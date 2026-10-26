@@ -298,8 +298,8 @@ request comes from our app, unmodified, on a real device, using the platforms' o
     approval. Prayer requests already go privately to the pastoral team, and the prayer wall (v2)
     would be moderated.
   - Excludes some devices: Android phones without Google Play services, and some rooted or very old
-    phones, fail attestation. Those installs get a polite "can't send from this device; here's the
-    church's email".
+    phones, fail attestation. **No fallback** (decided 2026-10-26): they can read everything but can't
+    send, and the app says so plainly rather than failing silently.
 - **Server side:** App Attest verification is CBOR decoding, an X.509 chain check and ECDSA, all in
   the BCL. Play Integrity is one HTTPS call to Google, authenticated with a service account. Both live
   in the API, so attested app traffic passes through the gateway untouched.
@@ -578,13 +578,21 @@ third-party SDK or service on top.
 
 ## 12. Open questions
 
-1. Who publishes to the stores? An Apple Developer account in the church's name (organisation
-   enrolment needs a D-U-N-S number) and a Google Play developer account.
-2. What from Tithe.ly do people actually use today? Measure before migrating.
-3. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
-   out?
-4. Android devices without Google Play services fail Play Integrity: is "email the church instead"
-   acceptable for them, or do we need a fallback (for example, writes held for staff review)?
+None block the skeleton. One has a deadline:
+
+1. **Store accounts.** The church has none yet. They aren't needed for the skeleton, but they are needed
+   for the device spike's push and attestation checks (Apple's paid programme, a Play Console listing)
+   and for any store testing. Enrol the church as an organisation: Apple requires a D-U-N-S number,
+   which is free but can take days to weeks with Apple's review, so start before the device spike.
+   Owning the app from the first build avoids a later app transfer.
+
+Decided, for the record:
+
+- **ImpactKids:** stays separate; no connection (non-goal, §1).
+- **Giving:** stays on Tithe.ly (§7).
+- **Sermons:** hosted in Tithe.ly, probably consumed through its RSS feed. The detail is settled when
+  that feature is built.
+- **Android without Google Play:** read-only, no fallback (§6).
 
 ## 13. Milestones
 
