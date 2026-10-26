@@ -1,0 +1,23 @@
+@page "/"
+@using Contracts
+@inject IEventsService Events
+
+<h1>AOT spike</h1>
+<pre id="out">@_out</pre>
+
+@code {
+    private string _out = "loading…";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var lines = new List<string> { $"aot={!System.Runtime.CompilerServices.RuntimeFeature.IsDynamicCodeCompiled}" };
+            var reply = await Events.ListAsync(new EventsRequest { Take = 3 });
+            lines.AddRange(reply.Events.Select(e => $"{e.Id} {e.Title} {e.StartsAt:o} {e.Kind} [{string.Join(",", e.Tags)}] {e.Venue?.Name} {e.Cost}"));
+            await foreach (var e in Events.WatchAsync(new EventsRequest { Take = 2 })) lines.Add($"stream {e.Id}");
+            _out = "OK\n" + string.Join("\n", lines);
+        }
+        catch (Exception ex) { _out = "FAIL\n" + ex; }
+    }
+}

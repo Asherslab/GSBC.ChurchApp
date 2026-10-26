@@ -1,0 +1,15 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsAotCompatible>true</IsAotCompatible>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <NoWarn>$(NoWarn);PBN9001</NoWarn>
+    <WarningsAsErrors>$(WarningsAsErrors);PBN3001;PBN3002;PBN3003;PBN3004;PBN3010;PBN3011;PBN4002;PBN4010;PBN4013;PBN4015;PBN4016;PBN4017;PBN4018</WarningsAsErrors>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);ProtoBuf.AOT</InterceptorsNamespaces>
+  </PropertyGroup>
+  <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <LinkerArg Include="-L/opt/homebrew/opt/openssl@4/lib;-L/opt/homebrew/opt/brotli/lib" />
+  </ItemGroup>
+</Project>

@@ -30,12 +30,16 @@ One web app, packaged three ways from a single build:
 Push Notifications, Haptics, Share, Browser, App (Android back button, deep links), Preferences and
 Splash Screen.
 
-**UI stack:** Blazor WebAssembly. It reuses our existing GSBC stack (ImpactKids, Accounting) and the
-patterns proven in the Graced POC: native-feel navigation, safe areas and offline-first.
+**UI stack:** Blazor WebAssembly, **AOT-compiled**. It reuses our existing GSBC stack (ImpactKids,
+Accounting) and the patterns proven in the Graced POC: native-feel navigation, safe areas and
+offline-first. The app is bundled in the store build, so AOT's larger download costs nothing at run
+time and buys a faster start-up.
+
+**API:** code-first gRPC (protobuf-net.Grpc), called from the app over gRPC-Web. The backend is
+native-AOT too. Both are AOT-checked from the first commit (§7).
 
 Downloading Blazor's compiled code (`.wasm`/`.dll`) over the air is a grey area under the store
-rules, but this plan never does it (§5), so it is not a constraint. The one cost is a 1 to 2 second
-start-up on older phones. AOT compilation can trim that if it matters.
+rules, but this plan never does it (§4), so it is not a constraint.
 
 ## 3. Features (v1)
 
@@ -64,7 +68,7 @@ There are two kinds of change, and each has one route into the app.
 | **Data** | The API, live | Events, announcements, sermons, groups, prayer wall, service times, staff |
 | **Code and design** | A store release | New pages, new features, layout, colours, fonts, logo |
 
-- **Data** is records from the church API (§7), edited by staff in an admin UI. It appears in the app
+- **Data** is records from the church API (§8), edited by staff in an admin UI. It appears in the app
   the next time it fetches, so no release is needed. The screens are fixed; only what fills them
   changes.
 - **Design** is built into the app. Colours and fonts are still CSS custom properties
@@ -90,9 +94,10 @@ the existing CSS variables. That stays data, not code. It is not planned for v1.
 - **The app refreshes on launch, on resume, and on pull-to-refresh.**
 - **Urgent changes** (a cancelled service, a venue change) go out as a push notification. Tapping it
   opens the app and refreshes the relevant screen.
-- **The API is versioned** (`/v1/...`) and only changes additively, so older app versions keep
-  working while people update. If a breaking change is unavoidable, the API can return a
-  "minimum app version" and the app asks the user to update.
+- **The API only changes additively,** so older app versions keep working while people update:
+  new fields get new numbers and old ones are never reused, and new services are added rather than
+  old ones changed. If a breaking change is unavoidable, the API can return a "minimum app version"
+  and the app asks the user to update.
 - **A first launch with no network** shows the bundled About and contact pages, plus a friendly
   "connect to load this week's events" message.
 
@@ -116,16 +121,83 @@ Plan:
 
 Never handle card numbers in our own code. Card details stay with the payment provider.
 
-## 7. Backend
+## 7. AOT from the first line
 
-A church API in the existing GSBC stack (.NET / Aspire, deployed through `gsbc.argo`), reached
-through the usual Cloudflare tunnel and ingress:
+Every .NET project is AOT-compiled: the Blazor app with `RunAOTCompilation`, and the backend with
+`PublishAot` (native AOT). This is enforced from the first commit, not retrofitted.
 
-- **Public read endpoints:** events, sermons, groups, announcements and service times. They are
-  anonymous and cacheable. Responses carry `ETag`s and short `Cache-Control` values, so Cloudflare
-  and the app can revalidate cheaply.
-- **Write endpoints:** prayer requests and "I'm interested" forms. They are rate-limited, never
-  cached, and go to the right staff member.
+### Code-first gRPC under AOT: investigated
+
+The question was whether code-first gRPC (protobuf-net.Grpc: C# interfaces and `[ProtoContract]`
+classes, no `.proto` files) survives AOT, or whether we would need `.proto` files and code
+generation. **It survives.** The evidence and how to re-run it are in
+[`spikes/aot-grpc`](spikes/aot-grpc/README.md).
+
+- **The runtime path does not work.** By default protobuf-net builds serializers and client proxies
+  at run time with reflection and IL emit. Under native AOT that **compiles fine and crashes at
+  start-up** (`PlatformNotSupportedException`); the spike confirmed it.
+- **The compile-time path does work.** protobuf-net 3.4+ and protobuf-net.Grpc 1.3.6+ ship source
+  generators that write the serializers (`[ProtoModel]`) and the client proxies and server bindings
+  (`[ProtoGrpc]`) as ordinary C#. With them, the spike ran unary and server-streaming calls from a
+  native AOT server to both a native AOT client and Blazor WASM AOT in Chrome.
+- **They are a preview.** The generator attributes are `[Experimental]` (`PBN9001`), and their shape
+  may change between versions. That is acceptable for a new app with a small API, but pin the
+  versions and read the release notes when upgrading.
+- **Fallback:** if the generators stall, contract-first (`.proto` + `Grpc.Tools` + Google.Protobuf)
+  is Microsoft's supported native AOT path. Contracts are small, so switching would be contained.
+
+### The rules
+
+1. **Library projects** (contracts, shared code): `IsAotCompatible=true`. This turns on the trim and
+   AOT analyzers for our own code.
+2. **The Blazor app project:** do **not** set `IsAotCompatible` or `IsTrimmable` on it. They make the
+   trimmer trim the app assembly itself, which removed its routed pages in the spike
+   (`CtorNotLocated`). Set `EnableTrimAnalyzer`, `EnableAotAnalyzer` and
+   `SuppressTrimAnalysisWarnings=false` instead. Blazor hides trim warnings by default.
+3. **Warnings are errors for our code:** `TreatWarningsAsErrors`, including all `IL2xxx`/`IL3xxx` and
+   these protobuf-net diagnostics:
+   - `PBN3001`–`PBN3004`: a contract was dropped from the generated model;
+   - `PBN3010`/`PBN3011`: a call still goes through the reflection model;
+   - `PBN4010`: no serializer model was named;
+   - `PBN4016`/`PBN4017`: a call or a DI-registered client isn't using the generated proxies;
+   - `PBN4018`: a contract was dropped and will throw under AOT.
+4. **One `[ProtoModel]`** in the contracts project lists the message types. One `[ProtoGrpc]` in each
+   **calling** project names the services; the app has its own, and the server has its own with the
+   implementations. The spike found that a factory declared only in the contracts project does not
+   rewrite calls in the projects that use it, and no diagnostic flags that. Each call site must see a
+   `[ProtoGrpc]` in its own project, with `InterceptorsNamespaces` including `ProtoBuf.AOT`, or pass
+   the factory explicitly.
+5. **The server uses the generated `AddXxxServices()`, never `AddCodeFirstGrpc()`.** The latter
+   registers the reflection binder.
+6. **Library warnings are tracked, not hidden.** Even with the generators, protobuf-net still contains
+   reflection paths it doesn't use, so a publish reports warnings from inside the library: about 20
+   on the server and about 240 in the WASM build. Collapse them to one warning per assembly
+   (`TrimmerSingleWarn`), commit the list of expected assemblies, and fail CI if a new one appears.
+7. **CI runs the published output, not just the build.** The spike's lesson is that a JIT build
+   hides AOT failures. CI publishes the native AOT server and the WASM AOT app, then runs a smoke test
+   that calls every service through the published binaries. Headless Chrome drives the WASM test.
+
+### Gotchas found
+
+- **`DateTime` loses its `Kind`:** UTC went in and came out unspecified. Use UTC everywhere and
+  restore the `Kind` on read, or use `DateTimeOffset` with a protobuf-net surrogate.
+- **gRPC-Web from .NET clients:** set `GrpcWebHandler.HttpVersion` to 1.1. Otherwise the client
+  tries HTTP/2 against an HTTP/1.1 endpoint and fails with `HTTP_1_1_REQUIRED`.
+- **Size:** the WASM AOT `_framework` is about 26 MB of `.wasm` (6.7 MB Brotli). It ships inside the
+  store build, so this only matters for the web/PWA target.
+
+## 8. Backend
+
+A church API in the existing GSBC stack (.NET / Aspire, native AOT, deployed through `gsbc.argo`),
+reached through the usual Cloudflare tunnel and ingress:
+
+- **Code-first gRPC services,** exposed to the app over gRPC-Web, so the same contracts work from
+  WKWebView, Android WebView and the browser.
+- **Public read services:** events, sermons, groups, announcements and service times. They are
+  anonymous. gRPC-Web calls are POSTs, so Cloudflare doesn't cache them; the app's own cache (§5)
+  does that job.
+- **Write services:** prayer requests and "I'm interested" forms. They are rate-limited and go to
+  the right staff member.
 - **Admin UI:** a staff-only page where staff edit records and send push notifications. It sits
   behind sign-in, for example Cloudflare Access or the existing GSBC auth.
 - **Push:** the API sends notifications directly to each platform's push service. There is no
@@ -147,7 +219,7 @@ third-party SDK or service on top.
 - **Not used:** Firebase on iOS, Firebase analytics, and hosted push services (OneSignal etc.).
   This keeps the dependency to the bare transport.
 
-## 8. Privacy and safety
+## 9. Privacy and safety
 
 - No third-party analytics or ad SDKs, which also keeps the store privacy labels short.
 - Prayer requests are sensitive. Use HTTPS only, give staff least-privilege access, and offer a
@@ -156,7 +228,7 @@ third-party SDK or service on top.
   child-safety policy.
 - Secrets (APNs key, FCM service account, payment keys) never go in this repo. **It is public.**
 
-## 9. Open questions
+## 10. Open questions
 
 1. Does ImpactKids (kids check-in) connect to the app, for example parent notifications?
 2. Giving: stay with Tithe.ly's giving page, or move to Stripe? Is ACNC registration in place for
@@ -167,10 +239,12 @@ third-party SDK or service on top.
 5. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
    out?
 
-## 10. Milestones
+## 11. Milestones
 
-1. **Spike:** Capacitor shell with one screen fed by the API and an offline cache, on a real iPhone
-   and Android device.
+0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
+1. **Skeleton:** solution with the §7 rules and an AOT CI gate (publish, then smoke-test the
+   binaries), plus a Capacitor shell with one screen fed by the API and an offline cache, on a real
+   iPhone and Android device.
 2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
    no release.
 3. **v1 features:** Home, Sermons, Events, Groups, Give (link out), push (APNs + FCM).
