@@ -25,9 +25,9 @@ One web app, packaged for both stores from a single build:
 |---|---|---|
 | iOS | Capacitor shell (WKWebView) | Code and design: App Store. Data: live from the API |
 | Android | Capacitor shell (Android WebView) | Code and design: Play Store. Data: live from the API |
-| Web (later, maybe) | A separate host with a chosen subset of features (§7) | Ordinary deploys |
+| Web (later, maybe) | A separate host with a chosen subset of features (§8) | Ordinary deploys |
 
-The app is not published as a website for now. The only public site is the staff admin panel (§9).
+The app is not published as a website for now. The only public site is the staff admin panel (§10).
 
 **Capacitor, with one native plugin of our own.** Nothing in scope needs native UI. Device features
 come from official plugins: Push Notifications, Haptics, Share, Browser, App (Android back button,
@@ -41,14 +41,14 @@ time and buys a faster start-up.
 
 **API:** code-first gRPC (protobuf-net.Grpc). In the store apps, the native data layer makes the
 calls over native gRPC (HTTP/2). Browsers, meaning the admin panel and any future website, use
-gRPC-Web (§9). The backend is native AOT too. Both are AOT-checked
-from the first commit (§8).
+gRPC-Web (§10). The backend is native AOT too. Both are AOT-checked
+from the first commit (§9).
 
 **Modular:** every feature is a set of modules that a host opts into: the app, the admin panel and any
-future public website (§7).
+future public website (§8).
 
 **Not AOT:** the admin panel. It is Blazor WebAssembly too, but staff-only, so AOT's start-up gain
-isn't worth the build time (§9).
+isn't worth the build time (§10).
 
 Downloading Blazor's compiled code (`.wasm`/`.dll`) over the air is a grey area under the store
 rules, but this plan never does it (§4), so it is not a constraint.
@@ -61,7 +61,7 @@ rules, but this plan never does it (§4), so it is not a constraint.
   passages. Last-played position is remembered.
 - **Events:** a list and calendar, with "add to calendar" and a registration link where one is needed.
 - **Groups:** life groups and ministries, each with a contact or "I'm interested" button.
-- **Give:** see §6, which is the most constrained feature.
+- **Give:** see §7, which is the most constrained feature.
 - **Prayer requests:** submit privately to the pastoral team, with an optional public prayer wall.
   Never public by default.
 - **Push notifications:** announcements, "service starting", and opt-in topics such as Youth, Kids
@@ -80,7 +80,7 @@ There are two kinds of change, and each has one route into the app.
 | **Data** | The API, live | Events, announcements, sermons, groups, prayer wall, service times, staff |
 | **Code and design** | A store release | New pages, new features, layout, colours, fonts, logo |
 
-- **Data** is records from the church API (§9), edited by staff in an admin UI. It appears in the app
+- **Data** is records from the church API (§10), edited by staff in an admin UI. It appears in the app
   the next time it fetches, so no release is needed. The screens are fixed; only what fills them
   changes.
 - **Design** is built into the app. Colours and fonts are still CSS custom properties
@@ -111,12 +111,12 @@ Blazor UI talks to it through one Capacitor plugin.
   Capacitor's Background Runner runs plain JavaScript only (no WebView, no WASM, about 30 seconds per
   run on iOS). Syncing while the app is closed means native code.
 - **Native gRPC:** native code gets real HTTP/2 gRPC, including client and two-way streaming, which
-  `fetch` can't do (§9).
+  `fetch` can't do (§10).
 
 ### Keep the native side generic
 
 The risk with a native layer is that every feature grows Swift and Kotlin code alongside its C#.
-That would triple the work and break the modularity in §7. So the native side **never understands a
+That would triple the work and break the modularity in §8. So the native side **never understands a
 message**: payloads stay protobuf bytes that only C# encodes and decodes. Contracts, models and
 logic stay in one place, in C#, and native gRPC libraries need no `.proto` code generation, because
 they only move bytes.
@@ -126,7 +126,7 @@ The plugin does four things:
 | Part | What it does | What it knows |
 |---|---|---|
 | **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. HTTP/2 via grpc-swift / grpc-java with a pass-through byte codec | URLs, auth headers, retries |
-| **Store** | SQLite table of `(feed, id, version, deleted, payload)` plus a sync cursor per feed | Nothing about the payload |
+| **Store** | SQLite table of `(feed, id, version, payload)` plus a few generic index columns the server fills in per feed (`sort_key`, `starts_at`, `ends_at`, `group_key`), and a sync cursor per feed | Nothing about the payload |
 | **Sync** | Pulls "changes since cursor" from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. Runs on launch, on resume, from a silent push, and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
 | **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be | Method paths |
 
@@ -135,9 +135,42 @@ On the .NET side:
 - **A `CallInvoker` that bridges to Transport.** protobuf-net's generated proxies run on top of any
   `CallInvoker`, so feature code calls `IEventsService` exactly as it would over gRPC-Web. The
   serialized bytes simply go through the plugin instead of `fetch`.
-- **Each feature reads its feeds from the Store** and decodes the payloads with its own contracts.
+- **Each feature reads its feeds from the Store a page at a time,** filtered and ordered by the index
+  columns, and decodes only that page with its own contracts. Nothing loads a whole feed into memory
+  to filter it.
   Screens show stored data immediately and re-render when Sync reports their feed changed.
-- **Feature modules declare their feeds on the server** (§9), so adding a feature adds no native code.
+- **Feature modules declare their feeds on the server** (§10), so adding a feature adds no native code.
+
+### Bounded, by design
+
+A store that only accumulates opaque payloads is a slow leak unless every way in has a way out. The
+rules:
+
+- **The server owns retention.** Each feed declares its window: events from 30 days ago onward,
+  the latest N sermons, announcements until they expire. A record leaving its window is sent as a
+  delete, exactly like a real deletion, so every phone converges on the server's window.
+- **Deletes delete.** The phone removes the row when the delete arrives; it never keeps tombstones.
+  The server keeps them for a fixed period (say 90 days). A phone whose cursor is older than that gets
+  "reset" instead of changes: it empties that feed and fetches it fresh. A phone that hasn't opened the
+  app since Easter can't replay a year of history.
+- **The phone only stores feeds it asks for.** Each sync names the feeds this app version registers.
+  On start-up, rows for any feed the app no longer registers (a feature removed in an update) are
+  dropped.
+- **Format changes reset a feed** rather than leaving undecodable rows. Payload changes are additive
+  (§10), so this is rare.
+- **Hard caps as a safety net:** a per-record size limit enforced by the server (say 64 KB), and a
+  per-feed row and byte cap on the phone. If a cap is hit, the oldest rows go and it is logged, because
+  it means a feed's window is wrong.
+- **Images aren't in the store.** They live in a separate file cache with its own size limit, evicting
+  the least recently used.
+- **Space comes back.** SQLite with `auto_vacuum = INCREMENTAL`, run after large deletes, so deleted
+  rows return disk space rather than leaving an ever-growing file.
+- **The outbox drains or gives up.** Entries retry with backoff, give up after a limit (days, not
+  forever), and the user sees "couldn't send" with a retry, rather than a queue growing silently.
+- **Memory:** bridge messages are paged and size-limited, and streams arrive in chunks.
+- **Proven, not assumed:** a soak test replays months of simulated changes (window churn, deletes,
+  resets, an app update that drops a feed) and asserts the store's rows and file size stay bounded.
+  Settings shows the space the app uses.
 
 ### Freshness and compatibility
 
@@ -166,7 +199,65 @@ On the .NET side:
 4. **Background scheduling** on real devices: how often iOS actually runs the refresh, and how
    reliably silent pushes arrive.
 
-## 6. Giving
+## 6. Who may call what
+
+Every service method falls into one of three tiers. The API **fails closed**: the default policy
+requires a signed-in staff member, so a method that forgets its attribute is locked, not open.
+
+| Tier | Examples | Requirement |
+|---|---|---|
+| **Public read** | Events, sermons, groups, `Sync` | `[AllowAnonymous]`, rate-limited |
+| **App write** | Prayer request, "I'm interested", push-topic subscription | A **genuine installed app** (below), rate-limited per install |
+| **Admin** | Editing anything, sending pushes, reading prayer requests | A **staff passkey** session; every method, no exceptions |
+
+A test enumerates every gRPC endpoint and fails if any method lacks an explicit tier, or if an
+admin feature's service has a method below Admin. (protobuf-net.Grpc's generated bindings keep
+`[Authorize]`-style metadata under native AOT; the spike's source notes confirm it, and the skeleton
+proves it.)
+
+### Admin: passkeys, as in MealPlanner
+
+- **Staff sign in with passkeys,** reusing MealPlanner's approach: ASP.NET Core Identity's passkey
+  support, invitations by link, user verification required. The same traps apply. Passkeys are
+  bound to the admin site's host for good, the relying party is configuration (never a header), and
+  every POST checks its origin.
+- **Sign-in runs in the admin host, not the API.** Identity and cookie authentication aren't supported
+  under native AOT; Microsoft's compatibility table lists JWT bearer as the supported scheme. So the
+  admin host, which isn't AOT, serves the WASM panel, runs the passkey ceremonies and keeps the session
+  cookie. It then issues short-lived (minutes) JWTs that the panel sends to the API on each gRPC-Web
+  call.
+- **The API only validates JWTs.** That needs the admin host's public signing key, the audience and
+  the staff role. A removed staff member or a "sign out everywhere" stops working when their current
+  token expires, within minutes.
+
+### App writes: proving it's a genuine installed app, without accounts
+
+Nobody signs in to send a prayer request. Instead, the native layer (§5) proves to the API that the
+request comes from our app, unmodified, on a real device, using the platforms' own attestation:
+
+- **iOS: App Attest.** The native layer creates a key in the Secure Enclave and has Apple attest it.
+  The API verifies the attestation once (Apple's certificate chain, our app ID) and registers the
+  install with that public key. Each write then carries an assertion: a signature over the request
+  with an increasing counter, checked against the registered key.
+- **Android: Play Integrity.** Each write carries an integrity token bound to a hash of the request.
+  The API asks Google to decode it and checks: our package name and signing certificate, an app
+  installed from Play, and a genuine device.
+- **What it proves, and what it doesn't:**
+  - Proves: the request came from our real app on a real phone.
+  - Doesn't prove: good intent. A person with the genuine app can still send nonsense, so rate limits
+    per install still apply, and nothing an app write creates is public without a staff member's
+    approval. Prayer requests already go privately to the pastoral team, and the prayer wall (v2)
+    would be moderated.
+  - Excludes some devices: Android phones without Google Play services, and some rooted or very old
+    phones, fail attestation. Those installs get a polite "can't send from this device; here's the
+    church's email".
+- **AOT on the server:** App Attest is CBOR decoding, X.509 chain checks and ECDSA, all available in
+  the BCL under AOT. Play Integrity is one HTTPS call to Google, authenticated with a service account,
+  written with `HttpClient` and source-generated JSON rather than Google's SDK.
+- **Pseudonymous, not anonymous:** an install has an ID so limits and blocks can apply. It isn't
+  linked to a person unless they type their name into the request.
+
+## 7. Giving
 
 Donations are not digital goods, so Apple and Google in-app purchase does **not** apply. But the
 stores still regulate how donations are collected. From memory, to be verified:
@@ -186,7 +277,7 @@ Plan:
 
 Never handle card numbers in our own code. Card details stay with the payment provider.
 
-## 7. Modules
+## 8. Modules
 
 Every feature (Events, Sermons, Groups, Prayer, Give, Push, …) is self-contained and **selectable per
 host**. The app ships the features we choose. A public website, if we build one later, picks its own
@@ -218,16 +309,16 @@ src/
   shows another's content, it goes through a small interface in `Shared` that the other feature
   implements. For example, Home shows "next events" through a home-card interface.
 - **Each module that calls the API declares its own `[ProtoGrpc]`,** because the generator only
-  covers its own project (§8). So a feature's client wiring lives inside the feature, and a host that
+  covers its own project (§9). So a feature's client wiring lives inside the feature, and a host that
   leaves the feature out carries none of it.
-- **Every assembly with routable pages is rooted for the trimmer** in the AOT hosts (§8). Feature
+- **Every assembly with routable pages is rooted for the trimmer** in the AOT hosts (§9). Feature
   `.App` modules have pages, so the App host roots each one it references. To do in the skeleton: make
   `Directory.Build.targets` add this automatically, so a new module can't forget it.
 
-## 8. AOT from the first line
+## 9. AOT from the first line
 
 The app (Blazor WASM, `RunAOTCompilation`) and the API (`PublishAot`, native AOT) are AOT-compiled and
-AOT-checked from the first commit. The admin panel is not (§9). The evidence for everything here,
+AOT-checked from the first commit. The admin panel is not (§10). The evidence for everything here,
 and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
 
 ### Code-first gRPC survives AOT
@@ -317,7 +408,7 @@ and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
   - **Note:** the older per-member `DataFormat.WellKnown` is obsolete. Level300 also sends `decimal`
     and `Guid` as strings.
 
-## 9. Backend
+## 10. Backend
 
 A church API in the existing GSBC stack (.NET / Aspire, native AOT, deployed through `gsbc.argo`),
 reached through the usual Cloudflare tunnel and ingress.
@@ -351,7 +442,7 @@ reached through the usual Cloudflare tunnel and ingress.
 
 ### Services
 
-- **Code-first gRPC services,** one set per feature module (§7).
+- **Code-first gRPC services,** one set per feature module (§8).
 - **One generic `Sync` service** serves the native data layer (§5). It returns changes since a cursor,
   per feed, as `(feed, id, version, deleted, payload bytes)`. Each feature's `.Api` module registers
   its feeds: what's in them and how a record is encoded.
@@ -365,14 +456,25 @@ reached through the usual Cloudflare tunnel and ingress.
 
 ### Admin panel
 
-- **Blazor WebAssembly, not AOT.** It is staff-only, so start-up time matters less than build time.
-  Its modules are still AOT-checked, because they share contracts and conventions with the AOT hosts.
+- **Blazor WebAssembly, not AOT,** served by a small admin host, which also runs passkey sign-in and
+  issues the API tokens (§6). Staff-only, so start-up time matters less than build time. Its modules
+  are still AOT-checked, because they share contracts and conventions with the AOT hosts.
 - **Modular like the app:** it hosts the `*.Admin` module of each feature it manages.
-- **Calls the API from the browser over gRPC-Web.** This is the only public website.
-- **Authorization happens in the API, not just in front of the site.** Because the browser calls the
-  API directly, every staff-only (write and admin) service checks the caller itself. Cloudflare
-  Access, or the existing GSBC auth, signs staff in; the API validates that token on every admin
-  call. Public read services stay anonymous.
+- **Calls the API from the browser over gRPC-Web,** with the token on every call. This is the only
+  public website.
+
+### Data access under AOT
+
+EF Core's NativeAOT support is, in Microsoft's words, "highly experimental … not yet suited for
+production use". So:
+
+- **The API queries with Npgsql and source-generated SQL mapping** (Dapper.AOT or hand-written
+  ADO.NET), both designed for AOT.
+- **The schema is EF Core migrations, run by a separate migrator job,** the same pattern as ImpactKids'
+  `Workers.DbMigrations`. The migrator isn't AOT, so EF Core is fine there, and the API never loads it.
+- **To verify in the skeleton:** Npgsql and the chosen mapper publish cleanly into the warning
+  baseline (§9). If that doesn't hold, this becomes the API's one non-AOT dependency, and it gets
+  decided then.
 
 ### Push notifications
 
@@ -390,7 +492,7 @@ third-party SDK or service on top.
 - **Not used:** Firebase on iOS, Firebase analytics, and hosted push services (OneSignal etc.).
   This keeps the dependency to the bare transport.
 
-## 10. Privacy and safety
+## 11. Privacy and safety
 
 - No third-party analytics or ad SDKs, which also keeps the store privacy labels short.
 - Prayer requests are sensitive. Use HTTPS only, give staff least-privilege access, and offer a
@@ -399,7 +501,7 @@ third-party SDK or service on top.
   child-safety policy.
 - Secrets (APNs key, FCM service account, payment keys) never go in this repo. **It is public.**
 
-## 11. Open questions
+## 12. Open questions
 
 1. Does ImpactKids (kids check-in) connect to the app, for example parent notifications?
 2. Giving: stay with Tithe.ly's giving page, or move to Stripe? Is ACNC registration in place for
@@ -409,11 +511,15 @@ third-party SDK or service on top.
 4. What from Tithe.ly do people actually use today? Measure before migrating.
 5. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
    out?
+6. Android devices without Google Play services fail Play Integrity: is "email the church instead"
+   acceptable for them, or do we need a fallback (for example, writes held for staff review)?
 
-## 12. Milestones
+## 13. Milestones
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
-1. **Skeleton:** the module layout (§7) with the §8 rules, the warning baseline and an AOT CI
+1. **Skeleton:** includes the fail-closed tier test (§6), passkey sign-in in the admin host with JWTs to
+   the API, and Npgsql data access in the AOT API.
+   Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI
    gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's four
    open points): a Capacitor shell with one screen fed through the native Transport, Store and Sync,
    on a real iPhone and Android device, through Cloudflare.

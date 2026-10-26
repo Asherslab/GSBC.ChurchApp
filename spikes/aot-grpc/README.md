@@ -3,7 +3,7 @@
 **Question:** can we keep code-first gRPC (protobuf-net.Grpc, plain C# interfaces, no `.proto`) when
 both the backend and the Blazor app are compiled AOT? **Answer: yes.** It needs protobuf-net's
 compile-time generators, which are still in preview. The rules that follow from this spike are in
-[SPEC.md §8](../../SPEC.md#8-aot-from-the-first-line).
+[SPEC.md §9](../../SPEC.md#9-aot-from-the-first-line).
 
 Run on 2026-10-26 with .NET SDK 10.0.401 (runtime 10.0.12), protobuf-net 3.4.40,
 protobuf-net.Grpc 1.3.14 and Grpc.Net.Client(.Web) 2.84.0.
