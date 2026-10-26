@@ -50,6 +50,34 @@ None yet. Every entry needs the owner's explicit approval in chat first.
 | Path | Host | Why it can't be gRPC | Approved |
 |---|---|---|---|
 
+# Components: reuse first, then generic
+
+Before writing any Blazor UI:
+
+1. **Look for an existing component that already does it, or nearly does.** Search the shared
+   component library and the feature modules. If one is close, extend or adapt it (a parameter, a
+   slot, a variant) rather than writing a near-copy.
+2. **If nothing fits, build it generic.** Ask whether what you're about to build is a one-off or a
+   pattern: a list with pull-to-refresh, a card, a sheet, a date line, an empty state, a "live"
+   indicator. Patterns go in the shared component library with parameters and `RenderFragment`
+   slots, and the feature uses them. Only truly feature-specific composition lives in the feature.
+3. **When you adapt a shared component, keep its existing callers working,** and check every
+   caller before changing what a parameter means.
+
+Two features with their own copies of the same UI is a defect: merge them into one component.
+
+# Comments: almost none
+
+**Don't write comments unless the code genuinely can't be understood without one.** Make the code say
+it instead: clear names, small methods, types that carry meaning, named constants. A comment is only
+justified for what code can't express, such as *why* a non-obvious choice was made, or an external
+constraint (a platform bug, a store rule, a protocol quirk). Never write comments that restate what
+the code does, narrate changes, or label sections. XML doc comments count too.
+
+**This is enforced by a hook** (`.claude/hooks/no-comments.py`, run after every Write/Edit). It
+reports every comment an edit adds. Delete each one, or, if it really must stay, say in your reply
+which one and why. Removing an existing comment that the code makes redundant is always welcome.
+
 # When to stop and ask
 
 Besides the hard rule above:
