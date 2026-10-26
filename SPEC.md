@@ -9,7 +9,8 @@ slow to update and hard to make feel like *our* church. We want our own app that
 
 - feels native on iOS and Android, and works offline;
 - puts the things people actually open first: this Sunday, sermons, events, groups and giving;
-- lets church staff change content and branding **without shipping a store update**;
+- lets church staff change content (events, announcements, sermons) the moment they need to,
+  **without a store update**;
 - is cheap to run on infrastructure we already have (the `gsbc.argo` cluster).
 
 Non-goals for v1: a full church management system (people database, rostering, accounting), live
@@ -21,18 +22,20 @@ One web app, packaged three ways from a single build:
 
 | Target | How | Updates |
 |---|---|---|
-| iOS | Capacitor shell (WKWebView) | Shell: App Store. Content: over the air |
-| Android | Capacitor shell (Android WebView) | Shell: Play Store. Content: over the air |
+| iOS | Capacitor shell (WKWebView) | Code and design: App Store. Data: live from the API |
+| Android | Capacitor shell (Android WebView) | Code and design: Play Store. Data: live from the API |
 | Web | The same build as a PWA | Service worker |
 
 **Capacitor only.** Nothing in scope needs native UI. Native capabilities come from official plugins:
-Push Notifications, Haptics, Share, Browser, App (Android back button, deep links), Filesystem,
-Preferences and Splash Screen.
+Push Notifications, Haptics, Share, Browser, App (Android back button, deep links), Preferences and
+Splash Screen.
 
-**UI stack (open question, §9):** Blazor WebAssembly reuses our existing GSBC stack (ImpactKids,
-Accounting) and the patterns proven in the Graced POC: native-feel navigation, safe areas and
-offline-first. The cost is a 1 to 2 second WASM start on older phones. A JS framework starts faster,
-and its code is fully eligible for over-the-air updates (§5).
+**UI stack:** Blazor WebAssembly. It reuses our existing GSBC stack (ImpactKids, Accounting) and the
+patterns proven in the Graced POC: native-feel navigation, safe areas and offline-first.
+
+Downloading Blazor's compiled code (`.wasm`/`.dll`) over the air is a grey area under the store
+rules, but this plan never does it (§5), so it is not a constraint. The one cost is a 1 to 2 second
+start-up on older phones. AOT compilation can trim that if it matters.
 
 ## 3. Features (v1)
 
@@ -52,77 +55,46 @@ and its code is fully eligible for over-the-air updates (§5).
 No accounts are required to read anything. Sign-in, if added, is only for things that are personal
 (prayer requests you sent, group membership).
 
-## 4. Content model
+## 4. What changes how
 
-Everything that isn't code is **content**: JSON, Markdown, images and fonts, described by one manifest.
+There are two kinds of change, and each has one route into the app.
 
-```
-content/
-  manifest.json        # version + every file with its sha256 and size
-  theme.json           # colours, fonts, radius, logo → CSS custom properties
-  home.json  events.json  groups.json  sermons/series.json  pages/*.md
-  img/…  fonts/…
-```
+| Change | Route | Examples |
+|---|---|---|
+| **Data** | The API, live | Events, announcements, sermons, groups, prayer wall, service times, staff |
+| **Code and design** | A store release | New pages, new features, layout, colours, fonts, logo |
 
-```json
-{
-  "version": 42,
-  "minShell": "1.0.0",
-  "files": {
-    "theme.json":  { "sha256": "…", "size": 812 },
-    "events.json": { "sha256": "…", "size": 10422 },
-    "fonts/Heading.woff2": { "sha256": "…", "size": 48120 }
-  }
-}
-```
+- **Data** is records from the church API (§7), edited by staff in an admin UI. It appears in the app
+  the next time it fetches, so no release is needed. The screens are fixed; only what fills them
+  changes.
+- **Design** is built into the app. Colours and fonts are still CSS custom properties
+  (`--colour-primary`, `--font-heading` and so on) so they are easy to change, but changing them
+  means a release. This is a deliberate choice: a release keeps the app reviewable, testable and
+  simple.
+- Store reviews typically take a day or two now, and both stores support phased rollouts, so a
+  release is routine.
 
-- **Theming is data.** The UI only uses CSS custom properties (`--colour-primary`, `--font-heading`
-  and so on). At start-up the app loads `theme.json` and writes it onto `:root`. Changing a colour
-  or font is therefore a content change.
-- `minShell` stops new content reaching an app version too old to understand it. That app keeps
-  its current content and asks the user to update.
-- **Authoring (open question, §9):** a git-based content repo edited through a simple web CMS such
-  as Decap, or a small admin page in the existing GSBC stack. Either way, publishing builds the
-  manifest and pushes the files to static hosting (cluster + Cloudflare).
+**Store rules:** serving data from an API is ordinary app behaviour, and neither store restricts it.
+The rules only bite on downloading *code* (Apple Guideline 2.5.2 and DPLA §3.3.1(B); Google Play's
+Device and Network Abuse policy), which this plan does not do.
 
-## 5. Over-the-air updates
+If we ever want over-the-air *styling*, the safe route is a theme record from the API mapped onto
+the existing CSS variables. That stays data, not code. It is not planned for v1.
 
-### How it works
-1. **The app ships with a full content snapshot**, so the first launch and offline use always work.
-2. **On launch and on resume,** it fetches `manifest.json` conditionally (ETag) with a short timeout.
-   If there is no network, it carries on with what it has.
-3. **It downloads only the files whose hash changed** into Filesystem/IndexedDB under a staging
-   version, and verifies every hash.
-4. **When all the files have arrived, it switches** the "current" pointer to the new version in one
-   step. A half-finished download is never used. The previous version is kept for rollback.
-5. **New content is applied** on the next screen change or the next launch, never mid-read. Urgent
-   items such as service cancellations can be pushed and shown immediately.
+## 5. Data in the app: offline and freshness
 
-Lookup order for every file: **downloaded current version → bundled snapshot**.
-
-### What the stores allow
-Policy summary from memory. Check it against the current App Review Guidelines, the Apple Developer
-Program License Agreement and the Google Play Developer Policy before relying on it.
-
-- **Apple (Guideline 2.5.2, DPLA §3.3.1(B)):**
-  - Apps must be self-contained and must not download code that adds or changes features.
-  - Downloaded *interpreted* code (HTML, CSS, JS run by WebKit) is allowed. The limits: it must not
-    change the app's primary purpose, add a storefront, or get around review or payment rules.
-- **Google Play (Device and Network Abuse):** apps must not download executable code (dex, JAR,
-  `.so`) from outside Play. JavaScript in a WebView is exempt.
-
-What that means for each kind of change:
-
-| Change | Store update? |
-|---|---|
-| Colours, fonts, logo, images | No |
-| Sermons, events, groups, pages, announcements | No |
-| Small CSS/layout or JS bug fixes | No (allowed; keep them small) |
-| Blazor `.wasm`/`.dll` changes | **Yes**. Treat as code, grey area at best |
-| New features, new payment flows, anything changing what the app *is* | **Yes**, always |
-
-Store reviews are typically a day or two now, and both stores support phased rollouts. Code
-releases are routine, not an ordeal.
+- **Every list is cached on the device** (IndexedDB) with the time it was fetched.
+- **Screens show the cache immediately,** then refresh from the API in the background
+  (stale-while-revalidate). If the refresh fails, they keep showing what they have, with an
+  "updated 3 hours ago" note.
+- **The app refreshes on launch, on resume, and on pull-to-refresh.**
+- **Urgent changes** (a cancelled service, a venue change) go out as a push notification. Tapping it
+  opens the app and refreshes the relevant screen.
+- **The API is versioned** (`/v1/...`) and only changes additively, so older app versions keep
+  working while people update. If a breaking change is unavoidable, the API can return a
+  "minimum app version" and the app asks the user to update.
+- **A first launch with no network** shows the bundled About and contact pages, plus a friendly
+  "connect to load this week's events" message.
 
 ## 6. Giving
 
@@ -146,14 +118,34 @@ Never handle card numbers in our own code. Card details stay with the payment pr
 
 ## 7. Backend
 
-Kept deliberately small, and run in the `gsbc.argo` cluster alongside the other GSBC apps:
+A church API in the existing GSBC stack (.NET / Aspire, deployed through `gsbc.argo`), reached
+through the usual Cloudflare tunnel and ingress:
 
-- **Static content host:** manifest + files behind Cloudflare. Use `no-cache` on `manifest.json` and
-  immutable caching on hashed files.
-- **Push:** Firebase Cloud Messaging (Android, and APNs relay for iOS), sent from the admin side.
-  Device tokens are stored per topic.
-- **Forms:** prayer requests and "I'm interested" go to the right staff inbox. Prayer requests are
-  stored only as long as needed.
+- **Public read endpoints:** events, sermons, groups, announcements and service times. They are
+  anonymous and cacheable. Responses carry `ETag`s and short `Cache-Control` values, so Cloudflare
+  and the app can revalidate cheaply.
+- **Write endpoints:** prayer requests and "I'm interested" forms. They are rate-limited, never
+  cached, and go to the right staff member.
+- **Admin UI:** a staff-only page where staff edit records and send push notifications. It sits
+  behind sign-in, for example Cloudflare Access or the existing GSBC auth.
+- **Push:** the API sends notifications directly to each platform's push service. There is no
+  third-party push SaaS. See below.
+
+### Push notifications
+
+Each platform has one push transport and there is no way around it. What *is* optional is a
+third-party SDK or service on top.
+
+- **iOS: APNs.** Capacitor's Push Notifications plugin returns a native APNs device token. The API
+  sends to APNs over HTTP/2 using a token-based `.p8` key from the Apple Developer account.
+- **Android: FCM.** Google only delivers push to Play-services Android devices through Firebase
+  Cloud Messaging. Using FCM means a Firebase project and a `google-services.json` in the Android
+  build; nothing else from Firebase is used. The API sends with the FCM HTTP v1 API and a service
+  account key.
+- **The API stores device tokens** with the platform and topic subscriptions (Youth, Kids, Prayer and
+  so on). It fans out per topic itself.
+- **Not used:** Firebase on iOS, Firebase analytics, and hosted push services (OneSignal etc.).
+  This keeps the dependency to the bare transport.
 
 ## 8. Privacy and safety
 
@@ -162,25 +154,25 @@ Kept deliberately small, and run in the `gsbc.argo` cluster alongside the other 
   retention period and a delete option.
 - No photos of children in content without consent. This follows the church's existing
   child-safety policy.
-- Secrets (push keys, payment keys) never go in this repo. **It is public.**
+- Secrets (APNs key, FCM service account, payment keys) never go in this repo. **It is public.**
 
 ## 9. Open questions
 
-1. Blazor WASM (reuse our stack) or a JS framework (faster start, fully over-the-air)?
-2. Content authoring: a git-based CMS or an admin page in the existing GSBC stack?
-3. Does ImpactKids (kids check-in) connect to the app, for example parent notifications?
-4. Giving: stay with Tithe.ly's giving page, or move to Stripe? Is ACNC registration in place for
+1. Does ImpactKids (kids check-in) connect to the app, for example parent notifications?
+2. Giving: stay with Tithe.ly's giving page, or move to Stripe? Is ACNC registration in place for
    Apple's nonprofit programme?
-5. Who publishes to the stores? An Apple Developer account in the church's name (organisation
+3. Who publishes to the stores? An Apple Developer account in the church's name (organisation
    enrolment needs a D-U-N-S number) and a Google Play developer account.
-6. What from Tithe.ly do people actually use today? Measure before migrating.
+4. What from Tithe.ly do people actually use today? Measure before migrating.
+5. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
+   out?
 
 ## 10. Milestones
 
-1. **Spike:** Capacitor shell + one screen + theme.json applied at runtime, on a real iPhone and
-   Android device.
-2. **Content sync:** manifest, hashed downloads, atomic switch-over, bundled fallback. Prove it by
-   changing a colour and a font with no store release.
-3. **v1 features:** Home, Sermons, Events, Groups, Give (link out), push.
+1. **Spike:** Capacitor shell with one screen fed by the API and an offline cache, on a real iPhone
+   and Android device.
+2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
+   no release.
+3. **v1 features:** Home, Sermons, Events, Groups, Give (link out), push (APNs + FCM).
 4. **Store submission:** TestFlight / internal testing, then public release.
 5. **v2:** in-app giving (approved nonprofit), prayer wall, sign-in if needed.
