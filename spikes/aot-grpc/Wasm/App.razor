@@ -1,3 +1,8 @@
+@using System.Diagnostics.CodeAnalysis
+@* The Razor compiler sets Router.NotFoundPage (a [DynamicallyAccessedMembers] Type) through the
+   component parameter path, which the trimmer reports against our generated BuildRenderTree. *@
+@attribute [UnconditionalSuppressMessage("Trimming", "IL2110", Justification = "Router.NotFoundPage is set by the Razor compiler; the page type is rooted with the app assembly.")]
+@attribute [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "As above.")]
 ﻿<Router AppAssembly="@typeof(App).Assembly" NotFoundPage="typeof(Pages.NotFound)">
     <Found Context="routeData">
         <RouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)"/>

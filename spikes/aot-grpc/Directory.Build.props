@@ -3,13 +3,31 @@
     <TargetFramework>net10.0</TargetFramework>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Every project is AOT-checked: the trim and AOT analyzers run on our code at build time. -->
     <IsAotCompatible>true</IsAotCompatible>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <!-- Library warnings stay individual so the baseline (aot-warnings/) can list them exactly. -->
     <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <!-- ILC/ILLink pass $(WarningsAsErrors)/$(TreatWarningsAsErrors) through; library warnings are
+         policed by the baseline check instead, so the publish itself must not fail on them. -->
+    <IlcTreatWarningsAsErrors>false</IlcTreatWarningsAsErrors>
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+
+    <!-- protobuf-net's compile-time serializers and gRPC proxies are a preview ([Experimental]). -->
     <NoWarn>$(NoWarn);PBN9001</NoWarn>
-    <WarningsAsErrors>$(WarningsAsErrors);PBN3001;PBN3002;PBN3003;PBN3004;PBN3010;PBN3011;PBN4002;PBN4010;PBN4013;PBN4015;PBN4016;PBN4017;PBN4018</WarningsAsErrors>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);ProtoBuf.AOT</InterceptorsNamespaces>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Direct, in every project: protobuf-net ships its MSBuild props in build/, not buildTransitive/,
+         so a project that only gets it through Contracts never tells the analyzers it is an AOT build,
+         and PBN4015 ("no [ProtoGrpc] here") stays silent. -->
+    <PackageReference Include="protobuf-net" Version="3.4.40" />
+  </ItemGroup>
+
   <ItemGroup Condition="$([MSBuild]::IsOSPlatform('OSX'))">
+    <!-- Homebrew's .NET links native AOT against Homebrew's OpenSSL and Brotli. -->
     <LinkerArg Include="-L/opt/homebrew/opt/openssl@4/lib;-L/opt/homebrew/opt/brotli/lib" />
   </ItemGroup>
 </Project>

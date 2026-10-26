@@ -18,13 +18,15 @@ streaming infrastructure, and anything that needs native code beyond standard Ca
 
 ## 2. Shape
 
-One web app, packaged three ways from a single build:
+One web app, packaged for both stores from a single build:
 
 | Target | How | Updates |
 |---|---|---|
 | iOS | Capacitor shell (WKWebView) | Code and design: App Store. Data: live from the API |
 | Android | Capacitor shell (Android WebView) | Code and design: Play Store. Data: live from the API |
-| Web | The same build as a PWA | Service worker |
+| Web (later, maybe) | A separate host with a chosen subset of features (§7) | Ordinary deploys |
+
+The app is not published as a website for now. The only public site is the staff admin panel (§9).
 
 **Capacitor only.** Nothing in scope needs native UI. Native capabilities come from official plugins:
 Push Notifications, Haptics, Share, Browser, App (Android back button, deep links), Preferences and
@@ -35,8 +37,14 @@ Accounting) and the patterns proven in the Graced POC: native-feel navigation, s
 offline-first. The app is bundled in the store build, so AOT's larger download costs nothing at run
 time and buys a faster start-up.
 
-**API:** code-first gRPC (protobuf-net.Grpc), called from the app over gRPC-Web. The backend is
-native-AOT too. Both are AOT-checked from the first commit (§7).
+**API:** code-first gRPC (protobuf-net.Grpc). The app calls it over gRPC-Web; .NET callers such as
+the admin panel use native gRPC over HTTP/2 (§9). The backend is native AOT too. Both are AOT-checked
+from the first commit (§8).
+
+**Modular:** every feature is a set of modules that a host opts into: the app, the admin panel and any
+future public website (§7).
+
+**Not AOT:** the admin panel. It is a staff-only server-rendered site, so AOT buys nothing there (§9).
 
 Downloading Blazor's compiled code (`.wasm`/`.dll`) over the air is a grey area under the store
 rules, but this plan never does it (§4), so it is not a constraint.
@@ -68,7 +76,7 @@ There are two kinds of change, and each has one route into the app.
 | **Data** | The API, live | Events, announcements, sermons, groups, prayer wall, service times, staff |
 | **Code and design** | A store release | New pages, new features, layout, colours, fonts, logo |
 
-- **Data** is records from the church API (§8), edited by staff in an admin UI. It appears in the app
+- **Data** is records from the church API (§9), edited by staff in an admin UI. It appears in the app
   the next time it fetches, so no release is needed. The screens are fixed; only what fills them
   changes.
 - **Design** is built into the app. Colours and fonts are still CSS custom properties
@@ -121,87 +129,185 @@ Plan:
 
 Never handle card numbers in our own code. Card details stay with the payment provider.
 
-## 7. AOT from the first line
+## 7. Modules
 
-Every .NET project is AOT-compiled: the Blazor app with `RunAOTCompilation`, and the backend with
-`PublishAot` (native AOT). This is enforced from the first commit, not retrofitted.
+Every feature (Events, Sermons, Groups, Prayer, Give, Push, …) is self-contained and **selectable per
+host**. The app ships the features we choose. A public website, if we build one later, picks its own
+subset. The admin panel picks the admin side of each.
 
-### Code-first gRPC under AOT: investigated
+```
+src/
+  Shared/                    time, module abstractions, small cross-feature interfaces
+  Features/Events/
+    Events.Contracts         messages + [Service] interfaces + [ProtoModel]      (AOT)
+    Events.Api               service implementations, storage, server [ProtoGrpc] (AOT)
+    Events.App               Razor class library: pages, components, cache,
+                             client [ProtoGrpc]                                   (AOT)
+    Events.Admin             Razor class library: staff pages, client [ProtoGrpc]
+  Features/Sermons/ …        same four parts, only the ones a feature needs
+  Hosts/
+    Api                      native AOT; references the *.Api modules it serves
+    App                      Capacitor + Blazor WASM AOT; references the *.App modules it ships
+    Admin                    Blazor Web App (interactive server), not AOT; the *.Admin modules
+    Web (later)              a public site; whichever *.App modules it wants
+```
 
-The question was whether code-first gRPC (protobuf-net.Grpc: C# interfaces and `[ProtoContract]`
-classes, no `.proto` files) survives AOT, or whether we would need `.proto` files and code
-generation. **It survives.** The evidence and how to re-run it are in
-[`spikes/aot-grpc`](spikes/aot-grpc/README.md).
+- **Choosing a feature is explicit:** a project reference plus one registration line in the host
+  (`builder.AddEventsApp()`). There's no assembly scanning, which keeps it trim-safe and readable.
+- **Each module registers itself:** its services, its navigation entry and its routable assembly. The
+  host builds the router's `AdditionalAssemblies` from what it registered.
+- **Features never reference each other,** only `Shared`, so any subset builds. When one feature
+  shows another's content, it goes through a small interface in `Shared` that the other feature
+  implements. For example, Home shows "next events" through a home-card interface.
+- **Each module that calls the API declares its own `[ProtoGrpc]`,** because the generator only
+  covers its own project (§8). So a feature's client wiring lives inside the feature, and a host that
+  leaves the feature out carries none of it.
+- **Every assembly with routable pages is rooted for the trimmer** in the AOT hosts (§8). Feature
+  `.App` modules have pages, so the App host roots each one it references. To do in the skeleton: make
+  `Directory.Build.targets` add this automatically, so a new module can't forget it.
 
-- **The runtime path does not work.** By default protobuf-net builds serializers and client proxies
-  at run time with reflection and IL emit. Under native AOT that **compiles fine and crashes at
+## 8. AOT from the first line
+
+The app (Blazor WASM, `RunAOTCompilation`) and the API (`PublishAot`, native AOT) are AOT-compiled and
+AOT-checked from the first commit. The admin panel is not (§9). The evidence for everything here,
+and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
+
+### Code-first gRPC survives AOT
+
+- **The runtime path doesn't work.** By default protobuf-net builds serializers and client proxies at
+  run time with reflection and IL emit. Under native AOT that **compiles fine and crashes at
   start-up** (`PlatformNotSupportedException`); the spike confirmed it.
 - **The compile-time path does work.** protobuf-net 3.4+ and protobuf-net.Grpc 1.3.6+ ship source
   generators that write the serializers (`[ProtoModel]`) and the client proxies and server bindings
   (`[ProtoGrpc]`) as ordinary C#. With them, the spike ran unary and server-streaming calls from a
-  native AOT server to both a native AOT client and Blazor WASM AOT in Chrome.
+  native AOT server to a native AOT client (over native gRPC and over gRPC-Web) and to Blazor WASM
+  AOT in Chrome.
 - **They are a preview.** The generator attributes are `[Experimental]` (`PBN9001`), and their shape
-  may change between versions. That is acceptable for a new app with a small API, but pin the
-  versions and read the release notes when upgrading.
-- **Fallback:** if the generators stall, contract-first (`.proto` + `Grpc.Tools` + Google.Protobuf)
-  is Microsoft's supported native AOT path. Contracts are small, so switching would be contained.
+  may change. Pin the versions and read the release notes when upgrading.
+- **Fallback:** contract-first (`.proto` + `Grpc.Tools` + Google.Protobuf) is Microsoft's supported
+  native AOT path. Contracts are per feature and small, so switching would be contained.
 
-### The rules
+### Rules
 
-1. **Library projects** (contracts, shared code): `IsAotCompatible=true`. This turns on the trim and
-   AOT analyzers for our own code.
-2. **The Blazor app project:** do **not** set `IsAotCompatible` or `IsTrimmable` on it. They make the
-   trimmer trim the app assembly itself, which removed its routed pages in the spike
-   (`CtorNotLocated`). Set `EnableTrimAnalyzer`, `EnableAotAnalyzer` and
-   `SuppressTrimAnalysisWarnings=false` instead. Blazor hides trim warnings by default.
-3. **Warnings are errors for our code:** `TreatWarningsAsErrors`, including all `IL2xxx`/`IL3xxx` and
-   these protobuf-net diagnostics:
+1. **Every project sets `IsAotCompatible=true` and `TreatWarningsAsErrors=true`,** the Blazor app
+   included. The app must also **root its own assembly** with
+   `<TrimmerRootAssembly Include="$(AssemblyName)" />`, and so must every feature module with pages.
+   - **Why:** `IsAotCompatible` implies `IsTrimmable`, which opts the assembly into trimming. The
+     Blazor router finds pages by reflecting over the assembly, so the trimmer, seeing no static
+     reference, removed them. In the spike the app rendered `CtorNotLocated` instead of the home page.
+   - **What rooting does:** it keeps the assembly whole while still analysing it. In the spike, a
+     rooted app with `IsAotCompatible=true` ran correctly.
+   - **Also:** Blazor hides trim warnings by default, so the app sets
+     `SuppressTrimAnalysisWarnings=false`.
+2. **Reference `protobuf-net` directly in every project,** done once in `Directory.Build.props`.
+   - **Why:** protobuf-net ships its MSBuild props in `build/`, not `buildTransitive/`. A project that
+     only gets it through a contracts project never tells the analyzers it is an AOT build, so they
+     stay silent. That's why the spike's first attempt failed with no warning.
+   - **With the direct reference,** a calling project that has no `[ProtoGrpc]` fails the build with
+     `PBN4015`.
+3. **Each project that calls or hosts a service declares its own `[ProtoGrpc]`,** and contracts
+   projects declare none.
+   - **Why:** the generator deliberately walks only its own assembly's types. Its design notes say a
+     `[ProtoGrpc]` in a referenced assembly "has nothing to say about this one", so a factory in the
+     contracts project can't rewrite calls in other projects. This is by design, not a bug.
+   - **With `InterceptorsNamespaces` including `ProtoBuf.AOT`,** plain
+     `channel.CreateGrpcService<T>()` calls are rewritten to the generated proxies.
+   - **The server uses its generated `AddXxxServices()`,** never `AddCodeFirstGrpc()`, which registers
+     the reflection binder.
+4. **These protobuf-net diagnostics are errors** (via `TreatWarningsAsErrors`):
    - `PBN3001`–`PBN3004`: a contract was dropped from the generated model;
    - `PBN3010`/`PBN3011`: a call still goes through the reflection model;
    - `PBN4010`: no serializer model was named;
-   - `PBN4016`/`PBN4017`: a call or a DI-registered client isn't using the generated proxies;
-   - `PBN4018`: a contract was dropped and will throw under AOT.
-4. **One `[ProtoModel]`** in the contracts project lists the message types. One `[ProtoGrpc]` in each
-   **calling** project names the services; the app has its own, and the server has its own with the
-   implementations. The spike found that a factory declared only in the contracts project does not
-   rewrite calls in the projects that use it, and no diagnostic flags that. Each call site must see a
-   `[ProtoGrpc]` in its own project, with `InterceptorsNamespaces` including `ProtoBuf.AOT`, or pass
-   the factory explicitly.
-5. **The server uses the generated `AddXxxServices()`, never `AddCodeFirstGrpc()`.** The latter
-   registers the reflection binder.
-6. **Library warnings are tracked, not hidden.** Even with the generators, protobuf-net still contains
-   reflection paths it doesn't use, so a publish reports warnings from inside the library: about 20
-   on the server and about 240 in the WASM build. Collapse them to one warning per assembly
-   (`TrimmerSingleWarn`), commit the list of expected assemblies, and fail CI if a new one appears.
-7. **CI runs the published output, not just the build.** The spike's lesson is that a JIT build
-   hides AOT failures. CI publishes the native AOT server and the WASM AOT app, then runs a smoke test
-   that calls every service through the published binaries. Headless Chrome drives the WASM test.
+   - `PBN4015`: an AOT project has no `[ProtoGrpc]`;
+   - `PBN4016`/`PBN4017`: a call or DI client isn't using the generated proxies;
+   - `PBN4018`: a contract was dropped and will throw.
 
-### Gotchas found
+   `TreatWarningsAsErrors` has already earned its place: it caught two obsolete APIs in the spike.
+5. **Known warnings live in a committed baseline, checked in CI** (`aot-warnings/`).
+   - **Our own code:** zero warnings. A genuine false positive is suppressed in source with
+     `[UnconditionalSuppressMessage]` and a justification. The spike needed two:
+     - the warnings the Razor compiler generates for `Router.NotFoundPage` in `App.razor`;
+     - `IL2095`, an annotation mismatch inside protobuf-net that the trimmer reports on our generated
+       `[ProtoModel]` class.
+   - **Library code:** protobuf-net still contains reflection paths it doesn't use, so a publish
+     reports warnings from inside it. Each one is listed exactly (warning code and member) in a
+     per-host baseline file.
+   - **The CI script fails on** any warning in our code, any library warning not in the baseline, and
+     any baseline entry that no longer appears, so the list never goes stale after an upgrade.
+   - **Why not suppress library warnings directly:** suppression for a specific member of someone
+     else's library isn't possible in the native AOT compiler. It has no `--link-attributes` option
+     and ignores an embedded `ILLink.LinkAttributes.xml` (tested: 5 warnings before, 5 after). The
+     WASM trimmer does support it, but only through `_ExtraTrimmerArgs`, an unofficial SDK property.
+     `NoWarn` is per warning code across the whole build, so it would hide our own warnings too. A
+     baseline is exact and works the same for both compilers.
+6. **CI runs the published output, not just the build,** because a JIT build hides AOT failures. CI
+   publishes the native AOT API and the WASM AOT app, runs the baseline check, then runs a smoke test
+   that calls every service through the published binaries. Headless Chrome drives the WASM side.
 
-- **`DateTime` loses its `Kind`:** UTC went in and came out unspecified. Use UTC everywhere and
-  restore the `Kind` on read, or use `DateTimeOffset` with a protobuf-net surrogate.
-- **gRPC-Web from .NET clients:** set `GrpcWebHandler.HttpVersion` to 1.1. Otherwise the client
-  tries HTTP/2 against an HTTP/1.1 endpoint and fails with `HTTP_1_1_REQUIRED`.
-- **Size:** the WASM AOT `_framework` is about 26 MB of `.wasm` (6.7 MB Brotli). It ships inside the
-  store build, so this only matters for the web/PWA target.
+### Time
 
-## 8. Backend
+- **Only UTC crosses the wire.** Clients convert to local time for display. The server handles
+  anything tied to the church's clock, such as "send the reminder at 10:00", using the church's zone
+  (`Australia/Brisbane`, no daylight saving). This is the same approach as ImpactKids' `ChurchTime`,
+  which moves into `Shared`.
+- **Contracts assemblies set `[assembly: CompatibilityLevel(CompatibilityLevel.Level300)]`.** It
+  sends `DateTime`/`TimeSpan` as `google.protobuf.Timestamp`/`Duration`.
+  - **Tested:** with the default format, a UTC `DateTime` arrived as `Kind=Unspecified`. With
+    Level300 it arrived as `Kind=Utc`.
+  - **Why it matters:** `ToLocalTime()` happens to treat `Unspecified` as UTC, but `ToUniversalTime()`
+    treats it as *local*. An `Unspecified` value is therefore a bug waiting for the wrong call.
+  - **Note:** the older per-member `DataFormat.WellKnown` is obsolete. Level300 also sends `decimal`
+    and `Guid` as strings.
+
+## 9. Backend
 
 A church API in the existing GSBC stack (.NET / Aspire, native AOT, deployed through `gsbc.argo`),
-reached through the usual Cloudflare tunnel and ingress:
+reached through the usual Cloudflare tunnel and ingress.
 
-- **Code-first gRPC services,** exposed to the app over gRPC-Web, so the same contracts work from
-  WKWebView, Android WebView and the browser.
+### Transports
+
+| Caller | Transport | Why |
+|---|---|---|
+| The app (Capacitor WebView) | gRPC-Web, over HTTP/2 or HTTP/1.1 as the WebView negotiates | Required, see below |
+| A future public website | gRPC-Web | It's a browser |
+| Admin panel, other GSBC services | Native gRPC over HTTP/2, in-cluster | Full gRPC, no proxying needed |
+
+- **The app can't use native gRPC, despite being installed from a store.** A Capacitor app is still a
+  web app: the .NET code runs as WASM inside the WebView, and its `HttpClient` is the WebView's
+  `fetch`. `fetch` doesn't expose the HTTP/2 trailers that gRPC needs, which is exactly the gap
+  gRPC-Web exists to fill. Native gRPC from the app would need a custom Swift/Kotlin plugin, and the
+  plan rules native code out.
+- **gRPC-Web over HTTPS still runs on HTTP/2 when the WebView negotiates it.** What the app gives up
+  is client and bidirectional streaming; server streaming still works.
+- **Kestrel listens on two ports,** because plaintext HTTP/2 (h2c) can't be negotiated on a port that
+  also speaks HTTP/1.1:
+  - `web`: HTTP/1.1 + HTTP/2, gRPC-Web enabled. Exposed through the ingress.
+  - `grpc`: HTTP/2 only, native gRPC. Cluster-internal.
+
+  The spike ran both from one native AOT server. Behind TLS, ALPN would let one port do both, but
+  in-cluster traffic is plaintext.
+
+### Services
+
+- **Code-first gRPC services,** one set per feature module (§7).
 - **Public read services:** events, sermons, groups, announcements and service times. They are
   anonymous. gRPC-Web calls are POSTs, so Cloudflare doesn't cache them; the app's own cache (§5)
   does that job.
 - **Write services:** prayer requests and "I'm interested" forms. They are rate-limited and go to
   the right staff member.
-- **Admin UI:** a staff-only page where staff edit records and send push notifications. It sits
-  behind sign-in, for example Cloudflare Access or the existing GSBC auth.
 - **Push:** the API sends notifications directly to each platform's push service. There is no
   third-party push SaaS. See below.
+
+### Admin panel
+
+- **A Blazor Web App with interactive server rendering, not AOT.** It is a staff-only internal site,
+  so start-up size and time don't matter, and server rendering keeps it simple.
+- **Modular like the app:** it hosts the `*.Admin` module of each feature it manages.
+- **Calls the API in-cluster over native gRPC,** so nothing it does needs gRPC-Web.
+- **The only public website.** It sits behind sign-in, such as Cloudflare Access or the existing GSBC
+  auth.
+- **Not being AOT doesn't relax the contracts:** they are shared with the AOT hosts and stay
+  AOT-checked.
 
 ### Push notifications
 
@@ -219,7 +325,7 @@ third-party SDK or service on top.
 - **Not used:** Firebase on iOS, Firebase analytics, and hosted push services (OneSignal etc.).
   This keeps the dependency to the bare transport.
 
-## 9. Privacy and safety
+## 10. Privacy and safety
 
 - No third-party analytics or ad SDKs, which also keeps the store privacy labels short.
 - Prayer requests are sensitive. Use HTTPS only, give staff least-privilege access, and offer a
@@ -228,7 +334,7 @@ third-party SDK or service on top.
   child-safety policy.
 - Secrets (APNs key, FCM service account, payment keys) never go in this repo. **It is public.**
 
-## 10. Open questions
+## 11. Open questions
 
 1. Does ImpactKids (kids check-in) connect to the app, for example parent notifications?
 2. Giving: stay with Tithe.ly's giving page, or move to Stripe? Is ACNC registration in place for
@@ -239,11 +345,11 @@ third-party SDK or service on top.
 5. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
    out?
 
-## 11. Milestones
+## 12. Milestones
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
-1. **Skeleton:** solution with the §7 rules and an AOT CI gate (publish, then smoke-test the
-   binaries), plus a Capacitor shell with one screen fed by the API and an offline cache, on a real
+1. **Skeleton:** the module layout (§7) with the §8 rules, the warning baseline and an AOT CI
+   gate (publish, check, then smoke-test the binaries), plus a Capacitor shell with one screen fed by the API and an offline cache, on a real
    iPhone and Android device.
 2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
    no release.

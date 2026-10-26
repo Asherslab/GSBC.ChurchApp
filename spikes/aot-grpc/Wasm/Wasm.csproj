@@ -3,17 +3,19 @@
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
     <RunAOTCompilation>true</RunAOTCompilation>
     <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
-    <!-- IsAotCompatible implies IsTrimmable, which would trim the app assembly itself and its routed components. -->
-    <IsAotCompatible>false</IsAotCompatible>
-    <IsTrimmable>false</IsTrimmable>
-    <EnableTrimAnalyzer>true</EnableTrimAnalyzer>
-    <EnableAotAnalyzer>true</EnableAotAnalyzer>
+    <!-- Blazor hides trim warnings by default; we want them. -->
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="10.0.12" />
     <PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="10.0.12" PrivateAssets="all" />
-    <PackageReference Include="Grpc.Net.Client" Version="2.84.0" /><PackageReference Include="Grpc.Net.Client.Web" Version="2.84.0" />
+    <PackageReference Include="Grpc.Net.Client" Version="2.84.0" />
+    <PackageReference Include="Grpc.Net.Client.Web" Version="2.84.0" />
     <ProjectReference Include="../Contracts/Contracts.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <!-- IsAotCompatible implies IsTrimmable, which opts this assembly into trimming. The router finds
+         pages by reflecting over it, so root it: analysis stays on, the pages stay in. -->
+    <TrimmerRootAssembly Include="$(AssemblyName)" />
   </ItemGroup>
 </Project>
