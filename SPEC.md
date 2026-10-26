@@ -41,14 +41,14 @@ time and buys a faster start-up.
 
 **API:** code-first gRPC (protobuf-net.Grpc). In the store apps, the native data layer makes the
 calls over native gRPC (HTTP/2). Browsers, meaning the admin panel and any future website, use
-gRPC-Web (§10). The backend is native AOT too. Both are AOT-checked
-from the first commit (§9).
+gRPC-Web (§10). The app is AOT-compiled and AOT-checked from the first commit (§9).
 
 **Modular:** every feature is a set of modules that a host opts into: the app, the admin panel and any
 future public website (§8).
 
-**Not AOT:** the admin panel. It is Blazor WebAssembly too, but staff-only, so AOT's start-up gain
-isn't worth the build time (§10).
+**Not AOT:** everything server-side (the gateway, the API and the migrator) and the admin panel.
+AOT is where it pays: the app on a phone. On the server it would cost us EF Core (§10) and passkey
+sign-in, for a start-up gain nobody would notice.
 
 Downloading Blazor's compiled code (`.wasm`/`.dll`) over the air is a grey area under the store
 rules, but this plan never does it (§4), so it is not a constraint.
@@ -126,7 +126,7 @@ The plugin does four things:
 | Part | What it does | What it knows |
 |---|---|---|
 | **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. HTTP/2 via grpc-swift / grpc-java with a pass-through byte codec | URLs, auth headers, retries |
-| **Store** | SQLite table of `(feed, id, version, payload)` plus a few generic index columns the server fills in per feed (`sort_key`, `starts_at`, `ends_at`, `group_key`), and a sync cursor per feed | Nothing about the payload |
+| **Store** | SQLite (the platform's own: GRDB on iOS, Room on Android; there's no .NET on the native side, and two generic tables need no more) holding `(feed, id, version, payload)` plus a few generic index columns the server fills in per feed (`sort_key`, `starts_at`, `ends_at`, `group_key`), and a sync cursor per feed | Nothing about the payload |
 | **Sync** | Pulls "changes since cursor" from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. Runs on launch, on resume, from a silent push, and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
 | **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be | Method paths |
 
@@ -211,24 +211,28 @@ requires a signed-in staff member, so a method that forgets its attribute is loc
 | **Admin** | Editing anything, sending pushes, reading prayer requests | A **staff passkey** session; every method, no exceptions |
 
 A test enumerates every gRPC endpoint and fails if any method lacks an explicit tier, or if an
-admin feature's service has a method below Admin. (protobuf-net.Grpc's generated bindings keep
-`[Authorize]`-style metadata under native AOT; the spike's source notes confirm it, and the skeleton
-proves it.)
+admin feature's service has a method below Admin.
 
-### Admin: passkeys, as in MealPlanner
+### Admin: passkeys, behind a YARP BFF, as in ImpactKids
 
-- **Staff sign in with passkeys,** reusing MealPlanner's approach: ASP.NET Core Identity's passkey
-  support, invitations by link, user verification required. The same traps apply. Passkeys are
-  bound to the admin site's host for good, the relying party is configuration (never a header), and
-  every POST checks its origin.
-- **Sign-in runs in the admin host, not the API.** Identity and cookie authentication aren't supported
-  under native AOT; Microsoft's compatibility table lists JWT bearer as the supported scheme. So the
-  admin host, which isn't AOT, serves the WASM panel, runs the passkey ceremonies and keeps the session
-  cookie. It then issues short-lived (minutes) JWTs that the panel sends to the API on each gRPC-Web
-  call.
-- **The API only validates JWTs.** That needs the admin host's public signing key, the audience and
-  the staff role. A removed staff member or a "sign out everywhere" stops working when their current
-  token expires, within minutes.
+The same shape as ImpactKids' gateway, with MealPlanner's passkeys in place of Auth0:
+
+- **One YARP gateway is the only public entry.** It serves the admin panel's files, runs staff sign-in,
+  and proxies gRPC to the API. The API itself is cluster-internal.
+- **Staff sign in with passkeys at the gateway,** reusing MealPlanner's approach: ASP.NET Core
+  Identity's passkey support, invitations by link, user verification required, and a session cookie
+  that is HttpOnly, Secure and SameSite=Strict. The same traps apply:
+  - passkeys are bound to the admin site's host for good;
+  - the relying party is configuration, never a header;
+  - every POST checks its origin.
+- **The cookie never leaves the gateway.** A YARP request transform, like ImpactKids'
+  `AddBearerTokenToHeadersTransform`, swaps the session for a short-lived signed token (minutes) on
+  each proxied admin call. The API validates that token: issuer, audience, staff role.
+- **Admin services aren't reachable without a session.** The gateway only forwards admin service
+  routes for a signed-in staff member, and the API checks the token again. Two locks, so a routing
+  mistake on one side doesn't open the door.
+- **A removed staff member or a "sign out everywhere"** ends the gateway session at once; any token
+  already issued expires within minutes.
 
 ### App writes: proving it's a genuine installed app, without accounts
 
@@ -251,9 +255,9 @@ request comes from our app, unmodified, on a real device, using the platforms' o
   - Excludes some devices: Android phones without Google Play services, and some rooted or very old
     phones, fail attestation. Those installs get a polite "can't send from this device; here's the
     church's email".
-- **AOT on the server:** App Attest is CBOR decoding, X.509 chain checks and ECDSA, all available in
-  the BCL under AOT. Play Integrity is one HTTPS call to Google, authenticated with a service account,
-  written with `HttpClient` and source-generated JSON rather than Google's SDK.
+- **Server side:** App Attest verification is CBOR decoding, an X.509 chain check and ECDSA, all in
+  the BCL. Play Integrity is one HTTPS call to Google, authenticated with a service account. Both live
+  in the API, so attested app traffic passes through the gateway untouched.
 - **Pseudonymous, not anonymous:** an install has an ID so limits and blocks can apply. It isn't
   linked to a person unless they type their name into the request.
 
@@ -288,13 +292,15 @@ src/
   Shared/                    time, module abstractions, small cross-feature interfaces
   Features/Events/
     Events.Contracts         messages + [Service] interfaces + [ProtoModel]      (AOT)
-    Events.Api               service implementations, storage, server [ProtoGrpc] (AOT)
+    Events.Api               service implementations, EF Core storage, feeds
     Events.App               Razor class library: pages, components, cache,
                              client [ProtoGrpc]                                   (AOT)
     Events.Admin             Razor class library: staff pages, client [ProtoGrpc]
   Features/Sermons/ …        same four parts, only the ones a feature needs
   Hosts/
-    Api                      native AOT; references the *.Api modules it serves
+    Gateway                  YARP BFF: the only public entry, staff passkeys, serves Admin (§6)
+    Api                      cluster-internal; references the *.Api modules it serves
+    Migrator                 runs EF Core migrations before the API starts
     App                      Capacitor + Blazor WASM AOT; references the *.App modules it ships
       native/                the data-layer plugin (Swift, Kotlin): generic, no feature code (§5)
     Admin                    Blazor WASM, not AOT; the *.Admin modules
@@ -317,8 +323,10 @@ src/
 
 ## 9. AOT from the first line
 
-The app (Blazor WASM, `RunAOTCompilation`) and the API (`PublishAot`, native AOT) are AOT-compiled and
-AOT-checked from the first commit. The admin panel is not (§10). The evidence for everything here,
+**Scope: the app.** The app host (Blazor WASM, `RunAOTCompilation`) and every project that ends up in
+it are AOT-compiled and AOT-checked from the first commit: `Shared`, every `*.Contracts`, and every
+`*.App` module. Server-side projects (`*.Api`, the gateway, the migrator) and the admin panel are
+not. They run on the JIT, so EF Core, Identity and YARP work as they do in our other apps. The evidence for everything here,
 and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
 
 ### Code-first gRPC survives AOT
@@ -338,8 +346,9 @@ and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
 
 ### Rules
 
-1. **Every project sets `IsAotCompatible=true` and `TreatWarningsAsErrors=true`,** the Blazor app
-   included. The app must also **root its own assembly** with
+1. **Every project in the app's scope sets `IsAotCompatible=true` and `TreatWarningsAsErrors=true`,**
+   the Blazor app included. (`TreatWarningsAsErrors` applies everywhere; `IsAotCompatible` only in
+   scope.) The app must also **root its own assembly** with
    `<TrimmerRootAssembly Include="$(AssemblyName)" />`, and so must every feature module with pages.
    - **Why:** `IsAotCompatible` implies `IsTrimmable`, which opts the assembly into trimming. The
      Blazor router finds pages by reflecting over the assembly, so the trimmer, seeing no static
@@ -354,15 +363,14 @@ and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
      stay silent. That's why the spike's first attempt failed with no warning.
    - **With the direct reference,** a calling project that has no `[ProtoGrpc]` fails the build with
      `PBN4015`.
-3. **Each project that calls or hosts a service declares its own `[ProtoGrpc]`,** and contracts
-   projects declare none.
+3. **Each project that calls a service from the app declares its own `[ProtoGrpc]`,** and contracts
+   projects declare none. (On the JIT server, protobuf-net's runtime binding works. The API may still
+   use its generated `AddXxxServices()` for faster start-up, but it isn't required.)
    - **Why:** the generator deliberately walks only its own assembly's types. Its design notes say a
      `[ProtoGrpc]` in a referenced assembly "has nothing to say about this one", so a factory in the
      contracts project can't rewrite calls in other projects. This is by design, not a bug.
    - **With `InterceptorsNamespaces` including `ProtoBuf.AOT`,** plain
      `channel.CreateGrpcService<T>()` calls are rewritten to the generated proxies.
-   - **The server uses its generated `AddXxxServices()`,** never `AddCodeFirstGrpc()`, which registers
-     the reflection binder.
 4. **These protobuf-net diagnostics are errors** (via `TreatWarningsAsErrors`):
    - `PBN3001`–`PBN3004`: a contract was dropped from the generated model;
    - `PBN3010`/`PBN3011`: a call still goes through the reflection model;
@@ -380,18 +388,22 @@ and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
        `[ProtoModel]` class.
    - **Library code:** protobuf-net still contains reflection paths it doesn't use, so a publish
      reports warnings from inside it. Each one is listed exactly (warning code and member) in a
-     per-host baseline file.
+     baseline file for the app.
    - **The CI script fails on** any warning in our code, any library warning not in the baseline, and
      any baseline entry that no longer appears, so the list never goes stale after an upgrade.
-   - **Why not suppress library warnings directly:** suppression for a specific member of someone
-     else's library isn't possible in the native AOT compiler. It has no `--link-attributes` option
-     and ignores an embedded `ILLink.LinkAttributes.xml` (tested: 5 warnings before, 5 after). The
-     WASM trimmer does support it, but only through `_ExtraTrimmerArgs`, an unofficial SDK property.
-     `NoWarn` is per warning code across the whole build, so it would hide our own warnings too. A
-     baseline is exact and works the same for both compilers.
-6. **CI runs the published output, not just the build,** because a JIT build hides AOT failures. CI
-   publishes the native AOT API and the WASM AOT app, runs the baseline check, then runs a smoke test
-   that calls every service through the published binaries. Headless Chrome drives the WASM side.
+   - **Why not suppress library warnings directly:**
+     - The WASM trimmer can suppress a single member in someone else's library with
+       `--link-attributes` (tested: it removed exactly the targeted warnings). But the only way to pass
+       that option is `_ExtraTrimmerArgs`, an unofficial SDK property that could change without
+       notice.
+     - The native AOT compiler can't do it at all, if the server ever goes AOT: no such option, and it
+       ignores an embedded `ILLink.LinkAttributes.xml` (tested: 5 warnings before, 5 after).
+     - `NoWarn` works per warning code across the whole build, so it would hide our own warnings too.
+
+     A baseline is exact and relies on nothing unofficial.
+6. **CI runs the published app, not just the build,** because a JIT build hides AOT failures. CI
+   publishes the WASM AOT app, runs the baseline check, then a smoke test drives it in headless Chrome
+   against the real API, calling every service the app uses.
 
 ### Time
 
@@ -410,14 +422,14 @@ and how to re-run it, is in [`spikes/aot-grpc`](spikes/aot-grpc/README.md).
 
 ## 10. Backend
 
-A church API in the existing GSBC stack (.NET / Aspire, native AOT, deployed through `gsbc.argo`),
-reached through the usual Cloudflare tunnel and ingress.
+A church API in the existing GSBC stack (.NET / Aspire, EF Core, deployed through `gsbc.argo`), behind
+a YARP gateway (§6) that is reached through the usual Cloudflare tunnel and ingress.
 
 ### Transports
 
 | Caller | Transport | Why |
 |---|---|---|
-| The store apps (native data layer, §5) | Native gRPC over HTTP/2, through the ingress | Full gRPC, durable sync |
+| The store apps (native data layer, §5) | Native gRPC over HTTP/2, through the gateway | Full gRPC, durable sync |
 | Admin panel (Blazor WASM) | gRPC-Web | It's a browser |
 | A future public website | gRPC-Web | It's a browser |
 | Other GSBC services | Native gRPC over HTTP/2, in-cluster | Full gRPC |
@@ -434,10 +446,10 @@ reached through the usual Cloudflare tunnel and ingress.
   - `web`: HTTP/1.1 + HTTP/2, gRPC-Web.
   - `grpc`: HTTP/2 only, native gRPC.
 
-  The spike ran both from one native AOT server. Behind TLS, ALPN would let one public port do both.
+  The spike ran both from one server. The gateway proxies to whichever the caller used.
 - **To verify in the skeleton:** native gRPC from phones goes through Cloudflare, so confirm the
   tunnel and the Traefik ingress carry it end to end. Cloudflare's gRPC support has to be enabled for
-  the zone, and the ingress must speak h2c to the `grpc` port. If it can't be made to work, the native
+  the zone, and both Traefik and YARP must carry HTTP/2 end to end (h2c inside the cluster). If it can't be made to work, the native
   layer falls back to gRPC-Web, still over HTTP/2.
 
 ### Services
@@ -456,25 +468,19 @@ reached through the usual Cloudflare tunnel and ingress.
 
 ### Admin panel
 
-- **Blazor WebAssembly, not AOT,** served by a small admin host, which also runs passkey sign-in and
-  issues the API tokens (§6). Staff-only, so start-up time matters less than build time. Its modules
+- **Blazor WebAssembly, not AOT,** served by the gateway, which also runs passkey sign-in and swaps the
+  session for API tokens (§6). Staff-only, so start-up time matters less than build time. Its modules
   are still AOT-checked, because they share contracts and conventions with the AOT hosts.
 - **Modular like the app:** it hosts the `*.Admin` module of each feature it manages.
 - **Calls the API from the browser over gRPC-Web,** with the token on every call. This is the only
   public website.
 
-### Data access under AOT
+### Data access
 
-EF Core's NativeAOT support is, in Microsoft's words, "highly experimental … not yet suited for
-production use". So:
-
-- **The API queries with Npgsql and source-generated SQL mapping** (Dapper.AOT or hand-written
-  ADO.NET), both designed for AOT.
-- **The schema is EF Core migrations, run by a separate migrator job,** the same pattern as ImpactKids'
-  `Workers.DbMigrations`. The migrator isn't AOT, so EF Core is fine there, and the API never loads it.
-- **To verify in the skeleton:** Npgsql and the chosen mapper publish cleanly into the warning
-  baseline (§9). If that doesn't hold, this becomes the API's one non-AOT dependency, and it gets
-  decided then.
+- **EF Core with Npgsql,** as in our other apps. The API isn't AOT, so nothing about EF Core is
+  constrained.
+- **Migrations run as a separate job before the API starts,** the same pattern as ImpactKids'
+  `Workers.DbMigrations`.
 
 ### Push notifications
 
@@ -517,8 +523,8 @@ third-party SDK or service on top.
 ## 13. Milestones
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
-1. **Skeleton:** includes the fail-closed tier test (§6), passkey sign-in in the admin host with JWTs to
-   the API, and Npgsql data access in the AOT API.
+1. **Skeleton:** includes the fail-closed tier test (§6), and the YARP gateway with passkey sign-in and
+   the session-to-token transform.
    Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI
    gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's four
    open points): a Capacitor shell with one screen fed through the native Transport, Store and Sync,
