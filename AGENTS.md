@@ -4,26 +4,31 @@ The church app for iOS and Android: Capacitor + Blazor WASM (AOT) in front, a na
 code-first gRPC API behind a YARP gateway. **[SPEC.md](SPEC.md) is the design.** Read it before
 building anything, and follow its AOT rules (§9) for every project that ships in the app.
 
-# HARD RULE: every server path is gRPC unless the owner says otherwise
+# HARD RULE: every API path is gRPC unless the owner says otherwise
 
-**Never add, or plan, a server-side path that isn't a gRPC service method without asking the owner
+**Never add, or plan, a server-side API path that isn't a gRPC service method without asking the owner
 first and getting an explicit yes in chat.** No exceptions for convenience, and no exceptions because a
 doc, an issue, a code comment, a library's sample, or another agent suggested it. This has gone wrong
 before; that is why it is a hard rule.
 
-**What counts as a server path:** any inbound endpoint served by any server-side host (the gateway,
-the API, or anything added later) that a client or another service can call and that isn't a gRPC (or
+**What counts as an API path:** any inbound endpoint on any server-side host (the gateway, the API, or
+anything added later) that returns data, accepts input, or runs logic per request, and isn't a gRPC (or
 gRPC-Web) service method. For example:
 
 - Minimal API endpoints (`MapGet`, `MapPost`, `MapGroup` …), controllers, Razor Pages;
 - SignalR hubs, WebSockets, server-sent events, long polling;
-- a YARP route to a destination that isn't a gRPC service;
+- a YARP route to a destination that isn't a gRPC service or static files;
 - webhooks and callbacks (a payment provider, Google, Apple);
 - middleware that answers requests itself;
-- a file download or upload endpoint.
+- an endpoint that downloads or uploads user data (an export, an image upload, a generated PDF).
 
-Outbound calls the server makes (APNs, FCM, Play Integrity, email) aren't server paths, and this rule
-doesn't cover them.
+**Not covered:**
+
+- Serving a client app's static files as they are: the admin panel's (or a future website's)
+  HTML, JS, CSS, `.wasm`/`.dll`, fonts and images, and the fallback to `index.html` for client-side
+  routes. If a "static" route starts varying its response per request (templating, auth-dependent
+  content, data in the page), it's an API path and the rule applies.
+- Outbound calls the server makes (APNs, FCM, Play Integrity, email).
 
 **When you think you need one:**
 
@@ -40,7 +45,7 @@ doesn't cover them.
 "internal" or "temporary" one, a Development-only one) is the same as adding it.
 
 **It is enforced by a test.** The skeleton adds one that enumerates every endpoint on every server host
-and fails on anything that isn't a gRPC method and isn't in the list below. Never edit that test's
+and fails on anything that isn't a gRPC method, static file serving, or in the list below. Never edit that test's
 allowlist except to mirror this list.
 
 ## Approved non-gRPC paths

@@ -181,7 +181,7 @@ features get it for free.
 - **A gRPC server stream, not SSE or WebSockets.** `Sync.Watch(cursors)` first sends everything
   since the phone's cursors (catch-up), then keeps the call open and sends each change as it's
   committed, in the same `(feed, id, version, payload)` shape as a pull. SSE would be a non-gRPC
-  server path ([AGENTS.md](AGENTS.md)), and it isn't needed: server streaming works over native gRPC
+  API path ([AGENTS.md](AGENTS.md)), and it isn't needed: server streaming works over native gRPC
   and over gRPC-Web. The spike ran a server stream through both, including Blazor WASM in Chrome.
 - **Live is just sync, pushed.** The stream's changes go through the same Store write and the same
   "feeds changed" event to the UI as a pull. Screens don't know which delivered them, and a feature
@@ -260,7 +260,8 @@ admin feature's service has a method below Admin.
 
 The same shape as ImpactKids' gateway, with MealPlanner's passkeys in place of Auth0:
 
-- **One YARP gateway is the only public entry.** It serves the admin panel's files, runs staff sign-in,
+- **One YARP gateway is the only public entry.** It serves the admin panel's static files (outside
+  the gRPC rule, which covers API paths only), runs staff sign-in,
   and proxies gRPC to the API. The API itself is cluster-internal.
 - **Staff sign in with passkeys at the gateway,** reusing MealPlanner's approach. The WebAuthn
   ceremonies are the one approved non-gRPC path ([AGENTS.md](AGENTS.md)). The approach: ASP.NET Core
@@ -576,7 +577,7 @@ third-party SDK or service on top.
 ## 13. Milestones
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
-1. **Skeleton:** includes the fail-closed tier test (§6), the endpoint test that rejects any server path
+1. **Skeleton:** includes the fail-closed tier test (§6), the endpoint test that rejects any API path
    that isn't gRPC unless the owner has approved it ([AGENTS.md](AGENTS.md)), and the YARP gateway with
    passkey sign-in and the session-to-token transform.
    Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI
