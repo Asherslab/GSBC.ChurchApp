@@ -262,7 +262,8 @@ The same shape as ImpactKids' gateway, with MealPlanner's passkeys in place of A
 
 - **One YARP gateway is the only public entry.** It serves the admin panel's files, runs staff sign-in,
   and proxies gRPC to the API. The API itself is cluster-internal.
-- **Staff sign in with passkeys at the gateway,** reusing MealPlanner's approach: ASP.NET Core
+- **Staff sign in with passkeys at the gateway,** reusing MealPlanner's approach. The WebAuthn
+  ceremonies are the one approved non-gRPC path ([AGENTS.md](AGENTS.md)). The approach: ASP.NET Core
   Identity's passkey support, invitations by link, user verification required, and a session cookie
   that is HttpOnly, Secure and SameSite=Strict. The same traps apply:
   - passkeys are bound to the admin site's host for good;
@@ -518,6 +519,14 @@ a YARP gateway (§6) that is reached through the usual Cloudflare tunnel and ing
 - **Modular like the app:** it hosts the `*.Admin` module of each feature it manages.
 - **Calls the API from the browser over gRPC-Web,** with the token on every call. This is the only
   public website.
+
+### Health checks
+
+- **gRPC, not HTTP.** Every server host (gateway, API) serves the standard gRPC health service
+  (`grpc.health.v1`, via `Grpc.AspNetCore.HealthChecks`). Kubernetes probes it with its built-in `grpc`
+  probe type, so there's no `/healthz` endpoint (AGENTS.md's hard rule).
+- **Readiness includes dependencies:** the database for the API, and the API for the gateway. Liveness
+  stays shallow, so a database outage doesn't restart every pod.
 
 ### Data access
 

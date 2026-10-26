@@ -45,10 +45,15 @@ allowlist except to mirror this list.
 
 ## Approved non-gRPC paths
 
-None yet. Every entry needs the owner's explicit approval in chat first.
+Every entry needs the owner's explicit approval in chat first.
 
 | Path | Host | Why it can't be gRPC | Approved |
 |---|---|---|---|
+| Passkey ceremonies: begin/complete for sign-in and for registering a passkey (including accepting a staff invitation) | Gateway | The browser's WebAuthn API exchanges JSON with the server; the owner chose plain HTTP for these, as in MealPlanner | 2026-10-26 |
+
+**Explicitly not exceptions:** health checks are gRPC (`grpc.health.v1`; Kubernetes probes it
+natively). Anything else around sign-in, such as "who am I", sign-out, or managing staff and
+invitations, is gRPC unless it is added here.
 
 # Components: reuse first, then generic
 
