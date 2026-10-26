@@ -14,7 +14,8 @@ slow to update and hard to make feel like *our* church. We want our own app that
 - is cheap to run on infrastructure we already have (the `gsbc.argo` cluster).
 
 Non-goals for v1: a full church management system (people database, rostering, accounting), live
-streaming infrastructure, and anything that needs native code beyond standard Capacitor plugins.
+streaming infrastructure, and native UI. Native code is limited to one small, generic data layer
+(§5).
 
 ## 2. Shape
 
@@ -28,23 +29,26 @@ One web app, packaged for both stores from a single build:
 
 The app is not published as a website for now. The only public site is the staff admin panel (§9).
 
-**Capacitor only.** Nothing in scope needs native UI. Native capabilities come from official plugins:
-Push Notifications, Haptics, Share, Browser, App (Android back button, deep links), Preferences and
-Splash Screen.
+**Capacitor, with one native plugin of our own.** Nothing in scope needs native UI. Device features
+come from official plugins: Push Notifications, Haptics, Share, Browser, App (Android back button,
+deep links), Preferences and Splash Screen. The one plugin we write is the data layer (§5), in Swift
+and Kotlin. It is generic, so it is written once per platform, not once per feature.
 
 **UI stack:** Blazor WebAssembly, **AOT-compiled**. It reuses our existing GSBC stack (ImpactKids,
 Accounting) and the patterns proven in the Graced POC: native-feel navigation, safe areas and
 offline-first. The app is bundled in the store build, so AOT's larger download costs nothing at run
 time and buys a faster start-up.
 
-**API:** code-first gRPC (protobuf-net.Grpc). The app calls it over gRPC-Web; .NET callers such as
-the admin panel use native gRPC over HTTP/2 (§9). The backend is native AOT too. Both are AOT-checked
+**API:** code-first gRPC (protobuf-net.Grpc). In the store apps, the native data layer makes the
+calls over native gRPC (HTTP/2). Browsers, meaning the admin panel and any future website, use
+gRPC-Web (§9). The backend is native AOT too. Both are AOT-checked
 from the first commit (§8).
 
 **Modular:** every feature is a set of modules that a host opts into: the app, the admin panel and any
 future public website (§7).
 
-**Not AOT:** the admin panel. It is a staff-only server-rendered site, so AOT buys nothing there (§9).
+**Not AOT:** the admin panel. It is Blazor WebAssembly too, but staff-only, so AOT's start-up gain
+isn't worth the build time (§9).
 
 Downloading Blazor's compiled code (`.wasm`/`.dll`) over the air is a grey area under the store
 rules, but this plan never does it (§4), so it is not a constraint.
@@ -93,21 +97,74 @@ Device and Network Abuse policy), which this plan does not do.
 If we ever want over-the-air *styling*, the safe route is a theme record from the API mapped onto
 the existing CSS variables. That stays data, not code. It is not planned for v1.
 
-## 5. Data in the app: offline and freshness
+## 5. Data in the app: the native data layer
 
-- **Every list is cached on the device** (IndexedDB) with the time it was fetched.
-- **Screens show the cache immediately,** then refresh from the API in the background
-  (stale-while-revalidate). If the refresh fails, they keep showing what they have, with an
-  "updated 3 hours ago" note.
-- **The app refreshes on launch, on resume, and on pull-to-refresh.**
-- **Urgent changes** (a cancelled service, a venue change) go out as a push notification. Tapping it
-  opens the app and refreshes the relevant screen.
-- **The API only changes additively,** so older app versions keep working while people update:
-  new fields get new numbers and old ones are never reused, and new services are added rather than
-  old ones changed. If a breaking change is unavoidable, the API can return a "minimum app version"
-  and the app asks the user to update.
+The store apps get a thin native layer that owns the network, storage and background work. The
+Blazor UI talks to it through one Capacitor plugin.
+
+### Why native
+
+- **Storage:** Capacitor's own storage guide says the OS can reclaim WebView storage on a device low
+  on space, IndexedDB included on iOS, and recommends SQLite for anything that matters. A native
+  SQLite store survives.
+- **Background sync:** the WebView, and with it our .NET code, doesn't run in the background.
+  Capacitor's Background Runner runs plain JavaScript only (no WebView, no WASM, about 30 seconds per
+  run on iOS). Syncing while the app is closed means native code.
+- **Native gRPC:** native code gets real HTTP/2 gRPC, including client and two-way streaming, which
+  `fetch` can't do (§9).
+
+### Keep the native side generic
+
+The risk with a native layer is that every feature grows Swift and Kotlin code alongside its C#.
+That would triple the work and break the modularity in §7. So the native side **never understands a
+message**: payloads stay protobuf bytes that only C# encodes and decodes. Contracts, models and
+logic stay in one place, in C#, and native gRPC libraries need no `.proto` code generation, because
+they only move bytes.
+
+The plugin does four things:
+
+| Part | What it does | What it knows |
+|---|---|---|
+| **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. HTTP/2 via grpc-swift / grpc-java with a pass-through byte codec | URLs, auth headers, retries |
+| **Store** | SQLite table of `(feed, id, version, deleted, payload)` plus a sync cursor per feed | Nothing about the payload |
+| **Sync** | Pulls "changes since cursor" from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. Runs on launch, on resume, from a silent push, and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
+| **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be | Method paths |
+
+On the .NET side:
+
+- **A `CallInvoker` that bridges to Transport.** protobuf-net's generated proxies run on top of any
+  `CallInvoker`, so feature code calls `IEventsService` exactly as it would over gRPC-Web. The
+  serialized bytes simply go through the plugin instead of `fetch`.
+- **Each feature reads its feeds from the Store** and decodes the payloads with its own contracts.
+  Screens show stored data immediately and re-render when Sync reports their feed changed.
+- **Feature modules declare their feeds on the server** (§9), so adding a feature adds no native code.
+
+### Freshness and compatibility
+
+- **Sync runs on launch, on resume, and on pull-to-refresh, and opportunistically in the background.**
+  iOS decides when background work runs; Android allows at most every 15 minutes. A "data changed"
+  silent push triggers a sync. These pushes are budgeted by iOS, so they are used for real changes,
+  not on a timer.
+- **Urgent changes** (a cancelled service, a venue change) are a visible push notification as well as
+  a sync.
 - **A first launch with no network** shows the bundled About and contact pages, plus a friendly
   "connect to load this week's events" message.
+- **The API only changes additively,** so older app versions keep working while people update: new
+  fields get new numbers and old ones are never reused, and new services are added rather than old
+  ones changed. Stored payloads follow the same rule, so an app update can still read what an older
+  version stored. If a breaking change is unavoidable, the API can return a "minimum app version" and
+  the app asks the user to update.
+
+### Not yet proven (spike before building on it)
+
+1. **Generated proxies over a custom bridging `CallInvoker`** under WASM AOT, including server
+   streaming surfaced as `IAsyncEnumerable`.
+2. **Pass-through byte codecs:** grpc-swift and grpc-java calling a protobuf-net code-first service
+   with no generated stubs.
+3. **Bridge cost:** Capacitor plugin calls pass JSON, so the bytes travel base64-encoded. That should
+   be fine at church-app volumes; measure it on a real phone.
+4. **Background scheduling** on real devices: how often iOS actually runs the refresh, and how
+   reliably silent pushes arrive.
 
 ## 6. Giving
 
@@ -148,7 +205,8 @@ src/
   Hosts/
     Api                      native AOT; references the *.Api modules it serves
     App                      Capacitor + Blazor WASM AOT; references the *.App modules it ships
-    Admin                    Blazor Web App (interactive server), not AOT; the *.Admin modules
+      native/                the data-layer plugin (Swift, Kotlin): generic, no feature code (§5)
+    Admin                    Blazor WASM, not AOT; the *.Admin modules
     Web (later)              a public site; whichever *.App modules it wants
 ```
 
@@ -268,31 +326,38 @@ reached through the usual Cloudflare tunnel and ingress.
 
 | Caller | Transport | Why |
 |---|---|---|
-| The app (Capacitor WebView) | gRPC-Web, over HTTP/2 or HTTP/1.1 as the WebView negotiates | Required, see below |
+| The store apps (native data layer, §5) | Native gRPC over HTTP/2, through the ingress | Full gRPC, durable sync |
+| Admin panel (Blazor WASM) | gRPC-Web | It's a browser |
 | A future public website | gRPC-Web | It's a browser |
-| Admin panel, other GSBC services | Native gRPC over HTTP/2, in-cluster | Full gRPC, no proxying needed |
+| Other GSBC services | Native gRPC over HTTP/2, in-cluster | Full gRPC |
 
-- **The app can't use native gRPC, despite being installed from a store.** A Capacitor app is still a
-  web app: the .NET code runs as WASM inside the WebView, and its `HttpClient` is the WebView's
-  `fetch`. `fetch` doesn't expose the HTTP/2 trailers that gRPC needs, which is exactly the gap
-  gRPC-Web exists to fill. Native gRPC from the app would need a custom Swift/Kotlin plugin, and the
-  plan rules native code out.
-- **gRPC-Web over HTTPS still runs on HTTP/2 when the WebView negotiates it.** What the app gives up
-  is client and bidirectional streaming; server streaming still works.
-- **Kestrel listens on two ports,** because plaintext HTTP/2 (h2c) can't be negotiated on a port that
-  also speaks HTTP/1.1:
-  - `web`: HTTP/1.1 + HTTP/2, gRPC-Web enabled. Exposed through the ingress.
-  - `grpc`: HTTP/2 only, native gRPC. Cluster-internal.
+- **Browsers need gRPC-Web.** In a browser, or in WASM inside a WebView, .NET's `HttpClient` is
+  `fetch`. `fetch` doesn't expose the HTTP/2 trailers gRPC needs, which is the gap gRPC-Web fills.
+  That is why the store apps call the API from native code (§5), and why the admin panel and any
+  website use gRPC-Web. gRPC-Web supports unary and server-streaming calls; client and two-way
+  streaming are native-only.
+- **One set of C# proxies serves both transports.** Feature code is written against the service
+  interfaces. The host picks a `CallInvoker`: the native bridge in the store apps, a gRPC-Web channel
+  in the browser hosts.
+- **Kestrel listens on two ports,** because plaintext HTTP/2 (h2c) can't share a port with HTTP/1.1:
+  - `web`: HTTP/1.1 + HTTP/2, gRPC-Web.
+  - `grpc`: HTTP/2 only, native gRPC.
 
-  The spike ran both from one native AOT server. Behind TLS, ALPN would let one port do both, but
-  in-cluster traffic is plaintext.
+  The spike ran both from one native AOT server. Behind TLS, ALPN would let one public port do both.
+- **To verify in the skeleton:** native gRPC from phones goes through Cloudflare, so confirm the
+  tunnel and the Traefik ingress carry it end to end. Cloudflare's gRPC support has to be enabled for
+  the zone, and the ingress must speak h2c to the `grpc` port. If it can't be made to work, the native
+  layer falls back to gRPC-Web, still over HTTP/2.
 
 ### Services
 
 - **Code-first gRPC services,** one set per feature module (§7).
+- **One generic `Sync` service** serves the native data layer (§5). It returns changes since a cursor,
+  per feed, as `(feed, id, version, deleted, payload bytes)`. Each feature's `.Api` module registers
+  its feeds: what's in them and how a record is encoded.
 - **Public read services:** events, sermons, groups, announcements and service times. They are
-  anonymous. gRPC-Web calls are POSTs, so Cloudflare doesn't cache them; the app's own cache (§5)
-  does that job.
+  anonymous. gRPC calls are POSTs, so Cloudflare doesn't cache them; the app's store (§5) does
+  that job.
 - **Write services:** prayer requests and "I'm interested" forms. They are rate-limited and go to
   the right staff member.
 - **Push:** the API sends notifications directly to each platform's push service. There is no
@@ -300,14 +365,14 @@ reached through the usual Cloudflare tunnel and ingress.
 
 ### Admin panel
 
-- **A Blazor Web App with interactive server rendering, not AOT.** It is a staff-only internal site,
-  so start-up size and time don't matter, and server rendering keeps it simple.
+- **Blazor WebAssembly, not AOT.** It is staff-only, so start-up time matters less than build time.
+  Its modules are still AOT-checked, because they share contracts and conventions with the AOT hosts.
 - **Modular like the app:** it hosts the `*.Admin` module of each feature it manages.
-- **Calls the API in-cluster over native gRPC,** so nothing it does needs gRPC-Web.
-- **The only public website.** It sits behind sign-in, such as Cloudflare Access or the existing GSBC
-  auth.
-- **Not being AOT doesn't relax the contracts:** they are shared with the AOT hosts and stay
-  AOT-checked.
+- **Calls the API from the browser over gRPC-Web.** This is the only public website.
+- **Authorization happens in the API, not just in front of the site.** Because the browser calls the
+  API directly, every staff-only (write and admin) service checks the caller itself. Cloudflare
+  Access, or the existing GSBC auth, signs staff in; the API validates that token on every admin
+  call. Public read services stay anonymous.
 
 ### Push notifications
 
@@ -349,8 +414,9 @@ third-party SDK or service on top.
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
 1. **Skeleton:** the module layout (§7) with the §8 rules, the warning baseline and an AOT CI
-   gate (publish, check, then smoke-test the binaries), plus a Capacitor shell with one screen fed by the API and an offline cache, on a real
-   iPhone and Android device.
+   gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's four
+   open points): a Capacitor shell with one screen fed through the native Transport, Store and Sync,
+   on a real iPhone and Android device, through Cloudflare.
 2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
    no release.
 3. **v1 features:** Home, Sermons, Events, Groups, Give (link out), push (APNs + FCM).
