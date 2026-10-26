@@ -127,7 +127,7 @@ The plugin does four things:
 |---|---|---|
 | **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. HTTP/2 via grpc-swift / grpc-java with a pass-through byte codec | URLs, auth headers, retries |
 | **Store** | SQLite (the platform's own: GRDB on iOS, Room on Android; there's no .NET on the native side, and two generic tables need no more) holding `(feed, id, version, payload)` plus a few generic index columns the server fills in per feed (`sort_key`, `starts_at`, `ends_at`, `group_key`), and a sync cursor per feed | Nothing about the payload |
-| **Sync** | Pulls "changes since cursor" from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. Runs on launch, on resume, from a silent push, and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
+| **Sync** | Gets changes from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. **While the app is open it holds a live stream** (below). When closed, it pulls from a silent push and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
 | **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be | Method paths |
 
 On the .NET side:
@@ -172,9 +172,49 @@ rules:
   resets, an app update that drops a feed) and asserts the store's rows and file size stay bounded.
   Settings shows the space the app uses.
 
+### Live updates
+
+All content updates live in an open app: a new event, an edited service time or an approved prayer
+on the wall appears within a second or two of a staff member saving it. There's one mechanism, and
+features get it for free.
+
+- **A gRPC server stream, not SSE or WebSockets.** `Sync.Watch(cursors)` first sends everything
+  since the phone's cursors (catch-up), then keeps the call open and sends each change as it's
+  committed, in the same `(feed, id, version, payload)` shape as a pull. SSE would be a non-gRPC
+  server path ([AGENTS.md](AGENTS.md)), and it isn't needed: server streaming works over native gRPC
+  and over gRPC-Web. The spike ran a server stream through both, including Blazor WASM in Chrome.
+- **Live is just sync, pushed.** The stream's changes go through the same Store write and the same
+  "feeds changed" event to the UI as a pull. Screens don't know which delivered them, and a feature
+  that declares a feed gets live updates with no extra code.
+- **Only while the app is in the foreground.** The native layer opens the stream on launch and on
+  resume, and closes it when the app goes to the background; iOS suspends sockets soon after anyway.
+  When the app is closed, silent pushes and background refresh take over (below).
+- **Reconnect from the cursor.** On any drop, reconnect with backoff and jitter and resume from the
+  stored cursors, so nothing is missed or duplicated. Jitter matters after a deploy, when every open
+  app reconnects at once.
+- **Heartbeats.** The server sends a small heartbeat message every ~30 seconds, so proxies with idle
+  timeouts (Cloudflare, Traefik, YARP) don't cut a quiet stream. HTTP/2 PINGs alone aren't relied
+  on, because not every hop counts them as activity.
+- **Browsers get the same stream.** The admin panel watches over gRPC-Web, with no native store, so it
+  keeps state in memory. New prayer requests appear in the pastoral inbox live, and two staff editing
+  see each other's saves. A future website would do the same with public feeds only.
+- **Tiers apply per feed.** `Watch` streams public feeds to anyone. Staff-only feeds, such as the
+  prayer inbox, are only included when the call carries a staff token (§6).
+
+On the server:
+
+- **A change is committed and announced in one transaction.** Saving a record writes its feed change
+  row (the same rows `Sync` pulls), plus a Postgres `NOTIFY` that carries the feed and new cursor.
+  Postgres delivers `NOTIFY` only on commit, so a stream never announces a change that rolled back.
+- **Every API instance `LISTEN`s** and fans the change out to the streams it holds, so it works with
+  more than one replica and needs no Redis or message bus. If an instance misses a notification (for
+  example, a dropped database connection), a reconnect from the cursor recovers it.
+- **Scale is not a concern:** a church's concurrent open apps are in the hundreds at most.
+
 ### Freshness and compatibility
 
-- **Sync runs on launch, on resume, and on pull-to-refresh, and opportunistically in the background.**
+- **Sync runs live while the app is open (above), on pull-to-refresh, and opportunistically in the
+  background.**
   iOS decides when background work runs; Android allows at most every 15 minutes. A "data changed"
   silent push triggers a sync. These pushes are budgeted by iOS, so they are used for real changes,
   not on a timer.
@@ -198,6 +238,9 @@ rules:
    be fine at church-app volumes; measure it on a real phone.
 4. **Background scheduling** on real devices: how often iOS actually runs the refresh, and how
    reliably silent pushes arrive.
+5. **Long-lived streams end to end:** a `Watch` stream held open through Cloudflare, Traefik and YARP,
+   over native gRPC and gRPC-Web. Find each hop's idle and maximum-duration limits and confirm the
+   heartbeat and reconnect cover them.
 
 ## 6. Who may call what
 
@@ -206,7 +249,7 @@ requires a signed-in staff member, so a method that forgets its attribute is loc
 
 | Tier | Examples | Requirement |
 |---|---|---|
-| **Public read** | Events, sermons, groups, `Sync` | `[AllowAnonymous]`, rate-limited |
+| **Public read** | Events, sermons, groups, `Sync` and `Watch` for public feeds | `[AllowAnonymous]`, rate-limited |
 | **App write** | Prayer request, "I'm interested", push-topic subscription | A **genuine installed app** (below), rate-limited per install |
 | **Admin** | Editing anything, sending pushes, reading prayer requests | A **staff passkey** session; every method, no exceptions |
 
@@ -455,9 +498,10 @@ a YARP gateway (§6) that is reached through the usual Cloudflare tunnel and ing
 ### Services
 
 - **Code-first gRPC services,** one set per feature module (§8).
-- **One generic `Sync` service** serves the native data layer (§5). It returns changes since a cursor,
-  per feed, as `(feed, id, version, deleted, payload bytes)`. Each feature's `.Api` module registers
-  its feeds: what's in them and how a record is encoded.
+- **One generic `Sync` service** serves the native data layer and the browsers (§5). `Pull` returns
+  changes since a cursor, per feed, as `(feed, id, version, deleted, payload bytes)`. `Watch` does the
+  same, then stays open and streams changes as they're committed. Each feature's `.Api` module registers
+  its feeds: what's in them, how a record is encoded, its retention window and its tier.
 - **Public read services:** events, sermons, groups, announcements and service times. They are
   anonymous. gRPC calls are POSTs, so Cloudflare doesn't cache them; the app's store (§5) does
   that job.
@@ -527,7 +571,7 @@ third-party SDK or service on top.
    that isn't gRPC unless the owner has approved it ([AGENTS.md](AGENTS.md)), and the YARP gateway with
    passkey sign-in and the session-to-token transform.
    Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI
-   gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's four
+   gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's five
    open points): a Capacitor shell with one screen fed through the native Transport, Store and Sync,
    on a real iPhone and Android device, through Cloudflare.
 2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
