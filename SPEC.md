@@ -523,8 +523,9 @@ third-party SDK or service on top.
 ## 13. Milestones
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
-1. **Skeleton:** includes the fail-closed tier test (§6), and the YARP gateway with passkey sign-in and
-   the session-to-token transform.
+1. **Skeleton:** includes the fail-closed tier test (§6), the endpoint test that rejects any server path
+   that isn't gRPC unless the owner has approved it ([AGENTS.md](AGENTS.md)), and the YARP gateway with
+   passkey sign-in and the session-to-token transform.
    Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI
    gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's four
    open points): a Capacitor shell with one screen fed through the native Transport, Store and Sync,
