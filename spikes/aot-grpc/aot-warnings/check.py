@@ -1,17 +1,4 @@
 #!/usr/bin/env python3
-"""Compare a publish log's trim/AOT warnings against a committed baseline of known library warnings.
-
-    check.py <publish.log> <baseline.txt> --ours Contracts. Server. [--update]
-
-Fails when:
-  - a warning comes from our own code (a source path in this repo, or a member under one of --ours):
-    ours are fixed or suppressed in source with [UnconditionalSuppressMessage] and a justification,
-    never baselined;
-  - a library warning is not in the baseline (a new reflection path, usually after an upgrade);
-  - a baseline entry no longer appears (fixed upstream: prune it, so the list stays exact).
-
---update rewrites the baseline from the log (library warnings only) instead of checking.
-"""
 import argparse
 import os
 import re
@@ -41,11 +28,11 @@ def is_ours(key, src, prefixes):
 
 
 def main():
-    ap = argparse.ArgumentParser()
+    ap = argparse.ArgumentParser(description="Fail on trim/AOT warnings in our code, or library warnings not exactly matching the baseline.")
     ap.add_argument("log")
     ap.add_argument("baseline")
     ap.add_argument("--ours", nargs="*", default=[])
-    ap.add_argument("--update", action="store_true")
+    ap.add_argument("--update", action="store_true", help="rewrite the baseline from the log")
     a = ap.parse_args()
 
     with open(a.log, encoding="utf-8", errors="replace") as log:

@@ -13,8 +13,8 @@ slow to update and hard to make feel like *our* church. We want our own app that
   **without a store update**;
 - is cheap to run on infrastructure we already have (the `gsbc.argo` cluster).
 
-Non-goals for v1: a full church management system (people database, rostering, accounting), live
-streaming infrastructure, and native UI. Native code is limited to one small, generic data layer
+Non-goals: a full church management system (people database, rostering, accounting), live streaming
+infrastructure, native UI, and any connection to ImpactKids (kids check-in stays a separate app). Native code is limited to one small, generic data layer
 (§5).
 
 ## 2. Shape
@@ -319,10 +319,25 @@ stores still regulate how donations are collected. From memory, to be verified:
 - **Google Play:** charitable donations are exempt from Play Billing. Check the current payments
   policy for any verification requirement.
 
-Plan:
-- **v1:** a Give screen that opens our existing giving page (Tithe.ly or a Stripe-hosted page) in the
-  system browser. No approval needed, and it ships fastest.
-- **v2:** apply as an approved nonprofit, then give in the app with Stripe + Apple Pay / Google Pay.
+**Decision: giving stays on Tithe.ly.** The Give screen opens the church's existing Tithe.ly giving
+page in the system browser. No store approval is needed, and Tithe.ly keeps handling recurring gifts,
+giving statements and donor records.
+
+**Would in-app Apple Pay be cheaper?** Only marginally. Apple Pay doesn't set the fee: Apple charges
+the merchant nothing, and the fee is the payment processor's behind it. Published Australian card
+rates (checked 2026-10-26; confirm before deciding):
+
+| Processor | Rate | On a $100 gift |
+|---|---|---|
+| Tithe.ly | 1.9% + $0.30 | $2.20 |
+| Stripe, standard (domestic cards; Apple Pay and Google Pay are the same rate) | 1.65% + $0.30 from 1 Oct 2026 | $1.95 |
+| Stripe, nonprofit discount (on application; last published figure, Sept 2023) | ~1.4% + $0.30 | ~$1.70 |
+
+So moving to Stripe saves about 0.25–0.5% of what's given. Against that, in-app giving needs Apple's
+nonprofit approval, and we would have to build and maintain what Tithe.ly provides: recurring gifts,
+refunds and disputes, receipts and annual tax statements, and reconciliation with the church's
+accounts. Revisit only if the yearly saving clearly outweighs that work. Tithe.ly's optional "cover
+the fees" setting, which lets donors add the fee to their gift, is a cheaper lever.
 
 Never handle card numbers in our own code. Card details stay with the payment provider.
 
@@ -563,15 +578,12 @@ third-party SDK or service on top.
 
 ## 12. Open questions
 
-1. Does ImpactKids (kids check-in) connect to the app, for example parent notifications?
-2. Giving: stay with Tithe.ly's giving page, or move to Stripe? Is ACNC registration in place for
-   Apple's nonprofit programme?
-3. Who publishes to the stores? An Apple Developer account in the church's name (organisation
+1. Who publishes to the stores? An Apple Developer account in the church's name (organisation
    enrolment needs a D-U-N-S number) and a Google Play developer account.
-4. What from Tithe.ly do people actually use today? Measure before migrating.
-5. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
+2. What from Tithe.ly do people actually use today? Measure before migrating.
+3. Sermons: is YouTube or a podcast feed the source of record, or does the API hold them and link
    out?
-6. Android devices without Google Play services fail Play Integrity: is "email the church instead"
+4. Android devices without Google Play services fail Play Integrity: is "email the church instead"
    acceptable for them, or do we need a fallback (for example, writes held for staff review)?
 
 ## 13. Milestones

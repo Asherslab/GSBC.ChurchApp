@@ -3,7 +3,7 @@
     <OverrideHtmlAssetPlaceholders>true</OverrideHtmlAssetPlaceholders>
     <RunAOTCompilation>true</RunAOTCompilation>
     <WasmStripILAfterAOT>true</WasmStripILAfterAOT>
-    <!-- Blazor hides trim warnings by default; we want them. -->
+    <!-- Blazor suppresses trim warnings by default. -->
     <SuppressTrimAnalysisWarnings>false</SuppressTrimAnalysisWarnings>
   </PropertyGroup>
   <ItemGroup>
@@ -14,8 +14,7 @@
     <ProjectReference Include="../Contracts/Contracts.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <!-- IsAotCompatible implies IsTrimmable, which opts this assembly into trimming. The router finds
-         pages by reflecting over it, so root it: analysis stays on, the pages stay in. -->
+    <!-- IsAotCompatible makes this assembly trimmable, and the router finds pages by reflection. -->
     <TrimmerRootAssembly Include="$(AssemblyName)" />
   </ItemGroup>
 </Project>

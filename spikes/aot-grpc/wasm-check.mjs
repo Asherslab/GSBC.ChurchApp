@@ -1,4 +1,3 @@
-// Usage: PROFILE=<empty dir> node wasm-check.mjs <url> — opens the url in headless Chrome and prints #out once it settles.
 import { spawn } from 'node:child_process';
 const url = process.argv[2];
 const chrome = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',

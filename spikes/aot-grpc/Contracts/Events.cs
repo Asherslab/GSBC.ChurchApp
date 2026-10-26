@@ -3,7 +3,7 @@ using ProtoBuf.Grpc.Configuration;
 using ProtoBuf;
 using ProtoBuf.Grpc;
 
-// Level300: DateTime/TimeSpan as google.protobuf.Timestamp/Duration, so instants keep Kind = Utc.
+// Level300 sends DateTime as google.protobuf.Timestamp; the default format loses Kind = Utc.
 [assembly: CompatibilityLevel(CompatibilityLevel.Level300)]
 
 namespace Contracts;
@@ -15,7 +15,6 @@ public sealed class ChurchEvent
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
     [ProtoMember(2)] public string Title { get; set; } = "";
-    /// <summary>UTC. Sent as google.protobuf.Timestamp (Level300 below), so it arrives with Kind = Utc.</summary>
     [ProtoMember(3)] public DateTime StartsAt { get; set; }
     [ProtoMember(4)] public EventKind Kind { get; set; }
     [ProtoMember(5)] public List<string> Tags { get; set; } = [];

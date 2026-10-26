@@ -5,9 +5,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using ProtoBuf.Grpc.Server;
 
 var builder = WebApplication.CreateSlimBuilder(args);
-// Two listeners, because plaintext HTTP/2 (h2c) can't be negotiated on a port that also speaks
-// HTTP/1.1: gRPC-Web for browsers and WebViews on one, native gRPC for .NET callers on the other.
-// Behind TLS one port can do both (ALPN); in-cluster traffic is plaintext.
+// h2c can't share a plaintext port with HTTP/1.1, so native gRPC gets its own.
 builder.WebHost.ConfigureKestrel(k =>
 {
     k.ListenAnyIP(int.Parse(builder.Configuration["WebPort"] ?? "5310"), l => l.Protocols = HttpProtocols.Http1AndHttp2);

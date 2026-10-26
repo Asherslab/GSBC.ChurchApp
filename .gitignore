@@ -3,3 +3,4 @@ obj/
 out/
 *.user
 .DS_Store
+.nodeterm/

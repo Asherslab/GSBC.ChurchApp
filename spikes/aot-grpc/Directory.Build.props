@@ -4,25 +4,20 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
 
-    <!-- Every project is AOT-checked: the trim and AOT analyzers run on our code at build time. -->
     <IsAotCompatible>true</IsAotCompatible>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <!-- Library warnings stay individual so the baseline (aot-warnings/) can list them exactly. -->
     <TrimmerSingleWarn>false</TrimmerSingleWarn>
-    <!-- ILC/ILLink pass $(WarningsAsErrors)/$(TreatWarningsAsErrors) through; library warnings are
-         policed by the baseline check instead, so the publish itself must not fail on them. -->
+    <!-- Library warnings are policed by aot-warnings/, so they must not fail the publish. -->
     <IlcTreatWarningsAsErrors>false</IlcTreatWarningsAsErrors>
     <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
 
-    <!-- protobuf-net's compile-time serializers and gRPC proxies are a preview ([Experimental]). -->
+    <!-- PBN9001: protobuf-net's AOT generators are [Experimental]. -->
     <NoWarn>$(NoWarn);PBN9001</NoWarn>
     <InterceptorsNamespaces>$(InterceptorsNamespaces);ProtoBuf.AOT</InterceptorsNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Direct, in every project: protobuf-net ships its MSBuild props in build/, not buildTransitive/,
-         so a project that only gets it through Contracts never tells the analyzers it is an AOT build,
-         and PBN4015 ("no [ProtoGrpc] here") stays silent. -->
+    <!-- Direct in every project: protobuf-net ships its props in build/, not buildTransitive/, so its AOT analyzers stay silent in projects that only reference it transitively. -->
     <PackageReference Include="protobuf-net" Version="3.4.40" />
   </ItemGroup>
 
