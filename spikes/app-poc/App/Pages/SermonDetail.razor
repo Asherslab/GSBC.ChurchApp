@@ -1,0 +1,110 @@
+@page "/sermons/{Id}"
+@implements IDisposable
+@inject SermonLibrary Library
+@inject NativeBridge Native
+
+<Page Title="@(sermon?.Title ?? "Sermon")" BackHref="listen" BackLabel="Listen" TopBar="TopBarStyle.Solid" StuckAt="320" Bell="false">
+    <Actions>
+        @if (sermon is not null)
+        {
+            <button class="icon-btn" @onclick="Share" aria-label="Share"><Icon Name="share" /></button>
+        }
+    </Actions>
+    <ChildContent>
+        @if (sermon is null)
+        {
+            <EmptyState Icon="sermons" Title="Finding this sermon…" />
+        }
+        else
+        {
+            <VideoEmbed YouTubeId="@sermon.YouTubeId" PosterUrl="@sermon.ImageUrl" Title="@sermon.Title" AutoPlay="Watch" />
+
+            <div class="detail">
+                <h1 class="detail__title selectable">@sermon.Title</h1>
+                @if ((sermon.Part ?? sermon.Series) is { } label)
+                {
+                    <p class="detail__series">@label</p>
+                }
+                <div class="detail__meta">
+                    @if (Library.PhotoFor(sermon) is { } photo)
+                    {
+                        <img class="speaker" src="@photo" alt="" />
+                    }
+                    <div>
+                        <strong>@sermon.Speaker</strong>
+                        <span>@sermon.Date.ToString("dddd d MMMM yyyy")@(sermon.Service.Length > 0 ? $" · {sermon.Service}" : "")</span>
+                    </div>
+                </div>
+                @if (sermon.YouTubeId is { } youTubeId)
+                {
+                    <div class="detail__actions">
+                        <button class="btn btn--quiet" @onclick="() => OpenYouTubeApp(youTubeId)"><Icon Name="external-link" Size="IconSize.Small" />Open in the YouTube app</button>
+                    </div>
+                }
+            </div>
+
+            @if (sermon.AudioUrl is { } audio)
+            {
+                <Section Title="Listen">
+                    <AudioPlayer @key="sermon.Id" Sermon="sermon" />
+                    <p class="hint"><Icon Name="headphones" Size="IconSize.ExtraSmall" />Keeps playing when you leave this page or lock the phone. Picks up where you left off.</p>
+                </Section>
+            }
+
+            @if (Library.NotesFor(sermon) is { } notes)
+            {
+                <Section Title="Sermon notes">
+                    <SermonOutline Notes="notes" />
+                </Section>
+            }
+
+            <Section Title="My notes">
+                <NotesField Key="@($"sermon:{sermon.Id}")" />
+            </Section>
+
+            @if (MoreInSeries.Count > 0)
+            {
+                <Section Title="@($"More from {sermon.Series}")">
+                    <div class="list">
+                        @foreach (var other in MoreInSeries)
+                        {
+                            <SermonRow Sermon="other" />
+                        }
+                    </div>
+                </Section>
+            }
+        }
+    </ChildContent>
+</Page>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    [SupplyParameterFromQuery] public bool Watch { get; set; }
+
+    private Sermon? sermon;
+
+    private IReadOnlyList<Sermon> MoreInSeries =>
+        sermon?.Series is { } series ? Library.Sermons.Where(s => s.Series == series && s.Id != sermon.Id).Take(5).ToList() : [];
+
+    protected override void OnInitialized() => Library.Changed += Refresh;
+
+    protected override void OnParametersSet() => sermon = Library.Find(Id);
+
+    private void Refresh() => InvokeAsync(() =>
+    {
+        sermon = Library.Find(Id);
+        StateHasChanged();
+    });
+
+    private async Task OpenYouTubeApp(string id)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Native.OpenExternalAsync(VideoEmbed.WatchUrl(id));
+    }
+
+    private Task Share() =>
+        Native.ShareAsync(sermon!.Title, $"{sermon.Title} · {sermon.Speaker}", sermon.Link).AsTask();
+
+    public void Dispose() => Library.Changed -= Refresh;
+}

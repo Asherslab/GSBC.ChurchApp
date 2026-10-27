@@ -1,0 +1,53 @@
+@implements IDisposable
+@inject PlayerService Player
+@inject NativeBridge Native
+@inject NavigationManager Navigation
+
+<div class="today-latest">
+    <a class="today-latest__art pressable" href="@($"sermons/{Sermon.Id}")">
+        <Cover ImageUrl="@Sermon.ImageUrl" Title="@Sermon.Title" />
+    </a>
+    <a class="today-latest__text" href="@($"sermons/{Sermon.Id}")">
+        <strong>@Sermon.Title</strong>
+        <span>@Sermon.Speaker · @Sermon.Date.ToString("dddd d MMMM")</span>
+    </a>
+    @if (Player.IsCurrent(Sermon))
+    {
+        <AudioPlayer Sermon="Sermon" />
+    }
+    else
+    {
+        <div class="today-actions">
+            @if (Sermon.AudioUrl is not null)
+            {
+                <button class="btn btn--primary" @onclick="Listen"><Icon Name="headphones" Size="IconSize.Small" />Listen</button>
+            }
+            @if (Sermon.YouTubeId is not null)
+            {
+                <button class="btn btn--quiet" @onclick="Watch"><Icon Name="video" Size="IconSize.Small" />Watch</button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Sermon Sermon { get; set; } = default!;
+
+    protected override void OnInitialized() => Player.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task Listen()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Player.PlayAsync(Sermon);
+    }
+
+    private async Task Watch()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        Navigation.NavigateTo($"sermons/{Sermon.Id}?watch=true");
+    }
+
+    public void Dispose() => Player.Changed -= Refresh;
+}

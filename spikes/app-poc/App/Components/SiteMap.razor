@@ -1,0 +1,125 @@
+@implements IAsyncDisposable
+@inject SiteMapSvg Svg
+@inject IJSRuntime JS
+
+<div class="site-map @(Interactive ? "site-map--interactive" : "site-map--inset") @scope" @ref="viewport">
+    <style>@RoomCss</style>
+    <div class="site-map__canvas" style="aspect-ratio: @Inv(Box.Width) / @Inv(Box.Height)">
+        @if (baseSvg is not null)
+        {
+            @((MarkupString)baseSvg)
+        }
+        <svg class="site-map__marks" viewBox="@Box" aria-hidden="true">
+            @foreach (var (mark, index) in Marks.Select((m, i) => (m, i)))
+            {
+                var selected = mark.Place.Id == SelectedPlaceId;
+                if (mark.Badge is not null)
+                {
+                    <g transform="translate(@Inv(mark.Place.X) @Inv(mark.Place.Y))">
+                        <g class="map-badge @(selected ? "map-badge--selected" : "")" data-mark="@index" style="--mark: @mark.Colour">
+                            <circle class="map-badge__halo" r="@Inv(Radius * 1.7)" />
+                            <circle class="map-badge__dot" r="@Inv(Radius)" stroke-width="@Inv(Radius * 0.24)" />
+                            <text font-size="@Inv(Radius * 1.15)" dy="0.36em">@mark.Badge</text>
+                        </g>
+                    </g>
+                }
+                else
+                {
+                    <g transform="translate(@Inv(mark.Place.X) @Inv(mark.Place.Y))">
+                        <g class="map-label @(selected ? "map-label--selected" : "")" data-mark="@index">
+                            <text font-size="@Inv(LabelSize)" dy="0.35em" stroke-width="@Inv(LabelSize * 0.36)">@mark.Label</text>
+                        </g>
+                    </g>
+                }
+            }
+        </svg>
+    </div>
+</div>
+
+@code {
+    private const double BadgeScale = 0.033;
+    private const double LabelScale = 0.02;
+    private const double FocusZoom = 2.4;
+
+    [Parameter] public IReadOnlyList<MapMark> Marks { get; set; } = [];
+    [Parameter] public bool Interactive { get; set; }
+    [Parameter] public Place? Around { get; set; }
+    [Parameter] public double AroundWidth { get; set; } = 420;
+    [Parameter] public string? SelectedPlaceId { get; set; }
+    [Parameter] public string? FocusPlaceId { get; set; }
+    [Parameter] public EventCallback<MapMark> OnTap { get; set; }
+
+    private readonly string scope = $"sm-{Guid.NewGuid():N}";
+    private ElementReference viewport;
+    private DotNetObjectReference<SiteMap>? self;
+    private string? svg;
+    private string? baseSvg;
+    private MapViewBox? renderedBox;
+    private string? focused;
+
+    private MapViewBox Box => Around is { } place ? SitePlan.ViewBox.Around(place, AroundWidth) : SitePlan.ViewBox;
+
+    private double Radius => Box.Width * BadgeScale;
+
+    private double LabelSize => Box.Width * LabelScale;
+
+    private string RoomCss => string.Concat(Marks
+        .Where(m => m.Colour is not null && m.Place.Space is not null)
+        .Select(m =>
+            $":root .{scope} .site-map__base [data-space=\"{m.Place.Space}\"][data-part=\"top\"]{{fill:{m.Colour}}}" +
+            $":root .{scope} .site-map__base [data-space=\"{m.Place.Space}\"][data-part=\"side\"]{{fill:color-mix(in srgb,{m.Colour} 66%,#000)}}"));
+
+    protected override async Task OnParametersSetAsync()
+    {
+        svg ??= await Svg.GetAsync();
+        if (renderedBox != Box)
+        {
+            renderedBox = Box;
+            baseSvg = svg.Replace($"viewBox=\"{SitePlan.ViewBox}\"", $"class=\"site-map__base\" preserveAspectRatio=\"xMidYMid meet\" viewBox=\"{Box}\"");
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!Interactive || baseSvg is null)
+        {
+            return;
+        }
+        if (self is null)
+        {
+            self = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("gsbc.map.attach", viewport, self);
+        }
+        if (FocusPlaceId != focused)
+        {
+            focused = FocusPlaceId;
+            if (FocusPlaceId is not null && SitePlan.Find(FocusPlaceId) is { } place)
+            {
+                await JS.InvokeVoidAsync("gsbc.map.focus", viewport, (place.X - Box.X) / Box.Width, (place.Y - Box.Y) / Box.Height, FocusZoom);
+            }
+        }
+    }
+
+    [JSInvokable]
+    public async Task Tapped(string kind, string value)
+    {
+        var mark = kind switch
+        {
+            "mark" when int.TryParse(value, out var index) && index < Marks.Count => Marks[index],
+            "space" => Marks.FirstOrDefault(m => m.Place.Space == value) ?? (SitePlan.ForSpace(value) is { } place ? new MapMark(place, place.Name) : null),
+            _ => null,
+        };
+        if (mark is not null)
+        {
+            await OnTap.InvokeAsync(mark);
+        }
+    }
+
+    private static string Inv(double value) => value.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture);
+
+    public ValueTask DisposeAsync()
+    {
+        self?.Dispose();
+        return ValueTask.CompletedTask;
+    }
+}

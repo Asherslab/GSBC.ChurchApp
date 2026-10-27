@@ -1,0 +1,21 @@
+@typeparam TValue
+@inject NativeBridge Native
+
+<div class="chips" role="group">
+    @foreach (var option in Options)
+    {
+        <button class="chip" aria-pressed="@(EqualityComparer<TValue>.Default.Equals(option.Value, Value) ? "true" : "false")" @onclick="() => Select(option.Value)">@option.Label</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Choice<TValue>> Options { get; set; } = [];
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+
+    private async Task Select(TValue value)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await ValueChanged.InvokeAsync(value);
+    }
+}

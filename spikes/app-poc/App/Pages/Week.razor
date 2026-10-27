@@ -1,0 +1,102 @@
+@page "/week"
+@inject WeekPlan Plan
+@inject ChurchClock Clock
+@inject NativeBridge Native
+@inject IJSRuntime JS
+
+<Page Title="This week" StuckAt="150">
+    <Masthead Title="This week" Note="@Range">
+        <div class="day-rail" role="group" aria-label="Days">
+            @foreach (var day in days)
+            {
+                <button class="@(day.Date == Today ? "today" : "")" @onclick="() => Jump(day.Date)" aria-label="@day.Date.ToString("dddd d MMMM")">
+                    <b>@day.Date.ToString("ddd").ToUpperInvariant()</b>
+                    <span>@day.Date.Day</span>
+                    <i class="@(day.Entries.Count > 0 ? "has" : "")"></i>
+                </button>
+            }
+        </div>
+    </Masthead>
+
+    <Section First="true">
+        @foreach (var day in days)
+        {
+            if (day.Entries.Count == 0)
+            {
+                <div class="agenda-day agenda-day--quiet" id="@DayId(day.Date)">
+                    <h2>@DayName(day.Date) <span>Nothing on · @day.Date.ToString("d MMM")</span></h2>
+                </div>
+                continue;
+            }
+            <div class="agenda-day" id="@DayId(day.Date)">
+                <h2>@DayName(day.Date) <span>@day.Date.ToString("d MMM")</span></h2>
+                <div class="list">
+                    @foreach (var entry in day.Entries)
+                    {
+                        var past = entry.Start < Clock.Now;
+                        if (entry.Href is not null)
+                        {
+                            <a class="row @(past ? "row--past" : "")" href="@entry.Href">
+                                <span class="row__time">@ChurchClock.Time(entry.Start)</span>
+                                <span class="row__body"><span class="row__title">@entry.Title</span>@if (entry.Detail is not null) { <span class="row__subtitle">@entry.Detail</span> }</span>
+                                <span class="row__trail"><Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                            </a>
+                        }
+                        else
+                        {
+                            <div class="row @(past ? "row--past" : "")">
+                                <span class="row__time">@ChurchClock.Time(entry.Start)</span>
+                                <span class="row__body"><span class="row__title">@entry.Title</span>@if (entry.Streamed) { <span class="tag">Streamed on YouTube</span> }</span>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        }
+    </Section>
+
+    @if (Plan.ComingUp() is { Count: > 0 } coming)
+    {
+        <Section Title="Coming up">
+            @foreach (var e in coming)
+            {
+                <a class="feature-card pressable" href="@($"events/{e.Id}")">
+                    <Cover ImageUrl="@e.ImageUrl" Title="@e.Title" Tone="Tone.Accent" />
+                    <span class="feature-card__body">
+                        <strong>@e.Title</strong>
+                        <span>@e.Start.ToString("dddd d MMMM") · @ChurchClock.Time(e.Start)@(e.Repeats is { } r ? $" · {r}" : "")</span>
+                    </span>
+                </a>
+            }
+        </Section>
+    }
+
+    <Section>
+        <p class="hint"><Icon Name="sparkles" Size="IconSize.ExtraSmall" />Sample events. The real calendar will come from staff.</p>
+    </Section>
+</Page>
+
+@code {
+    private IReadOnlyList<DayPlan> days = [];
+
+    private DateOnly Today => DateOnly.FromDateTime(Clock.Now);
+
+    private string Range => $"{days[0].Date:d MMM} – {days[^1].Date:d MMM}";
+
+    protected override void OnInitialized() => days = Plan.Days();
+
+    private string DayName(DateOnly date) => (date.DayNumber - Today.DayNumber) switch
+    {
+        0 => "Today",
+        1 => "Tomorrow",
+        _ => date.ToString("dddd"),
+    };
+
+    private static string DayId(DateOnly date) => $"day-{date:yyyyMMdd}";
+
+    private async Task Jump(DateOnly date)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await JS.InvokeVoidAsync("gsbc.scrollToSection", DayId(date));
+    }
+}

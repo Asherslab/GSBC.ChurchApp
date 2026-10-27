@@ -1,0 +1,28 @@
+@inject NativeBridge Native
+
+<a class="band-card pressable @(Quiet ? "band-card--quiet" : "")" href="@Href" style="--band: @Colour" @onclick="Tap">
+    <span class="band-card__head">
+        <span class="band-card__title">@Title</span>
+        @Badge
+    </span>
+    @if (Blurb is not null)
+    {
+        <span class="band-card__blurb">@Blurb</span>
+    }
+    @if (Footer is not null)
+    {
+        <span class="band-card__foot">@Footer</span>
+    }
+</a>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Href { get; set; } = "";
+    [Parameter, EditorRequired] public string Colour { get; set; } = "";
+    [Parameter] public string? Blurb { get; set; }
+    [Parameter] public bool Quiet { get; set; }
+    [Parameter] public RenderFragment? Badge { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+
+    private Task Tap() => Native.HapticAsync(Haptic.Selection).AsTask();
+}

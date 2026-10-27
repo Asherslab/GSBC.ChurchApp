@@ -1,0 +1,84 @@
+@page "/events/{Id}"
+@inject SampleContent Content
+@inject NativeBridge Native
+
+<Page Title="@(item?.Title ?? "Event")" BackHref="week" BackLabel="This week" TopBar="TopBarStyle.Solid" StuckAt="320" Bell="false">
+    <Actions>
+        @if (item is not null)
+        {
+            <button class="icon-btn" @onclick="Share" aria-label="Share"><Icon Name="share" /></button>
+        }
+    </Actions>
+    <ChildContent>
+        @if (item is null)
+        {
+            <EmptyState Icon="calendar" Title="This event has finished or moved" />
+        }
+        else
+        {
+            <div class="detail-hero"><Cover ImageUrl="@item.ImageUrl" Title="@item.Title" Tone="Tone.Accent" /></div>
+            <div class="detail">
+                <h1 class="detail__title selectable">@item.Title</h1>
+                <p class="detail__series">@(item.Repeats ?? item.Start.ToString("dddd d MMMM"))</p>
+                <div class="detail__actions">
+                    <button class="btn btn--primary" @onclick="AddToCalendar"><Icon Name="calendar-plus" Size="IconSize.Small" />@calendarLabel</button>
+                    @if (item.RegisterHref is { } register)
+                    {
+                        <button class="btn btn--quiet" @onclick="() => Native.OpenInAppAsync(register)">Register</button>
+                    }
+                </div>
+            </div>
+            <Section>
+                <div class="facts">
+                    <div class="fact">
+                        <Icon Name="clock" />
+                        <div><strong>@item.Start.ToString("dddd d MMMM") · @ChurchClock.Time(item.Start) – @ChurchClock.Time(item.Start + item.Length)</strong><span>@(item.Repeats ?? "One-off event")</span></div>
+                    </div>
+                    <button class="fact" style="text-align: left" @onclick="Directions">
+                        <Icon Name="map-pin" />
+                        <div><strong>@item.Location</strong><span>@SampleContent.Address</span></div>
+                    </button>
+                </div>
+            </Section>
+            <Section Title="About">
+                <div class="prose selectable">
+                    @foreach (var paragraph in item.Description)
+                    {
+                        <p>@paragraph</p>
+                    }
+                </div>
+            </Section>
+        }
+    </ChildContent>
+</Page>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private ChurchEvent? item;
+    private string calendarLabel = "Add to calendar";
+
+    protected override void OnParametersSet() => item = Content.Event(Id);
+
+    private async Task AddToCalendar()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        var result = await Native.AddToCalendarAsync(new(item!.Title, item.Start, item.Start + item.Length, $"{item.Location}, {SampleContent.Address}", string.Join("\n\n", item.Description)));
+        calendarLabel = result switch
+        {
+            "added" => "Added",
+            "cancelled" => "Add to calendar",
+            "web" => "Phone only",
+            _ => "Couldn't add",
+        };
+        if (result == "added")
+        {
+            await Native.HapticAsync(Haptic.Success);
+        }
+    }
+
+    private Task Directions() => Native.OpenExternalAsync(SampleContent.DirectionsHref).AsTask();
+
+    private Task Share() =>
+        Native.ShareAsync(item!.Title, $"{item.Title} · {item.Start:dddd d MMMM}, {ChurchClock.Time(item.Start)} at Good Shepherd", SampleContent.Website + "/events").AsTask();
+}

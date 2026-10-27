@@ -1,0 +1,30 @@
+<div class="outline">
+    @if (Notes.MainText is not null)
+    {
+        <div class="outline__main">Main text <PassageChips Passages="[Notes.MainText]" /></div>
+    }
+    @foreach (var point in Notes.Outline)
+    {
+        <div class="outline__point">
+            <h3>@point.Heading</h3>
+            <ul class="outline__items">
+                @foreach (var item in point.Items)
+                {
+                    <li class="@(item.Text == PassagesOnly ? "outline__passages" : "")">
+                        @if (item.Text != PassagesOnly)
+                        {
+                            <span class="selectable">@item.Text</span>
+                        }
+                        <PassageChips Passages="item.Passages" />
+                    </li>
+                }
+            </ul>
+        </div>
+    }
+</div>
+
+@code {
+    private const string PassagesOnly = "Passages";
+
+    [Parameter, EditorRequired] public SermonNotes Notes { get; set; } = default!;
+}

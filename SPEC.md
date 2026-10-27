@@ -60,7 +60,12 @@ rules, but this plan never does it (§4), so it is not a constraint.
 - **Sermons:** a series → sermon list with video (YouTube embed) or audio (podcast feed), notes and
   passages. Last-played position is remembered.
 - **Events:** a list and calendar, with "add to calendar" and a registration link where one is needed.
-- **Groups:** life groups and ministries, each with a contact or "I'm interested" button.
+- **Life Groups:** the Sunday 9:00 classes, run in six-week rounds: browse the groups, leaders and
+  rooms, join one, and get its notices (a sick teacher, a moved room) and resources. See
+  [docs/features/life-groups.md](docs/features/life-groups.md).
+- **Groups:** ministries, each with a contact or "I'm interested" button.
+- **Site map:** one interactive map of the church and school site that any feature can mark places
+  on. See [docs/features/site-map.md](docs/features/site-map.md).
 - **Give:** see §7, which is the most constrained feature.
 - **Prayer requests:** submit privately to the pastoral team, with an optional public prayer wall.
   Never public by default.
@@ -250,8 +255,8 @@ requires a signed-in staff member, so a method that forgets its attribute is loc
 | Tier | Examples | Requirement |
 |---|---|---|
 | **Public read** | Events, sermons, groups, `Sync` and `Watch` for public feeds | `[AllowAnonymous]`, rate-limited |
-| **App write** | Prayer request, "I'm interested", push-topic subscription | A **genuine installed app** (below), rate-limited per install |
-| **Admin** | Editing anything, sending pushes, reading prayer requests | A **staff passkey** session; every method, no exceptions |
+| **App write** | Prayer request, "I'm interested", push-topic subscription, joining a Life Group | A **genuine installed app** (below), rate-limited per install |
+| **Admin** | Editing anything, sending pushes, reading prayer requests | A **staff passkey** session; every method, no exceptions. Some roles, such as Life Group leaders, are further limited to their own records |
 
 A test enumerates every gRPC endpoint and fails if any method lacks an explicit tier, or if an
 admin feature's service has a method below Admin.
@@ -585,6 +590,14 @@ None block the skeleton. One has a deadline:
    and for any store testing. Enrol the church as an organisation: Apple requires a D-U-N-S number,
    which is free but can take days to weeks with Apple's review, so start before the device spike.
    Owning the app from the first build avoids a later app transfer.
+2. **How media travels.** Images (sermon artwork, leader photos) and files (Life Group notes) are
+   outside the Store (§5), but nothing yet says how the phone fetches them or how staff upload them.
+   By the hard rule in [AGENTS.md](AGENTS.md) both are gRPC: for example, a `Media` service
+   (`Get` returns the bytes, a server stream for large files; `Upload` in the admin panel), with
+   content-addressed IDs so the phone's file cache never goes stale. A plain HTTP GET would let
+   Cloudflare cache images, but it is a non-gRPC path and needs the owner's explicit approval first.
+   To settle before the first feature with images.
+3. **Life Groups and the site map** have their own open questions in their docs.
 
 Decided, for the record:
 
@@ -606,6 +619,7 @@ Decided, for the record:
    on a real iPhone and Android device, through Cloudflare.
 2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
    no release.
-3. **v1 features:** Home, Sermons, Events, Groups, Give (link out), push (APNs + FCM).
+3. **v1 features:** Home, Sermons, Events, Life Groups, site map, Groups, Give (link out), push
+   (APNs + FCM).
 4. **Store submission:** TestFlight / internal testing, then public release.
 5. **v2:** in-app giving (approved nonprofit), prayer wall, sign-in if needed.

@@ -1,0 +1,36 @@
+{
+  "title": "Your combination: Sunday, Week, Listen",
+  "question": "Bulletin as home, the week as the calendar, Listen for sermons, all in the bulletin's look. One choice left: should Listen stay dark like its sketch, or go light like the rest?",
+  "options": [
+    {
+      "id": "combined-light",
+      "kind": "assigned",
+      "kicker": "ONE LOOK",
+      "label": "All light, bulletin look",
+      "lineage": "the printed What's Next bulletin",
+      "thesis": "Every tab shares the bulletin's navy masthead, white page and orange section tabs; Listen puts the latest sermon in its masthead.",
+      "palette": ["#2a3d5e", "#ffffff", "#d5c9b7", "#e7ae74", "#009c8f"],
+      "materials": ["Montserrat", "navy masthead", "section tabs"],
+      "viewport": "Tabs: Sunday (the bulletin), Week (day rail and agenda), Listen (shown), More. Listen: masthead with the latest sermon and Listen / Watch, then Latest, Series, Speakers.",
+      "risk": "Calmer and more consistent; listening feels less like an occasion.",
+      "html": ".impeccable/mocks/decision/combined-light.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "combined-dark",
+      "kind": "dealt",
+      "label": "Listen stays dark",
+      "lineage": "podcast and streaming apps",
+      "thesis": "Sunday and Week keep the bulletin's light look; Listen switches to a dark theatre so artwork and video lead.",
+      "palette": ["#141d31", "#2a3d5e", "#f2ede4", "#2ec4b6", "#e7ae74"],
+      "materials": ["Montserrat", "dark theatre", "series artwork"],
+      "viewport": "Same four tabs. Listen: dark page, a large latest-service player, a keep-listening row with progress, series shelves.",
+      "risk": "Two looks in one app; the switch on the Listen tab must feel deliberate, not like a bug.",
+      "html": ".impeccable/mocks/decision/combined-dark.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

@@ -1,0 +1,52 @@
+@page "/notifications"
+@inject SampleContent Content
+@inject AppSettings Settings
+@inject NativeBridge Native
+
+<Page Title="Notifications" BackHref="" BackLabel="Back" Bell="false">
+    <Masthead Title="Notifications" Note="News from Good Shepherd, and what you hear about." />
+    <Section Title="Inbox" First="true">
+        <div class="list">
+            @foreach (var message in Content.Inbox)
+            {
+                <a class="row inbox-row @(message.Unread ? "inbox-row--unread" : "")" href="@message.Href">
+                    <span class="inbox-row__dot" aria-hidden="true"></span>
+                    <span class="row__body">
+                        <span class="row__title">@message.Title@if (message.Unread) { <span class="visually-hidden">, unread</span> }</span>
+                        <span class="row__subtitle">@message.Body</span>
+                    </span>
+                    <span class="row__trail">@message.When<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                </a>
+            }
+        </div>
+    </Section>
+
+    <Section Title="What you hear about">
+        <div>
+            @foreach (var topic in Content.Topics)
+            {
+                <ToggleRow Title="@topic.Name" Description="@topic.Description" Checked="Settings.Topics.Contains(topic.Id)" CheckedChanged="on => Settings.SetTopicAsync(topic.Id, on)" />
+            }
+        </div>
+        <p class="hint">Urgent changes, like a cancelled service, always come through.</p>
+    </Section>
+
+    <Section>
+        <button class="btn btn--quiet btn--block" @onclick="Test"><Icon Name="bell" Size="IconSize.Small" />@testLabel</button>
+    </Section>
+</Page>
+
+@code {
+    private string testLabel = "Send me a test notification";
+
+    private async Task Test()
+    {
+        var result = await Native.ScheduleNotificationAsync("Good Shepherd", "This is what a notification from the church looks like.", 5);
+        testLabel = result switch
+        {
+            "scheduled" => "Arriving in 5 seconds; lock your phone",
+            "web" => "Only on the phone",
+            _ => $"Not allowed ({result})",
+        };
+    }
+}

@@ -55,6 +55,7 @@ Every entry needs the owner's explicit approval in chat first.
 | Path | Host | Why it can't be gRPC | Approved |
 |---|---|---|---|
 | Passkey ceremonies: begin/complete for sign-in and for registering a passkey (including accepting a staff invitation) | Gateway | The browser's WebAuthn API exchanges JSON with the server; the owner chose plain HTTP for these, as in MealPlanner | 2026-10-26 |
+| The same passkey ceremonies, called from the app's native layer (Life Group leaders and staff signing in on the phone) | Gateway | The platform passkey APIs produce the same WebAuthn JSON; the owner confirmed the app may use these endpoints | 2026-10-26 |
 
 **Explicitly not exceptions:** health checks are gRPC (`grpc.health.v1`; Kubernetes probes it
 natively). Anything else around sign-in, such as "who am I", sign-out, or managing staff and

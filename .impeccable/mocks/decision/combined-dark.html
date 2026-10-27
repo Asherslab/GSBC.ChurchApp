@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Watch and listen</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--night:#141d31;--navy:#2a3d5e;--ink:#f2ede4;--ink2:#aab1bf;--card:#1d2840;--aqua:#2ec4b6;--orange:#e7ae74;--line:rgba(255,255,255,.09)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--night);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.top{display:flex;justify-content:space-between;align-items:center;padding:60px 20px 14px}
+.top h1{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.top svg{width:24px;height:24px;fill:none;stroke:var(--ink);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.player{margin:0 16px;border-radius:18px;overflow:hidden;background:var(--card)}
+.video{height:196px;background:linear-gradient(160deg,#3b4a63,#232c3d);position:relative}
+.video .t{position:absolute;left:16px;bottom:14px;right:16px}
+.video .t strong{display:block;font-size:30px;font-weight:700;letter-spacing:-.02em;line-height:1.05}
+.video .t span{font-size:13px;color:rgba(255,255,255,.75)}
+.play{position:absolute;right:16px;top:16px;width:52px;height:52px;border-radius:26px;background:#fff;display:grid;place-items:center}
+.play svg{width:22px;height:22px;fill:#141d31;margin-left:3px}
+.meta{padding:14px 16px 16px;display:flex;justify-content:space-between;align-items:center}
+.meta b{display:block;font-size:16px}.meta small{font-size:13px;color:var(--ink2)}
+.btn{background:var(--aqua);color:#062522;font-weight:700;font-size:14px;border-radius:20px;padding:10px 16px}
+h2{font-size:19px;font-weight:700;padding:24px 20px 12px;letter-spacing:-.01em}
+.resume{display:flex;gap:12px;padding:0 20px;overflow:hidden}
+.ep{flex:0 0 250px;display:flex;gap:12px;align-items:center;background:var(--card);border-radius:14px;padding:10px}
+.ep .art{width:58px;height:58px;border-radius:10px;flex:none}
+.ep b{display:block;font-size:14px;line-height:1.25}
+.ep small{font-size:12px;color:var(--ink2)}
+.bar{height:4px;border-radius:2px;background:var(--line);margin-top:7px;width:150px}.bar i{display:block;height:4px;border-radius:2px;background:var(--orange)}
+.shelf{display:flex;gap:12px;padding:0 20px;overflow:hidden}
+.series{flex:0 0 132px}
+.series .art{height:132px;border-radius:14px;padding:10px;display:flex;align-items:flex-end;font-weight:700;font-size:15px;line-height:1.1}
+.series small{display:block;font-size:12px;color:var(--ink2);margin-top:6px}
+.strip{margin:22px 16px 0;padding:12px 14px;border-radius:14px;background:var(--card);display:flex;justify-content:space-between;align-items:center;font-size:14px}
+.strip b{font-weight:700}.strip span{color:var(--ink2);font-size:13px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(20,29,49,.95);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#7c8496}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua)}
+</style></head><body>
+<div class="top"><h1>Listen</h1><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></div>
+<section class="player">
+  <div class="video"><div class="play"><svg viewBox="0 0 24 24"><path d="M6 4l14 8-14 8z"/></svg></div>
+    <div class="t"><strong>Grace at the Edge of the Pit</strong><span>What God Is Doing in the Dark · Part 2</span></div></div>
+  <div class="meta"><div><b>Hernan Hullana</b><small>Sunday PM · 25 Oct · 49 min</small></div><span class="btn">Listen</span></div>
+</section>
+<h2>Keep listening</h2>
+<div class="resume">
+  <div class="ep"><div class="art" style="background:#1f6f8b"></div><div><b>Anchored in Community</b><small>Phil Parry · 18 min left</small><div class="bar"><i style="width:62%"></i></div></div></div>
+  <div class="ep"><div class="art" style="background:#6b5b3e"></div><div><b>Enlarge the Place of Thy Tent</b><small>12 min left</small><div class="bar"><i style="width:80%"></i></div></div></div>
+</div>
+<h2>Series</h2>
+<div class="shelf">
+  <div class="series"><div class="art" style="background:#1f6f8b">Anchored</div><small>3 messages</small></div>
+  <div class="series"><div class="art" style="background:#3a3346">What God Is Doing in the Dark</div><small>2 messages</small></div>
+  <div class="series"><div class="art" style="background:#4a7355">Almighty God</div><small>This year's theme</small></div>
+</div>
+
+<nav class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>Sunday</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Week</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>Listen</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>
+

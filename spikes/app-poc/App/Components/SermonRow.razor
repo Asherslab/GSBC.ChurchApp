@@ -1,0 +1,11 @@
+<a class="row" href="@($"sermons/{Sermon.Id}")">
+    <span class="row__thumb"><Cover ImageUrl="@Sermon.ImageUrl" Title="@Sermon.Title" ShowTitle="false" /></span>
+    <span class="row__body">
+        <span class="row__title">@Sermon.Title</span>
+        <span class="row__subtitle">@Sermon.Speaker · @Sermon.Date.ToString("d MMM")@(Sermon.Service.Length > 0 ? $" · {Sermon.Service}" : "")</span>
+    </span>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public Sermon Sermon { get; set; } = default!;
+}

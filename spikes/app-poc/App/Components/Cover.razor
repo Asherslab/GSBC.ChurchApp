@@ -1,0 +1,29 @@
+@if (ImageUrl is not null)
+{
+    <div class="cover @Class"><img src="@ImageUrl" alt="" loading="lazy" decoding="async" /></div>
+}
+else
+{
+    <div class="cover cover--fallback @ToneClass @Class">
+        <BrandMark Class="cover__mark" />
+        @if (ShowTitle)
+        {
+            <span class="cover__title">@Title</span>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public string? ImageUrl { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public bool ShowTitle { get; set; } = true;
+    [Parameter] public Tone Tone { get; set; } = Tone.Primary;
+    [Parameter] public string? Class { get; set; }
+
+    private string ToneClass => Tone switch
+    {
+        Tone.Accent => "cover--accent",
+        Tone.Warm => "cover--warm",
+        _ => "",
+    };
+}

@@ -1,0 +1,44 @@
+@if (Sermon is null)
+{
+    <button class="simple-listen" disabled>
+        <span class="simple-listen__disc"><Icon Name="headphones" /></span>
+        <span class="simple-listen__body">
+            <span class="simple-listen__label">Finding the latest sermon</span>
+        </span>
+    </button>
+}
+else
+{
+    <button class="simple-listen @(IsPlaying ? "simple-listen--playing" : "")" @onclick="OnPress">
+        <span class="simple-listen__disc"><Icon Name="@(IsPlaying ? "pause" : "play")" /></span>
+        <span class="simple-listen__body">
+            <span class="simple-listen__label">@Label</span>
+            <span class="simple-listen__detail">@Sermon.Title · @Sermon.Speaker</span>
+            @if (IsCurrent && Duration > 0)
+            {
+                <span class="progress simple-listen__progress"><i style="width: @Percent.ToString(System.Globalization.CultureInfo.InvariantCulture)%"></i></span>
+                <span class="simple-listen__time">@PlayerService.Clock(Position) of @PlayerService.Clock(Duration)</span>
+            }
+        </span>
+    </button>
+}
+
+@code {
+    [Parameter, EditorRequired] public Sermon? Sermon { get; set; }
+    [Parameter] public Sermon? Latest { get; set; }
+    [Parameter] public bool IsCurrent { get; set; }
+    [Parameter] public bool IsPlaying { get; set; }
+    [Parameter] public double Position { get; set; }
+    [Parameter] public double Duration { get; set; }
+    [Parameter] public EventCallback OnPress { get; set; }
+
+    private double Percent => Math.Round(Math.Clamp(Position / Duration, 0, 1) * 100, 1);
+
+    private string Label => (IsPlaying, IsCurrent) switch
+    {
+        (true, _) => "Pause the sermon",
+        (_, true) => "Keep listening",
+        _ when Sermon?.Date.DayOfWeek == DayOfWeek.Sunday && Sermon == Latest => "Listen to Sunday's sermon",
+        _ => "Listen to the latest sermon",
+    };
+}

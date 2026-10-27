@@ -1,0 +1,25 @@
+@inject LifeGroupsService Groups
+
+<BandCard Title="@Group.Title" Href="@($"groups/{Group.Id}")" Colour="@Group.Colour" Blurb="@Group.Blurb" Quiet="Quiet">
+    <Badge>
+        @if (Groups.IsJoined(Group) && !Quiet)
+        {
+            <span class="pill"><Icon Name="check" Size="IconSize.ExtraSmall" />Joined</span>
+        }
+        else if (Group.Audience is not null)
+        {
+            <span class="pill pill--quiet">@Group.Audience</span>
+        }
+    </Badge>
+    <Footer>
+        <People Persons="Group.Leaders" />
+        <PlaceChip Label="@Room" Number="@(Groups.PlaceOf(Group) is null ? null : Group.MapNumber.ToString())" Colour="@Group.Colour" />
+    </Footer>
+</BandCard>
+
+@code {
+    [Parameter, EditorRequired] public LifeGroup Group { get; set; } = default!;
+    [Parameter] public bool Quiet { get; set; }
+
+    private string Room => Groups.PlaceOf(Group)?.Name ?? "Room to be confirmed";
+}

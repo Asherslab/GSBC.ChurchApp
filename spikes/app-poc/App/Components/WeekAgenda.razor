@@ -1,0 +1,20 @@
+@inject ChurchClock Clock
+
+<div class="agenda">
+    @foreach (var day in Days)
+    {
+        <div class="agenda__day">
+            <div class="agenda__dow @(day.Day == Clock.Now.DayOfWeek ? "agenda__dow--today" : "")">@(day.Day == Clock.Now.DayOfWeek ? "Today" : day.Day.ToString()[..3])</div>
+            <div class="agenda__items">
+                @foreach (var item in day.Items)
+                {
+                    <div class="agenda__item"><time>@item.Time</time><span>@item.Name</span></div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<AgendaDay> Days { get; set; } = [];
+}

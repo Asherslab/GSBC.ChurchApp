@@ -1,0 +1,24 @@
+@inject NativeBridge Native
+
+@if (Passages.Count > 0)
+{
+    <div class="passages">
+        @foreach (var passage in Passages)
+        {
+            <button class="passage" @onclick="() => Open(passage)"><Icon Name="book-open" Size="IconSize.ExtraSmall" />@passage</button>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public IReadOnlyList<string> Passages { get; set; } = [];
+
+    public static string BibleUrl(string passage) =>
+        $"https://www.biblegateway.com/passage/?search={Uri.EscapeDataString(passage.Replace('–', '-'))}&version=KJV";
+
+    private async Task Open(string passage)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await Native.OpenInAppAsync(BibleUrl(passage));
+    }
+}

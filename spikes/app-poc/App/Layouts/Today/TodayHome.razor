@@ -1,0 +1,223 @@
+@implements IDisposable
+@inject SampleContent Content
+@inject SermonLibrary Library
+@inject ChurchClock Clock
+@inject WeekPlan Plan
+@inject PlayerService Player
+@inject NativeBridge Native
+
+<Page Title="Today" StuckAt="150">
+    <Masthead Title="@Greeting" Note="@Clock.Now.ToString("dddd d MMMM")">
+        <ServiceStatus />
+    </Masthead>
+
+    @foreach (var (block, index) in Blocks.Select((b, i) => (b, i)))
+    {
+        var first = index == 0;
+        switch (block)
+        {
+            case FeedBlock.NowPlaying:
+                <Section Title="Keep listening" LinkText="Listen" LinkHref="listen" First="first">
+                    <div class="list"><TodaySermon Sermon="Player.Current!" /></div>
+                </Section>
+                break;
+
+            case FeedBlock.LiveOutline:
+                <Section Title="@($"{live!.Service.Name} outline")" LinkText="Bulletin" LinkHref="sunday" First="first">
+                    @if (LiveSermon is { } sermon)
+                    {
+                        <a class="sermon-head pressable" href="@($"sermons/{sermon.Id}")">
+                            <span class="row__thumb"><Cover ImageUrl="@sermon.ImageUrl" Title="@sermon.Title" ShowTitle="false" /></span>
+                            <span class="sermon-head__body">
+                                <strong>@sermon.Title</strong>
+                                <span>@sermon.Speaker@(sermon.Part is { } part ? $" · {part}" : "")</span>
+                            </span>
+                            <Icon Name="chevron-right" Size="IconSize.Small" />
+                        </a>
+                        @if (Library.NotesFor(sermon) is { } notes)
+                        {
+                            <SermonOutline Notes="notes" />
+                        }
+                    }
+                    else
+                    {
+                        <p class="muted">The outline appears here once the sermon is published.</p>
+                    }
+                </Section>
+                break;
+
+            case FeedBlock.Notes:
+                <Section Title="My notes" First="first">
+                    <NotesField Key="@NotesKey" />
+                </Section>
+                break;
+
+            case FeedBlock.Bulletin:
+                <Section Title="@Bulletin.Theme" LinkText="Bulletin" LinkHref="sunday" First="first">
+                    <p class="today-subhead">@Bulletin.ThemeVerse · Sunday @Bulletin.Date.ToString("d MMMM")</p>
+                    <a class="today-letter" href="sunday">
+                        <strong>@Bulletin.Welcome.Heading</strong>
+                        <span>@Bulletin.Welcome.Paragraphs[0]</span>
+                    </a>
+                    <div class="callout"><strong>Your challenge this week</strong>@Bulletin.Welcome.Challenge</div>
+                </Section>
+                break;
+
+            case FeedBlock.SundaySermons:
+                <Section Title="@SermonsTitle" LinkText="All sermons" LinkHref="listen" First="first">
+                    <div class="list">
+                        @foreach (var sermon in FocusSermons)
+                        {
+                            <TodaySermon @key="sermon.Id" Sermon="sermon" Label="@ServiceLabel(sermon)" />
+                        }
+                    </div>
+                </Section>
+                break;
+
+            case FeedBlock.ComingUp:
+                var lead = moment == ChurchMoment.Midweek;
+                <Section Title="@(lead ? "What's on next" : "This week")" LinkText="Calendar" LinkHref="week" First="first">
+                    <TodayComingUp Entries="Upcoming(lead ? LeadCount : TailCount)" />
+                </Section>
+                break;
+
+            case FeedBlock.LifeGroups:
+                <Section Title="Life Groups" LinkText="All groups" LinkHref="groups" First="first">
+                    <div class="list"><LifeGroupsHomeRow /></div>
+                </Section>
+                break;
+
+            case FeedBlock.LatestSermon:
+                <Section Title="Latest sermon" LinkText="All sermons" LinkHref="listen" First="first">
+                    <TodayLatestSermon Sermon="Latest!" />
+                </Section>
+                break;
+
+            case FeedBlock.WhatsNext:
+                <Section Title="What's next" First="first">
+                    <div class="list">
+                        @foreach (var note in Bulletin.WhatsNext)
+                        {
+                            <a class="row" href="@note.ActionHref">
+                                <span class="row__body">
+                                    <span class="row__title">@note.Title</span>
+                                    <span class="row__subtitle">@note.Kicker</span>
+                                    <span class="row__subtitle today-clamp">@note.Body</span>
+                                </span>
+                                <span class="row__trail"><Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                            </a>
+                        }
+                    </div>
+                </Section>
+                break;
+
+            case FeedBlock.Prayer:
+                <Section First="first">
+                    <a class="today-prompt pressable" href="prayer">
+                        <span class="row__icon row__icon--accent"><Icon Name="prayer" Size="IconSize.Small" /></span>
+                        <span class="today-prompt__body">
+                            <strong>How can we pray for you?</strong>
+                            <span>Send a request to the pastoral team. It stays private unless you choose to share it.</span>
+                        </span>
+                        <Icon Name="chevron-right" Size="IconSize.Small" />
+                    </a>
+                </Section>
+                break;
+
+            case FeedBlock.Give:
+                <Section Title="Give" First="first">
+                    <div class="stack">
+                        <p class="muted">Give online through our secure Tithe.ly page, in the offering during the service, or by bank transfer.</p>
+                        <div><button class="btn btn--primary" @onclick="Give"><Icon Name="heart" Size="IconSize.Small" />Give online</button></div>
+                    </div>
+                </Section>
+                break;
+        }
+    }
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private const int LeadCount = 5;
+    private const int TailCount = 3;
+
+    private ServiceOccurrence? live;
+    private ChurchMoment moment;
+
+    private Data.Bulletin Bulletin => Content.Bulletin;
+
+    private string NotesKey => $"bulletin:{Bulletin.Date:yyyy-MM-dd}";
+
+    private IReadOnlyList<Sermon> FocusSermons => Bulletin.FocusSermonIds.Select(Library.Find).OfType<Sermon>().ToList();
+
+    private Sermon? Latest => Library.Sermons.FirstOrDefault();
+
+    private Sermon? LiveSermon => live is null ? null : FocusSermons.FirstOrDefault(s => s.Service == FeedService(live.Service));
+
+    private string SermonsTitle => moment == ChurchMoment.Sunday ? "Today's sermons" : "Catch up on Sunday";
+
+    private string Greeting => Clock.Now.Hour switch
+    {
+        < 12 => "Good morning",
+        < 17 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    private IEnumerable<FeedBlock> Blocks => TodayFeed.Order(moment).Where(HasContent);
+
+    private IEnumerable<Sermon> SermonsInFeed => moment switch
+    {
+        ChurchMoment.Sunday or ChurchMoment.AfterSunday => FocusSermons,
+        ChurchMoment.Midweek when Latest is not null => [Latest],
+        _ => [],
+    };
+
+    private bool HasContent(FeedBlock block) => block switch
+    {
+        FeedBlock.NowPlaying => Player.Current is { } current && SermonsInFeed.All(s => s.Id != current.Id),
+        FeedBlock.LiveOutline => live is not null,
+        FeedBlock.SundaySermons => FocusSermons.Count > 0,
+        FeedBlock.LatestSermon => Latest is not null,
+        FeedBlock.ComingUp => Upcoming(1).Count > 0,
+        _ => true,
+    };
+
+    protected override void OnInitialized()
+    {
+        Library.Changed += Refresh;
+        Player.Changed += Refresh;
+    }
+
+    protected override void OnParametersSet()
+    {
+        live = Clock.LiveNow();
+        moment = TodayFeed.MomentAt(Clock.Now, live is not null);
+    }
+
+    private IReadOnlyList<AgendaEntry> Upcoming(int count) =>
+        Plan.Days().SelectMany(d => d.Entries).Where(e => e.Start > Clock.Now).Take(count).ToList();
+
+    private static string FeedService(ServiceTime service) => service.Start.Hour < 12 ? "Sunday AM" : "Sunday PM";
+
+    private static string ServiceLabel(Sermon sermon) => sermon.Service switch
+    {
+        "Sunday AM" => "Morning",
+        "Sunday PM" => "Evening",
+        _ => sermon.Service,
+    };
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task Give()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Native.OpenExternalAsync(SampleContent.GiveHref);
+    }
+
+    public void Dispose()
+    {
+        Library.Changed -= Refresh;
+        Player.Changed -= Refresh;
+    }
+}

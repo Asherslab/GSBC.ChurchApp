@@ -1,0 +1,16 @@
+@if (Persons.Count > 0)
+{
+    <span class="people">
+        <span class="people__faces">
+            @foreach (var person in Persons)
+            {
+                <Avatar Name="@person.Name" PhotoUrl="@person.PhotoUrl" />
+            }
+        </span>
+        <span>@string.Join(" & ", Persons.Select(p => p.Name))</span>
+    </span>
+}
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Person> Persons { get; set; } = [];
+}

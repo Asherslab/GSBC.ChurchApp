@@ -1,0 +1,141 @@
+@page "/sunday"
+@implements IDisposable
+@inject SampleContent Content
+@inject SermonLibrary Library
+@inject AppSettings Settings
+@inject NativeBridge Native
+
+<Page Title="@Bulletin.Theme">
+    <Actions>
+        <button class="icon-btn" @onclick="() => notesOpen = true" aria-label="My notes"><Icon Name="notebook-pen" /></button>
+        <button class="icon-btn" @onclick="Share" aria-label="Share this bulletin"><Icon Name="share" /></button>
+    </Actions>
+    <ChildContent>
+        <Masthead Title="@Bulletin.Theme" Note="@($"{Bulletin.ThemeVerse} · Sunday {Bulletin.Date:d MMMM}")">
+            <ServiceStatus />
+        </Masthead>
+
+        <SectionTabs Items="Sections" />
+
+        <Section Id="welcome" First="true">
+            <article class="letter">
+                <h2>@Bulletin.Welcome.Heading</h2>
+                <div class="prose">
+                    @foreach (var paragraph in Bulletin.Welcome.Paragraphs)
+                    {
+                        <p>@paragraph</p>
+                    }
+                </div>
+                <div class="callout"><strong>Your challenge this week</strong>@Bulletin.Welcome.Challenge</div>
+                <p class="sign">In Christ,<strong>@Bulletin.Welcome.SignOff</strong></p>
+            </article>
+        </Section>
+
+        <div id="sermons">
+            @foreach (var sermon in FocusSermons)
+            {
+                <Section Title="@ServiceTitle(sermon)">
+                    <a class="sermon-head pressable" href="@($"sermons/{sermon.Id}")">
+                        <span class="row__thumb"><Cover ImageUrl="@sermon.ImageUrl" Title="@sermon.Title" ShowTitle="false" /></span>
+                        <span class="sermon-head__body">
+                            <strong>@sermon.Title</strong>
+                            <span>@sermon.Speaker · watch or listen</span>
+                        </span>
+                        <Icon Name="chevron-right" Size="IconSize.Small" />
+                    </a>
+                    @if (Library.NotesFor(sermon) is { } notes)
+                    {
+                        <SermonOutline Notes="notes" />
+                    }
+                </Section>
+            }
+        </div>
+
+        <Section Id="week" Title="This week" LinkText="Calendar" LinkHref="week">
+            <WeekAgenda Days="Bulletin.Week" />
+        </Section>
+
+        <Section Id="groups" Title="Life Groups" LinkText="All groups" LinkHref="groups">
+            <div class="list">
+                <LifeGroupsHomeRow />
+            </div>
+        </Section>
+
+        <Section Id="next" Title="What's next">
+            <div class="list">
+                @foreach (var note in Bulletin.WhatsNext)
+                {
+                    <a class="row" href="@note.ActionHref">
+                        <span class="row__body">
+                            <span class="row__title">@note.Title</span>
+                            <span class="row__subtitle">@note.Kicker</span>
+                            <span class="row__subtitle" style="margin-top: 6px">@note.Body</span>
+                        </span>
+                        <span class="row__trail"><Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                    </a>
+                }
+            </div>
+        </Section>
+
+        <Section Id="give" Title="How to give">
+            <div class="stack">
+                <p class="muted">Give online through our secure Tithe.ly page, in the offering during the service, or by bank transfer (details at the welcome desk).</p>
+                <button class="btn btn--primary btn--block" @onclick="Give"><Icon Name="heart" Size="IconSize.Small" />Give online</button>
+            </div>
+        </Section>
+
+        <Section Id="notes" Title="My notes">
+            <NotesField Key="@NotesKey" />
+        </Section>
+
+        <PreviewFooter />
+    </ChildContent>
+</Page>
+
+<Sheet @bind-Open="notesOpen">
+    <h2>My notes</h2>
+    <p>For Sunday @Bulletin.Date.ToString("d MMMM"). Only on this phone.</p>
+    <div style="margin-top: 16px">
+        <NotesField Key="@NotesKey" />
+    </div>
+</Sheet>
+
+<WelcomeSheet />
+
+@code {
+    private static readonly IReadOnlyList<Choice<string>> Sections =
+    [
+        new("welcome", "Welcome"),
+        new("sermons", "Sermons"),
+        new("week", "This week"),
+        new("groups", "Groups"),
+        new("next", "Next"),
+        new("give", "Give"),
+    ];
+
+    private bool notesOpen;
+
+    private string NotesKey => $"bulletin:{Bulletin.Date:yyyy-MM-dd}";
+
+    private Data.Bulletin Bulletin => Content.Bulletin;
+
+    private IEnumerable<Sermon> FocusSermons => Bulletin.FocusSermonIds.Select(Library.Find).OfType<Sermon>();
+
+    private static string ServiceTitle(Sermon sermon) => sermon.Service switch
+    {
+        "Sunday AM" => "Morning",
+        "Sunday PM" => "Evening",
+        _ => sermon.Service,
+    } + (sermon.Part is { } part ? $": {part}" : "");
+
+    protected override void OnInitialized() => Library.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private Task Share() =>
+        Native.ShareAsync($"{Bulletin.Theme} · {Bulletin.Date:d MMMM}", "This week's bulletin from Good Shepherd", SampleContent.Website).AsTask();
+
+    private Task Give() => Native.OpenExternalAsync(SampleContent.GiveHref).AsTask();
+
+    public void Dispose() => Library.Changed -= Refresh;
+}

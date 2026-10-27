@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>The week</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#5a6476;--paper:#f5f1ea;--card:#fff;--aqua:#00877c;--orange:#e7ae74;--beige:#d5c9b7;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.status{height:54px}
+.top{display:flex;align-items:center;justify-content:space-between;padding:0 20px 10px}
+.top h1{font-size:28px;font-weight:700;letter-spacing:-.02em}
+.top .month{font-size:15px;font-weight:500;color:var(--ink2)}
+.rail{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;padding:6px 14px 14px;border-bottom:1px solid var(--line)}
+.d{display:flex;flex-direction:column;align-items:center;gap:5px;padding:8px 0 9px;border-radius:14px}
+.d b{font-size:11px;font-weight:600;color:var(--ink2);letter-spacing:.04em}
+.d span{font-size:19px;font-weight:600}
+.d i{width:5px;height:5px;border-radius:3px;background:var(--aqua)}
+.d i.none{background:transparent}
+.d.today{background:var(--navy);color:#fff}.d.today b{color:rgba(255,255,255,.75)}.d.today i{background:var(--orange)}
+.d.sun span{color:var(--navy)}
+.agenda{padding:4px 20px 0}
+.day{padding:16px 0 6px}
+.day h2{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;justify-content:space-between}
+.day h2 em{font-style:normal;font-weight:500;color:var(--ink2);font-size:13px}
+.row{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.row time{font-size:14px;font-weight:600;color:var(--navy);font-variant-numeric:tabular-nums;padding-top:1px}
+.row strong{display:block;font-size:15.5px;font-weight:600}
+.row small{display:block;font-size:13px;color:var(--ink2);margin-top:2px}
+.quiet{font-size:14px;color:var(--ink2);padding:2px 0 8px}
+.feature{display:grid;grid-template-columns:64px 1fr;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.feature .art{grid-column:1/-1;height:92px;border-radius:12px;background:var(--navy);color:#fff;padding:14px;display:flex;flex-direction:column;justify-content:flex-end}
+.feature .art strong{font-size:18px}
+.feature .art small{font-size:12.5px;color:rgba(255,255,255,.75)}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;color:var(--aqua);margin-top:4px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(245,241,234,.94);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#8a91a0}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua)}
+</style></head><body>
+<div class="status"></div>
+<div class="top"><h1>This week</h1><span class="month">October</span></div>
+<div class="rail">
+  <div class="d sun"><b>SUN</b><span>25</span><i></i></div>
+  <div class="d today"><b>MON</b><span>26</span><i class="none"></i></div>
+  <div class="d"><b>TUE</b><span>27</span><i class="none"></i></div>
+  <div class="d"><b>WED</b><span>28</span><i></i></div>
+  <div class="d"><b>THU</b><span>29</span><i class="none"></i></div>
+  <div class="d"><b>FRI</b><span>30</span><i></i></div>
+  <div class="d"><b>SAT</b><span>31</span><i class="none"></i></div>
+</div>
+<div class="agenda">
+  <div class="day">
+    <h2>Today <em>Monday</em></h2>
+    <p class="quiet">Nothing on at church today. Catch up on Sunday below.</p>
+    <div class="feature">
+      <div class="art"><strong>Almighty God</strong><small>Sunday's bulletin · notes and both sermons</small></div>
+    </div>
+  </div>
+  <div class="day">
+    <h2>Wednesday <em>28 Oct</em></h2>
+    <div class="row"><time>7:00pm</time><div><strong>Bible Study &amp; Prayer</strong><small>Good Shepherd · every Wednesday</small></div></div>
+  </div>
+  <div class="day">
+    <h2>Friday <em>30 Oct</em></h2>
+    <div class="row"><time>5:00am</time><div><strong>Men's Prayer</strong></div></div>
+    <div class="row"><time>9:30am</time><div><strong>Ladies' Prayer</strong></div></div>
+    <div class="row"><time>6:30pm</time><div><strong>Impact Kids &amp; Impact Youth</strong><small>Kids and high-schoolers</small></div></div>
+  </div>
+  <div class="day">
+    <h2>Sunday <em>1 Nov</em></h2>
+    <div class="row"><time>9:00am</time><div><strong>LIFE Groups</strong></div></div>
+    <div class="row"><time>10:30am</time><div><strong>Morning Worship</strong><span class="tag">Streamed on YouTube</span></div></div>
+  </div>
+</div>
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Week</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M10 8l6 4-6 4z"/></svg>Sermons</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.35-9.5-8.5C1 9.5 3 6 6.5 6c2 0 3.5 1 5.5 3 2-2 3.5-3 5.5-3C21 6 23 9.5 21.5 12.5 19 16.65 12 21 12 21z"/></svg>Prayer</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>

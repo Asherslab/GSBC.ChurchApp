@@ -1,0 +1,236 @@
+@page "/groups/{Id}"
+@implements IDisposable
+@inject LifeGroupsService Groups
+@inject NativeBridge Native
+
+<Page Title="@(group?.Title ?? "Life Group")" BackHref="groups" BackLabel="Groups" StuckAt="150" Bell="false">
+    <Actions>
+        @if (group is not null)
+        {
+            <button class="icon-btn" @onclick="Share" aria-label="Share"><Icon Name="share" /></button>
+        }
+    </Actions>
+    <ChildContent>
+        @if (group is null)
+        {
+            <EmptyState Icon="users" Title="This group has finished or moved" />
+        }
+        else
+        {
+            var round = Groups.RoundOf(group);
+            var sunday = Groups.NextSunday(group);
+            var change = Groups.ChangeOn(group, sunday);
+            var where = Groups.PlaceOn(group, sunday);
+            <header class="group-hero" style="--band: @group.Colour">
+                <p class="group-hero__kicker">@Kicker(round)</p>
+                <h1>@group.Title</h1>
+                <div class="group-hero__actions">
+                    @if (Groups.IsFinished(group))
+                    {
+                        <span class="pill pill--quiet">Finished @round!.Last.ToString("d MMM")</span>
+                    }
+                    else if (Groups.IsJoined(group))
+                    {
+                        <button class="btn btn--ghost-masthead" @onclick="() => joinedOpen = true"><Icon Name="check" Size="IconSize.Small" />Joined</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn--on-masthead" @onclick="Join"><Icon Name="bell-ring" Size="IconSize.Small" />@JoinLabel</button>
+                    }
+                    @if (where is not null)
+                    {
+                        <a class="btn btn--ghost-masthead" href="@WhereHref"><Icon Name="map-pin" Size="IconSize.Small" />Find the room</a>
+                    }
+                </div>
+            </header>
+
+            @if (!Groups.IsFinished(group))
+            {
+                <Section First="true">
+                    <div class="facts">
+                        <div class="fact">
+                            <Icon Name="clock" />
+                            <div>
+                                <strong>@Groups.WhenLabel(sunday)</strong>
+                                @if (change is not null)
+                                {
+                                    <span class="session__note">@change.Summary</span>
+                                }
+                                else
+                                {
+                                    <span>Until 9:45, then the morning service at 10:30</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </Section>
+            }
+
+            <Section Title="About" First="Groups.IsFinished(group)">
+                <div class="stack">
+                    <p class="prose selectable">@group.Blurb</p>
+                    @if (group.Leaders.Count > 0)
+                    {
+                        <People Persons="group.Leaders" />
+                    }
+                </div>
+            </Section>
+
+            <Section Title="Where" LinkText="Find the room" LinkHref="@WhereHref">
+                @if (where is { } shown)
+                {
+                    <div class="where">
+                        <a href="@WhereHref" aria-label="Find the room on the site map">
+                            <SiteMap Marks="[Groups.MarkFor(group, shown)]" Around="shown" SelectedPlaceId="@shown.Id" />
+                        </a>
+                        <PlaceChip Label="@($"Room {Groups.NumberAt(group, shown)} · {shown.Name}")" Number="@Groups.NumberAt(group, shown).ToString()" Colour="@group.Colour" />
+                        @if (change?.MovedToPlaceId is not null)
+                        {
+                            <p class="hint">Moved for @sunday.ToString("d MMMM") only.</p>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="muted">The room will be confirmed before the first Sunday.</p>
+                }
+            </Section>
+
+            @if (round is not null)
+            {
+                <Section Title="@($"{round.Name} Sundays")">
+                    <div>
+                        @foreach (var (date, index) in round.Sundays.Select((d, i) => (d, i)))
+                        {
+                            var dayChange = Groups.ChangeOn(group, date);
+                            <div class="session @(date < Groups.Today ? "session--past" : "")">
+                                <span class="session__date">@date.ToString("d MMM")</span>
+                                <span class="session__body">
+                                    @if (dayChange is not null)
+                                    {
+                                        <span class="session__note">@dayChange.Summary</span>
+                                    }
+                                    else
+                                    {
+                                        <span>@(index == round.Sundays.Count - 1 ? "Last week" : $"Week {index + 1}")</span>
+                                    }
+                                </span>
+                                @if (date == sunday && !Groups.IsFinished(group))
+                                {
+                                    <span class="pill">Next</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </Section>
+            }
+
+            <Section Title="Notices and resources">
+                <div>
+                    @foreach (var post in LifeGroupsContent.PostsFor(group, round))
+                    {
+                        <article class="post">
+                            <div class="post__head">
+                                <Icon Name="@(post.Kind == PostKind.Notice ? "megaphone" : "file-text")" Size="IconSize.Small" />
+                                <strong>@post.Title</strong>
+                                @if (post.Urgent)
+                                {
+                                    <span class="pill pill--urgent">Urgent</span>
+                                }
+                            </div>
+                            <p>@post.Body</p>
+                            <time>@post.Date.ToString("ddd d MMM")</time>
+                        </article>
+                    }
+                </div>
+            </Section>
+
+            <PreviewFooter />
+        }
+    </ChildContent>
+</Page>
+
+@if (group is not null)
+{
+    <Sheet @bind-Open="joinedOpen">
+        <h2>@(justJoined ? "You've joined" : "You're in this group")</h2>
+        <p>@JoinedLine</p>
+        <div style="margin-top: 12px">
+            <ToggleRow Title="Remind me on Sundays" Description="A nudge at 8:30 with the room" Checked="Groups.HasReminder(group)" CheckedChanged="on => Groups.SetReminderAsync(group, on)" />
+        </div>
+        <div class="stack" style="margin-top: 18px">
+            <button class="btn btn--primary btn--block" @onclick="PreviewNotice"><Icon Name="bell" Size="IconSize.Small" />@previewLabel</button>
+            <button class="btn btn--quiet btn--block" @onclick="Leave">Leave this group</button>
+        </div>
+    </Sheet>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private LifeGroup? group;
+    private bool joinedOpen;
+    private bool justJoined;
+    private string previewLabel = "Preview a notice from this group";
+
+    private string JoinLabel => group!.ParentsJoin ? "Join as a parent" : "Join";
+
+    private string JoinedLine
+    {
+        get
+        {
+            var from = group!.Leaders.Count > 0 ? string.Join(" & ", group.Leaders.Select(l => l.Name)) : "the leaders";
+            return $"Notices from {from} arrive on this phone. No account needed; leaders see how many have joined, not who.";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Groups.Changed += Refresh;
+        await Groups.EnsureLoadedAsync();
+    }
+
+    protected override void OnParametersSet() => group = Groups.Find(Id);
+
+    private string Kicker(LifeGroupRound? round)
+    {
+        var who = group!.Audience is { } audience ? $"{audience} · " : "";
+        return round is null ? $"{who}All year" : $"{who}{round.Name} · {round.Dates}";
+    }
+
+    private string WhereHref => $"groups/{Id}/room";
+
+    private async Task Join()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        await Groups.SetJoinedAsync(group!, true);
+        justJoined = true;
+        joinedOpen = true;
+    }
+
+    private async Task Leave()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Groups.SetJoinedAsync(group!, false);
+        joinedOpen = false;
+        justJoined = false;
+    }
+
+    private async Task PreviewNotice()
+    {
+        var result = await Native.ScheduleNotificationAsync(group!.Title, "Sample notice: we're in a different room this Sunday. Tap to see where.", 5);
+        previewLabel = result switch
+        {
+            "scheduled" => "Arriving in 5 seconds; lock your phone",
+            "web" => "Notifications only show on the phone",
+            _ => $"Not allowed ({result})",
+        };
+    }
+
+    private Task Share() =>
+        Native.ShareAsync(group!.Title, $"{group.Title}: Life Groups at Good Shepherd, Sundays 9am", SampleContent.Website).AsTask();
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Groups.Changed -= Refresh;
+}

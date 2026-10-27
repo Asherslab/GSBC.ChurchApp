@@ -1,0 +1,30 @@
+@inject NativeBridge Native
+@inject IJSRuntime JS
+
+<nav class="section-tabs" @ref="nav" aria-label="Sections">
+    @foreach (var item in Items)
+    {
+        <button data-target="@item.Value" @onclick="() => Jump(item.Value)">@item.Label</button>
+    }
+    <span class="section-tabs__ink" aria-hidden="true"></span>
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Choice<string>> Items { get; set; } = [];
+
+    private ElementReference nav;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JS.InvokeVoidAsync("gsbc.spySections", nav);
+        }
+    }
+
+    private async Task Jump(string id)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await JS.InvokeVoidAsync("gsbc.scrollToSection", id);
+    }
+}

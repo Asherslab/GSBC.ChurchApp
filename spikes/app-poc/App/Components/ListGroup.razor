@@ -1,0 +1,8 @@
+<div class="list @(Boxed ? "list--boxed" : "")">
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public bool Boxed { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

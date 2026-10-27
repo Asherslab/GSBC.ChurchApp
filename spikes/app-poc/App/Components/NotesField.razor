@@ -1,0 +1,21 @@
+@inject AppSettings Settings
+
+<textarea class="notes" placeholder="@Placeholder" value="@text" @oninput="Changed" aria-label="My notes"></textarea>
+<div class="hint"><Icon Name="smartphone" Size="IconSize.ExtraSmall" />@status</div>
+
+@code {
+    [Parameter, EditorRequired] public string Key { get; set; } = "";
+    [Parameter] public string Placeholder { get; set; } = "Write as you listen…";
+
+    private string text = "";
+    private string status = "Saved on this phone only";
+
+    protected override async Task OnParametersSetAsync() => text = await Settings.NotesAsync(Key) ?? "";
+
+    private async Task Changed(ChangeEventArgs e)
+    {
+        text = e.Value?.ToString() ?? "";
+        await Settings.SaveNotesAsync(Key, text);
+        status = $"Saved on this phone · {DateTime.Now:h:mm tt}";
+    }
+}

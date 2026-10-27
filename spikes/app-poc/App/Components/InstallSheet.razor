@@ -1,0 +1,34 @@
+@inject NativeBridge Native
+
+<Sheet Open="open" OpenChanged="_ => open = false">
+    <h2>Add Good Shepherd to your Home Screen</h2>
+    <p>It's a preview of the church app. From the Home Screen it opens full screen, like an app, which is how it's meant to be tried.</p>
+    @if (mode == DisplayMode.BrowserIos)
+    {
+        <ol class="install-steps">
+            <li>Tap <Icon Name="share" Size="IconSize.Small" /> <strong>Share</strong> in Safari's toolbar.</li>
+            <li>Choose <strong>Add to Home Screen</strong>.</li>
+            <li>Open <strong>Good Shepherd</strong> from your Home Screen.</li>
+        </ol>
+    }
+    <div class="stack" style="margin-top: 20px">
+        @if (mode == DisplayMode.BrowserInstallable)
+        {
+            <button class="btn btn--primary btn--block" @onclick="Install">Install</button>
+        }
+        <button class="btn btn--quiet btn--block" @onclick="() => open = false">Keep using the browser</button>
+    </div>
+</Sheet>
+
+@code {
+    private bool open;
+    private DisplayMode mode;
+
+    protected override async Task OnInitializedAsync()
+    {
+        mode = await Native.DisplayModeAsync();
+        open = mode is DisplayMode.BrowserIos or DisplayMode.BrowserInstallable;
+    }
+
+    private async Task Install() => open = !await Native.InstallAsync();
+}

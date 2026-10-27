@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Listen, bulletin look</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#5a6476;--paper:#fff;--beige:#d5c9b7;--sand:#f3eee6;--aqua:#00877c;--orange:#e7ae74;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.mast{background:var(--navy);color:#fff;padding:62px 20px 20px;position:relative;overflow:hidden}
+.mast .ring{position:absolute;right:-60px;top:30px;width:200px;height:200px;border-radius:50%;border:16px solid rgba(255,255,255,.06)}
+.mast h1{font-size:34px;font-weight:700;letter-spacing:-.03em}
+.now{display:flex;gap:14px;align-items:center;margin-top:18px}
+.now .art{width:86px;height:86px;border-radius:12px;background:#3a3346;flex:none}
+.now b{display:block;font-size:17px;line-height:1.2}
+.now small{display:block;font-size:13px;color:var(--beige);margin-top:4px}
+.ctrl{display:flex;gap:10px;margin-top:16px}
+.ctrl span{display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 16px;border-radius:21px;font-size:14px;font-weight:600}
+.ctrl .p{background:#fff;color:var(--navy)}.ctrl .q{background:rgba(255,255,255,.14);color:#fff}
+.ctrl svg{width:16px;height:16px}
+.tabsec{display:flex;gap:22px;padding:0 20px;border-bottom:1px solid var(--line)}
+.tabsec a{font-size:14.5px;font-weight:600;color:var(--ink2);padding:15px 0 13px;border-bottom:3px solid transparent}
+.tabsec a.on{color:var(--ink);border-color:var(--orange)}
+h2{font-size:18px;font-weight:700;padding:20px 20px 10px}
+.row{display:flex;gap:12px;align-items:center;padding:10px 20px}
+.row .art{width:56px;height:56px;border-radius:10px;flex:none}
+.row b{display:block;font-size:15px}.row small{font-size:12.5px;color:var(--ink2)}
+.bar{height:4px;border-radius:2px;background:var(--sand);margin-top:6px;width:180px}.bar i{display:block;height:4px;border-radius:2px;background:var(--orange)}
+.shelf{display:flex;gap:12px;padding:0 20px;overflow:hidden}
+.series{flex:0 0 132px}.series .art{height:132px;border-radius:14px;padding:10px;display:flex;align-items:flex-end;color:#fff;font-weight:700;font-size:15px;line-height:1.1}
+.series small{display:block;font-size:12px;color:var(--ink2);margin-top:6px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(255,255,255,.95);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:#8a91a0}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua)}
+</style></head><body>
+<header class="mast"><div class="ring"></div>
+  <h1>Listen</h1>
+  <div class="now"><div class="art"></div><div><b>Grace at the Edge of the Pit</b><small>Hernan Hullana · Sunday PM · 49 min</small></div></div>
+  <div class="ctrl"><span class="p"><svg viewBox="0 0 24 24" fill="#2a3d5e"><path d="M6 4l14 8-14 8z"/></svg>Listen</span><span class="q"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><rect x="2" y="5" width="20" height="14" rx="3"/><path d="M10 9l5 3-5 3z"/></svg>Watch</span></div>
+</header>
+<nav class="tabsec"><a class="on">Latest</a><a>Series</a><a>Speakers</a></nav>
+<h2>Keep listening</h2>
+<div class="row"><div class="art" style="background:#1f6f8b"></div><div><b>Anchored in Community</b><small>Phil Parry · 18 min left</small><div class="bar"><i style="width:62%"></i></div></div></div>
+<div class="row"><div class="art" style="background:#6b5b3e"></div><div><b>Enlarge the Place of Thy Tent</b><small>Hernan Hullana · 12 min left</small><div class="bar"><i style="width:80%"></i></div></div></div>
+<h2>Series</h2>
+<div class="shelf">
+  <div class="series"><div class="art" style="background:#1f6f8b">Anchored</div><small>Phil Parry</small></div>
+  <div class="series"><div class="art" style="background:#3a3346">What God Is Doing in the Dark</div><small>Hernan Hullana</small></div>
+  <div class="series"><div class="art" style="background:#4a7355">Almighty God</div><small>This year's theme</small></div>
+</div>
+<nav class="tabs">
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-2 2zm0 0a2 2 0 0 1-2-2v-9c0-1.1.9-2 2-2h2M18 14h-8M15 18h-5M10 6h8v4h-8z"/></svg>Sunday</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>Week</div>
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>Listen</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>

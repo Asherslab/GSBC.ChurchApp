@@ -1,0 +1,956 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-26T05:09:53+00:00",
+  "title": "Design System: GSBC Church App",
+  "extensions": {
+    "colorMeta": {
+      "navy": {
+        "role": "primary",
+        "displayName": "Navy",
+        "canonical": "#2a3d5e",
+        "tonalRamp": [
+          "#000825",
+          "#122342",
+          "#2c4061",
+          "#495e81",
+          "#6b81a6",
+          "#8fa6cd",
+          "#b4ccf4",
+          "#e6effe"
+        ]
+      },
+      "navy-deep": {
+        "role": "primary",
+        "displayName": "Navy Deep",
+        "canonical": "#22334f",
+        "tonalRamp": [
+          "#010922",
+          "#14243e",
+          "#2e405d",
+          "#4b5e7d",
+          "#6d81a2",
+          "#91a6c8",
+          "#b6ccef",
+          "#e6efff"
+        ]
+      },
+      "aqua": {
+        "role": "secondary",
+        "displayName": "Aqua",
+        "canonical": "#009c8f",
+        "tonalRamp": [
+          "#000f0c",
+          "#002b27",
+          "#034a44",
+          "#036d63",
+          "#009488",
+          "#3ebbad",
+          "#6be2d3",
+          "#b8fff4"
+        ]
+      },
+      "aqua-deep": {
+        "role": "secondary",
+        "displayName": "Aqua Deep",
+        "canonical": "#00776d",
+        "tonalRamp": [
+          "#000f0d",
+          "#022b27",
+          "#024b44",
+          "#026d64",
+          "#319287",
+          "#5ab7ac",
+          "#82ded2",
+          "#b7fff4"
+        ]
+      },
+      "orange": {
+        "role": "tertiary",
+        "displayName": "Orange",
+        "canonical": "#e7ae74",
+        "tonalRamp": [
+          "#150800",
+          "#371d00",
+          "#5c3500",
+          "#835010",
+          "#a97339",
+          "#cf985e",
+          "#f7be83",
+          "#ffebd7"
+        ]
+      },
+      "orange-ink": {
+        "role": "tertiary",
+        "displayName": "Orange Ink",
+        "canonical": "#8a5422",
+        "tonalRamp": [
+          "#160700",
+          "#391c00",
+          "#603301",
+          "#844f1c",
+          "#aa7241",
+          "#d19665",
+          "#f9bc8a",
+          "#feeadb"
+        ]
+      },
+      "beige": {
+        "role": "tertiary",
+        "displayName": "Beige",
+        "canonical": "#d5c9b7",
+        "tonalRamp": [
+          "#120901",
+          "#2b2214",
+          "#483e2f",
+          "#665c4c",
+          "#8a7f6e",
+          "#aea391",
+          "#d5c9b7",
+          "#f9edda"
+        ]
+      },
+      "white": {
+        "role": "neutral",
+        "displayName": "White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#0b0b0b",
+          "#242424",
+          "#404040",
+          "#5d5d5d",
+          "#808080",
+          "#a4a4a4",
+          "#cacaca",
+          "#eeeeee"
+        ]
+      },
+      "sand": {
+        "role": "neutral",
+        "displayName": "Sand",
+        "canonical": "#f4efe7",
+        "tonalRamp": [
+          "#0e0b06",
+          "#27231e",
+          "#433f39",
+          "#615d56",
+          "#848078",
+          "#a9a49c",
+          "#cfcac2",
+          "#f3eee6"
+        ]
+      },
+      "sand-strong": {
+        "role": "neutral",
+        "displayName": "Sand Strong",
+        "canonical": "#e9e1d4",
+        "tonalRamp": [
+          "#0f0a03",
+          "#292319",
+          "#453f34",
+          "#635d51",
+          "#867f73",
+          "#aba497",
+          "#d1c9bd",
+          "#f5ede0"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#18233a",
+        "tonalRamp": [
+          "#030a1e",
+          "#18233a",
+          "#334059",
+          "#505e78",
+          "#72809d",
+          "#96a5c2",
+          "#bbcbea",
+          "#e7effe"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "#545e70",
+        "tonalRamp": [
+          "#050b18",
+          "#1c2434",
+          "#374051",
+          "#545e70",
+          "#768194",
+          "#9aa5b9",
+          "#bfcbe0",
+          "#e6efff"
+        ]
+      },
+      "ink-3": {
+        "role": "neutral",
+        "displayName": "Ink 3",
+        "canonical": "#6b7384",
+        "tonalRamp": [
+          "#060b17",
+          "#1d2432",
+          "#39404f",
+          "#565e6e",
+          "#788092",
+          "#9ca5b7",
+          "#c2cbde",
+          "#e7effe"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Line",
+        "canonical": "rgb(42 61 94 / 0.12)"
+      },
+      "danger": {
+        "role": "neutral",
+        "displayName": "Danger",
+        "canonical": "#b4372f",
+        "tonalRamp": [
+          "#1f0000",
+          "#4b0102",
+          "#7d0106",
+          "#a62923",
+          "#cf5146",
+          "#fa7769",
+          "#feb5ab",
+          "#ffe9e5"
+        ]
+      },
+      "night": {
+        "role": "neutral",
+        "displayName": "Night",
+        "canonical": "#141d31",
+        "tonalRamp": [
+          "#040a1c",
+          "#1a2438",
+          "#354056",
+          "#525e75",
+          "#748099",
+          "#98a5bf",
+          "#becbe6",
+          "#e7efff"
+        ]
+      },
+      "night-surface": {
+        "role": "neutral",
+        "displayName": "Night Surface",
+        "canonical": "#1d2840",
+        "tonalRamp": [
+          "#03091f",
+          "#19233b",
+          "#333f59",
+          "#505d79",
+          "#72809d",
+          "#96a5c3",
+          "#bbcbea",
+          "#e7efff"
+        ]
+      },
+      "night-surface-strong": {
+        "role": "neutral",
+        "displayName": "Night Surface Strong",
+        "canonical": "#26334f",
+        "tonalRamp": [
+          "#020921",
+          "#17233e",
+          "#323f5c",
+          "#4f5d7c",
+          "#7080a1",
+          "#94a5c7",
+          "#b9cbee",
+          "#e7efff"
+        ]
+      },
+      "night-masthead": {
+        "role": "primary",
+        "displayName": "Night Masthead",
+        "canonical": "#283c62",
+        "tonalRamp": [
+          "#000728",
+          "#102246",
+          "#2b3f65",
+          "#485d86",
+          "#6980ab",
+          "#8da5d2",
+          "#b2cbfa",
+          "#e6efff"
+        ]
+      },
+      "night-masthead-deep": {
+        "role": "primary",
+        "displayName": "Night Masthead Deep",
+        "canonical": "#20314f",
+        "tonalRamp": [
+          "#010923",
+          "#132340",
+          "#2e405f",
+          "#4b5e7f",
+          "#6d81a4",
+          "#90a5ca",
+          "#b5ccf2",
+          "#e6effe"
+        ]
+      },
+      "bright-aqua": {
+        "role": "secondary",
+        "displayName": "Bright Aqua",
+        "canonical": "#2ec4b6",
+        "tonalRamp": [
+          "#000f0d",
+          "#002b27",
+          "#044a44",
+          "#046d64",
+          "#019489",
+          "#20bdaf",
+          "#59e4d5",
+          "#b6fff5"
+        ]
+      },
+      "on-bright-aqua": {
+        "role": "secondary",
+        "displayName": "On Bright Aqua",
+        "canonical": "#062522",
+        "tonalRamp": [
+          "#000f0d",
+          "#0b2a27",
+          "#284643",
+          "#466561",
+          "#688883",
+          "#8caca8",
+          "#b1d3ce",
+          "#d4f7f2"
+        ]
+      },
+      "night-ink": {
+        "role": "neutral",
+        "displayName": "Night Ink",
+        "canonical": "#f2ede4",
+        "tonalRamp": [
+          "#0e0b06",
+          "#27241d",
+          "#433f38",
+          "#615d55",
+          "#848078",
+          "#a9a49c",
+          "#cfcac1",
+          "#f3eee5"
+        ]
+      },
+      "night-ink-2": {
+        "role": "neutral",
+        "displayName": "Night Ink 2",
+        "canonical": "#b2b8c5",
+        "tonalRamp": [
+          "#070b14",
+          "#20242e",
+          "#3b404a",
+          "#585e69",
+          "#7b808c",
+          "#9fa5b1",
+          "#c4cbd8",
+          "#e8effc"
+        ]
+      },
+      "night-ink-3": {
+        "role": "neutral",
+        "displayName": "Night Ink 3",
+        "canonical": "#8a92a3",
+        "tonalRamp": [
+          "#060b17",
+          "#1e2431",
+          "#39404e",
+          "#565e6d",
+          "#788091",
+          "#9ca5b6",
+          "#c2cbdd",
+          "#e7efff"
+        ]
+      },
+      "night-orange-ink": {
+        "role": "tertiary",
+        "displayName": "Night Orange Ink",
+        "canonical": "#f0c493",
+        "tonalRamp": [
+          "#140800",
+          "#351e01",
+          "#5a3702",
+          "#7b5525",
+          "#a07748",
+          "#c69c6c",
+          "#eec291",
+          "#ffebd6"
+        ]
+      },
+      "night-line": {
+        "role": "neutral",
+        "displayName": "Night Line",
+        "canonical": "rgb(255 255 255 / 0.09)"
+      },
+      "year-green": {
+        "role": "primary",
+        "displayName": "Year Green",
+        "canonical": "#4a7355",
+        "tonalRamp": [
+          "#001004",
+          "#022d13",
+          "#214a2e",
+          "#40684b",
+          "#628c6d",
+          "#86b190",
+          "#abd8b6",
+          "#cefcd9"
+        ]
+      },
+      "year-green-deep": {
+        "role": "primary",
+        "displayName": "Year Green Deep",
+        "canonical": "#3f6449",
+        "tonalRamp": [
+          "#001004",
+          "#062c14",
+          "#25492f",
+          "#43684d",
+          "#658b6e",
+          "#88b092",
+          "#aed7b7",
+          "#d1fbdb"
+        ]
+      },
+      "year-accent": {
+        "role": "secondary",
+        "displayName": "Year Accent",
+        "canonical": "#3b6847",
+        "tonalRamp": [
+          "#001004",
+          "#002d11",
+          "#1d4b2b",
+          "#3c6948",
+          "#5f8d6a",
+          "#83b28e",
+          "#a8d9b3",
+          "#cbfdd6"
+        ]
+      },
+      "year-sage": {
+        "role": "secondary",
+        "displayName": "Year Sage",
+        "canonical": "#84a87d",
+        "tonalRamp": [
+          "#011000",
+          "#0c2c06",
+          "#294923",
+          "#466840",
+          "#688b62",
+          "#8cb085",
+          "#b1d7aa",
+          "#d5fbcd"
+        ]
+      },
+      "year-cream": {
+        "role": "tertiary",
+        "displayName": "Year Cream",
+        "canonical": "#fffcd1",
+        "tonalRamp": [
+          "#0d0c00",
+          "#282501",
+          "#45411c",
+          "#635f3a",
+          "#85825b",
+          "#aaa77f",
+          "#d0cda3",
+          "#f4f1c6"
+        ]
+      },
+      "year-sand": {
+        "role": "neutral",
+        "displayName": "Year Sand",
+        "canonical": "#f3f2e2",
+        "tonalRamp": [
+          "#0d0c03",
+          "#262519",
+          "#414034",
+          "#5f5e51",
+          "#828173",
+          "#a6a597",
+          "#cccbbc",
+          "#f0efdf"
+        ]
+      },
+      "year-sand-strong": {
+        "role": "neutral",
+        "displayName": "Year Sand Strong",
+        "canonical": "#e6e8d3",
+        "tonalRamp": [
+          "#0c0c01",
+          "#242515",
+          "#404130",
+          "#5e5f4d",
+          "#80826f",
+          "#a5a793",
+          "#cbcdb8",
+          "#eff1dc"
+        ]
+      },
+      "year-ink": {
+        "role": "neutral",
+        "displayName": "Year Ink",
+        "canonical": "#1e2a22",
+        "tonalRamp": [
+          "#040e07",
+          "#1b271f",
+          "#37433b",
+          "#546258",
+          "#76847b",
+          "#9aa99f",
+          "#c0cfc4",
+          "#e3f3e8"
+        ]
+      },
+      "year-ink-2": {
+        "role": "neutral",
+        "displayName": "Year Ink 2",
+        "canonical": "#4f5e53",
+        "tonalRamp": [
+          "#040e06",
+          "#1a281e",
+          "#364439",
+          "#536257",
+          "#758579",
+          "#99aa9d",
+          "#bfd0c3",
+          "#e2f4e7"
+        ]
+      },
+      "year-ink-3": {
+        "role": "neutral",
+        "displayName": "Year Ink 3",
+        "canonical": "#66736a",
+        "tonalRamp": [
+          "#050e08",
+          "#1c2720",
+          "#37433b",
+          "#556159",
+          "#77847b",
+          "#9ba99f",
+          "#c0cfc5",
+          "#e4f3e9"
+        ]
+      },
+      "year-marker": {
+        "role": "tertiary",
+        "displayName": "Year Marker",
+        "canonical": "#c9bd4a",
+        "tonalRamp": [
+          "#0e0c00",
+          "#292500",
+          "#474101",
+          "#685f00",
+          "#8e8305",
+          "#b4a831",
+          "#dace5d",
+          "#fef382"
+        ]
+      },
+      "year-marker-ink": {
+        "role": "tertiary",
+        "displayName": "Year Marker Ink",
+        "canonical": "#5e5718",
+        "tonalRamp": [
+          "#0e0b00",
+          "#292500",
+          "#474103",
+          "#665f22",
+          "#898246",
+          "#aea76a",
+          "#d4cd8e",
+          "#f8f2b1"
+        ]
+      },
+      "year-night": {
+        "role": "neutral",
+        "displayName": "Year Night",
+        "canonical": "#111a14",
+        "tonalRamp": [
+          "#060d08",
+          "#1d2720",
+          "#39433c",
+          "#566159",
+          "#78847c",
+          "#9ca8a0",
+          "#c2cec6",
+          "#e6f2e9"
+        ]
+      },
+      "year-night-surface": {
+        "role": "neutral",
+        "displayName": "Year Night Surface",
+        "canonical": "#1a261d",
+        "tonalRamp": [
+          "#040e07",
+          "#1b271e",
+          "#37443a",
+          "#546257",
+          "#768579",
+          "#9aa99d",
+          "#c0cfc3",
+          "#e3f3e7"
+        ]
+      },
+      "year-night-surface-strong": {
+        "role": "neutral",
+        "displayName": "Year Night Surface Strong",
+        "canonical": "#233126",
+        "tonalRamp": [
+          "#030e06",
+          "#1a281d",
+          "#354438",
+          "#536256",
+          "#758578",
+          "#99aa9c",
+          "#bed0c2",
+          "#e2f4e5"
+        ]
+      },
+      "year-night-masthead": {
+        "role": "neutral",
+        "displayName": "Year Night Masthead",
+        "canonical": "#24382a",
+        "tonalRamp": [
+          "#010f05",
+          "#16291c",
+          "#314537",
+          "#4e6454",
+          "#708776",
+          "#94ac9a",
+          "#bad2c0",
+          "#ddf6e4"
+        ]
+      },
+      "year-bright-sage": {
+        "role": "secondary",
+        "displayName": "Year Bright Sage",
+        "canonical": "#a6cf9e",
+        "tonalRamp": [
+          "#011000",
+          "#082d02",
+          "#264a1f",
+          "#44693d",
+          "#668c5e",
+          "#8ab182",
+          "#afd8a7",
+          "#d2fdca"
+        ]
+      },
+      "on-year-bright-sage": {
+        "role": "secondary",
+        "displayName": "On Year Bright Sage",
+        "canonical": "#10200f",
+        "tonalRamp": [
+          "#020f02",
+          "#182917",
+          "#344532",
+          "#51644f",
+          "#738771",
+          "#97ab95",
+          "#bcd1ba",
+          "#e0f6de"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Masthead title on every tab root."
+      },
+      "display-year": {
+        "displayName": "Display Year",
+        "purpose": "Masthead title under the 2026 yearly palette only."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Sermon and event detail titles."
+      },
+      "title-lg": {
+        "displayName": "Title Lg",
+        "purpose": "Welcome letter and sheet headings."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Default text."
+      },
+      "prose": {
+        "displayName": "Prose",
+        "purpose": "Welcome letter and descriptions, max 65ch, ink-2."
+      },
+      "row-title": {
+        "displayName": "Row Title",
+        "purpose": "List and toggle row titles."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Section tabs and section links."
+      },
+      "caption": {
+        "displayName": "Caption",
+        "purpose": "Row subtitles, metadata, hints."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Tab-bar labels, unread badge, day-rail weekdays."
+      }
+    },
+    "shadows": [
+      {
+        "name": "lift",
+        "value": "0 1px 2px rgb(24 35 58 / 0.06), 0 10px 24px -14px rgb(24 35 58 / 0.3)",
+        "purpose": "Boxed lists and the event feature card only (light scheme)."
+      },
+      {
+        "name": "lift-dark",
+        "value": "0 1px 0 rgb(255 255 255 / 0.04) inset, 0 14px 28px -18px rgb(0 0 0 / 0.7)",
+        "purpose": "The same lift in the dark scheme."
+      },
+      {
+        "name": "segment",
+        "value": "0 1px 3px rgb(0 0 0 / 0.14)",
+        "purpose": "Selected segment of the segmented control."
+      },
+      {
+        "name": "knob",
+        "value": "0 2px 6px rgb(0 0 0 / 0.2)",
+        "purpose": "Switch thumb."
+      },
+      {
+        "name": "play-overlay",
+        "value": "0 10px 30px rgb(0 0 0 / 0.35)",
+        "purpose": "Round play button over a video hero."
+      },
+      {
+        "name": "badge-ring",
+        "value": "0 0 0 2px var(--masthead)",
+        "purpose": "Separates the unread badge from the bell."
+      },
+      {
+        "name": "frosted-bar",
+        "value": "backdrop-filter: saturate(1.6) blur(18px); background: 90% page colour; box-shadow: 0 1px 0 var(--line)",
+        "purpose": "Section tabs (tab bar uses saturate(1.8) blur(20px) and a top hairline)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "The single curve for presses, sheets, the section-tab underline and page entry."
+      },
+      {
+        "name": "page-in",
+        "value": "220ms, opacity from 0.4",
+        "purpose": "Tab roots."
+      },
+      {
+        "name": "page-push",
+        "value": "220ms, opacity 0 and translateX(20px)",
+        "purpose": "Pushed detail pages."
+      },
+      {
+        "name": "sheet-up",
+        "value": "320ms, translateY(100%)",
+        "purpose": "Bottom sheets."
+      },
+      {
+        "name": "section-ink",
+        "value": "240ms transform and width",
+        "purpose": "Section-tab underline."
+      },
+      {
+        "name": "press",
+        "value": "scale 0.94 to 0.98, 140 to 160ms",
+        "purpose": "Buttons, icon buttons, pressable cards."
+      },
+      {
+        "name": "live-pulse",
+        "value": "1.6s ease-in-out infinite",
+        "purpose": "Live dot."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "all animations and transitions 1ms",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [],
+    "themes": {
+      "selector": "html[data-scheme=light|dark] and html[data-theme=brand|year]",
+      "default": "light scheme, brand palette; Appearance setting defaults to Automatic (follows the system)",
+      "year": "2026 yearly palette, under comparison with the brand palette; swaps greens and a DM Serif Text masthead title"
+    },
+    "rootType": "html font: -apple-system-body when supported, else 17px; all sizes in rem"
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Navy capsule for the main action of a section.",
+      "html": "<button class=\"ds-btn-primary\">Give online</button>",
+      "css": ".ds-btn-primary { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 22px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), opacity 140ms; background: var(--primary, #2a3d5e); color: var(--on-primary, #ffffff); } .ds-btn-primary:hover { opacity: 0.92; } .ds-btn-primary:active { transform: scale(0.96); } .ds-btn-primary:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Sand capsule for secondary actions.",
+      "html": "<button class=\"ds-btn-quiet\">Not now</button>",
+      "css": ".ds-btn-quiet { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 22px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), opacity 140ms; background: var(--sand, #f4efe7); color: var(--ink, #18233a); } .ds-btn-quiet:hover { background: var(--sand-strong, #e9e1d4); } .ds-btn-quiet:active { transform: scale(0.96); } .ds-btn-quiet:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Masthead with status strip",
+      "kind": "custom",
+      "refersTo": "masthead",
+      "description": "The navy cover of every tab root: display title, beige note, and the next-service strip.",
+      "html": "<header class=\"ds-masthead\"><div class=\"ds-mast-bar\"><button class=\"ds-icon-btn\" aria-label=\"Notifications\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10.268 21a2 2 0 0 0 3.464 0\"/><path d=\"M3.262 15.326A1 1 0 0 0 4 17h16a1 1 0 0 0 .74-1.673C19.41 13.956 18 12.499 18 8A6 6 0 0 0 6 8c0 4.499-1.411 5.956-2.738 7.326\"/></svg><span class=\"ds-badge\">1</span></button></div><h1>Almighty God</h1><p class=\"ds-mast-note\">Job 33:4 · Sunday 25 October</p><div class=\"ds-status\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg><span class=\"ds-status-text\"><strong>Wednesday, 7pm</strong> · Bible Study &amp; Prayer</span><button class=\"ds-btn-ghost\">Remind me</button></div></header>",
+      "css": ".ds-masthead { position: relative; padding: 8px 20px 22px; background: var(--masthead, #2a3d5e); color: var(--on-masthead, #ffffff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; border-radius: 0; } .ds-mast-bar { display: flex; justify-content: flex-end; margin-bottom: 8px; } .ds-icon-btn { position: relative; display: inline-grid; place-items: center; width: 44px; height: 44px; border: 0; border-radius: 22px; background: none; color: inherit; cursor: pointer; transition: background 150ms, transform 150ms; } .ds-icon-btn:active { background: rgb(255 255 255 / 0.12); transform: scale(0.94); } .ds-icon-btn:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-badge { position: absolute; top: 6px; right: 5px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--marker, #e7ae74); color: #2a1a08; font-size: 11px; font-weight: 700; line-height: 18px; box-shadow: 0 0 0 2px var(--masthead, #2a3d5e); } .ds-masthead h1 { margin: 0; font-weight: 700; font-size: 40px; line-height: 1.02; letter-spacing: -0.03em; max-width: 13ch; } .ds-mast-note { margin: 8px 0 0; font-size: 15px; font-weight: 600; color: var(--masthead-note, #d5c9b7); } .ds-status { display: flex; align-items: center; gap: 10px; margin-top: 18px; padding: 10px 12px 10px 14px; border-radius: 12px; background: rgb(255 255 255 / 0.12); font-size: 14px; } .ds-status-text { flex: 1; color: rgb(255 255 255 / 0.76); } .ds-status-text strong { color: #fff; font-weight: 600; } .ds-btn-ghost { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 0 18px; border: 0; border-radius: 22px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; font-weight: 600; font-size: 15px; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1), opacity 140ms; min-height: 36px; padding: 0 14px; font-size: 14px; background: rgb(255 255 255 / 0.12); color: #fff; } .ds-btn-ghost:active { transform: scale(0.96); } .ds-btn-ghost:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Section tabs",
+      "kind": "nav",
+      "refersTo": "section-tab",
+      "description": "Sticky section navigation under the masthead with the sliding orange underline.",
+      "html": "<nav class=\"ds-section-tabs\" aria-label=\"Sections\"><button class=\"on\">Welcome<i></i></button><button>Sermons</button><button>This week</button><button>Next</button><button>Give</button></nav>",
+      "css": ".ds-section-tabs { display: flex; gap: 18px; padding: 0 20px; overflow-x: auto; background: rgb(255 255 255 / 0.9); backdrop-filter: saturate(1.6) blur(18px); box-shadow: 0 1px 0 var(--line, rgb(42 61 94 / 0.12)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-section-tabs button { position: relative; flex: none; padding: 14px 0 12px; border: 0; background: none; font: inherit; font-size: 14.5px; font-weight: 600; color: var(--ink-3, #6b7384); cursor: pointer; transition: color 150ms; } .ds-section-tabs button:hover, .ds-section-tabs button.on { color: var(--ink, #18233a); } .ds-section-tabs button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-section-tabs i { position: absolute; left: 0; right: 0; bottom: 0; height: 3px; border-radius: 2px; background: var(--marker, #e7ae74); transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1); }"
+    },
+    {
+      "name": "List rows",
+      "kind": "card",
+      "refersTo": "row",
+      "description": "Hairline-divided rows: leading tile, title and caption, trailing chevron; the unread inbox variant.",
+      "html": "<div class=\"ds-list\"><a class=\"ds-row\" href=\"#\"><span class=\"ds-row-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg></span><span class=\"ds-row-body\"><span class=\"ds-row-title\">Service times</span><span class=\"ds-row-sub\">Sunday 9:00, 10:30 and 6:00</span></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></a><a class=\"ds-row\" href=\"#\"><span class=\"ds-dot\"></span><span class=\"ds-row-body\"><span class=\"ds-row-title ds-unread\">Evening service moved</span><span class=\"ds-row-sub\">This Sunday only, 6:30pm.</span></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></a></div>",
+      "css": ".ds-list { border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-row { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 12px 0; border-bottom: 1px solid var(--line, rgb(42 61 94 / 0.12)); color: var(--ink-3, #6b7384); text-decoration: none; transition: background 120ms; } .ds-row:hover, .ds-row:active { background: var(--line, rgb(42 61 94 / 0.12)); } .ds-row:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-row-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--sand, #f4efe7); color: var(--primary, #2a3d5e); flex: none; } .ds-row-body { flex: 1; min-width: 0; } .ds-row-title { display: block; font-weight: 600; font-size: 15.5px; line-height: 1.3; color: var(--ink, #18233a); } .ds-row-title.ds-unread { font-weight: 700; } .ds-row-sub { display: block; margin-top: 2px; font-size: 14px; line-height: 1.35; color: var(--ink-2, #545e70); } .ds-dot { width: 9px; height: 9px; border-radius: 5px; background: var(--marker, #e7ae74); flex: none; align-self: flex-start; margin-top: 7px; }"
+    },
+    {
+      "name": "Passage chips and pill",
+      "kind": "chip",
+      "refersTo": "passage-chip",
+      "description": "Bible passage capsules under sermon outline points, and the orange status pill.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-passage\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/></svg>Job 33:4</button><button class=\"ds-passage\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/></svg>Psalm 139:1–6</button><span class=\"ds-pill\">Later release</span></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-passage { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 11px; border: 0; border-radius: 16px; background: var(--sand, #f4efe7); color: var(--accent, #00776d); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 150ms, transform 140ms; } .ds-passage:hover { background: var(--sand-strong, #e9e1d4); } .ds-passage:active { transform: scale(0.96); } .ds-passage:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-pill { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--marker, #e7ae74) 28%, transparent); color: var(--marker-ink, #8a5422); font-size: 12px; font-weight: 700; }"
+    },
+    {
+      "name": "Filter chips",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Sand capsules; the selected one turns navy.",
+      "html": "<div class=\"ds-filter\"><button aria-pressed=\"true\">All</button><button aria-pressed=\"false\">Sunday AM</button><button aria-pressed=\"false\">Sunday PM</button></div>",
+      "css": ".ds-filter { display: flex; gap: 8px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-filter button { min-height: 36px; padding: 0 16px; border: 0; border-radius: 18px; background: var(--sand, #f4efe7); color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 150ms, color 150ms; } .ds-filter button:hover { color: var(--ink, #18233a); } .ds-filter button[aria-pressed=\"true\"] { background: var(--primary, #2a3d5e); color: #fff; } .ds-filter button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "field",
+      "description": "Borderless sand field with a caption label and an inset aqua focus ring.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-req\">Your request</label><textarea id=\"ds-req\" placeholder=\"What can we pray for?\"></textarea></div>",
+      "css": ".ds-field { display: grid; gap: 6px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-field label { font-size: 14px; font-weight: 600; color: var(--ink-2, #545e70); } .ds-field textarea { min-height: 96px; padding: 13px 14px; border: 0; border-radius: 12px; background: var(--sand, #f4efe7); color: var(--ink, #18233a); font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; caret-color: var(--accent, #00776d); } .ds-field textarea::placeholder { color: var(--ink-3, #6b7384); } .ds-field textarea:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent, #00776d); }"
+    },
+    {
+      "name": "Segmented control",
+      "kind": "custom",
+      "refersTo": "segmented",
+      "description": "Sand track of equal segments; the selected one is a white tile.",
+      "html": "<div class=\"ds-seg\" role=\"tablist\"><button aria-pressed=\"true\">Automatic</button><button aria-pressed=\"false\">Light</button><button aria-pressed=\"false\">Dark</button></div>",
+      "css": ".ds-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 12px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-seg button { min-height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 180ms, color 180ms; } .ds-seg button:hover { color: var(--ink, #18233a); } .ds-seg button[aria-pressed=\"true\"] { background: var(--surface, #ffffff); color: var(--ink, #18233a); box-shadow: 0 1px 3px rgb(0 0 0 / 0.14); } .ds-seg button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Tab bar",
+      "kind": "nav",
+      "refersTo": "tab-bar-item",
+      "description": "Five-tab bar; the active tab is deep aqua.",
+      "html": "<nav class=\"ds-tabbar\"><a class=\"on\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 18h-5\"/><path d=\"M18 14h-8\"/><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2\"/><rect width=\"8\" height=\"4\" x=\"10\" y=\"6\" rx=\"1\"/></svg>Sunday</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2v3\"/><path d=\"M16 2v3\"/><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18\"/></svg>Week</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3\"/></svg>Listen</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16\"/><path d=\"m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9\"/><path d=\"m2 15 6 6\"/></svg>Prayer</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"19\" cy=\"12\" r=\"1\"/><circle cx=\"5\" cy=\"12\" r=\"1\"/></svg>More</a></nav>",
+      "css": ".ds-tabbar { display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px 8px; background: rgb(255 255 255 / 0.9); backdrop-filter: saturate(1.8) blur(20px); box-shadow: 0 -0.5px 0 var(--line, rgb(42 61 94 / 0.12)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 48px; justify-content: center; font-size: 11px; font-weight: 600; color: var(--ink-3, #6b7384); text-decoration: none; transition: color 150ms; } .ds-tabbar a:hover { color: var(--ink, #18233a); } .ds-tabbar a.on { color: var(--accent, #00776d); } .ds-tabbar a:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-tabbar a:active svg { transform: scale(0.88); } .ds-tabbar svg { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Sunday Bulletin",
+    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app tile grid and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series).\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is built as a full alternate so staff can compare it with the brand palette; which one ships is not decided.",
+    "keyCharacteristics": [
+      "Navy masthead on every tab root, with the mark's ring echo at 7% opacity.",
+      "Sticky section tabs with a sliding orange underline on sectioned pages.",
+      "A navy top bar that is transparent over the masthead and turns solid once scrolled past it.",
+      "White page, sand callouts, hairline-divided rows; shadows only on the few boxed lists and picture cards.",
+      "Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.",
+      "rem type tied to the iOS body text size, so Dynamic Type scales the whole app.",
+      "Five-tab bar (Sunday, Week, Listen, Prayer, More) and a notifications bell with an orange unread badge on every tab root."
+    ],
+    "rules": [
+      {
+        "name": "The Roles Not Hexes Rule",
+        "body": "Components use the semantic roles (masthead, primary, accent, live, marker, sand, ink, line) and never a palette hex, because every role is redefined by the scheme and the yearly theme. The only literal colours in components are the palette-picker swatches, the black video hero, and white on the play overlay.",
+        "section": "colors"
+      },
+      {
+        "name": "The Marker Rule",
+        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened. It is never a button fill and never decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Aqua Acts Rule",
+        "body": "Aqua is for live state, for things you can act on (links, passages, the active tab), and for one short line of metadata at most (a series or recurrence line, a \"Streamed on YouTube\" tag). Navy is for the primary action itself. Don't use aqua for headings or running text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Dynamic Type Rule",
+        "body": "Every font size is in rem off the iOS body root. Never set a font size in px; the only px type is the 17px root fallback for platforms without `-apple-system-body`.",
+        "section": "typography"
+      },
+      {
+        "name": "The One Family Rule",
+        "body": "Montserrat is the only face on the page. The serif belongs to the yearly palette's masthead title and nowhere else.",
+        "section": "typography"
+      },
+      {
+        "name": "The Numbers Line Up Rule",
+        "body": "Times, durations, dates in the day rail and positions use tabular figures.",
+        "section": "typography"
+      },
+      {
+        "name": "The Masthead First Rule",
+        "body": "Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar).",
+        "section": "layout"
+      },
+      {
+        "name": "The One Column Rule",
+        "body": "No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail.",
+        "section": "layout"
+      },
+      {
+        "name": "The Flat Page Rule",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** open every tab root on a masthead with the title in display type, a beige note line and the mark at 7% opacity bleeding off the right edge.",
+      "**Do** add sticky section tabs with the sliding orange underline to any long page divided into named sections, and keep every tab label visible at 390pt width.",
+      "**Do** put the notifications bell in the top bar of every tab root.",
+      "**Do** build content as hairline-divided rows on the white page, and use sand (callouts, sermon head, player, fields) for anything the bulletin would shade.",
+      "**Do** size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.",
+      "**Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
+      "**Do** keep touch targets at 44px or more and give presses a scale and a haptic."
+    ],
+    "donts": [
+      "**Don't** lay tab roots out as a grid of tiles or a feed of identical cards.",
+      "**Don't** float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.",
+      "**Don't** use orange as a button fill or decoration; it marks position and newness only.",
+      "**Don't** add shadows to rows, callouts or the player; only boxed lists and picture cards lift.",
+      "**Don't** use DM Serif Text anywhere but the yearly palette's masthead title.",
+      "**Don't** redraw or restyle the church mark beyond recolouring the supplied artwork.",
+      "**Don't** set font sizes in px."
+    ]
+  }
+}

@@ -1,0 +1,103 @@
+@page "/groups"
+@implements IDisposable
+@inject LifeGroupsService Groups
+
+<Page Title="Life Groups" BackHref="more" BackLabel="Back">
+    <Masthead Title="Life Groups" Note="Sundays 9 – 9:45am, before the morning service">
+        <div class="status">
+            <span class="status__text">@((MarkupString)StatusLine)</span>
+            <a class="btn btn--on-masthead" href="map?layer=lifegroups"><Icon Name="map" Size="IconSize.Small" />Map</a>
+        </div>
+    </Masthead>
+
+    @if (Groups.Yours is { Count: > 0 } yours)
+    {
+        <Section Title="Your groups" First="true">
+            <div class="cards">
+                @foreach (var group in yours)
+                {
+                    <LifeGroupCard @key="group.Id" Group="group" />
+                }
+            </div>
+        </Section>
+    }
+
+    @if (Groups.Showing is { } round)
+    {
+        <Section Title="@RoundTitle(round)" First="Groups.Yours.Count == 0">
+            @if (Groups.Current is null)
+            {
+                <p class="section__lead">Starts @round.First.ToString("d MMMM"). You can join now.</p>
+            }
+            <div class="cards">
+                @foreach (var group in round.Groups.Where(g => !Groups.IsJoined(g)))
+                {
+                    <LifeGroupCard @key="group.Id" Group="group" />
+                }
+            </div>
+        </Section>
+    }
+
+    <Section Title="All year">
+        <p class="section__lead">The same leaders every round. Parents can join to hear about their children's class.</p>
+        <div class="cards">
+            @foreach (var group in LifeGroupsContent.AllYear.Where(g => !Groups.IsJoined(g)))
+            {
+                <LifeGroupCard @key="group.Id" Group="group" />
+            }
+        </div>
+    </Section>
+
+    @if (Groups.Current is null && Groups.Previous is { } previous)
+    {
+        <Section Title="@($"Last round: {previous.Name}")">
+            <p class="section__lead">Finished @previous.Last.ToString("d MMMM"). Notes stay here until the next round ends.</p>
+            <div class="cards">
+                @foreach (var group in previous.Groups)
+                {
+                    <LifeGroupCard @key="group.Id" Group="group" Quiet="true" />
+                }
+            </div>
+        </Section>
+    }
+
+    <Section Title="This preview">
+        <Segmented TValue="bool" Options="PreviewOptions" Value="Groups.PreviewInRound" ValueChanged="Groups.SetPreviewInRound" />
+        <p class="hint">Today is the break between rounds. Switch to see a Sunday morning in Round 2 (11 October).</p>
+    </Section>
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private static readonly IReadOnlyList<Choice<bool>> PreviewOptions =
+        [new(false, "Today"), new(true, "A Sunday in Round 2")];
+
+    private string StatusLine
+    {
+        get
+        {
+            if (Groups.Current is { } current)
+            {
+                var week = current.Sundays.Count(d => d <= Groups.Today);
+                return $"<strong>{current.Name}</strong> · {current.Dates} · week {week} of {current.Sundays.Count}";
+            }
+            return Groups.Next is { } next
+                ? $"<strong>Back {next.First:d MMM}</strong> · {next.Name}, {next.Dates}"
+                : "<strong>On a break</strong> · new groups coming soon";
+        }
+    }
+
+    private string RoundTitle(LifeGroupRound round) =>
+        Groups.Current == round ? $"This round: {round.Name}" : $"Next: {round.Name} · {round.Dates}";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Groups.Changed += Refresh;
+        await Groups.EnsureLoadedAsync();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Groups.Changed -= Refresh;
+}

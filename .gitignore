@@ -4,3 +4,5 @@ out/
 *.user
 .DS_Store
 .nodeterm/
+node_modules/
+GSBC Logo Pack 2022.zip

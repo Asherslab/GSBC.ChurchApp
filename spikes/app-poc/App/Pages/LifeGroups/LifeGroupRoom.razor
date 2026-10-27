@@ -1,0 +1,72 @@
+@page "/groups/{Id}/room"
+@implements IDisposable
+@inject LifeGroupsService Groups
+@inject SitePlan Plan
+
+<Page Title="@(group?.Title ?? "Find the room")" BackHref="@($"groups/{Id}")" BackLabel="Back" TopBar="TopBarStyle.Solid" Bell="false">
+    @if (group is null || place is null)
+    {
+        <EmptyState Icon="map-pin" Title="The room for this group isn't set yet" />
+    }
+    else
+    {
+        var number = Groups.NumberAt(group, place);
+        <SiteMap Marks="Marks" Interactive="true" FocusPlaceId="@place.Id" SelectedPlaceId="@place.Id" />
+
+        <Section First="true">
+            <div class="where-card" style="--band: @group.Colour">
+                <span class="badge-dot">@number</span>
+                <div>
+                    <strong>Room @number</strong>
+                    <span>@place.Name</span>
+                    <span class="where-card__when">@WhenLine</span>
+                </div>
+            </div>
+            <p class="hint">Pinch or double-tap to zoom.</p>
+        </Section>
+
+        <Section>
+            <div class="list">
+                <ListRow Icon="map" Title="All Life Groups rooms" Subtitle="Every group this round, numbered" Href="map?layer=lifegroups" />
+            </div>
+        </Section>
+    }
+</Page>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private LifeGroup? group;
+    private Place? place;
+    private DateOnly sunday;
+    private SessionChange? change;
+
+    private string WhenLine =>
+        Groups.IsFinished(group!) ? $"Finished {Groups.RoundOf(group!)!.Last:d MMMM}"
+        : change is null ? Groups.WhenLabel(sunday) : $"{Groups.WhenLabel(sunday)} · {change.Summary}";
+
+    private IReadOnlyList<MapMark> Marks =>
+        [Groups.MarkFor(group!, place!), .. Plan.Marks().Where(m => m.Place.Id != place!.Id)];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Groups.Changed += Refresh;
+        await Groups.EnsureLoadedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        group = Groups.Find(Id);
+        if (group is null)
+        {
+            return;
+        }
+        sunday = Groups.NextSunday(group);
+        change = Groups.ChangeOn(group, sunday);
+        place = Groups.PlaceOn(group, sunday);
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Groups.Changed -= Refresh;
+}

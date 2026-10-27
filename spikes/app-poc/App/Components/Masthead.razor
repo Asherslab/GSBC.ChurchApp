@@ -1,0 +1,18 @@
+<header class="masthead">
+    <BrandMark Class="masthead__mark" />
+    <h1>@Title</h1>
+    @if (Note is not null)
+    {
+        <p class="masthead__note">@Note</p>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="masthead__extra">@ChildContent</div>
+    }
+</header>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Note { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,37 @@
+@inject AppSettings Settings
+@inject SampleContent Content
+@inject NativeBridge Native
+
+<Sheet Open="open" OpenChanged="Close">
+    <h2>Stay in the loop</h2>
+    <p>Choose what Good Shepherd can tell you about. Urgent changes, like a cancelled service, always come through.</p>
+    <div style="margin-top: 12px">
+        @foreach (var topic in Content.Topics)
+        {
+            <ToggleRow Title="@topic.Name" Description="@topic.Description" Checked="Settings.Topics.Contains(topic.Id)" CheckedChanged="on => Settings.SetTopicAsync(topic.Id, on)" />
+        }
+    </div>
+    <div class="stack" style="margin-top: 20px">
+        <button class="btn btn--primary btn--block" @onclick="Allow">Turn on notifications</button>
+        <button class="btn btn--quiet btn--block" @onclick="Close">Not now</button>
+    </div>
+</Sheet>
+
+@code {
+    private bool open;
+
+    protected override async Task OnInitializedAsync() => open = !await Settings.WelcomedAsync() && !await Native.ShouldOfferInstallAsync();
+
+    private async Task Allow()
+    {
+        await Native.ScheduleNotificationAsync("You're all set", "Notifications from Good Shepherd will look like this.", 3);
+        await Native.HapticAsync(Haptic.Success);
+        await Close();
+    }
+
+    private async Task Close()
+    {
+        open = false;
+        await Settings.MarkWelcomedAsync();
+    }
+}

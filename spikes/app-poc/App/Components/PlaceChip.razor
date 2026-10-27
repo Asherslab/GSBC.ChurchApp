@@ -1,0 +1,17 @@
+<span class="place-chip" style="--band: @Colour">
+    @if (Number is not null)
+    {
+        <span class="badge-dot">@Number</span>
+    }
+    else
+    {
+        <Icon Name="map-pin" Size="IconSize.Small" />
+    }
+    <span>@Label</span>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter] public string? Number { get; set; }
+    [Parameter] public string Colour { get; set; } = "var(--accent)";
+}

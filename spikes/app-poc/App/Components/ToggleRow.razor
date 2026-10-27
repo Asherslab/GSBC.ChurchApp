@@ -1,0 +1,28 @@
+@inject NativeBridge Native
+
+<label class="toggle-row">
+    <span class="toggle-row__body">
+        <strong>@Title</strong>
+        @if (Description is not null)
+        {
+            <span>@Description</span>
+        }
+    </span>
+    <span class="switch">
+        <input type="checkbox" role="switch" checked="@Checked" @onchange="Toggle" />
+        <span></span>
+    </span>
+</label>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public bool Checked { get; set; }
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+
+    private async Task Toggle(ChangeEventArgs e)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await CheckedChanged.InvokeAsync(e.Value is true);
+    }
+}

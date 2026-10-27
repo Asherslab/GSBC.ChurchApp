@@ -1,0 +1,88 @@
+@implements IDisposable
+@inject SampleContent Content
+@inject SermonLibrary Library
+@inject PlayerService Player
+@inject ChurchClock Clock
+@inject WeekPlan Plan
+@inject NativeBridge Native
+@inject NavigationManager Navigation
+
+<Page Title="Good Shepherd">
+    <Masthead Title="@Greeting" Note="@Clock.Now.ToString("dddd d MMMM")">
+        <div class="simple-status">
+            <ServiceStatus />
+        </div>
+    </Masthead>
+
+    <Section First="true">
+        <div class="simple-actions">
+            <ListRow Icon="bulletin" Title="Read this Sunday's bulletin" Subtitle="@BulletinLine" Href="sunday" />
+            <SimpleListen Sermon="ListenTarget" IsCurrent="IsCurrent" IsPlaying="IsCurrent && Player.IsPlaying"
+                          Position="Player.Position" Duration="Player.Duration" Latest="Latest" OnPress="Listen" />
+            <ListRow Icon="calendar" Title="What's on this week" Subtitle="@NextUpLine" Href="week" />
+            <LifeGroupsHomeRow />
+            <ListRow Icon="prayer" Title="Ask for prayer" Subtitle="Our pastoral team would love to pray with you" Href="prayer" />
+            <ListRow Icon="heart" Title="Give online" Subtitle="Opens our secure Tithe.ly page" Href="@SampleContent.GiveHref" External="true" />
+            <ListRow Icon="map-pin" Title="Find us or call the church" Subtitle="185 Old Northern Road, Albany Creek" Href="visit" />
+        </div>
+    </Section>
+
+    <Section>
+        <div class="list">
+            <ListRow Icon="more" IconTone="Tone.Quiet" Title="More" Subtitle="YouTube, the Bible, notifications, appearance" Href="more" />
+        </div>
+    </Section>
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private Sermon? Latest => Library.Sermons.FirstOrDefault();
+
+    private Sermon? ListenTarget => Player.Current ?? Latest;
+
+    private bool IsCurrent => ListenTarget is { } sermon && Player.IsCurrent(sermon);
+
+    private string Greeting => Clock.Now.Hour switch
+    {
+        < 12 => "Good morning",
+        < 17 => "Good afternoon",
+        _ => "Good evening",
+    };
+
+    private string BulletinLine => $"{Content.Bulletin.Theme} · Sunday {Content.Bulletin.Date:d MMMM}";
+
+    private string NextUpLine =>
+        Plan.Days().SelectMany(d => d.Entries).FirstOrDefault(e => e.Start > Clock.Now) is { } next
+            ? $"Next: {Clock.Relative(next.Start)} {ChurchClock.Time(next.Start)}, {next.Title}"
+            : "Services, groups and events";
+
+    protected override void OnInitialized()
+    {
+        Library.Changed += Refresh;
+        Player.Changed += Refresh;
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task Listen()
+    {
+        if (ListenTarget is not { } sermon)
+        {
+            return;
+        }
+        await Native.HapticAsync(Haptic.Light);
+        if (sermon.AudioUrl is null)
+        {
+            Navigation.NavigateTo($"sermons/{sermon.Id}");
+            return;
+        }
+        await Player.PlayAsync(sermon);
+    }
+
+    public void Dispose()
+    {
+        Library.Changed -= Refresh;
+        Player.Changed -= Refresh;
+    }
+}

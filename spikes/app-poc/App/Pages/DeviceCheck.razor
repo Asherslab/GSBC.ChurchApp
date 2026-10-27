@@ -1,0 +1,142 @@
+@page "/device"
+@using System.Runtime.CompilerServices
+@implements IDisposable
+@inject NativeBridge Native
+@inject SermonLibrary Library
+@inject ChurchClock Clock
+@inject NavigationManager Navigation
+
+<Page Title="Device check" BackHref="more" BackLabel="More" Bell="false">
+    <Masthead Title="Device check" Note="What this build proves on a real iPhone, and what it can't yet." />
+    <Section Title="Runtime" First="true">
+        <div>
+            <Probe Title="Compiled ahead of time" Status="@(RuntimeFeature.IsDynamicCodeCompiled ? Check.Warn : Check.Ok)" Detail="@($"{platform} · IsDynamicCodeCompiled = {RuntimeFeature.IsDynamicCodeCompiled}")" />
+            <Probe Title="Native plugins" Status="@(plugins.StartsWith("All", StringComparison.Ordinal) ? Check.Ok : Check.No)" Detail="@plugins" />
+            <Probe Title="Start-up" Status="Check.Info" Detail="@startup" />
+            <Probe Title="Safe areas" Status="Check.Info" Detail="@safeArea" />
+            <Probe Title="Web storage" Status="Check.Info" Detail="@storage" />
+        </div>
+    </Section>
+
+    <Section Title="Content">
+        <div>
+            <Probe Title="Live sermons from baptist.com.au" Status="@(Library.Source == FeedSource.Live ? Check.Ok : Library.LastError is null ? Check.Info : Check.No)" Detail="@FeedDetail" Action="Fetch" OnAction="Library.RefreshAsync" />
+            <Probe Title="YouTube video in the app" Status="Check.Manual" Detail="Inline YouTube embeds fail on iOS (no referrer from capacitor://), so play opens the video over the app; 'Open in the YouTube app' hands off to YouTube." Action="Open" OnAction="OpenLatestSermon" />
+            <Probe Title="Audio with the screen locked" Status="Check.Manual" Detail="Play a sermon, leave the page and lock the phone. It should keep playing, with controls on the lock screen and a playing mark on the Listen tab." Action="Open" OnAction="OpenLatestSermon" />
+            <Probe Title="Live service state" Status="Check.Info" Detail="@(Clock.PreviewLive ? "Showing Home as if a service is streaming now" : "Preview Home during a live service")" Action="@(Clock.PreviewLive ? "Stop" : "Preview")" OnAction="ToggleLive" />
+        </div>
+    </Section>
+
+    <Section Title="Native features">
+        <div>
+            <Probe Title="Haptics" Status="@hapticStatus" Detail="@haptics" Action="Try" OnAction="TryHaptics" />
+            <Probe Title="Share sheet" Status="Check.Manual" Detail="Opens the iOS share sheet." Action="Try" OnAction="TryShare" />
+            <Probe Title="In-app browser" Status="Check.Manual" Detail="Opens baptist.com.au over the app (Safari View Controller)." Action="Try" OnAction="TryBrowser" />
+            <Probe Title="Add to calendar" Status="@calendarStatus" Detail="@calendar" Action="Try" OnAction="TryCalendar" />
+            <Probe Title="Local notification" Status="@notifyStatus" Detail="@notify" Action="Try" OnAction="TryNotify" />
+        </div>
+    </Section>
+
+    <Section Title="Needs the church's Apple account">
+        <div>
+            <Probe Title="Push notifications" Status="Check.No" Detail="Apple only issues push credentials to paid developer accounts. This free build can't receive pushes; local notifications above show the look." />
+            <Probe Title="App Attest (prayer requests)" Status="Check.No" Detail="Needs a paid account too. Without it, the app can't prove to the server that it's genuine." />
+            <Probe Title="TestFlight for staff" Status="Check.No" Detail="Free builds install only on phones plugged into this Mac and expire after 7 days." />
+            <Probe Title="Native data layer (gRPC, SQLite, background sync)" Status="Check.No" Detail="The next spike. This preview stores everything in the web view." />
+        </div>
+    </Section>
+</Page>
+
+@code {
+    private string platform = "…";
+    private string plugins = "…";
+    private string haptics = "You should feel a light tap, then a success buzz.";
+    private Check hapticStatus = Check.Manual;
+    private string startup = "…";
+    private string safeArea = "…";
+    private string storage = "…";
+    private string calendar = "Opens the iOS new-event screen with the event filled in.";
+    private Check calendarStatus = Check.Manual;
+    private string notify = "Schedules a notification for 5 seconds from now. Lock the phone to see it.";
+    private Check notifyStatus = Check.Manual;
+
+    private string FeedDetail => Library.Source switch
+    {
+        FeedSource.Live => $"{Library.Sermons.Count} sermons in {Library.LastFetch?.TotalMilliseconds:0} ms via native networking",
+        _ when Library.LastError is { } error => $"Using the offline copy: {error}",
+        _ => "Using the offline copy while it checks…",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Library.Changed += Refresh;
+        platform = await Native.ProbeAsync("runtime");
+        plugins = await Native.ProbeAsync("plugins");
+        startup = await Native.ProbeAsync("startup");
+        safeArea = await Native.ProbeAsync("safe-area");
+        storage = await Native.ProbeAsync("storage");
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private Task OpenLatestSermon()
+    {
+        if (Library.Sermons.FirstOrDefault(s => s.YouTubeId is not null) is { } sermon)
+        {
+            Navigation.NavigateTo($"sermons/{sermon.Id}");
+        }
+        return Task.CompletedTask;
+    }
+
+    private Task ToggleLive()
+    {
+        Clock.PreviewLive = !Clock.PreviewLive;
+        if (Clock.PreviewLive)
+        {
+            Navigation.NavigateTo("");
+        }
+        return Task.CompletedTask;
+    }
+
+    private async Task TryHaptics()
+    {
+        var first = await Native.TryHapticAsync(Haptic.Light);
+        await Task.Delay(400);
+        var second = await Native.TryHapticAsync(Haptic.Success);
+        (hapticStatus, haptics) = (first, second) switch
+        {
+            ("ok", "ok") => (Check.Ok, "Both fired. If you felt nothing, check Settings → Sounds & Haptics → System Haptics."),
+            _ => (Check.No, $"Tap: {first} · buzz: {second}"),
+        };
+    }
+
+    private Task TryShare() => Native.ShareAsync("Good Shepherd", "Good Shepherd Baptist Church", SampleContent.Website).AsTask();
+
+    private Task TryBrowser() => Native.OpenInAppAsync(SampleContent.Website).AsTask();
+
+    private async Task TryCalendar()
+    {
+        var start = DateTime.Today.AddDays(7).AddHours(10.5);
+        var result = await Native.AddToCalendarAsync(new("Test event from the GSBC app", start, start.AddHours(1.5), SampleContent.Address, "Created by the device check. Safe to delete."));
+        (calendarStatus, calendar) = result switch
+        {
+            "added" => (Check.Ok, "Added. Check the Calendar app."),
+            "cancelled" => (Check.Ok, "The new-event screen opened (you cancelled)."),
+            "web" => (Check.Info, "Only on the phone."),
+            _ => (Check.No, result),
+        };
+    }
+
+    private async Task TryNotify()
+    {
+        var result = await Native.ScheduleNotificationAsync("Good Shepherd", "This is a local notification from the device check.", 5);
+        (notifyStatus, notify) = result switch
+        {
+            "scheduled" => (Check.Ok, "Scheduled for 5 seconds. Lock the phone to see it."),
+            "web" => (Check.Info, "Only on the phone."),
+            _ => (Check.No, result),
+        };
+    }
+
+    public void Dispose() => Library.Changed -= Refresh;
+}

@@ -1,0 +1,40 @@
+@implements IDisposable
+@inject PlayerService Player
+
+<div class="player">
+    <div class="player__top">
+        <button class="player__toggle" @onclick="Toggle" aria-label="@(Playing ? "Pause" : "Play")">
+            <Icon Name="@(Playing ? "pause" : "play")" />
+        </button>
+        <div class="player__label">
+            <strong>@(Player.IsCurrent(Sermon) ? (Playing ? "Playing" : "Paused") : "Listen")</strong>
+            <span>@PlayerService.Clock(Position) / @(Duration > 0 ? PlayerService.Clock(Duration) : "--:--")</span>
+        </div>
+        <button class="player__skip" disabled="@(!Player.IsCurrent(Sermon))" @onclick="() => Player.SkipAsync(-15)" aria-label="Back 15 seconds"><Icon Name="skip-back" /><span>15</span></button>
+        <button class="player__skip" disabled="@(!Player.IsCurrent(Sermon))" @onclick="() => Player.SkipAsync(30)" aria-label="Forward 30 seconds"><Icon Name="skip-forward" /><span>30</span></button>
+    </div>
+    <input type="range" min="0" max="@Math.Max(1, (int)Duration)" value="@((int)Position)" disabled="@(!Player.IsCurrent(Sermon))" @onchange="Seek" aria-label="Position" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Sermon Sermon { get; set; } = default!;
+
+    private double saved;
+
+    private bool Playing => Player.IsCurrent(Sermon) && Player.IsPlaying;
+    private double Position => Player.IsCurrent(Sermon) ? Player.Position : saved;
+    private double Duration => Player.IsCurrent(Sermon) ? Player.Duration : 0;
+
+    protected override void OnInitialized() => Player.Changed += Refresh;
+
+    protected override async Task OnParametersSetAsync() => saved = await Player.SavedPositionAsync(Sermon);
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private Task Toggle() => Player.PlayAsync(Sermon);
+
+    private Task Seek(ChangeEventArgs e) =>
+        double.TryParse(e.Value?.ToString(), out var to) ? Player.SeekAsync(to).AsTask() : Task.CompletedTask;
+
+    public void Dispose() => Player.Changed -= Refresh;
+}

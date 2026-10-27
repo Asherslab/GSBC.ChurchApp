@@ -1,0 +1,42 @@
+@inject ChurchClock Clock
+
+<div class="list">
+    @foreach (var entry in Entries)
+    {
+        if (entry.Href is not null)
+        {
+            <a class="row" href="@entry.Href">@Body(entry)<span class="row__trail"><Icon Name="chevron-right" Size="IconSize.Small" /></span></a>
+        }
+        else
+        {
+            <div class="row">@Body(entry)</div>
+        }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<AgendaEntry> Entries { get; set; } = [];
+
+    private bool IsToday(AgendaEntry entry) => entry.Start.Date == Clock.Now.Date;
+
+    private string When(AgendaEntry entry) => $"{Clock.Relative(entry.Start)}, {ChurchClock.Time(entry.Start)}";
+
+    private RenderFragment Body(AgendaEntry entry) => @<text>
+        <span class="today-date @(IsToday(entry) ? "today-date--today" : "")" aria-hidden="true">
+            <b>@entry.Start.ToString("ddd")</b>
+            <span>@entry.Start.Day</span>
+        </span>
+        <span class="row__body">
+            <span class="row__title">@entry.Title</span>
+            <span class="row__subtitle">@When(entry)</span>
+            @if (entry.Streamed)
+            {
+                <span class="tag">Streamed on YouTube</span>
+            }
+            else if (entry.Detail is not null)
+            {
+                <span class="row__subtitle">@entry.Detail</span>
+            }
+        </span>
+    </text>;
+}

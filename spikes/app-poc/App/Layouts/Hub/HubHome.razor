@@ -1,0 +1,239 @@
+@implements IDisposable
+@inject SampleContent Content
+@inject SermonLibrary Library
+@inject ChurchClock Clock
+@inject WeekPlan Plan
+@inject PlayerService Player
+@inject NativeBridge Native
+@inject LifeGroupsService Groups
+
+<Page Title="Good Shepherd">
+    <Masthead Title="Good Shepherd" Note="@Clock.Now.ToString("dddd d MMMM")">
+        <ServiceStatus />
+    </Masthead>
+
+    <div class="hub-grid">
+        @if (Featured is { } sermon)
+        {
+            var current = Player.IsCurrent(sermon);
+            <div class="hub-tile hub-tile--wide hub-tile--lift hub-listen">
+                <a class="hub-tile__link" href="listen" @onclick="Tap">
+                    <Cover ImageUrl="@sermon.ImageUrl" Title="@sermon.Title" ShowTitle="false" />
+                    <span class="hub-listen__body">
+                        <strong class="hub-listen__title">@sermon.Title</strong>
+                        <span class="hub-tile__meta">@ListenLine(sermon, current)</span>
+                        @if (current)
+                        {
+                            <span class="progress"><i style="width: @ProgressPercent%"></i></span>
+                        }
+                    </span>
+                </a>
+                <button class="hub-listen__play" @onclick="() => Play(sermon)" aria-label="@PlayLabel(sermon, current)">
+                    <Icon Name="@(current && Player.IsPlaying ? "pause" : "play")" />
+                </button>
+            </div>
+        }
+        else
+        {
+            <a class="hub-tile hub-tile--wide hub-tile--lift hub-listen" href="listen" @onclick="Tap">
+                <Cover Title="Listen" />
+                <span class="hub-listen__body">
+                    <strong class="hub-listen__title">Sermons</strong>
+                    <span class="hub-tile__meta">Fetching the latest sermon…</span>
+                </span>
+            </a>
+        }
+
+        <a class="hub-tile hub-tile--tall hub-tile--navy hub-sunday" href="sunday" @onclick="Tap">
+            <BrandMark Class="hub-sunday__mark" />
+            <span class="hub-sunday__icon"><Icon Name="bulletin" Size="IconSize.Small" /></span>
+            <span class="hub-sunday__date">Sunday @Bulletin.Date.ToString("d MMMM")</span>
+            <strong class="hub-sunday__theme">@Bulletin.Theme</strong>
+            <span class="hub-sunday__verse">@Bulletin.ThemeVerse</span>
+            <span class="hub-sunday__go">Read the bulletin<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+        </a>
+
+        <a class="hub-tile hub-tile--act" href="prayer" @onclick="Tap">
+            <span class="hub-tile__top">
+                <span class="row__icon row__icon--accent"><Icon Name="prayer" Size="IconSize.Small" /></span>
+                <Icon Name="chevron-right" Size="IconSize.Small" />
+            </span>
+            <span class="hub-tile__foot">
+                <strong class="hub-tile__title">How can we pray for you?</strong>
+                <span class="hub-tile__meta">@Content.PrayerWall.Count on the prayer wall</span>
+            </span>
+        </a>
+
+        <button class="hub-tile" @onclick="Give">
+            <span class="hub-tile__top">
+                <span class="row__icon"><Icon Name="heart" Size="IconSize.Small" /></span>
+                <Icon Name="external-link" Size="IconSize.Small" />
+            </span>
+            <span class="hub-tile__foot">
+                <strong class="hub-tile__title">Give</strong>
+                <span class="hub-tile__meta">Online at baptist.com.au</span>
+            </span>
+        </button>
+
+        <a class="hub-tile hub-tile--wide hub-tile--lift hub-week" href="week" @onclick="Tap">
+            <span class="hub-week__head">
+                <strong class="hub-tile__title">This week</strong>
+                <span class="hub-week__more">Calendar<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+            </span>
+            @if (ComingUp.Count == 0)
+            {
+                <span class="hub-tile__meta">Nothing else on this week.</span>
+            }
+            else
+            {
+                <span class="hub-week__list">
+                    @foreach (var entry in ComingUp)
+                    {
+                        <span class="hub-week__entry">
+                            <span class="hub-week__when">@ChurchClock.Time(entry.Start)<small>@Clock.Relative(entry.Start)</small></span>
+                            <span>
+                                <span class="hub-week__what">@entry.Title</span>
+                                @if (entry.Detail is not null)
+                                {
+                                    <span class="tag">@entry.Detail</span>
+                                }
+                            </span>
+                        </span>
+                    }
+                </span>
+            }
+        </a>
+
+        <a class="hub-tile" href="notifications" @onclick="Tap">
+            <span class="hub-tile__top">
+                <span class="row__icon @(Unread > 0 ? "row__icon--warm" : "row__icon--quiet")"><Icon Name="bell" Size="IconSize.Small" /></span>
+                <Icon Name="chevron-right" Size="IconSize.Small" />
+            </span>
+            <span class="hub-tile__foot">
+                @if (LatestUnread is { } message)
+                {
+                    <strong class="hub-tile__title"><i class="hub-inbox__dot"></i>@Unread unread</strong>
+                    <span class="hub-tile__meta hub-tile__meta--clamp">@message.Title</span>
+                }
+                else
+                {
+                    <strong class="hub-tile__title">All caught up</strong>
+                    <span class="hub-tile__meta">Notifications</span>
+                }
+            </span>
+        </a>
+
+        <button class="hub-tile" @onclick="OpenBible">
+            <span class="hub-tile__top">
+                <span class="row__icon"><Icon Name="book-open" Size="IconSize.Small" /></span>
+                <Icon Name="chevron-right" Size="IconSize.Small" />
+            </span>
+            <span class="hub-tile__foot">
+                <strong class="hub-tile__title">Bible</strong>
+                <span class="hub-tile__meta">King James Version</span>
+            </span>
+        </button>
+
+        <a class="hub-tile hub-tile--wide hub-visit" href="@GroupsLine.Href" @onclick="Tap">
+            <span class="hub-visit__body">
+                <strong class="hub-tile__title">@GroupsLine.Title</strong>
+                <span class="hub-tile__meta">@GroupsLine.Subtitle</span>
+            </span>
+            <span class="row__icon row__icon--warm"><Icon Name="users" Size="IconSize.Small" /></span>
+        </a>
+
+        <a class="hub-tile hub-tile--wide hub-visit" href="visit" @onclick="Tap">
+            <span class="hub-visit__body">
+                <strong class="hub-tile__title">Visit us</strong>
+                <span class="hub-tile__meta">@SundayTimes</span>
+                <span class="hub-tile__meta">@SampleContent.Address</span>
+            </span>
+            <span class="row__icon row__icon--accent"><Icon Name="map-pin" Size="IconSize.Small" /></span>
+        </a>
+    </div>
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private const string BibleHref = "https://www.biblegateway.com/versions/King-James-Version-KJV-Bible/";
+    private const int ComingUpCount = 2;
+
+    private Bulletin Bulletin => Content.Bulletin;
+
+    private HomeLine GroupsLine => Groups.Home();
+
+    private Sermon? Featured => Player.Current ?? Library.Sermons.FirstOrDefault();
+
+    private int Unread => Content.Inbox.Count(m => m.Unread);
+
+    private InboxMessage? LatestUnread => Content.Inbox.FirstOrDefault(m => m.Unread);
+
+    private double ProgressPercent => Player.Duration > 0 ? Player.Position / Player.Duration * 100 : 0;
+
+    private IReadOnlyList<AgendaEntry> ComingUp =>
+        Plan.Days().SelectMany(d => d.Entries).Where(e => e.Start > Clock.Now).Take(ComingUpCount).ToList();
+
+    private string SundayTimes
+    {
+        get
+        {
+            var times = Content.Services
+                .Where(s => s.Day == DayOfWeek.Sunday && s.Streamed)
+                .OrderBy(s => s.Start)
+                .Select(s => ChurchClock.Time(DateTime.Today + s.Start.ToTimeSpan()));
+            return $"Sundays {string.Join(" & ", times)}";
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        Library.Changed += Refresh;
+        Player.Changed += Refresh;
+        Groups.Changed += Refresh;
+        _ = Groups.EnsureLoadedAsync();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private string ListenLine(Sermon sermon, bool current) => current
+        ? $"{(Player.IsPlaying ? "Playing" : "Paused")} · {PlayerService.Clock(Math.Max(0, Player.Duration - Player.Position))} left"
+        : $"{sermon.Speaker} · {sermon.Date:d MMM}";
+
+    private string PlayLabel(Sermon sermon, bool current) =>
+        current && Player.IsPlaying ? $"Pause {sermon.Title}" : $"Play {sermon.Title}";
+
+    private Task Tap() => Native.HapticAsync(Haptic.Selection).AsTask();
+
+    private async Task Play(Sermon sermon)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        if (Player.IsCurrent(sermon))
+        {
+            await Player.ToggleAsync();
+        }
+        else
+        {
+            await Player.PlayAsync(sermon);
+        }
+    }
+
+    private async Task Give()
+    {
+        await Tap();
+        await Native.OpenExternalAsync(SampleContent.GiveHref);
+    }
+
+    private async Task OpenBible()
+    {
+        await Tap();
+        await Native.OpenInAppAsync(BibleHref);
+    }
+
+    public void Dispose()
+    {
+        Library.Changed -= Refresh;
+        Player.Changed -= Refresh;
+        Groups.Changed -= Refresh;
+    }
+}

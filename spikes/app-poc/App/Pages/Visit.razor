@@ -1,0 +1,51 @@
+@page "/visit"
+@inject SampleContent Content
+@inject NativeBridge Native
+
+<Page Title="Visit us" BackHref="more" BackLabel="More" Bell="false">
+    <Masthead Title="Visit us" Note="An oasis in Albany Creek. Come as you are." />
+    <Section First="true">
+        <div>
+            <div class="stack">
+                <div>
+                    <strong>@SampleContent.ChurchName</strong>
+                    <p class="muted small selectable">@SampleContent.Address</p>
+                </div>
+                <div class="visit-actions">
+                    <button class="btn btn--primary" @onclick="() => Open(SampleContent.DirectionsHref)"><Icon Name="navigation" Size="IconSize.Small" />Directions</button>
+                    <button class="btn btn--quiet" @onclick="() => Open(SampleContent.PhoneHref)"><Icon Name="phone" Size="IconSize.Small" />Call</button>
+                    <button class="btn btn--quiet" @onclick="() => Open(EmailHref)"><Icon Name="mail" Size="IconSize.Small" />Email</button>
+                </div>
+            </div>
+        </div>
+    </Section>
+
+    <Section Title="Service times">
+        <WeekAgenda Days="ServiceDays" />
+        <p class="hint">Nursery available for all services.</p>
+    </Section>
+
+    <Section Title="Plan your visit">
+        <div class="list">
+            <ListRow Icon="globe" Title="baptist.com.au" Href="@SampleContent.Website" OpenInApp="true" />
+            <ListRow Icon="users" Title="Meet the team" Href="https://baptist.com.au/pages/our-team" OpenInApp="true" />
+            <ListRow Icon="scroll-text" Title="What we believe" Href="https://baptist.com.au/pages/our-beliefs" OpenInApp="true" />
+        </div>
+    </Section>
+</Page>
+
+@code {
+    private const string EmailHref = "mailto:" + SampleContent.Email;
+
+    private IReadOnlyList<AgendaDay> ServiceDays =>
+        Content.Services
+            .GroupBy(s => s.Day)
+            .Select(g => new AgendaDay(g.Key, g.Select(s => new AgendaItem(ChurchClock.Time(DateTime.Today + s.Start.ToTimeSpan()), s.Name)).ToArray()))
+            .ToList();
+
+    private async Task Open(string href)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Native.OpenExternalAsync(href);
+    }
+}

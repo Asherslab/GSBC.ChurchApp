@@ -1,0 +1,44 @@
+@implements IDisposable
+@inject PlayerService Player
+@inject NativeBridge Native
+
+<div class="today-sermon">
+    <div class="row">
+        <a class="today-sermon__link" href="@($"sermons/{Sermon.Id}")">
+            <span class="row__thumb"><Cover ImageUrl="@Sermon.ImageUrl" Title="@Sermon.Title" ShowTitle="false" /></span>
+            <span class="row__body">
+                <span class="row__title">@Sermon.Title</span>
+                <span class="row__subtitle">@Caption</span>
+            </span>
+        </a>
+        @if (Sermon.AudioUrl is not null && !IsCurrent)
+        {
+            <button class="today-play" @onclick="Play" aria-label="@($"Listen to {Sermon.Title}")"><Icon Name="play" Size="IconSize.Small" /></button>
+        }
+    </div>
+    @if (IsCurrent)
+    {
+        <div class="today-sermon__player"><AudioPlayer Sermon="Sermon" /></div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public Sermon Sermon { get; set; } = default!;
+    [Parameter] public string? Label { get; set; }
+
+    private bool IsCurrent => Player.IsCurrent(Sermon);
+
+    private string Caption => string.Join(" · ", new[] { Label, Sermon.Speaker, Sermon.Date.ToString("d MMM") }.Where(p => !string.IsNullOrEmpty(p)));
+
+    protected override void OnInitialized() => Player.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private async Task Play()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Player.PlayAsync(Sermon);
+    }
+
+    public void Dispose() => Player.Changed -= Refresh;
+}

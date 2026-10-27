@@ -1,0 +1,49 @@
+{
+  "title": "Choose how the GSBC app is organised",
+  "question": "Three ways to lay out the app around the same brand and content. Pick one to build, steer it, or ask for another three.",
+  "options": [
+    {
+      "id": "assigned",
+      "kind": "assigned",
+      "label": "The week",
+      "kicker": "THE ROLL",
+      "lineage": "the church's weekly rhythm, set like a timetable",
+      "thesis": "Home is the church week: a day rail and an agenda where services, events, new sermons and the bulletin sit on the day they happen.",
+      "palette": ["#2a3d5e", "#f5f1ea", "#009c8f", "#e7ae74", "#d5c9b7"],
+      "materials": ["Montserrat", "timetable columns", "day rail"],
+      "viewport": "Brand bar, a seven-day rail with today marked, then today-onward agenda rows with times in a fixed column; four tabs: Week, Sermons, Prayer, More.",
+      "risk": "Quiet weeks look empty; it leans on events data that is still being redone.",
+      "html": ".impeccable/mocks/decision/assigned.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "dealt-bulletin",
+      "kind": "dealt",
+      "label": "The bulletin",
+      "lineage": "the printed What's Next bulletin",
+      "thesis": "Home is this Sunday's bulletin, read like the paper one: a masthead, section tabs, and the outline you write notes against.",
+      "palette": ["#2a3d5e", "#ffffff", "#d5c9b7", "#009c8f", "#e7ae74"],
+      "materials": ["Montserrat", "masthead band", "sticky section tabs"],
+      "viewport": "Navy masthead with the yearly theme, sticky tabs (Welcome, Sermons, This week, Give), then the welcome letter; tabs: Sunday, Sermons, Events, More.",
+      "risk": "Midweek, a page about last Sunday can feel stale until the next bulletin lands.",
+      "html": ".impeccable/mocks/decision/dealt-bulletin.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "dealt-media",
+      "kind": "dealt",
+      "label": "Watch and listen",
+      "lineage": "podcast and streaming apps",
+      "thesis": "Home leads with the latest service to watch or listen to, picks up where you left off, and keeps this week as a compact strip below.",
+      "palette": ["#1b2740", "#2a3d5e", "#f5f1ea", "#009c8f", "#e7ae74"],
+      "materials": ["Montserrat", "series artwork", "resume progress"],
+      "viewport": "A full-width latest-service player (Live when streaming), a continue-listening row with progress, series shelves, then a this-week strip; tabs: Listen, This week, Prayer, More.",
+      "risk": "Puts sermons above everything else, which tips away from the even mix you asked for.",
+      "html": ".impeccable/mocks/decision/dealt-media.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

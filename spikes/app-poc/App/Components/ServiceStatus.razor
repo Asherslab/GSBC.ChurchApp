@@ -1,0 +1,45 @@
+@inject ChurchClock Clock
+@inject NativeBridge Native
+
+@if (Clock.LiveNow() is { } live)
+{
+    <div class="status">
+        <span class="live-dot"></span>
+        <span class="status__text"><strong>Live now</strong> · @live.Service.Name</span>
+        <button class="btn btn--live" @onclick="WatchLive">Watch</button>
+    </div>
+}
+else
+{
+    var next = Clock.NextService();
+    <div class="status">
+        <Icon Name="clock" Size="IconSize.Small" />
+        <span class="status__text"><strong>@Clock.Relative(next.Start), @ChurchClock.Time(next.Start)</strong> · @next.Service.Name</span>
+        <button class="btn btn--ghost-masthead" @onclick="() => Remind(next)">@reminderLabel</button>
+    </div>
+}
+
+@code {
+    private const string LiveUrl = SampleContent.YouTubeChannel + "/live";
+    private string reminderLabel = "Remind me";
+
+    private async Task WatchLive()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Native.OpenExternalAsync(LiveUrl);
+    }
+
+    private async Task Remind(ServiceOccurrence next)
+    {
+        var at = next.Start.AddHours(-1) > Clock.Now ? next.Start.AddHours(-1) : next.Start.AddMinutes(-10);
+        var seconds = Math.Max(5, (int)(at - Clock.Now).TotalSeconds);
+        var result = await Native.ScheduleNotificationAsync(next.Service.Name, $"Starts at {ChurchClock.Time(next.Start)}. See you there.", seconds);
+        reminderLabel = result switch
+        {
+            "scheduled" => "Reminder set",
+            "web" => "Phone only",
+            _ => "Not allowed",
+        };
+        await Native.HapticAsync(result == "scheduled" ? Haptic.Success : Haptic.Warning);
+    }
+}

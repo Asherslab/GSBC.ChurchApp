@@ -1,0 +1,65 @@
+@inject NativeBridge Native
+
+<div class="probe">
+    <strong>@Title</strong>
+    @if (Action is not null)
+    {
+        <button class="btn btn--quiet" disabled="@busy" @onclick="Run">@Action</button>
+    }
+    else
+    {
+        <span class="status-word @StatusClass">@StatusLabel</span>
+    }
+    <span>
+        @if (Action is not null && Status is not Check.Info and not Check.Manual)
+        {
+            <b class="status-word @StatusClass">@StatusLabel</b>@(" · ")
+        }
+        @Detail
+    </span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public Check Status { get; set; } = Check.Info;
+    [Parameter] public string? Action { get; set; }
+    [Parameter] public Func<Task>? OnAction { get; set; }
+
+    private bool busy;
+
+    private string StatusClass => Status switch
+    {
+        Check.Ok => "status-word--ok",
+        Check.Warn => "status-word--warn",
+        Check.No => "status-word--no",
+        _ => "",
+    };
+
+    private string StatusLabel => Status switch
+    {
+        Check.Ok => "Works",
+        Check.Warn => "Check",
+        Check.No => "Not yet",
+        Check.Manual => "Try it",
+        _ => "",
+    };
+
+    private async Task Run()
+    {
+        if (OnAction is null)
+        {
+            return;
+        }
+        busy = true;
+        await Native.HapticAsync(Haptic.Selection);
+        try
+        {
+            await OnAction();
+        }
+        finally
+        {
+            busy = false;
+        }
+    }
+}

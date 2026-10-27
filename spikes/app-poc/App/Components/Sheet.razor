@@ -1,0 +1,16 @@
+@if (Open)
+{
+    <div class="sheet-backdrop" @onclick="Close"></div>
+    <div class="sheet" role="dialog" aria-modal="true">
+        <div class="sheet__grabber"></div>
+        @ChildContent
+    </div>
+}
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task Close() => OpenChanged.InvokeAsync(false);
+}

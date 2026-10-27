@@ -1,0 +1,63 @@
+@implements IDisposable
+@inject NavigationManager Navigation
+@inject NativeBridge Native
+@inject PlayerService Player
+@inject AppSettings Settings
+
+<nav class="tabbar" aria-label="Main">
+    @foreach (var tab in Tabs)
+    {
+        <a class="tabbar__item @(IsActive(tab) ? "active" : "")" href="@tab.Href" @onclick="() => Select(tab)" aria-current="@(IsActive(tab) ? "page" : null)">
+            <span class="tabbar__icon">
+                <Icon Name="@tab.Icon" />
+                @if (tab.Href == "listen" && Player.IsPlaying)
+                {
+                    <span class="playing-bars" aria-label="Playing"><i></i><i></i><i></i></span>
+                }
+            </span>
+            <span>@tab.Label</span>
+        </a>
+    }
+</nav>
+
+@code {
+    private IReadOnlyList<NavTab> Tabs => Settings.LayoutOption.Tabs;
+
+    private string Section => Navigation.ToBaseRelativePath(Navigation.Uri).Split('/', '?', '#')[0];
+
+    private bool IsActive(NavTab tab) => tab.Sections.Contains(Section);
+
+    protected override void OnInitialized()
+    {
+        Navigation.LocationChanged += OnLocationChanged;
+        Player.Changed += OnPlayerChanged;
+    }
+
+    private bool wasPlaying;
+
+    private void OnPlayerChanged()
+    {
+        if (Player.IsPlaying != wasPlaying)
+        {
+            wasPlaying = Player.IsPlaying;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private void OnLocationChanged(object? sender, Microsoft.AspNetCore.Components.Routing.LocationChangedEventArgs e) => StateHasChanged();
+
+    private async Task Select(NavTab tab)
+    {
+        if (IsActive(tab))
+        {
+            await Native.ScrollToTopAsync();
+        }
+        await Native.HapticAsync(Haptic.Selection);
+    }
+
+    public void Dispose()
+    {
+        Navigation.LocationChanged -= OnLocationChanged;
+        Player.Changed -= OnPlayerChanged;
+    }
+}

@@ -1,0 +1,90 @@
+@page "/prayer"
+@inject SampleContent Content
+@inject NativeBridge Native
+
+<Page Title="Prayer">
+    <Masthead Title="Prayer" Note="Our pastoral team would love to pray with you." />
+    <Section First="true">
+        <div class="stack stack--lg">
+            <div class="field">
+                <label for="request">Your request</label>
+                <textarea id="request" @bind="request" @bind:event="oninput" placeholder="What can we pray for?"></textarea>
+            </div>
+            <div class="field">
+                <label for="name">Your name <span class="muted">(optional)</span></label>
+                <input id="name" @bind="name" autocomplete="name" placeholder="First name is fine" />
+            </div>
+            <div>
+                <ToggleRow Title="Share on the prayer wall" Description="So the church can pray too. Staff check it first." @bind-Checked="shareOnWall" />
+                @if (shareOnWall)
+                {
+                    <ToggleRow Title="Hide my name" Description="Show the request without your name." @bind-Checked="hideName" />
+                }
+                <ToggleRow Title="I'd like someone to contact me" Description="A pastor will get in touch." @bind-Checked="wantsContact" />
+            </div>
+            @if (wantsContact)
+            {
+                <div class="field">
+                    <label for="contact">Phone or email</label>
+                    <input id="contact" @bind="contact" inputmode="email" autocomplete="email" />
+                </div>
+            }
+            <button class="btn btn--primary btn--block" disabled="@string.IsNullOrWhiteSpace(request)" @onclick="Send">Send to the pastoral team</button>
+            <p class="hint" style="margin-top: -10px"><Icon Name="shield-check" Size="IconSize.ExtraSmall" />Private to the pastoral team unless you choose to share.</p>
+        </div>
+    </Section>
+
+    <Section Title="Prayer wall">
+        <Trailing><span class="pill">Later release</span></Trailing>
+        <ChildContent>
+            <div>
+                @foreach (var (post, i) in Content.PrayerWall.Select((p, i) => (p, i)))
+                {
+                    <article class="wall-post">
+                        <p>@post.Text</p>
+                        <footer>
+                            <span>@post.When</span>
+                            <button class="pray-btn" aria-pressed="@(praying.Contains(i) ? "true" : "false")" @onclick="() => Pray(i)">
+                                <Icon Name="prayer" Size="IconSize.Small" />@(post.Praying + (praying.Contains(i) ? 1 : 0)) praying
+                            </button>
+                        </footer>
+                    </article>
+                }
+            </div>
+        </ChildContent>
+    </Section>
+
+    <Sheet @bind-Open="sent">
+        <EmptyState Icon="check" Title="Thank you" Body="In the real app this goes straight to the pastoral team. This is a design preview, so nothing was sent.">
+            <button class="btn btn--quiet" @onclick="() => sent = false">Done</button>
+        </EmptyState>
+    </Sheet>
+</Page>
+
+@code {
+    private string request = "";
+    private string name = "";
+    private string contact = "";
+    private bool shareOnWall;
+    private bool hideName;
+    private bool wantsContact;
+    private bool sent;
+    private readonly HashSet<int> praying = [];
+
+    private async Task Send()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        sent = true;
+        request = name = contact = "";
+        shareOnWall = wantsContact = hideName = false;
+    }
+
+    private async Task Pray(int index)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        if (!praying.Add(index))
+        {
+            praying.Remove(index);
+        }
+    }
+}

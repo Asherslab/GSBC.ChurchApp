@@ -1,0 +1,241 @@
+@implements IDisposable
+@inject SampleContent Content
+@inject SermonLibrary Library
+@inject ChurchClock Clock
+@inject PlayerService Player
+@inject NativeBridge Native
+@inject IJSRuntime JS
+
+<Page Title="This week" StuckAt="230">
+    <Masthead Title="This week" Note="@($"{plan.First:d MMM} – {plan.Last:d MMM}")">
+        <div class="day-rail wk-rail" role="group" aria-label="Days">
+            @foreach (var day in days)
+            {
+                <button class="@RailClass(day.Date)" @onclick="() => Jump(day.Date)" aria-label="@day.Date.ToString("dddd d MMMM")" aria-current="@(day.Date == plan.Today ? "date" : null)">
+                    <b>@day.Date.ToString("ddd").ToUpperInvariant()</b>
+                    <span>@day.Date.Day</span>
+                    <i class="@(day.IsQuiet ? "" : "has")"></i>
+                </button>
+            }
+        </div>
+        <div class="wk-status"><ServiceStatus /></div>
+    </Masthead>
+
+    <Section First="true">
+        @foreach (var day in days)
+        {
+            if (day.IsQuiet)
+            {
+                <div class="wk-day wk-day--quiet @DayClass(day.Date)" id="@DayId(day.Date)">
+                    <h2 class="wk-day__head"><span class="wk-day__name">@DayName(day.Date)</span><span class="wk-day__date">Nothing on · @DateLabel(day.Date)</span></h2>
+                </div>
+                continue;
+            }
+            var isToday = day.Date == plan.Today;
+            var nowShown = false;
+            <div class="wk-day @DayClass(day.Date)" id="@DayId(day.Date)">
+                <h2 class="wk-day__head"><span class="wk-day__name">@DayName(day.Date)</span><span class="wk-day__date">@DateLabel(day.Date)</span></h2>
+                <div class="list">
+                    @if (day.Bulletin is { } bulletin)
+                    {
+                        <ListRow Icon="bulletin" Title="@bulletin.Theme" Subtitle="@($"The bulletin · {bulletin.ThemeVerse}")" Href="sunday" />
+                    }
+                    @foreach (var entry in day.Entries)
+                    {
+                        if (isToday && !nowShown && entry.End > Clock.Now)
+                        {
+                            nowShown = true;
+                            @NowLine
+                        }
+                        <div class="wk-entry @(entry.Sermons.Count > 0 ? "wk-entry--sermon" : "")">
+                            @EntryRow(entry)
+                            @foreach (var sermon in entry.Sermons)
+                            {
+                                @SermonBand(sermon)
+                            }
+                        </div>
+                    }
+                    @if (isToday && !nowShown)
+                    {
+                        @NowLine
+                    }
+                    @if (day.LooseSermons.Count > 0)
+                    {
+                        <div class="wk-entry wk-entry--sermon wk-entry--loose">
+                            @foreach (var sermon in day.LooseSermons)
+                            {
+                                @SermonBand(sermon)
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </Section>
+
+    @if (plan.ComingUp() is { Count: > 0 } coming)
+    {
+        <Section Title="Coming up">
+            @foreach (var e in coming)
+            {
+                <a class="feature-card pressable" href="@($"events/{e.Id}")">
+                    <Cover ImageUrl="@e.ImageUrl" Title="@e.Title" Tone="Tone.Accent" />
+                    <span class="feature-card__body">
+                        <strong>@e.Title</strong>
+                        <span>@e.Start.ToString("dddd d MMMM") · @ChurchClock.Time(e.Start)@(e.Repeats is { } r ? $" · {r}" : "")</span>
+                    </span>
+                </a>
+            }
+        </Section>
+    }
+
+    @if (WhatsNext(plan.ComingUp()) is { Count: > 0 } notes)
+    {
+        <Section Title="What's next">
+            <div class="list">
+                @foreach (var note in notes)
+                {
+                    <ListRow Title="@note.Title" Subtitle="@note.Body" Href="@note.ActionHref" />
+                }
+            </div>
+        </Section>
+    }
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private WeekHomePlan plan = default!;
+    private IReadOnlyList<WeekDay> days = [];
+
+    protected override void OnInitialized()
+    {
+        Library.Changed += Refresh;
+        Player.Changed += Refresh;
+    }
+
+    protected override void OnParametersSet() => Replan();
+
+    private void Replan()
+    {
+        plan = new WeekHomePlan(Content, Clock.Now);
+        days = plan.Days(Library.Sermons);
+    }
+
+    private void Refresh() => InvokeAsync(() =>
+    {
+        Replan();
+        StateHasChanged();
+    });
+
+    private RenderFragment NowLine => @<div class="wk-now" role="note"><span>Now · @ChurchClock.Time(Clock.Now)</span></div>;
+
+    private RenderFragment EntryRow(WeekEntry entry)
+    {
+        var past = entry.End <= Clock.Now;
+        var live = !past && entry.Start <= Clock.Now;
+        var body = EntryBody(entry, past, live);
+        return entry.Href is not null
+            ? @<a class="row @(past ? "row--past" : "")" href="@entry.Href">
+                <span class="row__time">@ChurchClock.Time(entry.Start)</span>
+                @body
+                <span class="row__trail"><Icon Name="chevron-right" Size="IconSize.Small" /></span>
+            </a>
+            : @<div class="row @(past ? "row--past" : "")">
+                <span class="row__time">@ChurchClock.Time(entry.Start)</span>
+                @body
+            </div>;
+    }
+
+    private static RenderFragment EntryBody(WeekEntry entry, bool past, bool live) =>
+        @<span class="row__body">
+            <span class="row__title">@entry.Title</span>
+            @if (live)
+            {
+                <span class="wk-live"><span class="live-dot"></span>On now</span>
+            }
+            else if (!past && entry.Service?.Streamed == true)
+            {
+                <span class="tag">Streamed on YouTube</span>
+            }
+            else if (entry.Detail is not null)
+            {
+                <span class="row__subtitle">@entry.Detail</span>
+            }
+        </span>;
+
+    private RenderFragment SermonBand(Sermon sermon) =>
+        @<div class="wk-sermon">
+            <a class="wk-sermon__open pressable" href="@($"sermons/{sermon.Id}")">
+                <span class="row__thumb"><Cover ImageUrl="@sermon.ImageUrl" Title="@sermon.Title" ShowTitle="false" /></span>
+                <span class="wk-sermon__body">
+                    <strong>@sermon.Title</strong>
+                    <span>@sermon.Speaker</span>
+                </span>
+            </a>
+            @if (sermon.AudioUrl is not null)
+            {
+                var playing = Player.IsCurrent(sermon) && Player.IsPlaying;
+                <button class="wk-sermon__play" @onclick="() => Play(sermon)" aria-label="@($"{(playing ? "Pause" : "Play")} {sermon.Title}")">
+                    <Icon Name="@(playing ? "pause" : "play")" Size="IconSize.Small" />
+                </button>
+            }
+            @if (Player.IsCurrent(sermon) && Player.Duration > 0)
+            {
+                <span class="progress"><i style="width: @(Player.Position / Player.Duration * 100)%"></i></span>
+            }
+        </div>;
+
+    private IReadOnlyList<Announcement> WhatsNext(IReadOnlyList<ChurchEvent> coming)
+    {
+        var shown = coming.Select(e => $"events/{e.Id}").ToHashSet();
+        return Content.Bulletin.WhatsNext.Where(n => n.ActionHref is null || !shown.Contains(n.ActionHref.TrimStart('/'))).ToList();
+    }
+
+    private int Offset(DateOnly date) => date.DayNumber - plan.Today.DayNumber;
+
+    private string DayName(DateOnly date) => Offset(date) switch
+    {
+        0 => "Today",
+        1 => "Tomorrow",
+        -1 => "Yesterday",
+        < 0 when date.DayOfWeek == DayOfWeek.Sunday => "Last Sunday",
+        _ => date.ToString("dddd"),
+    };
+
+    private string DateLabel(DateOnly date) => Offset(date) is >= -1 and <= 1 ? date.ToString("dddd d MMM") : date.ToString("d MMM");
+
+    private string DayClass(DateOnly date) => Offset(date) switch
+    {
+        0 => "wk-day--today",
+        < 0 => "wk-day--past",
+        _ => "",
+    };
+
+    private string RailClass(DateOnly date) => Offset(date) switch
+    {
+        0 => "today",
+        < 0 => "wk-rail__past",
+        _ => "",
+    };
+
+    private static string DayId(DateOnly date) => $"wk-day-{date:yyyyMMdd}";
+
+    private async Task Jump(DateOnly date)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await JS.InvokeVoidAsync("gsbc.scrollToSection", DayId(date));
+    }
+
+    private async Task Play(Sermon sermon)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Player.PlayAsync(sermon);
+    }
+
+    public void Dispose()
+    {
+        Library.Changed -= Refresh;
+        Player.Changed -= Refresh;
+    }
+}

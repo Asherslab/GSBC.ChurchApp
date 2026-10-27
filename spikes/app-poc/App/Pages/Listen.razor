@@ -1,0 +1,187 @@
+@page "/listen"
+@implements IDisposable
+@inject SermonLibrary Library
+@inject NativeBridge Native
+@inject NavigationManager Navigation
+@inject PlayerService Player
+
+<Page Title="Listen" StuckAt="180">
+    @if (Player.Current is { } playing)
+    {
+        <Masthead Title="Listen">
+            <a class="now-playing" href="@($"sermons/{playing.Id}")">
+                <Cover ImageUrl="@playing.ImageUrl" Title="@playing.Title" ShowTitle="false" />
+                <div>
+                    <strong>@playing.Title</strong>
+                    <span>@(Player.IsPlaying ? "Playing" : "Paused") · @playing.Speaker</span>
+                </div>
+            </a>
+            <div class="mini-progress"><i style="width: @(Player.Duration > 0 ? Player.Position / Player.Duration * 100 : 0)%"></i></div>
+            <div class="transport">
+                <span class="transport__time">@PlayerService.Clock(Player.Position)</span>
+                <button class="transport__btn" @onclick="() => Player.SkipAsync(-15)" aria-label="Back 15 seconds"><Icon Name="skip-back" /><span>15</span></button>
+                <button class="transport__play" @onclick="Player.ToggleAsync" aria-label="@(Player.IsPlaying ? "Pause" : "Play")"><Icon Name="@(Player.IsPlaying ? "pause" : "play")" /></button>
+                <button class="transport__btn" @onclick="() => Player.SkipAsync(30)" aria-label="Forward 30 seconds"><Icon Name="skip-forward" /><span>30</span></button>
+                <span class="transport__time">-@PlayerService.Clock(Math.Max(0, Player.Duration - Player.Position))</span>
+            </div>
+        </Masthead>
+    }
+    else if (Latest is { } latest)
+    {
+        <Masthead Title="Listen">
+            <div class="now-playing">
+                <Cover ImageUrl="@latest.ImageUrl" Title="@latest.Title" ShowTitle="false" />
+                <div>
+                    <strong>@latest.Title</strong>
+                    <span>@latest.Speaker · @Service(latest) · @latest.Date.ToString("d MMM")</span>
+                </div>
+            </div>
+            <div class="masthead__actions">
+                <button class="btn btn--on-masthead" @onclick="() => Player.PlayAsync(latest)"><Icon Name="play" Size="IconSize.Small" />Listen</button>
+                @if (latest.YouTubeId is not null)
+                {
+                    <button class="btn btn--ghost-masthead" @onclick="() => Open(latest, watch: true)"><Icon Name="video" Size="IconSize.Small" />Watch</button>
+                }
+            </div>
+        </Masthead>
+    }
+    else
+    {
+        <Masthead Title="Listen" Note="Loading sermons…" />
+    }
+
+    <SectionTabs Items="Sections" />
+
+    @if (InProgress.Count > 0)
+    {
+        <Section Id="keep" Title="Keep listening" First="true">
+            <div class="list">
+                @foreach (var (sermon, progress) in InProgress)
+                {
+                    <a class="row" href="@($"sermons/{sermon.Id}")">
+                        <span class="row__thumb"><Cover ImageUrl="@sermon.ImageUrl" Title="@sermon.Title" ShowTitle="false" /></span>
+                        <span class="row__body">
+                            <span class="row__title">@sermon.Title</span>
+                            <span class="row__subtitle">@sermon.Speaker</span>
+                            <span class="progress"><i style="width: @(progress)%"></i></span>
+                        </span>
+                    </a>
+                }
+            </div>
+        </Section>
+    }
+
+    <Section Id="latest" First="true">
+        <div class="list">
+            @foreach (var sermon in Library.Sermons.Skip(Player.Current is null ? 1 : 0).Take(visible))
+            {
+                <SermonRow Sermon="sermon" />
+            }
+        </div>
+        @if (visible + 1 < Library.Sermons.Count)
+        {
+            <button class="btn btn--quiet btn--block" style="margin-top: 16px" @onclick="() => visible += PageSize">Show older sermons</button>
+        }
+    </Section>
+
+    <Section Id="series" Title="Series">
+        <div class="series-grid">
+            @foreach (var series in Library.BySeries().Take(8))
+            {
+                var first = series.First();
+                <button class="series-card pressable" @onclick="() => openSeries = series.Key">
+                    <Cover ImageUrl="@first.ImageUrl" Title="@series.Key" />
+                    <strong>@series.Key</strong>
+                    <span>@series.Count() messages</span>
+                </button>
+            }
+        </div>
+    </Section>
+
+    <Section Id="speakers" Title="Speakers">
+        <div class="list">
+            @foreach (var speaker in Library.Sermons.GroupBy(s => s.Speaker).OrderByDescending(g => g.Count()).Take(8))
+            {
+                <button class="row" @onclick="() => openSpeaker = speaker.Key">
+                    <Avatar Name="@speaker.Key" PhotoUrl="@Library.PhotoFor(speaker.First())" />
+                    <span class="row__body">
+                        <span class="row__title">@speaker.Key</span>
+                        <span class="row__subtitle">@speaker.Count() messages · latest @speaker.First().Date.ToString("d MMM yyyy")</span>
+                    </span>
+                    <span class="row__trail"><Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                </button>
+            }
+        </div>
+    </Section>
+
+    <Section>
+        <p class="hint"><Icon Name="@(Library.Source == FeedSource.Live ? "radio" : "smartphone")" Size="IconSize.ExtraSmall" />@SourceLabel</p>
+    </Section>
+
+    <Sheet Open="SheetTitle is not null" OpenChanged="_ => openSeries = openSpeaker = null">
+        @if (SheetTitle is not null)
+        {
+            <h2>@SheetTitle</h2>
+            <div class="list" style="margin-top: 14px">
+                @foreach (var sermon in Library.Sermons.Where(s => s.Series == openSeries || s.Speaker == openSpeaker))
+                {
+                    <SermonRow Sermon="sermon" />
+                }
+            </div>
+        }
+    </Sheet>
+</Page>
+
+@code {
+    private const int PageSize = 15;
+
+    private static readonly IReadOnlyList<Choice<string>> Sections =
+        [new("latest", "Latest"), new("series", "Series"), new("speakers", "Speakers")];
+
+    private int visible = PageSize;
+    private string? openSeries;
+    private string? openSpeaker;
+    private Dictionary<string, double> positions = [];
+
+    private Sermon? Latest => Library.Sermons.FirstOrDefault();
+
+    private string? SheetTitle => openSeries ?? openSpeaker;
+
+    private IReadOnlyList<(Sermon Sermon, int Percent)> InProgress =>
+        Library.Sermons
+            .Where(s => positions.ContainsKey(s.Id))
+            .Select(s => (s, (int)Math.Round(positions[s.Id] * 100)))
+            .Take(3)
+            .ToList();
+
+    private string SourceLabel => Library.Source switch
+    {
+        FeedSource.Live => $"Live from baptist.com.au · {Library.Sermons.Count} sermons",
+        FeedSource.Bundled when Library.LastError is not null => "Offline copy · couldn't reach baptist.com.au",
+        FeedSource.Bundled => "Offline copy · checking for new sermons…",
+        _ => "",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Library.Changed += Refresh;
+        Player.Changed += Refresh;
+        positions = System.Text.Json.JsonSerializer.Deserialize(await Native.PositionsJsonAsync(), PositionsJson.Default.DictionaryStringDouble) ?? [];
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    private static string Service(Sermon sermon) => sermon.Service.Length > 0 ? sermon.Service : "Message";
+
+    private async Task Open(Sermon sermon, bool watch = false)
+    {
+        await Native.HapticAsync(Haptic.Light);
+        Navigation.NavigateTo(watch ? $"sermons/{sermon.Id}?watch=true" : $"sermons/{sermon.Id}");
+    }
+
+    public void Dispose()
+    {
+        Library.Changed -= Refresh;
+        Player.Changed -= Refresh;
+    }
+}

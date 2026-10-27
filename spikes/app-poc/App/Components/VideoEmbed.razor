@@ -1,0 +1,55 @@
+@inject NativeBridge Native
+
+<div class="detail-hero">
+    @if (inline)
+    {
+        <iframe src="@EmbedUrl" title="@Title" allow="autoplay; encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe>
+    }
+    else
+    {
+        <Cover ImageUrl="@PosterUrl" Title="@Title" ShowTitle="false" />
+        @if (YouTubeId is not null)
+        {
+            <button class="detail-hero__play" @onclick="Play" aria-label="Play video">
+                <span><Icon Name="play" Size="IconSize.Large" /></span>
+            </button>
+            <span class="detail-hero__label"><Icon Name="video" Size="IconSize.Small" />Watch the service</span>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string? YouTubeId { get; set; }
+    [Parameter] public string? PosterUrl { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public bool AutoPlay { get; set; }
+
+    private bool inline;
+    private bool autoPlayed;
+
+    private string EmbedUrl => $"https://www.youtube-nocookie.com/embed/{YouTubeId}?autoplay=1&playsinline=1&rel=0";
+
+    public static string WatchUrl(string youTubeId) => $"https://www.youtube.com/watch?v={youTubeId}";
+
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (AutoPlay && !autoPlayed && YouTubeId is not null)
+        {
+            autoPlayed = true;
+            await Play();
+        }
+    }
+
+    private async Task Play()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        if (await Native.IsIosAppAsync())
+        {
+            await Native.OpenInAppAsync(WatchUrl(YouTubeId!));
+            return;
+        }
+        inline = true;
+        StateHasChanged();
+    }
+}

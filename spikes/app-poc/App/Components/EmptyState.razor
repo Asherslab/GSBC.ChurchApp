@@ -1,0 +1,16 @@
+<div class="empty">
+    <Icon Name="@Icon" />
+    <strong>@Title</strong>
+    @if (Body is not null)
+    {
+        <span>@Body</span>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "sparkles";
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Body { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

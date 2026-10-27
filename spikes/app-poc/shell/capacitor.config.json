@@ -1,0 +1,21 @@
+{
+  "appId": "au.com.baptist.churchapp.poc",
+  "appName": "Good Shepherd",
+  "webDir": "../out/app/wwwroot",
+  "backgroundColor": "#2a3d5e",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false,
+    "limitsNavigationsToAppBoundDomains": false
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": true
+    },
+    "SplashScreen": {
+      "launchAutoHide": false,
+      "backgroundColor": "#2a3d5e",
+      "showSpinner": false
+    }
+  }
+}

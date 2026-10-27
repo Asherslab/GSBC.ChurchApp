@@ -1,0 +1,15 @@
+@inject SampleContent Content
+
+<a class="icon-btn" href="notifications" aria-label="@Label">
+    <Icon Name="bell" />
+    @if (Unread > 0)
+    {
+        <span class="badge-count">@Unread</span>
+    }
+</a>
+
+@code {
+    private int Unread => Content.Inbox.Count(m => m.Unread);
+
+    private string Label => Unread > 0 ? $"Notifications, {Unread} unread" : "Notifications";
+}

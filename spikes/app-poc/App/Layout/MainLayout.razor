@@ -1,0 +1,41 @@
+@inherits LayoutComponentBase
+@implements IDisposable
+@inject AppSettings Settings
+@inject NativeBridge Native
+@inject SermonLibrary Sermons
+@inject PlayerService Player
+
+<div class="shell @(Settings.LayoutOption.ShowTabBar ? "" : "shell--no-tabs")">
+    @Body
+    @if (Settings.LayoutOption.ShowTabBar)
+    {
+        <TabBar @key="Settings.Layout" />
+    }
+    <InstallSheet />
+</div>
+
+@code {
+    protected override void OnInitialized()
+    {
+        Settings.Changed += OnSettingsChanged;
+        _ = Sermons.EnsureLoadedAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await Native.ApplyThemeAsync(Settings.Theme, Settings.Appearance, Settings.LayoutOption.CssName);
+            await Native.MarkFirstRenderAsync();
+            await Player.StartAsync();
+        }
+    }
+
+    private async void OnSettingsChanged()
+    {
+        await Native.ApplyThemeAsync(Settings.Theme, Settings.Appearance, Settings.LayoutOption.CssName);
+        StateHasChanged();
+    }
+
+    public void Dispose() => Settings.Changed -= OnSettingsChanged;
+}

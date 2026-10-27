@@ -1,0 +1,30 @@
+@page "/"
+@implements IDisposable
+@inject AppSettings Settings
+
+@switch (Settings.Layout)
+{
+    case AppLayout.Today:
+        <TodayHome />
+        break;
+    case AppLayout.Hub:
+        <HubHome />
+        break;
+    case AppLayout.Simple:
+        <SimpleHome />
+        break;
+    case AppLayout.Week:
+        <WeekHome />
+        break;
+    default:
+        <Sunday />
+        break;
+}
+
+@code {
+    protected override void OnInitialized() => Settings.Changed += Refresh;
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Settings.Changed -= Refresh;
+}

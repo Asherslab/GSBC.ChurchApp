@@ -1,0 +1,56 @@
+@page "/appearance"
+@inject AppSettings Settings
+@inject NativeBridge Native
+
+<Page Title="Appearance" BackHref="more" BackLabel="More" Bell="false">
+    <Masthead Title="Appearance" Note="Five layouts, light or dark, and two palettes for staff to compare." />
+    <Section Title="Layout" First="true">
+        <div>
+            @foreach (var option in LayoutCatalog.All)
+            {
+                <button class="theme-option layout-option" @onclick="() => SetLayout(option.Id)">
+                    <span><strong>@option.Name</strong><br /><span class="muted small">@option.Summary</span></span>
+                    <span class="check @(Settings.Layout == option.Id ? "check--on" : "")">@if (Settings.Layout == option.Id) { <Icon Name="check" Size="IconSize.ExtraSmall" /> }</span>
+                </button>
+            }
+        </div>
+    </Section>
+
+    <Section Title="Light or dark">
+        <Segmented Options="Appearances" Value="Settings.Appearance" ValueChanged="@((Appearance a) => SetAppearance(a))" />
+    </Section>
+
+    <Section Title="Palette">
+        <div>
+            <button class="theme-option" @onclick="() => SetTheme(Theme.Brand)">
+                <span class="swatches"><i style="background:#2a3d5e"></i><i style="background:#009c8f"></i><i style="background:#d5c9b7"></i><i style="background:#e7ae74"></i></span>
+                <span><strong>Brand</strong><br /><span class="muted small">2022 brand guide: navy, beige, aqua, orange</span></span>
+                <span class="check @(Settings.Theme == Theme.Brand ? "check--on" : "")">@if (Settings.Theme == Theme.Brand) { <Icon Name="check" Size="IconSize.ExtraSmall" /> }</span>
+            </button>
+            <button class="theme-option" @onclick="() => SetTheme(Theme.Year2026)">
+                <span class="swatches"><i style="background:#4a7355"></i><i style="background:#84a87d"></i><i style="background:#fffcd1"></i><i style="background:#fffef0"></i></span>
+                <span><strong>2026 theme</strong><br /><span class="muted small">This year’s website greens, serif headings</span></span>
+                <span class="check @(Settings.Theme == Theme.Year2026 ? "check--on" : "")">@if (Settings.Theme == Theme.Year2026) { <Icon Name="check" Size="IconSize.ExtraSmall" /> }</span>
+            </button>
+        </div>
+    </Section>
+</Page>
+
+@code {
+    private static readonly IReadOnlyList<Choice<Appearance>> Appearances =
+        [new(Appearance.System, "Automatic"), new(Appearance.Light, "Light"), new(Appearance.Dark, "Dark")];
+
+    private async Task SetTheme(Theme theme)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await Settings.SetThemeAsync(theme);
+    }
+
+    private Task SetAppearance(Appearance appearance) => Settings.SetAppearanceAsync(appearance);
+
+    private async Task SetLayout(AppLayout layout)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        await Settings.SetLayoutAsync(layout);
+    }
+}

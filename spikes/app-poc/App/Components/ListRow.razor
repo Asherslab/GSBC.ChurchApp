@@ -1,0 +1,77 @@
+@inject NativeBridge Native
+
+@if (Href is not null && !External && !Disabled)
+{
+    <a class="row @RowClass" href="@Href" @onclick="Tap">@Body</a>
+}
+else if (Disabled)
+{
+    <div class="row row--disabled @RowClass">@Body</div>
+}
+else
+{
+    <button class="row @RowClass" @onclick="Activate">@Body</button>
+}
+
+@code {
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public Tone IconTone { get; set; } = Tone.Primary;
+    [Parameter] public RenderFragment? Leading { get; set; }
+    [Parameter] public string? Trailing { get; set; }
+    [Parameter] public RenderFragment? TrailingContent { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public bool External { get; set; }
+    [Parameter] public bool OpenInApp { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private string RowClass => "";
+
+    private string ToneClass => IconTone switch
+    {
+        Tone.Accent => "row__icon--accent",
+        Tone.Warm => "row__icon--warm",
+        Tone.Quiet => "row__icon--quiet",
+        _ => "",
+    };
+
+    private RenderFragment Body => @<text>
+        @if (Leading is not null)
+        {
+            @Leading
+        }
+        else if (Icon is not null)
+        {
+            <span class="row__icon @ToneClass"><Gsbc.AppPoc.Components.Icon Name="@Icon" Size="IconSize.Small" /></span>
+        }
+        <span class="row__body">
+            <span class="row__title">@Title</span>
+            @if (Subtitle is not null)
+            {
+                <span class="row__subtitle">@Subtitle</span>
+            }
+        </span>
+        <span class="row__trail">
+            @Trailing
+            @TrailingContent
+            @if (!Disabled)
+            {
+                <Gsbc.AppPoc.Components.Icon Name="@(External ? "external-link" : "chevron-right")" Size="IconSize.Small" />
+            }
+        </span>
+    </text>;
+
+    private Task Tap() => Native.HapticAsync(Haptic.Selection).AsTask();
+
+    private async Task Activate()
+    {
+        await Tap();
+        if (Href is not null)
+        {
+            await (OpenInApp ? Native.OpenInAppAsync(Href) : Native.OpenExternalAsync(Href));
+        }
+        await OnClick.InvokeAsync();
+    }
+}
