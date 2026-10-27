@@ -96,9 +96,13 @@ it opens full screen.
 
 Native-only features say so instead of working: notification previews and Add to calendar report
 "Phone only", haptics do nothing, and the first-run notifications sheet is skipped in a browser tab. Sermons come from the bundled feed snapshot (baptist.com.au
-sends no CORS headers, and a proxy would be a non-gRPC API path). YouTube plays inline. The service
-worker (`wwwroot/sw.js`) is network-first, so every launch gets the latest build and only offline falls
-back to the cache.
+sends no CORS headers, and a proxy would be a non-gRPC API path). YouTube plays inline.
+
+The service worker (`wwwroot/service-worker.published.js`, ported from Graced) precaches each build
+under its own version, fetching every file cache-busted with its integrity hash, so Cloudflare (whose
+baptist.com.au zone stretches static files to a 4-hour browser cache) can't serve a stale copy. A new
+build installs behind the running one; the app checks when it returns to the foreground and every five
+minutes, and `Components/UpdateBanner.razor` offers Reload.
 
 `pwa/Dockerfile` builds an nginx image (context `spikes/app-poc`); `.github/workflows/app-poc-pwa.yml`
 pushes it to GHCR and pins the tag in gsbc.argo (`clusters/mini/app/church-app-pwa`), the same as
