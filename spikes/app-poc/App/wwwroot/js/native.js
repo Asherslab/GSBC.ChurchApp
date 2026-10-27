@@ -442,6 +442,16 @@
     plugin('App')?.addListener('backButton', () => history.length > 1 && history.back());
   });
 
+  const fillStandaloneScreen = () => {
+    const portrait = matchMedia('(orientation: portrait)').matches;
+    const [short, long] = [screen.width, screen.height].sort((a, b) => a - b);
+    document.documentElement.style.setProperty('--screen-h', `${portrait ? long : short}px`);
+  };
+  if (window.gsbc.displayMode() === 'standalone') {
+    fillStandaloneScreen();
+    addEventListener('resize', fillStandaloneScreen);
+  }
+
   if (!isNative() && 'serviceWorker' in navigator && location.protocol === 'https:') {
     navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
       .then((registration) => window.gsbc.updates.watch(registration))
