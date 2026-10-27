@@ -1,3 +1,4 @@
+using Gsbc.AppPoc.Components;
 using Microsoft.JSInterop;
 
 namespace Gsbc.AppPoc.Native;
@@ -31,6 +32,11 @@ public sealed class NativeBridge(IJSRuntime js)
     public async ValueTask<bool> ShouldOfferInstallAsync() => await DisplayModeAsync() is DisplayMode.BrowserIos or DisplayMode.BrowserInstallable;
 
     public ValueTask<bool> InstallAsync() => js.InvokeAsync<bool>("gsbc.install");
+
+    public ValueTask OnUpdateReadyAsync(DotNetObjectReference<UpdateBanner> listener) =>
+        js.InvokeVoidAsync("gsbc.updates.onReady", listener);
+
+    public ValueTask ApplyUpdateAsync() => js.InvokeVoidAsync("gsbc.updates.apply");
 
     public async ValueTask<bool> IsIosAppAsync() => await IsNativeAsync() && await PlatformAsync() == "ios";
 

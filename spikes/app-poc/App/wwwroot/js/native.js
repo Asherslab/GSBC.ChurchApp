@@ -341,6 +341,58 @@
       },
     },
 
+    updates: {
+      waiting: false,
+      listener: null,
+      lastCheck: 0,
+      watch(registration) {
+        const updates = window.gsbc.updates;
+        updates.lastCheck = Date.now();
+        const installed = () => navigator.serviceWorker.controller && updates.ready();
+        if (registration.waiting) installed();
+        registration.addEventListener('updatefound', () => {
+          const next = registration.installing;
+          next?.addEventListener('statechange', () => { if (next.state === 'installed') installed(); });
+        });
+        const check = () => {
+          if (Date.now() - updates.lastCheck < 30_000) return;
+          updates.lastCheck = Date.now();
+          registration.update().catch(() => { });
+        };
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') check(); });
+        setInterval(check, 5 * 60_000);
+      },
+      ready() {
+        const updates = window.gsbc.updates;
+        if (updates.waiting) return;
+        updates.waiting = true;
+        updates.listener?.invokeMethodAsync('UpdateReady');
+      },
+      onReady(listener) {
+        const updates = window.gsbc.updates;
+        updates.listener = listener;
+        if (updates.waiting) listener.invokeMethodAsync('UpdateReady');
+      },
+      async apply() {
+        try {
+          const registration = await navigator.serviceWorker?.getRegistration();
+          const next = registration?.waiting ?? registration?.installing;
+          if (next) {
+            const switched = new Promise((resolve) => {
+              navigator.serviceWorker.addEventListener('controllerchange', resolve, { once: true });
+              setTimeout(resolve, 10_000);
+            });
+            if (next.state === 'installing') {
+              await new Promise((resolve) => next.addEventListener('statechange', () => next.state !== 'installing' && resolve()));
+            }
+            next.postMessage('skip-waiting');
+            await switched;
+          }
+        } catch { }
+        location.reload();
+      },
+    },
+
     async probe(name) {
       try {
         switch (name) {
@@ -391,6 +443,8 @@
   });
 
   if (!isNative() && 'serviceWorker' in navigator && location.protocol === 'https:') {
-    navigator.serviceWorker.register('sw.js').catch(() => { });
+    navigator.serviceWorker.register('service-worker.js', { updateViaCache: 'none' })
+      .then((registration) => window.gsbc.updates.watch(registration))
+      .catch(() => { });
   }
 })();

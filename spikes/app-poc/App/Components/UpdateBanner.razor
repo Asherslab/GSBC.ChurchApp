@@ -1,0 +1,41 @@
+@inject NativeBridge Native
+@implements IDisposable
+
+@if (ready)
+{
+    <div class="update-bar" role="status">
+        <span>A new version is ready</span>
+        <button class="btn btn--primary" disabled="@reloading" @onclick="Reload">@(reloading ? "Reloading…" : "Reload")</button>
+    </div>
+}
+
+@code {
+    private bool ready;
+    private bool reloading;
+    private DotNetObjectReference<UpdateBanner>? listener;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+        {
+            return;
+        }
+        listener = DotNetObjectReference.Create(this);
+        await Native.OnUpdateReadyAsync(listener);
+    }
+
+    [JSInvokable]
+    public void UpdateReady()
+    {
+        ready = true;
+        StateHasChanged();
+    }
+
+    private async Task Reload()
+    {
+        reloading = true;
+        await Native.ApplyUpdateAsync();
+    }
+
+    public void Dispose() => listener?.Dispose();
+}
