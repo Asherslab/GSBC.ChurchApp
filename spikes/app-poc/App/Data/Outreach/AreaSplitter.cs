@@ -2,7 +2,7 @@ namespace Gsbc.AppPoc.Data.Outreach;
 
 public enum SplitTarget { Letterboxes, Bundles, Minutes }
 
-public sealed record AreaSelection(IReadOnlyList<int> Fresh, IReadOnlyList<int> Rested, IReadOnlyList<int> MainRoads);
+public sealed record AreaSelection(IReadOnlyList<int> Fresh, IReadOnlyList<int> Rested, IReadOnlyList<int> MainRoads, IReadOnlyList<int> Excluded);
 
 public sealed class DraftSection(IEnumerable<int> edges)
 {
@@ -120,11 +120,15 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
     private const int MaxBalanceMoves = 400;
     private const double MaxLinkMetres = 500;
 
-    public AreaSelection Select(IReadOnlyList<GeoPoint> polygon, Func<int, bool> rested)
+    public AreaSelection Select(IReadOnlyList<GeoPoint> polygon, Func<int, bool> rested, Func<int, bool> excluded)
     {
         var inside = Enumerable.Range(0, map.Edges.Count).Where(e => Inside(polygon, planner.Midpoint(e))).ToList();
-        var streets = inside.Where(e => !map.Edges[e].IsArterial).ToList();
-        return new(streets.Where(e => !rested(e)).ToList(), streets.Where(rested).ToList(), inside.Where(e => map.Edges[e].IsArterial).ToList());
+        var streets = inside.Where(e => !map.Edges[e].IsArterial && !excluded(e)).ToList();
+        return new(
+            streets.Where(e => !rested(e)).ToList(),
+            streets.Where(rested).ToList(),
+            inside.Where(e => map.Edges[e].IsArterial).ToList(),
+            inside.Where(e => !map.Edges[e].IsArterial && excluded(e)).ToList());
     }
 
     public static bool Inside(IReadOnlyList<GeoPoint> polygon, GeoPoint point)

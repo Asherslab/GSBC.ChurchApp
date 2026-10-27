@@ -1,0 +1,126 @@
+@inject OutreachService Outreach
+@inject NativeBridge Native
+
+<Sheet Open="Open" OpenChanged="OpenChanged">
+    @if (sent)
+    {
+        <h2>Sent for review</h2>
+        <p>Thank you. Staff will look at it; nothing changes until they do. You can see it under Your reports on the Outreach page.</p>
+        <div style="margin-top: 20px">
+            <button class="btn btn--quiet btn--block" @onclick="Close">Done</button>
+        </div>
+    }
+    else
+    {
+        <h2>Report a problem</h2>
+        <p>Staff will look at it. Nothing changes until they do.</p>
+        <div class="stack report-sheet">
+            @if (Scopes.Count > 1)
+            {
+                <Segmented TValue="ReportScope" Options="ScopeOptions" Value="scope" ValueChanged="SetScope" />
+            }
+            <p class="hint report-sheet__where"><Icon Name="map-pin" Size="IconSize.Small" />@WhereLine</p>
+            @if (scope == ReportScope.Letterbox && OnPickOnMap.HasDelegate)
+            {
+                <button class="btn btn--quiet" @onclick="PickOnMap"><Icon Name="map" Size="IconSize.Small" />Pick it on the map</button>
+            }
+            <ChipGroup TValue="ReportReason?" Options="ReasonOptions" Value="reason" ValueChanged="r => reason = r" />
+            <div class="field">
+                <label for="report-note">What's wrong? (needed)</label>
+                <textarea id="report-note" @bind="note" @bind:event="oninput" placeholder="For example: these are shops, not homes"></textarea>
+            </div>
+            <div class="field">
+                <label for="report-photo">Photo (optional)</label>
+                <input id="report-photo" class="report-sheet__file" type="file" accept="image/*" capture="environment" @ref="photoInput" @onchange="PhotoChosen" />
+                @if (photo is not null)
+                {
+                    <img class="report-sheet__photo" src="@photo" alt="Your photo" />
+                }
+                <span class="hint"><Icon Name="camera" Size="IconSize.Small" />Show the place, not people.</span>
+            </div>
+            <button class="btn btn--primary btn--block" disabled="@(!CanSend)" @onclick="Send">Send for review</button>
+        </div>
+    }
+</Sheet>
+
+@code {
+    private const int PhotoSize = 1280;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public IReadOnlyList<ReportScope> Scopes { get; set; } = [ReportScope.Area, ReportScope.Letterbox];
+    [Parameter] public string AreaName { get; set; } = "";
+    [Parameter] public string? StreetName { get; set; }
+    [Parameter] public int? StreetEdge { get; set; }
+    [Parameter] public GeoPoint? Point { get; set; }
+    [Parameter] public bool PointFromMap { get; set; }
+    [Parameter] public EventCallback OnPickOnMap { get; set; }
+
+    private static readonly IReadOnlyList<Choice<ReportReason?>> ReasonOptions =
+        OutreachLabels.ReportReasons.Select(r => new Choice<ReportReason?>(r, OutreachLabels.Label(r))).ToList();
+
+    private ElementReference photoInput;
+    private ReportScope scope;
+    private ReportReason? reason;
+    private string note = "";
+    private string? photo;
+    private bool sent;
+    private bool wasOpen;
+
+    private IReadOnlyList<Choice<ReportScope>> ScopeOptions => Scopes.Select(s => new Choice<ReportScope>(s, OutreachLabels.Label(s))).ToList();
+
+    private bool CanSend => reason is not null && !string.IsNullOrWhiteSpace(note) && (scope != ReportScope.Letterbox || Point is not null);
+
+    private string WhereLine => scope switch
+    {
+        ReportScope.Area => AreaName,
+        ReportScope.Street => StreetName ?? "This street",
+        _ when Point is null => "Where you are isn't known. Pick it on the map.",
+        _ when PointFromMap => "The spot you picked on the map",
+        _ => "Where you're standing now",
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !wasOpen)
+        {
+            if (!PointFromMap)
+            {
+                sent = false;
+                reason = null;
+                note = "";
+                photo = null;
+            }
+            scope = PointFromMap && Scopes.Contains(ReportScope.Letterbox) ? ReportScope.Letterbox : Scopes[0];
+        }
+        wasOpen = Open;
+    }
+
+    private void SetScope(ReportScope value) => scope = value;
+
+    private async Task PickOnMap() => await OnPickOnMap.InvokeAsync();
+
+    private async Task PhotoChosen() => photo = await Native.ReadPhotoAsync(photoInput, PhotoSize);
+
+    private async Task Send()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        var where = scope switch
+        {
+            ReportScope.Area => AreaName,
+            ReportScope.Street => StreetName ?? AreaName,
+            _ => $"A letterbox on {StreetName ?? AreaName}",
+        };
+        await Outreach.SendReportAsync(scope, reason!.Value, note, photo, scope == ReportScope.Area ? null : Point, scope == ReportScope.Street ? StreetEdge : null, where);
+        sent = true;
+    }
+
+    private async Task Close()
+    {
+        sent = false;
+        reason = null;
+        note = "";
+        photo = null;
+        await OpenChanged.InvokeAsync(false);
+    }
+}

@@ -18,6 +18,10 @@
     [Parameter] public int? SelectedEdge { get; set; }
     [Parameter] public string Mode { get; set; } = "select";
     [Parameter] public int FitVersion { get; set; }
+    [Parameter] public IReadOnlyList<ExclusionZone> Zones { get; set; } = [];
+    [Parameter] public IReadOnlyList<PlannerPin> Pins { get; set; } = [];
+    [Parameter] public GeoPoint? Focus { get; set; }
+    [Parameter] public int FocusVersion { get; set; }
     [Parameter] public EventCallback<GeoPoint> OnPoint { get; set; }
     [Parameter] public EventCallback OnFinish { get; set; }
     [Parameter] public EventCallback<GeoPoint> OnMeeting { get; set; }
@@ -25,6 +29,7 @@
 
     private ElementReference element;
     private DotNetObjectReference<PlannerMap>? self;
+    private Task? attaching;
     private int fittedVersion;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -36,8 +41,9 @@
         if (self is null)
         {
             self = DotNetObjectReference.Create(this);
-            await JS.InvokeVoidAsync("gsbc.plannerMap.attach", element, self, Meeting.Lat, Meeting.Lon, Attribution);
+            attaching = JS.InvokeVoidAsync("gsbc.plannerMap.attach", element, self, Meeting.Lat, Meeting.Lon, Attribution).AsTask();
         }
+        await attaching!;
         var fit = FitVersion != fittedVersion;
         fittedVersion = FitVersion;
         await JS.InvokeVoidAsync("gsbc.plannerMap.update", element, Json(), Mode, fit);
@@ -164,6 +170,37 @@
             });
 
             Collection(json, "meeting", () => Feature(json, "Point", () => { json.WriteNumberValue(Meeting.Lon); json.WriteNumberValue(Meeting.Lat); }));
+
+            Collection(json, "zones", () =>
+            {
+                foreach (var zone in Zones)
+                {
+                    Feature(json, "Polygon", () =>
+                    {
+                        json.WriteStartArray();
+                        foreach (var p in zone.Polygon.Append(zone.Polygon[0]))
+                        {
+                            Point(json, p.Point);
+                        }
+                        json.WriteEndArray();
+                    });
+                }
+            });
+
+            Collection(json, "pins", () =>
+            {
+                foreach (var pin in Pins)
+                {
+                    Feature(json, "Point", () => { json.WriteNumberValue(pin.Point.Lon); json.WriteNumberValue(pin.Point.Lat); }, properties: () => json.WriteString("kind", pin.Kind));
+                }
+            });
+
+            json.WriteNumber("focusVersion", FocusVersion);
+            if (Focus is { } focus)
+            {
+                json.WritePropertyName("focus");
+                Point(json, focus);
+            }
             json.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.ToArray());

@@ -1,0 +1,48 @@
+@inject OutreachService Outreach
+
+<Section Title="Reports from walkers" First="true">
+    <p class="section__lead">Nothing changes until you act on a report. Photos are deleted once it's resolved.</p>
+    @if (Outreach.Reports.Count == 0)
+    {
+        <p class="hint">No reports yet. Walkers send them from the walking screen or a route's page.</p>
+    }
+    else
+    {
+        <div class="planner-sections">
+            @foreach (var report in Outreach.Reports.OrderBy(r => r.Status != ReportStatus.SentForReview).ThenByDescending(r => r.Sent))
+            {
+                var open = report.Status == ReportStatus.SentForReview;
+                <div class="planner-section report-card @(open ? "" : "report-card--done")" @key="report.Id">
+                    <div class="planner-section__head">
+                        <span class="planner-section__number planner-section__number--report"><Icon Name="flag" Size="IconSize.Small" /></span>
+                        <strong>@OutreachLabels.Label(report.Reason) · @OutreachLabels.Label(report.Scope)</strong>
+                    </div>
+                    <p class="planner-section__meta">@report.Where · @report.Sent.ToString("ddd d MMM, h:mm tt") · @OutreachLabels.Label(report.Status)</p>
+                    <p class="report-card__note">@report.Note</p>
+                    @if (report.Photo is not null)
+                    {
+                        <img class="report-card__photo" src="@report.Photo" alt="Photo sent with the report" />
+                    }
+                    @if (open)
+                    {
+                        <div class="planner__actions">
+                            @if (report.Point is { } point)
+                            {
+                                <button class="btn btn--quiet planner__small" @onclick="() => OnFocus.InvokeAsync(point.Point)"><Icon Name="map-pin" Size="IconSize.Small" />Show</button>
+                            }
+                            <button class="btn btn--quiet planner__small" @onclick="() => OnMakeZone.InvokeAsync(report)">Make exclusion zone</button>
+                            <button class="btn btn--quiet planner__small" @onclick="() => OnMakeAddress.InvokeAsync(report)" disabled="@(report.Point is null)">Make excluded letterbox</button>
+                            <button class="btn btn--quiet planner__small" @onclick="() => Outreach.ResolveReportAsync(report, ReportStatus.Dismissed)">Dismiss</button>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+    }
+</Section>
+
+@code {
+    [Parameter] public EventCallback<WalkerReport> OnMakeZone { get; set; }
+    [Parameter] public EventCallback<WalkerReport> OnMakeAddress { get; set; }
+    [Parameter] public EventCallback<GeoPoint> OnFocus { get; set; }
+}

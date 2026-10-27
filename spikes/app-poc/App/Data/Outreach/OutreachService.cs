@@ -1,5 +1,7 @@
 using System.Globalization;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using Gsbc.AppPoc.Native;
 
 namespace Gsbc.AppPoc.Data.Outreach;
@@ -35,6 +37,9 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     private const string FlagsKey = "outreach:flags";
     private const string DayTallyKey = "outreach:day-tally";
     private const string PublishedKey = "outreach:published";
+    private const string ZonesKey = "outreach:zones";
+    private const string ExcludedKey = "outreach:excluded";
+    private const string ReportsKey = "outreach:reports";
     private static readonly DateTime OutreachPreviewMoment = new(2026, 10, 31, 9, 5, 0);
     private static readonly OutreachDay SampleDay = new(new(2026, 10, 31, 8, 30, 0), new(2026, 10, 31, 11, 30, 0), "church");
     private const int SampleDayTally = 312;
@@ -54,6 +59,10 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     private readonly Dictionary<int, DateOnly> sampleWalked = [];
     private readonly Dictionary<(int Node, double? Minutes, double? Kilometres), WalkPlan> plans = [];
     private List<ReadyRoute>? published;
+    private List<ExclusionZone> zones = [];
+    private List<ExcludedAddress> excluded = [];
+    private List<WalkerReport> reports = [];
+    private HashSet<int> zoneEdges = [];
     private Task? loading;
     private int myDayTally;
 
@@ -91,10 +100,93 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
 
     public Task EnsureLoadedAsync() => loading ??= LoadAsync();
 
+    public IReadOnlyList<ExclusionZone> Zones => zones;
+
+    public IReadOnlyList<ExcludedAddress> ExcludedAddresses => excluded;
+
+    public IReadOnlyList<WalkerReport> Reports => reports;
+
+    public bool InZone(int edge) => zoneEdges.Contains(edge);
+
     public int Count(int edge, int side)
     {
-        var boxes = Map!.Edges[edge].Boxes[side] - flags.Count(f => f.Edge == edge && f.Side == side);
+        if (zoneEdges.Contains(edge))
+        {
+            return 0;
+        }
+        var boxes = Map!.Edges[edge].Boxes[side]
+            - flags.Count(f => f.Edge == edge && f.Side == side)
+            - excluded.Count(x => x.Edge == edge && x.Side == side);
         return Math.Max(0, boxes);
+    }
+
+    public IReadOnlyList<Mark> SkipsOn(IEnumerable<Arc> arcs)
+    {
+        var sides = arcs.Select(a => (a.Edge, a.Side)).ToHashSet();
+        return (Map?.Skips ?? []).Where(m => sides.Contains((m.Edge, m.Side))).ToList();
+    }
+
+    public IReadOnlyList<ExcludedAddress> DontLetterboxOn(IEnumerable<Arc> arcs)
+    {
+        var sides = arcs.Select(a => (a.Edge, a.Side)).ToHashSet();
+        return excluded.Where(x => x.ShowWalkers && sides.Contains((x.Edge, x.Side))).ToList();
+    }
+
+    public IReadOnlyList<WalkMarker> MarkersFor(WalkPlan plan)
+    {
+        var delivering = plan.Legs.Where(l => l.Letterboxes > 0).SelectMany(l => l.Arcs).ToList();
+        return SkipsOn(delivering).Select(m => new WalkMarker(m.Point, MarkerKind.Skip, $"Skip: {m.Label}"))
+            .Concat(DontLetterboxOn(plan.Arcs).Select(x => new WalkMarker(x.Point.Point, MarkerKind.DontLetterbox, "Don't letterbox here")))
+            .ToList();
+    }
+
+    public int SkipCount(WalkPlan plan) => SkipsOn(plan.Legs.Where(l => l.Letterboxes > 0).SelectMany(l => l.Arcs)).Count;
+
+    public bool NeedsReview(ReadyRoute route) => route.Edges.Any(zoneEdges.Contains);
+
+    public async Task AddZoneAsync(IReadOnlyList<GeoPoint> polygon, ExclusionReason reason, string note)
+    {
+        zones.Add(new(NewId(), polygon.Select(LatLon.From).ToList(), reason, note.Trim(), DateTime.Now));
+        await SaveExclusionsAsync();
+    }
+
+    public async Task RemoveZoneAsync(ExclusionZone zone)
+    {
+        zones.Remove(zone);
+        await SaveExclusionsAsync();
+    }
+
+    public async Task<ExcludedAddress> AddExcludedAddressAsync(GeoPoint point, ExclusionReason reason, string note, bool showWalkers)
+    {
+        var (edge, side) = Planner!.NearestSide(point);
+        var address = new ExcludedAddress(NewId(), edge, side, LatLon.From(point), reason, note.Trim(), showWalkers, DateTime.Now);
+        excluded.Add(address);
+        await SaveExclusionsAsync();
+        return address;
+    }
+
+    public async Task SetShowWalkersAsync(ExcludedAddress address, bool show)
+    {
+        excluded[excluded.IndexOf(address)] = address with { ShowWalkers = show };
+        await SaveExclusionsAsync();
+    }
+
+    public async Task RemoveExcludedAddressAsync(ExcludedAddress address)
+    {
+        excluded.Remove(address);
+        await SaveExclusionsAsync();
+    }
+
+    public async Task SendReportAsync(ReportScope scope, ReportReason reason, string note, string? photo, GeoPoint? point, int? edge, string where)
+    {
+        reports.Insert(0, new(NewId(), scope, reason, note.Trim(), photo, point is { } p ? LatLon.From(p) : null, edge, where, DateTime.Now, ReportStatus.SentForReview));
+        await SaveReportsAsync();
+    }
+
+    public async Task ResolveReportAsync(WalkerReport report, ReportStatus status)
+    {
+        reports[reports.IndexOf(report)] = report with { Status = status, Photo = null };
+        await SaveReportsAsync();
     }
 
     public bool Rested(int edge) => LastWalked(edge) is { } date && Today.DayNumber - date.DayNumber < RestDays;
@@ -302,6 +394,10 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         Splitter = new(Map!, Planner, Count);
         SeedSampleCoverage();
         LoadPublished(await native.GetAsync(PublishedKey));
+        zones = Read(await native.GetAsync(ZonesKey), ExclusionsJson.Default.ListExclusionZone);
+        excluded = Read(await native.GetAsync(ExcludedKey), ExclusionsJson.Default.ListExcludedAddress);
+        reports = Read(await native.GetAsync(ReportsKey), ExclusionsJson.Default.ListWalkerReport);
+        RefreshZoneEdges();
         WalkerName = await native.GetAsync(NameKey);
         myClaims.UnionWith((await native.GetAsync(ClaimsKey))?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? []);
         foreach (var entry in (await native.GetAsync(WalkedKey))?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? [])
@@ -322,6 +418,52 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
             }
         }
         myDayTally = int.TryParse(await native.GetAsync(DayTallyKey), out var tally) ? tally : 0;
+        Changed?.Invoke();
+    }
+
+    private static List<T> Read<T>(string? saved, JsonTypeInfo<List<T>> type)
+    {
+        if (string.IsNullOrEmpty(saved))
+        {
+            return [];
+        }
+        try
+        {
+            return JsonSerializer.Deserialize(saved, type) ?? [];
+        }
+        catch (JsonException)
+        {
+            return [];
+        }
+    }
+
+    private static string NewId() => Guid.NewGuid().ToString("N")[..10];
+
+    private void RefreshZoneEdges()
+    {
+        if (Map is null)
+        {
+            return;
+        }
+        zoneEdges = zones.Count == 0
+            ? []
+            : Enumerable.Range(0, Map.Edges.Count)
+                .Where(e => zones.Any(z => AreaSplitter.Inside(z.Polygon.Select(p => p.Point).ToList(), Planner!.Midpoint(e))))
+                .ToHashSet();
+    }
+
+    private async Task SaveExclusionsAsync()
+    {
+        RefreshZoneEdges();
+        plans.Clear();
+        await native.SetAsync(ZonesKey, JsonSerializer.Serialize(zones, ExclusionsJson.Default.ListExclusionZone));
+        await native.SetAsync(ExcludedKey, JsonSerializer.Serialize(excluded, ExclusionsJson.Default.ListExcludedAddress));
+        Changed?.Invoke();
+    }
+
+    private async Task SaveReportsAsync()
+    {
+        await native.SetAsync(ReportsKey, JsonSerializer.Serialize(reports, ExclusionsJson.Default.ListWalkerReport));
         Changed?.Invoke();
     }
 

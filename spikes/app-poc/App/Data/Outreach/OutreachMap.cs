@@ -2,7 +2,12 @@ using System.Text.Json.Serialization;
 
 namespace Gsbc.AppPoc.Data.Outreach;
 
-public sealed record LetterboxTally(int Placed, int Unplaced);
+public sealed record LetterboxTally(int Placed, int Unplaced, int Skipped = 0);
+
+public sealed record Mark(double Lon, double Lat, int Side, int Edge, string Label)
+{
+    public GeoPoint Point => new(Lat, Lon);
+}
 
 public sealed record StreetEdge(int U, int V, string Name, string Road, int Length, int[] Boxes, int[] Units, double[][] Line)
 {
@@ -22,7 +27,9 @@ public sealed record OutreachMap(
     LetterboxTally Letterboxes,
     IReadOnlyList<StreetEdge> Edges,
     IReadOnlyList<OutreachArea> Areas,
-    IReadOnlyList<ReadyRoute> OutreachRoutes);
+    IReadOnlyList<ReadyRoute> OutreachRoutes,
+    IReadOnlyList<Mark>? Skips = null,
+    IReadOnlyList<Mark>? Checks = null);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(OutreachMap))]

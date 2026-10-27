@@ -1,0 +1,39 @@
+<div class="stack">
+    <ChipGroup TValue="ExclusionReason" Options="ReasonOptions" Value="reason" ValueChanged="r => reason = r" />
+    <div class="field">
+        <label for="exclusion-note">Note for staff</label>
+        <textarea id="exclusion-note" @bind="note" @bind:event="oninput" placeholder="Who asked, and when; what's wrong"></textarea>
+    </div>
+    @if (ShowWalkersOption)
+    {
+        <ToggleRow Title="Show walkers 'Don't letterbox'" Description="A marker on their map and walking screen. The reason is never shown." Checked="showWalkers" CheckedChanged="on => showWalkers = on" />
+    }
+    <div class="planner__actions">
+        <button class="btn btn--primary" @onclick="Save">@Action</button>
+        <button class="btn btn--quiet" @onclick="OnCancel">Cancel</button>
+    </div>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<Choice<ExclusionReason>> ReasonOptions =
+        OutreachLabels.ExclusionReasons.Select(r => new Choice<ExclusionReason>(r, OutreachLabels.Label(r))).ToList();
+
+    [Parameter] public ExclusionReason Reason { get; set; }
+    [Parameter] public string Note { get; set; } = "";
+    [Parameter] public string Action { get; set; } = "Save";
+    [Parameter] public bool ShowWalkersOption { get; set; }
+    [Parameter] public EventCallback<(ExclusionReason, string, bool)> OnSave { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private ExclusionReason reason;
+    private string note = "";
+    private bool showWalkers = true;
+
+    protected override void OnInitialized()
+    {
+        reason = Reason;
+        note = Note;
+    }
+
+    private Task Save() => OnSave.InvokeAsync((reason, note, showWalkers));
+}

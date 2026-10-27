@@ -98,12 +98,15 @@
       map.addSource('gsbc-route', { type: 'geojson', data: state.route ?? empty });
       map.addSource('gsbc-start', { type: 'geojson', data: point(state.start?.[0], state.start?.[1]) });
       map.addSource('gsbc-me', { type: 'geojson', data: point(position?.[0], position?.[1]) });
+      map.addSource('gsbc-marks', { type: 'geojson', data: state.marks ?? empty });
       const side = { 'line-offset': -4, 'line-width': 5 };
       map.addLayer({ id: 'gsbc-route-done', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'done'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--ink-3'), 'line-opacity': 0.55 } });
       map.addLayer({ id: 'gsbc-route-todo', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'todo'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--primary') } });
       map.addLayer({ id: 'gsbc-route-transit', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'transit'], layout: { 'line-cap': 'round' }, paint: { 'line-offset': -4, 'line-width': 3, 'line-color': token('--primary'), 'line-dasharray': [1, 1.6] } });
       map.addLayer({ id: 'gsbc-route-now', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'now'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-offset': -4, 'line-width': 7, 'line-color': token('--marker') } });
       map.addLayer({ id: 'gsbc-route-arrows', type: 'symbol', source: 'gsbc-route', filter: ['in', ['get', 'state'], ['literal', ['todo', 'now']]], layout: { 'symbol-placement': 'line', 'symbol-spacing': 90, 'icon-image': 'gsbc-arrow', 'icon-size': 0.5, 'icon-offset': [0, -8], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true } });
+      map.addLayer({ id: 'gsbc-skips', type: 'circle', source: 'gsbc-marks', filter: ['==', ['get', 'kind'], 'skip'], paint: { 'circle-radius': 5, 'circle-color': token('--ink-3'), 'circle-stroke-width': 2, 'circle-stroke-color': token('--bg') } });
+      map.addLayer({ id: 'gsbc-dont', type: 'circle', source: 'gsbc-marks', filter: ['==', ['get', 'kind'], 'dont'], paint: { 'circle-radius': 8, 'circle-color': token('--danger'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
       map.addLayer({ id: 'gsbc-start', type: 'circle', source: 'gsbc-start', paint: { 'circle-radius': 8, 'circle-color': token('--primary'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
       map.addLayer({ id: 'gsbc-me-halo', type: 'circle', source: 'gsbc-me', paint: { 'circle-radius': 16, 'circle-color': token('--live'), 'circle-opacity': 0.2 } });
       map.addLayer({ id: 'gsbc-me', type: 'circle', source: 'gsbc-me', paint: { 'circle-radius': 7, 'circle-color': token('--live'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
@@ -158,10 +161,11 @@
         map.on('click', (e) => { if (el.gsbcStreetMap.pick) dotnet.invokeMethodAsync('Picked', e.lngLat.lat, e.lngLat.lng); });
       },
 
-      update(el, routeJson, startLat, startLon, fit, pick, follow, showLocation) {
+      update(el, routeJson, startLat, startLon, fit, pick, follow, showLocation, marksJson) {
         const state = el.gsbcStreetMap;
         if (!state) return;
         state.route = routeJson ? JSON.parse(routeJson) : null;
+        state.marks = marksJson ? JSON.parse(marksJson) : null;
         state.start = startLat == null ? null : [startLat, startLon];
         state.pick = pick;
         state.follow = follow;
@@ -169,6 +173,7 @@
         const apply = () => {
           state.map.getSource('gsbc-route')?.setData(state.route ?? empty);
           state.map.getSource('gsbc-start')?.setData(point(state.start?.[0], state.start?.[1]));
+          state.map.getSource('gsbc-marks')?.setData(state.marks ?? empty);
           if (fit) {
             const coords = (state.route?.features ?? []).flatMap((f) => f.geometry.coordinates);
             if (state.start) coords.push([state.start[1], state.start[0]]);
@@ -216,6 +221,10 @@
       map.addSource('planner-streets', { type: 'geojson', data: data.streets ?? empty });
       map.addSource('planner-labels', { type: 'geojson', data: data.labels ?? empty });
       map.addSource('planner-meeting', { type: 'geojson', data: data.meeting ?? empty });
+      map.addSource('planner-zones', { type: 'geojson', data: data.zones ?? empty });
+      map.addSource('planner-pins', { type: 'geojson', data: data.pins ?? empty });
+      map.addLayer({ id: 'planner-zones-fill', type: 'fill', source: 'planner-zones', paint: { 'fill-color': token('--danger'), 'fill-opacity': 0.14 } });
+      map.addLayer({ id: 'planner-zones-line', type: 'line', source: 'planner-zones', paint: { 'line-color': token('--danger'), 'line-width': 2 } });
       map.addLayer({ id: 'planner-area-fill', type: 'fill', source: 'planner-area', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': token('--accent'), 'fill-opacity': 0.08 } });
       map.addLayer({ id: 'planner-area-line', type: 'line', source: 'planner-area', filter: ['==', ['geometry-type'], 'LineString'], paint: { 'line-color': token('--accent'), 'line-width': 2, 'line-dasharray': [2, 1.5] } });
       map.addLayer({ id: 'planner-area-points', type: 'circle', source: 'planner-area', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-width': 2, 'circle-stroke-color': token('--accent') } });
@@ -224,6 +233,7 @@
       map.addLayer({ id: 'planner-streets', type: 'line', source: 'planner-streets', filter: ['!=', ['get', 'kind'], 'rested'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['coalesce', ['get', 'color'], token('--ink-3')], 'line-width': ['case', ['==', ['get', 'kind'], 'free'], 4, 6] } });
       map.addLayer({ id: 'planner-labels', type: 'symbol', source: 'planner-labels', layout: { 'text-field': ['get', 'label'], 'text-font': textFont(map), 'text-size': 15, 'text-allow-overlap': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': token('--bg'), 'text-halo-width': 2.5 } });
       map.addLayer({ id: 'planner-meeting', type: 'circle', source: 'planner-meeting', paint: { 'circle-radius': 9, 'circle-color': token('--primary'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
+      map.addLayer({ id: 'planner-pins', type: 'circle', source: 'planner-pins', paint: { 'circle-radius': ['match', ['get', 'kind'], 'report', 9, 7], 'circle-color': ['match', ['get', 'kind'], 'report', token('--marker'), 'pending', token('--accent'), token('--danger')], 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
     };
 
     const planner = {
@@ -265,7 +275,11 @@
         state.first = state.data.first ?? null;
         el.classList.toggle('planner-map--drawing', mode !== 'select');
         const apply = () => {
-          for (const name of ['area', 'streets', 'labels', 'meeting']) state.map.getSource(`planner-${name}`)?.setData(state.data[name] ?? empty);
+          for (const name of ['area', 'streets', 'labels', 'meeting', 'zones', 'pins']) state.map.getSource(`planner-${name}`)?.setData(state.data[name] ?? empty);
+          if (state.data.focus && state.data.focusVersion !== state.focusVersion) {
+            state.focusVersion = state.data.focusVersion;
+            state.map.easeTo({ center: state.data.focus, zoom: 17, duration: 600 });
+          }
           if (fit) {
             const coords = [...(state.data.streets?.features ?? []).flatMap((f) => f.geometry.coordinates), ...(state.data.area?.features ?? []).filter((f) => f.geometry.type === 'Point').map((f) => f.geometry.coordinates)];
             if (coords.length > 1) state.map.fitBounds(coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0])), { padding: 48, maxZoom: 17, duration: 500 });
@@ -295,6 +309,23 @@
     platform,
     streetMap: maps.street,
     plannerMap: maps.planner,
+
+    async readPhoto(input, maxSize) {
+      const file = input?.files?.[0];
+      if (!file) return null;
+      try {
+        const bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' });
+        const scale = Math.min(1, maxSize / Math.max(bitmap.width, bitmap.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(bitmap.width * scale);
+        canvas.height = Math.round(bitmap.height * scale);
+        canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+        bitmap.close();
+        return canvas.toDataURL('image/jpeg', 0.8);
+      } catch {
+        return null;
+      }
+    },
 
     async keepAwake(on) {
       wantAwake = on;

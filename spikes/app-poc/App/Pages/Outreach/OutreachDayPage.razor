@@ -48,6 +48,10 @@
                             <span class="row__icon route-number @(Outreach.IsMine(OutreachService.RouteKey(route)) ? "row__icon--accent" : names.Count > 0 ? "row__icon--warm" : "")" aria-label="@($"Route {route.Id}")">@route.Id</span>
                         </Leading>
                         <TrailingContent>
+                            @if (Outreach.NeedsReview(route))
+                            {
+                                <span class="pill pill--urgent">Needs review</span>
+                            }
                             @if (names.Count > 0)
                             {
                                 <People Persons="@names.Select(n => new Person(n)).ToList()" MaxFaces="2" Label="@OutreachFormat.Claimers(names)" />

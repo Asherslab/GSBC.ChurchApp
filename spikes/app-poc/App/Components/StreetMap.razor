@@ -15,12 +15,14 @@
     [Parameter] public bool Pickable { get; set; }
     [Parameter] public bool Follow { get; set; }
     [Parameter] public bool ShowLocation { get; set; }
+    [Parameter] public IReadOnlyList<WalkMarker> Markers { get; set; } = [];
     [Parameter] public string Label { get; set; } = "Map of the walk";
     [Parameter] public string? Class { get; set; }
     [Parameter] public EventCallback<GeoPoint> OnPick { get; set; }
 
     private ElementReference element;
     private DotNetObjectReference<StreetMap>? self;
+    private Task? attaching;
     private WalkPlan? shownPlan;
     private string? shownState;
     private GeoPoint? shownStart;
@@ -35,9 +37,10 @@
         {
             self = DotNetObjectReference.Create(this);
             var centre = Start ?? Outreach.Church;
-            await JS.InvokeVoidAsync("gsbc.streetMap.attach", element, self, centre.Lat, centre.Lon, Attribution);
+            attaching = JS.InvokeVoidAsync("gsbc.streetMap.attach", element, self, centre.Lat, centre.Lon, Attribution).AsTask();
         }
-        var state = $"{CurrentLeg}|{Start}|{Pickable}|{Follow}|{ShowLocation}";
+        await attaching!;
+        var state = $"{CurrentLeg}|{Start}|{Pickable}|{Follow}|{ShowLocation}|{Markers.Count}";
         var planChanged = !ReferenceEquals(Plan, shownPlan);
         if (!planChanged && state == shownState)
         {
@@ -47,11 +50,42 @@
         shownPlan = Plan;
         shownStart = Start;
         shownState = state;
-        await JS.InvokeVoidAsync("gsbc.streetMap.update", element, RouteJson(), Start?.Lat, Start?.Lon, fit, Pickable, Follow, ShowLocation);
+        await JS.InvokeVoidAsync("gsbc.streetMap.update", element, RouteJson(), Start?.Lat, Start?.Lon, fit, Pickable, Follow, ShowLocation, MarkersJson());
     }
 
     [JSInvokable]
     public Task Picked(double lat, double lon) => OnPick.InvokeAsync(new GeoPoint(lat, lon));
+
+    private string MarkersJson()
+    {
+        using var buffer = new MemoryStream();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteString("type", "FeatureCollection");
+            json.WriteStartArray("features");
+            foreach (var marker in Markers)
+            {
+                json.WriteStartObject();
+                json.WriteString("type", "Feature");
+                json.WriteStartObject("properties");
+                json.WriteString("kind", marker.Kind == MarkerKind.Skip ? "skip" : "dont");
+                json.WriteString("label", marker.Label);
+                json.WriteEndObject();
+                json.WriteStartObject("geometry");
+                json.WriteString("type", "Point");
+                json.WriteStartArray("coordinates");
+                json.WriteNumberValue(marker.Point.Lon);
+                json.WriteNumberValue(marker.Point.Lat);
+                json.WriteEndArray();
+                json.WriteEndObject();
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+            json.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(buffer.ToArray());
+    }
 
     private string? RouteJson()
     {

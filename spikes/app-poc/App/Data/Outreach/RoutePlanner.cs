@@ -26,6 +26,10 @@ public sealed record WalkPlan(int StartNode, IReadOnlyList<Arc> Arcs, IReadOnlyL
 
 public delegate int LetterboxCount(int edge, int side);
 
+public enum MarkerKind { Skip, DontLetterbox }
+
+public sealed record WalkMarker(GeoPoint Point, MarkerKind Kind, string Label);
+
 public sealed class RoutePlanner
 {
     private const double WalkingMetresPerSecond = 4000.0 / 3600;
@@ -73,6 +77,33 @@ public sealed class RoutePlanner
         var dx = (b.Lon - a.Lon) * Math.PI / 180 * EarthMetres * cosLat;
         var dy = (b.Lat - a.Lat) * Math.PI / 180 * EarthMetres;
         return Math.Sqrt(dx * dx + dy * dy);
+    }
+
+    public (int Edge, int Side) NearestSide(GeoPoint point)
+    {
+        var best = (Edge: -1, Side: 0, Distance: double.MaxValue);
+        var px = point.Lon * cosLat;
+        for (var e = 0; e < map.Edges.Count; e++)
+        {
+            if (map.Edges[e].IsArterial)
+            {
+                continue;
+            }
+            var line = map.Edges[e].Line;
+            for (var i = 0; i < line.Length - 1; i++)
+            {
+                var (ax, ay, bx, by) = (line[i][0] * cosLat, line[i][1], line[i + 1][0] * cosLat, line[i + 1][1]);
+                var (dx, dy) = (bx - ax, by - ay);
+                var t = Math.Clamp(((px - ax) * dx + (point.Lat - ay) * dy) / Math.Max(dx * dx + dy * dy, 1e-18), 0, 1);
+                var distance = Math.Pow(px - (ax + t * dx), 2) + Math.Pow(point.Lat - (ay + t * dy), 2);
+                if (distance < best.Distance)
+                {
+                    var cross = dx * (point.Lat - ay) - dy * (px - ax);
+                    best = (e, cross > 0 ? 0 : 1, distance);
+                }
+            }
+        }
+        return (best.Edge, best.Side);
     }
 
     public IEnumerable<int> NeighbourEdges(int edge) => adjacency[map.Edges[edge].U].Concat(adjacency[map.Edges[edge].V]);

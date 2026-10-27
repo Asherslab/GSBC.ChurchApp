@@ -6,7 +6,7 @@
 @inject NativeBridge Native
 
 <Page Title="Walk now" BackHref="outreach" BackLabel="Outreach" TopBar="TopBarStyle.Solid" Bell="false">
-    <StreetMap Plan="plan" Start="start" Pickable="@(startMode == StartMode.Map)" ShowLocation="@(startMode == StartMode.Here)" OnPick="Picked" Class="street-map--preview" Label="Map of your walk" />
+    <StreetMap Plan="plan" Start="start" Markers="@(plan is null ? [] : Outreach.MarkersFor(plan))" Pickable="@(startMode == StartMode.Map)" ShowLocation="@(startMode == StartMode.Here)" OnPick="Picked" Class="street-map--preview" Label="Map of your walk" />
 
     <Section First="true">
         <div class="stack">
@@ -39,6 +39,10 @@
             @if (Outreach.DayIsOn)
             {
                 <p class="outreach-counts"><span class="live-dot"></span>Counts toward today's outreach</p>
+            }
+            @if (Outreach.SkipCount(plan) is > 0 and var skips)
+            {
+                <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />Skips @skips @(skips == 1 ? "business" : "businesses") and other non-homes</p>
             }
             @if (Outreach.RestedStreetsNearby(plan) is > 0 and var rested)
             {

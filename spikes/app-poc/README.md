@@ -122,12 +122,23 @@ the map with your position and one street side at a time, Done, Back a street an
   cul-de-sac into up one side and back the other (`Data/Outreach/RoutePlanner.cs`). Time assumes 4 km/h
   plus about 8 s a house letterbox and 3 s a unit letterbox; bundles are 50. Main roads (OSM primary and
   secondary) are walked along but never delivered to. Streets walked in the last 7 days are skipped.
-- **Data** is `wwwroot/data/outreach.json` (about 510 KB, every street segment including ones with no
-  letterboxes, so the network stays connected), built by `tools/outreach/build_data.py` from
-  OpenStreetMap streets (Overpass, ODbL) and the Queensland Government Addresses layer (CC BY 4.0). It
-  holds letterbox counts per street side, never addresses: 10,233 letterboxes placed, 551 not matched to a
-  street. Rebuild with `python3 tools/outreach/build_data.py`. It covers Albany Creek only; a start outside
-  it falls back to church with a message.
+- **Data** is `wwwroot/data/outreach.json` (about 940 KB; every street segment, so the network stays
+  connected), built by `tools/outreach/build_data.py` (`python3 tools/outreach/build_data.py`, about a
+  minute) from OpenStreetMap streets (Overpass, ODbL), Queensland address points (CC BY 4.0), Moreton Bay
+  lot land use (MBRC 2020, CC BY 4.0) and Brisbane City Plan 2014 zoning (Brisbane City Council, CC BY 4.0).
+  It covers Albany Creek and the Brisbane edge to the east (Bridgeman Downs, Aspley and Carseldine edges,
+  Bald Hills and McDowall slivers); a start outside falls back to church with a message.
+- **Homes only:** every address is classed deliver, skip or check. Moreton Bay addresses join the
+  council's lot layer by lot and plan (92% of 9,138), else by the lot polygon they sit in (8%); the
+  lot's actual use decides (homes, unit schemes, flats and retirement villages are delivered; shops,
+  offices, industry, schools, childcare, churches, parks, vacant land, utilities and the like are
+  skipped). Brisbane addresses take the City Plan zone they sit in (99.7% of 8,802): residential,
+  emerging community, rural and environmental zones are delivered, centres, community facilities, open
+  space, sport, utilities and industry skipped, mixed use and no zone are "check" (delivered, with a
+  check point). 17,077 home letterboxes, 863 skipped, 883 addresses not matched to a street. The file
+  holds counts per street side plus the points of skipped non-homes (705) and checks (28), never a
+  home's address. The walking screen says "Skip: shop" for the current street and routes show "skips N
+  businesses".
 - **Map:** MapLibre GL JS 5.24.0 (BSD-3, vendored in `wwwroot/lib/maplibre`, loaded only on outreach pages)
   with OpenFreeMap's Positron and Dark styles. Tiles come from OpenFreeMap's servers, so maps need a signal.
 - **Walk now figures** on the Outreach page come from the planner itself, from the same start the walk
@@ -148,11 +159,26 @@ the map with your position and one street side at a time, Done, Back a street an
   then "Publish to Saturday's outreach" replaces the sample routes on this device (Outreach day shows
   them; "Restore the sample routes" undoes it). Areas separated by parkland or roads not in the data
   (South Pine Road is a higher road class) split into separate groups and balance less evenly.
+- **Exclusions (staff planner, Exclusions panel):** draw an exclusion zone with a reason (non-residential,
+  complaint, wrong data, unsafe, private estate, other) and a note: streets inside are walked through but
+  never delivered by Walk now, areas or the splitter, and any outreach route touching one shows "Needs
+  review". Exclude a letterbox by clicking it on the map (matched to the nearest side of the nearest
+  street; that side's count drops), with the same reasons, a note and "Show walkers 'Don't letterbox'":
+  walkers then see a red marker on the map and a line on the walking screen, never the reason. Both
+  lists can be shown on the map and removed.
+- **Reports from walkers:** "Report a problem" on the walking screen and on route and area pages: this
+  area, this street or a letterbox here (your position, or picked on the map), a reason (not homes,
+  unsafe, complaint, wrong on the map, other), a required note and an optional photo, downscaled on the
+  phone to 1280 px JPEG ("Show the place, not people"). Stored as "Sent for review" and listed under Your
+  reports on the Outreach page. The planner's Reports panel shows each one with its pin, note and photo:
+  Make exclusion zone, Make excluded letterbox (both prefilled from the report) or Dismiss; resolving
+  drops the photo. Nothing changes until a report is acted on. No junk mail flags are unchanged.
 - **Sample, not real:** the areas are cut automatically (about one bundle each) with made-up "last done"
   dates; the nine outreach-day routes are pairs of areas nearest church; the outreach day (Saturday
   31 October, 8:30–11:30) and every claim name except yours are samples, and so is the day's running
   tally. "This preview" on the Outreach page switches to Saturday morning with outreach on.
-- **On the phone only:** claims, coverage, flags and your first name are kept on the device (nothing is
+- **On the phone only:** claims, coverage, flags, exclusions, reports (photos included, in local
+  storage) and your first name are kept on the device (nothing is
   shared); the walking screen keeps the screen on (Wake Lock) but location stops when the app is in the
   background, and a walk in progress is lost if the app is closed. The real app needs the shared Outreach
   service (gRPC), background location from the native layer, offline map tiles and the admin view for

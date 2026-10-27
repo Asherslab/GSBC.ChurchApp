@@ -1,0 +1,118 @@
+@inject OutreachService Outreach
+
+@if (DrawingZone || ZoneReady)
+{
+    <Section Title="New exclusion zone" First="true">
+        @if (!ZoneReady)
+        {
+            <p class="section__lead">Click the map to add corners. Double-click, or click the first corner, to finish.</p>
+            <div class="planner__actions">
+                <button class="btn btn--primary" @onclick="OnFinishZone" disabled="@(ZonePoints < 3)">Finish zone</button>
+                <button class="btn btn--quiet" @onclick="OnCancel">Cancel</button>
+            </div>
+        }
+        else
+        {
+            <p class="section__lead">Streets inside are never delivered to; walkers may still walk through. Routes that touch it are flagged for review.</p>
+            <ExclusionForm Reason="Reason" Note="@Note" Action="Save zone" OnSave="f => OnSaveZone.InvokeAsync((f.Item1, f.Item2))" OnCancel="OnCancel" />
+        }
+    </Section>
+}
+else if (PickingAddress || PendingAddress is not null)
+{
+    <Section Title="Exclude a letterbox" First="true">
+        @if (PendingAddress is null)
+        {
+            <p class="section__lead">Click the letterbox on the map. It's matched to the nearest side of the nearest street.</p>
+            <button class="btn btn--quiet" @onclick="OnCancel">Cancel</button>
+        }
+        else
+        {
+            <p class="section__lead">That side's count drops by one. The reason stays with staff; walkers never see it.</p>
+            <ExclusionForm Reason="Reason" Note="@Note" Action="Exclude letterbox" ShowWalkersOption="true" OnSave="f => OnSaveAddress.InvokeAsync(f)" OnCancel="OnCancel" />
+        }
+    </Section>
+}
+else
+{
+    <Section Title="Exclusions" First="true">
+        <p class="section__lead">For complaints, places that aren't homes, and anywhere walkers shouldn't go.</p>
+        <div class="planner__actions">
+            <button class="btn btn--primary" @onclick="OnStartZone"><Icon Name="map" Size="IconSize.Small" />Draw a zone</button>
+            <button class="btn btn--quiet" @onclick="OnStartAddress"><Icon Name="mailbox" Size="IconSize.Small" />Exclude a letterbox</button>
+        </div>
+    </Section>
+}
+
+<Section Title="@($"Zones ({Outreach.Zones.Count})")">
+    @if (Outreach.Zones.Count == 0)
+    {
+        <p class="hint">No exclusion zones yet.</p>
+    }
+    else
+    {
+        <div class="planner-sections">
+            @foreach (var zone in Outreach.Zones)
+            {
+                <div class="planner-section" @key="zone.Id">
+                    <div class="planner-section__head">
+                        <span class="planner-section__number planner-section__number--zone"><Icon Name="x" Size="IconSize.Small" /></span>
+                        <strong>@OutreachLabels.Label(zone.Reason)</strong>
+                    </div>
+                    <p class="planner-section__meta">@(string.IsNullOrEmpty(zone.Note) ? "No note" : zone.Note) · added @zone.Added.ToString("d MMM")</p>
+                    <div class="planner__actions">
+                        <button class="btn btn--quiet planner__small" @onclick="() => OnFocus.InvokeAsync(zone.Polygon[0].Point)">Show</button>
+                        <button class="btn btn--quiet planner__small" @onclick="() => Outreach.RemoveZoneAsync(zone)">Remove</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</Section>
+
+<Section Title="@($"Excluded letterboxes ({Outreach.ExcludedAddresses.Count})")">
+    @if (Outreach.ExcludedAddresses.Count == 0)
+    {
+        <p class="hint">No excluded letterboxes yet.</p>
+    }
+    else
+    {
+        <div class="planner-sections">
+            @foreach (var address in Outreach.ExcludedAddresses)
+            {
+                <div class="planner-section" @key="address.Id">
+                    <div class="planner-section__head">
+                        <span class="planner-section__number planner-section__number--zone"><Icon Name="mailbox" Size="IconSize.Small" /></span>
+                        <strong>@StreetOf(address) · @OutreachLabels.Label(address.Reason)</strong>
+                    </div>
+                    <p class="planner-section__meta">@(string.IsNullOrEmpty(address.Note) ? "No note" : address.Note) · added @address.Added.ToString("d MMM")</p>
+                    <ToggleRow Title="Show walkers 'Don't letterbox'" Checked="address.ShowWalkers" CheckedChanged="on => Outreach.SetShowWalkersAsync(address, on)" />
+                    <div class="planner__actions">
+                        <button class="btn btn--quiet planner__small" @onclick="() => OnFocus.InvokeAsync(address.Point.Point)">Show</button>
+                        <button class="btn btn--quiet planner__small" @onclick="() => Outreach.RemoveExcludedAddressAsync(address)">Remove</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</Section>
+
+@code {
+    [Parameter] public bool DrawingZone { get; set; }
+    [Parameter] public bool ZoneReady { get; set; }
+    [Parameter] public int ZonePoints { get; set; }
+    [Parameter] public bool PickingAddress { get; set; }
+    [Parameter] public GeoPoint? PendingAddress { get; set; }
+    [Parameter] public ExclusionReason Reason { get; set; }
+    [Parameter] public string Note { get; set; } = "";
+    [Parameter] public EventCallback OnStartZone { get; set; }
+    [Parameter] public EventCallback OnFinishZone { get; set; }
+    [Parameter] public EventCallback<(ExclusionReason Reason, string Note)> OnSaveZone { get; set; }
+    [Parameter] public EventCallback OnStartAddress { get; set; }
+    [Parameter] public EventCallback<(ExclusionReason Reason, string Note, bool ShowWalkers)> OnSaveAddress { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback<GeoPoint> OnFocus { get; set; }
+
+    private string StreetOf(ExcludedAddress address) =>
+        Outreach.Map?.Edges[address.Edge].Name is { Length: > 0 } name ? name : "Unnamed street";
+}

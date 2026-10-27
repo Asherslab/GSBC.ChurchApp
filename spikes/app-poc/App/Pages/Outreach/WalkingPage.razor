@@ -15,7 +15,11 @@
     }
     else
     {
-        <StreetMap Plan="walk.Plan" CurrentLeg="walk.LegIndex" Start="Outreach.Planner!.Node(walk.Plan.StartNode)" ShowLocation="true" Follow="following" Class="street-map--walking" Label="Map of your walk with the current street highlighted" />
+        <StreetMap Plan="walk.Plan" CurrentLeg="walk.LegIndex" Start="Outreach.Planner!.Node(walk.Plan.StartNode)" ShowLocation="true" Follow="@(following && !picking)" Markers="Outreach.MarkersFor(walk.Plan)" Pickable="picking" OnPick="Picked" Class="street-map--walking" Label="Map of your walk with the current street highlighted" />
+        @if (picking)
+        {
+            <p class="walk-pick"><Icon Name="map-pin" Size="IconSize.Small" />Tap the letterbox on the map. <button class="btn btn--quiet planner__small" @onclick="() => { picking = false; reporting = true; }">Cancel</button></p>
+        }
 
         @if (walk.Current is { } leg)
         {
@@ -41,6 +45,14 @@
                 {
                     <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />@flagged marked "No junk mail" on this side</p>
                 }
+                @if (Outreach.DontLetterboxOn(leg.Arcs).Count is > 0 and var donts)
+                {
+                    <p class="walk-mark walk-mark--dont"><Icon Name="x" Size="IconSize.Small" />Don't letterbox @(donts == 1 ? "one house" : $"{donts} houses") on this side (red on the map)</p>
+                }
+                @if (leg.Letterboxes > 0 && Outreach.SkipsOn(leg.Arcs) is { Count: > 0 } skips)
+                {
+                    <p class="walk-mark"><Icon Name="mailbox" Size="IconSize.Small" />Skip: @string.Join(", ", skips.Select(m => m.Label).Distinct())</p>
+                }
                 @if (walk.Next is { } next)
                 {
                     <p class="hint"><Icon Name="chevron-right" Size="IconSize.Small" />Then @next.Street</p>
@@ -52,7 +64,10 @@
                         <button class="btn btn--quiet" @onclick="Back" disabled="@(walk.LegIndex == 0)"><Icon Name="undo" Size="IconSize.Small" />Back a street</button>
                         <button class="btn btn--quiet" @onclick="Flag" disabled="@(leg.Letterboxes == 0)"><Icon Name="mailbox" Size="IconSize.Small" />No junk mail</button>
                     </div>
-                    <button class="btn btn--quiet walk-card__follow" @onclick="() => following = !following" aria-pressed="@(following ? "true" : "false")"><Icon Name="locate" Size="IconSize.Small" />@(following ? "Following you" : "Follow me on the map")</button>
+                    <div class="walk-card__row">
+                        <button class="btn btn--quiet walk-card__follow" @onclick="() => following = !following" aria-pressed="@(following ? "true" : "false")"><Icon Name="locate" Size="IconSize.Small" />@(following ? "Following you" : "Follow me")</button>
+                        <button class="btn btn--quiet walk-card__follow" @onclick="StartReport"><Icon Name="flag" Size="IconSize.Small" />Report a problem</button>
+                    </div>
                 </div>
             </section>
         }
@@ -71,8 +86,18 @@
     }
 </Page>
 
+<ReportSheet Open="reporting" OpenChanged="o => { reporting = o; if (!o) pickedFromMap = false; }" Scopes="WalkScopes"
+             AreaName="@(Outreach.Walk?.Title ?? "This walk")" StreetName="@Outreach.Walk?.Current?.Street" StreetEdge="@Outreach.Walk?.Current?.Arcs.FirstOrDefault().Edge"
+             Point="reportPoint" PointFromMap="pickedFromMap" OnPickOnMap="PickOnMap" />
+
 @code {
+    private static readonly IReadOnlyList<ReportScope> WalkScopes = [ReportScope.Street, ReportScope.Letterbox, ReportScope.Area];
+
     private bool following = true;
+    private bool reporting;
+    private bool picking;
+    private bool pickedFromMap;
+    private GeoPoint? reportPoint;
     private bool awake;
 
     protected override void OnInitialized() => Outreach.Changed += Refresh;
@@ -111,6 +136,28 @@
     {
         await Native.HapticAsync(Haptic.Warning);
         await Outreach.FlagNoJunkMailAsync(OutreachPosition.Parse(await Native.LastPositionAsync()));
+    }
+
+    private async Task StartReport()
+    {
+        pickedFromMap = false;
+        reportPoint = OutreachPosition.Parse(await Native.LastPositionAsync())
+            ?? (Outreach.Walk?.Current is { } leg && leg.Arcs.Count > 0 ? Outreach.Planner!.Midpoint(leg.Arcs[0].Edge) : null);
+        reporting = true;
+    }
+
+    private void PickOnMap()
+    {
+        reporting = false;
+        picking = true;
+    }
+
+    private void Picked(GeoPoint point)
+    {
+        reportPoint = point;
+        pickedFromMap = true;
+        picking = false;
+        reporting = true;
     }
 
     private void Finish()

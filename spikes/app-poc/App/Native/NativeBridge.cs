@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Components;
 using Gsbc.AppPoc.Components;
 using Microsoft.JSInterop;
 
@@ -55,6 +56,8 @@ public sealed class NativeBridge(IJSRuntime js)
     public ValueTask<string?> GetAsync(string key) => js.InvokeAsync<string?>("gsbc.get", key);
 
     public ValueTask SetAsync(string key, string value) => js.InvokeVoidAsync("gsbc.set", key, value);
+
+    public ValueTask<string?> ReadPhotoAsync(ElementReference input, int maxSize) => js.InvokeAsync<string?>("gsbc.readPhoto", input, maxSize);
 
     public ValueTask KeepAwakeAsync(bool on) => js.InvokeVoidAsync("gsbc.keepAwake", on);
 

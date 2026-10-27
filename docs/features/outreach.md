@@ -56,6 +56,43 @@ The POC runs this on real Albany Creek data. Validated 2026-10-27.
   letterboxes per km walked, so an hour is roughly 3 km and 100 letterboxes.
 - **Bundles:** letterboxes ÷ 50, rounded up, plus a spare when the remainder is close.
 
+### Homes only: skipping businesses
+
+Businesses, schools, parks and vacant land are skipped; only homes count as letterboxes. The church
+is near the Moreton Bay–Brisbane boundary and works both (2026-10-27).
+
+- **Moreton Bay:** the council's open planning-scheme layer gives every lot its **actual use** (the
+  rates land-use category: Single Unit Dwelling, Residential CTS, Shops, Professional Offices…), keyed
+  by lot and plan, which the address points carry. Around the church 86% of addresses join exactly
+  by lot; the rest (mostly units in a scheme) join by the lot polygon they sit in.
+- **Brisbane:** City Plan 2014 zoning only (no actual use, no lot key), joined by the zone polygon the
+  address sits in: 99% of 2,930 Bridgeman Downs and Aspley addresses land in a zone. Residential zones
+  are delivered; centres, industry, community facilities, open space and sport are skipped. A shop in
+  a residential zone isn't caught, and homes in a centre or mixed-use zone are skipped; mixed use is
+  shown as "check" rather than skipped outright.
+- **Delivered:** single dwellings, unit and townhouse schemes, flats, rural residential, and
+  **retirement villages** (most are fine with it, 2026-10-27).
+- **Skipped:** shops, offices, centres, service stations, hotels and clubs, industry, schools and
+  childcare, churches, hospitals, parks, vacant land, utilities. The walking screen says so ("Skip:
+  shop") and routes show "skips 6 businesses".
+- **Elsewhere:** other councils publish differently, so each is its own import; the national fallback
+  is ABS mesh block categories (residential, commercial, industrial…), coarse but enough to skip a
+  shopping centre.
+
+### Data sources and licences
+
+Checked against each publisher's own metadata, 2026-10-27:
+
+| Data | Publisher | Licence |
+|---|---|---|
+| Address points | Queensland Department of Resources | CC BY 4.0 |
+| Lot land use and zones | Moreton Bay City Council ("MBRC 2020") | CC BY 4.0 |
+| City Plan 2014 zoning | Brisbane City Council | CC BY 4.0, no access or use limitations |
+| Streets | OpenStreetMap contributors | ODbL (attribution; the derived street graph is shared under ODbL) |
+| Map tiles | OpenFreeMap (OpenMapTiles schema, OSM data) | Free public instance, no keys or limits; attribution required |
+
+The app shows the attributions under the map and in More → About.
+
 ## Outreach days
 
 - **Made in the admin panel** (decided 2026-10-27): a day (date, time window, meeting point, note) and
@@ -107,6 +144,21 @@ there.
   address point it's nearest to on that side; the app then skips it and lowers that side's count.
   It's address-linked data, so: staff can see and clear flags in admin, a flag expires after
   **two years** unless re-confirmed (to decide), and flags are never shown with who made them.
+- **Admin exclusion zones** (2026-10-27): staff draw an area no route may deliver to, with a reason
+  (non-residential, a complaint, wrong data, unsafe, private estate, other). Streets inside are walked through, never
+  delivered; existing day routes that touch it are flagged for review.
+- **Admin exclusion addresses** (2026-10-27): for a phone call asking not to be letterboxed. Staff
+  pick the address; it's skipped and its side's count drops. Optionally shown to walkers as an
+  explicit "Don't letterbox" marker on the walking screen and map; the marker never shows why. The
+  reason and the caller's details stay in admin only, and are kept as long as the request stands.
+- **Reports from walkers** (2026-10-27): most walkers aren't staff, so anyone can report an area, a
+  street or a letterbox: not homes, unsafe, a complaint, wrong on the map, or other, with a
+  **mandatory note** and an optional photo. A report changes nothing until staff review it; then it
+  becomes an exclusion (zone or address), a data fix, or is dismissed. The reporter sees "Sent for
+  review". Photos are for staff only, should show the place not people (the app says so), and are
+  deleted once the report is resolved.
+- **No junk mail letterboxes** (decided 2026-10-27, above) stay in as the walker's quick, unreviewed
+  flag; reports are the considered, reviewed route.
 - **Respect the signs.** The letterbox distribution industry's code of practice asks distributors to
   honour "No junk mail" and "No advertising material" signs. Tracts arguably aren't advertising, but
   the church should honour the signs anyway, and the app assumes it does.
@@ -123,12 +175,15 @@ A feature module `Features/Outreach` (§8). Feeds (§5, §10):
 | `outreach.coverage` | Last walked date per street side | Rolling 8 weeks | Drives "avoid streets done this week" and areas' freshness |
 | `outreach.areas` | Areas | All | Name, street sides, last done |
 | `outreach.flags` | No junk mail points | All active | Points only; no reporter |
+| `outreach.exclusions` | Exclusion zones and addresses | All active | Polygons and points, and whether to show "Don't letterbox"; never the reason |
 
 Services, all gRPC (the AGENTS.md hard rule; nothing here needs an exception):
 
-- `IOutreachService` (App write): `Claim`, `Unclaim`, `RecordWalk` (street sides, date, optional day)
-  and `FlagLetterbox`. Rate-limited per install.
-- `IOutreachAdminService` (Admin): days, routes, areas, flags (review and clear), drafting routes
+- `IOutreachService` (App write): `Claim`, `Unclaim`, `RecordWalk` (street sides, date, optional day),
+  `FlagLetterbox` and `SubmitReport` (place, reason, note, and an optional photo sent as a
+  client-streamed gRPC upload, so no non-gRPC path is needed). Rate-limited per install.
+- `IOutreachAdminService` (Admin): days, routes, areas, flags (review and clear), exclusion zones and
+  addresses, the report queue (review, turn into an exclusion or a fix, dismiss), drafting routes
   from a polygon (`DraftRoutes(polygon, target, meeting point)` returns sections to review), and
   rebuilding `outreach.streets`.
 - **Building the street graph** is a server job, not a request path: fetch OSM and the address data,
@@ -185,9 +240,9 @@ engine in admin for day routes. The phone sends only what was walked.
 
 1. **Areas:** how the church's historical areas are defined today, and whether to import them or redraw
    them in admin.
-2. **Licences:** G-NAF's open licence restricts using it to compile addresses "for the sending of
-   mail". A hand-delivered tract isn't post, but confirm before using G-NAF; the Queensland layer is CC
-   BY 4.0. OSM data is ODbL: attribution in the app, and the street graph is shared under ODbL.
+2. **Licences:** settled for Queensland (table above). G-NAF isn't needed while both councils are in
+   Queensland; if it's ever used, its licence restricts compiling addresses "for the sending of mail",
+   which needs a look first.
 3. **No junk mail flags:** retention (two years?) and whether walkers can see a flag before they reach
    the letterbox.
 4. **Rest period:** 7 days between walks of the same street, or longer?

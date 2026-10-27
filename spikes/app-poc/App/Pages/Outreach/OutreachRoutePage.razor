@@ -14,13 +14,25 @@
     }
     else
     {
-        <StreetMap Plan="plan" Start="Outreach.Planner!.Node(plan.StartNode)" Class="street-map--preview" Label="@($"Map of {Title}")" />
+        <StreetMap Plan="plan" Start="Outreach.Planner!.Node(plan.StartNode)" Markers="Outreach.MarkersFor(plan)" Pickable="picking" OnPick="Picked" Class="street-map--preview" Label="@($"Map of {Title}")" />
+        @if (picking)
+        {
+            <p class="walk-pick"><Icon Name="map-pin" Size="IconSize.Small" />Tap the letterbox on the map. <button class="btn btn--quiet planner__small" @onclick="() => { picking = false; reporting = true; }">Cancel</button></p>
+        }
 
         <Section First="true">
             <h2 class="outreach-title">@Title</h2>
             <p class="outreach-sub">@OutreachFormat.StreetList(plan)</p>
             <StatRow Stats="Stats" />
             <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />@OutreachFormat.Bundles(plan)</p>
+            @if (Outreach.SkipCount(plan) is > 0 and var skips)
+            {
+                <p class="hint"><Icon Name="x" Size="IconSize.Small" />Skips @skips @(skips == 1 ? "business" : "businesses") and other non-homes</p>
+            }
+            @if (route is not null && Outreach.NeedsReview(route))
+            {
+                <p class="hint walk-mark--dont"><Icon Name="flag" Size="IconSize.Small" />Needs review: part of this route is now in an excluded area</p>
+            }
             @if (area is not null)
             {
                 <p class="hint"><Icon Name="clock" Size="IconSize.Small" />@(char.ToUpperInvariant(Outreach.LastDoneLabel(area)[0]) + Outreach.LastDoneLabel(area)[1..])</p>
@@ -54,11 +66,15 @@
             {
                 <p class="hint">Names other than yours are samples for this preview.</p>
             }
+            <button class="btn btn--quiet outreach-report" @onclick="StartReport"><Icon Name="flag" Size="IconSize.Small" />Report a problem</button>
         </Section>
     }
 
     <PreviewFooter />
 </Page>
+
+<ReportSheet Open="reporting" OpenChanged="o => { reporting = o; if (!o) pickedFromMap = false; }" AreaName="@Title"
+             Point="reportPoint" PointFromMap="pickedFromMap" OnPickOnMap="PickOnMap" />
 
 <NameSheet @bind-Open="askingName" Action="@ClaimAction" OnSaved="() => SetClaim(true)" />
 
@@ -69,6 +85,10 @@
     private OutreachArea? area;
     private WalkPlan? plan;
     private bool askingName;
+    private bool reporting;
+    private bool picking;
+    private bool pickedFromMap;
+    private GeoPoint? reportPoint;
 
     private bool IsArea => Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith("outreach/area", StringComparison.Ordinal);
 
@@ -123,6 +143,27 @@
         await Native.HapticAsync(Haptic.Medium);
         Outreach.StartWalk(IsArea ? WalkKind.Area : WalkKind.Route, Id, Title, plan!);
         Navigation.NavigateTo("outreach/go");
+    }
+
+    private async Task StartReport()
+    {
+        pickedFromMap = false;
+        reportPoint = OutreachPosition.Parse(await Native.LastPositionAsync());
+        reporting = true;
+    }
+
+    private void PickOnMap()
+    {
+        reporting = false;
+        picking = true;
+    }
+
+    private void Picked(GeoPoint point)
+    {
+        reportPoint = point;
+        pickedFromMap = true;
+        picking = false;
+        reporting = true;
     }
 
     private void Refresh() => InvokeAsync(StateHasChanged);

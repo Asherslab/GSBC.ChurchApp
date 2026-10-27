@@ -9,8 +9,8 @@
         <div class="planner__map">
             @if (Outreach.Map is not null)
             {
-                <PlannerMap Polygon="polygon" Closed="closed" Meeting="MeetingPoint" Selection="selection" Sections="summaries" Palette="Palette"
-                            SelectedEdge="selectedEdge" Mode="@mode" FitVersion="fitVersion"
+                <PlannerMap Polygon="@(ZoneActive ? zoneDraft : polygon)" Closed="@(ZoneActive ? zoneClosed : closed)" Meeting="MeetingPoint" Selection="selection" Sections="summaries" Palette="Palette"
+                            SelectedEdge="selectedEdge" Mode="@MapMode" FitVersion="fitVersion" Zones="Outreach.Zones" Pins="Pins" Focus="focusPoint" FocusVersion="focusVersion"
                             OnPoint="AddPoint" OnFinish="FinishDrawing" OnMeeting="SetMeeting" OnStreet="SelectStreet" />
             }
         </div>
@@ -20,6 +20,22 @@
                 <strong>Staff preview</strong>
                 In the real app this lives in the admin panel. Nothing here is shared; publishing changes only this device.
             </div>
+            <div class="planner__tabs">
+                <Segmented TValue="PlannerPanel" Options="PanelOptions" Value="panel" ValueChanged="SetPanel" />
+            </div>
+
+            @if (panel == PlannerPanel.Exclusions)
+            {
+                <ExclusionsPanel DrawingZone="drawingZone" ZoneReady="zoneClosed" ZonePoints="zoneDraft.Count" PickingAddress="pickingAddress" PendingAddress="pendingAddress"
+                                 Reason="prefillReason" Note="@prefillNote" OnStartZone="StartZone" OnFinishZone="FinishDrawing" OnSaveZone="SaveZone"
+                                 OnStartAddress="StartAddress" OnSaveAddress="SaveAddress" OnCancel="CancelExclusion" OnFocus="FocusOn" />
+            }
+            else if (panel == PlannerPanel.Reports)
+            {
+                <ReportsPanel OnMakeZone="MakeZone" OnMakeAddress="MakeAddress" OnFocus="FocusOn" />
+            }
+            else
+            {
 
             @if (selectedEdge is { } edge && OwnerOf(edge) is { } owner)
             {
@@ -144,11 +160,14 @@
                     <button class="btn btn--quiet" @onclick="RestoreSamples">Restore the sample routes</button>
                 </Section>
             }
+            }
         </aside>
     </div>
 </Page>
 
 @code {
+    private enum PlannerPanel { Routes, Exclusions, Reports }
+
     private const string SelectMode = "select";
     private const string DrawMode = "draw";
     private const string MeetingMode = "meeting";
@@ -161,6 +180,17 @@
         [new(SplitTarget.Letterboxes, "Letterboxes"), new(SplitTarget.Bundles, "Bundles"), new(SplitTarget.Minutes, "Minutes")];
 
     private readonly List<GeoPoint> polygon = [];
+    private readonly List<GeoPoint> zoneDraft = [];
+    private PlannerPanel panel = PlannerPanel.Routes;
+    private bool drawingZone;
+    private bool zoneClosed;
+    private bool pickingAddress;
+    private GeoPoint? pendingAddress;
+    private ExclusionReason prefillReason = ExclusionReason.NonResidential;
+    private string prefillNote = "";
+    private WalkerReport? fromReport;
+    private GeoPoint? focusPoint;
+    private int focusVersion;
     private readonly Dictionary<SplitTarget, double> targetValues = new()
     {
         [SplitTarget.Letterboxes] = 120,
@@ -185,6 +215,24 @@
     private int fitVersion;
 
     private GeoPoint MeetingPoint => pinnedMeeting ?? Outreach.Church;
+
+    private bool ZoneActive => drawingZone || zoneClosed;
+
+    private string MapMode => drawingZone ? DrawMode : pickingAddress ? MeetingMode : ZoneActive ? SelectMode : mode;
+
+    private IReadOnlyList<Choice<PlannerPanel>> PanelOptions =>
+    [
+        new(PlannerPanel.Routes, "Routes"),
+        new(PlannerPanel.Exclusions, $"Exclusions ({Outreach.Zones.Count + Outreach.ExcludedAddresses.Count})"),
+        new(PlannerPanel.Reports, $"Reports ({Outreach.Reports.Count(r => r.Status == ReportStatus.SentForReview)})"),
+    ];
+
+    private IReadOnlyList<PlannerPin> Pins =>
+    [
+        .. Outreach.ExcludedAddresses.Select(a => new PlannerPin(a.Point.Point, "excluded")),
+        .. Outreach.Reports.Where(r => r.Status == ReportStatus.SentForReview && r.Point is not null).Select(r => new PlannerPin(r.Point!.Point, "report")),
+        .. pendingAddress is { } pending ? [new PlannerPin(pending, "pending")] : Array.Empty<PlannerPin>(),
+    ];
 
     private bool MeetsAtChurch => pinnedMeeting is null;
 
@@ -243,15 +291,25 @@
 
     private void AddPoint(GeoPoint point)
     {
-        if (mode != DrawMode || (polygon.Count > 0 && Outreach.Planner!.Distance(polygon[^1], point) < SamePointMetres))
+        var target = drawingZone ? zoneDraft : polygon;
+        if ((!drawingZone && mode != DrawMode) || (target.Count > 0 && Outreach.Planner!.Distance(target[^1], point) < SamePointMetres))
         {
             return;
         }
-        polygon.Add(point);
+        target.Add(point);
     }
 
     private void FinishDrawing()
     {
+        if (drawingZone)
+        {
+            if (zoneDraft.Count >= 3)
+            {
+                drawingZone = false;
+                zoneClosed = true;
+            }
+            return;
+        }
         if (polygon.Count < 3)
         {
             return;
@@ -275,6 +333,12 @@
 
     private void SetMeeting(GeoPoint point)
     {
+        if (pickingAddress)
+        {
+            pendingAddress = point;
+            pickingAddress = false;
+            return;
+        }
         if (mode != MeetingMode)
         {
             return;
@@ -302,7 +366,7 @@
 
     private void Reselect()
     {
-        selection = Outreach.Splitter!.Select(polygon, Outreach.Rested);
+        selection = Outreach.Splitter!.Select(polygon, Outreach.Rested, Outreach.InZone);
         ResetDraft();
     }
 
@@ -320,7 +384,7 @@
     {
         await Native.HapticAsync(Haptic.Medium);
         ResetDraft();
-        IEnumerable<int> connectors = leaveOutRested ? [.. selection!.Rested, .. selection.MainRoads] : selection!.MainRoads;
+        IEnumerable<int> connectors = leaveOutRested ? [.. selection!.Rested, .. selection.MainRoads, .. selection.Excluded] : [.. selection!.MainRoads, .. selection.Excluded];
         (sections, graph) = Outreach.Splitter!.Split(Included, target, TargetValue, connectors);
         Summarise();
         fitVersion++;
@@ -412,6 +476,106 @@
     private string StreetName(int edge) => Outreach.Map!.Edges[edge].Name is { Length: > 0 } name ? name : "This street";
 
     private string Colour(DraftSection section) => Palette[sections.IndexOf(section) % Palette.Count];
+
+    private void SetPanel(PlannerPanel value)
+    {
+        CancelExclusion();
+        panel = value;
+    }
+
+    private void StartZone()
+    {
+        zoneDraft.Clear();
+        zoneClosed = false;
+        drawingZone = true;
+        mode = SelectMode;
+    }
+
+    private void StartAddress()
+    {
+        pendingAddress = null;
+        pickingAddress = true;
+        mode = SelectMode;
+    }
+
+    private async Task SaveZone((ExclusionReason Reason, string Note) form)
+    {
+        await Outreach.AddZoneAsync(zoneDraft.ToList(), form.Reason, form.Note);
+        await ResolveFromReport(ReportStatus.MadeZone);
+        CancelExclusion();
+        AfterExclusionChange();
+    }
+
+    private async Task SaveAddress((ExclusionReason Reason, string Note, bool ShowWalkers) form)
+    {
+        await Outreach.AddExcludedAddressAsync(pendingAddress!.Value, form.Reason, form.Note, form.ShowWalkers);
+        await ResolveFromReport(ReportStatus.MadeAddress);
+        CancelExclusion();
+        AfterExclusionChange();
+    }
+
+    private async Task ResolveFromReport(ReportStatus status)
+    {
+        if (fromReport is not null)
+        {
+            await Outreach.ResolveReportAsync(fromReport, status);
+        }
+    }
+
+    private void CancelExclusion()
+    {
+        drawingZone = false;
+        zoneClosed = false;
+        zoneDraft.Clear();
+        pickingAddress = false;
+        pendingAddress = null;
+        fromReport = null;
+        prefillReason = ExclusionReason.NonResidential;
+        prefillNote = "";
+    }
+
+    private void AfterExclusionChange()
+    {
+        if (closed)
+        {
+            selection = Outreach.Splitter!.Select(polygon, Outreach.Rested, Outreach.InZone);
+            Summarise();
+        }
+    }
+
+    private void MakeZone(WalkerReport report)
+    {
+        CancelExclusion();
+        panel = PlannerPanel.Exclusions;
+        fromReport = report;
+        prefillReason = OutreachLabels.ToExclusion(report.Reason);
+        prefillNote = $"Walker report: {report.Note}";
+        drawingZone = true;
+        if (report.Point is { } point)
+        {
+            FocusOn(point.Point);
+        }
+    }
+
+    private void MakeAddress(WalkerReport report)
+    {
+        CancelExclusion();
+        panel = PlannerPanel.Exclusions;
+        fromReport = report;
+        prefillReason = OutreachLabels.ToExclusion(report.Reason);
+        prefillNote = $"Walker report: {report.Note}";
+        pendingAddress = report.Point?.Point;
+        if (report.Point is { } point)
+        {
+            FocusOn(point.Point);
+        }
+    }
+
+    private void FocusOn(GeoPoint point)
+    {
+        focusPoint = point;
+        focusVersion++;
+    }
 
     private void Refresh() => InvokeAsync(StateHasChanged);
 

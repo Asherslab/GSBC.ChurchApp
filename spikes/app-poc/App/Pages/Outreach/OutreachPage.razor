@@ -74,6 +74,25 @@
             </div>
         </Section>
 
+        @if (Outreach.Reports.Count > 0)
+        {
+            <Section Title="Your reports">
+                <p class="section__lead">Problems you've reported. Staff review each one; nothing changes until they do.</p>
+                <div class="list">
+                    @foreach (var report in Outreach.Reports)
+                    {
+                        <div class="row report-row" @key="report.Id">
+                            <span class="row__icon @(report.Status == ReportStatus.SentForReview ? "row__icon--warm" : "row__icon--quiet")"><Icon Name="flag" Size="IconSize.Small" /></span>
+                            <span class="row__body">
+                                <span class="row__title">@OutreachLabels.Label(report.Reason) · @report.Where</span>
+                                <span class="row__subtitle">@OutreachLabels.Label(report.Status) · @report.Sent.ToString("d MMM, h:mm tt")</span>
+                            </span>
+                        </div>
+                    }
+                </div>
+            </Section>
+        }
+
         <Section Title="This preview">
             <Segmented TValue="bool" Options="PreviewOptions" Value="Outreach.PreviewDuringOutreach" ValueChanged="Outreach.SetPreviewDuringOutreach" />
             <p class="hint">Switch to see Saturday morning while outreach is on. Names other than yours are samples.</p>

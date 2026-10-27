@@ -68,6 +68,7 @@
 }
 
 :root[data-scheme="dark"] {
+  --danger: #f08a80;
   --bg: #141d31;
   --surface: #1d2840;
   --sand: #1d2840;

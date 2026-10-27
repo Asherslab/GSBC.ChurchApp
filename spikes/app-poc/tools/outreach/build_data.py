@@ -1,7 +1,9 @@
 """Builds App/wwwroot/data/outreach.json: Albany Creek's walkable streets with letterbox counts per side.
 
 Streets: OpenStreetMap via Overpass (ODbL). Addresses: Queensland Government Addresses layer (CC BY 4.0).
-Only counts per street side are written; no address leaves this script.
+Homes only: Moreton Bay lot land use (MBRC 2020, CC BY 4.0) and Brisbane City Plan 2014 zoning (Brisbane
+City Council, CC BY 4.0). Only counts per street side, and the points of skipped non-homes, are written;
+no home address leaves this script.
 
     python3 tools/outreach/build_data.py
 """
@@ -11,12 +13,14 @@ import json
 import math
 import random
 import sys
+import time
+import urllib.error
 import urllib.parse
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
 
-SOUTH, WEST, NORTH, EAST = -27.3720, 152.9380, -27.3280, 152.9900
+SOUTH, WEST, NORTH, EAST = -27.3720, 152.9380, -27.3280, 153.0150
 STREET_MARGIN = 0.004
 CHURCH = (-27.34335, 152.96467)
 DELIVERY_ROADS = {"residential", "living_street", "unclassified", "tertiary", "secondary", "primary"}
@@ -29,7 +33,30 @@ USER_AGENT = "GSBC-ChurchApp-POC/0.1 (+https://github.com/Asherslab/GSBC.ChurchA
 OVERPASS = "https://overpass-api.de/api/interpreter"
 ADDRESSES = ("https://spatial-gis.information.qld.gov.au/arcgis/rest/services/PlanningCadastre/"
              "LandParcelPropertyFramework/MapServer/0/query")
+MBRC_LOTS = ("https://services-ap1.arcgis.com/152ojN3Ts9H3cdtl/arcgis/rest/services/"
+             "ZM_Zones_WebMercator_OpenData/FeatureServer/0/query")
+BCC_ZONES = "https://services2.arcgis.com/dEKgZETqwmDAh1rP/arcgis/rest/services/Zoning_opendata/FeatureServer/0/query"
+GRID_DEGREES = 0.002
+SKIP_MERGE_DEGREES = 0.0003
 EARTH_M = 6371000.0
+
+MBRC_DELIVER = {"Single Unit Dwelling", "Multi Unit Dwelling (flats)", "Residential CTS Properties", "Retirement Village"}
+MBRC_CHECK = {"", "Outbuildings", "Cattle Breeding & Fattening", "Turf Farms"}
+MBRC_SKIP = [
+    ("Shopping Centre", "shopping centre"), ("Shops", "shop"), ("Professional Offices", "office"),
+    ("Restaurant", "restaurant"), ("Service Station", "service station"), ("Hotel", "hotel"), ("Club", "club"),
+    ("Industr", "industry"), ("Extractive", "quarry"), ("Educational", "school"), ("Child Care", "childcare"),
+    ("Religious", "church"), ("Hospitals", "hospital or care home"), ("Parks", "park"), ("Vacant", "vacant land"),
+    ("Reservoir", "utility"), ("Telco", "utility"), ("Cemeteries", "cemetery"), ("Community Protection", "emergency services"),
+    ("Nurseries", "nursery"),
+]
+BCC_DELIVER = {"LDR", "LMR", "MDR", "HDR", "CR", "EC", "RU", "RR", "EM", "TA"}
+BCC_CHECK = {"MU"}
+BCC_SKIP = {"NC": "shops", "DC": "shops", "MC": "shops", "PC": "shops", "CN": "shops", "SC": "shops", "OS": "park",
+            "SR": "sport", "SP": "utility", "IN": "industry", "LII": "industry", "GI": "industry", "HI": "industry",
+            "IN1": "industry", "IN2": "industry", "SI": "industry", "IPA": "industry"}
+BCC_COMMUNITY = [("Cemetery", "cemetery"), ("Emergency", "emergency services"), ("Health", "health care"),
+                 ("Education", "school"), ("Worship", "church")]
 OUT = Path(__file__).resolve().parents[2] / "App" / "wwwroot" / "data" / "outreach.json"
 
 ABBREVIATIONS = {"Street": "St", "Road": "Rd", "Court": "Ct", "Drive": "Dr", "Crescent": "Cres", "Place": "Pl",
@@ -37,10 +64,16 @@ ABBREVIATIONS = {"Street": "St", "Road": "Rd", "Court": "Ct", "Drive": "Dr", "Cr
                  "Boulevard": "Bvd", "Lane": "Ln", "Way": "Way", "Grove": "Gr", "Highway": "Hwy"}
 
 
-def fetch(url, data=None):
-    request = urllib.request.Request(url, data=data, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=120) as response:
-        return json.load(response)
+def fetch(url, data=None, attempts=4):
+    for attempt in range(attempts):
+        try:
+            request = urllib.request.Request(url, data=data, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(request, timeout=120) as response:
+                return json.load(response)
+        except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError):
+            if attempt == attempts - 1:
+                raise
+            time.sleep(10 * (attempt + 1))
 
 
 def fetch_streets():
@@ -55,7 +88,8 @@ def fetch_addresses():
     while True:
         params = {
             "geometry": f"{WEST},{SOUTH},{EAST},{NORTH}", "geometryType": "esriGeometryEnvelope", "inSR": 4326,
-            "spatialRel": "esriSpatialRelIntersects", "where": "1=1", "outFields": "unit_number,street_full",
+            "spatialRel": "esriSpatialRelIntersects", "where": "1=1",
+            "outFields": "unit_number,street_full,lotplan,local_authority",
             "returnGeometry": "true", "outSR": 4326, "orderByFields": "objectid", "resultOffset": offset,
             "resultRecordCount": 2000, "f": "json",
         }
@@ -64,6 +98,110 @@ def fetch_addresses():
         if not page.get("exceededTransferLimit"):
             return features
         offset += len(page["features"])
+
+
+def fetch_polygons(url, fields, page_size):
+    features, offset = [], 0
+    while True:
+        params = {
+            "geometry": f"{WEST},{SOUTH},{EAST},{NORTH}", "geometryType": "esriGeometryEnvelope", "inSR": 4326,
+            "spatialRel": "esriSpatialRelIntersects", "where": "1=1", "outFields": fields, "returnGeometry": "true",
+            "outSR": 4326, "orderByFields": "OBJECTID", "resultOffset": offset, "resultRecordCount": page_size,
+            "f": "json",
+        }
+        page = fetch(f"{url}?{urllib.parse.urlencode(params)}")
+        features += page.get("features", [])
+        if not page.get("exceededTransferLimit") or not page.get("features"):
+            return features
+        offset += len(page["features"])
+
+
+class PolygonIndex:
+    def __init__(self, features):
+        self.grid = defaultdict(list)
+        self.items = []
+        for feature in features:
+            rings = (feature.get("geometry") or {}).get("rings") or []
+            if not rings:
+                continue
+            xs = [p[0] for ring in rings for p in ring]
+            ys = [p[1] for ring in rings for p in ring]
+            box = (min(xs), min(ys), max(xs), max(ys))
+            index = len(self.items)
+            self.items.append((box, rings, feature["attributes"]))
+            for gx in range(int(box[0] / GRID_DEGREES), int(box[2] / GRID_DEGREES) + 1):
+                for gy in range(int(box[1] / GRID_DEGREES), int(box[3] / GRID_DEGREES) + 1):
+                    self.grid[(gx, gy)].append(index)
+
+    def find(self, lon, lat):
+        for index in self.grid.get((int(lon / GRID_DEGREES), int(lat / GRID_DEGREES)), []):
+            box, rings, attributes = self.items[index]
+            if box[0] <= lon <= box[2] and box[1] <= lat <= box[3] and inside(rings, lon, lat):
+                return attributes
+        return None
+
+
+def inside(rings, x, y):
+    hit = False
+    for ring in rings:
+        for (x1, y1), (x2, y2) in zip(ring, ring[1:] + ring[:1]):
+            if (y1 > y) != (y2 > y) and x < (x2 - x1) * (y - y1) / (y2 - y1) + x1:
+                hit = not hit
+    return hit
+
+
+def classify_mbrc(landuse):
+    use = (landuse or "").strip()
+    if use in MBRC_DELIVER:
+        return "deliver", None
+    if use in MBRC_CHECK:
+        return "check", "check: " + (use.lower() or "no land use record")
+    for key, label in MBRC_SKIP:
+        if key.lower() in use.lower():
+            return "skip", label
+    return "check", "check: " + use.lower()
+
+
+def classify_bcc(attributes):
+    code = (attributes.get("ZONE_CODE") or "").strip()
+    description = attributes.get("ZONE_PREC_DESC") or ""
+    if code in BCC_DELIVER:
+        return "deliver", None
+    if code in BCC_CHECK:
+        return "check", "check: mixed use"
+    if code == "CF":
+        return "skip", next((label for key, label in BCC_COMMUNITY if key in description), "community facility")
+    return "skip", BCC_SKIP.get(code, description.split(" - ")[-1].lower() or "not homes")
+
+
+class Classifier:
+    def __init__(self, mbrc_features, bcc_features):
+        self.mbrc_by_lot = {}
+        for feature in mbrc_features:
+            lot = (feature["attributes"].get("LOT_PLAN") or "").strip()
+            if lot:
+                self.mbrc_by_lot[lot] = feature["attributes"]
+        self.mbrc_shapes = PolygonIndex(mbrc_features)
+        self.bcc_shapes = PolygonIndex(bcc_features)
+        self.stats = defaultdict(lambda: defaultdict(int))
+
+    def classify(self, attributes, lon, lat):
+        council = attributes.get("local_authority") or ""
+        if council.startswith("Brisbane"):
+            zone = self.bcc_shapes.find(lon, lat)
+            self.stats["Brisbane"]["in a zone" if zone else "no zone"] += 1
+            result = classify_bcc(zone) if zone else ("check", "check: no zone")
+        else:
+            lot = self.mbrc_by_lot.get((attributes.get("lotplan") or "").strip())
+            how = "by lot" if lot else None
+            if lot is None:
+                lot = self.mbrc_shapes.find(lon, lat)
+                how = "by lot polygon" if lot else "unmatched"
+            self.stats["Moreton Bay"][how] += 1
+            result = classify_mbrc(lot["LanduseRates"]) if lot else ("check", "check: no land use record")
+        name = "Brisbane" if council.startswith("Brisbane") else "Moreton Bay"
+        self.stats[name][result[0]] += 1
+        return result
 
 
 def local_xy(lat, lon):
@@ -102,11 +240,12 @@ def build_edges(raw):
     return edges
 
 
-def count_letterboxes(edges, features):
+def count_letterboxes(edges, features, classifier):
     by_name = defaultdict(list)
     for i, edge in enumerate(edges):
         by_name[edge["name"].lower()].append(i)
     placed = unplaced = 0
+    marks = {"skips": {}, "checks": {}}
     for feature in features:
         attributes = feature["attributes"]
         p = local_xy(feature["geometry"]["y"], feature["geometry"]["x"])
@@ -121,11 +260,18 @@ def count_letterboxes(edges, features):
             unplaced += 1
             continue
         _, i, side = best
-        edges[i]["boxes"][side] += 1
-        if attributes["unit_number"]:
-            edges[i]["units"][side] += 1
+        lon, lat = feature["geometry"]["x"], feature["geometry"]["y"]
+        kind, label = classifier.classify(attributes, lon, lat)
+        if kind != "skip":
+            edges[i]["boxes"][side] += 1
+            if attributes["unit_number"]:
+                edges[i]["units"][side] += 1
+        if label is not None:
+            bucket = marks["skips" if kind == "skip" else "checks"]
+            key = (i, side, label, round(lon / SKIP_MERGE_DEGREES), round(lat / SKIP_MERGE_DEGREES))
+            bucket.setdefault(key, [round(lon, 5), round(lat, 5), side, i, label])
         placed += 1
-    return placed, unplaced
+    return placed, unplaced, {k: list(v.values()) for k, v in marks.items()}
 
 
 def adjacency(edges, ids):
@@ -226,17 +372,19 @@ def outreach_routes(edges, areas):
     return routes
 
 
-def write(edges, areas, routes, placed, unplaced):
+def write(edges, areas, routes, placed, unplaced, marks):
     keep = list(range(len(edges)))
     index = {old: new for new, old in enumerate(keep)}
     nodes = sorted({n for i in keep for n in (edges[i]["u"], edges[i]["v"])})
     node_index = {n: k for k, n in enumerate(nodes)}
     rng = random.Random(31)
     data = {
-        "attribution": "Streets © OpenStreetMap contributors (ODbL). Addresses © State of Queensland (CC BY 4.0).",
+        "attribution": "Streets © OpenStreetMap contributors (ODbL). Addresses © State of Queensland (CC BY 4.0). "
+                       "Land use © MBRC 2020 (CC BY 4.0). Zoning © Brisbane City Council (CC BY 4.0).",
         "church": list(CHURCH),
         "bounds": [SOUTH, WEST, NORTH, EAST],
-        "letterboxes": {"placed": placed, "unplaced": unplaced},
+        "letterboxes": {"placed": sum(sum(e["boxes"]) for e in edges), "unplaced": unplaced,
+                        "skipped": placed - sum(sum(e["boxes"]) for e in edges)},
         "edges": [
             {
                 "u": node_index[edges[i]["u"]], "v": node_index[edges[i]["v"]],
@@ -255,6 +403,10 @@ def write(edges, areas, routes, placed, unplaced):
             {"id": k + 1, "name": area_name(edges, route), "edges": sorted(index[i] for i in route)}
             for k, route in enumerate(routes)
         ],
+        "skips": [{"lon": lon, "lat": lat, "side": side, "edge": index[i], "label": label}
+                  for lon, lat, side, i, label in marks["skips"]],
+        "checks": [{"lon": lon, "lat": lat, "side": side, "edge": index[i], "label": label}
+                   for lon, lat, side, i, label in marks["checks"]],
     }
     OUT.write_text(json.dumps(data, separators=(",", ":")))
     return len(keep), OUT.stat().st_size
@@ -262,12 +414,22 @@ def write(edges, areas, routes, placed, unplaced):
 
 def main():
     edges = build_edges(fetch_streets())
-    placed, unplaced = count_letterboxes(edges, fetch_addresses())
+    classifier = Classifier(fetch_polygons(MBRC_LOTS, "LOT_PLAN,LanduseRates", 1000),
+                            fetch_polygons(BCC_ZONES, "ZONE_CODE,ZONE_PREC_DESC", 2000))
+    placed, unplaced, marks = count_letterboxes(edges, fetch_addresses(), classifier)
     areas = cut_areas(edges)
     routes = outreach_routes(edges, areas)
-    kept, size = write(edges, areas, routes, placed, unplaced)
-    print(f"{kept} street segments, {placed} letterboxes placed, {unplaced} unplaced, "
+    kept, size = write(edges, areas, routes, placed, unplaced, marks)
+    homes = sum(sum(e["boxes"]) for e in edges)
+    print(f"{kept} street segments, {placed} addresses placed ({homes} letterboxes, {placed - homes} skipped), "
+          f"{unplaced} unplaced, {len(marks['skips'])} skip points, {len(marks['checks'])} check points, "
           f"{len(areas)} areas, {len(routes)} outreach routes, {size // 1024} KB", file=sys.stderr)
+    for council, counts in classifier.stats.items():
+        total = counts["deliver"] + counts["skip"] + counts["check"]
+        matched = {k: v for k, v in counts.items() if k not in ("deliver", "skip", "check")}
+        rates = ", ".join(f"{k} {v} ({v / total:.0%})" for k, v in matched.items())
+        print(f"{council}: {total} placed addresses; {rates}; deliver {counts['deliver']}, "
+              f"skip {counts['skip']}, check {counts['check']}", file=sys.stderr)
 
 
 if __name__ == "__main__":
