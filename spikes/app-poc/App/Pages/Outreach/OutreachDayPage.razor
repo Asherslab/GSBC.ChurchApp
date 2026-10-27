@@ -1,0 +1,116 @@
+@page "/outreach/day"
+@implements IDisposable
+@inject OutreachService Outreach
+
+<Page Title="Outreach day" BackHref="outreach" BackLabel="Outreach">
+    <Masthead Title="Outreach day" Note="@Note">
+        @if (Outreach.Day is not null && Outreach.Map is not null)
+        {
+            <div class="status">
+                @if (Outreach.DayIsOn)
+                {
+                    <span class="live-dot"></span>
+                }
+                else
+                {
+                    <Icon Name="clock" Size="IconSize.Small" />
+                }
+                <span class="status__text">@((MarkupString)StatusLine)</span>
+                <a class="btn btn--ghost-masthead" href="outreach/walk?minutes=60">Walk from home</a>
+            </div>
+        }
+    </Masthead>
+
+    @if (Outreach.Map is not { } map)
+    {
+        <Section First="true">
+            <p class="hint">Loading the routes…</p>
+        </Section>
+    }
+    else if (Outreach.Day is null)
+    {
+        <Section First="true">
+            <EmptyState Icon="calendar" Title="No outreach day this week" Body="When staff plan one, its ready-made routes show here.">
+                <a class="btn btn--quiet" href="outreach">Back to Outreach</a>
+            </EmptyState>
+        </Section>
+    }
+    else
+    {
+        <Section Title="Ready-made routes" First="true">
+            <p class="section__lead">Claim one so others know it's taken. More than one person can claim the same route.</p>
+            <div class="list">
+                @foreach (var route in Outreach.Routes)
+                {
+                    var names = Outreach.ClaimsFor(OutreachService.RouteKey(route));
+                    <ListRow Title="@route.Name" Subtitle="@RouteLine(route)" Href="@($"outreach/route/{route.Id}")">
+                        <Leading>
+                            <span class="row__icon route-number @(Outreach.IsMine(OutreachService.RouteKey(route)) ? "row__icon--accent" : names.Count > 0 ? "row__icon--warm" : "")" aria-label="@($"Route {route.Id}")">@route.Id</span>
+                        </Leading>
+                        <TrailingContent>
+                            @if (names.Count > 0)
+                            {
+                                <People Persons="@names.Select(n => new Person(n)).ToList()" MaxFaces="2" Label="@OutreachFormat.Claimers(names)" />
+                            }
+                            else
+                            {
+                                <span class="pill pill--quiet">Open</span>
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </div>
+        </Section>
+
+        <Section Title="Walking from home?">
+            <div class="callout">
+                <strong>It still counts.</strong>
+                Any walk you start between @ChurchClock.Time(Outreach.Day.Start) and @ChurchClock.Time(Outreach.Day.End) adds to the day, wherever you are.
+            </div>
+            <div style="margin-top: 14px">
+                <a class="btn btn--quiet" href="outreach/walk?minutes=60"><Icon Name="footprints" Size="IconSize.Small" />Plan a walk from here</a>
+            </div>
+            @if (!Outreach.HasPublishedRoutes)
+            {
+                <p class="hint">Names other than yours are samples for this preview.</p>
+            }
+        </Section>
+    }
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private string? Note => Outreach.Day is { } day ? $"{day.Start:dddd d MMMM} · {OutreachFormat.Window(day)}" : "Letterbox drops together";
+
+    private string StatusLine
+    {
+        get
+        {
+            var routes = $"{Outreach.ClaimedRoutes} of {Outreach.Routes.Count} routes claimed";
+            if (Outreach.DayIsOn)
+            {
+                return $"<strong>On now</strong> · {Outreach.DayTally} letterboxes so far";
+            }
+            var days = (Outreach.Day!.Start.Date - Outreach.Now.Date).Days;
+            var when = days switch { 0 => "Today", 1 => "Tomorrow", _ => $"In {days} days" };
+            return $"<strong>{when}</strong> · {routes}";
+        }
+    }
+
+    private string RouteLine(ReadyRoute route)
+    {
+        var plan = Outreach.PlanEdges(route.Edges, Outreach.Church);
+        return $"Route {route.Id} · {plan.Letterboxes} letterboxes · {OutreachFormat.Kilometres(plan.Metres)}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Outreach.Changed += Refresh;
+        await Outreach.EnsureLoadedAsync();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Outreach.Changed -= Refresh;
+}

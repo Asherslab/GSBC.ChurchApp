@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Outreach, go now</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--paper:#fff;--beige:#d5c9b7;--sand:#f4efe7;--sand2:#e9e1d4;--aqua:#009c8f;--aqua-deep:#00776d;--orange:#e7ae74;--orange-ink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.status{height:47px;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 34px;color:#fff;font-size:16px;font-weight:600}
+.status svg{height:12px;fill:#fff}
+.mast{background:var(--navy);color:#fff;position:relative;overflow:hidden;padding-bottom:16px}
+.mast .ring{position:absolute;right:-70px;top:10px;width:170px;height:170px;border-radius:50%;border:16px solid rgba(255,255,255,.06)}
+.head{display:grid;grid-template-columns:32px 1fr;column-gap:6px;align-items:center;padding:2px 20px 0 12px}
+.back{width:32px;height:32px;display:grid;place-items:center}
+.back svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mast h1{font-size:23px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.live{display:flex;align-items:center;gap:8px;padding:6px 20px 0 50px;font-size:13px;color:rgba(255,255,255,.82)}
+.live b{font-weight:600;color:#fff}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--aqua);box-shadow:0 0 0 3px rgba(0,156,143,.3);flex:none}
+h2{font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.2;padding:20px 20px 0}
+.seg{margin:12px 20px 0;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;border-radius:14px;background:var(--sand);border:1px solid var(--sand2)}
+.seg span{height:42px;border-radius:10px;display:grid;place-items:center;font-size:15px;font-weight:600;color:var(--navy)}
+.seg .on{background:var(--navy);color:#fff;box-shadow:0 2px 6px rgba(24,35,58,.18)}
+.mapcard{position:relative;margin:14px 20px 0;height:256px;border-radius:14px;overflow:hidden;background:#efebe3;border:1px solid var(--line)}
+.mapcard svg{display:block}
+.from{position:absolute;left:12px;top:12px;height:32px;padding:0 12px 0 10px;border-radius:16px;background:#fff;box-shadow:0 2px 8px rgba(24,35,58,.16);display:flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--navy)}
+.from svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.from i{width:8px;height:8px;border-radius:50%;background:var(--aqua-deep)}
+.both{position:absolute;right:12px;bottom:12px;height:28px;padding:0 12px;border-radius:14px;background:rgba(255,255,255,.92);display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink2)}
+.both svg{width:18px;height:8px}
+.stats{margin:14px 20px 0;display:grid;grid-template-columns:1fr 1fr 1.25fr}
+.stat{padding:0 12px;border-left:1px solid var(--line)}
+.stat:first-child{padding-left:0;border-left:0}
+.stat b{display:block;font-size:20px;font-weight:700;letter-spacing:-.02em;line-height:1.15}
+.stat small{display:block;font-size:12px;color:var(--ink2);margin-top:2px}
+.btn{margin:16px 20px 0;height:52px;border-radius:14px;background:var(--aqua-deep);color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-size:16px;font-weight:600}
+.btn svg{width:16px;height:16px;fill:#fff}
+.links{margin:10px 20px 0}
+.row{display:grid;grid-template-columns:40px 1fr 16px;column-gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.ico{width:40px;height:40px;border-radius:10px;background:var(--sand);display:grid;place-items:center}
+.ico svg{width:20px;height:20px;fill:none;stroke:var(--navy);stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.row b{display:block;font-size:15px;font-weight:600;line-height:1.3}
+.row small{display:block;font-size:12.5px;color:var(--ink2);margin-top:2px}
+.row small em{font-style:normal;font-weight:600;color:var(--orange-ink)}
+.chev{width:16px;height:16px;fill:none;stroke:var(--ink3);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink3)}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua-deep)}
+</style></head><body>
+<header class="mast"><div class="ring"></div>
+  <div class="status"><span>9:05</span><svg viewBox="0 0 66 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M30 3.2a10 10 0 0 1 13 0l-1.4 1.5a8 8 0 0 0-10.2 0zM32.6 6a6 6 0 0 1 7.8 0L39 7.5a4 4 0 0 0-5 0zM36.5 11.5l-1.9-2a2.6 2.6 0 0 1 3.8 0z"/><rect x="47" y="0.5" width="17" height="11" rx="3" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="49" y="2.5" width="12" height="7" rx="1.5"/><rect x="64.5" y="4" width="1.5" height="4" rx=".7" fill-opacity=".5"/></svg></div>
+  <div class="head">
+    <span class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></span>
+    <h1>Go for a walk</h1>
+  </div>
+  <p class="live"><span class="dot"></span><span><b>Outreach is on till 11:30</b> · this walk counts toward it</span></p>
+</header>
+
+<h2>How long have you got?</h2>
+<div class="seg"><span>30 min</span><span class="on">1 hr</span><span>2 hr</span><span>km</span></div>
+
+<div class="mapcard">
+  <svg viewBox="0 0 350 256" width="350" height="256" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M-4 196 C40 186 70 214 96 260 L-4 260Z" fill="#dfe8d6"/>
+    <g stroke="none">
+      <rect x="84" y="80" width="80" height="62" rx="8" fill="#d3d6dc" opacity=".6"/>
+      <rect x="182" y="80" width="78" height="62" rx="8" fill="#d3d6dc" opacity=".6"/>
+      <rect x="84" y="166" width="72" height="54" rx="8" fill="#d3d6dc" opacity=".6"/>
+      <rect x="184" y="166" width="76" height="54" rx="8" fill="#d3d6dc" opacity=".6"/>
+      <rect x="-10" y="80" width="68" height="62" rx="8" fill="#d3d6dc" opacity=".6"/>
+    </g>
+    <path d="M318 -10 C312 80 326 170 316 270" stroke="#e7d9c3" stroke-width="18"/>
+    <path d="M318 -10 C312 80 326 170 316 270" stroke="#fbf1e2" stroke-width="14"/>
+    <defs><g id="rd"><g fill="none">
+      <path id="k" d="M70 154 C130 148 200 160 272 152"/>
+      <path id="l" d="M272 64 C200 70 130 60 70 66"/>
+      <path id="w" d="M70 66 C66 96 74 126 70 154"/>
+      <path id="c" d="M272 152 C276 120 268 92 272 64"/>
+      <path id="s" d="M170 155 C166 180 174 200 170 222"/>
+      <path d="M-4 156 Q30 154 70 154"/><path d="M272 152 Q296 150 318 150"/><path d="M272 64 Q296 62 316 60"/><path d="M-4 68 Q30 66 70 66"/><path d="M70 66 C68 30 72 10 70 -6"/><path d="M70 154 C72 200 66 230 70 262"/><path d="M272 152 C270 200 278 230 274 262"/>
+    </g><circle cx="170" cy="226" r="8"/></g></defs>
+    <use href="#rd" stroke="#d9dcd3" fill="#d9dcd3" stroke-width="12"/>
+    <use href="#rd" stroke="#fff" fill="#fff" stroke-width="9"/>
+    <g stroke="#2a3d5e" stroke-width="16"><use href="#k"/><use href="#l"/><use href="#w"/><use href="#c"/><use href="#s"/></g>
+    <circle cx="170" cy="226" r="12" fill="#2a3d5e"/>
+    <g stroke="#fff" stroke-width="7"><use href="#k"/><use href="#l"/><use href="#w"/><use href="#c"/><use href="#s"/></g>
+    <circle cx="170" cy="226" r="5" fill="#fff"/>
+    <g stroke="#2a3d5e" stroke-width="1.6">
+      <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(224,155) rotate(-3)"/>
+      <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(272,108) rotate(-90)"/>
+      <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(200,67) rotate(178)"/>
+      <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(110,64) rotate(180)"/>
+      <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(70,110) rotate(90)"/>
+      <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(170,190) rotate(92)"/>
+    </g>
+    <g font-family="Montserrat,sans-serif" font-size="11" font-weight="600" fill="#6b7384" stroke="none">
+      <text x="186" y="178">Kingfisher St</text>
+      <text x="132" y="52">Lorikeet Dr</text>
+      <text transform="translate(57,126) rotate(-88)">Wren Ct</text>
+      <text transform="translate(286,82) rotate(90)">Currawong St</text>
+      <text transform="translate(334,30) rotate(92)" fill="#8a5422">Albany Creek Rd</text>
+    </g>
+    <circle cx="118" cy="151" r="14" fill="rgba(0,156,143,.22)"/>
+    <circle cx="118" cy="151" r="7" fill="#009c8f" stroke="#fff" stroke-width="2.5"/>
+    <rect x="58" y="104" width="136" height="24" rx="12" fill="#00776d"/>
+    <path d="M112 128l6 6 6-6z" fill="#00776d"/>
+    <text x="126" y="120" font-family="Montserrat,sans-serif" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">You · 14 Kingfisher St</text>
+  </svg>
+  <span class="from"><i></i>From here<svg viewBox="0 0 16 16"><path d="M4 6l4 4 4-4"/></svg></span>
+  <span class="both"><svg viewBox="0 0 18 8"><path d="M1 4h16" stroke="#2a3d5e" stroke-width="7" stroke-linecap="round"/><path d="M3 4h12" stroke="#fff" stroke-width="2.5" stroke-linecap="round"/></svg>Both sides of every street</span>
+</div>
+
+<div class="stats">
+  <div class="stat"><b>2.8 km</b><small>about 1 hr</small></div>
+  <div class="stat"><b>104</b><small>letterboxes</small></div>
+  <div class="stat"><b>2 bundles</b><small>plus a spare</small></div>
+</div>
+
+<div class="btn"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>Start walk</div>
+
+<div class="links">
+  <div class="row">
+    <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 20V10l8-6 8 6v10"/><path d="M12 4V1.5M10.5 2.8h3M9.5 20v-5h5v5"/></svg></span>
+    <div><b>Today's routes from church</b><small>9 routes, 5 claimed · <em>Sam + 2</em> on Route 4</small></div>
+    <svg class="chev" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5"/></svg>
+  </div>
+  <div class="row">
+    <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 6l15-2 2 14-15 2z"/><path d="M9 5.4l1.2 13.9"/></svg></span>
+    <div><b>Take a patch</b><small>3 fresh near you · about 50 letterboxes each</small></div>
+    <svg class="chev" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5"/></svg>
+  </div>
+</div>
+
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>Listen</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 8a4.3 4.3 0 0 1 7.5 2.8C19.5 16.4 12 21 12 21z"/></svg>Prayer</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>

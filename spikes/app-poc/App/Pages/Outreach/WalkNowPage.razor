@@ -1,0 +1,213 @@
+@page "/outreach/walk"
+@using System.Globalization
+@implements IDisposable
+@inject OutreachService Outreach
+@inject NavigationManager Navigation
+@inject NativeBridge Native
+
+<Page Title="Walk now" BackHref="outreach" BackLabel="Outreach" TopBar="TopBarStyle.Solid" Bell="false">
+    <StreetMap Plan="plan" Start="start" Pickable="@(startMode == StartMode.Map)" ShowLocation="@(startMode == StartMode.Here)" OnPick="Picked" Class="street-map--preview" Label="Map of your walk" />
+
+    <Section First="true">
+        <div class="stack">
+            <Segmented TValue="string" Options="LengthOptions" Value="length" ValueChanged="SetLength" />
+            @if (length == DistanceOption)
+            {
+                <Stepper Label="Distance" Value="kilometres" ValueChanged="SetKilometres" Step="0.5" Min="0.5" Max="10" Format="0.0" Unit=" km" />
+            }
+            <Segmented TValue="StartMode" Options="StartOptions" Value="startMode" ValueChanged="SetStart" />
+        </div>
+        @if (message is not null)
+        {
+            <p class="hint"><Icon Name="locate" Size="IconSize.Small" />@message</p>
+        }
+    </Section>
+
+    <Section>
+        @if (plan is null)
+        {
+            <p class="hint">@(startMode == StartMode.Map ? "Tap the map where you'll start." : "Finding where you are…")</p>
+        }
+        else if (plan.Letterboxes == 0)
+        {
+            <EmptyState Icon="map" Title="No streets to walk here" Body="Every street near this start was walked this week, or it's outside the area this preview covers. Try church, or tap somewhere else on the map." />
+        }
+        else
+        {
+            <StatRow Stats="Stats" />
+            <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />@OutreachFormat.Bundles(plan)</p>
+            @if (Outreach.DayIsOn)
+            {
+                <p class="outreach-counts"><span class="live-dot"></span>Counts toward today's outreach</p>
+            }
+            @if (Outreach.RestedStreetsNearby(plan) is > 0 and var rested)
+            {
+                <p class="hint"><Icon Name="check" Size="IconSize.Small" />Skips @rested @(rested == 1 ? "street" : "streets") done this week</p>
+            }
+            <div style="margin-top: 18px">
+                <button class="btn btn--primary btn--block" @onclick="Start"><Icon Name="footprints" Size="IconSize.Small" />Start walk</button>
+            </div>
+            <p class="hint">@OutreachFormat.StreetList(plan)</p>
+        }
+    </Section>
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private enum StartMode { Here, Church, Map }
+
+    private const string DistanceOption = "km";
+
+    private static readonly IReadOnlyList<Choice<string>> LengthOptions =
+        [new("30", "30 min"), new("60", "1 hr"), new("120", "2 hr"), new(DistanceOption, "Distance")];
+
+    private static readonly IReadOnlyList<Choice<StartMode>> StartOptions =
+        [new(StartMode.Here, "From here"), new(StartMode.Church, "Church"), new(StartMode.Map, "Pick on map")];
+
+    [SupplyParameterFromQuery] public int? Minutes { get; set; }
+    [SupplyParameterFromQuery(Name = "km")] public double? Km { get; set; }
+    [SupplyParameterFromQuery] public string? From { get; set; }
+
+    private string length = "60";
+    private double kilometres = 3;
+    private StartMode startMode = StartMode.Here;
+    private GeoPoint? start;
+    private WalkPlan? plan;
+    private string? message;
+    private bool located;
+
+    private WalkBudget Budget => length == DistanceOption ? new(Kilometres: kilometres) : new(Minutes: int.Parse(length, CultureInfo.InvariantCulture));
+
+    private IReadOnlyList<Stat> Stats =>
+    [
+        new(OutreachFormat.Kilometres(plan!.Metres), "loop"),
+        new(plan.Letterboxes.ToString(CultureInfo.InvariantCulture), "letterboxes"),
+        new(OutreachFormat.Duration(plan.Time), "walking"),
+    ];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Outreach.Changed += Refresh;
+        if (Km is { } km)
+        {
+            length = DistanceOption;
+            kilometres = Math.Clamp(km, 0.5, 10);
+        }
+        else if (Minutes is 30 or 60 or 120)
+        {
+            length = Minutes.Value.ToString(CultureInfo.InvariantCulture);
+        }
+        await Outreach.EnsureLoadedAsync();
+        if (From == "church")
+        {
+            startMode = StartMode.Church;
+            start = Outreach.Church;
+            located = true;
+            Replan();
+        }
+        else if (From == "here" && Outreach.Here is { } here)
+        {
+            start = here;
+            located = true;
+            Replan();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && startMode == StartMode.Here && !located)
+        {
+            located = true;
+            await LocateAsync();
+        }
+    }
+
+    private async Task LocateAsync()
+    {
+        await Outreach.EnsureLoadedAsync();
+        var result = await Native.LocateAsync();
+        if (OutreachPosition.Parse(result) is { } here)
+        {
+            if (Outreach.Planner!.Contains(here))
+            {
+                message = null;
+                start = here;
+                Outreach.SetHere(here);
+            }
+            else
+            {
+                message = "You're outside the streets this preview covers (Albany Creek), so this starts from church.";
+                start = Outreach.Church;
+            }
+        }
+        else
+        {
+            message = result == "denied"
+                ? "Location is off for this app, so this starts from church. Pick on map to start somewhere else."
+                : "Couldn't find where you are, so this starts from church.";
+            start = Outreach.Church;
+        }
+        Replan();
+        StateHasChanged();
+    }
+
+    private void Replan() => plan = start is { } from ? Outreach.PlanNow(from, Budget) : null;
+
+    private void SetLength(string value)
+    {
+        length = value;
+        Replan();
+    }
+
+    private void SetKilometres(double value)
+    {
+        kilometres = value;
+        Replan();
+    }
+
+    private async Task SetStart(StartMode mode)
+    {
+        startMode = mode;
+        message = null;
+        switch (mode)
+        {
+            case StartMode.Church:
+                start = Outreach.Church;
+                Replan();
+                break;
+            case StartMode.Map:
+                start = null;
+                plan = null;
+                break;
+            default:
+                await LocateAsync();
+                break;
+        }
+    }
+
+    private async Task Picked(GeoPoint point)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        if (!Outreach.Planner!.Contains(point))
+        {
+            message = "That's outside the streets this preview covers (Albany Creek).";
+            return;
+        }
+        message = null;
+        start = point;
+        Replan();
+    }
+
+    private async Task Start()
+    {
+        await Native.HapticAsync(Haptic.Medium);
+        var title = length == DistanceOption ? $"{kilometres.ToString("0.#", CultureInfo.InvariantCulture)} km walk" : $"{LengthOptions.First(o => o.Value == length).Label} walk";
+        Outreach.StartWalk(WalkKind.Now, null, title, plan!);
+        Navigation.NavigateTo("outreach/go");
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Outreach.Changed -= Refresh;
+}

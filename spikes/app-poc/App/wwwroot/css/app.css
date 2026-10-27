@@ -474,7 +474,7 @@ button.row:active, a.row:active { background: var(--line); }
 .series-card span { font-size: 0.8235rem; color: var(--ink-2); }
 
 .speaker { width: 48px; height: 48px; border-radius: 24px; object-fit: cover; background: var(--sand-strong); flex: none; }
-.speaker--initials { display: grid; place-items: center; font-weight: 700; color: var(--primary); background: var(--sand); }
+.speaker--initials { display: grid; place-items: center; font-weight: 700; color: var(--primary); background: color-mix(in srgb, var(--primary) 16%, var(--surface)); }
 
 .detail-hero { position: relative; aspect-ratio: 16 / 9; background: #000; }
 .detail-hero > .cover, .detail-hero > iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }

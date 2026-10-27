@@ -1,0 +1,49 @@
+{
+  "title": "Outreach, in the moment",
+  "question": "Someone opens Outreach because they have time now. Outreach days are a time window, not a place: a walk from home during it still counts. Each sketch shows Saturday 9:05, outreach on, walker at home. Which should lead?",
+  "options": [
+    {
+      "id": "step-by-step",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Three quick steps",
+      "lineage": "a guided booking flow",
+      "thesis": "Time, then start, then your route: three short steps with big answers, ending on a route card ready to walk.",
+      "palette": ["#2a3d5e", "#ffffff", "#009c8f", "#e7ae74", "#d5c9b7"],
+      "materials": ["Montserrat", "navy masthead", "large choice tiles"],
+      "viewport": "A banner that outreach is on until 11:30 and your walk counts; step 1 of 3 'How long have you got?' with four large tiles; start options below; Next.",
+      "risk": "Three steps is a tap or two more than the fastest path, though each step is trivial.",
+      "html": ".impeccable/mocks/decision/outreach/step-by-step.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "route-deck",
+      "kind": "dealt",
+      "label": "Routes near you",
+      "lineage": "swipe-through cards",
+      "thesis": "Ready-made routes around where you are, one per screen with its map; swipe through, tap Go. Today's outreach routes sit in the same deck with who's claimed them.",
+      "palette": ["#2a3d5e", "#ffffff", "#009c8f", "#e7ae74", "#18233a"],
+      "materials": ["Montserrat", "full-height route cards", "map per card"],
+      "viewport": "One big card: the loop on a map, '1 hr from your door · 104 letterboxes · 2 bundles', Go; a peek of the next card; an outreach chip on routes that belong to today's outreach.",
+      "risk": "You browse rather than ask for exactly the time you have, so the right length may be a few swipes away.",
+      "html": ".impeccable/mocks/decision/outreach/route-deck.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "go-now",
+      "kind": "dealt",
+      "label": "Go now",
+      "lineage": "a one-screen quick start",
+      "thesis": "One screen: how long have you got, from where you are, and the loop is already drawn; change the time and it redraws; Start.",
+      "palette": ["#2a3d5e", "#ffffff", "#009c8f", "#e7ae74", "#f4efe7"],
+      "materials": ["Montserrat", "navy masthead", "live route preview"],
+      "viewport": "Masthead with the outreach-on note; big time chips; a map preview of the loop from your location; letterboxes and bundles; Start walk; patches and today's routes as quieter links below.",
+      "risk": "Everything on one screen means patches and outreach routes get less room.",
+      "html": ".impeccable/mocks/decision/outreach/go-now.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

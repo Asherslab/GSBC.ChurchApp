@@ -1,0 +1,49 @@
+{
+  "title": "Outreach: letterbox drops",
+  "question": "Three ways to organise the same feature (plan an area, walk both sides of every street, count letterboxes and bundles, and share coverage so streets aren't done twice in a week). Lock the one that should lead; the others can live inside it.",
+  "options": [
+    {
+      "id": "patch-board",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Patch board",
+      "lineage": "a parish map cut into delivery runs",
+      "thesis": "The area around the church is pre-cut into patches of about one bundle each, coloured by when they were last done; claim one near you and walk it.",
+      "palette": ["#2a3d5e", "#ffffff", "#009c8f", "#e7ae74", "#d5c9b7"],
+      "materials": ["Montserrat", "navy masthead", "map tinted by freshness"],
+      "viewport": "Navy masthead with this week's coverage; a map of patches tinted fresh, claimed or done; a sheet suggesting the freshest patch near your address with letterboxes, loop length and Claim.",
+      "risk": "You choose patches, not kilometres: '3 km from home' becomes 'one or two patches near home', and patches must be cut and kept up to date.",
+      "html": ".impeccable/mocks/decision/outreach/patch-board.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "route-builder",
+      "kind": "dealt",
+      "label": "Route from your door",
+      "lineage": "walking route planners",
+      "thesis": "Enter an address and a distance; a loop covering both sides of every street redraws live, with letterbox and bundle counts, steering around streets done this week.",
+      "palette": ["#2a3d5e", "#ffffff", "#009c8f", "#e7ae74", "#18233a"],
+      "materials": ["Montserrat", "full-bleed map", "planning sheet"],
+      "viewport": "Full-screen map with the loop and start pin; a sheet with Start (Home, Church, Other), a distance stepper, letterboxes, bundles and time, and Start walk.",
+      "risk": "Everyone picks their own area, so coverage gets lumpy unless the generator pushes hard toward fresh streets.",
+      "html": ".impeccable/mocks/decision/outreach/route-builder.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "day-board",
+      "kind": "dealt",
+      "label": "Outreach day board",
+      "lineage": "a team run sheet on a clipboard",
+      "thesis": "An outreach day as a run sheet: each team a row with its route, bundles and live progress, plus the month's coverage of the suburb.",
+      "palette": ["#2a3d5e", "#ffffff", "#e7ae74", "#009c8f", "#f4efe7"],
+      "materials": ["Montserrat", "section tabs", "progress rows"],
+      "viewport": "Masthead with the day's totals; Teams / Map tabs; a row per team with names, patch, bundles and progress; coverage this month at the foot.",
+      "risk": "Needs sign-in and a leader role, and it does little for someone walking alone on a Tuesday.",
+      "html": ".impeccable/mocks/decision/outreach/day-board.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

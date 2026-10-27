@@ -1,0 +1,13 @@
+<dl class="stat-row">
+    @foreach (var stat in Stats)
+    {
+        <div class="stat-row__item">
+            <dt>@stat.Label</dt>
+            <dd>@stat.Value</dd>
+        </div>
+    }
+</dl>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<Stat> Stats { get; set; } = [];
+}

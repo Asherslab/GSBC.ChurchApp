@@ -56,6 +56,12 @@ public sealed class NativeBridge(IJSRuntime js)
 
     public ValueTask SetAsync(string key, string value) => js.InvokeVoidAsync("gsbc.set", key, value);
 
+    public ValueTask KeepAwakeAsync(bool on) => js.InvokeVoidAsync("gsbc.keepAwake", on);
+
+    public ValueTask<string> LocateAsync() => js.InvokeAsync<string>("gsbc.streetMap.locate");
+
+    public ValueTask<string> LastPositionAsync() => js.InvokeAsync<string>("gsbc.streetMap.position");
+
     public ValueTask ScrollToTopAsync() => js.InvokeVoidAsync("gsbc.scrollToTop");
 
     public ValueTask ApplyThemeAsync(Theme theme, Appearance appearance, string layout) =>

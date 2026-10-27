@@ -1,0 +1,419 @@
+@page "/staff/outreach-planner"
+@using System.Globalization
+@implements IDisposable
+@inject OutreachService Outreach
+@inject NativeBridge Native
+
+<Page Title="Outreach planner" TopBar="TopBarStyle.Solid" Bell="false">
+    <div class="planner">
+        <div class="planner__map">
+            @if (Outreach.Map is not null)
+            {
+                <PlannerMap Polygon="polygon" Closed="closed" Meeting="MeetingPoint" Selection="selection" Sections="summaries" Palette="Palette"
+                            SelectedEdge="selectedEdge" Mode="@mode" FitVersion="fitVersion"
+                            OnPoint="AddPoint" OnFinish="FinishDrawing" OnMeeting="SetMeeting" OnStreet="SelectStreet" />
+            }
+        </div>
+
+        <aside class="planner__panel">
+            <div class="callout">
+                <strong>Staff preview</strong>
+                In the real app this lives in the admin panel. Nothing here is shared; publishing changes only this device.
+            </div>
+
+            @if (selectedEdge is { } edge && OwnerOf(edge) is { } owner)
+            {
+                <Section Title="Move a street">
+                    <p class="section__lead"><strong>@StreetName(edge)</strong> is in route @(sections.IndexOf(owner) + 1).</p>
+                    @if (!AreaSplitter.CanGive(graph!, owner, edge))
+                    {
+                        <p class="hint">Moving it would cut route @(sections.IndexOf(owner) + 1) in two.</p>
+                    }
+                    else if (!AreaSplitter.NeighboursOfEdge(graph!, edge, owner, sections).Any())
+                    {
+                        <p class="hint">No other route touches this street, so it can't move. Merge routes instead.</p>
+                    }
+                    else
+                    {
+                        <div class="planner__actions">
+                            @foreach (var target in AreaSplitter.NeighboursOfEdge(graph!, edge, owner, sections))
+                            {
+                                <button class="btn btn--quiet planner__small" @onclick="() => Move(edge, owner, target)">
+                                    <i class="planner__swatch" style="--swatch: @Colour(target)"></i>To route @(sections.IndexOf(target) + 1)
+                                </button>
+                            }
+                        </div>
+                    }
+                    <button class="btn btn--quiet planner__small planner__cancel" @onclick="() => selectedEdge = null">Done</button>
+                </Section>
+            }
+
+            <Section Title="Area" First="true">
+                <p class="section__lead">@AreaHint</p>
+                <div class="planner__actions">
+                    @if (mode == DrawMode)
+                    {
+                        <button class="btn btn--primary" @onclick="FinishDrawing" disabled="@(polygon.Count < 3)">Finish area</button>
+                    }
+                    else
+                    {
+                        <button class="btn btn--primary" @onclick="StartDrawing">@(closed ? "Draw again" : "Draw area")</button>
+                    }
+                    <button class="btn btn--quiet" @onclick="Clear" disabled="@(polygon.Count == 0)">Clear</button>
+                </div>
+                @if (selection is not null)
+                {
+                    <p class="hint"><Icon Name="map" Size="IconSize.Small" />@SelectionLine</p>
+                }
+                <div class="planner__meeting">
+                    <span><Icon Name="map-pin" Size="IconSize.Small" />Meeting point: <strong>@(MeetsAtChurch ? "church" : "pinned on the map")</strong></span>
+                    <span class="planner__actions">
+                        <button class="btn btn--quiet planner__small" @onclick="ToggleMeetingMode">@(mode == MeetingMode ? "Cancel" : "Set on map")</button>
+                        @if (!MeetsAtChurch)
+                        {
+                            <button class="btn btn--quiet planner__small" @onclick="UseChurch">Use church</button>
+                        }
+                    </span>
+                </div>
+            </Section>
+
+            <Section Title="Routes">
+                <div class="stack">
+                    <Segmented TValue="SplitTarget" Options="TargetOptions" Value="target" ValueChanged="SetTarget" />
+                    <Stepper Label="Target per route" Value="TargetValue" ValueChanged="SetTargetValue" Step="@TargetStep" Min="@TargetStep" Max="@TargetMax" Unit="@TargetUnit" />
+                </div>
+                <ToggleRow Title="Leave out streets walked this week" Description="Walked in the last 7 days. Dashed grey streets are walked through without delivering." Checked="leaveOutRested" CheckedChanged="SetLeaveOutRested" />
+                <button class="btn btn--primary btn--block" @onclick="SplitArea" disabled="@(selection is null || Included.Count == 0)">@(sections.Count > 0 ? "Regenerate" : "Split into routes")</button>
+            </Section>
+
+            @if (summaries.Count > 0)
+            {
+                <Section Title="@($"{summaries.Count} {(summaries.Count == 1 ? "route" : "routes")}")">
+                    <p class="section__lead">@SpreadLine. Tap a street on the map to move it.</p>
+                    <div class="planner-sections">
+                        @foreach (var summary in summaries)
+                        {
+                            var section = summary.Section;
+                            var number = sections.IndexOf(section) + 1;
+                            <div class="planner-section" @key="section">
+                                <div class="planner-section__head">
+                                    <span class="planner-section__number" style="--swatch: @Colour(section)">@number</span>
+                                    @if (renaming == section)
+                                    {
+                                        <input class="planner-section__rename" @bind="renameText" @bind:event="oninput" @onkeydown="RenameKey" aria-label="Route name" />
+                                        <button class="btn btn--primary planner__small" @onclick="SaveRename">Save</button>
+                                    }
+                                    else
+                                    {
+                                        <strong>@summary.Name</strong>
+                                    }
+                                </div>
+                                <p class="planner-section__meta">@summary.Letterboxes letterboxes · @summary.Bundles @(summary.Bundles == 1 ? "bundle" : "bundles") · @OutreachFormat.Duration(summary.Time) · @TravelLine(summary)</p>
+                                <div class="planner__actions">
+                                    <button class="btn btn--quiet planner__small" @onclick="() => StartRename(section, summary.Name)">Rename</button>
+                                    <button class="btn btn--quiet planner__small" @onclick="() => SplitSection(section)" disabled="@(section.Edges.Count < 2)">Split in two</button>
+                                    <button class="btn btn--quiet planner__small" @onclick="() => merging = merging == section ? null : section">Merge…</button>
+                                </div>
+                                @if (merging == section)
+                                {
+                                    <div class="planner__actions planner-section__merge">
+                                        @foreach (var other in AreaSplitter.Neighbours(graph!, section, sections))
+                                        {
+                                            <button class="btn btn--quiet planner__small" @onclick="() => Merge(section, other)">
+                                                <i class="planner__swatch" style="--swatch: @Colour(other)"></i>With route @(sections.IndexOf(other) + 1)
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                    <div class="stack planner__publish">
+                        <button class="btn btn--primary btn--block" @onclick="Publish">Publish to Saturday's outreach</button>
+                        @if (publishedCount is { } count)
+                        {
+                            <p class="hint"><Icon Name="check" Size="IconSize.Small" />Published @count routes. <a href="outreach/day">See them on Outreach day</a></p>
+                        }
+                    </div>
+                </Section>
+            }
+
+            @if (Outreach.HasPublishedRoutes)
+            {
+                <Section>
+                    <button class="btn btn--quiet" @onclick="RestoreSamples">Restore the sample routes</button>
+                </Section>
+            }
+        </aside>
+    </div>
+</Page>
+
+@code {
+    private const string SelectMode = "select";
+    private const string DrawMode = "draw";
+    private const string MeetingMode = "meeting";
+    private const double SamePointMetres = 3;
+
+    private static readonly IReadOnlyList<string> Palette =
+        ["#3f7fc4", "#d1495b", "#2a9d8f", "#e3a033", "#8a63c4", "#5f9e5a", "#c96f2d", "#d16ba5", "#4aa8c9", "#8c8f3a"];
+
+    private static readonly IReadOnlyList<Choice<SplitTarget>> TargetOptions =
+        [new(SplitTarget.Letterboxes, "Letterboxes"), new(SplitTarget.Bundles, "Bundles"), new(SplitTarget.Minutes, "Minutes")];
+
+    private readonly List<GeoPoint> polygon = [];
+    private readonly Dictionary<SplitTarget, double> targetValues = new()
+    {
+        [SplitTarget.Letterboxes] = 120,
+        [SplitTarget.Bundles] = 2,
+        [SplitTarget.Minutes] = 60,
+    };
+
+    private bool closed;
+    private string mode = SelectMode;
+    private GeoPoint? pinnedMeeting;
+    private SplitTarget target = SplitTarget.Letterboxes;
+    private bool leaveOutRested = true;
+    private AreaSelection? selection;
+    private List<DraftSection> sections = [];
+    private SplitGraph? graph;
+    private List<SectionSummary> summaries = [];
+    private int? selectedEdge;
+    private DraftSection? renaming;
+    private DraftSection? merging;
+    private string renameText = "";
+    private int? publishedCount;
+    private int fitVersion;
+
+    private GeoPoint MeetingPoint => pinnedMeeting ?? Outreach.Church;
+
+    private bool MeetsAtChurch => pinnedMeeting is null;
+
+    private double TargetValue => targetValues[target];
+
+    private double TargetStep => target switch { SplitTarget.Bundles => 1, SplitTarget.Minutes => 15, _ => 10 };
+
+    private double TargetMax => target switch { SplitTarget.Bundles => 10, SplitTarget.Minutes => 240, _ => 600 };
+
+    private string TargetUnit => target switch { SplitTarget.Bundles => " bundles", SplitTarget.Minutes => " min", _ => " letterboxes" };
+
+    private IReadOnlyList<int> Included => selection is null ? [] : leaveOutRested ? selection.Fresh : [.. selection.Fresh, .. selection.Rested];
+
+    private string AreaHint => mode switch
+    {
+        DrawMode => "Click the map to add corners. Double-click, or click the first corner, to finish.",
+        MeetingMode => "Click the map where everyone meets.",
+        _ when closed => "Streets whose middle is inside the area are included. Main roads are left out.",
+        _ => "Draw the area to split: click its corners on the map.",
+    };
+
+    private string SelectionLine
+    {
+        get
+        {
+            var letterboxes = Outreach.Letterboxes(Included);
+            var rested = selection!.Rested.Count;
+            return $"{Included.Count} street segments, {letterboxes} letterboxes" + (rested > 0 ? $" · {rested} walked this week{(leaveOutRested ? ", left out" : ", included")}" : "");
+        }
+    }
+
+    private string SpreadLine
+    {
+        get
+        {
+            var values = summaries.Select(s => target == SplitTarget.Minutes ? s.Time.TotalMinutes : s.Letterboxes).ToList();
+            var unit = target == SplitTarget.Minutes ? " min" : " letterboxes";
+            return $"{summaries.Sum(s => s.Letterboxes)} letterboxes in all; each route has {values.Min():0} to {values.Max():0}{unit}";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Outreach.Changed += Refresh;
+        await Outreach.EnsureLoadedAsync();
+    }
+
+    private void StartDrawing()
+    {
+        polygon.Clear();
+        closed = false;
+        ResetDraft();
+        selection = null;
+        mode = DrawMode;
+    }
+
+    private void AddPoint(GeoPoint point)
+    {
+        if (mode != DrawMode || (polygon.Count > 0 && Outreach.Planner!.Distance(polygon[^1], point) < SamePointMetres))
+        {
+            return;
+        }
+        polygon.Add(point);
+    }
+
+    private void FinishDrawing()
+    {
+        if (polygon.Count < 3)
+        {
+            return;
+        }
+        closed = true;
+        mode = SelectMode;
+        Reselect();
+        fitVersion++;
+    }
+
+    private void Clear()
+    {
+        polygon.Clear();
+        closed = false;
+        selection = null;
+        ResetDraft();
+        mode = SelectMode;
+    }
+
+    private void ToggleMeetingMode() => mode = mode == MeetingMode ? SelectMode : MeetingMode;
+
+    private void SetMeeting(GeoPoint point)
+    {
+        if (mode != MeetingMode)
+        {
+            return;
+        }
+        pinnedMeeting = point;
+        mode = SelectMode;
+        Summarise();
+    }
+
+    private void UseChurch()
+    {
+        pinnedMeeting = null;
+        Summarise();
+    }
+
+    private void SetTarget(SplitTarget value) => target = value;
+
+    private void SetTargetValue(double value) => targetValues[target] = value;
+
+    private void SetLeaveOutRested(bool on)
+    {
+        leaveOutRested = on;
+        ResetDraft();
+    }
+
+    private void Reselect()
+    {
+        selection = Outreach.Splitter!.Select(polygon, Outreach.Rested);
+        ResetDraft();
+    }
+
+    private void ResetDraft()
+    {
+        sections = [];
+        summaries = [];
+        selectedEdge = null;
+        renaming = null;
+        merging = null;
+        publishedCount = null;
+    }
+
+    private async Task SplitArea()
+    {
+        await Native.HapticAsync(Haptic.Medium);
+        ResetDraft();
+        IEnumerable<int> connectors = leaveOutRested ? [.. selection!.Rested, .. selection.MainRoads] : selection!.MainRoads;
+        (sections, graph) = Outreach.Splitter!.Split(Included, target, TargetValue, connectors);
+        Summarise();
+        fitVersion++;
+    }
+
+    private void SplitSection(DraftSection section)
+    {
+        var index = sections.IndexOf(section);
+        sections.RemoveAt(index);
+        sections.InsertRange(index, Outreach.Splitter!.SplitInTwo(graph!, section, target));
+        merging = null;
+        Summarise();
+    }
+
+    private void Merge(DraftSection a, DraftSection b)
+    {
+        a.Edges.UnionWith(b.Edges);
+        a.CustomName = null;
+        sections.Remove(b);
+        merging = null;
+        Summarise();
+    }
+
+    private void SelectStreet(int edge)
+    {
+        if (mode != SelectMode)
+        {
+            return;
+        }
+        selectedEdge = edge >= 0 && OwnerOf(edge) is not null ? edge : null;
+    }
+
+    private void Move(int edge, DraftSection from, DraftSection to)
+    {
+        from.Edges.Remove(edge);
+        to.Edges.Add(edge);
+        selectedEdge = null;
+        Summarise();
+    }
+
+    private void StartRename(DraftSection section, string name)
+    {
+        renaming = section;
+        renameText = name;
+    }
+
+    private void SaveRename()
+    {
+        if (renaming is not null && !string.IsNullOrWhiteSpace(renameText))
+        {
+            renaming.CustomName = renameText.Trim();
+        }
+        renaming = null;
+        Summarise();
+    }
+
+    private void RenameKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SaveRename();
+        }
+    }
+
+    private async Task Publish()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        await Outreach.PublishRoutesAsync(summaries.Select(s => (s.Name, (IEnumerable<int>)s.Section.Edges)));
+        publishedCount = summaries.Count;
+    }
+
+    private async Task RestoreSamples()
+    {
+        await Outreach.RestoreSampleRoutesAsync();
+        publishedCount = null;
+    }
+
+    private void Summarise()
+    {
+        publishedCount = null;
+        summaries = sections.Select(s => Outreach.Splitter!.Summarise(s, MeetingPoint)).ToList();
+    }
+
+    private static string TravelLine(SectionSummary summary) =>
+        summary.TravelMetres < 50 ? "starts at the meeting point" : $"includes {OutreachFormat.Kilometres(summary.TravelMetres * 2)} there and back";
+
+    private DraftSection? OwnerOf(int edge) => sections.FirstOrDefault(s => s.Edges.Contains(edge));
+
+    private string StreetName(int edge) => Outreach.Map!.Edges[edge].Name is { Length: > 0 } name ? name : "This street";
+
+    private string Colour(DraftSection section) => Palette[sections.IndexOf(section) % Palette.Count];
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Outreach.Changed -= Refresh;
+}

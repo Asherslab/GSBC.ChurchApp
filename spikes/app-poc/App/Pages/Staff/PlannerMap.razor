@@ -1,0 +1,220 @@
+@using System.Text
+@using System.Text.Json
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject OutreachService Outreach
+
+<div class="planner-map" @ref="element" role="application" aria-label="Map for drawing an outreach area"></div>
+
+@code {
+    private const string Attribution = "© OpenFreeMap · Addresses © State of Queensland";
+
+    [Parameter] public IReadOnlyList<GeoPoint> Polygon { get; set; } = [];
+    [Parameter] public bool Closed { get; set; }
+    [Parameter] public GeoPoint Meeting { get; set; }
+    [Parameter] public AreaSelection? Selection { get; set; }
+    [Parameter] public IReadOnlyList<SectionSummary> Sections { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Palette { get; set; } = [];
+    [Parameter] public int? SelectedEdge { get; set; }
+    [Parameter] public string Mode { get; set; } = "select";
+    [Parameter] public int FitVersion { get; set; }
+    [Parameter] public EventCallback<GeoPoint> OnPoint { get; set; }
+    [Parameter] public EventCallback OnFinish { get; set; }
+    [Parameter] public EventCallback<GeoPoint> OnMeeting { get; set; }
+    [Parameter] public EventCallback<int> OnStreet { get; set; }
+
+    private ElementReference element;
+    private DotNetObjectReference<PlannerMap>? self;
+    private int fittedVersion;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Outreach.Map is null)
+        {
+            return;
+        }
+        if (self is null)
+        {
+            self = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("gsbc.plannerMap.attach", element, self, Meeting.Lat, Meeting.Lon, Attribution);
+        }
+        var fit = FitVersion != fittedVersion;
+        fittedVersion = FitVersion;
+        await JS.InvokeVoidAsync("gsbc.plannerMap.update", element, Json(), Mode, fit);
+    }
+
+    [JSInvokable]
+    public Task MapClicked(double lat, double lon) => OnPoint.InvokeAsync(new GeoPoint(lat, lon));
+
+    [JSInvokable]
+    public Task DrawFinished() => OnFinish.InvokeAsync();
+
+    [JSInvokable]
+    public Task MeetingSet(double lat, double lon) => OnMeeting.InvokeAsync(new GeoPoint(lat, lon));
+
+    [JSInvokable]
+    public Task StreetClicked(int edge) => OnStreet.InvokeAsync(edge);
+
+    private string Json()
+    {
+        var map = Outreach.Map!;
+        var planner = Outreach.Planner!;
+        var owner = new Dictionary<int, int>();
+        var walkThrough = new HashSet<int>();
+        for (var i = 0; i < Sections.Count; i++)
+        {
+            foreach (var edge in Sections[i].Section.Edges)
+            {
+                owner[edge] = i;
+            }
+            walkThrough.UnionWith(Sections[i].WalkThrough);
+        }
+        using var buffer = new MemoryStream();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteNumber("points", Polygon.Count);
+            if (Polygon.Count > 0)
+            {
+                json.WritePropertyName("first");
+                Point(json, Polygon[0]);
+            }
+
+            Collection(json, "area", () =>
+            {
+                if (Closed && Polygon.Count >= 3)
+                {
+                    Feature(json, "Polygon", () =>
+                    {
+                        json.WriteStartArray();
+                        foreach (var p in Polygon.Append(Polygon[0]))
+                        {
+                            Point(json, p);
+                        }
+                        json.WriteEndArray();
+                    });
+                }
+                if (Polygon.Count >= 2)
+                {
+                    Feature(json, "LineString", () =>
+                    {
+                        foreach (var p in Closed ? Polygon.Append(Polygon[0]) : Polygon)
+                        {
+                            Point(json, p);
+                        }
+                    });
+                }
+                if (!Closed)
+                {
+                    foreach (var p in Polygon)
+                    {
+                        Feature(json, "Point", () => { json.WriteNumberValue(p.Lon); json.WriteNumberValue(p.Lat); });
+                    }
+                }
+            });
+
+            Collection(json, "streets", () =>
+            {
+                if (Selection is null)
+                {
+                    return;
+                }
+                var drawn = Selection.Fresh.Select(e => (e, false))
+                    .Concat(Selection.Rested.Select(e => (e, true)))
+                    .Concat(walkThrough.Except(Selection.Fresh).Except(Selection.Rested).Select(e => (e, true)));
+                foreach (var (edge, rested) in drawn)
+                {
+                    var kind = owner.ContainsKey(edge) ? "section" : rested || walkThrough.Contains(edge) ? "rested" : "free";
+                    Feature(json, "LineString", () =>
+                    {
+                        foreach (var point in map.Edges[edge].Line)
+                        {
+                            json.WriteStartArray();
+                            json.WriteNumberValue(point[0]);
+                            json.WriteNumberValue(point[1]);
+                            json.WriteEndArray();
+                        }
+                    }, properties: () =>
+                    {
+                        json.WriteNumber("edge", edge);
+                        json.WriteString("kind", kind);
+                        json.WriteBoolean("selected", edge == SelectedEdge);
+                        if (owner.TryGetValue(edge, out var section))
+                        {
+                            json.WriteString("color", Palette[section % Palette.Count]);
+                        }
+                    });
+                }
+            });
+
+            Collection(json, "labels", () =>
+            {
+                for (var i = 0; i < Sections.Count; i++)
+                {
+                    var edges = Sections[i].Section.Edges;
+                    var centre = new GeoPoint(edges.Average(e => planner.Midpoint(e).Lat), edges.Average(e => planner.Midpoint(e).Lon));
+                    var label = (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
+                    var colour = Palette[i % Palette.Count];
+                    Feature(json, "Point", () => { json.WriteNumberValue(centre.Lon); json.WriteNumberValue(centre.Lat); }, properties: () =>
+                    {
+                        json.WriteString("label", label);
+                        json.WriteString("color", colour);
+                    });
+                }
+            });
+
+            Collection(json, "meeting", () => Feature(json, "Point", () => { json.WriteNumberValue(Meeting.Lon); json.WriteNumberValue(Meeting.Lat); }));
+            json.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    private static void Point(Utf8JsonWriter json, GeoPoint point)
+    {
+        json.WriteStartArray();
+        json.WriteNumberValue(point.Lon);
+        json.WriteNumberValue(point.Lat);
+        json.WriteEndArray();
+    }
+
+    private static void Collection(Utf8JsonWriter json, string name, Action features)
+    {
+        json.WriteStartObject(name);
+        json.WriteString("type", "FeatureCollection");
+        json.WriteStartArray("features");
+        features();
+        json.WriteEndArray();
+        json.WriteEndObject();
+    }
+
+    private static void Feature(Utf8JsonWriter json, string type, Action coordinates, Action? properties = null)
+    {
+        json.WriteStartObject();
+        json.WriteString("type", "Feature");
+        json.WriteStartObject("properties");
+        properties?.Invoke();
+        json.WriteEndObject();
+        json.WriteStartObject("geometry");
+        json.WriteString("type", type);
+        json.WriteStartArray("coordinates");
+        coordinates();
+        json.WriteEndArray();
+        json.WriteEndObject();
+        json.WriteEndObject();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (self is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("gsbc.plannerMap.detach", element);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            self.Dispose();
+        }
+    }
+}

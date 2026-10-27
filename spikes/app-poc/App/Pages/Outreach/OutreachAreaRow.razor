@@ -1,0 +1,13 @@
+@inject OutreachService Outreach
+
+<ListRow Icon="map" IconTone="@(Outreach.Staleness(Area) >= OverdueDays ? Tone.Warm : Tone.Quiet)" Title="@Area.Name" Subtitle="@Subtitle" Href="@($"outreach/area/{Area.Id}")" Trailing="@ClaimLabel" />
+
+@code {
+    private const int OverdueDays = 56;
+
+    [Parameter, EditorRequired] public OutreachArea Area { get; set; } = null!;
+
+    private string Subtitle => $"{Outreach.Letterboxes(Area.Edges)} letterboxes · {Outreach.LastDoneLabel(Area)}";
+
+    private string? ClaimLabel => Outreach.ClaimsFor(OutreachService.AreaKey(Area)) is { Count: > 0 } names ? OutreachFormat.Claimers(names) : null;
+}

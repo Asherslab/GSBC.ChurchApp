@@ -1,0 +1,32 @@
+@page "/outreach/areas"
+@implements IDisposable
+@inject OutreachService Outreach
+
+<Page Title="Areas" BackHref="outreach" BackLabel="Outreach" TopBar="TopBarStyle.Solid" Bell="false">
+    <Section First="true">
+        <p class="section__lead">Every area the church has walked, nearest to church first. Each is about one bundle.</p>
+        @if (Outreach.Map is { } map)
+        {
+            <div class="list">
+                @foreach (var area in map.Areas.OrderBy(a => Outreach.Planner!.Distance(Outreach.Planner.Midpoint(a.Edges[0]), Outreach.Church)))
+                {
+                    <OutreachAreaRow @key="area.Id" Area="area" />
+                }
+            </div>
+        }
+    </Section>
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Outreach.Changed += Refresh;
+        await Outreach.EnsureLoadedAsync();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Outreach.Changed -= Refresh;
+}

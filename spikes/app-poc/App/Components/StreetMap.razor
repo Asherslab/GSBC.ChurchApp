@@ -1,0 +1,118 @@
+@using System.Text
+@using System.Text.Json
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject OutreachService Outreach
+
+<div class="street-map @Class" @ref="element" role="img" aria-label="@Label"></div>
+
+@code {
+    private const string Attribution = "© OpenFreeMap · Addresses © State of Queensland";
+
+    [Parameter] public WalkPlan? Plan { get; set; }
+    [Parameter] public int CurrentLeg { get; set; } = -1;
+    [Parameter] public GeoPoint? Start { get; set; }
+    [Parameter] public bool Pickable { get; set; }
+    [Parameter] public bool Follow { get; set; }
+    [Parameter] public bool ShowLocation { get; set; }
+    [Parameter] public string Label { get; set; } = "Map of the walk";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public EventCallback<GeoPoint> OnPick { get; set; }
+
+    private ElementReference element;
+    private DotNetObjectReference<StreetMap>? self;
+    private WalkPlan? shownPlan;
+    private string? shownState;
+    private GeoPoint? shownStart;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Outreach.Map is null)
+        {
+            return;
+        }
+        if (self is null)
+        {
+            self = DotNetObjectReference.Create(this);
+            var centre = Start ?? Outreach.Church;
+            await JS.InvokeVoidAsync("gsbc.streetMap.attach", element, self, centre.Lat, centre.Lon, Attribution);
+        }
+        var state = $"{CurrentLeg}|{Start}|{Pickable}|{Follow}|{ShowLocation}";
+        var planChanged = !ReferenceEquals(Plan, shownPlan);
+        if (!planChanged && state == shownState)
+        {
+            return;
+        }
+        var fit = planChanged || (Plan is null && Start != shownStart);
+        shownPlan = Plan;
+        shownStart = Start;
+        shownState = state;
+        await JS.InvokeVoidAsync("gsbc.streetMap.update", element, RouteJson(), Start?.Lat, Start?.Lon, fit, Pickable, Follow, ShowLocation);
+    }
+
+    [JSInvokable]
+    public Task Picked(double lat, double lon) => OnPick.InvokeAsync(new GeoPoint(lat, lon));
+
+    private string? RouteJson()
+    {
+        if (Plan is null || Outreach.Map is not { } map)
+        {
+            return null;
+        }
+        using var buffer = new MemoryStream();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            json.WriteString("type", "FeatureCollection");
+            json.WriteStartArray("features");
+            for (var i = 0; i < Plan.Legs.Count; i++)
+            {
+                var leg = Plan.Legs[i];
+                var state = CurrentLeg < 0 ? (leg.Letterboxes > 0 ? "todo" : "transit")
+                    : i < CurrentLeg ? "done"
+                    : i == CurrentLeg ? "now"
+                    : leg.Letterboxes > 0 ? "todo" : "transit";
+                foreach (var arc in leg.Arcs)
+                {
+                    var line = map.Edges[arc.Edge].Line;
+                    json.WriteStartObject();
+                    json.WriteString("type", "Feature");
+                    json.WriteStartObject("properties");
+                    json.WriteString("state", state);
+                    json.WriteEndObject();
+                    json.WriteStartObject("geometry");
+                    json.WriteString("type", "LineString");
+                    json.WriteStartArray("coordinates");
+                    foreach (var point in arc.Forward ? line : line.Reverse())
+                    {
+                        json.WriteStartArray();
+                        json.WriteNumberValue(point[0]);
+                        json.WriteNumberValue(point[1]);
+                        json.WriteEndArray();
+                    }
+                    json.WriteEndArray();
+                    json.WriteEndObject();
+                    json.WriteEndObject();
+                }
+            }
+            json.WriteEndArray();
+            json.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (self is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("gsbc.streetMap.detach", element);
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+            self.Dispose();
+        }
+    }
+}

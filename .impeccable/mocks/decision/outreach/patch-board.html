@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Outreach, patch board</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--paper:#fff;--beige:#d5c9b7;--sand:#f4efe7;--aqua:#009c8f;--aqua-deep:#00776d;--orange:#e7ae74;--orange-ink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.status{height:47px;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 34px;color:#fff;font-size:16px;font-weight:600}
+.status svg{height:12px;fill:#fff}
+.mast{background:var(--navy);color:#fff;position:relative;overflow:hidden;padding-bottom:18px}
+.mast .ring{position:absolute;right:-70px;top:10px;width:190px;height:190px;border-radius:50%;border:16px solid rgba(255,255,255,.06)}
+.head{display:grid;grid-template-columns:32px 1fr;column-gap:6px;align-items:center;padding:6px 20px 0 12px}
+.back{width:32px;height:32px;display:grid;place-items:center}
+.back svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.kick{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--beige)}
+.mast h1{font-size:27px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.prog{padding:10px 20px 0 50px}
+.prog p{font-size:13px;color:rgba(255,255,255,.82);display:flex;justify-content:space-between}
+.prog p b{font-weight:600;color:#fff}
+.track{height:4px;border-radius:2px;background:rgba(255,255,255,.16);margin-top:8px}
+.track i{display:block;height:4px;width:14.6%;border-radius:2px;background:var(--orange)}
+.map{position:absolute;top:150px;left:0;width:390px;height:380px;background:#efebe3}
+.map svg{display:block}
+.legend{position:absolute;top:12px;left:12px;display:flex;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border-radius:14px;background:rgba(255,255,255,.94);box-shadow:0 1px 3px rgba(24,35,58,.14);font-size:11.5px;font-weight:600;color:var(--ink)}
+.sw{width:12px;height:12px;border-radius:3px}
+.sw.f{background:rgba(0,156,143,.28);border:1px solid rgba(0,156,143,.5)}
+.sw.c{border:1.5px dashed var(--orange);background:rgba(231,174,116,.18)}
+.sw.d{background:rgba(42,61,94,.55)}
+.locate{position:absolute;right:12px;top:12px;width:36px;height:36px;border-radius:18px;background:#fff;box-shadow:0 1px 3px rgba(24,35,58,.18);display:grid;place-items:center}
+.locate svg{width:18px;height:18px;fill:none;stroke:var(--aqua-deep);stroke-width:2;stroke-linecap:round}
+.sheet{position:absolute;left:0;right:0;top:506px;bottom:84px;background:#fff;border-radius:22px 22px 0 0;box-shadow:0 -6px 24px rgba(24,35,58,.14);padding:8px 20px 0}
+.grab{width:38px;height:5px;border-radius:3px;background:#d9dde4;margin:0 auto 12px}
+.sheet .kick{color:var(--aqua-deep)}
+.sheet h2{font-size:19px;font-weight:700;letter-spacing:-.015em;line-height:1.25;margin-top:4px}
+.stats{display:grid;grid-template-columns:1fr 1fr 1.35fr;margin-top:14px;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.stats div{padding:10px 0 10px 12px;border-left:1px solid var(--line)}
+.stats div:first-child{padding-left:0;border-left:0}
+.stats b{display:block;font-size:17px;font-weight:700;letter-spacing:-.01em}
+.stats small{display:block;font-size:12px;color:var(--ink2);margin-top:1px}
+.note{display:flex;align-items:center;gap:8px;margin-top:11px;font-size:13px;color:var(--ink2)}
+.note i{width:8px;height:8px;border-radius:50%;background:var(--aqua)}
+.note b{font-weight:600;color:var(--ink)}
+.acts{display:grid;grid-template-columns:1fr auto;gap:10px;margin-top:14px}
+.btn{height:48px;border-radius:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14.5px;font-weight:600}
+.btn.p{background:var(--aqua-deep);color:#fff}
+.btn.q{background:var(--sand);color:var(--navy);padding:0 18px}
+.btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink3)}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua-deep)}
+</style></head><body>
+<header class="mast"><div class="ring"></div>
+  <div class="status"><span>9:41</span><svg viewBox="0 0 66 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M30 3.2a10 10 0 0 1 13 0l-1.4 1.5a8 8 0 0 0-10.2 0zM32.6 6a6 6 0 0 1 7.8 0L39 7.5a4 4 0 0 0-5 0zM36.5 11.5l-1.9-2a2.6 2.6 0 0 1 3.8 0z"/><rect x="47" y="0.5" width="17" height="11" rx="3" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="49" y="2.5" width="12" height="7" rx="1.5"/><rect x="64.5" y="4" width="1.5" height="4" rx=".7" fill-opacity=".5"/></svg></div>
+  <div class="head">
+    <span class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></span>
+    <div><h1>Outreach</h1></div>
+  </div>
+  <div class="prog"><p><span>Albany Creek this week · <b>14 of 96</b> done</span><span>Sat 31 Oct</span></p><div class="track"><i></i></div></div>
+</header>
+
+<section class="map">
+<svg viewBox="0 0 390 380" width="390" height="380">
+  <defs>
+    <g id="st" fill="none">
+      <path d="M0,40 C80,30 140,62 210,42 S330,18 390,30"/>
+      <path d="M58,-5 C70,60 40,120 60,190 S82,300 52,380"/>
+      <path d="M180,-5 C170,50 200,92 190,140 C185,180 212,222 200,262"/>
+      <path d="M250,0 C262,60 292,110 280,170"/>
+      <path d="M340,0 C352,40 338,72 360,112 S392,150 390,160"/>
+      <path d="M190,118 C230,110 260,128 300,112 S360,96 390,96"/>
+      <path d="M0,128 C30,124 46,140 62,134"/>
+      <path d="M60,190 C100,182 130,204 146,200 C175,190 205,215 240,205 S275,186 288,196"/>
+      <path d="M204,210 C208,226 202,240 192,248"/>
+      <path d="M60,190 C34,200 22,214 24,232"/>
+      <path d="M280,170 C300,190 330,196 352,212"/>
+      <path d="M120,10 C128,40 112,70 124,96"/>
+      <path d="M0,352 C80,340 130,362 200,346 S322,330 390,340"/>
+      <path d="M302,232 C322,276 300,316 322,380"/>
+      <path d="M110,286 C126,312 112,340 132,380"/>
+      <path d="M232,262 C262,276 276,300 270,318"/>
+      <path d="M0,214 C10,236 0,262 18,280"/>
+    </g>
+  </defs>
+  <path d="M300,250 C330,232 372,240 390,262 L390,312 C360,322 322,312 306,290 Z" fill="#dfe5d3"/>
+  <path d="M-5,236 C40,226 70,240 92,222 S140,198 150,176" fill="none" stroke="#c4d8df" stroke-width="5" stroke-linecap="round"/>
+  <use href="#st" stroke="#ddd6ca" stroke-width="8" stroke-linecap="round"/>
+  <use href="#st" stroke="#fff" stroke-width="5.5" stroke-linecap="round"/>
+  <g fill="#fff" stroke="#ddd6ca" stroke-width="1"><circle cx="192" cy="248" r="6"/><circle cx="24" cy="232" r="6"/><circle cx="352" cy="212" r="6"/><circle cx="124" cy="96" r="6"/><circle cx="270" cy="318" r="6"/><circle cx="62" cy="134" r="6"/></g>
+  <path id="onr" d="M-10,312 C60,292 100,272 140,256 S300,170 400,132" fill="none" stroke="#e3d6c0" stroke-width="13" stroke-linecap="round"/>
+  <path d="M-10,312 C60,292 100,272 140,256 S300,170 400,132" fill="none" stroke="#fffaf0" stroke-width="9" stroke-linecap="round"/>
+  <text font-size="9" font-weight="600" fill="#6f6048" letter-spacing=".04em" dy="3"><textPath href="#onr" startOffset="62%">OLD NORTHERN RD</textPath></text>
+  <g stroke="#fff" stroke-width="1.2" stroke-linejoin="round">
+    <path d="M-10,-10 72,-10 66,76 -10,84Z" fill="rgba(0,156,143,.22)"/>
+    <path d="M72,-10 148,-10 154,90 66,76Z" fill="rgba(0,156,143,.12)"/>
+    <path d="M148,-10 236,-10 228,72 154,90Z" fill="rgba(0,156,143,.18)"/>
+    <path d="M236,-10 312,-10 318,86 228,72Z" fill="rgba(42,61,94,.5)"/>
+    <path d="M312,-10 400,-10 400,78 318,86Z" fill="rgba(0,156,143,.1)"/>
+    <path d="M-10,84 66,76 76,172 -10,166Z" fill="rgba(42,61,94,.5)"/>
+    <path d="M66,76 154,90 146,160 76,172Z" fill="rgba(42,61,94,.5)"/>
+    <path d="M154,90 228,72 240,176 146,160Z" fill="rgba(0,156,143,.2)"/>
+    <path d="M318,86 400,78 400,172 306,164Z" fill="rgba(0,156,143,.14)"/>
+    <path d="M-10,166 76,172 68,254 -10,262Z" fill="rgba(42,61,94,.5)"/>
+    <path d="M76,172 146,160 156,266 68,254Z" fill="rgba(0,156,143,.08)"/>
+    <path d="M240,176 306,164 316,262 232,250Z" fill="rgba(0,156,143,.16)"/>
+    <path d="M306,164 400,172 400,256 316,262Z" fill="rgba(0,156,143,.24)"/>
+    <path d="M-10,262 68,254 74,352 -10,346Z" fill="rgba(0,156,143,.12)"/>
+    <path d="M68,254 156,266 150,342 74,352Z" fill="rgba(42,61,94,.5)"/>
+    <path d="M156,266 232,250 238,356 150,342Z" fill="rgba(0,156,143,.1)"/>
+    <path d="M316,262 400,256 400,352 310,348Z" fill="rgba(0,156,143,.18)"/>
+  </g>
+  <g stroke="#e7ae74" stroke-width="2" stroke-dasharray="5 4" fill="rgba(231,174,116,.16)" stroke-linejoin="round">
+    <path d="M228,72 318,86 306,164 240,176Z"/>
+    <path d="M232,250 316,262 310,348 238,356Z"/>
+  </g>
+  <path d="M146,160 240,176 232,250 156,266Z" fill="rgba(0,156,143,.3)" stroke="#009c8f" stroke-width="3" stroke-linejoin="round"/>
+  <rect x="177" y="199" width="34" height="22" rx="11" fill="#00776d"/>
+  <text x="194" y="214.5" text-anchor="middle" font-size="12.5" font-weight="700" fill="#fff">23</text>
+  <circle cx="176" cy="292" r="14" fill="rgba(0,156,143,.18)"/>
+  <circle cx="176" cy="292" r="6" fill="#009c8f" stroke="#fff" stroke-width="2.5"/>
+  <g transform="translate(104,276)"><circle r="11" fill="#2a3d5e" stroke="#fff" stroke-width="2.5"/><path d="M0,-5.5V5.5M-4,-1.5H4" stroke="#fff" stroke-width="2" stroke-linecap="round"/></g>
+</svg>
+<div class="legend"><span class="chip"><i class="sw f"></i>Fresh</span><span class="chip"><i class="sw c"></i>Claimed</span><span class="chip"><i class="sw d"></i>Done this week</span></div>
+<span class="locate"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></span>
+</section>
+
+<section class="sheet">
+  <div class="grab"></div>
+  <h2>Patch 23 · Kingfisher St &amp; Lorikeet Ct</h2>
+  <div class="stats">
+    <div><b>48</b><small>letterboxes</small></div>
+    <div><b>1</b><small>bundle</small></div>
+    <div><b>2.6 km</b><small>loop · ~40 min</small></div>
+  </div>
+  <p class="note"><i></i><span>Freshest near you · last done <b>9 weeks ago</b></span></p>
+  <div class="acts">
+    <span class="btn p"><svg viewBox="0 0 24 24"><path d="M5 12l4.5 4.5L19 7"/></svg>Claim for Saturday</span>
+    <span class="btn q">Other patches</span>
+  </div>
+</section>
+
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>Listen</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 8a4.3 4.3 0 0 1 7.5 2.8C19.5 16.4 12 21 12 21z"/></svg>Prayer</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>

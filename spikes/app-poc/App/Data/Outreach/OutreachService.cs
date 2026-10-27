@@ -1,0 +1,368 @@
+using System.Globalization;
+using System.Net.Http.Json;
+using Gsbc.AppPoc.Native;
+
+namespace Gsbc.AppPoc.Data.Outreach;
+
+public enum WalkKind { Now, Area, Route }
+
+public sealed record OutreachDay(DateTime Start, DateTime End, string Where);
+
+public sealed record LetterboxFlag(int Edge, int Side, GeoPoint Point);
+
+public sealed class WalkSession(WalkKind kind, int? id, string title, WalkPlan plan, bool countsTowardDay)
+{
+    public WalkKind Kind { get; } = kind;
+    public int? Id { get; } = id;
+    public string Title { get; } = title;
+    public WalkPlan Plan { get; } = plan;
+    public bool CountsTowardDay { get; } = countsTowardDay;
+    public int LegIndex { get; set; }
+    public DateTime StartedAt { get; } = DateTime.Now;
+    public bool Finished => LegIndex >= Plan.Legs.Count;
+    public WalkLeg? Current => Finished ? null : Plan.Legs[LegIndex];
+    public WalkLeg? Next => LegIndex + 1 < Plan.Legs.Count ? Plan.Legs[LegIndex + 1] : null;
+    public int LetterboxesDone => Plan.Legs.Take(LegIndex).Sum(l => l.Letterboxes);
+}
+
+public sealed class OutreachService(HttpClient http, NativeBridge native, ChurchClock clock)
+{
+    public const int RestDays = 7;
+    private const int MonthDays = 28;
+    private const string NameKey = "outreach:name";
+    private const string ClaimsKey = "outreach:claims";
+    private const string WalkedKey = "outreach:walked";
+    private const string FlagsKey = "outreach:flags";
+    private const string DayTallyKey = "outreach:day-tally";
+    private const string PublishedKey = "outreach:published";
+    private static readonly DateTime OutreachPreviewMoment = new(2026, 10, 31, 9, 5, 0);
+    private static readonly OutreachDay SampleDay = new(new(2026, 10, 31, 8, 30, 0), new(2026, 10, 31, 11, 30, 0), "church");
+    private const int SampleDayTally = 312;
+
+    private static readonly Dictionary<string, string[]> SampleClaims = new()
+    {
+        ["route:1"] = ["Ruth", "David"],
+        ["route:3"] = ["Sam", "Grace", "Tom"],
+        ["route:4"] = ["Priya"],
+        ["route:6"] = ["Ben", "Hannah"],
+        ["route:8"] = ["Joy"],
+    };
+
+    private readonly HashSet<string> myClaims = [];
+    private readonly Dictionary<int, DateOnly> walked = [];
+    private readonly List<LetterboxFlag> flags = [];
+    private readonly Dictionary<int, DateOnly> sampleWalked = [];
+    private readonly Dictionary<(int Node, double? Minutes, double? Kilometres), WalkPlan> plans = [];
+    private List<ReadyRoute>? published;
+    private Task? loading;
+    private int myDayTally;
+
+    public event Action? Changed;
+
+    public OutreachMap? Map { get; private set; }
+
+    public RoutePlanner? Planner { get; private set; }
+
+    public AreaSplitter? Splitter { get; private set; }
+
+    public IReadOnlyList<ReadyRoute> Routes => published ?? (IReadOnlyList<ReadyRoute>?)Map?.OutreachRoutes ?? [];
+
+    public bool HasPublishedRoutes => published is not null;
+
+    public string? WalkerName { get; private set; }
+
+    public bool PreviewDuringOutreach { get; private set; }
+
+    public WalkSession? Walk { get; private set; }
+
+    public GeoPoint? Here { get; private set; }
+
+    public DateTime Now => PreviewDuringOutreach ? OutreachPreviewMoment : clock.Now;
+
+    public DateOnly Today => DateOnly.FromDateTime(Now);
+
+    public OutreachDay? Day => Now < SampleDay.End && SampleDay.Start - Now <= TimeSpan.FromDays(7) ? SampleDay : null;
+
+    public bool DayIsOn => Day is { } day && day.Start <= Now && Now < day.End;
+
+    public int DayTally => DayIsOn ? SampleDayTally + myDayTally : myDayTally;
+
+    public GeoPoint Church => Map is { } map ? new(map.Church[0], map.Church[1]) : new(-27.34335, 152.96467);
+
+    public Task EnsureLoadedAsync() => loading ??= LoadAsync();
+
+    public int Count(int edge, int side)
+    {
+        var boxes = Map!.Edges[edge].Boxes[side] - flags.Count(f => f.Edge == edge && f.Side == side);
+        return Math.Max(0, boxes);
+    }
+
+    public bool Rested(int edge) => LastWalked(edge) is { } date && Today.DayNumber - date.DayNumber < RestDays;
+
+    public DateOnly? LastWalked(int edge)
+    {
+        var mine = walked.TryGetValue(edge, out var a) ? a : (DateOnly?)null;
+        var sample = sampleWalked.TryGetValue(edge, out var b) ? b : (DateOnly?)null;
+        return mine > sample || sample is null ? mine : sample;
+    }
+
+    public int RestedStreetsNearby(WalkPlan plan) =>
+        plan.Edges.SelectMany(Planner!.NeighbourEdges).Distinct().Where(Rested).Select(e => Map!.Edges[e].Name).Distinct().Count();
+
+    public double MonthCoverage()
+    {
+        if (Map is null)
+        {
+            return 0;
+        }
+        var reached = Map.Edges.Select((e, i) => (e, i))
+            .Where(x => LastWalked(x.i) is { } d && Today.DayNumber - d.DayNumber < MonthDays)
+            .Sum(x => x.e.TotalBoxes);
+        return (double)reached / Map.Letterboxes.Placed;
+    }
+
+    public IReadOnlyList<string> ClaimsFor(string key)
+    {
+        var others = published is not null && key.StartsWith("route:", StringComparison.Ordinal) ? [] : SampleClaims.GetValueOrDefault(key) ?? [];
+        return myClaims.Contains(key) && WalkerName is { } name ? [name, .. others] : others;
+    }
+
+    public bool IsMine(string key) => myClaims.Contains(key);
+
+    public static string RouteKey(ReadyRoute route) => $"route:{route.Id}";
+
+    public static string AreaKey(OutreachArea area) => $"area:{area.Id}";
+
+    public int ClaimedRoutes => Routes.Count(r => ClaimsFor(RouteKey(r)).Count > 0);
+
+    public async Task PublishRoutesAsync(IEnumerable<(string Name, IEnumerable<int> Edges)> routes)
+    {
+        published = routes.Select((r, i) => new ReadyRoute(i + 1, r.Name, r.Edges.Order().ToArray())).ToList();
+        myClaims.RemoveWhere(k => k.StartsWith("route:", StringComparison.Ordinal));
+        await native.SetAsync(ClaimsKey, string.Join(',', myClaims));
+        await native.SetAsync(PublishedKey, string.Join('\n', published.Select(r =>
+            $"{r.Name.Replace('|', ' ').Replace('\n', ' ')}|{string.Join('.', r.Edges)}")));
+        Changed?.Invoke();
+    }
+
+    public async Task RestoreSampleRoutesAsync()
+    {
+        published = null;
+        myClaims.RemoveWhere(k => k.StartsWith("route:", StringComparison.Ordinal));
+        await native.SetAsync(ClaimsKey, string.Join(',', myClaims));
+        await native.SetAsync(PublishedKey, "");
+        Changed?.Invoke();
+    }
+
+    public DateOnly? LastDone(OutreachArea area)
+    {
+        var latest = area.Edges.Select(LastWalked).Max();
+        return latest ?? (area.LastDoneWeeksAgo is { } weeks ? DateOnly.FromDateTime(clock.Now).AddDays(-7 * weeks) : null);
+    }
+
+    public string LastDoneLabel(OutreachArea area)
+    {
+        if (LastDone(area) is not { } date)
+        {
+            return "not done yet";
+        }
+        var days = Today.DayNumber - date.DayNumber;
+        return days switch
+        {
+            < 1 => "done today",
+            < 7 => "done this week",
+            < 14 => "last done a week ago",
+            _ => $"last done {days / 7} weeks ago",
+        };
+    }
+
+    public int Staleness(OutreachArea area) => LastDone(area) is { } date ? Today.DayNumber - date.DayNumber : int.MaxValue;
+
+    public int Letterboxes(IEnumerable<int> edges) => Planner!.Letterboxes(edges, Count);
+
+    public IReadOnlyList<OutreachArea> DueNear(GeoPoint point, int take) =>
+        Map!.Areas
+            .OrderBy(a => Planner!.Distance(Planner.Midpoint(a.Edges[0]), point))
+            .Take(24)
+            .OrderByDescending(Staleness)
+            .ThenBy(a => Planner!.Distance(Planner.Midpoint(a.Edges[0]), point))
+            .Take(take)
+            .ToList();
+
+    public WalkPlan PlanNow(GeoPoint start, WalkBudget budget)
+    {
+        var key = (Planner!.NearestNode(start), budget.Minutes, budget.Kilometres);
+        if (!plans.TryGetValue(key, out var plan))
+        {
+            plans[key] = plan = Planner.Plan(key.Item1, budget, Rested, Count);
+        }
+        return plan;
+    }
+
+    public void SetHere(GeoPoint point) => Here = point;
+
+    public WalkPlan PlanEdges(IEnumerable<int> edges, GeoPoint start)
+    {
+        var set = edges.ToList();
+        return Planner!.Circuit(set, Planner.NearestNode(start, set), Count);
+    }
+
+    public async Task SetNameAsync(string name)
+    {
+        WalkerName = name.Trim();
+        await native.SetAsync(NameKey, WalkerName);
+        Changed?.Invoke();
+    }
+
+    public async Task SetClaimAsync(string key, bool on)
+    {
+        if (on)
+        {
+            myClaims.Add(key);
+        }
+        else
+        {
+            myClaims.Remove(key);
+        }
+        await native.SetAsync(ClaimsKey, string.Join(',', myClaims));
+        Changed?.Invoke();
+    }
+
+    public void SetPreviewDuringOutreach(bool on)
+    {
+        PreviewDuringOutreach = on;
+        plans.Clear();
+        Changed?.Invoke();
+    }
+
+    public void StartWalk(WalkKind kind, int? id, string title, WalkPlan plan)
+    {
+        Walk = new(kind, id, title, plan, DayIsOn);
+        Changed?.Invoke();
+    }
+
+    public async Task CompleteLegAsync()
+    {
+        if (Walk?.Current is not { } leg)
+        {
+            return;
+        }
+        foreach (var arc in leg.Arcs)
+        {
+            walked[arc.Edge] = Today;
+        }
+        if (Walk.CountsTowardDay)
+        {
+            myDayTally += leg.Letterboxes;
+            await native.SetAsync(DayTallyKey, myDayTally.ToString(CultureInfo.InvariantCulture));
+        }
+        Walk.LegIndex++;
+        plans.Clear();
+        await SaveWalkedAsync();
+        Changed?.Invoke();
+    }
+
+    public void StepBack()
+    {
+        if (Walk is { LegIndex: > 0 })
+        {
+            Walk.LegIndex--;
+            Changed?.Invoke();
+        }
+    }
+
+    public void EndWalk()
+    {
+        Walk = null;
+        Changed?.Invoke();
+    }
+
+    public async Task FlagNoJunkMailAsync(GeoPoint? where)
+    {
+        if (Walk?.Current is not { } leg || leg.Arcs.Count == 0)
+        {
+            return;
+        }
+        var arc = where is { } point
+            ? leg.Arcs.MinBy(a => Planner!.Distance(Planner.Midpoint(a.Edge), point))
+            : leg.Arcs[0];
+        flags.Add(new(arc.Edge, arc.Side, where ?? Planner!.Midpoint(arc.Edge)));
+        plans.Clear();
+        await native.SetAsync(FlagsKey, string.Join(',', flags.Select(f =>
+            string.Create(CultureInfo.InvariantCulture, $"{f.Edge}:{f.Side}:{f.Point.Lat}:{f.Point.Lon}"))));
+        Changed?.Invoke();
+    }
+
+    public int FlagsOn(WalkLeg leg) => flags.Count(f => leg.Arcs.Any(a => a.Edge == f.Edge && a.Side == f.Side));
+
+    private async Task LoadAsync()
+    {
+        Map = await http.GetFromJsonAsync("data/outreach.json", OutreachMapJson.Default.OutreachMap);
+        Planner = new(Map!);
+        Splitter = new(Map!, Planner, Count);
+        SeedSampleCoverage();
+        LoadPublished(await native.GetAsync(PublishedKey));
+        WalkerName = await native.GetAsync(NameKey);
+        myClaims.UnionWith((await native.GetAsync(ClaimsKey))?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? []);
+        foreach (var entry in (await native.GetAsync(WalkedKey))?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? [])
+        {
+            var parts = entry.Split(':');
+            if (parts.Length == 2 && int.TryParse(parts[0], out var edge) && DateOnly.TryParseExact(parts[1], "yyyyMMdd", out var date))
+            {
+                walked[edge] = date;
+            }
+        }
+        foreach (var entry in (await native.GetAsync(FlagsKey))?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? [])
+        {
+            var parts = entry.Split(':');
+            if (parts.Length == 4 && int.TryParse(parts[0], out var edge) && int.TryParse(parts[1], out var side)
+                && double.TryParse(parts[2], CultureInfo.InvariantCulture, out var lat) && double.TryParse(parts[3], CultureInfo.InvariantCulture, out var lon))
+            {
+                flags.Add(new(edge, side, new(lat, lon)));
+            }
+        }
+        myDayTally = int.TryParse(await native.GetAsync(DayTallyKey), out var tally) ? tally : 0;
+        Changed?.Invoke();
+    }
+
+    private void LoadPublished(string? saved)
+    {
+        if (string.IsNullOrEmpty(saved))
+        {
+            return;
+        }
+        var routes = new List<ReadyRoute>();
+        foreach (var line in saved.Split('\n', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var parts = line.Split('|');
+            var edges = parts.Length == 2 ? parts[1].Split('.', StringSplitOptions.RemoveEmptyEntries).Select(e => int.TryParse(e, out var n) ? n : -1).ToArray() : [];
+            if (edges.Length > 0 && edges.All(e => e >= 0 && e < Map!.Edges.Count))
+            {
+                routes.Add(new(routes.Count + 1, parts[0], edges));
+            }
+        }
+        published = routes.Count > 0 ? routes : null;
+    }
+
+    private void SeedSampleCoverage()
+    {
+        var today = DateOnly.FromDateTime(clock.Now);
+        foreach (var area in Map!.Areas.Where(a => a.LastDoneWeeksAgo is { } w && w <= 4))
+        {
+            foreach (var edge in area.Edges)
+            {
+                sampleWalked[edge] = today.AddDays(-7 * area.LastDoneWeeksAgo!.Value);
+            }
+        }
+        foreach (var area in Map.Areas.OrderBy(a => Planner!.Distance(Planner.Midpoint(a.Edges[0]), Church)).Skip(1).Take(2))
+        {
+            foreach (var edge in area.Edges)
+            {
+                sampleWalked[edge] = today.AddDays(-3);
+            }
+        }
+    }
+
+    private Task SaveWalkedAsync() =>
+        native.SetAsync(WalkedKey, string.Join(',', walked.Select(w => $"{w.Key}:{w.Value:yyyyMMdd}"))).AsTask();
+}

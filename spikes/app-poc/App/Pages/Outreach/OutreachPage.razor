@@ -1,0 +1,150 @@
+@page "/outreach"
+@implements IDisposable
+@inject OutreachService Outreach
+@inject NativeBridge Native
+
+<Page Title="Outreach" BackHref="" BackLabel="Home">
+    <Masthead Title="Outreach" Note="Letterbox drops around Albany Creek">
+        @if (Outreach.Map is not null)
+        {
+            <div class="status">
+                <span class="status__text">@((MarkupString)CoverageLine)</span>
+            </div>
+        }
+    </Masthead>
+
+    @if (Outreach.Map is not { } map)
+    {
+        <Section First="true">
+            <p class="hint">Loading the streets…</p>
+        </Section>
+    }
+    else
+    {
+        @if (Outreach.Walk is { Finished: false } walk)
+        {
+            <Section First="true">
+                <a class="outreach-card outreach-card--resume" href="outreach/go">
+                    <span class="outreach-card__body">
+                        <strong>Walk in progress</strong>
+                        <span>@walk.Title · @walk.Current!.Street · street @(walk.LegIndex + 1) of @walk.Plan.Legs.Count</span>
+                    </span>
+                    <span class="btn btn--primary">Resume</span>
+                </a>
+            </Section>
+        }
+
+        @if (Outreach.Day is { } day)
+        {
+            <Section Title="@(Outreach.DayIsOn ? "Outreach is on" : $"Outreach {Outreach.Day.Start:dddd}")" First="@(Outreach.Walk is not { Finished: false })">
+                <a class="outreach-card" href="outreach/day">
+                    <span class="outreach-card__body">
+                        <span class="outreach-card__when">
+                            @if (Outreach.DayIsOn)
+                            {
+                                <span class="live-dot"></span>
+                                <span>On now till @ChurchClock.Time(day.End) · from @day.Where</span>
+                            }
+                            else
+                            {
+                                <span>@day.Start.ToString("dddd d MMMM") · @OutreachFormat.Window(day)</span>
+                            }
+                        </span>
+                        <strong>@Outreach.Routes.Count ready-made routes · @Outreach.ClaimedRoutes claimed</strong>
+                        <People Persons="Claimers" MaxFaces="4" Label="@ClaimersLine" />
+                        <span class="outreach-card__note">Walking from home? It still counts while it's on.</span>
+                    </span>
+                    <Icon Name="chevron-right" Size="IconSize.Small" />
+                </a>
+            </Section>
+        }
+
+        <Section Title="Walk now" First="@(Outreach.Day is null && Outreach.Walk is not { Finished: false })">
+            <p class="section__lead">@(Outreach.Here is null ? "A loop from church that covers both sides of every street. You can start from where you are on the next screen." : "A loop from where you are that covers both sides of every street.")</p>
+            <ChoiceTiles Tiles="WalkTiles" />
+        </Section>
+
+        <Section Title="Areas" LinkText="All areas" LinkHref="outreach/areas">
+            <p class="section__lead">Areas the church has walked before. These are due a visit.</p>
+            <div class="list">
+                @foreach (var area in DueAreas)
+                {
+                    <OutreachAreaRow @key="area.Id" Area="area" />
+                }
+            </div>
+        </Section>
+
+        <Section Title="This preview">
+            <Segmented TValue="bool" Options="PreviewOptions" Value="Outreach.PreviewDuringOutreach" ValueChanged="Outreach.SetPreviewDuringOutreach" />
+            <p class="hint">Switch to see Saturday morning while outreach is on. Names other than yours are samples.</p>
+        </Section>
+    }
+
+    <PreviewFooter />
+</Page>
+
+@code {
+    private const int DueAreaCount = 4;
+
+    private static readonly IReadOnlyList<Choice<bool>> PreviewOptions =
+        [new(false, "Today"), new(true, "Saturday, outreach on")];
+
+    private IReadOnlyList<ChoiceTile> walkTiles = [];
+
+    private IReadOnlyList<ChoiceTile> WalkTiles => walkTiles;
+
+    private IReadOnlyList<OutreachArea> DueAreas => Outreach.DueNear(Outreach.Church, DueAreaCount);
+
+    private IReadOnlyList<string> ClaimerNames =>
+        Outreach.Routes.SelectMany(r => Outreach.ClaimsFor(OutreachService.RouteKey(r))).Distinct().ToList();
+
+    private IReadOnlyList<Person> Claimers => ClaimerNames.Select(n => new Person(n)).ToList();
+
+    private string ClaimersLine
+    {
+        get
+        {
+            var names = ClaimerNames;
+            return names.Count switch
+            {
+                0 => "Nobody has claimed a route yet",
+                1 => $"{names[0]} is going",
+                2 => $"{names[0]} and {names[1]} are going",
+                _ => $"{names[0]}, {names[1]} and {names.Count - 2} more are going",
+            };
+        }
+    }
+
+    private string CoverageLine =>
+        $"<strong>{Math.Round(Outreach.MonthCoverage() * 100):0}%</strong> of Albany Creek's letterboxes reached in the last four weeks";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Outreach.Changed += Refresh;
+        await Outreach.EnsureLoadedAsync();
+        walkTiles = BuildTiles();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && Outreach.Here is null && OutreachPosition.Parse(await Native.LastPositionAsync()) is { } here && Outreach.Planner?.Contains(here) == true)
+        {
+            Outreach.SetHere(here);
+            walkTiles = BuildTiles();
+            StateHasChanged();
+        }
+    }
+
+    private IReadOnlyList<ChoiceTile> BuildTiles()
+    {
+        var from = Outreach.Here is null ? "church" : "here";
+        var start = Outreach.Here ?? Outreach.Church;
+        ChoiceTile Timed(string label, int minutes) =>
+            new(label, $"about {Outreach.PlanNow(start, new(minutes)).Letterboxes} letterboxes", $"outreach/walk?minutes={minutes}&from={from}");
+        return [Timed("30 min", 30), Timed("1 hour", 60), Timed("2 hours", 120), new("Distance", "choose how far", $"outreach/walk?km=3&from={from}")];
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Outreach.Changed -= Refresh;
+}

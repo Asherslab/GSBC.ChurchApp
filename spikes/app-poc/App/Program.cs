@@ -1,5 +1,6 @@
 using Gsbc.AppPoc;
 using Gsbc.AppPoc.Data;
+using Gsbc.AppPoc.Data.Outreach;
 using Gsbc.AppPoc.Native;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
@@ -19,6 +20,7 @@ builder.Services.AddSingleton<PlayerService>();
 builder.Services.AddSingleton<SiteMapSvg>();
 builder.Services.AddSingleton<LifeGroupsService>();
 builder.Services.AddSingleton<SitePlan>();
+builder.Services.AddSingleton<OutreachService>();
 builder.Services.AddSingleton<IMapLayer>(sp => sp.GetRequiredService<LifeGroupsService>());
 builder.Services.AddSingleton<IMapLayer>(sp => sp.GetRequiredService<SitePlan>());
 

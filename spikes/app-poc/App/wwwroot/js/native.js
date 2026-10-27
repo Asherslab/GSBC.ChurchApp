@@ -51,9 +51,259 @@
     installPrompt = e;
   });
 
+  const maps = (() => {
+    let loading = null;
+    let position = null;
+    let watcher = null;
+    const watchers = new Set();
+    const empty = { type: 'FeatureCollection', features: [] };
+    const point = (lat, lon) => ({ type: 'FeatureCollection', features: lat == null ? [] : [{ type: 'Feature', geometry: { type: 'Point', coordinates: [lon, lat] }, properties: {} }] });
+
+    const load = () => loading ??= new Promise((resolve, reject) => {
+      if (window.maplibregl) { resolve(); return; }
+      const css = document.createElement('link');
+      css.rel = 'stylesheet';
+      css.href = 'lib/maplibre/maplibre-gl.css';
+      document.head.appendChild(css);
+      const js = document.createElement('script');
+      js.src = 'lib/maplibre/maplibre-gl.js';
+      js.onload = () => resolve();
+      js.onerror = () => { loading = null; reject(new Error('Map library failed to load')); };
+      document.head.appendChild(js);
+    });
+
+    const token = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    const styleUrl = () => `https://tiles.openfreemap.org/styles/${document.documentElement.dataset.scheme === 'dark' ? 'dark' : 'positron'}`;
+
+    const arrowImage = () => {
+      const size = 32;
+      const canvas = document.createElement('canvas');
+      canvas.width = canvas.height = size;
+      const g = canvas.getContext('2d');
+      g.strokeStyle = '#ffffff';
+      g.lineWidth = 4;
+      g.lineCap = g.lineJoin = 'round';
+      g.beginPath();
+      g.moveTo(11, 8);
+      g.lineTo(21, 16);
+      g.lineTo(11, 24);
+      g.stroke();
+      return g.getImageData(0, 0, size, size);
+    };
+
+    const addLayers = (el) => {
+      const state = el.gsbcStreetMap;
+      const map = state.map;
+      if (!map.hasImage('gsbc-arrow')) map.addImage('gsbc-arrow', arrowImage(), { pixelRatio: 2 });
+      map.addSource('gsbc-route', { type: 'geojson', data: state.route ?? empty });
+      map.addSource('gsbc-start', { type: 'geojson', data: point(state.start?.[0], state.start?.[1]) });
+      map.addSource('gsbc-me', { type: 'geojson', data: point(position?.[0], position?.[1]) });
+      const side = { 'line-offset': -4, 'line-width': 5 };
+      map.addLayer({ id: 'gsbc-route-done', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'done'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--ink-3'), 'line-opacity': 0.55 } });
+      map.addLayer({ id: 'gsbc-route-todo', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'todo'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--primary') } });
+      map.addLayer({ id: 'gsbc-route-transit', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'transit'], layout: { 'line-cap': 'round' }, paint: { 'line-offset': -4, 'line-width': 3, 'line-color': token('--primary'), 'line-dasharray': [1, 1.6] } });
+      map.addLayer({ id: 'gsbc-route-now', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'now'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-offset': -4, 'line-width': 7, 'line-color': token('--marker') } });
+      map.addLayer({ id: 'gsbc-route-arrows', type: 'symbol', source: 'gsbc-route', filter: ['in', ['get', 'state'], ['literal', ['todo', 'now']]], layout: { 'symbol-placement': 'line', 'symbol-spacing': 90, 'icon-image': 'gsbc-arrow', 'icon-size': 0.5, 'icon-offset': [0, -8], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true } });
+      map.addLayer({ id: 'gsbc-start', type: 'circle', source: 'gsbc-start', paint: { 'circle-radius': 8, 'circle-color': token('--primary'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
+      map.addLayer({ id: 'gsbc-me-halo', type: 'circle', source: 'gsbc-me', paint: { 'circle-radius': 16, 'circle-color': token('--live'), 'circle-opacity': 0.2 } });
+      map.addLayer({ id: 'gsbc-me', type: 'circle', source: 'gsbc-me', paint: { 'circle-radius': 7, 'circle-color': token('--live'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
+    };
+
+    const showMe = () => {
+      watchers.forEach((el) => el.gsbcStreetMap?.map.getSource('gsbc-me')?.setData(point(position?.[0], position?.[1])));
+      watchers.forEach((el) => {
+        const state = el.gsbcStreetMap;
+        if (state?.follow && position) state.map.easeTo({ center: [position[1], position[0]], duration: 600 });
+      });
+    };
+
+    const startWatching = () => {
+      if (watcher != null || !navigator.geolocation) return;
+      watcher = navigator.geolocation.watchPosition((p) => { position = [p.coords.latitude, p.coords.longitude]; showMe(); }, () => { }, { enableHighAccuracy: true, maximumAge: 5000 });
+    };
+
+    const stopWatching = () => {
+      if (watcher == null || watchers.size > 0) return;
+      navigator.geolocation.clearWatch(watcher);
+      watcher = null;
+    };
+
+    const createMap = (el, lat, lon, attribution) => {
+      const map = new maplibregl.Map({
+        container: el,
+        style: styleUrl(),
+        center: [lon, lat],
+        zoom: 15,
+        attributionControl: { compact: true, customAttribution: attribution },
+        dragRotate: false,
+        pitchWithRotate: false,
+      });
+      map.touchZoomRotate.disableRotation();
+      map.once('load', () => el.querySelector('.maplibregl-ctrl-attrib')?.classList.remove('maplibregl-compact-show'));
+      let scheme = document.documentElement.dataset.scheme;
+      new MutationObserver(() => {
+        if (scheme === document.documentElement.dataset.scheme) return;
+        scheme = document.documentElement.dataset.scheme;
+        map.setStyle(styleUrl());
+      }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-scheme'] });
+      return map;
+    };
+
+    const street = {
+      async attach(el, dotnet, lat, lon, attribution) {
+        await load();
+        const map = createMap(el, lat, lon, attribution);
+        el.gsbcStreetMap = { map, dotnet, route: null, start: null, follow: false, pick: false };
+        map.on('style.load', () => addLayers(el));
+        map.on('click', (e) => { if (el.gsbcStreetMap.pick) dotnet.invokeMethodAsync('Picked', e.lngLat.lat, e.lngLat.lng); });
+      },
+
+      update(el, routeJson, startLat, startLon, fit, pick, follow, showLocation) {
+        const state = el.gsbcStreetMap;
+        if (!state) return;
+        state.route = routeJson ? JSON.parse(routeJson) : null;
+        state.start = startLat == null ? null : [startLat, startLon];
+        state.pick = pick;
+        state.follow = follow;
+        el.classList.toggle('street-map--picking', pick);
+        const apply = () => {
+          state.map.getSource('gsbc-route')?.setData(state.route ?? empty);
+          state.map.getSource('gsbc-start')?.setData(point(state.start?.[0], state.start?.[1]));
+          if (fit) {
+            const coords = (state.route?.features ?? []).flatMap((f) => f.geometry.coordinates);
+            if (state.start) coords.push([state.start[1], state.start[0]]);
+            if (coords.length > 1) {
+              const bounds = coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0]));
+              state.map.fitBounds(bounds, { padding: 36, maxZoom: 17, duration: 500 });
+            } else if (coords.length === 1) {
+              state.map.easeTo({ center: coords[0], zoom: 16, duration: 500 });
+            }
+          }
+        };
+        if (state.map.isStyleLoaded() && state.map.getSource('gsbc-route')) apply();
+        else state.map.once('idle', apply);
+        if (showLocation) { watchers.add(el); startWatching(); showMe(); }
+        else { watchers.delete(el); stopWatching(); }
+      },
+
+      locate() {
+        return new Promise((resolve) => {
+          if (!navigator.geolocation) { resolve('unsupported'); return; }
+          navigator.geolocation.getCurrentPosition(
+            (p) => { position = [p.coords.latitude, p.coords.longitude]; showMe(); resolve(`${p.coords.latitude},${p.coords.longitude}`); },
+            (e) => resolve(e.code === 1 ? 'denied' : 'unavailable'),
+            { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 });
+        });
+      },
+
+      position: () => position ? `${position[0]},${position[1]}` : '',
+
+      detach(el) {
+        watchers.delete(el);
+        stopWatching();
+        el.gsbcStreetMap?.map.remove();
+        el.gsbcStreetMap = null;
+      },
+    };
+
+    const textFont = (map) => map.getStyle().layers.find((l) => l.layout?.['text-font'])?.layout['text-font'] ?? ['Noto Sans Regular'];
+
+    const addPlannerLayers = (el) => {
+      const state = el.gsbcPlanner;
+      const map = state.map;
+      const data = state.data ?? {};
+      map.addSource('planner-area', { type: 'geojson', data: data.area ?? empty });
+      map.addSource('planner-streets', { type: 'geojson', data: data.streets ?? empty });
+      map.addSource('planner-labels', { type: 'geojson', data: data.labels ?? empty });
+      map.addSource('planner-meeting', { type: 'geojson', data: data.meeting ?? empty });
+      map.addLayer({ id: 'planner-area-fill', type: 'fill', source: 'planner-area', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': token('--accent'), 'fill-opacity': 0.08 } });
+      map.addLayer({ id: 'planner-area-line', type: 'line', source: 'planner-area', filter: ['==', ['geometry-type'], 'LineString'], paint: { 'line-color': token('--accent'), 'line-width': 2, 'line-dasharray': [2, 1.5] } });
+      map.addLayer({ id: 'planner-area-points', type: 'circle', source: 'planner-area', filter: ['==', ['geometry-type'], 'Point'], paint: { 'circle-radius': 5, 'circle-color': '#ffffff', 'circle-stroke-width': 2, 'circle-stroke-color': token('--accent') } });
+      map.addLayer({ id: 'planner-rested', type: 'line', source: 'planner-streets', filter: ['==', ['get', 'kind'], 'rested'], layout: { 'line-cap': 'round' }, paint: { 'line-color': token('--ink-3'), 'line-width': 4, 'line-opacity': 0.6, 'line-dasharray': [1, 1.4] } });
+      map.addLayer({ id: 'planner-selected', type: 'line', source: 'planner-streets', filter: ['==', ['get', 'selected'], true], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': token('--marker'), 'line-width': 13 } });
+      map.addLayer({ id: 'planner-streets', type: 'line', source: 'planner-streets', filter: ['!=', ['get', 'kind'], 'rested'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['coalesce', ['get', 'color'], token('--ink-3')], 'line-width': ['case', ['==', ['get', 'kind'], 'free'], 4, 6] } });
+      map.addLayer({ id: 'planner-labels', type: 'symbol', source: 'planner-labels', layout: { 'text-field': ['get', 'label'], 'text-font': textFont(map), 'text-size': 15, 'text-allow-overlap': true }, paint: { 'text-color': ['get', 'color'], 'text-halo-color': token('--bg'), 'text-halo-width': 2.5 } });
+      map.addLayer({ id: 'planner-meeting', type: 'circle', source: 'planner-meeting', paint: { 'circle-radius': 9, 'circle-color': token('--primary'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
+    };
+
+    const planner = {
+      async attach(el, dotnet, lat, lon, attribution) {
+        await load();
+        const map = createMap(el, lat, lon, attribution);
+        el.gsbcPlanner = { map, dotnet, data: null, mode: 'select', points: 0, first: null };
+        map.doubleClickZoom.disable();
+        map.on('style.load', () => addPlannerLayers(el));
+        map.on('click', (e) => {
+          const state = el.gsbcPlanner;
+          if (state.mode === 'draw') {
+            if (state.first && state.points >= 3) {
+              const first = map.project(state.first);
+              if (Math.hypot(first.x - e.point.x, first.y - e.point.y) < 14) { dotnet.invokeMethodAsync('DrawFinished'); return; }
+            }
+            dotnet.invokeMethodAsync('MapClicked', e.lngLat.lat, e.lngLat.lng);
+          } else if (state.mode === 'meeting') {
+            dotnet.invokeMethodAsync('MeetingSet', e.lngLat.lat, e.lngLat.lng);
+          } else {
+            const box = [[e.point.x - 8, e.point.y - 8], [e.point.x + 8, e.point.y + 8]];
+            const hit = map.queryRenderedFeatures(box, { layers: ['planner-streets'] })[0];
+            dotnet.invokeMethodAsync('StreetClicked', hit ? Number(hit.properties.edge) : -1);
+          }
+        });
+        map.on('dblclick', (e) => {
+          if (el.gsbcPlanner.mode !== 'draw') return;
+          e.preventDefault();
+          dotnet.invokeMethodAsync('DrawFinished');
+        });
+      },
+
+      update(el, json, mode, fit) {
+        const state = el.gsbcPlanner;
+        if (!state) return;
+        state.data = JSON.parse(json);
+        state.mode = mode;
+        state.points = state.data.points ?? 0;
+        state.first = state.data.first ?? null;
+        el.classList.toggle('planner-map--drawing', mode !== 'select');
+        const apply = () => {
+          for (const name of ['area', 'streets', 'labels', 'meeting']) state.map.getSource(`planner-${name}`)?.setData(state.data[name] ?? empty);
+          if (fit) {
+            const coords = [...(state.data.streets?.features ?? []).flatMap((f) => f.geometry.coordinates), ...(state.data.area?.features ?? []).filter((f) => f.geometry.type === 'Point').map((f) => f.geometry.coordinates)];
+            if (coords.length > 1) state.map.fitBounds(coords.reduce((b, c) => b.extend(c), new maplibregl.LngLatBounds(coords[0], coords[0])), { padding: 48, maxZoom: 17, duration: 500 });
+          }
+        };
+        if (state.map.isStyleLoaded() && state.map.getSource('planner-area')) apply();
+        else state.map.once('idle', apply);
+      },
+
+      detach(el) {
+        el.gsbcPlanner?.map.remove();
+        el.gsbcPlanner = null;
+      },
+    };
+
+    return { street, planner };
+  })();
+
+  let wakeLock = null;
+  let wantAwake = false;
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible' && wantAwake) window.gsbc.keepAwake(true);
+  });
+
   window.gsbc = {
     isNative,
     platform,
+    streetMap: maps.street,
+    plannerMap: maps.planner,
+
+    async keepAwake(on) {
+      wantAwake = on;
+      if (document.visibilityState === 'visible' && on && wakeLock?.released) wakeLock = null;
+      try {
+        if (on && !wakeLock && navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen');
+        if (!on && wakeLock) { await wakeLock.release(); wakeLock = null; }
+      } catch { wakeLock = null; }
+    },
 
     displayMode() {
       if (isNative()) return 'native';

@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Outreach, in the week</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--paper:#fff;--beige:#d5c9b7;--sand:#f4efe7;--sand2:#e9e1d4;--aqua:#009c8f;--aqua-deep:#00776d;--orange:#e7ae74;--orange-ink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.status{height:47px;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 34px;color:#fff;font-size:16px;font-weight:600}
+.status svg{height:12px;fill:#fff}
+.mast{background:var(--navy);color:#fff;position:relative;overflow:hidden;padding-bottom:16px}
+.mast .ring{position:absolute;right:-70px;top:10px;width:190px;height:190px;border-radius:50%;border:16px solid rgba(255,255,255,.06)}
+.head{display:grid;grid-template-columns:32px 1fr;column-gap:6px;align-items:center;padding:4px 20px 0 12px}
+.back{width:32px;height:32px;display:grid;place-items:center}
+.back svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.mast h1{font-size:27px;font-weight:700;letter-spacing:-.025em;line-height:1.1}
+.prog{padding:8px 20px 0 50px}
+.prog p{font-size:13px;color:rgba(255,255,255,.82)}
+.prog p b{font-weight:600;color:#fff}
+.track{height:4px;border-radius:2px;background:rgba(255,255,255,.16);margin-top:8px}
+.track i{display:block;height:4px;width:14.6%;border-radius:2px;background:var(--orange)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);padding:10px 14px 10px;border-bottom:1px solid var(--line)}
+.d{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11.5px;font-weight:600;color:var(--ink3)}
+.d b{width:34px;height:34px;border-radius:17px;display:grid;place-items:center;font-size:15px;font-weight:600;color:var(--ink)}
+.d.today b{background:var(--navy);color:#fff}
+.d.today{color:var(--navy)}
+.d i{width:5px;height:5px;border-radius:50%;background:transparent}
+.d.has i{background:var(--aqua)}
+.d.today i{background:var(--orange)}
+.agenda{padding:0 20px;height:528px;overflow:hidden}
+.day{display:flex;align-items:baseline;gap:8px;padding:12px 0 8px}
+.day h2{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.day span{font-size:12.5px;color:var(--ink3)}
+.row{display:grid;grid-template-columns:40px 1fr auto;column-gap:12px;align-items:center}
+.row b{display:block;font-size:14.5px;font-weight:600;line-height:1.3}
+.row small{display:block;font-size:12.5px;color:var(--ink2);line-height:1.4;margin-top:1px}
+.tile{width:40px;height:40px;border-radius:10px;overflow:hidden;background:#efebe3;display:grid;place-items:center}
+.tile svg{display:block}
+.btn{height:32px;padding:0 14px;border-radius:16px;display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;white-space:nowrap}
+.btn.q{background:var(--sand);color:var(--navy);border:1px solid var(--beige)}
+.btn.p{background:var(--aqua-deep);color:#fff}
+.suggest{background:var(--sand);border:1px solid var(--beige);border-radius:14px;padding:12px 12px 12px 14px}
+.suggest .btn.q{background:#fff}
+.suggest .tile{background:#fff}
+.event{border:1px solid var(--line);border-radius:14px;padding:12px 12px 4px 14px}
+.event .tile{background:var(--aqua-deep);color:#fff}
+.event .tile svg{width:22px;height:22px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.who{display:flex;align-items:center;gap:8px;margin-top:8px;padding-bottom:8px;font-size:12.5px;color:var(--ink2)}
+.stack{display:flex}
+.stack span{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--navy);background:var(--sand2);border:2px solid #fff;margin-left:-7px}
+.stack span:first-child{margin-left:0}
+.stack span:nth-child(2n){background:var(--beige)}
+.route{display:grid;grid-template-columns:1fr auto;column-gap:12px;align-items:center;padding:10px 0;border-top:1px solid var(--line)}
+.route b{display:block;font-size:13.5px;font-weight:600;line-height:1.3}
+.route small{display:flex;align-items:center;gap:6px;font-size:12.5px;color:var(--ink2);margin-top:2px}
+.claimed{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--aqua-deep)}
+.claimed .stack span{width:22px;height:22px;font-size:11px}
+.open{color:var(--orange-ink);font-weight:600}
+.patch{padding:10px 0;border-bottom:1px solid var(--line)}
+.patch:last-child{border-bottom:0}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink3)}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua-deep)}
+</style></head><body>
+<header class="mast"><div class="ring"></div>
+  <div class="status"><span>9:41</span><svg viewBox="0 0 68 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M31 3.2a9 9 0 0 1 12 0l-1.3 1.4a7 7 0 0 0-9.4 0zM33.4 5.8a5.4 5.4 0 0 1 7.2 0L37 9.6z"/><rect x="47" y="0.5" width="19" height="11" rx="3" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="49" y="2.5" width="14" height="7" rx="1.5"/><rect x="66.5" y="4" width="1.5" height="4" rx=".7"/></svg></div>
+  <div class="head">
+    <span class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></span>
+    <h1>Outreach</h1>
+  </div>
+  <div class="prog"><p>This week in Albany Creek · <b>14 of 96</b> patches done</p><div class="track"><i></i></div></div>
+</header>
+<nav class="week">
+  <div class="d"><span>Mon</span><b>26</b><i></i></div>
+  <div class="d today"><span>Tue</span><b>27</b><i></i></div>
+  <div class="d"><span>Wed</span><b>28</b><i></i></div>
+  <div class="d has"><span>Thu</span><b>29</b><i></i></div>
+  <div class="d"><span>Fri</span><b>30</b><i></i></div>
+  <div class="d has"><span>Sat</span><b>31</b><i></i></div>
+  <div class="d"><span>Sun</span><b>1</b><i></i></div>
+</nav>
+<main class="agenda">
+  <div class="day"><h2>Thursday 29</h2><span>nothing else on that evening</span></div>
+  <div class="suggest row">
+    <span class="tile"><svg width="40" height="40" viewBox="0 0 40 40"><path d="M0 14h40M0 29h40M13 0v40M28 0v40" stroke="#fff" stroke-width="3" fill="none"/><path d="M13 14h15v15H13z" fill="none" stroke="#009c8f" stroke-width="2.4" stroke-linejoin="round"/><circle cx="13" cy="29" r="3.5" fill="#2a3d5e" stroke="#fff" stroke-width="1.5"/></svg></span>
+    <div><b>Free evening? A 45-minute walk from your door</b><small>About 80 letterboxes, both sides</small></div>
+    <span class="btn q">Plan</span>
+  </div>
+  <div class="day"><h2>Saturday 31</h2><span>outreach day</span></div>
+  <section class="event">
+    <div class="row">
+      <span class="tile"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 4l9 6.5M5 9v11h14V9M10 20v-5h4v5"/></svg></span>
+      <div><b>Outreach day · 8:30 at church</b><small>9 routes, 5 claimed</small></div>
+      <span class="btn p">Join</span>
+    </div>
+    <div class="who"><span class="stack"><span>S</span><span>R</span><span>M</span><span>D</span><span>G</span></span>Sam, Ruth and 9 others are coming</div>
+    <div class="route">
+      <div><b>Route 4 · Kingfisher St &amp; courts</b><small>112 letterboxes · 2 bundles + 12</small></div>
+      <span class="claimed"><span class="stack"><span>S</span></span>Sam + 2</span>
+    </div>
+    <div class="route">
+      <div><b>Route 7 · Lorikeet Ct loop</b><small>64 letterboxes · <span class="open">Open</span></small></div>
+      <span class="btn p">Claim</span>
+    </div>
+  </section>
+  <div class="day"><h2>Any day this week</h2><span>patches of about a bundle</span></div>
+  <div class="row patch">
+    <span class="tile"><svg width="40" height="40" viewBox="0 0 40 40"><path d="M6 8l22-3 7 14-6 15-20 1-5-13z" fill="rgba(231,174,116,.55)" stroke="#e7ae74" stroke-width="1.5"/><path d="M0 21h40M19 0v40" stroke="#fff" stroke-width="2.5"/></svg></span>
+    <div><b>Patch 23 · Wruck Cres end</b><small>Done 9 weeks ago · 48 boxes</small></div>
+    <span class="btn q">Take it</span>
+  </div>
+  <div class="row patch">
+    <span class="tile"><svg width="40" height="40" viewBox="0 0 40 40"><path d="M4 6h30l2 12-8 17H8L3 22z" fill="rgba(231,174,116,.85)" stroke="#e7ae74" stroke-width="1.5"/><path d="M0 15h40M0 28c14-4 26-4 40 0M24 0v40" stroke="#fff" stroke-width="2.5" fill="none"/></svg></span>
+    <div><b>Patch 41 · off Ogg Rd</b><small>Done 14 weeks ago · 52 boxes</small></div>
+    <span class="btn q">Take it</span>
+  </div>
+</main>
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>Listen</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.4 3.6 5 7 5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>Prayer</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>

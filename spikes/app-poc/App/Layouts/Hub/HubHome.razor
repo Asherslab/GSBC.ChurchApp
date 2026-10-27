@@ -6,6 +6,7 @@
 @inject PlayerService Player
 @inject NativeBridge Native
 @inject LifeGroupsService Groups
+@inject OutreachService Outreach
 
 <Page Title="Good Shepherd">
     <Masthead Title="Good Shepherd" Note="@Clock.Now.ToString("dddd d MMMM")">
@@ -104,6 +105,20 @@
             }
         </a>
 
+        <a class="hub-tile hub-tile--wide hub-visit @(Outreach.DayIsOn ? "hub-tile--act" : "")" href="outreach" @onclick="Tap">
+            <span class="hub-visit__body">
+                <strong class="hub-tile__title">
+                    @if (Outreach.DayIsOn)
+                    {
+                        <span class="live-dot"></span>
+                    }
+                    @OutreachTitle
+                </strong>
+                <span class="hub-tile__meta">@OutreachLine</span>
+            </span>
+            <span class="row__icon row__icon--accent"><Icon Name="footprints" Size="IconSize.Small" /></span>
+        </a>
+
         <a class="hub-tile" href="notifications" @onclick="Tap">
             <span class="hub-tile__top">
                 <span class="row__icon @(Unread > 0 ? "row__icon--warm" : "row__icon--quiet")"><Icon Name="bell" Size="IconSize.Small" /></span>
@@ -163,6 +178,29 @@
 
     private HomeLine GroupsLine => Groups.Home();
 
+    private string OutreachTitle => Outreach.DayIsOn && Outreach.Day is { } day ? $"Outreach is on till {ChurchClock.Time(day.End)}" : "Got an hour?";
+
+    private string OutreachDayName(OutreachDay day) => Clock.Relative(day.Start) is "Today" or "Tomorrow" ? Clock.Relative(day.Start).ToLowerInvariant() : Clock.Relative(day.Start);
+
+    private string OutreachLine
+    {
+        get
+        {
+            if (Outreach.Map is null)
+            {
+                return "Letterbox drops around Albany Creek";
+            }
+            var routes = $"{Outreach.ClaimedRoutes} of {Outreach.Routes.Count} routes claimed";
+            if (Outreach.DayIsOn)
+            {
+                return $"{routes} · walk from anywhere and it counts";
+            }
+            return Outreach.Day is { } day
+                ? $"Walk from your door, or join outreach {OutreachDayName(day)} at {ChurchClock.Time(day.Start)}"
+                : "Walk from your door: a loop of letterbox drops";
+        }
+    }
+
     private Sermon? Featured => Player.Current ?? Library.Sermons.FirstOrDefault();
 
     private int Unread => Content.Inbox.Count(m => m.Unread);
@@ -191,7 +229,9 @@
         Library.Changed += Refresh;
         Player.Changed += Refresh;
         Groups.Changed += Refresh;
+        Outreach.Changed += Refresh;
         _ = Groups.EnsureLoadedAsync();
+        _ = Outreach.EnsureLoadedAsync();
     }
 
     private void Refresh() => InvokeAsync(StateHasChanged);
@@ -235,5 +275,6 @@
         Library.Changed -= Refresh;
         Player.Changed -= Refresh;
         Groups.Changed -= Refresh;
+        Outreach.Changed -= Refresh;
     }
 }

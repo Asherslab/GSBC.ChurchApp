@@ -1,0 +1,20 @@
+@inject NativeBridge Native
+
+<div class="choice-tiles">
+    @foreach (var tile in Tiles)
+    {
+        <a class="choice-tile" href="@tile.Href" @onclick="Tap">
+            <strong>@tile.Label</strong>
+            @if (tile.Caption is not null)
+            {
+                <span>@tile.Caption</span>
+            }
+        </a>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<ChoiceTile> Tiles { get; set; } = [];
+
+    private Task Tap() => Native.HapticAsync(Haptic.Selection).AsTask();
+}

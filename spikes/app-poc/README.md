@@ -108,6 +108,56 @@ minutes, and `Components/UpdateBanner.razor` offers Reload.
 pushes it to GHCR and pins the tag in gsbc.argo (`clusters/mini/app/church-app-pwa`), the same as
 Graced. Delete the workflow, `pwa/` and the gsbc.argo manifests once TestFlight is running.
 
+## Outreach (letterbox drops)
+
+Added 2026-10-27 from a member's idea; the design record is `.impeccable/surfaces/spikes-app-poc-outreach.md`.
+A Hub tile (and More → Outreach) opens `/outreach`, which has three ways in: an **outreach day** (only shown
+when one is within a week; ready-made routes that walkers claim, several people per route), **Walk now**
+(a loop generated on the phone from where you are, for 30 min, 1 or 2 hours, or a distance), and **Areas**
+(the church's historical outreach areas, most overdue first). All three end on the same walking screen:
+the map with your position and one street side at a time, Done, Back a street and "No junk mail".
+
+- **Routes** walk both sides of every street: each street side is a directed arc, so the loop always
+  closes, and the walker keeps the houses on their left, which traces each block's kerb and turns a
+  cul-de-sac into up one side and back the other (`Data/Outreach/RoutePlanner.cs`). Time assumes 4 km/h
+  plus about 8 s a house letterbox and 3 s a unit letterbox; bundles are 50. Main roads (OSM primary and
+  secondary) are walked along but never delivered to. Streets walked in the last 7 days are skipped.
+- **Data** is `wwwroot/data/outreach.json` (about 510 KB, every street segment including ones with no
+  letterboxes, so the network stays connected), built by `tools/outreach/build_data.py` from
+  OpenStreetMap streets (Overpass, ODbL) and the Queensland Government Addresses layer (CC BY 4.0). It
+  holds letterbox counts per street side, never addresses: 10,233 letterboxes placed, 551 not matched to a
+  street. Rebuild with `python3 tools/outreach/build_data.py`. It covers Albany Creek only; a start outside
+  it falls back to church with a message.
+- **Map:** MapLibre GL JS 5.24.0 (BSD-3, vendored in `wwwroot/lib/maplibre`, loaded only on outreach pages)
+  with OpenFreeMap's Positron and Dark styles. Tiles come from OpenFreeMap's servers, so maps need a signal.
+- **Walk now figures** on the Outreach page come from the planner itself, from the same start the walk
+  page will use (your last known position, otherwise church; the tile passes it on), and plans are cached
+  per start and length, so the tile and the generated walk always agree.
+- **Staff preview: `/staff/outreach-planner`** (not linked anywhere; open it directly). In the real app
+  this belongs in the admin panel. Draw an area on the map (click the corners; double-click or click
+  the first corner to finish), keep church as the meeting point or pin another, and set a target per
+  route in letterboxes, bundles or minutes. Street sides whose middle is inside are included, main roads
+  excluded, and this week's streets are dashed grey and left out (toggle). The split
+  (`Data/Outreach/AreaSplitter.cs`): routes = total over target; seeds spread across the area weighted
+  by letterboxes; every route grows at once, the lightest taking its nearest adjacent street; then a
+  balancing pass moves boundary streets from heavier to lighter neighbours while keeping each route in
+  one piece; scraps under a third of the target merge into a neighbour. Excluded streets, main roads and
+  links of up to 500 m count as connections, so routes can be walked through them without delivering.
+  Each route's loop starts at its point nearest the meeting point, and its time includes the walk there
+  and back. Click a street to move it to a neighbouring route; merge, split in two, rename or regenerate;
+  then "Publish to Saturday's outreach" replaces the sample routes on this device (Outreach day shows
+  them; "Restore the sample routes" undoes it). Areas separated by parkland or roads not in the data
+  (South Pine Road is a higher road class) split into separate groups and balance less evenly.
+- **Sample, not real:** the areas are cut automatically (about one bundle each) with made-up "last done"
+  dates; the nine outreach-day routes are pairs of areas nearest church; the outreach day (Saturday
+  31 October, 8:30–11:30) and every claim name except yours are samples, and so is the day's running
+  tally. "This preview" on the Outreach page switches to Saturday morning with outreach on.
+- **On the phone only:** claims, coverage, flags and your first name are kept on the device (nothing is
+  shared); the walking screen keeps the screen on (Wake Lock) but location stops when the app is in the
+  background, and a walk in progress is lost if the app is closed. The real app needs the shared Outreach
+  service (gRPC), background location from the native layer, offline map tiles and the admin view for
+  routes and areas.
+
 ## Life Groups and the site map
 
 More → Life Groups (also on every home layout, and LIFE Groups in the week links to it). Today is the

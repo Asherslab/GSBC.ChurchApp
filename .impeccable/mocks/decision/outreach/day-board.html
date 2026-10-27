@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Outreach day board</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--paper:#fff;--beige:#d5c9b7;--sand:#f4efe7;--sand2:#e9e1d4;--aqua:#009c8f;--aqua-d:#00776d;--orange:#e7ae74;--orange-ink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.status{position:absolute;top:0;left:0;right:0;height:50px;display:flex;align-items:center;justify-content:space-between;padding:4px 30px 0 36px;color:#fff;font-size:16px;font-weight:600;z-index:2}
+.status svg{height:12px;fill:#fff}
+.mast{background:var(--navy);color:#fff;padding:56px 20px 18px;position:relative;overflow:hidden}
+.mast .ring{position:absolute;right:-70px;top:20px;width:210px;height:210px;border-radius:50%;border:16px solid rgba(255,255,255,.06)}
+.top{display:flex;align-items:center;gap:8px;height:30px}
+.top svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;margin-left:-4px}
+.kick{font-size:13px;font-weight:600;color:var(--beige);letter-spacing:.02em}
+.live{margin-left:auto;display:inline-flex;align-items:center;gap:6px;height:26px;padding:0 11px;border-radius:13px;background:var(--aqua-d);font-size:12.5px;font-weight:700}
+.live i{width:7px;height:7px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px rgba(255,255,255,.28)}
+.mast h1{font-size:29px;font-weight:700;letter-spacing:-.03em;line-height:1.1;margin-top:6px}
+.totals{display:grid;grid-template-columns:1fr 1.35fr 1fr;margin-top:16px;border-top:1px solid rgba(255,255,255,.14);padding-top:12px}
+.totals div+div{padding-left:14px;border-left:1px solid rgba(255,255,255,.14)}
+.totals b{display:block;font-size:20px;font-weight:700;letter-spacing:-.02em}
+.totals small{font-size:12px;color:var(--beige)}
+.tabsec{display:flex;gap:24px;padding:0 20px;border-bottom:1px solid var(--line);background:#fff}
+.tabsec a{font-size:14.5px;font-weight:600;color:var(--ink3);padding:15px 0 12px;border-bottom:3px solid transparent}
+.tabsec a.on{color:var(--ink);border-color:var(--orange)}
+.list{height:438px;overflow:hidden;padding:0 20px}
+.row{display:grid;grid-template-columns:44px 1fr auto;column-gap:12px;align-items:center;padding:11px 0;border-bottom:1px solid var(--line)}
+.av{position:relative;width:44px;height:34px}
+.av span{position:absolute;top:3px;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;color:var(--navy);background:var(--sand2);border:2px solid #fff}
+.av span:first-child{left:0}.av span+span{left:15px;background:var(--beige)}
+.row b{display:block;font-size:15px;font-weight:600;line-height:1.3}
+.row small{display:block;font-size:12.5px;color:var(--ink2);line-height:1.35}
+.st{font-size:12px;font-weight:600;display:inline-flex;align-items:center;gap:5px;align-self:start;margin-top:3px}
+.st.out{color:var(--aqua-d)}.st.out i{width:7px;height:7px;border-radius:50%;background:var(--aqua)}
+.st.done{color:var(--aqua-d)}.st.done svg{width:16px;height:16px;border-radius:50%;background:var(--aqua);stroke:#fff;fill:none;stroke-width:3;stroke-linecap:round;stroke-linejoin:round;padding:3px}
+.st.wait{color:var(--ink3)}
+.prog{grid-column:2/4;display:flex;align-items:center;gap:10px;margin-top:8px}
+.bar{flex:1;height:5px;border-radius:3px;background:var(--sand2)}.bar i{display:block;height:5px;border-radius:3px;background:var(--orange)}
+.prog em{font-style:normal;font-size:12px;font-weight:600;color:var(--ink2);min-width:72px;text-align:right}
+.flag{grid-column:2/4;justify-self:start;margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:4px 10px 4px 8px;border-radius:999px;background:var(--sand);border:1px solid var(--beige);font-size:12px;font-weight:600;color:var(--orange-ink)}
+.flag svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.cov{position:absolute;left:20px;right:20px;bottom:98px;background:var(--sand);border:1px solid var(--beige);border-radius:14px;padding:13px 16px 14px}
+.cov .h{display:flex;justify-content:space-between;align-items:baseline}
+.cov .h span{font-size:12px;font-weight:600;color:var(--orange-ink);letter-spacing:.02em}
+.cov .h small{font-size:12px;color:var(--ink2)}
+.cov b{display:block;font-size:16px;font-weight:700;letter-spacing:-.01em;margin-top:3px}
+.cov .bar{margin-top:9px;background:#fff;height:6px}.cov .bar i{height:6px}
+.tabs{position:absolute;left:0;right:0;bottom:0;height:84px;background:rgba(255,255,255,.96);border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);padding-top:8px}
+.tab{display:flex;flex-direction:column;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--ink3)}
+.tab svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.tab.on{color:var(--aqua-d)}
+</style></head><body>
+<div class="status"><span>9:41</span><svg viewBox="0 0 68 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M31 3.2a9 9 0 0 1 12 0l-1.3 1.4a7 7 0 0 0-9.4 0zM33.4 5.8a5.4 5.4 0 0 1 7.2 0L37 9.6z"/><rect x="47" y="0.5" width="19" height="11" rx="3" fill="none" stroke="#fff" stroke-opacity=".5"/><rect x="49" y="2.5" width="14" height="7" rx="1.5"/><rect x="66.5" y="4" width="1.5" height="4" rx=".7"/></svg></div>
+<header class="mast"><div class="ring"></div>
+  <div class="top"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg><span class="kick">Outreach day</span><span class="live"><i></i>Live</span></div>
+  <h1>Saturday 31 October</h1>
+  <div class="totals">
+    <div><b>6</b><small>teams</small></div>
+    <div><b>1,140</b><small>letterboxes</small></div>
+    <div><b>24</b><small>bundles</small></div>
+  </div>
+</header>
+<nav class="tabsec"><a class="on">Teams</a><a>Map</a><a>Coverage</a></nav>
+<section class="list">
+  <div class="row">
+    <div class="av"><span>A</span><span>S</span></div>
+    <div><b>Team 3 · Alvyn &amp; Sam</b><small>Patch 23 · Kingfisher St · 4 bundles</small></div>
+    <span class="st out"><i></i>Out now</span>
+    <div class="prog"><div class="bar"><i style="width:72%"></i></div><em>142 of 196</em></div>
+    <span class="flag"><svg viewBox="0 0 24 24"><path d="M5 21V4M5 4h11l-2 4 2 4H5"/></svg>2 ‘No junk mail’ boxes flagged</span>
+  </div>
+  <div class="row">
+    <div class="av"><span>R</span><span>D</span></div>
+    <div><b>Team 1 · Ruth &amp; Daniel</b><small>Patch 14 · Albany Forest Dr · 4 bundles</small></div>
+    <span class="st out"><i></i>Out now</span>
+    <div class="prog"><div class="bar"><i style="width:46%"></i></div><em>88 of 192</em></div>
+  </div>
+  <div class="row">
+    <div class="av"><span>G</span><span>M</span></div>
+    <div><b>Team 5 · Grace, Mei &amp; Tom</b><small>Patch 31 · Wruck Cres · 4 bundles</small></div>
+    <span class="st out"><i></i>Out now</span>
+    <div class="prog"><div class="bar"><i style="width:26%"></i></div><em>51 of 200</em></div>
+  </div>
+  <div class="row">
+    <div class="av"><span>H</span><span>J</span></div>
+    <div><b>Team 6 · Hannah &amp; Josh</b><small>Patch 8 · Ogg Rd · leaves 10:30</small></div>
+    <span class="st wait">Not started</span>
+    <div class="prog"><div class="bar"></div><em>0 of 180</em></div>
+  </div>
+  <div class="row">
+    <div class="av"><span>P</span><span>L</span></div>
+    <div><b>Team 2 · Peter &amp; Lydia</b><small>Patch 19 · Explorer Dr · 4 bundles</small></div>
+    <span class="st done"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Done</span>
+    <div class="prog"><div class="bar"><i style="width:100%"></i></div><em>184 of 184</em></div>
+  </div>
+  <div class="row">
+    <div class="av"><span>E</span><span>B</span></div>
+    <div><b>Team 4 · Esther &amp; Ben</b><small>Patch 27 · Old Northern Rd · 4 bundles</small></div>
+    <span class="st done"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Done</span>
+    <div class="prog"><div class="bar"><i style="width:100%"></i></div><em>188 of 188</em></div>
+  </div>
+</section>
+<aside class="cov">
+  <div class="h"><span>Albany Creek this month</span><small>2,640 of 6,950</small></div>
+  <b>38% of letterboxes reached</b>
+  <div class="bar"><i style="width:38%"></i></div>
+</aside>
+<nav class="tabs">
+  <div class="tab on"><svg viewBox="0 0 24 24"><path d="M3 10.5L12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>Home</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3"/></svg>Listen</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><path d="M12 21s-7.5-4.6-9.3-9.2C1.4 8.4 3.6 5 7 5c2 0 3.6 1.1 5 3 1.4-1.9 3-3 5-3 3.4 0 5.6 3.4 4.3 6.8C19.5 16.4 12 21 12 21z"/></svg>Prayer</div>
+  <div class="tab"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>More</div>
+</nav>
+</body></html>

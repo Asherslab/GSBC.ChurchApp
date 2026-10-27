@@ -2,15 +2,17 @@
 {
     <span class="people">
         <span class="people__faces">
-            @foreach (var person in Persons)
+            @foreach (var person in Persons.Take(MaxFaces))
             {
                 <Avatar Name="@person.Name" PhotoUrl="@person.PhotoUrl" />
             }
         </span>
-        <span>@string.Join(" & ", Persons.Select(p => p.Name))</span>
+        <span>@(Label ?? string.Join(" & ", Persons.Select(p => p.Name)))</span>
     </span>
 }
 
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<Person> Persons { get; set; } = [];
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public int MaxFaces { get; set; } = int.MaxValue;
 }

@@ -1,0 +1,131 @@
+@page "/outreach/route/{Id:int}"
+@page "/outreach/area/{Id:int}"
+@implements IDisposable
+@inject OutreachService Outreach
+@inject NavigationManager Navigation
+@inject NativeBridge Native
+
+<Page Title="@Title" BackHref="@(IsArea ? "outreach" : "outreach/day")" BackLabel="Back" TopBar="TopBarStyle.Solid" Bell="false">
+    @if (plan is null)
+    {
+        <Section First="true">
+            <p class="hint">Loading…</p>
+        </Section>
+    }
+    else
+    {
+        <StreetMap Plan="plan" Start="Outreach.Planner!.Node(plan.StartNode)" Class="street-map--preview" Label="@($"Map of {Title}")" />
+
+        <Section First="true">
+            <h2 class="outreach-title">@Title</h2>
+            <p class="outreach-sub">@OutreachFormat.StreetList(plan)</p>
+            <StatRow Stats="Stats" />
+            <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />@OutreachFormat.Bundles(plan)</p>
+            @if (area is not null)
+            {
+                <p class="hint"><Icon Name="clock" Size="IconSize.Small" />@(char.ToUpperInvariant(Outreach.LastDoneLabel(area)[0]) + Outreach.LastDoneLabel(area)[1..])</p>
+            }
+        </Section>
+
+        <Section Title="@(IsArea ? "Who's on it" : "Who's going")">
+            <div class="claim">
+                @if (Names.Count > 0)
+                {
+                    <People Persons="@Names.Select(n => new Person(n)).ToList()" MaxFaces="4" Label="@ClaimLine" />
+                }
+                else
+                {
+                    <span class="claim__empty">@(IsArea ? "Nobody has taken this area this week." : "Nobody has claimed this route yet.")</span>
+                }
+            </div>
+            <p class="section__lead claim__lead">@(IsArea ? "Taking an area lets others know you're on it this week." : "Claiming lets others know it's covered. Others can claim it too and walk with you.")</p>
+            <div class="stack">
+                @if (Mine)
+                {
+                    <button class="btn btn--quiet btn--block" @onclick="() => SetClaim(false)">@(IsArea ? "Give it back" : "Unclaim")</button>
+                }
+                else
+                {
+                    <button class="btn btn--quiet btn--block" @onclick="() => SetClaim(true)">@ClaimAction</button>
+                }
+                <button class="btn btn--primary btn--block" @onclick="Start"><Icon Name="footprints" Size="IconSize.Small" />Start walk</button>
+            </div>
+            @if (Names.Count > 0 && !Mine)
+            {
+                <p class="hint">Names other than yours are samples for this preview.</p>
+            }
+        </Section>
+    }
+
+    <PreviewFooter />
+</Page>
+
+<NameSheet @bind-Open="askingName" Action="@ClaimAction" OnSaved="() => SetClaim(true)" />
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private ReadyRoute? route;
+    private OutreachArea? area;
+    private WalkPlan? plan;
+    private bool askingName;
+
+    private bool IsArea => Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith("outreach/area", StringComparison.Ordinal);
+
+    private string Key => IsArea ? OutreachService.AreaKey(area!) : OutreachService.RouteKey(route!);
+
+    private string Title => area?.Name ?? (route is null ? "Route" : $"Route {route.Id} · {route.Name}");
+
+    private IReadOnlyList<string> Names => plan is null ? [] : Outreach.ClaimsFor(Key);
+
+    private bool Mine => plan is not null && Outreach.IsMine(Key);
+
+    private string ClaimAction => IsArea ? "Take this area" : Names.Count > 0 ? "Claim too" : "Claim this route";
+
+    private string ClaimLine => Names switch
+    {
+        [var one] => Mine ? "You've claimed it" : $"{one} has claimed it",
+        _ => $"{string.Join(", ", Names.Take(Names.Count - 1))} and {Names[^1]}",
+    };
+
+    private IReadOnlyList<Stat> Stats =>
+    [
+        new(OutreachFormat.Kilometres(plan!.Metres), "loop"),
+        new(plan.Letterboxes.ToString(), "letterboxes"),
+        new(OutreachFormat.Duration(plan.Time), "walking"),
+    ];
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Outreach.EnsureLoadedAsync();
+        var map = Outreach.Map!;
+        route = IsArea ? null : Outreach.Routes.FirstOrDefault(r => r.Id == Id);
+        area = IsArea ? map.Areas.FirstOrDefault(a => a.Id == Id) : null;
+        var edges = area?.Edges ?? route?.Edges;
+        plan = edges is null ? null : Outreach.PlanEdges(edges, Outreach.Church);
+    }
+
+    protected override void OnInitialized() => Outreach.Changed += Refresh;
+
+    private async Task SetClaim(bool on)
+    {
+        if (on && Outreach.WalkerName is null)
+        {
+            askingName = true;
+            return;
+        }
+        await Native.HapticAsync(on ? Haptic.Success : Haptic.Light);
+        await Outreach.SetClaimAsync(Key, on);
+    }
+
+    private async Task Start()
+    {
+        await Native.HapticAsync(Haptic.Medium);
+        Outreach.StartWalk(IsArea ? WalkKind.Area : WalkKind.Route, Id, Title, plan!);
+        Navigation.NavigateTo("outreach/go");
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Outreach.Changed -= Refresh;
+}

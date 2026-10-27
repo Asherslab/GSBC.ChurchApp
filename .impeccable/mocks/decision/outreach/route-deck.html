@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Walks near you</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--paper:#fff;--beige:#d5c9b7;--sand:#f4efe7;--sand2:#e9e1d4;--aqua:#009c8f;--aqua-deep:#00776d;--orange:#e7ae74;--orange-ink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--paper);font-family:Montserrat,sans-serif;color:var(--ink);position:relative}
+.status{height:47px;display:flex;align-items:center;justify-content:space-between;padding:0 28px 0 34px;font-size:16px;font-weight:600}
+.status svg{height:12px;fill:var(--ink)}
+.bar{height:48px;display:flex;align-items:center;gap:4px;padding:0 16px 0 8px}
+.back{width:36px;height:36px;display:grid;place-items:center;flex:none}
+.back svg{width:22px;height:22px;fill:none;stroke:var(--navy);stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.bar h1{font-size:19px;font-weight:700;letter-spacing:-.02em;white-space:nowrap}
+.on{margin-left:auto;height:30px;padding:0 12px;border-radius:15px;background:var(--sand);display:flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--ink);white-space:nowrap}
+.on i{width:7px;height:7px;border-radius:50%;background:var(--aqua);box-shadow:0 0 0 3px rgba(0,156,143,.2)}
+.chips{display:flex;gap:8px;padding:8px 16px 0}
+.chip{height:36px;padding:0 16px;border-radius:18px;background:var(--sand);display:inline-flex;align-items:center;font-size:14px;font-weight:600;color:var(--ink2)}
+.chip.sel{background:var(--navy);color:#fff}
+.deck{position:absolute;top:151px;left:0;right:0;height:618px}
+.card{position:absolute;top:0;left:16px;width:340px;height:618px;border-radius:22px;background:#fff;overflow:hidden;box-shadow:0 1px 2px rgba(24,35,58,.06),0 8px 28px rgba(24,35,58,.11)}
+.card.next{left:366px;top:14px;height:590px;box-shadow:0 6px 20px rgba(24,35,58,.08)}
+.card.next .map{background:#efebe3}
+.map{height:334px;background:#eef0ea;position:relative}
+.map svg{display:block}
+.body{padding:18px 18px 18px}
+.body h2{font-size:23px;font-weight:700;letter-spacing:-.025em;line-height:1.15}
+.streets{font-size:13px;color:var(--ink2);margin-top:5px;line-height:1.4}
+.stats{display:grid;grid-template-columns:1fr 1.2fr 1fr;margin-top:14px;background:var(--sand);border-radius:14px;padding:12px 0}
+.stats div{padding:0 12px;white-space:nowrap;border-left:1px solid var(--line)}
+.stats div:first-child{border:0}
+.stats b{display:block;font-size:19px;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stats small{font-size:12px;color:var(--ink2)}
+.counts{display:inline-flex;align-items:center;gap:7px;height:30px;padding:0 12px;border-radius:15px;background:rgba(0,156,143,.14);color:var(--aqua-deep);font-size:12.5px;font-weight:600;margin-top:12px}
+.counts svg{width:14px;height:14px;fill:none;stroke:var(--aqua-deep);stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.acts{display:flex;gap:10px;margin-top:14px}
+.go{flex:1;height:52px;border-radius:14px;background:var(--aqua-deep);color:#fff;font-size:16px;font-weight:700;display:flex;align-items:center;justify-content:center;gap:8px}
+.go svg{width:16px;height:16px;fill:#fff}
+.save{width:52px;height:52px;border-radius:50%;background:var(--sand);display:grid;place-items:center;flex:none}
+.save svg{width:20px;height:20px;fill:none;stroke:var(--navy);stroke-width:2;stroke-linejoin:round}
+.dots{position:absolute;top:785px;left:0;right:0;display:flex;justify-content:center;gap:6px}
+.dots i{width:7px;height:7px;border-radius:4px;background:var(--sand2)}
+.dots i:first-child{width:20px;background:var(--navy)}
+.home{position:absolute;bottom:8px;left:50%;width:134px;height:5px;margin-left:-67px;border-radius:3px;background:var(--ink)}
+</style></head><body>
+<div class="status"><span>9:05</span><svg viewBox="0 0 66 12"><rect x="0" y="8" width="3" height="4" rx="1"/><rect x="5" y="5.5" width="3" height="6.5" rx="1"/><rect x="10" y="3" width="3" height="9" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/><path d="M30 3.5a9 9 0 0 1 12 0l-1.4 1.5a7 7 0 0 0-9.2 0zM32.6 6.4a5 5 0 0 1 6.8 0L36 10z"/><rect x="45.5" y=".5" width="18" height="11" rx="3" fill="none" stroke="#18233a" opacity=".45"/><rect x="47.5" y="2.5" width="13" height="7" rx="1.5"/><rect x="64.5" y="4" width="1.5" height="4" rx=".7" opacity=".45"/></svg></div>
+<div class="bar">
+  <div class="back"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg></div>
+  <h1>Walks near you</h1>
+  <span class="on"><i></i>Outreach on · till 11:30</span>
+</div>
+<div class="chips"><span class="chip">30 min</span><span class="chip sel">1 hr</span><span class="chip">2 hr</span></div>
+<div class="deck">
+  <article class="card">
+    <div class="map">
+      <svg viewBox="0 0 340 334" width="340" height="334" fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M188 214 C214 204 252 212 258 236 C264 262 226 274 200 262 C180 252 172 222 188 214Z" fill="#dfe8d6"/>
+        <path d="M0 40 C30 30 52 50 40 74 C30 92 0 90 0 84Z" fill="#dfe8d6"/>
+        <path d="M318 -10 C314 110 330 220 318 344" stroke="#e7d9c3" stroke-width="20"/>
+        <path d="M318 -10 C314 110 330 220 318 344" stroke="#fbf1e2" stroke-width="16"/>
+        <defs><g id="r">
+          <path id="k" d="M34 168 C90 158 170 176 252 162 C272 159 290 164 318 160"/>
+          <path id="fc" d="M84 164 C82 130 88 100 84 74"/>
+          <path id="pc" d="M162 172 C164 200 158 220 160 244"/>
+          <path id="lc" d="M236 164 C238 132 232 108 236 84"/>
+          <path d="M0 300 C80 292 200 306 318 296"/>
+          <path d="M34 168 C30 210 38 260 34 298"/>
+          <path d="M34 168 C36 120 30 60 34 -10"/>
+          <path d="M120 300 C122 320 118 330 120 344"/>
+          <path d="M34 30 C120 24 220 36 318 28"/>
+          <circle cx="84" cy="66" r="9" fill="#fff"/><circle cx="160" cy="252" r="9"/><circle cx="236" cy="76" r="9"/>
+        </g></defs>
+        <use href="#r" stroke="#d9dcd3" fill="#d9dcd3" stroke-width="12"/>
+        <use href="#r" stroke="#fff" fill="#fff" stroke-width="9"/>
+        <g stroke="#2a3d5e" stroke-width="17"><path d="M34 168 C90 158 170 176 252 162 C268 160 280 161 292 162"/><use href="#fc"/><use href="#pc"/><use href="#lc"/></g>
+        <g fill="#2a3d5e"><circle cx="84" cy="66" r="13"/><circle cx="160" cy="252" r="13"/><circle cx="236" cy="76" r="13"/></g>
+        <g stroke="#fff" stroke-width="8"><path d="M34 168 C90 158 170 176 252 162 C268 160 280 161 292 162"/><use href="#fc"/><use href="#pc"/><use href="#lc"/></g>
+        <g fill="#fff"><circle cx="84" cy="66" r="6"/><circle cx="160" cy="252" r="6"/><circle cx="236" cy="76" r="6"/></g>
+        <g stroke="#2a3d5e" stroke-width="1.6">
+          <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(196,168) rotate(-6)"/>
+          <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(90,112) rotate(-92)"/>
+          <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(78,124) rotate(88)"/>
+          <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(166,212) rotate(88)"/>
+          <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(242,124) rotate(-90)"/>
+          <path d="M-2-2.5L1.5 0-2 2.5" transform="translate(56,164) rotate(176)"/>
+        </g>
+        <g font-family="Montserrat,sans-serif" font-size="11" font-weight="600" fill="#6b7384" stroke="none">
+          <text x="174" y="192">Kingfisher St</text>
+          <text transform="translate(72,140) rotate(-90)">Finch Ct</text>
+          <text transform="translate(176,206) rotate(90)">Plover Ct</text>
+          <text transform="translate(224,142) rotate(-90)">Lark Ct</text>
+          <text x="140" y="290">Lorikeet Dr</text>
+          <text transform="translate(306,96) rotate(92)" fill="#8a5422">Albany Creek Rd</text>
+        </g>
+        <g font-family="Montserrat,sans-serif" stroke="none">
+          <path d="M124 166 c-10 -12 -14 -18 -14 -24 a14 14 0 0 1 28 0 c0 6 -4 12 -14 24z" fill="#009c8f" stroke="#fff" stroke-width="2"/>
+          <circle cx="124" cy="142" r="5" fill="#fff"/>
+          <rect x="102" y="104" width="44" height="22" rx="11" fill="#00776d"/>
+          <text x="124" y="119" font-size="11" font-weight="700" fill="#fff" text-anchor="middle">You</text>
+        </g>
+      </svg>
+    </div>
+    <div class="body">
+      <h2>1 hour from your door</h2>
+      <p class="streets">Kingfisher St, Finch Ct, Plover Ct, Lark Ct</p>
+      <div class="stats">
+        <div><b>2.8 km</b><small>loop</small></div>
+        <div><b>104</b><small>letterboxes</small></div>
+        <div><b>2</b><small>bundles</small></div>
+      </div>
+      <span class="counts"><svg viewBox="0 0 16 16"><path d="M3 8.5l3 3 7-7"/></svg>Counts toward today's outreach</span>
+      <div class="acts">
+        <div class="go"><svg viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>Go</div>
+        <div class="save"><svg viewBox="0 0 24 24"><path d="M6 3.5h12v17l-6-4.2-6 4.2z"/></svg></div>
+      </div>
+    </div>
+  </article>
+  <article class="card next"><div class="map"></div></article>
+</div>
+<div class="dots"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+<div class="home"></div>
+</body></html>
