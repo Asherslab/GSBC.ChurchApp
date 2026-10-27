@@ -117,7 +117,7 @@ html, body {
   margin: 0;
   height: 100%;
   overflow: hidden;
-  background: var(--bg);
+  background: var(--masthead);
   color: var(--ink);
   font-family: var(--font);
   line-height: 1.45;

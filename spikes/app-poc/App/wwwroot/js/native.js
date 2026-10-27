@@ -136,6 +136,7 @@
       root.dataset.appearance = appearance;
       root.dataset.layout = layout;
       applyScheme();
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', getComputedStyle(root).getPropertyValue('--masthead').trim());
     },
 
     markFirstRender() {
