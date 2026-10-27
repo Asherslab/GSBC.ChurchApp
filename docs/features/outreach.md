@@ -122,9 +122,18 @@ Asked for 2026-10-27: draw a polygon and get it split into sections for staff to
    moves boundary streets between neighbours to even them further and keep shapes compact.
 4. **Loops:** each section gets its both-sides loop (above), starting from its point nearest the
    meeting point; the walk there and back is added to its time.
-5. **Review:** sections coloured on the map and listed with letterboxes, bundles and time. Tap a street
-   to move it to a neighbouring section; merge, split, rename or regenerate with another target; then
-   publish them as the day's routes. Nothing is published without review.
+5. **Review, on the map:** each section is coloured, with a map label giving its number, letterboxes
+   and time; hovering shows its stats and any "Needs review" beside it, and a selected section is
+   drawn thicker with a halo while the rest fade. Staff edit directly on the map with a tool rail:
+   select (with Merge, Rename, Lock and Unassign floating beside the selection, and renaming inline on
+   the label), scissors (draw a line across a section to cut it in two; streets go to the side holding
+   most of their length, with both halves and their letterboxes previewed while drawing), brush (paint
+   streets into a section), lasso (loop streets into a section or a new one), eraser (leave streets
+   out that day) and a draggable start pin. Undo and redo cover every edit; Rebalance evens out the
+   unlocked sections; locked sections are left as they are by Regenerate, Rebalance and the tools.
+   Streets with no letterboxes stay connectors; an edit that breaks a section apart keeps it as one
+   and flags it "Needs review: in pieces". A side list summarises the sections and offers the same
+   actions as a fallback. Then publish them as the day's routes. Nothing is published without review.
 
 The split runs in the admin panel (Blazor, not AOT) using the same shared route engine; a polygon and
 its draft sections are admin data, never sent to phones until published.

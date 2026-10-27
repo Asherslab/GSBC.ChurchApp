@@ -164,8 +164,23 @@ the map with your position and one street side at a time, Done, Back a street an
   one piece; scraps under a third of the target merge into a neighbour. Excluded streets, main roads,
   streets with no letterboxes and links of up to 500 m count as connections, so routes can be walked through them without delivering.
   Each route's loop starts at its point nearest the meeting point, and its time includes the walk there
-  and back. Click a street to move it to a neighbouring route; merge, split in two, rename or regenerate;
-  then "Publish to Saturday's outreach" replaces the sample routes on this device (Outreach day shows
+  and back. Routes are edited on the map (`Data/Outreach/RouteDraft.cs` for the edits and their
+  50-step undo, `RouteEditor.cs` for the cut geometry): each route has a map label with its number,
+  letterboxes and time; hovering a route or its label shows its stats and any "Needs review" in a small
+  card, and selecting one draws it thicker with a halo while the others fade. A tool rail at the
+  map's top left has **Select** (V; click a route or its label, shift-click to add; the selection's
+  Rename, Lock, Unassign and, for two or more, Merge float beside it; double-click a label to rename it
+  in place), **Scissors** (C; drag a line across routes to cut each in two, with both halves and their
+  letterboxes previewed while dragging; new halves are "Route 4a" and "Route 4b"), **Brush** (B; click
+  or drag streets into the selected route, or pick one from the chips at the top), **Lasso** (L; loop
+  streets into the selected route or a new one), **Eraser** (E; take streets out of every route, drawn
+  faded), **Start pin** (S; drag a route's start to another of its corners), then Undo (⌘Z / Ctrl+Z),
+  Redo (⇧⌘Z / Ctrl+Y), Rebalance (evens out unlocked routes by moving boundary streets) and Fit (F).
+  Esc ends a gesture and returns to Select; hold Space to pan with a drawing tool. Locked routes show a
+  lock and are left alone by Regenerate, Rebalance and every tool. Streets with no letterboxes can't
+  be painted in; a route an edit breaks apart stays one route, flagged "Needs review: in pieces". The
+  side list is a quiet summary: click a route to select it, with rename, split in two, merge and lock
+  as a fallback. Then "Publish to Saturday's outreach" replaces the sample routes on this device (Outreach day shows
   them; "Restore the sample routes" undoes it). Areas separated by parkland or roads not in the data
   (South Pine Road is a higher road class) split into separate groups and balance less evenly.
 - **Exclusions (staff planner, Exclusions panel):** draw an exclusion zone with a reason (non-residential,

@@ -1,0 +1,110 @@
+@using System.Globalization
+
+<div class="route-tag @(Selected ? "is-selected" : "") @(Expanded ? "is-expanded" : "")" data-route="@Route" data-lng="@At.Lon.ToString(CultureInfo.InvariantCulture)" data-lat="@At.Lat.ToString(CultureInfo.InvariantCulture)" style="--swatch: @Colour">
+    <div class="route-tag__anchor">
+        @if (Renaming)
+        {
+            <div class="route-tag__chip route-tag__chip--editing">
+                <span class="route-tag__number">@Number</span>
+                <input class="route-tag__input" @ref="input" @bind="text" @bind:event="oninput" @onkeydown="RenameKey" aria-label="Route @Number name" />
+                <button type="button" class="route-tag__save" @onclick="Save">Save</button>
+            </div>
+        }
+        else
+        {
+            <button type="button" class="route-tag__chip" aria-pressed="@(Selected ? "true" : "false")" aria-label="Route @Number, @Summary.Name, @Summary.Letterboxes letterboxes, @OutreachFormat.Duration(Summary.Time)"
+                    @onclick="Pick" @ondblclick="() => OnStartRename.InvokeAsync()">
+                <span class="route-tag__number">@Number</span>
+                <span class="route-tag__stats">@Summary.Letterboxes · @OutreachFormat.Duration(Summary.Time)</span>
+                @if (Summary.Section.Locked)
+                {
+                    <Icon Name="lock" Size="IconSize.ExtraSmall" Class="route-tag__lock" />
+                }
+                @if (Summary.NeedsReview)
+                {
+                    <Icon Name="flag" Size="IconSize.ExtraSmall" Class="route-tag__flag" />
+                }
+            </button>
+        }
+        <div class="route-tag__card" role="group" aria-label="Route @Number details">
+            <strong class="route-tag__name">@Summary.Name</strong>
+            <span class="route-tag__meta">@Summary.Letterboxes letterboxes · @Summary.Bundles @(Summary.Bundles == 1 ? "bundle" : "bundles") · @OutreachFormat.Duration(Summary.Time)</span>
+            @if (Summary.Plan.ConnectorMetres >= 1)
+            {
+                <span class="route-tag__meta">@OutreachFormat.Metres(Summary.Plan.ConnectorMetres) with no letterboxes</span>
+            }
+            @if (Summary.InPieces)
+            {
+                <span class="route-tag__review"><Icon Name="flag" Size="IconSize.ExtraSmall" />Needs review: in pieces</span>
+            }
+            else if (Summary.NeedsReview)
+            {
+                <span class="route-tag__review"><Icon Name="flag" Size="IconSize.ExtraSmall" />Needs review: @OutreachFormat.Metres(Summary.Plan.LongestConnectorMetres) with no letterboxes at a stretch</span>
+            }
+            @if (Expanded && !Renaming)
+            {
+                <div class="route-tag__actions">
+                    <button type="button" class="map-action" @onclick="() => OnStartRename.InvokeAsync()"><Icon Name="pencil" Size="IconSize.ExtraSmall" />Rename</button>
+                    <button type="button" class="map-action" @onclick="() => OnLock.InvokeAsync()"><Icon Name="@(Summary.Section.Locked ? "lock-open" : "lock")" Size="IconSize.ExtraSmall" />@(Summary.Section.Locked ? "Unlock" : "Lock")</button>
+                    <button type="button" class="map-action" @onclick="() => OnUnassign.InvokeAsync()" disabled="@Summary.Section.Locked"><Icon Name="circle-off" Size="IconSize.ExtraSmall" />Unassign</button>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public SectionSummary Summary { get; set; } = default!;
+    [Parameter] public int Route { get; set; }
+    [Parameter] public int Number { get; set; }
+    [Parameter] public string Colour { get; set; } = "";
+    [Parameter] public GeoPoint At { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public bool Expanded { get; set; }
+    [Parameter] public bool Renaming { get; set; }
+    [Parameter] public EventCallback<bool> OnPick { get; set; }
+    [Parameter] public EventCallback OnStartRename { get; set; }
+    [Parameter] public EventCallback<string?> OnRename { get; set; }
+    [Parameter] public EventCallback OnLock { get; set; }
+    [Parameter] public EventCallback OnUnassign { get; set; }
+
+    private ElementReference input;
+    private string text = "";
+    private bool focusInput;
+    private bool editing;
+
+    protected override void OnParametersSet()
+    {
+        if (Renaming && !editing)
+        {
+            text = Summary.Name;
+            focusInput = true;
+        }
+        editing = Renaming;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Renaming && focusInput)
+        {
+            focusInput = false;
+            await input.FocusAsync();
+        }
+    }
+
+    private Task Pick(MouseEventArgs e) => OnPick.InvokeAsync(e.ShiftKey);
+
+    private Task Save() => OnRename.InvokeAsync(text);
+
+    private async Task RenameKey(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            await Save();
+        }
+        else if (e.Key == "Escape")
+        {
+            await OnRename.InvokeAsync(null);
+        }
+    }
+}

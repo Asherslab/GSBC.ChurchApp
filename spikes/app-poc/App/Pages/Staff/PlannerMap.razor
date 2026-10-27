@@ -4,7 +4,10 @@
 @inject IJSRuntime JS
 @inject OutreachService Outreach
 
-<div class="planner-map" @ref="element" role="application" aria-label="Map for drawing an outreach area"></div>
+<div class="planner-map-wrap">
+    <div class="planner-map" @ref="element" role="application" aria-label="Map for drawing an outreach area and editing its routes"></div>
+    <div class="planner-overlay">@Overlay</div>
+</div>
 
 @code {
     private const string Attribution = "© OpenFreeMap · Addresses © State of Queensland";
@@ -15,7 +18,11 @@
     [Parameter] public AreaSelection? Selection { get; set; }
     [Parameter] public IReadOnlyList<SectionSummary> Sections { get; set; } = [];
     [Parameter] public IReadOnlyList<string> Palette { get; set; } = [];
-    [Parameter] public int? SelectedEdge { get; set; }
+    [Parameter] public IReadOnlySet<DraftSection> Chosen { get; set; } = new HashSet<DraftSection>();
+    [Parameter] public DraftSection? Active { get; set; }
+    [Parameter] public RouteDraft? Draft { get; set; }
+    [Parameter] public MapTool Tool { get; set; }
+    [Parameter] public RenderFragment? Overlay { get; set; }
     [Parameter] public string Mode { get; set; } = "select";
     [Parameter] public int FitVersion { get; set; }
     [Parameter] public IReadOnlyList<ExclusionZone> Zones { get; set; } = [];
@@ -25,7 +32,12 @@
     [Parameter] public EventCallback<GeoPoint> OnPoint { get; set; }
     [Parameter] public EventCallback OnFinish { get; set; }
     [Parameter] public EventCallback<GeoPoint> OnMeeting { get; set; }
-    [Parameter] public EventCallback<int> OnStreet { get; set; }
+    [Parameter] public EventCallback<RoutePick> OnRoute { get; set; }
+    [Parameter] public EventCallback<MapStroke> OnStroke { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<GeoPoint>> OnCut { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<GeoPoint>> OnLasso { get; set; }
+    [Parameter] public EventCallback<StartMove> OnStart { get; set; }
+    [Parameter] public EventCallback<string> OnShortcut { get; set; }
 
     private ElementReference element;
     private DotNetObjectReference<PlannerMap>? self;
@@ -46,7 +58,7 @@
         await attaching!;
         var fit = FitVersion != fittedVersion;
         fittedVersion = FitVersion;
-        await JS.InvokeVoidAsync("gsbc.plannerMap.update", element, Json(), Mode, fit);
+        await JS.InvokeVoidAsync("gsbc.plannerMap.update", element, Json(), Mode, Tool.ToString().ToLowerInvariant(), fit);
     }
 
     [JSInvokable]
@@ -59,7 +71,108 @@
     public Task MeetingSet(double lat, double lon) => OnMeeting.InvokeAsync(new GeoPoint(lat, lon));
 
     [JSInvokable]
-    public Task StreetClicked(int edge) => OnStreet.InvokeAsync(edge);
+    public Task RoutePicked(int route, bool add) => OnRoute.InvokeAsync(new RoutePick(route, add));
+
+    [JSInvokable]
+    public Task StrokeFinished(string tool, int[] edges) =>
+        OnStroke.InvokeAsync(new MapStroke(tool == "eraser" ? MapTool.Eraser : MapTool.Brush, edges));
+
+    [JSInvokable]
+    public Task CutFinished(double[] line) => OnCut.InvokeAsync(Points(line));
+
+    [JSInvokable]
+    public Task LassoFinished(double[] loop) => OnLasso.InvokeAsync(Points(loop));
+
+    [JSInvokable]
+    public Task StartMoved(int route, double lat, double lon) => OnStart.InvokeAsync(new StartMove(route, new GeoPoint(lat, lon)));
+
+    [JSInvokable]
+    public Task Shortcut(string key) => OnShortcut.InvokeAsync(key);
+
+    [JSInvokable]
+    public string CutPreview(double[] line)
+    {
+        var previews = Draft?.PreviewCut(Points(line)) ?? [];
+        return Write(json =>
+        {
+            json.WriteStartArray("routes");
+            foreach (var preview in previews)
+            {
+                json.WriteStartObject();
+                json.WriteNumber("route", Draft!.Sections.IndexOf(preview.Route));
+                json.WriteNumber("number", Draft.Number(preview.Route));
+                json.WriteString("keptColor", Colour(preview.Route.Colour));
+                json.WriteString("cutColor", Colour(preview.NewColour));
+                json.WriteNumber("keptBoxes", Outreach.Letterboxes(preview.Kept));
+                json.WriteNumber("cutBoxes", Outreach.Letterboxes(preview.Cut));
+                Edges(json, "kept", preview.Kept);
+                Edges(json, "cut", preview.Cut);
+                json.WriteEndObject();
+            }
+            json.WriteEndArray();
+        });
+    }
+
+    [JSInvokable]
+    public string LassoPreview(double[] loop)
+    {
+        var captured = Draft?.Lassoed(Active, Points(loop), Outreach.Planner!) ?? [];
+        return Write(json =>
+        {
+            Edges(json, "edges", captured);
+            json.WriteNumber("boxes", Outreach.Letterboxes(captured));
+            json.WriteString("color", Active is null ? Colour(NewColour) : Colour(Active.Colour));
+            json.WriteString("into", Active is null ? "a new route" : $"route {Draft!.Number(Active)}");
+        });
+    }
+
+    [JSInvokable]
+    public double[] SnapStart(int route, double lat, double lon)
+    {
+        if (Draft is null || route < 0 || route >= Draft.Sections.Count)
+        {
+            return [];
+        }
+        var node = Outreach.Planner!.Node(Outreach.Editor!.NearestNode(Draft.Sections[route], new GeoPoint(lat, lon)));
+        return [node.Lon, node.Lat];
+    }
+
+    private int NewColour => Enumerable.Range(0, Palette.Count).MinBy(c => (Draft!.Sections.Count(s => s.Colour == c), c));
+
+    private string Colour(int index) => Palette[index % Palette.Count];
+
+    private static List<GeoPoint> Points(double[] flat) =>
+        Enumerable.Range(0, flat.Length / 2).Select(i => new GeoPoint(flat[2 * i + 1], flat[2 * i])).ToList();
+
+    private static void Edges(Utf8JsonWriter json, string name, IEnumerable<int> edges)
+    {
+        json.WriteStartArray(name);
+        foreach (var edge in edges)
+        {
+            json.WriteNumberValue(edge);
+        }
+        json.WriteEndArray();
+    }
+
+    private static string Write(Action<Utf8JsonWriter> body)
+    {
+        using var buffer = new MemoryStream();
+        using (var json = new Utf8JsonWriter(buffer))
+        {
+            json.WriteStartObject();
+            body(json);
+            json.WriteEndObject();
+        }
+        return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    private static string Muted(string hex)
+    {
+        const double grey = 0x96;
+        const double keep = 0.4;
+        var channels = Enumerable.Range(0, 3).Select(i => (int)Math.Round(Convert.ToInt32(hex.Substring(1 + 2 * i, 2), 16) * keep + grey * (1 - keep)));
+        return "#" + string.Concat(channels.Select(c => c.ToString("x2", System.Globalization.CultureInfo.InvariantCulture)));
+    }
 
     private string Json()
     {
@@ -130,7 +243,7 @@
                     .Concat(walkThrough.Except(Selection.Fresh).Except(Selection.Rested).Select(e => (e, true)));
                 foreach (var (edge, rested) in drawn)
                 {
-                    var kind = owner.ContainsKey(edge) ? "section" : walkThrough.Contains(edge) ? "through" : rested ? "rested" : "free";
+                    var kind = owner.ContainsKey(edge) ? "section" : walkThrough.Contains(edge) ? "through" : rested ? "rested" : Sections.Count > 0 ? "unassigned" : "free";
                     Feature(json, "LineString", () =>
                     {
                         foreach (var point in map.Edges[edge].Line)
@@ -144,30 +257,38 @@
                     {
                         json.WriteNumber("edge", edge);
                         json.WriteString("kind", kind);
-                        json.WriteBoolean("selected", edge == SelectedEdge);
+                        json.WriteNumber("boxes", Outreach.Count(edge, 0) + Outreach.Count(edge, 1));
                         if (owner.TryGetValue(edge, out var section))
                         {
-                            json.WriteString("color", Palette[section % Palette.Count]);
+                            var colour = Colour(Sections[section].Section.Colour);
+                            json.WriteNumber("route", section);
+                            json.WriteString("color", colour);
+                            json.WriteString("muted", Muted(colour));
+                            json.WriteBoolean("selected", Chosen.Contains(Sections[section].Section));
                         }
                     });
                 }
             });
 
-            Collection(json, "labels", () =>
+            Collection(json, "starts", () =>
             {
                 for (var i = 0; i < Sections.Count; i++)
                 {
-                    var edges = Sections[i].Section.Edges;
-                    var centre = new GeoPoint(edges.Average(e => planner.Midpoint(e).Lat), edges.Average(e => planner.Midpoint(e).Lon));
-                    var label = (i + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
-                    var colour = Palette[i % Palette.Count];
-                    Feature(json, "Point", () => { json.WriteNumberValue(centre.Lon); json.WriteNumberValue(centre.Lat); }, properties: () =>
+                    var start = planner.Node(Sections[i].Plan.StartNode);
+                    var colour = Colour(Sections[i].Section.Colour);
+                    var route = i;
+                    Feature(json, "Point", () => { json.WriteNumberValue(start.Lon); json.WriteNumberValue(start.Lat); }, properties: () =>
                     {
-                        json.WriteString("label", label);
+                        json.WriteNumber("route", route);
                         json.WriteString("color", colour);
                     });
                 }
             });
+            json.WriteBoolean("anySelected", Chosen.Count > 0);
+            if (Active is not null)
+            {
+                json.WriteString("activeColor", Colour(Active.Colour));
+            }
 
             Collection(json, "meeting", () => Feature(json, "Point", () => { json.WriteNumberValue(Meeting.Lon); json.WriteNumberValue(Meeting.Lat); }));
 

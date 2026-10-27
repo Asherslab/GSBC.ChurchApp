@@ -7,14 +7,20 @@ public sealed record AreaSelection(IReadOnlyList<int> Fresh, IReadOnlyList<int> 
     public IEnumerable<int> Connectors(bool restedToo) => [.. MainRoads, .. Excluded, .. Empty, .. restedToo ? Rested : []];
 }
 
-public sealed class DraftSection(IEnumerable<int> edges)
+public sealed class DraftSection(IEnumerable<int> edges, int colour = 0)
 {
     public HashSet<int> Edges { get; } = [.. edges];
 
     public string? CustomName { get; set; }
+
+    public int Colour { get; set; } = colour;
+
+    public bool Locked { get; set; }
+
+    public int? Start { get; set; }
 }
 
-public sealed record SectionSummary(DraftSection Section, string Name, WalkPlan Plan, TimeSpan Time, double TravelMetres)
+public sealed record SectionSummary(DraftSection Section, string Name, WalkPlan Plan, TimeSpan Time, double TravelMetres, int Pieces)
 {
     public int Letterboxes => Plan.Letterboxes;
 
@@ -22,7 +28,9 @@ public sealed record SectionSummary(DraftSection Section, string Name, WalkPlan 
 
     public IEnumerable<int> WalkThrough => Plan.Edges.Where(e => !Section.Edges.Contains(e));
 
-    public bool NeedsReview => Plan.LongConnector;
+    public bool InPieces => Pieces > 1;
+
+    public bool NeedsReview => Plan.LongConnector || InPieces;
 }
 
 public sealed class SplitGraph
@@ -243,16 +251,22 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
         return halves;
     }
 
-    public SectionSummary Summarise(DraftSection section, GeoPoint meeting)
+    public void Rebalance(SplitGraph graph, IEnumerable<DraftSection> sections, SplitTarget target) =>
+        Balance(graph, sections.Where(s => !s.Locked).ToList(), target);
+
+    public SectionSummary Summarise(DraftSection section, GeoPoint meeting, SplitGraph graph)
     {
-        var plan = planner.Circuit(section.Edges, planner.NearestNode(meeting, section.Edges), count);
+        var start = section.Start is { } pinned && section.Edges.Any(e => map.Edges[e].U == pinned || map.Edges[e].V == pinned)
+            ? pinned
+            : planner.NearestNode(meeting, section.Edges);
+        var plan = planner.Circuit(section.Edges, start, count);
         var travel = planner.ShortestMetres(planner.NearestAnyNode(meeting), plan.StartNode);
         if (double.IsNaN(travel))
         {
             travel = planner.Distance(meeting, planner.Node(plan.StartNode)) * 1.3;
         }
         var time = plan.Time + TimeSpan.FromSeconds(2 * RoutePlanner.WalkingSeconds(travel));
-        return new(section, section.CustomName ?? Name(section), plan, time, travel);
+        return new(section, section.CustomName ?? Name(section), plan, time, travel, graph.Components(section.Edges).Count);
     }
 
     public string Name(DraftSection section)

@@ -1,0 +1,31 @@
+<div class="tool-rail @Class" role="toolbar" aria-orientation="vertical" aria-label="@Label">
+    @foreach (var group in Groups)
+    {
+        <div class="tool-rail__group">
+            @foreach (var item in group)
+            {
+                <button type="button" class="tool-rail__button" aria-label="@item.Label" aria-pressed="@Pressed(item)" disabled="@item.Disabled" @onclick="() => OnPick.InvokeAsync(item.Key)">
+                    <Icon Name="@item.Icon" Size="IconSize.Small" />
+                    <span class="tool-rail__tip" aria-hidden="true">@item.Label@if (item.Shortcut is { } shortcut)
+                        {
+                            <kbd>@shortcut</kbd>
+                        }</span>
+                </button>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string Label { get; set; } = "";
+    [Parameter, EditorRequired] public IReadOnlyList<IReadOnlyList<ToolRailItem>> Groups { get; set; } = [];
+    [Parameter] public EventCallback<string> OnPick { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private static string? Pressed(ToolRailItem item) => item.Pressed switch
+    {
+        true => "true",
+        false => "false",
+        null => null,
+    };
+}

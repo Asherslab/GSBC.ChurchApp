@@ -76,6 +76,8 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
 
     public AreaSplitter? Splitter { get; private set; }
 
+    public RouteEditor? Editor { get; private set; }
+
     public IReadOnlyList<ReadyRoute> Routes => published ?? (IReadOnlyList<ReadyRoute>?)Map?.OutreachRoutes ?? [];
 
     public bool HasPublishedRoutes => published is not null;
@@ -394,6 +396,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         Map = await http.GetFromJsonAsync("data/outreach.json", OutreachMapJson.Default.OutreachMap);
         Planner = new(Map!);
         Splitter = new(Map!, Planner, Count);
+        Editor = new(Map!, Planner);
         SeedSampleCoverage();
         LoadPublished(await native.GetAsync(PublishedKey));
         zones = Read(await native.GetAsync(ZonesKey), ExclusionsJson.Default.ListExclusionZone);
