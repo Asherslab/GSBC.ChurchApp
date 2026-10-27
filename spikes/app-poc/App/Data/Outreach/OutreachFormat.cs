@@ -17,6 +17,8 @@ public static class OutreachPosition
 
 public static class OutreachFormat
 {
+    public static string Metres(double metres) => metres >= 1000 ? Kilometres(metres) : (Math.Round(metres / 10) * 10).ToString("0", CultureInfo.InvariantCulture) + " m";
+
     public static string Kilometres(double metres) => (metres / 1000).ToString("0.0", CultureInfo.InvariantCulture) + " km";
 
     public static string Duration(TimeSpan time)

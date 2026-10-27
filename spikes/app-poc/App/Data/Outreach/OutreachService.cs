@@ -21,10 +21,12 @@ public sealed class WalkSession(WalkKind kind, int? id, string title, WalkPlan p
     public bool CountsTowardDay { get; } = countsTowardDay;
     public int LegIndex { get; set; }
     public DateTime StartedAt { get; } = DateTime.Now;
-    public bool Finished => LegIndex >= Plan.Legs.Count;
-    public WalkLeg? Current => Finished ? null : Plan.Legs[LegIndex];
-    public WalkLeg? Next => LegIndex + 1 < Plan.Legs.Count ? Plan.Legs[LegIndex + 1] : null;
-    public int LetterboxesDone => Plan.Legs.Take(LegIndex).Sum(l => l.Letterboxes);
+    public bool Finished => LegIndex >= Plan.Deliveries.Count;
+    public WalkLeg? Current => Finished ? null : Plan.Deliveries[LegIndex];
+    public WalkLeg? Next => LegIndex + 1 < Plan.Deliveries.Count ? Plan.Deliveries[LegIndex + 1] : null;
+    public IReadOnlyList<string> WalkAlongToCurrent => Plan.WalkAlongBefore(LegIndex);
+    public IReadOnlyList<string> WalkAlongToNext => Plan.WalkAlongBefore(LegIndex + 1);
+    public int LetterboxesDone => Plan.Deliveries.Take(LegIndex).Sum(l => l.Letterboxes);
 }
 
 public sealed class OutreachService(HttpClient http, NativeBridge native, ChurchClock clock)
@@ -134,13 +136,13 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
 
     public IReadOnlyList<WalkMarker> MarkersFor(WalkPlan plan)
     {
-        var delivering = plan.Legs.Where(l => l.Letterboxes > 0).SelectMany(l => l.Arcs).ToList();
+        var delivering = plan.Deliveries.SelectMany(l => l.Arcs).ToList();
         return SkipsOn(delivering).Select(m => new WalkMarker(m.Point, MarkerKind.Skip, $"Skip: {m.Label}"))
             .Concat(DontLetterboxOn(plan.Arcs).Select(x => new WalkMarker(x.Point.Point, MarkerKind.DontLetterbox, "Don't letterbox here")))
             .ToList();
     }
 
-    public int SkipCount(WalkPlan plan) => SkipsOn(plan.Legs.Where(l => l.Letterboxes > 0).SelectMany(l => l.Arcs)).Count;
+    public int SkipCount(WalkPlan plan) => SkipsOn(plan.Deliveries.SelectMany(l => l.Arcs)).Count;
 
     public bool NeedsReview(ReadyRoute route) => route.Edges.Any(zoneEdges.Contains);
 

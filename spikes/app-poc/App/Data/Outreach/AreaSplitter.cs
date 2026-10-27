@@ -2,7 +2,10 @@ namespace Gsbc.AppPoc.Data.Outreach;
 
 public enum SplitTarget { Letterboxes, Bundles, Minutes }
 
-public sealed record AreaSelection(IReadOnlyList<int> Fresh, IReadOnlyList<int> Rested, IReadOnlyList<int> MainRoads, IReadOnlyList<int> Excluded);
+public sealed record AreaSelection(IReadOnlyList<int> Fresh, IReadOnlyList<int> Rested, IReadOnlyList<int> MainRoads, IReadOnlyList<int> Excluded, IReadOnlyList<int> Empty)
+{
+    public IEnumerable<int> Connectors(bool restedToo) => [.. MainRoads, .. Excluded, .. Empty, .. restedToo ? Rested : []];
+}
 
 public sealed class DraftSection(IEnumerable<int> edges)
 {
@@ -18,17 +21,21 @@ public sealed record SectionSummary(DraftSection Section, string Name, WalkPlan 
     public int Bundles => Plan.Bundles;
 
     public IEnumerable<int> WalkThrough => Plan.Edges.Where(e => !Section.Edges.Contains(e));
+
+    public bool NeedsReview => Plan.LongConnector;
 }
 
 public sealed class SplitGraph
 {
+    public const double MaxJoinMetres = WalkPlan.MaxConnectorMetres / 2;
+
     private readonly OutreachMap map;
     private readonly Dictionary<int, int> group = [];
 
-    public SplitGraph(OutreachMap map, IEnumerable<int> connectors)
+    public SplitGraph(OutreachMap map, IEnumerable<int> connectors, IReadOnlyCollection<int> streets)
     {
         this.map = map;
-        Join(connectors);
+        JoinShortLinks(connectors, streets);
     }
 
     public bool Touch(int a, int b)
@@ -90,6 +97,50 @@ public sealed class SplitGraph
         return components;
     }
 
+    private void JoinShortLinks(IEnumerable<int> connectors, IReadOnlyCollection<int> streets)
+    {
+        var linksAt = new Dictionary<int, List<int>>();
+        foreach (var e in connectors)
+        {
+            foreach (var node in new[] { map.Edges[e].U, map.Edges[e].V })
+            {
+                if (!linksAt.TryGetValue(node, out var list))
+                {
+                    linksAt[node] = list = [];
+                }
+                list.Add(e);
+            }
+        }
+        var ends = streets.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V }).ToHashSet();
+        foreach (var origin in ends.Where(linksAt.ContainsKey))
+        {
+            var distance = new Dictionary<int, double> { [origin] = 0 };
+            var queue = new PriorityQueue<int, double>();
+            queue.Enqueue(origin, 0);
+            while (queue.TryDequeue(out var node, out var reached))
+            {
+                if (reached > distance[node])
+                {
+                    continue;
+                }
+                if (node != origin && ends.Contains(node))
+                {
+                    Union(origin, node);
+                }
+                foreach (var e in linksAt.GetValueOrDefault(node) ?? [])
+                {
+                    var next = map.Edges[e].U == node ? map.Edges[e].V : map.Edges[e].U;
+                    var nextDistance = reached + map.Edges[e].Length;
+                    if (nextDistance <= MaxJoinMetres && nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
+                    {
+                        distance[next] = nextDistance;
+                        queue.Enqueue(next, nextDistance);
+                    }
+                }
+            }
+        }
+    }
+
     private int Find(int node)
     {
         var root = node;
@@ -118,17 +169,18 @@ public sealed class SplitGraph
 public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, LetterboxCount count)
 {
     private const int MaxBalanceMoves = 400;
-    private const double MaxLinkMetres = 500;
 
     public AreaSelection Select(IReadOnlyList<GeoPoint> polygon, Func<int, bool> rested, Func<int, bool> excluded)
     {
         var inside = Enumerable.Range(0, map.Edges.Count).Where(e => Inside(polygon, planner.Midpoint(e))).ToList();
         var streets = inside.Where(e => !map.Edges[e].IsArterial && !excluded(e)).ToList();
+        var delivering = streets.Where(e => planner.Deliverable(e, count)).ToList();
         return new(
-            streets.Where(e => !rested(e)).ToList(),
-            streets.Where(rested).ToList(),
+            delivering.Where(e => !rested(e)).ToList(),
+            delivering.Where(rested).ToList(),
             inside.Where(e => map.Edges[e].IsArterial).ToList(),
-            inside.Where(e => !map.Edges[e].IsArterial && excluded(e)).ToList());
+            inside.Where(e => !map.Edges[e].IsArterial && excluded(e)).ToList(),
+            streets.Except(delivering).ToList());
     }
 
     public static bool Inside(IReadOnlyList<GeoPoint> polygon, GeoPoint point)
@@ -155,8 +207,8 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
 
     public (List<DraftSection> Sections, SplitGraph Graph) Split(IEnumerable<int> edges, SplitTarget target, double perRoute, IEnumerable<int> connectors)
     {
-        var graph = new SplitGraph(map, connectors);
-        var streets = edges.ToHashSet();
+        var streets = edges.Where(e => planner.Deliverable(e, count)).ToHashSet();
+        var graph = new SplitGraph(map, connectors, streets);
         var total = streets.Sum(e => Weight(e, target));
         if (total <= 0 || perRoute <= 0)
         {
@@ -169,21 +221,7 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
             .Where(c => c.Weight > 0)
             .OrderByDescending(c => c.Weight)
             .ToList();
-        while (islands.Count > 1 && islands[^1].Weight < perRoute / 2)
-        {
-            var small = islands[^1];
-            islands.RemoveAt(islands.Count - 1);
-            var centre = Centre(small.Edges);
-            var nearest = islands.MinBy(i => planner.Distance(Centre(i.Edges), centre));
-            nearest.Edges.UnionWith(small.Edges);
-            islands[islands.IndexOf(nearest)] = (nearest.Edges, nearest.Weight + small.Weight);
-        }
-        var routes = Math.Max(islands.Count, (int)Math.Round(total / perRoute));
-        var shares = islands.Select(_ => 1).ToArray();
-        for (var extra = islands.Count; extra < routes; extra++)
-        {
-            shares[Enumerable.Range(0, islands.Count).MaxBy(i => islands[i].Weight / shares[i])]++;
-        }
+        var shares = islands.Select(i => Math.Max(1, (int)Math.Round(i.Weight / perRoute))).ToArray();
 
         var sections = new List<DraftSection>();
         for (var i = 0; i < islands.Count; i++)
@@ -243,8 +281,10 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
         var merged = false;
         while (sections.Count > 1 && sections.MinBy(Total) is { } scrap && Total(scrap) < perRoute / 3)
         {
-            var into = Neighbours(graph, scrap, sections).MinBy(Total)
-                ?? sections.Where(s => s != scrap).MinBy(s => planner.Distance(Centre(s.Edges), Centre(scrap.Edges)))!;
+            if (Neighbours(graph, scrap, sections).MinBy(Total) is not { } into)
+            {
+                break;
+            }
             into.Edges.UnionWith(scrap.Edges);
             sections.Remove(scrap);
             merged = true;
@@ -261,7 +301,7 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
                 .Where(link => link.Edges.Count > 0)
                 .DefaultIfEmpty()
                 .MinBy(link => link.Edges is null ? double.MaxValue : link.Metres);
-            if (best.Edges is null || best.Metres > MaxLinkMetres)
+            if (best.Edges is null || best.Metres > SplitGraph.MaxJoinMetres)
             {
                 return;
             }

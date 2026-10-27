@@ -122,6 +122,15 @@ the map with your position and one street side at a time, Done, Back a street an
   cul-de-sac into up one side and back the other (`Data/Outreach/RoutePlanner.cs`). Time assumes 4 km/h
   plus about 8 s a house letterbox and 3 s a unit letterbox; bundles are 50. Main roads (OSM primary and
   secondary) are walked along but never delivered to. Streets walked in the last 7 days are skipped.
+- **Connectors:** a street side with no deliverable letterboxes (all shops, a park edge, a main road, an
+  excluded zone) is never a delivery street anywhere routes are made. It is walked only when it lies on
+  the shortest walk joining parts of a route or from the start, counts in time but not in letterboxes or
+  "Street N of M", is drawn as a thin dashed grey line, and shows on the walking screen only as "Then
+  walk along …". Long empty walks are avoided: Walk now tries the five nearest fresh starts (200 m apart)
+  and never adds a street that needs more than 150 m without letterboxes in one stretch; the splitter
+  joins streets only through connectors of up to 125 m, so a far group becomes its own route (Merge can
+  still join any two). The planner shows each route's metres with no letterboxes and marks "Needs
+  review" over 250 m in all or 150 m in one stretch.
 - **Data** is `wwwroot/data/outreach.json` (about 940 KB; every street segment, so the network stays
   connected), built by `tools/outreach/build_data.py` (`python3 tools/outreach/build_data.py`, about a
   minute) from OpenStreetMap streets (Overpass, ODbL), Queensland address points (CC BY 4.0), Moreton Bay
@@ -152,8 +161,8 @@ the map with your position and one street side at a time, Done, Back a street an
   (`Data/Outreach/AreaSplitter.cs`): routes = total over target; seeds spread across the area weighted
   by letterboxes; every route grows at once, the lightest taking its nearest adjacent street; then a
   balancing pass moves boundary streets from heavier to lighter neighbours while keeping each route in
-  one piece; scraps under a third of the target merge into a neighbour. Excluded streets, main roads and
-  links of up to 500 m count as connections, so routes can be walked through them without delivering.
+  one piece; scraps under a third of the target merge into a neighbour. Excluded streets, main roads,
+  streets with no letterboxes and links of up to 500 m count as connections, so routes can be walked through them without delivering.
   Each route's loop starts at its point nearest the meeting point, and its time includes the walk there
   and back. Click a street to move it to a neighbouring route; merge, split in two, rename or regenerate;
   then "Publish to Saturday's outreach" replaces the sample routes on this device (Outreach day shows

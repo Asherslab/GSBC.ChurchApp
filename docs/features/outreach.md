@@ -52,6 +52,14 @@ The POC runs this on real Albany Creek data. Validated 2026-10-27.
   in as out). The walk prefers the sharpest left turn at each corner, which traces each block's kerb
   without crossing; cul-de-sacs become up one side and back the other. Loops are spliced where they
   meet, which is where you cross.
+- **No empty walking** (2026-10-27): a street with no letterboxes (all businesses, a park edge, a main
+  road) is never a delivery street. It's walked only as a short connector between parts of a route,
+  drawn dashed, counted in time but not letterboxes. Long empty walks are avoided with hard limits
+  (POC values, to tune): Walk now never adds a street that needs more than 150 m of empty walking in
+  one stretch; the splitter joins streets only through connectors up to 125 m, so a cut-off group
+  becomes its own small route rather than a long empty walk; a route with more than 250 m of
+  connectors in total, or one leg over 150 m, is flagged for review. The walk from the meeting
+  point to a route's start is exempt.
 - **Time:** walking at 4 km/h plus the per-letterbox time above. Around Albany Creek that is about 38
   letterboxes per km walked, so an hour is roughly 3 km and 100 letterboxes.
 - **Bundles:** letterboxes ÷ 50, rounded up, plus a spare when the remainder is close.

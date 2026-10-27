@@ -130,7 +130,7 @@
                     .Concat(walkThrough.Except(Selection.Fresh).Except(Selection.Rested).Select(e => (e, true)));
                 foreach (var (edge, rested) in drawn)
                 {
-                    var kind = owner.ContainsKey(edge) ? "section" : rested || walkThrough.Contains(edge) ? "rested" : "free";
+                    var kind = owner.ContainsKey(edge) ? "section" : walkThrough.Contains(edge) ? "through" : rested ? "rested" : "free";
                     Feature(json, "LineString", () =>
                     {
                         foreach (var point in map.Edges[edge].Line)

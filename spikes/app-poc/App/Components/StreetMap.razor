@@ -99,13 +99,18 @@
             json.WriteStartObject();
             json.WriteString("type", "FeatureCollection");
             json.WriteStartArray("features");
-            for (var i = 0; i < Plan.Legs.Count; i++)
+            var delivery = 0;
+            foreach (var leg in Plan.Legs)
             {
-                var leg = Plan.Legs[i];
-                var state = CurrentLeg < 0 ? (leg.Letterboxes > 0 ? "todo" : "transit")
-                    : i < CurrentLeg ? "done"
-                    : i == CurrentLeg ? "now"
-                    : leg.Letterboxes > 0 ? "todo" : "transit";
+                var state = !leg.Delivers ? "transit"
+                    : CurrentLeg < 0 ? "todo"
+                    : delivery < CurrentLeg ? "done"
+                    : delivery == CurrentLeg ? "now"
+                    : "todo";
+                if (leg.Delivers)
+                {
+                    delivery++;
+                }
                 foreach (var arc in leg.Arcs)
                 {
                     var line = map.Edges[arc.Edge].Line;

@@ -1,4 +1,6 @@
+@implements IDisposable
 @inject NativeBridge Native
+@inject NavigationManager Navigation
 
 <Sheet Open="open" OpenChanged="_ => open = false">
     <h2>Add Good Shepherd to your Home Screen</h2>
@@ -26,9 +28,23 @@
 
     protected override async Task OnInitializedAsync()
     {
+        Navigation.LocationChanged += StaffPageOpened;
         mode = await Native.DisplayModeAsync();
-        open = mode is DisplayMode.BrowserIos or DisplayMode.BrowserInstallable;
+        open = !OnStaffPage && mode is DisplayMode.BrowserIos or DisplayMode.BrowserInstallable;
     }
+
+    private bool OnStaffPage => Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith("staff/", StringComparison.OrdinalIgnoreCase);
+
+    private void StaffPageOpened(object? sender, LocationChangedEventArgs e)
+    {
+        if (open && OnStaffPage)
+        {
+            open = false;
+            InvokeAsync(StateHasChanged);
+        }
+    }
+
+    public void Dispose() => Navigation.LocationChanged -= StaffPageOpened;
 
     private async Task Install() => open = !await Native.InstallAsync();
 }

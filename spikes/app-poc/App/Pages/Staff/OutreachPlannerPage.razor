@@ -98,7 +98,7 @@
                     <Segmented TValue="SplitTarget" Options="TargetOptions" Value="target" ValueChanged="SetTarget" />
                     <Stepper Label="Target per route" Value="TargetValue" ValueChanged="SetTargetValue" Step="@TargetStep" Min="@TargetStep" Max="@TargetMax" Unit="@TargetUnit" />
                 </div>
-                <ToggleRow Title="Leave out streets walked this week" Description="Walked in the last 7 days. Dashed grey streets are walked through without delivering." Checked="leaveOutRested" CheckedChanged="SetLeaveOutRested" />
+                <ToggleRow Title="Leave out streets walked this week" Description="Walked in the last 7 days; they show as faded dashes. Thin dashed lines are streets walked through without delivering." Checked="leaveOutRested" CheckedChanged="SetLeaveOutRested" />
                 <button class="btn btn--primary btn--block" @onclick="SplitArea" disabled="@(selection is null || Included.Count == 0)">@(sections.Count > 0 ? "Regenerate" : "Split into routes")</button>
             </Section>
 
@@ -123,8 +123,16 @@
                                     {
                                         <strong>@summary.Name</strong>
                                     }
+                                    @if (summary.NeedsReview)
+                                    {
+                                        <span class="pill pill--urgent">Needs review</span>
+                                    }
                                 </div>
-                                <p class="planner-section__meta">@summary.Letterboxes letterboxes · @summary.Bundles @(summary.Bundles == 1 ? "bundle" : "bundles") · @OutreachFormat.Duration(summary.Time) · @TravelLine(summary)</p>
+                                <p class="planner-section__meta">@summary.Letterboxes letterboxes · @ConnectorLine(summary)@summary.Bundles @(summary.Bundles == 1 ? "bundle" : "bundles") · @OutreachFormat.Duration(summary.Time) · @TravelLine(summary)</p>
+                                @if (summary.NeedsReview)
+                                {
+                                    <p class="hint"><Icon Name="flag" Size="IconSize.Small" />Long walk with no letterboxes (@OutreachFormat.Metres(summary.Plan.LongestConnectorMetres) at a stretch). Split it, merge it or move streets.</p>
+                                }
                                 <div class="planner__actions">
                                     <button class="btn btn--quiet planner__small" @onclick="() => StartRename(section, summary.Name)">Rename</button>
                                     <button class="btn btn--quiet planner__small" @onclick="() => SplitSection(section)" disabled="@(section.Edges.Count < 2)">Split in two</button>
@@ -133,7 +141,7 @@
                                 @if (merging == section)
                                 {
                                     <div class="planner__actions planner-section__merge">
-                                        @foreach (var other in AreaSplitter.Neighbours(graph!, section, sections))
+                                        @foreach (var other in MergeOptions(section))
                                         {
                                             <button class="btn btn--quiet planner__small" @onclick="() => Merge(section, other)">
                                                 <i class="planner__swatch" style="--swatch: @Colour(other)"></i>With route @(sections.IndexOf(other) + 1)
@@ -384,8 +392,7 @@
     {
         await Native.HapticAsync(Haptic.Medium);
         ResetDraft();
-        IEnumerable<int> connectors = leaveOutRested ? [.. selection!.Rested, .. selection.MainRoads, .. selection.Excluded] : [.. selection!.MainRoads, .. selection.Excluded];
-        (sections, graph) = Outreach.Splitter!.Split(Included, target, TargetValue, connectors);
+        (sections, graph) = Outreach.Splitter!.Split(Included, target, TargetValue, selection!.Connectors(leaveOutRested));
         Summarise();
         fitVersion++;
     }
@@ -468,8 +475,17 @@
         summaries = sections.Select(s => Outreach.Splitter!.Summarise(s, MeetingPoint)).ToList();
     }
 
+    private static string ConnectorLine(SectionSummary summary) =>
+        summary.Plan.ConnectorMetres < 1 ? "" : $"{OutreachFormat.Metres(summary.Plan.ConnectorMetres)} with no letterboxes · ";
+
     private static string TravelLine(SectionSummary summary) =>
         summary.TravelMetres < 50 ? "starts at the meeting point" : $"includes {OutreachFormat.Kilometres(summary.TravelMetres * 2)} there and back";
+
+    private IEnumerable<DraftSection> MergeOptions(DraftSection section)
+    {
+        var neighbours = AreaSplitter.Neighbours(graph!, section, sections).ToList();
+        return [.. neighbours, .. sections.Where(s => s != section && !neighbours.Contains(s))];
+    }
 
     private DraftSection? OwnerOf(int edge) => sections.FirstOrDefault(s => s.Edges.Contains(edge));
 
