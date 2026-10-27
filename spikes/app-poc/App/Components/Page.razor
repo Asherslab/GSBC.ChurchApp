@@ -39,13 +39,14 @@
     [Parameter] public TopBarStyle TopBar { get; set; } = TopBarStyle.OverHero;
     [Parameter] public int StuckAt { get; set; } = 120;
     [Parameter] public bool Bell { get; set; } = true;
+    [Parameter] public bool TitleAlwaysShown { get; set; }
     [Parameter] public RenderFragment? Actions { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private bool NeedsHomeButton =>
         !Settings.LayoutOption.ShowTabBar && Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Length > 0;
 
-    private string TopBarClass => TopBar == TopBarStyle.Solid ? "topbar--solid" : "topbar--over-hero";
+    private string TopBarClass => (TopBar == TopBarStyle.Solid ? "topbar--solid" : "topbar--over-hero") + (TitleAlwaysShown ? " topbar--titled" : "");
 
     private async Task GoBack()
     {

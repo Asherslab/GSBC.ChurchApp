@@ -208,7 +208,7 @@ h1, h2, h3, p { margin: 0; }
   text-overflow: ellipsis;
   max-width: 52vw;
 }
-.topbar.is-stuck .topbar__title { opacity: 1; transform: none; }
+.topbar.is-stuck .topbar__title, .topbar--titled .topbar__title { opacity: 1; transform: none; }
 .topbar__start { justify-self: start; display: flex; align-items: center; min-width: 0; }
 .topbar__end { justify-self: end; display: flex; align-items: center; }
 
