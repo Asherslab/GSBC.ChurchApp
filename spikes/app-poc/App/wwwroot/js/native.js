@@ -414,7 +414,7 @@
             probe.style.cssText = 'position:fixed;top:0;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom);visibility:hidden';
             document.body.appendChild(probe);
             const style = getComputedStyle(probe);
-            const result = `top ${style.paddingTop} · bottom ${style.paddingBottom}`;
+            const result = `top ${style.paddingTop} · bottom ${style.paddingBottom} · window ${innerHeight} of ${screen.height} · ${window.gsbc.displayMode()}`;
             probe.remove();
             return result;
           }
