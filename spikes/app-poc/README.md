@@ -170,8 +170,9 @@ the map with your position and one street side at a time, Done, Back a street an
   card, and selecting one draws it thicker with a halo while the others fade. A tool rail at the
   map's top left has **Select** (V; click a route or its label, shift-click to add; the selection's
   Rename, Lock, Unassign and, for two or more, Merge float beside it; double-click a label to rename it
-  in place), **Scissors** (C; drag a line across routes to cut each in two, with both halves and their
-  letterboxes previewed while dragging; new halves are "Route 4a" and "Route 4b"), **Brush** (B; click
+  in place), **Scissors** (C; drag across the streets where a route should split: only the streets the line
+  crosses are severed, at the crossing, and each piece left joined becomes a route, previewed while
+  dragging; new pieces are "Route 4a", "Route 4b" …), **Brush** (B; click
   or drag streets into the selected route, or pick one from the chips at the top), **Lasso** (L; loop
   streets into the selected route or a new one), **Eraser** (E; take streets out of every route, drawn
   faded), **Start pin** (S; drag a route's start to another of its corners), then Undo (⌘Z / Ctrl+Z),

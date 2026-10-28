@@ -95,6 +95,7 @@
         var previews = Draft?.PreviewCut(Points(line)) ?? [];
         return Write(json =>
         {
+            json.WriteBoolean("touches", previews.Count == 0 && Draft?.CutTouches(Points(line)) == true);
             json.WriteStartArray("routes");
             foreach (var preview in previews)
             {
@@ -102,11 +103,18 @@
                 json.WriteNumber("route", Draft!.Sections.IndexOf(preview.Route));
                 json.WriteNumber("number", Draft.Number(preview.Route));
                 json.WriteString("keptColor", Colour(preview.Route.Colour));
-                json.WriteString("cutColor", Colour(preview.NewColour));
                 json.WriteNumber("keptBoxes", Outreach.Letterboxes(preview.Kept));
-                json.WriteNumber("cutBoxes", Outreach.Letterboxes(preview.Cut));
                 Edges(json, "kept", preview.Kept);
-                Edges(json, "cut", preview.Cut);
+                json.WriteStartArray("pieces");
+                foreach (var piece in preview.Pieces)
+                {
+                    json.WriteStartObject();
+                    json.WriteString("color", Colour(piece.Colour));
+                    json.WriteNumber("boxes", Outreach.Letterboxes(piece.Edges));
+                    Edges(json, "edges", piece.Edges);
+                    json.WriteEndObject();
+                }
+                json.WriteEndArray();
                 json.WriteEndObject();
             }
             json.WriteEndArray();

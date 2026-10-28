@@ -57,6 +57,12 @@ public sealed class SplitGraph
         return au == bu || au == bv || av == bu || av == bv;
     }
 
+    public bool Reaches(int edge, int node)
+    {
+        var group = Find(node);
+        return Find(map.Edges[edge].U) == group || Find(map.Edges[edge].V) == group;
+    }
+
     public void Join(IEnumerable<int> connectors)
     {
         foreach (var e in connectors)

@@ -5,7 +5,9 @@ public sealed record EditOutcome(bool Changed, string? Note = null)
     public static readonly EditOutcome Done = new(true);
 }
 
-public sealed record CutPreview(DraftSection Route, HashSet<int> Kept, HashSet<int> Cut, int NewColour);
+public sealed record CutPiece(HashSet<int> Edges, int Colour);
+
+public sealed record CutPreview(DraftSection Route, HashSet<int> Kept, List<CutPiece> Pieces);
 
 public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, LetterboxCount count, int colours)
 {
@@ -129,32 +131,51 @@ public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, Letter
 
     public List<CutPreview> PreviewCut(IReadOnlyList<GeoPoint> line)
     {
-        var used = Sections.Select(s => s.Colour).ToList();
         var previews = new List<CutPreview>();
-        foreach (var cut in editor.Cut(Sections, line))
+        if (Graph is null)
         {
-            var colour = NextColour(used, [cut.Route.Colour, .. Neighbours(cut.Route).Select(n => n.Colour)]);
-            used.Add(colour);
-            var (kept, rest) = Letterboxes(cut.Kept) >= Letterboxes(cut.Cut) ? (cut.Kept, cut.Cut) : (cut.Cut, cut.Kept);
-            previews.Add(new(cut.Route, kept, rest, colour));
+            return previews;
+        }
+        var used = Sections.Select(s => s.Colour).ToList();
+        foreach (var cut in editor.Cut(Graph, Sections, line, count))
+        {
+            var avoid = new List<int> { cut.Route.Colour };
+            avoid.AddRange(Neighbours(cut.Route).Select(n => n.Colour));
+            var pieces = new List<CutPiece>();
+            foreach (var edges in cut.Pieces)
+            {
+                var colour = NextColour(used, avoid);
+                used.Add(colour);
+                avoid.Add(colour);
+                pieces.Add(new(edges, colour));
+            }
+            previews.Add(new(cut.Route, cut.Kept, pieces));
         }
         return previews;
     }
+
+    public bool CutTouches(IReadOnlyList<GeoPoint> line) => Graph is not null && editor.Crosses(Sections, line);
 
     public EditOutcome Cut(IReadOnlyList<GeoPoint> line) => Edit(() =>
     {
         var previews = PreviewCut(line);
         if (previews.Count == 0)
         {
-            return new(false, "That cut doesn't divide a route. Drag right across one.");
+            return new(false, CutTouches(line)
+                ? "The route is still joined elsewhere. Cut across every street between the two parts."
+                : "That cut doesn't cross a route. Drag across its streets where the split should be.");
         }
         foreach (var preview in previews)
         {
             var number = Number(preview.Route);
-            preview.Route.Edges.ExceptWith(preview.Cut);
+            preview.Route.Edges.IntersectWith(preview.Kept);
             preview.Route.CustomName = $"Route {number}a";
             preview.Route.Start = null;
-            Sections.Insert(Sections.IndexOf(preview.Route) + 1, new DraftSection(preview.Cut, preview.NewColour) { CustomName = $"Route {number}b" });
+            var at = Sections.IndexOf(preview.Route);
+            foreach (var (piece, i) in preview.Pieces.Select((p, i) => (p, i)))
+            {
+                Sections.Insert(at + 1 + i, new DraftSection(piece.Edges, piece.Colour) { CustomName = $"Route {number}{(char)('b' + i)}" });
+            }
         }
         return EditOutcome.Done;
     });

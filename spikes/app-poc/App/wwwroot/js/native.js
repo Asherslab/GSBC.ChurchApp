@@ -355,11 +355,13 @@
       }
       for (const r of result.routes) {
         r.kept.forEach((e) => state.map.setFeatureState({ source: 'planner-streets', id: e }, { paint: r.keptColor }));
-        r.cut.forEach((e) => state.map.setFeatureState({ source: 'planner-streets', id: e }, { paint: r.cutColor }));
+        r.pieces.forEach((p) => p.edges.forEach((e) => state.map.setFeatureState({ source: 'planner-streets', id: e }, { paint: p.color })));
       }
-      showTip(state, point, result.routes.length === 0
-        ? [[null, 'Drag across a route to cut it']]
-        : result.routes.flatMap((r) => [[r.keptColor, `${r.keptBoxes}`], [r.cutColor, `${r.cutBoxes} letterboxes`]]));
+      showTip(state, point, result.routes.length > 0
+        ? result.routes.flatMap((r) => [[r.keptColor, `${r.keptBoxes}`], ...r.pieces.map((p) => [p.color, `${p.boxes}`]), [null, 'letterboxes']])
+        : result.touches
+          ? [[null, 'Still joined elsewhere: keep cutting across the streets between']]
+          : [[null, 'Drag across the streets where the split goes']]);
     };
 
     const previewLasso = (el, point) => {

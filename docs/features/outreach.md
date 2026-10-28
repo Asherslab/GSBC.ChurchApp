@@ -126,8 +126,10 @@ Asked for 2026-10-27: draw a polygon and get it split into sections for staff to
    and time; hovering shows its stats and any "Needs review" beside it, and a selected section is
    drawn thicker with a halo while the rest fade. Staff edit directly on the map with a tool rail:
    select (with Merge, Rename, Lock and Unassign floating beside the selection, and renaming inline on
-   the label), scissors (draw a line across a section to cut it in two; streets go to the side holding
-   most of their length, with both halves and their letterboxes previewed while drawing), brush (paint
+   the label), scissors (draw across the streets where a section should split; only the streets the line
+   crosses are severed, at the crossing, so each piece is what stays joined on either side; the pieces
+   and their letterboxes are previewed while drawing, and a cut that leaves the section joined elsewhere
+   says to keep cutting), brush (paint
    streets into a section), lasso (loop streets into a section or a new one), eraser (leave streets
    out that day) and a draggable start pin. Undo and redo cover every edit; Rebalance evens out the
    unlocked sections; locked sections are left as they are by Regenerate, Rebalance and the tools.

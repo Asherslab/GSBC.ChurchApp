@@ -1,12 +1,12 @@
 namespace Gsbc.AppPoc.Data.Outreach;
 
-public sealed record RouteCut(DraftSection Route, HashSet<int> Kept, HashSet<int> Cut);
+public sealed record RouteCut(DraftSection Route, HashSet<int> Kept, List<HashSet<int>> Pieces);
 
 public sealed class RouteEditor(OutreachMap map, RoutePlanner planner)
 {
     private readonly double cosLat = Math.Cos((map.Bounds[0] + map.Bounds[2]) / 2 * Math.PI / 180);
 
-    public List<RouteCut> Cut(IEnumerable<DraftSection> sections, IReadOnlyList<GeoPoint> line)
+    public List<RouteCut> Cut(SplitGraph graph, IEnumerable<DraftSection> sections, IReadOnlyList<GeoPoint> line, LetterboxCount count)
     {
         var cut = line.Select(Flat).ToList();
         var cuts = new List<RouteCut>();
@@ -14,19 +14,51 @@ public sealed class RouteEditor(OutreachMap map, RoutePlanner planner)
         {
             return cuts;
         }
-        foreach (var section in sections.Where(s => !s.Locked && s.Edges.Any(e => Crosses(cut, e))))
+        foreach (var section in sections.Where(s => !s.Locked))
         {
-            var (kept, rest) = (new HashSet<int>(), new HashSet<int>());
-            foreach (var edge in section.Edges)
+            var crossed = section.Edges.Select(e => (Edge: e, Along: Crossings(cut, e))).Where(c => c.Along.Count > 0).ToList();
+            if (crossed.Count == 0)
             {
-                (LeftShare(cut, edge) >= 0.5 ? kept : rest).Add(edge);
+                continue;
             }
-            if (kept.Count > 0 && rest.Count > 0)
+            var severed = crossed.Select(c => c.Edge).ToHashSet();
+            var pieces = new List<HashSet<int>>();
+            var untouched = new HashSet<int>();
+            foreach (var whole in graph.Components(section.Edges))
             {
-                cuts.Add(new(section, kept, rest));
+                var parts = graph.Components(whole.Where(e => !severed.Contains(e)).ToList()).Select(p => p.ToHashSet()).ToList();
+                if (whole.Any(severed.Contains) && parts.Count > 1)
+                {
+                    pieces.AddRange(parts);
+                }
+                else
+                {
+                    untouched.UnionWith(whole);
+                }
             }
+            if (pieces.Count == 0)
+            {
+                continue;
+            }
+            foreach (var (edge, along) in crossed.Where(c => !untouched.Contains(c.Edge)))
+            {
+                var (near, far) = along.Min() >= 1 - along.Max() ? (map.Edges[edge].U, map.Edges[edge].V) : (map.Edges[edge].V, map.Edges[edge].U);
+                var home = pieces.FirstOrDefault(p => p.Any(e => graph.Reaches(e, near)))
+                    ?? pieces.FirstOrDefault(p => p.Any(e => graph.Reaches(e, far)))
+                    ?? pieces.MaxBy(p => planner.Letterboxes(p, count))!;
+                home.Add(edge);
+            }
+            var kept = pieces.MaxBy(p => planner.Letterboxes(p, count))!;
+            kept.UnionWith(untouched);
+            cuts.Add(new(section, kept, pieces.Where(p => p != kept && p.Count > 0).ToList()));
         }
         return cuts;
+    }
+
+    public bool Crosses(IEnumerable<DraftSection> sections, IReadOnlyList<GeoPoint> line)
+    {
+        var cut = line.Select(Flat).ToList();
+        return cut.Count > 1 && sections.Any(s => !s.Locked && s.Edges.Any(e => Crossings(cut, e).Count > 0));
     }
 
     public int NearestNode(DraftSection section, GeoPoint point) => planner.NearestNode(point, section.Edges);
@@ -41,61 +73,37 @@ public sealed class RouteEditor(OutreachMap map, RoutePlanner planner)
 
     private (double X, double Y) Flat(double[] p) => (p[0] * cosLat, p[1]);
 
-    private bool Crosses(List<(double X, double Y)> cut, int edge)
+    private List<double> Crossings(List<(double X, double Y)> cut, int edge)
     {
         var line = map.Edges[edge].Line;
-        for (var i = 0; i < line.Length - 1; i++)
+        var lengths = new double[line.Length - 1];
+        for (var i = 0; i < lengths.Length; i++)
+        {
+            var (a, b) = (Flat(line[i]), Flat(line[i + 1]));
+            lengths[i] = Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
+        }
+        var total = Math.Max(lengths.Sum(), 1e-12);
+        var crossings = new List<double>();
+        var walked = 0.0;
+        for (var i = 0; i < lengths.Length; i++)
         {
             var (a, b) = (Flat(line[i]), Flat(line[i + 1]));
             for (var j = 0; j < cut.Count - 1; j++)
             {
-                if (Intersect(a, b, cut[j], cut[j + 1]))
+                if (Intersection(a, b, cut[j], cut[j + 1]) is { } t)
                 {
-                    return true;
+                    crossings.Add((walked + t * lengths[i]) / total);
                 }
             }
+            walked += lengths[i];
         }
-        return false;
+        return crossings;
     }
 
-    private double LeftShare(List<(double X, double Y)> cut, int edge)
-    {
-        var line = map.Edges[edge].Line;
-        var (left, total) = (0.0, 0.0);
-        for (var i = 0; i < line.Length - 1; i++)
-        {
-            var (a, b) = (Flat(line[i]), Flat(line[i + 1]));
-            var length = Math.Max(Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y)), 1e-12);
-            total += length;
-            if (Side(cut, ((a.X + b.X) / 2, (a.Y + b.Y) / 2)) > 0)
-            {
-                left += length;
-            }
-        }
-        return left / total;
-    }
-
-    private static double Side(List<(double X, double Y)> cut, (double X, double Y) p)
-    {
-        var (best, side) = (double.MaxValue, 0.0);
-        for (var i = 0; i < cut.Count - 1; i++)
-        {
-            var (a, b) = (cut[i], cut[i + 1]);
-            var (dx, dy) = (b.X - a.X, b.Y - a.Y);
-            var t = Math.Clamp(((p.X - a.X) * dx + (p.Y - a.Y) * dy) / Math.Max(dx * dx + dy * dy, 1e-18), 0, 1);
-            var distance = Math.Pow(p.X - (a.X + t * dx), 2) + Math.Pow(p.Y - (a.Y + t * dy), 2);
-            if (distance < best)
-            {
-                (best, side) = (distance, dx * (p.Y - a.Y) - dy * (p.X - a.X));
-            }
-        }
-        return side;
-    }
-
-    private static bool Intersect((double X, double Y) p1, (double X, double Y) p2, (double X, double Y) q1, (double X, double Y) q2)
+    private static double? Intersection((double X, double Y) p1, (double X, double Y) p2, (double X, double Y) q1, (double X, double Y) q2)
     {
         static double Cross((double X, double Y) o, (double X, double Y) a, (double X, double Y) b) => (a.X - o.X) * (b.Y - o.Y) - (a.Y - o.Y) * (b.X - o.X);
         var (d1, d2, d3, d4) = (Cross(q1, q2, p1), Cross(q1, q2, p2), Cross(p1, p2, q1), Cross(p1, p2, q2));
-        return d1 * d2 < 0 && d3 * d4 < 0;
+        return d1 * d2 < 0 && d3 * d4 < 0 ? d1 / (d1 - d2) : null;
     }
 }
