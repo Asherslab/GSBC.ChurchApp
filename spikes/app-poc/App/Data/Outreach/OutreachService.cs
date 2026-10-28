@@ -60,7 +60,9 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     private readonly Dictionary<int, DateOnly> walked = [];
     private readonly List<LetterboxFlag> flags = [];
     private readonly Dictionary<int, DateOnly> sampleWalked = [];
-    private readonly Dictionary<(int Node, double? Minutes, double? Kilometres), WalkPlan> plans = [];
+    private readonly Dictionary<(int Node, double? Minutes, double? Kilometres, bool Hop), WalkPlan> plans = [];
+    private readonly Dictionary<(int Node, double? Minutes, double? Kilometres), WalkReach> reaches = [];
+    private ReachFinder? finder;
     private List<ReadyRoute>? published;
     private List<ExclusionZone> zones = [];
     private List<ExcludedAddress> excluded = [];
@@ -150,6 +152,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         var delivering = plan.Deliveries.SelectMany(l => l.Arcs).ToList();
         return SkipsOn(delivering).Select(m => new WalkMarker(m.Point, MarkerKind.Skip, $"Skip: {m.Label}"))
             .Concat(DontLetterboxOn(plan.Arcs).Select(x => new WalkMarker(x.Point.Point, MarkerKind.DontLetterbox, "Don't letterbox here")))
+            .Concat(plan.Hop is { } hop ? [new WalkMarker(Planner!.Midpoint(hop.Edges[hop.Edges.Count / 2]), MarkerKind.Hop, OutreachFormat.HopNote(hop))] : [])
             .ToList();
     }
 
@@ -211,23 +214,9 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         return mine > sample || sample is null ? mine : sample;
     }
 
-    public IReadOnlyList<int> RestedNear(WalkPlan plan)
-    {
-        const double MarginMetres = 250;
-        var points = plan.Edges.SelectMany(e => Map!.Edges[e].Line).ToList();
-        if (points.Count == 0)
-        {
-            return [];
-        }
-        var latMargin = MarginMetres / 111_320;
-        var lonMargin = latMargin / Math.Cos(points[0][1] * Math.PI / 180);
-        var (south, north) = (points.Min(p => p[1]) - latMargin, points.Max(p => p[1]) + latMargin);
-        var (west, east) = (points.Min(p => p[0]) - lonMargin, points.Max(p => p[0]) + lonMargin);
-        return Enumerable.Range(0, Map!.Edges.Count)
-            .Where(e => Rested(e) && Planner!.Deliverable(e, Count))
-            .Where(e => Planner!.Midpoint(e) is var m && m.Lat >= south && m.Lat <= north && m.Lon >= west && m.Lon <= east)
-            .ToList();
-    }
+    public IReadOnlyList<int> RestedNear(WalkPlan plan) => Finder.RestedNear(plan);
+
+    private ReachFinder Finder => finder ??= new(Planner!, Rested, Count, PlanAt);
 
     public IReadOnlyList<string> StreetNames(IEnumerable<int> edges) => edges.Select(e => Map!.Edges[e].Name).Where(n => n.Length > 0).Distinct().Order().ToList();
 
@@ -311,14 +300,39 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
             .Take(take)
             .ToList();
 
-    public WalkPlan PlanNow(GeoPoint start, WalkBudget budget)
+    public WalkPlan PlanNow(GeoPoint start, WalkBudget budget) => PlanAt(Planner!.NearestNode(start), budget, null);
+
+    public WalkReach ReachNow(GeoPoint start, WalkBudget budget)
     {
         var key = (Planner!.NearestNode(start), budget.Minutes, budget.Kilometres);
+        if (!reaches.TryGetValue(key, out var reach))
+        {
+            reaches[key] = reach = Finder.Assess(key.Item1, start, budget, PlanAt(key.Item1, budget, null));
+        }
+        return reach;
+    }
+
+    public bool Capped(GeoPoint start, WalkBudget budget)
+    {
+        var node = Planner!.NearestNode(start);
+        return Finder.CappedAt(node, budget, PlanAt(node, budget, null));
+    }
+
+    private WalkPlan PlanAt(int node, WalkBudget budget, WalkHop? hop)
+    {
+        var key = (node, budget.Minutes, budget.Kilometres, hop is not null);
         if (!plans.TryGetValue(key, out var plan))
         {
-            plans[key] = plan = Planner.Plan(key.Item1, budget, Rested, Count);
+            plans[key] = plan = Planner!.Plan(node, budget, Rested, Count, hop);
         }
         return plan;
+    }
+
+    private void ForgetPlans()
+    {
+        plans.Clear();
+        reaches.Clear();
+        finder = null;
     }
 
     public void SetHere(GeoPoint point) => Here = point;
@@ -353,7 +367,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     public void SetPreviewDuringOutreach(bool on)
     {
         PreviewDuringOutreach = on;
-        plans.Clear();
+        ForgetPlans();
         Changed?.Invoke();
     }
 
@@ -379,7 +393,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
             await native.SetAsync(DayTallyKey, myDayTally.ToString(CultureInfo.InvariantCulture));
         }
         Walk.LegIndex++;
-        plans.Clear();
+        ForgetPlans();
         await SaveWalkedAsync();
         Changed?.Invoke();
     }
@@ -409,7 +423,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
             ? leg.Arcs.MinBy(a => Planner!.Distance(Planner.Midpoint(a.Edge), point))
             : leg.Arcs[0];
         flags.Add(new(StreetOf(arc.Edge), arc.Side, where ?? Planner!.Midpoint(arc.Edge)));
-        plans.Clear();
+        ForgetPlans();
         await native.SetAsync(FlagsKey, string.Join(',', flags.Select(f =>
             string.Create(CultureInfo.InvariantCulture, $"{f.Edge}:{f.Side}:{f.Point.Lat}:{f.Point.Lon}"))));
         Changed?.Invoke();
@@ -487,7 +501,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     private async Task SaveExclusionsAsync()
     {
         RefreshZoneEdges();
-        plans.Clear();
+        ForgetPlans();
         await native.SetAsync(ZonesKey, JsonSerializer.Serialize(zones, ExclusionsJson.Default.ListExclusionZone));
         await native.SetAsync(ExcludedKey, JsonSerializer.Serialize(excluded, ExclusionsJson.Default.ListExcludedAddress));
         Changed?.Invoke();

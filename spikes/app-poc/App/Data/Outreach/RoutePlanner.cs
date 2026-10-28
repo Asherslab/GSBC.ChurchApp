@@ -18,6 +18,8 @@ public sealed record WalkLeg(string Street, IReadOnlyList<Arc> Arcs, int Letterb
     public string Title => Part ? $"{Street} (part)" : Street;
 }
 
+public sealed record WalkHop(int From, IReadOnlyList<int> Edges, int Target, double Metres);
+
 public sealed record WalkPlan(int StartNode, IReadOnlyList<Arc> Arcs, IReadOnlyList<WalkLeg> Legs, double Metres, int Letterboxes, TimeSpan Time, double ConnectorMetres, double LongestConnectorMetres)
 {
     public const int BundleSize = 50;
@@ -31,6 +33,10 @@ public sealed record WalkPlan(int StartNode, IReadOnlyList<Arc> Arcs, IReadOnlyL
     public IReadOnlyList<WalkLeg> Deliveries { get; } = Legs.Where(l => l.Delivers).ToList();
 
     public IEnumerable<int> Edges => Arcs.Select(a => a.Edge).Distinct();
+
+    public WalkHop? Hop { get; init; }
+
+    public double ApproachMetres => Legs.TakeWhile(l => !l.Delivers).Sum(l => l.Metres);
 
     public IReadOnlyList<string> WalkAlongBefore(int delivery)
     {
@@ -55,7 +61,7 @@ public sealed record WalkPlan(int StartNode, IReadOnlyList<Arc> Arcs, IReadOnlyL
 
 public delegate int LetterboxCount(int edge, int side);
 
-public enum MarkerKind { Skip, DontLetterbox }
+public enum MarkerKind { Skip, DontLetterbox, Hop }
 
 public sealed record WalkMarker(GeoPoint Point, MarkerKind Kind, string Label);
 
@@ -138,9 +144,9 @@ public sealed class RoutePlanner
         return new(middle[1], middle[0]);
     }
 
-    public WalkPlan Plan(int start, WalkBudget budget, Func<int, bool> rested, LetterboxCount count)
+    public WalkPlan Plan(int start, WalkBudget budget, Func<int, bool> rested, LetterboxCount count, WalkHop? hop = null)
     {
-        var plans = ApproachSeeds(start, rested, count).Select(seed => Grow(start, seed, budget, rested, count)).ToList();
+        var plans = ApproachSeeds(start, rested, count).Select(seed => Grow(start, seed, budget, rested, count, hop)).ToList();
         return plans.Count == 0 ? Circuit([], start, count) : plans.MaxBy(p => p.Letterboxes)!;
     }
 
@@ -177,9 +183,13 @@ public sealed class RoutePlanner
         }
     }
 
-    private WalkPlan Grow(int start, (int Edge, List<int> Approach) seed, WalkBudget budget, Func<int, bool> rested, LetterboxCount count)
+    public static double Asked(WalkBudget budget) => budget.Minutes is { } minutes ? minutes * 60 : (budget.Kilometres ?? 2) * 1000;
+
+    public static double Reached(WalkBudget budget, WalkPlan plan) => budget.Minutes is null ? plan.Metres : plan.Time.TotalSeconds;
+
+    private WalkPlan Grow(int start, (int Edge, List<int> Approach) seed, WalkBudget budget, Func<int, bool> rested, LetterboxCount count, WalkHop? hop)
     {
-        var limit = budget.Minutes is { } minutes ? minutes * 60 : (budget.Kilometres ?? 2) * 1000;
+        var limit = Asked(budget);
         double Cost(int e) => budget.Minutes is null ? 2.0 * net[e].Length : WalkSeconds(e, count);
         double TransitCost(int e) => 2.0 * net[e].Length / (budget.Minutes is null ? 1 : WalkingMetresPerSecond);
         bool Empty(int e) => !Deliverable(e, count) || rested(e);
@@ -209,22 +219,53 @@ public sealed class RoutePlanner
             return true;
         }
 
-        var candidates = EdgesNear([net[seed.Edge].U, net[seed.Edge].V], radius, count).Where(e => !Empty(e) && !chosen.Contains(e)).ToList();
-        var grew = true;
-        while (grew && total < limit)
+        bool TryHop(WalkHop jump)
         {
-            grew = false;
-            foreach (var e in candidates.Where(e => !chosen.Contains(e)).ToList())
+            var lead = chosenNodes.Contains(jump.From) ? [] : ShortestPath(chosenNodes, [jump.From], ReachMetres);
+            if (!chosenNodes.Contains(jump.From) && lead.Count == 0)
             {
-                grew |= total < limit && TryAdd(e);
+                return false;
+            }
+            var path = lead.Concat(jump.Edges).ToList();
+            var cost = Cost(jump.Target) + path.Sum(p => Empty(p) ? TransitCost(p) : Cost(p));
+            if (total + cost > limit * BudgetSlack)
+            {
+                return false;
+            }
+            chosen.UnionWith(path);
+            chosen.Add(jump.Target);
+            transit.UnionWith(path.Where(Empty));
+            chosenNodes.UnionWith(path.Append(jump.Target).SelectMany(p => new[] { net[p].U, net[p].V }));
+            total += cost;
+            return true;
+        }
+
+        void Fill(IEnumerable<int> from)
+        {
+            var candidates = EdgesNear(from, radius, count).Where(e => !Empty(e) && !chosen.Contains(e)).ToList();
+            var grew = true;
+            while (grew && total < limit)
+            {
+                grew = false;
+                foreach (var e in candidates.Where(e => !chosen.Contains(e)).ToList())
+                {
+                    grew |= total < limit && TryAdd(e);
+                }
             }
         }
-        return Circuit(chosen, start, count, transit);
+
+        Fill([net[seed.Edge].U, net[seed.Edge].V]);
+        if (hop is null || total >= limit || !TryHop(hop))
+        {
+            return Circuit(chosen, start, count, transit);
+        }
+        Fill([net[hop.Target].U, net[hop.Target].V]);
+        return Circuit(chosen, start, count, transit) with { Hop = hop };
     }
 
     private List<int> EdgesNear(IEnumerable<int> from, double radius, LetterboxCount count)
     {
-        var distance = from.ToDictionary(n => n, _ => 0.0);
+        var distance = from.Distinct().ToDictionary(n => n, _ => 0.0);
         var queue = new PriorityQueue<int, double>();
         foreach (var node in distance.Keys)
         {

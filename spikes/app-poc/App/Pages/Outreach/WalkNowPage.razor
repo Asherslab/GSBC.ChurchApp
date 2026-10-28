@@ -14,6 +14,10 @@
             @if (length == DistanceOption)
             {
                 <Stepper Label="Distance" Value="kilometres" ValueChanged="SetKilometres" Step="0.5" Min="0.5" Max="10" Format="0.0" Unit=" km" />
+                @if (most is not null)
+                {
+                    <p class="hint walk-most">@OutreachFormat.Most(Budget, most)</p>
+                }
             }
             <Segmented TValue="StartMode" Options="StartOptions" Value="startMode" ValueChanged="SetStart" />
         </div>
@@ -38,6 +42,53 @@
         else
         {
             <StatRow Stats="Stats" />
+            <div aria-live="polite">
+                @if (plan.Hop is not null || reach is { Status: not ReachStatus.Full })
+                {
+                    <div class="walk-reach" @key="nudge">
+                        @if (plan.Hop is { } hop)
+                        {
+                            <p class="walk-reach__title">@($"Includes a {OutreachFormat.Metres(hop.Metres)} walk with no letterboxes")</p>
+                            <p class="walk-reach__why">@($"It's dotted on the map, on the way to {Outreach.Network![hop.Target].Name}.")</p>
+                            <div class="list walk-reach__options">
+                                <ListRow Icon="undo" IconTone="Tone.Accent" Title="Leave it out" Subtitle="@($"Back to {OutreachFormat.Reached(Budget, Plain!)} and {Plain!.Letterboxes} letterboxes")" OnClick="ToggleHop" />
+                                @if (reach?.Elsewhere is { } there)
+                                {
+                                    <ListRow Icon="map-pin" IconTone="Tone.Accent" Title="@OutreachFormat.StartTitle(there)" Subtitle="@OutreachFormat.StartPayoff(there, Budget)" OnClick="() => StartThere(there)" />
+                                }
+                            </div>
+                        }
+                        else if (reach is { } capped)
+                        {
+                            <p class="walk-reach__title">@OutreachFormat.ReachTitle(capped, Budget, plan, startMode == StartMode.Here)</p>
+                            <p class="walk-reach__asked">@($"You asked for {OutreachFormat.Asked(Budget)}.")</p>
+                            @foreach (var reason in capped.Reasons)
+                            {
+                                <p class="walk-reach__why">
+                                    @if (reason.Kind == ReachReasonKind.Rested)
+                                    {
+                                        <span class="walked-swatch"></span>
+                                    }
+                                    <span>@OutreachFormat.Reason(reason)</span>
+                                </p>
+                            }
+                            @if (capped.Hop is not null || capped.Elsewhere is not null)
+                            {
+                                <div class="list walk-reach__options">
+                                    @if (capped.Hop is { } further)
+                                    {
+                                        <ListRow Icon="footprints" IconTone="Tone.Accent" Title="@OutreachFormat.HopTitle(further)" Subtitle="@OutreachFormat.HopPayoff(further, Budget)" OnClick="ToggleHop" />
+                                    }
+                                    @if (capped.Elsewhere is { } there)
+                                    {
+                                        <ListRow Icon="map-pin" IconTone="Tone.Accent" Title="@OutreachFormat.StartTitle(there)" Subtitle="@OutreachFormat.StartPayoff(there, Budget)" OnClick="() => StartThere(there)" />
+                                    }
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            </div>
             <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />@OutreachFormat.Bundles(plan)</p>
             @if (Outreach.DayIsOn)
             {
@@ -47,7 +98,7 @@
             {
                 <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />Skips @skips @(skips == 1 ? "business" : "businesses") and other non-homes</p>
             }
-            @if (walked.Count > 0)
+            @if (walked.Count > 0 && reach is not { Status: not ReachStatus.Full })
             {
                 <p class="walked-note"><span class="walked-swatch"></span><span><strong>Leaves out streets done this week</strong>, shown faded on the map: @OutreachFormat.StreetList(Outreach.StreetNames(walked))</span></p>
             }
@@ -81,6 +132,10 @@
     private StartMode startMode = StartMode.Here;
     private GeoPoint? start;
     private WalkPlan? plan;
+    private WalkReach? reach;
+    private WalkPlan? most;
+    private bool withHop;
+    private int nudge;
     private IReadOnlyList<int> walked = [];
     private string? message;
     private bool located;
@@ -109,7 +164,7 @@
         await Outreach.EnsureLoadedAsync();
         if (From == "here" && Outreach.Here is { } here)
         {
-            start = here;
+            Move(here);
             located = true;
             Replan();
         }
@@ -133,7 +188,7 @@
             if (Outreach.Planner!.Contains(here))
             {
                 message = null;
-                start = here;
+                Move(here);
                 Outreach.SetHere(here);
             }
             else
@@ -155,25 +210,60 @@
     {
         startMode = StartMode.Map;
         message = reason;
-        start = null;
+        Move(null);
         walked = [];
     }
 
-    private void Replan()
+    private WalkPlan? Plain => start is { } from ? Outreach.PlanNow(from, Budget) : null;
+
+    private void Move(GeoPoint? point)
     {
-        plan = start is { } from ? Outreach.PlanNow(from, Budget) : null;
+        start = point;
+        most = null;
+        withHop = false;
+    }
+
+    private void Replan(bool asked = false)
+    {
+        var plain = Plain;
+        reach = plain is { Letterboxes: > 0 } ? Outreach.ReachNow(start!.Value, Budget) : null;
+        plan = withHop && reach?.Hop is { } hop ? hop.Plan : plain;
         walked = plan is null ? [] : Outreach.RestedNear(plan);
+        if (length == DistanceOption && reach is { Capped: true } && plan?.Hop is null)
+        {
+            most = plan;
+        }
+        if (asked && (reach is { Status: not ReachStatus.Full } || plan?.Hop is not null))
+        {
+            nudge++;
+        }
     }
 
     private void SetLength(string value)
     {
         length = value;
-        Replan();
+        most = null;
+        Replan(asked: true);
     }
 
     private void SetKilometres(double value)
     {
         kilometres = value;
+        Replan(asked: true);
+    }
+
+    private async Task ToggleHop()
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        withHop = !withHop;
+        Replan();
+    }
+
+    private void StartThere(StartChoice choice)
+    {
+        startMode = StartMode.Map;
+        message = null;
+        Move(choice.Point);
         Replan();
     }
 
@@ -184,8 +274,9 @@
         switch (mode)
         {
             case StartMode.Map:
-                start = null;
+                Move(null);
                 plan = null;
+                reach = null;
                 walked = [];
                 break;
             default:
@@ -203,7 +294,7 @@
             return;
         }
         message = null;
-        start = point;
+        Move(point);
         Replan();
     }
 

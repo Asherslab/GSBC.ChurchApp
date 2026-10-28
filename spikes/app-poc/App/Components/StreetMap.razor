@@ -70,7 +70,7 @@
                 json.WriteStartObject();
                 json.WriteString("type", "Feature");
                 json.WriteStartObject("properties");
-                json.WriteString("kind", marker.Kind == MarkerKind.Skip ? "skip" : "dont");
+                json.WriteString("kind", marker.Kind switch { MarkerKind.Skip => "skip", MarkerKind.Hop => "hop", _ => "dont" });
                 json.WriteString("label", marker.Label);
                 json.WriteEndObject();
                 json.WriteStartObject("geometry");
@@ -105,6 +105,7 @@
                 WriteLine(json, "walked", map.Edges[edge].Line);
             }
             var delivery = 0;
+            var hop = Plan.Hop?.Edges.ToHashSet() ?? [];
             foreach (var leg in Plan.Legs)
             {
                 var state = !leg.Delivers ? "transit"
@@ -119,7 +120,7 @@
                 foreach (var arc in leg.Arcs)
                 {
                     var line = Outreach.Network![arc.Edge].Line;
-                    WriteLine(json, state, arc.Forward ? line : line.Reverse());
+                    WriteLine(json, hop.Contains(arc.Edge) ? "hop" : state, arc.Forward ? line : line.Reverse());
                 }
             }
             json.WriteEndArray();

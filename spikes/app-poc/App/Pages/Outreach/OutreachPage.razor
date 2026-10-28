@@ -159,8 +159,13 @@
     private IReadOnlyList<ChoiceTile> BuildTiles()
     {
         var start = Outreach.Here ?? Outreach.Church;
-        ChoiceTile Timed(string label, int minutes) =>
-            new(label, $"about {Outreach.PlanNow(start, new(minutes)).Letterboxes} letterboxes", $"outreach/walk?minutes={minutes}{From}");
+        ChoiceTile Timed(string label, int minutes)
+        {
+            var budget = new WalkBudget(minutes);
+            var plan = Outreach.PlanNow(start, budget);
+            var most = Outreach.Capped(start, budget) ? ", the most nearby" : "";
+            return new(label, $"about {plan.Letterboxes} letterboxes{most}", $"outreach/walk?minutes={minutes}{From}");
+        }
         return [Timed("30 min", 30), Timed("1 hour", 60), Timed("2 hours", 120), new("Distance", "choose how far", $"outreach/walk?km=3{From}")];
     }
 

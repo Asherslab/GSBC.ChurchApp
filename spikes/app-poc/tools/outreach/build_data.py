@@ -23,8 +23,8 @@ from pathlib import Path
 SOUTH, WEST, NORTH, EAST = -27.3720, 152.9380, -27.3280, 153.0150
 STREET_MARGIN = 0.004
 CHURCH = (-27.34335, 152.96467)
-DELIVERY_ROADS = {"residential", "living_street", "unclassified", "tertiary", "secondary", "primary"}
-ARTERIALS = {"primary", "secondary"}
+ARTERIALS = {"trunk", "primary", "secondary", "trunk_link", "primary_link", "secondary_link", "tertiary_link"}
+ROADS = {"residential", "living_street", "unclassified", "tertiary"} | ARTERIALS
 WALK_THROUGH = {"residential", "living_street", "unclassified"}
 MAX_SETBACK_M = 200
 AREA_LETTERBOXES = 55
@@ -78,7 +78,7 @@ def fetch(url, data=None, attempts=4):
 
 def fetch_streets():
     box = f"{SOUTH - STREET_MARGIN},{WEST - STREET_MARGIN},{NORTH + STREET_MARGIN},{EAST + STREET_MARGIN}"
-    roads = "|".join(sorted(DELIVERY_ROADS))
+    roads = "|".join(sorted(ROADS))
     query = f'[out:json][timeout:90];way["highway"~"^({roads})$"]({box});(._;>;);out body;'
     return fetch(OVERPASS, urllib.parse.urlencode({"data": query}).encode())
 

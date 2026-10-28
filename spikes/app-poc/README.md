@@ -120,8 +120,21 @@ the map with your position and one street side at a time, Done, Back a street an
 - **Routes** walk both sides of every street: each street side is a directed arc, so the loop always
   closes, and the walker keeps the houses on their left, which traces each block's kerb and turns a
   cul-de-sac into up one side and back the other (`Data/Outreach/RoutePlanner.cs`). Time assumes 4 km/h
-  plus about 8 s a house letterbox and 3 s a unit letterbox; bundles are 50. Main roads (OSM primary and
-  secondary) are walked along but never delivered to. Streets walked in the last 7 days are skipped.
+  plus about 8 s a house letterbox and 3 s a unit letterbox; bundles are 50. Main roads (OSM trunk, primary
+  and secondary, and their slip lanes) are walked along or crossed but never delivered to; trunk roads were
+  missing until 2026-10-28, which cut the network into 30 pieces. Streets walked in the last 7 days are
+  skipped.
+- **Reach** (`Data/Outreach/WalkReach.cs`): a walk more than 10% short of the request (or 25% over) says
+  so under its figures, with up to two reasons from the data (streets done this week nearby, the main
+  roads and non-homes around the pocket, the edge of this preview's area; or "the next streets don't fit"
+  when a longer request would reach further). A capped walk offers up to two ways to get more: an opt-in
+  hop over 150 m and up to 600 m of empty walking to the next pocket (drawn dotted with "N m, no
+  letterboxes"; "Leave it out" undoes it), and the nearest start that can fill the request (sets Pick on
+  map there). The Distance control then shows "Up to N km nearby", a capped Walk now tile says "the most
+  nearby", and changing the length when the walk can't grow briefly highlights the note. Pockets are
+  worked out once per "done this week" state and cached with the plans. Not done here: footpaths and
+  cut-throughs (OSM footway, path, cycleway) aren't in the network yet; 68 in the area would each save
+  over 150 m of walking.
 - **Connectors:** a street side with no deliverable letterboxes (all shops, a park edge, a main road, an
   excluded zone) is never a delivery street anywhere routes are made. It is walked only when it lies on
   the shortest walk joining parts of a route or from the start, counts in time but not in letterboxes or
@@ -131,23 +144,24 @@ the map with your position and one street side at a time, Done, Back a street an
   joins streets only through connectors of up to 125 m, so a far group becomes its own route (Merge can
   still join any two). The planner shows each route's metres with no letterboxes and marks "Needs
   review" over 250 m in all or 150 m in one stretch.
-- **Data** is `wwwroot/data/outreach.json` (about 940 KB; every street segment, so the network stays
+- **Data** is `wwwroot/data/outreach.json` (about 1.1 MB; every street segment, so the network stays
   connected), built by `tools/outreach/build_data.py` (`python3 tools/outreach/build_data.py`, about a
   minute) from OpenStreetMap streets (Overpass, ODbL), Queensland address points (CC BY 4.0), Moreton Bay
   lot land use (MBRC 2020, CC BY 4.0) and Brisbane City Plan 2014 zoning (Brisbane City Council, CC BY 4.0).
   It covers Albany Creek and the Brisbane edge to the east (Bridgeman Downs, Aspley and Carseldine edges,
   Bald Hills and McDowall slivers); a start outside, or no location, asks you to tap your start on the map.
 - **Homes only:** every address is classed deliver, skip or check. Moreton Bay addresses join the
-  council's lot layer by lot and plan (92% of 9,138), else by the lot polygon they sit in (8%); the
+  council's lot layer by lot and plan (92% of 9,179), else by the lot polygon they sit in (8%); the
   lot's actual use decides (homes, unit schemes, flats and retirement villages are delivered; shops,
   offices, industry, schools, childcare, churches, parks, vacant land, utilities and the like are
-  skipped). Brisbane addresses take the City Plan zone they sit in (99.7% of 8,802): residential,
+  skipped). Brisbane addresses take the City Plan zone they sit in (99.7% of 8,818): residential,
   emerging community, rural and environmental zones are delivered, centres, community facilities, open
   space, sport, utilities and industry skipped, mixed use and no zone are "check" (delivered, with a
-  check point). 17,077 home letterboxes, 863 skipped, 883 addresses not matched to a street. The file
+  check point). 17,102 home letterboxes, 895 skipped, 826 addresses not matched to a street (data rebuilt
+  2026-10-28). The file
   holds counts per street side, each letterbox's distance along its street in thousandths (so a stretch
-  of a street has an exact count; 1,075 KB, up from 962 KB without them), plus the points of skipped
-  non-homes (705) and checks (28), never a home's address. The walking screen says "Skip: shop" for the current street and routes show "skips N
+  of a street has an exact count; 1,141 KB with the trunk roads), plus the points of skipped
+  non-homes (737) and checks (28), never a home's address. The walking screen says "Skip: shop" for the current street and routes show "skips N
   businesses".
 - **Map:** MapLibre GL JS 5.24.0 (BSD-3, vendored in `wwwroot/lib/maplibre`, loaded only on outreach pages)
   with OpenFreeMap's Positron and Dark styles. Tiles come from OpenFreeMap's servers, so maps need a signal.

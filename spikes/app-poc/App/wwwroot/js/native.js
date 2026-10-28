@@ -106,10 +106,12 @@
       map.addLayer({ id: 'gsbc-route-done', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'done'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--ink-3'), 'line-opacity': 0.55 } });
       map.addLayer({ id: 'gsbc-route-todo', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'todo'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--primary') } });
       map.addLayer({ id: 'gsbc-route-transit', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'transit'], layout: { 'line-cap': 'butt' }, paint: walkThroughPaint() });
+      map.addLayer({ id: 'gsbc-route-hop', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'hop'], layout: { 'line-cap': 'round' }, paint: { 'line-width': 3.5, 'line-color': token('--ink'), 'line-dasharray': [0.6, 1.8] } });
       map.addLayer({ id: 'gsbc-route-now', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'now'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-offset': -4, 'line-width': 7, 'line-color': token('--marker') } });
       map.addLayer({ id: 'gsbc-route-arrows', type: 'symbol', source: 'gsbc-route', filter: ['in', ['get', 'state'], ['literal', ['todo', 'now']]], layout: { 'symbol-placement': 'line', 'symbol-spacing': 90, 'icon-image': 'gsbc-arrow', 'icon-size': 0.5, 'icon-offset': [0, -8], 'icon-rotation-alignment': 'map', 'icon-allow-overlap': true } });
       map.addLayer({ id: 'gsbc-skips', type: 'circle', source: 'gsbc-marks', filter: ['==', ['get', 'kind'], 'skip'], paint: { 'circle-radius': 5, 'circle-color': token('--ink-3'), 'circle-stroke-width': 2, 'circle-stroke-color': token('--bg') } });
       map.addLayer({ id: 'gsbc-dont', type: 'circle', source: 'gsbc-marks', filter: ['==', ['get', 'kind'], 'dont'], paint: { 'circle-radius': 8, 'circle-color': token('--danger'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
+      map.addLayer({ id: 'gsbc-hop', type: 'symbol', source: 'gsbc-marks', filter: ['==', ['get', 'kind'], 'hop'], layout: { 'text-field': ['get', 'label'], 'text-font': textFont(map), 'text-size': 13, 'text-anchor': 'bottom', 'text-offset': [0, -0.5], 'text-allow-overlap': true, 'text-ignore-placement': true }, paint: { 'text-color': token('--ink'), 'text-halo-color': token('--bg'), 'text-halo-width': 2.5 } });
       map.addLayer({ id: 'gsbc-start', type: 'circle', source: 'gsbc-start', paint: { 'circle-radius': 8, 'circle-color': token('--primary'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
       map.addLayer({ id: 'gsbc-me-halo', type: 'circle', source: 'gsbc-me', paint: { 'circle-radius': 16, 'circle-color': token('--live'), 'circle-opacity': 0.2 } });
       map.addLayer({ id: 'gsbc-me', type: 'circle', source: 'gsbc-me', paint: { 'circle-radius': 7, 'circle-color': token('--live'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
@@ -214,7 +216,10 @@
       },
     };
 
-    const textFont = (map) => map.getStyle().layers.find((l) => l.layout?.['text-font'])?.layout['text-font'] ?? ['Noto Sans Regular'];
+    const textFont = (map) => {
+      const fonts = map.getStyle().layers.map((l) => l.layout?.['text-font']).filter((f) => Array.isArray(f));
+      return fonts.find((f) => !f.some((name) => /italic/i.test(name))) ?? fonts[0] ?? ['Noto Sans Regular'];
+    };
 
     const addPlannerLayers = (el) => {
       const state = el.gsbcPlanner;

@@ -45,8 +45,11 @@ The POC runs this on real Albany Creek data. Validated 2026-10-27.
   each against 8 s for a house). In the POC area, 95% of 10,784 addresses place cleanly.
 - **Which streets:** grow outward from the start along residential streets until the time or distance
   is used up, skipping streets walked in the last 7 days. **Arterials** (Old Northern Rd, Albany
-  Creek Rd) are never delivery streets: they can be walked along to get somewhere, but nobody is sent
-  to letterbox a main road.
+  Creek Rd; in OpenStreetMap terms trunk, primary and secondary roads and their slip lanes) are never
+  delivery streets: they can be walked along or crossed to get somewhere, but nobody is sent to
+  letterbox a main road. They must still be in the street network: until 2026-10-28 the POC left out
+  trunk roads (South Pine Rd, Old Northern Rd, Gympie Rd), which split the network into 30 pieces and
+  made the streets across them unreachable; with them in, one piece holds 99% of letterboxes.
 - **Both sides of the road is what makes the maths easy.** Walking every chosen street once per side
   always forms a closed loop (each street becomes two one-way kerbs, so every corner has as many ways
   in as out). The walk prefers the sharpest left turn at each corner, which traces each block's kerb
@@ -63,6 +66,40 @@ The POC runs this on real Albany Creek data. Validated 2026-10-27.
 - **Time:** walking at 4 km/h plus the per-letterbox time above. Around Albany Creek that is about 38
   letterboxes per km walked, so an hour is roughly 3 km and 100 letterboxes.
 - **Bundles:** letterboxes ÷ 50, rounded up, plus a spare when the remainder is close.
+
+### When Walk now can't be as long as asked (2026-10-28)
+
+Because of the no-empty-walking limit, homes fall into pockets: streets you can reach from each other
+without more than 150 m of empty walking. Main roads, shops, parks, creeks and streets done this week
+bound them. Around Albany Creek about a quarter of homes are in pockets of under 500 letterboxes, so a
+1 to 2 hour walk often fills a whole pocket. Raising the length then changes nothing, and people
+can't see why. So the plan reports its **reach**:
+
+- If the walk falls more than 10% short of what was asked, or comes out more than 25% longer, the
+  screen says so right under the figures, in plain words: "Streets near you run out at 4.8 km. You
+  asked for 10 km." It isn't an error and doesn't pop up. Changing the length, when the walk doesn't
+  change, briefly highlights the note and updates "You asked for", so a tap never looks ignored. The
+  distance control shows "Up to 4.8 km nearby" once the limit is known, and a Walk now tile whose
+  walk is capped says "about 290 letterboxes, the most nearby".
+- **Why**, from the data, at most two lines: streets done this week nearby (named and drawn faded),
+  the main roads that bound the pocket and the non-homes skipped around it, or the edge of the area
+  the app covers. When a longer walk *would* reach further, it says the next streets don't fit, not
+  that streets run out. When the walk is longer than asked, it says why: the nearest streets not done
+  this week are some way off, or one street both ways already makes it that long.
+- **Two ways to get more**, worked out only when the walk is capped:
+  - **Walk further between streets:** the shortest stretch over 150 m, and up to 600 m, that reaches
+    another pocket ("Add a 290 m walk to reach Flamingo Dr: about 150 more letterboxes, 10.0 km in
+    all"). It's opt-in for that one walk and never automatic, because long empty walks are what the
+    limit is there to stop. A walk that uses one draws it dotted on the map, labelled "290 m, no
+    letterboxes", and can be undone ("Leave it out").
+  - **Start where there's more:** the nearest start whose pocket can fill the request ("Start from the
+    Bevlin Ct area, 310 m away: room for the full 10 km"). Choosing it switches to Pick on map at that
+    point.
+- **The real app** covers the whole church area, not the POC's Albany Creek box (so "edge of the
+  area" rarely shows), and its "done this week" comes from everyone's walks on the server, not this
+  phone. It should also add footpaths and cut-throughs to the street network (OpenStreetMap footway,
+  path and cycleway, without the footpaths that run beside a road): in the POC area 68 of them would
+  each save more than 150 m of walking, 17 within 1.5 km of church, and many would join pockets.
 
 ### Homes only: skipping businesses
 

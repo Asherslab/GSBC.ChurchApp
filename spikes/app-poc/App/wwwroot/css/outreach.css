@@ -191,3 +191,13 @@
 .walked-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 0.8235rem; line-height: 1.45; color: var(--ink-2); }
 .walked-note strong { color: var(--ink); font-weight: 600; }
 .walked-swatch { flex: none; width: 18px; height: 6px; margin-top: 0.5em; border-radius: 3px; background: color-mix(in srgb, var(--ink-3) 35%, transparent); }
+
+.walk-most { margin-top: -6px; }
+.walk-reach { margin-top: 14px; padding: 14px 16px 2px; border-radius: var(--radius); background: var(--sand); animation: walk-reach-nudge 1100ms var(--ease-out); }
+.walk-reach__title { font-size: 0.9412rem; font-weight: 700; line-height: 1.3; color: var(--ink); text-wrap: balance; }
+.walk-reach__asked { margin-top: 2px; font-size: 0.8235rem; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.walk-reach__why { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 0.8235rem; line-height: 1.45; color: var(--ink-2); }
+.walk-reach__options { margin-top: 12px; }
+.walk-reach__options .row { width: 100%; text-align: left; }
+.walk-reach__options .row:active { background: var(--sand-strong); }
+@keyframes walk-reach-nudge { from { background: color-mix(in srgb, var(--marker) 34%, var(--sand)); } }
