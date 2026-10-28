@@ -60,7 +60,7 @@
         }
 
         <Section Title="Walk now" First="@(Outreach.Day is null && Outreach.Walk is not { Finished: false })">
-            <p class="section__lead">@(Outreach.Here is null ? "A loop from church that covers both sides of every street. You can start from where you are on the next screen." : "A loop from where you are that covers both sides of every street.")</p>
+            <p class="section__lead">A loop from where you are that covers both sides of every street.</p>
             <ChoiceTiles Tiles="WalkTiles" />
         </Section>
 
@@ -154,13 +154,14 @@
         }
     }
 
+    private string From => Outreach.Here is null ? "" : "&from=here";
+
     private IReadOnlyList<ChoiceTile> BuildTiles()
     {
-        var from = Outreach.Here is null ? "church" : "here";
         var start = Outreach.Here ?? Outreach.Church;
         ChoiceTile Timed(string label, int minutes) =>
-            new(label, $"about {Outreach.PlanNow(start, new(minutes)).Letterboxes} letterboxes", $"outreach/walk?minutes={minutes}&from={from}");
-        return [Timed("30 min", 30), Timed("1 hour", 60), Timed("2 hours", 120), new("Distance", "choose how far", $"outreach/walk?km=3&from={from}")];
+            new(label, $"about {Outreach.PlanNow(start, new(minutes)).Letterboxes} letterboxes", $"outreach/walk?minutes={minutes}{From}");
+        return [Timed("30 min", 30), Timed("1 hour", 60), Timed("2 hours", 120), new("Distance", "choose how far", $"outreach/walk?km=3{From}")];
     }
 
     private void Refresh() => InvokeAsync(StateHasChanged);

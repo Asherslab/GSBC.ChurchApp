@@ -26,11 +26,14 @@
     <Section>
         @if (plan is null)
         {
-            <p class="hint">@(startMode == StartMode.Map ? "Tap the map where you'll start." : "Finding where you are…")</p>
+            @if (message is null)
+            {
+                <p class="hint">@(startMode == StartMode.Map ? "Tap the map where you'll start." : "Finding where you are…")</p>
+            }
         }
         else if (plan.Letterboxes == 0)
         {
-            <EmptyState Icon="map" Title="No streets to walk here" Body="Every street near this start was walked this week, or it's outside the area this preview covers. Try church, or tap somewhere else on the map." />
+            <EmptyState Icon="map" Title="No streets to walk here" Body="Every street near this start was walked this week, or it's outside the area this preview covers. Tap somewhere else on the map." />
         }
         else
         {
@@ -59,7 +62,7 @@
 </Page>
 
 @code {
-    private enum StartMode { Here, Church, Map }
+    private enum StartMode { Here, Map }
 
     private const string DistanceOption = "km";
 
@@ -67,7 +70,7 @@
         [new("30", "30 min"), new("60", "1 hr"), new("120", "2 hr"), new(DistanceOption, "Distance")];
 
     private static readonly IReadOnlyList<Choice<StartMode>> StartOptions =
-        [new(StartMode.Here, "From here"), new(StartMode.Church, "Church"), new(StartMode.Map, "Pick on map")];
+        [new(StartMode.Here, "From here"), new(StartMode.Map, "Pick on map")];
 
     [SupplyParameterFromQuery] public int? Minutes { get; set; }
     [SupplyParameterFromQuery(Name = "km")] public double? Km { get; set; }
@@ -103,14 +106,7 @@
             length = Minutes.Value.ToString(CultureInfo.InvariantCulture);
         }
         await Outreach.EnsureLoadedAsync();
-        if (From == "church")
-        {
-            startMode = StartMode.Church;
-            start = Outreach.Church;
-            located = true;
-            Replan();
-        }
-        else if (From == "here" && Outreach.Here is { } here)
+        if (From == "here" && Outreach.Here is { } here)
         {
             start = here;
             located = true;
@@ -141,19 +137,24 @@
             }
             else
             {
-                message = "You're outside the streets this preview covers (Albany Creek), so this starts from church.";
-                start = Outreach.Church;
+                PickOnMap("You're outside the streets this preview covers (Albany Creek). Tap the map where you'll start.");
             }
         }
         else
         {
-            message = result == "denied"
-                ? "Location is off for this app, so this starts from church. Pick on map to start somewhere else."
-                : "Couldn't find where you are, so this starts from church.";
-            start = Outreach.Church;
+            PickOnMap(result == "denied"
+                ? "Location is off for this app. Tap the map where you'll start."
+                : "Couldn't find where you are. Tap the map where you'll start.");
         }
         Replan();
         StateHasChanged();
+    }
+
+    private void PickOnMap(string reason)
+    {
+        startMode = StartMode.Map;
+        message = reason;
+        start = null;
     }
 
     private void Replan() => plan = start is { } from ? Outreach.PlanNow(from, Budget) : null;
@@ -176,10 +177,6 @@
         message = null;
         switch (mode)
         {
-            case StartMode.Church:
-                start = Outreach.Church;
-                Replan();
-                break;
             case StartMode.Map:
                 start = null;
                 plan = null;

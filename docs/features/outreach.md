@@ -17,7 +17,7 @@ design leaves room for it (a slower pace, fewer letterboxes per hour) but doesn'
 Three ways in, each a different thing (decided 2026-10-27):
 
 1. **Walk now (casual, the default).** "How long have you got?" 30 min, 1 hr, 2 hr or a distance. The
-   app makes a loop there and then, from where you are, from church, or from a point you tap. It
+   app makes a loop there and then, from where you are (or a point you tap if location is off). It
    shows the distance, letterboxes, bundles to take and roughly how long, then Start.
 2. **Outreach days (ready-made).** The church holds them at a set day and time (for example, Saturday
    8:30–11:30). Staff prepare the routes beforehand in the admin panel. Walkers **claim** a route:

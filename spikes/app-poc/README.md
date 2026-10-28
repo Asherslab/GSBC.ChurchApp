@@ -136,7 +136,7 @@ the map with your position and one street side at a time, Done, Back a street an
   minute) from OpenStreetMap streets (Overpass, ODbL), Queensland address points (CC BY 4.0), Moreton Bay
   lot land use (MBRC 2020, CC BY 4.0) and Brisbane City Plan 2014 zoning (Brisbane City Council, CC BY 4.0).
   It covers Albany Creek and the Brisbane edge to the east (Bridgeman Downs, Aspley and Carseldine edges,
-  Bald Hills and McDowall slivers); a start outside falls back to church with a message.
+  Bald Hills and McDowall slivers); a start outside, or no location, asks you to tap your start on the map.
 - **Homes only:** every address is classed deliver, skip or check. Moreton Bay addresses join the
   council's lot layer by lot and plan (92% of 9,138), else by the lot polygon they sit in (8%); the
   lot's actual use decides (homes, unit schemes, flats and retirement villages are delivered; shops,
