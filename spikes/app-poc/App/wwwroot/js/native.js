@@ -227,6 +227,7 @@
       map.addSource('planner-zones', { type: 'geojson', data: data.zones ?? empty });
       map.addSource('planner-pins', { type: 'geojson', data: data.pins ?? empty });
       map.addSource('planner-gesture', { type: 'geojson', data: empty });
+      map.addSource('planner-brush', { type: 'geojson', data: empty });
       map.addLayer({ id: 'planner-zones-fill', type: 'fill', source: 'planner-zones', paint: { 'fill-color': token('--danger'), 'fill-opacity': 0.14 } });
       map.addLayer({ id: 'planner-zones-line', type: 'line', source: 'planner-zones', paint: { 'line-color': token('--danger'), 'line-width': 2 } });
       map.addLayer({ id: 'planner-area-fill', type: 'fill', source: 'planner-area', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': token('--accent'), 'fill-opacity': 0.08 } });
@@ -236,6 +237,7 @@
       map.addLayer({ id: 'planner-through', type: 'line', source: 'planner-streets', filter: ['==', ['get', 'kind'], 'through'], layout: { 'line-cap': 'butt' }, paint: walkThroughPaint() });
       map.addLayer({ id: 'planner-halo', type: 'line', source: 'planner-streets', filter: ['==', ['get', 'kind'], 'section'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['get', 'color'], 'line-width': 16, 'line-opacity': 0, 'line-blur': 1 } });
       map.addLayer({ id: 'planner-streets', type: 'line', source: 'planner-streets', filter: ['!', ['in', ['get', 'kind'], ['literal', ['rested', 'through']]]], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': ['coalesce', ['get', 'color'], token('--ink-3')], 'line-width': ['case', ['==', ['get', 'kind'], 'free'], 4, 6] } });
+      map.addLayer({ id: 'planner-brush', type: 'line', source: 'planner-brush', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-width': 16, 'line-opacity': 0.5, 'line-blur': 1, 'line-color': token('--ink-3') } });
       map.addLayer({ id: 'planner-gesture-fill', type: 'fill', source: 'planner-gesture', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': token('--ink'), 'fill-opacity': 0.06 } });
       map.addLayer({ id: 'planner-gesture-line', type: 'line', source: 'planner-gesture', filter: ['==', ['geometry-type'], 'LineString'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': token('--ink'), 'line-width': 2, 'line-dasharray': [2, 1.5] } });
       map.addLayer({ id: 'planner-meeting', type: 'circle', source: 'planner-meeting', paint: { 'circle-radius': 9, 'circle-color': token('--primary'), 'circle-stroke-width': 3, 'circle-stroke-color': '#ffffff' } });
@@ -245,6 +247,8 @@
     };
 
     const drawingTools = ['scissors', 'lasso', 'brush', 'eraser'];
+    const snapMetres = 15;
+    const clickPixels = 4;
     const hitLayers = ['planner-streets', 'planner-rested', 'planner-through'];
     const flat = (points) => points.flatMap((p) => [p.lng, p.lat]);
     const fs = (key) => ['boolean', ['feature-state', key], false];
@@ -298,9 +302,10 @@
       const state = el.gsbcPlanner;
       state.map.removeFeatureState({ source: 'planner-streets' });
       state.map.getSource('planner-gesture')?.setData(empty);
+      state.map.getSource('planner-brush')?.setData(empty);
       state.tip.hidden = true;
-      state.stroke = null;
-      state.hoverEdge = null;
+      state.brush = null;
+      state.hoverStreet = null;
     };
 
     const showTip = (state, point, parts) => {
@@ -321,29 +326,129 @@
       state.tip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
     };
 
-    const edgeAt = (map, point) => {
-      const box = [[point.x - 6, point.y - 6], [point.x + 6, point.y + 6]];
-      return map.queryRenderedFeatures(box, { layers: hitLayers })[0];
-    };
-
     const routeAt = (map, point) => {
       const box = [[point.x - 8, point.y - 8], [point.x + 8, point.y + 8]];
       const hit = map.queryRenderedFeatures(box, { layers: ['planner-streets'] }).find((f) => f.properties.route != null);
       return hit ? Number(hit.properties.route) : -1;
     };
 
-    const strokeAt = (el, point) => {
-      const state = el.gsbcPlanner;
-      const hit = edgeAt(state.map, point);
-      if (!hit) return;
-      const edge = Number(hit.properties.edge);
-      if (state.stroke.has(edge)) return;
-      state.stroke.add(edge);
-      if (state.tool === 'eraser') {
-        if (hit.properties.route != null) state.map.setFeatureState({ source: 'planner-streets', id: edge }, { erase: true });
-      } else if (state.data.activeColor && Number(hit.properties.boxes) > 0) {
-        state.map.setFeatureState({ source: 'planner-streets', id: edge }, { paint: state.data.activeColor });
+    const indexStreets = (state) => {
+      const cos = state.data?.cosLat ?? 1;
+      const byStreet = new Map();
+      for (const f of state.data?.streets?.features ?? []) {
+        if (!byStreet.has(f.properties.street)) byStreet.set(f.properties.street, []);
+        byStreet.get(f.properties.street).push(f);
       }
+      state.streets = new Map();
+      for (const [street, pieces] of byStreet) {
+        pieces.sort((a, b) => a.properties.from - b.properties.from);
+        if (pieces[0].properties.from > 0 || pieces[pieces.length - 1].properties.to < 1) continue;
+        const coords = [];
+        for (const c of pieces.flatMap((f) => f.geometry.coordinates)) {
+          const last = coords[coords.length - 1];
+          if (!last || last[0] !== c[0] || last[1] !== c[1]) coords.push(c);
+        }
+        const along = [0];
+        for (let i = 1; i < coords.length; i++) along.push(along[i - 1] + Math.hypot((coords[i][0] - coords[i - 1][0]) * cos, coords[i][1] - coords[i - 1][1]));
+        state.streets.set(street, { coords, along, metres: pieces[0].properties.length, edges: pieces.map((f) => f.properties.edge) });
+      }
+    };
+
+    const project = (street, lngLat, cos) => {
+      const { coords, along } = street;
+      const [px, py] = [lngLat.lng * cos, lngLat.lat];
+      let best = Infinity;
+      let at = 0;
+      for (let i = 0; i < coords.length - 1; i++) {
+        const [ax, ay, bx, by] = [coords[i][0] * cos, coords[i][1], coords[i + 1][0] * cos, coords[i + 1][1]];
+        const [dx, dy] = [bx - ax, by - ay];
+        const t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / Math.max(dx * dx + dy * dy, 1e-18)));
+        const distance = (px - ax - t * dx) ** 2 + (py - ay - t * dy) ** 2;
+        if (distance < best) { best = distance; at = along[i] + t * (along[i + 1] - along[i]); }
+      }
+      return at / Math.max(along[along.length - 1], 1e-12);
+    };
+
+    const slice = (street, from, to) => {
+      const { coords, along } = street;
+      const total = along[along.length - 1];
+      const pointAt = (d) => {
+        const i = Math.max(0, Math.min(coords.length - 2, along.findIndex((a) => a >= d) - 1));
+        const span = along[i + 1] - along[i];
+        const t = span <= 0 ? 0 : Math.max(0, Math.min(1, (d - along[i]) / span));
+        return [coords[i][0] + t * (coords[i + 1][0] - coords[i][0]), coords[i][1] + t * (coords[i + 1][1] - coords[i][1])];
+      };
+      const [a, b] = [from * total, to * total];
+      return [pointAt(a), ...coords.filter((_, i) => along[i] > a && along[i] < b), pointAt(b)];
+    };
+
+    const snap = (at, metres) => at * metres <= snapMetres ? 0 : (1 - at) * metres <= snapMetres ? 1 : at;
+
+    const nearestEnds = (from, to) => {
+      const ends = (s) => [[0, s.coords[0]], [1, s.coords[s.coords.length - 1]]];
+      let best = null;
+      for (const [fa, pa] of ends(from)) {
+        for (const [ta, pb] of ends(to)) {
+          const d = Math.hypot(pa[0] - pb[0], pa[1] - pb[1]);
+          if (!best || d < best.d) best = { d, from: fa, to: ta };
+        }
+      }
+      return best;
+    };
+
+    const streetsAt = (state, point) => state.map.queryRenderedFeatures([[point.x - 7, point.y - 7], [point.x + 7, point.y + 7]], { layers: hitLayers })
+      .map((f) => f.properties.street).filter((s) => state.streets.has(s));
+
+    const brushTo = (el, point) => {
+      const state = el.gsbcPlanner;
+      const brush = state.brush;
+      const lngLat = state.map.unproject(point);
+      const cos = state.data.cosLat;
+      const under = streetsAt(state, point);
+      const current = brush.stretches[brush.stretches.length - 1];
+      brush.moved ||= Math.hypot(point.x - brush.origin.x, point.y - brush.origin.y) > clickPixels;
+      if (!current) {
+        if (under.length === 0) return;
+        const at = project(state.streets.get(under[0]), lngLat, cos);
+        brush.stretches.push({ street: under[0], a: at, b: at });
+      } else if (under.length > 0 && !under.includes(current.street)) {
+        const ends = nearestEnds(state.streets.get(current.street), state.streets.get(under[0]));
+        current.b = ends.from;
+        brush.stretches.push({ street: under[0], a: ends.to, b: project(state.streets.get(under[0]), lngLat, cos) });
+      } else {
+        current.b = project(state.streets.get(current.street), lngLat, cos);
+      }
+    };
+
+    const drawBrush = (el, point) => {
+      const state = el.gsbcPlanner;
+      const brush = state.brush;
+      if (!brush) return;
+      const features = [];
+      brush.flat = [];
+      for (const stretch of brush.stretches) {
+        const street = state.streets.get(stretch.street);
+        const [a, b] = brush.moved ? [snap(Math.min(stretch.a, stretch.b), street.metres), snap(Math.max(stretch.a, stretch.b), street.metres)] : [0, 1];
+        if ((b - a) * street.metres < 1) continue;
+        brush.flat.push(stretch.street, a, b);
+        features.push({ type: 'Feature', properties: {}, geometry: { type: 'LineString', coordinates: slice(street, a, b) } });
+      }
+      if (brush.colour) state.map.getSource('planner-brush')?.setData({ type: 'FeatureCollection', features });
+      if (brush.flat.length === 0 || !brush.colour) { state.tip.hidden = true; return; }
+      const label = state.dotnet.invokeMethod('BrushPreview', state.gesture, brush.flat);
+      showTip(state, point, [[state.gesture === 'brush' ? brush.colour : null, label]]);
+    };
+
+    const startBrush = (el, point) => {
+      const state = el.gsbcPlanner;
+      clearHover(state);
+      const erasing = state.tool === 'eraser';
+      const colour = erasing ? token('--bg') : state.data.activeColor;
+      state.brush = { stretches: [], origin: point, moved: false, colour };
+      state.map.setPaintProperty('planner-brush', 'line-color', colour ?? token('--ink-3'));
+      state.map.setPaintProperty('planner-brush', 'line-opacity', erasing ? 0.85 : 0.5);
+      brushTo(el, point);
+      drawBrush(el, point);
     };
 
     const previewCut = (el, point) => {
@@ -413,13 +518,11 @@
         } else if (panning(state)) {
           return;
         } else {
+          setHover(el, -1);
           state.gesture = state.tool;
           state.line = [map.unproject(point)];
           state.last = point;
-          if (state.tool === 'brush' || state.tool === 'eraser') {
-            state.stroke = new Set();
-            strokeAt(el, point);
-          }
+          if (state.tool === 'brush' || state.tool === 'eraser') startBrush(el, point);
         }
         e.preventDefault();
         e.stopPropagation();
@@ -445,8 +548,9 @@
         }
         if (state.gesture === 'brush' || state.gesture === 'eraser') {
           const steps = Math.max(1, Math.ceil(Math.hypot(point.x - state.last.x, point.y - state.last.y) / 5));
-          for (let i = 1; i <= steps; i++) strokeAt(el, new maplibregl.Point(state.last.x + (point.x - state.last.x) * i / steps, state.last.y + (point.y - state.last.y) * i / steps));
+          for (let i = 1; i <= steps; i++) brushTo(el, new maplibregl.Point(state.last.x + (point.x - state.last.x) * i / steps, state.last.y + (point.y - state.last.y) * i / steps));
           state.last = point;
+          schedule(el, () => state.gesture && drawBrush(el, point));
           return;
         }
         if (Math.hypot(point.x - state.last.x, point.y - state.last.y) < 4) return;
@@ -468,8 +572,9 @@
         if (!gesture || e.type === 'pointercancel') { state.gesture = null; clearPreview(el); return; }
         state.gesture = null;
         state.held = true;
-        if (gesture === 'brush' || gesture === 'eraser') {
-          state.dotnet.invokeMethodAsync('StrokeFinished', gesture, [...state.stroke]);
+        if ((gesture === 'brush' || gesture === 'eraser') && state.brush) {
+          drawBrush(el, state.last);
+          state.dotnet.invokeMethodAsync('StrokeFinished', gesture, state.brush.flat ?? []);
         } else if (gesture === 'scissors' && state.line.length >= 2) {
           state.dotnet.invokeMethodAsync('CutFinished', flat(state.line));
         } else if (gesture === 'lasso' && state.line.length >= 3) {
@@ -488,14 +593,21 @@
       const map = state.map;
       setHover(el, routeAt(map, point));
       if (state.tool !== 'brush' && state.tool !== 'eraser') return;
-      const hit = edgeAt(map, point);
-      const edge = hit ? Number(hit.properties.edge) : null;
-      if (edge === state.hoverEdge) return;
-      if (state.hoverEdge != null) map.setFeatureState({ source: 'planner-streets', id: state.hoverEdge }, { hover: false, paint: null, erase: false });
-      state.hoverEdge = edge;
-      if (edge == null) return;
-      if (state.tool === 'brush' && state.data.activeColor && Number(hit.properties.boxes) > 0) map.setFeatureState({ source: 'planner-streets', id: edge }, { hover: true, paint: state.data.activeColor });
-      if (state.tool === 'eraser' && hit.properties.route != null) map.setFeatureState({ source: 'planner-streets', id: edge }, { erase: true });
+      const street = streetsAt(state, point)[0] ?? null;
+      if (street === state.hoverStreet) return;
+      clearHover(state);
+      state.hoverStreet = street;
+      if (street == null) return;
+      const pieces = (state.data.streets?.features ?? []).filter((f) => f.properties.street === street);
+      for (const f of pieces) {
+        if (state.tool === 'brush' && state.data.activeColor && Number(f.properties.boxes) > 0) map.setFeatureState({ source: 'planner-streets', id: f.properties.edge }, { hover: true, paint: state.data.activeColor });
+        if (state.tool === 'eraser' && f.properties.route != null) map.setFeatureState({ source: 'planner-streets', id: f.properties.edge }, { erase: true });
+      }
+    };
+
+    const clearHover = (state) => {
+      for (const edge of state.streets?.get(state.hoverStreet)?.edges ?? []) state.map.setFeatureState({ source: 'planner-streets', id: edge }, { hover: false, paint: null, erase: false });
+      state.hoverStreet = null;
     };
 
     const isTyping = (target) => target instanceof HTMLElement && (target.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName));
@@ -588,6 +700,7 @@
         state.points = state.data.points ?? 0;
         state.first = state.data.first ?? null;
         state.routes = (state.data.starts?.features ?? []).length > 0;
+        indexStreets(state);
         el.classList.toggle('planner-map--drawing', mode !== 'select');
         for (const t of ['scissors', 'lasso', 'brush', 'eraser', 'start']) el.classList.toggle(`planner-map--${t}`, mode === 'select' && state.routes && tool === t);
         const apply = () => {

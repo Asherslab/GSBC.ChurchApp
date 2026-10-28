@@ -37,12 +37,13 @@ public sealed class SplitGraph
 {
     public const double MaxJoinMetres = WalkPlan.MaxConnectorMetres / 2;
 
-    private readonly OutreachMap map;
+    private readonly StreetNetwork net;
     private readonly Dictionary<int, int> group = [];
+    private readonly HashSet<int> placed = [];
 
-    public SplitGraph(OutreachMap map, IEnumerable<int> connectors, IReadOnlyCollection<int> streets)
+    public SplitGraph(StreetNetwork network, IEnumerable<int> connectors, IReadOnlyCollection<int> streets)
     {
-        this.map = map;
+        net = network;
         JoinShortLinks(connectors, streets);
     }
 
@@ -52,22 +53,22 @@ public sealed class SplitGraph
         {
             return false;
         }
-        var (ea, eb) = (map.Edges[a], map.Edges[b]);
-        var (au, av, bu, bv) = (Find(ea.U), Find(ea.V), Find(eb.U), Find(eb.V));
+        var (ea, eb) = (net[a], net[b]);
+        var (au, av, bu, bv) = (Root(ea.U), Root(ea.V), Root(eb.U), Root(eb.V));
         return au == bu || au == bv || av == bu || av == bv;
     }
 
     public bool Reaches(int edge, int node)
     {
-        var group = Find(node);
-        return Find(map.Edges[edge].U) == group || Find(map.Edges[edge].V) == group;
+        var group = Root(node);
+        return Root(net[edge].U) == group || Root(net[edge].V) == group;
     }
 
     public void Join(IEnumerable<int> connectors)
     {
         foreach (var e in connectors)
         {
-            Union(map.Edges[e].U, map.Edges[e].V);
+            Union(net[e].U, net[e].V);
         }
     }
 
@@ -76,7 +77,7 @@ public sealed class SplitGraph
         var byGroup = new Dictionary<int, List<int>>();
         foreach (var e in edges)
         {
-            foreach (var g in new[] { Find(map.Edges[e].U), Find(map.Edges[e].V) }.Distinct())
+            foreach (var g in new[] { Root(net[e].U), Root(net[e].V) }.Distinct())
             {
                 if (!byGroup.TryGetValue(g, out var list))
                 {
@@ -98,7 +99,7 @@ public sealed class SplitGraph
             while (stack.TryPop(out var e))
             {
                 component.Add(e);
-                foreach (var next in byGroup[Find(map.Edges[e].U)].Concat(byGroup[Find(map.Edges[e].V)]))
+                foreach (var next in byGroup[Root(net[e].U)].Concat(byGroup[Root(net[e].V)]))
                 {
                     if (seen.Add(next))
                     {
@@ -116,7 +117,7 @@ public sealed class SplitGraph
         var linksAt = new Dictionary<int, List<int>>();
         foreach (var e in connectors)
         {
-            foreach (var node in new[] { map.Edges[e].U, map.Edges[e].V })
+            foreach (var node in new[] { net[e].U, net[e].V })
             {
                 if (!linksAt.TryGetValue(node, out var list))
                 {
@@ -125,7 +126,7 @@ public sealed class SplitGraph
                 list.Add(e);
             }
         }
-        var ends = streets.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V }).ToHashSet();
+        var ends = streets.SelectMany(e => new[] { net[e].U, net[e].V }).ToHashSet();
         foreach (var origin in ends.Where(linksAt.ContainsKey))
         {
             var distance = new Dictionary<int, double> { [origin] = 0 };
@@ -143,8 +144,8 @@ public sealed class SplitGraph
                 }
                 foreach (var e in linksAt.GetValueOrDefault(node) ?? [])
                 {
-                    var next = map.Edges[e].U == node ? map.Edges[e].V : map.Edges[e].U;
-                    var nextDistance = reached + map.Edges[e].Length;
+                    var next = net[e].U == node ? net[e].V : net[e].U;
+                    var nextDistance = reached + net[e].Length;
                     if (nextDistance <= MaxJoinMetres && nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
                     {
                         distance[next] = nextDistance;
@@ -153,6 +154,21 @@ public sealed class SplitGraph
                 }
             }
         }
+    }
+
+    private int Root(int node)
+    {
+        if (net.IsVirtual(node) && placed.Add(node))
+        {
+            var (street, at) = net.VirtualNode(node);
+            var whole = net.Map.Edges[street];
+            var (corner, metres) = at <= 0.5 ? (whole.U, at * whole.Length) : (whole.V, (1 - at) * whole.Length);
+            if (metres <= MaxJoinMetres)
+            {
+                Union(node, corner);
+            }
+        }
+        return Find(node);
     }
 
     private int Find(int node)
@@ -222,7 +238,7 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
     public (List<DraftSection> Sections, SplitGraph Graph) Split(IEnumerable<int> edges, SplitTarget target, double perRoute, IEnumerable<int> connectors)
     {
         var streets = edges.Where(e => planner.Deliverable(e, count)).ToHashSet();
-        var graph = new SplitGraph(map, connectors, streets);
+        var graph = new SplitGraph(planner.Network, connectors, streets);
         var total = streets.Sum(e => Weight(e, target));
         if (total <= 0 || perRoute <= 0)
         {
@@ -262,11 +278,11 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
 
     public SectionSummary Summarise(DraftSection section, GeoPoint meeting, SplitGraph graph)
     {
-        var start = section.Start is { } pinned && section.Edges.Any(e => map.Edges[e].U == pinned || map.Edges[e].V == pinned)
+        var start = section.Start is { } pinned && section.Edges.Any(e => planner.Network[e].U == pinned || planner.Network[e].V == pinned)
             ? pinned
             : planner.NearestNode(meeting, section.Edges);
         var plan = planner.Circuit(section.Edges, start, count);
-        var travel = planner.ShortestMetres(planner.NearestAnyNode(meeting), plan.StartNode);
+        var travel = planner.ShortestMetres(planner.NearestAnyNode(meeting), plan.StartNode, planner.Network.CutsOf(plan.Edges));
         if (double.IsNaN(travel))
         {
             travel = planner.Distance(meeting, planner.Node(plan.StartNode)) * 1.3;
@@ -278,8 +294,8 @@ public sealed class AreaSplitter(OutreachMap map, RoutePlanner planner, Letterbo
     public string Name(DraftSection section)
     {
         var names = section.Edges
-            .Where(e => !string.IsNullOrEmpty(map.Edges[e].Name))
-            .GroupBy(e => map.Edges[e].Name)
+            .Where(e => !string.IsNullOrEmpty(planner.Network[e].Name))
+            .GroupBy(e => planner.Network[e].Name)
             .OrderByDescending(g => g.Sum(e => count(e, 0) + count(e, 1)))
             .Take(2)
             .Select(g => g.Key);

@@ -34,7 +34,7 @@
                 {
                     <p class="hint"><Icon Name="footprints" Size="IconSize.Small" />Walk along @string.Join(", ", approach) to start</p>
                 }
-                <h2 class="walk-card__street">@leg.Street</h2>
+                <h2 class="walk-card__street">@leg.Title</h2>
                 <p class="walk-card__what">
                     <span>Houses on your left · <strong>@leg.Letterboxes</strong> @(leg.Letterboxes == 1 ? "letterbox" : "letterboxes")</span>
                 </p>
@@ -52,7 +52,7 @@
                 }
                 @if (walk.Next is { } next)
                 {
-                    <p class="hint"><Icon Name="chevron-right" Size="IconSize.Small" />Then @(walk.WalkAlongToNext is { Count: > 0 } along ? $"walk along {string.Join(", ", along)} to " : "")@next.Street</p>
+                    <p class="hint"><Icon Name="chevron-right" Size="IconSize.Small" />Then @(walk.WalkAlongToNext is { Count: > 0 } along ? $"walk along {string.Join(", ", along)} to " : "")@next.Title</p>
                 }
 
                 <div class="stack walk-card__actions">
@@ -84,7 +84,7 @@
 </Page>
 
 <ReportSheet Open="reporting" OpenChanged="o => { reporting = o; if (!o) pickedFromMap = false; }" Scopes="WalkScopes"
-             AreaName="@(Outreach.Walk?.Title ?? "This walk")" StreetName="@Outreach.Walk?.Current?.Street" StreetEdge="@Outreach.Walk?.Current?.Arcs.FirstOrDefault().Edge"
+             AreaName="@(Outreach.Walk?.Title ?? "This walk")" StreetName="@Outreach.Walk?.Current?.Title" StreetEdge="@(Outreach.Walk?.Current is { } current ? Outreach.StreetOf(current.Arcs[0].Edge) : null)"
              Point="reportPoint" PointFromMap="pickedFromMap" OnPickOnMap="PickOnMap" />
 
 @code {

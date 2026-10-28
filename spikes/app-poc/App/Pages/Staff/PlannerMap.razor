@@ -74,8 +74,16 @@
     public Task RoutePicked(int route, bool add) => OnRoute.InvokeAsync(new RoutePick(route, add));
 
     [JSInvokable]
-    public Task StrokeFinished(string tool, int[] edges) =>
-        OnStroke.InvokeAsync(new MapStroke(tool == "eraser" ? MapTool.Eraser : MapTool.Brush, edges));
+    public Task StrokeFinished(string tool, double[] stretches) =>
+        OnStroke.InvokeAsync(new MapStroke(tool == "eraser" ? MapTool.Eraser : MapTool.Brush, Stretches(stretches)));
+
+    [JSInvokable]
+    public string BrushPreview(string tool, double[] stretches)
+    {
+        var erasing = tool == "eraser";
+        var boxes = Draft?.Moving(erasing ? null : Active, Stretches(stretches)) ?? 0;
+        return erasing ? $"{boxes} letterboxes out" : $"{boxes} letterboxes into route {Draft!.Number(Active!)}";
+    }
 
     [JSInvokable]
     public Task CutFinished(double[] line) => OnCut.InvokeAsync(Points(line));
@@ -149,6 +157,15 @@
 
     private string Colour(int index) => Palette[index % Palette.Count];
 
+    private static List<Stretch> Stretches(double[] flat) =>
+        Enumerable.Range(0, flat.Length / 3).Select(i => new Stretch((int)flat[3 * i], flat[3 * i + 1], flat[3 * i + 2])).ToList();
+
+    private static Dictionary<int, List<(double From, double To)>> Coverage(StreetNetwork net, IEnumerable<int> edges) =>
+        edges.GroupBy(e => net[e].Street).ToDictionary(g => g.Key, g => g.Select(e => (net[e].From, net[e].To)).ToList());
+
+    private static bool Covered(Dictionary<int, List<(double From, double To)>> coverage, Piece piece) =>
+        coverage.TryGetValue(piece.Street, out var spans) && spans.Any(s => s.From <= piece.From + 1e-6 && s.To >= piece.To - 1e-6);
+
     private static List<GeoPoint> Points(double[] flat) =>
         Enumerable.Range(0, flat.Length / 2).Select(i => new GeoPoint(flat[2 * i + 1], flat[2 * i])).ToList();
 
@@ -184,7 +201,7 @@
 
     private string Json()
     {
-        var map = Outreach.Map!;
+        var net = Outreach.Network!;
         var planner = Outreach.Planner!;
         var owner = new Dictionary<int, int>();
         var walkThrough = new HashSet<int>();
@@ -246,15 +263,20 @@
                 {
                     return;
                 }
+                var cuts = Draft?.Cuts() ?? new Dictionary<int, double[]>();
+                var selected = Selection.Fresh.Concat(Selection.Rested).ToHashSet();
+                var through = Coverage(net, walkThrough);
                 var drawn = Selection.Fresh.Select(e => (e, false))
                     .Concat(Selection.Rested.Select(e => (e, true)))
-                    .Concat(walkThrough.Except(Selection.Fresh).Except(Selection.Rested).Select(e => (e, true)));
+                    .SelectMany(x => (Draft?.PiecesOf(x.e, cuts) ?? [x.e]).Select(p => (p, x.Item2)))
+                    .Concat(walkThrough.Where(e => !selected.Contains(net[e].Street)).Select(e => (e, true)));
                 foreach (var (edge, rested) in drawn)
                 {
-                    var kind = owner.ContainsKey(edge) ? "section" : walkThrough.Contains(edge) ? "through" : rested ? "rested" : Sections.Count > 0 ? "unassigned" : "free";
+                    var piece = net[edge];
+                    var kind = owner.ContainsKey(edge) ? "section" : Covered(through, piece) ? "through" : rested ? "rested" : Sections.Count > 0 ? "unassigned" : "free";
                     Feature(json, "LineString", () =>
                     {
-                        foreach (var point in map.Edges[edge].Line)
+                        foreach (var point in piece.Line)
                         {
                             json.WriteStartArray();
                             json.WriteNumberValue(point[0]);
@@ -264,6 +286,10 @@
                     }, properties: () =>
                     {
                         json.WriteNumber("edge", edge);
+                        json.WriteNumber("street", piece.Street);
+                        json.WriteNumber("from", piece.From);
+                        json.WriteNumber("to", piece.To);
+                        json.WriteNumber("length", piece.Whole.Length);
                         json.WriteString("kind", kind);
                         json.WriteNumber("boxes", Outreach.Count(edge, 0) + Outreach.Count(edge, 1));
                         if (owner.TryGetValue(edge, out var section))
@@ -293,6 +319,7 @@
                 }
             });
             json.WriteBoolean("anySelected", Chosen.Count > 0);
+            json.WriteNumber("cosLat", net.CosLat);
             if (Active is not null)
             {
                 json.WriteString("activeColor", Colour(Active.Colour));

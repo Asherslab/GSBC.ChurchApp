@@ -9,12 +9,15 @@ public sealed record CutPiece(HashSet<int> Edges, int Colour);
 
 public sealed record CutPreview(DraftSection Route, HashSet<int> Kept, List<CutPiece> Pieces);
 
-public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, LetterboxCount count, int colours)
+public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, StreetNetwork net, LetterboxCount count, int colours)
 {
     public const int MaxHistory = 50;
     private const string Locked = "is locked. Unlock it to change its streets.";
+    private const double MinStretchMetres = 1;
 
     private sealed record SectionState(DraftSection Section, int[] Edges, string? Name, int Colour, bool Locked, int? Start);
+
+    private sealed record Segment(double From, double To, DraftSection? Owner);
 
     private sealed record Snapshot(List<SectionState> Sections, SplitGraph? Graph);
 
@@ -44,11 +47,16 @@ public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, Letter
 
     public DraftSection? OwnerOf(int edge) => Sections.FirstOrDefault(s => s.Edges.Contains(edge));
 
+    public IReadOnlyDictionary<int, double[]> Cuts() => net.CutsOf(Sections.SelectMany(s => s.Edges));
+
+    public IEnumerable<int> PiecesOf(int street, IReadOnlyDictionary<int, double[]> cuts) => net.Split(street, cuts.GetValueOrDefault(street) ?? []);
+
     public EditOutcome Regenerate(IEnumerable<int> edges, SplitTarget target, double perRoute, IEnumerable<int> connectors) => Edit(() =>
     {
         var locked = Sections.Where(s => s.Locked).ToList();
-        var taken = locked.SelectMany(s => s.Edges).ToHashSet();
-        var (fresh, graph) = splitter.Split(edges.Where(e => !taken.Contains(e)), target, perRoute, connectors);
+        var lockedStreets = locked.SelectMany(s => s.Edges).Select(e => net[e].Street).ToHashSet();
+        var free = edges.SelectMany(e => lockedStreets.Contains(e) ? Unlocked(e) : [e]).ToList();
+        var (fresh, graph) = splitter.Split(free, target, perRoute, connectors);
         Sections = [.. locked];
         foreach (var section in fresh)
         {
@@ -59,49 +67,26 @@ public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, Letter
         return EditOutcome.Done;
     });
 
-    public EditOutcome Paint(DraftSection into, IEnumerable<int> edges) => Edit(() =>
-    {
-        if (into.Locked)
-        {
-            return new(false, $"Route {Number(into)} {Locked}");
-        }
-        var touched = edges.Where(e => !into.Edges.Contains(e)).ToList();
-        var paintable = touched.Where(e => Streets.Contains(e) && count(e, 0) + count(e, 1) > 0).ToList();
-        var movable = paintable.Where(e => OwnerOf(e) is not { Locked: true }).ToList();
-        if (movable.Count == 0)
-        {
-            return new(false, touched.Count == 0 ? null
-                : paintable.Count > 0 ? $"Route {Number(OwnerOf(paintable[0])!)} {Locked}"
-                : "Streets with no letterboxes stay connectors; they can't be painted.");
-        }
-        foreach (var edge in movable)
-        {
-            OwnerOf(edge)?.Edges.Remove(edge);
-            into.Edges.Add(edge);
-        }
-        return EditOutcome.Done;
-    });
+    public EditOutcome Paint(DraftSection into, IReadOnlyList<Stretch> stretches) => Edit(() =>
+        into.Locked ? new(false, $"Route {Number(into)} {Locked}") : Reassign(stretches, into));
 
-    public EditOutcome Erase(IEnumerable<int> edges) => Edit(() =>
-    {
-        var owned = edges.Select(e => (Edge: e, Owner: OwnerOf(e))).Where(x => x.Owner is not null).ToList();
-        var free = owned.Where(x => !x.Owner!.Locked).ToList();
-        if (free.Count == 0)
-        {
-            return new(false, owned.Count > 0 ? $"Route {Number(owned[0].Owner!)} {Locked}" : null);
-        }
-        foreach (var (edge, owner) in free)
-        {
-            owner!.Edges.Remove(edge);
-        }
-        return EditOutcome.Done;
-    });
+    public EditOutcome Erase(IReadOnlyList<Stretch> stretches) => Edit(() => Reassign(stretches, null));
 
-    public HashSet<int> Lassoed(DraftSection? into, IReadOnlyList<GeoPoint> loop, RoutePlanner planner) =>
-        loop.Count < 3 ? [] : Streets
-            .Where(e => count(e, 0) + count(e, 1) > 0 && into?.Edges.Contains(e) != true && OwnerOf(e) is not { Locked: true })
+    public int Moving(DraftSection? into, IReadOnlyList<Stretch> stretches) =>
+        Touched(stretches).Where(t => Moves(t.Owner, into)).Sum(t => Letterboxes([net.PieceOf(t.Street, t.From, t.To)]));
+
+    public HashSet<int> Lassoed(DraftSection? into, IReadOnlyList<GeoPoint> loop, RoutePlanner planner)
+    {
+        if (loop.Count < 3)
+        {
+            return [];
+        }
+        var cuts = Cuts();
+        return Streets.SelectMany(street => PiecesOf(street, cuts))
+            .Where(e => Letterboxes([e]) > 0 && into?.Edges.Contains(e) != true && OwnerOf(e) is not { Locked: true })
             .Where(e => AreaSplitter.Inside(loop, planner.Midpoint(e)))
             .ToHashSet();
+    }
 
     public EditOutcome Lasso(DraftSection? into, IReadOnlyList<GeoPoint> loop, RoutePlanner planner) => Edit(() =>
     {
@@ -288,6 +273,10 @@ public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, Letter
             Restore(before);
             return outcome;
         }
+        foreach (var street in Sections.SelectMany(s => s.Edges).Where(e => net[e].Partial).Select(e => net[e].Street).Distinct().ToList())
+        {
+            Write(street, Timeline(street));
+        }
         Sections.RemoveAll(s => s.Edges.Count == 0);
         undo.Add(before);
         if (undo.Count > MaxHistory)
@@ -316,6 +305,132 @@ public sealed class RouteDraft(AreaSplitter splitter, RouteEditor editor, Letter
     }
 
     private int Letterboxes(IEnumerable<int> edges) => edges.Sum(e => count(e, 0) + count(e, 1));
+
+    private static bool Moves(DraftSection? owner, DraftSection? into) => owner != into && owner is not { Locked: true };
+
+    private EditOutcome Reassign(IReadOnlyList<Stretch> stretches, DraftSection? into)
+    {
+        var touched = Touched(stretches);
+        if (touched.Where(t => Moves(t.Owner, into)).Sum(t => Letterboxes([net.PieceOf(t.Street, t.From, t.To)])) == 0)
+        {
+            var locked = touched.FirstOrDefault(t => t.Owner is { Locked: true } && t.Owner != into).Owner;
+            return new(false, locked is not null ? $"Route {Number(locked)} {Locked}"
+                : into is not null && touched.Any(t => t.Owner != into) ? "Stretches with no letterboxes stay connectors; they can't be painted."
+                : null);
+        }
+        foreach (var stretch in Merged(stretches))
+        {
+            var segments = Split(Timeline(stretch.Street), stretch.From, stretch.To)
+                .Select(s => s.From >= stretch.From && s.To <= stretch.To && Moves(s.Owner, into) ? s with { Owner = into } : s)
+                .ToList();
+            Write(stretch.Street, segments);
+        }
+        return EditOutcome.Done;
+    }
+
+    private List<(int Street, double From, double To, DraftSection? Owner)> Touched(IReadOnlyList<Stretch> stretches) =>
+        Merged(stretches)
+            .SelectMany(stretch => Split(Timeline(stretch.Street), stretch.From, stretch.To)
+                .Where(s => s.From >= stretch.From && s.To <= stretch.To)
+                .Select(s => (stretch.Street, s.From, s.To, s.Owner)))
+            .ToList();
+
+    private IEnumerable<Stretch> Merged(IReadOnlyList<Stretch> stretches)
+    {
+        foreach (var street in stretches.Where(s => Streets.Contains(s.Street)).GroupBy(s => s.Street))
+        {
+            var length = net.Map.Edges[street.Key].Length;
+            Stretch? open = null;
+            foreach (var (from, to) in street.Select(s => (StreetNetwork.Round(Math.Min(s.From, s.To)), StreetNetwork.Round(Math.Max(s.From, s.To)))).OrderBy(s => s.Item1))
+            {
+                if (open is { } current && from <= current.To)
+                {
+                    open = current with { To = Math.Max(current.To, to) };
+                    continue;
+                }
+                if (open is { } done && (done.To - done.From) * length >= MinStretchMetres)
+                {
+                    yield return done;
+                }
+                open = new(street.Key, from, to);
+            }
+            if (open is { } last && (last.To - last.From) * length >= MinStretchMetres)
+            {
+                yield return last;
+            }
+        }
+    }
+
+    private List<Segment> Timeline(int street)
+    {
+        var owned = Sections
+            .SelectMany(section => section.Edges.Where(e => net[e].Street == street).Select(e => new Segment(net[e].From, net[e].To, section)))
+            .OrderBy(s => s.From);
+        var timeline = new List<Segment>();
+        var at = 0.0;
+        foreach (var segment in owned)
+        {
+            if (segment.From > at)
+            {
+                timeline.Add(new(at, segment.From, null));
+            }
+            timeline.Add(segment);
+            at = segment.To;
+        }
+        if (at < 1)
+        {
+            timeline.Add(new(at, 1, null));
+        }
+        return timeline;
+    }
+
+    private static IEnumerable<Segment> Split(IEnumerable<Segment> timeline, double from, double to)
+    {
+        foreach (var segment in timeline)
+        {
+            var cuts = new[] { segment.From, from, to, segment.To }.Where(c => c >= segment.From && c <= segment.To).Distinct().Order().ToList();
+            for (var i = 0; i < cuts.Count - 1; i++)
+            {
+                yield return segment with { From = cuts[i], To = cuts[i + 1] };
+            }
+        }
+    }
+
+    private static List<Segment> Joined(IEnumerable<Segment> segments)
+    {
+        var joined = new List<Segment>();
+        foreach (var segment in segments)
+        {
+            if (joined.Count > 0 && joined[^1].Owner == segment.Owner)
+            {
+                joined[^1] = joined[^1] with { To = segment.To };
+            }
+            else
+            {
+                joined.Add(segment);
+            }
+        }
+        return joined;
+    }
+
+    private void Write(int street, IEnumerable<Segment> segments)
+    {
+        var kept = Joined(Joined(segments)
+            .Select(s => s.Owner is { Locked: false } && (s.From > 0 || s.To < 1) && Letterboxes([net.PieceOf(street, s.From, s.To)]) == 0 ? s with { Owner = null } : s));
+        foreach (var section in Sections)
+        {
+            section.Edges.RemoveWhere(e => net[e].Street == street);
+        }
+        foreach (var segment in kept.Where(s => s.Owner is not null))
+        {
+            segment.Owner!.Edges.Add(net.PieceOf(street, segment.From, segment.To));
+        }
+    }
+
+    private IEnumerable<int> Unlocked(int street) =>
+        Joined(Timeline(street).Select(s => s.Owner is { Locked: true } ? s : s with { Owner = null }))
+            .Where(s => s.Owner is null)
+            .Select(s => net.PieceOf(street, s.From, s.To));
 
     private int NextColour() => NextColour(Sections.Select(s => s.Colour).ToList());
 

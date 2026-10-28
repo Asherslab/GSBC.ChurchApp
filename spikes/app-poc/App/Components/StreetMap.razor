@@ -118,7 +118,7 @@
                 }
                 foreach (var arc in leg.Arcs)
                 {
-                    var line = map.Edges[arc.Edge].Line;
+                    var line = Outreach.Network![arc.Edge].Line;
                     WriteLine(json, state, arc.Forward ? line : line.Reverse());
                 }
             }

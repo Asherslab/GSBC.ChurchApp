@@ -9,7 +9,7 @@ public sealed record Mark(double Lon, double Lat, int Side, int Edge, string Lab
     public GeoPoint Point => new(Lat, Lon);
 }
 
-public sealed record StreetEdge(int U, int V, string Name, string Road, int Length, int[] Boxes, int[] Units, double[][] Line)
+public sealed record StreetEdge(int U, int V, string Name, string Road, int Length, int[] Boxes, int[] Units, double[][] Line, int[][]? At = null)
 {
     public bool IsArterial => Road is "primary" or "secondary";
 

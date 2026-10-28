@@ -42,6 +42,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     private const string ZonesKey = "outreach:zones";
     private const string ExcludedKey = "outreach:excluded";
     private const string ReportsKey = "outreach:reports";
+    private const int PieceSteps = 10000;
     private static readonly DateTime OutreachPreviewMoment = new(2026, 10, 31, 9, 5, 0);
     private static readonly OutreachDay SampleDay = new(new(2026, 10, 31, 8, 30, 0), new(2026, 10, 31, 11, 30, 0), "church");
     private const int SampleDayTally = 312;
@@ -71,6 +72,8 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
     public event Action? Changed;
 
     public OutreachMap? Map { get; private set; }
+
+    public StreetNetwork? Network { get; private set; }
 
     public RoutePlanner? Planner { get; private set; }
 
@@ -112,29 +115,35 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
 
     public bool InZone(int edge) => zoneEdges.Contains(edge);
 
+    public int StreetOf(int edge) => Network![edge].Street;
+
     public int Count(int edge, int side)
     {
-        if (zoneEdges.Contains(edge))
+        var piece = Network![edge];
+        if (zoneEdges.Contains(piece.Street))
         {
             return 0;
         }
-        var boxes = Map!.Edges[edge].Boxes[side]
-            - flags.Count(f => f.Edge == edge && f.Side == side)
-            - excluded.Count(x => x.Edge == edge && x.Side == side);
+        var boxes = piece.Boxes(side)
+            - flags.Count(f => f.Edge == piece.Street && f.Side == side && Network.Covers(edge, f.Point))
+            - excluded.Count(x => x.Edge == piece.Street && x.Side == side && Network.Covers(edge, x.Point.Point));
         return Math.Max(0, boxes);
     }
 
     public IReadOnlyList<Mark> SkipsOn(IEnumerable<Arc> arcs)
     {
-        var sides = arcs.Select(a => (a.Edge, a.Side)).ToHashSet();
-        return (Map?.Skips ?? []).Where(m => sides.Contains((m.Edge, m.Side))).ToList();
+        var sides = arcs.ToList();
+        return (Map?.Skips ?? []).Where(m => sides.Any(a => On(a, m.Edge, m.Side, m.Point))).ToList();
     }
 
     public IReadOnlyList<ExcludedAddress> DontLetterboxOn(IEnumerable<Arc> arcs)
     {
-        var sides = arcs.Select(a => (a.Edge, a.Side)).ToHashSet();
-        return excluded.Where(x => x.ShowWalkers && sides.Contains((x.Edge, x.Side))).ToList();
+        var sides = arcs.ToList();
+        return excluded.Where(x => x.ShowWalkers && sides.Any(a => On(a, x.Edge, x.Side, x.Point.Point))).ToList();
     }
+
+    private bool On(Arc arc, int street, int side, GeoPoint point) =>
+        arc.Side == side && Network![arc.Edge].Street == street && Network.Covers(arc.Edge, point);
 
     public IReadOnlyList<WalkMarker> MarkersFor(WalkPlan plan)
     {
@@ -146,7 +155,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
 
     public int SkipCount(WalkPlan plan) => SkipsOn(plan.Deliveries.SelectMany(l => l.Arcs)).Count;
 
-    public bool NeedsReview(ReadyRoute route) => route.Edges.Any(zoneEdges.Contains);
+    public bool NeedsReview(ReadyRoute route) => route.Edges.Any(e => zoneEdges.Contains(StreetOf(e)));
 
     public async Task AddZoneAsync(IReadOnlyList<GeoPoint> polygon, ExclusionReason reason, string note)
     {
@@ -254,7 +263,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         myClaims.RemoveWhere(k => k.StartsWith("route:", StringComparison.Ordinal));
         await native.SetAsync(ClaimsKey, string.Join(',', myClaims));
         await native.SetAsync(PublishedKey, string.Join('\n', published.Select(r =>
-            $"{r.Name.Replace('|', ' ').Replace('\n', ' ')}|{string.Join('.', r.Edges)}")));
+            $"{r.Name.Replace('|', ' ').Replace('\n', ' ')}|{string.Join('.', r.Edges.Select(PieceKey))}")));
         Changed?.Invoke();
     }
 
@@ -362,7 +371,7 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         }
         foreach (var arc in leg.Arcs)
         {
-            walked[arc.Edge] = Today;
+            walked[StreetOf(arc.Edge)] = Today;
         }
         if (Walk.CountsTowardDay)
         {
@@ -399,21 +408,22 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         var arc = where is { } point
             ? leg.Arcs.MinBy(a => Planner!.Distance(Planner.Midpoint(a.Edge), point))
             : leg.Arcs[0];
-        flags.Add(new(arc.Edge, arc.Side, where ?? Planner!.Midpoint(arc.Edge)));
+        flags.Add(new(StreetOf(arc.Edge), arc.Side, where ?? Planner!.Midpoint(arc.Edge)));
         plans.Clear();
         await native.SetAsync(FlagsKey, string.Join(',', flags.Select(f =>
             string.Create(CultureInfo.InvariantCulture, $"{f.Edge}:{f.Side}:{f.Point.Lat}:{f.Point.Lon}"))));
         Changed?.Invoke();
     }
 
-    public int FlagsOn(WalkLeg leg) => flags.Count(f => leg.Arcs.Any(a => a.Edge == f.Edge && a.Side == f.Side));
+    public int FlagsOn(WalkLeg leg) => flags.Count(f => leg.Arcs.Any(a => On(a, f.Edge, f.Side, f.Point)));
 
     private async Task LoadAsync()
     {
         Map = await http.GetFromJsonAsync("data/outreach.json", OutreachMapJson.Default.OutreachMap);
-        Planner = new(Map!);
+        Network = new(Map!);
+        Planner = new(Network);
         Splitter = new(Map!, Planner, Count);
-        Editor = new(Map!, Planner);
+        Editor = new(Planner);
         SeedSampleCoverage();
         LoadPublished(await native.GetAsync(PublishedKey));
         zones = Read(await native.GetAsync(ZonesKey), ExclusionsJson.Default.ListExclusionZone);
@@ -499,13 +509,32 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         foreach (var line in saved.Split('\n', StringSplitOptions.RemoveEmptyEntries))
         {
             var parts = line.Split('|');
-            var edges = parts.Length == 2 ? parts[1].Split('.', StringSplitOptions.RemoveEmptyEntries).Select(e => int.TryParse(e, out var n) ? n : -1).ToArray() : [];
-            if (edges.Length > 0 && edges.All(e => e >= 0 && e < Map!.Edges.Count))
+            var edges = parts.Length == 2 ? parts[1].Split('.', StringSplitOptions.RemoveEmptyEntries).Select(ParsePiece).ToArray() : [];
+            if (edges.Length > 0 && edges.All(e => e >= 0))
             {
                 routes.Add(new(routes.Count + 1, parts[0], edges));
             }
         }
         published = routes.Count > 0 ? routes : null;
+    }
+
+    private string PieceKey(int edge) => Network![edge] is { Partial: true } piece
+        ? string.Create(CultureInfo.InvariantCulture, $"{piece.Street}:{Math.Round(piece.From * PieceSteps)}:{Math.Round(piece.To * PieceSteps)}")
+        : edge.ToString(CultureInfo.InvariantCulture);
+
+    private int ParsePiece(string key)
+    {
+        var parts = key.Split(':');
+        if (!int.TryParse(parts[0], CultureInfo.InvariantCulture, out var street) || street < 0 || street >= Map!.Edges.Count)
+        {
+            return -1;
+        }
+        return parts.Length == 3
+            && int.TryParse(parts[1], CultureInfo.InvariantCulture, out var from)
+            && int.TryParse(parts[2], CultureInfo.InvariantCulture, out var to)
+            && from >= 0 && from < to && to <= PieceSteps
+                ? Network!.PieceOf(street, from / (double)PieceSteps, to / (double)PieceSteps)
+                : parts.Length == 1 ? street : -1;
     }
 
     private void SeedSampleCoverage()

@@ -2,8 +2,8 @@
 
 Streets: OpenStreetMap via Overpass (ODbL). Addresses: Queensland Government Addresses layer (CC BY 4.0).
 Homes only: Moreton Bay lot land use (MBRC 2020, CC BY 4.0) and Brisbane City Plan 2014 zoning (Brisbane
-City Council, CC BY 4.0). Only counts per street side, and the points of skipped non-homes, are written;
-no home address leaves this script.
+City Council, CC BY 4.0). Only counts per street side, each letterbox's distance along its street in
+thousandths, and the points of skipped non-homes, are written; no home address leaves this script.
 
     python3 tools/outreach/build_data.py
 """
@@ -213,7 +213,7 @@ def nearest_on_segment(p, a, b):
     ax, ay = b[0] - a[0], b[1] - a[1]
     t = max(0.0, min(1.0, ((p[0] - a[0]) * ax + (p[1] - a[1]) * ay) / ((ax * ax + ay * ay) or 1)))
     q = (a[0] + t * ax, a[1] + t * ay)
-    return math.dist(p, q), ax * (p[1] - a[1]) - ay * (p[0] - a[0])
+    return math.dist(p, q), ax * (p[1] - a[1]) - ay * (p[0] - a[0]), t
 
 
 def build_edges(raw):
@@ -234,7 +234,7 @@ def build_edges(raw):
                     "u": segment[0], "v": segment[-1], "name": way["tags"].get("name", ""),
                     "road": way["tags"]["highway"], "xy": xy, "ll": [lat_lon[n] for n in segment],
                     "length": sum(math.dist(xy[i], xy[i + 1]) for i in range(len(xy) - 1)),
-                    "boxes": [0, 0], "units": [0, 0],
+                    "boxes": [0, 0], "units": [0, 0], "at": [[], []],
                 })
                 segment = [node]
     return edges
@@ -252,18 +252,22 @@ def count_letterboxes(edges, features, classifier):
         best = None
         for i in by_name.get((attributes["street_full"] or "").lower(), []):
             xy = edges[i]["xy"]
+            walked = 0.0
             for j in range(len(xy) - 1):
-                distance, cross = nearest_on_segment(p, xy[j], xy[j + 1])
+                distance, cross, t = nearest_on_segment(p, xy[j], xy[j + 1])
+                step = math.dist(xy[j], xy[j + 1])
                 if best is None or distance < best[0]:
-                    best = (distance, i, 0 if cross > 0 else 1)
+                    best = (distance, i, 0 if cross > 0 else 1, walked + t * step)
+                walked += step
         if best is None or best[0] > MAX_SETBACK_M:
             unplaced += 1
             continue
-        _, i, side = best
+        _, i, side, along = best
         lon, lat = feature["geometry"]["x"], feature["geometry"]["y"]
         kind, label = classifier.classify(attributes, lon, lat)
         if kind != "skip":
             edges[i]["boxes"][side] += 1
+            edges[i]["at"][side].append(round(1000 * along / (edges[i]["length"] or 1)))
             if attributes["unit_number"]:
                 edges[i]["units"][side] += 1
         if label is not None:
@@ -390,6 +394,7 @@ def write(edges, areas, routes, placed, unplaced, marks):
                 "u": node_index[edges[i]["u"]], "v": node_index[edges[i]["v"]],
                 "name": short_name(edges[i]["name"]), "road": edges[i]["road"],
                 "length": round(edges[i]["length"]), "boxes": edges[i]["boxes"], "units": edges[i]["units"],
+                "at": [sorted(side) for side in edges[i]["at"]],
                 "line": [[round(lon, 5), round(lat, 5)] for lat, lon in edges[i]["ll"]],
             }
             for i in keep

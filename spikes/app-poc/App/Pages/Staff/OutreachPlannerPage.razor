@@ -271,7 +271,7 @@
     {
         get
         {
-            var top = chosen.SelectMany(s => s.Edges).SelectMany(e => Outreach.Map!.Edges[e].Line).Max(p => p[1]);
+            var top = chosen.SelectMany(s => s.Edges).SelectMany(e => Outreach.Network![e].Line).Max(p => p[1]);
             return new(top, chosen.Average(s => labelAt[s].Lon));
         }
     }
@@ -297,9 +297,9 @@
     private string ToolHint => tool switch
     {
         MapTool.Scissors => "Drag across the streets where the route should split",
-        MapTool.Brush => Active is null ? "Paint into" : $"Click or drag streets into route {draft.Number(Active)}",
+        MapTool.Brush => Active is null ? "Paint into" : $"Drag along a street to paint that stretch into route {draft.Number(Active)}; click to take it all",
         MapTool.Lasso => "Loop streets into",
-        MapTool.Eraser => "Click or drag streets to leave them out",
+        MapTool.Eraser => "Drag along a street to leave that stretch out; click to leave it all out",
         MapTool.Start => "Drag a route's start pin along its streets",
         _ => chosen.Count == 0 ? "Click a route to select it; shift-click to add more" : "Shift-click to add or remove routes; click the map to clear",
     };
@@ -366,7 +366,7 @@
     {
         Outreach.Changed += Refresh;
         await Outreach.EnsureLoadedAsync();
-        draft = new RouteDraft(Outreach.Splitter!, Outreach.Editor!, Outreach.Count, Palette.Count);
+        draft = new RouteDraft(Outreach.Splitter!, Outreach.Editor!, Outreach.Network!, Outreach.Count, Palette.Count);
         mac = await JS.InvokeAsync<bool>("gsbc.isMac");
     }
 
@@ -609,11 +609,11 @@
     {
         if (stroke.Tool == MapTool.Eraser)
         {
-            Apply(draft.Erase(stroke.Edges));
+            Apply(draft.Erase(stroke.Stretches));
         }
         else if (Active is { } into)
         {
-            Apply(draft.Paint(into, stroke.Edges));
+            Apply(draft.Paint(into, stroke.Stretches));
         }
         else
         {

@@ -145,8 +145,9 @@ the map with your position and one street side at a time, Done, Back a street an
   emerging community, rural and environmental zones are delivered, centres, community facilities, open
   space, sport, utilities and industry skipped, mixed use and no zone are "check" (delivered, with a
   check point). 17,077 home letterboxes, 863 skipped, 883 addresses not matched to a street. The file
-  holds counts per street side plus the points of skipped non-homes (705) and checks (28), never a
-  home's address. The walking screen says "Skip: shop" for the current street and routes show "skips N
+  holds counts per street side, each letterbox's distance along its street in thousandths (so a stretch
+  of a street has an exact count; 1,075 KB, up from 962 KB without them), plus the points of skipped
+  non-homes (705) and checks (28), never a home's address. The walking screen says "Skip: shop" for the current street and routes show "skips N
   businesses".
 - **Map:** MapLibre GL JS 5.24.0 (BSD-3, vendored in `wwwroot/lib/maplibre`, loaded only on outreach pages)
   with OpenFreeMap's Positron and Dark styles. Tiles come from OpenFreeMap's servers, so maps need a signal.
@@ -172,14 +173,26 @@ the map with your position and one street side at a time, Done, Back a street an
   Rename, Lock, Unassign and, for two or more, Merge float beside it; double-click a label to rename it
   in place), **Scissors** (C; drag across the streets where a route should split: only the streets the line
   crosses are severed, at the crossing, and each piece left joined becomes a route, previewed while
-  dragging; new pieces are "Route 4a", "Route 4b" …), **Brush** (B; click
-  or drag streets into the selected route, or pick one from the chips at the top), **Lasso** (L; loop
-  streets into the selected route or a new one), **Eraser** (E; take streets out of every route, drawn
-  faded), **Start pin** (S; drag a route's start to another of its corners), then Undo (⌘Z / Ctrl+Z),
+  dragging; new pieces are "Route 4a", "Route 4b" …), **Brush** (B; press on a street and drag along
+  it to paint just that stretch into the selected route, drawn live as a translucent stroke in the
+  route's colour with its letterbox count by the cursor; dragging on past a corner carries into the
+  next street, an end within 15 m of a corner snaps to it, and a click takes the whole street; pick
+  the route from the chips at the top), **Lasso** (L; loop streets into the selected route or a new
+  one), **Eraser** (E; the same gesture, taking a stretch or a whole street out of every route),
+  **Start pin** (S; drag a route's start to another of its corners), then Undo (⌘Z / Ctrl+Z),
   Redo (⇧⌘Z / Ctrl+Y), Rebalance (evens out unlocked routes by moving boundary streets) and Fit (F).
   Esc ends a gesture and returns to Select; hold Space to pan with a drawing tool. Locked routes show a
-  lock and are left alone by Regenerate, Rebalance and every tool. Streets with no letterboxes can't
-  be painted in; a route an edit breaks apart stays one route, flagged "Needs review: in pieces". The
+  lock and are left alone by Regenerate, Rebalance and every tool. Painting over part of another
+  route's street takes only that stretch; the rest stays with its owner. **Part streets**
+  (`Data/Outreach/StreetNetwork.cs`): a route can own a stretch of a street. A street with stretches
+  owned is split at those points into sub-streets with their own nodes, and every tool, the splitter,
+  the circuit planner, summaries, undo and publishing work on sub-streets as they do on streets.
+  Neighbouring stretches that end up with the same owner join back into one, and a stretch left with
+  no letterboxes goes back to unassigned. A route that owns only part of a street walks to the end of
+  its stretch and back (both kerbs); a stretch whose end is more than 125 m from a corner counts as
+  in pieces, and the empty-walk limits apply as before. Walkers see the leg as "Smith St (part)" with
+  only that stretch drawn (there are no house numbers to say where it stops). Walking a part street
+  marks the whole street walked this week. Stretches with no letterboxes can't be painted in; a route an edit breaks apart stays one route, flagged "Needs review: in pieces". The
   side list is a quiet summary: click a route to select it, with rename, split in two, merge and lock
   as a fallback. Then "Publish to Saturday's outreach" replaces the sample routes on this device (Outreach day shows
   them; "Restore the sample routes" undoes it). Areas separated by parkland or roads not in the data

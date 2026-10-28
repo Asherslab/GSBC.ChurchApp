@@ -129,9 +129,16 @@ Asked for 2026-10-27: draw a polygon and get it split into sections for staff to
    the label), scissors (draw across the streets where a section should split; only the streets the line
    crosses are severed, at the crossing, so each piece is what stays joined on either side; the pieces
    and their letterboxes are previewed while drawing, and a cut that leaves the section joined elsewhere
-   says to keep cutting), brush (paint
-   streets into a section), lasso (loop streets into a section or a new one), eraser (leave streets
-   out that day) and a draggable start pin. Undo and redo cover every edit; Rebalance evens out the
+   says to keep cutting), brush (drag along a street to paint just that stretch into a section, drawn
+   live as a brush stroke with its letterbox count; carrying on past a corner continues into the next
+   street, ends snap to a corner within 15 m, and a click takes the whole street), lasso (loop streets
+   into a section or a new one), eraser (the same gesture, leaving a stretch or a street out that day)
+   and a draggable start pin. A section can own part of a street: painting over part of another
+   section's street takes only that stretch, and the street is split into sub-streets at the stretch
+   ends, which the splitter, the walk planner and every tool treat like streets. Neighbouring
+   stretches with the same owner join back up. A part street is walked to the end of its stretch and
+   back, and walkers see it as "Smith St (part)" with the stretch drawn; without house numbers it can't
+   say "to no. 40". Undo and redo cover every edit; Rebalance evens out the
    unlocked sections; locked sections are left as they are by Regenerate, Rebalance and the tools.
    Streets with no letterboxes stay connectors; an edit that breaks a section apart keeps it as one
    and flags it "Needs review: in pieces". A side list summarises the sections and offers the same
@@ -188,8 +195,8 @@ A feature module `Features/Outreach` (§8). Feeds (§5, §10):
 
 | Feed | Records | Window | Notes |
 |---|---|---|---|
-| `outreach.streets` | The street graph with letterbox counts per side | Whole area, versioned | About 450 KB for Albany Creek; changes only when rebuilt from OSM and addresses |
-| `outreach.days` | Outreach days and their routes | Next 4 weeks and the current day | Routes are lists of street sides |
+| `outreach.streets` | The street graph with letterbox counts per side, and each letterbox's position along its street (thousandths, no address) so a stretch has an exact count | Whole area, versioned | About 450 KB for Albany Creek; changes only when rebuilt from OSM and addresses |
+| `outreach.days` | Outreach days and their routes | Next 4 weeks and the current day | Routes are lists of street sides, or stretches of them (street, from, to) |
 | `outreach.claims` | Claims on day routes and areas | Live | First names only; deleted after the day or the claim's end date |
 | `outreach.coverage` | Last walked date per street side | Rolling 8 weeks | Drives "avoid streets done this week" and areas' freshness |
 | `outreach.areas` | Areas | All | Name, street sides, last done |

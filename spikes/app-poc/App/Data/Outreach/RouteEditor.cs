@@ -2,9 +2,10 @@ namespace Gsbc.AppPoc.Data.Outreach;
 
 public sealed record RouteCut(DraftSection Route, HashSet<int> Kept, List<HashSet<int>> Pieces);
 
-public sealed class RouteEditor(OutreachMap map, RoutePlanner planner)
+public sealed class RouteEditor(RoutePlanner planner)
 {
-    private readonly double cosLat = Math.Cos((map.Bounds[0] + map.Bounds[2]) / 2 * Math.PI / 180);
+    private readonly StreetNetwork net = planner.Network;
+    private readonly double cosLat = planner.Network.CosLat;
 
     public List<RouteCut> Cut(SplitGraph graph, IEnumerable<DraftSection> sections, IReadOnlyList<GeoPoint> line, LetterboxCount count)
     {
@@ -42,7 +43,7 @@ public sealed class RouteEditor(OutreachMap map, RoutePlanner planner)
             }
             foreach (var (edge, along) in crossed.Where(c => !untouched.Contains(c.Edge)))
             {
-                var (near, far) = along.Min() >= 1 - along.Max() ? (map.Edges[edge].U, map.Edges[edge].V) : (map.Edges[edge].V, map.Edges[edge].U);
+                var (near, far) = along.Min() >= 1 - along.Max() ? (net[edge].U, net[edge].V) : (net[edge].V, net[edge].U);
                 var home = pieces.FirstOrDefault(p => p.Any(e => graph.Reaches(e, near)))
                     ?? pieces.FirstOrDefault(p => p.Any(e => graph.Reaches(e, far)))
                     ?? pieces.MaxBy(p => planner.Letterboxes(p, count))!;
@@ -75,7 +76,7 @@ public sealed class RouteEditor(OutreachMap map, RoutePlanner planner)
 
     private List<double> Crossings(List<(double X, double Y)> cut, int edge)
     {
-        var line = map.Edges[edge].Line;
+        var line = net[edge].Line;
         var lengths = new double[line.Length - 1];
         for (var i = 0; i < lengths.Length; i++)
         {

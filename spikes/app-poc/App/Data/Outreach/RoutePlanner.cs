@@ -9,11 +9,13 @@ public readonly record struct Arc(int Edge, bool Forward)
     public int Side => Forward ? 0 : 1;
 }
 
-public sealed record WalkLeg(string Street, IReadOnlyList<Arc> Arcs, int Letterboxes, double Metres)
+public sealed record WalkLeg(string Street, IReadOnlyList<Arc> Arcs, int Letterboxes, double Metres, bool Part = false)
 {
     public const string Unnamed = "Unnamed street";
 
     public bool Delivers => Letterboxes > 0;
+
+    public string Title => Part ? $"{Street} (part)" : Street;
 }
 
 public sealed record WalkPlan(int StartNode, IReadOnlyList<Arc> Arcs, IReadOnlyList<WalkLeg> Legs, double Metres, int Letterboxes, TimeSpan Time, double ConnectorMetres, double LongestConnectorMetres)
@@ -48,7 +50,7 @@ public sealed record WalkPlan(int StartNode, IReadOnlyList<Arc> Arcs, IReadOnlyL
 
     public int BundlesToTake => (int)Math.Ceiling(Letterboxes * 1.1 / BundleSize);
 
-    public IReadOnlyList<string> Streets => Deliveries.Select(l => l.Street).Distinct().ToList();
+    public IReadOnlyList<string> Streets => Deliveries.Select(l => l.Title).Distinct().ToList();
 }
 
 public delegate int LetterboxCount(int edge, int side);
@@ -69,37 +71,28 @@ public sealed class RoutePlanner
     private const double SeedSpacingMetres = 200;
 
     private readonly OutreachMap map;
-    private readonly GeoPoint[] nodes;
-    private readonly List<int>[] adjacency;
+    private readonly StreetNetwork net;
     private readonly double cosLat;
 
-    public RoutePlanner(OutreachMap map)
+    public RoutePlanner(StreetNetwork network)
     {
-        this.map = map;
-        var count = map.Edges.Max(e => Math.Max(e.U, e.V)) + 1;
-        nodes = new GeoPoint[count];
-        adjacency = Enumerable.Range(0, count).Select(_ => new List<int>()).ToArray();
-        for (var i = 0; i < map.Edges.Count; i++)
-        {
-            var edge = map.Edges[i];
-            nodes[edge.U] = new(edge.Line[0][1], edge.Line[0][0]);
-            nodes[edge.V] = new(edge.Line[^1][1], edge.Line[^1][0]);
-            adjacency[edge.U].Add(i);
-            adjacency[edge.V].Add(i);
-        }
-        cosLat = Math.Cos((map.Bounds[0] + map.Bounds[2]) / 2 * Math.PI / 180);
+        net = network;
+        map = network.Map;
+        cosLat = network.CosLat;
     }
 
-    public GeoPoint Node(int node) => nodes[node];
+    public StreetNetwork Network => net;
+
+    public GeoPoint Node(int node) => net.Node(node);
 
     public bool Contains(GeoPoint point) =>
         point.Lat >= map.Bounds[0] && point.Lat <= map.Bounds[2] && point.Lon >= map.Bounds[1] && point.Lon <= map.Bounds[3];
 
     public int NearestNode(GeoPoint point, IEnumerable<int>? within = null)
     {
-        var candidates = within?.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V })
-            ?? Enumerable.Range(0, nodes.Length).Where(n => adjacency[n].Any(e => !map.Edges[e].IsArterial));
-        return candidates.MinBy(n => Distance(nodes[n], point));
+        var candidates = within?.SelectMany(e => new[] { net[e].U, net[e].V })
+            ?? net.CornerNodes.Where(n => net.Adjacent(n).Any(e => !net[e].IsArterial));
+        return candidates.MinBy(n => Distance(net.Node(n), point));
     }
 
     public double Distance(GeoPoint a, GeoPoint b)
@@ -115,11 +108,11 @@ public sealed class RoutePlanner
         var px = point.Lon * cosLat;
         for (var e = 0; e < map.Edges.Count; e++)
         {
-            if (map.Edges[e].IsArterial)
+            if (net[e].IsArterial)
             {
                 continue;
             }
-            var line = map.Edges[e].Line;
+            var line = net[e].Line;
             for (var i = 0; i < line.Length - 1; i++)
             {
                 var (ax, ay, bx, by) = (line[i][0] * cosLat, line[i][1], line[i + 1][0] * cosLat, line[i + 1][1]);
@@ -136,12 +129,12 @@ public sealed class RoutePlanner
         return (best.Edge, best.Side);
     }
 
-    public IEnumerable<int> NeighbourEdges(int edge) => adjacency[map.Edges[edge].U].Concat(adjacency[map.Edges[edge].V]);
+    public IEnumerable<int> NeighbourEdges(int edge) => net.Adjacent(net[edge].U).Concat(net.Adjacent(net[edge].V));
 
     public GeoPoint Midpoint(int edge)
     {
-        var line = map.Edges[edge].Line;
-        var middle = line[line.Length / 2];
+        var piece = net[edge];
+        var middle = piece.Partial ? net.Slice(piece.Street, (piece.From + piece.To) / 2, (piece.From + piece.To) / 2)[0] : piece.Line[piece.Line.Length / 2];
         return new(middle[1], middle[0]);
     }
 
@@ -165,7 +158,7 @@ public sealed class RoutePlanner
             {
                 continue;
             }
-            foreach (var e in adjacency[node])
+            foreach (var e in net.Adjacent(node))
             {
                 if (seen.Add(e) && Deliverable(e, count) && !rested(e) && seeds.All(s => Distance(s, Midpoint(e)) >= SeedSpacingMetres))
                 {
@@ -173,7 +166,7 @@ public sealed class RoutePlanner
                     yield return (e, PathTo(node, reachedBy).ToList());
                 }
                 var next = Other(e, node);
-                var nextDistance = reached + map.Edges[e].Length;
+                var nextDistance = reached + net[e].Length;
                 if (nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
                 {
                     distance[next] = nextDistance;
@@ -187,19 +180,19 @@ public sealed class RoutePlanner
     private WalkPlan Grow(int start, (int Edge, List<int> Approach) seed, WalkBudget budget, Func<int, bool> rested, LetterboxCount count)
     {
         var limit = budget.Minutes is { } minutes ? minutes * 60 : (budget.Kilometres ?? 2) * 1000;
-        double Cost(int e) => budget.Minutes is null ? 2.0 * map.Edges[e].Length : WalkSeconds(e, count);
-        double TransitCost(int e) => 2.0 * map.Edges[e].Length / (budget.Minutes is null ? 1 : WalkingMetresPerSecond);
+        double Cost(int e) => budget.Minutes is null ? 2.0 * net[e].Length : WalkSeconds(e, count);
+        double TransitCost(int e) => 2.0 * net[e].Length / (budget.Minutes is null ? 1 : WalkingMetresPerSecond);
         bool Empty(int e) => !Deliverable(e, count) || rested(e);
 
         var chosen = new HashSet<int>(seed.Approach) { seed.Edge };
         var transit = seed.Approach.Where(Empty).ToHashSet();
-        var chosenNodes = chosen.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V }).ToHashSet();
+        var chosenNodes = chosen.SelectMany(e => new[] { net[e].U, net[e].V }).ToHashSet();
         var total = Cost(seed.Edge) + seed.Approach.Sum(p => Empty(p) ? TransitCost(p) : Cost(p));
         var radius = (budget.Minutes is { } walkMinutes ? walkMinutes * 60 * WalkingMetresPerSecond : (budget.Kilometres ?? 2) * 1000) / 2;
 
         bool TryAdd(int e)
         {
-            var ends = new HashSet<int> { map.Edges[e].U, map.Edges[e].V };
+            var ends = new HashSet<int> { net[e].U, net[e].V };
             var touches = ends.Overlaps(chosenNodes);
             var path = touches ? [] : ShortestPath(chosenNodes, ends, ReachMetres);
             var empty = path.Where(Empty).ToList();
@@ -211,12 +204,12 @@ public sealed class RoutePlanner
             chosen.UnionWith(path);
             chosen.Add(e);
             transit.UnionWith(empty);
-            chosenNodes.UnionWith(path.Append(e).SelectMany(p => new[] { map.Edges[p].U, map.Edges[p].V }));
+            chosenNodes.UnionWith(path.Append(e).SelectMany(p => new[] { net[p].U, net[p].V }));
             total += cost;
             return true;
         }
 
-        var candidates = EdgesNear([map.Edges[seed.Edge].U, map.Edges[seed.Edge].V], radius, count).Where(e => !Empty(e) && !chosen.Contains(e)).ToList();
+        var candidates = EdgesNear([net[seed.Edge].U, net[seed.Edge].V], radius, count).Where(e => !Empty(e) && !chosen.Contains(e)).ToList();
         var grew = true;
         while (grew && total < limit)
         {
@@ -245,14 +238,14 @@ public sealed class RoutePlanner
             {
                 continue;
             }
-            foreach (var e in adjacency[node].OrderByDescending(e => Density(e, count)))
+            foreach (var e in net.Adjacent(node).OrderByDescending(e => Density(e, count)))
             {
                 if (seen.Add(e))
                 {
                     edges.Add(e);
                 }
                 var next = Other(e, node);
-                var nextDistance = reached + map.Edges[e].Length;
+                var nextDistance = reached + net[e].Length;
                 if (nextDistance <= radius && nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
                 {
                     distance[next] = nextDistance;
@@ -267,11 +260,12 @@ public sealed class RoutePlanner
     {
         var walkOnly = transit?.ToHashSet() ?? [];
         var set = edges.Where(e => walkOnly.Contains(e) || Deliverable(e, count)).ToHashSet();
-        if (set.Count > 0 && !set.Any(e => map.Edges[e].U == start || map.Edges[e].V == start))
+        if (set.Count > 0 && !set.Any(e => net[e].U == start || net[e].V == start))
         {
-            start = NearestNode(nodes[start], set);
+            start = NearestNode(net.Node(start), set);
         }
-        foreach (var link in Links(set, start))
+        var cuts = net.CutsOf(set);
+        foreach (var link in Links(set, start, cuts))
         {
             if (set.Add(link))
             {
@@ -281,8 +275,8 @@ public sealed class RoutePlanner
         var arcsFrom = new Dictionary<int, List<Arc>>();
         foreach (var e in set)
         {
-            Outgoing(arcsFrom, map.Edges[e].U).Add(new(e, true));
-            Outgoing(arcsFrom, map.Edges[e].V).Add(new(e, false));
+            Outgoing(arcsFrom, net[e].U).Add(new(e, true));
+            Outgoing(arcsFrom, net[e].V).Add(new(e, false));
         }
 
         var used = new HashSet<Arc>();
@@ -315,7 +309,7 @@ public sealed class RoutePlanner
         return Summarise(start, route, (e, side) => walkOnly.Contains(e) ? 0 : count(e, side), walkOnly.Contains);
     }
 
-    private IEnumerable<int> Links(HashSet<int> edges, int start)
+    private IEnumerable<int> Links(HashSet<int> edges, int start, IReadOnlyDictionary<int, double[]> cuts)
     {
         var reached = new HashSet<int> { start };
         var pending = edges.ToHashSet();
@@ -326,11 +320,11 @@ public sealed class RoutePlanner
             while (grew)
             {
                 grew = false;
-                foreach (var e in pending.Where(e => reached.Contains(map.Edges[e].U) || reached.Contains(map.Edges[e].V)).ToList())
+                foreach (var e in pending.Where(e => reached.Contains(net[e].U) || reached.Contains(net[e].V)).ToList())
                 {
                     pending.Remove(e);
-                    reached.Add(map.Edges[e].U);
-                    reached.Add(map.Edges[e].V);
+                    reached.Add(net[e].U);
+                    reached.Add(net[e].V);
                     grew = true;
                 }
             }
@@ -338,8 +332,8 @@ public sealed class RoutePlanner
             {
                 return links;
             }
-            var targets = pending.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V }).ToHashSet();
-            var path = ShortestPath(reached, targets);
+            var targets = pending.SelectMany(e => new[] { net[e].U, net[e].V }).ToHashSet();
+            var path = ShortestPath(reached, targets, cuts: cuts);
             if (path.Count == 0)
             {
                 return links;
@@ -347,21 +341,22 @@ public sealed class RoutePlanner
             links.AddRange(path);
             foreach (var e in path)
             {
-                reached.Add(map.Edges[e].U);
-                reached.Add(map.Edges[e].V);
+                reached.Add(net[e].U);
+                reached.Add(net[e].V);
             }
         }
     }
 
     public (List<int> Edges, double Metres) ShortestLink(IEnumerable<int> fromEdges, IEnumerable<int> toEdges)
     {
-        var from = fromEdges.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V }).ToHashSet();
-        var to = toEdges.SelectMany(e => new[] { map.Edges[e].U, map.Edges[e].V }).ToHashSet();
-        var path = ShortestPath(from, to);
-        return (path, path.Sum(e => (double)map.Edges[e].Length));
+        var (fromList, toList) = (fromEdges.ToList(), toEdges.ToList());
+        var from = fromList.SelectMany(e => new[] { net[e].U, net[e].V }).ToHashSet();
+        var to = toList.SelectMany(e => new[] { net[e].U, net[e].V }).ToHashSet();
+        var path = ShortestPath(from, to, cuts: net.CutsOf(fromList.Concat(toList)));
+        return (path, path.Sum(e => (double)net[e].Length));
     }
 
-    private List<int> ShortestPath(HashSet<int> from, HashSet<int> to, double maxMetres = double.MaxValue)
+    private List<int> ShortestPath(HashSet<int> from, HashSet<int> to, double maxMetres = double.MaxValue, IReadOnlyDictionary<int, double[]>? cuts = null)
     {
         var distance = new Dictionary<int, double>();
         var via = new Dictionary<int, int>();
@@ -387,10 +382,10 @@ public sealed class RoutePlanner
                 }
                 return path;
             }
-            foreach (var e in adjacency[node])
+            foreach (var e in net.Adjacent(node, cuts))
             {
                 var next = Other(e, node);
-                var nextDistance = reached + map.Edges[e].Length;
+                var nextDistance = reached + net[e].Length;
                 if (nextDistance <= maxMetres && nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
                 {
                     distance[next] = nextDistance;
@@ -409,7 +404,7 @@ public sealed class RoutePlanner
         var (longest, run) = (0.0, 0.0);
         foreach (var e in path)
         {
-            run = empty.Contains(e) ? run + map.Edges[e].Length : 0;
+            run = empty.Contains(e) ? run + net[e].Length : 0;
             longest = Math.Max(longest, run);
         }
         return longest;
@@ -421,27 +416,28 @@ public sealed class RoutePlanner
         foreach (var arc in route)
         {
             var isConnector = connector(arc.Edge);
-            run = isConnector ? run + map.Edges[arc.Edge].Length : 0;
-            connectorMetres += isConnector ? map.Edges[arc.Edge].Length : 0;
+            run = isConnector ? run + net[arc.Edge].Length : 0;
+            connectorMetres += isConnector ? net[arc.Edge].Length : 0;
             longest = Math.Max(longest, run);
         }
         var legs = new List<WalkLeg>();
         foreach (var arc in route)
         {
-            var edge = map.Edges[arc.Edge];
+            var edge = net[arc.Edge];
             var street = string.IsNullOrEmpty(edge.Name) ? WalkLeg.Unnamed : edge.Name;
             var boxes = edge.IsArterial ? 0 : count(arc.Edge, arc.Side);
+            var part = boxes > 0 && edge.Partial;
             if (legs.Count > 0 && legs[^1].Street == street && legs[^1].Delivers == boxes > 0)
             {
                 var last = legs[^1];
-                legs[^1] = last with { Arcs = [.. last.Arcs, arc], Letterboxes = last.Letterboxes + boxes, Metres = last.Metres + edge.Length };
+                legs[^1] = last with { Arcs = [.. last.Arcs, arc], Letterboxes = last.Letterboxes + boxes, Metres = last.Metres + edge.Length, Part = last.Part || part };
             }
             else
             {
-                legs.Add(new(street, [arc], boxes, edge.Length));
+                legs.Add(new(street, [arc], boxes, edge.Length, part));
             }
         }
-        var metres = route.Sum(a => (double)map.Edges[a.Edge].Length);
+        var metres = route.Sum(a => (double)net[a.Edge].Length);
         var seconds = metres / WalkingMetresPerSecond + route.Sum(a => SideSeconds(a.Edge, a.Side, count));
         return new(start, route, legs, metres, legs.Sum(l => l.Letterboxes), TimeSpan.FromSeconds(seconds), connectorMetres, longest);
     }
@@ -473,23 +469,23 @@ public sealed class RoutePlanner
 
     private double OutBearing(Arc arc)
     {
-        var line = map.Edges[arc.Edge].Line;
+        var line = net[arc.Edge].Line;
         return arc.Forward ? Bearing(line[0], line[1]) : Bearing(line[^1], line[^2]);
     }
 
     private double InBearing(Arc arc)
     {
-        var line = map.Edges[arc.Edge].Line;
+        var line = net[arc.Edge].Line;
         return arc.Forward ? Bearing(line[^2], line[^1]) : Bearing(line[1], line[0]);
     }
 
     private double Bearing(double[] from, double[] to) => Math.Atan2(to[1] - from[1], (to[0] - from[0]) * cosLat);
 
-    private int From(Arc arc) => arc.Forward ? map.Edges[arc.Edge].U : map.Edges[arc.Edge].V;
+    private int From(Arc arc) => arc.Forward ? net[arc.Edge].U : net[arc.Edge].V;
 
-    private int To(Arc arc) => arc.Forward ? map.Edges[arc.Edge].V : map.Edges[arc.Edge].U;
+    private int To(Arc arc) => arc.Forward ? net[arc.Edge].V : net[arc.Edge].U;
 
-    private int Other(int edge, int node) => map.Edges[edge].U == node ? map.Edges[edge].V : map.Edges[edge].U;
+    private int Other(int edge, int node) => net[edge].U == node ? net[edge].V : net[edge].U;
 
     private IEnumerable<int> PathTo(int node, Dictionary<int, int> reachedBy)
     {
@@ -500,18 +496,18 @@ public sealed class RoutePlanner
         }
     }
 
-    public bool Deliverable(int e, LetterboxCount count) => !map.Edges[e].IsArterial && count(e, 0) + count(e, 1) > 0;
+    public bool Deliverable(int e, LetterboxCount count) => !net[e].IsArterial && count(e, 0) + count(e, 1) > 0;
 
     private double Density(int e, LetterboxCount count) =>
-        map.Edges[e].IsArterial ? 0 : (count(e, 0) + count(e, 1)) / Math.Max(map.Edges[e].Length, 1.0);
+        net[e].IsArterial ? 0 : (count(e, 0) + count(e, 1)) / Math.Max(net[e].Length, 1.0);
 
     public double EdgeSeconds(int e, LetterboxCount count) => WalkSeconds(e, count);
 
     public static double WalkingSeconds(double metres) => metres / WalkingMetresPerSecond;
 
-    public int NearestAnyNode(GeoPoint point) => Enumerable.Range(0, nodes.Length).Where(n => adjacency[n].Count > 0).MinBy(n => Distance(nodes[n], point));
+    public int NearestAnyNode(GeoPoint point) => net.CornerNodes.Where(n => net.Adjacent(n).Any()).MinBy(n => Distance(net.Node(n), point));
 
-    public double ShortestMetres(int from, int to)
+    public double ShortestMetres(int from, int to, IReadOnlyDictionary<int, double[]>? cuts = null)
     {
         var distance = new Dictionary<int, double> { [from] = 0 };
         var queue = new PriorityQueue<int, double>();
@@ -526,10 +522,10 @@ public sealed class RoutePlanner
             {
                 continue;
             }
-            foreach (var e in adjacency[node])
+            foreach (var e in net.Adjacent(node, cuts))
             {
                 var next = Other(e, node);
-                var nextDistance = reached + map.Edges[e].Length;
+                var nextDistance = reached + net[e].Length;
                 if (nextDistance < distance.GetValueOrDefault(next, double.MaxValue))
                 {
                     distance[next] = nextDistance;
@@ -541,16 +537,16 @@ public sealed class RoutePlanner
     }
 
     private double WalkSeconds(int e, LetterboxCount count) =>
-        2.0 * map.Edges[e].Length / WalkingMetresPerSecond + SideSeconds(e, 0, count) + SideSeconds(e, 1, count);
+        2.0 * net[e].Length / WalkingMetresPerSecond + SideSeconds(e, 0, count) + SideSeconds(e, 1, count);
 
     private double SideSeconds(int e, int side, LetterboxCount count)
     {
-        if (map.Edges[e].IsArterial)
+        if (net[e].IsArterial)
         {
             return 0;
         }
         var boxes = count(e, side);
-        var units = Math.Min(map.Edges[e].Units[side], boxes);
+        var units = Math.Min(net[e].Units(side), boxes);
         return units * UnitSeconds + (boxes - units) * HouseSeconds;
     }
 
