@@ -187,3 +187,7 @@
 .report-card__note { font-size: 0.9118rem; color: var(--ink); line-height: 1.45; }
 .report-card__photo { width: 100%; max-height: 260px; object-fit: cover; border-radius: var(--radius); }
 .report-card--done { opacity: 0.6; }
+
+.walked-note { display: flex; align-items: flex-start; gap: 8px; margin-top: 10px; font-size: 0.8235rem; line-height: 1.45; color: var(--ink-2); }
+.walked-note strong { color: var(--ink); font-weight: 600; }
+.walked-swatch { flex: none; width: 18px; height: 6px; margin-top: 0.5em; border-radius: 3px; background: color-mix(in srgb, var(--ink-3) 35%, transparent); }

@@ -6,7 +6,7 @@
 @inject NativeBridge Native
 
 <Page Title="Walk now" BackHref="outreach" BackLabel="Outreach" TopBar="TopBarStyle.Solid" Bell="false">
-    <StreetMap Plan="plan" Start="start" Markers="@(plan is null ? [] : Outreach.MarkersFor(plan))" Pickable="@(startMode == StartMode.Map)" ShowLocation="@(startMode == StartMode.Here)" OnPick="Picked" Class="street-map--preview" Label="Map of your walk" />
+    <StreetMap Plan="plan" Start="start" Markers="@(plan is null ? [] : Outreach.MarkersFor(plan))" Walked="walked" Pickable="@(startMode == StartMode.Map)" ShowLocation="@(startMode == StartMode.Here)" OnPick="Picked" Class="street-map--preview" Label="Map of your walk" />
 
     <Section First="true">
         <div class="stack">
@@ -47,9 +47,9 @@
             {
                 <p class="hint"><Icon Name="mailbox" Size="IconSize.Small" />Skips @skips @(skips == 1 ? "business" : "businesses") and other non-homes</p>
             }
-            @if (Outreach.RestedStreetsNearby(plan) is > 0 and var rested)
+            @if (walked.Count > 0)
             {
-                <p class="hint"><Icon Name="check" Size="IconSize.Small" />Skips @rested @(rested == 1 ? "street" : "streets") done this week</p>
+                <p class="walked-note"><span class="walked-swatch"></span><span><strong>Leaves out streets done this week</strong>, shown faded on the map: @OutreachFormat.StreetList(Outreach.StreetNames(walked))</span></p>
             }
             <div style="margin-top: 18px">
                 <button class="btn btn--primary btn--block" @onclick="Start"><Icon Name="footprints" Size="IconSize.Small" />Start walk</button>
@@ -81,6 +81,7 @@
     private StartMode startMode = StartMode.Here;
     private GeoPoint? start;
     private WalkPlan? plan;
+    private IReadOnlyList<int> walked = [];
     private string? message;
     private bool located;
 
@@ -155,9 +156,14 @@
         startMode = StartMode.Map;
         message = reason;
         start = null;
+        walked = [];
     }
 
-    private void Replan() => plan = start is { } from ? Outreach.PlanNow(from, Budget) : null;
+    private void Replan()
+    {
+        plan = start is { } from ? Outreach.PlanNow(from, Budget) : null;
+        walked = plan is null ? [] : Outreach.RestedNear(plan);
+    }
 
     private void SetLength(string value)
     {
@@ -180,6 +186,7 @@
             case StartMode.Map:
                 start = null;
                 plan = null;
+                walked = [];
                 break;
             default:
                 await LocateAsync();

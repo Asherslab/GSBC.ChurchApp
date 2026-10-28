@@ -202,8 +202,25 @@ public sealed class OutreachService(HttpClient http, NativeBridge native, Church
         return mine > sample || sample is null ? mine : sample;
     }
 
-    public int RestedStreetsNearby(WalkPlan plan) =>
-        plan.Edges.SelectMany(Planner!.NeighbourEdges).Distinct().Where(Rested).Select(e => Map!.Edges[e].Name).Distinct().Count();
+    public IReadOnlyList<int> RestedNear(WalkPlan plan)
+    {
+        const double MarginMetres = 250;
+        var points = plan.Edges.SelectMany(e => Map!.Edges[e].Line).ToList();
+        if (points.Count == 0)
+        {
+            return [];
+        }
+        var latMargin = MarginMetres / 111_320;
+        var lonMargin = latMargin / Math.Cos(points[0][1] * Math.PI / 180);
+        var (south, north) = (points.Min(p => p[1]) - latMargin, points.Max(p => p[1]) + latMargin);
+        var (west, east) = (points.Min(p => p[0]) - lonMargin, points.Max(p => p[0]) + lonMargin);
+        return Enumerable.Range(0, Map!.Edges.Count)
+            .Where(e => Rested(e) && Planner!.Deliverable(e, Count))
+            .Where(e => Planner!.Midpoint(e) is var m && m.Lat >= south && m.Lat <= north && m.Lon >= west && m.Lon <= east)
+            .ToList();
+    }
+
+    public IReadOnlyList<string> StreetNames(IEnumerable<int> edges) => edges.Select(e => Map!.Edges[e].Name).Where(n => n.Length > 0).Distinct().Order().ToList();
 
     public double MonthCoverage()
     {

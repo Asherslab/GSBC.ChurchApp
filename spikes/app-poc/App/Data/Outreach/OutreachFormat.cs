@@ -46,6 +46,8 @@ public static class OutreachFormat
     public static string Window(OutreachDay day) =>
         $"{ChurchClock.Time(day.Start)}–{ChurchClock.Time(day.End)} from {day.Where}";
 
-    public static string StreetList(WalkPlan plan, int take = 4) =>
-        plan.Streets.Count <= take ? string.Join(", ", plan.Streets) : $"{string.Join(", ", plan.Streets.Take(take))} and {plan.Streets.Count - take} more";
+    public static string StreetList(WalkPlan plan, int take = 4) => StreetList(plan.Streets, take);
+
+    public static string StreetList(IReadOnlyList<string> streets, int take = 4) =>
+        streets.Count <= take ? string.Join(", ", streets) : $"{string.Join(", ", streets.Take(take))} and {streets.Count - take} more";
 }

@@ -16,6 +16,7 @@
     [Parameter] public bool Follow { get; set; }
     [Parameter] public bool ShowLocation { get; set; }
     [Parameter] public IReadOnlyList<WalkMarker> Markers { get; set; } = [];
+    [Parameter] public IReadOnlyList<int> Walked { get; set; } = [];
     [Parameter] public string Label { get; set; } = "Map of the walk";
     [Parameter] public string? Class { get; set; }
     [Parameter] public EventCallback<GeoPoint> OnPick { get; set; }
@@ -40,7 +41,7 @@
             attaching = JS.InvokeVoidAsync("gsbc.streetMap.attach", element, self, centre.Lat, centre.Lon, Attribution).AsTask();
         }
         await attaching!;
-        var state = $"{CurrentLeg}|{Start}|{Pickable}|{Follow}|{ShowLocation}|{Markers.Count}";
+        var state = $"{CurrentLeg}|{Start}|{Pickable}|{Follow}|{ShowLocation}|{Markers.Count}|{Walked.Count}";
         var planChanged = !ReferenceEquals(Plan, shownPlan);
         if (!planChanged && state == shownState)
         {
@@ -99,6 +100,10 @@
             json.WriteStartObject();
             json.WriteString("type", "FeatureCollection");
             json.WriteStartArray("features");
+            foreach (var edge in Walked)
+            {
+                WriteLine(json, "walked", map.Edges[edge].Line);
+            }
             var delivery = 0;
             foreach (var leg in Plan.Legs)
             {
@@ -114,30 +119,35 @@
                 foreach (var arc in leg.Arcs)
                 {
                     var line = map.Edges[arc.Edge].Line;
-                    json.WriteStartObject();
-                    json.WriteString("type", "Feature");
-                    json.WriteStartObject("properties");
-                    json.WriteString("state", state);
-                    json.WriteEndObject();
-                    json.WriteStartObject("geometry");
-                    json.WriteString("type", "LineString");
-                    json.WriteStartArray("coordinates");
-                    foreach (var point in arc.Forward ? line : line.Reverse())
-                    {
-                        json.WriteStartArray();
-                        json.WriteNumberValue(point[0]);
-                        json.WriteNumberValue(point[1]);
-                        json.WriteEndArray();
-                    }
-                    json.WriteEndArray();
-                    json.WriteEndObject();
-                    json.WriteEndObject();
+                    WriteLine(json, state, arc.Forward ? line : line.Reverse());
                 }
             }
             json.WriteEndArray();
             json.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.ToArray());
+    }
+
+    private static void WriteLine(Utf8JsonWriter json, string state, IEnumerable<double[]> line)
+    {
+        json.WriteStartObject();
+        json.WriteString("type", "Feature");
+        json.WriteStartObject("properties");
+        json.WriteString("state", state);
+        json.WriteEndObject();
+        json.WriteStartObject("geometry");
+        json.WriteString("type", "LineString");
+        json.WriteStartArray("coordinates");
+        foreach (var point in line)
+        {
+            json.WriteStartArray();
+            json.WriteNumberValue(point[0]);
+            json.WriteNumberValue(point[1]);
+            json.WriteEndArray();
+        }
+        json.WriteEndArray();
+        json.WriteEndObject();
+        json.WriteEndObject();
     }
 
     public async ValueTask DisposeAsync()

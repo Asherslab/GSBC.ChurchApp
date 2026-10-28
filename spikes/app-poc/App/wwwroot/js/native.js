@@ -102,6 +102,7 @@
       map.addSource('gsbc-me', { type: 'geojson', data: point(position?.[0], position?.[1]) });
       map.addSource('gsbc-marks', { type: 'geojson', data: state.marks ?? empty });
       const side = { 'line-offset': -4, 'line-width': 5 };
+      map.addLayer({ id: 'gsbc-route-walked', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'walked'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-width': 7, 'line-color': token('--ink-3'), 'line-opacity': 0.35 } });
       map.addLayer({ id: 'gsbc-route-done', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'done'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--ink-3'), 'line-opacity': 0.55 } });
       map.addLayer({ id: 'gsbc-route-todo', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'todo'], layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { ...side, 'line-color': token('--primary') } });
       map.addLayer({ id: 'gsbc-route-transit', type: 'line', source: 'gsbc-route', filter: ['==', ['get', 'state'], 'transit'], layout: { 'line-cap': 'butt' }, paint: walkThroughPaint() });
