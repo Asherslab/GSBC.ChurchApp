@@ -1,0 +1,104 @@
+@page "/ministries"
+@implements IDisposable
+@inject MinistriesService Ministries
+
+<Page Title="Ministries" BackHref="more" BackLabel="More">
+    <Masthead Title="Ministries" Note="Every ministry at Good Shepherd. Have a look, then join or ask the leaders.">
+        <div class="status">
+            <span class="status__text">Viewing as <strong>@SplitCatalog.RoleName(Ministries.Role)</strong> · @SplitCatalog.For(Ministries.Split).Name design</span>
+            <button class="btn btn--ghost-masthead" @onclick="() => previewOpen = true"><Icon Name="eye" Size="IconSize.Small" />Change</button>
+        </div>
+    </Masthead>
+
+    @if (Ministries.IsStaff)
+    {
+        <Section Title="Staff" First="true">
+            <div class="list">
+                <ListRow Icon="send" IconTone="Tone.Warm" Title="Message all serving teams" Subtitle="@($"{MinistriesService.Names(Ministries.ServingTeams.Where(m => m.ParentId is null).ToList())}, and Music's teams. Not fellowship groups.")" OnClick="() => staffOpen = true" />
+            </div>
+        </Section>
+    }
+
+    @if (Ministries.Mine is { Count: > 0 } mine)
+    {
+        <Section Title="Yours" First="!Ministries.IsStaff">
+            <div class="stack">
+                <YourSlots Limit="1" />
+            </div>
+            <div class="list mine-list">
+                @foreach (var ministry in mine)
+                {
+                    <MinistryRow @key="ministry.Id" Ministry="ministry" Detail="@MineDetail(ministry)" Href="@MineHref(ministry)" />
+                }
+            </div>
+        </Section>
+    }
+
+    <Section Title="Serving teams" First="Ministries.Mine.Count == 0 && !Ministries.IsStaff">
+        <p class="section__lead">The teams that run Sundays and Friday nights. Most ask you to talk to a leader before joining.</p>
+        <div class="list">
+            @foreach (var ministry in MinistriesService.TopLevel.Where(IsServing))
+            {
+                <MinistryRow @key="ministry.Id" Ministry="ministry" />
+                @foreach (var child in MinistriesService.Children(ministry))
+                {
+                    <MinistryRow @key="child.Id" Ministry="child" Child="true" />
+                }
+            }
+        </div>
+    </Section>
+
+    <Section Title="Fellowship">
+        <p class="section__lead">Groups to belong to. Open to all: tap Join to see what's on.</p>
+        <div class="list">
+            @foreach (var ministry in MinistriesService.TopLevel.Where(m => !IsServing(m)))
+            {
+                <MinistryRow @key="ministry.Id" Ministry="ministry" />
+            }
+        </div>
+    </Section>
+
+    <Section Title="Life Groups" LinkText="All groups" LinkHref="groups">
+        <p class="section__lead">Sunday classes at 9am, chosen each round. Each group is a ministry too, with its own leaders, notices and room.</p>
+        <div class="list">
+            <LifeGroupsHomeRow />
+        </div>
+    </Section>
+
+    <Section Title="This preview">
+        <PreviewControls />
+    </Section>
+
+    <PreviewFooter />
+</Page>
+
+<PreviewSheet @bind-Open="previewOpen" />
+<ComposeSheet Open="staffOpen" OpenChanged="v => staffOpen = v" OnSent="m => toast.ShowAsync(m)" />
+<Toast @ref="toast" />
+
+@code {
+    private Toast toast = default!;
+    private bool previewOpen;
+    private bool staffOpen;
+
+    private string? MineHref(Ministry ministry) =>
+        Ministries.Split == ViewingSplit.TeamRoom ? $"ministries/{ministry.Id}/team" : null;
+
+    private bool IsServing(Ministry ministry) => Ministries.Settings(ministry).ServingTeam;
+
+    private string MineDetail(Ministry ministry)
+    {
+        var latest = Ministries.Posts(ministry).FirstOrDefault();
+        return latest is null ? MinistriesService.JoinLabel(Ministries.Settings(ministry).Join) : $"Latest: {latest.Title}";
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Ministries.Changed += Refresh;
+        await Ministries.EnsureLoadedAsync();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ministries.Changed -= Refresh;
+}

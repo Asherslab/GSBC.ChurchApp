@@ -1,0 +1,67 @@
+@inject MinistriesService Ministries
+@inject NavigationManager Navigation
+@inject ChurchClock Clock
+
+@if (Chats.Count == 0)
+{
+    <p class="muted small">No chats yet.</p>
+}
+else
+{
+    <div class="list">
+        @foreach (var chat in Chats)
+        {
+            <ListRow Icon="@(chat.LeadersOnly ? "megaphone" : "message-square")" IconTone="Tone.Accent" Title="@chat.Name" Subtitle="@Preview(chat)" Href="@($"ministries/{chat.MinistryId}/chats/{chat.Id}")" Trailing="@When(chat)">
+                <Below>
+                    @if (chat.LeadersOnly)
+                    {
+                        <span class="row__meta">Leaders post, everyone reads</span>
+                    }
+                </Below>
+            </ListRow>
+        }
+    </div>
+}
+@if (Ministries.CanStartChat(Ministry))
+{
+    <button class="btn btn--quiet chat-start" @onclick="() => starting = true"><Icon Name="plus" Size="IconSize.Small" />Start a chat</button>
+}
+
+<Sheet Open="starting" OpenChanged="v => starting = v">
+    <h2>New chat in @Ministry.Name</h2>
+    <p>Everyone in @Ministries.MembersPhrase(Ministry) can read it. Messages are kept.</p>
+    <div class="stack sheet__form">
+        <div class="field">
+            <label for="chat-name">Name</label>
+            <input id="chat-name" @bind="name" @bind:event="oninput" placeholder="For example, Christmas cantata" />
+        </div>
+        @if (Ministries.IsLeader(Ministry))
+        {
+            <ToggleRow Title="Only leaders can post" Description="For notices: members read and get notified, but can't reply" Checked="leadersOnly" CheckedChanged="v => leadersOnly = v" />
+        }
+        <button class="btn btn--primary btn--block" disabled="@string.IsNullOrWhiteSpace(name)" @onclick="Start">Start chat</button>
+    </div>
+</Sheet>
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+
+    private bool starting;
+    private bool leadersOnly;
+    private string name = "";
+
+    private IReadOnlyList<MinistryChat> Chats => Ministries.Chats(Ministry).ToList();
+
+    private static string Preview(MinistryChat chat) =>
+        chat.Last is { } last ? $"{last.Author.Split(' ')[0]}: {last.Text}" : "No messages yet";
+
+    private string? When(MinistryChat chat) => chat.Last is { } last ? Clock.Relative(last.At) : null;
+
+    private void Start()
+    {
+        var chat = Ministries.StartChat(Ministry, name.Trim(), leadersOnly);
+        starting = false;
+        name = "";
+        Navigation.NavigateTo($"ministries/{chat.MinistryId}/chats/{chat.Id}");
+    }
+}

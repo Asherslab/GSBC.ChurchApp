@@ -1,0 +1,48 @@
+@inject ChurchClock Clock
+
+@if (Posts.Count == 0)
+{
+    <p class="muted small">@Empty</p>
+}
+else
+{
+    <div class="posts">
+        @foreach (var post in Posts)
+        {
+            <article class="post">
+                <div class="post__head">
+                    <Icon Name="megaphone" Size="IconSize.Small" />
+                    <strong>@post.Title</strong>
+                    @if (post.Important)
+                    {
+                        <span class="pill pill--urgent">Important</span>
+                    }
+                    @if (Marking.Tags(post.Audience))
+                    {
+                        <AudienceTag Audience="post.Audience" />
+                    }
+                </div>
+                <p>@post.Body</p>
+                <time>@Byline(post)</time>
+            </article>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<MinistryPost> Posts { get; set; } = [];
+    [Parameter] public Marking Marking { get; set; }
+    [Parameter] public string Empty { get; set; } = "No announcements yet.";
+
+    private string Byline(MinistryPost post)
+    {
+        var when = Clock.Relative(post.Posted);
+        if (post.ToAllTeams)
+        {
+            return $"{post.Author} · to all serving teams · {when}";
+        }
+        var from = post.MinistryId != Ministry.Id && MinistriesService.Find(post.MinistryId) is { } source ? $" · from {source.Name}" : "";
+        return $"{post.Author}{from} · {when}";
+    }
+}

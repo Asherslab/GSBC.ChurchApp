@@ -713,8 +713,8 @@ button.row:active, a.row:active { background: var(--line); }
 
 .group-hero { position: relative; margin-top: calc(-48px - var(--sat)); padding: calc(var(--sat) + 60px) var(--gutter) 22px; background: color-mix(in srgb, var(--band) 38%, var(--masthead)); color: var(--on-masthead); overflow: hidden; }
 .group-hero::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 5px; background: var(--band); }
-.group-hero__kicker { font-size: 0.8235rem; font-weight: 600; color: var(--on-masthead-2); }
-.group-hero h1 { margin-top: 6px; font-family: var(--font-masthead); font-weight: var(--masthead-weight); letter-spacing: var(--masthead-tracking); font-size: 2rem; line-height: 1.05; text-wrap: balance; }
+.group-hero h1 { font-family: var(--font-masthead); font-weight: var(--masthead-weight); letter-spacing: var(--masthead-tracking); font-size: 2rem; line-height: 1.05; text-wrap: balance; }
+.group-hero__note { margin-top: 6px; font-size: 0.8235rem; font-weight: 600; color: var(--on-masthead-2); }
 .group-hero__actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 18px; }
 
 .where { display: grid; gap: 10px; }

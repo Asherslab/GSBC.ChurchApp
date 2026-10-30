@@ -1,7 +1,35 @@
 # Life Groups
 
-Status: draft, 2026-10-26. Extends [SPEC.md](../../SPEC.md); the site map it uses is
+Status: draft, 2026-10-26; Life Groups became a kind of ministry on 2026-10-30. Extends
+[SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
+
+## A kind of ministry
+
+The owner, 2026-10-30: "Life Groups and Ministries should be somewhat joined, with Life Groups as a
+type of ministry. They have a lot of overlap." So a Life Group is a **ministry of kind Life Group**,
+in the same model as Music or Young Adults ([ministries.md](ministries.md)):
+
+| Shared with every ministry | Only for Life Groups |
+|---|---|
+| Name, About (the blurb), who it's for, leaders, colour | **Rounds**: which round a group belongs to, or all year |
+| Join and Leave (open to all, per phone), and the notifications switch | The Sunday 9:00–9:45 time, set per round |
+| Notices: the Announcements module (an urgent notice is an Important announcement) | The **room** and its map number, and the site-map link |
+| Resources: the Files module | **Session changes** (cancelled, moved, combined) |
+| The Sundays: the Calendar module, one entry per Sunday of the round, a change shown on its entry | "Join as a parent" for Nursery and Kids Life |
+| | The Sunday reminder at 8:30 |
+
+Joining a round's group still lasts until the round ends: the membership stays, but the group drops
+out of "Your groups" once its round is over. A Life Group is always open (Join), all its items are
+for Everyone, and it has no chats or roster.
+
+**Life Groups keeps its own entry point** (More → Life Groups, the home rows and the Hub tile), as a
+view of the ministries of kind Life Group. The directory of ministries has a Life Groups section that
+links to it, rather than listing the classes. Why: Life Groups are chosen together, once a round, as a
+set of classes at the same hour (you pick one of five); they change every eight weeks; and their
+page is organised around the round, the room and the map. Mixed into the directory, five rotating
+classes would bury the ministries that don't change, and a member choosing a class would lose the
+side-by-side choice. As ministries underneath, they share everything that isn't seasonal.
 
 ## What they are
 
@@ -45,13 +73,14 @@ Christmas.
 - **A round** has a name ("Round 3, 2026"), its Sundays (pre-filled six from a start date, editable
   to skip one or shorten it), a time (default 9:00–9:45) and a publish date. A round appears in the app once
   published, usually during the break before it.
-- **A group** belongs to a round, or to no round if it runs all year. It has a title, blurb, leaders
-  (name, photo, optional role), audience, colour, room (a place on the site map), and a map number
-  that defaults to its order.
-- **A session** is one group on one Sunday. It's generated from the round and only stored when
-  something differs: cancelled, a different room, combined with another group, or a substitute
-  leader. Those are structured fields, not just text, so the map, Home and the group page all show
-  the change, and a notice can be attached.
+- **A group** is a ministry of kind Life Group that belongs to a round, or to no round if it runs all
+  year. Its own part is the room (a place on the site map) and a map number that defaults to its
+  order; the title, blurb, leaders (name, photo, optional role), audience and colour are the
+  ministry's.
+- **A session** is one group on one Sunday, shown as an entry in the group's calendar. It's generated
+  from the round and only stored when something differs: cancelled, a different room, combined with
+  another group, or a substitute leader. Those are structured fields, not just text, so the map,
+  Home and the group page all show the change, and a notice can be attached.
 
 **Between rounds,** the app shows the next round as soon as it's published ("Summer FIT starts
 8 Nov") with Join already open. Joining a round's group lasts until that round ends. When the next
@@ -117,14 +146,14 @@ A feature module `Features/LifeGroups` with all four parts (§8). Feeds (§5, §
 | `lifegroups.rounds` | Rounds | Previous, current and next | `starts_at`, `ends_at` |
 | `lifegroups.groups` | Groups and their leaders | Groups of those rounds, plus year-round ones | `group_key` = round, `sort_key` = order |
 | `lifegroups.sessions` | Session exceptions | Current and next round | `group_key` = group, `starts_at` |
-| `lifegroups.posts` | Notices and resources | Current and previous round | `group_key` = group, `sort_key` = posted |
+| `ministries.items` | Notices (announcements) and resources (files) | Current and previous round | `group_key` = group, `sort_key` = posted |
 
 Services:
 
-- `ILifeGroupsMembershipService` (App write): `Join`, `Leave` and `SetReminder`. The client stores
-  the result locally.
-- `ILifeGroupsAdminService` (Admin): rounds, groups, sessions and posts. Group methods are scoped to
-  the leader's groups.
+- Joining and leaving use the ministries' membership service (App write); `ILifeGroupsService` keeps
+  only `SetReminder`. The client stores the result locally.
+- `ILifeGroupsAdminService` (Admin): rounds, rooms and sessions. Posting notices and resources is the
+  ministries' admin service, scoped to the leader's groups.
 
 Posting saves the post and its feed change in one transaction (§5); for an urgent post, the push is
 sent after commit.
@@ -147,6 +176,10 @@ They reuse the spike's shared components (`Page`, `Masthead`, `ListGroup`/`ListR
    choose one during the break.
 4. **Leader view** (signed-in leaders only): my groups, post a notice, change this Sunday.
 
+In the design spike, the group page is built from the shared ministry components (`BandHero`,
+`MinistryAbout`, `EventList` for the Sundays, `PostList` for notices, `FileList` for resources and
+`MembershipSheet` for Joined), with the round, the time and the room as Life Groups' own sections.
+
 The design spike (`spikes/app-poc`) has screens 1–3 with Round 2's real groups, the site map and
 sample notices, for showing staff. Its README says what's real and what's sample.
 
@@ -165,11 +198,14 @@ New shared components: a **colour-band card** (also suits events and sermon seri
 ## Later: messages
 
 Messages would need a person, not an install: a name, sign-in or a verified phone, moderation and
-safeguarding for groups that include youth. Kept out of v1. Nothing above blocks it: posts become one
-kind of message, and memberships gain an optional person.
+safeguarding for groups that include youth. Kept out of v1. Ministries have chats
+([ministries.md](ministries.md)); a Life Group could switch the Chats module on once member sign-in
+and the safeguarding rules exist.
 
 ## Decided
 
+- **A kind of ministry:** Life Groups share the ministries' model and modules, with rounds, rooms and
+  the Sunday time as their own (owner, 2026-10-30). Life Groups keeps its own entry point.
 - **Time:** 9:00–9:45 by default, set per round in the admin panel (2026-10-26).
 - **Leaders:** sign in with a passkey in the app and do their work there (2026-10-26).
 - **Membership:** leaders see a count, not names, for now (2026-10-26).

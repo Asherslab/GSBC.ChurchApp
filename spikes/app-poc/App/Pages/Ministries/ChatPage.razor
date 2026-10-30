@@ -1,0 +1,92 @@
+@page "/ministries/{Id}/chats/{ChatId}"
+@implements IDisposable
+@inject MinistriesService Ministries
+@inject NativeBridge Native
+
+<Page Title="@(chat?.Name ?? "Chat")" BackHref="@BackHref" BackLabel="@(ministry?.Name ?? "Back")" TopBar="TopBarStyle.Solid" TitleAlwaysShown="true" Bell="false">
+    @if (ministry is null || chat is null || !Ministries.IsMember(ministry))
+    {
+        <EmptyState Icon="lock" Title="Chats are for members" />
+    }
+    else
+    {
+        <div class="chat">
+            <p class="chat__notice">
+                <Icon Name="lock" Size="IconSize.ExtraSmall" />
+                @(chat.LeadersOnly ? $"Leaders post here; {ministry.Name} members read it." : $"Only {ministry.Name} members can read this chat.") Messages are kept.
+            </p>
+            @foreach (var day in chat.Messages.GroupBy(m => m.At.Date))
+            {
+                <p class="chat__day">@DayLabel(day.Key)</p>
+                ChatMessage? previous = null;
+                @foreach (var message in day)
+                {
+                    var mine = message.Author == MinistriesContent.You.Name;
+                    var first = previous?.Author != message.Author;
+                    <div class="bubble @(mine ? "bubble--mine" : "") @(first ? "bubble--first" : "")">
+                        @if (first && !mine)
+                        {
+                            <span class="bubble__author">@message.Author</span>
+                        }
+                        <p>@message.Text</p>
+                        <time>@ChurchClock.Time(message.At)</time>
+                    </div>
+                    previous = message;
+                }
+            }
+        </div>
+        <div class="chat-compose">
+            @if (Ministries.CanWrite(chat))
+            {
+                <label class="visually-hidden" for="chat-text">Message</label>
+                <textarea id="chat-text" rows="1" @bind="text" @bind:event="oninput" placeholder="Message @chat.Name"></textarea>
+                <button class="chat-compose__send" disabled="@string.IsNullOrWhiteSpace(text)" @onclick="Send" aria-label="Send"><Icon Name="send" Size="IconSize.Small" /></button>
+            }
+            else
+            {
+                <p class="chat-compose__closed"><Icon Name="megaphone" Size="IconSize.Small" />Only leaders post in this chat</p>
+            }
+        </div>
+    }
+</Page>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string ChatId { get; set; } = "";
+
+    private Ministry? ministry;
+    private MinistryChat? chat;
+    private string text = "";
+
+    private string BackHref => Ministries.Split == ViewingSplit.TeamRoom ? $"ministries/{Id}/team" : $"ministries/{Id}";
+
+    private string DayLabel(DateTime day) => (Ministries.Now.Date - day).Days switch
+    {
+        0 => "Today",
+        1 => "Yesterday",
+        _ => day.ToString("dddd d MMMM"),
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Ministries.Changed += Refresh;
+        await Ministries.EnsureLoadedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ministry = MinistriesService.Find(Id);
+        chat = Ministries.Chat(ChatId);
+    }
+
+    private async Task Send()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        Ministries.Send(chat!, text.Trim());
+        text = "";
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ministries.Changed -= Refresh;
+}

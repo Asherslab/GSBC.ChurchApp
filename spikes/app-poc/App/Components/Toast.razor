@@ -1,0 +1,35 @@
+@implements IDisposable
+
+@if (shown is not null)
+{
+    <div class="toast" role="status" @key="shown">
+        <Icon Name="check" Size="IconSize.Small" />@shown
+    </div>
+}
+
+@code {
+    private static readonly TimeSpan ShownFor = TimeSpan.FromSeconds(3);
+
+    private string? shown;
+    private CancellationTokenSource? hiding;
+
+    public async Task ShowAsync(string message)
+    {
+        shown = message;
+        hiding?.Cancel();
+        hiding = new();
+        var token = hiding.Token;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(ShownFor, token);
+            shown = null;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    public void Dispose() => hiding?.Cancel();
+}

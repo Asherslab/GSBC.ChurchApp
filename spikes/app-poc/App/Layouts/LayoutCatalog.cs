@@ -13,7 +13,7 @@ public static class LayoutCatalog
 {
     private static readonly NavTab ListenTab = new("Listen", "headphones", "listen", "listen", "sermons");
     private static readonly NavTab PrayerTab = new("Prayer", "prayer", "prayer", "prayer");
-    private static readonly NavTab MoreTab = new("More", "more", "more", "more", "visit", "appearance", "device", "notifications", "groups", "map");
+    private static readonly NavTab MoreTab = new("More", "more", "more", "more", "visit", "appearance", "device", "notifications", "groups", "map", "ministries");
 
     public static readonly IReadOnlyList<LayoutOption> All =
     [

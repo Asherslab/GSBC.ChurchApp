@@ -1,0 +1,416 @@
+@page "/ministries/{Id}"
+@implements IDisposable
+@inject MinistriesService Ministries
+@inject NativeBridge Native
+@inject NavigationManager Navigation
+
+<Page Title="@(ministry?.Name ?? "Ministry")" BackHref="@BackHref" BackLabel="@BackLabel" StuckAt="150" Bell="false">
+    <Actions>
+        <button class="icon-btn" @onclick="() => previewOpen = true" aria-label="Preview: viewing as and design"><Icon Name="eye" /></button>
+        @if (ministry is not null && Ministries.IsLeader(ministry))
+        {
+            <a class="icon-btn" href="@($"ministries/{Id}/settings")" aria-label="Ministry settings"><Icon Name="sliders" /></a>
+        }
+    </Actions>
+    <ChildContent>
+        @if (ministry is null)
+        {
+            <EmptyState Icon="users" Title="This ministry isn't here any more" />
+        }
+        else
+        {
+            <BandHero Title="@ministry.Name" Note="@HeroNote" Colour="@ministry.Colour">
+                <Actions>
+                    @if (Ministries.IsLeader(ministry))
+                    {
+                        <button class="btn btn--on-masthead" @onclick="() => Compose(FrontAudience)"><Icon Name="plus" Size="IconSize.Small" />Post</button>
+                    }
+                    else if (Ministries.IsOwnMember(ministry))
+                    {
+                        <button class="btn btn--ghost-masthead" @onclick="() => memberOpen = true"><Icon Name="check" Size="IconSize.Small" />Member</button>
+                    }
+                    else if (Ministries.IsMember(ministry))
+                    {
+                        <span class="hero-note"><Icon Name="check" Size="IconSize.ExtraSmall" />Member through @MinistriesService.Names(MinistriesService.Children(ministry).Where(Ministries.IsOwnMember).ToList())</span>
+                    }
+                    else
+                    {
+                        @JoinButton
+                    }
+                </Actions>
+            </BandHero>
+
+            @switch (Ministries.Split)
+            {
+                case ViewingSplit.Marked:
+                    @Marked
+                    break;
+                case ViewingSplit.Zones:
+                    @Zones
+                    break;
+                default:
+                    @FrontDoor
+                    break;
+            }
+
+            @Teams
+            <PreviewFooter />
+        }
+    </ChildContent>
+</Page>
+
+@if (ministry is not null)
+{
+    <ComposeSheet Open="composeOpen" OpenChanged="v => composeOpen = v" Ministry="ministry" DefaultAudience="composeAudience" OnSent="Sent" />
+    <PreviewSheet @bind-Open="previewOpen" />
+
+    <Sheet Open="askOpen" OpenChanged="v => askOpen = v">
+        <h2>@(Settings.Join == JoinMode.Ask ? $"Ask to join {ministry.Name}" : "Message the leaders")</h2>
+        <p>Goes to @LeaderNames only. They'll get back to you, usually within a few days.</p>
+        <div class="stack sheet__form">
+            <div class="field">
+                <label for="ask-name">Your name</label>
+                <input id="ask-name" @bind="askName" @bind:event="oninput" autocomplete="name" />
+            </div>
+            <div class="field">
+                <label for="ask-contact">Phone or email</label>
+                <input id="ask-contact" @bind="askContact" @bind:event="oninput" autocomplete="email" />
+            </div>
+            <div class="field">
+                <label for="ask-message">Message</label>
+                <textarea id="ask-message" rows="3" @bind="askMessage" @bind:event="oninput"></textarea>
+            </div>
+            <button class="btn btn--primary btn--block" disabled="@(string.IsNullOrWhiteSpace(askName) || string.IsNullOrWhiteSpace(askContact))" @onclick="SendAsk">
+                <Icon Name="send" Size="IconSize.Small" />Send to the leaders
+            </button>
+            <p class="hint">Design preview: nothing is sent.</p>
+        </div>
+    </Sheet>
+
+    <MembershipSheet Ministry="ministry" @bind-Open="memberOpen" Title="@($"You're in {ministry.Name}")" Line="@MemberLine"
+                     LeaveLabel="@($"Leave {ministry.Name}")" OnLeave="Leave" />
+}
+
+<Toast @ref="toast" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private Ministry? ministry;
+    private Toast toast = default!;
+    private bool previewOpen;
+    private bool composeOpen;
+    private bool askOpen;
+    private bool memberOpen;
+    private Audience composeAudience;
+    private string askName = "";
+    private string askContact = "";
+    private string askMessage = "";
+
+    private MinistrySettings Settings => Ministries.Settings(ministry!);
+
+    private Ministry? Parent => ministry is null ? null : MinistriesService.Parent(ministry);
+
+    private string BackHref => ministry?.ParentId is { } parent ? $"ministries/{parent}" : "ministries";
+
+    private string BackLabel => Parent is { } parent ? parent.Name : "Ministries";
+
+    private bool Member => Ministries.IsMember(ministry!);
+
+    private bool Leader => Ministries.IsLeader(ministry!);
+
+    private Audience FrontAudience => Ministries.Split == ViewingSplit.TeamRoom ? Audience.Everyone : Audience.Members;
+
+    private string LeaderNames => string.Join(" & ", ministry!.Leaders.Select(l => l.Name));
+
+    private string HeroNote
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (Parent is { } parent)
+            {
+                parts.Add($"Part of {parent.Name}");
+            }
+            if (ministry!.WhoFor is { } whoFor)
+            {
+                parts.Add(whoFor);
+            }
+            if (Settings.ServingTeam && Parent is null)
+            {
+                parts.Add("Serving team");
+            }
+            parts.Add(MinistriesService.JoinLabel(Settings.Join));
+            return string.Join(" · ", parts);
+        }
+    }
+
+    private string MemberLine => Settings.Join == JoinMode.Open
+        ? "You see its members-only news and chats. Leave any time."
+        : $"You see its members-only news, rosters and chats. Leaving tells {LeaderNames}, and takes you off future rosters.";
+
+    private RenderFragment JoinButton => Settings.Join switch
+    {
+        JoinMode.Open => @<button class="btn btn--on-masthead" @onclick="Join"><Icon Name="user-plus" Size="IconSize.Small" />Join</button>,
+        JoinMode.Ask when Ministries.HasAsked(ministry!) => @<span class="hero-note"><Icon Name="check" Size="IconSize.ExtraSmall" />Asked to join. The leaders will be in touch.</span>,
+        JoinMode.Ask => @<button class="btn btn--on-masthead" @onclick="() => askOpen = true"><Icon Name="user-plus" Size="IconSize.Small" />Ask to join</button>,
+        _ when Ministries.HasMessaged(ministry!) => @<span class="hero-note"><Icon Name="check" Size="IconSize.ExtraSmall" />Message sent to the leaders</span>,
+        _ => @<button class="btn btn--on-masthead" @onclick="() => askOpen = true"><Icon Name="message-square" Size="IconSize.Small" />Message the leaders</button>,
+    };
+
+    private RenderFragment About => @<MinistryAbout Ministry="ministry!" First="!Member" />;
+
+    private RenderFragment Teams => @<text>
+        @if (MinistriesService.Children(ministry!) is { Count: > 0 } children)
+        {
+            <Section Title="@($"Teams in {ministry!.Name}")">
+                <p class="section__lead">@ministry.Name's leaders lead these teams too, and @ministry.Name announcements reach all of them.</p>
+                <div class="list">
+                    @foreach (var child in children)
+                    {
+                        <MinistryRow @key="child.Id" Ministry="child" />
+                    }
+                </div>
+            </Section>
+        }
+    </text>;
+
+    private RenderFragment Feed(FeedScope scope, Marking marking, bool skipEmpty) => @<text>
+        @if (Ministries.Has(ministry!, MinistryModule.Announcements) && Posts(scope) is var posts && (posts.Count > 0 || !skipEmpty))
+        {
+            <Section Title="Announcements">
+                <PostList Ministry="ministry" Posts="posts" Marking="marking" />
+            </Section>
+        }
+        @if (Ministries.Has(ministry!, MinistryModule.Calendar) && Events(scope) is var events && (events.Count > 0 || !skipEmpty))
+        {
+            <Section Title="Calendar">
+                <EventList Ministry="ministry" Events="events" Marking="marking" />
+            </Section>
+        }
+        @if (scope != FeedScope.Everyone && Member && Ministries.Has(ministry!, MinistryModule.Rosters) && Ministries.Roster(ministry!).Count > 0)
+        {
+            <Section Title="Roster">
+                <Trailing>@MembersTag(marking)</Trailing>
+                <ChildContent><RosterGlance Ministry="ministry" /></ChildContent>
+            </Section>
+        }
+        @if (scope != FeedScope.Everyone && Member && Ministries.Has(ministry!, MinistryModule.Chats) && Ministries.ChatsAllowed(ministry!))
+        {
+            <Section Title="Chats">
+                <Trailing>@MembersTag(marking)</Trailing>
+                <ChildContent><ChatList Ministry="ministry" /></ChildContent>
+            </Section>
+        }
+        @if (Ministries.Has(ministry!, MinistryModule.Files) && Files(scope) is var files && (files.Count > 0 || !skipEmpty))
+        {
+            <Section Title="Files and links">
+                <FileList Files="files" Marking="marking" />
+            </Section>
+        }
+    </text>;
+
+    private RenderFragment MembersTag(Marking marking) => marking == Marking.MembersOnly ? @<AudienceTag Audience="Audience.Members" /> : @<text></text>;
+
+    private RenderFragment Marked => @<text>
+        @if (Member)
+        {
+            <Section First="true"><div class="stack"><YourSlots Ministry="ministry" /></div></Section>
+            @Feed(FeedScope.All, Marking.MembersOnly, false)
+            @About
+        }
+        else
+        {
+            @About
+            @Feed(FeedScope.All, Marking.MembersOnly, true)
+            @Teaser
+        }
+    </text>;
+
+    private RenderFragment Zones => @<text>
+        @About
+        <div class="zone zone--public">
+            <div class="zone__head">
+                <Icon Name="globe" Size="IconSize.Small" />
+                <span><strong>For everyone</strong>Anyone browsing the app sees this part</span>
+                @if (Leader)
+                {
+                    <button class="link-btn" @onclick="() => Compose(Audience.Everyone)">Post here</button>
+                }
+            </div>
+            @Feed(FeedScope.Everyone, Marking.None, true)
+            @if (!HasAny(FeedScope.Everyone))
+            {
+                <Section><p class="muted small">Nothing public yet.</p></Section>
+            }
+        </div>
+        <div class="zone zone--team">
+            <div class="zone__head">
+                <Icon Name="lock" Size="IconSize.Small" />
+                <span><strong>Team only</strong>Only @Ministries.MembersPhrase(ministry!) see this part</span>
+                @if (Leader)
+                {
+                    <button class="link-btn" @onclick="() => Compose(Audience.Members)">Post here</button>
+                }
+            </div>
+            @if (Member)
+            {
+                <Section First="true"><div class="stack"><YourSlots Ministry="ministry" /></div></Section>
+                @Feed(FeedScope.Members, Marking.None, true)
+            }
+            else
+            {
+                <Section First="true">
+                    <p class="zone__locked">@LockedLine</p>
+                </Section>
+            }
+        </div>
+    </text>;
+
+    private RenderFragment FrontDoor => @<text>
+        @if (Member)
+        {
+            <Section First="true">
+                <a class="team-door" href="@($"ministries/{Id}/team")" style="--band: @ministry!.Colour">
+                    <span class="team-door__icon"><Icon Name="door-open" /></span>
+                    <span class="team-door__body">
+                        <strong>@ministry.Name team room</strong>
+                        <span>@DoorLine</span>
+                    </span>
+                    <Icon Name="chevron-right" Size="IconSize.Small" />
+                </a>
+            </Section>
+        }
+        @About
+        @Feed(FeedScope.Everyone, Marking.None, true)
+        @if (!Member)
+        {
+            @Teaser
+        }
+    </text>;
+
+    private RenderFragment Teaser => @<Section>
+        <div class="callout teaser">
+            <strong><Icon Name="lock" Size="IconSize.Small" />Members see more</strong>
+            <span>@LockedLine</span>
+        </div>
+    </Section>;
+
+    private string LockedLine
+    {
+        get
+        {
+            var extras = new List<string>();
+            if (Ministries.MembersOnlyCount(ministry!) is var count and > 0)
+            {
+                extras.Add($"{count} team notices, events and files");
+            }
+            if (Ministries.Has(ministry!, MinistryModule.Rosters))
+            {
+                extras.Add("the roster");
+            }
+            if (Ministries.Has(ministry!, MinistryModule.Chats) && Ministries.ChatsAllowed(ministry!))
+            {
+                extras.Add("chats");
+            }
+            var what = extras.Count == 0 ? "team notices" : extras.Count == 1 ? extras[0] : $"{string.Join(", ", extras.Take(extras.Count - 1))} and {extras[^1]}";
+            var how = Settings.Join switch
+            {
+                JoinMode.Open => "Tap Join to see them.",
+                JoinMode.Ask => "Ask to join and a leader will be in touch.",
+                _ => "Leaders invite people to this team.",
+            };
+            return $"Members see {what}. {how}";
+        }
+    }
+
+    private string DoorLine
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (Ministries.YourSlotsIn(ministry!).FirstOrDefault() is { } slot)
+            {
+                parts.Add($"You're on {slot.Date.Start:d MMM}");
+            }
+            var notices = Ministries.Posts(ministry!).Count(p => p.Audience == Audience.Members);
+            if (notices > 0)
+            {
+                parts.Add(MinistriesService.Count(notices, "team notice"));
+            }
+            var chats = Ministries.Chats(ministry!).Count();
+            if (chats > 0 && Ministries.Has(ministry!, MinistryModule.Chats))
+            {
+                parts.Add(MinistriesService.Count(chats, "chat"));
+            }
+            return parts.Count > 0 ? string.Join(" · ", parts) : "Team notices, rosters and files";
+        }
+    }
+
+    private IReadOnlyList<MinistryPost> Posts(FeedScope scope) => Ministries.Posts(ministry!).Where(p => scope.Includes(p.Audience)).ToList();
+
+    private IReadOnlyList<MinistryEvent> Events(FeedScope scope) => Ministries.Events(ministry!).Where(e => scope.Includes(e.Audience)).ToList();
+
+    private IReadOnlyList<MinistryFile> Files(FeedScope scope) => Ministries.Files(ministry!).Where(f => scope.Includes(f.Audience)).ToList();
+
+    private bool HasAny(FeedScope scope) =>
+        (Ministries.Has(ministry!, MinistryModule.Announcements) && Posts(scope).Count > 0)
+        || (Ministries.Has(ministry!, MinistryModule.Calendar) && Events(scope).Count > 0)
+        || (Ministries.Has(ministry!, MinistryModule.Files) && Files(scope).Count > 0);
+
+    protected override async Task OnInitializedAsync()
+    {
+        Ministries.Changed += Refresh;
+        await Ministries.EnsureLoadedAsync();
+    }
+
+    protected override void OnParametersSet()
+    {
+        ministry = MinistriesService.Find(Id);
+        if (ministry?.Kind == MinistryKind.LifeGroup)
+        {
+            Navigation.NavigateTo($"groups/{Id}", replace: true);
+        }
+    }
+
+    private void Compose(Audience audience)
+    {
+        composeAudience = audience;
+        composeOpen = true;
+    }
+
+    private Task Sent(string message) => toast.ShowAsync(message);
+
+    private async Task Join()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        await Ministries.JoinAsync(ministry!);
+        await toast.ShowAsync($"You've joined {ministry!.Name}");
+    }
+
+    private async Task Leave()
+    {
+        await Native.HapticAsync(Haptic.Light);
+        await Ministries.LeaveAsync(ministry!);
+        memberOpen = false;
+    }
+
+    private async Task SendAsk()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        if (Settings.Join == JoinMode.Ask)
+        {
+            Ministries.AskToJoin(ministry!);
+        }
+        else
+        {
+            Ministries.MessageLeaders(ministry!);
+        }
+        askOpen = false;
+        await toast.ShowAsync("Sent to the leaders");
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ministries.Changed -= Refresh;
+}

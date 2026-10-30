@@ -1,0 +1,16 @@
+@implements IDisposable
+@inject MinistriesService Ministries
+
+<HomeLineRow Line="Ministries.Home()" />
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Ministries.Changed += Refresh;
+        await Ministries.EnsureLoadedAsync();
+    }
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ministries.Changed -= Refresh;
+}

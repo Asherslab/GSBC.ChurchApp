@@ -1,0 +1,42 @@
+<Section Title="About" First="First">
+    <div class="stack">
+        @foreach (var paragraph in Ministry.About)
+        {
+            <p class="prose selectable">@paragraph</p>
+        }
+        @if (Ministry.Meets is not null || (Ministry.WhoFor is not null && ShowWhoFor))
+        {
+            <div class="facts">
+                @if (Ministry.Meets is not null)
+                {
+                    <div class="fact"><Icon Name="clock" /><div><strong>@Ministry.Meets</strong></div></div>
+                }
+                @if (Ministry.WhoFor is not null && ShowWhoFor)
+                {
+                    <div class="fact"><Icon Name="users" /><div><strong>@Ministry.WhoFor</strong></div></div>
+                }
+            </div>
+        }
+        @if (Ministry.Leaders.Count > 0)
+        {
+            <People Persons="Ministry.Leaders" Label="@LeadLine" />
+        }
+        @if (Parent is { } parent)
+        {
+            <div class="list">
+                <MinistryRow Ministry="parent" Detail="@($"{Ministry.Name} is one of {parent.Name}'s teams")" ShowRelation="false" />
+            </div>
+        }
+    </div>
+</Section>
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+    [Parameter] public bool First { get; set; }
+    [Parameter] public bool ShowWhoFor { get; set; } = true;
+
+    private Ministry? Parent => MinistriesService.Parent(Ministry);
+
+    private string LeadLine =>
+        $"Led by {string.Join(" & ", Ministry.Leaders.Select(l => l.Name))}{(Parent is { } p ? $", with {p.Name}'s leaders" : "")}";
+}

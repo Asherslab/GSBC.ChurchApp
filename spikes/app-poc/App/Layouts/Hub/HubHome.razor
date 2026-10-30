@@ -7,6 +7,7 @@
 @inject NativeBridge Native
 @inject LifeGroupsService Groups
 @inject OutreachService Outreach
+@inject MinistriesService Ministries
 
 <Page Title="Good Shepherd">
     <Masthead Title="Good Shepherd" Note="@Clock.Now.ToString("dddd d MMMM")">
@@ -157,6 +158,14 @@
             <span class="row__icon row__icon--warm"><Icon Name="users" Size="IconSize.Small" /></span>
         </a>
 
+        <a class="hub-tile hub-tile--wide hub-visit" href="@MinistriesLine.Href" @onclick="Tap">
+            <span class="hub-visit__body">
+                <strong class="hub-tile__title">@MinistriesLine.Title</strong>
+                <span class="hub-tile__meta">@MinistriesLine.Subtitle</span>
+            </span>
+            <span class="row__icon ministry-icon" style="--band: @(MinistriesLine.Colour ?? "var(--live)")"><Icon Name="@MinistriesLine.Icon" Size="IconSize.Small" /></span>
+        </a>
+
         <a class="hub-tile hub-tile--wide hub-visit" href="visit" @onclick="Tap">
             <span class="hub-visit__body">
                 <strong class="hub-tile__title">Visit us</strong>
@@ -177,6 +186,8 @@
     private Bulletin Bulletin => Content.Bulletin;
 
     private HomeLine GroupsLine => Groups.Home();
+
+    private HomeLine MinistriesLine => Ministries.Home();
 
     private string OutreachTitle => Outreach.DayIsOn && Outreach.Day is { } day ? $"Outreach is on till {ChurchClock.Time(day.End)}" : "Got an hour?";
 
@@ -230,7 +241,9 @@
         Player.Changed += Refresh;
         Groups.Changed += Refresh;
         Outreach.Changed += Refresh;
+        Ministries.Changed += Refresh;
         _ = Groups.EnsureLoadedAsync();
+        _ = Ministries.EnsureLoadedAsync();
         _ = Outreach.EnsureLoadedAsync();
     }
 
@@ -276,5 +289,6 @@
         Player.Changed -= Refresh;
         Groups.Changed -= Refresh;
         Outreach.Changed -= Refresh;
+        Ministries.Changed -= Refresh;
     }
 }

@@ -1,0 +1,27 @@
+@inject MinistriesService Ministries
+
+<Sheet Open="Open" OpenChanged="OpenChanged">
+    <h2>@Title</h2>
+    <p>@Line</p>
+    <div class="sheet__form">
+        <ToggleRow Title="@($"Notifications from {Ministry.Name}")" Description="@NotifyLine" Checked="Ministries.PushOn(Ministry)" CheckedChanged="on => Ministries.SetPush(Ministry, on)" />
+        @ChildContent
+    </div>
+    <div class="stack sheet__actions">
+        @Actions
+        <button class="btn btn--quiet btn--block" @onclick="() => OnLeave.InvokeAsync()">@LeaveLabel</button>
+    </div>
+</Sheet>
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter, EditorRequired] public string Line { get; set; } = "";
+    [Parameter] public string NotifyLine { get; set; } = "Important announcements and new chat messages. A mock switch: nothing is sent.";
+    [Parameter] public string LeaveLabel { get; set; } = "Leave";
+    [Parameter] public EventCallback OnLeave { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+}

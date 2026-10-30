@@ -1,9 +1,10 @@
 @page "/groups/{Id}"
 @implements IDisposable
 @inject LifeGroupsService Groups
+@inject MinistriesService Ministries
 @inject NativeBridge Native
 
-<Page Title="@(group?.Title ?? "Life Group")" BackHref="groups" BackLabel="Groups" StuckAt="150" Bell="false">
+<Page Title="@(group?.Name ?? "Life Group")" BackHref="groups" BackLabel="Groups" StuckAt="150" Bell="false">
     <Actions>
         @if (group is not null)
         {
@@ -17,14 +18,12 @@
         }
         else
         {
-            var round = Groups.RoundOf(group);
+            var round = LifeGroupsService.RoundOf(group);
             var sunday = Groups.NextSunday(group);
             var change = Groups.ChangeOn(group, sunday);
             var where = Groups.PlaceOn(group, sunday);
-            <header class="group-hero" style="--band: @group.Colour">
-                <p class="group-hero__kicker">@Kicker(round)</p>
-                <h1>@group.Title</h1>
-                <div class="group-hero__actions">
+            <BandHero Title="@group.Name" Note="@Kicker(round)" Colour="@group.Colour">
+                <Actions>
                     @if (Groups.IsFinished(group))
                     {
                         <span class="pill pill--quiet">Finished @round!.Last.ToString("d MMM")</span>
@@ -41,8 +40,8 @@
                     {
                         <a class="btn btn--ghost-masthead" href="@WhereHref"><Icon Name="map-pin" Size="IconSize.Small" />Find the room</a>
                     }
-                </div>
-            </header>
+                </Actions>
+            </BandHero>
 
             @if (!Groups.IsFinished(group))
             {
@@ -66,15 +65,7 @@
                 </Section>
             }
 
-            <Section Title="About" First="Groups.IsFinished(group)">
-                <div class="stack">
-                    <p class="prose selectable">@group.Blurb</p>
-                    @if (group.Leaders.Count > 0)
-                    {
-                        <People Persons="group.Leaders" />
-                    }
-                </div>
-            </Section>
+            <MinistryAbout Ministry="group" First="Groups.IsFinished(group)" ShowWhoFor="false" />
 
             <Section Title="Where" LinkText="Find the room" LinkHref="@WhereHref">
                 @if (where is { } shown)
@@ -96,53 +87,16 @@
                 }
             </Section>
 
-            @if (round is not null)
-            {
-                <Section Title="@($"{round.Name} Sundays")">
-                    <div>
-                        @foreach (var (date, index) in round.Sundays.Select((d, i) => (d, i)))
-                        {
-                            var dayChange = Groups.ChangeOn(group, date);
-                            <div class="session @(date < Groups.Today ? "session--past" : "")">
-                                <span class="session__date">@date.ToString("d MMM")</span>
-                                <span class="session__body">
-                                    @if (dayChange is not null)
-                                    {
-                                        <span class="session__note">@dayChange.Summary</span>
-                                    }
-                                    else
-                                    {
-                                        <span>@(index == round.Sundays.Count - 1 ? "Last week" : $"Week {index + 1}")</span>
-                                    }
-                                </span>
-                                @if (date == sunday && !Groups.IsFinished(group))
-                                {
-                                    <span class="pill">Next</span>
-                                }
-                            </div>
-                        }
-                    </div>
-                </Section>
-            }
+            <Section Title="@(round is null ? "Coming Sundays" : $"{round.Name} Sundays")">
+                <EventList Ministry="group" Events="Sessions(round)" PastBefore="Groups.Now" MarkNext="!Groups.IsFinished(group)" />
+            </Section>
 
-            <Section Title="Notices and resources">
-                <div>
-                    @foreach (var post in LifeGroupsContent.PostsFor(group, round))
-                    {
-                        <article class="post">
-                            <div class="post__head">
-                                <Icon Name="@(post.Kind == PostKind.Notice ? "megaphone" : "file-text")" Size="IconSize.Small" />
-                                <strong>@post.Title</strong>
-                                @if (post.Urgent)
-                                {
-                                    <span class="pill pill--urgent">Urgent</span>
-                                }
-                            </div>
-                            <p>@post.Body</p>
-                            <time>@post.Date.ToString("ddd d MMM")</time>
-                        </article>
-                    }
-                </div>
+            <Section Title="Notices">
+                <PostList Ministry="group" Posts="Ministries.Posts(group).ToList()" Empty="No notices yet." />
+            </Section>
+
+            <Section Title="Resources">
+                <FileList Files="Ministries.Files(group).ToList()" />
             </Section>
 
             <PreviewFooter />
@@ -152,28 +106,26 @@
 
 @if (group is not null)
 {
-    <Sheet @bind-Open="joinedOpen">
-        <h2>@(justJoined ? "You've joined" : "You're in this group")</h2>
-        <p>@JoinedLine</p>
-        <div style="margin-top: 12px">
+    <MembershipSheet Ministry="group" @bind-Open="joinedOpen" Title="@(justJoined ? "You've joined" : "You're in this group")" Line="@JoinedLine"
+                     NotifyLine="Notices from the leaders: a moved room, no class this week" LeaveLabel="Leave this group" OnLeave="Leave">
+        <ChildContent>
             <ToggleRow Title="Remind me on Sundays" Description="A nudge at 8:30 with the room" Checked="Groups.HasReminder(group)" CheckedChanged="on => Groups.SetReminderAsync(group, on)" />
-        </div>
-        <div class="stack" style="margin-top: 18px">
+        </ChildContent>
+        <Actions>
             <button class="btn btn--primary btn--block" @onclick="PreviewNotice"><Icon Name="bell" Size="IconSize.Small" />@previewLabel</button>
-            <button class="btn btn--quiet btn--block" @onclick="Leave">Leave this group</button>
-        </div>
-    </Sheet>
+        </Actions>
+    </MembershipSheet>
 }
 
 @code {
     [Parameter] public string Id { get; set; } = "";
 
-    private LifeGroup? group;
+    private Ministry? group;
     private bool joinedOpen;
     private bool justJoined;
     private string previewLabel = "Preview a notice from this group";
 
-    private string JoinLabel => group!.ParentsJoin ? "Join as a parent" : "Join";
+    private string JoinLabel => group!.LifeGroup?.ParentsJoin == true ? "Join as a parent" : "Join";
 
     private string JoinedLine
     {
@@ -190,15 +142,20 @@
         await Groups.EnsureLoadedAsync();
     }
 
-    protected override void OnParametersSet() => group = Groups.Find(Id);
+    protected override void OnParametersSet() => group = LifeGroupsService.Find(Id);
 
     private string Kicker(LifeGroupRound? round)
     {
-        var who = group!.Audience is { } audience ? $"{audience} · " : "";
+        var who = group!.WhoFor is { } audience ? $"{audience} · " : "";
         return round is null ? $"{who}All year" : $"{who}{round.Name} · {round.Dates}";
     }
 
+    private const int UpcomingAllYear = 4;
+
     private string WhereHref => $"groups/{Id}/room";
+
+    private IReadOnlyList<MinistryEvent> Sessions(LifeGroupRound? round) =>
+        Ministries.Events(group!, withPast: round is not null).Take(round is null ? UpcomingAllYear : int.MaxValue).ToList();
 
     private async Task Join()
     {
@@ -218,7 +175,7 @@
 
     private async Task PreviewNotice()
     {
-        var result = await Native.ScheduleNotificationAsync(group!.Title, "Sample notice: we're in a different room this Sunday. Tap to see where.", 5);
+        var result = await Native.ScheduleNotificationAsync(group!.Name, "Sample notice: we're in a different room this Sunday. Tap to see where.", 5);
         previewLabel = result switch
         {
             "scheduled" => "Arriving in 5 seconds; lock your phone",
@@ -228,7 +185,7 @@
     }
 
     private Task Share() =>
-        Native.ShareAsync(group!.Title, $"{group.Title}: Life Groups at Good Shepherd, Sundays 9am", SampleContent.Website).AsTask();
+        Native.ShareAsync(group!.Name, $"{group.Name}: Life Groups at Good Shepherd, Sundays 9am", SampleContent.Website).AsTask();
 
     private void Refresh() => InvokeAsync(StateHasChanged);
 

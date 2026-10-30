@@ -1,0 +1,26 @@
+@inject MinistriesService Ministries
+
+<ListRow Title="@Ministry.Name" Subtitle="@Ministry.Summary" Href="@(Href ?? (Ministry.Kind == MinistryKind.LifeGroup ? $"groups/{Ministry.Id}" : $"ministries/{Ministry.Id}"))" Class="@(Child ? "row--child" : null)">
+    <Leading><MinistryIcon Ministry="Ministry" /></Leading>
+    <Below><span class="row__meta">@Meta</span></Below>
+    <TrailingContent>
+        @if (ShowRelation && Ministries.IsLeader(Ministry) && !Ministries.IsStaff)
+        {
+            <span class="pill">Leader</span>
+        }
+        else if (ShowRelation && Ministries.IsOwnMember(Ministry))
+        {
+            <span class="pill"><Icon Name="check" Size="IconSize.ExtraSmall" />Member</span>
+        }
+    </TrailingContent>
+</ListRow>
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+    [Parameter] public bool Child { get; set; }
+    [Parameter] public bool ShowRelation { get; set; } = true;
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public string? Href { get; set; }
+
+    private string Meta => Detail ?? $"{MinistriesService.JoinLabel(Ministries.Settings(Ministry).Join)} · {Ministries.Offers(Ministry)}";
+}

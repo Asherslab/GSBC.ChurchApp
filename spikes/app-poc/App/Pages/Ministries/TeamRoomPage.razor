@@ -1,0 +1,133 @@
+@page "/ministries/{Id}/team"
+@implements IDisposable
+@inject MinistriesService Ministries
+
+<Page Title="@($"{ministry?.Name} team")" BackHref="@($"ministries/{Id}")" BackLabel="@(ministry?.Name ?? "Back")" StuckAt="150" Bell="false">
+    <Actions>
+        <button class="icon-btn" @onclick="() => previewOpen = true" aria-label="Preview: viewing as and design"><Icon Name="eye" /></button>
+        @if (ministry is not null && Ministries.IsLeader(ministry))
+        {
+            <a class="icon-btn" href="@($"ministries/{Id}/settings")" aria-label="Ministry settings"><Icon Name="sliders" /></a>
+        }
+    </Actions>
+    <ChildContent>
+        @if (ministry is null)
+        {
+            <EmptyState Icon="users" Title="This ministry isn't here any more" />
+        }
+        else if (!Ministries.IsMember(ministry))
+        {
+            <BandHero Title="@($"{ministry.Name} team")" Note="Team room" Colour="@ministry.Colour" Class="group-hero--team" />
+            <EmptyState Icon="lock" Title="The team room is for members" Body="@($"Rosters, chats and team notices for {ministry.Name}. See the ministry page to join.")">
+                <a class="btn btn--quiet" href="@($"ministries/{Id}")">Back to @ministry.Name</a>
+            </EmptyState>
+        }
+        else
+        {
+            <BandHero Title="@($"{ministry.Name} team")" Colour="@ministry.Colour" Class="group-hero--team">
+                <ChildContent>
+                    <p class="team-badge"><Icon Name="lock" Size="IconSize.ExtraSmall" />Team room · only @ministry.Name members see this</p>
+                </ChildContent>
+                <Actions>
+                    @if (Ministries.IsLeader(ministry))
+                    {
+                        <button class="btn btn--on-masthead" @onclick="() => composeOpen = true"><Icon Name="plus" Size="IconSize.Small" />Post</button>
+                    }
+                    <a class="btn btn--ghost-masthead" href="@($"ministries/{Id}")"><Icon Name="globe" Size="IconSize.Small" />Public page</a>
+                </Actions>
+            </BandHero>
+
+            @if (Tabs.Count > 1)
+            {
+                <SectionTabs Items="Tabs" />
+            }
+
+            @if (Ministries.YourSlotsIn(ministry).Count > 0)
+            {
+                <Section First="true"><div class="stack"><YourSlots Ministry="ministry" /></div></Section>
+            }
+            @if (Ministries.Has(ministry, MinistryModule.Announcements))
+            {
+                <Section Id="notices" Title="Announcements">
+                    <PostList Ministry="ministry" Posts="Ministries.Posts(ministry).ToList()" Marking="Marking.Public" />
+                </Section>
+            }
+            @if (Ministries.Has(ministry, MinistryModule.Rosters) && Ministries.Roster(ministry).Count > 0)
+            {
+                <Section Id="roster" Title="Roster"><RosterGlance Ministry="ministry" /></Section>
+            }
+            @if (Ministries.Has(ministry, MinistryModule.Chats) && Ministries.ChatsAllowed(ministry))
+            {
+                <Section Id="chats" Title="Chats"><ChatList Ministry="ministry" /></Section>
+            }
+            @if (Ministries.Has(ministry, MinistryModule.Calendar))
+            {
+                <Section Id="calendar" Title="Calendar">
+                    <EventList Ministry="ministry" Events="Ministries.Events(ministry).ToList()" Marking="Marking.Public" />
+                </Section>
+            }
+            @if (Ministries.Has(ministry, MinistryModule.Files))
+            {
+                <Section Id="files" Title="Files and links">
+                    <FileList Files="Ministries.Files(ministry).ToList()" Marking="Marking.Public" />
+                </Section>
+            }
+            <PreviewFooter />
+        }
+    </ChildContent>
+</Page>
+
+@if (ministry is not null)
+{
+    <ComposeSheet Open="composeOpen" OpenChanged="v => composeOpen = v" Ministry="ministry" DefaultAudience="Audience.Members" OnSent="m => toast.ShowAsync(m)" />
+}
+<PreviewSheet @bind-Open="previewOpen" />
+<Toast @ref="toast" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private Ministry? ministry;
+    private Toast toast = default!;
+    private bool previewOpen;
+    private bool composeOpen;
+
+    private IReadOnlyList<Choice<string>> Tabs
+    {
+        get
+        {
+            var tabs = new List<Choice<string>>();
+            void Add(MinistryModule module, string id, string label)
+            {
+                if (Ministries.Has(ministry!, module))
+                {
+                    tabs.Add(new(id, label));
+                }
+            }
+            Add(MinistryModule.Announcements, "notices", "Notices");
+            if (Ministries.Roster(ministry!).Count > 0)
+            {
+                Add(MinistryModule.Rosters, "roster", "Roster");
+            }
+            if (Ministries.ChatsAllowed(ministry!))
+            {
+                Add(MinistryModule.Chats, "chats", "Chats");
+            }
+            Add(MinistryModule.Calendar, "calendar", "Calendar");
+            Add(MinistryModule.Files, "files", "Files");
+            return tabs;
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Ministries.Changed += Refresh;
+        await Ministries.EnsureLoadedAsync();
+    }
+
+    protected override void OnParametersSet() => ministry = MinistriesService.Find(Id);
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ministries.Changed -= Refresh;
+}

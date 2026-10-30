@@ -20,6 +20,7 @@ Started 2026-10-26 with .NET SDK 10.0.401, Capacitor 8.5.3 and Xcode 26.2.
 | Service times, address, links | baptist.com.au |
 | Events, prayer wall, inbox | Samples. Events are being redone; the model is just a calendar event, image, title and description |
 | Life Groups | Round 2 (13 Sep – 18 Oct) from the printed flyer: titles, blurbs, leaders, colours and rooms. Leader photos are the church website's own (initials where it has none); Kids Life and Youth leaders are from the website's team page. Summer FIT is the next round. Notices and resources are samples, and so is the one changed Sunday (11 Oct) |
+| Ministries | Names are the church's: Children's Ministry, Impact Youth and Young Adults (with their descriptions) from the website's Ministries page, Ladies and Southland Baptist Productions from its Our Team page, Music and its four teams and Men's from the owner; Friday's prayer, Impact Kids and Impact Youth times are real. Other descriptions, people (all placeholders such as "Alex Sample"), events, announcements, chats, rosters, songs' files and Dropbox links are samples. The practice recording is a synthesised rendition of the public-domain tune New Britain, made for the spike |
 | Site map | Drawn from the Life Groups room map's Illustrator file, without its labels; room names are placeholders |
 | Logo, colours, type | The GSBC Logo Pack 2022 (brand) and the website's 2026 theme; switch under More → Appearance |
 
@@ -236,6 +237,40 @@ the map with your position and one street side at a time, Done, Back a street an
   service (gRPC), background location from the native layer, offline map tiles and the admin view for
   routes and areas.
 
+## Ministries
+
+Added 2026-10-30 from the owner's brief; the design and its open questions are in
+`docs/features/ministries.md`. More → Ministries (and a Hub tile, a Today block and a Simple row) opens
+`/ministries`: every ministry, serving teams with Music's four teams under it, then fellowship groups,
+with what each offers and how to join (Open, Ask, Invite only). "Yours" at the top has your next roster
+date and your ministries.
+
+- **This preview:** sign-in isn't designed, so the eye button on any ministry page (or This preview at
+  the foot of the directory) picks who you are: **Visitor** (in nothing; join Young Adults or Men's to
+  see joining), **Member** (in Choir, so also Music, plus Young Adults and Children's Ministry), **Leader**
+  (leads Music and so its four teams) or **Staff** (runs everything, and has Message all serving
+  teams). The same place switches the three **designs** for keeping team-only things apart: **Team
+  room** (recommended: the ministry page is public, members get a separate team room), **Two zones**
+  (one page, a shaded team-only band) and **Marked** (one list, team items tagged). Both choices are
+  remembered on the phone.
+- **Posting:** a leader's Post (or a zone's "Post here") makes an announcement, an event or a link,
+  each for Everyone or Members only, with a sentence saying exactly who will see it.
+- **Tiers:** Music's leaders lead its teams; Music's items show on each team, labelled "from Music"; a
+  Choir member sees Music's members-only items and the Music team chat.
+- **Rosters** (`/ministries/{id}/roster`) are a mock of Elvanto: your dates with Accept, Decline and
+  Swap; each date's positions and people; leaders tap a position to assign people. Music's dates list
+  the songs with practice files: the first song's recording plays in the app's own audio player.
+- **Chats** are per ministry; leaders start them, members too where Settings allows; some are
+  leaders-post-only. Children's Ministry and Impact Youth have none (safeguarding first; see the doc).
+- **Settings** (leaders): modules on and off, join setting, members starting chats, join requests and
+  members; staff also set "serving team".
+- **Life Groups are ministries** of kind Life Group (2026-10-30): the same model, with their notices,
+  resources and Sundays coming from the shared Announcements, Files and Calendar modules, and joining
+  as ministry membership. Rounds, the 9:00 time, rooms and the map stay Life Groups' own. Life Groups
+  keeps its own page (a view of that kind); the directory has a Life Groups section linking to it.
+- **On the phone only:** joining is stored on the device; posts, chats, roster replies and settings
+  last until the app reloads. Nothing is sent anywhere, and notifications are a mock switch.
+
 ## Life Groups and the site map
 
 More → Life Groups (also on every home layout, and LIFE Groups in the week links to it). Today is the
@@ -244,7 +279,9 @@ Round 2, with a changed room. Joining is stored on the phone, and "Preview a not
 notification. Each group's "Find the room" opens a map of just that room, with the main buildings
 labelled around it; the Map button on the Life Groups page is the overview of every room, numbered.
 More → Site map has the same overview plus a Key places layer.
-Design: `docs/features/life-groups.md` and `docs/features/site-map.md`.
+Each group is a ministry of kind Life Group (see Ministries above), so its page shares the ministry
+components for About, Sundays, notices, resources and Joined.
+Design: `docs/features/life-groups.md`, `docs/features/ministries.md` and `docs/features/site-map.md`.
 
 ## How it fits together
 

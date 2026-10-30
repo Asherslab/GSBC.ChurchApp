@@ -1,0 +1,47 @@
+@inject MinistriesService Ministries
+@inject ChurchClock Clock
+@inject NativeBridge Native
+
+@foreach (var item in Slots)
+{
+    <div class="duty" style="--band: @item.Ministry.Colour">
+        <div class="duty__head">
+            <Icon Name="roster" Size="IconSize.Small" />
+            <strong>You're on @Clock.Relative(item.Date.Start)</strong>
+            <span>@Detail(item.Date.Start)</span>
+        </div>
+        <p>@item.Slot.Position · @item.Date.Service@(item.Ministry != Ministry && item.Ministry.Name != item.Date.Service ? $" · {item.Ministry.Name}" : "")</p>
+        @switch (item.Slot.YourReply)
+        {
+            case RosterReply.Waiting:
+                <div class="duty__actions">
+                    <button class="btn btn--primary" @onclick="() => Reply(item.Slot, RosterReply.Accepted)">Accept</button>
+                    <button class="btn btn--quiet" @onclick="() => Reply(item.Slot, RosterReply.Declined)">Decline</button>
+                    <button class="btn btn--quiet" @onclick="() => Reply(item.Slot, RosterReply.SwapAsked)"><Icon Name="swap" Size="IconSize.Small" />Swap</button>
+                </div>
+                break;
+            case RosterReply.Accepted:
+                <p class="duty__status"><Icon Name="check" Size="IconSize.ExtraSmall" />Accepted · <button class="link-btn" @onclick="() => Reply(item.Slot, RosterReply.Waiting)">Change</button></p>
+                break;
+            case RosterReply.SwapAsked:
+                <p class="duty__status">Swap asked. Your leaders will find someone; until then you're still on. <button class="link-btn" @onclick="() => Reply(item.Slot, RosterReply.Waiting)">Undo</button></p>
+                break;
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Ministry? Ministry { get; set; }
+    [Parameter] public int Limit { get; set; } = int.MaxValue;
+
+    private IReadOnlyList<SlotOnRoster> Slots => (Ministry is null ? Ministries.YourSlots : Ministries.YourSlotsIn(Ministry)).Take(Limit).ToList();
+
+    private string Detail(DateTime start) =>
+        Clock.Relative(start).Contains(' ') ? ChurchClock.Time(start) : $"{start:d MMM}, {ChurchClock.Time(start)}";
+
+    private async Task Reply(RosterSlot slot, RosterReply reply)
+    {
+        await Native.HapticAsync(reply == RosterReply.Accepted ? Haptic.Success : Haptic.Light);
+        Ministries.Reply(slot, reply);
+    }
+}

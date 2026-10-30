@@ -1,0 +1,140 @@
+@page "/ministries/{Id}/settings"
+@implements IDisposable
+@inject MinistriesService Ministries
+
+<Page Title="Settings" BackHref="@($"ministries/{Id}")" BackLabel="@(ministry?.Name ?? "Back")" Bell="false">
+    <Masthead Title="Settings" Note="@(ministry is null ? null : $"{ministry.Name} · for its leaders")" />
+
+    @if (ministry is null || !Ministries.IsLeader(ministry))
+    {
+        <EmptyState Icon="lock" Title="Settings are for leaders" />
+    }
+    else
+    {
+        var settings = Ministries.Settings(ministry);
+        <Section Title="@($"What {ministry.Name} uses")" First="true">
+            <p class="section__lead">Switch off what this ministry doesn't need; it disappears for everyone.</p>
+            <div class="list">
+                @foreach (var module in Enum.GetValues<MinistryModule>())
+                {
+                    @if (module == MinistryModule.Chats && !Ministries.ChatsAllowed(ministry))
+                    {
+                        <div class="toggle-row toggle-row--locked">
+                            <span class="toggle-row__body">
+                                <strong>Chats</strong>
+                                <span>Not for ministries with children yet. Safeguarding rules come first.</span>
+                            </span>
+                            <Icon Name="lock" Size="IconSize.Small" />
+                        </div>
+                    }
+                    else
+                    {
+                        <ToggleRow Title="@MinistriesService.ModuleName(module)" Description="@Describe(module)" Checked="settings.Modules.Contains(module)" CheckedChanged="on => Ministries.SetModule(ministry, module, on)" />
+                    }
+                }
+            </div>
+        </Section>
+
+        <Section Title="Joining">
+            <Segmented TValue="JoinMode" Options="JoinModes" Value="settings.Join" ValueChanged="mode => Ministries.SetJoin(ministry, mode)" />
+            <p class="hint">@JoinHint(settings.Join)</p>
+        </Section>
+
+        @if (settings.Modules.Contains(MinistryModule.Chats) && Ministries.ChatsAllowed(ministry))
+        {
+            <Section Title="Chats">
+                <div class="list">
+                    <ToggleRow Title="Members can start chats" Description="Off: only leaders start chats. Leaders can still make any chat leaders-post-only." Checked="settings.MembersStartChats" CheckedChanged="on => Ministries.SetMembersStartChats(ministry, on)" />
+                </div>
+            </Section>
+        }
+
+        <Section Title="Serving team">
+            @if (Ministries.IsStaff)
+            {
+                <div class="list">
+                    <ToggleRow Title="Serving team" Description="Gets staff messages sent to all serving teams. Fellowship groups such as Men's don't." Checked="settings.ServingTeam" CheckedChanged="on => Ministries.SetServingTeam(ministry, on)" />
+                </div>
+            }
+            else
+            {
+                <p class="muted small">@(settings.ServingTeam ? "This is a serving team: staff messages to all serving teams reach it." : "Not a serving team.") Staff decide this.</p>
+            }
+        </Section>
+
+        @if (settings.Join == JoinMode.Ask && Ministries.Requests(ministry) is { Count: > 0 } requests)
+        {
+            <Section Title="@($"Asked to join ({requests.Count})")">
+                <div class="list">
+                    @foreach (var person in requests)
+                    {
+                        <div class="request">
+                            <People Persons="[person]" />
+                            <span class="request__actions">
+                                <button class="btn btn--quiet" @onclick="() => Ministries.AnswerRequest(ministry, person, false)">Decline</button>
+                                <button class="btn btn--primary" @onclick="() => Ministries.AnswerRequest(ministry, person, true)">Accept</button>
+                            </span>
+                        </div>
+                    }
+                </div>
+            </Section>
+        }
+
+        <Section Title="@($"Members ({Ministries.Members(ministry).Count})")">
+            @if (MinistriesService.Parent(ministry) is { } parent)
+            {
+                <p class="section__lead">@parent.Name's leaders also lead @ministry.Name.</p>
+            }
+            <div class="list">
+                @foreach (var person in Ministries.Members(ministry))
+                {
+                    <div class="member-line">
+                        <People Persons="[person]" Label="@(MinistriesService.IsYou(person) ? $"{person.Name} (you)" : person.Name)" />
+                        @if (ministry.Leaders.Contains(person))
+                        {
+                            <span class="pill pill--quiet">Leader</span>
+                        }
+                    </div>
+                }
+            </div>
+        </Section>
+        <PreviewFooter />
+    }
+</Page>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private static readonly IReadOnlyList<Choice<JoinMode>> JoinModes =
+        [new(JoinMode.Open, "Open"), new(JoinMode.Ask, "Ask"), new(JoinMode.InviteOnly, "Invite only")];
+
+    private Ministry? ministry;
+
+    private static string Describe(MinistryModule module) => module switch
+    {
+        MinistryModule.Calendar => "Events, each for everyone or members only",
+        MinistryModule.Announcements => "News from leaders, for everyone or members only",
+        MinistryModule.Chats => "Group chats for members",
+        MinistryModule.Rosters => $"Who's on when, from {MinistriesContent.Elvanto}",
+        _ => "Documents and links: a code of conduct, practice recordings",
+    };
+
+    private static string JoinHint(JoinMode mode) => mode switch
+    {
+        JoinMode.Open => "Anyone can tap Join and see members-only things straight away.",
+        JoinMode.Ask => "People send a request with a message; a leader accepts it.",
+        _ => "No join button. People can message the leaders, who add members themselves.",
+    };
+
+    protected override async Task OnInitializedAsync()
+    {
+        Ministries.Changed += Refresh;
+        await Ministries.EnsureLoadedAsync();
+    }
+
+    protected override void OnParametersSet() => ministry = MinistriesService.Find(Id);
+
+    private void Refresh() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Ministries.Changed -= Refresh;
+}

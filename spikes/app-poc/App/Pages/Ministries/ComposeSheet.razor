@@ -1,0 +1,157 @@
+@inject MinistriesService Ministries
+@inject NativeBridge Native
+
+<Sheet Open="Open" OpenChanged="OpenChanged">
+    @if (Ministry is null)
+    {
+        <h2>Message all serving teams</h2>
+        <p>An important announcement, with a notification, to the members of @MinistriesService.Names(Ministries.ServingTeams.Where(m => m.ParentId is null).ToList()), and Music's four teams. Fellowship groups such as Men's and Young Adults don't get it.</p>
+    }
+    else
+    {
+        <h2>Post to @Ministry.Name</h2>
+        <div class="sheet__form">
+            <ChipGroup TValue="ComposeKind" Options="Kinds" Value="kind" ValueChanged="k => kind = k" />
+        </div>
+    }
+    <div class="stack sheet__form">
+        <div class="field">
+            <label for="post-title">@(kind == ComposeKind.Event ? "What's on" : "Title")</label>
+            <input id="post-title" @bind="title" @bind:event="oninput" placeholder="@Placeholder" />
+        </div>
+        @switch (kind)
+        {
+            case ComposeKind.Announcement:
+                <div class="field">
+                    <label for="post-body">Message</label>
+                    <textarea id="post-body" rows="4" @bind="body" @bind:event="oninput"></textarea>
+                </div>
+                break;
+            case ComposeKind.Event:
+                <ChipGroup TValue="DateTime" Options="Whens" Value="when" ValueChanged="w => when = w" />
+                <div class="field">
+                    <label for="post-place">Where</label>
+                    <input id="post-place" @bind="place" @bind:event="oninput" />
+                </div>
+                break;
+            case ComposeKind.Link:
+                <div class="field">
+                    <label for="post-href">Link</label>
+                    <input id="post-href" type="url" @bind="href" @bind:event="oninput" placeholder="https://www.dropbox.com/…" />
+                </div>
+                break;
+        }
+        @if (Ministry is not null)
+        {
+            <div class="stack audience-pick">
+                <h3 class="control-label">Who sees this</h3>
+                <Segmented TValue="Audience" Options="Audiences" Value="audience" ValueChanged="a => audience = a" />
+                <p class="reach reach--@(audience == Audience.Members ? "members" : "everyone")">
+                    <Icon Name="@(audience == Audience.Members ? "lock" : "globe")" Size="IconSize.Small" />
+                    <span>@ReachLine</span>
+                </p>
+            </div>
+            @if (kind == ComposeKind.Announcement)
+            {
+                <ToggleRow Title="Important" Description="Sends a notification now, to everyone who can see it and has this ministry's notifications on" Checked="important" CheckedChanged="v => important = v" />
+            }
+        }
+        <button class="btn btn--primary btn--block" disabled="@string.IsNullOrWhiteSpace(title)" @onclick="Send">
+            <Icon Name="send" Size="IconSize.Small" />@ButtonLabel
+        </button>
+    </div>
+</Sheet>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public Ministry? Ministry { get; set; }
+    [Parameter] public Audience DefaultAudience { get; set; } = Audience.Members;
+    [Parameter] public EventCallback<string> OnSent { get; set; }
+
+    private static readonly IReadOnlyList<Choice<ComposeKind>> Kinds =
+        [new(ComposeKind.Announcement, "Announcement"), new(ComposeKind.Event, "Event"), new(ComposeKind.Link, "Link")];
+
+    private static readonly IReadOnlyList<Choice<Audience>> Audiences =
+        [new(Audience.Everyone, "Everyone"), new(Audience.Members, "Members only")];
+
+    private ComposeKind kind;
+    private Audience audience;
+    private string title = "";
+    private string body = "";
+    private string place = "Good Shepherd";
+    private string href = "";
+    private bool important;
+    private DateTime when;
+    private bool wasOpen;
+
+    private IReadOnlyList<Choice<DateTime>> Whens
+    {
+        get
+        {
+            var today = Ministries.Now.Date;
+            DateTime Next(DayOfWeek day, int hour, int minute = 0) =>
+                today.AddDays(((int)day - (int)today.DayOfWeek + 7) % 7 + 7).AddHours(hour).AddMinutes(minute);
+            return [.. new[] { Next(DayOfWeek.Thursday, 19, 30), Next(DayOfWeek.Saturday, 9), Next(DayOfWeek.Sunday, 12, 30) }
+                .OrderBy(d => d)
+                .Select(d => new Choice<DateTime>(d, $"{d:ddd d MMM}, {ChurchClock.Time(d)}"))];
+        }
+    }
+
+    private string Placeholder => kind switch
+    {
+        ComposeKind.Event => "For example, Rehearsal",
+        ComposeKind.Link => "For example, Practice recordings",
+        _ => Ministry is null ? "For example, Safe Ministry training" : "For example, No rehearsal this week",
+    };
+
+    private string ReachLine => audience == Audience.Members
+        ? $"Only {Ministries.MembersPhrase(Ministry!)}. Visitors browsing the app don't see it."
+        : $"Anyone with the app, including visitors looking at {Ministry!.Name}{(Ministry.WithChildren ? " and parents" : "")}.";
+
+    private string ButtonLabel => Ministry is null
+        ? $"Send to {Ministries.ServingTeams.Count} teams"
+        : audience == Audience.Members ? "Post for members only" : "Post for everyone";
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !wasOpen)
+        {
+            audience = DefaultAudience;
+            kind = ComposeKind.Announcement;
+            title = body = href = "";
+            important = Ministry is null;
+            when = Whens[0].Value;
+        }
+        wasOpen = Open;
+    }
+
+    private async Task Send()
+    {
+        await Native.HapticAsync(Haptic.Success);
+        string done;
+        if (Ministry is null)
+        {
+            var count = Ministries.SendToServingTeams(title.Trim(), string.IsNullOrWhiteSpace(body) ? "Sample message from the church office." : body.Trim());
+            done = $"Sent to {count} serving teams and their sub-teams";
+        }
+        else
+        {
+            switch (kind)
+            {
+                case ComposeKind.Event:
+                    Ministries.AddEvent(Ministry, title.Trim(), when, place.Trim(), audience);
+                    break;
+                case ComposeKind.Link:
+                    Ministries.AddLink(Ministry, title.Trim(), string.IsNullOrWhiteSpace(href) ? "https://www.dropbox.com/" : href.Trim(), audience);
+                    break;
+                default:
+                    Ministries.Post(Ministry, title.Trim(), body.Trim(), audience, important);
+                    break;
+            }
+            done = audience == Audience.Members ? "Posted for members only" : "Posted for everyone";
+        }
+        await OpenChanged.InvokeAsync(false);
+        await OnSent.InvokeAsync(done);
+    }
+}

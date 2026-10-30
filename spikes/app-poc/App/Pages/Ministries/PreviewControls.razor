@@ -1,0 +1,37 @@
+@inject MinistriesService Ministries
+
+<div class="stack stack--lg">
+    <div class="stack">
+        <h3 class="control-label">Viewing as</h3>
+        <Segmented TValue="ViewerRole" Options="Roles" Value="Ministries.Role" ValueChanged="r => Ministries.SetRoleAsync(r)" />
+        <p class="hint">@SplitCatalog.RoleHint(Ministries.Role)</p>
+    </div>
+    <div>
+        <h3 class="control-label">How team-only things are kept apart</h3>
+        @foreach (var option in SplitCatalog.All)
+        {
+            var on = Ministries.Split == option.Id;
+            <button class="theme-option layout-option" @onclick="() => Ministries.SetSplitAsync(option.Id)" aria-pressed="@(on ? "true" : "false")">
+                <span>
+                    <strong>@option.Name</strong>
+                    @if (option.Recommended)
+                    {
+                        <span class="pill pill--quiet">Recommended</span>
+                    }
+                    <br /><span class="muted small">@option.Summary</span>
+                </span>
+                <span class="check @(on ? "check--on" : "")">
+                    @if (on)
+                    {
+                        <Icon Name="check" Size="IconSize.ExtraSmall" />
+                    }
+                </span>
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<Choice<ViewerRole>> Roles =
+        [.. Enum.GetValues<ViewerRole>().Select(r => new Choice<ViewerRole>(r, SplitCatalog.RoleName(r)))];
+}

@@ -1,22 +1,9 @@
 @implements IDisposable
 @inject LifeGroupsService Groups
 
-<ListRow Title="@Line.Title" Subtitle="@Line.Subtitle" Href="@Line.Href">
-    <Leading>
-        @if (Line.Colour is not null)
-        {
-            <span class="row__icon" style="background: color-mix(in srgb, @Line.Colour 28%, transparent)"><Icon Name="users" Size="IconSize.Small" /></span>
-        }
-        else
-        {
-            <span class="row__icon"><Icon Name="users" Size="IconSize.Small" /></span>
-        }
-    </Leading>
-</ListRow>
+<HomeLineRow Line="Groups.Home()" />
 
 @code {
-    private HomeLine Line => Groups.Home();
-
     protected override async Task OnInitializedAsync()
     {
         Groups.Changed += Refresh;

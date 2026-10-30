@@ -1,0 +1,10 @@
+<span class="audience-tag @(Audience == Audience.Members ? "audience-tag--members" : "audience-tag--everyone")">
+    <Icon Name="@(Audience == Audience.Members ? "lock" : "globe")" Size="IconSize.ExtraSmall" />@Label
+</span>
+
+@code {
+    [Parameter, EditorRequired] public Audience Audience { get; set; }
+    [Parameter] public string? Text { get; set; }
+
+    private string Label => Text ?? (Audience == Audience.Members ? "Members" : "Everyone");
+}

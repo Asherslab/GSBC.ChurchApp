@@ -1,0 +1,48 @@
+@inject ChurchClock Clock
+
+@if (Events.Count == 0)
+{
+    <p class="muted small">@Empty</p>
+}
+else
+{
+    <div class="list">
+        @foreach (var item in Events)
+        {
+            var past = PastBefore is { } now && item.Start + item.Length < now;
+            <div class="event-line @(past ? "event-line--past" : "")">
+                <span class="event-line__date"><b>@item.Start.Day</b>@item.Start.ToString("MMM")</span>
+                <span class="event-line__body">
+                    <strong>@item.Title</strong>
+                    <span>@Clock.Relative(item.Start), @ChurchClock.Time(item.Start) · @item.Place@From(item)</span>
+                    @if (item.Detail is not null)
+                    {
+                        <span class="event-line__detail @(item.Changed ? "event-line__detail--changed" : "")">@item.Detail</span>
+                    }
+                </span>
+                @if (item == Next)
+                {
+                    <span class="pill">Next</span>
+                }
+                @if (Marking.Tags(item.Audience))
+                {
+                    <AudienceTag Audience="item.Audience" />
+                }
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<MinistryEvent> Events { get; set; } = [];
+    [Parameter] public Marking Marking { get; set; }
+    [Parameter] public DateTime? PastBefore { get; set; }
+    [Parameter] public bool MarkNext { get; set; }
+    [Parameter] public string Empty { get; set; } = "Nothing on the calendar yet.";
+
+    private MinistryEvent? Next => MarkNext ? Events.FirstOrDefault(e => e.Start + e.Length >= (PastBefore ?? Clock.Now)) : null;
+
+    private string From(MinistryEvent item) =>
+        item.MinistryId != Ministry.Id && MinistriesService.Find(item.MinistryId) is { } source ? $" · {source.Name}" : "";
+}

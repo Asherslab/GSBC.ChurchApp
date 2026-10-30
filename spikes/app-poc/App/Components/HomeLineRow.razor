@@ -1,0 +1,11 @@
+<ListRow Title="@Line.Title" Subtitle="@Line.Subtitle" Href="@Line.Href">
+    <Leading>
+        <span class="row__icon" style="@Tint"><Icon Name="@Line.Icon" Size="IconSize.Small" /></span>
+    </Leading>
+</ListRow>
+
+@code {
+    [Parameter, EditorRequired] public HomeLine Line { get; set; } = default!;
+
+    private string? Tint => Line.Colour is { } colour ? $"background: color-mix(in srgb, {colour} 28%, transparent)" : null;
+}

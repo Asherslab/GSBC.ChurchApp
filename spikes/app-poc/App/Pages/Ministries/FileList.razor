@@ -1,0 +1,56 @@
+@if (Files.Count == 0)
+{
+    <p class="muted small">No files yet.</p>
+}
+else
+{
+    <div class="list">
+        @foreach (var file in Files)
+        {
+            @if (file.Kind == FileKind.Recording && file.AudioPath is not null)
+            {
+                <div class="practice">
+                    <span class="practice__label"><Icon Name="headphones" Size="IconSize.Small" /><span><strong>@file.Title</strong><small>@file.Detail</small></span></span>
+                    <AudioPlayer Sermon="AsRecording(file)" />
+                </div>
+            }
+            else if (file.Kind == FileKind.Link && file.Href is not null)
+            {
+                <ListRow Icon="link" IconTone="Tone.Accent" Title="@file.Title" Subtitle="@file.Detail" Href="@file.Href" External="true">
+                    <Below>@Tag(file)</Below>
+                </ListRow>
+            }
+            else
+            {
+                <ListRow Icon="file-text" Title="@file.Title" Subtitle="@file.Detail" OnClick="() => opened = file">
+                    <Below>@Tag(file)</Below>
+                </ListRow>
+            }
+        }
+    </div>
+}
+
+<Sheet Open="opened is not null" OpenChanged="_ => opened = null">
+    @if (opened is not null)
+    {
+        <h2>@opened.Title</h2>
+        <p>A sample file. In the app this opens the PDF, saved on the phone so it works without a signal.</p>
+        <div class="sheet__actions">
+            <button class="btn btn--quiet btn--block" @onclick="() => opened = null">Close</button>
+        </div>
+    }
+</Sheet>
+
+@code {
+    [Parameter, EditorRequired] public IReadOnlyList<MinistryFile> Files { get; set; } = [];
+    [Parameter] public Marking Marking { get; set; }
+    [Parameter] public string? SongTitle { get; set; }
+
+    private MinistryFile? opened;
+
+    private RenderFragment? Tag(MinistryFile file) =>
+        Marking.Tags(file.Audience) ? @<AudienceTag Audience="file.Audience" /> : null;
+
+    private Sermon AsRecording(MinistryFile file) =>
+        new($"practice:{file.AudioPath}", SongTitle ?? file.Title, null, "Practice recording", DateOnly.MinValue, "", null, null, file.AudioPath, null, "");
+}

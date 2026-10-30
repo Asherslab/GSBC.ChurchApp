@@ -87,6 +87,12 @@
                 </Section>
                 break;
 
+            case FeedBlock.Ministries:
+                <Section Title="Ministries" LinkText="All ministries" LinkHref="ministries" First="first">
+                    <div class="list"><MinistriesHomeRow /></div>
+                </Section>
+                break;
+
             case FeedBlock.LatestSermon:
                 <Section Title="Latest sermon" LinkText="All sermons" LinkHref="listen" First="first">
                     <TodayLatestSermon Sermon="Latest!" />
