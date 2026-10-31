@@ -5,7 +5,7 @@
 <Page Title="Ministries" BackHref="more" BackLabel="More">
     <Masthead Title="Ministries" Note="Every ministry at Good Shepherd. Have a look, then join or ask the leaders.">
         <div class="status">
-            <span class="status__text">Viewing as <strong>@SplitCatalog.RoleName(Ministries.Role)</strong> · @SplitCatalog.For(Ministries.Split).Name design</span>
+            <span class="status__text">Viewing as <strong>@ViewerRoles.Name(Ministries.Role)</strong></span>
             <button class="btn btn--ghost-masthead" @onclick="() => previewOpen = true"><Icon Name="eye" Size="IconSize.Small" />Change</button>
         </div>
     </Masthead>
@@ -28,7 +28,7 @@
             <div class="list mine-list">
                 @foreach (var ministry in mine)
                 {
-                    <MinistryRow @key="ministry.Id" Ministry="ministry" Detail="@MineDetail(ministry)" Href="@MineHref(ministry)" />
+                    <MinistryRow @key="ministry.Id" Ministry="ministry" Detail="@MineDetail(ministry)" />
                 }
             </div>
         </Section>
@@ -80,9 +80,6 @@
     private Toast toast = default!;
     private bool previewOpen;
     private bool staffOpen;
-
-    private string? MineHref(Ministry ministry) =>
-        Ministries.Split == ViewingSplit.TeamRoom ? $"ministries/{ministry.Id}/team" : null;
 
     private bool IsServing(Ministry ministry) => Ministries.Settings(ministry).ServingTeam;
 

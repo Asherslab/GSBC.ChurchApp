@@ -246,22 +246,25 @@ with what each offers and how to join (Open, Ask, Invite only). "Yours" at the t
 date and your ministries.
 
 - **Areas, not one scroll** (2026-10-31): a ministry page is a set of tabs, each its own view and URL:
-  About (`/ministries/{id}`), News, Calendar, Files, and for members Team, Roster and Chats
-  (`/ministries/{id}/news`, `/roster`, `/chats` …). Only the modules a ministry has on, and only what
-  you can see, get a tab. The Hub tile, "You're on Sunday" and the two sample Music notifications in
-  the inbox open the right area. A Life Group page is split the same way (About, Sundays, Notices,
-  Resources).
+  About (`/ministries/{id}`), News, Calendar, Roster, Chats and Files (`/ministries/{id}/news` …).
+  Only the modules a ministry has on, and only what you can see, get a tab; a members-only tab has a
+  lock. The Hub tile, "You're on Sunday" and the two sample Music notifications in the inbox open the
+  right area. A Life Group page is split the same way (About, Sundays, Notices, Resources).
+- **Who sees what** (2026-10-31): leaders set each of News, Calendar and Files to **Members only**,
+  **Everyone** or **Both** in Settings. Serving teams default to members only, so a visitor to Music
+  sees About and Ask to join and nothing else. Children's Ministry has News and Calendar on Both: a
+  member gets a **Team only / Public** switch at the top of the tab (each stream has its own URL, the
+  public one ending `/public`), and a visitor sees only the public stream. Young Adults, Men's,
+  Ladies and Life Groups are largely or wholly public. Roster and chats are always members only.
 - **This preview:** sign-in isn't designed, so the eye button on any ministry page (or This preview at
   the foot of the directory) picks who you are: **Visitor** (in nothing; join Young Adults or Men's to
   see joining), **Member** (in Choir, so also Music, plus Young Adults and Children's Ministry), **Leader**
-  (leads Music and so its four teams) or **Staff** (runs everything, and has Message all serving
-  teams). The same place switches the three **designs** for keeping team-only things apart: **Team
-  tabs** (recommended: the team's areas come after a lock in the same tab bar), **Team room** (the
-  ministry page is public, members get a separate team room with its own tabs) and **Marked** (one tab
-  per kind, team items tagged). Both choices are
-  remembered on the phone.
-- **Posting:** a leader's Post (starting on the audience of the tab you're on) makes an announcement, an event or a link,
-  each for Everyone or Members only, with a sentence saying exactly who will see it.
+  (leads Music and so its four teams, and Children's Ministry) or **Staff** (runs everything, and has
+  Message all serving teams). It's remembered on the phone. The earlier switch between three designs
+  is gone; `docs/features/ministries.md` says why.
+- **Posting:** a leader's Post makes an announcement, an event or a link. It starts on the stream
+  you're looking at (members only unless you're on a public stream), offers only the audiences the
+  module allows, and says exactly who will see it.
 - **Tiers:** Music's leaders lead its teams; Music's items show on each team, labelled "from Music"; a
   Choir member sees Music's members-only items and the Music team chat.
 - **Rosters** (the Roster area, `/ministries/{id}/roster`) are a mock of Elvanto: your dates with Accept, Decline and
@@ -269,7 +272,7 @@ date and your ministries.
   the songs with practice files: the first song's recording plays in the app's own audio player.
 - **Chats** are per ministry; leaders start them, members too where Settings allows; some are
   leaders-post-only. Children's Ministry and Impact Youth have none (safeguarding first; see the doc).
-- **Settings** (leaders): modules on and off, join setting, members starting chats, join requests and
+- **Settings** (leaders): modules on and off, who sees each module, join setting, members starting chats, join requests and
   members; staff also set "serving team".
 - **Life Groups are ministries** of kind Life Group (2026-10-30): the same model, with their notices,
   resources and Sundays coming from the shared Announcements, Files and Calendar modules, and joining

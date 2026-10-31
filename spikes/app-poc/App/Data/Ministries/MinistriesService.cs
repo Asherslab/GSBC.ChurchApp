@@ -5,11 +5,10 @@ namespace Gsbc.AppPoc.Data.Ministries;
 public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
 {
     private const string RoleKey = "ministries:role";
-    private const string SplitKey = "ministries:split";
     private const string JoinedKey = "ministries:joined";
     private const string StaffAuthor = "Church office";
 
-    private readonly Dictionary<string, MinistrySettings> settings = MinistriesContent.All.ToDictionary(m => m.Id, m => new MinistrySettings(m));
+    private readonly Dictionary<string, MinistrySettings> settings = MinistriesContent.All.ToDictionary(m => m.Id, m => new MinistrySettings(m, DefaultAudiences(m)));
     private readonly Dictionary<string, List<Person>> members = MinistriesContent.All.ToDictionary(m => m.Id, m => MinistriesContent.Members.GetValueOrDefault(m.Id)?.ToList() ?? []);
     private readonly Dictionary<string, List<Person>> requests = MinistriesContent.All.Where(m => m.Join == JoinMode.Ask).ToDictionary(m => m.Id, _ => MinistriesContent.AskedToJoin.ToList());
     private readonly List<MinistryPost> posts = [.. MinistriesContent.Posts(), .. LifeGroupsContent.Posts()];
@@ -26,8 +25,6 @@ public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
     private int chatCount;
 
     public ViewerRole Role { get; private set; } = ViewerRole.Member;
-
-    public ViewingSplit Split { get; private set; } = ViewingSplit.TeamTabs;
 
     public bool IsStaff => Role == ViewerRole.Staff;
 
@@ -83,18 +80,56 @@ public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
         OfKind(MinistryKind.Ministry).Where(m => IsOwnMember(m) || Leads(m)).ToList();
 
     public IEnumerable<MinistryPost> Posts(Ministry ministry) =>
-        posts.Where(p => FromHere(ministry, p.MinistryId, MinistryModule.Announcements) && CanSee(ministry, p.Audience)).OrderByDescending(p => p.Posted);
+        posts.Where(p => FromHere(ministry, p.MinistryId, MinistryModule.Announcements))
+            .Select(p => p with { Audience = Effective(p.MinistryId, MinistryModule.Announcements, p.Audience) })
+            .Where(p => CanSee(ministry, p.Audience))
+            .OrderByDescending(p => p.Posted);
 
     public IEnumerable<MinistryEvent> Events(Ministry ministry, bool withPast = false) =>
-        events.Where(e => FromHere(ministry, e.MinistryId, MinistryModule.Calendar) && CanSee(ministry, e.Audience) && (withPast || e.Start + e.Length > Now)).OrderBy(e => e.Start);
+        events.Where(e => FromHere(ministry, e.MinistryId, MinistryModule.Calendar) && (withPast || e.Start + e.Length > Now))
+            .Select(e => e with { Audience = Effective(e.MinistryId, MinistryModule.Calendar, e.Audience) })
+            .Where(e => CanSee(ministry, e.Audience))
+            .OrderBy(e => e.Start);
 
     public IEnumerable<MinistryFile> Files(Ministry ministry) =>
-        files.Where(f => FromHere(ministry, f.MinistryId, MinistryModule.Files) && CanSee(ministry, f.Audience));
+        files.Where(f => FromHere(ministry, f.MinistryId, MinistryModule.Files))
+            .Select(f => f with { Audience = Effective(f.MinistryId, MinistryModule.Files, f.Audience) })
+            .Where(f => CanSee(ministry, f.Audience));
 
-    public int MembersOnlyCount(Ministry ministry) =>
-        posts.Count(p => FromHere(ministry, p.MinistryId, MinistryModule.Announcements) && p.Audience == Audience.Members)
-        + events.Count(e => FromHere(ministry, e.MinistryId, MinistryModule.Calendar) && e.Audience == Audience.Members && e.Start > Now)
-        + files.Count(f => FromHere(ministry, f.MinistryId, MinistryModule.Files) && f.Audience == Audience.Members);
+    public ModuleAudience AudienceOf(Ministry ministry, MinistryModule module) =>
+        IsAlwaysMembers(module) ? ModuleAudience.Members : settings[ministry.Id].Audiences.GetValueOrDefault(module, ModuleAudience.Members);
+
+    public IReadOnlyList<Audience> Allowed(Ministry ministry, MinistryModule module) => AudienceOf(ministry, module) switch
+    {
+        ModuleAudience.Everyone => [Audience.Everyone],
+        ModuleAudience.Both => [Audience.Members, Audience.Everyone],
+        _ => [Audience.Members],
+    };
+
+    public static bool IsAlwaysMembers(MinistryModule module) => module is MinistryModule.Chats or MinistryModule.Rosters;
+
+    public static IReadOnlyList<MinistryModule> SharedModules => [MinistryModule.Announcements, MinistryModule.Calendar, MinistryModule.Files];
+
+    public IReadOnlyList<MinistryModule> MembersOnlyModules(Ministry ministry) =>
+        [.. Settings(ministry).Modules.Where(m => AudienceOf(ministry, m) != ModuleAudience.Everyone && (m != MinistryModule.Chats || ChatsAllowed(ministry))).Order()];
+
+    public void SetAudience(Ministry ministry, MinistryModule module, ModuleAudience audience)
+    {
+        settings[ministry.Id].Audiences[module] = audience;
+        Changed?.Invoke();
+    }
+
+    private Audience Effective(string sourceId, MinistryModule module, Audience posted) =>
+        Find(sourceId) is { } source && AudienceOf(source, module) == ModuleAudience.Members ? Audience.Members : posted;
+
+    private static Dictionary<MinistryModule, ModuleAudience> DefaultAudiences(Ministry ministry) =>
+        SharedModules.ToDictionary(m => m, m => ministry.Audiences is { } chosen && chosen.TryGetValue(m, out var audience) ? audience : ministry switch
+        {
+            { Kind: MinistryKind.LifeGroup } => ModuleAudience.Everyone,
+            { ServingTeam: true } => ModuleAudience.Members,
+            _ when Parent(ministry) is { ServingTeam: true } => ModuleAudience.Members,
+            _ => ModuleAudience.Everyone,
+        });
 
     public IEnumerable<MinistryChat> Chats(Ministry ministry) =>
         IsMember(ministry)
@@ -188,13 +223,6 @@ public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
     {
         Role = role;
         await native.SetAsync(RoleKey, role.ToString());
-        Changed?.Invoke();
-    }
-
-    public async Task SetSplitAsync(ViewingSplit split)
-    {
-        Split = split;
-        await native.SetAsync(SplitKey, split.ToString());
         Changed?.Invoke();
     }
 
@@ -360,10 +388,6 @@ public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
         if (Enum.TryParse<ViewerRole>(await native.GetAsync(RoleKey), out var role))
         {
             Role = role;
-        }
-        if (Enum.TryParse<ViewingSplit>(await native.GetAsync(SplitKey), out var split))
-        {
-            Split = split;
         }
         foreach (var id in (await native.GetAsync(JoinedKey))?.Split(',', StringSplitOptions.RemoveEmptyEntries) ?? [])
         {

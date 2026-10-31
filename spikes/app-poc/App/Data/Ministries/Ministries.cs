@@ -12,7 +12,7 @@ public enum ViewerRole { Visitor, Member, Leader, Staff }
 
 public enum Relation { Visitor, Member, Leader }
 
-public enum ViewingSplit { Marked, TeamTabs, TeamRoom }
+public enum ModuleAudience { Members, Everyone, Both }
 
 public enum FileKind { Document, Link, Recording }
 
@@ -37,13 +37,15 @@ public sealed record Ministry(
     bool WithChildren = false,
     bool MembersStartChats = false,
     MinistryKind Kind = MinistryKind.Ministry,
-    LifeGroupPart? LifeGroup = null);
+    LifeGroupPart? LifeGroup = null,
+    IReadOnlyDictionary<MinistryModule, ModuleAudience>? Audiences = null);
 
 public sealed record LifeGroupPart(string? PlaceId, int MapNumber, bool ParentsJoin = false);
 
-public sealed class MinistrySettings(Ministry ministry)
+public sealed class MinistrySettings(Ministry ministry, IReadOnlyDictionary<MinistryModule, ModuleAudience> audiences)
 {
     public HashSet<MinistryModule> Modules { get; } = [.. ministry.Modules];
+    public Dictionary<MinistryModule, ModuleAudience> Audiences { get; } = new(audiences);
     public JoinMode Join { get; set; } = ministry.Join;
     public bool ServingTeam { get; set; } = ministry.ServingTeam;
     public bool MembersStartChats { get; set; } = ministry.MembersStartChats;

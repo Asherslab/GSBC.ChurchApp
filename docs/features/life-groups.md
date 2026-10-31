@@ -185,6 +185,10 @@ Sunday's time or change, what the group is, its leaders and the room on the map)
 (`/sundays`), **Notices** (`/notices`) and **Resources** (`/resources`). Notices and Resources only
 appear when the group has some. The first view answers "when and where this Sunday" without scrolling,
 and a notice about a moved room can link straight to the group's About.
+Everything on a Life Group is public (its Notices, Sundays and Resources are set to Everyone): anyone
+can walk into a class, and its notices are logistics a newcomer needs as much as a member. So the
+page has no Team only and Public streams; see
+[Who sees what](ministries.md#who-sees-what-per-ministry-per-module).
 
 The design spike (`spikes/app-poc`) has screens 1–3 with Round 2's real groups, the site map and
 sample notices, for showing staff. Its README says what's real and what's sample.

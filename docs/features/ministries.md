@@ -1,6 +1,7 @@
 # Ministries
 
-Status: draft, 2026-10-30; areas separated into tabs 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
+Status: draft, 2026-10-30; areas separated into tabs 2026-10-31; who sees each module chosen per
+ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
 
@@ -39,14 +40,16 @@ owner. The spike uses these names; descriptions marked "sample" are written for 
 
 - **Anyone (a visitor):** browse every ministry, grouped as serving teams (with Music's four teams
   under it) and fellowship groups, each with what it offers and how to join. Open a ministry to read
-  its About (description, when and where it meets, who it's for, its leaders), then its public
-  announcements, calendar and files, each in its own tab. Then, by the ministry's join setting:
+  its About (description, when and where it meets, who it's for, its leaders) and how to join. For
+  most serving teams that's all: their news, calendar and files are for members. Where a ministry
+  has made a module public (Children's Ministry's news and calendar, Young Adults' calendar), the
+  visitor sees its public stream in its own tab. Then, by the ministry's join setting:
   - **Open:** tap Join; the members-only side opens at once.
   - **Ask:** "Ask to join" sends a name, a phone number or email, and a message to the leaders, who
     accept or decline the request.
   - **Invite only:** "Message the leaders"; leaders add members themselves (Song Leading: you're asked
     after serving in Choir or Vocal Groups).
-- **A member:** everything public plus the members-only announcements, events and files, the chats,
+- **A member:** everything public plus the team's announcements, events and files, the chats,
   and the roster: "You're on Sunday · Choir item", with Accept, Decline or Swap. Music's roster shows
   the songs for each service with the practice recording (it plays in the app), the Dropbox link and
   the score. A notifications switch per ministry, and Leave.
@@ -73,7 +76,13 @@ its latest announcement. Home has it as a Hub tile ("You're on Sunday · Choir i
   is a member of the parent for reading (a Choir member sees Music's members-only items and the Music
   team chat), but holds no role in the other children. A parent's roster holds every child's
   positions; each child shows its own.
-- **Items** (announcements, events, files and links) each carry an **audience**: Everyone or Members.
+- **Who sees each module** is a per-ministry setting a leader chooses for Announcements, Calendar and
+  Files: **Members only**, **Everyone**, or **Both** (a public stream and a team stream). About is
+  always public; Rosters and Chats are always members only. See
+  [Who sees what](#who-sees-what-per-ministry-per-module).
+- **Items** (announcements, events, files and links) each carry an **audience**: Everyone or Members,
+  which must be one the module allows. A module set to Members only hides its earlier public items
+  until it's changed back; a module set to Everyone never makes earlier members-only items public.
   An announcement can be **Important**, which sends a notification.
 - **Chats** belong to a ministry, have a name, and may be **leaders post only** (announcement-style:
   members read and are notified but can't reply). Leaders start chats; a per-ministry setting lets
@@ -122,14 +131,15 @@ own view under the hero, reached by the section tabs and each with its own URL:
 | Area | URL | Shown when |
 |---|---|---|
 | About | `/ministries/{id}` | Always. What it is, when it meets, who leads it, its teams; for a member, your next roster date and what's next |
-| News | `/ministries/{id}/news` | Announcements is on (and there's something to read, unless you lead it) |
-| Calendar | `/ministries/{id}/calendar` | Calendar is on, likewise |
-| Files | `/ministries/{id}/files` | Files is on, likewise |
-| Team | `/ministries/{id}/members` | Team tabs design: you're a member; the team's own notices, dates and files |
+| News | `/ministries/{id}/news` (and `/news/public`) | Announcements is on, and there's something you may read (leaders always see it) |
+| Calendar | `/ministries/{id}/calendar` (and `/calendar/public`) | Calendar is on, likewise |
 | Roster | `/ministries/{id}/roster` | Rosters is on and you're a member |
 | Chats | `/ministries/{id}/chats` | Chats is on, allowed (not with children yet) and you're a member |
+| Files | `/ministries/{id}/files` (and `/files/public`) | Files is on, likewise |
 
-A module that's off has no tab, and a visitor never sees the members-only ones. The first view is
+A module that's off has no tab, and a visitor sees only tabs with something public in them: for Music
+that's none, so a visitor gets About and Ask to join, with no tab bar at all. A tab that's members
+only carries a lock. The `/public` URLs are the public stream of a module set to Both. The first view is
 deliberately short: the hero says what kind of ministry it is and carries the one action (Join, Ask to
 join, Message the leaders, or Member); About then answers "what is this" for a visitor and "what's next
 for me" for a member (your next date with Accept, Decline and Swap, then the next thing on the
@@ -137,104 +147,103 @@ calendar). Everything else is one tab away instead of a long scroll down.
 
 Deep links land on the area: the Hub tile and Today's "You're on Sunday" open the Roster, a chat's
 back button returns to Chats, and a notification carries the area's URL ("Music: you're on Sunday"
-opens `/ministries/music/roster`; a team notice opens `/ministries/music/members`). The URLs are the
-same in every design: in Team room a team area redirects into the room, and a room URL redirects to
-the matching tab in the other two, so links in notifications don't depend on which design is chosen.
+opens `/ministries/music/roster`; a team notice opens `/ministries/music/news`, and a public one on a
+module set to Both opens its `/public` stream).
 
 `SectionTabs` gained a page mode for this (the selected tab, a URL per tab, and "locked" tabs shown
-with a lock), so the ministry page, the team room and the Life Group page share the Sunday tab's
+with a lock), so the ministry page and the Life Group page share the Sunday tab's
 sliding underline. Switching tabs replaces the history entry, so Back leaves the ministry rather than
 stepping through its tabs. The roster, which was its own page, is now the Roster area (`RosterView`).
 
-## Public and team-only: three designs
+## Who sees what: per ministry, per module
 
-This is the central design question. The sending side is settled: everything a leader posts is marked
-Everyone or Members. The question is how the receiving side keeps them apart. Three people look at a
-ministry, for different reasons:
+The owner, 2026-10-31, on the tabs rework: "you're assuming too much stuff is public. For most service
+ministries, only the About is public. Some ministries, e.g. Impact Kids, will have some public news and
+calendar, but they'll also need a private calendar and private news."
 
-- **A visitor** is deciding whether to join. They need the About, a sense of what's on, and the way
-  in. Team-only things are noise to them, but knowing they exist ("members get the roster and chats")
-  is a reason to join.
-- **A member** came to do something: check whether they're on, reply, find the practice recording,
-  read the chat. They need the team things first, and the public things only as part of the picture.
-- **A leader** is about to say something. The risk is saying a team thing in public ("pray for Jane's
-  surgery", a child's name). They need to know, while writing, exactly who will read it.
+So "who sees it" is no longer only a choice per post. Each ministry's leaders choose it **per module**
+in Settings → Who sees what:
 
-And in a chat or a notice, a member needs to know who else can see it before they reply. With areas
-separated, the question "does the team room still need to be its own place?" has a new answer: a tab
-is already a place. So the old Two zones design (one long page with a shaded team band) becomes **Team
-tabs**, and the three designs are re-cut around the tab bar. Switch them with the eye button on any
-ministry page, or under This preview at the foot of the directory.
+| Setting | A visitor sees | A member sees | A leader can post |
+|---|---|---|---|
+| **Members only** | No tab | One stream, marked Team only | For members only |
+| **Everyone** | One public stream | The same stream, marked Public | For everyone |
+| **Both** | The public stream only | Two streams in the tab: Team only and Public | Either; it starts on the stream they're looking at |
 
-### Team tabs (recommended)
+About is always public (what it is, when it meets, who leads it, how to join). Rosters and Chats are
+always members only. The defaults, which leaders can change:
 
-One page, one tab bar. The public areas come first (About, News, Calendar, Files) and show only what
-everyone sees. A member then sees a divider with a lock, and the team's areas after it: **Team** (team
-notices, team dates, team files), **Roster** and **Chats**. Each area opens with a one-line band that
-says who sees it: "For everyone · anyone with the app sees this" or "Team only · only members of Music
-and its teams see this". A leader's Post starts on the audience of the tab they're on. A visitor sees
-only the public tabs, with "Members see more" on About.
+| Ministry | News | Calendar | Files | Why |
+|---|---|---|---|---|
+| Serving teams: Music and its four teams, Southland Baptist Productions | Members only | Members only | Members only | The owner's rule: for most service ministries only About is public. A visitor sees what the team does and how to join, nothing else |
+| Children's Ministry (Impact Kids) | Both | Both | Members only | Parents need the Friday nights, the break-up night and "this Friday: space night"; helpers need their own briefings, planning and training dates. Its files (the helpers' guide, the code of conduct) are for the team |
+| Impact Youth | Both | Both | Both | The same reasons as Kids, plus a public file families need (the camp permission form) beside the leaders' room lists. A guess, to confirm with its leader |
+| Young Adults | Both | Everyone | Everyone | An open group: what's on is public, but the group has its own notices too ("camp carpool") |
+| Men's, Ladies | Everyone | Everyone | Everyone | Open fellowship groups whose news is mostly "come along" |
+| Life Groups | Everyone | Everyone | Everyone | See below |
 
-- **For:** the split is still a place (you're on a team tab or you aren't), and now it's visible all
-  the time in the tab bar rather than only after scrolling, with the band repeating it in words. A
-  member's public tabs are exactly what a visitor sees, so a member always knows what the public sees.
-  There's one page and one tab bar, Calendar and Files aren't in two places, and deep links land
-  straight in the area with no extra hop. The default audience follows the tab, so the easy path is
-  the safe one. It fits Kids: a public calendar on the Calendar tab, the team's notices on Team.
-- **Against:** "what's new?" means two tabs (News and Team), as Two zones meant two parts; About's
-  "Next up" and notifications soften it. A ministry with every module on has seven tabs, which scroll
-  sideways on a phone (Music, for a leader); the active tab always scrolls into view.
+**Life Groups are public.** A Life Group is a class anyone can walk into at 9:00; choosing one is done
+by looking at them side by side, and joining needs no approval. What a group posts is logistics
+(a moved room, no class this week, this week's notes) that a visitor deciding to come needs as much as
+a member. So all three modules default to Everyone and the group page has no streams. When member
+sign-in exists, a leader could set Notices to Both for things like prayer points.
 
-### Team room
+### Where a module is Both: two streams in one tab
 
-The ministry page is the **public front door**, identical for everyone, with the public tabs. Members
-see one extra thing on About: a dark **team room** card ("Music team room · You're on 1 Nov · 1 team
-notice · 2 chats"). The team room is its own page (`/ministries/{id}/team`) with a deeper header, a
-"Team room · only Music members see this" badge, and its own tabs: Notices, Roster, Chats, Calendar,
-Files, holding team items and public ones, the public ones tagged **Everyone**. A leader posting from
-the front door starts on Everyone; from the room, on Members.
+The owner has said all along that viewing should feel split. With most modules now wholly members only,
+the question narrows to the modules set to Both, such as Kids' News and Calendar. Three ways were
+considered:
 
-- **For:** the strongest separation: the whole screen changes, header and all, so you can't mistake
-  where you are. Inside the room the unusual thing (public) is the one tagged, which is the right way
-  round for a member.
-- **Against:** with areas separated, most of what the room bought is now bought by the tabs, and what's
-  left costs: two tab bars, Calendar and Files in both places, a hop for members (Home and
-  notifications link into the room, but browsing doesn't), and the team card only on About.
+- **A public tab and a team tab per module** (News, Team news, Calendar, Team calendar …): every
+  stream gets a place, but a ministry with two modules on Both has eight or nine tabs, and the pairs
+  sit apart in the tab bar.
+- **One tab, both streams stacked** (a Team only part, then a Public part): the long scroll the owner
+  asked to get rid of, back inside one tab.
+- **One tab, a switch between the streams** (chosen): News has a two-way switch at the top, **Team
+  only** and **Public**, and shows one stream at a time. Each stream has its own URL
+  (`/ministries/children/news` and `/news/public`).
 
-### Marked
+Why the switch: the streams are separate views, so the split is a place, not a tag on an item; the
+switch says which one you're in, and under it a band says who reads it ("Only Children's Ministry
+members see this" on a navy-tinted ground, "Anyone with the app sees this, including visitors" on
+sand). The tab bar stays short. Team only comes first because members open a ministry for the team's
+things; a notification for a public item opens the Public stream. A visitor never sees the switch:
+they get the public stream and nothing else.
 
-One page, one tab per kind, in the order of the brief: About, News, Calendar, Roster, Chats, Files.
-Members see public and team items together in each tab, newest first, with team items carrying a
-**Members** lock tag; Roster and Chats carry a lock in the tab bar. Visitors see the public items and
-a "Members see more" note.
+**Posting follows the stream.** A leader's Post starts on the audience of what they're looking at: Team
+only (members only) from a team stream, About or a members-only tab, and Everyone only from a public
+stream or a module set to Everyone. The sheet offers only what the module allows: on a module set to
+Both it shows the two-way **Who sees this** switch; otherwise it states the one audience ("In Music,
+announcements are for members only. Leaders change this in Settings."). The sheet's sentence says
+exactly who will read it, and the button repeats it: **Post for members only** or **Post for
+everyone**. Kinds of post whose module is off aren't offered.
 
-- **For:** the fewest tabs and nothing in two places; "what's new?" is one tab.
-- **Against:** within a tab the separation rests on a small tag that's easy to stop noticing. A member
-  can't tell at a glance what a visitor sees, and a leader replying in the flow has no sense of place.
-  Weakest for Kids and Youth, where getting it wrong matters most.
+### The three earlier designs, dropped
 
-### Common to all three
+The spike had a switch between three ways of keeping team things apart (Team tabs, Team room, Marked).
+Rechecked against per-module audiences, two no longer make sense and the third has become the design
+above, so the switch is gone (the eye button still sets who you're viewing as):
 
-- The composer always shows **Who sees this** as a two-way switch, with a sentence that says it in
-  full ("Only Music members, including Vocal Groups, Choir, Song Leading and Production. Visitors
-  browsing the app don't see it." / "Anyone with the app, including visitors looking at Children's Ministry
-  and parents."), and the button repeats it: **Post for everyone** or **Post for members only**.
+- **Team tabs** (the team's notices, dates and files in one Team tab after a lock) assumed News,
+  Calendar and Files were public. With them members only by default, Music would have had public tabs
+  with nothing in them and everything in Team. What's left of it is the lock on a members-only tab.
+- **Team room** (a separate team page) made the public page the front door. With only About public,
+  the front door is About, and the room would be the whole ministry one tap further away; for Kids it
+  meant two tab bars with News and Calendar in each.
+- **Marked** (team and public items mixed in one list, team items tagged) is the opposite of what the
+  owner asked for. Tags survive only on the About's "Next up" and on leftovers in a module set to
+  Everyone.
+
+### Common rules
+
 - Every chat starts with "Only Music members can read this chat. Messages are kept."
-- Roster and chats are always members-only; there's no public roster or public chat.
+- Roster and chats are always members only; there's no public roster or public chat.
+- Staff's "Message all serving teams" is always members only.
 
-### Recommendation
+### To decide with staff
 
-**Team tabs** (changed 2026-10-31 from Team room). The owner's instinct that viewing should feel split
-is right, and Team room was recommended because it was the only design where the split was a place
-rather than a label. Separating the areas makes every tab a place, so the split no longer needs a
-second page: putting the team's areas after a lock in the same tab bar keeps the boundary in view the
-whole time, and the band on each area says it in words. It drops Team room's costs (a second tab bar,
-Calendar and Files twice, an extra hop) and keeps its strengths (the public tabs are what the public
-sees; the default audience follows where you are). The three still differ in a way staff can feel, so
-the switch stays: Team room is the fallback if staff want the whole screen to change for team things
-(perhaps for Kids and Youth only); Marked is not recommended for ministries with children. To decide
-with staff: have a leader post one thing of each audience in each design, and ask a member which
-they'd trust.
+Have a Kids leader post one thing to each stream, then ask a helper and a parent what they saw. The
+defaults per ministry are guesses from the brief; each ministry's leaders should confirm theirs.
 
 ## Rosters and Elvanto
 
@@ -309,7 +318,7 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
   (viewer role, design, membership, posting, chats, rosters, settings; joining is stored on the phone,
   the rest is in memory).
 - `Pages/Ministries/`: the directory (`/ministries`), a ministry and its areas (`/ministries/{id}` and
-  `/ministries/{id}/{area}`, `MinistryArea.cs`), the team room (`/ministries/{id}/team/{area}`), chats
+  `/ministries/{id}/{area}` and `/{area}/public`, `MinistryArea.cs`), chats
   and settings, and the shared lists (posts, events, files, chats, the roster, your roster dates).
 - Shared components added or extended: `BandHero` (Life Group's colour header, now shared),
   `HomeLineRow` (Life Groups' home row, now shared), `MinistryAbout` and `MembershipSheet` (used by
@@ -327,6 +336,8 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
 ## Decided
 
 - **Posting:** every event, announcement and file is marked Everyone or Members (owner, 2026-10-30).
+- **Visibility:** for most serving teams only About is public; ministries such as Impact Kids need
+  public and private news and calendar (owner, 2026-10-31). Hence the per-module setting.
 - **Rosters:** Elvanto is the source of truth; leaders roster through the app into Elvanto; members
   read from it; Elvanto stays usable directly (owner, 2026-10-30).
 - **Chats:** several per ministry; leaders create; members can if enabled; leaders-post-only chats.
@@ -335,8 +346,8 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
 
 ## Open questions
 
-1. **Which split?** Team tabs is recommended (Team room until 2026-10-31); staff and the pastor to
-   choose.
+1. **Defaults per ministry.** Which modules each ministry makes public or Both; the spike's table is a
+   guess, to confirm with each ministry's leaders.
 2. **Which ministries, under whom?** Parents and children, join settings, and which are serving
    teams. The spike guesses all but Music's tier.
 3. **Southland Baptist Productions:** what it does, and whether it's Music's Production team, sits

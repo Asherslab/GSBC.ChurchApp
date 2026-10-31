@@ -35,6 +35,25 @@
             </div>
         </Section>
 
+        <Section Title="Who sees what">
+            <p class="section__lead">About is always public, so anyone can see what @ministry.Name is and how to join. Choose who sees the rest.</p>
+            <div class="stack stack--lg">
+                @foreach (var module in MinistriesService.SharedModules.Where(settings.Modules.Contains))
+                {
+                    var chosen = Ministries.AudienceOf(ministry, module);
+                    <div class="module-audience">
+                        <h3 class="control-label">@MinistriesService.ModuleName(module)</h3>
+                        <Segmented TValue="ModuleAudience" Options="AudienceChoices" Value="chosen" ValueChanged="a => Ministries.SetAudience(ministry, module, a)" Label="@($"Who sees {MinistriesService.ModuleName(module)}")" />
+                        <p class="hint">@AudienceHint(chosen)</p>
+                    </div>
+                }
+                @if (settings.Modules.Any(MinistriesService.IsAlwaysMembers))
+                {
+                    <p class="hint module-audience__fixed"><Icon Name="lock" Size="IconSize.ExtraSmall" />@AlwaysMembersLine(settings)</p>
+                }
+            </div>
+        </Section>
+
         <Section Title="Joining">
             <Segmented TValue="JoinMode" Options="JoinModes" Value="settings.Join" ValueChanged="mode => Ministries.SetJoin(ministry, mode)" />
             <p class="hint">@JoinHint(settings.Join)</p>
@@ -110,10 +129,26 @@
 
     private Ministry? ministry;
 
+    private static readonly IReadOnlyList<Choice<ModuleAudience>> AudienceChoices =
+        [new(ModuleAudience.Members, "Members only"), new(ModuleAudience.Everyone, "Everyone"), new(ModuleAudience.Both, "Both")];
+
+    private static string AlwaysMembersLine(MinistrySettings settings)
+    {
+        var names = settings.Modules.Where(MinistriesService.IsAlwaysMembers).Order().Select(MinistriesService.ModuleName).ToList();
+        return $"{string.Join(" and ", names)} are always for members only.";
+    }
+
+    private static string AudienceHint(ModuleAudience audience) => audience switch
+    {
+        ModuleAudience.Members => "Only members see it; visitors don't see the tab. Anything posted for everyone before is hidden until you change this back.",
+        ModuleAudience.Everyone => "Anyone with the app sees it. Members-only posts from before stay members-only.",
+        _ => "Two streams: a public one for everyone and a team one for members. Each post picks one.",
+    };
+
     private static string Describe(MinistryModule module) => module switch
     {
-        MinistryModule.Calendar => "Events, each for everyone or members only",
-        MinistryModule.Announcements => "News from leaders, for everyone or members only",
+        MinistryModule.Calendar => "Events and dates",
+        MinistryModule.Announcements => "News from leaders",
         MinistryModule.Chats => "Group chats for members",
         MinistryModule.Rosters => $"Who's on when, from {MinistriesContent.Elvanto}",
         _ => "Documents and links: a code of conduct, practice recordings",

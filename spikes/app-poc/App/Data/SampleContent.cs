@@ -139,7 +139,7 @@ public sealed class SampleContent
             new("Music: you're on Sunday", "Choir item, morning service. Sample notification: tap to reply on the roster.", "Fri", true, "ministries/music/roster"),
             new("This week's bulletin is ready", "Sunday 25 October: Almighty God. Tap to read before the service.", "Sun", true, ""),
             new("Summer FIT starts 8 November", "All adult classes combine for four weeks. See you at 9am.", "Thu", false, "events/summer-fit"),
-            new("Music team notice", "Team night, Saturday 14 November. Sample notification: tap to open the team's notices.", "Wed", false, "ministries/music/members"),
+            new("Music team notice", "Team night, Saturday 14 November. Sample notification: tap to open Music's news.", "Wed", false, "ministries/music/news"),
         ],
     };
 }

@@ -11,7 +11,7 @@
     {
         <h2>Post to @Ministry.Name</h2>
         <div class="sheet__form">
-            <ChipGroup TValue="ComposeKind" Options="Kinds" Value="kind" ValueChanged="k => kind = k" />
+            <ChipGroup TValue="ComposeKind" Options="Kinds" Value="kind" ValueChanged="PickKind" />
         </div>
     }
     <div class="stack sheet__form">
@@ -45,11 +45,18 @@
         {
             <div class="stack audience-pick">
                 <h3 class="control-label">Who sees this</h3>
-                <Segmented TValue="Audience" Options="Audiences" Value="audience" ValueChanged="a => audience = a" />
+                @if (Allowed.Count > 1)
+                {
+                    <Segmented TValue="Audience" Options="Audiences" Value="audience" ValueChanged="a => audience = a" Icon="AudienceIcon" Label="Who sees this" />
+                }
                 <p class="reach reach--@(audience == Audience.Members ? "members" : "everyone")">
                     <Icon Name="@(audience == Audience.Members ? "lock" : "globe")" Size="IconSize.Small" />
                     <span>@ReachLine</span>
                 </p>
+                @if (Allowed.Count == 1)
+                {
+                    <p class="hint">@FixedLine</p>
+                }
             </div>
             @if (kind == ComposeKind.Announcement)
             {
@@ -67,13 +74,28 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public Ministry? Ministry { get; set; }
     [Parameter] public Audience DefaultAudience { get; set; } = Audience.Members;
+    [Parameter] public ComposeKind DefaultKind { get; set; }
     [Parameter] public EventCallback<string> OnSent { get; set; }
 
-    private static readonly IReadOnlyList<Choice<ComposeKind>> Kinds =
+    private static readonly IReadOnlyList<Choice<ComposeKind>> AllKinds =
         [new(ComposeKind.Announcement, "Announcement"), new(ComposeKind.Event, "Event"), new(ComposeKind.Link, "Link")];
 
     private static readonly IReadOnlyList<Choice<Audience>> Audiences =
-        [new(Audience.Everyone, "Everyone"), new(Audience.Members, "Members only")];
+        [new(Audience.Members, "Members only"), new(Audience.Everyone, "Everyone")];
+
+    private IReadOnlyList<Choice<ComposeKind>> Kinds => [.. AllKinds.Where(k => Ministries.Has(Ministry!, ModuleFor(k.Value)))];
+
+    private static MinistryModule ModuleFor(ComposeKind kind) => kind switch
+    {
+        ComposeKind.Event => MinistryModule.Calendar,
+        ComposeKind.Link => MinistryModule.Files,
+        _ => MinistryModule.Announcements,
+    };
+
+    private IReadOnlyList<Audience> Allowed => Ministry is null ? [Audience.Members] : Ministries.Allowed(Ministry, ModuleFor(kind));
+
+    private string FixedLine =>
+        $"In {Ministry!.Name}, {MinistriesService.ModuleName(ModuleFor(kind)).ToLowerInvariant()} {(kind == ComposeKind.Event ? "is" : "are")} {(audience == Audience.Members ? "for members only" : "public")}. Leaders change this in Settings.";
 
     private ComposeKind kind;
     private Audience audience;
@@ -117,13 +139,23 @@
     {
         if (Open && !wasOpen)
         {
-            audience = DefaultAudience;
-            kind = ComposeKind.Announcement;
+            kind = Ministry is null || Kinds.Any(k => k.Value == DefaultKind) ? DefaultKind : Kinds.FirstOrDefault()?.Value ?? ComposeKind.Announcement;
+            audience = Fit(DefaultAudience);
             title = body = href = "";
             important = Ministry is null;
             when = Whens[0].Value;
         }
         wasOpen = Open;
+    }
+
+    private static string AudienceIcon(Audience audience) => audience == Audience.Members ? "lock" : "globe";
+
+    private Audience Fit(Audience wanted) => Allowed.Contains(wanted) ? wanted : Allowed[0];
+
+    private void PickKind(ComposeKind picked)
+    {
+        kind = picked;
+        audience = Fit(audience);
     }
 
     private async Task Send()
