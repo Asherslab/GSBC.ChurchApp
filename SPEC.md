@@ -346,6 +346,28 @@ the fees" setting, which lets donors add the fee to their gift, is a cheaper lev
 
 Never handle card numbers in our own code. Card details stay with the payment provider.
 
+### Later (nice to have): staff take a gift in person
+
+When a giving station isn't nearby, a staff member taps "Accept a gift" in the app, enters an
+amount, and the giver taps a card, phone or watch on the staff member's phone (Tap to Pay on iPhone
+and on Android). The church already takes in-person gifts through **Square**, so this uses Square
+too, and the money and reporting land where in-person giving already goes. Not planned yet; noted
+2026-10-31.
+
+- **Built into our app with Square's Mobile Payments SDK.** Using Square's own Point of Sale app
+  instead, or handing off to it, is ruled out: each staff phone would need the church's Square login
+  or its own Square account.
+- **Only signed-in staff with a "can take gifts" permission** see the button, and every gift is
+  logged with who took it, when and how much, for the treasurer.
+- **Needs, all outside this repo and the owner's to set up:** a Square developer application,
+  Apple's Tap to Pay entitlement for this app (requested through the church's Apple developer
+  account, then app review against Apple's Tap to Pay rules), and the Android equivalent.
+- **Server side:** authorising a phone for a session is a gRPC method. Square webhooks would be a
+  non-gRPC path and need the owner's approval first (see AGENTS.md); confirming the payment from
+  the phone avoids them.
+- **To check first:** the SDK's current Australian support for Tap to Pay, Square's fees for it, and
+  receipt wording (gifts are tax-deductible only to a DGR fund).
+
 ## 8. Modules
 
 Every feature (Events, Sermons, Groups, Prayer, Give, Push, …) is self-contained and **selectable per
