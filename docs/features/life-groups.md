@@ -179,6 +179,12 @@ They reuse the spike's shared components (`Page`, `Masthead`, `ListGroup`/`ListR
 In the design spike, the group page is built from the shared ministry components (`BandHero`,
 `MinistryAbout`, `EventList` for the Sundays, `PostList` for notices, `FileList` for resources and
 `MembershipSheet` for Joined), with the round, the time and the room as Life Groups' own sections.
+Like a ministry page (2026-10-31, [ministries.md](ministries.md#a-view-per-area)), it's split into
+areas instead of one long scroll, each a tab with its own URL: **About** (`/groups/{id}`: this
+Sunday's time or change, what the group is, its leaders and the room on the map), **Sundays**
+(`/sundays`), **Notices** (`/notices`) and **Resources** (`/resources`). Notices and Resources only
+appear when the group has some. The first view answers "when and where this Sunday" without scrolling,
+and a notice about a moved room can link straight to the group's About.
 
 The design spike (`spikes/app-poc`) has screens 1–3 with Round 2's real groups, the site map and
 sample notices, for showing staff. Its README says what's real and what's sample.

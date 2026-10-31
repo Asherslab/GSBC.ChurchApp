@@ -27,7 +27,7 @@ public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
 
     public ViewerRole Role { get; private set; } = ViewerRole.Member;
 
-    public ViewingSplit Split { get; private set; } = ViewingSplit.TeamRoom;
+    public ViewingSplit Split { get; private set; } = ViewingSplit.TeamTabs;
 
     public bool IsStaff => Role == ViewerRole.Staff;
 
@@ -142,7 +142,7 @@ public sealed class MinistriesService(ChurchClock clock, NativeBridge native)
         if (YourSlots.FirstOrDefault() is { } next)
         {
             var reply = next.Slot.YourReply == RosterReply.Waiting ? " · please reply" : "";
-            return new($"You're on {clock.Relative(next.Date.Start)}", $"{next.Slot.Position} · {next.Date.Service}, {ChurchClock.Time(next.Date.Start)}{reply}", $"ministries/{next.Date.MinistryId}/roster", next.Ministry.Colour, "roster");
+            return new($"You're on {clock.RelativeInSentence(next.Date.Start)}", $"{next.Slot.Position} · {next.Date.Service}, {ChurchClock.Time(next.Date.Start)}{reply}", $"ministries/{next.Date.MinistryId}/roster", next.Ministry.Colour, "roster");
         }
         if (Mine is { Count: > 0 } mine)
         {

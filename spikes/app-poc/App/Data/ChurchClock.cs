@@ -46,6 +46,9 @@ public sealed class ChurchClock(SampleContent content)
         };
     }
 
+    public string RelativeInSentence(DateTime moment) =>
+        Relative(moment) is var relative && (moment.Date - Now.Date).Days is 0 or 1 ? relative.ToLowerInvariant() : relative;
+
     public static string Time(DateTime moment) =>
         moment.Minute == 0 ? moment.ToString("h tt").ToLowerInvariant().Replace(" ", "") : moment.ToString("h:mm tt").ToLowerInvariant().Replace(" ", "");
 }

@@ -1,4 +1,5 @@
 @page "/ministries/{Id}"
+@page "/ministries/{Id}/{Area}"
 @implements IDisposable
 @inject MinistriesService Ministries
 @inject NativeBridge Native
@@ -23,7 +24,7 @@
                 <Actions>
                     @if (Ministries.IsLeader(ministry))
                     {
-                        <button class="btn btn--on-masthead" @onclick="() => Compose(FrontAudience)"><Icon Name="plus" Size="IconSize.Small" />Post</button>
+                        <button class="btn btn--on-masthead" @onclick="() => Compose(DefaultAudience)"><Icon Name="plus" Size="IconSize.Small" />Post</button>
                     }
                     else if (Ministries.IsOwnMember(ministry))
                     {
@@ -40,20 +41,14 @@
                 </Actions>
             </BandHero>
 
-            @switch (Ministries.Split)
+            @if (Areas.Count > 1)
             {
-                case ViewingSplit.Marked:
-                    @Marked
-                    break;
-                case ViewingSplit.Zones:
-                    @Zones
-                    break;
-                default:
-                    @FrontDoor
-                    break;
+                <SectionTabs Items="Tabs" Selected="@Current.Slug()" Href="AreaHref" Locked="LockedTabs" LockedApart="Ministries.Split == ViewingSplit.TeamTabs" Label="@($"{ministry.Name} areas")" />
             }
 
-            @Teams
+            <div class="area" @key="Current">
+                @AreaContent
+            </div>
             <PreviewFooter />
         }
     </ChildContent>
@@ -95,6 +90,7 @@
 
 @code {
     [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string? Area { get; set; }
 
     private Ministry? ministry;
     private Toast toast = default!;
@@ -118,8 +114,6 @@
     private bool Member => Ministries.IsMember(ministry!);
 
     private bool Leader => Ministries.IsLeader(ministry!);
-
-    private Audience FrontAudience => Ministries.Split == ViewingSplit.TeamRoom ? Audience.Everyone : Audience.Members;
 
     private string LeaderNames => string.Join(" & ", ministry!.Leaders.Select(l => l.Name));
 
@@ -158,7 +152,194 @@
         _ => @<button class="btn btn--on-masthead" @onclick="() => askOpen = true"><Icon Name="message-square" Size="IconSize.Small" />Message the leaders</button>,
     };
 
-    private RenderFragment About => @<MinistryAbout Ministry="ministry!" First="!Member" />;
+    private MinistryArea? requested;
+
+    private ViewingSplit Split => Ministries.Split;
+
+    private FeedScope PublicScope => Split == ViewingSplit.Marked ? FeedScope.All : FeedScope.Everyone;
+
+    private Marking PublicMarking => Split == ViewingSplit.Marked ? Marking.MembersOnly : Marking.None;
+
+    private bool RosterOn => Member && Ministries.Has(ministry!, MinistryModule.Rosters);
+
+    private bool ChatsOn => Member && Ministries.Has(ministry!, MinistryModule.Chats) && Ministries.ChatsAllowed(ministry!);
+
+    private bool TeamFeedOn => Member && (Ministries.Has(ministry!, MinistryModule.Announcements) || Ministries.Has(ministry!, MinistryModule.Calendar) || Ministries.Has(ministry!, MinistryModule.Files));
+
+    private IReadOnlyList<MinistryArea> Areas
+    {
+        get
+        {
+            var areas = new List<MinistryArea> { MinistryArea.About };
+            void Add(MinistryArea area, bool on)
+            {
+                if (on)
+                {
+                    areas.Add(area);
+                }
+            }
+            Add(MinistryArea.News, Ministries.Has(ministry!, MinistryModule.Announcements) && (Leader || Posts(PublicScope).Count > 0));
+            Add(MinistryArea.Calendar, Ministries.Has(ministry!, MinistryModule.Calendar) && (Leader || Events(PublicScope).Count > 0));
+            if (Split == ViewingSplit.Marked)
+            {
+                Add(MinistryArea.Roster, RosterOn);
+                Add(MinistryArea.Chats, ChatsOn);
+            }
+            Add(MinistryArea.Files, Ministries.Has(ministry!, MinistryModule.Files) && (Leader || Files(PublicScope).Count > 0));
+            if (Split == ViewingSplit.TeamTabs)
+            {
+                Add(MinistryArea.Team, TeamFeedOn);
+                Add(MinistryArea.Roster, RosterOn);
+                Add(MinistryArea.Chats, ChatsOn);
+            }
+            return areas;
+        }
+    }
+
+    private MinistryArea Current => requested switch
+    {
+        { } area when Areas.Contains(area) => area,
+        MinistryArea.Team when Areas.Contains(MinistryArea.News) => MinistryArea.News,
+        _ => MinistryArea.About,
+    };
+
+    private IReadOnlyList<Choice<string>> Tabs => [.. Areas.Select(a => new Choice<string>(a.Slug(), AreaLabel(a)))];
+
+    private IReadOnlyCollection<string> LockedTabs => [.. Areas.Where(a => a.IsTeam()).Select(a => a.Slug())];
+
+    private string AreaHref(string slug) => MinistryAreas.Path(Id, MinistryAreas.Parse(slug) ?? MinistryArea.About);
+
+    private static string AreaLabel(MinistryArea area) => area switch
+    {
+        MinistryArea.About => "About",
+        MinistryArea.News => "News",
+        MinistryArea.Calendar => "Calendar",
+        MinistryArea.Files => "Files",
+        MinistryArea.Team => "Team",
+        MinistryArea.Roster => "Roster",
+        _ => "Chats",
+    };
+
+    private Audience DefaultAudience => Split switch
+    {
+        ViewingSplit.TeamRoom => Audience.Everyone,
+        ViewingSplit.TeamTabs => Current.IsTeam() ? Audience.Members : Audience.Everyone,
+        _ => Audience.Members,
+    };
+
+    private RenderFragment AreaContent => Current switch
+    {
+        MinistryArea.News => @<text>
+            @Band(false)
+            <Section First="true"><PostList Ministry="ministry!" Posts="Posts(PublicScope)" Marking="PublicMarking" /></Section>
+        </text>,
+        MinistryArea.Calendar => @<text>
+            @Band(false)
+            <Section First="true"><EventList Ministry="ministry!" Events="Events(PublicScope)" Marking="PublicMarking" /></Section>
+        </text>,
+        MinistryArea.Files => @<text>
+            @Band(false)
+            <Section First="true"><FileList Files="Files(PublicScope)" Marking="PublicMarking" /></Section>
+        </text>,
+        MinistryArea.Team => @<text>
+            @Band(true)
+            @TeamFeed
+        </text>,
+        MinistryArea.Roster => @<text>
+            @Band(true)
+            <RosterView Ministry="ministry!" OnSaved="Sent" />
+        </text>,
+        MinistryArea.Chats => @<text>
+            @Band(true)
+            <Section First="true"><ChatList Ministry="ministry!" /></Section>
+        </text>,
+        _ => Overview,
+    };
+
+    private RenderFragment Band(bool team) => @<text>
+        @if (Split == ViewingSplit.TeamTabs && Member)
+        {
+            <div class="area-band @(team ? "area-band--team" : "")">
+                <Icon Name="@(team ? "lock" : "globe")" Size="IconSize.Small" />
+                <span><strong>@(team ? "Team only" : "For everyone")</strong> · @BandLine(team)</span>
+            </div>
+        }
+    </text>;
+
+    private string BandLine(bool team) =>
+        !team ? "anyone with the app sees this"
+        : MinistriesService.Children(ministry!).Count > 0 ? $"only members of {ministry!.Name} and its teams see this"
+        : $"only {ministry!.Name} members see this";
+
+    private RenderFragment TeamFeed => @<text>
+        @if (!HasAny(FeedScope.Members))
+        {
+            <Section First="true"><p class="muted small">No team notices, events or files yet.</p></Section>
+        }
+        @if (Ministries.Has(ministry!, MinistryModule.Announcements) && Posts(FeedScope.Members) is { Count: > 0 } posts)
+        {
+            <Section Title="Notices" First="true"><PostList Ministry="ministry!" Posts="posts" /></Section>
+        }
+        @if (Ministries.Has(ministry!, MinistryModule.Calendar) && Events(FeedScope.Members) is { Count: > 0 } events)
+        {
+            <Section Title="Team dates"><EventList Ministry="ministry!" Events="events" /></Section>
+        }
+        @if (Ministries.Has(ministry!, MinistryModule.Files) && Files(FeedScope.Members) is { Count: > 0 } files)
+        {
+            <Section Title="Team files"><FileList Files="files" /></Section>
+        }
+    </text>;
+
+    private RenderFragment Overview => @<text>
+        @if (Member && Split == ViewingSplit.TeamRoom)
+        {
+            <Section First="true">
+                <a class="team-door" href="@($"ministries/{Id}/team")" style="--band: @ministry!.Colour">
+                    <span class="team-door__icon"><Icon Name="door-open" /></span>
+                    <span class="team-door__body">
+                        <strong>@ministry.Name team room</strong>
+                        <span>@DoorLine</span>
+                    </span>
+                    <Icon Name="chevron-right" Size="IconSize.Small" />
+                </a>
+            </Section>
+        }
+        else if (HasLead)
+        {
+            <Section First="true">
+                <div class="stack"><YourSlots Ministry="ministry" Limit="1" /></div>
+                @if (Areas.Contains(MinistryArea.Roster))
+                {
+                    <a class="link-btn overview-link" href="@AreaHref(MinistryArea.Roster.Slug())">Full roster<Icon Name="chevron-right" Size="IconSize.Small" /></a>
+                }
+            </Section>
+        }
+        @if (Member)
+        {
+            @NextUp
+        }
+        <MinistryAbout Ministry="ministry!" First="!Member || (!HasLead && NextEvent is null)" />
+        @if (!Member)
+        {
+            @NextUp
+            @Teaser
+        }
+        @Teams
+    </text>;
+
+    private bool HasLead => Member && (Split == ViewingSplit.TeamRoom || Ministries.YourSlotsIn(ministry!).Count > 0);
+
+    private MinistryEvent? NextEvent => Ministries.Has(ministry!, MinistryModule.Calendar) ? Ministries.Events(ministry!).FirstOrDefault() : null;
+
+    private RenderFragment NextUp => @<text>
+        @if (NextEvent is { } next)
+        {
+            <Section Title="Next up" First="Member && !HasLead"
+                     LinkText="@(Areas.Contains(MinistryArea.Calendar) ? "Calendar" : null)" LinkHref="@(Areas.Contains(MinistryArea.Calendar) ? AreaHref(MinistryArea.Calendar.Slug()) : null)">
+                <EventList Ministry="ministry!" Events="[next]" Marking="Marking.MembersOnly" />
+            </Section>
+        }
+    </text>;
 
     private RenderFragment Teams => @<text>
         @if (MinistriesService.Children(ministry!) is { Count: > 0 } children)
@@ -172,120 +353,6 @@
                     }
                 </div>
             </Section>
-        }
-    </text>;
-
-    private RenderFragment Feed(FeedScope scope, Marking marking, bool skipEmpty) => @<text>
-        @if (Ministries.Has(ministry!, MinistryModule.Announcements) && Posts(scope) is var posts && (posts.Count > 0 || !skipEmpty))
-        {
-            <Section Title="Announcements">
-                <PostList Ministry="ministry" Posts="posts" Marking="marking" />
-            </Section>
-        }
-        @if (Ministries.Has(ministry!, MinistryModule.Calendar) && Events(scope) is var events && (events.Count > 0 || !skipEmpty))
-        {
-            <Section Title="Calendar">
-                <EventList Ministry="ministry" Events="events" Marking="marking" />
-            </Section>
-        }
-        @if (scope != FeedScope.Everyone && Member && Ministries.Has(ministry!, MinistryModule.Rosters) && Ministries.Roster(ministry!).Count > 0)
-        {
-            <Section Title="Roster">
-                <Trailing>@MembersTag(marking)</Trailing>
-                <ChildContent><RosterGlance Ministry="ministry" /></ChildContent>
-            </Section>
-        }
-        @if (scope != FeedScope.Everyone && Member && Ministries.Has(ministry!, MinistryModule.Chats) && Ministries.ChatsAllowed(ministry!))
-        {
-            <Section Title="Chats">
-                <Trailing>@MembersTag(marking)</Trailing>
-                <ChildContent><ChatList Ministry="ministry" /></ChildContent>
-            </Section>
-        }
-        @if (Ministries.Has(ministry!, MinistryModule.Files) && Files(scope) is var files && (files.Count > 0 || !skipEmpty))
-        {
-            <Section Title="Files and links">
-                <FileList Files="files" Marking="marking" />
-            </Section>
-        }
-    </text>;
-
-    private RenderFragment MembersTag(Marking marking) => marking == Marking.MembersOnly ? @<AudienceTag Audience="Audience.Members" /> : @<text></text>;
-
-    private RenderFragment Marked => @<text>
-        @if (Member)
-        {
-            <Section First="true"><div class="stack"><YourSlots Ministry="ministry" /></div></Section>
-            @Feed(FeedScope.All, Marking.MembersOnly, false)
-            @About
-        }
-        else
-        {
-            @About
-            @Feed(FeedScope.All, Marking.MembersOnly, true)
-            @Teaser
-        }
-    </text>;
-
-    private RenderFragment Zones => @<text>
-        @About
-        <div class="zone zone--public">
-            <div class="zone__head">
-                <Icon Name="globe" Size="IconSize.Small" />
-                <span><strong>For everyone</strong>Anyone browsing the app sees this part</span>
-                @if (Leader)
-                {
-                    <button class="link-btn" @onclick="() => Compose(Audience.Everyone)">Post here</button>
-                }
-            </div>
-            @Feed(FeedScope.Everyone, Marking.None, true)
-            @if (!HasAny(FeedScope.Everyone))
-            {
-                <Section><p class="muted small">Nothing public yet.</p></Section>
-            }
-        </div>
-        <div class="zone zone--team">
-            <div class="zone__head">
-                <Icon Name="lock" Size="IconSize.Small" />
-                <span><strong>Team only</strong>Only @Ministries.MembersPhrase(ministry!) see this part</span>
-                @if (Leader)
-                {
-                    <button class="link-btn" @onclick="() => Compose(Audience.Members)">Post here</button>
-                }
-            </div>
-            @if (Member)
-            {
-                <Section First="true"><div class="stack"><YourSlots Ministry="ministry" /></div></Section>
-                @Feed(FeedScope.Members, Marking.None, true)
-            }
-            else
-            {
-                <Section First="true">
-                    <p class="zone__locked">@LockedLine</p>
-                </Section>
-            }
-        </div>
-    </text>;
-
-    private RenderFragment FrontDoor => @<text>
-        @if (Member)
-        {
-            <Section First="true">
-                <a class="team-door" href="@($"ministries/{Id}/team")" style="--band: @ministry!.Colour">
-                    <span class="team-door__icon"><Icon Name="door-open" /></span>
-                    <span class="team-door__body">
-                        <strong>@ministry.Name team room</strong>
-                        <span>@DoorLine</span>
-                    </span>
-                    <Icon Name="chevron-right" Size="IconSize.Small" />
-                </a>
-            </Section>
-        }
-        @About
-        @Feed(FeedScope.Everyone, Marking.None, true)
-        @if (!Member)
-        {
-            @Teaser
         }
     </text>;
 
@@ -367,9 +434,19 @@
     protected override void OnParametersSet()
     {
         ministry = MinistriesService.Find(Id);
+        requested = MinistryAreas.Parse(Area);
+        Redirect();
+    }
+
+    private void Redirect()
+    {
         if (ministry?.Kind == MinistryKind.LifeGroup)
         {
             Navigation.NavigateTo($"groups/{Id}", replace: true);
+        }
+        else if (ministry is not null && Split == ViewingSplit.TeamRoom && requested is { } area && area.IsTeam())
+        {
+            Navigation.NavigateTo(MinistryAreas.Path(Id, area, inTeamRoom: true), replace: true);
         }
     }
 
@@ -410,7 +487,11 @@
         await toast.ShowAsync("Sent to the leaders");
     }
 
-    private void Refresh() => InvokeAsync(StateHasChanged);
+    private void Refresh() => InvokeAsync(() =>
+    {
+        Redirect();
+        StateHasChanged();
+    });
 
     public void Dispose() => Ministries.Changed -= Refresh;
 }

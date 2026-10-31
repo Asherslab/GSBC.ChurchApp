@@ -245,19 +245,26 @@ Added 2026-10-30 from the owner's brief; the design and its open questions are i
 with what each offers and how to join (Open, Ask, Invite only). "Yours" at the top has your next roster
 date and your ministries.
 
+- **Areas, not one scroll** (2026-10-31): a ministry page is a set of tabs, each its own view and URL:
+  About (`/ministries/{id}`), News, Calendar, Files, and for members Team, Roster and Chats
+  (`/ministries/{id}/news`, `/roster`, `/chats` …). Only the modules a ministry has on, and only what
+  you can see, get a tab. The Hub tile, "You're on Sunday" and the two sample Music notifications in
+  the inbox open the right area. A Life Group page is split the same way (About, Sundays, Notices,
+  Resources).
 - **This preview:** sign-in isn't designed, so the eye button on any ministry page (or This preview at
   the foot of the directory) picks who you are: **Visitor** (in nothing; join Young Adults or Men's to
   see joining), **Member** (in Choir, so also Music, plus Young Adults and Children's Ministry), **Leader**
   (leads Music and so its four teams) or **Staff** (runs everything, and has Message all serving
   teams). The same place switches the three **designs** for keeping team-only things apart: **Team
-  room** (recommended: the ministry page is public, members get a separate team room), **Two zones**
-  (one page, a shaded team-only band) and **Marked** (one list, team items tagged). Both choices are
+  tabs** (recommended: the team's areas come after a lock in the same tab bar), **Team room** (the
+  ministry page is public, members get a separate team room with its own tabs) and **Marked** (one tab
+  per kind, team items tagged). Both choices are
   remembered on the phone.
-- **Posting:** a leader's Post (or a zone's "Post here") makes an announcement, an event or a link,
+- **Posting:** a leader's Post (starting on the audience of the tab you're on) makes an announcement, an event or a link,
   each for Everyone or Members only, with a sentence saying exactly who will see it.
 - **Tiers:** Music's leaders lead its teams; Music's items show on each team, labelled "from Music"; a
   Choir member sees Music's members-only items and the Music team chat.
-- **Rosters** (`/ministries/{id}/roster`) are a mock of Elvanto: your dates with Accept, Decline and
+- **Rosters** (the Roster area, `/ministries/{id}/roster`) are a mock of Elvanto: your dates with Accept, Decline and
   Swap; each date's positions and people; leaders tap a position to assign people. Music's dates list
   the songs with practice files: the first song's recording plays in the app's own audio player.
 - **Chats** are per ministry; leaders start them, members too where Settings allows; some are

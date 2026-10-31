@@ -1,22 +1,60 @@
 @inject NativeBridge Native
 @inject IJSRuntime JS
+@inject NavigationManager Navigation
 
-<nav class="section-tabs" @ref="nav" aria-label="Sections">
-    @foreach (var item in Items)
+<nav class="section-tabs @(Paged ? "section-tabs--paged" : "")" @ref="nav" aria-label="@Label">
+    @for (var i = 0; i < Items.Count; i++)
     {
-        <button data-target="@item.Value" @onclick="() => Jump(item.Value)">@item.Label</button>
+        var item = Items[i];
+        var locked = Locked.Contains(item.Value);
+        @if (locked && LockedApart && i > 0 && !Locked.Contains(Items[i - 1].Value))
+        {
+            <span class="section-tabs__apart" aria-hidden="true"><Icon Name="lock" Size="IconSize.ExtraSmall" /></span>
+        }
+        @if (Paged)
+        {
+            var on = item.Value == Selected;
+            <a href="@Href!(item.Value)" class="@(on ? "on" : null)" aria-current="@(on ? "page" : null)" @onclick="() => Open(item.Value)" @onclick:preventDefault>@TabLabel(item, locked, !LockedApart)</a>
+        }
+        else
+        {
+            <button data-target="@item.Value" @onclick="() => Jump(item.Value)">@TabLabel(item, locked, !LockedApart)</button>
+        }
     }
     <span class="section-tabs__ink" aria-hidden="true"></span>
 </nav>
 
 @code {
     [Parameter, EditorRequired] public IReadOnlyList<Choice<string>> Items { get; set; } = [];
+    [Parameter] public string? Selected { get; set; }
+    [Parameter] public Func<string, string>? Href { get; set; }
+    [Parameter] public IReadOnlyCollection<string> Locked { get; set; } = [];
+    [Parameter] public bool LockedApart { get; set; }
+    [Parameter] public string Label { get; set; } = "Sections";
 
     private ElementReference nav;
 
+    private bool Paged => Href is not null;
+
+    private static RenderFragment TabLabel(Choice<string> item, bool locked, bool lockIcon) => @<text>
+        @if (locked && lockIcon)
+        {
+            <Icon Name="lock" Size="IconSize.ExtraSmall" />
+        }
+        @item.Label
+        @if (locked)
+        {
+            <span class="visually-hidden">, members only</span>
+        }
+    </text>;
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        if (firstRender)
+        if (Paged)
+        {
+            await JS.InvokeVoidAsync("gsbc.markTab", nav);
+        }
+        else if (firstRender)
         {
             await JS.InvokeVoidAsync("gsbc.spySections", nav);
         }
@@ -26,5 +64,16 @@
     {
         await Native.HapticAsync(Haptic.Selection);
         await JS.InvokeVoidAsync("gsbc.scrollToSection", id);
+    }
+
+    private async Task Open(string value)
+    {
+        if (value == Selected)
+        {
+            return;
+        }
+        await Native.HapticAsync(Haptic.Selection);
+        await JS.InvokeVoidAsync("gsbc.settleTabs", nav);
+        Navigation.NavigateTo(Href!(value), replace: true);
     }
 }

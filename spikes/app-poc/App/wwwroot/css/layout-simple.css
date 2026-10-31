@@ -42,7 +42,8 @@
 :root[data-layout="simple"] .agenda__item time { width: 4.4rem; }
 
 :root[data-layout="simple"] .section-tabs { gap: 0; justify-content: space-between; padding: 0 16px; }
-:root[data-layout="simple"] .section-tabs button { padding: 16px 0 14px; font-size: 0.8rem; }
+:root[data-layout="simple"] .section-tabs button,
+:root[data-layout="simple"] .section-tabs a { padding: 16px 0 14px; font-size: 0.8rem; }
 
 :root[data-layout="simple"] .day-rail { gap: 2px; }
 

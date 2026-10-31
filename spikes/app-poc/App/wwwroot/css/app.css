@@ -294,7 +294,11 @@ h1, h2, h3, p { margin: 0; }
   scrollbar-width: none;
 }
 .section-tabs::-webkit-scrollbar { display: none; }
-.section-tabs button {
+.section-tabs button,
+.section-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   flex: none;
   padding: 14px 0 12px;
   font-size: 0.8529rem;
@@ -302,7 +306,11 @@ h1, h2, h3, p { margin: 0; }
   color: var(--ink-3);
   transition: color 150ms;
 }
-.section-tabs button.on { color: var(--ink); }
+.section-tabs button.on,
+.section-tabs a.on { color: var(--ink); }
+.section-tabs .icon { color: var(--primary); }
+.section-tabs__apart { flex: none; display: inline-flex; align-items: center; gap: 14px; color: var(--primary); }
+.section-tabs__apart::before { content: ""; width: 1px; height: 18px; background: var(--line); box-shadow: 0 0 0 0.5px var(--line); }
 
 .section { padding: 0 var(--gutter); margin-top: 30px; }
 .section--first { margin-top: 22px; }

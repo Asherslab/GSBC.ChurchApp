@@ -12,7 +12,7 @@ public enum ViewerRole { Visitor, Member, Leader, Staff }
 
 public enum Relation { Visitor, Member, Leader }
 
-public enum ViewingSplit { Marked, Zones, TeamRoom }
+public enum ViewingSplit { Marked, TeamTabs, TeamRoom }
 
 public enum FileKind { Document, Link, Recording }
 

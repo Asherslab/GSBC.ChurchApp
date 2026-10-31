@@ -8,9 +8,9 @@ public static class SplitCatalog
 {
     public static readonly IReadOnlyList<SplitOption> All =
     [
-        new(ViewingSplit.TeamRoom, "Team room", "The ministry page is the public front door. Members get a separate team room for rosters, chats and team notices.", true),
-        new(ViewingSplit.Zones, "Two zones", "One page in two parts: what everyone sees, then a shaded team-only part below it."),
-        new(ViewingSplit.Marked, "Marked", "One page, one list per kind. Members see everything together, with members-only items marked by a lock."),
+        new(ViewingSplit.TeamTabs, "Team tabs", "One page with a tab per area. Members get extra tabs after a lock: Team, Roster and Chats. The public tabs show only what everyone sees.", true),
+        new(ViewingSplit.TeamRoom, "Team room", "The ministry page is the public front door. Members get a separate team room, with its own tabs, for rosters, chats and team notices."),
+        new(ViewingSplit.Marked, "Marked", "One tab per kind. Members see everything together, with members-only items and tabs marked by a lock."),
     ];
 
     public static SplitOption For(ViewingSplit id) => All.First(s => s.Id == id);

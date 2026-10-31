@@ -58,7 +58,7 @@
     private MinistryChat? chat;
     private string text = "";
 
-    private string BackHref => Ministries.Split == ViewingSplit.TeamRoom ? $"ministries/{Id}/team" : $"ministries/{Id}";
+    private string BackHref => MinistryAreas.Path(Id, MinistryArea.Chats, Ministries.Split == ViewingSplit.TeamRoom);
 
     private string DayLabel(DateTime day) => (Ministries.Now.Date - day).Days switch
     {

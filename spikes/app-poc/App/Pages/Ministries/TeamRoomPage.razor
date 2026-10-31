@@ -1,4 +1,6 @@
 @page "/ministries/{Id}/team"
+@page "/ministries/{Id}/team/{Area}"
+@inject NavigationManager Navigation
 @implements IDisposable
 @inject MinistriesService Ministries
 
@@ -37,41 +39,37 @@
                 </Actions>
             </BandHero>
 
-            @if (Tabs.Count > 1)
+            @if (Areas.Count > 1)
             {
-                <SectionTabs Items="Tabs" />
+                <SectionTabs Items="Tabs" Selected="@Current.Slug()" Href="AreaHref" Label="@($"{ministry.Name} team room areas")" />
             }
 
-            @if (Ministries.YourSlotsIn(ministry).Count > 0)
-            {
-                <Section First="true"><div class="stack"><YourSlots Ministry="ministry" /></div></Section>
-            }
-            @if (Ministries.Has(ministry, MinistryModule.Announcements))
-            {
-                <Section Id="notices" Title="Announcements">
-                    <PostList Ministry="ministry" Posts="Ministries.Posts(ministry).ToList()" Marking="Marking.Public" />
-                </Section>
-            }
-            @if (Ministries.Has(ministry, MinistryModule.Rosters) && Ministries.Roster(ministry).Count > 0)
-            {
-                <Section Id="roster" Title="Roster"><RosterGlance Ministry="ministry" /></Section>
-            }
-            @if (Ministries.Has(ministry, MinistryModule.Chats) && Ministries.ChatsAllowed(ministry))
-            {
-                <Section Id="chats" Title="Chats"><ChatList Ministry="ministry" /></Section>
-            }
-            @if (Ministries.Has(ministry, MinistryModule.Calendar))
-            {
-                <Section Id="calendar" Title="Calendar">
-                    <EventList Ministry="ministry" Events="Ministries.Events(ministry).ToList()" Marking="Marking.Public" />
-                </Section>
-            }
-            @if (Ministries.Has(ministry, MinistryModule.Files))
-            {
-                <Section Id="files" Title="Files and links">
-                    <FileList Files="Ministries.Files(ministry).ToList()" Marking="Marking.Public" />
-                </Section>
-            }
+            <div class="area" @key="Current">
+                @switch (Current)
+                {
+                    case MinistryArea.Roster:
+                        <RosterView Ministry="ministry" OnSaved="m => toast.ShowAsync(m)" />
+                        break;
+                    case MinistryArea.Chats:
+                        <Section First="true"><ChatList Ministry="ministry" /></Section>
+                        break;
+                    case MinistryArea.Calendar:
+                        <Section First="true"><EventList Ministry="ministry" Events="Ministries.Events(ministry).ToList()" Marking="Marking.Public" /></Section>
+                        break;
+                    case MinistryArea.Files:
+                        <Section First="true"><FileList Files="Ministries.Files(ministry).ToList()" Marking="Marking.Public" /></Section>
+                        break;
+                    default:
+                        @if (Ministries.YourSlotsIn(ministry).Count > 0)
+                        {
+                            <Section First="true"><div class="stack"><YourSlots Ministry="ministry" Limit="1" /></div></Section>
+                        }
+                        <Section First="Ministries.YourSlotsIn(ministry).Count == 0" Title="@(Ministries.YourSlotsIn(ministry).Count > 0 ? "Notices" : null)">
+                            <PostList Ministry="ministry" Posts="Ministries.Posts(ministry).ToList()" Marking="Marking.Public" />
+                        </Section>
+                        break;
+                }
+            </div>
             <PreviewFooter />
         }
     </ChildContent>
@@ -92,32 +90,45 @@
     private bool previewOpen;
     private bool composeOpen;
 
-    private IReadOnlyList<Choice<string>> Tabs
+    [Parameter] public string? Area { get; set; }
+
+    private MinistryArea? requested;
+
+    private IReadOnlyList<MinistryArea> Areas
     {
         get
         {
-            var tabs = new List<Choice<string>>();
-            void Add(MinistryModule module, string id, string label)
+            var areas = new List<MinistryArea>();
+            void Add(MinistryArea area, MinistryModule module, bool on = true)
             {
-                if (Ministries.Has(ministry!, module))
+                if (on && Ministries.Has(ministry!, module))
                 {
-                    tabs.Add(new(id, label));
+                    areas.Add(area);
                 }
             }
-            Add(MinistryModule.Announcements, "notices", "Notices");
-            if (Ministries.Roster(ministry!).Count > 0)
-            {
-                Add(MinistryModule.Rosters, "roster", "Roster");
-            }
-            if (Ministries.ChatsAllowed(ministry!))
-            {
-                Add(MinistryModule.Chats, "chats", "Chats");
-            }
-            Add(MinistryModule.Calendar, "calendar", "Calendar");
-            Add(MinistryModule.Files, "files", "Files");
-            return tabs;
+            Add(MinistryArea.News, MinistryModule.Announcements);
+            Add(MinistryArea.Roster, MinistryModule.Rosters);
+            Add(MinistryArea.Chats, MinistryModule.Chats, Ministries.ChatsAllowed(ministry!));
+            Add(MinistryArea.Calendar, MinistryModule.Calendar);
+            Add(MinistryArea.Files, MinistryModule.Files);
+            return areas.Count == 0 ? [MinistryArea.News] : areas;
         }
     }
+
+    private MinistryArea Current => requested is { } area && Areas.Contains(area) ? area : Areas[0];
+
+    private IReadOnlyList<Choice<string>> Tabs => [.. Areas.Select(a => new Choice<string>(a.Slug(), AreaLabel(a)))];
+
+    private string AreaHref(string slug) => MinistryAreas.Path(Id, MinistryAreas.Parse(slug) ?? MinistryArea.News, inTeamRoom: true);
+
+    private static string AreaLabel(MinistryArea area) => area switch
+    {
+        MinistryArea.News => "Notices",
+        MinistryArea.Roster => "Roster",
+        MinistryArea.Chats => "Chats",
+        MinistryArea.Calendar => "Calendar",
+        _ => "Files",
+    };
 
     protected override async Task OnInitializedAsync()
     {
@@ -125,9 +136,27 @@
         await Ministries.EnsureLoadedAsync();
     }
 
-    protected override void OnParametersSet() => ministry = MinistriesService.Find(Id);
+    protected override void OnParametersSet()
+    {
+        ministry = MinistriesService.Find(Id);
+        requested = Area is null ? MinistryArea.News : MinistryAreas.Parse(Area);
+        Redirect();
+    }
 
-    private void Refresh() => InvokeAsync(StateHasChanged);
+    private void Redirect()
+    {
+        if (ministry is not null && Ministries.Split != ViewingSplit.TeamRoom)
+        {
+            var area = requested is null or MinistryArea.News ? MinistryArea.Team : requested.Value;
+            Navigation.NavigateTo(MinistryAreas.Path(Id, area), replace: true);
+        }
+    }
+
+    private void Refresh() => InvokeAsync(() =>
+    {
+        Redirect();
+        StateHasChanged();
+    });
 
     public void Dispose() => Ministries.Changed -= Refresh;
 }

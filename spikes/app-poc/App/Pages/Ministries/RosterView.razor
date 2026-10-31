@@ -1,0 +1,126 @@
+@inject MinistriesService Ministries
+@inject ChurchClock Clock
+@inject NativeBridge Native
+
+<Section First="true">
+    <p class="hint roster-synced">From @MinistriesContent.Elvanto · synced 4 min ago (sample)</p>
+    @if (Ministries.YourSlotsIn(Ministry).Count > 0)
+    {
+        <div class="stack"><YourSlots Ministry="Ministry" /></div>
+    }
+</Section>
+
+@if (Ministries.Roster(Ministry).Count == 0)
+{
+    <Section><p class="muted small">No dates on the roster yet.</p></Section>
+}
+@foreach (var date in Ministries.Roster(Ministry))
+{
+    <Section Title="@($"{Clock.Relative(date.Start)}, {date.Start:d MMM}")">
+        <p class="section__lead">@date.Service, @ChurchClock.Time(date.Start)</p>
+        <div class="list">
+            @foreach (var slot in date.Slots)
+            {
+                var you = slot.People.Any(MinistriesService.IsYou);
+                var source = MinistriesService.Find(slot.MinistryId)!;
+                @if (Ministries.IsLeader(source))
+                {
+                    <button class="slot slot--button @(you ? "slot--you" : "")" @onclick="() => Assign(date, slot)">
+                        @SlotBody(slot, source, you)
+                        <span class="slot__assign"><Icon Name="pencil" Size="IconSize.Small" /></span>
+                    </button>
+                }
+                else
+                {
+                    <div class="slot @(you ? "slot--you" : "")">@SlotBody(slot, source, you)</div>
+                }
+            }
+        </div>
+        @if (date.Songs.Count > 0)
+        {
+            <h3 class="songs-title"><Icon Name="music" Size="IconSize.Small" />Songs and practice</h3>
+            <div class="stack">
+                @foreach (var song in date.Songs)
+                {
+                    <div class="song">
+                        <strong>@song.Title</strong>
+                        <span>@song.Detail</span>
+                        <FileList Files="song.Practice" SongTitle="@song.Title" />
+                    </div>
+                }
+            </div>
+        }
+    </Section>
+}
+
+<Section Title="How rosters work">
+    <p class="prose">Rosters live in @MinistriesContent.Elvanto, as they do now. Leaders roster here or in @MinistriesContent.Elvanto, and either way it's the same roster. Accepting, declining or asking for a swap here answers the @MinistriesContent.Elvanto request.</p>
+</Section>
+
+@if (assigning is { } current)
+{
+    var team = MinistriesService.Find(current.Slot.MinistryId)!;
+    <Sheet Open="true" OpenChanged="_ => assigning = null">
+        <h2>@current.Slot.Position</h2>
+        <p>@current.Date.Service, @current.Date.Start.ToString("dddd d MMMM"). @MinistriesContent.Elvanto sends each person the request; they accept or decline here or in @MinistriesContent.Elvanto.</p>
+        <div class="sheet__form">
+            @foreach (var person in Ministries.Members(team))
+            {
+                var on = current.Slot.People.Contains(person);
+                <button class="theme-option layout-option" aria-pressed="@(on ? "true" : "false")" @onclick="() => Ministries.ToggleOnSlot(current.Slot, person)">
+                    <span class="people"><Avatar Name="@person.Name" /><span>@(MinistriesService.IsYou(person) ? $"{person.Name} (you)" : person.Name)</span></span>
+                    <span class="check @(on ? "check--on" : "")">
+                        @if (on)
+                        {
+                            <Icon Name="check" Size="IconSize.ExtraSmall" />
+                        }
+                    </span>
+                </button>
+            }
+        </div>
+        <div class="sheet__actions">
+            <button class="btn btn--primary btn--block" @onclick="Done">Done</button>
+        </div>
+    </Sheet>
+}
+
+@code {
+    [Parameter, EditorRequired] public Ministry Ministry { get; set; } = default!;
+    [Parameter] public EventCallback<string> OnSaved { get; set; }
+
+    private SlotOnRoster? assigning;
+
+    private RenderFragment SlotBody(RosterSlot slot, Ministry source, bool you) => @<text>
+        <span class="slot__body">
+            <span class="slot__position">@slot.Position@(source != Ministry ? $" · {source.Name}" : "")</span>
+            <span class="slot__people @(slot.People.Count == 0 ? "slot__people--empty" : "")">@PeopleLine(slot)</span>
+        </span>
+        @if (you)
+        {
+            <span class="pill">@ReplyLabel(slot.YourReply)</span>
+        }
+    </text>;
+
+    private static string PeopleLine(RosterSlot slot) =>
+        slot.People.Count == 0 ? "Not filled" : string.Join(", ", slot.People.Select(p => MinistriesService.IsYou(p) ? "You" : p.Name));
+
+    private static string ReplyLabel(RosterReply reply) => reply switch
+    {
+        RosterReply.Accepted => "You · accepted",
+        RosterReply.Declined => "You · declined",
+        RosterReply.SwapAsked => "You · swap asked",
+        _ => "You · please reply",
+    };
+
+    private async Task Assign(RosterDate date, RosterSlot slot)
+    {
+        await Native.HapticAsync(Haptic.Selection);
+        assigning = new(date, slot, MinistriesService.Find(slot.MinistryId)!);
+    }
+
+    private async Task Done()
+    {
+        assigning = null;
+        await OnSaved.InvokeAsync($"Saved to {MinistriesContent.Elvanto} (sample)");
+    }
+}

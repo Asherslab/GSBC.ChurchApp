@@ -1,4 +1,5 @@
 @page "/groups/{Id}"
+@page "/groups/{Id}/{Area}"
 @implements IDisposable
 @inject LifeGroupsService Groups
 @inject MinistriesService Ministries
@@ -43,61 +44,76 @@
                 </Actions>
             </BandHero>
 
-            @if (!Groups.IsFinished(group))
+            @if (Areas.Count > 1)
             {
-                <Section First="true">
-                    <div class="facts">
-                        <div class="fact">
-                            <Icon Name="clock" />
-                            <div>
-                                <strong>@Groups.WhenLabel(sunday)</strong>
-                                @if (change is not null)
-                                {
-                                    <span class="session__note">@change.Summary</span>
-                                }
-                                else
-                                {
-                                    <span>Until 9:45, then the morning service at 10:30</span>
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </Section>
+                <SectionTabs Items="Tabs" Selected="@Current.Slug" Href="AreaHref" Label="@($"{group.Name} areas")" />
             }
 
-            <MinistryAbout Ministry="group" First="Groups.IsFinished(group)" ShowWhoFor="false" />
-
-            <Section Title="Where" LinkText="Find the room" LinkHref="@WhereHref">
-                @if (where is { } shown)
+            <div class="area" @key="Current.Slug">
+                @switch (Current.Area)
                 {
-                    <div class="where">
-                        <a href="@WhereHref" aria-label="Find the room on the site map">
-                            <SiteMap Marks="[Groups.MarkFor(group, shown)]" Around="shown" SelectedPlaceId="@shown.Id" />
-                        </a>
-                        <PlaceChip Label="@($"Room {Groups.NumberAt(group, shown)} · {shown.Name}")" Number="@Groups.NumberAt(group, shown).ToString()" Colour="@group.Colour" />
-                        @if (change?.MovedToPlaceId is not null)
+                    case MinistryArea.Calendar:
+                        <Section First="true">
+                            <EventList Ministry="group" Events="Sessions(round)" PastBefore="Groups.Now" MarkNext="!Groups.IsFinished(group)" />
+                        </Section>
+                        break;
+                    case MinistryArea.News:
+                        <Section First="true">
+                            <PostList Ministry="group" Posts="Ministries.Posts(group).ToList()" Empty="No notices yet." />
+                        </Section>
+                        break;
+                    case MinistryArea.Files:
+                        <Section First="true">
+                            <FileList Files="Ministries.Files(group).ToList()" />
+                        </Section>
+                        break;
+                    default:
+                        @if (!Groups.IsFinished(group))
                         {
-                            <p class="hint">Moved for @sunday.ToString("d MMMM") only.</p>
+                            <Section First="true">
+                                <div class="facts">
+                                    <div class="fact">
+                                        <Icon Name="clock" />
+                                        <div>
+                                            <strong>@Groups.WhenLabel(sunday)</strong>
+                                            @if (change is not null)
+                                            {
+                                                <span class="session__note">@change.Summary</span>
+                                            }
+                                            else
+                                            {
+                                                <span>Until 9:45, then the morning service at 10:30</span>
+                                            }
+                                        </div>
+                                    </div>
+                                </div>
+                            </Section>
                         }
-                    </div>
+
+                        <MinistryAbout Ministry="group" First="Groups.IsFinished(group)" ShowWhoFor="false" />
+
+                        <Section Title="Where" LinkText="Find the room" LinkHref="@WhereHref">
+                            @if (where is { } shown)
+                            {
+                                <div class="where">
+                                    <a href="@WhereHref" aria-label="Find the room on the site map">
+                                        <SiteMap Marks="[Groups.MarkFor(group, shown)]" Around="shown" SelectedPlaceId="@shown.Id" />
+                                    </a>
+                                    <PlaceChip Label="@($"Room {Groups.NumberAt(group, shown)} · {shown.Name}")" Number="@Groups.NumberAt(group, shown).ToString()" Colour="@group.Colour" />
+                                    @if (change?.MovedToPlaceId is not null)
+                                    {
+                                        <p class="hint">Moved for @sunday.ToString("d MMMM") only.</p>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <p class="muted">The room will be confirmed before the first Sunday.</p>
+                            }
+                        </Section>
+                        break;
                 }
-                else
-                {
-                    <p class="muted">The room will be confirmed before the first Sunday.</p>
-                }
-            </Section>
-
-            <Section Title="@(round is null ? "Coming Sundays" : $"{round.Name} Sundays")">
-                <EventList Ministry="group" Events="Sessions(round)" PastBefore="Groups.Now" MarkNext="!Groups.IsFinished(group)" />
-            </Section>
-
-            <Section Title="Notices">
-                <PostList Ministry="group" Posts="Ministries.Posts(group).ToList()" Empty="No notices yet." />
-            </Section>
-
-            <Section Title="Resources">
-                <FileList Files="Ministries.Files(group).ToList()" />
-            </Section>
+            </div>
 
             <PreviewFooter />
         }
@@ -119,6 +135,7 @@
 
 @code {
     [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string? Area { get; set; }
 
     private Ministry? group;
     private bool joinedOpen;
@@ -151,6 +168,32 @@
     }
 
     private const int UpcomingAllYear = 4;
+
+    private sealed record GroupArea(MinistryArea Area, string Slug, string Label);
+
+
+    private IReadOnlyList<GroupArea> Areas
+    {
+        get
+        {
+            var areas = new List<GroupArea> { new(MinistryArea.About, "", "About"), new(MinistryArea.Calendar, "sundays", "Sundays") };
+            if (Ministries.Posts(group!).Any())
+            {
+                areas.Add(new(MinistryArea.News, "notices", "Notices"));
+            }
+            if (Ministries.Files(group!).Any())
+            {
+                areas.Add(new(MinistryArea.Files, "resources", "Resources"));
+            }
+            return areas;
+        }
+    }
+
+    private GroupArea Current => Areas.FirstOrDefault(a => a.Slug == (Area ?? "")) ?? Areas[0];
+
+    private IReadOnlyList<Choice<string>> Tabs => [.. Areas.Select(a => new Choice<string>(a.Slug, a.Label))];
+
+    private string AreaHref(string slug) => slug.Length == 0 ? $"groups/{Id}" : $"groups/{Id}/{slug}";
 
     private string WhereHref => $"groups/{Id}/room";
 

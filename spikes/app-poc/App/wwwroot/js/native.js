@@ -915,6 +915,28 @@
       update();
     },
 
+    markTab(nav) {
+      const current = nav.querySelector('.on');
+      const ink = nav.querySelector('.section-tabs__ink');
+      if (!current || !ink) return;
+      const first = !nav.dataset.marked;
+      nav.dataset.marked = '1';
+      if (first) ink.style.transition = 'none';
+      ink.style.width = `${current.offsetWidth}px`;
+      ink.style.transform = `translateX(${current.offsetLeft}px)`;
+      if (first) requestAnimationFrame(() => { ink.style.transition = ''; });
+      nav.scrollTo({ left: current.offsetLeft - (nav.clientWidth - current.offsetWidth) / 2, behavior: first ? 'instant' : 'smooth' });
+    },
+
+    settleTabs(nav) {
+      const scroller = scrollerOf(nav);
+      const above = nav.previousElementSibling;
+      if (!scroller || !above) return;
+      const stick = scroller.getBoundingClientRect().top + (parseFloat(getComputedStyle(nav).top) || 0);
+      const past = above.getBoundingClientRect().bottom - stick;
+      if (past < 0) scroller.scrollTop += past;
+    },
+
     positions() {
       const out = {};
       try {
