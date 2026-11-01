@@ -27,7 +27,8 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    end-to-end call (`Accounts.Session.GetCurrent`).
 2. **Native data layer** on a real iPhone (built: transport, GRDB store, pull and live `Watch` with
    `LISTEN` fan-out, outbox, the Storage screen and the dev loop; still to do: background refresh,
-   silent push, per-feed caps, the server's retention and reset horizon, and the soak test), through Cloudflare (SPEC §5's five open points): Transport,
+   per-feed caps, the server's retention and reset horizon, and the soak test. Silent push waits for
+   the Apple enrolment and an APNs key), through Cloudflare (SPEC §5's five open points): Transport,
    Store, Sync and Outbox in Swift; the bridging `CallInvoker`; `Watch` fan-out from `LISTEN`.
 3. **Accounts:** passkey ceremonies at the gateway (browser and native), sessions, the
    session-to-token swap, invitations and recovery ([identity.md](architecture/identity.md)).
