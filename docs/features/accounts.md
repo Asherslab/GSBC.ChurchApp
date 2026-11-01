@@ -81,6 +81,25 @@ far) put it in `Data`, shared by `Api` and `Gateway`.
 3. The app's account screens, read-only signed out.
 4. After the enrolment: Associated Domains, native passkeys in the app, the Keychain session.
 
+## Status (2026-11-01)
+
+**Built, in the browser:** sign-up, sign-in, adding and removing passkeys, confirming an email,
+recovery by email link, invitation links, seeing and ending sessions, signing out everywhere, the
+session-to-token swap, and the API checking tokens. Tested by `Features.Accounts.Gateway.Tests`
+(real ceremonies, software authenticator, Postgres) and checked end to end through
+`dev.baptist.com.au`. Try it at https://dev.baptist.com.au/account with a real passkey; in
+development the emails (confirmation codes, links) appear in the API's log in the Aspire dashboard.
+
+**Waiting on something else:**
+
+- *The Access feature:* staff invitations and recovery codes are built but denied until Access
+  grants `accounts.manage`, and "accounts holding sensitive permissions can't recover by email"
+  needs Access to know which those are.
+- *The shared mailbox (owner):* the Graph sender and the outgoing-email table, as in GSBC.Accounting.
+- *The Apple enrolment:* Associated Domains, then passkeys and the Keychain session in the app.
+- *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
+  `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.
+
 ## Open
 
 - Which Microsoft 365 shared mailbox sends account email, and its app registration and Exchange

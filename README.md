@@ -55,6 +55,10 @@ tools/dev/feed.sh list
 Builds from `deploy.sh` (Debug or AOT) are marked as dev builds: they get the development feed and buttons
 there to queue a send that succeeds and one that fails, for the outbox. Store builds never do.
 
+Accounts: sign up or sign in at https://dev.baptist.com.au/account (the admin panel) with a real
+passkey. In development, emails such as confirmation codes and recovery links go to the API's log in
+the Aspire dashboard instead of being sent.
+
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to
 the gateway, never from the WebView, so there's no CORS. iOS allows plain HTTP to local-network
 addresses only (`NSAllowsLocalNetworking`), and asks for local-network permission the first time.

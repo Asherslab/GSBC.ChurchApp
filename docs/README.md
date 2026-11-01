@@ -31,8 +31,9 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    soak test and a Postgres retention test. Still to do: measure background refresh on a real phone,
    and test through Cloudflare and Traefik (needs the dev proxy). Silent push waits for the Apple
    enrolment and an APNs key.
-3. **Accounts:** passkey ceremonies at the gateway (browser and native), sessions, the
-   session-to-token swap, invitations and recovery ([identity.md](architecture/identity.md)).
+3. **Accounts** ([accounts.md](features/accounts.md)). Built in the browser: sign-up, sign-in,
+   passkeys, sessions, recovery, invitations and the session-to-token swap. Waiting: Access (for
+   staff actions), the shared mailbox (real email) and the enrolment (passkeys in the app).
 4. **Access:** roles, assignments, the cached evaluator, the admin screens
    ([permissions.md](architecture/permissions.md)).
 5. **Configuration:** surfaces, settings descriptors and the generic editor
