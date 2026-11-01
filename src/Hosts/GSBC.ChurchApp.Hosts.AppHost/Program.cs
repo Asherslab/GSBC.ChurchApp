@@ -12,6 +12,7 @@ IResourceBuilder<ProjectResource> migrator = builder
 
 IResourceBuilder<ProjectResource> api = builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Api>("api", launchProfileName: null)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WithHttpEndpoint(name: "web", env: "Ports__Web")
     .WithHttpEndpoint(name: "grpc", env: "Ports__Grpc")
     .WithReference(database)
@@ -19,6 +20,7 @@ IResourceBuilder<ProjectResource> api = builder
 
 builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WithHttpEndpoint(port: 5300, name: "web", env: "Ports__Web", isProxied: false)
     .WithHttpEndpoint(port: 5301, name: "grpc", env: "Ports__Grpc", isProxied: false)
     .WithEnvironment("ReverseProxy__Clusters__api-web__Destinations__api__Address", api.GetEndpoint("web"))

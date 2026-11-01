@@ -1,0 +1,123 @@
+@page "/storage"
+@using System.Text
+@using GSBC.ChurchApp.Platform.Client.Feeds
+@using GSBC.ChurchApp.Platform.Client.Outbox
+@using GSBC.ChurchApp.Platform.Contracts.Sync
+@implements IDisposable
+@inject ILocalFeeds Feeds
+@inject IOutbox Outbox
+
+<h1>Storage</h1>
+
+@if (!Feeds.IsAvailable)
+{
+    <p>Stored data is only kept in the phone app.</p>
+}
+else
+{
+    <p>Sync: @Feeds.State · On this phone: @Size(_info.FileBytes)</p>
+    <button @onclick="RefreshAsync">Refresh</button>
+
+    <table>
+        <thead><tr><th>Feed</th><th>Rows</th><th>Size</th><th>Cursor</th></tr></thead>
+        <tbody>
+            @foreach (StoredFeed feed in _info.Feeds)
+            {
+                <tr><td>@feed.Feed</td><td>@feed.Rows</td><td>@Size(feed.Bytes)</td><td>@feed.Cursor</td></tr>
+            }
+        </tbody>
+    </table>
+
+    <h2>Waiting to send</h2>
+    @if (_outbox.Count == 0)
+    {
+        <p>Nothing waiting.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (OutboxEntry entry in _outbox)
+            {
+                <li>
+                    @entry.Method · @(entry.Failed ? $"couldn't send: {entry.LastError}" : entry.Attempts == 0 ? "sending" : $"retrying ({entry.Attempts} tries; {entry.LastError})")
+                    @if (entry.Failed)
+                    {
+                        <button @onclick="() => Outbox.RetryAsync(entry.Id)">Retry</button>
+                        <button @onclick="() => Outbox.DiscardAsync(entry.Id)">Discard</button>
+                    }
+                </li>
+            }
+        </ul>
+    }
+#if DEBUG
+    <button @onclick="QueueTestSendAsync">Queue a test send</button>
+    <button @onclick="QueueFailingSendAsync">Queue a failing send</button>
+#endif
+
+    @if (_echo.Count > 0)
+    {
+        <h2>@DevelopmentFeeds.Echo</h2>
+        <ul>
+            @foreach (StoredRecord record in _echo)
+            {
+                <li><strong>@record.Id</strong> (v@(record.Version)): @Encoding.UTF8.GetString(record.Payload)</li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    private StoreInfo _info = new(0, []);
+    private IReadOnlyList<StoredRecord> _echo = [];
+    private IReadOnlyList<OutboxEntry> _outbox = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Feeds.FeedsChanged += OnFeedsChanged;
+        Feeds.StateChanged += OnStateChanged;
+        Outbox.Changed += OnOutboxChanged;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _info = await Feeds.InfoAsync();
+        _echo = await Feeds.ReadPageAsync(new FeedPageQuery(DevelopmentFeeds.Echo));
+        _outbox = await Outbox.ListAsync();
+    }
+
+    private async Task RefreshAsync()
+    {
+        await Feeds.RefreshAsync();
+        await LoadAsync();
+    }
+
+    private void OnFeedsChanged(IReadOnlySet<string> feeds) => InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnOutboxChanged() => InvokeAsync(async () =>
+    {
+        _outbox = await Outbox.ListAsync();
+        StateHasChanged();
+    });
+
+#if DEBUG
+    private async Task QueueTestSendAsync() => await Outbox.EnqueueAsync("/gsbc.accounts.Session/GetCurrent", []);
+
+    private async Task QueueFailingSendAsync() => await Outbox.EnqueueAsync("/gsbc.development.Missing/Call", []);
+#endif
+
+    private static string Size(long bytes) => bytes < 1024 ? $"{bytes} B" : $"{bytes / 1024.0:0.#} KB";
+
+    public void Dispose()
+    {
+        Feeds.FeedsChanged -= OnFeedsChanged;
+        Feeds.StateChanged -= OnStateChanged;
+        Outbox.Changed -= OnOutboxChanged;
+    }
+}

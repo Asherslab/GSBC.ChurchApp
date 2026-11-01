@@ -132,10 +132,18 @@ The plugin does four things:
 
 | Part | What it does | What it knows |
 |---|---|---|
-| **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. HTTP/2 via grpc-swift / grpc-java with a pass-through byte codec | URLs, auth headers, retries |
+| **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. gRPC-Web over the platform's HTTP client (`URLSession` on iOS), not grpc-swift; see below | URLs, auth headers, retries |
 | **Store** | SQLite (the platform's own: GRDB on iOS, Room on Android; there's no .NET on the native side, and two generic tables need no more) holding `(feed, id, version, payload)` plus a few generic index columns the server fills in per feed (`sort_key`, `starts_at`, `ends_at`, `group_key`), and a sync cursor per feed | Nothing about the payload |
 | **Sync** | Gets changes from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. **While the app is open it holds a live stream** (below). When closed, it pulls from a silent push and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
 | **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be | Method paths |
+
+**Transport decided 2026-11-01, for the owner to veto:** the native layer speaks gRPC-Web (SPEC §10's
+fallback) through `URLSession` rather than native gRPC through grpc-swift. It covers everything the
+app needs: unary calls, and server streaming for `Watch`. It also removes three risks: no h2c, no
+Cloudflare gRPC setting (it's ordinary HTTP to every proxy), and no gRPC library on the phone.
+`URLSession` negotiates HTTP/2 itself over TLS. Client and two-way streaming are lost; nothing in the
+plan uses them. The native side encodes and decodes Sync's own messages (a small hand-written
+codec); feature payloads stay opaque bytes.
 
 On the .NET side:
 
@@ -174,6 +182,9 @@ rules:
   rows return disk space rather than leaving an ever-growing file.
 - **The outbox drains or gives up.** Entries retry with backoff, give up after a limit (days, not
   forever), and the user sees "couldn't send" with a retry, rather than a queue growing silently.
+  A send can succeed with its reply lost, so it's retried: every queued write carries a
+  `gsbc-request-id` header, and write methods treat a repeated id as already done. Errors that
+  retrying can't fix (bad request, not permitted, no such method) fail at once.
 - **Memory:** bridge messages are paged and size-limited, and streams arrive in chunks.
 - **Proven, not assumed:** a soak test replays months of simulated changes (window churn, deletes,
   resets, an app update that drops a feed) and asserts the store's rows and file size stay bounded.
@@ -240,16 +251,17 @@ On the server:
 1. **Generated proxies over a custom bridging `CallInvoker`** under WASM AOT, including server
    streaming surfaced as `IAsyncEnumerable`. *Unary proven 2026-11-01* (AOT, iOS Simulator, through
    the gateway): protobuf-net's marshallers are contextual-only, so the bridge must use
-   `ContextualSerializer`/`ContextualDeserializer`. Streaming still to prove.
-2. **Pass-through byte codecs:** grpc-swift and grpc-java calling a protobuf-net code-first service
-   with no generated stubs.
+   `ContextualSerializer`/`ContextualDeserializer`. Streaming isn't needed through the bridge: the app
+   reads the store, and native Sync holds the stream.
+2. ~~**Pass-through byte codecs**~~: not needed, since the transport is gRPC-Web (above).
 3. **Bridge cost:** Capacitor plugin calls pass JSON, so the bytes travel base64-encoded. That should
    be fine at church-app volumes; measure it on a real phone.
 4. **Background scheduling** on real devices: how often iOS actually runs the refresh, and how
    reliably silent pushes arrive.
 5. **Long-lived streams end to end:** a `Watch` stream held open through Cloudflare, Traefik and YARP,
-   over native gRPC and gRPC-Web. Find each hop's idle and maximum-duration limits and confirm the
-   heartbeat and reconnect cover them.
+   over gRPC-Web. Find each hop's idle and maximum-duration limits and confirm the heartbeat and
+   reconnect cover them. *Proven locally 2026-11-01* through YARP to the iOS Simulator (catch-up, then
+   a change arriving within a second); Cloudflare and Traefik still to test.
 
 ## 6. Who may call what
 

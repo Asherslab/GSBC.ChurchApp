@@ -117,7 +117,7 @@ def main():
     y = 70
     svg.panel(40, y, 470, 170, "iPhone · Capacitor shell (Android later)")
     svg.box(60, y + 46, 200, 64, "Hosts.App", HOSTS["Hosts.App"], "app", PREFIX + "Hosts.App")
-    svg.box(290, y + 46, 200, 64, "data-layer plugin", "Swift: transport · store · sync", "app")
+    svg.box(290, y + 46, 200, 64, "data-layer plugin", "Swift: store · sync · outbox", "app")
     svg.arrow([(260, y + 78), (288, y + 78)])
     svg.text(60, y + 136, "Screens read the phone's SQLite store;", size=11, fill=MUTED)
     svg.text(60, y + 152, "calls and sync go through native code.", size=11, fill=MUTED)

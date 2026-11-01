@@ -6,52 +6,99 @@ struct GrpcResult {
     let body: Data
 }
 
-struct GrpcWebTransport {
+struct GrpcError: Error {
+    let status: Int
+    let message: String
+}
+
+struct GrpcWebTransport: Sendable {
+    static let ok = 0
+    static let unknown = 2
+    static let unimplemented = 12
+    static let unavailable = 14
+    private static let httpNotFound = 404
+
     private static let contentType = "application/grpc-web+proto"
     private static let trailerFlag: UInt8 = 0x80
-    private static let unknown = 2
-    private static let unavailable = 14
+    private static let frameHeaderLength = 5
+    private static let streamIdleTimeout: TimeInterval = 90
 
     let gateway: URL
 
-    func unary(method: String, message: Data) async throws -> GrpcResult {
-        guard let url = URL(string: gateway.absoluteString + method) else {
-            return GrpcResult(status: Self.unavailable, message: "Bad method path \(method)", body: Data())
-        }
+    func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
+        let (data, response) = try await URLSession.shared.data(for: try request(method, message, headers))
+        let http = try Self.successful(response)
 
+        var trailers = Self.grpcHeaders(http)
+        var body = Data()
+        var buffer = data
+        while let frame = Self.takeFrame(&buffer) {
+            if frame.isTrailers {
+                trailers.merge(Self.parseTrailers(frame.payload)) { _, new in new }
+            } else {
+                body.append(frame.payload)
+            }
+        }
+        let (status, message) = Self.status(trailers)
+        return GrpcResult(status: status, message: message, body: body)
+    }
+
+    func serverStream(method: String, message: Data) -> AsyncThrowingStream<Data, Error> {
+        AsyncThrowingStream { continuation in
+            let task = Task {
+                do {
+                    var request = try request(method, message, [:])
+                    request.timeoutInterval = Self.streamIdleTimeout
+                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    let http = try Self.successful(response)
+
+                    var trailers = Self.grpcHeaders(http)
+                    var buffer = Data()
+                    for try await byte in bytes {
+                        buffer.append(byte)
+                        while let frame = Self.takeFrame(&buffer) {
+                            if frame.isTrailers {
+                                trailers.merge(Self.parseTrailers(frame.payload)) { _, new in new }
+                            } else {
+                                continuation.yield(frame.payload)
+                            }
+                        }
+                    }
+
+                    let (status, message) = Self.status(trailers)
+                    if status != Self.ok { throw GrpcError(status: status, message: message) }
+                    continuation.finish()
+                } catch {
+                    continuation.finish(throwing: error)
+                }
+            }
+            continuation.onTermination = { _ in task.cancel() }
+        }
+    }
+
+    private func request(_ method: String, _ message: Data, _ headers: [String: String]) throws -> URLRequest {
+        guard let url = URL(string: gateway.absoluteString + method) else {
+            throw GrpcError(status: Self.unavailable, message: "Bad method path \(method)")
+        }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue(Self.contentType, forHTTPHeaderField: "Content-Type")
         request.setValue(Self.contentType, forHTTPHeaderField: "Accept")
         request.setValue("1", forHTTPHeaderField: "X-Grpc-Web")
+        for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         request.httpBody = Self.frame(message)
+        return request
+    }
 
-        let (data, response) = try await URLSession.shared.data(for: request)
+    private static func successful(_ response: URLResponse) throws -> HTTPURLResponse {
         guard let http = response as? HTTPURLResponse, http.statusCode == 200 else {
             let code = (response as? HTTPURLResponse)?.statusCode ?? 0
-            return GrpcResult(status: Self.unavailable, message: "HTTP \(code) from \(url.host ?? "the gateway")", body: Data())
+            throw GrpcError(status: code == httpNotFound ? unimplemented : unavailable,
+                            message: "HTTP \(code) from \(response.url?.host ?? "the gateway")")
         }
-
-        var trailers = Self.headers(http)
-        var body = Data()
-        var offset = data.startIndex
-        while data.endIndex - offset >= 5 {
-            let flag = data[offset]
-            let length = data[(offset + 1)..<(offset + 5)].reduce(0) { $0 << 8 | Int($1) }
-            let start = offset + 5
-            guard data.endIndex - start >= length else { break }
-            let payload = data[start..<(start + length)]
-            if flag & Self.trailerFlag != 0 {
-                trailers.merge(Self.parseTrailers(payload)) { _, new in new }
-            } else {
-                body.append(payload)
-            }
-            offset = start + length
-        }
-
-        let status = trailers["grpc-status"].flatMap { Int($0) } ?? Self.unknown
-        let message = trailers["grpc-message"]?.removingPercentEncoding ?? ""
-        return GrpcResult(status: status, message: message, body: body)
+        let (status, message) = status(grpcHeaders(http), missing: ok)
+        if status != ok { throw GrpcError(status: status, message: message) }
+        return http
     }
 
     private static func frame(_ message: Data) -> Data {
@@ -61,7 +108,23 @@ struct GrpcWebTransport {
         return framed
     }
 
-    private static func headers(_ response: HTTPURLResponse) -> [String: String] {
+    private static func takeFrame(_ buffer: inout Data) -> (isTrailers: Bool, payload: Data)? {
+        guard buffer.count >= frameHeaderLength else { return nil }
+        let start = buffer.startIndex
+        let length = buffer[(start + 1)..<(start + frameHeaderLength)].reduce(0) { $0 << 8 | Int($1) }
+        guard buffer.count >= frameHeaderLength + length else { return nil }
+        let isTrailers = buffer[start] & trailerFlag != 0
+        let payload = Data(buffer[(start + frameHeaderLength)..<(start + frameHeaderLength + length)])
+        buffer = Data(buffer[(start + frameHeaderLength + length)...])
+        return (isTrailers, payload)
+    }
+
+    private static func status(_ trailers: [String: String], missing: Int = unknown) -> (Int, String) {
+        let status = trailers["grpc-status"].flatMap { Int($0) } ?? missing
+        return (status, trailers["grpc-message"]?.removingPercentEncoding ?? "")
+    }
+
+    private static func grpcHeaders(_ response: HTTPURLResponse) -> [String: String] {
         var result: [String: String] = [:]
         for (key, value) in response.allHeaderFields {
             if let key = key as? String, let value = value as? String, key.lowercased().hasPrefix("grpc-") {

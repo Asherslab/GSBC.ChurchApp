@@ -1,4 +1,5 @@
 import Capacitor
+import UIKit
 
 @objc(DataLayerPlugin)
 public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -6,21 +7,59 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let jsName = "DataLayer"
     public let pluginMethods: [CAPPluginMethod] = [
         CAPPluginMethod(name: "unary", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "readPage", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "startSync", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "stopSync", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "enqueue", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "pull", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "readPage", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "storeInfo", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "enqueue", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "outbox", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "retryOutbox", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise)
     ]
 
-    private static let unavailable = 14
+    private var transport: GrpcWebTransport?
+    private var store: FeedStore?
+    private var engine: SyncEngine?
+    private var outbox: Outbox?
+    private var state = SyncState.stopped
 
-    private lazy var transport: GrpcWebTransport? = {
-        let info = Bundle.main.infoDictionary
-        guard let scheme = info?["GsbcGatewayScheme"] as? String, !scheme.isEmpty,
-              let host = info?["GsbcGateway"] as? String, !host.isEmpty,
-              let url = URL(string: "\(scheme)://\(host)") else { return nil }
-        return GrpcWebTransport(gateway: url)
-    }()
+    override public func load() {
+        transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0) }
+        store = try? FeedStore(directory: Self.storeDirectory())
+        if let transport, let store {
+            engine = SyncEngine(
+                transport: transport, store: store,
+                onFeedsChanged: { [weak self] feeds in
+                    self?.notifyListeners("feedsChanged", data: ["feeds": Array(feeds).sorted()])
+                },
+                onState: { [weak self] state in
+                    self?.state = state
+                    self?.notifyListeners("syncState", data: ["state": state.rawValue])
+                    if state == .live { Task { await self?.outbox?.drain() } }
+                })
+            outbox = Outbox(database: store.database, transport: transport, onChanged: { [weak self] in
+                self?.notifyListeners("outboxChanged", data: [:])
+            })
+        }
+
+        NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive),
+                                               name: UIApplication.didBecomeActiveNotification, object: nil)
+        NotificationCenter.default.addObserver(self, selector: #selector(appEnteredBackground),
+                                               name: UIApplication.didEnterBackgroundNotification, object: nil)
+    }
+
+    @objc private func appBecameActive() {
+        Task {
+            await engine?.resume()
+            await outbox?.drain()
+        }
+    }
+
+    @objc private func appEnteredBackground() {
+        Task { await engine?.pause() }
+    }
 
     @objc func unary(_ call: CAPPluginCall) {
         guard let method = call.getString("method"),
@@ -29,33 +68,161 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
         guard let transport else {
-            resolve(call, GrpcResult(status: Self.unavailable, message: "This build has no gateway configured.", body: Data()))
+            resolve(call, GrpcResult(status: GrpcWebTransport.unavailable, message: "This build has no gateway configured.", body: Data()))
             return
         }
 
         Task {
             do {
                 resolve(call, try await transport.unary(method: method, message: request))
+            } catch let error as GrpcError {
+                resolve(call, GrpcResult(status: error.status, message: error.message, body: Data()))
             } catch {
-                resolve(call, GrpcResult(status: Self.unavailable, message: error.localizedDescription, body: Data()))
+                resolve(call, GrpcResult(status: GrpcWebTransport.unavailable, message: error.localizedDescription, body: Data()))
             }
         }
     }
 
-    @objc func readPage(_ call: CAPPluginCall) { notBuiltYet(call) }
-    @objc func startSync(_ call: CAPPluginCall) { notBuiltYet(call) }
-    @objc func stopSync(_ call: CAPPluginCall) { notBuiltYet(call) }
-    @objc func enqueue(_ call: CAPPluginCall) { notBuiltYet(call) }
-
-    private func resolve(_ call: CAPPluginCall, _ result: GrpcResult) {
-        call.resolve([
-            "status": result.status,
-            "message": result.message,
-            "response": result.body.base64EncodedString()
-        ])
+    @objc func startSync(_ call: CAPPluginCall) {
+        guard let engine else { return call.reject("The data layer isn't available in this build.") }
+        let feeds = call.getArray("feeds", String.self) ?? []
+        Task {
+            do {
+                try await engine.start(feeds: feeds)
+                call.resolve()
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
     }
 
-    private func notBuiltYet(_ call: CAPPluginCall) {
-        call.unimplemented("The native data layer is the next milestone (SPEC §13).")
+    @objc func stopSync(_ call: CAPPluginCall) {
+        Task {
+            await engine?.pause()
+            call.resolve()
+        }
+    }
+
+    @objc func pull(_ call: CAPPluginCall) {
+        guard let engine else { return call.reject("The data layer isn't available in this build.") }
+        Task {
+            do {
+                try await engine.pull()
+                call.resolve()
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func status(_ call: CAPPluginCall) {
+        call.resolve(["state": state.rawValue])
+    }
+
+    @objc func readPage(_ call: CAPPluginCall) {
+        guard let store else { return call.reject("The data layer isn't available in this build.") }
+        guard let feed = call.getString("feed") else { return call.reject("readPage needs a feed") }
+        do {
+            let records = try store.page(
+                feed: feed,
+                order: FeedOrder(rawValue: call.getString("order") ?? "") ?? .sortKey,
+                descending: call.getBool("descending") ?? false,
+                limit: call.getInt("limit") ?? 50,
+                offset: call.getInt("offset") ?? 0,
+                groupKey: call.getString("groupKey"))
+            call.resolve(["json": Self.json(records.map(Self.record))])
+        } catch {
+            call.reject(error.localizedDescription)
+        }
+    }
+
+    @objc func storeInfo(_ call: CAPPluginCall) {
+        guard let store else { return call.reject("The data layer isn't available in this build.") }
+        do {
+            let feeds = try store.info().map { ["feed": $0.feed, "rows": $0.rows, "bytes": $0.bytes, "cursor": $0.cursor] as [String: Any] }
+            call.resolve(["json": Self.json(["fileBytes": store.fileBytes, "feeds": feeds])])
+        } catch {
+            call.reject(error.localizedDescription)
+        }
+    }
+
+    @objc func enqueue(_ call: CAPPluginCall) {
+        guard let outbox else { return call.reject("The data layer isn't available in this build.") }
+        guard let method = call.getString("method"), let request = Data(base64Encoded: call.getString("request") ?? "") else {
+            return call.reject("enqueue needs a method and a base64 request")
+        }
+        Task {
+            do {
+                call.resolve(["id": try await outbox.enqueue(method: method, request: request)])
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func outbox(_ call: CAPPluginCall) {
+        guard let outbox else { return call.reject("The data layer isn't available in this build.") }
+        Task {
+            do {
+                let entries = try await outbox.entries().map { entry -> [String: Any] in
+                    var json: [String: Any] = ["id": entry.id, "method": entry.method, "createdAt": entry.createdAt,
+                                               "attempts": entry.attempts, "failed": entry.failed]
+                    json["lastError"] = entry.lastError
+                    return json
+                }
+                call.resolve(["json": Self.json(entries)])
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func retryOutbox(_ call: CAPPluginCall) {
+        changeOutbox(call) { outbox, id in try await outbox.retry(id: id) }
+    }
+
+    @objc func discardOutbox(_ call: CAPPluginCall) {
+        changeOutbox(call) { outbox, id in try await outbox.discard(id: id) }
+    }
+
+    private func changeOutbox(_ call: CAPPluginCall, _ change: @escaping (Outbox, String) async throws -> Void) {
+        guard let outbox, let id = call.getString("id") else { return call.reject("Needs an outbox entry id.") }
+        Task {
+            do {
+                try await change(outbox, id)
+                call.resolve()
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+
+    private func resolve(_ call: CAPPluginCall, _ result: GrpcResult) {
+        call.resolve(["status": result.status, "message": result.message, "response": result.body.base64EncodedString()])
+    }
+
+    private static func record(_ record: StoredRecord) -> [String: Any] {
+        var json: [String: Any] = ["id": record.id, "version": record.version, "payload": record.payload.base64EncodedString()]
+        json["sortKey"] = record.sortKey
+        json["startsAt"] = record.startsAt
+        json["endsAt"] = record.endsAt
+        json["groupKey"] = record.groupKey
+        return json
+    }
+
+    private static func json(_ value: Any) -> String {
+        guard let data = try? JSONSerialization.data(withJSONObject: value) else { return "null" }
+        return String(decoding: data, as: UTF8.self)
+    }
+
+    private static func configuredGateway() -> URL? {
+        let info = Bundle.main.infoDictionary
+        guard let scheme = info?["GsbcGatewayScheme"] as? String, !scheme.isEmpty,
+              let host = info?["GsbcGateway"] as? String, !host.isEmpty else { return nil }
+        return URL(string: "\(scheme)://\(host)")
+    }
+
+    private static func storeDirectory() -> URL {
+        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("DataLayer")
     }
 }

@@ -137,9 +137,9 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types. Not referenced yet | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`) and the Sync service contract | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry, `IAccess`, the gRPC-Web channel and the native bridge (`NativeCallInvoker`) | Yes |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry, `IAccess`, the native bridge (`NativeCallInvoker`, or gRPC-Web in a browser), local feed reads (`ILocalFeeds`) and the outbox (`IOutbox`) | Yes |
 | `GSBC.ChurchApp.Platform.Ui` | The shared component library: `ModuleRouter`, `ModuleNav`, the `Can` permission gate | Yes |
-| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue, feeds and the Sync service, health | No |
+| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue, feeds, the Sync service and its `LISTEN` fan-out to live `Watch` streams, health | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2) and content addressing. Not referenced yet | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
@@ -156,7 +156,7 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
-(the Capacitor plugin: Swift now, Kotlin stubbed until Android).
+(the Capacitor plugin: gRPC-Web transport, GRDB store, sync engine and outbox in Swift; Kotlin stubbed until Android).
 
 ## Naming
 

@@ -40,6 +40,17 @@ The script finds the phone, writes your team and this Mac's address (`<LocalHost
 launches. Home shows whether the app reached the server. Override with `GSBC_GATEWAY=host:port` or
 `GSBC_DEVICE=<udid>`.
 
+To see sync working: open **Storage** in the app (it lists what's stored, the sync state and anything
+waiting to send), then change the development feed from the Mac and watch it arrive:
+
+```sh
+tools/dev/feed.sh put hello "Hello from the Mac"     # add or edit a record
+tools/dev/feed.sh delete hello                       # delete it
+tools/dev/feed.sh list
+```
+
+Debug builds also have buttons there to queue a send that succeeds and one that fails, for the outbox.
+
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to
 the gateway, never from the WebView, so there's no CORS. iOS allows plain HTTP to local-network
 addresses only (`NSAllowsLocalNetworking`), and asks for local-network permission the first time.

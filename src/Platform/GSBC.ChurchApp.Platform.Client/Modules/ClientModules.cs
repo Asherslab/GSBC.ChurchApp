@@ -13,6 +13,8 @@ public sealed class ClientModules(Assembly hostAssembly)
 
     public IEnumerable<NavEntry> Navigation => _modules.SelectMany(module => module.Navigation);
 
+    public IReadOnlyCollection<string> Feeds => _modules.SelectMany(module => module.Feeds ?? []).ToHashSet();
+
     public ClientModules Add(ClientModule module)
     {
         _modules.Add(module);

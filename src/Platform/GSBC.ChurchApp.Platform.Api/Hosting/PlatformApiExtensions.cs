@@ -38,6 +38,8 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IAccessEvaluator, NoGrantsAccessEvaluator>();
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<FeedRegistry>();
+        services.AddSingleton<FeedChangeBroadcaster>();
+        services.AddHostedService<FeedChangeListener>();
         services.AddSyncData();
 
         services

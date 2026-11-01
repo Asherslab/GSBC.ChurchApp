@@ -8,14 +8,16 @@ let package = Package(
         .library(name: "GsbcDataLayer", targets: ["DataLayerPlugin"])
     ],
     dependencies: [
-        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0")
+        .package(url: "https://github.com/ionic-team/capacitor-swift-pm.git", from: "8.0.0"),
+        .package(url: "https://github.com/groue/GRDB.swift.git", from: "7.11.0")
     ],
     targets: [
         .target(
             name: "DataLayerPlugin",
             dependencies: [
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
-                .product(name: "Cordova", package: "capacitor-swift-pm")
+                .product(name: "Cordova", package: "capacitor-swift-pm"),
+                .product(name: "GRDB", package: "GRDB.swift")
             ],
             path: "ios/Sources/DataLayerPlugin")
     ]

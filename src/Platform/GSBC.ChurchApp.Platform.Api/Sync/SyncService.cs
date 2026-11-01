@@ -9,38 +9,71 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Platform.Api.Sync;
 
-public sealed class SyncService(SyncDbContext db, FeedRegistry feeds, IAccessEvaluator access) : ISyncService
+public sealed class SyncService(
+    SyncDbContext db, FeedRegistry feeds, IAccessEvaluator access, FeedChangeBroadcaster broadcaster) : ISyncService
 {
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
 
-    public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default) =>
-        new() { Feeds = await CatchUpAsync(request.Cursors, UserOf(context), context.CancellationToken) };
+    public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
+    {
+        Dictionary<string, long> cursors = CursorsOf(request.Cursors);
+        return new PullReply { Feeds = await ReadAsync(cursors, cursors.Keys, UserOf(context), context.CancellationToken) };
+    }
 
     public async IAsyncEnumerable<WatchEvent> WatchAsync(WatchRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        yield return new WatchEvent { Feeds = await CatchUpAsync(request.Cursors, UserOf(context), cancellationToken) };
+        ClaimsPrincipal user = UserOf(context);
+        Dictionary<string, long> cursors = CursorsOf(request.Cursors);
+        using FeedChangeBroadcaster.Subscription subscription = broadcaster.Subscribe();
 
+        IEnumerable<string> due = cursors.Keys;
+        bool caughtUp = false;
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (!await DelayAsync(HeartbeatInterval, cancellationToken))
-                yield break;
-            yield return new WatchEvent { IsHeartbeat = true };
+            List<FeedBatch> batches = await ReadAsync(cursors, due, user, cancellationToken);
+            if (batches.Count > 0 || !caughtUp)
+                yield return new WatchEvent { Feeds = batches };
+            caughtUp = true;
+
+            if (batches.Any(batch => batch.HasMore))
+            {
+                due = batches.Where(batch => batch.HasMore).Select(batch => batch.Feed).ToList();
+                continue;
+            }
+
+            ChangedFeeds? changed = await subscription.WaitAsync(HeartbeatInterval, cancellationToken);
+            if (changed is null)
+            {
+                yield return new WatchEvent { IsHeartbeat = true };
+                due = [];
+            }
+            else
+            {
+                due = cursors.Keys.Where(changed.Includes).ToList();
+            }
         }
     }
 
-    private async Task<List<FeedBatch>> CatchUpAsync(List<FeedCursor> cursors, ClaimsPrincipal user, CancellationToken cancellationToken)
+    private async Task<List<FeedBatch>> ReadAsync(
+        Dictionary<string, long> cursors, IEnumerable<string> due, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
         List<FeedBatch> batches = [];
-        foreach (FeedCursor cursor in cursors)
+        foreach (string name in due)
         {
-            if (!feeds.ByName.TryGetValue(cursor.Feed, out FeedDefinition? feed))
+            if (!feeds.ByName.TryGetValue(name, out FeedDefinition? feed))
                 continue;
 
-            batches.Add(await CanSeeFeedAsync(feed, user, cancellationToken)
-                ? await ReadBatchAsync(feed, cursor.Cursor, user, cancellationToken)
-                : new FeedBatch { Feed = feed.Name, Reset = true });
+            FeedBatch batch = await CanSeeFeedAsync(feed, user, cancellationToken)
+                ? await ReadBatchAsync(feed, cursors[name], user, cancellationToken)
+                : new FeedBatch { Feed = feed.Name, Reset = true };
+
+            if (batch.Reset || batch.Cursor != cursors[name])
+            {
+                cursors[name] = batch.Cursor;
+                batches.Add(batch);
+            }
         }
 
         return batches;
@@ -94,6 +127,9 @@ public sealed class SyncService(SyncDbContext db, FeedRegistry feeds, IAccessEva
             _ => false,
         };
 
+    private static Dictionary<string, long> CursorsOf(List<FeedCursor> cursors) =>
+        cursors.GroupBy(cursor => cursor.Feed).ToDictionary(group => group.Key, group => group.Last().Cursor);
+
     private static FeedChange ToMessage(FeedChangeRecord row) => new()
     {
         Id = row.RecordId,
@@ -110,17 +146,4 @@ public sealed class SyncService(SyncDbContext db, FeedRegistry feeds, IAccessEva
         context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
 
     private static bool IsSignedIn(ClaimsPrincipal user) => user.Identity?.IsAuthenticated == true;
-
-    private static async Task<bool> DelayAsync(TimeSpan delay, CancellationToken cancellationToken)
-    {
-        try
-        {
-            await Task.Delay(delay, cancellationToken);
-            return true;
-        }
-        catch (OperationCanceledException)
-        {
-            return false;
-        }
-    }
 }
