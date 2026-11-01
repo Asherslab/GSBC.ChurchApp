@@ -16,6 +16,19 @@ builder.Services.AddGrpcHealthChecks();
 
 WebApplication app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    app.Use((context, next) =>
+    {
+        context.Response.OnStarting(() =>
+        {
+            context.Response.Headers.CacheControl = "no-store";
+            return Task.CompletedTask;
+        });
+        return next(context);
+    });
+}
+
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseRateLimiter();
