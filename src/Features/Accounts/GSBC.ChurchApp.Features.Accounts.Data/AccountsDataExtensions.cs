@@ -9,7 +9,9 @@ public static class AccountsDataExtensions
     public static IServiceCollection AddAccountsData(this IServiceCollection services) =>
         services
             .Configure<IdentityOptions>(UsePasskeySchema)
-            .AddFeatureDbContext<AccountsDbContext>(AccountsDbContext.Schema, migrationOrder: 10);
+            .AddFeatureDbContext<AccountsDbContext>(AccountsDbContext.Schema, migrationOrder: 10)
+            .AddScoped<OneTimeCodes>()
+            .AddScoped<AccountsAudit>();
 
     public static void UsePasskeySchema(IdentityOptions options) =>
         options.Stores.SchemaVersion = IdentitySchemaVersions.Version3;

@@ -54,7 +54,7 @@ Every entry needs the owner's explicit approval in chat first.
 
 | Path | Host | Why it can't be gRPC | Approved |
 |---|---|---|---|
-| Passkey ceremonies: begin/complete for sign-in and for registering a passkey (including accepting a staff invitation) | Gateway | The browser's WebAuthn API exchanges JSON with the server; the owner chose plain HTTP for these, as in MealPlanner | 2026-10-26 |
+| Passkey ceremonies: begin/complete for sign-in and for registering a passkey (including accepting a staff invitation). Built as `POST /accounts/passkeys/{creation-options,register,request-options,sign-in}` | Gateway | The browser's WebAuthn API exchanges JSON with the server; the owner chose plain HTTP for these, as in MealPlanner | 2026-10-26 |
 | The same passkey ceremonies, called from the app's native layer (Life Group leaders and staff signing in on the phone) | Gateway | The platform passkey APIs produce the same WebAuthn JSON; the owner confirmed the app may use these endpoints | 2026-10-26 |
 
 **How self-service sign-up uses them** (owner confirmed 2026-11-01): `Accounts.StartSignUp` is a gRPC

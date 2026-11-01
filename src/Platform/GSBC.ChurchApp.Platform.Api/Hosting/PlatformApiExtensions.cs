@@ -1,4 +1,6 @@
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Email;
+using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Api.Tiers;
 using GSBC.ChurchApp.Platform.Data;
@@ -9,6 +11,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 using ProtoBuf.Grpc.Server;
 
 namespace GSBC.ChurchApp.Platform.Api.Hosting;
@@ -43,6 +46,11 @@ public static class PlatformApiExtensions
         services.AddScoped<FeedRetention>();
         services.AddHostedService<FeedRetentionService>();
         services.TryAddSingleton(TimeProvider.System);
+        services.AddPlatformRateLimits();
+        if (builder.Environment.IsDevelopment())
+            services.TryAddSingleton<IEmailSender, DevelopmentEmailSender>();
+        else
+            services.TryAddSingleton<IEmailSender, UnconfiguredEmailSender>();
         services.AddSyncData();
 
         services

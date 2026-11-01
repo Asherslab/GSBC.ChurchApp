@@ -76,6 +76,7 @@ flowchart LR
         AccountsClient["Features.Accounts.Client"]
         AccountsApi["Features.Accounts.Api"]
         AccountsData["Features.Accounts.Data"]
+        AccountsGateway["Features.Accounts.Gateway"]
         AccountsContracts["Features.Accounts.Contracts"]
     end
 
@@ -98,7 +99,7 @@ flowchart LR
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
-    HostsGateway --> HostsAdmin
+    HostsGateway --> HostsAdmin & AccountsGateway
     HostsApp --> AccountsApp & PlatformUi
     HostsAdmin --> PlatformUi
     HostsApi --> AccountsApi & PlatformApi
@@ -106,7 +107,8 @@ flowchart LR
 
     AccountsApp --> AccountsClient
     AccountsClient --> AccountsContracts & PlatformClient & PlatformUi
-    AccountsApi --> AccountsContracts & PlatformApi
+    AccountsApi --> AccountsContracts & AccountsData & PlatformApi
+    AccountsGateway --> AccountsData
     AccountsContracts --> PlatformContracts
     AccountsData --> PlatformData
 
@@ -150,12 +152,13 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2) and content addressing. Not referenced yet | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Accounts.Data` | The `accounts` schema: Identity users and passkeys, sessions, one-time codes, audit log; shared by the API and the gateway | No |
-| `GSBC.ChurchApp.Features.Accounts.Api` | `SessionService`: who is calling | No |
+| `GSBC.ChurchApp.Features.Accounts.Api` | `SessionService` (who is calling) and `AccountsService` (sign-up, recovery, profile, passkeys, sessions, invitations); validates the gateway's tokens | No |
+| `GSBC.ChurchApp.Features.Accounts.Gateway` | The passkey ceremonies (the approved non-gRPC paths), server-side sessions, and the session-to-token swap on every proxied call | No |
 | `GSBC.ChurchApp.Features.Accounts.Client` | Accounts' generated gRPC proxies and `AccountsClient` | Yes |
 | `GSBC.ChurchApp.Features.Accounts.App` | The phone's Account page and its navigation entry | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
 | `GSBC.ChurchApp.Hosts.Admin` | The staff admin panel: Blazor WASM, not AOT, served by the gateway | No |
-| `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API, serves the admin panel; passkeys later | No |
+| `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |
 | `GSBC.ChurchApp.Hosts.Api` | The cluster-internal gRPC API: maps every feature's services | No |
 | `GSBC.ChurchApp.Hosts.Migrator` | Applies every feature's migrations, then exits | No |
 | `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |

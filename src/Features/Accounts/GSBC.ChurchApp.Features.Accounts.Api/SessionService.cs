@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Features.Accounts.Data;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api;
@@ -15,8 +16,8 @@ internal sealed class SessionService : ISessionService
             ? new CurrentSession
             {
                 SignedIn = true,
-                UserId = user.FindFirstValue(ClaimTypes.NameIdentifier),
-                DisplayName = user.FindFirstValue(ClaimTypes.Name),
+                UserId = user.FindFirstValue(AccountClaims.UserId),
+                DisplayName = user.FindFirstValue(AccountClaims.Name),
             }
             : new CurrentSession());
     }

@@ -16,7 +16,13 @@ public sealed class EndpointRules
     private const string StaticFileFallback = "{*path:nonfile}";
     private const string GrpcUnimplementedMethod = "gRPC - Unimplemented method for ";
 
-    private static readonly string[] ApprovedNonGrpcPaths = [];
+    private static readonly string[] ApprovedNonGrpcPaths =
+    [
+        "/accounts/passkeys/creation-options",
+        "/accounts/passkeys/register",
+        "/accounts/passkeys/request-options",
+        "/accounts/passkeys/sign-in",
+    ];
 
     [Fact]
     public void EveryApiEndpointIsGrpcOrApproved()

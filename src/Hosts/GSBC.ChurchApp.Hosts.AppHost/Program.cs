@@ -1,6 +1,9 @@
+using System.Security.Cryptography;
 using GSBC.ChurchApp.Hosts.AppHost;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
+
+using ECDsa tokenKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
 
 IResourceBuilder<PostgresDatabaseResource> database = builder
     .AddPostgres("postgres")
@@ -18,6 +21,7 @@ IResourceBuilder<ProjectResource> api = builder
     .WithHttpEndpoint(name: "web", env: "Ports__Web")
     .WithHttpEndpoint(name: "grpc", env: "Ports__Grpc")
     .WithReference(database)
+    .WithEnvironment("Accounts__Tokens__PublicKey", tokenKey.ExportSubjectPublicKeyInfoPem())
     .WaitForCompletion(migrator);
 
 IResourceBuilder<ProjectResource> gateway = builder
@@ -25,6 +29,8 @@ IResourceBuilder<ProjectResource> gateway = builder
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WithHttpEndpoint(port: 5300, name: "web", env: "Ports__Web", isProxied: false)
     .WithHttpEndpoint(port: 5301, name: "grpc", env: "Ports__Grpc", isProxied: false)
+    .WithReference(database)
+    .WithEnvironment("Accounts__Tokens__SigningKey", tokenKey.ExportPkcs8PrivateKeyPem())
     .WithEnvironment("ReverseProxy__Clusters__api-web__Destinations__api__Address", api.GetEndpoint("web"))
     .WithEnvironment("ReverseProxy__Clusters__api-grpc__Destinations__api__Address", api.GetEndpoint("grpc"))
     .WithExternalHttpEndpoints()
