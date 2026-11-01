@@ -1,3 +1,5 @@
+using GSBC.ChurchApp.Hosts.AppHost;
+
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
 IResourceBuilder<PostgresDatabaseResource> database = builder
@@ -18,7 +20,7 @@ IResourceBuilder<ProjectResource> api = builder
     .WithReference(database)
     .WaitForCompletion(migrator);
 
-builder
+IResourceBuilder<ProjectResource> gateway = builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
     .WithHttpEndpoint(port: 5300, name: "web", env: "Ports__Web", isProxied: false)
@@ -27,5 +29,12 @@ builder
     .WithEnvironment("ReverseProxy__Clusters__api-grpc__Destinations__api__Address", api.GetEndpoint("grpc"))
     .WithExternalHttpEndpoints()
     .WaitFor(api);
+
+if (DevTunnel.Find() is { } tunnel)
+{
+    builder
+        .AddExecutable("tunnel", tunnel.Command, tunnel.WorkingDirectory, "tunnel", "run", tunnel.Name)
+        .WaitFor(gateway);
+}
 
 builder.Build().Run();

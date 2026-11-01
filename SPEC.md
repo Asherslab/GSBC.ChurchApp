@@ -263,7 +263,8 @@ On the server:
 5. **Long-lived streams end to end:** a `Watch` stream held open through Cloudflare, Traefik and YARP,
    over gRPC-Web. Find each hop's idle and maximum-duration limits and confirm the heartbeat and
    reconnect cover them. *Proven locally 2026-11-01* through YARP to the iOS Simulator (catch-up, then
-   a change arriving within a second); Cloudflare and Traefik still to test.
+   a change arriving within a second), and through Cloudflare's tunnel the same day (HTTP/2 at the edge,
+no buffering, heartbeats holding the stream). Traefik still to test, in the cluster.
 
 ## 6. Who may call what
 

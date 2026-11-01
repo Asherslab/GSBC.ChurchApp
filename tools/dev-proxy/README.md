@@ -28,23 +28,22 @@ Copy `cloudflared.yml` to `~/.cloudflared/config.yml` and fill in:
 - `service`: `http://localhost:5300` on the dev Mac, or from the Mac mini the dev Mac's Bonjour name
   (`scutil --get LocalHostName` on the dev Mac, plus `.local`).
 
-Then run it, in the foreground while developing:
-
-```sh
-cloudflared tunnel run gsbc-dev
-```
-
-or as a service on the Mac mini, so it survives restarts: `sudo cloudflared service install`.
+Then nothing else on the dev Mac: **the AppHost starts the tunnel with the backend** whenever
+`~/.cloudflared/config.yml` names `gsbc-dev` and `cloudflared` is installed (it shows as `tunnel` in
+the Aspire dashboard). To run only the tunnel, use **Cloudflare tunnel** in Rider or
+`tools/dev-proxy/run.sh`. On the Mac mini, run it as a service instead: `sudo cloudflared service install`.
 
 ## Using it
 
 Start the backend on the dev Mac as usual, then deploy a build that goes through Cloudflare:
 
-```sh
-GSBC_GATEWAY=https://dev.baptist.com.au tools/ios/deploy.sh
-```
+**iPhone (dev)** and **iPhone (AOT, as shipped)** in Rider deploy builds that use
+`https://dev.baptist.com.au`; **iPhone (dev, Wi-Fi only)** goes straight to the laptop when the
+tunnel is down. From a terminal: `GSBC_GATEWAY=https://dev.baptist.com.au tools/ios/deploy.sh`. The
+admin panel is at https://dev.baptist.com.au.
 
-or **iPhone (dev, through Cloudflare)** in Rider. The admin panel is at https://dev.baptist.com.au.
+Proven 2026-11-01: gRPC-Web calls and a `Watch` stream through Cloudflare (HTTP/2 at the edge), changes
+arriving within a second, heartbeats keeping the stream open.
 
 ## Notes
 

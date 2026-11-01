@@ -155,7 +155,7 @@ flowchart LR
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API, serves the admin panel; passkeys later | No |
 | `GSBC.ChurchApp.Hosts.Api` | The cluster-internal gRPC API: maps every feature's services | No |
 | `GSBC.ChurchApp.Hosts.Migrator` | Applies every feature's migrations, then exits | No |
-| `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, migrator, API and gateway together | No |
+| `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Sync against a real Postgres (in a container): pruning, compaction and resets converge every phone | No |
