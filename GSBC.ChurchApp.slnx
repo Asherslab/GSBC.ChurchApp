@@ -24,6 +24,7 @@
     <File Path="docs/architecture/storage.md" />
   </Folder>
   <Folder Name="/docs/features/">
+    <File Path="docs/features/accounts.md" />
     <File Path="docs/features/life-groups.md" />
     <File Path="docs/features/ministries.md" />
     <File Path="docs/features/outreach.md" />
