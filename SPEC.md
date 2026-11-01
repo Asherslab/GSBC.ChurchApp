@@ -73,8 +73,10 @@ rules, but this plan never does it (§4), so it is not a constraint.
   and Prayer.
 - **About / contact:** location, map, staff and beliefs.
 
-No accounts are required to read anything. Sign-in, if added, is only for things that are personal
-(prayer requests you sent, group membership).
+No accounts are required to read anything public. One passkey sign-in serves members, leaders and
+staff, in the app and the admin panel; it unlocks what is personal or private (your prayer requests,
+a ministry's members-only news) and whatever your permissions allow
+([identity](docs/architecture/identity.md), [permissions](docs/architecture/permissions.md)).
 
 ## 4. What changes how
 
@@ -236,7 +238,9 @@ On the server:
 ### Not yet proven (spike before building on it)
 
 1. **Generated proxies over a custom bridging `CallInvoker`** under WASM AOT, including server
-   streaming surfaced as `IAsyncEnumerable`.
+   streaming surfaced as `IAsyncEnumerable`. *Unary proven 2026-11-01* (AOT, iOS Simulator, through
+   the gateway): protobuf-net's marshallers are contextual-only, so the bridge must use
+   `ContextualSerializer`/`ContextualDeserializer`. Streaming still to prove.
 2. **Pass-through byte codecs:** grpc-swift and grpc-java calling a protobuf-net code-first service
    with no generated stubs.
 3. **Bridge cost:** Capacitor plugin calls pass JSON, so the bytes travel base64-encoded. That should
@@ -369,6 +373,12 @@ too, and the money and reporting land where in-person giving already goes. Not p
   receipt wording (gifts are tax-deductible only to a DGR fund).
 
 ## 8. Modules
+
+The layout as built is in [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md)
+(decided 2026-11-01). It refines the sketch below: projects are named `GSBC.ChurchApp.<Area>.<Name>`,
+and a feature may also have a **Client** part (AOT) holding its calls, feed readers and every
+component shown in more than one host, because admin features also appear in the app for those
+permitted.
 
 Every feature (Events, Sermons, Groups, Prayer, Give, Push, …) is self-contained and **selectable per
 host**. The app ships the features we choose. A public website, if we build one later, picks its own
@@ -618,7 +628,9 @@ None block the skeleton. One has a deadline:
    (`Get` returns the bytes, a server stream for large files; `Upload` in the admin panel), with
    content-addressed IDs so the phone's file cache never goes stale. A plain HTTP GET would let
    Cloudflare cache images, but it is a non-gRPC path and needs the owner's explicit approval first.
-   To settle before the first feature with images.
+   To settle before the first feature with images. A proposal (content-addressed objects in R2,
+   fetched directly, with signed URLs from gRPC for private files) awaits the owner in
+   [offline-and-caching.md](docs/architecture/offline-and-caching.md).
 3. **Life Groups and the site map** have their own open questions in their docs.
 
 Decided, for the record:
@@ -632,7 +644,8 @@ Decided, for the record:
 ## 13. Milestones
 
 0. **Done:** code-first gRPC under AOT ([`spikes/aot-grpc`](spikes/aot-grpc/README.md)).
-1. **Skeleton:** includes the fail-closed tier test (§6), the endpoint test that rejects any API path
+1. **Skeleton** (layout, AOT rules and baseline, the endpoint and tier tests, gateway routing: done
+   2026-11-01; [docs/README.md](docs/README.md) has the build order from here): includes the fail-closed tier test (§6), the endpoint test that rejects any API path
    that isn't gRPC unless the owner has approved it ([AGENTS.md](AGENTS.md)), and the YARP gateway with
    passkey sign-in and the session-to-token transform.
    Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI

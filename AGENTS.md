@@ -44,9 +44,9 @@ gRPC-Web) service method. For example:
 **Don't work around the rule.** Disguising a non-gRPC path (an endpoint under a gRPC-looking route, an
 "internal" or "temporary" one, a Development-only one) is the same as adding it.
 
-**It is enforced by a test.** The skeleton adds one that enumerates every endpoint on every server host
-and fails on anything that isn't a gRPC method, static file serving, or in the list below. Never edit that test's
-allowlist except to mirror this list.
+**It is enforced by a test.** `tests/Architecture/…/EndpointRules.cs` enumerates every endpoint on every
+server host and fails on anything that isn't a gRPC method, static file serving, or in the list below
+(its `ApprovedNonGrpcPaths`). Never edit that allowlist except to mirror this list.
 
 ## Approved non-gRPC paths
 
@@ -61,12 +61,26 @@ Every entry needs the owner's explicit approval in chat first.
 natively). Anything else around sign-in, such as "who am I", sign-out, or managing staff and
 invitations, is gRPC unless it is added here.
 
+# Repo layout
+
+Feature-first, with solution folders that mirror the disk: see
+[docs/architecture/repo-layout.md](docs/architecture/repo-layout.md). Features never reference each
+other. A management screen goes in the feature's Client, gated by a permission, so it works in the
+app and the admin panel alike. The backbone's design is in [docs/](docs/README.md); read the relevant
+doc before changing auth, permissions, sync, storage or configuration.
+
+**Keep the project map current.** Adding, removing, renaming or re-referencing a project means updating
+the diagram and table in the repo-layout doc's "The projects" section in the same change.
+`ProjectMapRules` fails the build otherwise.
+
+Tests guard rules and real behaviour. Don't write tests for coverage.
+
 # Components: reuse first, then generic
 
 Before writing any Blazor UI:
 
 1. **Look for an existing component that already does it, or nearly does.** Search the shared
-   component library and the feature modules. If one is close, extend or adapt it (a parameter, a
+   component library (`src/Platform/GSBC.ChurchApp.Platform.Ui`) and the feature modules. If one is close, extend or adapt it (a parameter, a
    slot, a variant) rather than writing a near-copy.
 2. **If nothing fits, build it generic.** Ask whether what you're about to build is a one-off or a
    pattern: a list with pull-to-refresh, a card, a sheet, a date line, an empty state, a "live"
