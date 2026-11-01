@@ -20,29 +20,21 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise)
     ]
 
-    private var transport: GrpcWebTransport?
-    private var store: FeedStore?
-    private var engine: SyncEngine?
-    private var outbox: Outbox?
-    private var state = SyncState.stopped
+    private let runtime = DataLayerRuntime.shared
+    private var transport: GrpcWebTransport? { runtime.transport }
+    private var store: FeedStore? { runtime.store }
+    private var engine: SyncEngine? { runtime.engine }
+    private var outbox: Outbox? { runtime.outbox }
 
     override public func load() {
-        transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0) }
-        store = try? FeedStore(directory: Self.storeDirectory())
-        if let transport, let store {
-            engine = SyncEngine(
-                transport: transport, store: store,
-                onFeedsChanged: { [weak self] feeds in
-                    self?.notifyListeners("feedsChanged", data: ["feeds": Array(feeds).sorted()])
-                },
-                onState: { [weak self] state in
-                    self?.state = state
-                    self?.notifyListeners("syncState", data: ["state": state.rawValue])
-                    if state == .live { Task { await self?.outbox?.drain() } }
-                })
-            outbox = Outbox(database: store.database, transport: transport, onChanged: { [weak self] in
-                self?.notifyListeners("outboxChanged", data: [:])
-            })
+        runtime.feedsChanged = { [weak self] feeds in
+            self?.notifyListeners("feedsChanged", data: ["feeds": Array(feeds).sorted()])
+        }
+        runtime.stateChanged = { [weak self] state in
+            self?.notifyListeners("syncState", data: ["state": state.rawValue])
+        }
+        runtime.outboxChanged = { [weak self] in
+            self?.notifyListeners("outboxChanged", data: [:])
         }
 
         NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive),
@@ -59,6 +51,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc private func appEnteredBackground() {
+        DataLayerBackground.schedule()
         Task { await engine?.pause() }
     }
 
@@ -117,7 +110,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func status(_ call: CAPPluginCall) {
-        call.resolve(["state": state.rawValue])
+        call.resolve(["state": runtime.state.rawValue])
     }
 
     @objc func readPage(_ call: CAPPluginCall) {
@@ -214,16 +207,5 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private static func json(_ value: Any) -> String {
         guard let data = try? JSONSerialization.data(withJSONObject: value) else { return "null" }
         return String(decoding: data, as: UTF8.self)
-    }
-
-    private static func configuredGateway() -> URL? {
-        let info = Bundle.main.infoDictionary
-        guard let scheme = info?["GsbcGatewayScheme"] as? String, !scheme.isEmpty,
-              let host = info?["GsbcGateway"] as? String, !host.isEmpty else { return nil }
-        return URL(string: "\(scheme)://\(host)")
-    }
-
-    private static func storeDirectory() -> URL {
-        FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0].appendingPathComponent("DataLayer")
     }
 }

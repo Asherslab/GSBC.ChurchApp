@@ -46,7 +46,7 @@ public actor SyncEngine {
     }
 
     public func pull() async throws {
-        var due = feeds
+        var due = feeds.isEmpty ? try store.registeredFeeds() : feeds
         while !due.isEmpty {
             let cursors = try store.cursors(for: due)
             let result = try await transport.unary(method: SyncMessages.pullMethod, message: SyncMessages.cursorsRequest(cursors))
