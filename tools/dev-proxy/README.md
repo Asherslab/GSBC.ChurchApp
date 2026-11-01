@@ -50,6 +50,8 @@ arriving within a second, heartbeats keeping the stream open.
 - Nothing is cached in dev: the dev gateway sends `Cache-Control: no-store` on every response, because
   Cloudflare otherwise replaces `no-cache` with its 4-hour browser cache (it once kept a 404 alive in
   Safari). If a browser still shows something stale, empty its cache once (Safari: Develop → Empty Caches).
+  `check-caching.sh` checks every asset as Cloudflare serves it; run it after changing anything the
+  gateway serves.
 - `dev.baptist.com.au` is also dev's passkey domain (docs/architecture/identity.md), kept apart from
   production's `baptist.com.au` so test passkeys never sit beside real ones.
 - If the dev Mac changes, change `service` and restart: `sudo launchctl kickstart -k system/com.cloudflare.cloudflared`.

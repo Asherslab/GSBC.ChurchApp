@@ -58,6 +58,23 @@ is a gRPC `Media` service streaming the bytes through our API, which Cloudflare 
 | Admin panel `index.html` | No (`no-cache`) | It names the fingerprinted files |
 | The app itself | Not served from the web | It ships in the store build |
 
+### Cloudflare overrides our headers
+
+Learned the hard way (2026-11-01): Cloudflare's zone defaults replace a shorter origin cache header with
+its own **4-hour browser cache** (`max-age=14400`, even on 404s) and cache `.js`/`.css` at the edge. A
+file fixed on the server can stay broken in a browser for hours. So:
+
+- **Dev** (`dev.baptist.com.au`) sends `Cache-Control: no-store` on every response, which Cloudflare
+  respects. After changing what's cached, purge the zone once; `no-store` doesn't evict what the edge
+  already holds.
+- **Production** relies on fingerprinted names (`immutable`, safe to cache forever) and `index.html`
+  never cached; set the zone's Browser Cache TTL to *Respect existing headers* so Cloudflare doesn't
+  shorten or lengthen ours (owner).
+- **Every web deploy is checked through the public hostname**, not localhost:
+  `tools/dev-proxy/check-caching.sh [site]` reads `cache-control` and `cf-cache-status` as Cloudflare
+  serves them and fails on anything unexpected. A 200 from curl doesn't prove a browser isn't holding
+  an earlier response.
+
 ## Dropbox
 
 Files that stay in the church's Dropbox (music recordings) are fetched through Dropbox temporary
