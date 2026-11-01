@@ -34,8 +34,8 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
 3. **Accounts** ([accounts.md](features/accounts.md)). Built in the browser: sign-up, sign-in,
    passkeys, sessions, recovery, invitations and the session-to-token swap. Waiting: Access (for
    staff actions), the shared mailbox (real email) and the enrolment (passkeys in the app).
-4. **Access:** roles, assignments, the cached evaluator, the admin screens
-   ([permissions.md](architecture/permissions.md)).
+4. **Access** ([access.md](features/access.md)). Built: roles, assignments, the cached evaluator,
+   escalation guards and the admin screens. Open: a private grants feed for offline use in the app.
 5. **Configuration:** surfaces, settings descriptors and the generic editor
    ([data-driven.md](architecture/data-driven.md)).
 6. **Media**, once its route is approved ([offline-and-caching.md](architecture/offline-and-caching.md)).

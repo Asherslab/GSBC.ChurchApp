@@ -92,10 +92,12 @@ development the emails (confirmation codes, links) appear in the API's log in th
 
 **Waiting on something else:**
 
-- *The Access feature:* staff invitations and recovery codes are built but denied until Access
-  grants `accounts.manage`, and "accounts holding sensitive permissions can't recover by email"
-  needs Access to know which those are.
-- *The shared mailbox (owner):* the Graph sender and the outgoing-email table, as in GSBC.Accounting.
+- ~~*The Access feature*~~: built. Staff with `accounts.manage` can invite, give recovery links,
+  disable accounts and read the audit log (the admin panel's People page), and people holding a
+  sensitive permission can't recover by email. Abandoned sign-ups (no passkey after 7 days) are
+  cleaned up, and email is queued and retried.
+- *The shared mailbox (owner):* the Graph transport. The queue and dispatcher are built; until a
+  transport is configured, emails wait in `email.outgoing_emails` (in development they're logged).
 - *The Apple enrolment:* Associated Domains, then passkeys and the Keychain session in the app.
 - *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
   `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.

@@ -58,6 +58,15 @@ can't recover their account by email; a staff member issues them a recovery code
 The two features meet through a small `IPeopleDirectory` in Platform.Client, implemented by Accounts,
 so Access can show names without referencing Accounts.
 
+## Status (2026-11-01)
+
+**Built:** system roles and the catalogue reconciled at start-up, custom roles, assignments with
+scopes and end dates, the cached evaluator behind every `[Requires]`, the escalation and last-owner
+guards, grants loaded into the admin panel's `IAccess` (navigation and `<Can>`), the Roles and
+Who-holds-what pages, and the bootstrap script. Tested by `Features.Access.Api.Tests` (Postgres)
+and checked end to end through `dev.baptist.com.au`: a new member holds nothing and every staff
+method refuses them.
+
 ## Open
 
 - A private sync feed for your own grants, so permission-gated tools work offline in the app: with the
