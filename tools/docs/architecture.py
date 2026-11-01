@@ -23,7 +23,7 @@ HOSTS = {
 }
 APP_PLATFORM = {"Platform.Common", "Platform.Permissions", "Platform.Contracts", "Platform.Client", "Platform.Ui"}
 APP_PARTS = (".Contracts", ".Client", ".App", ".Admin")
-PART_ORDER = ["Contracts", "Api", "Client", "App", "Admin"]
+PART_ORDER = ["Contracts", "Data", "Api", "Gateway", "Client", "App", "Admin"]
 PLATFORM_ORDER = ["Common", "Permissions", "Contracts", "Client", "Ui", "Api", "Data", "Storage"]
 
 
@@ -156,22 +156,23 @@ def main():
     tests = [n for n in names if n.endswith(".Tests")]
 
     chip_w, gap = 104, 8
-    feature_rows = max(1, len(features))
-    code_h = 60 + max(feature_rows * 56, 2 * 40) + 10
-    svg.panel(40, cy, 600, code_h, "src/Features · one folder per feature")
-    fy = cy + 48
+    feature_h = 60 + max(1, len(features)) * 44 + 24
+    svg.panel(40, cy, 1160, feature_h, "src/Features · one folder per feature")
+    fy = cy + 44
     for feature, parts in sorted(features.items()):
         svg.text(60, fy + 19, feature, size=13, weight=700)
         for i, part in enumerate(sorted(parts, key=lambda p: PART_ORDER.index(p) if p in PART_ORDER else 99)):
-            svg.chip(160 + i * (chip_w + gap), fy, chip_w, part, f"{PREFIX}Features.{feature}.{part}")
-        fy += 56
-    svg.text(60, cy + code_h - 14, "Features never reference each other, only Platform.", size=11, fill=MUTED, italic=True)
+            svg.chip(170 + i * (chip_w + gap), fy, chip_w, part, f"{PREFIX}Features.{feature}.{part}")
+        fy += 44
+    svg.text(60, cy + feature_h - 14, "Features never reference each other, only Platform.", size=11, fill=MUTED, italic=True)
 
-    svg.panel(660, cy, 540, code_h, "src/Platform · what every feature stands on")
+    py = cy + feature_h + 20
+    platform_h = 88
+    svg.panel(40, py, 1160, platform_h, "src/Platform · what every feature stands on")
     ordered = sorted(platform, key=lambda p: PLATFORM_ORDER.index(p) if p in PLATFORM_ORDER else 99)
     for i, part in enumerate(ordered):
-        row, col = divmod(i, 4)
-        svg.chip(680 + col * (chip_w + 26), cy + 48 + row * 40, chip_w + 18, part, f"{PREFIX}Platform.{part}")
+        svg.chip(60 + i * (chip_w + 34), py + 44, chip_w + 26, part, f"{PREFIX}Platform.{part}")
+    code_h = feature_h + 20 + platform_h
 
     ty = cy + code_h + 20
     svg.panel(40, ty, 1160, 76, "tests/ · rules and real behaviour")

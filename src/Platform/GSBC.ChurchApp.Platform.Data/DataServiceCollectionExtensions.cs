@@ -7,7 +7,7 @@ namespace GSBC.ChurchApp.Platform.Data;
 public static class DataServiceCollectionExtensions
 {
     public static IServiceCollection AddFeatureDbContext<TContext>(this IServiceCollection services, string schema, int migrationOrder)
-        where TContext : FeatureDbContext
+        where TContext : DbContext
     {
         services.AddDbContext<TContext>((provider, options) =>
             options.UseNpgsql(

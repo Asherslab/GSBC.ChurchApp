@@ -75,6 +75,7 @@ flowchart LR
         AccountsApp["Features.Accounts.App"]
         AccountsClient["Features.Accounts.Client"]
         AccountsApi["Features.Accounts.Api"]
+        AccountsData["Features.Accounts.Data"]
         AccountsContracts["Features.Accounts.Contracts"]
     end
 
@@ -101,12 +102,13 @@ flowchart LR
     HostsApp --> AccountsApp & PlatformUi
     HostsAdmin --> PlatformUi
     HostsApi --> AccountsApi & PlatformApi
-    HostsMigrator --> PlatformData
+    HostsMigrator --> PlatformData & AccountsData
 
     AccountsApp --> AccountsClient
     AccountsClient --> AccountsContracts & PlatformClient & PlatformUi
     AccountsApi --> AccountsContracts & PlatformApi
     AccountsContracts --> PlatformContracts
+    AccountsData --> PlatformData
 
     PlatformUi --> PlatformClient
     PlatformClient --> PlatformContracts
@@ -147,6 +149,7 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2) and content addressing. Not referenced yet | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Accounts.Data` | The `accounts` schema: Identity users and passkeys, sessions, one-time codes, audit log; shared by the API and the gateway | No |
 | `GSBC.ChurchApp.Features.Accounts.Api` | `SessionService`: who is calling | No |
 | `GSBC.ChurchApp.Features.Accounts.Client` | Accounts' generated gRPC proxies and `AccountsClient` | Yes |
 | `GSBC.ChurchApp.Features.Accounts.App` | The phone's Account page and its navigation entry | Yes |
@@ -178,7 +181,9 @@ A feature has only the parts it needs.
 | Part | Holds | References | Ships in |
 |---|---|---|---|
 | **Contracts** | Messages, `[Service]` interfaces, `[ProtoModel]`, its permission nodes and feed names | Platform.Contracts, Platform.Permissions | Everything |
-| **Api** | Service implementations, its `DbContext` and migrations, its feeds, its seeded roles | Its Contracts, Platform.Api, Platform.Data, Platform.Storage | Hosts.Api, Hosts.Migrator |
+| **Data** (optional) | Its `DbContext` and migrations, when the gateway needs the same state as the API (only Accounts so far) | Platform.Data | Api, Gateway, Hosts.Migrator |
+| **Api** | Service implementations, its `DbContext` and migrations (or its Data part's), its feeds, its seeded roles | Its Contracts, Platform.Api, Platform.Data, Platform.Storage | Hosts.Api, Hosts.Migrator |
+| **Gateway** (optional) | What the feature needs at the gateway: Accounts' passkey ceremonies and sessions | Its Contracts and Data | Hosts.Gateway |
 | **Client** | Its `[ProtoGrpc]`, typed calls, feed readers, and every component shown in more than one host | Its Contracts, Platform.Client, Platform.Ui | App, Admin |
 | **App** | Phone pages and navigation entries | Its Client | Hosts.App |
 | **Admin** | Desktop-only staff pages (bulk editing, configuration) | Its Client | Hosts.Admin |
