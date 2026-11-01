@@ -1,5 +1,6 @@
 CAPACITOR_DEBUG = true
 GSBC_GATEWAY_SCHEME = https
 GSBC_GATEWAY =
+GSBC_DEVELOPMENT_BUILD = NO
 
 #include? "dev.xcconfig"

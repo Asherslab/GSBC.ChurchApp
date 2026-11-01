@@ -14,7 +14,7 @@ builder.RootComponents.Add<HeadOutlet>("head::after");
 
 ClientModules modules = new(typeof(Program).Assembly);
 modules.Add(new ClientModule("Home", typeof(Program).Assembly, [new NavEntry("Home", "", "home")]));
-modules.Add(new ClientModule("Storage", typeof(Program).Assembly, [new NavEntry("Storage", "storage", "database")], StorageFeeds()));
+modules.Add(new ClientModule("Storage", typeof(Program).Assembly, [new NavEntry("Storage", "storage", "database")]));
 
 builder.Services
     .AddSingleton(modules)
@@ -23,12 +23,8 @@ builder.Services
     .AddAccountsApp(modules);
 
 WebAssemblyHost host = builder.Build();
+NativeBridge bridge = await host.Services.InitialiseNativeAsync();
+if (bridge.IsDevelopmentBuild)
+    modules.Add(new ClientModule("Development", typeof(Program).Assembly, [], [DevelopmentFeeds.Echo]));
 await host.Services.StartNativeDataLayerAsync(modules);
 await host.RunAsync();
-
-static string[] StorageFeeds() =>
-#if DEBUG
-    [DevelopmentFeeds.Echo];
-#else
-    [];
-#endif

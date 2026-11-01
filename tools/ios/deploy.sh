@@ -63,6 +63,7 @@ cat > "$shell/ios/dev.xcconfig" <<XC
 DEVELOPMENT_TEAM = $(tr -d '[:space:]' < "$team_file")
 GSBC_GATEWAY_SCHEME = http
 GSBC_GATEWAY = $gateway
+GSBC_DEVELOPMENT_BUILD = YES
 XC
 
 echo "== Publishing the app ($configuration)"

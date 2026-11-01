@@ -49,7 +49,8 @@ tools/dev/feed.sh delete hello                       # delete it
 tools/dev/feed.sh list
 ```
 
-Debug builds also have buttons there to queue a send that succeeds and one that fails, for the outbox.
+Builds from `deploy.sh` (Debug or AOT) are marked as dev builds: they get the development feed and buttons
+there to queue a send that succeeds and one that fails, for the outbox. Store builds never do.
 
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to
 the gateway, never from the WebView, so there's no CORS. iOS allows plain HTTP to local-network

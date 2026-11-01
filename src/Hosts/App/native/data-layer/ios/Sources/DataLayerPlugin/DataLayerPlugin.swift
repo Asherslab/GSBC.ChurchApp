@@ -110,7 +110,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func status(_ call: CAPPluginCall) {
-        call.resolve(["state": runtime.state.rawValue])
+        call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild])
     }
 
     @objc func readPage(_ call: CAPPluginCall) {

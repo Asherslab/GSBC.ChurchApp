@@ -9,6 +9,7 @@ window.gsbcNative = (() => {
     startSync: (feeds) => dataLayer().startSync({ feeds }),
     pull: () => dataLayer().pull(),
     status: () => dataLayer().status().then((result) => result.state),
+    isDevelopmentBuild: () => isNative() && dataLayer().status().then((result) => !!result.developmentBuild),
     readPage: (feed, order, descending, limit, offset, groupKey) =>
       dataLayer().readPage({ feed, order, descending, limit, offset, groupKey }).then((result) => result.json),
     storeInfo: () => dataLayer().storeInfo().then((result) => result.json),

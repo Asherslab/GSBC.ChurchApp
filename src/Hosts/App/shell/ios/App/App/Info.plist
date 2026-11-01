@@ -14,6 +14,8 @@
 	</array>
 	<key>GsbcGateway</key>
 	<string>$(GSBC_GATEWAY)</string>
+	<key>GsbcDevelopmentBuild</key>
+	<string>$(GSBC_DEVELOPMENT_BUILD)</string>
 	<key>GsbcGatewayScheme</key>
 	<string>$(GSBC_GATEWAY_SCHEME)</string>
 	<key>NSAppTransportSecurity</key>

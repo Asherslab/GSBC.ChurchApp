@@ -9,6 +9,7 @@ final class DataLayerRuntime: @unchecked Sendable {
     private(set) var engine: SyncEngine?
     private(set) var outbox: Outbox?
     private(set) var state = SyncState.stopped
+    let isDevelopmentBuild = (Bundle.main.infoDictionary?["GsbcDevelopmentBuild"] as? String) == "YES"
 
     var feedsChanged: ((Set<String>) -> Void)?
     var stateChanged: ((SyncState) -> Void)?

@@ -6,7 +6,13 @@ public sealed class NativeBridge(IJSRuntime js)
 {
     public bool IsNative { get; private set; }
 
-    public async Task InitialiseAsync() => IsNative = await js.InvokeAsync<bool>("gsbcNative.isNative");
+    public bool IsDevelopmentBuild { get; private set; }
+
+    public async Task InitialiseAsync()
+    {
+        IsNative = await js.InvokeAsync<bool>("gsbcNative.isNative");
+        IsDevelopmentBuild = IsNative && await js.InvokeAsync<bool>("gsbcNative.isDevelopmentBuild");
+    }
 
     public ValueTask<NativeUnaryResult> UnaryAsync(string method, byte[] request, CancellationToken cancellationToken) =>
         js.InvokeAsync<NativeUnaryResult>("gsbcNative.unary", cancellationToken, method, Convert.ToBase64String(request));

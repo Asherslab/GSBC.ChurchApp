@@ -6,6 +6,7 @@
 @implements IDisposable
 @inject ILocalFeeds Feeds
 @inject IOutbox Outbox
+@inject GSBC.ChurchApp.Platform.Client.Native.NativeBridge Bridge
 
 <h1>Storage</h1>
 
@@ -49,10 +50,11 @@ else
             }
         </ul>
     }
-#if DEBUG
-    <button @onclick="QueueTestSendAsync">Queue a test send</button>
-    <button @onclick="QueueFailingSendAsync">Queue a failing send</button>
-#endif
+    @if (Bridge.IsDevelopmentBuild)
+    {
+        <button @onclick="QueueTestSendAsync">Queue a test send</button>
+        <button @onclick="QueueFailingSendAsync">Queue a failing send</button>
+    }
 
     @if (_echo.Count > 0)
     {
@@ -106,11 +108,9 @@ else
         StateHasChanged();
     });
 
-#if DEBUG
     private async Task QueueTestSendAsync() => await Outbox.EnqueueAsync("/gsbc.accounts.Session/GetCurrent", []);
 
     private async Task QueueFailingSendAsync() => await Outbox.EnqueueAsync("/gsbc.development.Missing/Call", []);
-#endif
 
     private static string Size(long bytes) => bytes < 1024 ? $"{bytes} B" : $"{bytes / 1024.0:0.#} KB";
 
