@@ -3,6 +3,6 @@
 <nav>
     @foreach (NavEntry entry in Modules.Navigation)
     {
-        <NavLink href="@entry.Href">@entry.Title</NavLink>
+        <NavLink href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">@entry.Title</NavLink>
     }
 </nav>

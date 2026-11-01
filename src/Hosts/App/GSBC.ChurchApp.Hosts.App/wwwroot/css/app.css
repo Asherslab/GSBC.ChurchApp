@@ -1,0 +1,38 @@
+body {
+    margin: 0;
+    padding: calc(env(safe-area-inset-top) + 8px) 16px calc(env(safe-area-inset-bottom) + 16px);
+    font-family: -apple-system, system-ui, sans-serif;
+    -webkit-text-size-adjust: 100%;
+}
+
+nav {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+nav a,
+button {
+    min-height: 44px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #2a3d5e;
+    color: #fff;
+    font: inherit;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+nav a.active {
+    background: #009c8f;
+}
+
+button + button {
+    margin-left: 8px;
+}
+
+h1:focus {
+    outline: none;
+}
