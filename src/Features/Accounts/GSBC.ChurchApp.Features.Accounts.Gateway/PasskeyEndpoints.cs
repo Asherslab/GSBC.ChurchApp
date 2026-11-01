@@ -60,7 +60,9 @@ public static class PasskeyEndpoints
         RegisterRequest request, HttpContext http, SignInManager<AccountUser> signIn, UserManager<AccountUser> users,
         OneTimeCodes codes, AccountsAudit audit, AccountsDbContext db, CancellationToken cancellationToken)
     {
-        PasskeyAttestationResult attestation = await signIn.PerformPasskeyAttestationAsync(request.Credential);
+        PasskeyAttestationResult? attestation = await WithinCeremonyAsync(() => signIn.PerformPasskeyAttestationAsync(request.Credential));
+        if (attestation is null)
+            return CeremonyExpired();
         if (!attestation.Succeeded)
             return Results.Problem(attestation.Failure.Message, statusCode: StatusCodes.Status400BadRequest);
 
@@ -106,7 +108,9 @@ public static class PasskeyEndpoints
         SignInRequest request, HttpContext http, SignInManager<AccountUser> signIn, UserManager<AccountUser> users,
         AccountsAudit audit, AccountsDbContext db, CancellationToken cancellationToken)
     {
-        PasskeyAssertionResult<AccountUser> assertion = await signIn.PerformPasskeyAssertionAsync(request.Credential);
+        PasskeyAssertionResult<AccountUser>? assertion = await WithinCeremonyAsync(() => signIn.PerformPasskeyAssertionAsync(request.Credential));
+        if (assertion is null)
+            return CeremonyExpired();
         if (!assertion.Succeeded)
             return Results.Problem("That passkey didn't work. Try again.", statusCode: StatusCodes.Status401Unauthorized);
         if (!await signIn.CanSignInAsync(assertion.User))
@@ -118,6 +122,21 @@ public static class PasskeyEndpoints
         await db.SaveChangesAsync(cancellationToken);
         return Results.Ok(new { signedIn = true });
     }
+
+    private static async Task<T?> WithinCeremonyAsync<T>(Func<Task<T>> step) where T : class
+    {
+        try
+        {
+            return await step();
+        }
+        catch (InvalidOperationException)
+        {
+            return null;
+        }
+    }
+
+    private static IResult CeremonyExpired() =>
+        Results.Problem("That took too long. Start again.", statusCode: StatusCodes.Status401Unauthorized);
 
     private static async Task<AccountUser?> UserForTicketAsync(
         string ticket, UserManager<AccountUser> users, OneTimeCodes codes, CancellationToken cancellationToken) =>

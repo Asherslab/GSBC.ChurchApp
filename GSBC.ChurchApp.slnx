@@ -64,6 +64,10 @@
   <Folder Name="/tests/Architecture/">
     <Project Path="tests/Architecture/GSBC.ChurchApp.Architecture.Tests/GSBC.ChurchApp.Architecture.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/Features/" />
+  <Folder Name="/tests/Features/Accounts/">
+    <Project Path="tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway.Tests/GSBC.ChurchApp.Features.Accounts.Gateway.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Contracts.Tests/GSBC.ChurchApp.Platform.Contracts.Tests.csproj" />

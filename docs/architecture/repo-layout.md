@@ -96,6 +96,7 @@ flowchart LR
         PermissionsTests["Platform.Permissions.Tests"]
         ContractsTests["Platform.Contracts.Tests"]
         ApiTests["Platform.Api.Tests"]
+        GatewayTests["Features.Accounts.Gateway.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
@@ -121,6 +122,7 @@ flowchart LR
     PermissionsTests --> PlatformPermissions
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi
+    GatewayTests --> AccountsGateway
 ```
 
 At run time:
@@ -164,6 +166,7 @@ flowchart LR
 | `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
+| `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Sync against a real Postgres (in a container): pruning, compaction and resets converge every phone | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too | No |
 
