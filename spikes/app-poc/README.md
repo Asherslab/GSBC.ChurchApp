@@ -354,7 +354,7 @@ controls, haptics, YouTube in the in-app browser and the hand-off to the YouTube
 visual system), `.impeccable/surfaces/spikes-app-poc-app.md` (the bulletin direction), and
 `.impeccable/mocks/decision/` (the three original options the owner picked from).
 
-**Not for the repo:** `GSBC Logo Pack 2022.zip` in the repo root is the church's original logo pack
+**Not for the repo:** `reference/GSBC Logo Pack 2022.zip` is the church's original logo pack
 (gitignored); the app uses only files cut from it in `wwwroot/img`. Never redraw the logo.
 
 ## Results

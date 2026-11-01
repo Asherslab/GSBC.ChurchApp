@@ -57,7 +57,7 @@ is the centre of gravity (owner, 2026-10-26).
 
 ## Evidence on Hand
 
-- Logo pack and brand guide: `GSBC Logo Pack 2022.zip` (untracked, not for the public repo).
+- Logo pack and brand guide: `reference/GSBC Logo Pack 2022.zip` (gitignored, not for the public repo).
 - Live sermon feed: https://baptist.com.au/podcasts/media.rss
 - The 25 Oct 2026 bulletin as screens in the owner's recording of the Tithe.ly app.
 - No event data, photography of the congregation, or testimonials yet; do not invent them.

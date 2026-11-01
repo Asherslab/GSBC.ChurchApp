@@ -11,7 +11,7 @@ a printed map someone redraws. The app has one interactive map, and any feature 
 
 ## The map is drawn, not a picture
 
-The site plan's Illustrator file (`LIFE Groups_Room location map_2026_Round 1.ai`) is PDF-compatible
+The site plan's Illustrator file (`reference/LIFE Groups_Room location map_2026_Round 1.ai`, gitignored) is PDF-compatible
 and has named layers: `Map Content` (ground, paths, buildings), `Building Labels` (labels, numbers,
 icons), `Layer 24` (the Life Groups legend), plus hidden ones: `Room Numbers`, `Trees` and the
 `Proposed …` building layers.
