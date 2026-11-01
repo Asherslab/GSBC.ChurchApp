@@ -1,7 +1,8 @@
 # Identity and passkeys
 
 One sign-in for everyone: members, Life Group leaders and staff, in the app and the admin panel
-(requirement B). Being staff is a set of permissions ([permissions.md](permissions.md)), not a
+(requirement B). **Everyone can sign in from v1** (decided 2026-11-01), so members create their own
+accounts as well as being invited. Being staff is a set of permissions ([permissions.md](permissions.md)), not a
 different kind of account. Reading public content still needs no account (SPEC ยง3).
 
 ## Decided
@@ -10,6 +11,11 @@ different kind of account. Reading public content still needs no account (SPEC ย
 - **Relying party: `baptist.com.au`** (decided 2026-11-01). It covers the admin panel, the app and
   any future site on any subdomain. It is permanent: a passkey can never move to another domain.
   The RP ID and the allowed origins are configuration, never read from a request header.
+- **Dev has its own relying party: `dev.baptist.com.au`** (decided 2026-11-01), reached through the dev
+  proxy ([tools/dev-proxy](../../tools/dev-proxy/README.md)). Test passkeys never sit beside real ones
+  in people's keychains. On a dev Mac with no tunnel, the browser accepts `localhost` as the RP.
+- **Bundle id: `au.com.baptist.churchapp`** (decided 2026-11-01), so the app id in the association
+  files is `<team id>.au.com.baptist.churchapp`.
 - **The ceremonies are the approved non-gRPC paths** in AGENTS.md: begin/complete for sign-in and for
   registering a passkey, at the gateway, called by the browser's WebAuthn API and by the app's
   native layer (the platform passkey APIs produce the same JSON).
@@ -21,7 +27,12 @@ different kind of account. Reading public content still needs no account (SPEC ย
 - `https://baptist.com.au/.well-known/apple-app-site-association`, served at the apex in front of the
   website (a Cloudflare rule or Worker), with `webcredentials` (passkeys) and `applinks` (invitation
   and recovery links open the app). It needs the Apple team id, so it waits for enrolment.
-- The app's Associated Domains entitlement: `webcredentials:baptist.com.au`, `applinks:baptist.com.au`.
+- The app's Associated Domains entitlement: `webcredentials:baptist.com.au`, `applinks:baptist.com.au`
+  (and `dev.baptist.com.au` for dev builds). Associated Domains needs the paid developer account, so
+  passkeys in the app wait for the enrolment; passkeys in the browser can be built and tested first.
+- Dev's association file is served by the dev gateway as a static file at
+  `dev.baptist.com.au/.well-known/apple-app-site-association`, written from the dev Mac's team id
+  (gitignored), so it needs nothing from the apex website.
 - Android's `assetlinks.json` at the same apex, when Android is built.
 
 ## Sessions
@@ -66,4 +77,5 @@ church directory (SPEC ยง1's non-goals). A link to an Elvanto person can be adde
 ## Open
 
 - The email provider for invitations and recovery codes (an outbound call, so not an API path).
-- Whether members sign in from v1, or leaders and staff first.
+- Self-service sign-up: whether its passkey ceremony is covered by the approved "registering a
+  passkey" paths in AGENTS.md, or needs its own approval.

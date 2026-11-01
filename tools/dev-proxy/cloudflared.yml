@@ -1,0 +1,11 @@
+tunnel: gsbc-dev
+credentials-file: /Users/YOU/.cloudflared/TUNNEL-ID.json
+
+ingress:
+  - hostname: dev.baptist.com.au
+    service: http://DEV-MAC.local:5300
+    originRequest:
+      connectTimeout: 10s
+      keepAliveTimeout: 90s
+      disableChunkedEncoding: false
+  - service: http_status:404

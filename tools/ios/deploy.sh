@@ -19,7 +19,10 @@ done
 team_file="$shell/.team"
 [ -s "$team_file" ] || { echo "Put your Apple team id in $team_file (Xcode → Settings → Accounts). It is gitignored."; exit 1; }
 
-gateway="${GSBC_GATEWAY:-$(scutil --get LocalHostName).local:5300}"
+gateway="${GSBC_GATEWAY:-http://$(scutil --get LocalHostName).local:5300}"
+case "$gateway" in http://*|https://*) ;; *) gateway="http://$gateway" ;; esac
+gateway_scheme="${gateway%%://*}"
+gateway_host="${gateway#*://}"
 bundle_id="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["appId"])' "$shell/capacitor.config.json")"
 
 find_device() {
@@ -56,13 +59,13 @@ else
   open -a Simulator
 fi
 
-curl -s -o /dev/null --max-time 2 "http://$gateway/" \
-  || echo "Note: nothing answers at http://$gateway yet. Start the backend: dotnet run --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost"
+curl -s -o /dev/null --max-time 5 "$gateway/" \
+  || echo "Note: nothing answers at $gateway yet. Start the backend: dotnet run --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost"
 
 cat > "$shell/ios/dev.xcconfig" <<XC
 DEVELOPMENT_TEAM = $(tr -d '[:space:]' < "$team_file")
-GSBC_GATEWAY_SCHEME = http
-GSBC_GATEWAY = $gateway
+GSBC_GATEWAY_SCHEME = $gateway_scheme
+GSBC_GATEWAY = $gateway_host
 GSBC_DEVELOPMENT_BUILD = YES
 XC
 
@@ -81,7 +84,7 @@ xcodebuild -project "$shell/ios/App/App.xcodeproj" -scheme App -configuration De
   -allowProvisioningUpdates -allowProvisioningDeviceRegistration -quiet build 2>&1 \
   | { grep -v "IDERunDestination: Supported platforms" || true; }
 
-echo "== Installing and launching (gateway: http://$gateway)"
+echo "== Installing and launching (gateway: $gateway)"
 if [ "$target" = device ]; then
   xcrun devicectl device install app --device "$device" "$root/out/ios-dd/Build/Products/Debug-iphoneos/App.app" >/dev/null
   xcrun devicectl device process launch --device "$device" --terminate-existing "$bundle_id" >/dev/null

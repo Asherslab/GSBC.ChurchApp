@@ -74,7 +74,7 @@ rules, but this plan never does it (§4), so it is not a constraint.
 - **About / contact:** location, map, staff and beliefs.
 
 No accounts are required to read anything public. One passkey sign-in serves members, leaders and
-staff, in the app and the admin panel; it unlocks what is personal or private (your prayer requests,
+staff from v1, in the app and the admin panel; it unlocks what is personal or private (your prayer requests,
 a ministry's members-only news) and whatever your permissions allow
 ([identity](docs/architecture/identity.md), [permissions](docs/architecture/permissions.md)).
 
@@ -654,6 +654,11 @@ Decided, for the record:
 - **Sermons:** hosted in Tithe.ly, probably consumed through its RSS feed. The detail is settled when
   that feature is built.
 - **Android without Google Play:** read-only, no fallback (§6).
+- **Bundle id:** `au.com.baptist.churchapp` (2026-11-01).
+- **Sign-in:** everyone from v1, members included (2026-11-01); see
+  [identity.md](docs/architecture/identity.md).
+- **Dev environment:** a Cloudflare tunnel from the Mac mini to a dev Mac, at `dev.baptist.com.au`,
+  which is also dev's passkey domain (2026-11-01); see [tools/dev-proxy](tools/dev-proxy/README.md).
 
 ## 13. Milestones
 
