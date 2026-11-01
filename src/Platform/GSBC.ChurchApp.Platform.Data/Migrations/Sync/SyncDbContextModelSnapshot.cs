@@ -89,6 +89,22 @@ namespace GSBC.ChurchApp.Platform.Data.Migrations.Sync
 
                     b.ToTable("feed_changes", "sync");
                 });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.FeedHorizon", b =>
+                {
+                    b.Property<string>("Feed")
+                        .HasColumnType("text")
+                        .HasColumnName("feed");
+
+                    b.Property<long>("Cursor")
+                        .HasColumnType("bigint")
+                        .HasColumnName("cursor");
+
+                    b.HasKey("Feed")
+                        .HasName("pk_feed_horizons");
+
+                    b.ToTable("feed_horizons", "sync");
+                });
 #pragma warning restore 612, 618
         }
     }

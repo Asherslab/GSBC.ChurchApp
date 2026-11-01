@@ -25,11 +25,12 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
 1. **Skeleton** (done 2026-11-01): the layout, the AOT rules and baseline, the gRPC-only and tier
    tests, Sync's change log and `NOTIFY` trigger, the gateway routing gRPC and gRPC-Web, one
    end-to-end call (`Accounts.Session.GetCurrent`).
-2. **Native data layer** on a real iPhone (built: transport, GRDB store, pull and live `Watch` with
-   `LISTEN` fan-out, outbox, the Storage screen and the dev loop; still to do: background refresh,
-   per-feed caps, the server's retention and reset horizon, and the soak test. Silent push waits for
-   the Apple enrolment and an APNs key), through Cloudflare (SPEC §5's five open points): Transport,
-   Store, Sync and Outbox in Swift; the bridging `CallInvoker`; `Watch` fan-out from `LISTEN`.
+2. **Native data layer** on a real iPhone. Built: gRPC-Web transport, GRDB store with per-feed caps,
+   pull and live `Watch` with `LISTEN` fan-out, outbox, background refresh, server-side compaction,
+   pruning and reset horizon, the Storage screen and the dev loop; tested by the wire-format pair, the
+   soak test and a Postgres retention test. Still to do: measure background refresh on a real phone,
+   and test through Cloudflare and Traefik (needs the dev proxy). Silent push waits for the Apple
+   enrolment and an APNs key.
 3. **Accounts:** passkey ceremonies at the gateway (browser and native), sessions, the
    session-to-token swap, invitations and recovery ([identity.md](architecture/identity.md)).
 4. **Access:** roles, assignments, the cached evaluator, the admin screens

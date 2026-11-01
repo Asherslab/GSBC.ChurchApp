@@ -188,6 +188,8 @@ rules:
 - **Memory:** bridge messages are paged and size-limited, and streams arrive in chunks.
 - **Proven, not assumed:** a soak test replays months of simulated changes (window churn, deletes,
   resets, an app update that drops a feed) and asserts the store's rows and file size stay bounded.
+  *Built 2026-11-01:* `FeedStoreSoakTests` (Swift) for the phone and `FeedRetentionTests` (Postgres in a
+  container) for the server; pruning runs every 6 hours, one replica at a time.
   Settings shows the space the app uses.
 
 ### Live updates

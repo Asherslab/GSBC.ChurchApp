@@ -23,3 +23,14 @@ jobs:
 
       - name: Publish the app (AOT) and check its warnings against the baseline
         run: tools/aot-warnings/check.sh
+
+  data-layer:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test the native data layer's core
+        working-directory: src/Hosts/App/native/data-layer
+        run: |
+          device=$(xcrun simctl list devices available -j | python3 -c 'import json,sys; d=[x for r in json.load(sys.stdin)["devices"].values() for x in r if x["name"].startswith("iPhone")]; print(d[-1]["udid"])')
+          xcodebuild test -scheme GsbcDataLayer -destination "id=$device"

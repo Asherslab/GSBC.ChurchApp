@@ -40,6 +40,9 @@ public static class PlatformApiExtensions
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<FeedChangeBroadcaster>();
         services.AddHostedService<FeedChangeListener>();
+        services.AddScoped<FeedRetention>();
+        services.AddHostedService<FeedRetentionService>();
+        services.TryAddSingleton(TimeProvider.System);
         services.AddSyncData();
 
         services

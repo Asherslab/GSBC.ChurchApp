@@ -60,14 +60,28 @@ public sealed class SyncService(
         Dictionary<string, long> cursors, IEnumerable<string> due, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
         List<FeedBatch> batches = [];
+        Dictionary<string, long> horizons = await db.FeedHorizons.AsNoTracking()
+            .ToDictionaryAsync(horizon => horizon.Feed, horizon => horizon.Cursor, cancellationToken);
+
         foreach (string name in due)
         {
             if (!feeds.ByName.TryGetValue(name, out FeedDefinition? feed))
                 continue;
 
-            FeedBatch batch = await CanSeeFeedAsync(feed, user, cancellationToken)
-                ? await ReadBatchAsync(feed, cursors[name], user, cancellationToken)
-                : new FeedBatch { Feed = feed.Name, Reset = true };
+            bool behindHorizon = cursors[name] > 0 && cursors[name] < horizons.GetValueOrDefault(name);
+            FeedBatch batch;
+            if (!await CanSeeFeedAsync(feed, user, cancellationToken))
+            {
+                batch = new FeedBatch { Feed = feed.Name, Reset = true };
+            }
+            else if (behindHorizon)
+            {
+                batch = new FeedBatch { Feed = feed.Name, Reset = true, Cursor = 0, HasMore = true };
+            }
+            else
+            {
+                batch = await ReadBatchAsync(feed, cursors[name], user, cancellationToken);
+            }
 
             if (batch.Reset || batch.Cursor != cursors[name])
             {
@@ -99,7 +113,12 @@ public sealed class SyncService(
             Feed = feed.Name,
             Cursor = rows.Count > 0 ? rows[^1].Cursor : after,
             HasMore = hasMore,
-            Changes = visible.Select(ToMessage).ToList(),
+            Changes = visible
+                .GroupBy(change => change.RecordId)
+                .Select(versions => versions.MaxBy(change => change.Cursor)!)
+                .OrderBy(change => change.Cursor)
+                .Select(ToMessage)
+                .ToList(),
         };
     }
 
