@@ -13,12 +13,20 @@ let package = Package(
     ],
     targets: [
         .target(
+            name: "DataLayerCore",
+            dependencies: [.product(name: "GRDB", package: "GRDB.swift")],
+            path: "ios/Sources/DataLayerCore"),
+        .target(
             name: "DataLayerPlugin",
             dependencies: [
+                "DataLayerCore",
                 .product(name: "Capacitor", package: "capacitor-swift-pm"),
-                .product(name: "Cordova", package: "capacitor-swift-pm"),
-                .product(name: "GRDB", package: "GRDB.swift")
+                .product(name: "Cordova", package: "capacitor-swift-pm")
             ],
-            path: "ios/Sources/DataLayerPlugin")
+            path: "ios/Sources/DataLayerPlugin"),
+        .testTarget(
+            name: "DataLayerCoreTests",
+            dependencies: ["DataLayerCore", .product(name: "GRDB", package: "GRDB.swift")],
+            path: "ios/Tests/DataLayerCoreTests")
     ]
 )

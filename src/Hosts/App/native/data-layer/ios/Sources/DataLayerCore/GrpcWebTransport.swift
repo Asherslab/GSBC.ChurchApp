@@ -1,21 +1,31 @@
 import Foundation
 
-struct GrpcResult {
-    let status: Int
-    let message: String
-    let body: Data
+public struct GrpcResult {
+    public let status: Int
+    public let message: String
+    public let body: Data
+
+    public init(status: Int, message: String, body: Data) {
+        self.status = status
+        self.message = message
+        self.body = body
+    }
 }
 
-struct GrpcError: Error {
-    let status: Int
-    let message: String
+public struct GrpcError: Error {
+    public let status: Int
+    public let message: String
 }
 
-struct GrpcWebTransport: Sendable {
-    static let ok = 0
-    static let unknown = 2
-    static let unimplemented = 12
-    static let unavailable = 14
+public struct GrpcWebTransport: Sendable {
+    public init(gateway: URL) {
+        self.gateway = gateway
+    }
+
+    public static let ok = 0
+    public static let unknown = 2
+    public static let unimplemented = 12
+    public static let unavailable = 14
     private static let httpNotFound = 404
 
     private static let contentType = "application/grpc-web+proto"
@@ -23,9 +33,9 @@ struct GrpcWebTransport: Sendable {
     private static let frameHeaderLength = 5
     private static let streamIdleTimeout: TimeInterval = 90
 
-    let gateway: URL
+    public let gateway: URL
 
-    func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
+    public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
         let (data, response) = try await URLSession.shared.data(for: try request(method, message, headers))
         let http = try Self.successful(response)
 
@@ -43,7 +53,7 @@ struct GrpcWebTransport: Sendable {
         return GrpcResult(status: status, message: message, body: body)
     }
 
-    func serverStream(method: String, message: Data) -> AsyncThrowingStream<Data, Error> {
+    public func serverStream(method: String, message: Data) -> AsyncThrowingStream<Data, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {

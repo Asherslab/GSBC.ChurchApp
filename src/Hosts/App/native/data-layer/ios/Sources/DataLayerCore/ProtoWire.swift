@@ -1,19 +1,19 @@
 import Foundation
 
-struct ProtoWriter {
+public struct ProtoWriter {
     private(set) var data = Data()
 
-    mutating func string(_ field: Int, _ value: String) {
+    public mutating func string(_ field: Int, _ value: String) {
         bytes(field, Data(value.utf8))
     }
 
-    mutating func bytes(_ field: Int, _ value: Data) {
+    public mutating func bytes(_ field: Int, _ value: Data) {
         tag(field, wireType: 2)
         varint(UInt64(value.count))
         data.append(value)
     }
 
-    mutating func int64(_ field: Int, _ value: Int64) {
+    public mutating func int64(_ field: Int, _ value: Int64) {
         guard value != 0 else { return }
         tag(field, wireType: 0)
         varint(UInt64(bitPattern: value))
@@ -33,27 +33,27 @@ struct ProtoWriter {
     }
 }
 
-struct ProtoError: Error {
-    let reason: String
+public struct ProtoError: Error {
+    public let reason: String
 }
 
-struct ProtoReader {
+public struct ProtoReader {
     private let data: Data
     private var offset: Data.Index
 
-    init(_ data: Data) {
+    public init(_ data: Data) {
         self.data = data
         self.offset = data.startIndex
     }
 
-    var isAtEnd: Bool { offset >= data.endIndex }
+    public var isAtEnd: Bool { offset >= data.endIndex }
 
-    mutating func nextField() throws -> (field: Int, wireType: Int) {
+    public mutating func nextField() throws -> (field: Int, wireType: Int) {
         let tag = try varint()
         return (Int(tag >> 3), Int(tag & 0x7))
     }
 
-    mutating func varint() throws -> UInt64 {
+    public mutating func varint() throws -> UInt64 {
         var result: UInt64 = 0
         var shift: UInt64 = 0
         while true {
@@ -66,11 +66,11 @@ struct ProtoReader {
         }
     }
 
-    mutating func int64() throws -> Int64 { Int64(bitPattern: try varint()) }
+    public mutating func int64() throws -> Int64 { Int64(bitPattern: try varint()) }
 
-    mutating func bool() throws -> Bool { try varint() != 0 }
+    public mutating func bool() throws -> Bool { try varint() != 0 }
 
-    mutating func bytes() throws -> Data {
+    public mutating func bytes() throws -> Data {
         let length = Int(try varint())
         guard data.endIndex - offset >= length else { throw ProtoError(reason: "truncated field") }
         let value = data[offset..<(offset + length)]
@@ -78,9 +78,9 @@ struct ProtoReader {
         return Data(value)
     }
 
-    mutating func string() throws -> String { String(decoding: try bytes(), as: UTF8.self) }
+    public mutating func string() throws -> String { String(decoding: try bytes(), as: UTF8.self) }
 
-    mutating func skip(wireType: Int) throws {
+    public mutating func skip(wireType: Int) throws {
         switch wireType {
         case 0: _ = try varint()
         case 1: offset += 8

@@ -92,6 +92,7 @@ flowchart LR
     subgraph Tests
         ArchitectureTests["Architecture.Tests"]
         PermissionsTests["Platform.Permissions.Tests"]
+        ContractsTests["Platform.Contracts.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
@@ -113,6 +114,7 @@ flowchart LR
 
     ArchitectureTests --> HostsApi & HostsGateway
     PermissionsTests --> PlatformPermissions
+    ContractsTests --> PlatformContracts
 ```
 
 At run time:
@@ -154,9 +156,12 @@ flowchart LR
 | `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, migrator, API and gateway together | No |
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
+| `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
-(the Capacitor plugin: gRPC-Web transport, GRDB store, sync engine and outbox in Swift; Kotlin stubbed until Android).
+(the Capacitor plugin: `DataLayerCore` holds the gRPC-Web transport, GRDB store, sync engine and outbox,
+with its own tests (`xcodebuild test -scheme GsbcDataLayer`); `DataLayerPlugin` is the thin Capacitor
+bridge over it; Kotlin is stubbed until Android).
 
 ## Naming
 

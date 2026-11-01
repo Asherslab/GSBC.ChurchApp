@@ -1,34 +1,54 @@
 import Foundation
 
-struct FeedChange {
-    var id = ""
-    var version: Int64 = 0
-    var deleted = false
-    var payload = Data()
-    var sortKey: String?
-    var startsAt: Int64?
-    var endsAt: Int64?
-    var groupKey: String?
+public struct FeedChange {
+    public var id = ""
+    public var version: Int64 = 0
+    public var deleted = false
+    public var payload = Data()
+    public var sortKey: String?
+    public var startsAt: Int64?
+    public var endsAt: Int64?
+    public var groupKey: String?
+
+    public init(id: String = "", version: Int64 = 0, deleted: Bool = false, payload: Data = Data(),
+                sortKey: String? = nil, startsAt: Int64? = nil, endsAt: Int64? = nil, groupKey: String? = nil) {
+        self.id = id
+        self.version = version
+        self.deleted = deleted
+        self.payload = payload
+        self.sortKey = sortKey
+        self.startsAt = startsAt
+        self.endsAt = endsAt
+        self.groupKey = groupKey
+    }
 }
 
-struct FeedBatch {
-    var feed = ""
-    var cursor: Int64 = 0
-    var reset = false
-    var changes: [FeedChange] = []
-    var hasMore = false
+public struct FeedBatch {
+    public var feed = ""
+    public var cursor: Int64 = 0
+    public var reset = false
+    public var changes: [FeedChange] = []
+    public var hasMore = false
+
+    public init(feed: String = "", cursor: Int64 = 0, reset: Bool = false, changes: [FeedChange] = [], hasMore: Bool = false) {
+        self.feed = feed
+        self.cursor = cursor
+        self.reset = reset
+        self.changes = changes
+        self.hasMore = hasMore
+    }
 }
 
-struct WatchEvent {
-    var batches: [FeedBatch] = []
-    var isHeartbeat = false
+public struct WatchEvent {
+    public var batches: [FeedBatch] = []
+    public var isHeartbeat = false
 }
 
-enum SyncMessages {
-    static let pullMethod = "/gsbc.sync.Sync/Pull"
-    static let watchMethod = "/gsbc.sync.Sync/Watch"
+public enum SyncMessages {
+    public static let pullMethod = "/gsbc.sync.Sync/Pull"
+    public static let watchMethod = "/gsbc.sync.Sync/Watch"
 
-    static func cursorsRequest(_ cursors: [String: Int64]) -> Data {
+    public static func cursorsRequest(_ cursors: [String: Int64]) -> Data {
         var request = ProtoWriter()
         for (feed, cursor) in cursors.sorted(by: { $0.key < $1.key }) {
             var entry = ProtoWriter()
@@ -39,11 +59,11 @@ enum SyncMessages {
         return request.data
     }
 
-    static func pullReply(_ data: Data) throws -> [FeedBatch] {
+    public static func pullReply(_ data: Data) throws -> [FeedBatch] {
         try watchEvent(data).batches
     }
 
-    static func watchEvent(_ data: Data) throws -> WatchEvent {
+    public static func watchEvent(_ data: Data) throws -> WatchEvent {
         var reader = ProtoReader(data)
         var event = WatchEvent()
         while !reader.isAtEnd {

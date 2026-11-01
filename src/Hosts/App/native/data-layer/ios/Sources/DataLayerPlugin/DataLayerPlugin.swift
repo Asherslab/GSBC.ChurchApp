@@ -1,4 +1,5 @@
 import Capacitor
+import DataLayerCore
 import UIKit
 
 @objc(DataLayerPlugin)

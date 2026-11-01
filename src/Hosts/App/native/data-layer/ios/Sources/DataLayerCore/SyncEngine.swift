@@ -1,13 +1,13 @@
 import Foundation
 
-enum SyncState: String {
+public enum SyncState: String {
     case stopped
     case connecting
     case live
     case offline
 }
 
-actor SyncEngine {
+public actor SyncEngine {
     private static let maximumBackoff: Double = 30
 
     private let transport: GrpcWebTransport
@@ -19,7 +19,7 @@ actor SyncEngine {
     private var watching: Task<Void, Never>?
     private var state = SyncState.stopped
 
-    init(transport: GrpcWebTransport, store: FeedStore,
+    public init(transport: GrpcWebTransport, store: FeedStore,
          onFeedsChanged: @escaping @Sendable (Set<String>) -> Void,
          onState: @escaping @Sendable (SyncState) -> Void) {
         self.transport = transport
@@ -28,24 +28,24 @@ actor SyncEngine {
         self.onState = onState
     }
 
-    func start(feeds: [String]) throws {
+    public func start(feeds: [String]) throws {
         self.feeds = feeds
-        try store.keepOnly(feeds: feeds)
+        try store.register(feeds: feeds)
         resume()
     }
 
-    func resume() {
+    public func resume() {
         guard watching == nil, !feeds.isEmpty else { return }
         watching = Task { await self.watchUntilCancelled() }
     }
 
-    func pause() {
+    public func pause() {
         watching?.cancel()
         watching = nil
         report(.stopped)
     }
 
-    func pull() async throws {
+    public func pull() async throws {
         var due = feeds
         while !due.isEmpty {
             let cursors = try store.cursors(for: due)

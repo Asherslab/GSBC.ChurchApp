@@ -1,17 +1,17 @@
 import Foundation
 import GRDB
 
-struct OutboxEntry {
-    let id: String
-    let method: String
-    let createdAt: Int64
-    let attempts: Int
-    let lastError: String?
-    let failed: Bool
+public struct OutboxEntry {
+    public let id: String
+    public let method: String
+    public let createdAt: Int64
+    public let attempts: Int
+    public let lastError: String?
+    public let failed: Bool
 }
 
-actor Outbox {
-    static let requestIdHeader = "gsbc-request-id"
+public actor Outbox {
+    public static let requestIdHeader = "gsbc-request-id"
 
     private static let giveUpAfterMilliseconds: Int64 = 3 * 24 * 60 * 60 * 1000
     private static let maximumBackoffSeconds: Double = 60 * 60
@@ -23,13 +23,13 @@ actor Outbox {
     private var draining = false
     private var wake: Task<Void, Never>?
 
-    init(database: DatabaseQueue, transport: GrpcWebTransport, onChanged: @escaping @Sendable () -> Void) {
+    public init(database: DatabaseQueue, transport: GrpcWebTransport, onChanged: @escaping @Sendable () -> Void) {
         self.database = database
         self.transport = transport
         self.onChanged = onChanged
     }
 
-    func enqueue(method: String, request: Data) throws -> String {
+    public func enqueue(method: String, request: Data) throws -> String {
         let id = UUID().uuidString
         let now = Self.now()
         try database.write { db in
@@ -41,7 +41,7 @@ actor Outbox {
         return id
     }
 
-    func entries() throws -> [OutboxEntry] {
+    public func entries() throws -> [OutboxEntry] {
         try database.read { db in
             try Row.fetchAll(db, sql: "SELECT id, method, created_at, attempts, last_error, failed FROM outbox ORDER BY created_at").map { row in
                 OutboxEntry(id: row["id"], method: row["method"], createdAt: row["created_at"],
@@ -50,7 +50,7 @@ actor Outbox {
         }
     }
 
-    func retry(id: String) throws {
+    public func retry(id: String) throws {
         try database.write { db in
             try db.execute(sql: "UPDATE outbox SET failed = 0, attempts = 0, created_at = ?, next_attempt_at = ? WHERE id = ?",
                            arguments: [Self.now(), Self.now(), id])
@@ -59,12 +59,12 @@ actor Outbox {
         Task { await drain() }
     }
 
-    func discard(id: String) throws {
+    public func discard(id: String) throws {
         try database.write { db in try db.execute(sql: "DELETE FROM outbox WHERE id = ?", arguments: [id]) }
         onChanged()
     }
 
-    func drain() async {
+    public func drain() async {
         guard !draining else { return }
         draining = true
         defer { draining = false }

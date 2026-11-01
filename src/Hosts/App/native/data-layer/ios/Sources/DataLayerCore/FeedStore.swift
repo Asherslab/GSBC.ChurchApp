@@ -1,35 +1,52 @@
 import Foundation
 import GRDB
+import os
 
-struct StoredRecord {
-    let id: String
-    let version: Int64
-    let payload: Data
-    let sortKey: String?
-    let startsAt: Int64?
-    let endsAt: Int64?
-    let groupKey: String?
+public struct StoredRecord {
+    public let id: String
+    public let version: Int64
+    public let payload: Data
+    public let sortKey: String?
+    public let startsAt: Int64?
+    public let endsAt: Int64?
+    public let groupKey: String?
 }
 
-struct FeedInfo {
-    let feed: String
-    let rows: Int
-    let bytes: Int
-    let cursor: Int64
+public struct FeedInfo {
+    public let feed: String
+    public let rows: Int
+    public let bytes: Int
+    public let cursor: Int64
 }
 
-enum FeedOrder: String {
+public struct FeedLimits: Sendable {
+    public static let standard = FeedLimits(maximumRows: 5_000, maximumBytes: 20 * 1024 * 1024)
+
+    public let maximumRows: Int
+    public let maximumBytes: Int
+
+    public init(maximumRows: Int, maximumBytes: Int) {
+        self.maximumRows = maximumRows
+        self.maximumBytes = maximumBytes
+    }
+}
+
+public enum FeedOrder: String {
     case sortKey
     case startsAt
 }
 
-final class FeedStore: Sendable {
-    private static let vacuumAfterDeletes = 200
+public final class FeedStore: Sendable {
+    private static let reclaimAtFreePages = 64
 
-    let database: DatabaseQueue
-    let fileURL: URL
+    private static let log = Logger(subsystem: "au.com.baptist.churchapp", category: "FeedStore")
 
-    init(directory: URL) throws {
+    public let database: DatabaseQueue
+    public let fileURL: URL
+    private let limits: FeedLimits
+
+    public init(directory: URL, limits: FeedLimits = .standard) throws {
+        self.limits = limits
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         var excluded = directory
         var values = URLResourceValues()
@@ -84,10 +101,16 @@ final class FeedStore: Sendable {
                 CREATE INDEX outbox_due ON outbox (failed, next_attempt_at);
                 """)
         }
+        migrator.registerMigration("v3-stored-cursor") { db in
+            try db.execute(sql: """
+                ALTER TABLE records ADD COLUMN stored_cursor INTEGER NOT NULL DEFAULT 0;
+                CREATE INDEX records_by_stored_cursor ON records (feed, stored_cursor);
+                """)
+        }
         return migrator
     }
 
-    func cursors(for feeds: [String]) throws -> [String: Int64] {
+    public func cursors(for feeds: [String]) throws -> [String: Int64] {
         try database.read { db in
             var cursors = Dictionary(uniqueKeysWithValues: feeds.map { ($0, Int64(0)) })
             for row in try Row.fetchAll(db, sql: "SELECT feed, cursor FROM cursors") {
@@ -98,30 +121,28 @@ final class FeedStore: Sendable {
         }
     }
 
-    func apply(_ batches: [FeedBatch]) throws -> Set<String> {
+    public func apply(_ batches: [FeedBatch]) throws -> Set<String> {
         var changed = Set<String>()
-        var deletes = 0
         try database.write { db in
             for batch in batches {
                 if batch.reset {
                     try db.execute(sql: "DELETE FROM records WHERE feed = ?", arguments: [batch.feed])
-                    deletes += db.changesCount
                     changed.insert(batch.feed)
                 }
                 for change in batch.changes {
                     if change.deleted {
                         try db.execute(sql: "DELETE FROM records WHERE feed = ? AND id = ?", arguments: [batch.feed, change.id])
-                        deletes += db.changesCount
                     } else {
                         try db.execute(sql: """
-                            INSERT INTO records (feed, id, version, payload, sort_key, starts_at, ends_at, group_key)
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                            INSERT INTO records (feed, id, version, payload, sort_key, starts_at, ends_at, group_key, stored_cursor)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                             ON CONFLICT (feed, id) DO UPDATE SET
                                 version = excluded.version, payload = excluded.payload, sort_key = excluded.sort_key,
-                                starts_at = excluded.starts_at, ends_at = excluded.ends_at, group_key = excluded.group_key
+                                starts_at = excluded.starts_at, ends_at = excluded.ends_at, group_key = excluded.group_key,
+                                stored_cursor = excluded.stored_cursor
                             WHERE excluded.version > records.version
                             """, arguments: [batch.feed, change.id, change.version, change.payload,
-                                             change.sortKey, change.startsAt, change.endsAt, change.groupKey])
+                                             change.sortKey, change.startsAt, change.endsAt, change.groupKey, batch.cursor])
                     }
                     changed.insert(batch.feed)
                 }
@@ -130,24 +151,50 @@ final class FeedStore: Sendable {
                     ON CONFLICT (feed) DO UPDATE SET cursor = excluded.cursor
                     """, arguments: [batch.feed, batch.cursor])
             }
+            for feed in changed {
+                try enforceLimits(db, feed: feed)
+            }
         }
-        if deletes >= Self.vacuumAfterDeletes { try reclaimSpace() }
+        try reclaimSpaceIfWorthIt()
         return changed
     }
 
-    func keepOnly(feeds: [String]) throws {
-        let deleted = try database.write { db -> Int in
+    private func enforceLimits(_ db: Database, feed: String) throws {
+        let rows = try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM records WHERE feed = ?", arguments: [feed]) ?? 0
+        let bytes = try Int.fetchOne(db, sql: "SELECT COALESCE(SUM(LENGTH(payload)), 0) FROM records WHERE feed = ?", arguments: [feed]) ?? 0
+        guard rows > limits.maximumRows || bytes > limits.maximumBytes else { return }
+
+        Self.log.warning("Feed \(feed, privacy: .public) is over its limits (\(rows) rows, \(bytes) bytes); dropping the oldest. Its server-side window is too wide.")
+        var remainingRows = rows
+        var remainingBytes = bytes
+        for row in try Row.fetchAll(db, sql: "SELECT id, LENGTH(payload) AS size FROM records WHERE feed = ? ORDER BY stored_cursor, id", arguments: [feed]) {
+            guard remainingRows > limits.maximumRows || remainingBytes > limits.maximumBytes else { break }
+            let id: String = row["id"]
+            let size: Int = row["size"]
+            try db.execute(sql: "DELETE FROM records WHERE feed = ? AND id = ?", arguments: [feed, id])
+            remainingRows -= 1
+            remainingBytes -= size
+        }
+    }
+
+    public func register(feeds: [String]) throws {
+        try database.write { db in
             let placeholders = databaseQuestionMarks(count: feeds.count)
             let clause = feeds.isEmpty ? "" : "WHERE feed NOT IN (\(placeholders))"
             try db.execute(sql: "DELETE FROM records \(clause)", arguments: StatementArguments(feeds))
-            let count = db.changesCount
             try db.execute(sql: "DELETE FROM cursors \(clause)", arguments: StatementArguments(feeds))
-            return count
+            for feed in feeds {
+                try db.execute(sql: "INSERT INTO cursors (feed, cursor) VALUES (?, 0) ON CONFLICT (feed) DO NOTHING", arguments: [feed])
+            }
         }
-        if deleted > 0 { try reclaimSpace() }
+        try reclaimSpaceIfWorthIt()
     }
 
-    func page(feed: String, order: FeedOrder, descending: Bool, limit: Int, offset: Int, groupKey: String?) throws -> [StoredRecord] {
+    public func registeredFeeds() throws -> [String] {
+        try database.read { db in try String.fetchAll(db, sql: "SELECT feed FROM cursors ORDER BY feed") }
+    }
+
+    public func page(feed: String, order: FeedOrder, descending: Bool, limit: Int, offset: Int, groupKey: String?) throws -> [StoredRecord] {
         let column = order == .sortKey ? "sort_key" : "starts_at"
         let direction = descending ? "DESC" : "ASC"
         let groupFilter = groupKey == nil ? "" : "AND group_key = ?"
@@ -167,7 +214,7 @@ final class FeedStore: Sendable {
         }
     }
 
-    func info() throws -> [FeedInfo] {
+    public func info() throws -> [FeedInfo] {
         try database.read { db in
             try Row.fetchAll(db, sql: """
                 SELECT c.feed, c.cursor, COUNT(r.id) AS rows, COALESCE(SUM(LENGTH(r.payload)), 0) AS bytes
@@ -179,13 +226,16 @@ final class FeedStore: Sendable {
         }
     }
 
-    var fileBytes: Int {
-        (try? fileURL.resourceValues(forKeys: [.fileSizeKey]).fileSize) ?? 0
+    public var fileBytes: Int {
+        ((try? FileManager.default.attributesOfItem(atPath: fileURL.path))?[.size] as? NSNumber)?.intValue ?? 0
     }
 
-    private func reclaimSpace() throws {
+    private func reclaimSpaceIfWorthIt() throws {
         try database.writeWithoutTransaction { db in
-            try db.execute(sql: "PRAGMA incremental_vacuum")
+            let freePages = try Int.fetchOne(db, sql: "PRAGMA freelist_count") ?? 0
+            if freePages >= Self.reclaimAtFreePages {
+                try db.execute(sql: "PRAGMA incremental_vacuum")
+            }
         }
     }
 }
