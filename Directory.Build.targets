@@ -1,0 +1,16 @@
+<Project>
+  <ItemGroup Condition="'$(GsbcIsContracts)' == 'true'">
+    <AssemblyAttribute Include="ProtoBuf.CompatibilityLevelAttribute">
+      <_Parameter1>ProtoBuf.CompatibilityLevel.Level300</_Parameter1>
+      <_Parameter1_IsLiteral>true</_Parameter1_IsLiteral>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <!-- The router finds pages by reflection, so the trimmer must keep the host and every page module whole (SPEC §9 rule 1). -->
+  <Target Name="GsbcRootPageModules" BeforeTargets="PrepareForILLink" Condition="'$(GsbcIsAppHost)' == 'true'">
+    <ItemGroup>
+      <TrimmerRootAssembly Include="$(AssemblyName)" />
+      <TrimmerRootAssembly Include="%(ProjectReference.Filename)" Condition="$([System.String]::Copy('%(ProjectReference.Filename)').EndsWith('.App'))" />
+    </ItemGroup>
+  </Target>
+</Project>

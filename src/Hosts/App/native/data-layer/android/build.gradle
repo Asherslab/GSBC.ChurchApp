@@ -1,0 +1,14 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+
+android {
+    namespace "au.com.baptist.churchapp.datalayer"
+    compileSdk 36
+    defaultConfig {
+        minSdk 24
+    }
+}
+
+dependencies {
+    implementation project(':capacitor-android')
+}

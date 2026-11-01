@@ -1,0 +1,15 @@
+{
+  "name": "gsbc-churchapp-shell",
+  "private": true,
+  "scripts": {
+    "sync": "cap sync ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "8.5.3",
+    "@capacitor/ios": "8.5.3",
+    "@gsbc/data-layer": "file:../native/data-layer"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.5.3"
+  }
+}

@@ -1,0 +1,39 @@
+@page "/account"
+@using Grpc.Core
+@inject AccountsClient Accounts
+
+<h1>Account</h1>
+
+@if (_error is not null)
+{
+    <p>Couldn't reach the server: @_error</p>
+}
+else if (_session is null)
+{
+    <p>Checking…</p>
+}
+else if (_session.SignedIn)
+{
+    <p>Signed in as @_session.DisplayName.</p>
+}
+else
+{
+    <p>Not signed in.</p>
+}
+
+@code {
+    private CurrentSession? _session;
+    private string? _error;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            _session = await Accounts.GetCurrentSessionAsync();
+        }
+        catch (RpcException exception)
+        {
+            _error = $"{exception.StatusCode}: {exception.Status.Detail}";
+        }
+    }
+}

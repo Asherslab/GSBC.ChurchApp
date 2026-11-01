@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - run: dotnet workload install wasm-tools
+
+      - run: dotnet build GSBC.ChurchApp.slnx
+
+      - run: dotnet test --solution GSBC.ChurchApp.slnx --no-build
+
+      - name: Publish the app (AOT) and check its warnings against the baseline
+        run: tools/aot-warnings/check.sh

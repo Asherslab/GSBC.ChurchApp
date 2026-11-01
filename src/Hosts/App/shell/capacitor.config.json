@@ -1,0 +1,10 @@
+{
+  "appId": "au.com.baptist.churchapp",
+  "appName": "Good Shepherd",
+  "webDir": "../../../../out/app/wwwroot",
+  "backgroundColor": "#2a3d5e",
+  "ios": {
+    "contentInset": "never",
+    "scrollEnabled": false
+  }
+}

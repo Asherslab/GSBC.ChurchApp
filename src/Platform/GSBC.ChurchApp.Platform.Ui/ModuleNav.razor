@@ -1,0 +1,8 @@
+@inject ClientModules Modules
+
+<nav>
+    @foreach (NavEntry entry in Modules.Navigation)
+    {
+        <NavLink href="@entry.Href">@entry.Title</NavLink>
+    }
+</nav>

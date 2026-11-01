@@ -1,0 +1,29 @@
+IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
+
+IResourceBuilder<PostgresDatabaseResource> database = builder
+    .AddPostgres("postgres")
+    .WithDataVolume()
+    .AddDatabase("churchapp");
+
+IResourceBuilder<ProjectResource> migrator = builder
+    .AddProject<Projects.GSBC_ChurchApp_Hosts_Migrator>("migrator")
+    .WithReference(database)
+    .WaitFor(database);
+
+IResourceBuilder<ProjectResource> api = builder
+    .AddProject<Projects.GSBC_ChurchApp_Hosts_Api>("api", launchProfileName: null)
+    .WithHttpEndpoint(name: "web", env: "Ports__Web")
+    .WithHttpEndpoint(name: "grpc", env: "Ports__Grpc")
+    .WithReference(database)
+    .WaitForCompletion(migrator);
+
+builder
+    .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
+    .WithHttpEndpoint(port: 5300, name: "web", env: "Ports__Web", isProxied: false)
+    .WithHttpEndpoint(port: 5301, name: "grpc", env: "Ports__Grpc", isProxied: false)
+    .WithEnvironment("ReverseProxy__Clusters__api-web__Destinations__api__Address", api.GetEndpoint("web"))
+    .WithEnvironment("ReverseProxy__Clusters__api-grpc__Destinations__api__Address", api.GetEndpoint("grpc"))
+    .WithExternalHttpEndpoints()
+    .WaitFor(api);
+
+builder.Build().Run();

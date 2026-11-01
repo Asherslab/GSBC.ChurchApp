@@ -1,0 +1,52 @@
+<Project>
+  <PropertyGroup>
+    <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <AspNetCoreVersion>10.0.12</AspNetCoreVersion>
+    <ServerAspNetCoreVersion>10.0.14</ServerAspNetCoreVersion>
+    <GrpcVersion>2.84.0</GrpcVersion>
+    <AspireVersion>13.6.4</AspireVersion>
+  </PropertyGroup>
+
+  <ItemGroup Label="protobuf-net: pinned, the AOT generators are a preview (SPEC §9)">
+    <PackageVersion Include="protobuf-net" Version="3.4.40" />
+    <PackageVersion Include="protobuf-net.Grpc" Version="1.3.14" />
+    <PackageVersion Include="protobuf-net.Grpc.AspNetCore" Version="1.3.14" />
+  </ItemGroup>
+
+  <ItemGroup Label="gRPC">
+    <PackageVersion Include="Grpc.Net.Client" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.Net.Client.Web" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.AspNetCore.Web" Version="$(GrpcVersion)" />
+    <PackageVersion Include="Grpc.AspNetCore.HealthChecks" Version="$(GrpcVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="ASP.NET Core and Blazor">
+    <PackageVersion Include="Microsoft.AspNetCore.Components.Web" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="$(ServerAspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="$(ServerAspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="$(ServerAspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Hosting" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
+  </ItemGroup>
+
+  <ItemGroup Label="Data and storage">
+    <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.EntityFrameworkCore.Design" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Microsoft.Extensions.Diagnostics.HealthChecks.EntityFrameworkCore" Version="$(AspNetCoreVersion)" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
+    <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
+    <PackageVersion Include="AWSSDK.S3" Version="4.0.104.8" />
+  </ItemGroup>
+
+  <ItemGroup Label="Aspire (local development)">
+    <PackageVersion Include="Aspire.Hosting.PostgreSQL" Version="$(AspireVersion)" />
+  </ItemGroup>
+
+  <ItemGroup Label="Tests">
+    <PackageVersion Include="xunit.v3" Version="4.0.2" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="$(ServerAspNetCoreVersion)" />
+  </ItemGroup>
+</Project>

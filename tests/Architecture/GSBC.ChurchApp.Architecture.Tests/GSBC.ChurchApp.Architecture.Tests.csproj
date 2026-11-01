@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\src\Hosts\GSBC.ChurchApp.Hosts.Api\GSBC.ChurchApp.Hosts.Api.csproj" Aliases="ApiHost" />
+    <ProjectReference Include="..\..\..\src\Hosts\GSBC.ChurchApp.Hosts.Gateway\GSBC.ChurchApp.Hosts.Gateway.csproj" Aliases="GatewayHost" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

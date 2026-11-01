@@ -1,0 +1,66 @@
+<Solution>
+  <Folder Name="/Solution Items/">
+    <File Path="AGENTS.md" />
+    <File Path="SPEC.md" />
+    <File Path="PRODUCT.md" />
+    <File Path="DESIGN.md" />
+    <File Path="README.md" />
+    <File Path="Directory.Build.props" />
+    <File Path="Directory.Build.targets" />
+    <File Path="Directory.Packages.props" />
+    <File Path="global.json" />
+    <File Path=".gitignore" />
+  </Folder>
+  <Folder Name="/docs/">
+    <File Path="docs/README.md" />
+  </Folder>
+  <Folder Name="/docs/architecture/">
+    <File Path="docs/architecture/data-driven.md" />
+    <File Path="docs/architecture/identity.md" />
+    <File Path="docs/architecture/offline-and-caching.md" />
+    <File Path="docs/architecture/permissions.md" />
+    <File Path="docs/architecture/repo-layout.md" />
+    <File Path="docs/architecture/storage.md" />
+  </Folder>
+  <Folder Name="/docs/features/">
+    <File Path="docs/features/life-groups.md" />
+    <File Path="docs/features/ministries.md" />
+    <File Path="docs/features/outreach.md" />
+    <File Path="docs/features/site-map.md" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Features/" />
+  <Folder Name="/src/Features/Accounts/">
+    <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api/GSBC.ChurchApp.Features.Accounts.Api.csproj" />
+    <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.App/GSBC.ChurchApp.Features.Accounts.App.csproj" />
+    <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/GSBC.ChurchApp.Features.Accounts.Client.csproj" />
+    <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Contracts/GSBC.ChurchApp.Features.Accounts.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Hosts/">
+    <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Admin/GSBC.ChurchApp.Hosts.Admin.csproj" />
+    <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Api/GSBC.ChurchApp.Hosts.Api.csproj" />
+    <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.AppHost/GSBC.ChurchApp.Hosts.AppHost.csproj" />
+    <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Gateway/GSBC.ChurchApp.Hosts.Gateway.csproj" />
+    <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Migrator/GSBC.ChurchApp.Hosts.Migrator.csproj" />
+  </Folder>
+  <Folder Name="/src/Hosts/App/">
+    <Project Path="src/Hosts/App/GSBC.ChurchApp.Hosts.App/GSBC.ChurchApp.Hosts.App.csproj" />
+  </Folder>
+  <Folder Name="/src/Platform/">
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Api/GSBC.ChurchApp.Platform.Api.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Client/GSBC.ChurchApp.Platform.Client.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Common/GSBC.ChurchApp.Platform.Common.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Contracts/GSBC.ChurchApp.Platform.Contracts.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Data/GSBC.ChurchApp.Platform.Data.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Permissions/GSBC.ChurchApp.Platform.Permissions.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Storage/GSBC.ChurchApp.Platform.Storage.csproj" />
+    <Project Path="src/Platform/GSBC.ChurchApp.Platform.Ui/GSBC.ChurchApp.Platform.Ui.csproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Architecture/">
+    <Project Path="tests/Architecture/GSBC.ChurchApp.Architecture.Tests/GSBC.ChurchApp.Architecture.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Platform/">
+    <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Permissions.Tests/GSBC.ChurchApp.Platform.Permissions.Tests.csproj" />
+  </Folder>
+</Solution>

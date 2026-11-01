@@ -1,0 +1,25 @@
+@page "/"
+@using Grpc.Core
+@using GSBC.ChurchApp.Features.Accounts.Client
+@inject AccountsClient Accounts
+
+<h1>Good Shepherd</h1>
+
+<p>Server: @_server</p>
+
+@code {
+    private string _server = "checking…";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            GSBC.ChurchApp.Features.Accounts.Contracts.CurrentSession session = await Accounts.GetCurrentSessionAsync();
+            _server = session.SignedIn ? $"connected, signed in as {session.DisplayName}" : "connected, not signed in";
+        }
+        catch (RpcException exception)
+        {
+            _server = $"unreachable ({exception.StatusCode}: {exception.Status.Detail})";
+        }
+    }
+}

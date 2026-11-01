@@ -1,0 +1,15 @@
+<Project Sdk="Aspire.AppHost.Sdk/13.6.4">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <UserSecretsId>gsbc-churchapp-apphost</UserSecretsId>
+    <NoWarn>$(NoWarn);ASPIRE010</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Api\GSBC.ChurchApp.Hosts.Api.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Gateway\GSBC.ChurchApp.Hosts.Gateway.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Migrator\GSBC.ChurchApp.Hosts.Migrator.csproj" />
+  </ItemGroup>
+</Project>

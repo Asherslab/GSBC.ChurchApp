@@ -1,0 +1,36 @@
+<Project>
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <RootNamespace>$(MSBuildProjectName)</RootNamespace>
+
+    <!-- PBN9001: protobuf-net's AOT generators are [Experimental] (SPEC §9). -->
+    <NoWarn>$(NoWarn);PBN9001</NoWarn>
+    <InterceptorsNamespaces>$(InterceptorsNamespaces);ProtoBuf.AOT</InterceptorsNamespaces>
+
+    <GsbcIsContracts>$(MSBuildProjectName.EndsWith('.Contracts'))</GsbcIsContracts>
+    <GsbcIsPageModule Condition="$(MSBuildProjectName.EndsWith('.App')) or $(MSBuildProjectName.EndsWith('.Admin'))">true</GsbcIsPageModule>
+    <GsbcInAotScope Condition="'$(GsbcIsContracts)' == 'true' or '$(GsbcIsPageModule)' == 'true' or $(MSBuildProjectName.EndsWith('.Client'))">true</GsbcInAotScope>
+    <GsbcInAotScope Condition="'$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Common' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Permissions' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Contracts' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Client' or '$(MSBuildProjectName)' == 'GSBC.ChurchApp.Platform.Ui'">true</GsbcInAotScope>
+    <GsbcInAotScope Condition="'$(MSBuildProjectName)' == 'GSBC.ChurchApp.Hosts.Admin'">false</GsbcInAotScope>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(GsbcInAotScope)' == 'true'">
+    <IsAotCompatible>true</IsAotCompatible>
+    <TrimmerSingleWarn>false</TrimmerSingleWarn>
+    <!-- Library warnings are policed by tools/aot-warnings, so they must not fail the publish. -->
+    <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+    <!-- Direct in every project: protobuf-net ships its props in build/, not buildTransitive/ (SPEC §9 rule 2). -->
+    <PackageReference Include="protobuf-net" />
+  </ItemGroup>
+</Project>

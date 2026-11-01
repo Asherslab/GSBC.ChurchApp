@@ -1,0 +1,19 @@
+{
+  "name": "@gsbc/data-layer",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The app's one native plugin: transport, store, sync and outbox (SPEC §5). Generic; no feature code.",
+  "files": [
+    "android/src/main/",
+    "android/build.gradle",
+    "ios/Sources",
+    "Package.swift"
+  ],
+  "capacitor": {
+    "ios": { "src": "ios" },
+    "android": { "src": "android" }
+  },
+  "peerDependencies": {
+    "@capacitor/core": "^8.0.0"
+  }
+}

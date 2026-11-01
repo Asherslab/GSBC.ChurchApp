@@ -1,0 +1,9 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
+    <ProjectReference Include="..\..\Features\Accounts\GSBC.ChurchApp.Features.Accounts.Api\GSBC.ChurchApp.Features.Accounts.Api.csproj" />
+  </ItemGroup>
+</Project>
