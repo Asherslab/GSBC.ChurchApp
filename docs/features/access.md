@@ -67,7 +67,27 @@ Who-holds-what pages, and the bootstrap script. Tested by `Features.Access.Api.T
 and checked end to end through `dev.baptist.com.au`: a new member holds nothing and every staff
 method refuses them.
 
+## Usability comes first (owner, 2026-11-01)
+
+The people managing access are church staff and volunteers, not administrators. The owner's earlier system never
+let users make custom roles for exactly this reason. Custom roles can stay, but only behind a good
+experience; the current Roles page (a pattern textarea and the raw catalogue) is a developer's tool,
+not that experience. Before staff use it:
+
+- Plain-language roles and permissions: what someone can *do* ("post news for Impact Kids"), never
+  nodes, patterns or wildcards on screen.
+- Start from templates (the system roles and sensible presets) rather than a blank role.
+- Show the effect before saving: who would gain or lose what, and a "what can this person do?" view.
+- Assigning happens where people already are (a ministry's team list: "add to team", "make a leader"),
+  not on a separate access screen.
+- Guard rails explained in words, not errors: why a role can't be given, what to ask for instead.
+
 ## Open
 
+- **Role-specific assigning rights (from the earlier model):** an "assignable by" list on each role, so
+  Leaders of a ministry can add Members to it and nothing else; checked with the escalation guard.
+- **Scoped assigners need a scoped screen:** listing a ministry's role holders should need
+  `access.view` only at that ministry, and finding someone to add shouldn't need the global directory.
+- **Scope hierarchy** (a ministry contains teams) when Ministries needs it.
 - A private sync feed for your own grants, so permission-gated tools work offline in the app: with the
   first phone feature that needs it.
