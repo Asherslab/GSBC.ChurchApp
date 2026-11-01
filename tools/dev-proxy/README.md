@@ -1,4 +1,4 @@
-# Dev proxy: dev.baptist.com.au → your laptop
+# Dev proxy: dev.baptist.com.au → a dev Mac
 
 Dev builds and the admin panel reach the backend running on a dev Mac through Cloudflare, over real
 HTTPS, from anywhere. `cloudflared` on the Mac mini holds a tunnel to Cloudflare and forwards
@@ -9,7 +9,11 @@ Why this shape: passkeys need HTTPS on a real domain, and the phone's sync must 
 Cloudflare (SPEC §5, open point 5). gRPC-Web is ordinary HTTP, so the tunnel needs no gRPC settings;
 `Watch` sends a heartbeat every 30 seconds, inside Cloudflare's 100-second idle limit.
 
-## Once, on the Mac mini
+## Once, on the Mac that runs the tunnel
+
+Either the Mac mini (always on) or the dev Mac itself. On the dev Mac, `service` is
+`http://localhost:5300` and the tunnel only runs while you do.
+
 
 ```sh
 brew install cloudflared
@@ -21,13 +25,16 @@ cloudflared tunnel route dns gsbc-dev dev.baptist.com.au
 Copy `cloudflared.yml` to `~/.cloudflared/config.yml` and fill in:
 
 - `credentials-file`: the path `tunnel create` printed;
-- `service`: the dev Mac's Bonjour name (`scutil --get LocalHostName` on the dev Mac, plus `.local`).
+- `service`: `http://localhost:5300` on the dev Mac, or from the Mac mini the dev Mac's Bonjour name
+  (`scutil --get LocalHostName` on the dev Mac, plus `.local`).
 
-Then run it as a service, so it survives restarts:
+Then run it, in the foreground while developing:
 
 ```sh
-sudo cloudflared service install
+cloudflared tunnel run gsbc-dev
 ```
+
+or as a service on the Mac mini, so it survives restarts: `sudo cloudflared service install`.
 
 ## Using it
 

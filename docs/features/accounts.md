@@ -83,5 +83,6 @@ far) put it in `Data`, shared by `Api` and `Gateway`.
 
 ## Open
 
-- Microsoft 365 or Google Workspace for the church's mail (Graph or the Gmail API).
+- Which Microsoft 365 shared mailbox sends account email, and its app registration and Exchange
+  scoping (owner; see [identity.md](../architecture/identity.md)).
 - The token signing key in production: a cluster secret through `gsbc.argo` (owner).

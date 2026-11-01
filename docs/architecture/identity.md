@@ -84,6 +84,10 @@ church directory (SPEC §1's non-goals). A link to an Elvanto person can be adde
 
 ## Open
 
-- Email goes out through the church's existing mail (decided 2026-11-01), behind an `IEmailSender`; in
-  development, emails show in the Aspire dashboard instead. Still to confirm: Microsoft 365 or Google
-  Workspace, which decides between Microsoft Graph and the Gmail API.
+- Email goes out from a Microsoft 365 shared mailbox through Microsoft Graph (decided 2026-11-01), the
+  same way GSBC.Accounting sends claims: an app registration with client credentials, permission to
+  send granted in Exchange and scoped to that one mailbox (never `Mail.Send` in Entra, which would let
+  it send as anyone), and an outgoing-email table with a background sender so an outage delays mail
+  but never loses it. In development, emails show in the Aspire dashboard instead. Owner: which
+  mailbox, and the app registration and Exchange scoping (GSBC.Accounting's
+  `docs/modules/infrastructure/email.md` has the steps).
