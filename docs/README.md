@@ -17,6 +17,42 @@
 
 One doc per feature in [features/](features/), written before its code.
 
+## Where we are (2026-11-01)
+
+All work is on the branch `skeleton/backbone`, **not pushed yet**, so CI has never run on it. Pushing it
+and opening a PR is the first step when picking up.
+
+**Working end to end:** the skeleton and its rules, the native data layer on iOS (store, live sync,
+outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone configurations,
+`dev.baptist.com.au` through a Cloudflare tunnel started by the AppHost), Accounts in the browser
+(passkeys, sessions, recovery, invitations, staff tools), and Access (roles, assignments, the
+evaluator behind every `[Requires]`, admin screens).
+
+**Waiting on the owner:**
+
+- Run `tools/access/make-owner.sh <your email>` once to become the first owner (the agent may not grant
+  Owner on a real account).
+- Cloudflare: purge the zone once; turn Web Analytics off for the app and admin hosts; set Browser Cache
+  TTL to *Respect existing headers* before production (see [offline-and-caching.md](architecture/offline-and-caching.md)).
+- The Microsoft 365 shared mailbox and its app registration, for the Graph email transport.
+- The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
+- Production config through `gsbc.argo`: token signing key, `Accounts:Passkeys` for `baptist.com.au`.
+- The media route proposal in [offline-and-caching.md](architecture/offline-and-caching.md) awaits a yes.
+
+**Not tested end to end yet:** the owner side of Access (creating and giving roles, inviting) needs an
+owner account; the last-Owner guard has no automated test; background refresh needs measuring on a
+real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
+
+**Next, in order:** push and get CI green; the Access gaps and permissions UX
+([access.md](features/access.md), *Usability comes first* and *Open*), designed alongside Ministries,
+the first feature whose people assign roles; then features page by page from the build order below.
+
+**Working on this repo:** start the backend from Rider's AppHost configuration (stop a running one
+first: its ports are fixed); build with Homebrew's `dotnet` (`global.json`); every new project goes in
+the project map and the picture (`ProjectMapRules` enforces it); check anything web-facing through
+`dev.baptist.com.au`, not localhost (`tools/dev-proxy/check-caching.sh`). The repo is public: no keys,
+personal data, or names of the owner's employer or its projects.
+
 ## Build order
 
 Linchpins first, then outwards, one feature at a time and tested on a phone before the next
