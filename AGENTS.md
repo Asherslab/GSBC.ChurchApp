@@ -70,7 +70,8 @@ app and the admin panel alike. The backbone's design is in [docs/](docs/README.m
 doc before changing auth, permissions, sync, storage or configuration.
 
 **Keep the project map current.** Adding, removing, renaming or re-referencing a project means updating
-the diagram and table in the repo-layout doc's "The projects" section in the same change.
+the diagram and table in the repo-layout doc's "The projects" section, and redrawing
+`docs/architecture/architecture.svg` with `tools/docs/architecture.py`, in the same change.
 `ProjectMapRules` fails the build otherwise.
 
 Tests guard rules and real behaviour. Don't write tests for coverage.

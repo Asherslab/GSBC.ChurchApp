@@ -15,6 +15,7 @@
     <File Path="docs/README.md" />
   </Folder>
   <Folder Name="/docs/architecture/">
+    <File Path="docs/architecture/architecture.svg" />
     <File Path="docs/architecture/data-driven.md" />
     <File Path="docs/architecture/identity.md" />
     <File Path="docs/architecture/offline-and-caching.md" />

@@ -53,8 +53,12 @@ reference/                     gitignored; the church's own files (logo pack, fl
 
 ## The projects
 
-Kept current by `Architecture.Tests` (`ProjectMapRules`): a project missing from the diagram or the
-table below, or listed here but gone, fails the build. Arrows are project references.
+![How the pieces fit: the phone and the admin panel call the gateway, which forwards gRPC to the API and Postgres; the code is split into features and platform](architecture.svg)
+
+The picture is drawn from the projects on disk by `tools/docs/architecture.py`; run it after adding,
+removing or renaming a project. `Architecture.Tests` (`ProjectMapRules`) keeps all of this current: a
+project missing from the picture, the diagram or the table below, or shown but gone, fails the
+build. In the diagram below, arrows are project references.
 
 ```mermaid
 flowchart LR
@@ -219,4 +223,5 @@ port, and nothing else.
 5. Write `docs/features/<feature>.md` before the code. Add tests where a rule would otherwise go
    unguarded; not for coverage.
 6. Add the projects to `GSBC.ChurchApp.slnx` under folders that match their paths.
-7. Add each project, and its references as arrows, to [The projects](#the-projects).
+7. Add each project, and its references as arrows, to [The projects](#the-projects), and run
+   `tools/docs/architecture.py` to redraw the picture.

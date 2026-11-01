@@ -7,6 +7,7 @@ public sealed partial class ProjectMapRules
     private const string Prefix = "GSBC.ChurchApp.";
     private const string MapDocument = "docs/architecture/repo-layout.md";
     private const string MapSection = "## The projects";
+    private const string Picture = "docs/architecture/architecture.svg";
 
     [Fact]
     public void TheTableListsEveryProjectAndNoOthers()
@@ -38,6 +39,14 @@ public sealed partial class ProjectMapRules
             .Concat(drawnEdges.Except(realEdges).Select(edge => $"arrow with no reference: {edge}")));
     }
 
+    [Fact]
+    public void ThePictureShowsEveryProjectAndNoOthers()
+    {
+        string svg = File.ReadAllText(Path.Combine(RepoRoot.Path, Picture));
+        HashSet<string> drawn = PictureProject().Matches(svg).Select(match => match.Groups[1].Value).ToHashSet();
+        AssertSameProjects(Projects.All().Select(Projects.NameOf).ToHashSet(), drawn);
+    }
+
     private static void AssertSameProjects(HashSet<string> real, HashSet<string> documented) =>
         Assert.Empty(real.Except(documented).Select(name => $"not in {MapDocument}: {name}")
             .Concat(documented.Except(real).Select(name => $"in {MapDocument} but no such project: {name}")));
@@ -49,6 +58,9 @@ public sealed partial class ProjectMapRules
         int end = document.IndexOf("\n## ", start + MapSection.Length, StringComparison.Ordinal);
         return document[start..(end < 0 ? document.Length : end)];
     }
+
+    [GeneratedRegex(@"data-project=""(GSBC\.ChurchApp\.[A-Za-z.]+)""")]
+    private static partial Regex PictureProject();
 
     [GeneratedRegex(@"^\| `(GSBC\.ChurchApp\.[A-Za-z.]+)`", RegexOptions.Multiline)]
     private static partial Regex TableRow();
