@@ -16,10 +16,10 @@ builder.Services.AddGrpcHealthChecks();
 
 WebApplication app = builder.Build();
 
-app.UseBlazorFrameworkFiles();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseRateLimiter();
+app.MapStaticAssets();
 app.MapGrpcHealthChecksService();
 app.MapPasskeyCeremonies();
 app.MapReverseProxy();

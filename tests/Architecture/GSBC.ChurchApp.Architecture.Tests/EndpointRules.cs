@@ -5,6 +5,7 @@ using Grpc.AspNetCore.Server;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.AspNetCore.StaticAssets;
 using Microsoft.Extensions.DependencyInjection;
 using Yarp.ReverseProxy.Model;
 
@@ -13,7 +14,7 @@ namespace GSBC.ChurchApp.Architecture.Tests;
 public sealed class EndpointRules
 {
     private const string GrpcServicePrefix = "/gsbc.";
-    private const string StaticFileFallback = "{*path:nonfile}";
+    private static readonly string[] StaticFileFallbacks = ["{*path:nonfile}", "{**path:file}"];
     private const string GrpcUnimplementedMethod = "gRPC - Unimplemented method for ";
 
     private static readonly string[] ApprovedNonGrpcPaths =
@@ -52,11 +53,14 @@ public sealed class EndpointRules
             || endpoint.DisplayName?.StartsWith(GrpcUnimplementedMethod) == true)
             return true;
 
+        if (endpoint.Metadata.GetMetadata<StaticAssetDescriptor>() is not null)
+            return true;
+
         if (endpoint.Metadata.GetMetadata<RouteModel>() is { } proxied)
             return IsGrpcProxyRoute(proxied);
 
         string? pattern = (endpoint as RouteEndpoint)?.RoutePattern.RawText;
-        return pattern == StaticFileFallback || ApprovedNonGrpcPaths.Contains(pattern);
+        return StaticFileFallbacks.Contains(pattern) || ApprovedNonGrpcPaths.Contains(pattern);
     }
 
     private static bool IsGrpcProxyRoute(RouteModel route) =>

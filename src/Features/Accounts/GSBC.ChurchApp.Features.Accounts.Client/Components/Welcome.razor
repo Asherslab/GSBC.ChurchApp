@@ -47,6 +47,10 @@
         {
             _message = exception.Status.Detail;
         }
+        catch (JSException)
+        {
+            _message = "This page couldn't start passkeys. Reload it and try again.";
+        }
         finally
         {
             _busy = false;

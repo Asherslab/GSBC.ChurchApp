@@ -55,7 +55,14 @@
     {
         if (!firstRender)
             return;
-        _supported = await Passkeys.IsSupportedAsync();
+        try
+        {
+            _supported = await Passkeys.IsSupportedAsync();
+        }
+        catch (JSException)
+        {
+            _message = "This page couldn't start passkeys. Reload it and try again.";
+        }
         StateHasChanged();
     }
 
@@ -98,6 +105,10 @@
         catch (RpcException exception)
         {
             _message = exception.Status.Detail;
+        }
+        catch (JSException)
+        {
+            _message = "This page couldn't start passkeys. Reload it and try again.";
         }
         finally
         {
