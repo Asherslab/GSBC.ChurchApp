@@ -69,6 +69,14 @@ What makes passkeys survive real people losing real phones:
 6. **Clear failures.** The UI explains the common ones (no passkey on this device, cancelled, a
    device without passkey support) rather than showing a WebAuthn error.
 
+## Signing up
+
+Anyone can create an account (decided 2026-11-01). `Accounts.StartSignUp` (gRPC: name and email) returns
+a short-lived, single-use sign-up ticket and sends a code to confirm the email; the first passkey is
+then registered through the approved ceremony with that ticket, the same path as accepting an
+invitation, so sign-up adds no API path (AGENTS.md). Rate limits apply per IP and per email, and an
+account's email must be confirmed before it can recover by email.
+
 ## Minimal personal data
 
 An account has a display name, an email (for recovery and invitations) and its passkeys. It is not a
@@ -76,6 +84,6 @@ church directory (SPEC §1's non-goals). A link to an Elvanto person can be adde
 
 ## Open
 
-- The email provider for invitations and recovery codes (an outbound call, so not an API path).
-- Self-service sign-up: whether its passkey ceremony is covered by the approved "registering a
-  passkey" paths in AGENTS.md, or needs its own approval.
+- Email goes out through the church's existing mail (decided 2026-11-01), behind an `IEmailSender`; in
+  development, emails show in the Aspire dashboard instead. Still to confirm: Microsoft 365 or Google
+  Workspace, which decides between Microsoft Graph and the Gmail API.
