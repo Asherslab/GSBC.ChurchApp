@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
+using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Api.Tiers;
@@ -42,15 +43,28 @@ public static class PlatformApiExtensions
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<FeedChangeBroadcaster>();
-        services.AddHostedService<FeedChangeListener>();
+        services.AddSingleton(provider =>
+        {
+            FeedChangeBroadcaster broadcaster = provider.GetRequiredService<FeedChangeBroadcaster>();
+            return new NotificationHandler(
+                FeedChangeTable.NotifyChannel,
+                payload => broadcaster.PublishChange(payload[..payload.LastIndexOf(':')]),
+                broadcaster.PublishAllMayHaveChanged);
+        });
+        services.AddHostedService<PostgresNotificationListener>();
         services.AddScoped<FeedRetention>();
         services.AddHostedService<FeedRetentionService>();
         services.TryAddSingleton(TimeProvider.System);
         services.AddPlatformRateLimits();
+        services.AddEmailData();
+        services.AddSingleton<EmailSignal>();
+        services.AddScoped<IEmailSender, QueuedEmailSender>();
+        services.AddScoped<EmailDispatcher>();
+        services.AddHostedService<EmailDelivery>();
         if (builder.Environment.IsDevelopment())
-            services.TryAddSingleton<IEmailSender, DevelopmentEmailSender>();
+            services.TryAddSingleton<IEmailTransport, DevelopmentEmailTransport>();
         else
-            services.TryAddSingleton<IEmailSender, UnconfiguredEmailSender>();
+            services.TryAddSingleton<IEmailTransport, UnconfiguredEmailTransport>();
         services.AddSyncData();
 
         services
@@ -76,4 +90,7 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddFeed(this IServiceCollection services, FeedDefinition feed) =>
         services.AddSingleton(feed);
+
+    public static IServiceCollection AddSystemRole(this IServiceCollection services, SystemRole role) =>
+        services.AddSingleton(role);
 }

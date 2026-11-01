@@ -1,8 +1,18 @@
+@implements IDisposable
 @inject ClientModules Modules
+@inject IAccess Access
 
 <nav>
-    @foreach (NavEntry entry in Modules.Navigation)
+    @foreach (NavEntry entry in Modules.Navigation.Where(entry => entry.Requires is null || Access.Can(entry.Requires)))
     {
         <NavLink href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">@entry.Title</NavLink>
     }
 </nav>
+
+@code {
+    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
+
+    private void OnAccessChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Access.Changed -= OnAccessChanged;
+}

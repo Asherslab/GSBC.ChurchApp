@@ -1,0 +1,160 @@
+@page "/access/roles"
+@inject AccessClient Access
+
+<h1>Roles</h1>
+
+<section class="account-panel">
+    <ul>
+        @foreach (RoleInfo role in _roles)
+        {
+            <li>
+                <button class="link" @onclick="() => Edit(role)">@role.Name</button>
+                @(role.IsSystem ? "· system" : "") · @role.ScopeKind · @string.Join(", ", role.Patterns)
+                @if (role.IncludedRoleIds.Count > 0)
+                {
+                    <span>· includes @string.Join(", ", role.IncludedRoleIds.Select(NameOf))</span>
+                }
+            </li>
+        }
+    </ul>
+    <Can Permission="AccessPermissions.EditRoles">
+        <button @onclick="New">New role</button>
+    </Can>
+</section>
+
+@if (_editing is not null)
+{
+    <section class="account-panel">
+        <h2>@(_editing.IsSystem ? _editing.Name : string.IsNullOrEmpty(_editing.Id) ? "New role" : $"Edit {_editing.Name}")</h2>
+        @if (_editing.IsSystem)
+        {
+            <p>@_editing.Description</p>
+            <p>System roles come from the app. You can give them to people, but not change them.</p>
+        }
+        else
+        {
+            <EditForm Model="this" OnSubmit="SaveAsync" FormName="role">
+                <label>Name <InputText @bind-Value="_editing.Name" /></label>
+                <label>Description <InputText @bind-Value="_editing.Description" /></label>
+                <label>
+                    Given
+                    <InputSelect @bind-Value="_editing.ScopeKind">
+                        @foreach (string kind in _catalog.ScopeKinds)
+                        {
+                            <option value="@kind">@(kind == "global" ? "everywhere" : $"per {kind}")</option>
+                        }
+                    </InputSelect>
+                </label>
+                <label>Permissions, one per line (<code>ministries.news.*</code>, or <code>-node</code> to deny)
+                    <InputTextArea @bind-Value="_patterns" rows="6" />
+                </label>
+                <fieldset>
+                    <legend>Also includes</legend>
+                    @foreach (RoleInfo other in _roles.Where(other => other.Id != _editing.Id && other.IncludedRoleIds.Count == 0))
+                    {
+                        <label><input type="checkbox" checked="@_editing.IncludedRoleIds.Contains(other.Id)" @onchange="() => ToggleInclude(other.Id)" /> @other.Name</label>
+                    }
+                </fieldset>
+                <Can Permission="AccessPermissions.EditRoles">
+                    <button type="submit" disabled="@_busy">Save</button>
+                    @if (!string.IsNullOrEmpty(_editing.Id))
+                    {
+                        <button type="button" @onclick="DeleteAsync" disabled="@_busy">Delete</button>
+                    }
+                </Can>
+            </EditForm>
+        }
+    </section>
+
+    <section class="account-panel">
+        <h2>Permissions the app knows about</h2>
+        <ul>
+            @foreach (PermissionInfo permission in _catalog.Permissions)
+            {
+                <li><code>@permission.Node</code> @(permission.ScopeKind == "global" ? "" : $"(per {permission.ScopeKind})") · @permission.Description @(permission.Sensitive ? "· sensitive" : "")</li>
+            }
+        </ul>
+    </section>
+}
+
+@if (_message is not null)
+{
+    <p class="message">@_message</p>
+}
+
+@code {
+    private List<RoleInfo> _roles = [];
+    private Catalog _catalog = new();
+    private RoleInfo? _editing;
+    private string _patterns = "";
+    private bool _busy;
+    private string? _message;
+
+    protected override Task OnInitializedAsync() => RunAsync(LoadAsync);
+
+    private async Task LoadAsync()
+    {
+        _roles = (await Access.ListRolesAsync()).Roles;
+        _catalog = await Access.ListCatalogAsync();
+    }
+
+    private void New() => Edit(new RoleInfo { ScopeKind = "global" });
+
+    private void Edit(RoleInfo role)
+    {
+        _editing = new RoleInfo
+        {
+            Id = role.Id,
+            Name = role.Name,
+            Description = role.Description,
+            ScopeKind = role.ScopeKind,
+            IsSystem = role.IsSystem,
+            Patterns = [.. role.Patterns],
+            IncludedRoleIds = [.. role.IncludedRoleIds],
+        };
+        _patterns = string.Join("\n", role.Patterns);
+        _message = null;
+    }
+
+    private void ToggleInclude(string id)
+    {
+        if (!_editing!.IncludedRoleIds.Remove(id))
+            _editing.IncludedRoleIds.Add(id);
+    }
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        _editing!.Patterns = _patterns.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+        RoleInfo saved = await Access.SaveRoleAsync(_editing);
+        await LoadAsync();
+        Edit(saved);
+        _message = "Saved.";
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Access.DeleteRoleAsync(_editing!.Id);
+        _editing = null;
+        await LoadAsync();
+        _message = "Deleted, and taken away from everyone who had it.";
+    });
+
+    private string NameOf(string id) => _roles.FirstOrDefault(role => role.Id == id)?.Name ?? "a removed role";
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

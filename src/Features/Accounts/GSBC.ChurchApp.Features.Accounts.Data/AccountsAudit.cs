@@ -28,4 +28,6 @@ public static class AuditActions
     public const string SessionEnded = "session-ended";
     public const string SignedOutEverywhere = "signed-out-everywhere";
     public const string NameChanged = "name-changed";
+    public const string Disabled = "disabled";
+    public const string Enabled = "enabled";
 }

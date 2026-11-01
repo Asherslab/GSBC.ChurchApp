@@ -1,0 +1,135 @@
+@page "/people"
+@using Grpc.Core
+@inject AccountsClient Accounts
+
+<h1>People</h1>
+
+<Can Permission="AccountsPermissions.Manage">
+    <section class="account-panel">
+        <h2>Invite someone</h2>
+        <EditForm Model="this" OnSubmit="InviteAsync" FormName="invite">
+            <label>Name <InputText @bind-Value="_inviteName" /></label>
+            <label>Email <InputText @bind-Value="_inviteEmail" type="email" /></label>
+            <button type="submit" disabled="@_busy">Send the invitation</button>
+        </EditForm>
+    </section>
+</Can>
+
+<section class="account-panel">
+    <EditForm Model="this" OnSubmit="SearchAsync" FormName="search">
+        <label>Find someone <InputText @bind-Value="_query" placeholder="Name or email" /></label>
+        <button type="submit" disabled="@_busy">Search</button>
+    </EditForm>
+    <ul>
+        @foreach (PersonInfo person in _people)
+        {
+            <li>
+                <button class="link" @onclick="() => SelectAsync(person)">@person.DisplayName</button>
+                @person.Email
+                @(person.EmailConfirmed ? "" : "· email not confirmed")
+                @(person.HasPasskey ? "" : "· no passkey yet")
+                @(person.Disabled ? "· disabled" : "")
+            </li>
+        }
+    </ul>
+</section>
+
+@if (_selected is not null)
+{
+    <section class="account-panel">
+        <h2>@_selected.DisplayName</h2>
+        <p>@_selected.Email · joined @_selected.CreatedAt.ToLocalTime().ToString("d MMM yyyy")</p>
+        <p><a href="access/people?user=@_selected.Id">Roles</a></p>
+        <Can Permission="AccountsPermissions.Manage">
+            <button @onclick="IssueRecoveryAsync" disabled="@_busy">Give a recovery link</button>
+            <button @onclick="ToggleDisabledAsync" disabled="@_busy">@(_selected.Disabled ? "Enable the account" : "Disable the account")</button>
+            @if (_recoveryLink is not null)
+            {
+                <p>Give them this link (works until @_recoveryExpires?.ToLocalTime().ToString("h:mm tt")): <code>@_recoveryLink</code></p>
+            }
+            <h3>Recent activity</h3>
+            <ul>
+                @foreach (AuditInfo entry in _audit)
+                {
+                    <li>@entry.At.ToLocalTime().ToString("d MMM, h:mm tt") · @entry.Action @(entry.ActorId is { Length: > 0 } actor && actor != _selected.Id ? "(by staff)" : "")</li>
+                }
+            </ul>
+        </Can>
+    </section>
+}
+
+@if (_message is not null)
+{
+    <p class="message">@_message</p>
+}
+
+@code {
+    private string _query = "";
+    private string _inviteName = "";
+    private string _inviteEmail = "";
+    private List<PersonInfo> _people = [];
+    private PersonInfo? _selected;
+    private List<AuditInfo> _audit = [];
+    private string? _recoveryLink;
+    private DateTime? _recoveryExpires;
+    private bool _busy;
+    private string? _message;
+
+    protected override Task OnInitializedAsync() => SearchAsync();
+
+    private Task SearchAsync() => RunAsync(async () => _people = (await Accounts.SearchPeopleAsync(_query)).People);
+
+    private Task InviteAsync() => RunAsync(async () =>
+    {
+        await Accounts.InviteAsync(_inviteName, _inviteEmail);
+        _message = $"Invitation sent to {_inviteEmail}.";
+        _inviteName = _inviteEmail = "";
+        _people = (await Accounts.SearchPeopleAsync(_query)).People;
+    });
+
+    private Task SelectAsync(PersonInfo person) => RunAsync(async () =>
+    {
+        _selected = person;
+        _recoveryLink = null;
+        _audit = [];
+        try
+        {
+            _audit = (await Accounts.ListAuditAsync(person.Id)).Entries;
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.PermissionDenied)
+        {
+        }
+    });
+
+    private Task IssueRecoveryAsync() => RunAsync(async () =>
+    {
+        CodeReply reply = await Accounts.IssueRecoveryCodeAsync(_selected!.Id);
+        _recoveryLink = reply.Code;
+        _recoveryExpires = reply.ExpiresAt;
+    });
+
+    private Task ToggleDisabledAsync() => RunAsync(async () =>
+    {
+        await Accounts.SetDisabledAsync(_selected!.Id, !_selected.Disabled);
+        _selected.Disabled = !_selected.Disabled;
+        _message = _selected.Disabled ? "Disabled, and signed out everywhere." : "Enabled.";
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -41,7 +41,7 @@
             _done = result.Ok;
             _message = result.Error;
             if (result.Ok)
-                Accounts.NotifySessionChanged();
+                await Accounts.NotifySessionChangedAsync();
         }
         catch (RpcException exception)
         {

@@ -3,7 +3,9 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Data;
+using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
+using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
@@ -21,6 +23,8 @@ internal sealed class AccountsService(
     AccountsAudit audit,
     IEmailSender email,
     IOptions<AccountsOptions> options,
+    IAccessEvaluator access,
+    PermissionCatalog catalog,
     TimeProvider time) : IAccountsService
 {
     private const int MaximumNameLength = 80;
@@ -72,7 +76,7 @@ internal sealed class AccountsService(
             ? await users.FindByEmailAsync(address.Address)
             : null;
 
-        if (user is { EmailConfirmed: true, Disabled: false, Email: not null })
+        if (user is { EmailConfirmed: true, Disabled: false, Email: not null } && !await HoldsSensitivePermissionAsync(user.Id, cancellationToken))
         {
             string link = Link(codes.IssueToken(user.Id, CodePurpose.Recovery, OneTimeCodes.RecoveryLifetime));
             audit.Record(AuditActions.RecoveryRequested, user.Id, remoteAddress: Address(context));
@@ -230,6 +234,90 @@ internal sealed class AccountsService(
         audit.Record(AuditActions.RecoveryIssued, user.Id, Caller(context).UserId);
         await db.SaveChangesAsync(context.CancellationToken);
         return new CodeReply { Code = Link(code), ExpiresAt = time.GetUtcNow().UtcDateTime + OneTimeCodes.RecoveryLifetime };
+    }
+
+    public async ValueTask<PeopleList> SearchPeopleAsync(SearchPeopleRequest request, CallContext context = default)
+    {
+        const int MaximumResults = 50;
+        string query = request.Query.Trim().ToUpperInvariant();
+        List<AccountUser> found = await db.Users.AsNoTracking()
+            .Where(user => query.Length == 0 || user.NormalizedEmail!.Contains(query) || user.DisplayName.ToUpper().Contains(query))
+            .OrderBy(user => user.DisplayName)
+            .Take(MaximumResults)
+            .ToListAsync(context.CancellationToken);
+        return await PeopleAsync(found, context.CancellationToken);
+    }
+
+    public async ValueTask<PeopleList> GetPeopleAsync(GetPeopleRequest request, CallContext context = default)
+    {
+        List<Guid> ids = request.Ids.Select(id => Guid.TryParse(id, out Guid parsed) ? parsed : Guid.Empty).Where(id => id != Guid.Empty).ToList();
+        List<AccountUser> found = await db.Users.AsNoTracking().Where(user => ids.Contains(user.Id)).ToListAsync(context.CancellationToken);
+        return await PeopleAsync(found, context.CancellationToken);
+    }
+
+    public async ValueTask<Done> SetDisabledAsync(SetDisabledRequest request, CallContext context = default)
+    {
+        Guid actorId = Caller(context).UserId;
+        AccountUser user = (Guid.TryParse(request.UserId, out Guid id) ? await users.FindByIdAsync(id.ToString()) : null)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+        if (user.Id == actorId && request.Disabled)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "You can't disable your own account."));
+
+        user.Disabled = request.Disabled;
+        if (request.Disabled)
+            await db.Sessions.Where(session => session.UserId == user.Id).ExecuteDeleteAsync(context.CancellationToken);
+        audit.Record(request.Disabled ? AuditActions.Disabled : AuditActions.Enabled, user.Id, actorId);
+        await db.SaveChangesAsync(context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<AuditList> ListAuditAsync(AuditQuery request, CallContext context = default)
+    {
+        const int MaximumEntries = 200;
+        IQueryable<AuditEntry> query = db.Audit.AsNoTracking();
+        if (Guid.TryParse(request.UserId, out Guid userId))
+            query = query.Where(entry => entry.UserId == userId || entry.ActorId == userId);
+
+        return new AuditList
+        {
+            Entries = await query.OrderByDescending(entry => entry.Id).Take(MaximumEntries).Select(entry => new AuditInfo
+            {
+                At = entry.At,
+                Action = entry.Action,
+                UserId = entry.UserId.ToString(),
+                ActorId = entry.ActorId.ToString(),
+                Detail = entry.Detail,
+            }).ToListAsync(context.CancellationToken),
+        };
+    }
+
+    private async Task<PeopleList> PeopleAsync(List<AccountUser> found, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = found.Select(user => user.Id).ToList();
+        HashSet<Guid> withPasskeys = (await db.Set<IdentityUserPasskey<Guid>>().AsNoTracking()
+            .Where(passkey => ids.Contains(passkey.UserId)).Select(passkey => passkey.UserId).Distinct()
+            .ToListAsync(cancellationToken)).ToHashSet();
+
+        return new PeopleList
+        {
+            People = found.Select(user => new PersonInfo
+            {
+                Id = user.Id.ToString(),
+                DisplayName = user.DisplayName,
+                Email = user.Email ?? "",
+                EmailConfirmed = user.EmailConfirmed,
+                Disabled = user.Disabled,
+                HasPasskey = withPasskeys.Contains(user.Id),
+                CreatedAt = user.CreatedAt,
+            }).ToList(),
+        };
+    }
+
+    private async Task<bool> HoldsSensitivePermissionAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
+        List<string> sensitive = catalog.ByNode.Values.Where(permission => permission.IsSensitive).Select(permission => permission.Node).ToList();
+        return grants.Grants.Any(grant => !grant.Pattern.IsDeny && sensitive.Any(grant.Pattern.Matches));
     }
 
     private async Task<AccountUser> FindAbandonedOrCreateAsync(string name, string address, CancellationToken cancellationToken)

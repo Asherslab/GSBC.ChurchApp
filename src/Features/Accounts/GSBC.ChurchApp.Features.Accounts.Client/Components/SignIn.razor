@@ -72,12 +72,12 @@
         _message = null;
     }
 
-    private Task SignInAsync() => RunAsync(async () => Finish(await Passkeys.SignInAsync()));
+    private Task SignInAsync() => RunAsync(async () => await FinishAsync(await Passkeys.SignInAsync()));
 
     private Task SignUpAsync() => RunAsync(async () =>
     {
         TicketReply reply = await Accounts.StartSignUpAsync(_name, _email);
-        Finish(await Passkeys.RegisterAsync(reply.Ticket));
+        await FinishAsync(await Passkeys.RegisterAsync(reply.Ticket));
     });
 
     private Task RecoverAsync() => RunAsync(async () =>
@@ -86,10 +86,10 @@
         _message = "If that email has a confirmed account, a link is on its way. It works for 2 hours.";
     });
 
-    private void Finish(CeremonyResult result)
+    private async Task FinishAsync(CeremonyResult result)
     {
         if (result.Ok)
-            Accounts.NotifySessionChanged();
+            await Accounts.NotifySessionChangedAsync();
         else
             _message = result.Error;
     }

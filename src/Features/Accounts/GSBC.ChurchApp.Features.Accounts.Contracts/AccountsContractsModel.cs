@@ -24,4 +24,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 [ProtoSerializable(typeof(InviteRequest))]
 [ProtoSerializable(typeof(IssueRecoveryCodeRequest))]
 [ProtoSerializable(typeof(CodeReply))]
+[ProtoSerializable(typeof(SearchPeopleRequest))]
+[ProtoSerializable(typeof(GetPeopleRequest))]
+[ProtoSerializable(typeof(PeopleList))]
+[ProtoSerializable(typeof(SetDisabledRequest))]
+[ProtoSerializable(typeof(AuditQuery))]
+[ProtoSerializable(typeof(AuditList))]
 public partial class AccountsContractsModel : TypeModel;

@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Access.Admin;
 using GSBC.ChurchApp.Features.Accounts.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
 using GSBC.ChurchApp.Platform.Client;
@@ -17,6 +18,9 @@ builder.Services
     .AddSingleton(modules)
     .AddPlatformClient()
     .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
-    .AddAccountsAdmin(modules);
+    .AddAccountsAdmin(modules)
+    .AddAccessAdmin(modules);
 
-await builder.Build().RunAsync();
+WebAssemblyHost host = builder.Build();
+await host.Services.RunClientStartupTasksAsync();
+await host.RunAsync();

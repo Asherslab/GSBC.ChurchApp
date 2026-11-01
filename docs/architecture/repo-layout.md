@@ -81,6 +81,13 @@ flowchart LR
         AccountsContracts["Features.Accounts.Contracts"]
     end
 
+    subgraph Access["Features / Access"]
+        AccessAdmin["Features.Access.Admin"]
+        AccessClient["Features.Access.Client"]
+        AccessApi["Features.Access.Api"]
+        AccessContracts["Features.Access.Contracts"]
+    end
+
     subgraph Platform
         PlatformUi["Platform.Ui"]
         PlatformClient["Platform.Client"]
@@ -98,14 +105,15 @@ flowchart LR
         ContractsTests["Platform.Contracts.Tests"]
         ApiTests["Platform.Api.Tests"]
         GatewayTests["Features.Accounts.Gateway.Tests"]
+        AccessTests["Features.Access.Api.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
     HostsApp --> AccountsApp & PlatformUi
-    HostsAdmin --> PlatformUi & AccountsAdmin
-    HostsApi --> AccountsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin
+    HostsApi --> AccountsApi & AccessApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -114,6 +122,11 @@ flowchart LR
     AccountsGateway --> AccountsData
     AccountsContracts --> PlatformContracts
     AccountsData --> PlatformData
+
+    AccessAdmin --> AccessClient
+    AccessClient --> AccessContracts & PlatformClient & PlatformUi
+    AccessApi --> AccessContracts & PlatformApi
+    AccessContracts --> PlatformContracts
 
     PlatformUi --> PlatformClient
     PlatformClient --> PlatformContracts
@@ -125,6 +138,7 @@ flowchart LR
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi
     GatewayTests --> AccountsGateway
+    AccessTests --> AccessApi
 ```
 
 At run time:
@@ -149,10 +163,10 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types. Not referenced yet | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`) and the Sync service contract | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry, `IAccess`, the native bridge (`NativeCallInvoker`, or gRPC-Web in a browser), local feed reads (`ILocalFeeds`) and the outbox (`IOutbox`) | Yes |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`) and the outbox (`IOutbox`) | Yes |
 | `GSBC.ChurchApp.Platform.Ui` | The shared component library: `ModuleRouter`, `ModuleNav`, the `Can` permission gate | Yes |
-| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue, feeds, the Sync service and its `LISTEN` fan-out to live `Watch` streams, health | No |
-| `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, migration targets | No |
+| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health | No |
+| `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2) and content addressing. Not referenced yet | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Accounts.Data` | The `accounts` schema: Identity users and passkeys, sessions, one-time codes, audit log; shared by the API and the gateway | No |
@@ -161,6 +175,10 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Accounts.Client` | Accounts' generated gRPC proxies, `AccountsClient`, the browser passkey ceremonies, and the shared `SignIn`, `Welcome` and `AccountDetails` components | Yes |
 | `GSBC.ChurchApp.Features.Accounts.App` | The phone's Account page and its navigation entry | Yes |
 | `GSBC.ChurchApp.Features.Accounts.Admin` | The admin panel's Account and Welcome pages, built from the Client's components | Yes |
+| `GSBC.ChurchApp.Features.Access.Contracts` | The `Access` service, its messages and the `access.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Access.Api` | Roles, assignments and the catalogue (schema `access`); the cached `AccessEvaluator` behind every `[Requires]`; reconciling system roles; the escalation and last-owner guards | No |
+| `GSBC.ChurchApp.Features.Access.Client` | Access's gRPC proxies, and loading your grants into `IAccess` whenever the session changes | Yes |
+| `GSBC.ChurchApp.Features.Access.Admin` | The Roles and Who-holds-what pages | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
 | `GSBC.ChurchApp.Hosts.Admin` | The staff admin panel: Blazor WASM, not AOT, served by the gateway | No |
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |
@@ -170,7 +188,8 @@ flowchart LR
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
-| `GSBC.ChurchApp.Platform.Api.Tests` | Sync against a real Postgres (in a container): pruning, compaction and resets converge every phone | No |
+| `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
+| `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`

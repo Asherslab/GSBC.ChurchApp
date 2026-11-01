@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Access.Api.Data;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
@@ -7,7 +8,9 @@ using Microsoft.Extensions.Hosting;
 HostApplicationBuilder builder = Host.CreateApplicationBuilder(args);
 
 builder.Services.AddSyncData();
+builder.Services.AddEmailData();
 builder.Services.AddAccountsData();
+builder.Services.AddAccessData();
 
 using IHost host = builder.Build();
 await using AsyncServiceScope scope = host.Services.CreateAsyncScope();

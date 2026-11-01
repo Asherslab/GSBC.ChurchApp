@@ -19,6 +19,9 @@ public static class DataServiceCollectionExtensions
         return services;
     }
 
+    public static IServiceCollection AddEmailData(this IServiceCollection services) =>
+        services.AddFeatureDbContext<Email.EmailDbContext>(Email.EmailDbContext.SchemaName, migrationOrder: 1);
+
     public static IServiceCollection AddSyncData(this IServiceCollection services) =>
         services.AddFeatureDbContext<SyncDbContext>(FeedChangeTable.Schema, migrationOrder: 0);
 }
