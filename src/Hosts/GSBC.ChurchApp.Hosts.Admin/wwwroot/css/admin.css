@@ -1,0 +1,75 @@
+body {
+    margin: 0 auto;
+    max-width: 760px;
+    padding: 24px 16px 48px;
+    font-family: -apple-system, system-ui, "Segoe UI", sans-serif;
+    color: #1f2a3c;
+}
+
+nav {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+nav a,
+button {
+    min-height: 40px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 10px;
+    background: #2a3d5e;
+    color: #fff;
+    font: inherit;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+nav a.active {
+    background: #009c8f;
+}
+
+button.link {
+    background: none;
+    color: #2a3d5e;
+    text-decoration: underline;
+    min-height: auto;
+    padding: 4px 8px;
+}
+
+button:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.account-panel {
+    border: 1px solid #d5c9b7;
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+}
+
+label {
+    display: block;
+    margin: 8px 0;
+}
+
+input {
+    display: block;
+    margin-top: 4px;
+    padding: 8px 10px;
+    width: min(100%, 360px);
+    border: 1px solid #b9b1a4;
+    border-radius: 8px;
+    font: inherit;
+}
+
+.message {
+    color: #9a4a00;
+}
+
+h1:focus {
+    outline: none;
+}

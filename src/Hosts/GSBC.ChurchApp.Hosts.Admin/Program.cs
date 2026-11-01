@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Accounts.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
 using GSBC.ChurchApp.Platform.Client;
 using GSBC.ChurchApp.Platform.Client.Modules;
@@ -10,10 +11,12 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 ClientModules modules = new(typeof(Program).Assembly);
+modules.Add(new ClientModule("Home", typeof(Program).Assembly, [new NavEntry("Home", "", "home")]));
 
 builder.Services
     .AddSingleton(modules)
     .AddPlatformClient()
-    .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress));
+    .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
+    .AddAccountsAdmin(modules);
 
 await builder.Build().RunAsync();

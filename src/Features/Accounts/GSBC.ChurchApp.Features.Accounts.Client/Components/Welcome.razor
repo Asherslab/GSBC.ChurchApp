@@ -1,0 +1,55 @@
+@inject AccountsClient Accounts
+@inject PasskeyCeremonies Passkeys
+
+<section class="account-panel">
+    <h2>Welcome</h2>
+    @if (_done)
+    {
+        <p>You're signed in. Your new passkey is saved on this device.</p>
+    }
+    else if (string.IsNullOrWhiteSpace(Code))
+    {
+        <p>This link is missing its code. Open the link from your email again.</p>
+    }
+    else
+    {
+        <p>Create a passkey on this device to sign in. Your phone or computer will ask you to confirm with Face ID, Touch ID or your screen lock.</p>
+        <button @onclick="CreateAsync" disabled="@_busy">Create a passkey</button>
+    }
+
+    @if (_message is not null)
+    {
+        <p class="message">@_message</p>
+    }
+</section>
+
+@code {
+    [Parameter] public string? Code { get; set; }
+
+    private bool _busy;
+    private bool _done;
+    private string? _message;
+
+    private async Task CreateAsync()
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            TicketReply reply = await Accounts.RedeemAsync(Code!);
+            CeremonyResult result = await Passkeys.RegisterAsync(reply.Ticket);
+            _done = result.Ok;
+            _message = result.Error;
+            if (result.Ok)
+                Accounts.NotifySessionChanged();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

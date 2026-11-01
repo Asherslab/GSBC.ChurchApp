@@ -33,6 +33,7 @@
   <Folder Name="/src/" />
   <Folder Name="/src/Features/" />
   <Folder Name="/src/Features/Accounts/">
+    <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/GSBC.ChurchApp.Features.Accounts.Admin.csproj" />
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api/GSBC.ChurchApp.Features.Accounts.Api.csproj" />
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.App/GSBC.ChurchApp.Features.Accounts.App.csproj" />
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/GSBC.ChurchApp.Features.Accounts.Client.csproj" />

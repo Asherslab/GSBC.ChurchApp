@@ -73,6 +73,7 @@ flowchart LR
 
     subgraph Accounts["Features / Accounts"]
         AccountsApp["Features.Accounts.App"]
+        AccountsAdmin["Features.Accounts.Admin"]
         AccountsClient["Features.Accounts.Client"]
         AccountsApi["Features.Accounts.Api"]
         AccountsData["Features.Accounts.Data"]
@@ -102,11 +103,12 @@ flowchart LR
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
     HostsApp --> AccountsApp & PlatformUi
-    HostsAdmin --> PlatformUi
+    HostsAdmin --> PlatformUi & AccountsAdmin
     HostsApi --> AccountsApi & PlatformApi
     HostsMigrator --> PlatformData & AccountsData
 
     AccountsApp --> AccountsClient
+    AccountsAdmin --> AccountsClient
     AccountsClient --> AccountsContracts & PlatformClient & PlatformUi
     AccountsApi --> AccountsContracts & AccountsData & PlatformApi
     AccountsGateway --> AccountsData
@@ -156,8 +158,9 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Accounts.Data` | The `accounts` schema: Identity users and passkeys, sessions, one-time codes, audit log; shared by the API and the gateway | No |
 | `GSBC.ChurchApp.Features.Accounts.Api` | `SessionService` (who is calling) and `AccountsService` (sign-up, recovery, profile, passkeys, sessions, invitations); validates the gateway's tokens | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway` | The passkey ceremonies (the approved non-gRPC paths), server-side sessions, and the session-to-token swap on every proxied call | No |
-| `GSBC.ChurchApp.Features.Accounts.Client` | Accounts' generated gRPC proxies and `AccountsClient` | Yes |
+| `GSBC.ChurchApp.Features.Accounts.Client` | Accounts' generated gRPC proxies, `AccountsClient`, the browser passkey ceremonies, and the shared `SignIn`, `Welcome` and `AccountDetails` components | Yes |
 | `GSBC.ChurchApp.Features.Accounts.App` | The phone's Account page and its navigation entry | Yes |
+| `GSBC.ChurchApp.Features.Accounts.Admin` | The admin panel's Account and Welcome pages, built from the Client's components | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
 | `GSBC.ChurchApp.Hosts.Admin` | The staff admin panel: Blazor WASM, not AOT, served by the gateway | No |
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |

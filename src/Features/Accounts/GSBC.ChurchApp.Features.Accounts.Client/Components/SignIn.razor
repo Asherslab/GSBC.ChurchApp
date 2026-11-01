@@ -1,0 +1,107 @@
+@inject AccountsClient Accounts
+@inject PasskeyCeremonies Passkeys
+
+<section class="account-panel">
+    @if (_supported is false)
+    {
+        <p>This browser can't use passkeys. Try a current version of Safari, Chrome or Edge.</p>
+    }
+    else if (_mode == Mode.SignIn)
+    {
+        <h2>Sign in</h2>
+        <button @onclick="SignInAsync" disabled="@_busy">Sign in with a passkey</button>
+        <p>
+            <button class="link" @onclick="() => Switch(Mode.SignUp)">Create an account</button>
+            <button class="link" @onclick="() => Switch(Mode.Recover)">Lost your passkey?</button>
+        </p>
+    }
+    else if (_mode == Mode.SignUp)
+    {
+        <h2>Create an account</h2>
+        <EditForm Model="this" OnSubmit="SignUpAsync" FormName="sign-up">
+            <label>Your name <InputText @bind-Value="_name" autocomplete="name" /></label>
+            <label>Email <InputText @bind-Value="_email" type="email" autocomplete="email" /></label>
+            <button type="submit" disabled="@_busy">Continue and create a passkey</button>
+        </EditForm>
+        <button class="link" @onclick="() => Switch(Mode.SignIn)">I already have an account</button>
+    }
+    else
+    {
+        <h2>Get back in</h2>
+        <EditForm Model="this" OnSubmit="RecoverAsync" FormName="recover">
+            <label>Your account's email <InputText @bind-Value="_email" type="email" autocomplete="email" /></label>
+            <button type="submit" disabled="@_busy">Email me a link</button>
+        </EditForm>
+        <button class="link" @onclick="() => Switch(Mode.SignIn)">Back to sign in</button>
+    }
+
+    @if (_message is not null)
+    {
+        <p class="message">@_message</p>
+    }
+</section>
+
+@code {
+    private enum Mode { SignIn, SignUp, Recover }
+
+    private Mode _mode = Mode.SignIn;
+    private bool? _supported;
+    private bool _busy;
+    private string? _message;
+    private string _name = "";
+    private string _email = "";
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _supported = await Passkeys.IsSupportedAsync();
+        StateHasChanged();
+    }
+
+    private void Switch(Mode mode)
+    {
+        _mode = mode;
+        _message = null;
+    }
+
+    private Task SignInAsync() => RunAsync(async () => Finish(await Passkeys.SignInAsync()));
+
+    private Task SignUpAsync() => RunAsync(async () =>
+    {
+        TicketReply reply = await Accounts.StartSignUpAsync(_name, _email);
+        Finish(await Passkeys.RegisterAsync(reply.Ticket));
+    });
+
+    private Task RecoverAsync() => RunAsync(async () =>
+    {
+        await Accounts.RequestRecoveryAsync(_email);
+        _message = "If that email has a confirmed account, a link is on its way. It works for 2 hours.";
+    });
+
+    private void Finish(CeremonyResult result)
+    {
+        if (result.Ok)
+            Accounts.NotifySessionChanged();
+        else
+            _message = result.Error;
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

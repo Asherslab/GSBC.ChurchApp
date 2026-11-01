@@ -1,0 +1,144 @@
+@inject AccountsClient Accounts
+@inject PasskeyCeremonies Passkeys
+
+@if (_profile is null)
+{
+    <p>Loading your account…</p>
+}
+else
+{
+    <section class="account-panel">
+        <h2>You</h2>
+        <EditForm Model="this" OnSubmit="SaveNameAsync" FormName="name">
+            <label>Name <InputText @bind-Value="_name" autocomplete="name" /></label>
+            <button type="submit" disabled="@_busy">Save</button>
+        </EditForm>
+        <p>@_profile.Email @(_profile.EmailConfirmed ? "(confirmed)" : "(not confirmed yet)")</p>
+        @if (!_profile.EmailConfirmed)
+        {
+            <EditForm Model="this" OnSubmit="ConfirmAsync" FormName="confirm">
+                <label>Code from the email <InputText @bind-Value="_code" inputmode="numeric" autocomplete="one-time-code" /></label>
+                <button type="submit" disabled="@_busy">Confirm</button>
+                <button type="button" class="link" @onclick="ResendAsync" disabled="@_busy">Send a new code</button>
+            </EditForm>
+            <p>Confirming lets you get back in by email if you lose your passkeys.</p>
+        }
+    </section>
+
+    <section class="account-panel">
+        <h2>Passkeys</h2>
+        <ul>
+            @foreach (PasskeySummary passkey in _passkeys)
+            {
+                <li>
+                    @passkey.Name · added @passkey.CreatedAt.ToLocalTime().ToString("d MMM yyyy") @(passkey.BackedUp ? "· synced" : "")
+                    @if (_passkeys.Count > 1)
+                    {
+                        <button class="link" @onclick="() => RemoveAsync(passkey.Id)" disabled="@_busy">Remove</button>
+                    }
+                </li>
+            }
+        </ul>
+        <button @onclick="AddPasskeyAsync" disabled="@_busy">Add a passkey on this device</button>
+        <p>A second passkey (another phone or computer) means losing one device never locks you out.</p>
+    </section>
+
+    <section class="account-panel">
+        <h2>Where you're signed in</h2>
+        <ul>
+            @foreach (SessionSummary session in _sessions)
+            {
+                <li>
+                    @(session.Current ? "This device" : session.DeviceName ?? session.Client) · last used @session.LastSeenAt.ToLocalTime().ToString("d MMM, h:mm tt")
+                    @if (!session.Current)
+                    {
+                        <button class="link" @onclick="() => EndAsync(session.Id)" disabled="@_busy">Sign out</button>
+                    }
+                </li>
+            }
+        </ul>
+        <button @onclick="Accounts.SignOutAsync" disabled="@_busy">Sign out of this device</button>
+        <button @onclick="Accounts.SignOutEverywhereAsync" disabled="@_busy">Sign out everywhere</button>
+    </section>
+}
+
+@if (_message is not null)
+{
+    <p class="message">@_message</p>
+}
+
+@code {
+    private Profile? _profile;
+    private List<PasskeySummary> _passkeys = [];
+    private List<SessionSummary> _sessions = [];
+    private string _name = "";
+    private string _code = "";
+    private bool _busy;
+    private string? _message;
+
+    protected override Task OnInitializedAsync() => LoadAsync();
+
+    private async Task LoadAsync()
+    {
+        _profile = await Accounts.GetProfileAsync();
+        _name = _profile.DisplayName;
+        _passkeys = (await Accounts.ListPasskeysAsync()).Passkeys;
+        _sessions = (await Accounts.ListSessionsAsync()).Sessions;
+    }
+
+    private Task SaveNameAsync() => RunAsync(async () =>
+    {
+        await Accounts.UpdateNameAsync(_name);
+        _message = "Saved. It shows everywhere the next time you sign in.";
+    });
+
+    private Task ConfirmAsync() => RunAsync(async () =>
+    {
+        await Accounts.ConfirmEmailAsync(_code);
+        _code = "";
+        _message = "Email confirmed.";
+    });
+
+    private Task ResendAsync() => RunAsync(async () =>
+    {
+        await Accounts.ResendConfirmationAsync();
+        _message = "A new code is on its way.";
+    });
+
+    private Task AddPasskeyAsync() => RunAsync(async () =>
+    {
+        CeremonyResult result = await Passkeys.RegisterAsync(null);
+        _message = result.Ok ? "Passkey added." : result.Error;
+    });
+
+    private Task RemoveAsync(string id) => RunAsync(async () =>
+    {
+        await Accounts.RemovePasskeyAsync(id);
+        _message = "Passkey removed.";
+    });
+
+    private Task EndAsync(string id) => RunAsync(async () =>
+    {
+        await Accounts.EndSessionAsync(id);
+        _message = "Signed out of that device.";
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+            await LoadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
