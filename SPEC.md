@@ -264,7 +264,10 @@ On the server:
    over gRPC-Web. Find each hop's idle and maximum-duration limits and confirm the heartbeat and
    reconnect cover them. *Proven locally 2026-11-01* through YARP to the iOS Simulator (catch-up, then
    a change arriving within a second), and through Cloudflare's tunnel the same day (HTTP/2 at the edge,
-no buffering, heartbeats holding the stream). Traefik still to test, in the cluster.
+no buffering, heartbeats holding the stream). *On a real iPhone 2026-11-02* through Cloudflare, with
+   Configuration's feed: changes within a second, the stream surviving 4 minutes idle, catch-up after
+   aeroplane mode and after the app was killed offline, and the outbox sending the moment the network
+   returns. Traefik still to test, in the cluster.
 
 ## 6. Who may call what
 

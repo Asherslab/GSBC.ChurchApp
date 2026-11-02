@@ -49,7 +49,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc private func appBecameActive() {
         Task {
             await engine?.resume()
-            await outbox?.drain()
+            await outbox?.sendWaitingNow()
         }
     }
 

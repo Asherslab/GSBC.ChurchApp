@@ -1,5 +1,6 @@
 import DataLayerCore
 import Foundation
+import Network
 
 final class DataLayerRuntime: @unchecked Sendable {
     static let shared = DataLayerRuntime()
@@ -15,6 +16,9 @@ final class DataLayerRuntime: @unchecked Sendable {
     var feedsChanged: ((Set<String>) -> Void)?
     var stateChanged: ((SyncState) -> Void)?
     var outboxChanged: (() -> Void)?
+
+    private let network = NWPathMonitor()
+    private var wasOnline = true
 
     private init() {
         transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0) }
@@ -33,9 +37,18 @@ final class DataLayerRuntime: @unchecked Sendable {
                 guard let self else { return }
                 self.state = state
                 self.stateChanged?(state)
-                if state == .live { Task { await self.outbox?.drain() } }
+                if state == .live { Task { await self.outbox?.sendWaitingNow() } }
             },
             onReset: { media?.clearPrivate() })
+
+        network.pathUpdateHandler = { [weak self] path in
+            guard let self else { return }
+            let online = path.status == .satisfied
+            defer { self.wasOnline = online }
+            guard online, !self.wasOnline else { return }
+            Task { await self.engine?.reconnectNow() }
+        }
+        network.start(queue: DispatchQueue(label: "au.com.baptist.churchapp.datalayer.network"))
     }
 
     private static func configuredGateway() -> URL? {

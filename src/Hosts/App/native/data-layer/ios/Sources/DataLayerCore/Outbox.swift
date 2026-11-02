@@ -64,6 +64,14 @@ public actor Outbox {
         onChanged()
     }
 
+    public func sendWaitingNow() async {
+        let now = Self.now()
+        try? await database.write { db in
+            try db.execute(sql: "UPDATE outbox SET next_attempt_at = ? WHERE failed = 0 AND next_attempt_at > ?", arguments: [now, now])
+        }
+        await drain()
+    }
+
     public func drain() async {
         guard !draining else { return }
         draining = true

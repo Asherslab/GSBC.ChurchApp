@@ -52,7 +52,8 @@ our headers, Web Analytics off, app hosts purged), and media goes through R2; se
 and inviting, with a real email through the shared mailbox.
 
 **Not tested end to end yet:** the staff-friendly access screens and Configuration's editor (built and
-unit-tested on 2026-11-02, not yet tried in the running app); Media on a phone. Media uploads from the
+unit-tested on 2026-11-02, not yet tried in the running app); Media on a phone. Live sync on a real iPhone through Cloudflare was proven with Configuration's feed
+(2026-11-02: live changes, idle stream, offline catch-up, outbox). Media uploads from the
 admin panel work through `dev-media.baptist.com.au` (owner, 2026-11-02); background refresh needs measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on

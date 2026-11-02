@@ -18,6 +18,7 @@ public actor SyncEngine {
 
     private var feeds: [String] = []
     private var watching: Task<Void, Never>?
+    private var retryWait: Task<Void, Never>?
     private var state = SyncState.stopped
 
     public init(transport: GrpcWebTransport, store: FeedStore,
@@ -45,6 +46,7 @@ public actor SyncEngine {
     public func pause() {
         watching?.cancel()
         watching = nil
+        retryWait?.cancel()
         report(.stopped)
     }
 
@@ -77,8 +79,15 @@ public actor SyncEngine {
             report(.offline)
             failures += 1
             let backoff = min(Self.maximumBackoff, pow(2, Double(min(failures, 5)))) * Double.random(in: 0.5...1)
-            try? await Task.sleep(nanoseconds: UInt64(backoff * 1_000_000_000))
+            let wait = Task<Void, Never> { try? await Task.sleep(nanoseconds: UInt64(backoff * 1_000_000_000)) }
+            retryWait = wait
+            await wait.value
+            retryWait = nil
         }
+    }
+
+    public func reconnectNow() {
+        retryWait?.cancel()
     }
 
     private func report(_ newState: SyncState) {
