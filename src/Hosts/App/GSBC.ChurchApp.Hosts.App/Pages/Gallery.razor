@@ -1,0 +1,162 @@
+@page "/gallery"
+@inject TimeProvider Clock
+@inject Appearance Appearance
+
+<Page Title="Design gallery" BackHref="more" BackLabel="More">
+    <Actions>
+        <button type="button" class="icon-btn" aria-label="Open a sheet" @onclick="() => _sheet = true"><Icon Name="sliders" /></button>
+    </Actions>
+    <ChildContent>
+        <PullToRefresh OnRefresh="PretendRefreshAsync">
+            <Masthead Title="Design gallery" Note="Every building block, in the current palette">
+                <div class="gallery__masthead-actions">
+                    <Button Variant="ButtonVariant.OnMasthead" Icon="headphones">Listen</Button>
+                    <Button Variant="ButtonVariant.GhostOnMasthead" Icon="calendar">Remind me</Button>
+                </div>
+            </Masthead>
+
+            <Section First="true" Title="Colours" Lead="Pull down to try pull to refresh. Light, dark and the preview palette live in Appearance.">
+                <div class="gallery__palette">
+                    @foreach (string role in Roles)
+                    {
+                        <span class="gallery__swatch"><i style="background: var(--@role)"></i>@role</span>
+                    }
+                </div>
+                <Segmented TValue="ColourScheme" Label="Light or dark" Options="Schemes" Value="Appearance.Scheme" ValueChanged="Appearance.SetSchemeAsync" />
+            </Section>
+
+            <Section Title="Type">
+                <div class="gallery__type">
+                    <span class="gallery__headline">Headline for a sermon or event</span>
+                    <span class="gallery__title-lg">Title large, for sheets</span>
+                    <p class="gallery__prose">Body prose sits in ink 2 at a reading measure, for the welcome letter and descriptions. It follows the iPhone's text size setting all the way through.</p>
+                    <span class="small muted">Caption for metadata and hints</span>
+                </div>
+            </Section>
+
+            <Section Title="Buttons">
+                <div class="gallery__buttons">
+                    <Button>Send to the pastoral team</Button>
+                    <Button Variant="ButtonVariant.Quiet">Not now</Button>
+                    <Button Variant="ButtonVariant.Live" Small="true" Icon="headphones">Watch live</Button>
+                    <Button Variant="ButtonVariant.Danger" Small="true">Discard</Button>
+                    <Button Busy="true">Saving</Button>
+                    <Button Disabled="true">Unavailable</Button>
+                    <Button Variant="ButtonVariant.Quiet" Icon="share" AriaLabel="Share" />
+                </div>
+                <div class="gallery__block"><Button Block="true" Icon="heart">Give online</Button></div>
+            </Section>
+
+            <Section Title="Rows" LinkHref="more" LinkText="More">
+                <ListGroup>
+                    <ListRow Title="Bulletin" Subtitle="Sunday's welcome, sermons and notices" Icon="book-open" Href="more" />
+                    <ListRow Title="Prayer requests" Subtitle="Private to the pastoral team" Icon="prayer" IconTone="RowTone.Accent" Href="more" />
+                    <ListRow Title="New this week" Subtitle="Two notices" Icon="bell" IconTone="RowTone.Warm" Trailing="2" Href="more" />
+                    <ListRow Title="Website" Subtitle="baptist.com.au" Icon="link" IconTone="RowTone.Quiet" Href="https://baptist.com.au" External="true" />
+                    <ListRow Title="Coming later" Subtitle="Not in this version" Icon="lock" Disabled="true" />
+                </ListGroup>
+            </Section>
+
+            <Section Title="Boxed list">
+                <ListGroup Boxed="true">
+                    <ListRow Title="Sunday 10:30am" Subtitle="Worship, streamed" Icon="clock" />
+                    <ListRow Title="Sunday 6pm" Subtitle="Worship, streamed" Icon="clock" />
+                </ListGroup>
+            </Section>
+
+            <Section Title="Cards">
+                <div class="stack">
+                    <Card Title="Your challenge this week">Read Job 33 and pray for one person by name each morning.</Card>
+                    <Card Tone="CardTone.Masthead" Title="Almighty God" Href="more">
+                        <span>Job 33:4 · the 2026 theme</span>
+                    </Card>
+                    <Card Tone="CardTone.Raised" Title="Picture card" Href="more">
+                        <Media><span class="gallery__cover"><BrandMark Decorative="true" /></span></Media>
+                        <ChildContent><span class="small muted">Only where a picture leads: an event, a series</span></ChildContent>
+                    </Card>
+                </div>
+            </Section>
+
+            <Section Title="Dates">
+                <ListGroup>
+                    <ListRow Title="Long"><TrailingContent><DateLine At="Now" /></TrailingContent></ListRow>
+                    <ListRow Title="Short, with time"><TrailingContent><DateLine At="Now" Style="DateLineStyle.Short" WithTime="true" /></TrailingContent></ListRow>
+                    <ListRow Title="Relative"><TrailingContent><DateLine At="Now.AddDays(1)" Style="DateLineStyle.Relative" WithTime="true" /></TrailingContent></ListRow>
+                    <ListRow Title="A range"><TrailingContent><DateLine At="Now" Until="Now.AddMinutes(90)" Style="DateLineStyle.TimeOnly" /></TrailingContent></ListRow>
+                </ListGroup>
+            </Section>
+
+            <Section Title="Fields">
+                <div class="stack">
+                    <TextField Label="Your name" @bind-Value="_name" Placeholder="First name is fine" AutoComplete="given-name" />
+                    <TextField Label="Prayer request" @bind-Value="_request" Multiline="true" MaxLength="500" Hint="Only the pastoral team sees this." />
+                    <TextField Label="Link" Value="http://example" Problem="Link must be a web link starting with https://." />
+                    <SelectField Label="Service" Options="Services" @bind-Value="_service" />
+                    <div>
+                        <ToggleRow Title="Hide my name" Description="The pastoral team sees it as anonymous" @bind-Checked="_anonymous" />
+                        <ToggleRow Title="Notify me" Description="Not available yet" Disabled="true" />
+                    </div>
+                </div>
+            </Section>
+
+            <Section Title="Notices">
+                <div class="stack">
+                    <Notice Text="Saved. Phones show it within a few seconds." />
+                    <Notice Tone="NoticeTone.Warning" Text="Someone else changed this. Here's the latest." />
+                </div>
+            </Section>
+
+            <Section Title="Sync">
+                <SyncIndicator />
+            </Section>
+
+            <Section Title="Loading">
+                <Skeleton Count="2" />
+                <div class="gallery__block"><Skeleton Shape="SkeletonShape.Lines" Count="3" /></div>
+            </Section>
+
+            <Section Title="Empty">
+                <EmptyState Icon="calendar" Title="Nothing on this week" Body="Events staff add appear here and in the calendar.">
+                    <Button Variant="ButtonVariant.Quiet" OnClick="() => _sheet = true">Open a sheet</Button>
+                </EmptyState>
+            </Section>
+        </PullToRefresh>
+    </ChildContent>
+</Page>
+
+<Sheet @bind-Open="_sheet" Title="My notes" Lead="Saved on this phone only.">
+    <ChildContent>
+        <TextField Label="Notes" @bind-Value="_notes" Multiline="true" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" OnClick="() => _sheet = false">Done</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly string[] Roles = ["masthead", "primary", "accent", "live", "marker", "sand", "ink", "ink-2", "danger"];
+
+    private static readonly IReadOnlyList<SegmentOption<ColourScheme>> Schemes =
+    [
+        new(ColourScheme.Automatic, "Automatic", "smartphone"),
+        new(ColourScheme.Light, "Light", "sun"),
+        new(ColourScheme.Dark, "Dark", "moon"),
+    ];
+
+    private static readonly IReadOnlyList<FieldOption> Services =
+    [
+        new("am", "Sunday 10:30am"),
+        new("pm", "Sunday 6pm"),
+    ];
+
+    private bool _sheet;
+    private bool _anonymous = true;
+    private string _name = "";
+    private string _request = "";
+    private string _notes = "";
+    private string _service = "am";
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private static Task PretendRefreshAsync() => Task.Delay(900);
+}

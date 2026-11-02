@@ -1,0 +1,29 @@
+@typeparam TValue
+@inject Shell Shell
+
+<div class="segmented" role="radiogroup" aria-label="@Label">
+    @foreach (SegmentOption<TValue> option in Options)
+    {
+        bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
+        <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" @onclick="() => SelectAsync(option.Value)">
+            @if (option.Icon is not null)
+            {
+                <Icon Name="@option.Icon" Size="IconSize.Small" />
+            }
+            @option.Label
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SegmentOption<TValue>> Options { get; set; }
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+
+    private async Task SelectAsync(TValue value)
+    {
+        await Shell.HapticAsync();
+        await ValueChanged.InvokeAsync(value);
+    }
+}

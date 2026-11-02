@@ -1,0 +1,25 @@
+<div class="skeleton skeleton--@Shape.ToString().ToLowerInvariant()" aria-hidden="true">
+    @for (int index = 0; index < Count; index++)
+    {
+        @switch (Shape)
+        {
+            case SkeletonShape.Rows:
+                <span class="skeleton__row"><i class="skeleton__tile"></i><span class="skeleton__lines"><i></i><i></i></span></span>
+                break;
+            case SkeletonShape.Lines:
+                <i class="skeleton__line"></i>
+                break;
+            default:
+                <i class="skeleton__block" style="aspect-ratio: @AspectRatio"></i>
+                break;
+        }
+    }
+</div>
+<span class="visually-hidden" role="status">@Label</span>
+
+@code {
+    [Parameter] public SkeletonShape Shape { get; set; } = SkeletonShape.Rows;
+    [Parameter] public int Count { get; set; } = 3;
+    [Parameter] public string AspectRatio { get; set; } = "16 / 9";
+    [Parameter] public string Label { get; set; } = "Loading";
+}

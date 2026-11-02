@@ -100,7 +100,7 @@
     {
         if (firstRender)
         {
-            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/rich-text-editor.js");
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/rich-text-editor.js");
             await _module.InvokeVoidAsync("attach", _textarea);
         }
 

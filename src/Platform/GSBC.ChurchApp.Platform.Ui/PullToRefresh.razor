@@ -1,0 +1,47 @@
+@implements IAsyncDisposable
+@inject Shell Shell
+
+<div class="pull" @ref="_host">
+    <div class="pull__indicator" aria-hidden="true"><Icon Name="refresh" Size="IconSize.Small" /></div>
+    <div class="pull__content">@ChildContent</div>
+</div>
+
+@code {
+    private ElementReference _host;
+    private DotNetObjectReference<PullToRefresh>? _receiver;
+    private IJSObjectReference? _gesture;
+
+    [Parameter, EditorRequired] public EventCallback OnRefresh { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _receiver = DotNetObjectReference.Create(this);
+        _gesture = await Shell.PullToRefreshAsync(_host, _receiver);
+    }
+
+    [JSInvokable]
+    public async Task Refresh()
+    {
+        await OnRefresh.InvokeAsync();
+        await Shell.HapticAsync(Haptic.Success);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_gesture is not null)
+            {
+                await _gesture.InvokeVoidAsync("dispose");
+                await _gesture.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _receiver?.Dispose();
+    }
+}

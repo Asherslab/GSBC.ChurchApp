@@ -9,7 +9,7 @@ namespace GSBC.ChurchApp.Features.Configuration.Client;
 public static class ConfigurationClientExtensions
 {
     public static IServiceCollection AddConfigurationClient(this IServiceCollection services) =>
-        services.AddSingleton<ConfigurationClient>().AddSurfaces(HubSurfaces.All);
+        services.AddSingleton<ConfigurationClient>().AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
 
     public static IServiceCollection AddLocalSurfaceLayout(this IServiceCollection services)
     {

@@ -24,12 +24,12 @@
 .rich-text blockquote {
     margin: 0.8em 0;
     padding: 0.1em 0 0.1em 1em;
-    border-left: 3px solid var(--line-strong, var(--line, rgb(42 61 94 / 0.25)));
-    color: var(--ink-2, #545e70);
+    border-left: 3px solid var(--line);
+    color: var(--ink-2);
 }
 
 .rich-text a {
-    color: var(--link, var(--aqua-deep, #00776d));
+    color: var(--accent);
 }
 
 .rich-text-figure {
@@ -40,7 +40,7 @@
     display: block;
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius-small, 8px);
+    border-radius: var(--radius-inner);
 }
 
 .rich-text-editor {
@@ -58,13 +58,13 @@
     margin: 0;
     min-height: 36px;
     padding: 0 10px;
-    background: var(--surface-strong, #e9e1d4);
-    color: var(--ink, #18233a);
+    background: var(--sand-strong);
+    color: var(--ink);
 }
 
 .rich-text-toolbar button[aria-pressed="true"] {
-    background: var(--navy, #2a3d5e);
-    color: var(--on-navy, #fff);
+    background: var(--primary);
+    color: var(--on-primary);
 }
 
 .rich-text-panel {
@@ -73,8 +73,8 @@
     align-items: end;
     gap: 8px;
     padding: 8px;
-    border: 1px solid var(--line, rgb(42 61 94 / 0.12));
-    border-radius: var(--radius-small, 8px);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-inner);
 }
 
 .rich-text-panel label {
@@ -93,8 +93,8 @@
 
 .rich-text-preview {
     padding: 12px;
-    border: 1px dashed var(--line, rgb(42 61 94 / 0.12));
-    border-radius: var(--radius-small, 8px);
+    border: 1px dashed var(--line);
+    border-radius: var(--radius-inner);
 }
 
 .rich-text-preview-label {
@@ -103,12 +103,12 @@
     font-size: 0.8em;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: var(--ink-3, #6b7384);
+    color: var(--ink-3);
 }
 
 .rich-text-preview-empty {
     margin: 0;
-    color: var(--ink-3, #6b7384);
+    color: var(--ink-3);
 }
 
 .media-chooser {
@@ -130,5 +130,5 @@
     width: 96px;
     height: 64px;
     object-fit: cover;
-    border-radius: var(--radius-small, 8px);
+    border-radius: var(--radius-inner);
 }

@@ -94,6 +94,13 @@ The Hub's **link tile** (`hub.link`): repeatable, with a title, subtitle, link, 
 "wide" switch and an optional picture. Home will render it for tiles no feature provides, such as the Bible link or a one-off
 campaign. Home itself isn't built yet; when it is, it reads `ISurfaceLayout.ForAreaAsync(HubSurfaces.Area)`.
 
+## The second consumer
+
+The app's **theme** (`app.appearance`, one `app.theme` surface with a palette choice): staff choose the
+church's brand or the yearly theme for everyone, and the phone applies it live. See
+[data-driven.md](../architecture/data-driven.md), *Themes*. It is "Colours" in the admin panel's
+navigation and "Colours for everyone" under More in the app.
+
 ## Status (2026-11-02)
 
 **Built:** the descriptors and layout composition in Platform.Contracts; `ISurfaceLayout` and
@@ -117,5 +124,6 @@ Not yet run end to end through the AppHost or on a phone.
 - **Feed writes by hand:** the editor adds its `sync.feed_changes` rows itself, in the same
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible
   to forget; do it when a second feature writes a feed.
-- Themes, and a role audience ([data-driven.md](../architecture/data-driven.md)). The media and
-  rich-text field kinds were built on 2026-11-02 but haven't been run against the API yet.
+- A role audience ([data-driven.md](../architecture/data-driven.md)).
+- The media and rich-text field kinds and the theme surface need the API restarted with these changes
+  before staff can save them (an unknown surface is refused).

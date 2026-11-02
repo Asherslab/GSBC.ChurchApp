@@ -92,5 +92,28 @@ these open; none split into materially different designs, so they were decided a
   new audited save. A save carries the revision it was based on and is refused if someone else saved
   since.
 - **"Needs app version X"** is shown for surfaces introduced after the first store release (1.0).
-- **Not yet:** themes (brand or yearly), and taxonomies, which are each feature's own records. The
-  media field kind and a rich-text one were added on 2026-11-02 ([configuration.md](../features/configuration.md)).
+- **Not yet:** taxonomies, which are each feature's own records. The media field kind and a
+  rich-text one were added on 2026-11-02 ([configuration.md](../features/configuration.md)).
+
+## Themes (decided 2026-11-02)
+
+Which palette everyone sees, the church's brand or the yearly theme, is staff's choice and needs no
+release. It is the smallest design that fits the machinery above:
+
+- **One area, one surface.** `AppearanceSurfaces` (Platform.Contracts) declares the area `app.appearance`
+  ("Colours", global, edited with `config.appearance.edit`) and one non-repeatable surface `app.theme`
+  with a choice setting `palette`: `brand` (the default) or `year-2026`. Staff edit it with the same
+  editor as the Hub (admin panel → Colours). It needs no new service, table or feed, and its dates let a
+  theme run for a season. Hidden, outside its dates, or a palette this app version doesn't know: the
+  brand.
+- **Applied at start-up and live.** The phone reads the area from the placements feed
+  (`ISurfaceLayout`), sets `data-theme`, and remembers it, so the next launch starts in the right
+  colours before Blazor runs; a change arrives through sync like any placement.
+- **Previewing.** Anyone holding `config.appearance.edit` can try a palette on their own phone
+  (More → Appearance) without changing it for everyone, then "Change for everyone" opens the editor.
+  Until people can sign in on the phone (passkeys wait on the Apple enrolment), development builds
+  offer the preview too; drop that once staff can sign in on the phone.
+- **Light, dark or automatic** is each person's own, kept on the phone.
+- **The palettes themselves are code.** Token values live in `tokens.css` and change with a release
+  (SPEC §4); next year's theme is a new palette id in a release, then staff switch to it. Token values
+  as data stays open until there is a reason for it.

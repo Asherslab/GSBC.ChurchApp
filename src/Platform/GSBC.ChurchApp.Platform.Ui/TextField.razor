@@ -1,0 +1,44 @@
+<div class="field @(Problem is null ? "" : "field--problem")">
+    <label class="field__label" for="@_id">@Label</label>
+    @if (Multiline)
+    {
+        <textarea id="@_id" class="field__input field__input--multiline" value="@Value" placeholder="@Placeholder" maxlength="@MaxLength" required="@Required" disabled="@Disabled" aria-describedby="@DescribedBy" aria-invalid="@(Problem is null ? null : "true")" @oninput="ChangeAsync"></textarea>
+    }
+    else
+    {
+        <input id="@_id" class="field__input" type="@Type" value="@Value" placeholder="@Placeholder" maxlength="@MaxLength" required="@Required" disabled="@Disabled" autocomplete="@AutoComplete" min="@Min" max="@Max" aria-describedby="@DescribedBy" aria-invalid="@(Problem is null ? null : "true")" @oninput="ChangeAsync" />
+    }
+    @if (Hint is not null)
+    {
+        <span class="field__hint" id="@(_id)-hint">@Hint</span>
+    }
+    @if (Problem is not null)
+    {
+        <span class="field__problem" id="@(_id)-problem">@Problem</span>
+    }
+</div>
+
+@code {
+    private static int _fields;
+    private readonly string _id = $"text-field-{Interlocked.Increment(ref _fields)}";
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string Type { get; set; } = "text";
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Multiline { get; set; }
+    [Parameter] public int? MaxLength { get; set; }
+    [Parameter] public bool Required { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? AutoComplete { get; set; }
+    [Parameter] public string? Min { get; set; }
+    [Parameter] public string? Max { get; set; }
+
+    private string? DescribedBy =>
+        string.Join(' ', new[] { Hint is null ? null : $"{_id}-hint", Problem is null ? null : $"{_id}-problem" }.OfType<string>()) is { Length: > 0 } ids ? ids : null;
+
+    private Task ChangeAsync(ChangeEventArgs change) => ValueChanged.InvokeAsync(change.Value?.ToString() ?? "");
+}

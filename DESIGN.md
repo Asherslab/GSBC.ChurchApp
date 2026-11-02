@@ -267,7 +267,7 @@ The app reads like the church's own printed bulletin brought onto a phone. Every
 
 Density is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app tile grid and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series).
 
-Light is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is built as a full alternate so staff can compare it with the brand palette; which one ships is not decided.
+Light is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose it in Configuration's Colours area, optionally for a run of dates, and anyone who may make that choice can preview the other palette on their own phone first.
 
 **Key Characteristics:**
 - Navy masthead on every tab root, with the mark's ring echo at 7% opacity.
@@ -276,13 +276,13 @@ Light is the default scheme. An app-wide dark scheme (night navy ground, raised 
 - White page, sand callouts, hairline-divided rows; shadows only on the few boxed lists and picture cards.
 - Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.
 - rem type tied to the iOS body text size, so Dynamic Type scales the whole app.
-- Five-tab bar (Sunday, Week, Listen, Prayer, More) and a notifications bell with an orange unread badge on every tab root.
+- A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox.
 
 ## Colors
 
 A bulletin palette: one deep brand navy for the masthead and primary actions, warm paper neutrals for the page, aqua for things you can act on or that are live, and orange as the marker for "you are here" and "new".
 
-The palette is switched at the document root: `data-scheme` selects light or dark, `data-theme` selects the brand palette or the 2026 yearly palette. Every component reads semantic roles (masthead, primary, accent, live, marker, sand, ink), never a raw hex, which is what lets the four combinations work without per-component overrides.
+The palette is switched at the document root: `data-scheme` selects light or dark (the person's choice, or the phone's), `data-theme` selects the palette (`brand` or `year-2026`, staff's choice). Every component reads semantic roles (masthead, primary, accent, live, marker, sand, ink), never a raw hex, which is what lets the four combinations work without per-component overrides.
 
 ### Primary
 - **Brand Navy** (navy): the masthead ground, the stuck top bar, primary buttons, the play toggle, selected chips, and the default tint for row icons and agenda times. The colour of the brand guide; the bulletin's cover.
@@ -310,7 +310,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 - **Bright Aqua** (bright-aqua) replaces navy as primary and replaces both aqua roles, with **On Bright Aqua** (on-bright-aqua) as its text. Orange stays the marker; **Night Orange Ink** (night-orange-ink) carries orange text.
 - Warm off-white ink (night-ink, night-ink-2, night-ink-3) rather than pure white.
 
-### 2026 yearly palette (under comparison)
+### 2026 yearly palette (staff's choice)
 - **Year Green** (year-green) replaces navy as the masthead and live colour; **Year Green Deep** (year-green-deep) is primary; **Year Accent** (year-accent) is the text-on-light action colour.
 - **Year Cream** (year-cream) is the masthead note; **Year Sand** and **Year Sand Strong** are the shaded boxes; green-tinted ink (year-ink, year-ink-2, year-ink-3) replaces navy-tinted ink.
 - **Year Marker** (year-marker) and **Year Marker Ink** (year-marker-ink) replace orange as the marker.
@@ -452,7 +452,46 @@ A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabbe
 Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an optional quiet button.
 
 ### Motion
-One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. Reduced motion collapses every animation and transition to 1ms.
+One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag.
+
+## Implementation
+
+The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`, and both hosts link it: the app in full,
+the admin panel for tokens, type and the shared components.
+
+- **Tokens:** `wwwroot/css/tokens.css` holds every literal colour: the semantic roles, redefined per
+  `data-theme` and `data-scheme`, plus the palette-picker swatches. `ui.css` styles the components from
+  the roles only. `Architecture.Tests` (`DesignTokenRules`) fails on a literal colour in any other
+  stylesheet and on a px font size (the root fallback aside), which are the Roles Not Hexes and
+  Dynamic Type rules.
+- **Theme:** `wwwroot/js/theme.js` runs in `<head>` and sets `data-scheme` and `data-theme` from what
+  the phone last knew, so nothing flashes. `AppTheme` (in the app's layout) reads Configuration's
+  `app.appearance` area through the store, applies staff's palette at start-up and whenever the feed
+  changes, and remembers it. `Appearance` holds the person's Light, Dark or Automatic and a local
+  preview palette.
+- **Shell:** `wwwroot/js/shell.js` and the `Shell` service: haptics, back with a fallback, the top bar
+  turning solid past the masthead, edge-swipe back, scroll to top, pull to refresh, the status bar.
+
+| Design | Component | Notes |
+|---|---|---|
+| Screen frame, top bar, back | `Page` | `BackHref` makes it a pushed page (slide in, back button, edge swipe); `Actions` fills the top bar's end |
+| Masthead | `Masthead` | Title, note, and a slot for the live element |
+| Section and section head | `Section` | Title, lead, a "see all" link, a trailing slot |
+| Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads, via `Media`), `Masthead` |
+| Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled |
+| Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included; the indicator sits under the top bar. Touch only, so offer a button too |
+| Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens |
+| Empty state | `EmptyState` | Icon, title, line, an action slot |
+| Dates and times | `DateLine` | Church time, `Long`/`Short`/`Relative`/`TimeOnly`, ranges, "10:30am" and "6pm" as the bulletin writes them |
+| Live/sync | `SyncIndicator` | Up to date, catching up, offline; plain or on the masthead |
+| Buttons | `Button` | Primary, Quiet, On masthead, Ghost on masthead, Live, Danger; block, small, icon-only, busy |
+| Fields | `TextField`, `SelectField`, `ToggleRow`, `Segmented` | Labels tied to inputs; hint and problem lines are described-by |
+| Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes |
+| Loading | `Skeleton` | Rows, lines or a block, with a status for screen readers |
+| Tab bar and More | `ModuleNav` | `NavStyle.TabBar` and `MoreList` (the admin panel keeps `Links`); entries come from `NavEntry.Placement` |
+| Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
+
+A development build has More → Design gallery, which shows every block in the current palette.
 
 ## Do's and Don'ts
 

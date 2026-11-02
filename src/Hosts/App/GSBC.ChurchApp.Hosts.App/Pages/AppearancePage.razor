@@ -1,0 +1,70 @@
+@page "/appearance"
+@using GSBC.ChurchApp.Platform.Client.Native
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@implements IDisposable
+@inject Appearance Appearance
+@inject IAccess Access
+@inject NativeBridge Bridge
+
+<Page Title="Appearance" BackHref="more" BackLabel="More">
+    <Masthead Title="Appearance" Note="How the app looks on this phone" />
+
+    <Section First="true" Title="Light or dark" Lead="Automatic follows your phone's setting, including at night.">
+        <Segmented TValue="ColourScheme" Label="Light or dark" Options="Schemes" Value="Appearance.Scheme" ValueChanged="Appearance.SetSchemeAsync" />
+    </Section>
+
+    @if (CanPreview)
+    {
+        <Section Title="Preview colours" Lead="Try a theme on this phone only. Everyone else keeps the colours chosen for the church.">
+            <ListGroup>
+                @foreach (Choice palette in AppearanceSurfaces.Palettes)
+                {
+                    bool chosen = Appearance.Palette == palette.Value;
+                    <ListRow Title="@palette.Label" Subtitle="@(palette.Value == Appearance.StaffPalette ? "What everyone sees" : null)" OnClick="() => Appearance.PreviewAsync(palette.Value)">
+                        <Leading><span class="swatches" data-theme-swatch="@palette.Value" aria-hidden="true"><i></i><i></i><i></i></span></Leading>
+                        <TrailingContent>
+                            @if (chosen)
+                            {
+                                <span class="check"><Icon Name="check" Size="IconSize.Small" /></span>
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+            @if (Appearance.PreviewPalette is not null)
+            {
+                <div class="ui-actions ui-after">
+                    <Button Variant="ButtonVariant.Quiet" OnClick="() => Appearance.PreviewAsync(null)">Stop previewing</Button>
+                    <Can Permission="AppearanceSurfaces.Edit">
+                        <Button Variant="ButtonVariant.Primary" Href="@($"configure/{AppearanceSurfaces.Area.Key}")">Change for everyone</Button>
+                    </Can>
+                </div>
+            }
+        </Section>
+    }
+</Page>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<ColourScheme>> Schemes =
+    [
+        new(ColourScheme.Automatic, "Automatic", "smartphone"),
+        new(ColourScheme.Light, "Light", "sun"),
+        new(ColourScheme.Dark, "Dark", "moon"),
+    ];
+
+    private bool CanPreview => Access.Can(AppearanceSurfaces.Edit) || Bridge.IsDevelopmentBuild;
+
+    protected override void OnInitialized()
+    {
+        Appearance.Changed += OnChanged;
+        Access.Changed += OnChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Appearance.Changed -= OnChanged;
+        Access.Changed -= OnChanged;
+    }
+}

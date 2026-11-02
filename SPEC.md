@@ -101,8 +101,11 @@ There are two kinds of change, and each has one route into the app.
 The rules only bite on downloading *code* (Apple Guideline 2.5.2 and DPLA §3.3.1(B); Google Play's
 Device and Network Abuse policy), which this plan does not do.
 
-If we ever want over-the-air *styling*, the safe route is a theme record from the API mapped onto
-the existing CSS variables. That stays data, not code. It is not planned for v1.
+Which of the built-in palettes the app uses (the church's brand or the yearly theme) is data: staff
+choose it, and it arrives like any other configuration ([data-driven.md](docs/architecture/data-driven.md),
+*Themes*). The palettes' values stay in the release. If we ever want over-the-air *styling*, the safe
+route is a theme record from the API mapped onto the existing CSS variables. That stays data, not code.
+It is not planned for v1.
 
 ## 5. Data in the app: the native data layer
 

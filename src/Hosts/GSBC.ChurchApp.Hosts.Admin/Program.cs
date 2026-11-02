@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Hosts.Admin;
 using GSBC.ChurchApp.Platform.Client;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Transport;
+using GSBC.ChurchApp.Platform.Ui;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -19,6 +20,7 @@ modules.Add(new ClientModule("Home", typeof(Program).Assembly, [new NavEntry("Ho
 builder.Services
     .AddSingleton(modules)
     .AddPlatformClient()
+    .AddPlatformUi()
     .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
     .AddAccountsAdmin(modules)
     .AddAccessAdmin(modules)

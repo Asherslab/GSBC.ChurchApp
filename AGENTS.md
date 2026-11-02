@@ -97,6 +97,12 @@ Before writing any Blazor UI:
 
 Two features with their own copies of the same UI is a defect: merge them into one component.
 
+**Data on screen stays current by itself.** A component that loads data uses `LiveData` (or
+`RefreshOn`) and names what it depends on, so it reloads when a feed changes, the phone reconnects,
+or the session or permissions change; never load once in `OnInitialized` and leave it. See
+[offline-and-caching.md](docs/architecture/offline-and-caching.md), *Screens update themselves*.
+`LiveDataRules` enforces it.
+
 # Comments: almost none
 
 **Don't write comments unless the code genuinely can't be understood without one.** Make the code say

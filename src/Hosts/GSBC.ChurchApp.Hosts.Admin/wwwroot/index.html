@@ -3,15 +3,20 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
     <title>Good Shepherd admin</title>
     <base href="/" />
     <link rel="preload" id="webassembly" />
-    <link rel="stylesheet" href="css/admin.css" />
-    <link rel="stylesheet" href="_content/GSBC.ChurchApp.Platform.Ui/rich-text.css" />
+    <link rel="stylesheet" href="_content/GSBC.ChurchApp.Platform.Ui/css/tokens#[.{fingerprint}].css" />
+    <link rel="stylesheet" href="_content/GSBC.ChurchApp.Platform.Ui/css/ui#[.{fingerprint}].css" />
+    <link rel="stylesheet" href="_content/GSBC.ChurchApp.Platform.Ui/css/rich-text#[.{fingerprint}].css" />
+    <link rel="stylesheet" href="css/admin#[.{fingerprint}].css" />
+    <script src="_content/GSBC.ChurchApp.Platform.Ui/js/theme#[.{fingerprint}].js"></script>
     <script type="importmap"></script>
 </head>
 <body>
     <div id="app"></div>
+    <script src="_content/GSBC.ChurchApp.Platform.Ui/js/shell#[.{fingerprint}].js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>
 </html>

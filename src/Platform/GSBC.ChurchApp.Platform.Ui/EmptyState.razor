@@ -1,0 +1,19 @@
+<div class="empty">
+    <Icon Name="@Icon" Size="IconSize.Large" />
+    <strong class="empty__title">@Title</strong>
+    @if (Body is not null)
+    {
+        <span class="empty__body">@Body</span>
+    }
+    @if (ChildContent is not null)
+    {
+        <div class="empty__action">@ChildContent</div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "sparkles";
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Body { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

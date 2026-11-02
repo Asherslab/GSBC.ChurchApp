@@ -64,7 +64,7 @@ with the server's problems listed as you type. Staff never need to know the synt
 - Link opens a box for the target and won't add one the server would refuse.
 - Picture opens the media library (`MediaChooser`, below) and puts the image on its own line.
 
-The only JavaScript is `rich-text-editor.js`, which reads and sets the text area's selection and turns
+The only JavaScript is `js/rich-text-editor.js`, which reads and sets the text area's selection and turns
 the shortcuts and Enter in the link box into toolbar clicks. The edits themselves are C#
 (`RichTextEdits`).
 
@@ -72,8 +72,8 @@ the shortcuts and Enter in the link box into toolbar clicks. The edits themselve
 registers its `MediaLibrary` in pick mode, so Platform.Ui and other features can offer "choose an
 image" without referencing Media. With no picker registered, the Picture button isn't shown.
 
-Styling is minimal and token-based (`rich-text.css` in Platform.Ui, falling back to DESIGN.md's
-values) until the design system lands.
+Styling uses the design system's tokens (`css/rich-text.css` in Platform.Ui), so it follows the
+theme and dark mode.
 
 ## Status (2026-11-02)
 

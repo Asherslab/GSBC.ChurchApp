@@ -15,8 +15,8 @@ public static class ConfigurationApiExtensions
     {
         services.AddConfigurationData();
         services.AddScoped<PlacementEditor>();
-        services.AddPermissions(HubSurfaces.Edit);
-        services.AddSurfaces(HubSurfaces.All);
+        services.AddPermissions(HubSurfaces.Edit, AppearanceSurfaces.Edit);
+        services.AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
         services.AddFeed(new FeedDefinition(ConfigurationFeeds.Placements, FeedAudience.Public));
         return services;
     }

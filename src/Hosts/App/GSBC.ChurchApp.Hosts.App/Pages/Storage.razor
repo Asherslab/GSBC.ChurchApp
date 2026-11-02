@@ -3,83 +3,90 @@
 @using GSBC.ChurchApp.Platform.Client.Feeds
 @using GSBC.ChurchApp.Platform.Client.Outbox
 @using GSBC.ChurchApp.Platform.Contracts.Sync
-@implements IDisposable
 @inject ILocalFeeds Feeds
 @inject IOutbox Outbox
 @inject GSBC.ChurchApp.Platform.Client.Native.NativeBridge Bridge
 
-<h1>Storage</h1>
+<RefreshOn On="ChangeKind.Feeds | ChangeKind.Outbox | ChangeKind.Reconnected" Changed="LoadAsync" />
 
-@if (!Feeds.IsAvailable)
-{
-    <p>Stored data is only kept in the phone app.</p>
-}
-else
-{
-    <p>Sync: @Feeds.State · On this phone: @Size(_info.FileBytes)</p>
-    <button @onclick="RefreshAsync">Refresh</button>
+<Page Title="Storage" BackHref="more" BackLabel="More">
+    <PullToRefresh OnRefresh="RefreshAsync">
+        <Masthead Title="Storage" Note="@(Feeds.IsAvailable ? $"{Size(_info.FileBytes)} on this phone" : null)">
+            <SyncIndicator OnMasthead="true" />
+        </Masthead>
 
-    <table>
-        <thead><tr><th>Feed</th><th>Rows</th><th>Size</th><th>Cursor</th></tr></thead>
-        <tbody>
-            @foreach (StoredFeed feed in _info.Feeds)
+        @if (!Feeds.IsAvailable)
+        {
+            <Section First="true">
+                <EmptyState Icon="database" Title="Kept on the phone" Body="The app stores what it syncs on the phone. In a browser, nothing is kept here." />
+            </Section>
+        }
+        else
+        {
+            <Section First="true" Title="Synced to this phone">
+                <Trailing><Button Variant="ButtonVariant.Quiet" Small="true" Icon="refresh" Busy="_refreshing" OnClick="RefreshAsync">Sync now</Button></Trailing>
+                <ChildContent>
+                    <ListGroup>
+                        @foreach (StoredFeed feed in _info.Feeds)
+                        {
+                            <ListRow Title="@feed.Feed" Subtitle="@($"{feed.Rows} {(feed.Rows == 1 ? "record" : "records")} · cursor {feed.Cursor}")" Trailing="@Size(feed.Bytes)" Icon="database" IconTone="RowTone.Quiet" />
+                        }
+                    </ListGroup>
+                </ChildContent>
+            </Section>
+
+            <Section Title="Waiting to send" Lead="Changes made offline wait here and go as soon as there's a signal.">
+                @if (_outbox.Count == 0)
+                {
+                    <ListGroup><ListRow Title="Nothing waiting" Icon="check" IconTone="RowTone.Accent" /></ListGroup>
+                }
+                else
+                {
+                    <ListGroup>
+                        @foreach (OutboxEntry entry in _outbox)
+                        {
+                            <ListRow Title="@entry.Method" Subtitle="@Describe(entry)" Icon="send" IconTone="@(entry.Failed ? RowTone.Warm : RowTone.Quiet)">
+                                <TrailingContent>
+                                    @if (entry.Failed)
+                                    {
+                                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Outbox.RetryAsync(entry.Id).AsTask()">Retry</Button>
+                                        <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => Outbox.DiscardAsync(entry.Id).AsTask()">Discard</Button>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                }
+                @if (Bridge.IsDevelopmentBuild)
+                {
+                    <div class="ui-actions ui-after">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="QueueTestSendAsync">Queue a test send</Button>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="QueueFailingSendAsync">Queue a failing send</Button>
+                    </div>
+                }
+            </Section>
+
+            @if (_echo.Count > 0)
             {
-                <tr><td>@feed.Feed</td><td>@feed.Rows</td><td>@Size(feed.Bytes)</td><td>@feed.Cursor</td></tr>
+                <Section Title="@DevelopmentFeeds.Echo">
+                    <ListGroup>
+                        @foreach (StoredRecord record in _echo)
+                        {
+                            <ListRow Title="@record.Id" Subtitle="@Encoding.UTF8.GetString(record.Payload)" Trailing="@($"v{record.Version}")" />
+                        }
+                    </ListGroup>
+                </Section>
             }
-        </tbody>
-    </table>
-
-    <h2>Waiting to send</h2>
-    @if (_outbox.Count == 0)
-    {
-        <p>Nothing waiting.</p>
-    }
-    else
-    {
-        <ul>
-            @foreach (OutboxEntry entry in _outbox)
-            {
-                <li>
-                    @entry.Method · @(entry.Failed ? $"couldn't send: {entry.LastError}" : entry.Attempts == 0 ? "sending" : $"retrying ({entry.Attempts} tries; {entry.LastError})")
-                    @if (entry.Failed)
-                    {
-                        <button @onclick="() => Outbox.RetryAsync(entry.Id)">Retry</button>
-                        <button @onclick="() => Outbox.DiscardAsync(entry.Id)">Discard</button>
-                    }
-                </li>
-            }
-        </ul>
-    }
-    @if (Bridge.IsDevelopmentBuild)
-    {
-        <button @onclick="QueueTestSendAsync">Queue a test send</button>
-        <button @onclick="QueueFailingSendAsync">Queue a failing send</button>
-    }
-
-    @if (_echo.Count > 0)
-    {
-        <h2>@DevelopmentFeeds.Echo</h2>
-        <ul>
-            @foreach (StoredRecord record in _echo)
-            {
-                <li><strong>@record.Id</strong> (v@(record.Version)): @Encoding.UTF8.GetString(record.Payload)</li>
-            }
-        </ul>
-    }
-}
+        }
+    </PullToRefresh>
+</Page>
 
 @code {
     private StoreInfo _info = new(0, []);
     private IReadOnlyList<StoredRecord> _echo = [];
     private IReadOnlyList<OutboxEntry> _outbox = [];
 
-    protected override async Task OnInitializedAsync()
-    {
-        Feeds.FeedsChanged += OnFeedsChanged;
-        Feeds.StateChanged += OnStateChanged;
-        Outbox.Changed += OnOutboxChanged;
-        await LoadAsync();
-    }
+    protected override Task OnInitializedAsync() => LoadAsync();
 
     private async Task LoadAsync()
     {
@@ -88,36 +95,28 @@ else
         _outbox = await Outbox.ListAsync();
     }
 
+    private bool _refreshing;
+
     private async Task RefreshAsync()
     {
-        await Feeds.RefreshAsync();
-        await LoadAsync();
+        _refreshing = true;
+        try
+        {
+            await Feeds.RefreshAsync();
+            await LoadAsync();
+        }
+        finally
+        {
+            _refreshing = false;
+        }
     }
 
-    private void OnFeedsChanged(IReadOnlySet<string> feeds) => InvokeAsync(async () =>
-    {
-        await LoadAsync();
-        StateHasChanged();
-    });
-
-    private void OnStateChanged() => InvokeAsync(StateHasChanged);
-
-    private void OnOutboxChanged() => InvokeAsync(async () =>
-    {
-        _outbox = await Outbox.ListAsync();
-        StateHasChanged();
-    });
+    private static string Describe(OutboxEntry entry) =>
+        entry.Failed ? $"Couldn't send: {entry.LastError}" : entry.Attempts == 0 ? "Sending" : $"Retrying ({entry.Attempts} tries; {entry.LastError})";
 
     private async Task QueueTestSendAsync() => await Outbox.EnqueueAsync("/gsbc.accounts.Session/GetCurrent", []);
 
     private async Task QueueFailingSendAsync() => await Outbox.EnqueueAsync("/gsbc.development.Missing/Call", []);
 
     private static string Size(long bytes) => bytes < 1024 ? $"{bytes} B" : $"{bytes / 1024.0:0.#} KB";
-
-    public void Dispose()
-    {
-        Feeds.FeedsChanged -= OnFeedsChanged;
-        Feeds.StateChanged -= OnStateChanged;
-        Outbox.Changed -= OnOutboxChanged;
-    }
 }

@@ -1,0 +1,41 @@
+@using GSBC.ChurchApp.Platform.Client.Feeds
+@implements IDisposable
+@inject ILocalFeeds Feeds
+@inject ClientSignals Signals
+
+@if (Feeds.IsAvailable)
+{
+    <span class="sync sync--@Shown.ToString().ToLowerInvariant() @(Retrying ? "sync--retrying" : "") @(OnMasthead ? "sync--on-masthead" : "")" role="status">
+        @if (Shown == SyncState.Offline)
+        {
+            <Icon Name="cloud-off" Size="IconSize.Small" />
+        }
+        else
+        {
+            <span class="sync__dot" aria-hidden="true"></span>
+        }
+        @Text
+    </span>
+}
+
+@code {
+    [Parameter] public bool OnMasthead { get; set; }
+
+    private bool Retrying => Feeds.State == SyncState.Connecting && !Signals.Online;
+
+    private SyncState Shown => Retrying ? SyncState.Offline : Feeds.State;
+
+    private string Text => Shown switch
+    {
+        SyncState.Live => "Up to date",
+        SyncState.Connecting => "Catching up…",
+        SyncState.Offline => "Offline · showing what's on this phone",
+        _ => "Not syncing",
+    };
+
+    protected override void OnInitialized() => Feeds.StateChanged += OnStateChanged;
+
+    private void OnStateChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Feeds.StateChanged -= OnStateChanged;
+}

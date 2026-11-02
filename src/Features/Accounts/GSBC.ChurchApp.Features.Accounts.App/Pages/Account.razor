@@ -1,39 +1,24 @@
 @page "/account"
-@using Grpc.Core
 @inject AccountsClient Accounts
 
-<h1>Account</h1>
+<Page Title="Account" BackHref="more" BackLabel="More">
+    <Masthead Title="Account" />
 
-@if (_error is not null)
-{
-    <p>Couldn't reach the server: @_error</p>
-}
-else if (_session is null)
-{
-    <p>Checking…</p>
-}
-else if (_session.SignedIn)
-{
-    <p>Signed in as @_session.DisplayName.</p>
-}
-else
-{
-    <p>Not signed in. Signing in on the phone arrives once the app can use passkeys (after the Apple enrolment); until then, sign in at the website.</p>
-}
-
-@code {
-    private CurrentSession? _session;
-    private string? _error;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            _session = await Accounts.GetCurrentSessionAsync();
-        }
-        catch (RpcException exception)
-        {
-            _error = $"{exception.StatusCode}: {exception.Status.Detail}";
-        }
-    }
-}
+    <Section First="true">
+        <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()" FailedTitle="Can't reach the church's server">
+            @if (context.Value.SignedIn)
+            {
+                <ListGroup>
+                    <ListRow Title="@context.Value.DisplayName" Subtitle="Signed in on this phone" Icon="user" IconTone="RowTone.Accent" />
+                </ListGroup>
+            }
+            else
+            {
+                <Card Title="You don't need an account to use the app">
+                    Signing in unlocks what's personal or private, such as your prayer requests and a ministry's members-only news.
+                    Signing in on the phone arrives once the app can use passkeys; until then, sign in at the website.
+                </Card>
+            }
+        </LiveData>
+    </Section>
+</Page>

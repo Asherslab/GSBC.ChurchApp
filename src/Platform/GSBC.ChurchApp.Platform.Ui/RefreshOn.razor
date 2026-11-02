@@ -1,0 +1,20 @@
+@implements IDisposable
+@inject ClientSignals Signals
+
+@code {
+    [Parameter] public IReadOnlyCollection<string>? Feeds { get; set; }
+    [Parameter] public ChangeKind On { get; set; } = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access;
+    [Parameter, EditorRequired] public EventCallback<ClientChange> Changed { get; set; }
+
+    private ChangeKind Kinds => Feeds is null ? On : On | ChangeKind.Feeds;
+
+    protected override void OnInitialized() => Signals.Changed += OnChanged;
+
+    private void OnChanged(ClientChange change)
+    {
+        if (change.Concerns(Kinds, Feeds))
+            InvokeAsync(() => Changed.InvokeAsync(change));
+    }
+
+    public void Dispose() => Signals.Changed -= OnChanged;
+}

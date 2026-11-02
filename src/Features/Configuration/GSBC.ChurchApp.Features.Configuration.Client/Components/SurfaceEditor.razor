@@ -4,79 +4,97 @@
 @inject SurfaceCatalog Surfaces
 @inject IPeopleDirectory People
 
-<section class="account-panel surface-editor">
-    <h2>@Area.Title</h2>
-    <p>@Area.Description</p>
-    <ol>
-        @for (int index = 0; index < _arranged.Count; index++)
-        {
-            int position = index;
-            ArrangedSurface entry = _arranged[position];
-            <li class="@(entry.Hidden ? "is-hidden" : "")">
-                <strong>@NameOf(entry)</strong>
-                <span>@Summary(entry)</span>
-                @if (entry.Surface.NeedsNewerApp)
-                {
-                    <span class="tag">needs app version @entry.Surface.IntroducedIn</span>
-                }
-                <button disabled="@(_busy || position == 0)" @onclick="() => MoveAsync(position, -1)" aria-label="Move @NameOf(entry) up">Up</button>
-                <button disabled="@(_busy || position == _arranged.Count - 1)" @onclick="() => MoveAsync(position, 1)" aria-label="Move @NameOf(entry) down">Down</button>
-                <button disabled="@_busy" @onclick="() => ToggleAsync(entry)">@(entry.Hidden ? "Show" : "Hide")</button>
-                <button disabled="@_busy" @onclick="() => Edit(entry)">Edit</button>
-            </li>
-        }
-    </ol>
-    @foreach (Surface repeatable in Surfaces.In(Area).Where(surface => surface.Repeatable))
-    {
-        <button disabled="@_busy" @onclick="() => Add(repeatable)">Add a @repeatable.Title.ToLowerInvariant()</button>
-    }
-</section>
+<RefreshOn Feeds="[ConfigurationFeeds.Placements]" Changed="ReloadUnlessEditingAsync" />
 
-@if (_draft is not null)
-{
-    <section class="account-panel">
-        <h2>@(_draft.IsNew && _draft.Surface.Repeatable ? $"New {_draft.Surface.Title.ToLowerInvariant()}" : _draft.Surface.Title)</h2>
-        <p>@_draft.Surface.Description</p>
-        <form @onsubmit="SaveDraftAsync">
+<Section First="true" Title="@(Surfaces.In(Area).Count > 1 ? "In order" : null)" Lead="@Area.Description">
+    @if (!_loaded)
+    {
+        <Skeleton Count="3" Label="Loading what's arranged" />
+    }
+    else
+    {
+        <ListGroup>
+            @for (int index = 0; index < _arranged.Count; index++)
+            {
+                int position = index;
+                ArrangedSurface entry = _arranged[position];
+                <ListRow Title="@NameOf(entry)" Subtitle="@Summary(entry)" Icon="@(entry.Hidden ? "eye-off" : "eye")" IconTone="@(entry.Hidden ? RowTone.Quiet : RowTone.Accent)" OnClick="() => Edit(entry)" Class="@(entry.Hidden ? "row--muted" : null)">
+                    <TrailingContent>
+                        @if (_arranged.Count > 1)
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-up" Disabled="@(_busy || position == 0)" AriaLabel="@($"Move {NameOf(entry)} up")" OnClick="() => MoveAsync(position, -1)" />
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-down" Disabled="@(_busy || position == _arranged.Count - 1)" AriaLabel="@($"Move {NameOf(entry)} down")" OnClick="() => MoveAsync(position, 1)" />
+                        }
+                        <GSBC.ChurchApp.Platform.Ui.Icon Name="chevron-right" Size="IconSize.Small" />
+                    </TrailingContent>
+                </ListRow>
+            }
+        </ListGroup>
+        @foreach (Surface repeatable in Surfaces.In(Area).Where(surface => surface.Repeatable))
+        {
+            <div class="ui-after">
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" Disabled="_busy" OnClick="() => Add(repeatable)">Add a @repeatable.Title.ToLowerInvariant()</Button>
+            </div>
+        }
+    }
+    @if (_message is not null && _draft is null)
+    {
+        <div class="ui-after"><Notice Tone="@(_failed ? NoticeTone.Warning : NoticeTone.Info)" Text="@_message" /></div>
+    }
+</Section>
+
+<Section Title="Recent changes">
+    <ListGroup>
+        @if (_loaded && _history.Count == 0)
+        {
+            <ListRow Title="Nothing changed yet" Subtitle="Everything is as the app starts" Icon="check" IconTone="RowTone.Quiet" />
+        }
+        @foreach (ChangeBatch batch in _history)
+        {
+            <ListRow Title="@Describe(batch)" Icon="undo" IconTone="RowTone.Quiet">
+                <Below><span class="row__subtitle">@_names.GetValueOrDefault(batch.By, "Someone") · <DateLine At="batch.At" Style="DateLineStyle.Relative" WithTime="true" /></span></Below>
+                <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RollBackAsync(batch)">Undo</Button></TrailingContent>
+            </ListRow>
+        }
+    </ListGroup>
+</Section>
+
+<Sheet Open="_draft is not null" OpenChanged="open => { if (!open) _draft = null; }" Title="@DraftTitle" Lead="@_draft?.Surface.Description">
+    <ChildContent>
+        @if (_draft is not null)
+        {
             @foreach (Setting setting in _draft.Surface.Settings)
             {
                 <SettingInput Setting="setting" Value="@_draft.Values[setting.Key]" ValueChanged="value => _draft.Values[setting.Key] = value" />
             }
             <AudiencePicker Value="@_draft.Audience" ValueChanged="value => _draft.Audience = value" />
-            <label>First day shown <input type="date" @bind="_draft.ShowFrom" /></label>
-            <label>Last day shown <input type="date" @bind="_draft.ShowUntil" /></label>
-            <label><input type="checkbox" @bind="_draft.Hidden" /> Hidden</label>
-            <button type="submit" disabled="@(_busy || _draft.Problems.Count > 0)">Save</button>
-            <button type="button" @onclick="() => _draft = null">Cancel</button>
+            <div class="ui-pair">
+                <TextField Label="First day shown" Type="date" Value="@Iso(_draft.ShowFrom)" ValueChanged="value => _draft.ShowFrom = FromIso(value)" />
+                <TextField Label="Last day shown" Type="date" Value="@Iso(_draft.ShowUntil)" ValueChanged="value => _draft.ShowUntil = FromIso(value)" />
+            </div>
+            <ToggleRow Title="Shown" Description="Turn off to hide it without losing its settings" Checked="!_draft.Hidden" CheckedChanged="shown => _draft.Hidden = !shown" />
+            @foreach (string problem in _draft.Problems.Where(problem => problem.StartsWith("The last day", StringComparison.Ordinal)))
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@problem" />
+            }
+            @if (_message is not null)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_message" />
+            }
+        }
+    </ChildContent>
+    <Actions>
+        @if (_draft is not null)
+        {
+            <Button Block="true" Busy="_busy" Disabled="@(_draft.Problems.Count > 0)" OnClick="SaveDraftAsync">Save</Button>
             @if (!_draft.IsNew)
             {
-                <button type="button" disabled="@_busy" @onclick="RemoveDraftAsync">@(_draft.Surface.Repeatable ? "Remove" : "Back to how the app starts")</button>
+                <Button Variant="ButtonVariant.Danger" Block="true" Disabled="_busy" OnClick="RemoveDraftAsync">@(_draft.Surface.Repeatable ? "Remove" : "Back to how the app starts")</Button>
             }
-        </form>
-    </section>
-}
-
-<section class="account-panel">
-    <h2>Recent changes</h2>
-    @if (_history.Count == 0)
-    {
-        <p>Nothing changed yet.</p>
-    }
-    <ul>
-        @foreach (ChangeBatch batch in _history)
-        {
-            <li>
-                @When(batch.At) · @_names.GetValueOrDefault(batch.By, "Someone") · @Describe(batch)
-                <button disabled="@_busy" @onclick="() => RollBackAsync(batch)">Undo</button>
-            </li>
+            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _draft = null">Cancel</Button>
         }
-    </ul>
-</section>
-
-@if (_message is not null)
-{
-    <p class="message">@_message</p>
-}
+    </Actions>
+</Sheet>
 
 @code {
     [Parameter, EditorRequired] public required SurfaceArea Area { get; set; }
@@ -87,6 +105,8 @@
     private Dictionary<string, string> _names = [];
     private PlacementDraft? _draft;
     private bool _busy;
+    private bool _loaded;
+    private bool _failed;
     private string? _message;
 
     protected override Task OnParametersSetAsync() => RunAsync(LoadAsync);
@@ -97,6 +117,7 @@
         _arranged = SurfaceLayout.Arrange(Surfaces.In(Area), placements.Placements.Select(placement => placement.ToStored()));
         _history = (await Configuration.ListChangesAsync(Area, ScopeId)).Batches;
         _names = await NamesAsync(_history.Select(batch => batch.By).Distinct().ToList());
+        _loaded = true;
     }
 
     private Task MoveAsync(int position, int by) => RunAsync(async () =>
@@ -187,6 +208,8 @@
             parts.Add($"from {When(starts)}");
         if (entry.EndsAt is { } ends)
             parts.Add($"until {When(ends.AddTicks(-1))}");
+        if (entry.Surface.NeedsNewerApp)
+            parts.Add($"needs app version {entry.Surface.IntroducedIn}");
         return string.Join(" · ", parts);
     }
 
@@ -199,15 +222,26 @@
 
     private static string When(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", CultureInfo.InvariantCulture);
 
+    private Task ReloadUnlessEditingAsync() => _draft is null && !_busy ? RunAsync(LoadAsync) : Task.CompletedTask;
+
+    private string DraftTitle => _draft is null ? "" : _draft.IsNew && _draft.Surface.Repeatable ? $"New {_draft.Surface.Title.ToLowerInvariant()}" : _draft.Surface.Title;
+
+    private static string Iso(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
+
     private async Task RunAsync(Func<Task> action)
     {
         _busy = true;
+        _failed = false;
         try
         {
             await action();
         }
         catch (RpcException exception)
         {
+            _failed = true;
             _message = exception.Status.Detail;
             if (exception.StatusCode == StatusCode.Aborted)
                 await LoadAsync();

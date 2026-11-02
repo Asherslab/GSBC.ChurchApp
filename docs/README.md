@@ -57,6 +57,11 @@ unit-tested on 2026-11-02, not yet tried in the running app); Media on a phone. 
 (2026-11-02: live changes, idle stream, offline catch-up, outbox). Media uploads from the
 admin panel work through `dev-media.baptist.com.au` (owner, 2026-11-02); background refresh needs measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
+**App shell and design system (2026-11-02, branch `feature/design-system`):** tokens, the phone shell
+(tab bar, pushed pages, edge-swipe back, safe areas) and the shared building blocks in Platform.Ui
+(DESIGN.md, *Implementation*); the theme is staff's choice as data (data-driven.md, *Themes*). On the
+owner's iPhone for review.
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),
