@@ -4,6 +4,8 @@
 @inject SurfaceCatalog Surfaces
 @inject IPeopleDirectory People
 
+<RefreshOn Feeds="[ConfigurationFeeds.Placements]" Changed="ReloadUnlessEditingAsync" />
+
 <Section First="true" Title="@(Surfaces.In(Area).Count > 1 ? "In order" : null)" Lead="@Area.Description">
     @if (!_loaded)
     {
@@ -219,6 +221,8 @@
     }
 
     private static string When(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", CultureInfo.InvariantCulture);
+
+    private Task ReloadUnlessEditingAsync() => _draft is null && !_busy ? RunAsync(LoadAsync) : Task.CompletedTask;
 
     private string DraftTitle => _draft is null ? "" : _draft.IsNew && _draft.Surface.Repeatable ? $"New {_draft.Surface.Title.ToLowerInvariant()}" : _draft.Surface.Title;
 

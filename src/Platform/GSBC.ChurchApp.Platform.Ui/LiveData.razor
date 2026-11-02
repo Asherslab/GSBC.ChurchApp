@@ -1,0 +1,96 @@
+@typeparam TValue
+@implements IDisposable
+@inject ClientSignals Signals
+
+@if (_loaded)
+{
+    @ChildContent(new Live<TValue>(_value!, Stale))
+}
+else if (_failure is not null)
+{
+    if (Failed is not null)
+    {
+        @Failed(_failure)
+    }
+    else
+    {
+        <EmptyState Icon="cloud-off" Title="@FailedTitle" Body="@(Signals.Online ? "Try again in a moment." : "It loads by itself when the phone is back online.")">
+            <Button Variant="ButtonVariant.Quiet" Icon="refresh" Busy="_loading" OnClick="ReloadAsync">Try again</Button>
+        </EmptyState>
+    }
+}
+else if (Loading is not null)
+{
+    @Loading
+}
+else
+{
+    <Skeleton Count="1" />
+}
+
+@code {
+    private TValue? _value;
+    private bool _loaded;
+    private bool _refreshFailed;
+    private Exception? _failure;
+    private bool _loading;
+    private bool _again;
+
+    [Parameter, EditorRequired] public required Func<Task<TValue>> Load { get; set; }
+    [Parameter] public IReadOnlyCollection<string>? Feeds { get; set; }
+    [Parameter] public ChangeKind ReloadOn { get; set; } = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access;
+    [Parameter, EditorRequired] public required RenderFragment<Live<TValue>> ChildContent { get; set; }
+    [Parameter] public RenderFragment? Loading { get; set; }
+    [Parameter] public RenderFragment<Exception>? Failed { get; set; }
+    [Parameter] public string FailedTitle { get; set; } = "Can't load this right now";
+
+    private bool Stale => _refreshFailed || !Signals.Online;
+
+    private ChangeKind Kinds => Feeds is null ? ReloadOn : ReloadOn | ChangeKind.Feeds;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Signals.Changed += OnChanged;
+        await ReloadAsync();
+    }
+
+    public async Task ReloadAsync()
+    {
+        if (_loading)
+        {
+            _again = true;
+            return;
+        }
+
+        _loading = true;
+        do
+        {
+            _again = false;
+            try
+            {
+                _value = await Load();
+                _loaded = true;
+                _failure = null;
+                _refreshFailed = false;
+            }
+            catch (Exception exception) when (exception is not OperationCanceledException)
+            {
+                _refreshFailed = _loaded;
+                _failure = _loaded ? null : exception;
+            }
+        }
+        while (_again);
+        _loading = false;
+        StateHasChanged();
+    }
+
+    private void OnChanged(ClientChange change)
+    {
+        if (change.Concerns(Kinds, Feeds))
+            InvokeAsync(ReloadAsync);
+        else if (change.Kind.HasFlag(ChangeKind.Disconnected))
+            InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => Signals.Changed -= OnChanged;
+}

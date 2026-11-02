@@ -1,11 +1,12 @@
 @using GSBC.ChurchApp.Platform.Client.Feeds
 @implements IDisposable
 @inject ILocalFeeds Feeds
+@inject ClientSignals Signals
 
 @if (Feeds.IsAvailable)
 {
-    <span class="sync sync--@Feeds.State.ToString().ToLowerInvariant() @(OnMasthead ? "sync--on-masthead" : "")" role="status">
-        @if (Feeds.State == SyncState.Offline)
+    <span class="sync sync--@Shown.ToString().ToLowerInvariant() @(Retrying ? "sync--retrying" : "") @(OnMasthead ? "sync--on-masthead" : "")" role="status">
+        @if (Shown == SyncState.Offline)
         {
             <Icon Name="cloud-off" Size="IconSize.Small" />
         }
@@ -20,7 +21,11 @@
 @code {
     [Parameter] public bool OnMasthead { get; set; }
 
-    private string Text => Feeds.State switch
+    private bool Retrying => Feeds.State == SyncState.Connecting && !Signals.Online;
+
+    private SyncState Shown => Retrying ? SyncState.Offline : Feeds.State;
+
+    private string Text => Shown switch
     {
         SyncState.Live => "Up to date",
         SyncState.Connecting => "Catching up…",

@@ -3,10 +3,11 @@
 @using GSBC.ChurchApp.Platform.Client.Feeds
 @using GSBC.ChurchApp.Platform.Client.Outbox
 @using GSBC.ChurchApp.Platform.Contracts.Sync
-@implements IDisposable
 @inject ILocalFeeds Feeds
 @inject IOutbox Outbox
 @inject GSBC.ChurchApp.Platform.Client.Native.NativeBridge Bridge
+
+<RefreshOn On="ChangeKind.Feeds | ChangeKind.Outbox | ChangeKind.Reconnected" Changed="LoadAsync" />
 
 <Page Title="Storage" BackHref="more" BackLabel="More">
     <PullToRefresh OnRefresh="RefreshAsync">
@@ -85,13 +86,7 @@
     private IReadOnlyList<StoredRecord> _echo = [];
     private IReadOnlyList<OutboxEntry> _outbox = [];
 
-    protected override async Task OnInitializedAsync()
-    {
-        Feeds.FeedsChanged += OnFeedsChanged;
-        Feeds.StateChanged += OnStateChanged;
-        Outbox.Changed += OnOutboxChanged;
-        await LoadAsync();
-    }
+    protected override Task OnInitializedAsync() => LoadAsync();
 
     private async Task LoadAsync()
     {
@@ -119,30 +114,9 @@
     private static string Describe(OutboxEntry entry) =>
         entry.Failed ? $"Couldn't send: {entry.LastError}" : entry.Attempts == 0 ? "Sending" : $"Retrying ({entry.Attempts} tries; {entry.LastError})";
 
-    private void OnFeedsChanged(IReadOnlySet<string> feeds) => InvokeAsync(async () =>
-    {
-        await LoadAsync();
-        StateHasChanged();
-    });
-
-    private void OnStateChanged() => InvokeAsync(StateHasChanged);
-
-    private void OnOutboxChanged() => InvokeAsync(async () =>
-    {
-        _outbox = await Outbox.ListAsync();
-        StateHasChanged();
-    });
-
     private async Task QueueTestSendAsync() => await Outbox.EnqueueAsync("/gsbc.accounts.Session/GetCurrent", []);
 
     private async Task QueueFailingSendAsync() => await Outbox.EnqueueAsync("/gsbc.development.Missing/Call", []);
 
     private static string Size(long bytes) => bytes < 1024 ? $"{bytes} B" : $"{bytes / 1024.0:0.#} KB";
-
-    public void Dispose()
-    {
-        Feeds.FeedsChanged -= OnFeedsChanged;
-        Feeds.StateChanged -= OnStateChanged;
-        Outbox.Changed -= OnOutboxChanged;
-    }
 }

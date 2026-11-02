@@ -381,3 +381,4 @@ button.row:active, a.row:active { background: var(--line); }
 .ui-after { margin-top: var(--stack); }
 .ui-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .ui-pair { display: grid; grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); gap: var(--stack); }
+.sync--retrying .icon { animation: breathe 1.6s ease-in-out infinite; }

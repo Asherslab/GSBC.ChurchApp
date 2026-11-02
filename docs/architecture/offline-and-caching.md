@@ -15,6 +15,27 @@ builds on SPEC §5.
   re-renders when Sync says its feed changed. There is no fetch-then-show path to go stale or fail.
 - **Writes go to the outbox** and show as pending until the server confirms them (SPEC §5).
 - **Gone means gone.** A feed the app no longer registers is dropped; a format change resets a feed.
+- **The sync stream is the phone's connection.** Its state (live, catching up, offline) is the one
+  signal for "online", and a retry while offline still reads as offline, so nothing flickers.
+
+## Screens update themselves
+
+Nothing a component shows may be the answer from when it opened. Every change the client knows
+about goes through one hub, `ClientSignals` (Platform.Client): a feed changed (and which), the phone
+reconnected or went offline (settled, not every retry), someone signed in or out, permissions
+changed, the outbox changed. Components say what they depend on and the platform does the rest:
+
+- **`LiveData<T>`** (Platform.Ui) is the default for anything loaded: it takes the load, the feeds it
+  reads and the kinds of change that matter (by default reconnecting, the session and access), and
+  reloads by itself, coalescing bursts. Offline it keeps the last answer and marks it stale; with no
+  answer yet it shows a failure that retries by itself once back online.
+- **`RefreshOn`** gives an imperative screen (an editor holding drafts) the same triggers.
+- Services keep their own `Changed` events (`ISurfaceLayout`, `IAccess`); a component may subscribe
+  to those directly.
+
+`Architecture.Tests` (`LiveDataRules`) fails on a component that injects a data source and loads on
+start without one of these. Components written before the rule are listed there (`NotYetMigrated`:
+Access's admin pages, People, AccountDetails, the media library) and come off the list as they move.
 
 ## Personal and private data
 

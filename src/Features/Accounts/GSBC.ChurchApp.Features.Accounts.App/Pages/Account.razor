@@ -1,56 +1,24 @@
 @page "/account"
-@using Grpc.Core
 @inject AccountsClient Accounts
 
 <Page Title="Account" BackHref="more" BackLabel="More">
-    <Masthead Title="Account" Note="@Note" />
+    <Masthead Title="Account" />
 
     <Section First="true">
-        @if (_error is not null)
-        {
-            <EmptyState Icon="cloud-off" Title="Can't reach the church's server" Body="@_error">
-                <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="LoadAsync">Try again</Button>
-            </EmptyState>
-        }
-        else if (_session is null)
-        {
-            <Skeleton Count="1" Label="Checking your account" />
-        }
-        else if (_session.SignedIn)
-        {
-            <ListGroup>
-                <ListRow Title="@_session.DisplayName" Subtitle="Signed in on this phone" Icon="user" IconTone="RowTone.Accent" />
-            </ListGroup>
-        }
-        else
-        {
-            <Card Title="You don't need an account to use the app">
-                Signing in unlocks what's personal or private, such as your prayer requests and a ministry's members-only news.
-                Signing in on the phone arrives once the app can use passkeys; until then, sign in at the website.
-            </Card>
-        }
+        <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()" FailedTitle="Can't reach the church's server">
+            @if (context.Value.SignedIn)
+            {
+                <ListGroup>
+                    <ListRow Title="@context.Value.DisplayName" Subtitle="Signed in on this phone" Icon="user" IconTone="RowTone.Accent" />
+                </ListGroup>
+            }
+            else
+            {
+                <Card Title="You don't need an account to use the app">
+                    Signing in unlocks what's personal or private, such as your prayer requests and a ministry's members-only news.
+                    Signing in on the phone arrives once the app can use passkeys; until then, sign in at the website.
+                </Card>
+            }
+        </LiveData>
     </Section>
 </Page>
-
-@code {
-    private CurrentSession? _session;
-    private string? _error;
-
-    private string? Note => _session?.SignedIn == true ? "Signed in" : _session is null ? null : "Not signed in";
-
-    protected override Task OnInitializedAsync() => LoadAsync();
-
-    private async Task LoadAsync()
-    {
-        _error = null;
-        _session = null;
-        try
-        {
-            _session = await Accounts.GetCurrentSessionAsync();
-        }
-        catch (RpcException exception)
-        {
-            _error = $"Check the phone has a signal, then try again ({exception.StatusCode}).";
-        }
-    }
-}

@@ -486,6 +486,7 @@ the admin panel for tokens, type and the shared components.
 | Live/sync | `SyncIndicator` | Up to date, catching up, offline; plain or on the masthead |
 | Buttons | `Button` | Primary, Quiet, On masthead, Ghost on masthead, Live, Danger; block, small, icon-only, busy |
 | Fields | `TextField`, `SelectField`, `ToggleRow`, `Segmented` | Labels tied to inputs; hint and problem lines are described-by |
+| Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes |
 | Loading | `Skeleton` | Rows, lines or a block, with a status for screen readers |
 | Tab bar and More | `ModuleNav` | `NavStyle.TabBar` and `MoreList` (the admin panel keeps `Links`); entries come from `NavEntry.Placement` |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |

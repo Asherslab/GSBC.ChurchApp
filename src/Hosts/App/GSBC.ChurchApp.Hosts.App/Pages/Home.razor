@@ -1,6 +1,6 @@
 @page "/"
-@using Grpc.Core
 @using GSBC.ChurchApp.Features.Accounts.Client
+@using GSBC.ChurchApp.Features.Accounts.Contracts
 @inject AccountsClient Accounts
 @inject TimeProvider Clock
 
@@ -16,36 +16,24 @@
 
     <Section Title="Connection">
         <ListGroup>
-            @if (_server is null)
-            {
-                <Skeleton Count="1" Label="Checking the server" />
-            }
-            else
-            {
-                <ListRow Title="@_server" Subtitle="@_detail" Icon="@(_reachable ? "check" : "alert")" IconTone="@(_reachable ? RowTone.Accent : RowTone.Warm)" />
-            }
+            <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()">
+                <ChildContent>
+                    @if (context.Stale)
+                    {
+                        @Unreachable
+                    }
+                    else
+                    {
+                        <ListRow Title="Connected to the church's server" Subtitle="@(context.Value.SignedIn ? $"Signed in as {context.Value.DisplayName}" : "Not signed in")" Icon="check" IconTone="RowTone.Accent" />
+                    }
+                </ChildContent>
+                <Failed>@Unreachable</Failed>
+            </LiveData>
         </ListGroup>
     </Section>
 </Page>
 
 @code {
-    private string? _server;
-    private string? _detail;
-    private bool _reachable;
-
-    protected override async Task OnInitializedAsync()
-    {
-        try
-        {
-            GSBC.ChurchApp.Features.Accounts.Contracts.CurrentSession session = await Accounts.GetCurrentSessionAsync();
-            _reachable = true;
-            _server = "Connected to the church's server";
-            _detail = session.SignedIn ? $"Signed in as {session.DisplayName}" : "Not signed in";
-        }
-        catch (RpcException exception)
-        {
-            _server = "Can't reach the church's server";
-            _detail = $"The app keeps showing what's on this phone and reconnects by itself ({exception.StatusCode}).";
-        }
-    }
+    private static readonly RenderFragment Unreachable =
+        @<ListRow Title="Can't reach the church's server" Subtitle="The app keeps showing what's on this phone and reconnects by itself." Icon="alert" IconTone="RowTone.Warm" />;
 }
