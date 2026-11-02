@@ -637,16 +637,7 @@ None block the skeleton. One has a deadline:
    and for any store testing. Enrol the church as an organisation: Apple requires a D-U-N-S number,
    which is free but can take days to weeks with Apple's review, so start before the device spike.
    Owning the app from the first build avoids a later app transfer.
-2. **How media travels.** Images (sermon artwork, leader photos) and files (Life Group notes) are
-   outside the Store (§5), but nothing yet says how the phone fetches them or how staff upload them.
-   By the hard rule in [AGENTS.md](AGENTS.md) both are gRPC: for example, a `Media` service
-   (`Get` returns the bytes, a server stream for large files; `Upload` in the admin panel), with
-   content-addressed IDs so the phone's file cache never goes stale. A plain HTTP GET would let
-   Cloudflare cache images, but it is a non-gRPC path and needs the owner's explicit approval first.
-   To settle before the first feature with images. A proposal (content-addressed objects in R2,
-   fetched directly, with signed URLs from gRPC for private files) awaits the owner in
-   [offline-and-caching.md](docs/architecture/offline-and-caching.md).
-3. **Life Groups and the site map** have their own open questions in their docs.
+2. **Life Groups and the site map** have their own open questions in their docs.
 
 Decided, for the record:
 
@@ -658,6 +649,9 @@ Decided, for the record:
 - **Bundle id:** `au.com.baptist.churchapp` (2026-11-01).
 - **Sign-in:** everyone from v1, members included (2026-11-01); see
   [identity.md](docs/architecture/identity.md).
+- **How media travels:** content-addressed objects in Cloudflare R2, public ones fetched directly from
+  a custom domain, private ones and uploads through short-lived signed URLs from gRPC methods
+  (2026-11-02); see [offline-and-caching.md](docs/architecture/offline-and-caching.md).
 - **Dev environment:** a Cloudflare tunnel from the Mac mini to a dev Mac, at `dev.baptist.com.au`,
   which is also dev's passkey domain (2026-11-01); see [tools/dev-proxy](tools/dev-proxy/README.md).
 

@@ -33,18 +33,21 @@ evaluator behind every `[Requires]`, admin screens).
 
 - Run `tools/access/make-owner.sh <your email>` once to become the first owner (the agent may not grant
   Owner on a real account).
-- Cloudflare: purge the zone once; turn Web Analytics off for the app and admin hosts (see
-  [offline-and-caching.md](architecture/offline-and-caching.md)).
 - The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
-- The media route proposal in [offline-and-caching.md](architecture/offline-and-caching.md) awaits a yes.
+- When media is built: the R2 bucket, its custom domain and a cache rule for it
+  ([offline-and-caching.md](architecture/offline-and-caching.md)).
+
+**Done by the owner, 2026-11-02:** the Cloudflare zone is set and checked (Browser Cache TTL respects
+our headers, Web Analytics off, app hosts purged), and media goes through R2; see
+[offline-and-caching.md](architecture/offline-and-caching.md).
 
 **Before production (not for a while; nothing to do until the API goes to the cluster):**
 
 - Production config through `gsbc.argo`: the token signing key, `Accounts:Passkeys` for
   `baptist.com.au`, and the email secret with the production mailer certificate
   ([email.md](architecture/email.md), *Going to production*).
-- Cloudflare: Browser Cache TTL set to *Respect existing headers*
-  ([offline-and-caching.md](architecture/offline-and-caching.md)).
+- Check the admin panel on `app.baptist.com.au` with `tools/dev-proxy/check-caching.sh` once it
+  replaces the POC there.
 
 **Not tested end to end yet:** the owner side of Access (creating and giving roles) needs an owner
 account (inviting was tested on 2026-11-02, with a real email through the shared mailbox); the last-Owner guard has no automated test; background refresh needs measuring on a

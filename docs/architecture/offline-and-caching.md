@@ -41,12 +41,17 @@ file's address is its content:
 - **The phone's file cache** is keyed by hash, size-limited and least-recently-used, so it can never
   show an old version.
 
-**Needs your OK:** public media served from an R2 bucket on a custom domain (e.g.
-`media.baptist.com.au`) behind Cloudflare, fetched by the phone directly; private media and uploads
-through short-lived signed R2 URLs handed out by gRPC methods (`Media.GetLink`, `Media.BeginUpload`).
-Neither adds an endpoint to our hosts, since the bytes go between the device and R2, but it is the
-media route SPEC §12 left open, so it waits for you rather than being decided here. The alternative
-is a gRPC `Media` service streaming the bytes through our API, which Cloudflare can't cache.
+**Decided (owner, 2026-11-02): media lives in R2.** Public media is served from an R2 bucket on a
+custom domain (e.g. `media.baptist.com.au`) behind Cloudflare and fetched by the phone directly;
+private media and uploads go through short-lived signed R2 URLs handed out by gRPC methods
+(`Media.GetLink`, `Media.BeginUpload`). Neither adds an endpoint to our hosts, since the bytes go
+between the device and R2 and our API only hands out links over gRPC. A gRPC `Media` service
+streaming the bytes was the alternative, turned down because Cloudflare can't cache it.
+
+Not built yet. When it is: the bucket, its custom domain and its CORS are the owner's to set up; each
+object is uploaded with the `immutable` header above as its metadata; and if keys have no file
+extension, the media host needs a cache rule marking it eligible for cache, because Cloudflare only
+caches by extension by default.
 
 ## Where Cloudflare caches, and where it doesn't
 
@@ -55,8 +60,10 @@ is a gRPC `Media` service streaming the bytes through our API, which Cloudflare 
 | gRPC (all data) | Never: they're POSTs | Sync is the cache |
 | Public media | Forever | Content-addressed |
 | Admin panel `.wasm`/`.dll`/JS/CSS | Forever | .NET 10 fingerprints file names |
-| Admin panel `index.html` | No (`no-cache`) | It names the fingerprinted files |
+| Admin panel `index.html` and unfingerprinted files | No (`no-cache`) | `index.html` names the fingerprinted files |
 | The app itself | Not served from the web | It ships in the store build |
+
+The admin panel will be at `app.baptist.com.au`, which serves the frozen POC's web build until then.
 
 ### Cloudflare overrides our headers
 
@@ -65,11 +72,23 @@ its own **4-hour browser cache** (`max-age=14400`, even on 404s) and cache `.js`
 file fixed on the server can stay broken in a browser for hours. So:
 
 - **Dev** (`dev.baptist.com.au`) sends `Cache-Control: no-store` on every response, which Cloudflare
-  respects. After changing what's cached, purge the zone once; `no-store` doesn't evict what the edge
-  already holds.
+  respects. `no-store` doesn't evict what the edge already holds, so after changing what's cached,
+  purge the host (Caching → Configuration → Custom Purge → Hostname).
 - **Production** relies on fingerprinted names (`immutable`, safe to cache forever) and `index.html`
-  never cached; set the zone's Browser Cache TTL to *Respect existing headers* so Cloudflare doesn't
-  shorten or lengthen ours (owner).
+  never cached.
+
+How the `baptist.com.au` zone is set (owner, 2026-11-02, checked through the public hostnames):
+
+- **Browser Cache TTL: *Respect existing headers*.** Zone-wide, so the church website's own headers
+  apply to it too. Before this, the POC's unfingerprinted `.js` and `.css` went out with `max-age=14400`.
+- **Web Analytics: disabled** for the whole zone. Its beacon was injected into every HTML page
+  (only for browser user agents, so a plain `curl` doesn't show it) and nobody used it.
+- **Purged** `dev.` and `app.` once, after the two changes above.
+- **No cache rules.** None are needed: the edge respects `no-store`, and fingerprinted files cache
+  on their own `immutable` header. The media host will need one (above).
+- **Nothing may rewrite our HTML or scripts:** Rocket Loader and Email Obfuscation must stay off,
+  since they would break the integrity hashes Blazor checks. Neither had touched our pages when
+  checked.
 - **Every web deploy is checked through the public hostname**, not localhost:
   `tools/dev-proxy/check-caching.sh [site]` reads `cache-control` and `cf-cache-status` as Cloudflare
   serves them and fails on anything unexpected. A 200 from curl doesn't prove a browser isn't holding
