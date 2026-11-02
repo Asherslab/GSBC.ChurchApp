@@ -12,8 +12,9 @@ else
     <div class="layer-band @(Scheduled ? "layer-band--scheduled" : "")">
         <span class="layer-band__dot" aria-hidden="true"></span>
         <div class="layer-band__body">
-            <span class="layer-band__label">@(Scheduled ? "Event layer · scheduled" : "Everyone sees an event layer")</span>
-            <button type="button" class="layer-band__name" @onclick="() => OnOpen.InvokeAsync(Layer)">@Layer.Name</button>
+            <span class="layer-band__name">
+                @(Scheduled ? "Everyone will see " : "Everyone sees ")<button type="button" class="layer-band__link" @onclick="() => OnOpen.InvokeAsync(Layer)">@Layer.Name</button>
+            </span>
             <span class="layer-band__meta">@When</span>
             @foreach (string dropped in Layer.DroppedFromLayer)
             {

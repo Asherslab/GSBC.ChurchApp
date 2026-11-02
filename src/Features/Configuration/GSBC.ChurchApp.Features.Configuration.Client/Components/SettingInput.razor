@@ -22,11 +22,11 @@
         break;
     case MediaSetting media:
         <div class="media-setting">
-            <span>@Setting.Label</span>
+            <span class="field__label">@Setting.Label</span>
             @if (media.TryParse(Value, out MediaRef? chosen) && chosen is not null)
             {
                 <MediaImage Media="chosen" Class="media-thumbnail" />
-                <button type="button" class="link" @onclick="() => SetAsync(media.Format(null))">Remove</button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SetAsync(media.Format(null))">Remove</Button>
             }
             @if (_choosing)
             {
@@ -34,7 +34,7 @@
             }
             else if (MediaChooser.IsAvailable(Services))
             {
-                <button type="button" @onclick="() => _choosing = true">@(chosen is null ? "Choose" : "Change")</button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(chosen is null ? "Choose" : "Change")</Button>
             }
         </div>
         break;

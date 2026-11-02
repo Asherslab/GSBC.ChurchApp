@@ -11,8 +11,8 @@
 .layer-band__body { flex: 1; display: grid; gap: 2px; min-width: 12rem; }
 .layer-band__label { font-size: var(--text-caption); font-weight: 600; color: var(--masthead-note); }
 .layer-band--none .layer-band__label { color: var(--ink); font-size: var(--text-row); }
-.layer-band__name { padding: 0; border: 0; background: none; color: inherit; font: inherit; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; text-align: left; cursor: pointer; }
-.layer-band__name:hover { text-decoration: underline; text-underline-offset: 3px; }
+.layer-band__name { font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; line-height: 1.25; }
+.layer-band__link { padding: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; text-decoration: underline; text-decoration-color: var(--masthead-note); text-underline-offset: 4px; cursor: pointer; }
 .layer-band__meta { font-size: var(--text-caption); color: var(--on-masthead-2); }
 .layer-band--none .layer-band__meta { color: var(--ink-2); line-height: 1.45; }
 .layer-band__warning { display: flex; gap: 6px; align-items: flex-start; margin-top: 6px; font-size: var(--text-caption); font-weight: 600; color: var(--masthead-note); }
@@ -29,7 +29,7 @@
 .changed-for-everyone { display: grid; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: var(--radius-field); background: color-mix(in srgb, var(--marker) 22%, var(--page)); color: var(--ink); font-size: var(--text-caption); line-height: 1.45; }
 .changed-for-everyone b { color: var(--marker-ink); }
 
-.detail-pane { position: sticky; top: 16px; display: grid; gap: var(--stack); }
+.detail-pane { position: sticky; top: 16px; display: grid; gap: var(--stack); align-content: start; }
 .detail-pane__hint { margin: 0; color: var(--ink-2); font-size: var(--text-row); line-height: 1.5; }
 .detail-pane__head { display: grid; gap: 2px; }
 .detail-pane__head h3 { margin: 0; font-size: var(--text-lead); font-weight: 700; overflow-wrap: anywhere; }
@@ -61,3 +61,6 @@
 .preview-window .field { width: min(100%, 393px); }
 .preview-window__title { margin: 0; font-size: var(--text-lead); font-weight: 700; }
 body:has(.preview-window) { max-width: none; padding: 0; }
+.workbench__aside .btn--quiet { background: var(--sand-strong); }
+.detail-pane .toggle-row__title { font-size: var(--text-caption); color: var(--ink-2); }
+.media-setting .field__label { flex-basis: 100%; }
