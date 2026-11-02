@@ -46,11 +46,13 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
 
         _app = builder.Build();
         _app.UseAppAssociation();
+        _app.UseRouting();
         _app.UseAuthentication();
         _app.UseRateLimiter();
         _app.MapPasskeyCeremonies();
         _app.MapGet("/test/token", (HttpContext http, ApiTokenIssuer tokens) =>
             http.User.Identity?.IsAuthenticated == true ? Results.Text(tokens.Issue(http.User)) : Results.Unauthorized());
+        _app.MapFallback(() => Results.Text("<!DOCTYPE html>", "text/html"));
         await _app.StartAsync();
 
         await using AsyncServiceScope scope = _app.Services.CreateAsyncScope();
