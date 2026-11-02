@@ -10,7 +10,8 @@ signed links from gRPC; [offline-and-caching.md](../architecture/offline-and-cac
 | Who | Can |
 |---|---|
 | `media.upload` | Upload an image (JPEG, PNG, WebP, GIF) or a PDF, public or private to an audience they belong to |
-| `media.view` | See the media library: every uploaded file, newest first |
+| `media.view` | See the media library: every uploaded file, newest first, and where each is used |
+| `media.delete` | Delete a file nothing uses any more |
 | Anyone signed in | Get a link to a private file, **if they hold its audience right now** |
 | Anyone | See public media: it's a plain URL on the media host |
 
@@ -29,7 +30,9 @@ out links over gRPC (AGENTS.md's hard rule).
 3. `Media.CompleteUpload` (gRPC) reads the staged object, **hashes it and checks its first bytes match
    its claimed type** (an HTML page sent as `image/png` is refused), copies it to its final key with
    `Cache-Control: public, max-age=31536000, immutable`, deletes the staged copy, and returns a
-   `MediaRef`.
+   `MediaRef`. An image's **width and height are read from its bytes** (PNG, GIF, WebP and JPEG,
+   turned by the JPEG's EXIF orientation so a sideways phone photo gets its displayed shape), so
+   placeholders know their shape. The client no longer sends them.
 
 Abandoned uploads: the pending row is pruned after a day, and the staged object by the bucket's
 lifecycle rule (below).
@@ -51,6 +54,38 @@ There is no media feed. A feature's record carries a `MediaRef` (Platform.Contra
 size, dimensions, alt text, file name, private or not, and the URL for public media) **inside its own
 payload**, so it reaches the phone through that feature's feed, with that feed's audience. The media
 library itself is staff-only and online-only (`Media.List`).
+
+## Saving a `MediaRef`: the server's, never the client's
+
+A feature that stores a `MediaRef` (or rich text, whose images are `MediaRef`s) calls
+`IMediaReferences` (Platform.Api, implemented by Media.Api) on every save:
+
+1. **Before saving,** `VerifyAsync(refs)` returns the library's own `MediaRef` for each: key, type,
+   size, dimensions, privacy and URL all come from the media table. An unknown id, or a key that isn't
+   that id's, is refused (`InvalidArgument`). Only the alt text may be the feature's own, so the same
+   photo can be described differently in two places.
+2. **After the save commits,** `UseAsync(owner, refs)` records which files that record uses (the
+   owner is a string such as `config.placement/<id>`), replacing what it used before. A record that's
+   deleted passes no refs.
+
+Uses are recorded after the commit so that a refused or conflicting save never leaves a phantom use
+behind. The cost is a small window: a crash between the commit and `UseAsync` leaves a file looking
+unused. A file deleted between the two makes `UseAsync` fail with "choose it again".
+
+Configuration does this for its media and rich-text settings; settings are public, so a setting's
+image must be public too.
+
+## Deleting media (built 2026-11-02)
+
+`Media.Delete` (`media.delete`) refuses a file that any record uses ("still used in 2 places"); the
+library shows "Used in N places" in place of the Delete button. A foreign key from `media.uses` to
+`media.items` closes the race with a save. The bytes are removed from the bucket only when no other
+library entry has the same content (re-uploads share a key).
+
+What deleting can't do: a deleted public file may still be at Cloudflare's edge, under its
+`immutable` header, until the edge evicts it, and it stays on phones that cached it until their cache
+evicts it. Nothing references it by then, so nobody is shown it. Purging the edge would need a
+Cloudflare API token and isn't built.
 
 ## Private media (owner, 2026-11-02: check on every link)
 
@@ -74,8 +109,29 @@ library itself is staff-only and online-only (`Media.List`).
 keyed by hash, capped at 200 MB and evicts the least recently used. In a browser, `IMediaFiles`
 returns the URL (public) or a signed link (private), and the browser's cache does the rest.
 
-Files are fetched when first shown, so a photo never seen online isn't there offline; prefetching
-for a feed is a follow-up when a feature needs it.
+### Prefetching, so images are there offline (built 2026-11-02)
+
+A feature registers a `MediaPrefetch` rule in its app-side registration: which of its feed's records
+(a `FeedPageQuery`, usually its newest) and how to find their `MediaRef`s. Whenever that feed changes,
+and when the app starts, `MediaPrefetcher` (Platform.Client) collects the images and asks the native
+cache to fetch the ones it lacks. Private images are included while the person can get a link to them.
+
+The cache enforces the limits (`MediaCache.prefetch`):
+
+- a file over **5 MB** is skipped (it's fetched when first shown instead);
+- one prefetch fetches at most **50 MB**, newest records first, so the 200 MB cache never evicts what
+  it just prefetched;
+- a file already cached is never fetched again, and one that turns out larger than declared is dropped;
+- prefetching uses a session that respects iOS **Low Data Mode**.
+
+Decided while building it: the rule runs in the app, not in the native sync engine. That needs no new
+column on `sync.feed_changes` and no change to the wire format, and it can prefetch private images. The
+cost is that records arriving by **background** sync have their images prefetched the next time the app
+is opened online, not in the background. Hub tile pictures (the placements feed) are the first rule.
+In a browser, prefetching does nothing.
+
+The admin panel registers `MediaLibrary` as the `MediaPicker`, so "choose an image" in rich text and in
+settings opens the library in pick mode, uploading included.
 
 ## Configuration
 
@@ -130,16 +186,22 @@ free certificate covers one level of subdomain only.
   the caller holds its audience; nobody can make a file private to people they aren't among.
 - `MediaCacheTests` (Swift): bytes that don't hash to their key are never cached; the least recently
   used file goes first; forgetting private files keeps public ones.
+- Also in `Features.Media.Api.Tests`: a saved `MediaRef` is the library's (forged keys and unknown ids
+  refused, forged type, size, URL and privacy replaced); dimensions come from the bytes, turned by EXIF
+  orientation; a file in use can't be deleted, and shared bytes stay while another entry lists them.
+- `MediaCacheTests` also: prefetching skips large files, stops at its budget, drops files larger than
+  declared and never fetches twice.
+- `PlacementEditorTests` (Configuration): images in settings are stored as the library's; forged and
+  private ones are refused.
 - Tiers and permissions on every `Media` method: `TierRules` in Architecture.Tests.
 
 ## Open
 
-- **Deleting media.** Nothing deletes yet: a public file may be in any feature's records and on any
-  phone. Deleting needs to know what still references a key (features would report their
-  `MediaRef`s through a small Platform interface) before it's safe.
-- **Checking a `MediaRef` on save.** When features start storing them, the server should fill them
-  from the media table rather than trust the client; the same Platform interface would serve.
-- **Image dimensions** are only stored if the client sends them; the admin upload doesn't yet, so
-  placeholders don't know their aspect ratio.
-- **Prefetching** a feed's images for offline use, and media in the Storage screen's total.
+- **The server changes aren't running yet:** the `media.uses` migration, verification and Delete need
+  the API restarted from a checkout that has them.
+- **Android's media cache:** Android has no `MediaCache` yet, so prefetching (and caching) are iOS only.
+- **Background prefetch:** records synced in the background get their images on the next open (above).
+- **Media in the Storage screen's total.**
 - **A phone page** for uploading (Life Group leaders), when a feature needs it.
+- **Existing items' dimensions:** files uploaded before 2026-11-02 keep the dimensions the client sent
+  (none, from the admin panel). Development data only; re-upload if it matters.

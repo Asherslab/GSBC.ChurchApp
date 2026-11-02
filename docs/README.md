@@ -13,6 +13,7 @@
 | [email.md](architecture/email.md) | Account email through a Microsoft 365 shared mailbox and Graph; the queue |
 | [storage.md](architecture/storage.md) | Postgres schemas per feature, R2 over the S3 API, Dropbox |
 | [data-driven.md](architecture/data-driven.md) | What staff can reshape without a release, and how |
+| [rich-text.md](architecture/rich-text.md) | The one formatted-text format: a Markdown subset, checked on save, one renderer and editor |
 
 ## Features
 
@@ -93,7 +94,10 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
 6. **Media** ([media.md](features/media.md)). Built 2026-11-02: uploads through signed R2 links named
    by their SHA-256, private media linked only while you hold its audience, the phone's
    hash-checked file cache, the admin library page; SeaweedFS in development. Waiting: the owner's R2
-   setup. Open: deleting media, and checking `MediaRef`s on save.
+   setup. Hardened 2026-11-02 (branch `feature/content-foundations`): every saved `MediaRef` is
+   verified by the server, dimensions come from the bytes, unused files can be deleted, feeds can
+   prefetch their images for offline, and settings can hold an image or rich text
+   ([rich-text.md](architecture/rich-text.md)). Not yet run against the API.
 7. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

@@ -33,6 +33,19 @@ public static class HubSurfaces
 }
 ```
 
+Besides text, number, yes/no, choice, colour, date and audience, two kinds hold content
+(2026-11-02):
+
+- **`MediaSetting`**: an image (or, with `imagesOnly: false`, any file) from the media library, stored
+  as its `MediaRef` in JSON. Settings are public, so it must be a public file.
+- **`RichTextSetting`**: formatted text ([rich-text.md](../architecture/rich-text.md)), stored as JSON.
+
+On save, the server replaces every `MediaRef` in these with the library's own and refuses forged ones
+(`IMediaReferences`, [media.md](media.md)), checks rich text against its rules, and records which
+placement uses which file once the save commits, so a file still on a tile can't be deleted. The
+editor shows a thumbnail with Choose, Change and Remove, and the rich-text editor; on the phone, the
+placements feed's pictures are prefetched for offline use.
+
 It registers them on both sides with `AddSurfaces(...)` (Platform.Api for validation, Platform.Client for
 the editor and the layout), the same way it registers permissions.
 
@@ -77,8 +90,8 @@ reference Configuration.
 
 ## The first consumer
 
-The Hub's **link tile** (`hub.link`): repeatable, with a title, subtitle, link, colour token and a
-"wide" switch. Home will render it for tiles no feature provides, such as the Bible link or a one-off
+The Hub's **link tile** (`hub.link`): repeatable, with a title, subtitle, link, colour token, a
+"wide" switch and an optional picture. Home will render it for tiles no feature provides, such as the Bible link or a one-off
 campaign. Home itself isn't built yet; when it is, it reads `ISurfaceLayout.ForAreaAsync(HubSurfaces.Area)`.
 
 ## Status (2026-11-02)
@@ -104,4 +117,5 @@ Not yet run end to end through the AppHost or on a phone.
 - **Feed writes by hand:** the editor adds its `sync.feed_changes` rows itself, in the same
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible
   to forget; do it when a second feature writes a feed.
-- The media field kind, themes, and a role audience ([data-driven.md](../architecture/data-driven.md)).
+- Themes, and a role audience ([data-driven.md](../architecture/data-driven.md)). The media and
+  rich-text field kinds were built on 2026-11-02 but haven't been run against the API yet.
