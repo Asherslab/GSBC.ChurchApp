@@ -13,6 +13,7 @@ nav {
 }
 
 nav a,
+a.button,
 button {
     min-height: 40px;
     padding: 0 16px;
@@ -68,6 +69,61 @@ input {
 
 .message {
     color: #9a4a00;
+}
+
+.notice {
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: #eef3f8;
+}
+
+.notice-warning {
+    background: #fbefe2;
+    color: #7a3b00;
+}
+
+.aside {
+    display: block;
+    color: #5f6878;
+}
+
+label.choice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: baseline;
+}
+
+label.choice input {
+    display: inline;
+    width: auto;
+    margin: 0;
+}
+
+.role-card {
+    display: grid;
+    gap: 4px;
+    color: inherit;
+    text-decoration: none;
+}
+
+.grouped-list h4 {
+    margin: 12px 0 4px;
+}
+
+.grouped-list ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.facts {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 16px;
+}
+
+.facts dd {
+    margin: 0;
 }
 
 h1:focus {

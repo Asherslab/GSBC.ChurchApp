@@ -11,6 +11,7 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
     public DbSet<RoleRecord> Roles => Set<RoleRecord>();
     public DbSet<RolePattern> RolePatterns => Set<RolePattern>();
     public DbSet<RoleInclude> RoleIncludes => Set<RoleInclude>();
+    public DbSet<RoleAssigner> RoleAssigners => Set<RoleAssigner>();
     public DbSet<Assignment> Assignments => Set<Assignment>();
     public DbSet<CatalogEntry> Catalog => Set<CatalogEntry>();
 
@@ -19,13 +20,16 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
     public async Task<Dictionary<Guid, RoleRecord>> LoadRolesWithIncludesAsync(IEnumerable<Guid> roleIds, CancellationToken cancellationToken)
     {
         List<Guid> ids = roleIds.Distinct().ToList();
-        List<RoleRecord> direct = await Roles.AsNoTracking().Include(role => role.Patterns).Include(role => role.Includes)
+        List<RoleRecord> direct = await Roles.AsNoTracking().Include(role => role.Patterns).Include(role => role.Includes).Include(role => role.Assigners)
             .Where(role => ids.Contains(role.Id)).ToListAsync(cancellationToken);
         List<Guid> includedIds = direct.SelectMany(role => role.Includes.Select(include => include.IncludedRoleId)).Except(ids).ToList();
         List<RoleRecord> included = await Roles.AsNoTracking().Include(role => role.Patterns)
             .Where(role => includedIds.Contains(role.Id)).ToListAsync(cancellationToken);
         return direct.Concat(included).ToDictionary(role => role.Id);
     }
+
+    public IQueryable<Assignment> ActiveAssignments(DateTime now) =>
+        Assignments.AsNoTracking().Where(assignment => assignment.ExpiresAt == null || assignment.ExpiresAt > now);
 
     public Task AnnounceChangeAsync(CancellationToken cancellationToken) =>
         Database.ExecuteSqlRawAsync($"NOTIFY {ChangesChannel}", cancellationToken);
@@ -42,6 +46,7 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
             entity.Ignore(role => role.IsSystem);
             entity.HasMany(role => role.Patterns).WithOne().HasForeignKey(pattern => pattern.RoleId).OnDelete(DeleteBehavior.Cascade);
             entity.HasMany(role => role.Includes).WithOne().HasForeignKey(include => include.RoleId).OnDelete(DeleteBehavior.Cascade);
+            entity.HasMany(role => role.Assigners).WithOne().HasForeignKey(assigner => assigner.RoleId).OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<RolePattern>(entity =>
         {
@@ -53,6 +58,12 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
             entity.ToTable("role_includes");
             entity.HasKey(include => new { include.RoleId, include.IncludedRoleId });
             entity.HasOne<RoleRecord>().WithMany().HasForeignKey(include => include.IncludedRoleId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<RoleAssigner>(entity =>
+        {
+            entity.ToTable("role_assigners");
+            entity.HasKey(assigner => new { assigner.RoleId, assigner.AssignerRoleId });
+            entity.HasOne<RoleRecord>().WithMany().HasForeignKey(assigner => assigner.AssignerRoleId).OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<Assignment>(entity =>
         {

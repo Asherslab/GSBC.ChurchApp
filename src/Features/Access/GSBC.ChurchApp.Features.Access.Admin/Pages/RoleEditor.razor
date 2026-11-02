@@ -1,0 +1,177 @@
+@page "/access/roles/new"
+@page "/access/roles/{Id}/edit"
+@inject AccessClient Access
+@inject IAccess MyAccess
+@inject NavigationManager Navigation
+
+<p><a href="access/roles">All roles</a></p>
+
+@if (_draft is not null)
+{
+    <h1>@(IsNew ? $"A new role, copied from {_template?.Name}" : $"Change {_draft.Name}")</h1>
+
+    <Can Permission="AccessPermissions.EditRoles">
+        <ChildContent>
+            <section class="account-panel">
+                <label>Name <InputText @bind-Value="_draft.Name" @bind-Value:after="Changed" /></label>
+                <label>What it's for <InputText @bind-Value="_draft.Description" @bind-Value:after="Changed" /></label>
+                <p>Given: @AccessWords.GivenWhere(_draft)</p>
+                @if (_draft.ScopeKind != ScopeKind.Global.Name)
+                {
+                    <label class="choice">
+                        <input type="checkbox" checked="@_draft.AppliesToChildren" @onchange="ToggleAppliesToChildren" />
+                        Also applies to the @_draft.ScopeKind's teams (a Music role also covers Choir)
+                    </label>
+                }
+            </section>
+
+            <section class="account-panel">
+                <h2>What it lets people do</h2>
+                <GroupedList Items="Offered" GroupKey="ability => ability.Area" Context="ability">
+                    <ItemTemplate>
+                        <label class="choice">
+                            <input type="checkbox" checked="@_draft.Patterns.Contains(ability.Node)"
+                                   disabled="@(!CanGive(ability) && !_draft.Patterns.Contains(ability.Node))"
+                                   @onchange="() => ToggleAbility(ability.Node)" />
+                            @ability.Description
+                            @if (!CanGive(ability))
+                            {
+                                <small class="aside">You can't do this yourself, so you can't give it.</small>
+                            }
+                            else if (ability.Sensitive)
+                            {
+                                <small class="aside">@AccessWords.Sensitive</small>
+                            }
+                        </label>
+                    </ItemTemplate>
+                </GroupedList>
+            </section>
+
+            <section class="account-panel">
+                <h2>Who can give it</h2>
+                <p>People who manage access always can. Also:</p>
+                @foreach (RoleInfo other in _roles.Where(other => other.Id != _draft.Id))
+                {
+                    <label class="choice">
+                        <input type="checkbox" checked="@_draft.AssignableByRoleIds.Contains(other.Id)" @onchange="() => ToggleAssigner(other.Id)" />
+                        @other.Name
+                    </label>
+                }
+            </section>
+
+            @if (_effect is null)
+            {
+                <button @onclick="ReviewAsync" disabled="@_busy">Check what changes</button>
+            }
+            else
+            {
+                <section class="account-panel">
+                    <h2>Before you save</h2>
+                    <RoleEffectView Effect="_effect" Catalog="_catalog" />
+                    <button @onclick="SaveAsync" disabled="@_busy">Save</button>
+                </section>
+            }
+        </ChildContent>
+        <Otherwise>
+            <Notice>Only people who manage roles can make or change them.</Notice>
+        </Otherwise>
+    </Can>
+}
+
+<Notice Tone="NoticeTone.Warning" Text="@_message" />
+
+@code {
+    [Parameter] public string? Id { get; set; }
+    [SupplyParameterFromQuery(Name = "from")] public string? From { get; set; }
+
+    private List<RoleInfo> _roles = [];
+    private Catalog _catalog = new();
+    private RoleInfo? _template;
+    private RoleInfo? _draft;
+    private RoleEffect? _effect;
+    private bool _busy;
+    private string? _message;
+
+    private bool IsNew => Id is null;
+
+    private IEnumerable<PermissionInfo> Offered =>
+        _catalog.Permissions.Where(permission => _draft!.ScopeKind == ScopeKind.Global.Name || permission.ScopeKind == _draft.ScopeKind);
+
+    protected override Task OnParametersSetAsync() => RunAsync(async () =>
+    {
+        _roles = (await Access.ListRolesAsync()).Roles;
+        _catalog = await Access.ListCatalogAsync();
+        _template = _roles.FirstOrDefault(role => role.Id == (Id ?? From));
+        if (_template is null)
+        {
+            _message = IsNew ? "Choose a role to copy first: open it from the Roles page and press Make a copy." : "That role no longer exists.";
+            return;
+        }
+        if (!IsNew && _template.IsSystem)
+        {
+            _message = "Built-in roles come from the app. Make a copy to change it.";
+            return;
+        }
+        _draft = new RoleInfo
+        {
+            Id = IsNew ? "" : _template.Id,
+            Name = IsNew ? $"{_template.Name} (copy)" : _template.Name,
+            Description = _template.Description,
+            ScopeKind = _template.ScopeKind,
+            Patterns = [.. _template.AbilityNodes],
+            AppliesToChildren = _template.AppliesToChildren,
+            AssignableByRoleIds = [.. _template.AssignableByRoleIds],
+        };
+    });
+
+    private bool CanGive(PermissionInfo ability) =>
+        MyAccess.Can(new Permission(ability.Node, ScopeKind.TryParse(ability.ScopeKind, out ScopeKind kind) ? kind : ScopeKind.Global, ability.Description));
+
+    private void Changed() => _effect = null;
+
+    private void ToggleAbility(string node)
+    {
+        if (!_draft!.Patterns.Remove(node))
+            _draft.Patterns.Add(node);
+        Changed();
+    }
+
+    private void ToggleAssigner(string roleId)
+    {
+        if (!_draft!.AssignableByRoleIds.Remove(roleId))
+            _draft.AssignableByRoleIds.Add(roleId);
+        Changed();
+    }
+
+    private void ToggleAppliesToChildren()
+    {
+        _draft!.AppliesToChildren = !_draft.AppliesToChildren;
+        Changed();
+    }
+
+    private Task ReviewAsync() => RunAsync(async () => _effect = await Access.PreviewRoleAsync(_draft!));
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        RoleInfo saved = await Access.SaveRoleAsync(_draft!);
+        Navigation.NavigateTo($"access/roles/{saved.Id}");
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

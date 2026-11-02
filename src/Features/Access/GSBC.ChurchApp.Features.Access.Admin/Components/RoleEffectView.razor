@@ -1,0 +1,47 @@
+@inject IPeopleDirectory People
+@inject IScopeNames ScopeNames
+
+@if (Effect.People.Count == 0)
+{
+    <Notice>This doesn't change what anyone can do.</Notice>
+}
+else
+{
+    <Notice Tone="NoticeTone.Warning">This changes what @AccessWords.Holders(Effect.People.Count) can do.</Notice>
+    <ul>
+        @foreach (PersonEffect person in Effect.People)
+        {
+            <li>
+                <strong>@(_names.GetValueOrDefault(person.UserId) ?? "Someone")</strong>
+                @if (person.Gains.Count > 0)
+                {
+                    <div>Gains: @Describe(person.Gains)</div>
+                }
+                @if (person.Losses.Count > 0)
+                {
+                    <div>Loses: @Describe(person.Losses)</div>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    [Parameter, EditorRequired] public required RoleEffect Effect { get; set; }
+    [Parameter, EditorRequired] public required Catalog Catalog { get; set; }
+
+    private Dictionary<string, string> _names = [];
+    private IReadOnlyDictionary<string, string> _places = new Dictionary<string, string>();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _names = (await People.GetAsync(Effect.People.Select(person => person.UserId).ToList())).ToDictionary(person => person.Id, person => person.Name);
+        List<string> places = Effect.People.SelectMany(person => person.Gains.Concat(person.Losses)).Select(change => change.ObjectId).OfType<string>().Distinct().ToList();
+        _places = await ScopeNames.NamesAsync(ScopeKind.Ministry.Name, places);
+    }
+
+    private string Describe(IEnumerable<AbilityChange> changes) =>
+        string.Join("; ", changes.Select(change =>
+            $"{Catalog.Permissions.FirstOrDefault(permission => permission.Node == change.Node)?.Description ?? change.Node}" +
+            (change.ObjectId is { } place ? $" (in {_places.GetValueOrDefault(place, place)})" : "")));
+}

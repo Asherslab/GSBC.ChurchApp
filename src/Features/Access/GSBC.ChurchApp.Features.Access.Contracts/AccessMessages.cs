@@ -37,6 +37,7 @@ public sealed class PermissionInfo
     [ProtoMember(2)] public string ScopeKind { get; set; } = "";
     [ProtoMember(3)] public string Description { get; set; } = "";
     [ProtoMember(4)] public bool Sensitive { get; set; }
+    [ProtoMember(5)] public string Area { get; set; } = "";
 }
 
 [ProtoContract]
@@ -55,6 +56,10 @@ public sealed class RoleInfo
     [ProtoMember(5)] public bool IsSystem { get; set; }
     [ProtoMember(6)] public List<string> Patterns { get; set; } = [];
     [ProtoMember(7)] public List<string> IncludedRoleIds { get; set; } = [];
+    [ProtoMember(8)] public List<string> AbilityNodes { get; set; } = [];
+    [ProtoMember(9)] public bool AppliesToChildren { get; set; }
+    [ProtoMember(10)] public List<string> AssignableByRoleIds { get; set; } = [];
+    [ProtoMember(11)] public int HolderCount { get; set; }
 }
 
 [ProtoContract]
@@ -103,4 +108,61 @@ public sealed class AssignRequest : IScopedRequest
 public sealed class AssignmentReference
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class PersonReference
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class PersonAbilities
+{
+    [ProtoMember(1)] public List<PlaceAbilities> Places { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class PlaceAbilities
+{
+    [ProtoMember(1)] public string ScopeKind { get; set; } = "";
+    [ProtoMember(2)] public string? ObjectId { get; set; }
+    [ProtoMember(3)] public bool IncludesTeams { get; set; }
+    [ProtoMember(4)] public List<string> Nodes { get; set; } = [];
+    [ProtoMember(5)] public List<PlaceReason> Because { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class PlaceReason
+{
+    [ProtoMember(1)] public string RoleName { get; set; } = "";
+    [ProtoMember(2)] public DateTime? ExpiresAt { get; set; }
+}
+
+[ProtoContract]
+public sealed class RolePreviewRequest
+{
+    [ProtoMember(1, IsRequired = true)] public RoleInfo Role { get; set; } = new();
+    [ProtoMember(2)] public bool Deleting { get; set; }
+}
+
+[ProtoContract]
+public sealed class RoleEffect
+{
+    [ProtoMember(1)] public List<PersonEffect> People { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class PersonEffect
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+    [ProtoMember(2)] public List<AbilityChange> Gains { get; set; } = [];
+    [ProtoMember(3)] public List<AbilityChange> Losses { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class AbilityChange
+{
+    [ProtoMember(1)] public string Node { get; set; } = "";
+    [ProtoMember(2)] public string? ObjectId { get; set; }
 }

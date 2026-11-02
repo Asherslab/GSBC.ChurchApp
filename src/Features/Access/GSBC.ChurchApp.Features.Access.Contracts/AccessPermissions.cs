@@ -9,13 +9,13 @@ public static class AccessPermissions
     public const string EditAssignmentsNode = "access.assignments.edit";
 
     public static readonly Permission View =
-        new(ViewNode, ScopeKind.Global, "See roles, the permission catalogue, and who holds which role", isSensitive: true);
+        new(ViewNode, ScopeKind.Global, "See roles and what each person can do", isSensitive: true);
 
     public static readonly Permission EditRoles =
-        new(EditRolesNode, ScopeKind.Global, "Create, change and delete custom roles", isSensitive: true);
+        new(EditRolesNode, ScopeKind.Global, "Make and change roles", isSensitive: true);
 
     public static readonly Permission EditAssignments =
-        new(EditAssignmentsNode, ScopeKind.Ministry, "Give and take away roles (everywhere, or within one ministry)", isSensitive: true);
+        new(EditAssignmentsNode, ScopeKind.Ministry, "Give people roles and take them away", isSensitive: true);
 
     public static readonly IReadOnlyList<Permission> All = [View, EditRoles, EditAssignments];
 }

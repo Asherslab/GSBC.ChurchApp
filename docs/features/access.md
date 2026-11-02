@@ -9,17 +9,20 @@ built.
 | Who | Can |
 |---|---|
 | Anyone signed in | See their own permissions (the app and admin panel use them to show or hide tools) |
-| `access.view` | See roles, the permission catalogue, and who holds which role |
-| `access.roles.edit` | Create, change and delete custom roles (system roles are locked) |
-| `access.assignments.edit` (at a scope) | Give or take away roles at that scope: globally, or within one ministry |
+| `access.view` | See roles and what each person can do ("See roles and what each person can do") |
+| `access.roles.edit` | Make and change custom roles, by copying a role (system roles are locked) |
+| `access.assignments.edit` (at a scope) | Give or take away any role at that scope: globally, or within one ministry |
+| A role's **assignable-by** roles (at a scope) | Give or take away that role at that scope ([below](#who-can-give-which-role-assignable-by)) |
 
 ## Roles
 
 - **System roles** are declared in code by features and reconciled into the database at start-up;
   they can be assigned but not edited. Access declares **Owner** (`*`), **Account manager**
   (`accounts.*`) and **Access manager** (`access.*`). Ministries will declare its own.
-- **Custom roles** are made in the admin panel: a name, a description, the scope kind they're assigned
-  at, patterns (`ministries.news.*`, `-ministries.roster.edit`) and up to one level of included roles.
+- **Custom roles** are made in the admin panel by copying a role: a name, a description, the scope
+  kind they're assigned at, the abilities ticked, whether they apply to child ministries, and who can
+  give them. The developer tool can also set raw patterns (`ministries.news.*`,
+  `-ministries.roster.edit`) and up to one level of included roles.
 - The permission catalogue is every node the running features declare, reconciled at start-up, so the
   role editor can list and explain them. Unknown patterns are allowed (a feature may come later) but
   flagged.
@@ -27,7 +30,7 @@ built.
 ## Assignments
 
 User + role + scope object (for a scoped role) + optional end date + source (`manual`, `bootstrap`,
-later `derived`). The last remaining Owner assignment can't be removed, so the church can't lock itself
+or `derived` when a feature gives it on its own rules, such as Join through `GiveAsFeatureAsync`). The last remaining Owner assignment can't be removed, so the church can't lock itself
 out.
 
 **The first owner** is made once per environment with `tools/access/make-owner.sh <email>` after that
@@ -51,16 +54,35 @@ can't recover their account by email; a staff member issues them a recovery code
 
 ## Admin screens
 
-- **Roles:** the list, and an editor for custom roles with the catalogue beside it.
+- **Roles** (`/access/roles`): every role as a card (what it's for, where it's given, who gives it,
+  how many hold it). A role's page (`/access/roles/{id}`) lists what it lets people do, by area, and
+  who has it; Access managers can **Make a copy** (`/access/roles/new?from={id}`), and change or
+  delete a custom role (`/access/roles/{id}/edit`), each after **Check what changes**.
+- **Who can do what** (`/access/people`): find someone, see "What can they do?" by place with the
+  reason, their roles with Take away, and Give a role with "They will be able to: …" before the button.
+- **Roles: developer tool** (`/access/roles/advanced`, not in the navigation): the raw pattern editor
+  and the catalogue with nodes.
 - **People** (Accounts): find someone, invite someone, give a recovery code, disable an account, see the
-  audit log; and (Access) their roles: assign one, end one.
+  audit log.
 
 The two features meet through a small `IPeopleDirectory` in Platform.Client, implemented by Accounts,
-so Access can show names without referencing Accounts.
+so Access can show names without referencing Accounts. Place names come from `IScopeNames`
+(Platform.Client), which Ministries will implement; until then a place shows its id. The screens use
+the shared `GroupedList` and `Notice` from Platform.Ui.
 
-## Status (2026-11-01)
+## Status (2026-11-02)
 
-**Built:** system roles and the catalogue reconciled at start-up, custom roles, assignments with
+**Built 2026-11-02 (the design below, minus Ministries itself):** plain-language descriptions and
+areas in the catalogue (`Permission.Area`), assignable-by and applies-to-children on roles
+(`SystemRole.AssignableBy`, `AppliesToChildren`, migration `RoleAssignersAndTeams`), the assigning
+rules with refusals in words (`AssignmentRules`), grants compiled onto child ministries through
+`IScopeHierarchy`, `Access.Explain` ("what can this person do?") and `Access.PreviewRole`, the
+in-process `IRoleAssignments` for Ministries, and the new Roles, role, copy-editor and Who-can-do-what
+screens. Tested in `Features.Access.Api.Tests`: leaders add members but only staff make leaders, the
+escalation guard's words, a leader covering a ministry's teams, the preview and the explanation. Not
+yet tried in a browser against the running backend.
+
+**Built 2026-11-01:** system roles and the catalogue reconciled at start-up, custom roles, assignments with
 scopes and end dates, the cached evaluator behind every `[Requires]`, the escalation and last-owner
 guards, grants loaded into the admin panel's `IAccess` (navigation and `<Can>`), the Roles and
 Who-holds-what pages, and the bootstrap script. Tested by `Features.Access.Api.Tests` (Postgres)
@@ -180,11 +202,12 @@ let that person do in that place before the button: "Sam will be able to: …".
 
 | When | The message |
 |---|---|
-| A Leader tries to make a Leader | "Only staff can make someone a leader. Ask the church office." |
-| The escalation guard | "You can't give Access manager, because it lets people manage roles and you can't do that yourself." |
+| A Leader tries to make a Leader | "Only someone with the Staff role can give the Leader role. Ask one of them." |
+| The escalation guard | "You can't give the Leader role, because it lets people do things you can't do yourself: Post news, …" |
 | A custom role with an ability you lack | The tick is greyed: "You can't do this yourself, so you can't give it." |
 | Taking away the last Owner | "This is the church's last Owner. Make someone else an Owner first." |
 | Changing a system role | "Built-in roles come from the app. Make a copy to change it." |
+| Changing where a held role applies | "People have this role, so where it applies can't change. Make a copy instead." |
 | A person has no roles | "Nothing beyond what everyone can do." |
 
 ### Scope hierarchy
@@ -197,19 +220,23 @@ parent changes, Ministries announces it and every grant cache drops.
 
 ### What Ministries must call
 
-Ministries is the first feature whose people give roles. Built in this pass for it to use:
+Ministries is the first feature whose people give roles. Built 2026-11-02 for it to use (all in place
+and tested; Ministries only has to call them):
 
 - **Its system roles**, declared with `AddSystemRole`: Member, Leader, Admin, Staff, each with its
   assignable-by keys and whether it applies to child ministries.
 - **`IRoleAssignments`** (Platform.Api, implemented by Access), called in-process from Ministries'
   own gRPC methods (`IMinistryMembershipService`):
-  - `GiveAsync(actor, user, roleKey, ministryId)` and `TakeAwayAsync(...)`, which apply the rules
-    above and return a refusal in words instead of throwing; the team list's buttons call these.
+  - `GiveAsync(actor, user, roleKey, ministryId, expiresAt)` and `TakeAwayAsync(...)`, which apply the
+    rules above and return an `AssignmentOutcome` with the refusal in words instead of throwing; the
+    team list's buttons call these, and show the refusal as it is.
+  - `MayGiveAsync(actor, roleKey, ministryId)`, to decide which buttons to show.
   - `GiveAsFeatureAsync` / `TakeAwayAsFeatureAsync`, for Ministries acting on its own rules: Join on
     an Open ministry, accepting a request, Leave. The caller has already checked who may do it.
   - `HoldersAsync(roleKey, ministryId)`, for the team list and the About's leaders.
-- **`IScopeHierarchy`**, implemented by Ministries (the children of a ministry), and an announcement
-  when it changes.
+- **`IScopeHierarchy`**, implemented by Ministries (`ChildrenOfAsync`, `ParentOfAsync`), registered
+  to replace the platform's flat default, and `IRoleAssignments.ScopesChangedAsync` when a ministry's
+  parent changes.
 - **Finding someone to add** to a team shouldn't need the global directory (`accounts.view` is
   sensitive): a Ministries method that, for someone who may give Member there, finds people by name
   and returns names with a masked email to tell two Sams apart. It needs an in-process people lookup

@@ -43,7 +43,9 @@ rosters" in two lines. A role may include other roles, one level deep, so "Minis
 **Roles are data** (requirement G). Holders of `access.roles.edit` create and change roles in the
 admin panel. Features also seed **system roles** in code (Owner, Staff, Ministry leader, Ministry
 member), reconciled on start-up, as the earlier model's role creator did; they can be assigned but not edited, so
-code can rely on them.
+code can rely on them. A role also says **who can give it** (assignable by: Leaders give Member) and
+whether it **applies to a ministry's teams**; staff see all of it in plain words
+([access.md](../features/access.md#how-staff-see-access-agreed-2026-11-02)).
 
 **Assignment.** User + role + scope object (for a scoped role), with an optional end date (a Life
 Group round) and a source:
