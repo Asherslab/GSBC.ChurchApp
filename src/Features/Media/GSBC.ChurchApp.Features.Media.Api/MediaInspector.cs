@@ -2,35 +2,38 @@ using System.Security.Cryptography;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
 
-internal sealed record InspectedContent(string Sha256, long Bytes, bool MatchesType);
+internal sealed record InspectedContent(string Sha256, long Bytes, bool MatchesType, Dimensions Dimensions);
 
 internal static class MediaInspector
 {
-    private const int HeaderLength = 12;
+    private const int HeadLength = 256 * 1024;
 
     public static async Task<InspectedContent> InspectAsync(Stream content, string contentType, CancellationToken cancellationToken)
     {
         using IncrementalHash hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        byte[] header = new byte[HeaderLength];
-        int headerRead = 0;
+        byte[] head = new byte[HeadLength];
+        int headRead = 0;
         long total = 0;
         byte[] buffer = new byte[81920];
         int read;
         while ((read = await content.ReadAsync(buffer, cancellationToken)) > 0)
         {
-            if (headerRead < HeaderLength)
+            if (headRead < HeadLength)
             {
-                int take = Math.Min(read, HeaderLength - headerRead);
-                buffer.AsSpan(0, take).CopyTo(header.AsSpan(headerRead));
-                headerRead += take;
+                int take = Math.Min(read, HeadLength - headRead);
+                buffer.AsSpan(0, take).CopyTo(head.AsSpan(headRead));
+                headRead += take;
             }
 
             hash.AppendData(buffer, 0, read);
             total += read;
         }
 
+        string type = contentType.ToLowerInvariant();
+        ReadOnlySpan<byte> start = head.AsSpan(0, headRead);
+        bool matches = Matches(type, start);
         return new InspectedContent(
-            Convert.ToHexStringLower(hash.GetHashAndReset()), total, Matches(contentType.ToLowerInvariant(), header.AsSpan(0, headerRead)));
+            Convert.ToHexStringLower(hash.GetHashAndReset()), total, matches, matches ? ImageDimensions.Read(type, start) : Dimensions.Unknown);
     }
 
     private static bool Matches(string contentType, ReadOnlySpan<byte> header) => contentType switch

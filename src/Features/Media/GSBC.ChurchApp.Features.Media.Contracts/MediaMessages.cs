@@ -9,8 +9,6 @@ public sealed class BeginUploadRequest
     [ProtoMember(1)] public string FileName { get; set; } = "";
     [ProtoMember(2)] public string ContentType { get; set; } = "";
     [ProtoMember(3)] public long Bytes { get; set; }
-    [ProtoMember(4)] public int Width { get; set; }
-    [ProtoMember(5)] public int Height { get; set; }
     [ProtoMember(6)] public string AltText { get; set; } = "";
     [ProtoMember(7)] public MediaAudience? PrivateTo { get; set; }
 }
@@ -71,4 +69,14 @@ public sealed class MediaItemInfo
     [ProtoMember(2)] public DateTime UploadedAt { get; set; }
     [ProtoMember(3)] public string UploadedBy { get; set; } = "";
     [ProtoMember(4)] public MediaAudience? PrivateTo { get; set; }
+    [ProtoMember(5)] public int Uses { get; set; }
 }
+
+[ProtoContract]
+public sealed class DeleteMediaRequest
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class Done;

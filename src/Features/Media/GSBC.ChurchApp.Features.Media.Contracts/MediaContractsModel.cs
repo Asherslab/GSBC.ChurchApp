@@ -15,4 +15,6 @@ namespace GSBC.ChurchApp.Features.Media.Contracts;
 [ProtoSerializable(typeof(MediaLink))]
 [ProtoSerializable(typeof(MediaQuery))]
 [ProtoSerializable(typeof(MediaList))]
+[ProtoSerializable(typeof(DeleteMediaRequest))]
+[ProtoSerializable(typeof(Done))]
 public partial class MediaContractsModel : TypeModel;
