@@ -7,7 +7,12 @@ namespace GSBC.ChurchApp.Features.Configuration.Client;
 
 public static class DraftWords
 {
-    public static string When(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM, h:mmtt", CultureInfo.InvariantCulture).Replace(":00", "").Replace("AM", "am").Replace("PM", "pm");
+    public static string When(DateTime utc)
+    {
+        DateTime local = ChurchTime.ToChurch(utc);
+        string format = local.Year == ChurchTime.ToChurch(DateTime.UtcNow).Year ? "ddd d MMM, h:mmtt" : "ddd d MMM yyyy, h:mmtt";
+        return local.ToString(format, CultureInfo.InvariantCulture).Replace(":00", "").Replace("AM", "am").Replace("PM", "pm");
+    }
 
     public static string Day(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", CultureInfo.InvariantCulture);
 

@@ -211,7 +211,11 @@ else
             {
                 <Notice Tone="NoticeTone.Warning" Text="@($"{(count == 1 ? "One thing" : $"{count} things")} in this draft {(count == 1 ? "was" : "were")} changed for everyone since you edited {(count == 1 ? "it" : "them")}. Choose which to keep before publishing.")" />
             }
-            @if (draft.LayerOn)
+            @if (draft is { LayerOn: true, LayerStartsAt: { } starts } && starts > DateTime.UtcNow)
+            {
+                <Notice Text="@($"This draft is scheduled for an event from {DraftWords.When(starts)}. What you save goes out to everyone then.")" />
+            }
+            else if (draft.LayerOn)
             {
                 <Notice Text="This draft is on for an event, so everyone sees your changes as they save." />
             }

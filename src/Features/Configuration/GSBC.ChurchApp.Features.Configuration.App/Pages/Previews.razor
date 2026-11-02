@@ -57,6 +57,7 @@
 @code {
     private const int MostDrafts = 200;
     private const string LocalFormat = "yyyy-MM-ddTHH:mm";
+    private static readonly string[] LocalFormats = [LocalFormat, "yyyy-MM-ddTHH:mm:ss"];
 
     private static readonly IReadOnlyList<SegmentOption<PreviewViewer>> Viewers =
     [
@@ -98,7 +99,7 @@
         Preview.ChooseAsync((Current ?? new PreviewChoice(null, "")) with { At = on ? DateTime.UtcNow.AddDays(7) : null });
 
     private Task SetDateAsync(string text) =>
-        DateTime.TryParseExact(text, LocalFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local)
+        DateTime.TryParseExact(text, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local)
             ? Preview.ChooseAsync((Current ?? new PreviewChoice(null, "")) with { At = ChurchTime.ToUtc(local) })
             : Task.CompletedTask;
 
