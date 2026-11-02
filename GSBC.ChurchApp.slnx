@@ -28,6 +28,7 @@
     <File Path="docs/features/accounts.md" />
     <File Path="docs/features/configuration.md" />
     <File Path="docs/features/life-groups.md" />
+    <File Path="docs/features/media.md" />
     <File Path="docs/features/ministries.md" />
     <File Path="docs/features/outreach.md" />
     <File Path="docs/features/site-map.md" />
@@ -55,6 +56,12 @@
     <Project Path="src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.App/GSBC.ChurchApp.Features.Configuration.App.csproj" />
     <Project Path="src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/GSBC.ChurchApp.Features.Configuration.Client.csproj" />
     <Project Path="src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Contracts/GSBC.ChurchApp.Features.Configuration.Contracts.csproj" />
+  </Folder>
+  <Folder Name="/src/Features/Media/">
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Admin/GSBC.ChurchApp.Features.Media.Admin.csproj" />
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Api/GSBC.ChurchApp.Features.Media.Api.csproj" />
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Client/GSBC.ChurchApp.Features.Media.Client.csproj" />
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Contracts/GSBC.ChurchApp.Features.Media.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Hosts/">
     <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Admin/GSBC.ChurchApp.Hosts.Admin.csproj" />
@@ -89,6 +96,9 @@
   </Folder>
   <Folder Name="/tests/Features/Configuration/">
     <Project Path="tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/GSBC.ChurchApp.Features.Configuration.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Media/">
+    <Project Path="tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/GSBC.ChurchApp.Features.Media.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />

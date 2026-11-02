@@ -36,3 +36,8 @@ button + button {
 h1:focus {
     outline: none;
 }
+
+.media-placeholder {
+    display: inline-block;
+    background: #eef1f5;
+}

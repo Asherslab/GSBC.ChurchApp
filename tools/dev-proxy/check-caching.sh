@@ -2,7 +2,7 @@
 set -uo pipefail
 
 site="${1:-https://dev.baptist.com.au}"
-page="$(curl -s "$site/")"
+page="$([[ -n "${2:-}" ]] || curl -s "$site/")"
 assets="$(printf '%s' "$page" | grep -oE '(_framework|_content)/[^"]+\.(js|css)' | sort -u)"
 failures=0
 
@@ -20,7 +20,9 @@ check() {
   fi
 }
 
-if [[ "$site" == *dev.* ]]; then
+if [[ -n "${2:-}" ]]; then
+  for _ in 1 2; do check "$2" 'immutable'; done
+elif [[ "$site" == *dev.* ]]; then
   for path in "" $assets "a-file-that-does-not-exist.js"; do check "$path" '^no-store$'; done
 else
   check "" 'no-cache|no-store'

@@ -1,0 +1,78 @@
+@inject MediaClient Media
+
+<div class="media-upload">
+    <label>
+        @Label
+        <InputFile OnChange="Choose" accept="@string.Join(",", MediaTypes.Accepted)" disabled="@_busy" />
+    </label>
+    @if (_file is not null)
+    {
+        <label>Description (for people using screen readers) <InputText @bind-Value="_altText" /></label>
+        @if (MediaTypes.IsLarge(_file.Size))
+        {
+            <p class="warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</p>
+        }
+        <button @onclick="UploadAsync" disabled="@_busy">@(_busy ? "Uploading…" : MediaTypes.IsLarge(_file.Size) ? "Upload anyway" : "Upload")</button>
+    }
+    @if (_error is not null)
+    {
+        <p class="message">@_error</p>
+    }
+</div>
+
+@code {
+    private IBrowserFile? _file;
+    private string _altText = "";
+    private bool _busy;
+    private string? _error;
+
+    [Parameter] public string Label { get; set; } = "Choose an image or PDF";
+    [Parameter] public MediaAudience? PrivateTo { get; set; }
+    [Parameter] public EventCallback<MediaRef> OnUploaded { get; set; }
+
+    private void Choose(InputFileChangeEventArgs args)
+    {
+        _file = args.File;
+        _error = MediaTypes.TryGetExtension(_file.ContentType, out _) ? null : $"{_file.Name} isn't an image or PDF this app can show.";
+        if (_error is not null)
+            _file = null;
+    }
+
+    private async Task UploadAsync()
+    {
+        if (_file is null)
+            return;
+
+        _busy = true;
+        _error = null;
+        try
+        {
+            await using Stream content = _file.OpenReadStream(maxAllowedSize: long.MaxValue);
+            MediaRef uploaded = await Media.UploadAsync(new BeginUploadRequest
+            {
+                FileName = _file.Name,
+                ContentType = _file.ContentType,
+                Bytes = _file.Size,
+                AltText = _altText,
+                PrivateTo = PrivateTo,
+            }, content);
+            _file = null;
+            _altText = "";
+            await OnUploaded.InvokeAsync(uploaded);
+        }
+        catch (RpcException exception)
+        {
+            _error = exception.Status.Detail;
+        }
+        catch (HttpRequestException exception)
+        {
+            _error = $"The file couldn't be sent: {exception.Message}";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string Megabytes(long bytes) => $"{bytes / 1024d / 1024d:0.#} MB";
+}

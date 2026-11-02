@@ -20,8 +20,8 @@ One doc per feature in [features/](features/), written before its code.
 
 ## Where we are (2026-11-02)
 
-All work is on the branch `skeleton/backbone`, **not pushed yet**, so CI has never run on it. Pushing it
-and opening a PR is the first step when picking up.
+All work is on the branch `skeleton/backbone`, **not pushed**, so CI has never run on it. The owner is
+keeping it local for now (2026-11-02): don't push without asking.
 
 **Working end to end:** the skeleton and its rules, the native data layer on iOS (store, live sync,
 outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone configurations,
@@ -32,8 +32,9 @@ evaluator behind every `[Requires]`, admin screens).
 **Waiting on the owner:**
 
 - The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
-- When media is built: the R2 bucket, its custom domain and a cache rule for it
-  ([offline-and-caching.md](architecture/offline-and-caching.md)).
+- For media, now built: two R2 buckets, the public one's custom domain, a cache rule, CORS and a
+  lifecycle rule on the private one, and an API token in the cluster secret
+  ([media.md](features/media.md), *What the owner sets up*).
 
 **Done by the owner, 2026-11-02:** the Cloudflare zone is set and checked (Browser Cache TTL respects
 our headers, Web Analytics off, app hosts purged), and media goes through R2; see
@@ -50,10 +51,12 @@ our headers, Web Analytics off, app hosts purged), and media goes through R2; se
 **Tested by the owner, 2026-11-02:** the owner side of Access (creating a role and giving it to a user)
 and inviting, with a real email through the shared mailbox.
 
-**Not tested end to end yet:** background refresh needs
-measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
+**Not tested end to end yet:** the staff-friendly access screens, Configuration's editor and Media's
+uploads (each built and unit-tested on 2026-11-02, not yet tried in the running app; the owner is
+testing them); background refresh needs measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
-**Next, in order:** push and get CI green; then features page by page from the build order below.
+**Next, in order:** features page by page from the build order below, starting with Home (Hub) on
+Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),
 *How staff see access*); Ministries plugs into them as described there.
 
@@ -86,7 +89,10 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    descriptors in Platform, the `config` schema and service (validated, permission per area, audited,
    rolled back), the placements feed, `ISurfaceLayout` for the phone, the generic editor in the app and
    the admin panel, and the Hub area with its link tile. Open: Home rendering it, grants on the phone.
-6. **Media**, once its route is approved ([offline-and-caching.md](architecture/offline-and-caching.md)).
+6. **Media** ([media.md](features/media.md)). Built 2026-11-02: uploads through signed R2 links named
+   by their SHA-256, private media linked only while you hold its audience, the phone's
+   hash-checked file cache, the admin library page; SeaweedFS in development. Waiting: the owner's R2
+   setup. Open: deleting media, and checking `MediaRef`s on save.
 7. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

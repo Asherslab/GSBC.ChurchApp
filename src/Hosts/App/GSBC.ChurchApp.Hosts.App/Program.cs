@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Accounts.App;
 using GSBC.ChurchApp.Features.Configuration.App;
+using GSBC.ChurchApp.Features.Media.Client;
 using GSBC.ChurchApp.Hosts.App;
 using GSBC.ChurchApp.Platform.Client;
 using GSBC.ChurchApp.Platform.Client.Modules;
@@ -22,7 +23,8 @@ builder.Services
     .AddPlatformClient()
     .AddNativeDataLayer(new Uri(builder.Configuration["Gateway"] ?? builder.HostEnvironment.BaseAddress))
     .AddAccountsApp(modules)
-    .AddConfigurationApp(modules);
+    .AddConfigurationApp(modules)
+    .AddMediaClient();
 
 WebAssemblyHost host = builder.Build();
 NativeBridge bridge = await host.Services.InitialiseNativeAsync();

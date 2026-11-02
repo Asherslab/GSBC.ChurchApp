@@ -94,6 +94,11 @@ flowchart LR
         ConfigurationClient["Features.Configuration.Client"]
         ConfigurationApi["Features.Configuration.Api"]
         ConfigurationContracts["Features.Configuration.Contracts"]
+    subgraph Media["Features / Media"]
+        MediaAdmin["Features.Media.Admin"]
+        MediaClient["Features.Media.Client"]
+        MediaApi["Features.Media.Api"]
+        MediaContracts["Features.Media.Contracts"]
     end
 
     subgraph Platform
@@ -115,14 +120,15 @@ flowchart LR
         GatewayTests["Features.Accounts.Gateway.Tests"]
         AccessTests["Features.Access.Api.Tests"]
         ConfigurationTests["Features.Configuration.Api.Tests"]
+        MediaTests["Features.Media.Api.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & ConfigurationApp & PlatformUi
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi
+    HostsApp --> AccountsApp & ConfigurationApp & PlatformUi & MediaClient
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -142,6 +148,10 @@ flowchart LR
     ConfigurationClient --> ConfigurationContracts & PlatformClient & PlatformUi & PlatformCommon
     ConfigurationApi --> ConfigurationContracts & PlatformApi
     ConfigurationContracts --> PlatformContracts
+    MediaAdmin --> MediaClient
+    MediaClient --> MediaContracts & PlatformClient & PlatformUi
+    MediaApi --> MediaContracts & PlatformApi & PlatformStorage
+    MediaContracts --> PlatformContracts
 
     PlatformUi --> PlatformClient
     PlatformClient --> PlatformContracts
@@ -155,6 +165,7 @@ flowchart LR
     GatewayTests --> AccountsGateway
     AccessTests --> AccessApi
     ConfigurationTests --> ConfigurationApi
+    MediaTests --> MediaApi
 ```
 
 At run time:
@@ -178,12 +189,12 @@ flowchart LR
 |---|---|---|
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
-| `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors: areas, surfaces, setting fields, audiences, layout composition, and the Hub area | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`), and `ISurfaceLayout` (an area as staff arranged it) | Yes |
-| `GSBC.ChurchApp.Platform.Ui` | The shared component library: `ModuleRouter`, `ModuleNav`, the `Can` permission gate | Yes |
+| `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), and `MediaRef` (how any feature's record points at an image or file) | Yes |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`), `ISurfaceLayout` (an area as staff arranged it), and media files (`IMediaFiles`: the phone's file cache, or the URL in a browser) | Yes |
+| `GSBC.ChurchApp.Platform.Ui` | The shared component library: `ModuleRouter`, `ModuleNav`, the `Can` permission gate, `MediaImage` | Yes |
 | `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
-| `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2) and content addressing. Not referenced yet | No |
+| `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2 in production, SeaweedFS in development): public and private buckets, signed links, copies with cache headers, content-addressed keys | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Accounts.Data` | The `accounts` schema: Identity users and passkeys, sessions, one-time codes, audit log; shared by the API and the gateway | No |
 | `GSBC.ChurchApp.Features.Accounts.Api` | `SessionService` (who is calling) and `AccountsService` (sign-up, recovery, profile, passkeys, sessions, invitations); validates the gateway's tokens | No |
@@ -200,23 +211,28 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store, and the generic `SurfaceEditor` | Yes |
 | `GSBC.ChurchApp.Features.Configuration.App` | The phone's Arrange page and its navigation entry | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Admin` | The admin panel's Arrange page and its navigation entry | Yes |
+| `GSBC.ChurchApp.Features.Media.Contracts` | The `Media` service, its messages, the accepted file types and the `media.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Media.Api` | Uploads through signed R2 links, checked and named by their SHA-256; signed links to private media for whoever holds its audience (schema `media`) | No |
+| `GSBC.ChurchApp.Features.Media.Client` | Media's gRPC proxies, uploading, private links behind `IPrivateMediaLinks`, and the shared `MediaUpload` and `MediaLibrary` components | Yes |
+| `GSBC.ChurchApp.Features.Media.Admin` | The Media library page | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
 | `GSBC.ChurchApp.Hosts.Admin` | The staff admin panel: Blazor WASM, not AOT, served by the gateway | No |
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |
 | `GSBC.ChurchApp.Hosts.Api` | The cluster-internal gRPC API: maps every feature's services | No |
 | `GSBC.ChurchApp.Hosts.Migrator` | Applies every feature's migrations, then exits | No |
-| `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |
+| `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, a SeaweedFS S3 store for media, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores | No |
+| `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
 (the Capacitor plugin: `DataLayerCore` holds the gRPC-Web transport, GRDB store, sync engine and outbox,
-with its own tests (`xcodebuild test -scheme GsbcDataLayer`); `DataLayerPlugin` is the thin Capacitor
+the media file cache, with its own tests (`xcodebuild test -scheme GsbcDataLayer`); `DataLayerPlugin` is the thin Capacitor
 bridge over it; Kotlin is stubbed until Android).
 
 ## Naming

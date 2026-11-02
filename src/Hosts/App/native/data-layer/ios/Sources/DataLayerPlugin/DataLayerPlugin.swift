@@ -17,7 +17,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "enqueue", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "outbox", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "retryOutbox", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "cachedMedia", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "fetchMedia", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise)
     ]
 
     private let runtime = DataLayerRuntime.shared
@@ -177,6 +180,31 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func discardOutbox(_ call: CAPPluginCall) {
         changeOutbox(call) { outbox, id in try await outbox.discard(id: id) }
+    }
+
+    @objc func cachedMedia(_ call: CAPPluginCall) {
+        guard let media = runtime.media, let key = call.getString("key") else { return call.reject("cachedMedia needs a key") }
+        var result: [String: Any] = [:]
+        result["path"] = media.cached(key: key, isPrivate: call.getBool("isPrivate") ?? false)?.path
+        call.resolve(result)
+    }
+
+    @objc func fetchMedia(_ call: CAPPluginCall) {
+        guard let media = runtime.media, let key = call.getString("key"),
+              let url = URL(string: call.getString("url") ?? "") else { return call.reject("fetchMedia needs a key and a url") }
+        let isPrivate = call.getBool("isPrivate") ?? false
+        Task {
+            do {
+                call.resolve(["path": try await media.fetch(key: key, from: url, isPrivate: isPrivate).path])
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func clearPrivateMedia(_ call: CAPPluginCall) {
+        runtime.media?.clearPrivate()
+        call.resolve()
     }
 
     private func changeOutbox(_ call: CAPPluginCall, _ change: @escaping (Outbox, String) async throws -> Void) {

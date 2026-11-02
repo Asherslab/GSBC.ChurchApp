@@ -4,5 +4,6 @@
     <ProjectReference Include="..\..\Features\Accounts\GSBC.ChurchApp.Features.Accounts.Api\GSBC.ChurchApp.Features.Accounts.Api.csproj" />
     <ProjectReference Include="..\..\Features\Access\GSBC.ChurchApp.Features.Access.Api\GSBC.ChurchApp.Features.Access.Api.csproj" />
     <ProjectReference Include="..\..\Features\Configuration\GSBC.ChurchApp.Features.Configuration.Api\GSBC.ChurchApp.Features.Configuration.Api.csproj" />
+    <ProjectReference Include="..\..\Features\Media\GSBC.ChurchApp.Features.Media.Api\GSBC.ChurchApp.Features.Media.Api.csproj" />
   </ItemGroup>
 </Project>
