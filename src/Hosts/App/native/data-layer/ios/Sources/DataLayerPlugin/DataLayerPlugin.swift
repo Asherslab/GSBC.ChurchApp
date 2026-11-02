@@ -22,7 +22,9 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "fetchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prefetchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setSession", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "registerPasskey", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise)
     ]
 
     private let runtime = DataLayerRuntime.shared
@@ -41,6 +43,11 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         runtime.outboxChanged = { [weak self] in
             self?.notifyListeners("outboxChanged", data: [:])
         }
+        runtime.sessionChanged = { [weak self] in
+            self?.notifyListeners("sessionChanged", data: ["signedIn": self?.runtime.signedIn ?? false])
+        }
+        NotificationCenter.default.addObserver(self, selector: #selector(linkOpened(_:)),
+                                               name: .capacitorSceneOpenUniversalLink, object: nil)
 
         NotificationCenter.default.addObserver(self, selector: #selector(appBecameActive),
                                                name: UIApplication.didBecomeActiveNotification, object: nil)
@@ -53,6 +60,13 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
             await engine?.resume()
             await outbox?.sendWaitingNow()
         }
+    }
+
+    @objc private func linkOpened(_ notification: Notification) {
+        guard let url = notification.userInfo?["url"] as? URL, url.host == transport?.gateway.host,
+              let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return }
+        let path = components.path + (components.percentEncodedQuery.map { "?" + $0 } ?? "")
+        notifyListeners("linkOpened", data: ["path": path], retainUntilConsumed: true)
     }
 
     @objc private func appEnteredBackground() {
@@ -83,11 +97,12 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func startSync(_ call: CAPPluginCall) {
-        guard let engine else { return call.reject("The data layer isn't available in this build.") }
+        guard engine != nil else { return call.reject("The data layer isn't available in this build.") }
         let feeds = call.getArray("feeds", String.self) ?? []
+        let privateFeeds = call.getArray("privateFeeds", String.self) ?? []
         Task {
             do {
-                try await engine.start(feeds: feeds)
+                try await runtime.startSync(feeds: feeds, privateFeeds: privateFeeds)
                 call.resolve()
             } catch {
                 call.reject(error.localizedDescription)
@@ -114,17 +129,44 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
     }
 
-    @objc func setSession(_ call: CAPPluginCall) {
-        SessionKeychain.write(call.getString("secret"))
+    @objc func signIn(_ call: CAPPluginCall) {
+        ceremony(call) { await $0.signIn() }
+    }
+
+    @objc func registerPasskey(_ call: CAPPluginCall) {
+        let ticket = call.getString("ticket")
+        ceremony(call) { await $0.register(ticket: ticket) }
+    }
+
+    @objc func signOut(_ call: CAPPluginCall) {
         Task {
-            await engine?.pause()
-            await engine?.resume()
-            call.resolve(["signedIn": SessionKeychain.read() != nil])
+            await runtime.forgetSession()
+            call.resolve()
         }
     }
 
     @objc func status(_ call: CAPPluginCall) {
-        call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild])
+        call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild, "signedIn": runtime.signedIn])
+    }
+
+    private func ceremony(_ call: CAPPluginCall, _ run: @escaping (PasskeyCeremonies) async -> CeremonyOutcome) {
+        guard let gateway = transport?.gateway else { return resolve(call, .failed("This build has no gateway configured.")) }
+        guard #available(iOS 16.0, *) else { return resolve(call, .failed("Passkeys need iOS 16 or later.")) }
+        let passkeys = PlatformPasskeys(window: { [weak self] in self?.bridge?.viewController?.view.window })
+        let ceremonies = PasskeyCeremonies(gateway: gateway, vault: DataLayerRuntime.vault, authenticator: passkeys,
+                                           deviceName: UIDevice.current.model)
+        let wasSignedIn = runtime.signedIn
+        Task {
+            let outcome = await run(ceremonies)
+            if outcome.ok && !wasSignedIn { await runtime.sessionStarted() }
+            resolve(call, outcome)
+        }
+    }
+
+    private func resolve(_ call: CAPPluginCall, _ outcome: CeremonyOutcome) {
+        var result: [String: Any] = ["ok": outcome.ok]
+        result["error"] = outcome.error
+        call.resolve(result)
     }
 
     @objc func readPage(_ call: CAPPluginCall) {

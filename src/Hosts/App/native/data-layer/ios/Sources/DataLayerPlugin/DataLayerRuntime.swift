@@ -5,6 +5,8 @@ import Network
 final class DataLayerRuntime: @unchecked Sendable {
     static let shared = DataLayerRuntime()
 
+    static let vault = SessionKeychain()
+
     let transport: GrpcWebTransport?
     let store: FeedStore?
     let media: MediaCache?
@@ -16,12 +18,19 @@ final class DataLayerRuntime: @unchecked Sendable {
     var feedsChanged: ((Set<String>) -> Void)?
     var stateChanged: ((SyncState) -> Void)?
     var outboxChanged: (() -> Void)?
+    var sessionChanged: (() -> Void)?
+    private(set) var privateFeeds: [String] = []
+
+    var signedIn: Bool { Self.vault.read() != nil }
 
     private let network = NWPathMonitor()
     private var wasOnline = true
 
     private init() {
-        transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0, sessionSecret: { SessionKeychain.read() }) }
+        transport = Self.configuredGateway().map {
+            GrpcWebTransport(gateway: $0, sessionSecret: { DataLayerRuntime.vault.read() },
+                             onSessionEnded: { DataLayerRuntime.shared.sessionEndedElsewhere() })
+        }
         store = try? FeedStore(directory: Self.storeDirectory())
         let media = try? MediaCache(directory: Self.mediaDirectory())
         self.media = media
@@ -49,6 +58,33 @@ final class DataLayerRuntime: @unchecked Sendable {
             Task { await self.engine?.reconnectNow() }
         }
         network.start(queue: DispatchQueue(label: "au.com.baptist.churchapp.datalayer.network"))
+    }
+
+    func startSync(feeds: [String], privateFeeds: [String]) async throws {
+        self.privateFeeds = privateFeeds
+        try await engine?.start(feeds: feeds)
+    }
+
+    func sessionStarted() async {
+        await clearPrivateData()
+    }
+
+    func forgetSession() async {
+        Self.vault.write(nil)
+        await clearPrivateData()
+    }
+
+    private func sessionEndedElsewhere() {
+        guard signedIn else { return }
+        Task { await forgetSession() }
+    }
+
+    private func clearPrivateData() async {
+        await engine?.pause()
+        if let cleared = try? store?.clear(feeds: privateFeeds), !cleared.isEmpty { feedsChanged?(cleared) }
+        media?.clearPrivate()
+        await engine?.resume()
+        sessionChanged?()
     }
 
     private static func configuredGateway() -> URL? {

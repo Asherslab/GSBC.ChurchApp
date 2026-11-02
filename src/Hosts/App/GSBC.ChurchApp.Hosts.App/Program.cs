@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Access.Client;
 using GSBC.ChurchApp.Features.Accounts.App;
 using GSBC.ChurchApp.Features.Configuration.App;
 using GSBC.ChurchApp.Features.Media.Client;
@@ -24,6 +25,7 @@ builder.Services
     .AddPlatformUi()
     .AddNativeDataLayer(new Uri(builder.Configuration["Gateway"] ?? builder.HostEnvironment.BaseAddress))
     .AddAccountsApp(modules)
+    .AddAccessOnPhone(modules)
     .AddConfigurationApp(modules)
     .AddMediaClient();
 modules.Add(new ClientModule("Settings", typeof(Program).Assembly,
@@ -34,4 +36,5 @@ NativeBridge bridge = await host.Services.InitialiseNativeAsync();
 if (bridge.IsDevelopmentBuild)
     modules.Add(new ClientModule("Development", typeof(Program).Assembly, [new NavEntry("Design gallery", "gallery", "palette")], [DevelopmentFeeds.Echo]));
 await host.Services.StartNativeDataLayerAsync(modules);
+await host.Services.RunClientStartupTasksAsync();
 await host.RunAsync();

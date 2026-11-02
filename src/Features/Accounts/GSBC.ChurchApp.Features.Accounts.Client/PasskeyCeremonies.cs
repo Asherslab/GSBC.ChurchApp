@@ -4,7 +4,16 @@ namespace GSBC.ChurchApp.Features.Accounts.Client;
 
 public sealed record CeremonyResult(bool Ok, string? Error);
 
-public sealed class PasskeyCeremonies(IJSRuntime js) : IAsyncDisposable
+public interface IPasskeyCeremonies
+{
+    ValueTask<bool> IsSupportedAsync();
+
+    ValueTask<CeremonyResult> RegisterAsync(string? ticket);
+
+    ValueTask<CeremonyResult> SignInAsync();
+}
+
+public sealed class BrowserPasskeyCeremonies(IJSRuntime js) : IPasskeyCeremonies, IAsyncDisposable
 {
     private const string ModulePath = "./_content/GSBC.ChurchApp.Features.Accounts.Client/passkeys.js";
     private IJSObjectReference? _module;

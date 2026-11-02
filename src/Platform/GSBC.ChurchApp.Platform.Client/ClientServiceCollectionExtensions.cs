@@ -18,6 +18,7 @@ public static class ClientServiceCollectionExtensions
         services.AddSingleton<IAccess>(provider => provider.GetRequiredService<GrantedAccess>());
         services.TryAddSingleton<IScopeNames, UnnamedScopes>();
         services.TryAddSingleton<IMediaFiles, WebMediaFiles>();
+        services.TryAddSingleton<IDeviceSession, CookieSession>();
         return services;
     }
 }

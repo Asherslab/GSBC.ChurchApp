@@ -30,11 +30,12 @@ internal sealed class AppSessionHandler(
             .Join(db.Users, session => session.UserId, user => user.Id, (session, user) => new { Session = session, user.DisplayName, user.Disabled })
             .SingleOrDefaultAsync(Context.RequestAborted);
         if (found is null || found.Disabled)
-            return AuthenticateResult.Fail("This phone's session has ended. Link it again.");
+            return AuthenticateResult.Fail("This phone's session has ended. Sign in again.");
 
         if (now - found.Session.LastSeenAt > LastSeenResolution)
         {
             found.Session.LastSeenAt = now;
+            found.Session.ExpiresAt = now + AppSessions.Lifetime;
             await db.SaveChangesAsync(Context.RequestAborted);
         }
 

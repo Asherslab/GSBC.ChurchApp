@@ -190,6 +190,17 @@ public final class FeedStore: Sendable {
         try reclaimSpaceIfWorthIt()
     }
 
+    public func clear(feeds: [String]) throws -> Set<String> {
+        guard !feeds.isEmpty else { return [] }
+        let placeholders = databaseQuestionMarks(count: feeds.count)
+        try database.write { db in
+            try db.execute(sql: "DELETE FROM records WHERE feed IN (\(placeholders))", arguments: StatementArguments(feeds))
+            try db.execute(sql: "UPDATE cursors SET cursor = 0 WHERE feed IN (\(placeholders))", arguments: StatementArguments(feeds))
+        }
+        try reclaimSpaceIfWorthIt()
+        return Set(feeds)
+    }
+
     public func registeredFeeds() throws -> [String] {
         try database.read { db in try String.fetchAll(db, sql: "SELECT feed FROM cursors ORDER BY feed") }
     }

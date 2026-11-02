@@ -16,7 +16,7 @@ public sealed class NativeLocalFeeds(NativeBridge bridge, IJSRuntime js) : ILoca
 
     public event Action? StateChanged;
 
-    public async Task StartAsync(IReadOnlyCollection<string> feeds)
+    public async Task StartAsync(IReadOnlyCollection<string> feeds, IReadOnlyCollection<string> privateFeeds)
     {
         if (!IsAvailable)
             return;
@@ -24,7 +24,7 @@ public sealed class NativeLocalFeeds(NativeBridge bridge, IJSRuntime js) : ILoca
         _receiver = DotNetObjectReference.Create(this);
         await js.InvokeVoidAsync("gsbcNative.listen", _receiver);
         State = Parse(await js.InvokeAsync<string>("gsbcNative.status"));
-        await js.InvokeVoidAsync("gsbcNative.startSync", feeds);
+        await js.InvokeVoidAsync("gsbcNative.startSync", feeds, privateFeeds);
     }
 
     public async ValueTask<IReadOnlyList<StoredRecord>> ReadPageAsync(FeedPageQuery query)

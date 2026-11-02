@@ -125,7 +125,7 @@ flowchart LR
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & ConfigurationApp & PlatformUi & MediaClient
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin
     HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & PlatformApi
     HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi
@@ -204,7 +204,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Accounts.Admin` | The admin panel's Account and Welcome pages, built from the Client's components | Yes |
 | `GSBC.ChurchApp.Features.Access.Contracts` | The `Access` service, its messages and the `access.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Access.Api` | Roles, assignments and the catalogue (schema `access`); the cached `AccessEvaluator` behind every `[Requires]`; reconciling system roles; the escalation and last-owner guards | No |
-| `GSBC.ChurchApp.Features.Access.Client` | Access's gRPC proxies, and loading your grants into `IAccess` whenever the session changes | Yes |
+| `GSBC.ChurchApp.Features.Access.Client` | Access's gRPC proxies, and loading your grants into `IAccess`: from `Access.GetMine` in the admin panel, from the private `access.grants` feed on the phone (offline too) | Yes |
 | `GSBC.ChurchApp.Features.Access.Admin` | The Roles and Who-holds-what pages | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Contracts` | The `Configuration` service, its messages and the placements feed | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Api` | Placements and their audit (schema `config`): validates against descriptors, checks each area's permission, writes the feed, rolls back | No |

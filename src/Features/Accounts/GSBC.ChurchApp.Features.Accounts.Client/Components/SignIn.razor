@@ -1,45 +1,54 @@
 @inject AccountsClient Accounts
-@inject PasskeyCeremonies Passkeys
+@inject IPasskeyCeremonies Passkeys
 
-<section class="account-panel">
-    @if (_supported is false)
-    {
-        <p>This browser can't use passkeys. Try a current version of Safari, Chrome or Edge.</p>
-    }
-    else if (_mode == Mode.SignIn)
-    {
-        <h2>Sign in</h2>
-        <button @onclick="SignInAsync" disabled="@_busy">Sign in with a passkey</button>
-        <p>
-            <button class="link" @onclick="() => Switch(Mode.SignUp)">Create an account</button>
-            <button class="link" @onclick="() => Switch(Mode.Recover)">Lost your passkey?</button>
-        </p>
-    }
-    else if (_mode == Mode.SignUp)
-    {
-        <h2>Create an account</h2>
-        <EditForm Model="this" OnSubmit="SignUpAsync" FormName="sign-up">
-            <label>Your name <InputText @bind-Value="_name" autocomplete="name" /></label>
-            <label>Email <InputText @bind-Value="_email" type="email" autocomplete="email" /></label>
-            <button type="submit" disabled="@_busy">Continue and create a passkey</button>
-        </EditForm>
-        <button class="link" @onclick="() => Switch(Mode.SignIn)">I already have an account</button>
-    }
-    else
-    {
-        <h2>Get back in</h2>
-        <EditForm Model="this" OnSubmit="RecoverAsync" FormName="recover">
-            <label>Your account's email <InputText @bind-Value="_email" type="email" autocomplete="email" /></label>
-            <button type="submit" disabled="@_busy">Email me a link</button>
-        </EditForm>
-        <button class="link" @onclick="() => Switch(Mode.SignIn)">Back to sign in</button>
-    }
+@if (_supported is false)
+{
+    <Section First="true">
+        <Notice Tone="NoticeTone.Warning" Text="This browser can't use passkeys. Try a current version of Safari, Chrome or Edge." />
+    </Section>
+}
+else if (_mode == Mode.SignIn)
+{
+    <Section First="true" Title="Sign in" Lead="With the passkey saved on this device. Face ID, Touch ID or your screen lock confirms it's you.">
+        <Button Block="true" Icon="key" Busy="_busy" OnClick="SignInAsync">Sign in with a passkey</Button>
+    </Section>
+    <Section>
+        <ListGroup>
+            <ListRow Title="Create an account" Subtitle="With your name, your email and a passkey" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Switch(Mode.SignUp)" />
+            <ListRow Title="Lost your passkey?" Subtitle="Get a link by email to add a new one" Icon="lock" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.Recover)" />
+        </ListGroup>
+    </Section>
+}
+else if (_mode == Mode.SignUp)
+{
+    <Section First="true" Title="Create an account" Lead="Then this device makes a passkey, so there's no password to remember.">
+        <TextField Label="Your name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="name" />
+        <div class="ui-after">
+            <TextField Label="Email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" Hint="For getting back in if you lose your passkeys" />
+        </div>
+        <div class="ui-actions ui-after">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
+            <Button Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)" OnClick="SignUpAsync">Create a passkey</Button>
+        </div>
+    </Section>
+}
+else
+{
+    <Section First="true" Title="Get back in" Lead="We'll email a link that adds a new passkey to your account. It works for 2 hours.">
+        <TextField Label="Your account's email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" />
+        <div class="ui-actions ui-after">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
+            <Button Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="RecoverAsync">Email me a link</Button>
+        </div>
+    </Section>
+}
 
-    @if (_message is not null)
-    {
-        <p class="message">@_message</p>
-    }
-</section>
+@if (_message is not null)
+{
+    <Section>
+        <Notice Tone="_messageTone" Text="@_message" />
+    </Section>
+}
 
 @code {
     private enum Mode { SignIn, SignUp, Recover }
@@ -48,6 +57,7 @@
     private bool? _supported;
     private bool _busy;
     private string? _message;
+    private NoticeTone _messageTone = NoticeTone.Warning;
     private string _name = "";
     private string _email = "";
 
@@ -61,7 +71,7 @@
         }
         catch (JSException)
         {
-            _message = "This page couldn't start passkeys. Reload it and try again.";
+            Warn("This page couldn't start passkeys. Reload it and try again.");
         }
         StateHasChanged();
     }
@@ -83,7 +93,8 @@
     private Task RecoverAsync() => RunAsync(async () =>
     {
         await Accounts.RequestRecoveryAsync(_email);
-        _message = "If that email has a confirmed account, a link is on its way. It works for 2 hours.";
+        _messageTone = NoticeTone.Info;
+        _message = "If that email has a confirmed account, a link is on its way. Open it on this device.";
     });
 
     private async Task FinishAsync(CeremonyResult result)
@@ -91,7 +102,13 @@
         if (result.Ok)
             await Accounts.NotifySessionChangedAsync();
         else
-            _message = result.Error;
+            Warn(result.Error ?? "That didn't work. Try again.");
+    }
+
+    private void Warn(string message)
+    {
+        _messageTone = NoticeTone.Warning;
+        _message = message;
     }
 
     private async Task RunAsync(Func<Task> action)
@@ -104,11 +121,11 @@
         }
         catch (RpcException exception)
         {
-            _message = exception.Status.Detail;
+            Warn(exception.Status.Detail);
         }
         catch (JSException)
         {
-            _message = "This page couldn't start passkeys. Reload it and try again.";
+            Warn("This page couldn't start passkeys. Reload it and try again.");
         }
         finally
         {

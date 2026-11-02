@@ -29,6 +29,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseAppAssociation();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseRateLimiter();

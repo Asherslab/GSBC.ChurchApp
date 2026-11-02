@@ -10,8 +10,6 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 [ProtoSerializable(typeof(CurrentSession))]
 [ProtoSerializable(typeof(Nothing))]
 [ProtoSerializable(typeof(Done))]
-[ProtoSerializable(typeof(LinkPhoneRequest))]
-[ProtoSerializable(typeof(LinkedPhone))]
 [ProtoSerializable(typeof(StartSignUpRequest))]
 [ProtoSerializable(typeof(TicketReply))]
 [ProtoSerializable(typeof(RedeemRequest))]

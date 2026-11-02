@@ -17,5 +17,4 @@ public enum CodePurpose
     Invitation,
     Recovery,
     RegisterPasskey,
-    LinkPhone,
 }

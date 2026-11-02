@@ -2,14 +2,12 @@
 @using System.Globalization
 @using GSBC.ChurchApp.Platform.Client.Access
 @using GSBC.ChurchApp.Platform.Client.Feeds
-@using GSBC.ChurchApp.Platform.Client.Native
 @using GSBC.ChurchApp.Platform.Client.Signals
 @using GSBC.ChurchApp.Platform.Common
 @implements IDisposable
 @inject ILocalFeeds Feeds
 @inject IPreviewMode Preview
 @inject IAccess Access
-@inject NativeBridge Bridge
 
 <Page Title="Previews" BackHref="more" BackLabel="More">
     <Masthead Title="Previews" Note="See the app as it will be, on this phone only" />
@@ -30,9 +28,9 @@
             @if (context.Value.Drafts.Count == 0)
             {
                 <EmptyState Icon="eye" Title="No drafts to preview" Body="@(Access.SignedIn ? "When someone shares a draft with you, it shows here." : "Drafts reach this phone once you're signed in on it.")">
-                    @if (!Access.SignedIn && Bridge.IsDevelopmentBuild)
+                    @if (!Access.SignedIn)
                     {
-                        <Button Href="link-phone" Icon="smartphone">Link this phone</Button>
+                        <Button Href="account" Icon="user">Sign in</Button>
                     }
                 </EmptyState>
             }

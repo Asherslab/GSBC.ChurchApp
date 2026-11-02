@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Access.Api;
 
-internal sealed class RoleAssignments(AccessDbContext db, AssignmentRules rules, TimeProvider time) : IRoleAssignments
+internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes, AssignmentRules rules, TimeProvider time) : IRoleAssignments
 {
     public async ValueTask<AssignmentOutcome> GiveAsync(
         Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
@@ -50,7 +50,7 @@ internal sealed class RoleAssignments(AccessDbContext db, AssignmentRules rules,
             .ToListAsync(cancellationToken);
     }
 
-    public async ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => await db.AnnounceChangeAsync(cancellationToken);
+    public async ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => await changes.AnnounceAsync(cancellationToken);
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
@@ -87,7 +87,7 @@ internal sealed class RoleAssignments(AccessDbContext db, AssignmentRules rules,
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        await db.AnnounceChangeAsync(cancellationToken);
+        await changes.AnnounceAsync(cancellationToken);
     }
 
     private async Task<AssignmentOutcome> RemoveAsync(Guid userId, RoleRecord role, string? objectId, CancellationToken cancellationToken)
@@ -102,7 +102,7 @@ internal sealed class RoleAssignments(AccessDbContext db, AssignmentRules rules,
 
         db.Assignments.RemoveRange(held);
         await db.SaveChangesAsync(cancellationToken);
-        await db.AnnounceChangeAsync(cancellationToken);
+        await changes.AnnounceAsync(cancellationToken);
         return AssignmentOutcome.Success;
     }
 }

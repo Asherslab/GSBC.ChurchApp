@@ -1,6 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
+using System.Text.Json;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.AspNetCore.Builder;
@@ -21,6 +22,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Gateway.Tests;
 public sealed class PasskeyCeremonyTests : IAsyncLifetime
 {
     private const string Origin = "https://localhost";
+    private const string TeamId = "ABCDE12345";
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
     private readonly ECDsa _tokenKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -38,10 +40,12 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
             ["Accounts:Passkeys:RelyingPartyId"] = "localhost",
             ["Accounts:Passkeys:AllowedOrigins:0"] = Origin,
             [AccountTokens.SigningKeySetting] = _tokenKey.ExportPkcs8PrivateKeyPem(),
+            [$"{AppAssociation.Section}:TeamId"] = TeamId,
         });
         builder.Services.AddAccountsGateway(builder.Configuration);
 
         _app = builder.Build();
+        _app.UseAppAssociation();
         _app.UseAuthentication();
         _app.UseRateLimiter();
         _app.MapPasskeyCeremonies();
@@ -95,6 +99,53 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         using HttpClient another = Browser();
         string assertion = authenticator.Assert(await PostForJsonAsync(another, "request-options", new { }));
         Assert.Equal(HttpStatusCode.Forbidden, (await Post(another, "sign-in", new { credential = assertion })).StatusCode);
+    }
+
+    [Fact]
+    public async Task ThePhoneKeepsASessionSecretInsteadOfACookieUntilTheSessionEnds()
+    {
+        (Guid userId, string ticket) = await NewAccountWithTicketAsync("phoebe@example.com");
+        using SoftwareAuthenticator authenticator = new(Origin);
+        using HttpClient phone = Browser();
+
+        string credential = authenticator.Create(await PostForJsonAsync(phone, "creation-options", new { ticket }));
+        PasskeyEndpoints.CeremonyReply? signedUp = await (await Post(phone, "register", new { credential, ticket, name = "iPhone", app = true }))
+            .Content.ReadFromJsonAsync<PasskeyEndpoints.CeremonyReply>(TestContext.Current.CancellationToken);
+        string secret = Assert.IsType<string>(signedUp?.Session);
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await phone.GetAsync("/test/token", TestContext.Current.CancellationToken)).StatusCode);
+        HttpResponseMessage withSecret = await TokenWithSessionAsync(phone, secret);
+        Assert.Equal(HttpStatusCode.OK, withSecret.StatusCode);
+        JsonWebToken token = new(await withSecret.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(userId.ToString(), token.Subject);
+
+        await EndSessionAsync(Guid.Parse(token.GetClaim(AccountClaims.SessionId).Value));
+        Assert.Equal(HttpStatusCode.Unauthorized, (await TokenWithSessionAsync(phone, secret)).StatusCode);
+
+        string assertion = authenticator.Assert(await PostForJsonAsync(phone, "request-options", new { }));
+        PasskeyEndpoints.CeremonyReply? signedIn = await (await Post(phone, "sign-in", new { credential = assertion, app = true, device = "iPhone" }))
+            .Content.ReadFromJsonAsync<PasskeyEndpoints.CeremonyReply>(TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, (await TokenWithSessionAsync(phone, Assert.IsType<string>(signedIn?.Session))).StatusCode);
+    }
+
+    [Fact]
+    public async Task TheAssociationFileNamesTheConfiguredTeamAndBundle()
+    {
+        HttpResponseMessage response = await Browser().GetAsync(AppAssociation.RequestPath, TestContext.Current.CancellationToken);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
+        using JsonDocument association = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        string app = $"{TeamId}.{AppAssociation.DefaultBundleId}";
+        Assert.Equal(app, association.RootElement.GetProperty("webcredentials").GetProperty("apps")[0].GetString());
+        Assert.Equal(app, association.RootElement.GetProperty("applinks").GetProperty("details")[0].GetProperty("appIDs")[0].GetString());
+    }
+
+    private static Task<HttpResponseMessage> TokenWithSessionAsync(HttpClient phone, string secret)
+    {
+        HttpRequestMessage request = new(HttpMethod.Get, "/test/token");
+        request.Headers.Add(AppSessions.Header, secret);
+        return phone.SendAsync(request, TestContext.Current.CancellationToken);
     }
 
     private async Task RegisterAsync(HttpClient browser, SoftwareAuthenticator authenticator, string ticket)
