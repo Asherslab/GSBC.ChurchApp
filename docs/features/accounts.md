@@ -96,14 +96,13 @@ development the emails (confirmation codes, links) appear in the API's log in th
   disable accounts and read the audit log (the admin panel's People page), and people holding a
   sensitive permission can't recover by email. Abandoned sign-ups (no passkey after 7 days) are
   cleaned up, and email is queued and retried.
-- *The shared mailbox (owner):* the Graph transport. The queue and dispatcher are built; until a
-  transport is configured, emails wait in `email.outgoing_emails` (in development they're logged).
+- ~~*The shared mailbox*~~: done 2026-11-02. Email goes out as `app@baptist.com.au` through Graph
+  ([email.md](../architecture/email.md)); a staff invitation was sent, accepted and signed in end to
+  end in development. Production needs the `Email__Graph__*` values in the cluster secret.
 - *The Apple enrolment:* Associated Domains, then passkeys and the Keychain session in the app.
 - *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
   `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.
 
 ## Open
 
-- Which Microsoft 365 shared mailbox sends account email, and its app registration and Exchange
-  scoping (owner; see [identity.md](../architecture/identity.md)).
 - The token signing key in production: a cluster secret through `gsbc.argo` (owner).

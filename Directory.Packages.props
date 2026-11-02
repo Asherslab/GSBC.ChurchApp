@@ -32,6 +32,10 @@
     <PackageVersion Include="Yarp.ReverseProxy" Version="2.3.0" />
   </ItemGroup>
 
+  <ItemGroup Label="Microsoft 365">
+    <PackageVersion Include="Azure.Identity" Version="1.21.0" />
+  </ItemGroup>
+
   <ItemGroup Label="Data and storage">
     <PackageVersion Include="Microsoft.EntityFrameworkCore" Version="$(ServerAspNetCoreVersion)" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Relational" Version="$(ServerAspNetCoreVersion)" />

@@ -61,7 +61,9 @@ public static class PlatformApiExtensions
         services.AddScoped<IEmailSender, QueuedEmailSender>();
         services.AddScoped<EmailDispatcher>();
         services.AddHostedService<EmailDelivery>();
-        if (builder.Environment.IsDevelopment())
+        if (builder.Configuration.HasGraphEmail())
+            services.AddGraphEmail(builder.Configuration);
+        else if (builder.Environment.IsDevelopment())
             services.TryAddSingleton<IEmailTransport, DevelopmentEmailTransport>();
         else
             services.TryAddSingleton<IEmailTransport, UnconfiguredEmailTransport>();

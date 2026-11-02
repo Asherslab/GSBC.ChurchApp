@@ -10,6 +10,7 @@
 | [identity.md](architecture/identity.md) | One passkey sign-in for app and admin; sessions; recovery |
 | [permissions.md](architecture/permissions.md) | Nodes, scopes, roles as data, how the server and the UI check |
 | [offline-and-caching.md](architecture/offline-and-caching.md) | Sync as the only data path; media that never goes stale; Cloudflare |
+| [email.md](architecture/email.md) | Account email through a Microsoft 365 shared mailbox and Graph; the queue |
 | [storage.md](architecture/storage.md) | Postgres schemas per feature, R2 over the S3 API, Dropbox |
 | [data-driven.md](architecture/data-driven.md) | What staff can reshape without a release, and how |
 
@@ -17,7 +18,7 @@
 
 One doc per feature in [features/](features/), written before its code.
 
-## Where we are (2026-11-01)
+## Where we are (2026-11-02)
 
 All work is on the branch `skeleton/backbone`, **not pushed yet**, so CI has never run on it. Pushing it
 and opening a PR is the first step when picking up.
@@ -34,13 +35,13 @@ evaluator behind every `[Requires]`, admin screens).
   Owner on a real account).
 - Cloudflare: purge the zone once; turn Web Analytics off for the app and admin hosts; set Browser Cache
   TTL to *Respect existing headers* before production (see [offline-and-caching.md](architecture/offline-and-caching.md)).
-- The Microsoft 365 shared mailbox and its app registration, for the Graph email transport.
 - The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
-- Production config through `gsbc.argo`: token signing key, `Accounts:Passkeys` for `baptist.com.au`.
+- Production config through `gsbc.argo`: token signing key, `Accounts:Passkeys` for `baptist.com.au`,
+  and the `Email__Graph__*` values with the production mailer certificate ([email.md](architecture/email.md)).
 - The media route proposal in [offline-and-caching.md](architecture/offline-and-caching.md) awaits a yes.
 
-**Not tested end to end yet:** the owner side of Access (creating and giving roles, inviting) needs an
-owner account; the last-Owner guard has no automated test; background refresh needs measuring on a
+**Not tested end to end yet:** the owner side of Access (creating and giving roles) needs an owner
+account (inviting was tested on 2026-11-02, with a real email through the shared mailbox); the last-Owner guard has no automated test; background refresh needs measuring on a
 real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
 **Next, in order:** push and get CI green; the Access gaps and permissions UX

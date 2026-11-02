@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using GSBC.ChurchApp.Hosts.AppHost;
+using Microsoft.Extensions.Configuration;
 
 IDistributedApplicationBuilder builder = DistributedApplication.CreateBuilder(args);
 
@@ -23,6 +24,9 @@ IResourceBuilder<ProjectResource> api = builder
     .WithReference(database)
     .WithEnvironment("Accounts__Tokens__PublicKey", tokenKey.ExportSubjectPublicKeyInfoPem())
     .WaitForCompletion(migrator);
+
+foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
+    api.WithEnvironment($"Email__Graph__{setting.Key}", setting.Value);
 
 IResourceBuilder<ProjectResource> gateway = builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
