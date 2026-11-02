@@ -6,6 +6,7 @@ namespace GSBC.ChurchApp.Platform.Contracts.Content;
 public static class RichTextParser
 {
     private const int NestedIndent = 2;
+    private const int MaximumHrefLength = 2_000;
 
     public static RichTextDocument Parse(string markdown)
     {
@@ -300,13 +301,26 @@ public static class RichTextParser
                 labelEnd = Find("]", open + 1, end);
                 if (labelEnd < 0 || labelEnd + 1 >= end || text[labelEnd + 1] != '(')
                     return false;
-                int closeParen = Find(")", labelEnd + 2, end);
+                int closeParen = ClosingParenthesis(labelEnd + 2, end);
                 if (closeParen < 0)
                     return false;
 
                 href = text[(labelEnd + 2)..closeParen].Trim();
                 linkEnd = closeParen + 1;
                 return true;
+            }
+
+            private int ClosingParenthesis(int from, int end)
+            {
+                int depth = 0;
+                for (int position = from; position < Math.Min(end, from + MaximumHrefLength); position++)
+                {
+                    if (text[position] == '(')
+                        depth++;
+                    else if (text[position] == ')' && depth-- == 0)
+                        return position;
+                }
+                return -1;
             }
 
             private int Find(string delimiter, int from, int end)

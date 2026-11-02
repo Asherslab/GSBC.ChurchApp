@@ -1,3 +1,8 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject IServiceProvider Services
+
 @switch (Setting)
 {
     case YesNoSetting yesNo:
@@ -26,6 +31,28 @@
     case DateSetting:
         <label>@Setting.Label <input type="date" value="@Value" @onchange="ChangeAsync" /></label>
         break;
+    case MediaSetting media:
+        <div class="media-setting">
+            <span>@Setting.Label</span>
+            @if (media.TryParse(Value, out MediaRef? chosen) && chosen is not null)
+            {
+                <MediaImage Media="chosen" Class="media-thumbnail" />
+                <button type="button" class="link" @onclick="() => SetAsync(media.Format(null))">Remove</button>
+            }
+            @if (_choosing)
+            {
+                <MediaChooser ImagesOnly="media.ImagesOnly" OnChosen="chosenMedia => ChooseAsync(media, chosenMedia)" OnCancel="() => _choosing = false" />
+            }
+            else if (MediaChooser.IsAvailable(Services))
+            {
+                <button type="button" @onclick="() => _choosing = true">@(chosen is null ? "Choose" : "Change")</button>
+            }
+        </div>
+        break;
+    case RichTextSetting richText:
+        <RichTextEditor Label="@Setting.Label" Value="@(richText.TryParse(Value, out RichText content) ? content : new RichText())"
+                        ValueChanged="changed => SetAsync(richText.Format(changed))" MaximumLength="richText.MaxLength" Rows="6" />
+        break;
     case TextSetting text:
         <label>
             @Setting.Label
@@ -43,6 +70,8 @@
 }
 
 @code {
+    private bool _choosing;
+
     [Parameter, EditorRequired] public required Setting Setting { get; set; }
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
@@ -50,4 +79,10 @@
     private Task ChangeAsync(ChangeEventArgs change) => SetAsync(change.Value?.ToString() ?? "");
 
     private Task SetAsync(string value) => ValueChanged.InvokeAsync(value);
+
+    private Task ChooseAsync(MediaSetting setting, MediaRef chosen)
+    {
+        _choosing = false;
+        return SetAsync(setting.Format(chosen));
+    }
 }
