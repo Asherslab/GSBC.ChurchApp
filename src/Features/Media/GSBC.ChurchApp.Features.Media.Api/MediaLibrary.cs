@@ -26,6 +26,10 @@ internal sealed class MediaLibrary(
             throw Invalid("Keep the file name and description under 200 characters.");
         if (request.PrivateTo is { } audience)
             await CheckAudienceAsync(user, audience, cancellationToken);
+        if (MediaTypes.IsFont(request.ContentType) && !await access.IsAllowedAsync(user, MediaPermissions.UploadFontsNode, null, cancellationToken))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Uploading font files needs permission to, since the church must be licensed to use the font in an app. Choose one from Google Fonts instead."));
+        if (MediaTypes.IsFont(request.ContentType) && request.PrivateTo is not null)
+            throw Invalid("Fonts are public: anyone using the app downloads them.");
 
         DateTime now = Now;
         await db.PendingUploads.Where(upload => upload.ExpiresAt < now - PendingKeptFor).ExecuteDeleteAsync(cancellationToken);
@@ -94,6 +98,39 @@ internal sealed class MediaLibrary(
         };
         db.Items.Add(item);
         await DiscardAsync(pending, cancellationToken);
+        return MediaRefs.Of(item, blobs);
+    }
+
+    public async Task<MediaRef> StoreAsync(ClaimsPrincipal user, byte[] bytes, string contentType, string fileName, CancellationToken cancellationToken)
+    {
+        using MemoryStream content = new(bytes);
+        InspectedContent inspected = await MediaInspector.InspectAsync(content, contentType, cancellationToken);
+        if (!inspected.MatchesType)
+            throw new RpcException(new Status(StatusCode.Unavailable, $"That download isn't really {contentType}."));
+
+        MediaTypes.TryGetExtension(contentType, out string extension);
+        string key = ContentAddress.KeyFor(inspected.Sha256, extension);
+        if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Key == key && item.AudiencePermission == null, cancellationToken) is { } existing)
+            return MediaRefs.Of(existing, blobs);
+
+        if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
+        {
+            content.Position = 0;
+            await blobs.PutAsync(BlobBucket.Public, key, content, new BlobHeaders(contentType, ContentAddress.ImmutableCacheControl), cancellationToken);
+        }
+
+        MediaItem item = new()
+        {
+            Id = Guid.CreateVersion7(),
+            Key = key,
+            ContentType = contentType,
+            Bytes = inspected.Bytes,
+            FileName = fileName,
+            UploadedBy = CallerId(user),
+            UploadedAt = Now,
+        };
+        db.Items.Add(item);
+        await db.SaveChangesAsync(cancellationToken);
         return MediaRefs.Of(item, blobs);
     }
 

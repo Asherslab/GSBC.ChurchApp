@@ -26,7 +26,7 @@ public static class AppearanceSurfaces
 
     public static readonly IReadOnlyList<ThemeFont> Fonts =
     [
-        new("montserrat", "Montserrat", "var(--font)", 700, "-0.03em"),
+        new("montserrat", "Montserrat", "\"Montserrat\", -apple-system, system-ui, sans-serif", 700, "-0.03em"),
         new("dm-serif-text", "DM Serif Text", "\"DM Serif Text\", Georgia, serif", 400, "-0.01em"),
     ];
 
@@ -41,8 +41,9 @@ public static class AppearanceSurfaces
     public static class CustomTheme
     {
         public static readonly TextSetting Name = new("name", "Name", defaultValue: "New theme", required: true, maxLength: 40);
-        public static readonly ChoiceSetting Font = new("font", "Masthead font",
-            Fonts.Select(font => new Choice(font.Key, font.Name)).ToList(), "montserrat");
+        public static readonly FontSetting Font = new("font", "Masthead font", Fonts, "montserrat");
+        public static readonly FontSetting BodyFont = new("body-font", "Text font", Fonts, "montserrat",
+            help: "Used for everything else. Keep it easy to read at small sizes.");
 
         public static readonly HexColourSetting LightMasthead = new("light-masthead", "Masthead", "#2a3d5e");
         public static readonly HexColourSetting LightPrimary = new("light-primary", "Main buttons", "#2a3d5e");
@@ -64,7 +65,7 @@ public static class AppearanceSurfaces
 
         public static readonly Surface Surface = new("app.custom-theme", Area, "Custom theme",
             "A theme you make: a name, a masthead font and its colours for light and dark",
-            [Name, Font, .. LightKeys, .. DarkKeys, Overrides], defaultOrder: 100, repeatable: true,
+            [Name, Font, BodyFont, .. LightKeys, .. DarkKeys, Overrides], defaultOrder: 100, repeatable: true,
             check: values => ThemeDerivation.Problems(SpecOf(values)));
 
         public static ThemeSpec SpecOf(SettingValues values)
@@ -72,7 +73,8 @@ public static class AppearanceSurfaces
             IReadOnlyDictionary<string, string> overrides = values.Get(Overrides);
             return new ThemeSpec(
                 values.Get(Name),
-                Fonts.FirstOrDefault(font => font.Key == values.Get(Font)) ?? Fonts[0],
+                values.Get(Font),
+                values.Get(BodyFont),
                 new ThemeKeys(values.Get(LightMasthead), values.Get(LightPrimary), values.Get(LightAccent), values.Get(LightMarker), values.Get(LightTint)),
                 new ThemeKeys(values.Get(DarkMasthead), values.Get(DarkPrimary), values.Get(DarkAccent), values.Get(DarkMarker), values.Get(DarkTint)),
                 OverridesFor(overrides, ThemeScheme.Light),
@@ -89,19 +91,23 @@ public static class AppearanceSurfaces
 
     public static SurfaceSet All => new([Theme.Surface, CustomTheme.Surface]);
 
-    public sealed record ChosenTheme(string Palette, ThemeSpec? Custom);
+    public sealed record ChosenTheme(string Palette, ThemeSpec? Custom, string ChosenValue);
 
     public const string CustomPalette = "custom";
+    public const string PreviewPalette = "preview-custom";
 
     public static ChosenTheme ChosenFrom(IEnumerable<ArrangedSurface> shown)
     {
         List<ArrangedSurface> entries = shown.ToList();
         string palette = entries.FirstOrDefault(entry => entry.Surface.Key == Theme.Surface.Key)?.Values.Get(Theme.Palette) ?? Brand;
         if (!ThemeChoiceSetting.IsCustom(palette, out string themeId))
-            return new ChosenTheme(Palettes.Any(choice => choice.Value == palette) ? palette : Brand, null);
+        {
+            string known = Palettes.Any(choice => choice.Value == palette) ? palette : Brand;
+            return new ChosenTheme(known, null, known);
+        }
 
         ArrangedSurface? custom = entries.FirstOrDefault(entry => entry.Surface.Key == CustomTheme.Surface.Key && entry.Placement?.Id == themeId);
-        return custom is null ? new ChosenTheme(Brand, null) : new ChosenTheme(CustomPalette, CustomTheme.SpecOf(custom.Values));
+        return custom is null ? new ChosenTheme(Brand, null, Brand) : new ChosenTheme(CustomPalette, CustomTheme.SpecOf(custom.Values), palette);
     }
 
     public static string PaletteOf(IEnumerable<ArrangedSurface> shown) => ChosenFrom(shown).Palette;

@@ -22,13 +22,16 @@ public static class MediaApiExtensions
         services.AddScoped<IMediaReferences, MediaReferences>();
         services.AddPermissions(MediaPermissions.All);
         services.AddSystemRole(new SystemRole("media-editor", "Media editor", "Upload images and files, and see the media library",
-            ScopeKind.Global, ["media.*"]));
+            ScopeKind.Global, [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode]));
+        services.AddHttpClient<GoogleFonts>(client => client.DefaultRequestHeaders.UserAgent.ParseAdd(GoogleFonts.BrowserAgent));
+        services.AddScoped<FontsService>();
         return services;
     }
 
     public static IEndpointRouteBuilder MapMediaApi(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGrpcService<MediaService>();
+        endpoints.MapGrpcService<FontsService>();
         return endpoints;
     }
 }

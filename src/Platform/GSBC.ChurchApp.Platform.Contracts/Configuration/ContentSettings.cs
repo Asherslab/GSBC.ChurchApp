@@ -85,3 +85,49 @@ public sealed class RichTextSetting(string key, string label, bool required = fa
         return Format(new RichText { Markdown = used.Markdown, Media = used.Media.Select(media => verified[media.Id]).ToList() });
     }
 }
+
+public sealed class FontSetting(string key, string label, IReadOnlyList<ThemeFont> bundled, string defaultKey, string help = "")
+    : Setting<ThemeFont>(key, label, bundled.Single(font => font.Key == defaultKey), help), IHoldsMedia
+{
+    public IReadOnlyList<ThemeFont> Bundled { get; } = bundled;
+
+    public override bool TryParse(string text, out ThemeFont value)
+    {
+        value = Default;
+        if (text.StartsWith('{'))
+        {
+            if (!ContentJson.TryRead(text, out CustomFont? custom) || custom is null || custom.Files.Count == 0)
+                return false;
+            value = ThemeFont.Of(custom);
+            return true;
+        }
+        ThemeFont? known = Bundled.FirstOrDefault(font => font.Key == text);
+        value = known ?? Default;
+        return known is not null;
+    }
+
+    public override string Format(ThemeFont value) => value.Custom is { } custom ? ContentJson.Write(custom) : value.Key;
+
+    public override string? ProblemWith(string text)
+    {
+        if (!TryParse(text, out ThemeFont font))
+            return $"{Label} isn't a font.";
+        if (font.Custom is { } custom && custom.Files.Any(file => !file.Media.IsFont))
+            return $"{Label} has to be a font file.";
+        if (font.Custom is { } shared && shared.Files.Any(file => file.Media.IsPrivate))
+            return $"Anyone can read the app's settings, so {Label} has to be a public font.";
+        return null;
+    }
+
+    public IReadOnlyList<MediaRef> MediaIn(string text) =>
+        TryParse(text, out ThemeFont font) && font.Custom is { } custom ? custom.Files.Select(file => file.Media).ToList() : [];
+
+    public string WithMedia(string text, IReadOnlyDictionary<string, MediaRef> verified)
+    {
+        if (!TryParse(text, out ThemeFont font) || font.Custom is not { } custom)
+            return text;
+        foreach (FontFile file in custom.Files)
+            file.Media = verified[file.Media.Id];
+        return Format(font);
+    }
+}

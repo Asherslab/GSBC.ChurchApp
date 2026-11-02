@@ -1,12 +1,13 @@
+@using GSBC.ChurchApp.Platform.Ui.Content
 @using CustomTheme = GSBC.ChurchApp.Platform.Contracts.Configuration.AppearanceSurfaces.CustomTheme
 
 <TextField Label="Name" Placeholder="Advent 2026" MaxLength="CustomTheme.Name.MaxLength" Value="@Draft.Values[CustomTheme.Name.Key]"
            ValueChanged="value => SetAsync(CustomTheme.Name, value)" Problem="@CustomTheme.Name.ProblemWith(Draft.Values[CustomTheme.Name.Key])" />
 
-<div class="field">
-    <span class="field__label">Masthead font</span>
-    <Segmented TValue="string" Label="Masthead font" Options="Fonts" Value="@Draft.Values[CustomTheme.Font.Key]" ValueChanged="value => SetAsync(CustomTheme.Font, value)" />
-</div>
+<FontPicker Label="@CustomTheme.Font.Label" Bundled="AppearanceSurfaces.Fonts" Value="Values.Get(CustomTheme.Font)"
+            ValueChanged="font => SetAsync(CustomTheme.Font, CustomTheme.Font.Format(font))" />
+<FontPicker Label="@CustomTheme.BodyFont.Label" Bundled="AppearanceSurfaces.Fonts" Value="Values.Get(CustomTheme.BodyFont)" Hint="@CustomTheme.BodyFont.Help"
+            ValueChanged="font => SetAsync(CustomTheme.BodyFont, CustomTheme.BodyFont.Format(font))" />
 
 <div class="theme-editor__scheme">
     <span class="field__label">Colours for</span>
@@ -52,9 +53,6 @@
     [Parameter] public EventCallback<ThemeScheme> SchemeChanged { get; set; }
 
     private bool _advanced;
-
-    private static readonly IReadOnlyList<SegmentOption<string>> Fonts =
-        AppearanceSurfaces.Fonts.Select(font => new SegmentOption<string>(font.Key, font.Name)).ToList();
 
     private static readonly IReadOnlyList<SegmentOption<ThemeScheme>> Schemes =
         [new(ThemeScheme.Light, "Light", "sun"), new(ThemeScheme.Dark, "Dark", "moon")];

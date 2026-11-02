@@ -118,14 +118,16 @@ release. It is the smallest design that fits the machinery above:
 - **Light, dark or automatic** is each person's own, kept on the phone.
 - **The built-in palettes are code** (`tokens.css`, changed with a release, SPEC §4).
 - **Staff can make their own (owner, 2026-11-03).** A repeatable surface `app.custom-theme` holds a
-  name, a masthead font from the fonts the app bundles (Montserrat, DM Serif Text), five key colours
+  name, a masthead font and a text font (the bundled Montserrat or DM Serif Text, one from Google
+  Fonts, or an uploaded file for those allowed; see [media.md](../features/media.md), *Fonts*), five key colours
   for light and five for dark (masthead, main buttons, links and live, marker, shaded boxes or raised
   panels), and, under *Advanced*, any colour role set by hand. Everything not set by hand is worked
   out from the key colours by `ThemeDerivation` (Platform.Contracts), which keeps text readable on
   whatever keys are chosen; the same code validates on the server, draws the admin panel's preview and
   writes the CSS the phone applies, so they can't disagree. A theme fails to save while any text pair
   is under 4.5:1 (only a colour set by hand can do that). The phone stores the generated CSS with the
-  palette, so the next launch starts in it before Blazor runs.
+  palette, so the next launch starts in it before Blazor runs. People who can change colours can try
+  a made theme on their own phone under More → Appearance, as with the built-in ones.
 - **Edited live, in a draft.** Opening a made theme in a draft puts its controls in the middle pane
   and the phone, in the scheme being edited, in the right pane; the preview follows every change as
   it's made, and phones previewing the draft follow once it saves.

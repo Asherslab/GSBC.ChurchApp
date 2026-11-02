@@ -80,3 +80,21 @@ public sealed class DeleteMediaRequest
 
 [ProtoContract]
 public sealed class Done;
+
+[ProtoContract]
+public sealed class FontSearch
+{
+    [ProtoMember(1)] public string Query { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class FontFamilies
+{
+    [ProtoMember(1)] public List<FontFamilyChoice> Families { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ImportFontRequest
+{
+    [ProtoMember(1)] public string Family { get; set; } = "";
+}

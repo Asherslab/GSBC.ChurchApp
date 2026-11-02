@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
 
@@ -11,12 +12,20 @@ public enum ThemeScheme
 
 public sealed record ThemeKeys(string Masthead, string Primary, string Accent, string Marker, string Tint);
 
-public sealed record ThemeFont(string Key, string Name, string Family, int Weight, string Tracking);
+public sealed record ThemeFont(string Key, string Name, string Family, int Weight, string Tracking)
+{
+    private const string Fallback = "-apple-system, system-ui, sans-serif";
+
+    public CustomFont? Custom { get; private init; }
+
+    public static ThemeFont Of(CustomFont custom) =>
+        new(custom.CssFamily, custom.Family, $"\"{custom.CssFamily}\", {Fallback}", custom.HasBold ? 700 : 400, "0") { Custom = custom };
+}
 
 public sealed record ThemeRole(string Key, string Label);
 
 public sealed record ThemeSpec(
-    string Name, ThemeFont Font, ThemeKeys Light, ThemeKeys Dark,
+    string Name, ThemeFont Font, ThemeFont BodyFont, ThemeKeys Light, ThemeKeys Dark,
     IReadOnlyDictionary<string, string> LightOverrides, IReadOnlyDictionary<string, string> DarkOverrides)
 {
     public IReadOnlyDictionary<string, string> Roles(ThemeScheme scheme) =>
@@ -182,12 +191,30 @@ public static class ThemeDerivation
     public static IReadOnlyList<string> Problems(ThemeSpec theme) =>
         [.. ProblemsIn(theme.Roles(ThemeScheme.Light), "Light"), .. ProblemsIn(theme.Roles(ThemeScheme.Dark), "Dark")];
 
-    public static string Css(ThemeSpec theme, string lightSelector, string darkSelector)
+    public static IReadOnlyList<MediaRef> FontFiles(ThemeSpec theme) =>
+        new[] { theme.Font.Custom, theme.BodyFont.Custom }.OfType<CustomFont>().SelectMany(font => font.Files).Select(file => file.Media).DistinctBy(media => media.Key).ToList();
+
+    public static string Css(ThemeSpec theme, string lightSelector, string darkSelector, IReadOnlyDictionary<string, string>? fontSources = null)
     {
         StringBuilder css = new();
-        Block(css, lightSelector, theme.Roles(ThemeScheme.Light), theme.Font);
-        Block(css, darkSelector, theme.Roles(ThemeScheme.Dark), theme.Font);
+        foreach (CustomFont font in new[] { theme.Font.Custom, theme.BodyFont.Custom }.OfType<CustomFont>().DistinctBy(font => font.CssFamily))
+            FontFaces(css, font, fontSources ?? new Dictionary<string, string>());
+        Block(css, lightSelector, theme.Roles(ThemeScheme.Light), theme);
+        Block(css, darkSelector, theme.Roles(ThemeScheme.Dark), theme);
         return css.ToString();
+    }
+
+    private static void FontFaces(StringBuilder css, CustomFont font, IReadOnlyDictionary<string, string> sources)
+    {
+        foreach (FontFile file in font.Files)
+        {
+            if (!sources.TryGetValue(file.Media.Key, out string? source))
+                continue;
+            string safeSource = Uri.EscapeDataString(source).Replace("%3A", ":").Replace("%2F", "/");
+            css.Append("@font-face { font-family: \"").Append(font.CssFamily).Append("\"; font-style: normal; font-weight: ")
+                .Append(file.Weight is FontFile.Bold or FontFile.RegularToBold ? file.Weight : FontFile.Regular)
+                .Append("; font-display: swap; src: url(\"").Append(safeSource).Append("\"); }\n");
+        }
     }
 
     private static IEnumerable<string> ProblemsIn(IReadOnlyDictionary<string, string> roles, string scheme)
@@ -226,11 +253,13 @@ public static class ThemeDerivation
         return roles;
     }
 
-    private static void Block(StringBuilder css, string selector, IReadOnlyDictionary<string, string> roles, ThemeFont font)
+    private static void Block(StringBuilder css, string selector, IReadOnlyDictionary<string, string> roles, ThemeSpec theme)
     {
+        ThemeFont font = theme.Font;
         css.Append(selector).Append(" {");
         foreach ((string role, string value) in roles)
             css.Append(" --").Append(role).Append(": ").Append(value).Append(';');
+        css.Append(" --font: ").Append(theme.BodyFont.Family).Append(';');
         css.Append(" --font-masthead: ").Append(font.Family).Append(';');
         css.Append(" --masthead-weight: ").Append(font.Weight.ToString(CultureInfo.InvariantCulture)).Append(';');
         css.Append(" --masthead-tracking: ").Append(font.Tracking).Append("; }\n");

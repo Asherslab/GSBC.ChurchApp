@@ -511,3 +511,52 @@ button.row:active, a.row:active { background: var(--line); }
 }
 .colour-field__reset:hover { background: var(--sand); color: var(--ink); }
 .workbench__detail .colour-field__hex { background: var(--fill-on-surface); }
+
+.font-picker { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.font-picker__current { display: grid; gap: 2px; min-width: 0; }
+.font-picker__name { font-size: var(--text-lead); font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+.font-picker__source { font-size: var(--text-caption); color: var(--ink-3); }
+.font-picker__panel { display: grid; gap: var(--stack); padding: 16px; border-radius: var(--radius); background: var(--sand); }
+.workbench__detail .font-picker__panel, .theme-editor .font-picker__panel { background: var(--fill-on-surface); }
+.font-picker__options { display: grid; grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr)); gap: 8px; }
+.font-picker__results { display: grid; gap: 2px; max-height: 18rem; overflow-y: auto; }
+.font-picker__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-field);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: var(--text-row);
+  text-align: left;
+  cursor: pointer;
+}
+.font-picker__results .font-picker__option { background: none; font-family: inherit; }
+.font-picker__option:hover:not(:disabled) { background: var(--selected-fill); }
+.font-picker__option:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.font-picker__option:disabled { cursor: progress; opacity: 0.6; }
+.font-picker__option--chosen { box-shadow: inset 0 0 0 2px var(--accent); }
+.font-picker__option--chosen .icon { color: var(--accent); }
+.font-picker__category { font-size: var(--text-caption); color: var(--ink-3); }
+.font-picker__note { margin: 0; font-size: var(--text-caption); color: var(--ink-2); }
+.font-picker__upload { display: grid; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.font-picker__upload input[type="file"] { padding: 0; border: 0; background: none; font: inherit; font-size: var(--text-caption); color: var(--ink-2); }
+.font-picker__upload input[type="file"]::file-selector-button {
+  min-height: 36px;
+  margin-right: 12px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  color: var(--ink);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+.swatches[style] i:nth-child(1) { background: var(--swatch-1); }
+.swatches[style] i:nth-child(2) { background: var(--swatch-2); }
+.swatches[style] i:nth-child(3) { background: var(--swatch-3); }

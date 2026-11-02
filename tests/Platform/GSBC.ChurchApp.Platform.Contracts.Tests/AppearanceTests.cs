@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Tests;
 
@@ -54,6 +55,25 @@ public sealed class AppearanceTests
 
         string problem = Assert.Single(AppearanceSurfaces.CustomTheme.Surface.ProblemsWith(values));
         Assert.StartsWith("Dark: text would be hard to read", problem);
+    }
+
+    [Fact]
+    public void AFontsNameAsStaffTypedItNeverReachesTheStylesheet()
+    {
+        CustomFont font = new()
+        {
+            Family = "Evil\"; } body { display: none",
+            Files = [new FontFile { Media = new MediaRef { Key = "ab/abcdef0123456789.woff2", ContentType = "font/woff2" }, Weight = FontFile.RegularToBold }],
+        };
+        Dictionary<string, string> values = KeyColours("#2a3d5e", "#2a3d5e", "#00877c", "#e7ae74", "#f4efe7");
+        values[AppearanceSurfaces.CustomTheme.Font.Key] = AppearanceSurfaces.CustomTheme.Font.Format(ThemeFont.Of(font));
+        ThemeSpec theme = AppearanceSurfaces.CustomTheme.SpecOf(new SettingValues(values));
+
+        string css = ThemeDerivation.Css(theme, ":root", ":root.dark", new Dictionary<string, string> { [font.Files[0].Media.Key] = "https://media.test/a\"b.woff2" });
+
+        Assert.DoesNotContain("Evil", css);
+        Assert.DoesNotContain("a\"b", css);
+        Assert.Contains("font-family: \"gsbc-font-abcdef0123456789\"", css);
     }
 
     private static Dictionary<string, string> KeyColours(string masthead, string primary, string accent, string marker, string tint)

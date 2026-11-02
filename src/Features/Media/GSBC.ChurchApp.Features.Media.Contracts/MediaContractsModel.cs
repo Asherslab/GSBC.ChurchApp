@@ -17,4 +17,10 @@ namespace GSBC.ChurchApp.Features.Media.Contracts;
 [ProtoSerializable(typeof(MediaList))]
 [ProtoSerializable(typeof(DeleteMediaRequest))]
 [ProtoSerializable(typeof(Done))]
+[ProtoSerializable(typeof(FontSearch))]
+[ProtoSerializable(typeof(FontFamilies))]
+[ProtoSerializable(typeof(FontFamilyChoice))]
+[ProtoSerializable(typeof(ImportFontRequest))]
+[ProtoSerializable(typeof(CustomFont))]
+[ProtoSerializable(typeof(FontFile))]
 public partial class MediaContractsModel : TypeModel;

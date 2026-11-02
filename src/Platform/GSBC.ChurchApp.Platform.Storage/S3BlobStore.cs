@@ -51,6 +51,20 @@ internal sealed class S3BlobStore(IAmazonS3 s3, S3Presigner presigner, IOptions<
         return response.ResponseStream;
     }
 
+    public Task PutAsync(BlobBucket bucket, string key, Stream content, BlobHeaders headers, CancellationToken cancellationToken)
+    {
+        PutObjectRequest request = new()
+        {
+            BucketName = NameOf(bucket),
+            Key = key,
+            InputStream = content,
+            AutoCloseStream = false,
+            ContentType = headers.ContentType,
+        };
+        request.Headers.CacheControl = headers.CacheControl;
+        return s3.PutObjectAsync(request, cancellationToken);
+    }
+
     public Task CopyAsync(BlobBucket fromBucket, string fromKey, BlobBucket toBucket, string toKey, BlobHeaders headers, CancellationToken cancellationToken)
     {
         CopyObjectRequest request = new()
