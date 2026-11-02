@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>The church year</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--live:#00877c;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7}
+*{box-sizing:border-box}html,body{margin:0;width:1440px;height:900px;overflow:hidden}
+body{font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink);background:var(--page)}
+.bar{display:flex;align-items:center;gap:28px;height:60px;padding:0 40px;background:var(--navy);color:#fff;font-size:14px;font-weight:600}
+.bar span{opacity:.72}.bar .on{opacity:1;background:rgb(255 255 255/.12);padding:8px 14px;border-radius:99px}
+main{padding:28px 40px}
+.head{display:flex;justify-content:space-between;align-items:flex-end}
+h1{margin:0;font-size:27px;letter-spacing:-.02em}.lead{margin:4px 0 0;color:var(--ink2);font-size:15px}
+.btn{display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:99px;font-weight:600;font-size:14px;background:var(--sand);color:var(--ink)}
+.btn.p{background:var(--navy);color:#fff}.btn.s{height:32px;font-size:13px;padding:0 14px}
+.sign{display:flex;align-items:center;gap:14px;margin-top:20px;padding:14px 20px;border-radius:14px;background:var(--navy);color:#fff}
+.dot{width:10px;height:10px;border-radius:99px;background:var(--live);box-shadow:0 0 0 4px rgb(0 135 124/.3)}
+.sign b{font-size:18px}.sign small{color:rgb(255 255 255/.76);font-size:13px}.sign .lbl{color:var(--beige);font-size:13px;font-weight:600}
+.sign .acts{margin-left:auto;display:flex;gap:8px}.sign .w{background:#fff;color:var(--navy)}.sign .g{background:rgb(255 255 255/.12);color:#fff}
+.cal{margin-top:22px;border-top:1px solid var(--line)}
+.weeks{display:grid;grid-template-columns:180px repeat(8,1fr);font-size:12px;color:var(--ink3);font-weight:600}
+.weeks div{padding:10px 8px;border-left:1px solid var(--line)}.weeks div:first-child{border:0}
+.weeks .today{color:var(--ink)}
+.lane{display:grid;grid-template-columns:180px repeat(8,1fr);align-items:center;min-height:52px;border-top:1px solid var(--line);position:relative}
+.lane>.n{font-size:14px;font-weight:600;padding-right:12px}.lane>.n small{display:block;font-weight:400;color:var(--ink3);font-size:12px}
+.span{height:34px;border-radius:10px;display:flex;align-items:center;padding:0 12px;font-size:13px;font-weight:600}
+.ev{background:var(--navy);color:#fff}.tile{background:rgb(0 135 124/.14);color:var(--aqua)}.dr{background:rgb(231 174 116/.3);color:var(--oink)}
+.nowline{position:absolute;top:0;bottom:0;left:calc(180px + (100% - 180px)/8*.4);width:2px;background:var(--orange)}
+h2{margin:26px 0 8px;font-size:20px;letter-spacing:-.015em;display:flex;gap:10px;align-items:center}
+.tray{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.card{padding:16px 18px;border-radius:14px;background:var(--sand)}
+.card b{display:block;font-size:15px}.card .m{font-size:13px;color:var(--ink2);margin-top:2px}
+.card .f{display:flex;align-items:center;gap:8px;margin-top:12px}
+.pill{padding:3px 9px;border-radius:99px;font-size:12px;font-weight:700;background:rgb(231 174 116/.4);color:var(--oink)}
+.count{padding:1px 8px;border-radius:99px;background:var(--orange);color:#2a1a08;font-size:12px;font-weight:700}
+</style></head><body>
+<div class="bar"><b style="opacity:1">Good Shepherd admin</b><span>People</span><span>Roles</span><span class="on">Drafts</span><span>Home screen</span><span>Colours</span><span>Media</span></div>
+<main>
+<div class="head"><div><h1>Drafts</h1><p class="lead">What everyone sees now, what's coming, and the changes you're working on.</p></div><span class="btn p">+ New draft</span></div>
+<div class="sign"><span class="dot"></span><div><div class="lbl">Everyone sees now · with an event layer</div><b>Conference 2027</b> <small>· until Sun 16 May, 9pm</small></div><div class="acts"><span class="btn s g">Change dates</span><span class="btn s w">Turn off</span></div></div>
+<div class="cal">
+<div class="weeks"><div></div><div class="today">This week · 11 May</div><div>18 May</div><div>25 May</div><div>1 Jun</div><div>8 Jun</div><div>15 Jun</div><div>22 Jun</div><div>29 Jun</div></div>
+<div class="lane"><div class="n">Event layer<small>one at a time</small></div><div class="span ev" style="grid-column:2/3">Conference 2027</div><div class="span ev" style="grid-column:7/9;opacity:.55">Kids holiday club · scheduled</div><span class="nowline"></span></div>
+<div class="lane"><div class="n">Home screen<small>tiles with dates</small></div><div class="span tile" style="grid-column:2/4">Conference site map</div><div class="span tile" style="grid-column:5/8">Winter appeal</div></div>
+<div class="lane"><div class="n">Colours</div><div class="span tile" style="grid-column:2/10">Church brand, all year</div></div>
+</div>
+<h2>Drafts not yet out <span class="count">4</span></h2>
+<div class="tray">
+<div class="card"><b>Fix the Bible tile's link</b><div class="m">Jo Nguyen · Home screen · 1 change</div><div class="f"><span class="pill">Asked to publish</span><span style="margin-left:auto" class="btn s">Look</span><span class="btn s p">Publish</span></div></div>
+<div class="card"><b>Christmas 2026</b><div class="m">You · Colours, Home screen · 4 changes</div><div class="f"><span class="pill">Live changed 1 tile since</span><span style="margin-left:auto" class="btn s">Open</span></div></div>
+<div class="card"><b>Kids ministry page refresh</b><div class="m">Sam Taylor · Children's Ministry · 7 changes</div><div class="f"><span class="m">Shared with nobody</span><span style="margin-left:auto" class="btn s">Open</span></div></div>
+</div>
+</main></body></html>

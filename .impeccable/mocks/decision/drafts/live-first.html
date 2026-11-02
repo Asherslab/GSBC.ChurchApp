@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Live first</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--live:#00877c;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7}
+*{box-sizing:border-box}html,body{margin:0;width:1440px;height:900px;overflow:hidden}
+body{font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink);background:var(--page)}
+.bar{display:flex;align-items:center;gap:28px;height:60px;padding:0 40px;background:var(--navy);color:#fff;font-size:14px;font-weight:600}
+.bar span{opacity:.72}.bar .on{opacity:1;background:rgb(255 255 255/.12);padding:8px 14px;border-radius:99px}
+.ctx{display:flex;align-items:center;gap:16px;padding:14px 40px;background:rgb(231 174 116/.28);border-bottom:1px solid var(--line)}
+.sw{display:inline-flex;align-items:center;gap:10px;height:44px;padding:0 16px;border-radius:12px;background:#fff;font-weight:700;font-size:16px;box-shadow:0 1px 2px rgb(24 35 58/.08)}
+.sw small{font-weight:600;color:var(--ink3);font-size:12px}
+.saved{font-size:13px;font-weight:600;color:var(--ink2)}
+.btn{display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:99px;font-weight:600;font-size:14px;background:var(--sand);color:var(--ink)}
+.btn.p{background:var(--navy);color:#fff}.btn.s{height:32px;font-size:13px;padding:0 14px}.btn.w{background:#fff}
+main{display:grid;grid-template-columns:1fr 420px 300px;gap:36px;padding:24px 40px}
+h1{margin:0 0 4px;font-size:27px;letter-spacing:-.02em}.lead{margin:0 0 16px;color:var(--ink2);font-size:14px}
+.row{display:flex;align-items:center;gap:14px;min-height:62px;border-bottom:1px solid var(--line)}
+.rows{border-top:1px solid var(--line)}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--sand);flex:none}
+.ic.a{background:rgb(0 135 124/.16)}.ic.w{background:rgb(231 174 116/.3)}
+.t{font-size:15px;font-weight:600}.st{font-size:13px;color:var(--ink2)}
+.pill{padding:3px 9px;border-radius:99px;font-size:12px;font-weight:700;background:rgb(231 174 116/.35);color:var(--oink);margin-left:8px}
+.sel{background:var(--sand);margin:0 -12px;padding:0 12px;border-radius:10px}
+.check{margin:8px 0 8px 48px;padding:12px 14px;border-radius:12px;background:rgb(231 174 116/.22);font-size:13px}
+.check b{color:var(--oink)}
+.pane{padding:22px;border-radius:14px;box-shadow:0 1px 2px rgb(24 35 58/.06),0 10px 24px -14px rgb(24 35 58/.3)}
+.pane b{font-size:17px}.f{margin-top:14px}.f label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:6px}
+.f div{height:46px;border-radius:12px;background:var(--sand);padding:12px 14px;font-size:15px}
+.phone{height:600px;border-radius:40px;border:9px solid #18233a;overflow:hidden;background:#fff}
+.ph-m{height:170px;background:var(--navy);color:#fff;padding:90px 18px 0;font-weight:700;font-size:26px}
+.ph-r{height:52px;border-bottom:1px solid var(--line);margin:0 16px;display:flex;align-items:center;font-size:13px;font-weight:600}
+.ph-r.hi{background:rgb(231 174 116/.22)}
+.cap{font-size:12px;font-weight:600;color:var(--ink3);margin-bottom:8px;display:flex;justify-content:space-between}
+</style></head><body>
+<div class="bar"><b style="opacity:1">Good Shepherd admin</b><span>People</span><span>Roles</span><span>Drafts</span><span class="on">Home screen</span><span>Colours</span><span>Media</span></div>
+<div class="ctx"><span class="sw"><small>Showing</small> Christmas 2026 ▾</span><span class="saved">✓ Saved a moment ago · only you, Sam and the Senior pastor see it</span><span style="margin-left:auto" class="btn w">Share</span><span class="btn w">More</span><span class="btn p">Publish now</span></div>
+<main>
+<section>
+<h1>Home screen</h1><p class="lead">What everyone sees, with this draft's changes marked. Changes save themselves.</p>
+<div class="rows">
+<div class="row"><span class="ic"></span><div><div class="t">Sunday services</div><div class="st">shown to everyone</div></div></div>
+<div class="row sel"><span class="ic a"></span><div><div class="t">Christmas services <span class="pill">Added</span></div><div class="st">from Mon 1 Dec · until Thu 25 Dec</div></div></div>
+<div class="row"><span class="ic w"></span><div><div class="t">Bible <span class="pill">Changed</span></div><div class="st">shown to everyone</div></div></div>
+<div class="check"><b>Changed for everyone since you edited it.</b> Title: yours "Read the Bible", everyone's now "Bible app". <span class="btn s p" style="margin-left:8px">Keep mine</span> <span class="btn s">Use everyone's</span></div>
+<div class="row"><span class="ic"></span><div><div class="t" style="opacity:.6">Life Groups <span class="pill">Hidden</span></div><div class="st">hidden</div></div></div>
+<div class="row"><span class="ic"></span><div><div class="t">Give</div><div class="st">shown to everyone</div></div></div>
+</div>
+</section>
+<section class="pane"><b>Christmas services</b><div class="st">Link tile · added in this draft</div>
+<div class="f"><label>Title</label><div>Christmas at Good Shepherd</div></div>
+<div class="f"><label>Subtitle</label><div>Carols, Christmas Eve and Christmas Day</div></div>
+<div class="f"><label>Link</label><div>baptist.com.au/christmas</div></div>
+<div class="f"><label>First and last day shown</label><div>1 Dec – 25 Dec 2026</div></div>
+</section>
+<section><div class="cap"><span>Phone preview</span><span>Hide</span></div>
+<div class="phone"><div class="ph-m">Good Shepherd</div><div class="ph-r">Sunday services</div><div class="ph-r hi">Christmas at Good Shepherd</div><div class="ph-r">Read the Bible</div><div class="ph-r">Give</div></div></section>
+</main></body></html>
