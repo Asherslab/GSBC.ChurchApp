@@ -27,6 +27,15 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
         return direct.Concat(included).ToDictionary(role => role.Id);
     }
 
+    public async Task<bool> IsLastActiveOwnerAsync(Assignment assignment, DateTime now, CancellationToken cancellationToken)
+    {
+        RoleRecord role = assignment.Role ?? await Roles.SingleAsync(existing => existing.Id == assignment.RoleId, cancellationToken);
+        if (role.SystemKey != AccessService.OwnerKey || assignment.ExpiresAt <= now)
+            return false;
+        return !await Assignments.AnyAsync(other => other.Id != assignment.Id && other.RoleId == assignment.RoleId
+            && (other.ExpiresAt == null || other.ExpiresAt > now), cancellationToken);
+    }
+
     public Task AnnounceChangeAsync(CancellationToken cancellationToken) =>
         Database.ExecuteSqlRawAsync($"NOTIFY {ChangesChannel}", cancellationToken);
 

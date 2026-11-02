@@ -83,6 +83,29 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         Assert.Empty(RoleGrants.NotHeld(actor, ["access.assignments.edit"], ScopeKind.Ministry, "42", _catalog));
     }
 
+    [Fact]
+    public async Task TheLastActiveOwnerCannotBeRemoved()
+    {
+        Guid owner = await SystemRoleAsync(AccessService.OwnerKey);
+        Assignment current = await AssignAsync(Guid.CreateVersion7(), owner);
+        Assignment lapsed = await AssignAsync(Guid.CreateVersion7(), owner, expiresAt: DateTime.UtcNow.AddDays(-1));
+
+        Assert.True(await IsLastActiveOwnerAsync(current));
+        Assert.False(await IsLastActiveOwnerAsync(lapsed));
+
+        Assignment second = await AssignAsync(Guid.CreateVersion7(), owner);
+
+        Assert.False(await IsLastActiveOwnerAsync(current));
+        Assert.False(await IsLastActiveOwnerAsync(second));
+    }
+
+    private async Task<bool> IsLastActiveOwnerAsync(Assignment assignment)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<AccessDbContext>()
+            .IsLastActiveOwnerAsync(assignment, DateTime.UtcNow, TestContext.Current.CancellationToken);
+    }
+
     private async Task<GrantSet> GrantsAsync(Guid userId)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
@@ -108,11 +131,11 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             .Where(role => role.SystemKey == key).Select(role => role.Id).SingleAsync(TestContext.Current.CancellationToken);
     }
 
-    private async Task AssignAsync(Guid userId, Guid roleId, string? scopeObjectId = null, DateTime? expiresAt = null)
+    private async Task<Assignment> AssignAsync(Guid userId, Guid roleId, string? scopeObjectId = null, DateTime? expiresAt = null)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         AccessDbContext db = scope.ServiceProvider.GetRequiredService<AccessDbContext>();
-        db.Assignments.Add(new Assignment
+        Assignment assignment = new()
         {
             Id = Guid.CreateVersion7(),
             UserId = userId,
@@ -120,8 +143,10 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             ScopeObjectId = scopeObjectId,
             ExpiresAt = expiresAt,
             CreatedAt = DateTime.UtcNow,
-        });
+        };
+        db.Assignments.Add(assignment);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        return assignment;
     }
 
     public async ValueTask DisposeAsync()

@@ -50,7 +50,7 @@ our headers, Web Analytics off, app hosts purged), and media goes through R2; se
 **Tested by the owner, 2026-11-02:** the owner side of Access (creating a role and giving it to a user)
 and inviting, with a real email through the shared mailbox.
 
-**Not tested end to end yet:** the last-Owner guard has no automated test; background refresh needs
+**Not tested end to end yet:** background refresh needs
 measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
 **Next, in order:** push and get CI green; the Access gaps and permissions UX

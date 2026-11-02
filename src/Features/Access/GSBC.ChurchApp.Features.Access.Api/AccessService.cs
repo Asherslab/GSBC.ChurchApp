@@ -185,8 +185,7 @@ internal sealed class AccessService(
         if (!await evaluator.IsAllowedAsync(caller, AccessPermissions.EditAssignmentsNode, assignment.ScopeObjectId, cancellationToken))
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
 
-        if (assignment.Role!.SystemKey == OwnerKey
-            && await db.Assignments.CountAsync(other => other.RoleId == assignment.RoleId, cancellationToken) <= 1)
+        if (await db.IsLastActiveOwnerAsync(assignment, Now, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "This is the last Owner. Make someone else an Owner first."));
 
         db.Assignments.Remove(assignment);
