@@ -31,8 +31,6 @@ evaluator behind every `[Requires]`, admin screens).
 
 **Waiting on the owner:**
 
-- Run `tools/access/make-owner.sh <your email>` once to become the first owner (the agent may not grant
-  Owner on a real account).
 - The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
 - When media is built: the R2 bucket, its custom domain and a cache rule for it
   ([offline-and-caching.md](architecture/offline-and-caching.md)).
@@ -49,9 +47,11 @@ our headers, Web Analytics off, app hosts purged), and media goes through R2; se
 - Check the admin panel on `app.baptist.com.au` with `tools/dev-proxy/check-caching.sh` once it
   replaces the POC there.
 
-**Not tested end to end yet:** the owner side of Access (creating and giving roles) needs an owner
-account (inviting was tested on 2026-11-02, with a real email through the shared mailbox); the last-Owner guard has no automated test; background refresh needs measuring on a
-real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
+**Tested by the owner, 2026-11-02:** the owner side of Access (creating a role and giving it to a user)
+and inviting, with a real email through the shared mailbox.
+
+**Not tested end to end yet:** the last-Owner guard has no automated test; background refresh needs
+measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
 **Next, in order:** push and get CI green; the Access gaps and permissions UX
 ([access.md](features/access.md), *Usability comes first* and *Open*), designed alongside Ministries,
