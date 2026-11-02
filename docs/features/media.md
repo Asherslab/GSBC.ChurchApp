@@ -118,9 +118,9 @@ Cloudflare API token and isn't built.
 - `Media.GetLink` checks the caller's grants **on every call** and returns a signed GET valid for
   5 minutes. Someone removed from a ministry is refused from their next request; keys never rotate.
 - On the phone, private files are cached apart from public ones and dropped whenever a feed resets
-  (which is what a permission change does). `PrivateMediaGuard` also drops them when the session
-  changes, but only in hosts that run client startup tasks; the app doesn't yet (sign-in on the phone
-  waits for the Apple enrolment), so wire it in when it does.
+  (which is what a permission change does). They're also dropped when the session changes: by the
+  native layer when someone signs in or out on the phone or the session ends elsewhere, and by
+  `PrivateMediaGuard`, a client startup task the app and the admin panel both run.
 - Once a file is on someone's phone, or they've saved it, we can't take it back. Short links and
   dropping the cache are the most a server can do.
 
