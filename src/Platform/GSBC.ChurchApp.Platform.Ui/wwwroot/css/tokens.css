@@ -4,6 +4,7 @@
 @font-face { font-family: "DM Serif Text"; font-weight: 400; font-display: swap; src: url("../fonts/dm-serif-text-latin-400-normal.woff2") format("woff2"); }
 
 :root {
+  --device-bezel: #000000;
   --page: #ffffff;
   --surface: #ffffff;
   --sand: #f4efe7;

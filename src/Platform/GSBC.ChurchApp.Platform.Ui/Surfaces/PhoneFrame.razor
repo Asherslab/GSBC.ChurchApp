@@ -1,12 +1,32 @@
-<div class="phone-frame" data-palette="@Palette" role="img" aria-label="@Label">
+<div class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@Palette" role="img" aria-label="@Label"
+     style="@($"width: {Device.Width}px; height: {Device.Height}px; --sat: {Device.TopInset}px; --sab: {Device.BottomInset}px")">
     <div class="phone-frame__screen">
         <div class="topbar" aria-hidden="true"></div>
         @ChildContent
     </div>
+    <div class="phone-frame__status" aria-hidden="true">
+        <span class="phone-frame__time">9:41</span>
+        @if (Device.Cutout != PhoneCutout.None)
+        {
+            <span class="phone-frame__cutout"></span>
+        }
+        <span class="phone-frame__levels">
+            <svg viewBox="0 0 18 12"><rect x="0" y="8" width="3" height="4" rx="1" /><rect x="5" y="5.5" width="3" height="6.5" rx="1" /><rect x="10" y="3" width="3" height="9" rx="1" /><rect x="15" y="0" width="3" height="12" rx="1" /></svg>
+            <svg viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity="0.4" /><rect x="2" y="2" width="20" height="9" rx="2" /><rect x="25" y="4.5" width="1.5" height="4" rx="0.75" opacity="0.4" /></svg>
+        </span>
+    </div>
+    <nav class="tabbar" aria-hidden="true">
+        @foreach ((string title, string icon) in Tabs)
+        {
+            <span class="tabbar__item @(title == Tabs[0].Title ? "active" : "")"><Icon Name="@icon" /><span>@title</span></span>
+        }
+    </nav>
 </div>
 
 @code {
     [Parameter] public string? Palette { get; set; }
+    [Parameter] public PhoneDevice Device { get; set; } = PhoneDevice.IPhone15Pro;
+    [Parameter] public IReadOnlyList<(string Title, string Icon)> Tabs { get; set; } = [("Home", "home"), ("More", "more")];
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }

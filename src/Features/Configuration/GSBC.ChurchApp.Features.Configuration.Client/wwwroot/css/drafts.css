@@ -29,7 +29,7 @@
 .changed-for-everyone { display: grid; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: var(--radius-field); background: color-mix(in srgb, var(--marker) 22%, var(--page)); color: var(--ink); font-size: var(--text-caption); line-height: 1.45; }
 .changed-for-everyone b { color: var(--marker-ink); }
 
-.detail-pane { position: sticky; top: 16px; display: grid; gap: var(--stack); }
+.detail-pane { position: sticky; top: 16px; display: grid; gap: var(--stack); overflow-x: auto; }
 .detail-pane__hint { margin: 0; color: var(--ink-2); font-size: var(--text-row); line-height: 1.5; }
 .detail-pane__head { display: grid; gap: 2px; }
 .detail-pane__head h3 { margin: 0; font-size: var(--text-lead); font-weight: 700; overflow-wrap: anywhere; }
