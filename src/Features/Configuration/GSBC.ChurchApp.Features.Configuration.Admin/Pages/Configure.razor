@@ -1,0 +1,11 @@
+@page "/configure/{AreaKey}"
+@page "/configure/{AreaKey}/{ScopeId}"
+
+<h1>Arrange</h1>
+
+<SurfaceArrangement AreaKey="@AreaKey" ScopeId="@ScopeId" />
+
+@code {
+    [Parameter] public string AreaKey { get; set; } = "";
+    [Parameter] public string? ScopeId { get; set; }
+}

@@ -10,5 +10,6 @@
     <ProjectReference Include="..\..\Platform\GSBC.ChurchApp.Platform.Ui\GSBC.ChurchApp.Platform.Ui.csproj" />
     <ProjectReference Include="..\..\Features\Accounts\GSBC.ChurchApp.Features.Accounts.Admin\GSBC.ChurchApp.Features.Accounts.Admin.csproj" />
     <ProjectReference Include="..\..\Features\Access\GSBC.ChurchApp.Features.Access.Admin\GSBC.ChurchApp.Features.Access.Admin.csproj" />
+    <ProjectReference Include="..\..\Features\Configuration\GSBC.ChurchApp.Features.Configuration.Admin\GSBC.ChurchApp.Features.Configuration.Admin.csproj" />
   </ItemGroup>
 </Project>

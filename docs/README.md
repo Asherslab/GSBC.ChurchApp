@@ -82,8 +82,10 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    staff actions), the shared mailbox (real email) and the enrolment (passkeys in the app).
 4. **Access** ([access.md](features/access.md)). Built: roles, assignments, the cached evaluator,
    escalation guards and the admin screens. Open: a private grants feed for offline use in the app.
-5. **Configuration:** surfaces, settings descriptors and the generic editor
-   ([data-driven.md](architecture/data-driven.md)).
+5. **Configuration** ([configuration.md](features/configuration.md)). Built: surfaces and settings
+   descriptors in Platform, the `config` schema and service (validated, permission per area, audited,
+   rolled back), the placements feed, `ISurfaceLayout` for the phone, the generic editor in the app and
+   the admin panel, and the Hub area with its link tile. Open: Home rendering it, grants on the phone.
 6. **Media**, once its route is approved ([offline-and-caching.md](architecture/offline-and-caching.md)).
 7. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in

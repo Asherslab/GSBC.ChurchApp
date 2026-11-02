@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Api.Tiers;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
@@ -92,6 +93,12 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddFeed(this IServiceCollection services, FeedDefinition feed) =>
         services.AddSingleton(feed);
+
+    public static IServiceCollection AddSurfaces(this IServiceCollection services, SurfaceSet surfaces)
+    {
+        services.TryAddSingleton<SurfaceCatalog>();
+        return services.AddSingleton(surfaces);
+    }
 
     public static IServiceCollection AddSystemRole(this IServiceCollection services, SystemRole role) =>
         services.AddSingleton(role);

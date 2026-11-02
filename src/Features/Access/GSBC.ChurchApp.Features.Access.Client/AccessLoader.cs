@@ -19,11 +19,11 @@ internal sealed class AccessLoader(AccessClient access, GrantedAccess granted, S
     {
         try
         {
-            granted.Replace(ToGrantSet(await access.GetMineAsync()));
+            granted.Replace(ToGrantSet(await access.GetMineAsync()), signedIn: true);
         }
         catch (RpcException)
         {
-            granted.Replace(GrantSet.Empty);
+            granted.Replace(GrantSet.Empty, signedIn: false);
         }
     }
 

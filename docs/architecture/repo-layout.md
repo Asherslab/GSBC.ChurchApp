@@ -88,6 +88,14 @@ flowchart LR
         AccessContracts["Features.Access.Contracts"]
     end
 
+    subgraph Configuration["Features / Configuration"]
+        ConfigurationApp["Features.Configuration.App"]
+        ConfigurationAdmin["Features.Configuration.Admin"]
+        ConfigurationClient["Features.Configuration.Client"]
+        ConfigurationApi["Features.Configuration.Api"]
+        ConfigurationContracts["Features.Configuration.Contracts"]
+    end
+
     subgraph Platform
         PlatformUi["Platform.Ui"]
         PlatformClient["Platform.Client"]
@@ -106,14 +114,15 @@ flowchart LR
         ApiTests["Platform.Api.Tests"]
         GatewayTests["Features.Accounts.Gateway.Tests"]
         AccessTests["Features.Access.Api.Tests"]
+        ConfigurationTests["Features.Configuration.Api.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & PlatformUi
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin
-    HostsApi --> AccountsApi & AccessApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi
+    HostsApp --> AccountsApp & ConfigurationApp & PlatformUi
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -128,6 +137,12 @@ flowchart LR
     AccessApi --> AccessContracts & PlatformApi
     AccessContracts --> PlatformContracts
 
+    ConfigurationApp --> ConfigurationClient
+    ConfigurationAdmin --> ConfigurationClient
+    ConfigurationClient --> ConfigurationContracts & PlatformClient & PlatformUi & PlatformCommon
+    ConfigurationApi --> ConfigurationContracts & PlatformApi
+    ConfigurationContracts --> PlatformContracts
+
     PlatformUi --> PlatformClient
     PlatformClient --> PlatformContracts
     PlatformApi --> PlatformContracts & PlatformData
@@ -139,6 +154,7 @@ flowchart LR
     ApiTests --> PlatformApi
     GatewayTests --> AccountsGateway
     AccessTests --> AccessApi
+    ConfigurationTests --> ConfigurationApi
 ```
 
 At run time:
@@ -160,10 +176,10 @@ flowchart LR
 
 | Project | What it is and does | AOT |
 |---|---|---|
-| `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types. Not referenced yet | Yes |
+| `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
-| `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`) and the Sync service contract | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`) and the outbox (`IOutbox`) | Yes |
+| `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors: areas, surfaces, setting fields, audiences, layout composition, and the Hub area | Yes |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`), and `ISurfaceLayout` (an area as staff arranged it) | Yes |
 | `GSBC.ChurchApp.Platform.Ui` | The shared component library: `ModuleRouter`, `ModuleNav`, the `Can` permission gate | Yes |
 | `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
@@ -179,6 +195,11 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Api` | Roles, assignments and the catalogue (schema `access`); the cached `AccessEvaluator` behind every `[Requires]`; reconciling system roles; the escalation and last-owner guards | No |
 | `GSBC.ChurchApp.Features.Access.Client` | Access's gRPC proxies, and loading your grants into `IAccess` whenever the session changes | Yes |
 | `GSBC.ChurchApp.Features.Access.Admin` | The Roles and Who-holds-what pages | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Contracts` | The `Configuration` service, its messages and the placements feed | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Api` | Placements and their audit (schema `config`): validates against descriptors, checks each area's permission, writes the feed, rolls back | No |
+| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store, and the generic `SurfaceEditor` | Yes |
+| `GSBC.ChurchApp.Features.Configuration.App` | The phone's Arrange page and its navigation entry | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Admin` | The admin panel's Arrange page and its navigation entry | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
 | `GSBC.ChurchApp.Hosts.Admin` | The staff admin panel: Blazor WASM, not AOT, served by the gateway | No |
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |
@@ -189,8 +210,9 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
+| `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
-| `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too | No |
+| `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
 (the Capacitor plugin: `DataLayerCore` holds the gRPC-Web transport, GRDB store, sync engine and outbox,
