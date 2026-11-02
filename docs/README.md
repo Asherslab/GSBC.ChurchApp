@@ -107,6 +107,7 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
 7. **Drafts and previews** ([drafts.md](architecture/drafts.md)), decided 2026-11-02: every change
    staff arrange is made in a draft, previewed live on their own phone, shared, then published or
    turned on for an event. Screens mocked up and reviewed first. Before Home, so Home is built on it.
+   Then a design pass over the admin panel's pages, designed for desktop, not the phone.
 8. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

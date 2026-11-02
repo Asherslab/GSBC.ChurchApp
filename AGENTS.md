@@ -103,6 +103,14 @@ or the session or permissions change; never load once in `OnInitialized` and lea
 [offline-and-caching.md](docs/architecture/offline-and-caching.md), *Screens update themselves*.
 `LiveDataRules` enforces it.
 
+# Who may see or do something: always the permission system
+
+**Every "who can see or do this" goes through Access's permissions** ([permissions.md](docs/architecture/permissions.md)):
+sharing a draft, members of a ministry, a private file's audience, a reviewer, an owner of a record.
+Never keep a feature's own list of user ids, a "shared with" column, an `IsAdmin` flag or a check that
+bypasses `IAccess`. When the permission system can't express what's needed (a new kind of scope, a
+role given for one object), extend the permission system; don't work around it (owner, 2026-11-02).
+
 # Comments: almost none
 
 **Don't write comments unless the code genuinely can't be understood without one.** Make the code say
