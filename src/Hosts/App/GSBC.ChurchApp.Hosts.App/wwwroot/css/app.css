@@ -27,7 +27,7 @@ img { display: block; max-width: 100%; }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
 
 .boot { position: fixed; inset: 0; z-index: 100; display: grid; place-items: center; background: var(--masthead); color: var(--on-masthead); }
-.boot__mark { width: 88px; animation: boot 1.6s ease-in-out infinite; }
+.boot__mark { width: calc(100vh * 434 / 2732); animation: boot 1.6s ease-in-out infinite; }
 @keyframes boot { 50% { opacity: 0.55; } }
 
 .shell { position: fixed; inset: 0; background: var(--page); }
