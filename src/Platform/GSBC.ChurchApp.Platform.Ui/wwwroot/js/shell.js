@@ -67,7 +67,8 @@ window.gsbcShell = (() => {
         const holder = frame.parentElement;
         if (!holder) return;
         const above = frame.getBoundingClientRect().top - holder.getBoundingClientRect().top;
-        const tall = innerHeight - Math.max(16, holder.getBoundingClientRect().top) - above - 24;
+        const chrome = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--chrome-top')) || 0;
+        const tall = innerHeight - Math.max(chrome + 16, holder.getBoundingClientRect().top) - above - 24;
         const scale = Math.min(1, holder.clientWidth / (width + bezel), tall / (height + bezel));
         frame.style.zoom = Math.max(0.4, scale).toFixed(3);
       };

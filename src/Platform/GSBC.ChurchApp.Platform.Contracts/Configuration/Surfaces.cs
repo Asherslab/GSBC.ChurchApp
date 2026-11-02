@@ -2,7 +2,7 @@ using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
 
-public sealed record SurfaceArea(string Key, string Title, string Description, ScopeKind ScopeKind, Permission EditPermission, Permission PublishPermission)
+public sealed record SurfaceArea(string Key, string Title, string Description, ScopeKind ScopeKind, Permission EditPermission, Permission PublishPermission, bool Ordered = true)
 {
     public Permission AudiencePermission(string node) => new(node, ScopeKind, "");
 }
@@ -12,8 +12,10 @@ public sealed class Surface
     public const string FirstRelease = "1.0";
 
     public Surface(string key, SurfaceArea area, string title, string description, IReadOnlyList<Setting> settings,
-        string introducedIn = FirstRelease, bool shownByDefault = true, int defaultOrder = 0, bool repeatable = false)
+        string introducedIn = FirstRelease, bool shownByDefault = true, int defaultOrder = 0, bool repeatable = false,
+        Func<SettingValues, IEnumerable<string>>? check = null)
     {
+        _check = check;
         if (settings.Select(setting => setting.Key).Distinct().Count() != settings.Count)
             throw new ArgumentException($"Surface '{key}' declares a setting key twice.", nameof(settings));
 
@@ -27,6 +29,8 @@ public sealed class Surface
         DefaultOrder = defaultOrder;
         Repeatable = repeatable;
     }
+
+    private readonly Func<SettingValues, IEnumerable<string>>? _check;
 
     public string Key { get; }
     public SurfaceArea Area { get; }
@@ -49,6 +53,8 @@ public sealed class Surface
         problems.AddRange(Settings
             .Select(setting => setting.ProblemWith(values.GetValueOrDefault(setting.Key, setting.DefaultText)))
             .OfType<string>());
+        if (problems.Count == 0 && _check is not null)
+            problems.AddRange(_check(new SettingValues(Settings.ToDictionary(setting => setting.Key, setting => values.GetValueOrDefault(setting.Key, setting.DefaultText)))));
         return problems;
     }
 }

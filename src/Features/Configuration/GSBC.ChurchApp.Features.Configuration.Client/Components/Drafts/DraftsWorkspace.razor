@@ -87,7 +87,7 @@ else
                 <ChildContent>
                     @if (_form is not null)
                     {
-                        <PlacementForm Draft="_form" Changed="FormChangedAsync" />
+                        <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
                     }
                 </ChildContent>
                 <Actions>
@@ -125,6 +125,7 @@ else
     [Parameter] public bool Narrow { get; set; }
     [Parameter] public string BasePath { get; set; } = "drafts";
 
+    private ThemeScheme _themeScheme;
     private DraftList? _list;
     private string? _loadProblem;
     private Dictionary<string, string> _names = [];
@@ -240,6 +241,14 @@ else
                 {
                     <Skeleton Count="3" Label="Loading what's there" />
                 }
+                else if (!Narrow && EditingTheme is not null)
+                {
+                    <div class="theme-editor">
+                        <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> Everything in @area.Title</button>
+                        <PlacementForm Draft="_form!" Changed="FormChangedAsync" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
+                        <div class="ui-actions">@FormActions</div>
+                    </div>
+                }
                 else
                 {
                     IReadOnlyList<ArrangedSurface> arranged = session.Arranged(area, _area.ScopeId);
@@ -270,7 +279,7 @@ else
                                     }
                                 </Below>
                                 <TrailingContent>
-                                    @if (arranged.Count > 1)
+                                    @if (area.Ordered && arranged.Count > 1)
                                     {
                                         <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-up" Disabled="@(position == 0)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} up")" OnClick="() => MoveAsync(arranged, position, -1)" />
                                         <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-down" Disabled="@(position == arranged.Count - 1)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} down")" OnClick="() => MoveAsync(arranged, position, 1)" />
@@ -313,30 +322,46 @@ else
     private RenderFragment DetailPane => __builder =>
     {
         <div class="detail-pane">
-            <Segmented TValue="bool" Label="Show" Options="DetailViews" Value="_preview" ValueChanged="preview => _preview = preview" />
-            @if (_session is null || CurrentArea is null)
+            @if (_session is not null && EditingTheme is { } theme)
             {
-                <p class="detail-pane__hint">Open a draft to change it here.</p>
-            }
-            else if (_preview)
-            {
-                <div class="ui-actions"><Button Variant="ButtonVariant.Quiet" Small="true" Icon="external-link" OnClick="PopOutAsync">Pop out</Button></div>
-                <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
-            }
-            else if (_form is null)
-            {
-                <p class="detail-pane__hint">Choose something on the left to change it. Changes save themselves, and phones previewing this draft follow along.</p>
+                <div class="detail-pane__head">
+                    <h3>@(theme.Name.Length > 0 ? theme.Name : "This theme"), live</h3>
+                    <span>As you change it, in @(_themeScheme == ThemeScheme.Light ? "light" : "dark") mode. Phones previewing this draft follow once it saves.</span>
+                </div>
+                <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Theme="theme" Scheme="_themeScheme" />
             }
             else
             {
-                <div class="detail-pane__head">
-                    <h3>@FormTitle</h3>
-                    <span>@_form.Surface.Description</span>
-                </div>
-                <PlacementForm Draft="_form" Changed="FormChangedAsync" />
-                <div class="ui-actions">@FormActions</div>
+                @SettingsOrPreview
             }
         </div>
+    };
+
+    private RenderFragment SettingsOrPreview => __builder =>
+    {
+        <Segmented TValue="bool" Label="Show" Options="DetailViews" Value="_preview" ValueChanged="preview => _preview = preview" />
+        @if (_session is null || CurrentArea is null)
+        {
+            <p class="detail-pane__hint">Open a draft to change it here.</p>
+        }
+        else if (_preview)
+        {
+            <div class="ui-actions"><Button Variant="ButtonVariant.Quiet" Small="true" Icon="external-link" OnClick="PopOutAsync">Pop out</Button></div>
+            <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
+        }
+        else if (_form is null)
+        {
+            <p class="detail-pane__hint">Choose something on the left to change it. Changes save themselves, and phones previewing this draft follow along.</p>
+        }
+        else
+        {
+            <div class="detail-pane__head">
+                <h3>@FormTitle</h3>
+                <span>@_form.Surface.Description</span>
+            </div>
+            <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
+            <div class="ui-actions">@FormActions</div>
+        }
     };
 
     private RenderFragment FormActions => __builder =>
@@ -353,6 +378,17 @@ else
             }
         }
     };
+
+    private ThemeSpec? EditingTheme => _form?.Surface == AppearanceSurfaces.CustomTheme.Surface
+        ? AppearanceSurfaces.CustomTheme.SpecOf(new SettingValues(_form.Values))
+        : null;
+
+    private IReadOnlyList<Choice> CustomThemes => _session is null
+        ? []
+        : _session.Arranged(AppearanceSurfaces.Area, null)
+            .Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
+            .Select(entry => new Choice(ThemeChoiceSetting.Custom(entry.Placement!.Id), $"{entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)}: made here"))
+            .ToList();
 
     private static readonly IReadOnlyList<SegmentOption<bool>> DetailViews = [new(false, "Settings", "sliders"), new(true, "Phone preview", "smartphone")];
 

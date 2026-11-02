@@ -34,6 +34,8 @@ public static class DraftWords
 
     public static string Summary(ArrangedSurface entry)
     {
+        if (entry.Surface == AppearanceSurfaces.CustomTheme.Surface)
+            return "A theme to choose under Theme";
         List<string> parts = [entry.Hidden ? "hidden" : entry.Audience == Audience.Everyone ? "shown to everyone" : "shown to some people"];
         if (entry.StartsAt is { } starts)
             parts.Add($"from {Day(starts)}");

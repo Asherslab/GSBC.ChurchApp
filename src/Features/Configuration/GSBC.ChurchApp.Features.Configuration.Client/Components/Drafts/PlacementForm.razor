@@ -1,8 +1,13 @@
 @using System.Globalization
 
+@if (Draft.Surface == AppearanceSurfaces.CustomTheme.Surface)
+{
+    <ThemeEditor Draft="Draft" Changed="Changed" Scheme="Scheme" SchemeChanged="SchemeChanged" />
+    return;
+}
 @foreach (Setting setting in Draft.Surface.Settings)
 {
-    <SettingInput Setting="setting" Value="@Draft.Values[setting.Key]" ValueChanged="value => ChangeAsync(() => Draft.Values[setting.Key] = value)" />
+    <SettingInput Setting="setting" Value="@Draft.Values[setting.Key]" MoreChoices="MoreChoices" ValueChanged="value => ChangeAsync(() => Draft.Values[setting.Key] = value)" />
 }
 <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
 <div class="ui-pair">
@@ -18,6 +23,9 @@
 @code {
     [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
     [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public IReadOnlyList<Choice> MoreChoices { get; set; } = [];
+    [Parameter] public ThemeScheme Scheme { get; set; }
+    [Parameter] public EventCallback<ThemeScheme> SchemeChanged { get; set; }
 
     private Task ChangeAsync(Action change)
     {

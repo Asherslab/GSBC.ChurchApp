@@ -11,7 +11,18 @@ window.gsbcTheme = (() => {
     } catch { }
   };
 
+  const customStyle = () => {
+    let style = document.getElementById('gsbc-custom-theme');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'gsbc-custom-theme';
+      document.head.append(style);
+    }
+    return style;
+  };
+
   const apply = () => {
+    customStyle().textContent = read('custom-theme') ?? '';
     const appearance = read('appearance') ?? 'automatic';
     const dark = appearance === 'dark' || (appearance === 'automatic' && darkQuery.matches);
     root.dataset.scheme = dark ? 'dark' : 'light';
@@ -27,7 +38,11 @@ window.gsbcTheme = (() => {
     appearance: () => read('appearance') ?? 'automatic',
     preview: () => read('palette-preview'),
     setAppearance(appearance) { write('appearance', appearance); apply(); },
-    setPalette(palette) { write('palette', palette); apply(); },
+    setPalette(palette, customCss) {
+      write('palette', palette);
+      write('custom-theme', customCss ?? null);
+      apply();
+    },
     setPreview(palette) { write('palette-preview', palette); apply(); },
   };
 })();

@@ -15,7 +15,7 @@
     private void OnLayoutChanged() => InvokeAsync(ApplyAsync);
 
     private async Task ApplyAsync() =>
-        await Appearance.UseStaffPaletteAsync(AppearanceSurfaces.PaletteOf(await Layout.ShownAsync(AppearanceSurfaces.Area)));
+        await Appearance.UseStaffThemeAsync(AppearanceSurfaces.ChosenFrom(await Layout.ShownAsync(AppearanceSurfaces.Area)));
 
     public void Dispose() => Layout.Changed -= OnLayoutChanged;
 }

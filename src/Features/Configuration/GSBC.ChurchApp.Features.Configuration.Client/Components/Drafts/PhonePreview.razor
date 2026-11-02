@@ -1,7 +1,7 @@
 @inject TimeProvider Clock
 
 <SelectField Label="Phone" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
-<PhoneFrame Palette="@Palette" Device="_device" Label="@($"Home on an {_device.Name}, as a visitor sees it with this draft")">
+<PhoneFrame Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"Home on an {_device.Name}, as a visitor sees it with this draft")">
     <HomeScreen Shown="Shown" At="Now" />
 </PhoneFrame>
 <p class="phone-preview__note">Home as a visitor sees it today, drawn by the app's own screen. Your phone shows it live under Previews.</p>
@@ -19,5 +19,8 @@
 
     private List<ArrangedSurface> Shown => Hub.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)).ToList();
 
-    private string Palette => AppearanceSurfaces.PaletteOf(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)));
+    [Parameter] public ThemeSpec? Theme { get; set; }
+    [Parameter] public ThemeScheme? Scheme { get; set; }
+
+    private AppearanceSurfaces.ChosenTheme Chosen => AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)));
 }

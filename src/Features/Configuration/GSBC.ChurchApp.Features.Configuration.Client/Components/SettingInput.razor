@@ -11,6 +11,9 @@
     case AudienceSetting:
         <AudiencePicker Label="@Setting.Label" Value="@Value" ValueChanged="SetAsync" />
         break;
+    case ThemeChoiceSetting themes:
+        <SelectField Label="@Setting.Label" Options="@themes.Choices.Concat(MoreChoices).Select(option => new FieldOption(option.Value, option.Label)).ToList()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
+        break;
     case ChoiceSetting choice:
         <SelectField Label="@Setting.Label" Options="@choice.Choices.Select(option => new FieldOption(option.Value, option.Label)).ToList()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
@@ -53,6 +56,7 @@
     [Parameter, EditorRequired] public required Setting Setting { get; set; }
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public IReadOnlyList<Choice> MoreChoices { get; set; } = [];
 
     private string? Help => Setting.Help.Length > 0 ? Setting.Help : null;
 

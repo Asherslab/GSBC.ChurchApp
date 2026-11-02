@@ -29,7 +29,7 @@
 .changed-for-everyone { display: grid; gap: 10px; margin-top: 10px; padding: 12px 14px; border-radius: var(--radius-field); background: color-mix(in srgb, var(--marker) 22%, var(--page)); color: var(--ink); font-size: var(--text-caption); line-height: 1.45; }
 .changed-for-everyone b { color: var(--marker-ink); }
 
-.detail-pane { position: sticky; top: 16px; display: grid; gap: var(--stack); align-content: start; }
+.detail-pane { position: sticky; top: calc(var(--chrome-top, 0px) + 16px); display: grid; gap: var(--stack); align-content: start; }
 .detail-pane__hint { margin: 0; color: var(--ink-2); font-size: var(--text-row); line-height: 1.5; }
 .detail-pane__head { display: grid; gap: 2px; }
 .detail-pane__head h3 { margin: 0; font-size: var(--text-lead); font-weight: 700; overflow-wrap: anywhere; }
@@ -59,3 +59,29 @@
 .workbench__aside .btn--quiet { background: var(--sand-strong); }
 .detail-pane .toggle-row__title { font-size: var(--text-caption); color: var(--ink-2); }
 .media-setting .field__label { flex-basis: 100%; }
+
+.theme-editor__scheme { display: grid; gap: 6px; }
+.theme-editor__scheme > span:last-child { font-size: var(--text-caption); color: var(--ink-3); }
+.theme-editor__group { display: grid; gap: 6px; margin: 0; padding: 0; border: 0; }
+.theme-editor__group legend { margin-bottom: 6px; padding: 0; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
+.theme-editor__advanced { display: grid; gap: 6px; padding-top: 12px; border-top: 1px solid var(--line); }
+.theme-editor__disclose {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--touch);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  font: inherit;
+  font-size: var(--text-row);
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+.theme-editor__count { margin-left: auto; font-size: var(--text-caption); font-weight: 400; color: var(--ink-3); }
+.theme-editor__lead { margin: 0 0 6px; font-size: var(--text-caption); line-height: 1.5; color: var(--ink-2); }
+
+.theme-editor { display: grid; gap: var(--stack); max-width: 34rem; }
+.detail-pane .phone-frame { justify-self: center; }

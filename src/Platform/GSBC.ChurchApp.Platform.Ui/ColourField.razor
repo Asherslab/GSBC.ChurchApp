@@ -1,0 +1,62 @@
+<div class="colour-field @(Set ? "" : "colour-field--worked-out")">
+    <input id="@_id-swatch" class="colour-field__swatch" type="color" value="@Shown" aria-label="@($"{Label}: pick a colour")" @oninput="PickAsync" />
+    <label class="colour-field__label" for="@_id">@Label</label>
+    <input id="@_id" class="colour-field__hex" type="text" inputmode="text" spellcheck="false" maxlength="7" value="@_typed" placeholder="@WorkedOut"
+           aria-invalid="@(TypedIsWrong ? "true" : null)" @oninput="TypeAsync" @onblur="SettleTyped" />
+    @if (OnReset.HasDelegate && Set)
+    {
+        <button type="button" class="colour-field__reset" aria-label="@($"Work out {Label.ToLowerInvariant()} again")" @onclick="() => OnReset.InvokeAsync()"><Icon Name="undo" Size="IconSize.Small" /></button>
+    }
+</div>
+
+@code {
+    private static int _fields;
+    private readonly string _id = $"colour-field-{Interlocked.Increment(ref _fields)}";
+    private string _typed = "";
+    private string? _lastValue;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public string WorkedOut { get; set; } = "#000000";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public EventCallback OnReset { get; set; }
+
+    private bool Set => Value is { Length: > 0 };
+
+    private string Shown => Set ? Value! : WorkedOut;
+
+    private bool TypedIsWrong => _typed.Length > 0 && !Rgb.TryParse(Normalise(_typed), out _);
+
+    protected override void OnParametersSet()
+    {
+        if (Value == _lastValue)
+            return;
+        _lastValue = Value;
+        _typed = Value ?? "";
+    }
+
+    private Task PickAsync(ChangeEventArgs change)
+    {
+        _typed = change.Value?.ToString() ?? "";
+        return ValueChanged.InvokeAsync(_typed);
+    }
+
+    private Task TypeAsync(ChangeEventArgs change)
+    {
+        _typed = change.Value?.ToString() ?? "";
+        string colour = Normalise(_typed);
+        return Rgb.TryParse(colour, out _) ? ValueChanged.InvokeAsync(colour) : Task.CompletedTask;
+    }
+
+    private void SettleTyped()
+    {
+        if (TypedIsWrong)
+            _typed = Value ?? "";
+    }
+
+    private static string Normalise(string text)
+    {
+        string trimmed = text.Trim().ToLowerInvariant();
+        return trimmed.StartsWith('#') ? trimmed : $"#{trimmed}";
+    }
+}

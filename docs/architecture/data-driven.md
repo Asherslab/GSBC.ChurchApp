@@ -104,10 +104,10 @@ release. It is the smallest design that fits the machinery above:
 
 - **One area, one surface.** `AppearanceSurfaces` (Platform.Contracts) declares the area `app.appearance`
   ("Colours", global, edited with `config.appearance.edit`) and one non-repeatable surface `app.theme`
-  with a choice setting `palette`: `brand` (the default) or `year-2026`. Staff edit it with the same
-  editor as the Hub (admin panel → Colours). It needs no new service, table or feed, and its dates let a
-  theme run for a season. Hidden, outside its dates, or a palette this app version doesn't know: the
-  brand.
+  with a choice setting `palette`: `brand` (the default), `year-2026`, or a theme staff made
+  (`custom:<id>`, below). Staff change it in a draft (admin panel → Drafts → Colours). It needs no new
+  service, table or feed, and its dates let a theme run for a season. Hidden, outside its dates, a
+  palette this app version doesn't know, or a made theme that's gone: the brand.
 - **Applied at start-up and live.** The phone reads the area from the placements feed
   (`ISurfaceLayout`), sets `data-theme`, and remembers it, so the next launch starts in the right
   colours before Blazor runs; a change arrives through sync like any placement.
@@ -116,6 +116,16 @@ release. It is the smallest design that fits the machinery above:
   Until people can sign in on the phone (passkeys wait on the Apple enrolment), development builds
   offer the preview too; drop that once staff can sign in on the phone.
 - **Light, dark or automatic** is each person's own, kept on the phone.
-- **The palettes themselves are code.** Token values live in `tokens.css` and change with a release
-  (SPEC §4); next year's theme is a new palette id in a release, then staff switch to it. Token values
-  as data stays open until there is a reason for it.
+- **The built-in palettes are code** (`tokens.css`, changed with a release, SPEC §4).
+- **Staff can make their own (owner, 2026-11-03).** A repeatable surface `app.custom-theme` holds a
+  name, a masthead font from the fonts the app bundles (Montserrat, DM Serif Text), five key colours
+  for light and five for dark (masthead, main buttons, links and live, marker, shaded boxes or raised
+  panels), and, under *Advanced*, any colour role set by hand. Everything not set by hand is worked
+  out from the key colours by `ThemeDerivation` (Platform.Contracts), which keeps text readable on
+  whatever keys are chosen; the same code validates on the server, draws the admin panel's preview and
+  writes the CSS the phone applies, so they can't disagree. A theme fails to save while any text pair
+  is under 4.5:1 (only a colour set by hand can do that). The phone stores the generated CSS with the
+  palette, so the next launch starts in it before Blazor runs.
+- **Edited live, in a draft.** Opening a made theme in a draft puts its controls in the middle pane
+  and the phone, in the scheme being edited, in the right pane; the preview follows every change as
+  it's made, and phones previewing the draft follow once it saves.

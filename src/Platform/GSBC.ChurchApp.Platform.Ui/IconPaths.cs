@@ -11,6 +11,7 @@ public static class IconPaths
         ["book-open"] = """<path d="M12 5v16"/> <path d="M20.001 19A2 2 0 0022 17V5a2 2 0 00-1.999-2L16 3.002A5 5 0 0012 5a5 5 0 00-4-2H4a2 2 0 00-2 2v12a2 2 0 001.999 2H8a5 5 0 014 2 5 5 0 014-2z"/>""",
         ["calendar"] = """<path d="M8 2v3"/> <path d="M16 2v3"/> <rect x="3" y="3" width="18" height="18" rx="2"/> <path d="M3 9h18"/>""",
         ["check"] = """<path d="M20 6 9 17l-5-5"/>""",
+        ["chevron-down"] = """<path d="m6 9 6 6 6-6"/>""",
         ["chevron-left"] = """<path d="m15 18-6-6 6-6"/>""",
         ["chevron-right"] = """<path d="m9 18 6-6-6-6"/>""",
         ["clock"] = """<circle cx="12" cy="12" r="10"/> <path d="M12 6v6l4 2"/>""",

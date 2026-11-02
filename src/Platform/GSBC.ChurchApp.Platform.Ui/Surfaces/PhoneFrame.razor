@@ -1,5 +1,10 @@
-<div @ref="_frame" class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@Palette" role="img" aria-label="@Label"
+<div @ref="_frame" class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@(Theme is null ? Palette : PreviewPalette)" data-preview-scheme="@Scheme?.ToString().ToLowerInvariant()" role="img" aria-label="@Label"
      style="@($"width: {Device.Width}px; height: {Device.Height}px; --sat: {Device.TopInset}px; --sab: {Device.BottomInset}px")">
+    @if (Theme is not null)
+    {
+        <style>@ThemeDerivation.Css(Theme, $"[data-palette=\"{PreviewPalette}\"]",
+            $":root[data-scheme=\"dark\"] [data-palette=\"{PreviewPalette}\"]:not([data-preview-scheme=\"light\"]), [data-palette=\"{PreviewPalette}\"][data-preview-scheme=\"dark\"]")</style>
+    }
     <div class="phone-frame__screen">
         <div class="topbar" aria-hidden="true"></div>
         @ChildContent
@@ -37,7 +42,11 @@
         await Shell.FitToSpaceAsync(_frame, Device.Width, Device.Height);
     }
 
+    private const string PreviewPalette = "preview";
+
     [Parameter] public string? Palette { get; set; }
+    [Parameter] public ThemeSpec? Theme { get; set; }
+    [Parameter] public ThemeScheme? Scheme { get; set; }
     [Parameter] public PhoneDevice Device { get; set; } = PhoneDevice.IPhone15Pro;
     [Parameter] public IReadOnlyList<(string Title, string Icon)> Tabs { get; set; } = [("Home", "home"), ("More", "more")];
     [Parameter, EditorRequired] public required string Label { get; set; }

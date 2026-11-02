@@ -80,12 +80,11 @@ Management reads go over gRPC, like Access's screens; only the phone's display r
 
 ## The editor
 
-`SurfaceEditor` (Configuration.Client) renders any area from its descriptors: a row per surface, with
-show or hide, move up and down, then the settings form (one input per field kind), audience and dates,
-and "needs app version X" where it applies. It's the page `configure/{area}` (and
-`configure/{area}/{scope}`) in both the app and the admin panel, shown in navigation to those who hold
-the Hub's permission. Other features link to it by route rather than embedding it, since they can't
-reference Configuration.
+The drafts workbench (`DraftsWorkspace`, Configuration.Client) renders any area from its descriptors: a
+row per surface, with show or hide, move up and down where the area's order matters, then the settings
+form (one input per field kind), audience and dates, and "needs app version X" where it applies. It's
+the page `drafts` (`drafts?area={key}` opens on an area) in both the app and the admin panel. Other
+features link to it by route rather than embedding it, since they can't reference Configuration.
 
 ## The first consumer
 
@@ -95,10 +94,10 @@ campaign. Home itself isn't built yet; when it is, it reads `ISurfaceLayout.ForA
 
 ## The second consumer
 
-The app's **theme** (`app.appearance`, one `app.theme` surface with a palette choice): staff choose the
-church's brand or the yearly theme for everyone, and the phone applies it live. See
-[data-driven.md](../architecture/data-driven.md), *Themes*. It is "Colours" in the admin panel's
-navigation and "Colours for everyone" under More in the app.
+The app's **theme** (`app.appearance`: an `app.theme` surface with a palette choice, and repeatable
+`app.custom-theme` surfaces for themes staff make): staff choose the church's brand, the yearly theme
+or one they made, for everyone, and the phone applies it live. See
+[data-driven.md](../architecture/data-driven.md), *Themes*. It's edited under Colours in a draft.
 
 ## Status (2026-11-02)
 
@@ -111,8 +110,8 @@ its Arrange page in the app and the admin panel; the Hub area with its link tile
 **Built 2026-11-02: drafts, the event layer and previews** ([drafts.md](../architecture/drafts.md),
 *Status*). Every edit is made in a draft: the service's direct `Save` is gone, replaced by
 `gsbc.config.Drafts`, and publishing needs the area's publish permission (`config.hub.publish`,
-`config.appearance.publish`). "Home screen" and "Colours" in the admin panel now show what everyone
-sees, with *Change it* starting a draft; the editing happens in the drafts workbench. Run end to end
+`config.appearance.publish`). The separate "Home screen" and "Colours" pages are gone (owner,
+2026-11-03): Drafts shows what everyone sees, its history and *Undo*. Run end to end
 through the AppHost and on the owner's iPhone.
 
 **Open:**
@@ -127,7 +126,8 @@ through the AppHost and on the owner's iPhone.
   shown as "only people with a particular permission"): picking one needs the plain-language
   permissions from Access's *Usability comes first*.
 - **Ministry modules:** Ministries declares its area (`ministries.modules.edit` per ministry) and its
-  module surfaces, and links its settings page to `configure/ministry.modules/{id}`.
+  module surfaces, and links its settings page to Drafts on that area, once the workbench handles
+  areas scoped to one ministry (open, [drafts.md](../architecture/drafts.md)).
 - **Feed writes by hand:** the editor adds its `sync.feed_changes` rows itself, in the same
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible
   to forget; do it when a second feature writes a feed.

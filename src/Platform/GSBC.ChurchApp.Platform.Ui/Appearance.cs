@@ -36,12 +36,17 @@ public sealed class Appearance(IJSRuntime js)
         Changed?.Invoke();
     }
 
-    public async Task UseStaffPaletteAsync(string palette)
+    public async Task UseStaffThemeAsync(AppearanceSurfaces.ChosenTheme chosen)
     {
-        StaffPalette = palette;
-        await js.InvokeVoidAsync("gsbcTheme.setPalette", palette);
+        StaffPalette = chosen.Palette;
+        string? css = chosen.Custom is { } custom
+            ? ThemeDerivation.Css(custom, CustomSelector, $"{CustomSelector}[data-scheme=\"dark\"]")
+            : null;
+        await js.InvokeVoidAsync("gsbcTheme.setPalette", chosen.Palette, css);
         Changed?.Invoke();
     }
+
+    private const string CustomSelector = $":root[data-theme=\"{AppearanceSurfaces.CustomPalette}\"]";
 
     public async Task PreviewAsync(string? palette)
     {
