@@ -84,17 +84,24 @@ for a feed is a follow-up when a feature needs it.
 | Key | Production (R2) | Development |
 |---|---|---|
 | `ServiceUrl` | `https://<account-id>.r2.cloudflarestorage.com` | Set by the AppHost: SeaweedFS on `http://localhost:5310` |
+| `PublicServiceUrl` | Not set: signed links use `ServiceUrl` | `https://dev-media.baptist.com.au` when the dev tunnel serves it, else `ServiceUrl` |
 | `Region` | `auto` (the default) | `auto` |
 | `AccessKeyId`, `SecretAccessKey` | The R2 API token's (cluster secret) | Random per AppHost run |
 | `PublicBucket`, `PrivateBucket` | The two bucket names | `gsbc-media`, `gsbc-private` |
-| `PublicBaseUrl` | `https://media.baptist.com.au` | `http://localhost:5310/gsbc-media` |
+| `PublicBaseUrl` | `https://media.baptist.com.au` | `<PublicServiceUrl>/gsbc-media` |
 | `CreateBuckets` | Never set | `true`: the API creates the buckets |
 
 As environment variables: `Storage__Blobs__ServiceUrl` and so on. In development the AppHost runs
 SeaweedFS (MinIO no longer publishes images) unless `Storage:Blobs` is set in the AppHost's user
-secrets, in which case it passes those to the API instead. That is how a **real iPhone** sees media
-in dev: localhost isn't reachable from the phone, so point dev at a real R2 dev bucket (or give the
-SeaweedFS port a tunnel hostname). The iOS Simulator works with localhost as is.
+secrets, in which case it passes those to the API instead.
+
+Signed links go to browsers and phones, so they carry `PublicServiceUrl`, while the API reaches the
+store at `ServiceUrl`. In development the admin panel is on `https://dev.baptist.com.au`, and a browser
+refuses an upload from that page to `http://localhost` (mixed content), and a phone can't reach
+localhost at all. So the dev tunnel also serves `dev-media.baptist.com.au` → SeaweedFS
+([tools/dev-proxy](../../tools/dev-proxy/README.md)), and the AppHost signs links for it whenever
+`~/.cloudflared/config.yml` names that hostname. It's `dev-media`, not `media.dev`: Cloudflare's
+free certificate covers one level of subdomain only.
 
 ## What the owner sets up in Cloudflare (not done yet)
 

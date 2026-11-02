@@ -8,4 +8,6 @@ ingress:
       connectTimeout: 10s
       keepAliveTimeout: 90s
       disableChunkedEncoding: false
+  - hostname: dev-media.baptist.com.au
+    service: http://localhost:5310
   - service: http_status:404

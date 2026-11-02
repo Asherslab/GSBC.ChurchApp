@@ -25,6 +25,8 @@ IResourceBuilder<ProjectResource> api = builder
     .WithEnvironment("Accounts__Tokens__PublicKey", tokenKey.ExportSubjectPublicKeyInfoPem())
     .WaitForCompletion(migrator);
 
+DevTunnel? tunnel = DevTunnel.Find();
+
 IConfigurationSection blobs = builder.Configuration.GetSection("Storage:Blobs");
 if (blobs.Exists())
 {
@@ -33,7 +35,7 @@ if (blobs.Exists())
 }
 else
 {
-    builder.AddDevMediaStore(api);
+    builder.AddDevMediaStore(api, tunnel);
 }
 
 foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
@@ -51,7 +53,7 @@ IResourceBuilder<ProjectResource> gateway = builder
     .WithExternalHttpEndpoints()
     .WaitFor(api);
 
-if (DevTunnel.Find() is { } tunnel)
+if (tunnel is not null)
 {
     builder
         .AddExecutable("tunnel", tunnel.Command, tunnel.WorkingDirectory, "tunnel", "run", tunnel.Name)

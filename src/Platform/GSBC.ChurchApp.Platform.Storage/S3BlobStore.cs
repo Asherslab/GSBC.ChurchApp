@@ -5,12 +5,12 @@ using Microsoft.Extensions.Options;
 
 namespace GSBC.ChurchApp.Platform.Storage;
 
-internal sealed class S3BlobStore(IAmazonS3 s3, IOptions<BlobStoreOptions> options) : IBlobStore
+internal sealed class S3BlobStore(IAmazonS3 s3, S3Presigner presigner, IOptions<BlobStoreOptions> options) : IBlobStore
 {
     private BlobStoreOptions Options => options.Value;
 
     public async Task<Uri> PresignUploadAsync(BlobBucket bucket, string key, string contentType, TimeSpan validFor) =>
-        new(await s3.GetPreSignedURLAsync(new GetPreSignedUrlRequest
+        new(await presigner.Client.GetPreSignedURLAsync(new GetPreSignedUrlRequest
         {
             BucketName = NameOf(bucket),
             Key = key,
@@ -21,7 +21,7 @@ internal sealed class S3BlobStore(IAmazonS3 s3, IOptions<BlobStoreOptions> optio
         }));
 
     public async Task<Uri> PresignDownloadAsync(BlobBucket bucket, string key, TimeSpan validFor) =>
-        new(await s3.GetPreSignedURLAsync(new GetPreSignedUrlRequest
+        new(await presigner.Client.GetPreSignedURLAsync(new GetPreSignedUrlRequest
         {
             BucketName = NameOf(bucket),
             Key = key,
@@ -69,7 +69,7 @@ internal sealed class S3BlobStore(IAmazonS3 s3, IOptions<BlobStoreOptions> optio
     public Task DeleteAsync(BlobBucket bucket, string key, CancellationToken cancellationToken) =>
         s3.DeleteObjectAsync(NameOf(bucket), key, cancellationToken);
 
-    private Protocol Protocol => Options.ServiceUrl.StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTP : Protocol.HTTPS;
+    private Protocol Protocol => (Options.PublicServiceUrl ?? Options.ServiceUrl).StartsWith("http://", StringComparison.OrdinalIgnoreCase) ? Protocol.HTTP : Protocol.HTTPS;
 
     private string NameOf(BlobBucket bucket) => bucket == BlobBucket.Public ? Options.PublicBucket : Options.PrivateBucket;
 }

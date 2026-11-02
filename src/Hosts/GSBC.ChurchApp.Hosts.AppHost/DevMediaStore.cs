@@ -6,11 +6,12 @@ namespace GSBC.ChurchApp.Hosts.AppHost;
 internal static class DevMediaStore
 {
     public const int Port = 5310;
+    public const string TunnelHostname = "dev-media.baptist.com.au";
     public const string PublicBucket = "gsbc-media";
     public const string PrivateBucket = "gsbc-private";
     private const string ConfigFolder = "/etc/gsbc";
 
-    public static void AddDevMediaStore(this IDistributedApplicationBuilder builder, IResourceBuilder<ProjectResource> api)
+    public static void AddDevMediaStore(this IDistributedApplicationBuilder builder, IResourceBuilder<ProjectResource> api, DevTunnel? tunnel)
     {
         string accessKey = RandomNumberGenerator.GetHexString(20, lowercase: true);
         string secretKey = RandomNumberGenerator.GetHexString(40, lowercase: true);
@@ -23,13 +24,15 @@ internal static class DevMediaStore
             .WithHttpEndpoint(port: Port, targetPort: 8333, name: "s3", isProxied: false);
 
         string serviceUrl = $"http://localhost:{Port}";
+        string publicServiceUrl = tunnel?.Serves(TunnelHostname) == true ? $"https://{TunnelHostname}" : serviceUrl;
         api
             .WithEnvironment("Storage__Blobs__ServiceUrl", serviceUrl)
+            .WithEnvironment("Storage__Blobs__PublicServiceUrl", publicServiceUrl)
             .WithEnvironment("Storage__Blobs__AccessKeyId", accessKey)
             .WithEnvironment("Storage__Blobs__SecretAccessKey", secretKey)
             .WithEnvironment("Storage__Blobs__PublicBucket", PublicBucket)
             .WithEnvironment("Storage__Blobs__PrivateBucket", PrivateBucket)
-            .WithEnvironment("Storage__Blobs__PublicBaseUrl", $"{serviceUrl}/{PublicBucket}")
+            .WithEnvironment("Storage__Blobs__PublicBaseUrl", $"{publicServiceUrl}/{PublicBucket}")
             .WithEnvironment("Storage__Blobs__CreateBuckets", "true")
             .WaitFor(store);
     }

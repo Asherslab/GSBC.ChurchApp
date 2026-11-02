@@ -20,6 +20,7 @@ brew install cloudflared
 cloudflared tunnel login                       # pick the baptist.com.au zone
 cloudflared tunnel create gsbc-dev             # prints the tunnel id and writes its credentials file
 cloudflared tunnel route dns gsbc-dev dev.baptist.com.au
+cloudflared tunnel route dns gsbc-dev dev-media.baptist.com.au
 ```
 
 Copy `cloudflared.yml` to `~/.cloudflared/config.yml` and fill in:
@@ -27,6 +28,9 @@ Copy `cloudflared.yml` to `~/.cloudflared/config.yml` and fill in:
 - `credentials-file`: the path `tunnel create` printed;
 - `service`: `http://localhost:5300` on the dev Mac, or from the Mac mini the dev Mac's Bonjour name
   (`scutil --get LocalHostName` on the dev Mac, plus `.local`).
+- `dev-media.baptist.com.au` is the dev media store (SeaweedFS, port 5310), so uploads from
+  `https://dev.baptist.com.au` and media on a phone work ([media.md](../../docs/features/media.md)).
+  The store listens on localhost only, so this hostname works only when the tunnel runs on the dev Mac.
 
 Then nothing else on the dev Mac: **the AppHost starts the tunnel with the backend** whenever
 `~/.cloudflared/config.yml` names `gsbc-dev` and `cloudflared` is installed (it shows as `tunnel` in
