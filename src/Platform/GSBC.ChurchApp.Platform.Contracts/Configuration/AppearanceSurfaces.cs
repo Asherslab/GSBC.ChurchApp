@@ -51,11 +51,11 @@ public static class AppearanceSurfaces
         public static readonly HexColourSetting LightMarker = new("light-marker", "Marker", "#e7ae74");
         public static readonly HexColourSetting LightTint = new("light-tint", "Shaded boxes", "#f4efe7");
 
-        public static readonly HexColourSetting DarkMasthead = new("dark-masthead", "Masthead", "#283c62");
-        public static readonly HexColourSetting DarkPrimary = new("dark-primary", "Main buttons", "#2ec4b6");
-        public static readonly HexColourSetting DarkAccent = new("dark-accent", "Links and live", "#2ec4b6");
-        public static readonly HexColourSetting DarkMarker = new("dark-marker", "Marker", "#e7ae74");
-        public static readonly HexColourSetting DarkTint = new("dark-tint", "Raised panels", "#1d2840");
+        public static readonly HexColourSetting DarkMasthead = new("dark-masthead", "Masthead", "", workedOutWhenEmpty: true);
+        public static readonly HexColourSetting DarkPrimary = new("dark-primary", "Main buttons", "", workedOutWhenEmpty: true);
+        public static readonly HexColourSetting DarkAccent = new("dark-accent", "Links and live", "", workedOutWhenEmpty: true);
+        public static readonly HexColourSetting DarkMarker = new("dark-marker", "Marker", "", workedOutWhenEmpty: true);
+        public static readonly HexColourSetting DarkTint = new("dark-tint", "Raised panels", "", workedOutWhenEmpty: true);
 
         public static readonly ColourOverridesSetting Overrides = new("overrides", "Advanced colours",
             help: "Set any colour by hand; everything else is worked out from the key colours.");
@@ -76,9 +76,18 @@ public static class AppearanceSurfaces
                 values.Get(Font),
                 values.Get(BodyFont),
                 new ThemeKeys(values.Get(LightMasthead), values.Get(LightPrimary), values.Get(LightAccent), values.Get(LightMarker), values.Get(LightTint)),
-                new ThemeKeys(values.Get(DarkMasthead), values.Get(DarkPrimary), values.Get(DarkAccent), values.Get(DarkMarker), values.Get(DarkTint)),
+                DarkKeysOf(values),
                 OverridesFor(overrides, ThemeScheme.Light),
                 OverridesFor(overrides, ThemeScheme.Dark));
+        }
+
+        public static ThemeKeys DarkKeysOf(SettingValues values)
+        {
+            ThemeKeys light = new(values.Get(LightMasthead), values.Get(LightPrimary), values.Get(LightAccent), values.Get(LightMarker), values.Get(LightTint));
+            ThemeKeys worked = ThemeDerivation.DarkKeysFrom(light);
+            string Either(HexColourSetting setting, string workedOut) => values.Get(setting) is { Length: > 0 } set ? set : workedOut;
+            return new ThemeKeys(Either(DarkMasthead, worked.Masthead), Either(DarkPrimary, worked.Primary), Either(DarkAccent, worked.Accent),
+                Either(DarkMarker, worked.Marker), Either(DarkTint, worked.Tint));
         }
 
         private static Dictionary<string, string> OverridesFor(IReadOnlyDictionary<string, string> overrides, ThemeScheme scheme)

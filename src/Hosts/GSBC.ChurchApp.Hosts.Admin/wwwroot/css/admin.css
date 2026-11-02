@@ -111,7 +111,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 label:not([class]) { display: block; margin: 8px 0; }
 
-input:is(:not([class]), .valid, .invalid, .modified):not([type="checkbox"], [type="radio"]), select:is(:not([class]), .valid, .invalid, .modified), textarea:is(:not([class]), .valid, .invalid, .modified) {
+input:is(:not([class]), .valid, .invalid, .modified):not([type="checkbox"], [type="radio"], [type="file"]), select:is(:not([class]), .valid, .invalid, .modified), textarea:is(:not([class]), .valid, .invalid, .modified) {
     display: block;
     width: min(100%, 360px);
     margin-top: 4px;

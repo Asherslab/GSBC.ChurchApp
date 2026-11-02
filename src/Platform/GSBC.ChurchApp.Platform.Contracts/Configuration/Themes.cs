@@ -24,6 +24,12 @@ public sealed record ThemeFont(string Key, string Name, string Family, int Weigh
 
 public sealed record ThemeRole(string Key, string Label);
 
+public sealed record ThemeProblem(ThemeScheme Scheme, string TextRole, string BackgroundRole, double Contrast, string Words)
+{
+    public override string ToString() =>
+        string.Create(CultureInfo.InvariantCulture, $"{Scheme}: {Words} would be hard to read ({Contrast:0.0}:1; it needs {ThemeDerivation.ReadableText}:1).");
+}
+
 public sealed record ThemeSpec(
     string Name, ThemeFont Font, ThemeFont BodyFont, ThemeKeys Light, ThemeKeys Dark,
     IReadOnlyDictionary<string, string> LightOverrides, IReadOnlyDictionary<string, string> DarkOverrides)
@@ -188,8 +194,25 @@ public static class ThemeDerivation
         return WithDetails(Apply(roles, overrides), ThemeScheme.Dark);
     }
 
-    public static IReadOnlyList<string> Problems(ThemeSpec theme) =>
-        [.. ProblemsIn(theme.Roles(ThemeScheme.Light), "Light"), .. ProblemsIn(theme.Roles(ThemeScheme.Dark), "Dark")];
+    public static ThemeKeys DarkKeysFrom(ThemeKeys light)
+    {
+        Rgb masthead = Rgb.Parse(light.Masthead);
+        Rgb accent = Rgb.Parse(light.Accent);
+        Rgb marker = Rgb.Parse(light.Marker);
+        Rgb darkPage = DarkEnough(masthead.Mix(Black, 0.5));
+        Rgb brightAccent = Readable(accent, darkPage);
+        return new ThemeKeys(
+            masthead.Mix(Black, 0.08).ToString(),
+            brightAccent.ToString(),
+            brightAccent.ToString(),
+            marker.ToString(),
+            darkPage.Mix(masthead, 0.35).ToString());
+    }
+
+    public static IReadOnlyList<string> Problems(ThemeSpec theme) => ProblemsOf(theme).Select(problem => problem.ToString()).ToList();
+
+    public static IReadOnlyList<ThemeProblem> ProblemsOf(ThemeSpec theme) =>
+        [.. ProblemsIn(theme.Roles(ThemeScheme.Light), ThemeScheme.Light), .. ProblemsIn(theme.Roles(ThemeScheme.Dark), ThemeScheme.Dark)];
 
     public static IReadOnlyList<MediaRef> FontFiles(ThemeSpec theme) =>
         new[] { theme.Font.Custom, theme.BodyFont.Custom }.OfType<CustomFont>().SelectMany(font => font.Files).Select(file => file.Media).DistinctBy(media => media.Key).ToList();
@@ -217,7 +240,7 @@ public static class ThemeDerivation
         }
     }
 
-    private static IEnumerable<string> ProblemsIn(IReadOnlyDictionary<string, string> roles, string scheme)
+    private static IEnumerable<ThemeProblem> ProblemsIn(IReadOnlyDictionary<string, string> roles, ThemeScheme scheme)
     {
         foreach ((string text, string background, string words) in ReadablePairs)
         {
@@ -225,7 +248,7 @@ public static class ThemeDerivation
                 continue;
             double contrast = foreground.ContrastWith(behind);
             if (contrast < ReadableText)
-                yield return string.Create(CultureInfo.InvariantCulture, $"{scheme}: {words} would be hard to read ({contrast:0.0}:1; it needs {ReadableText}:1).");
+                yield return new ThemeProblem(scheme, text, background, contrast, words);
         }
     }
 

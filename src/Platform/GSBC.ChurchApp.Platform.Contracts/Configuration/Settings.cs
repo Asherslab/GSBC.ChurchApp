@@ -143,13 +143,15 @@ public sealed class AudienceSetting(string key, string label, Audience? defaultV
     public override string? ProblemWith(string text) => TryParse(text, out _) ? null : $"{Label} isn't an audience.";
 }
 
-public sealed class HexColourSetting(string key, string label, string defaultValue, string help = "")
+public sealed class HexColourSetting(string key, string label, string defaultValue, bool workedOutWhenEmpty = false, string help = "")
     : Setting<string>(key, label, defaultValue, help)
 {
+    public bool WorkedOutWhenEmpty { get; } = workedOutWhenEmpty;
+
     public override bool TryParse(string text, out string value)
     {
         value = text.ToLowerInvariant();
-        return Rgb.TryParse(value, out _);
+        return (WorkedOutWhenEmpty && value.Length == 0) || Rgb.TryParse(value, out _);
     }
 
     public override string Format(string value) => value.ToLowerInvariant();

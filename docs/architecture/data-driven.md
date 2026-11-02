@@ -122,8 +122,10 @@ release. It is the smallest design that fits the machinery above:
   Fonts, or an uploaded file for those allowed; see [media.md](../features/media.md), *Fonts*), five key colours
   for light and five for dark (masthead, main buttons, links and live, marker, shaded boxes or raised
   panels), and, under *Advanced*, any colour role set by hand. Everything not set by hand is worked
-  out from the key colours by `ThemeDerivation` (Platform.Contracts), which keeps text readable on
-  whatever keys are chosen; the same code validates on the server, draws the admin panel's preview and
+  out from the key colours, and the dark key colours are themselves worked out from the light ones
+  until someone sets them (owner, 2026-11-03: a theme changed only in light mode looked unchanged on
+  phones in dark mode). `ThemeDerivation` (Platform.Contracts) does all of it and keeps text readable
+  on whatever keys are chosen; the same code validates on the server, draws the admin panel's preview and
   writes the CSS the phone applies, so they can't disagree. A theme fails to save while any text pair
   is under 4.5:1 (only a colour set by hand can do that). The phone stores the generated CSS with the
   palette, so the next launch starts in it before Blazor runs. People who can change colours can try

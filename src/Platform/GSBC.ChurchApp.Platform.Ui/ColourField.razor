@@ -1,11 +1,15 @@
-<div class="colour-field @(Set ? "" : "colour-field--worked-out")">
+<div class="colour-field @(Set ? "" : "colour-field--worked-out") @(Problem is null ? "" : "colour-field--problem")">
     <input id="@_id-swatch" class="colour-field__swatch" type="color" value="@Shown" aria-label="@($"{Label}: pick a colour")" @oninput="PickAsync" />
     <label class="colour-field__label" for="@_id">@Label</label>
     <input id="@_id" class="colour-field__hex" type="text" inputmode="text" spellcheck="false" maxlength="7" value="@_typed" placeholder="@WorkedOut"
-           aria-invalid="@(TypedIsWrong ? "true" : null)" @oninput="TypeAsync" @onblur="SettleTyped" />
+           aria-invalid="@(TypedIsWrong || Problem is not null ? "true" : null)" aria-describedby="@(Problem is null ? null : $"{_id}-problem")" @oninput="TypeAsync" @onblur="SettleTyped" />
     @if (OnReset.HasDelegate && Set)
     {
         <button type="button" class="colour-field__reset" aria-label="@($"Work out {Label.ToLowerInvariant()} again")" @onclick="() => OnReset.InvokeAsync()"><Icon Name="undo" Size="IconSize.Small" /></button>
+    }
+    @if (Problem is not null)
+    {
+        <span class="colour-field__problem" id="@(_id)-problem">@Problem</span>
     }
 </div>
 
@@ -20,6 +24,7 @@
     [Parameter] public string WorkedOut { get; set; } = "#000000";
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public EventCallback OnReset { get; set; }
+    [Parameter] public string? Problem { get; set; }
 
     private bool Set => Value is { Length: > 0 };
 
