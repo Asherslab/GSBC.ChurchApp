@@ -52,6 +52,8 @@ Settings contracts only grow (SPEC §5's additive rule).
 
 - The server validates every configuration change against its descriptor.
 - Changes are audited (who, when, before and after) and can be rolled back.
+- Changes are made in drafts, previewed on your own phone, and published by someone holding the
+  area's publish permission, or turned on for an event and off again ([drafts.md](drafts.md)).
 - Editing configuration is itself a permission, per area (`config.hub.edit`, a ministry's
   `ministries.modules.edit` at that ministry), so a leader can arrange their own ministry and nothing
   else.

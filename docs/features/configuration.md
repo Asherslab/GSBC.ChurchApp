@@ -112,6 +112,9 @@ Not yet run end to end through the AppHost or on a phone.
 
 **Open:**
 
+- **Drafts, the event layer and previews** ([drafts.md](../architecture/drafts.md)): decided
+  2026-11-02, next to build. Every edit moves into a draft.
+
 - **Home renders it.** Nothing draws Hub tiles yet; Home reads `ISurfaceLayout` when it's built.
 - **The phone holds no grants yet:** Access.Client isn't in the app, so "signed in" and
   permission audiences are hidden there, and the Arrange entry doesn't show, until Access joins the app
