@@ -59,6 +59,27 @@ Done once by a tenant admin, following GSBC.Accounting's `expenses@` setup:
    Test-ServicePrincipalAuthorization -Identity <client id> -Resource <any other mailbox>    # InScope False
    ```
 
+## Going to production (later)
+
+Not done yet: the API isn't on the cluster. When it goes there through `gsbc.argo`:
+
+1. Create a secret in the API's namespace with the four values. The certificate value is
+   `mailer-prod.crt` followed by `mailer-prod.key` (kept in the owner's password manager):
+
+   ```bash
+   kubectl -n <namespace> create secret generic email-secret \
+     --from-literal=Email__Graph__TenantId='<tenant id>' \
+     --from-literal=Email__Graph__ClientId='<client id>' \
+     --from-literal=Email__Graph__Sender='app@baptist.com.au' \
+     --from-literal=Email__Graph__Certificate="$(cat mailer-prod.crt mailer-prod.key)"
+   ```
+
+2. Give the API deployment that secret as environment variables (`envFrom`, `optional: true`: without
+   it the API still starts and emails wait in the table until it exists).
+3. Restart the API, send an invitation, and check `email.outgoing_emails` (below).
+
+Nothing changes on the Microsoft 365 side: the production certificate is already on the registration.
+
 ## Renewing a certificate
 
 Before the production certificate expires (late 2028; Entra shows the date), make a new one with the

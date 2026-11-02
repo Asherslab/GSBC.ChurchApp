@@ -98,7 +98,8 @@ development the emails (confirmation codes, links) appear in the API's log in th
   cleaned up, and email is queued and retried.
 - ~~*The shared mailbox*~~: done 2026-11-02. Email goes out as `app@baptist.com.au` through Graph
   ([email.md](../architecture/email.md)); a staff invitation was sent, accepted and signed in end to
-  end in development. Production needs the `Email__Graph__*` values in the cluster secret.
+  end in development. Production needs the email secret in the cluster, later
+  ([email.md](../architecture/email.md), *Going to production*).
 - *The Apple enrolment:* Associated Domains, then passkeys and the Keychain session in the app.
 - *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
   `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.
