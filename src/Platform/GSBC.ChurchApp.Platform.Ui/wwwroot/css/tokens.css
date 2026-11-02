@@ -61,6 +61,7 @@
   --radius-field: 12px;
   --radius: 14px;
   --radius-sheet: 22px;
+  --radius-full: 999px;
   --tab-h: 56px;
   --top-h: 48px;
   --sat: env(safe-area-inset-top);
