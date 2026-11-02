@@ -1,0 +1,80 @@
+@using GSBC.ChurchApp.Platform.Common
+@inject ConfigurationClient Configuration
+@inject SurfaceCatalog Surfaces
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<div class="church-year">
+    <div class="church-year__head">
+        <h2 class="section__title">The coming weeks</h2>
+        <p class="section__lead">The event layer and everything with dates: what's published, and what's waiting in drafts.</p>
+    </div>
+    <LiveData TValue="IReadOnlyList<Lane>" Load="LoadAsync" Feeds="[ConfigurationFeeds.Placements, ConfigurationFeeds.Drafts]">
+        <div class="church-year__grid" style="--weeks: @Weeks">
+            <span></span>
+            @for (int week = 0; week < Weeks; week++)
+            {
+                <span class="church-year__week @(week == 0 ? "church-year__week--now" : "")">@(week == 0 ? "This week" : DraftWords.Day(WeekStart(week)))</span>
+            }
+            @foreach (Lane lane in context.Value)
+            {
+                <span class="church-year__lane">@lane.Title</span>
+                <div class="church-year__track">
+                    @if (lane.Spans.Count == 0)
+                    {
+                        <span class="church-year__quiet">Nothing dated</span>
+                    }
+                    @foreach (Span span in lane.Spans)
+                    {
+                        <button type="button" class="church-year__span church-year__span--@span.Kind" style="grid-column: @Column(span.StartsAt) / @(Column(span.EndsAt) + 1)"
+                                title="@span.Title" @onclick="() => OnOpen.InvokeAsync(span.DraftId)" disabled="@(span.DraftId is null)">
+                            @span.Title
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </LiveData>
+</div>
+
+@code {
+    private const int Weeks = 8;
+
+    [Parameter, EditorRequired] public required DraftList List { get; set; }
+    [Parameter] public EventCallback<string?> OnOpen { get; set; }
+
+    private DateTime Today => ChurchTime.ToUtc(ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date);
+
+    private DateTime WeekStart(int week) => Today.AddDays(7 * week);
+
+    private int Column(DateTime at) => Math.Clamp((int)Math.Floor((at - Today).TotalDays / 7) + 1, 1, Weeks);
+
+    private async Task<IReadOnlyList<Lane>> LoadAsync()
+    {
+        DateTime horizon = WeekStart(Weeks);
+        List<Lane> lanes = [new("Event layer", List.Drafts.Where(draft => draft.LayerOn)
+            .Select(draft => new Span(draft.Name, draft.LayerStartsAt ?? Today, draft.LayerEndsAt ?? horizon, "layer", draft.Id)).ToList())];
+
+        foreach (SurfaceArea area in Surfaces.Areas.Values.Where(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.EditPermission)))
+        {
+            AreaPlacements live = await Configuration.GetAreaAsync(area, null);
+            List<Span> spans = SurfaceLayout.Arrange(Surfaces.In(area), live.Placements.Select(placement => placement.ToStored()))
+                .Where(entry => entry.StartsAt is not null || entry.EndsAt is not null)
+                .Select(entry => new Span(DraftWords.NameOf(entry), entry.StartsAt ?? Today, entry.EndsAt ?? horizon, "live", null))
+                .ToList();
+            spans.AddRange(List.Drafts.SelectMany(draft => draft.Patches()
+                .Where(patch => patch.Area == area.Key && patch.SetsDates && (patch.StartsAt is not null || patch.EndsAt is not null))
+                .Select(patch => new Span($"{draft.Name}: {TitleOf(patch)}", patch.StartsAt ?? Today, patch.EndsAt ?? horizon, "draft", draft.Id))));
+            lanes.Add(new Lane(area.Title, spans.Where(span => span.EndsAt > Today && span.StartsAt < horizon).ToList()));
+        }
+
+        return lanes;
+    }
+
+    private string TitleOf(PlacementPatch patch) =>
+        patch.ValueChanges.GetValueOrDefault(HubSurfaces.LinkTile.Title.Key) ?? Surfaces.ByKey.GetValueOrDefault(patch.Surface)?.Title ?? patch.Surface;
+
+    private sealed record Lane(string Title, List<Span> Spans);
+
+    private sealed record Span(string Title, DateTime StartsAt, DateTime EndsAt, string Kind, string? DraftId);
+}

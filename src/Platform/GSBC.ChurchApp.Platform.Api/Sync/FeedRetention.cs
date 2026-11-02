@@ -36,6 +36,8 @@ public sealed class FeedRetention(SyncDbContext db)
             ON CONFLICT (feed) DO UPDATE SET cursor = GREATEST(sync.feed_horizons.cursor, EXCLUDED.cursor)
             """, cancellationToken);
 
+        await db.AudienceMarks.Where(mark => mark.SeenAt < deletedBefore).ExecuteDeleteAsync(cancellationToken);
+
         await transaction.CommitAsync(cancellationToken);
         return true;
     }

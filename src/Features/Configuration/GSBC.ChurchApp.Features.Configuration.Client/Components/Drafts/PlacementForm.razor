@@ -1,0 +1,32 @@
+@using System.Globalization
+
+@foreach (Setting setting in Draft.Surface.Settings)
+{
+    <SettingInput Setting="setting" Value="@Draft.Values[setting.Key]" ValueChanged="value => ChangeAsync(() => Draft.Values[setting.Key] = value)" />
+}
+<AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
+<div class="ui-pair">
+    <TextField Label="First day shown" Type="date" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+    <TextField Label="Last day shown" Type="date" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+</div>
+<ToggleRow Title="Shown" Description="Turn off to hide it without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
+@foreach (string problem in Draft.Problems)
+{
+    <Notice Tone="NoticeTone.Warning" Text="@problem" />
+}
+
+@code {
+    [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private Task ChangeAsync(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private static string Iso(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
+}

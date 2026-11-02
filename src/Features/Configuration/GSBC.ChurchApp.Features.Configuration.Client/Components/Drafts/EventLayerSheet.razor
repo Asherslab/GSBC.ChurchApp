@@ -1,0 +1,72 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Common
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Turn on \"{Draft.Name}\" for everyone")"
+       Lead="Everyone sees what's published plus this draft's changes. Turning it off puts the app back, keeping anything published meanwhile.">
+    <ChildContent>
+        <Segmented TValue="bool" Label="When" Options="Whens" Value="_scheduled" ValueChanged="scheduled => _scheduled = scheduled" />
+        @if (_scheduled)
+        {
+            <div class="ui-pair">
+                <TextField Label="Starts" Type="datetime-local" Value="@_starts" ValueChanged="value => _starts = value" />
+                <TextField Label="Ends" Type="datetime-local" Value="@_ends" ValueChanged="value => _ends = value" />
+            </div>
+            <p class="field__hint">Phones receive it ahead of time and switch by themselves at the start, even without signal.</p>
+        }
+        else
+        {
+            <TextField Label="Turns off by itself (optional)" Type="datetime-local" Value="@_ends" ValueChanged="value => _ends = value" />
+        }
+        @if (Replacing is not null)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@($"\"{Replacing}\" is on for an event now. This replaces it.")" />
+        }
+        @if (Problem is not null)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@Problem" />
+        }
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="Busy" Disabled="@(_scheduled && Starts is null)" OnClick="TurnOnAsync">@(_scheduled ? "Schedule it" : "Turn on now")</Button>
+        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => OpenChanged.InvokeAsync(false)">Cancel</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const string LocalFormat = "yyyy-MM-ddTHH:mm";
+    private static readonly IReadOnlyList<SegmentOption<bool>> Whens = [new(false, "Now", "sun"), new(true, "Between dates", "calendar")];
+
+    [Parameter, EditorRequired] public required Draft Draft { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Replacing { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<(DateTime? StartsAt, DateTime? EndsAt)> OnTurnOn { get; set; }
+
+    private bool _scheduled;
+    private string _starts = "";
+    private string _ends = "";
+
+    private bool _wasOpen;
+
+    protected override void OnParametersSet()
+    {
+        bool opening = Open && !_wasOpen;
+        _wasOpen = Open;
+        if (!opening)
+            return;
+        _scheduled = Draft.LayerStartsAt is not null;
+        _starts = Local(Draft.LayerStartsAt);
+        _ends = Local(Draft.LayerEndsAt);
+    }
+
+    private DateTime? Starts => Utc(_starts);
+
+    private Task TurnOnAsync() => OnTurnOn.InvokeAsync((_scheduled ? Starts : null, Utc(_ends)));
+
+    private static string Local(DateTime? utc) => utc is { } value ? ChurchTime.ToChurch(value).ToString(LocalFormat, CultureInfo.InvariantCulture) : "";
+
+    private static DateTime? Utc(string text) =>
+        DateTime.TryParseExact(text, LocalFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local) ? ChurchTime.ToUtc(local) : null;
+}

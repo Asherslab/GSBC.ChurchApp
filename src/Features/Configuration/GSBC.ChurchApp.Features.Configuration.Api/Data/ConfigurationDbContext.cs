@@ -8,9 +8,12 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data;
 public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbContext> options) : FeatureDbContext(options)
 {
     public const string SchemaName = "config";
+    public const int MaximumDraftName = 80;
 
     public DbSet<PlacementRecord> Placements => Set<PlacementRecord>();
     public DbSet<ChangeRecord> Changes => Set<ChangeRecord>();
+    public DbSet<DraftRecord> Drafts => Set<DraftRecord>();
+    public DbSet<DraftChangeRecord> DraftChanges => Set<DraftChangeRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -46,6 +49,27 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
             entity.HasIndex(change => change.BatchId);
             entity.Property(change => change.Before).HasColumnType("jsonb");
             entity.Property(change => change.After).HasColumnType("jsonb");
+            entity.HasIndex(change => change.DraftId);
+        });
+        modelBuilder.Entity<DraftRecord>(entity =>
+        {
+            entity.ToTable("drafts");
+            entity.HasKey(draft => draft.Id);
+            entity.Property(draft => draft.Name).HasMaxLength(MaximumDraftName);
+            entity.Property(draft => draft.Status).HasConversion<string>().HasMaxLength(32);
+            entity.Property(draft => draft.Revision).IsConcurrencyToken();
+            entity.Property(draft => draft.DroppedFromLayer).HasColumnType("jsonb");
+            entity.HasIndex(draft => draft.LayerOn).IsUnique().HasFilter("layer_on");
+        });
+        modelBuilder.Entity<DraftChangeRecord>(entity =>
+        {
+            entity.ToTable("draft_changes");
+            entity.HasKey(change => change.Id);
+            entity.HasIndex(change => new { change.DraftId, change.PlacementId }).IsUnique();
+            entity.HasIndex(change => change.PlacementId);
+            entity.Property(change => change.Kind).HasConversion<string>().HasMaxLength(16);
+            entity.Property(change => change.Patch).HasColumnType("jsonb");
+            entity.HasOne<DraftRecord>().WithMany().HasForeignKey(change => change.DraftId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -1,0 +1,767 @@
+@implements IDisposable
+@inject DraftsClient Drafts
+@inject ConfigurationClient Configuration
+@inject SurfaceCatalog Surfaces
+@inject IAccess Access
+@inject IPeopleDirectory People
+@inject NavigationManager Navigation
+
+<RefreshOn Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" Changed="RefreshAsync" />
+
+@if (_list is null)
+{
+    <Skeleton Count="4" Label="Loading drafts" />
+}
+else
+{
+    <Workbench Narrow="Narrow" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
+        <Aside>
+            <div class="drafts-column">
+                <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
+                <EventLayerBand Layer="Layer" MayChange="MayPublishAnything" Busy="_busy" OnOpen="draft => OpenAsync(draft.Id)" OnTurnOff="TurnOffAsync" OnChangeDates="ChangeDatesAsync" />
+                <DraftListing List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" />
+            </div>
+        </Aside>
+        <ChildContent>
+            @if (_view == View.ChurchYear)
+            {
+                <ChurchYear List="_list" OnOpen="OpenFromYearAsync" />
+            }
+            else if (_session is null)
+            {
+                @if (_message is not null)
+                {
+                    <Notice Text="@_message" />
+                }
+                <EmptyState Icon="pencil" Title="Choose a draft, or start one" Body="A draft holds changes to the app's Home screen, colours and pages. Only you and people you share it with see it until it's published.">
+                    <Button Icon="plus" OnClick="() => _naming = true">New draft</Button>
+                </EmptyState>
+            }
+            else
+            {
+                @EditorPane
+            }
+        </ChildContent>
+    </Workbench>
+
+    @if (_session is not null)
+    {
+        <ShareSheet Draft="_session.Draft" Open="_sharing" OpenChanged="open => _sharing = open" Names="_names" OnShare="ShareAsync" OnUnshare="UnshareAsync" />
+        <EventLayerSheet Draft="_session.Draft" Open="_turningOn" OpenChanged="open => _turningOn = open" Busy="_busy" Problem="@_problem"
+                         Replacing="@(Layer is { } layer && layer.Id != _session.Draft.Id ? layer.Name : null)" OnTurnOn="TurnOnAsync" />
+        <Sheet Open="_more" OpenChanged="open => _more = open" Title="@_session.Draft.Name">
+            <ChildContent>
+                <TextField Label="Name" Value="@_rename" ValueChanged="value => _rename = value" MaxLength="80" />
+                <ListGroup>
+                    @if (MayPublishDraft)
+                    {
+                        @if (_session.Draft.LayerOn)
+                        {
+                            <ListRow Title="Turn off for the event" Subtitle="Everyone goes back to what's published" Icon="calendar" OnClick="() => TurnOffAsync(_session.Draft)" />
+                        }
+                        else
+                        {
+                            <ListRow Title="Turn on for an event" Subtitle="Everyone sees it now, or between dates; turn it off after" Icon="calendar" OnClick="() => { _more = false; _turningOn = true; }" />
+                        }
+                    }
+                    <ListRow Title="Make a copy" Subtitle="Next year's version, starting from this one" Icon="plus" OnClick="CopyAsync" />
+                    @if (!_session.Draft.LayerOn)
+                    {
+                        <ListRow Title="@(_confirmDelete ? "Delete it: nothing reached everyone" : "Delete this draft")" Icon="x" IconTone="RowTone.Warm" OnClick="DeleteAsync" />
+                    }
+                </ListGroup>
+            </ChildContent>
+            <Actions>
+                <Button Block="true" Busy="_busy" Disabled="@(string.IsNullOrWhiteSpace(_rename) || _rename == _session.Draft.Name)" OnClick="RenameAsync">Save name</Button>
+                <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _more = false">Close</Button>
+            </Actions>
+        </Sheet>
+        @if (Narrow)
+        {
+            <Sheet Open="_form is not null" OpenChanged="open => { if (!open) Deselect(); }" Title="@FormTitle" Lead="@_form?.Surface.Description">
+                <ChildContent>
+                    @if (_form is not null)
+                    {
+                        <PlacementForm Draft="_form" Changed="FormChangedAsync" />
+                    }
+                </ChildContent>
+                <Actions>
+                    @FormActions
+                    <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="Deselect">Done</Button>
+                </Actions>
+            </Sheet>
+        }
+    }
+
+    <Sheet Open="_naming" OpenChanged="open => _naming = open" Title="New draft" Lead="Name it for what it's for, so you'll know it in a few weeks.">
+        <ChildContent>
+            <TextField Label="Name" Placeholder="Christmas 2026" Value="@_newName" ValueChanged="value => _newName = value" MaxLength="80" />
+            @if (_problem is not null && _naming)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            }
+        </ChildContent>
+        <Actions>
+            <Button Block="true" Busy="_busy" Disabled="@string.IsNullOrWhiteSpace(_newName)" OnClick="CreateAsync">Start the draft</Button>
+            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _naming = false">Cancel</Button>
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private enum View { Drafts, ChurchYear }
+
+    private static readonly TimeSpan SaveAfter = TimeSpan.FromSeconds(1);
+    private static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(5);
+    private static readonly IReadOnlyList<SegmentOption<View>> Views = [new(View.Drafts, "Drafts", "pencil"), new(View.ChurchYear, "Church year", "calendar")];
+
+    [Parameter] public string? DraftId { get; set; }
+    [Parameter] public string? AreaKey { get; set; }
+    [Parameter] public bool Narrow { get; set; }
+    [Parameter] public string BasePath { get; set; } = "drafts";
+
+    private DraftList? _list;
+    private Dictionary<string, string> _names = [];
+    private DraftSession? _session;
+    private AreaKey _area;
+    private View _view;
+    private PlacementDraft? _form;
+    private string? _formId;
+    private string? _selectedKey;
+    private bool _preview;
+    private SaveState _save;
+    private bool _saving;
+    private CancellationTokenSource? _pending;
+    private string? _problem;
+    private string? _message;
+    private bool _busy;
+    private bool _sharing;
+    private bool _turningOn;
+    private bool _more;
+    private bool _naming;
+    private bool _confirmDelete;
+    private string _newName = "";
+    private string _rename = "";
+    private string? _opened;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _list ??= await LoadListAsync();
+        if (DraftId != _opened)
+            await OpenDraftAsync(DraftId);
+    }
+
+    private WorkbenchPane Showing => _session is null && _view == View.Drafts ? WorkbenchPane.Aside : WorkbenchPane.Main;
+
+    private Draft? Layer => _list?.Drafts.FirstOrDefault(draft => draft.LayerOn);
+
+    private bool MayPublishAnything => Surfaces.Areas.Values.Any(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.PublishPermission));
+
+    private bool MayPublishDraft => _session is not null
+        && _session.TouchedAreas.All(area => Surfaces.Areas.TryGetValue(area.Area, out SurfaceArea? known) && Access.Can(known.PublishPermission, area.ScopeId))
+        && _session.TouchedAreas.Any();
+
+    private IEnumerable<SurfaceArea> EditableAreas => Surfaces.Areas.Values.Where(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.EditPermission));
+
+    private SurfaceArea? CurrentArea => Surfaces.Areas.GetValueOrDefault(_area.Area);
+
+    private RenderFragment EditorPane => __builder =>
+    {
+        DraftSession session = _session!;
+        Draft draft = session.Draft;
+        <div class="draft-pane">
+            @if (Narrow)
+            {
+                <button type="button" class="draft-pane__back" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> Drafts</button>
+            }
+            <header class="draft-pane__head">
+                <div class="draft-pane__title">
+                    <h2>@draft.Name</h2>
+                    <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
+                </div>
+                <div class="ui-actions">
+                    <Button Variant="ButtonVariant.Quiet" Icon="share" OnClick="() => _sharing = true">Share</Button>
+                    <Button Variant="ButtonVariant.Quiet" Icon="more" OnClick="OpenMore">More</Button>
+                    @if (MayPublishDraft)
+                    {
+                        <Button Busy="_busy" Disabled="@(session.ChangedForEveryone.Count > 0 || !session.Patches.Any() || _save == SaveState.Failed)" OnClick="PublishAsync">Publish now</Button>
+                    }
+                    else if (draft.Status == DraftStatus.WaitingToPublish)
+                    {
+                        <Button Disabled="true">Waiting for a publisher</Button>
+                    }
+                    else
+                    {
+                        <Button Busy="_busy" Disabled="@(!session.Patches.Any())" OnClick="AskToPublishAsync">Ask to publish</Button>
+                    }
+                </div>
+            </header>
+
+            @if (_problem is not null && !_turningOn && !_naming)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            }
+            @if (session.ChangedForEveryone.Count is > 0 and var count)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@($"{(count == 1 ? "One thing" : $"{count} things")} in this draft {(count == 1 ? "was" : "were")} changed for everyone since you edited {(count == 1 ? "it" : "them")}. Choose which to keep before publishing.")" />
+            }
+            @if (draft.LayerOn)
+            {
+                <Notice Text="This draft is on for an event, so everyone sees your changes as they save." />
+            }
+            else if (draft.Status == DraftStatus.WaitingToPublish)
+            {
+                <Notice Text="Waiting for someone who can publish. If you change it, you'll need to ask again." />
+            }
+
+            <TabStrip TValue="AreaKey" Label="What this draft changes" Options="AreaTabs" Value="_area" ValueChanged="SelectAreaAsync">
+                <Trailing>
+                    @foreach (SurfaceArea other in EditableAreas.Where(area => AreaTabs.All(tab => tab.Value.Area != area.Key)))
+                    {
+                        <button type="button" class="tab-strip__add" @onclick="() => SelectAreaAsync(new AreaKey(other.Key, null))"><Icon Name="plus" Size="IconSize.Small" /> @other.Title</button>
+                    }
+                </Trailing>
+            </TabStrip>
+
+            @if (CurrentArea is { } area)
+            {
+                <p class="section__lead draft-pane__lead">@area.Description</p>
+                @if (!session.Knows(_area))
+                {
+                    <Skeleton Count="3" Label="Loading what's there" />
+                }
+                else
+                {
+                    IReadOnlyList<ArrangedSurface> arranged = session.Arranged(area, _area.ScopeId);
+                    <ListGroup>
+                        @for (int index = 0; index < arranged.Count; index++)
+                        {
+                            int position = index;
+                            ArrangedSurface entry = arranged[position];
+                            PlacementPatch? patch = session.PatchFor(entry.Placement?.Id);
+                            ChangedForEveryone? changed = session.ChangedFor(entry.Placement?.Id);
+                            <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@DraftWords.Summary(entry)" Icon="@(changed is not null ? "alert" : entry.Hidden ? "eye-off" : "eye")"
+                                     IconTone="@(changed is not null ? RowTone.Warm : entry.Hidden ? RowTone.Quiet : RowTone.Accent)"
+                                     Class="@RowClass(entry)" OnClick="() => Select(entry)">
+                                <Below>
+                                    @if (patch is not null)
+                                    {
+                                        <Pill>@(patch.Kind == PatchKind.Add ? "Added in this draft" : "Changed in this draft")</Pill>
+                                    }
+                                    @if (changed is not null)
+                                    {
+                                        <span class="changed-for-everyone">
+                                            <b>Changed for everyone since you edited it:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, entry.Surface))).
+                                            <span class="ui-actions">
+                                                <Button Small="true" OnClick="() => SettleAsync(entry, keepMine: true)">Keep mine</Button>
+                                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleAsync(entry, keepMine: false)">Use everyone's</Button>
+                                            </span>
+                                        </span>
+                                    }
+                                </Below>
+                                <TrailingContent>
+                                    @if (arranged.Count > 1)
+                                    {
+                                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-up" Disabled="@(position == 0)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} up")" OnClick="() => MoveAsync(arranged, position, -1)" />
+                                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-down" Disabled="@(position == arranged.Count - 1)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} down")" OnClick="() => MoveAsync(arranged, position, 1)" />
+                                    }
+                                    <Icon Name="chevron-right" Size="IconSize.Small" />
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                        @foreach (PlacementPatch removed in session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)))
+                        {
+                            ChangedForEveryone? changed = session.ChangedFor(removed.PlacementId);
+                            <ListRow Title="@RemovedTitle(removed)" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                                <Below>
+                                    @if (changed is not null)
+                                    {
+                                        <span class="changed-for-everyone">
+                                            <b>Changed for everyone since you took it out.</b>
+                                            <span class="ui-actions">
+                                                <Button Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: true)">Take it out anyway</Button>
+                                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: false)">Keep it</Button>
+                                            </span>
+                                        </span>
+                                    }
+                                </Below>
+                                <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => UndoAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                    @foreach (Surface repeatable in Surfaces.In(area).Where(surface => surface.Repeatable))
+                    {
+                        <div class="ui-after">
+                            <Button Variant="ButtonVariant.Quiet" Icon="plus" OnClick="() => Add(repeatable, arranged)">Add a @repeatable.Title.ToLowerInvariant()</Button>
+                        </div>
+                    }
+                }
+            }
+        </div>
+    };
+
+    private RenderFragment DetailPane => __builder =>
+    {
+        <div class="detail-pane">
+            <Segmented TValue="bool" Label="Show" Options="DetailViews" Value="_preview" ValueChanged="preview => _preview = preview" />
+            @if (_session is null || CurrentArea is null)
+            {
+                <p class="detail-pane__hint">Open a draft to change it here.</p>
+            }
+            else if (_preview)
+            {
+                <PhonePreview Area="CurrentArea" Arranged="@_session.Arranged(CurrentArea, _area.ScopeId)" Changed="ChangedIds" />
+            }
+            else if (_form is null)
+            {
+                <p class="detail-pane__hint">Choose something on the left to change it. Changes save themselves, and phones previewing this draft follow along.</p>
+            }
+            else
+            {
+                <div class="detail-pane__head">
+                    <h3>@FormTitle</h3>
+                    <span>@_form.Surface.Description</span>
+                </div>
+                <PlacementForm Draft="_form" Changed="FormChangedAsync" />
+                <div class="ui-actions">@FormActions</div>
+            }
+        </div>
+    };
+
+    private RenderFragment FormActions => __builder =>
+    {
+        if (_form is not null && _session is not null)
+        {
+            if (_session.PatchFor(_formId) is not null)
+            {
+                <Button Variant="ButtonVariant.Quiet" Small="@(!Narrow)" Block="Narrow" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo this change</Button>
+            }
+            if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
+            {
+                <Button Variant="ButtonVariant.Danger" Small="@(!Narrow)" Block="Narrow" OnClick="RemoveSelectedAsync">@(_form.Surface.Repeatable ? "Take it out" : "Back to how the app starts")</Button>
+            }
+        }
+    };
+
+    private static readonly IReadOnlyList<SegmentOption<bool>> DetailViews = [new(false, "Settings", "sliders"), new(true, "Phone preview", "smartphone")];
+
+    private IReadOnlyList<TabOption<AreaKey>> AreaTabs =>
+        _session is null
+            ? []
+            : _session.TouchedAreas.Append(_area).Distinct()
+                .Where(area => Surfaces.Areas.ContainsKey(area.Area))
+                .Select(area => new TabOption<AreaKey>(area, Surfaces.Areas[area.Area].Title, _session.CountIn(area)))
+                .ToList();
+
+    private IReadOnlySet<string> ChangedIds => _session?.Patches.Select(patch => patch.PlacementId).ToHashSet() ?? [];
+
+    private string FormTitle => _form is null ? "" : _form.IsNew && _form.Surface.Repeatable && _session?.PatchFor(_formId) is null
+        ? $"New {_form.Surface.Title.ToLowerInvariant()}"
+        : _form.Surface.Repeatable && _form.Surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title ? _form.Values[title.Key] : _form.Surface.Title;
+
+    private string? RowClass(ArrangedSurface entry) => string.Join(' ', new[]
+    {
+        entry.Hidden ? "row--muted" : null,
+        KeyOf(entry) == _selectedKey ? "row--selected" : null,
+    }.OfType<string>());
+
+    private static string KeyOf(ArrangedSurface entry) => entry.Placement?.Id ?? entry.Surface.Key;
+
+    private string SharedText(Draft draft) => draft.SharedWith.Count == 0
+        ? "only you see it"
+        : $"shared with {string.Join(", ", draft.SharedWith.Select(id => _names.GetValueOrDefault(id, "someone")))}";
+
+    private string RemovedTitle(PlacementPatch patch)
+    {
+        Surface? surface = Surfaces.ByKey.GetValueOrDefault(patch.Surface);
+        return surface is { Repeatable: true } && surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title
+            ? patch.Base?.Values.GetValueOrDefault(title.Key) ?? surface.Title
+            : surface?.Title ?? patch.Surface;
+    }
+
+    private async Task<DraftList> LoadListAsync()
+    {
+        DraftList list = await Drafts.ListAsync();
+        List<string> ids = list.Drafts.SelectMany(draft => draft.SharedWith.Append(draft.AuthorId)).Concat(list.Published.Select(published => published.By))
+            .Where(id => !_names.ContainsKey(id)).Distinct().ToList();
+        if (ids.Count > 0)
+        {
+            try
+            {
+                foreach (PersonSummary person in await People.GetAsync(ids))
+                    _names[person.Id] = person.Name;
+            }
+            catch (RpcException)
+            {
+            }
+        }
+        return list;
+    }
+
+    private async Task RefreshAsync()
+    {
+        _list = await LoadListAsync();
+        if (_session is not null && !_session.HasUnsaved && !_saving && _form is null)
+        {
+            foreach (AreaKey area in _session.TouchedAreas.Append(_area).Distinct().ToList())
+                await LoadLiveAsync(area);
+        }
+    }
+
+    private async Task OpenDraftAsync(string? draftId)
+    {
+        await SaveNowAsync();
+        _opened = draftId;
+        _session = null;
+        Deselect();
+        _problem = null;
+        if (draftId is null)
+            return;
+
+        try
+        {
+            _session = new DraftSession(await Drafts.GetAsync(draftId), Surfaces);
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.NotFound)
+        {
+            _message = "That draft isn't there any more: it was published or deleted.";
+            return;
+        }
+
+        _view = View.Drafts;
+        _save = SaveState.Saved;
+        _rename = _session.Draft.Name;
+        AreaKey? requested = AreaKey is not null && Surfaces.Areas.ContainsKey(AreaKey) ? new AreaKey(AreaKey, null) : null;
+        AreaKey? touched = _session.TouchedAreas.Where(area => Surfaces.Areas.ContainsKey(area.Area)).Cast<AreaKey?>().FirstOrDefault();
+        _area = requested ?? touched ?? new AreaKey(EditableAreas.FirstOrDefault()?.Key ?? HubSurfaces.Area.Key, null);
+        foreach (AreaKey area in _session.TouchedAreas.Append(_area).Distinct().ToList())
+            await LoadLiveAsync(area);
+    }
+
+    private async Task LoadLiveAsync(AreaKey area)
+    {
+        if (_session is null || !Surfaces.Areas.TryGetValue(area.Area, out SurfaceArea? known))
+            return;
+        try
+        {
+            _session.UseLive(area, (await Configuration.GetAreaAsync(known, area.ScopeId)).Placements.Select(placement => placement.ToStored()));
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.PermissionDenied)
+        {
+            _session.UseLive(area, []);
+            _problem = $"You can't arrange {known.Title}, so you can see but not change that part of this draft.";
+        }
+    }
+
+    private Task OpenAsync(string draftId)
+    {
+        Navigation.NavigateTo($"{BasePath}/{draftId}");
+        return Task.CompletedTask;
+    }
+
+    private Task OpenFromYearAsync(string? draftId) => draftId is null ? Task.CompletedTask : OpenAsync(draftId);
+
+    private async Task BackToListAsync()
+    {
+        await SaveNowAsync();
+        Navigation.NavigateTo(BasePath);
+    }
+
+    private async Task SelectAreaAsync(AreaKey area)
+    {
+        Deselect();
+        _area = area;
+        if (_session is not null && !_session.Knows(area))
+            await LoadLiveAsync(area);
+    }
+
+    private void Select(ArrangedSurface entry)
+    {
+        _form = PlacementDraft.Of(entry);
+        _formId = entry.Placement?.Id ?? Guid.CreateVersion7().ToString();
+        _selectedKey = KeyOf(entry);
+        _preview = false;
+    }
+
+    private void Add(Surface surface, IReadOnlyList<ArrangedSurface> arranged)
+    {
+        _form = PlacementDraft.New(surface, arranged.Count == 0 ? surface.DefaultOrder : arranged.Max(entry => entry.Order) + 10);
+        _formId = Guid.CreateVersion7().ToString();
+        _preview = false;
+    }
+
+    private void Deselect()
+    {
+        _form = null;
+        _formId = null;
+        _selectedKey = null;
+    }
+
+    private Task FormChangedAsync()
+    {
+        if (_session is null || _form is null || _formId is null || _form.Problems.Count > 0)
+            return Task.CompletedTask;
+        _session.Set(_area, _form.ToStored(_formId));
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private Task MoveAsync(IReadOnlyList<ArrangedSurface> arranged, int position, int by)
+    {
+        List<ArrangedSurface> reordered = [.. arranged];
+        (reordered[position], reordered[position + by]) = (reordered[position + by], reordered[position]);
+        for (int index = 0; index < reordered.Count; index++)
+        {
+            ArrangedSurface entry = reordered[index];
+            int order = index * 10;
+            if (entry.Order == order && entry.Placement is not null)
+                continue;
+            PlacementDraft moved = PlacementDraft.Of(entry);
+            moved.Order = order;
+            _session!.Set(_area, moved.ToStored(entry.Placement?.Id ?? Guid.CreateVersion7().ToString()));
+        }
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private Task RemoveSelectedAsync()
+    {
+        if (_session is null || _formId is null)
+            return Task.CompletedTask;
+        StoredPlacement? live = _session.LiveOf(_area, _formId);
+        if (live is null)
+            _session.Undo(_formId);
+        else
+            _session.Remove(_area, new ArrangedSurface(_form!.Surface, live));
+        Deselect();
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private Task UndoAsync(string placementId)
+    {
+        _session?.Undo(placementId);
+        Deselect();
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private void SaveSoon()
+    {
+        _save = SaveState.Waiting;
+        _pending?.Cancel();
+        _pending = new CancellationTokenSource();
+        _ = SaveAfterAsync(SaveAfter, _pending.Token);
+    }
+
+    private async Task SaveAfterAsync(TimeSpan delay, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(delay, cancellationToken);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+        await InvokeAsync(SaveNowAsync);
+    }
+
+    private async Task SaveNowAsync()
+    {
+        if (_session is null || !_session.HasUnsaved || _saving)
+            return;
+
+        _saving = true;
+        _save = SaveState.Saving;
+        StateHasChanged();
+        (List<PatchMessage> set, List<string> cleared) = _session.TakeUnsaved();
+        try
+        {
+            Draft saved = await Drafts.SaveAsync(_session.Draft.Id, set, cleared);
+            _session.Accept(saved);
+            _save = SaveState.Saved;
+            _problem = null;
+            Replace(saved);
+        }
+        catch (RpcException exception)
+        {
+            _session.MarkUnsaved(set, cleared);
+            _save = SaveState.Failed;
+            if (exception.StatusCode is StatusCode.InvalidArgument or StatusCode.PermissionDenied or StatusCode.FailedPrecondition or StatusCode.Aborted)
+                _problem = exception.Status.Detail;
+            else
+                _ = SaveAfterAsync(RetryAfter, CancellationToken.None);
+        }
+        finally
+        {
+            _saving = false;
+        }
+
+        if (_session.HasUnsaved && _save != SaveState.Failed)
+            SaveSoon();
+        StateHasChanged();
+    }
+
+    private void Replace(Draft saved)
+    {
+        if (_list is null)
+            return;
+        int index = _list.Drafts.FindIndex(draft => draft.Id == saved.Id);
+        if (index >= 0)
+            _list.Drafts[index] = saved;
+    }
+
+    private Task SettleAsync(ArrangedSurface entry, bool keepMine) =>
+        entry.Placement is { } placement ? SettleIdAsync(placement.Id, keepMine) : Task.CompletedTask;
+
+    private Task SettleRemovedAsync(PlacementPatch removed, bool keepMine) => SettleIdAsync(removed.PlacementId, keepMine);
+
+    private Task SettleIdAsync(string placementId, bool keepMine) => RunAsync(async () =>
+    {
+        await SaveNowAsync();
+        Draft settled = await Drafts.SettleAsync(_session!.Draft.Id, placementId, keepMine);
+        _session = new DraftSession(settled, Surfaces);
+        foreach (AreaKey area in _session.TouchedAreas.Append(_area).Distinct().ToList())
+            await LoadLiveAsync(area);
+        Deselect();
+        Replace(settled);
+    });
+
+    private Task PublishAsync() => RunAsync(async () =>
+    {
+        await SaveNowAsync();
+        if (_session is null || _session.HasUnsaved)
+            return;
+        await Drafts.PublishAsync(_session.Draft.Id);
+        _message = $"Published \"{_session.Draft.Name}\". Phones show it within a few seconds.";
+        _session = null;
+        _list = await LoadListAsync();
+        Navigation.NavigateTo(BasePath);
+    });
+
+    private Task AskToPublishAsync() => RunAsync(async () =>
+    {
+        await SaveNowAsync();
+        Draft asked = await Drafts.AskToPublishAsync(_session!.Draft.Id);
+        _session.Accept(asked);
+        Replace(asked);
+    });
+
+    private Task CreateAsync() => RunAsync(async () =>
+    {
+        Draft created = await Drafts.CreateAsync(_newName.Trim());
+        _naming = false;
+        _newName = "";
+        _list = await LoadListAsync();
+        await OpenAsync(created.Id);
+    });
+
+    private Task CopyAsync() => RunAsync(async () =>
+    {
+        Draft copy = await Drafts.CreateAsync($"Copy of {_session!.Draft.Name}", _session.Draft.Id);
+        _more = false;
+        _list = await LoadListAsync();
+        await OpenAsync(copy.Id);
+    });
+
+    private Task RenameAsync() => RunAsync(async () =>
+    {
+        Draft renamed = await Drafts.RenameAsync(_session!.Draft.Id, _rename.Trim());
+        _session.Accept(renamed);
+        Replace(renamed);
+        _more = false;
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        if (!_confirmDelete)
+        {
+            _confirmDelete = true;
+            return;
+        }
+        await Drafts.DeleteAsync(_session!.Draft.Id);
+        _message = $"Deleted \"{_session.Draft.Name}\".";
+        _more = false;
+        _session = null;
+        _list = await LoadListAsync();
+        Navigation.NavigateTo(BasePath);
+    });
+
+    private void OpenMore()
+    {
+        _rename = _session?.Draft.Name ?? "";
+        _confirmDelete = false;
+        _more = true;
+    }
+
+    private Task ShareAsync(string userId) => RunAsync(async () => Accept(await Drafts.ShareAsync(_session!.Draft.Id, userId)));
+
+    private Task UnshareAsync(string userId) => RunAsync(async () => Accept(await Drafts.UnshareAsync(_session!.Draft.Id, userId)));
+
+    private void Accept(Draft draft)
+    {
+        _session?.Accept(draft);
+        Replace(draft);
+        _ = InvokeAsync(async () =>
+        {
+            _list = await LoadListAsync();
+            StateHasChanged();
+        });
+    }
+
+    private Task TurnOnAsync((DateTime? StartsAt, DateTime? EndsAt) when) => RunAsync(async () =>
+    {
+        await SaveNowAsync();
+        Draft on = await Drafts.TurnOnAsync(_session!.Draft.Id, when.StartsAt, when.EndsAt);
+        _session.Accept(on);
+        _turningOn = false;
+        _more = false;
+        _list = await LoadListAsync();
+    });
+
+    private Task TurnOffAsync(Draft layer) => RunAsync(async () =>
+    {
+        await Drafts.TurnOffAsync(layer.Id);
+        _more = false;
+        _list = await LoadListAsync();
+        if (_session?.Draft.Id == layer.Id)
+            _session.Accept(await Drafts.GetAsync(layer.Id));
+    });
+
+    private Task ChangeDatesAsync(Draft layer)
+    {
+        if (_session?.Draft.Id == layer.Id)
+            _turningOn = true;
+        else
+            Navigation.NavigateTo($"{BasePath}/{layer.Id}");
+        return Task.CompletedTask;
+    }
+
+    private Task UndoAsync(PublishedDraft published) => RunAsync(async () =>
+    {
+        await Configuration.RollBackAsync(published.BatchId);
+        _message = $"Undid \"{published.Name}\". Phones show it within a few seconds.";
+        _list = await LoadListAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    public void Dispose() => _pending?.Cancel();
+}

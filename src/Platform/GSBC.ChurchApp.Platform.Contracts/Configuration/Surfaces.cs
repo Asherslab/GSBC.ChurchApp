@@ -2,7 +2,7 @@ using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
 
-public sealed record SurfaceArea(string Key, string Title, string Description, ScopeKind ScopeKind, Permission EditPermission)
+public sealed record SurfaceArea(string Key, string Title, string Description, ScopeKind ScopeKind, Permission EditPermission, Permission PublishPermission)
 {
     public Permission AudiencePermission(string node) => new(node, ScopeKind, "");
 }

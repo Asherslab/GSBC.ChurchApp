@@ -1,16 +1,50 @@
 @inherits LayoutComponentBase
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Client.Configuration
+@using GSBC.ChurchApp.Platform.Common
+@implements IDisposable
 @inject Shell Shell
+@inject IPreviewMode Preview
 
 <div class="shell">
     @Body
+    @if (Preview.Current is { } preview)
+    {
+        <PreviewBanner Title="@BannerTitle(preview)" Detail="@BannerDetail(preview)" OnExit="() => Preview.ChooseAsync(null)" />
+    }
     <ModuleNav Style="NavStyle.TabBar" />
 </div>
 <AppTheme />
 
 @code {
+    protected override async Task OnInitializedAsync()
+    {
+        Preview.Changed += OnPreviewChanged;
+        await Preview.LoadAsync();
+    }
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
             await Shell.StartedAsync();
     }
+
+    private static string BannerTitle(PreviewChoice preview) =>
+        preview.DraftId is null ? "Previewing what everyone sees" : $"Previewing \"{preview.Name}\"";
+
+    private static string? BannerDetail(PreviewChoice preview)
+    {
+        List<string> parts = [];
+        if (preview.As == PreviewViewer.Visitor)
+            parts.Add("as a visitor");
+        if (preview.As == PreviewViewer.Member)
+            parts.Add("as a member");
+        if (preview.At is { } at)
+            parts.Add(ChurchTime.ToChurch(at).ToString("ddd d MMM, h:mmtt", CultureInfo.InvariantCulture).Replace(":00", "").ToLowerInvariant());
+        return parts.Count == 0 ? null : string.Join(" · ", parts);
+    }
+
+    private void OnPreviewChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Preview.Changed -= OnPreviewChanged;
 }

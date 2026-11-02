@@ -1,0 +1,81 @@
+@inject SurfaceCatalog Surfaces
+
+@if (Waiting.Count > 0)
+{
+    <h3 class="draft-list__head">Waiting to publish <span class="tab-strip__count">@Waiting.Count</span></h3>
+    <ListGroup>
+        @foreach (Draft draft in Waiting)
+        {
+            <ListRow Title="@draft.Name" Subtitle="@($"{Author(draft)} · {DraftWords.Touches(draft, Surfaces)}")" Icon="send" IconTone="RowTone.Warm"
+                     Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)" />
+        }
+    </ListGroup>
+}
+
+<h3 class="draft-list__head">
+    Open
+    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="OnNew">New draft</Button>
+</h3>
+@if (Open.Count == 0)
+{
+    <p class="draft-list__empty">A draft is a set of changes to the app that only you, and people you share it with, can see until it's published.</p>
+}
+else
+{
+    <ListGroup>
+        @foreach (Draft draft in Open)
+        {
+            <ListRow Title="@draft.Name" Subtitle="@($"{Author(draft)} · {DraftWords.Touches(draft, Surfaces)}")" Icon="@(draft.LayerOn ? "calendar" : "pencil")"
+                     IconTone="@(draft.LayerOn ? RowTone.Accent : RowTone.Primary)" Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)">
+                <Below>
+                    @if (ToCheck(draft) is > 0 and var count)
+                    {
+                        <Pill Icon="alert">@(count == 1 ? "1 change to check" : $"{count} changes to check")</Pill>
+                    }
+                    @if (draft.SharedWith.Count > 0)
+                    {
+                        <span class="row__subtitle">Shared with @string.Join(", ", draft.SharedWith.Select(id => Names.GetValueOrDefault(id, "someone")))</span>
+                    }
+                </Below>
+            </ListRow>
+        }
+    </ListGroup>
+}
+
+@if (List.Published.Count > 0)
+{
+    <h3 class="draft-list__head">Published recently</h3>
+    <ListGroup>
+        @foreach (PublishedDraft published in List.Published)
+        {
+            <ListRow Title="@published.Name" Subtitle="@($"{string.Join(", ", published.Areas)} · {Names.GetValueOrDefault(published.By, "Someone")} · {DraftWords.Day(published.At)}")" Icon="check" IconTone="RowTone.Quiet">
+                <TrailingContent>
+                    @if (MayUndo)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnUndo.InvokeAsync(published)">Undo</Button>
+                    }
+                </TrailingContent>
+            </ListRow>
+        }
+    </ListGroup>
+}
+
+@code {
+    [Parameter, EditorRequired] public required DraftList List { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> Names { get; set; } = new Dictionary<string, string>();
+    [Parameter] public string? SelectedId { get; set; }
+    [Parameter] public bool MayUndo { get; set; }
+    [Parameter] public EventCallback<Draft> OnOpen { get; set; }
+    [Parameter] public EventCallback OnNew { get; set; }
+    [Parameter] public EventCallback<PublishedDraft> OnUndo { get; set; }
+
+    private List<Draft> Waiting => List.Drafts.Where(draft => draft.Status == DraftStatus.WaitingToPublish).ToList();
+
+    private List<Draft> Open => List.Drafts.Where(draft => draft.Status == DraftStatus.Open).ToList();
+
+    private string Author(Draft draft) => draft.Mine ? "You" : Names.GetValueOrDefault(draft.AuthorId, "Someone");
+
+    private static int ToCheck(Draft draft) => draft.ToCheck;
+
+    private string? RowClass(Draft draft) => draft.Id == SelectedId ? "row--selected" : null;
+}

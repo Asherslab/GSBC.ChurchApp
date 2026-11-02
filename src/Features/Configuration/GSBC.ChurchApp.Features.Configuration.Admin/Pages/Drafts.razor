@@ -1,0 +1,10 @@
+@page "/drafts"
+@page "/drafts/{DraftId}"
+
+<h1 class="visually-hidden">Drafts</h1>
+<DraftsWorkspace DraftId="@DraftId" AreaKey="@Area" />
+
+@code {
+    [Parameter] public string? DraftId { get; set; }
+    [SupplyParameterFromQuery(Name = "area")] public string? Area { get; set; }
+}

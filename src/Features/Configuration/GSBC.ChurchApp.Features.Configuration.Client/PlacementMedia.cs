@@ -15,12 +15,23 @@ internal static class PlacementMedia
 
     private static IEnumerable<MediaRef> In(SurfaceCatalog surfaces, StoredRecord record)
     {
-        Placement placement = ConfigurationContractsModel.Instance.Deserialize<Placement>(new MemoryStream(record.Payload));
-        if (placement.Hidden || !surfaces.ByKey.TryGetValue(placement.Surface, out Surface? surface))
-            return [];
+        if (record.GroupKey == ConfigurationFeeds.EventLayerRecord)
+        {
+            EventLayerMessage layer = ConfigurationContractsModel.Instance.Deserialize<EventLayerMessage>(new MemoryStream(record.Payload));
+            return layer.Changes
+                .Where(change => change.Kind != (int)PatchKind.Remove)
+                .SelectMany(change => MediaIn(surfaces, change.Surface, change.Values.Where(value => value.Value is not null)
+                    .GroupBy(value => value.Key).ToDictionary(group => group.Key, group => group.Last().Value!)));
+        }
 
-        Dictionary<string, string> values = placement.Values.GroupBy(value => value.Key).ToDictionary(group => group.Key, group => group.Last().Value);
-        return surface.Settings.OfType<IHoldsMedia>()
-            .SelectMany(holder => holder.MediaIn(values.GetValueOrDefault(((Setting)holder).Key, "")));
+        Placement placement = ConfigurationContractsModel.Instance.Deserialize<Placement>(new MemoryStream(record.Payload));
+        return placement.Hidden
+            ? []
+            : MediaIn(surfaces, placement.Surface, placement.Values.GroupBy(value => value.Key).ToDictionary(group => group.Key, group => group.Last().Value));
     }
+
+    private static IEnumerable<MediaRef> MediaIn(SurfaceCatalog surfaces, string surfaceKey, Dictionary<string, string> values) =>
+        surfaces.ByKey.TryGetValue(surfaceKey, out Surface? surface)
+            ? surface.Settings.OfType<IHoldsMedia>().SelectMany(holder => holder.MediaIn(values.GetValueOrDefault(((Setting)holder).Key, "")))
+            : [];
 }

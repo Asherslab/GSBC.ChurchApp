@@ -1,0 +1,18 @@
+<div class="preview-banner" role="status">
+    <Icon Name="eye" Size="IconSize.Small" />
+    <span class="preview-banner__text">
+        <b>@Title</b>
+        @if (Detail is not null)
+        {
+            <small>@Detail</small>
+        }
+    </span>
+    <button type="button" class="preview-banner__exit" @onclick="OnExit">@ExitLabel</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public string ExitLabel { get; set; } = "Exit";
+    [Parameter] public EventCallback OnExit { get; set; }
+}

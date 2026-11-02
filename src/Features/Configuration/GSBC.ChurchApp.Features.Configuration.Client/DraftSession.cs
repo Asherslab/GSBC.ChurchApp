@@ -1,0 +1,114 @@
+using GSBC.ChurchApp.Features.Configuration.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
+
+namespace GSBC.ChurchApp.Features.Configuration.Client;
+
+public readonly record struct AreaKey(string Area, string? ScopeId);
+
+internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces)
+{
+    private readonly Dictionary<AreaKey, IReadOnlyList<StoredPlacement>> _live = [];
+    private readonly Dictionary<string, PlacementPatch> _patches = draft.Patches().ToDictionary(patch => patch.PlacementId);
+    private readonly HashSet<string> _dirty = [];
+
+    public Draft Draft { get; private set; } = draft;
+
+    public bool HasUnsaved => _dirty.Count > 0;
+
+    public IReadOnlyCollection<PlacementPatch> Patches => _patches.Values;
+
+    public IEnumerable<AreaKey> TouchedAreas => _patches.Values.Select(patch => new AreaKey(patch.Area, patch.ScopeId)).Distinct();
+
+    public bool Knows(AreaKey area) => _live.ContainsKey(area);
+
+    public void UseLive(AreaKey area, IEnumerable<StoredPlacement> live) => _live[area] = live.ToList();
+
+    public int CountIn(AreaKey area) => _patches.Values.Count(patch => patch.Touches(area.Area, area.ScopeId));
+
+    public IReadOnlyList<ArrangedSurface> Arranged(SurfaceArea area, string? scopeId)
+    {
+        AreaKey key = new(area.Key, scopeId);
+        IEnumerable<StoredPlacement> composed = DraftComposition.Apply(_live.GetValueOrDefault(key, []), InArea(key));
+        return SurfaceLayout.Arrange(surfaces.In(area), composed);
+    }
+
+    public IReadOnlyList<ArrangedSurface> Everyone(SurfaceArea area, string? scopeId) =>
+        SurfaceLayout.Arrange(surfaces.In(area), _live.GetValueOrDefault(new AreaKey(area.Key, scopeId), []));
+
+    public PlacementPatch? PatchFor(string? placementId) => placementId is null ? null : _patches.GetValueOrDefault(placementId);
+
+    public IReadOnlyList<ChangedForEveryone> ChangedForEveryone =>
+        _live.SelectMany(pair => DraftComposition.ChangedSince(pair.Value, InArea(pair.Key))).ToList();
+
+    public ChangedForEveryone? ChangedFor(string? placementId) =>
+        ChangedForEveryone.FirstOrDefault(changed => changed.Patch.PlacementId == placementId);
+
+    public StoredPlacement? LiveOf(AreaKey area, string? placementId) =>
+        placementId is null ? null : _live.GetValueOrDefault(area, []).FirstOrDefault(placement => placement.Id == placementId);
+
+    public void Set(AreaKey area, StoredPlacement wanted)
+    {
+        StoredPlacement? live = LiveOf(area, wanted.Id);
+        PlacementPatch? patch = live is null ? Added(area, wanted) : Changed(area, live, wanted);
+        Put(wanted.Id, patch is null ? null : patch with { Base = _patches.GetValueOrDefault(wanted.Id)?.Base ?? live });
+    }
+
+    public void Remove(AreaKey area, ArrangedSurface entry)
+    {
+        if (entry.Placement is not { } placement)
+            return;
+        StoredPlacement? live = LiveOf(area, placement.Id);
+        Put(placement.Id, live is null ? null : new PlacementPatch(placement.Id, area.Area, area.ScopeId, placement.Surface, PatchKind.Remove, Base: live));
+    }
+
+    public void Undo(string placementId) => Put(placementId, null);
+
+    public (List<PatchMessage> Set, List<string> Cleared) TakeUnsaved()
+    {
+        List<PatchMessage> set = _dirty.Where(_patches.ContainsKey).Select(id => _patches[id].ToMessage()).ToList();
+        List<string> cleared = _dirty.Where(id => !_patches.ContainsKey(id)).ToList();
+        _dirty.Clear();
+        return (set, cleared);
+    }
+
+    public void MarkUnsaved(IEnumerable<PatchMessage> set, IEnumerable<string> cleared) =>
+        _dirty.UnionWith(set.Select(patch => patch.PlacementId).Concat(cleared));
+
+    public void Accept(Draft saved)
+    {
+        Draft = saved;
+        foreach (string id in _patches.Keys.Where(id => !_dirty.Contains(id)).ToList())
+            _patches.Remove(id);
+        foreach (PlacementPatch patch in saved.Patches().Where(patch => !_dirty.Contains(patch.PlacementId)))
+            _patches[patch.PlacementId] = patch;
+    }
+
+    private IEnumerable<PlacementPatch> InArea(AreaKey area) => _patches.Values.Where(patch => patch.Touches(area.Area, area.ScopeId));
+
+    private void Put(string placementId, PlacementPatch? patch)
+    {
+        if (patch is null)
+            _patches.Remove(placementId);
+        else
+            _patches[placementId] = patch;
+        _dirty.Add(placementId);
+    }
+
+    private static PlacementPatch Added(AreaKey area, StoredPlacement wanted) =>
+        new(wanted.Id, area.Area, area.ScopeId, wanted.Surface, PatchKind.Add, wanted.Order, wanted.Hidden, wanted.Audience,
+            SetsDates: true, wanted.StartsAt, wanted.EndsAt, wanted.Values.ToDictionary(pair => pair.Key, pair => (string?)pair.Value));
+
+    private static PlacementPatch? Changed(AreaKey area, StoredPlacement live, StoredPlacement wanted)
+    {
+        Dictionary<string, string?> values = wanted.Values.Keys.Union(live.Values.Keys)
+            .Where(key => wanted.Values.GetValueOrDefault(key) != live.Values.GetValueOrDefault(key))
+            .ToDictionary(key => key, key => wanted.Values.GetValueOrDefault(key));
+        bool dates = wanted.StartsAt != live.StartsAt || wanted.EndsAt != live.EndsAt;
+        PlacementPatch patch = new(wanted.Id, area.Area, area.ScopeId, wanted.Surface, PatchKind.Change,
+            wanted.Order == live.Order ? null : wanted.Order,
+            wanted.Hidden == live.Hidden ? null : wanted.Hidden,
+            wanted.Audience == live.Audience ? null : wanted.Audience,
+            dates, dates ? wanted.StartsAt : null, dates ? wanted.EndsAt : null, values);
+        return patch.Fields.Any() ? patch : null;
+    }
+}

@@ -1,0 +1,14 @@
+@page "/drafts"
+@page "/drafts/{DraftId}"
+
+<Page Title="Drafts" BackHref="more" BackLabel="More">
+    <Masthead Title="Drafts" Note="Changes only you and people you share them with can see" />
+    <Section First="true">
+        <DraftsWorkspace DraftId="@DraftId" AreaKey="@Area" Narrow="true" />
+    </Section>
+</Page>
+
+@code {
+    [Parameter] public string? DraftId { get; set; }
+    [SupplyParameterFromQuery(Name = "area")] public string? Area { get; set; }
+}

@@ -11,9 +11,6 @@ public interface IConfigurationService
     ValueTask<AreaPlacements> GetAreaAsync(AreaQuery request, CallContext context = default);
 
     [SignedIn]
-    ValueTask<AreaPlacements> SaveAsync(SaveRequest request, CallContext context = default);
-
-    [SignedIn]
     ValueTask<ChangeList> ListChangesAsync(AreaQuery request, CallContext context = default);
 
     [SignedIn]
