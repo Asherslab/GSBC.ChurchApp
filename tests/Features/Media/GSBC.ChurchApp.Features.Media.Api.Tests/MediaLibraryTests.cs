@@ -178,7 +178,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
             AltText = "The hall set up for lunch",
         };
 
-        MediaRef saved = Assert.Single(await ReferencesCallAsync(references => references.AttachAsync("news.post/1", [forgedDetails], Cancellation)));
+        MediaRef saved = Assert.Single(await ReferencesCallAsync(references => references.VerifyAsync([forgedDetails], Cancellation)));
 
         Assert.Equal((photo.ContentType, photo.Bytes, photo.Url, photo.IsPrivate), (saved.ContentType, saved.Bytes, saved.Url, saved.IsPrivate));
         Assert.Equal("The hall set up for lunch", saved.AltText);
@@ -188,7 +188,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         foreach (MediaRef forged in new[] { otherKey, unknown })
         {
             RpcException refused = await Assert.ThrowsAsync<RpcException>(() =>
-                ReferencesCallAsync(references => references.AttachAsync("news.post/2", [forged], Cancellation)));
+                ReferencesCallAsync(references => references.VerifyAsync([forged], Cancellation)));
             Assert.Equal(StatusCode.InvalidArgument, refused.StatusCode);
         }
     }
@@ -212,12 +212,12 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         byte[] bytes = Jpeg(seed: 5);
         MediaRef used = await UploadAsync(staff, bytes, "image/jpeg");
         MediaRef sameBytes = await UploadAsync(staff, bytes, "image/jpeg");
-        await ReferencesCallAsync(references => references.AttachAsync("news.post/3", [used], Cancellation));
+        await ReferencesCallAsync(references => Done(references.UseAsync("news.post/3", [used], Cancellation)));
 
         RpcException inUse = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => Done(library.DeleteAsync(used.Id, Cancellation))));
         Assert.Equal(StatusCode.FailedPrecondition, inUse.StatusCode);
 
-        await ReferencesCallAsync(references => Done(references.DetachAsync("news.post/3", Cancellation)));
+        await ReferencesCallAsync(references => Done(references.UseAsync("news.post/3", [], Cancellation)));
         await LibraryCallAsync(library => Done(library.DeleteAsync(used.Id, Cancellation)));
         using (HttpResponseMessage stillListed = await _http.GetAsync(sameBytes.Url, Cancellation))
             Assert.Equal(HttpStatusCode.OK, stillListed.StatusCode);

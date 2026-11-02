@@ -11,19 +11,24 @@ namespace GSBC.ChurchApp.Features.Media.Api;
 
 internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs) : IMediaReferences
 {
-    public async Task<IReadOnlyList<MediaRef>> AttachAsync(string owner, IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
         List<Guid> ids = claimed.Select(media => Guid.TryParse(media.Id, out Guid id) ? id : throw NotInLibrary(media)).ToList();
         Dictionary<Guid, MediaItem> items = await db.Items.AsNoTracking()
             .Where(item => ids.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, cancellationToken);
 
-        List<MediaRef> verified = claimed.Zip(ids, (media, id) => Verified(media, items.GetValueOrDefault(id))).ToList();
+        return claimed.Zip(ids, (media, id) => Verified(media, items.GetValueOrDefault(id))).ToList();
+    }
+
+    public async Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(owner);
+        HashSet<Guid> ids = [.. verified.Select(media => Guid.Parse(media.Id))];
 
         await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.Uses.Where(use => use.Owner == owner).ExecuteDeleteAsync(cancellationToken);
-        db.Uses.AddRange(ids.Distinct().Select(id => new MediaUse { MediaId = id, Owner = owner }));
+        db.Uses.AddRange(ids.Select(id => new MediaUse { MediaId = id, Owner = owner }));
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -38,11 +43,7 @@ internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs) : IMe
         }
 
         await transaction.CommitAsync(cancellationToken);
-        return verified;
     }
-
-    public async Task DetachAsync(string owner, CancellationToken cancellationToken) =>
-        await db.Uses.Where(use => use.Owner == owner).ExecuteDeleteAsync(cancellationToken);
 
     private MediaRef Verified(MediaRef claimed, MediaItem? item)
     {

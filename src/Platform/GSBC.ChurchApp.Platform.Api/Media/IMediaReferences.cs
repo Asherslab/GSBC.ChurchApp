@@ -4,7 +4,7 @@ namespace GSBC.ChurchApp.Platform.Api.Media;
 
 public interface IMediaReferences
 {
-    Task<IReadOnlyList<MediaRef>> AttachAsync(string owner, IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken);
+    Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken);
 
-    Task DetachAsync(string owner, CancellationToken cancellationToken);
+    Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken);
 }
