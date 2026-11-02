@@ -51,9 +51,9 @@ our headers, Web Analytics off, app hosts purged), and media goes through R2; se
 **Tested by the owner, 2026-11-02:** the owner side of Access (creating a role and giving it to a user)
 and inviting, with a real email through the shared mailbox.
 
-**Not tested end to end yet:** the staff-friendly access screens, Configuration's editor and Media's
-uploads (each built and unit-tested on 2026-11-02, not yet tried in the running app; the owner is
-testing them); background refresh needs measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
+**Not tested end to end yet:** the staff-friendly access screens and Configuration's editor (built and
+unit-tested on 2026-11-02, not yet tried in the running app); Media on a phone. Media uploads from the
+admin panel work through `dev-media.baptist.com.au` (owner, 2026-11-02); background refresh needs measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
