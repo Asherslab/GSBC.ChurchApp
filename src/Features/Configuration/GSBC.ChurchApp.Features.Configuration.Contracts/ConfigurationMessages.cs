@@ -41,22 +41,6 @@ public sealed class AreaPlacements
 }
 
 [ProtoContract]
-public sealed class PlacementReference
-{
-    [ProtoMember(1)] public string Id { get; set; } = "";
-    [ProtoMember(2)] public long Revision { get; set; }
-}
-
-[ProtoContract]
-public sealed class SaveRequest
-{
-    [ProtoMember(1)] public string Area { get; set; } = "";
-    [ProtoMember(2)] public string? ScopeId { get; set; }
-    [ProtoMember(3)] public List<Placement> Placements { get; set; } = [];
-    [ProtoMember(4)] public List<PlacementReference> Removed { get; set; } = [];
-}
-
-[ProtoContract]
 public sealed class ChangeList
 {
     [ProtoMember(1)] public List<ChangeBatch> Batches { get; set; } = [];
@@ -70,6 +54,7 @@ public sealed class ChangeBatch
     [ProtoMember(3)] public string By { get; set; } = "";
     [ProtoMember(4)] public List<PlacementChange> Changes { get; set; } = [];
     [ProtoMember(5)] public string? RollsBack { get; set; }
+    [ProtoMember(6)] public string? DraftName { get; set; }
 }
 
 [ProtoContract]

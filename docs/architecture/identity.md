@@ -82,6 +82,15 @@ account's email must be confirmed before it can recover by email.
 An account has a display name, an email (for recovery and invitations) and its passkeys. It is not a
 church directory (SPEC §1's non-goals). A link to an Elvanto person can be added when rosters need it.
 
+## Development builds: linking a phone with a code (owner, 2026-11-02)
+
+Until passkeys work in the app, a development build can be linked to an account for previews: the
+admin panel's *Preview on your phone* shows a six-character one-time code (`Accounts.PhoneLinks.Start`,
+ten minutes), the app's *Link this phone* redeems it (`Accounts.PhoneLinks.Link`, rate-limited) for an
+app session, and its secret goes in the iOS Keychain and is sent as `X-Gsbc-Session`. The gateway
+authenticates that header like the browser's cookie, strips it, and issues the usual API token. Both
+methods refuse outside Development. The session is listed and ended like any other.
+
 ## Open
 
 - ~~Email~~: done 2026-11-02. It goes out as `app@baptist.com.au`, a Microsoft 365 shared mailbox,

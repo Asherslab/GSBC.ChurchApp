@@ -1,0 +1,127 @@
+@using GSBC.ChurchApp.Platform.Ui.Content
+@using CustomTheme = GSBC.ChurchApp.Platform.Contracts.Configuration.AppearanceSurfaces.CustomTheme
+
+<TextField Label="Name" Placeholder="Advent 2026" MaxLength="CustomTheme.Name.MaxLength" Value="@Draft.Values[CustomTheme.Name.Key]"
+           ValueChanged="value => SetAsync(CustomTheme.Name, value)" Problem="@CustomTheme.Name.ProblemWith(Draft.Values[CustomTheme.Name.Key])" />
+
+<FontPicker Label="@CustomTheme.Font.Label" Bundled="AppearanceSurfaces.Fonts" Value="Values.Get(CustomTheme.Font)"
+            ValueChanged="font => SetAsync(CustomTheme.Font, CustomTheme.Font.Format(font))" />
+<FontPicker Label="@CustomTheme.BodyFont.Label" Bundled="AppearanceSurfaces.Fonts" Value="Values.Get(CustomTheme.BodyFont)" Hint="@CustomTheme.BodyFont.Help"
+            ValueChanged="font => SetAsync(CustomTheme.BodyFont, CustomTheme.BodyFont.Format(font))" />
+
+<div class="theme-editor__scheme">
+    <span class="field__label">Colours for</span>
+    <Segmented TValue="ThemeScheme" Label="Colours for" Options="Schemes" Value="Scheme" ValueChanged="SchemeChanged" />
+    <span>@(Scheme == ThemeScheme.Light ? "Phones set to light mode." : "Phones set to dark mode, which many switch to at night. Worked out from the light colours until you set them here.")</span>
+</div>
+
+<fieldset class="theme-editor__group">
+    <legend>Key colours</legend>
+    @foreach (HexColourSetting key in Scheme == ThemeScheme.Light ? CustomTheme.LightKeys : CustomTheme.DarkKeys)
+    {
+        @if (key.WorkedOutWhenEmpty)
+        {
+            <ColourField Label="@key.Label" Value="@Draft.Values[key.Key]" WorkedOut="@DarkWorkedOut(key)" ValueChanged="value => SetAsync(key, value)" OnReset="() => SetAsync(key, string.Empty)" />
+        }
+        else
+        {
+            <ColourField Label="@key.Label" Value="@Draft.Values[key.Key]" WorkedOut="@key.DefaultText" ValueChanged="value => SetAsync(key, value)" />
+        }
+    }
+</fieldset>
+
+@if (Problems.Count > 0)
+{
+    <Notice Tone="NoticeTone.Warning" Text="@($"{(Problems.Count == 1 ? "A colour set by hand makes" : $"{Problems.Count} colours set by hand make")} text hard to read in {(Scheme == ThemeScheme.Light ? "light" : "dark")} mode, so this theme can't be saved yet. It's marked under Advanced.")" />
+}
+
+<div class="theme-editor__advanced">
+    <button type="button" class="theme-editor__disclose" aria-expanded="@(_advanced ? "true" : "false")" @onclick="() => _advanced = !_advanced">
+        <Icon Name="@(_advanced ? "chevron-down" : "chevron-right")" Size="IconSize.Small" />
+        <span>Advanced: every colour</span>
+        <span class="theme-editor__count">@(OverrideCount == 0 ? "all worked out" : OverrideCount == 1 ? "1 set by hand" : $"{OverrideCount} set by hand")</span>
+    </button>
+    @if (_advanced)
+    {
+    <p class="theme-editor__lead">Each colour is worked out from the key colours. Set one here to override it; the arrow puts it back.</p>
+    @foreach (ThemeRole role in ThemeDerivation.Editable)
+    {
+        string key = ColourOverridesSetting.RoleKey(Scheme, role.Key);
+        <ColourField Label="@role.Label" Value="@Overrides.GetValueOrDefault(key)" WorkedOut="@WorkedOut(role.Key)"
+                     ValueChanged="value => SetOverrideAsync(key, value)" OnReset="() => SetOverrideAsync(key, null)" Problem="@ProblemFor(role.Key)" />
+    }
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public ThemeScheme Scheme { get; set; }
+    [Parameter] public EventCallback<ThemeScheme> SchemeChanged { get; set; }
+
+    private bool _advanced;
+
+    protected override void OnParametersSet()
+    {
+        if (Problems.Count > 0)
+            _advanced = true;
+    }
+
+    private static readonly IReadOnlyList<SegmentOption<ThemeScheme>> Schemes =
+        [new(ThemeScheme.Light, "Light", "sun"), new(ThemeScheme.Dark, "Dark", "moon")];
+
+    private SettingValues Values => new(Draft.Values);
+
+    private IReadOnlyDictionary<string, string> Overrides => Values.Get(CustomTheme.Overrides);
+
+    private int OverrideCount => Overrides.Keys.Count(key => key.StartsWith(ColourOverridesSetting.RoleKey(Scheme, ""), StringComparison.Ordinal));
+
+    private IReadOnlyList<ThemeProblem> Problems =>
+        ThemeDerivation.ProblemsOf(CustomTheme.SpecOf(Values)).Where(problem => problem.Scheme == Scheme).ToList();
+
+    private string? ProblemFor(string role) =>
+        Problems.FirstOrDefault(problem => problem.TextRole == role || (problem.BackgroundRole == role && Overrides.ContainsKey(ColourOverridesSetting.RoleKey(Scheme, role)))) is { } problem
+            ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Hard to read on {Label(problem.BackgroundRole == role ? problem.TextRole : problem.BackgroundRole)}: {problem.Contrast:0.0}:1, it needs {ThemeDerivation.ReadableText}:1.")
+            : null;
+
+    private static string Label(string role) => ThemeDerivation.Editable.FirstOrDefault(known => known.Key == role)?.Label.ToLowerInvariant() ?? role;
+
+    private string DarkWorkedOut(HexColourSetting key)
+    {
+        Dictionary<string, string> unset = new(Draft.Values);
+        foreach (HexColourSetting dark in CustomTheme.DarkKeys)
+            unset[dark.Key] = "";
+        ThemeKeys worked = CustomTheme.DarkKeysOf(new SettingValues(unset));
+        return CustomTheme.DarkKeys.ToList().IndexOf(key) switch
+        {
+            0 => worked.Masthead,
+            1 => worked.Primary,
+            2 => worked.Accent,
+            3 => worked.Marker,
+            _ => worked.Tint,
+        };
+    }
+
+    private string WorkedOut(string role)
+    {
+        ThemeSpec spec = CustomTheme.SpecOf(Values);
+        ThemeSpec derived = spec with { LightOverrides = new Dictionary<string, string>(), DarkOverrides = new Dictionary<string, string>() };
+        return derived.Roles(Scheme)[role];
+    }
+
+    private Task SetAsync(Setting setting, string value)
+    {
+        Draft.Values[setting.Key] = value;
+        return Changed.InvokeAsync();
+    }
+
+    private Task SetOverrideAsync(string key, string? value)
+    {
+        Dictionary<string, string> overrides = new(Overrides);
+        if (value is null)
+            overrides.Remove(key);
+        else
+            overrides[key] = value;
+        return SetAsync(CustomTheme.Overrides, CustomTheme.Overrides.Format(overrides));
+    }
+}

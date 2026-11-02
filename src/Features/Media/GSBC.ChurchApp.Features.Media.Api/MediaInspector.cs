@@ -43,6 +43,10 @@ internal static class MediaInspector
         "image/gif" => header.StartsWith("GIF8"u8),
         "image/webp" => header.StartsWith("RIFF"u8) && header.Length >= 12 && header[8..12].SequenceEqual("WEBP"u8),
         "application/pdf" => header.StartsWith("%PDF-"u8),
+        "font/woff2" => header.StartsWith("wOF2"u8),
+        "font/woff" => header.StartsWith("wOFF"u8),
+        "font/ttf" => header.StartsWith((ReadOnlySpan<byte>)[0x00, 0x01, 0x00, 0x00]) || header.StartsWith("true"u8),
+        "font/otf" => header.StartsWith("OTTO"u8),
         _ => false,
     };
 }

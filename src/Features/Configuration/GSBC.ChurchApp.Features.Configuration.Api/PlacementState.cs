@@ -1,6 +1,7 @@
 using System.Text.Json;
 using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 namespace GSBC.ChurchApp.Features.Configuration.Api;
 
@@ -18,6 +19,13 @@ internal sealed record PlacementState(
     public static PlacementState Of(Placement placement) =>
         new(placement.Surface, placement.Order, placement.Hidden, placement.Audience.Trim(), AsUtc(placement.StartsAt), AsUtc(placement.EndsAt),
             new(placement.Values.GroupBy(value => value.Key).ToDictionary(group => group.Key, group => group.Last().Value)));
+
+    public static PlacementState Of(StoredPlacement placement) =>
+        new(placement.Surface, placement.Order, placement.Hidden, placement.Audience.Trim(), AsUtc(placement.StartsAt), AsUtc(placement.EndsAt),
+            new(placement.Values.ToDictionary()));
+
+    public StoredPlacement ToStored(Guid id, long revision) =>
+        new(id.ToString(), Surface, Order, Hidden, Audience, StartsAt, EndsAt, Values, revision);
 
     public void ApplyTo(PlacementRecord record)
     {

@@ -13,6 +13,7 @@ public static class MediaClientExtensions
         return services
             .AddSingleton(provider => new MediaClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
             .AddSingleton<IPrivateMediaLinks, PrivateMediaLinks>()
+            .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<MediaClient>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))
             .AddSingleton(new MediaPicker(typeof(MediaLibrary)))
             .AddSingleton<IClientStartupTask, PrivateMediaGuard>();
     }

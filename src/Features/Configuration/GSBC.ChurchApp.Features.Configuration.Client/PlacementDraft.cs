@@ -4,7 +4,7 @@ using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 namespace GSBC.ChurchApp.Features.Configuration.Client;
 
-internal sealed class PlacementDraft
+public sealed class PlacementDraft
 {
     private PlacementDraft(Surface surface) => Surface = surface;
 
@@ -47,6 +47,13 @@ internal sealed class PlacementDraft
                 problems.Add("The last day can't be before the first.");
             return problems;
         }
+    }
+
+    public StoredPlacement ToStored(string id)
+    {
+        Placement message = ToMessage();
+        message.Id = id;
+        return message.ToStored();
     }
 
     public Placement ToMessage() => new()

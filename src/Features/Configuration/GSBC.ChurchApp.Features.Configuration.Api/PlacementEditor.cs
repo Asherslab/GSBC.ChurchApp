@@ -17,37 +17,12 @@ namespace GSBC.ChurchApp.Features.Configuration.Api;
 internal sealed class PlacementEditor(
     ConfigurationDbContext db, SurfaceCatalog surfaces, PermissionCatalog permissions, IAccessEvaluator access, IMediaReferences media, TimeProvider time)
 {
+    public const string EventLayerHistory = "event-layer";
     private const int HistoryBatches = 50;
 
     public async Task<AreaPlacements> GetAreaAsync(ClaimsPrincipal caller, AreaQuery query, CancellationToken cancellationToken)
     {
         (SurfaceArea area, string? scopeId) = await AuthoriseAsync(caller, query.Area, query.ScopeId, cancellationToken);
-        return await PlacementsAsync(area, scopeId, cancellationToken);
-    }
-
-    public async Task<AreaPlacements> SaveAsync(ClaimsPrincipal caller, SaveRequest request, CancellationToken cancellationToken)
-    {
-        (SurfaceArea area, string? scopeId) = await AuthoriseAsync(caller, request.Area, request.ScopeId, cancellationToken);
-        List<PlacementRecord> existing = await InArea(area, scopeId).ToListAsync(cancellationToken);
-        List<Change> changes = [];
-
-        foreach (Placement placement in request.Placements)
-        {
-            Surface surface = SurfaceIn(area, placement.Surface);
-            PlacementState after = await ValidatedAsync(surface, PlacementState.Of(placement), cancellationToken);
-            PlacementRecord record = string.IsNullOrEmpty(placement.Id)
-                ? Create(area, scopeId, surface, Guid.CreateVersion7(), existing)
-                : Current(existing, placement.Id, placement.Revision, surface);
-            changes.Add(new Change(record, record.Revision == 0 ? null : PlacementState.Of(record), after));
-        }
-
-        foreach (PlacementReference removed in request.Removed)
-        {
-            PlacementRecord record = Current(existing, removed.Id, removed.Revision, surface: null);
-            changes.Add(new Change(record, PlacementState.Of(record), null));
-        }
-
-        await CommitAsync(area, scopeId, CallerId(caller), changes, rollsBack: null, cancellationToken);
         return await PlacementsAsync(area, scopeId, cancellationToken);
     }
 
@@ -74,6 +49,7 @@ internal sealed class PlacementEditor(
                     At = batch.First().At,
                     By = batch.First().By.ToString(),
                     RollsBack = batch.First().RollsBack?.ToString(),
+                    DraftName = batch.First().DraftName,
                     Changes = batch.Select(change => new PlacementChange
                     {
                         PlacementId = change.PlacementId.ToString(),
@@ -89,39 +65,43 @@ internal sealed class PlacementEditor(
     public async Task<AreaPlacements> RollBackAsync(ClaimsPrincipal caller, RollBackRequest request, CancellationToken cancellationToken)
     {
         Guid batchId = ParseId(request.BatchId);
-        List<ChangeRecord> batch = await db.Changes.AsNoTracking().Where(change => change.BatchId == batchId).ToListAsync(cancellationToken);
+        List<ChangeRecord> batch = await db.Changes.AsNoTracking()
+            .Where(change => change.BatchId == batchId && change.Area != EventLayerHistory)
+            .ToListAsync(cancellationToken);
         if (batch.Count == 0)
             throw new RpcException(new Status(StatusCode.NotFound, "That change isn't in the history."));
 
-        (SurfaceArea area, string? scopeId) = await AuthoriseAsync(caller, batch[0].Area, batch[0].ScopeId, cancellationToken);
-        List<PlacementRecord> existing = await InArea(area, scopeId).ToListAsync(cancellationToken);
         List<Change> changes = [];
-
-        foreach (ChangeRecord change in batch)
+        foreach (IGrouping<(string Area, string? ScopeId), ChangeRecord> inArea in batch.GroupBy(change => (change.Area, change.ScopeId)))
         {
-            PlacementState? target = PlacementState.FromJson(change.Before);
-            PlacementRecord? record = existing.SingleOrDefault(placement => placement.Id == change.PlacementId);
-            if (target is null)
+            (SurfaceArea area, string? scopeId) = await AuthoriseAsync(caller, inArea.Key.Area, inArea.Key.ScopeId, cancellationToken, publishing: true);
+            List<PlacementRecord> existing = await InArea(area, scopeId).ToListAsync(cancellationToken);
+            foreach (ChangeRecord change in inArea)
             {
-                if (record is not null)
-                    changes.Add(new Change(record, PlacementState.Of(record), null));
-                continue;
-            }
+                PlacementState? target = PlacementState.FromJson(change.Before);
+                PlacementRecord? record = existing.SingleOrDefault(placement => placement.Id == change.PlacementId);
+                if (target is null)
+                {
+                    if (record is not null)
+                        changes.Add(new Change(record, PlacementState.Of(record), null));
+                    continue;
+                }
 
-            Surface surface = surfaces.ByKey.TryGetValue(target.Surface, out Surface? known) && known.Area.Key == area.Key
-                ? known
-                : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{target.Surface}' isn't in this version of the app any more."));
-            PlacementState after = await ValidatedAsync(surface, target, cancellationToken);
-            record ??= Create(area, scopeId, surface, change.PlacementId, existing);
-            changes.Add(new Change(record, record.Revision == 0 ? null : PlacementState.Of(record), after));
+                Surface surface = surfaces.ByKey.TryGetValue(target.Surface, out Surface? known) && known.Area.Key == area.Key
+                    ? known
+                    : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{target.Surface}' isn't in this version of the app any more."));
+                PlacementState after = await ValidatedAsync(surface, target, cancellationToken);
+                record ??= Create(area, scopeId, surface, change.PlacementId, existing);
+                changes.Add(new Change(record, record.Revision == 0 ? null : PlacementState.Of(record), after));
+            }
         }
 
-        await CommitAsync(area, scopeId, CallerId(caller), changes, rollsBack: batchId, cancellationToken);
-        return await PlacementsAsync(area, scopeId, cancellationToken);
+        await CommitAsync(CallerId(caller), changes, rollsBack: batchId, draft: null, cancellationToken);
+        return new AreaPlacements();
     }
 
-    private async Task<(SurfaceArea Area, string? ScopeId)> AuthoriseAsync(
-        ClaimsPrincipal caller, string areaKey, string? requestedScope, CancellationToken cancellationToken)
+    public async Task<(SurfaceArea Area, string? ScopeId)> AuthoriseAsync(
+        ClaimsPrincipal caller, string areaKey, string? requestedScope, CancellationToken cancellationToken, bool publishing = false)
     {
         if (!surfaces.Areas.TryGetValue(areaKey, out SurfaceArea? area))
             throw new RpcException(new Status(StatusCode.NotFound, $"There's no area '{areaKey}' to arrange."));
@@ -132,13 +112,15 @@ internal sealed class PlacementEditor(
         if (area.ScopeKind != ScopeKind.Global && scopeId is null)
             throw Invalid($"Choose which {area.ScopeKind.Name} to arrange.");
 
-        if (!await access.IsAllowedAsync(caller, area.EditPermission.Node, scopeId, cancellationToken))
-            throw new RpcException(new Status(StatusCode.PermissionDenied, $"You can't arrange {area.Title}."));
+        Permission needed = publishing ? area.PublishPermission : area.EditPermission;
+        if (!await access.IsAllowedAsync(caller, needed.Node, scopeId, cancellationToken))
+            throw new RpcException(new Status(StatusCode.PermissionDenied,
+                publishing ? $"You can't put changes to {area.Title} out to everyone. Ask someone who can publish it." : $"You can't arrange {area.Title}."));
 
         return (area, scopeId);
     }
 
-    private async Task<PlacementState> ValidatedAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
+    public async Task<PlacementState> ValidatedAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
     {
         PlacementState claimed = Validated(surface, state);
         List<(Setting Setting, IHoldsMedia Holder)> holders = MediaHolders(surface);
@@ -159,7 +141,7 @@ internal sealed class PlacementEditor(
     private static List<(Setting Setting, IHoldsMedia Holder)> MediaHolders(Surface surface) =>
         surface.Settings.OfType<IHoldsMedia>().Select(holder => ((Setting)holder, holder)).ToList();
 
-    private IReadOnlyList<MediaRef> MediaOf(string surfaceKey, PlacementState? state) =>
+    public IReadOnlyList<MediaRef> MediaOf(string surfaceKey, PlacementState? state) =>
         state is null || !surfaces.ByKey.TryGetValue(surfaceKey, out Surface? surface)
             ? []
             : MediaHolders(surface).SelectMany(field => field.Holder.MediaIn(state.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
@@ -180,7 +162,7 @@ internal sealed class PlacementEditor(
         return problems.Count == 0 ? state with { Audience = audience!.Text } : throw Invalid(string.Join(" ", problems));
     }
 
-    private PlacementRecord Create(SurfaceArea area, string? scopeId, Surface surface, Guid id, List<PlacementRecord> existing)
+    public PlacementRecord Create(SurfaceArea area, string? scopeId, Surface surface, Guid id, List<PlacementRecord> existing)
     {
         if (!surface.Repeatable && existing.Any(placement => placement.Surface == surface.Key))
             throw Conflict(surface.Title);
@@ -198,19 +180,7 @@ internal sealed class PlacementEditor(
         return record;
     }
 
-    private static PlacementRecord Current(List<PlacementRecord> existing, string id, long revision, Surface? surface)
-    {
-        Guid placementId = ParseId(id);
-        PlacementRecord record = existing.SingleOrDefault(placement => placement.Id == placementId) ?? throw Conflict(surface?.Title ?? "it");
-        if (record.Revision != revision)
-            throw Conflict(surface?.Title ?? record.Surface);
-        if (surface is not null && record.Surface != surface.Key)
-            throw Invalid("A placement can't change which surface it is.");
-        return record;
-    }
-
-    private async Task CommitAsync(
-        SurfaceArea area, string? scopeId, Guid actor, List<Change> changes, Guid? rollsBack, CancellationToken cancellationToken)
+    public async Task<Guid> CommitAsync(Guid actor, List<Change> changes, Guid? rollsBack, DraftRecord? draft, CancellationToken cancellationToken)
     {
         Guid batchId = Guid.CreateVersion7();
         DateTime now = time.GetUtcNow().UtcDateTime;
@@ -236,8 +206,8 @@ internal sealed class PlacementEditor(
             {
                 Id = Guid.CreateVersion7(),
                 BatchId = batchId,
-                Area = area.Key,
-                ScopeId = scopeId,
+                Area = record.Area,
+                ScopeId = record.ScopeId,
                 PlacementId = record.Id,
                 Surface = record.Surface,
                 Before = before?.ToJson(),
@@ -245,6 +215,8 @@ internal sealed class PlacementEditor(
                 At = now,
                 By = actor,
                 RollsBack = rollsBack,
+                DraftId = draft?.Id,
+                DraftName = draft?.Name,
             });
             db.FeedChanges.Add(FeedChangeOf(record, deleted: after is null));
         }
@@ -264,11 +236,12 @@ internal sealed class PlacementEditor(
 
         foreach ((PlacementRecord record, _, PlacementState? after) in changes.Where(change => HoldsMedia(change.Record.Surface)))
             await media.UseAsync(MediaOwner(record.Id), MediaOf(record.Surface, after), cancellationToken);
+        return batchId;
     }
 
     private static string MediaOwner(Guid placementId) => $"config.placement/{placementId}";
 
-    private static FeedChangeRecord FeedChangeOf(PlacementRecord record, bool deleted) => new()
+    public static FeedChangeRecord FeedChangeOf(PlacementRecord record, bool deleted) => new()
     {
         Feed = ConfigurationFeeds.Placements,
         RecordId = record.Id.ToString(),
@@ -280,10 +253,10 @@ internal sealed class PlacementEditor(
         ScopeId = record.ScopeId,
     };
 
-    private static byte[] Encode(Placement placement)
+    public static byte[] Encode<T>(T message)
     {
         using MemoryStream stream = new();
-        ConfigurationContractsModel.Instance.Serialize(stream, placement);
+        ConfigurationContractsModel.Instance.Serialize(stream, message);
         return stream.ToArray();
     }
 
@@ -294,15 +267,15 @@ internal sealed class PlacementEditor(
             .ToList(),
     };
 
-    private IQueryable<PlacementRecord> InArea(SurfaceArea area, string? scopeId) =>
+    public IQueryable<PlacementRecord> InArea(SurfaceArea area, string? scopeId) =>
         db.Placements.Where(placement => placement.Area == area.Key && placement.ScopeId == scopeId);
 
-    private Surface SurfaceIn(SurfaceArea area, string key) =>
+    public Surface SurfaceIn(SurfaceArea area, string key) =>
         surfaces.ByKey.TryGetValue(key, out Surface? surface) && surface.Area.Key == area.Key
             ? surface
             : throw Invalid($"'{key}' can't be placed in {area.Title}.");
 
-    private static Placement ToMessage(PlacementRecord record)
+    public static Placement ToMessage(PlacementRecord record)
     {
         Placement message = PlacementState.Of(record).ToMessage(record.Id, record.Area, record.ScopeId);
         message.Revision = record.Revision;
@@ -311,16 +284,16 @@ internal sealed class PlacementEditor(
         return message;
     }
 
-    private static Guid CallerId(ClaimsPrincipal caller) =>
+    public static Guid CallerId(ClaimsPrincipal caller) =>
         Caller.UserId(caller) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in again."));
 
-    private static Guid ParseId(string id) =>
+    public static Guid ParseId(string id) =>
         Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("That isn't a valid id.");
 
-    private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
+    public static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 
-    private static RpcException Conflict(string what) =>
+    public static RpcException Conflict(string what) =>
         new(new Status(StatusCode.Aborted, $"Someone else changed {what} while you were editing. Reload to see their change."));
 
-    private sealed record Change(PlacementRecord Record, PlacementState? Before, PlacementState? After);
+    public sealed record Change(PlacementRecord Record, PlacementState? Before, PlacementState? After);
 }

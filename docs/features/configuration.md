@@ -72,21 +72,19 @@ transaction, so Sync's trigger announces it to every open phone.
 
 `gsbc.config.Configuration`, every method `[SignedIn]` with the area's permission checked in the method
 (the node depends on the area, so it can't be a static `[Requires]`):
-`GetArea`, `Save` (one batch for one area and scope: placements to create or change, and placements to
-remove, which puts a surface back to its default or deletes a repeatable one), `ListChanges` and
-`RollBack`. A change based on an old revision, or a second copy of a non-repeatable surface, is
+`GetArea`, `ListChanges` and `RollBack` (undoing a published draft, which needs the publish permission
+for every area in it). Changes are made through `gsbc.config.Drafts` ([drafts.md](../architecture/drafts.md)). A change based on an old revision, or a second copy of a non-repeatable surface, is
 refused with `Aborted` ("someone else changed this"), and the editor reloads.
 
 Management reads go over gRPC, like Access's screens; only the phone's display reads the store.
 
 ## The editor
 
-`SurfaceEditor` (Configuration.Client) renders any area from its descriptors: a row per surface, with
-show or hide, move up and down, then the settings form (one input per field kind), audience and dates,
-and "needs app version X" where it applies. It's the page `configure/{area}` (and
-`configure/{area}/{scope}`) in both the app and the admin panel, shown in navigation to those who hold
-the Hub's permission. Other features link to it by route rather than embedding it, since they can't
-reference Configuration.
+The drafts workbench (`DraftsWorkspace`, Configuration.Client) renders any area from its descriptors: a
+row per surface, with show or hide, move up and down where the area's order matters, then the settings
+form (one input per field kind), audience and dates, and "needs app version X" where it applies. It's
+the page `drafts` (`drafts?area={key}` opens on an area) in both the app and the admin panel. Other
+features link to it by route rather than embedding it, since they can't reference Configuration.
 
 ## The first consumer
 
@@ -96,10 +94,10 @@ campaign. Home itself isn't built yet; when it is, it reads `ISurfaceLayout.ForA
 
 ## The second consumer
 
-The app's **theme** (`app.appearance`, one `app.theme` surface with a palette choice): staff choose the
-church's brand or the yearly theme for everyone, and the phone applies it live. See
-[data-driven.md](../architecture/data-driven.md), *Themes*. It is "Colours" in the admin panel's
-navigation and "Colours for everyone" under More in the app.
+The app's **theme** (`app.appearance`: an `app.theme` surface with a palette choice, and repeatable
+`app.custom-theme` surfaces for themes staff make): staff choose the church's brand, the yearly theme
+or one they made, for everyone, and the phone applies it live. See
+[data-driven.md](../architecture/data-driven.md), *Themes*. It's edited under Colours in a draft.
 
 ## Status (2026-11-02)
 
@@ -108,14 +106,19 @@ navigation and "Colours for everyone" under More in the app.
 per-area permissions, revisions, audit and rollback, and the `config.placements` feed; the editor and
 its Arrange page in the app and the admin panel; the Hub area with its link tile. Tested by
 `Features.Configuration.Api.Tests` (Postgres) and `SurfaceLayoutTests` in Platform.Contracts.Tests.
-Not yet run end to end through the AppHost or on a phone.
+
+**Built 2026-11-02: drafts, the event layer and previews** ([drafts.md](../architecture/drafts.md),
+*Status*). Every edit is made in a draft: the service's direct `Save` is gone, replaced by
+`gsbc.config.Drafts`, and publishing needs the area's publish permission (`config.hub.publish`,
+`config.appearance.publish`). The separate "Home screen" and "Colours" pages are gone (owner,
+2026-11-03): Drafts shows what everyone sees, its history and *Undo*. Run end to end
+through the AppHost and on the owner's iPhone.
 
 **Open:**
 
-- **Drafts, the event layer and previews** ([drafts.md](../architecture/drafts.md)): decided
-  2026-11-02, next to build. Every edit moves into a draft.
-
-- **Home renders it.** Nothing draws Hub tiles yet; Home reads `ISurfaceLayout` when it's built.
+- **Home renders it properly.** Home lists the Hub's link tiles through `HomeScreen` and
+  `SurfaceViews` (Platform.Ui), which the admin preview shares; build Home on those
+  ([drafts.md](../architecture/drafts.md), *Decided while building*).
 - **The phone holds no grants yet:** Access.Client isn't in the app, so "signed in" and
   permission audiences are hidden there, and the Arrange entry doesn't show, until Access joins the app
   (with its private grants feed, [access.md](access.md)).
@@ -123,7 +126,8 @@ Not yet run end to end through the AppHost or on a phone.
   shown as "only people with a particular permission"): picking one needs the plain-language
   permissions from Access's *Usability comes first*.
 - **Ministry modules:** Ministries declares its area (`ministries.modules.edit` per ministry) and its
-  module surfaces, and links its settings page to `configure/ministry.modules/{id}`.
+  module surfaces, and links its settings page to Drafts on that area, once the workbench handles
+  areas scoped to one ministry (open, [drafts.md](../architecture/drafts.md)).
 - **Feed writes by hand:** the editor adds its `sync.feed_changes` rows itself, in the same
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible
   to forget; do it when a second feature writes a feed.

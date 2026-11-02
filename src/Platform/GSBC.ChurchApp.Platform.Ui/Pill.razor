@@ -1,0 +1,14 @@
+<span class="pill @ToneClass">@if (Icon is not null){<Icon Name="@Icon" Size="IconSize.Small" />}@ChildContent</span>
+
+@code {
+    [Parameter] public PillTone Tone { get; set; } = PillTone.Marker;
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string ToneClass => Tone switch
+    {
+        PillTone.Accent => "pill--accent",
+        PillTone.Masthead => "pill--masthead",
+        _ => "",
+    };
+}

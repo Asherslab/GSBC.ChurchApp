@@ -1,0 +1,18 @@
+<div class="workbench @(Narrow ? "workbench--narrow" : "") @(Detail is null ? "workbench--no-detail" : "")" data-showing="@Showing.ToString().ToLowerInvariant()">
+    <aside class="workbench__aside" aria-label="@AsideLabel">@Aside</aside>
+    <section class="workbench__main">@ChildContent</section>
+    @if (Detail is not null)
+    {
+        <aside class="workbench__detail" aria-label="@DetailLabel">@Detail</aside>
+    }
+</div>
+
+@code {
+    [Parameter] public RenderFragment? Aside { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Detail { get; set; }
+    [Parameter] public string AsideLabel { get; set; } = "List";
+    [Parameter] public string DetailLabel { get; set; } = "Details";
+    [Parameter] public bool Narrow { get; set; }
+    [Parameter] public WorkbenchPane Showing { get; set; } = WorkbenchPane.Main;
+}

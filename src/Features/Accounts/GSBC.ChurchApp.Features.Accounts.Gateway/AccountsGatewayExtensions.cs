@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Threading.RateLimiting;
 using GSBC.ChurchApp.Features.Accounts.Data;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -15,6 +16,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Gateway;
 public static class AccountsGatewayExtensions
 {
     private const string SessionCookie = "__Host-gsbc-session";
+    private const string EitherSession = "Session";
 
     public static IServiceCollection AddAccountsGateway(this IServiceCollection services, IConfiguration configuration)
     {
@@ -26,7 +28,14 @@ public static class AccountsGatewayExtensions
         services.AddSingleton<ApiTokenIssuer>();
 
         services
-            .AddAuthentication(IdentityConstants.ApplicationScheme)
+            .AddAuthentication(options =>
+            {
+                options.DefaultScheme = IdentityConstants.ApplicationScheme;
+                options.DefaultAuthenticateScheme = EitherSession;
+            })
+            .AddPolicyScheme(EitherSession, "The browser's cookie or the app's session", policy => policy.ForwardDefaultSelector = context =>
+                context.Request.Headers.ContainsKey(AppSessions.Header) ? AppSessionHandler.SchemeName : IdentityConstants.ApplicationScheme)
+            .AddScheme<AuthenticationSchemeOptions, AppSessionHandler>(AppSessionHandler.SchemeName, null)
             .AddIdentityCookies();
         services
             .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
@@ -71,6 +80,7 @@ public static class AccountsGatewayExtensions
         proxy.AddTransforms(transforms => transforms.AddRequestTransform(transform =>
         {
             transform.ProxyRequest.Headers.Authorization = null;
+            transform.ProxyRequest.Headers.Remove(AppSessions.Header);
             string? token = transform.HttpContext.RequestServices.GetRequiredService<ApiTokenIssuer>().Issue(transform.HttpContext.User);
             if (token is not null)
                 transform.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);

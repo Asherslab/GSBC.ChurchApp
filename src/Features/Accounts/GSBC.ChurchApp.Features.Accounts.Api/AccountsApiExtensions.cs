@@ -30,6 +30,7 @@ public static class AccountsApiExtensions
     {
         endpoints.MapGrpcService<SessionService>();
         endpoints.MapGrpcService<AccountsService>();
+        endpoints.MapGrpcService<PhoneLinkService>();
         return endpoints;
     }
 }

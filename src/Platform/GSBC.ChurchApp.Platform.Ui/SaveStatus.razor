@@ -1,0 +1,29 @@
+<p class="save-status @(State == SaveState.Failed ? "save-status--failed" : "")" role="status" aria-live="polite">
+    @switch (State)
+    {
+        case SaveState.Saving or SaveState.Waiting:
+            <span class="spinner" aria-hidden="true"></span>
+            <span>Saving…</span>
+            break;
+        case SaveState.Failed:
+            <Icon Name="cloud-off" Size="IconSize.Small" />
+            <span>Couldn't save. Trying again by itself.</span>
+            <button type="button" class="save-status__retry" @onclick="Retry">Try now</button>
+            break;
+        default:
+            <Icon Name="check" Size="IconSize.Small" />
+            <span>@SavedText</span>
+            break;
+    }
+    @if (Detail is not null)
+    {
+        <span class="save-status__detail">· @Detail</span>
+    }
+</p>
+
+@code {
+    [Parameter] public SaveState State { get; set; }
+    [Parameter] public string SavedText { get; set; } = "Saved";
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public EventCallback Retry { get; set; }
+}

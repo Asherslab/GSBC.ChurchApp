@@ -14,6 +14,8 @@ public sealed class NativeBridge(IJSRuntime js)
         IsDevelopmentBuild = IsNative && await js.InvokeAsync<bool>("gsbcNative.isDevelopmentBuild");
     }
 
+    public ValueTask<bool> UseSessionAsync(string? secret) => js.InvokeAsync<bool>("gsbcNative.setSession", secret);
+
     public ValueTask<NativeUnaryResult> UnaryAsync(string method, byte[] request, CancellationToken cancellationToken) =>
         js.InvokeAsync<NativeUnaryResult>("gsbcNative.unary", cancellationToken, method, Convert.ToBase64String(request));
 }

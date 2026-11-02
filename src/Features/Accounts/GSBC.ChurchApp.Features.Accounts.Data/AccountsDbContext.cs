@@ -28,6 +28,7 @@ public sealed class AccountsDbContext(DbContextOptions<AccountsDbContext> option
             entity.HasKey(session => session.Id);
             entity.HasIndex(session => session.UserId);
             entity.Property(session => session.Client).HasConversion<string>();
+            entity.HasIndex(session => session.SecretHash).IsUnique();
         });
 
         modelBuilder.Entity<OneTimeCode>(entity =>

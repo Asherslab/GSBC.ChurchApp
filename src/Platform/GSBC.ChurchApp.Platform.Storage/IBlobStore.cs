@@ -20,6 +20,8 @@ public interface IBlobStore
 
     Task<Stream> OpenAsync(BlobBucket bucket, string key, CancellationToken cancellationToken);
 
+    Task PutAsync(BlobBucket bucket, string key, Stream content, BlobHeaders headers, CancellationToken cancellationToken);
+
     Task CopyAsync(BlobBucket fromBucket, string fromKey, BlobBucket toBucket, string toKey, BlobHeaders headers, CancellationToken cancellationToken);
 
     Task DeleteAsync(BlobBucket bucket, string key, CancellationToken cancellationToken);

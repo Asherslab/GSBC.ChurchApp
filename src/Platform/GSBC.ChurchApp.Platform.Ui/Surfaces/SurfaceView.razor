@@ -1,0 +1,7 @@
+@inject SurfaceViews Views
+
+@Views.For(Entry)
+
+@code {
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+}

@@ -18,8 +18,9 @@ public struct GrpcError: Error {
 }
 
 public struct GrpcWebTransport: Sendable {
-    public init(gateway: URL) {
+    public init(gateway: URL, sessionSecret: @escaping @Sendable () -> String? = { nil }) {
         self.gateway = gateway
+        self.sessionSecret = sessionSecret
     }
 
     public static let ok = 0
@@ -34,6 +35,8 @@ public struct GrpcWebTransport: Sendable {
     private static let streamIdleTimeout: TimeInterval = 90
 
     public let gateway: URL
+    private let sessionSecret: @Sendable () -> String?
+    public static let sessionHeader = "X-Gsbc-Session"
 
     public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
         let (data, response) = try await URLSession.shared.data(for: try request(method, message, headers))
@@ -95,6 +98,7 @@ public struct GrpcWebTransport: Sendable {
         request.setValue(Self.contentType, forHTTPHeaderField: "Content-Type")
         request.setValue(Self.contentType, forHTTPHeaderField: "Accept")
         request.setValue("1", forHTTPHeaderField: "X-Grpc-Web")
+        if let secret = sessionSecret() { request.setValue(secret, forHTTPHeaderField: Self.sessionHeader) }
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         request.httpBody = Self.frame(message)
         return request

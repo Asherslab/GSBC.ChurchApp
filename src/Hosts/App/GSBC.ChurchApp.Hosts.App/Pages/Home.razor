@@ -2,18 +2,14 @@
 @using GSBC.ChurchApp.Features.Accounts.Client
 @using GSBC.ChurchApp.Features.Accounts.Contracts
 @inject AccountsClient Accounts
+@using GSBC.ChurchApp.Platform.Client.Configuration
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@implements IDisposable
 @inject TimeProvider Clock
+@inject ISurfaceLayout Layout
 
 <Page Title="Good Shepherd">
-    <Masthead Title="Good Shepherd">
-        <p class="masthead__note"><DateLine At="Clock.GetUtcNow().UtcDateTime" /></p>
-        <div class="home-status"><SyncIndicator OnMasthead="true" /></div>
-    </Masthead>
-
-    <Section First="true">
-        <EmptyState Icon="home" Title="Home is on its way" Body="This Sunday, sermons and the week will show here as each part of the app is built." />
-    </Section>
-
+    <HomeScreen Shown="_tiles" At="Clock.GetUtcNow().UtcDateTime" Live="true">
     <Section Title="Connection">
         <ListGroup>
             <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()">
@@ -31,9 +27,29 @@
             </LiveData>
         </ListGroup>
     </Section>
+    </HomeScreen>
 </Page>
 
 @code {
+    private IReadOnlyList<ArrangedSurface> _tiles = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Layout.Changed += OnLayoutChanged;
+        await LoadTilesAsync();
+    }
+
+    private async Task LoadTilesAsync() =>
+        _tiles = await Layout.ShownAsync(HubSurfaces.Area);
+
+    private void OnLayoutChanged() => InvokeAsync(async () =>
+    {
+        await LoadTilesAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => Layout.Changed -= OnLayoutChanged;
+
     private static readonly RenderFragment Unreachable =
         @<ListRow Title="Can't reach the church's server" Subtitle="The app keeps showing what's on this phone and reconnects by itself." Icon="alert" IconTone="RowTone.Warm" />;
 }

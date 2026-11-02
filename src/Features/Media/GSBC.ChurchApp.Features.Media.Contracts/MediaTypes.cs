@@ -11,6 +11,21 @@ public static class MediaTypes
         ["image/webp"] = "webp",
         ["image/gif"] = "gif",
         ["application/pdf"] = "pdf",
+        ["font/woff2"] = "woff2",
+        ["font/woff"] = "woff",
+        ["font/ttf"] = "ttf",
+        ["font/otf"] = "otf",
+    };
+
+    public static bool IsFont(string contentType) => contentType.StartsWith("font/", StringComparison.OrdinalIgnoreCase);
+
+    public static string? FontTypeOf(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
+    {
+        ".woff2" => "font/woff2",
+        ".woff" => "font/woff",
+        ".ttf" => "font/ttf",
+        ".otf" => "font/otf",
+        _ => null,
     };
 
     public static IEnumerable<string> Accepted => ExtensionByType.Keys;

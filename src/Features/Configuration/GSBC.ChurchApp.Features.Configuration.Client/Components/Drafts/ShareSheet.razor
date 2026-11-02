@@ -1,0 +1,87 @@
+@inject IPeopleDirectory People
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Share \"{Draft.Name}\"")" Lead="They can preview it on their phone and watch it change as you edit. They can't change it.">
+    <ChildContent>
+        @if (Draft.SharedWith.Count > 0)
+        {
+            <ListGroup>
+                @foreach (string id in Draft.SharedWith)
+                {
+                    <ListRow Title="@Names.GetValueOrDefault(id, "Someone")" Icon="user">
+                        <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == id)" OnClick="() => ChangeAsync(id, OnUnshare)">Stop sharing</Button></TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        }
+        <TextField Label="Share with" Placeholder="Find someone by name" Value="@_query" ValueChanged="SearchAsync" AutoComplete="off" />
+        @if (_problem is not null)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+        @if (_found.Count > 0)
+        {
+            <ListGroup>
+                @foreach (PersonSummary person in _found.Where(person => !Draft.SharedWith.Contains(person.Id)))
+                {
+                    <ListRow Title="@person.Name" Subtitle="@person.Email" Icon="user">
+                        <TrailingContent><Button Variant="ButtonVariant.Primary" Small="true" Busy="@(_busy == person.Id)" OnClick="() => ChangeAsync(person.Id, OnShare)">Share</Button></TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        }
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => OpenChanged.InvokeAsync(false)">Done</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const int ShortestSearch = 2;
+
+    [Parameter, EditorRequired] public required Draft Draft { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> Names { get; set; } = new Dictionary<string, string>();
+    [Parameter] public EventCallback<string> OnShare { get; set; }
+    [Parameter] public EventCallback<string> OnUnshare { get; set; }
+
+    private string _query = "";
+    private string? _busy;
+    private string? _problem;
+    private IReadOnlyList<PersonSummary> _found = [];
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query;
+        _problem = null;
+        if (query.Trim().Length < ShortestSearch)
+        {
+            _found = [];
+            return;
+        }
+
+        try
+        {
+            IReadOnlyList<PersonSummary> found = await People.SearchAsync(query.Trim());
+            if (_query == query)
+                _found = found.Where(person => !person.Disabled).ToList();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.StatusCode == StatusCode.PermissionDenied ? "You can't look people up. Ask someone who manages people to share it." : exception.Status.Detail;
+        }
+    }
+
+    private async Task ChangeAsync(string id, EventCallback<string> change)
+    {
+        _busy = id;
+        try
+        {
+            await change.InvokeAsync(id);
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

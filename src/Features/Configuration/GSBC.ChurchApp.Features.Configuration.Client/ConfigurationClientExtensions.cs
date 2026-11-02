@@ -9,12 +9,13 @@ namespace GSBC.ChurchApp.Features.Configuration.Client;
 public static class ConfigurationClientExtensions
 {
     public static IServiceCollection AddConfigurationClient(this IServiceCollection services) =>
-        services.AddSingleton<ConfigurationClient>().AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
+        services.AddSingleton<ConfigurationClient>().AddSingleton<DraftsClient>().AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
 
     public static IServiceCollection AddLocalSurfaceLayout(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
         return services
+            .AddSingleton<IPreviewMode, DraftPreview>()
             .AddSingleton<ISurfaceLayout, LocalSurfaceLayout>()
             .AddMediaPrefetch(provider => PlacementMedia.Prefetch(provider.GetRequiredService<SurfaceCatalog>()));
     }

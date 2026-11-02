@@ -5,6 +5,7 @@
 @inject Appearance Appearance
 @inject IAccess Access
 @inject NativeBridge Bridge
+@inject GSBC.ChurchApp.Platform.Client.Configuration.ISurfaceLayout Layout
 
 <Page Title="Appearance" BackHref="more" BackLabel="More">
     <Masthead Title="Appearance" Note="How the app looks on this phone" />
@@ -17,11 +18,12 @@
     {
         <Section Title="Preview colours" Lead="Try a theme on this phone only. Everyone else keeps the colours chosen for the church.">
             <ListGroup>
-                @foreach (Choice palette in AppearanceSurfaces.Palettes)
+                @foreach (Choice palette in AppearanceSurfaces.Palettes.Concat(MadeThemes.Select(made => new Choice(made.Palette, made.Spec.Name))))
                 {
                     bool chosen = Appearance.Palette == palette.Value;
-                    <ListRow Title="@palette.Label" Subtitle="@(palette.Value == Appearance.StaffPalette ? "What everyone sees" : null)" OnClick="() => Appearance.PreviewAsync(palette.Value)">
-                        <Leading><span class="swatches" data-theme-swatch="@palette.Value" aria-hidden="true"><i></i><i></i><i></i></span></Leading>
+                    ThemeSpec? made = MadeThemes.FirstOrDefault(theme => theme.Palette == palette.Value)?.Spec;
+                    <ListRow Title="@palette.Label" Subtitle="@(palette.Value == Appearance.StaffPalette ? "What everyone sees" : made is not null ? "Made by the church" : null)" OnClick="() => Appearance.PreviewAsync(palette.Value, made)">
+                        <Leading><span class="swatches" data-theme-swatch="@palette.Value" style="@Swatches(made)" aria-hidden="true"><i></i><i></i><i></i></span></Leading>
                         <TrailingContent>
                             @if (chosen)
                             {
@@ -36,7 +38,7 @@
                 <div class="ui-actions ui-after">
                     <Button Variant="ButtonVariant.Quiet" OnClick="() => Appearance.PreviewAsync(null)">Stop previewing</Button>
                     <Can Permission="AppearanceSurfaces.Edit">
-                        <Button Variant="ButtonVariant.Primary" Href="@($"configure/{AppearanceSurfaces.Area.Key}")">Change for everyone</Button>
+                        <Button Variant="ButtonVariant.Primary" Href="@($"drafts?area={AppearanceSurfaces.Area.Key}")">Change for everyone</Button>
                     </Can>
                 </div>
             }
@@ -54,17 +56,40 @@
 
     private bool CanPreview => Access.Can(AppearanceSurfaces.Edit) || Bridge.IsDevelopmentBuild;
 
-    protected override void OnInitialized()
+    private sealed record MadeTheme(string Palette, ThemeSpec Spec);
+
+    private IReadOnlyList<MadeTheme> MadeThemes { get; set; } = [];
+
+    protected override async Task OnInitializedAsync()
     {
         Appearance.Changed += OnChanged;
         Access.Changed += OnChanged;
+        Layout.Changed += OnLayoutChanged;
+        await LoadMadeThemesAsync();
     }
 
+    private async Task LoadMadeThemesAsync() =>
+        MadeThemes = (await Layout.ShownAsync(AppearanceSurfaces.Area))
+            .Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
+            .Select(entry => new MadeTheme(ThemeChoiceSetting.Custom(entry.Placement!.Id), AppearanceSurfaces.CustomTheme.SpecOf(entry.Values)))
+            .ToList();
+
+    private static string? Swatches(ThemeSpec? made) => made is null
+        ? null
+        : $"--swatch-1: {made.Light.Masthead}; --swatch-2: {made.Light.Accent}; --swatch-3: {made.Light.Marker}";
+
     private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLayoutChanged() => InvokeAsync(async () =>
+    {
+        await LoadMadeThemesAsync();
+        StateHasChanged();
+    });
 
     public void Dispose()
     {
         Appearance.Changed -= OnChanged;
         Access.Changed -= OnChanged;
+        Layout.Changed -= OnLayoutChanged;
     }
 }

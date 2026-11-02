@@ -1,0 +1,12 @@
+@inject SurfaceViews Views
+
+<ListGroup>
+    @foreach (ArrangedSurface entry in Shown.Where(entry => Views.For(entry) is not null))
+    {
+        <SurfaceView Entry="entry" />
+    }
+</ListGroup>
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Shown { get; set; }
+}

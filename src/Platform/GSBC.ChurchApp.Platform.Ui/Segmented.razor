@@ -5,7 +5,7 @@
     @foreach (SegmentOption<TValue> option in Options)
     {
         bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
-        <button type="button" role="radio" aria-checked="@(selected ? "true" : "false")" @onclick="() => SelectAsync(option.Value)">
+        <button type="button" class="segmented__option" role="radio" aria-checked="@(selected ? "true" : "false")" @onclick="() => SelectAsync(option.Value)">
             @if (option.Icon is not null)
             {
                 <Icon Name="@option.Icon" Size="IconSize.Small" />

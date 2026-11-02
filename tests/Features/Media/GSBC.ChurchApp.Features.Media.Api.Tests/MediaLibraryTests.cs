@@ -164,6 +164,20 @@ public sealed class MediaLibraryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task OnlyPeopleTrustedWithFontLicencesCanUploadAFontFile()
+    {
+        ClaimsPrincipal staff = Person();
+        byte[] font = [.. "wOF2"u8, .. new byte[64]];
+
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => UploadAsync(staff, font, "font/woff2"));
+        _access.Grant(staff, MediaPermissions.UploadFontsNode, null);
+        MediaRef uploaded = await UploadAsync(staff, font, "font/woff2");
+
+        Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+        Assert.True(uploaded.IsFont);
+    }
+
+    [Fact]
     public async Task ASavedMediaRefIsTheLibrarysNeverTheClients()
     {
         MediaRef photo = await UploadAsync(Person(), Jpeg(seed: 4), "image/jpeg");

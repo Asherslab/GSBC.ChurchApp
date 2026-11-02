@@ -12,11 +12,34 @@ signed links from gRPC; [offline-and-caching.md](../architecture/offline-and-cac
 | `media.upload` | Upload an image (JPEG, PNG, WebP, GIF) or a PDF, public or private to an audience they belong to |
 | `media.view` | See the media library: every uploaded file, newest first, and where each is used |
 | `media.delete` | Delete a file nothing uses any more |
+| `media.upload` | Bring a font in from Google Fonts (free to use in the app), for a theme |
+| `media.fonts.upload` | Upload a font file (.woff2, .woff, .ttf, .otf): only fonts the church is licensed to embed in an app |
 | Anyone signed in | Get a link to a private file, **if they hold its audience right now** |
 | Anyone | See public media: it's a plain URL on the media host |
 
-The **Media editor** system role holds `media.*`. The library page is in the admin panel; the upload
+The **Media editor** system role holds `media.view`, `media.upload` and `media.delete`, not
+`media.fonts.upload`: a font file's licence is a separate judgement, given on its own (owner,
+2026-11-03). The library page is in the admin panel; the upload
 and library components live in Media.Client, so a phone page is a page change, not a rewrite.
+
+## Fonts (owner, 2026-11-03)
+
+Staff can use any font in a theme they make ([data-driven.md](../architecture/data-driven.md), *Themes*),
+for the masthead and for body text. A font is media like any other: public, content-addressed, cached
+on the phone, and held by the draft or theme that uses it, so it can't be deleted from under one.
+
+- **From Google Fonts** (`gsbc.media.Fonts`, gRPC): `Search` matches names in Google's public catalogue
+  (`fonts.google.com/metadata/fonts`, kept for a day); `Import` asks Google's CSS API for the family's
+  regular and bold Latin files, downloads them on the server, checks they're really WOFF2 and stores
+  them in the public bucket. A variable font's one file covers both weights. These are outbound calls,
+  not endpoints. If Google changes that catalogue's format, search breaks and nothing else does.
+- **Uploaded**, through the usual presigned upload, only with `media.fonts.upload`; a font is never
+  private, since everyone using the app downloads it.
+- **On screen**, a theme's font files become `@font-face` rules with a family name made from the
+  file's hash, never from the name staff typed.
+- **Production needs CORS on the public media host** for fonts, since browsers fetch `@font-face`
+  across origins with CORS (images don't need it). The phone is unaffected: it serves the stored copy
+  from its own origin. Dev's store already allows every origin.
 
 ## How an upload works
 

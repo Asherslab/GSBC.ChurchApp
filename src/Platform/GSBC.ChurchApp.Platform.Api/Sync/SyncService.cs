@@ -1,4 +1,6 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 using Grpc.Core;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
@@ -14,6 +16,7 @@ public sealed class SyncService(
 {
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan AudienceMarkResolution = TimeSpan.FromDays(1);
 
     public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
     {
@@ -69,12 +72,13 @@ public sealed class SyncService(
                 continue;
 
             bool behindHorizon = cursors[name] > 0 && cursors[name] < horizons.GetValueOrDefault(name);
+            bool audienceChanged = await AudienceChangedAsync(feed, user, cancellationToken) && cursors[name] > 0;
             FeedBatch batch;
             if (!await CanSeeFeedAsync(feed, user, cancellationToken))
             {
                 batch = new FeedBatch { Feed = feed.Name, Reset = true };
             }
-            else if (behindHorizon)
+            else if (behindHorizon || audienceChanged)
             {
                 batch = new FeedBatch { Feed = feed.Name, Reset = true, Cursor = 0, HasMore = true };
             }
@@ -134,6 +138,32 @@ public sealed class SyncService(
 
         return rows.Where(row => allowedByScope[row.ScopeId ?? ""]).ToList();
     }
+
+    private async Task<bool> AudienceChangedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        if (feed.Audience is not FeedAudience.PermissionAudience audience || Caller.SessionId(user) is not { } session || Caller.UserId(user) is not { } userId)
+            return false;
+
+        string fingerprint = Fingerprint(await access.GrantsForAsync(userId, cancellationToken), audience.Permission.Node);
+        AudienceMark? mark = await db.AudienceMarks.FindAsync([session, feed.Name], cancellationToken);
+        bool changed = mark is not null && mark.Fingerprint != fingerprint;
+        DateTime now = DateTime.UtcNow;
+        if (mark is not null && !changed && now - mark.SeenAt < AudienceMarkResolution)
+            return false;
+
+        if (mark is null)
+            db.AudienceMarks.Add(mark = new AudienceMark { SessionId = session, Feed = feed.Name, Fingerprint = fingerprint });
+        mark.Fingerprint = fingerprint;
+        mark.SeenAt = now;
+        await db.SaveChangesAsync(cancellationToken);
+        return changed;
+    }
+
+    private static string Fingerprint(GrantSet grants, string node) =>
+        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', grants.Grants
+            .Where(grant => grant.Pattern.Matches(node))
+            .Select(grant => $"{grant.Pattern}@{grant.Scope}")
+            .Order(StringComparer.Ordinal)))));
 
     private async Task<bool> CanSeeFeedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken) =>
         feed.Audience switch

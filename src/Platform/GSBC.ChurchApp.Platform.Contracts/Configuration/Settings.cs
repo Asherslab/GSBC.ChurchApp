@@ -142,3 +142,70 @@ public sealed class AudienceSetting(string key, string label, Audience? defaultV
 
     public override string? ProblemWith(string text) => TryParse(text, out _) ? null : $"{Label} isn't an audience.";
 }
+
+public sealed class HexColourSetting(string key, string label, string defaultValue, bool workedOutWhenEmpty = false, string help = "")
+    : Setting<string>(key, label, defaultValue, help)
+{
+    public bool WorkedOutWhenEmpty { get; } = workedOutWhenEmpty;
+
+    public override bool TryParse(string text, out string value)
+    {
+        value = text.ToLowerInvariant();
+        return (WorkedOutWhenEmpty && value.Length == 0) || Rgb.TryParse(value, out _);
+    }
+
+    public override string Format(string value) => value.ToLowerInvariant();
+
+    public override string? ProblemWith(string text) => TryParse(text, out _) ? null : $"{Label} must be a colour like #2a3d5e.";
+}
+
+public sealed class ColourOverridesSetting(string key, string label, string help = "")
+    : Setting<IReadOnlyDictionary<string, string>>(key, label, new Dictionary<string, string>(), help)
+{
+    private const char Separator = ';';
+    private const char Assign = '=';
+
+    public static string RoleKey(ThemeScheme scheme, string role) => $"{scheme.ToString().ToLowerInvariant()}.{role}";
+
+    public override bool TryParse(string text, out IReadOnlyDictionary<string, string> value)
+    {
+        Dictionary<string, string> overrides = [];
+        value = overrides;
+        foreach (string pair in text.Split(Separator, StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+        {
+            string[] parts = pair.Split(Assign, 2);
+            if (parts.Length != 2 || !IsRole(parts[0]) || !Rgb.TryParse(parts[1], out _))
+                return false;
+            overrides[parts[0]] = parts[1].ToLowerInvariant();
+        }
+        return true;
+    }
+
+    public override string Format(IReadOnlyDictionary<string, string> value) =>
+        string.Join(Separator, value.OrderBy(pair => pair.Key, StringComparer.Ordinal).Select(pair => $"{pair.Key}{Assign}{pair.Value}"));
+
+    public override string? ProblemWith(string text) => TryParse(text, out _) ? null : $"{Label} has a colour that isn't a theme colour like #2a3d5e.";
+
+    private static bool IsRole(string key) =>
+        Enum.GetValues<ThemeScheme>().Any(scheme => ThemeDerivation.Editable.Any(role => key == RoleKey(scheme, role.Key)));
+}
+
+public sealed class ThemeChoiceSetting(string key, string label, IReadOnlyList<Choice> builtIn, string defaultValue, string help = "")
+    : ChoiceSetting(key, label, builtIn, defaultValue, help)
+{
+    public const string CustomPrefix = "custom:";
+
+    public static string Custom(string placementId) => CustomPrefix + placementId;
+
+    public static bool IsCustom(string value, out string placementId)
+    {
+        placementId = value.StartsWith(CustomPrefix, StringComparison.Ordinal) ? value[CustomPrefix.Length..] : "";
+        return Guid.TryParse(placementId, out _);
+    }
+
+    public override bool TryParse(string text, out string value)
+    {
+        value = text;
+        return Choices.Any(choice => choice.Value == text) || IsCustom(text, out _);
+    }
+}

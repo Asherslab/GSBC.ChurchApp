@@ -23,6 +23,7 @@ window.gsbcNative = (() => {
       dataLayer().fetchMedia({ key, url, isPrivate }).then((result) => capacitor().convertFileSrc(result.path)),
     prefetchMedia: (json) => dataLayer().prefetchMedia({ items: JSON.parse(json) }).then((result) => result.fetched),
     clearPrivateMedia: () => dataLayer().clearPrivateMedia(),
+    setSession: (secret) => dataLayer().setSession({ secret }).then((result) => !!result.signedIn),
     listenOutbox: (receiver) => {
       dataLayer().addListener('outboxChanged', () => receiver.invokeMethodAsync('OnOutboxChanged'));
     },

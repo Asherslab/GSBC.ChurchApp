@@ -11,8 +11,7 @@ public static class ConfigurationAdminExtensions
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAdminExtensions).Assembly,
             [
-                new NavEntry("Home screen", $"configure/{HubSurfaces.Area.Key}", "layout", HubSurfaces.Edit),
-                new NavEntry("Colours", $"configure/{AppearanceSurfaces.Area.Key}", "palette", AppearanceSurfaces.Edit),
+                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit),
             ]));
         return services.AddConfigurationClient();
     }

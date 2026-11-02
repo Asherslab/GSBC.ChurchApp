@@ -1,0 +1,26 @@
+@inject TimeProvider Clock
+
+<SelectField Label="Phone" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
+<PhoneFrame Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"Home on an {_device.Name}, as a visitor sees it with this draft")">
+    <HomeScreen Shown="Shown" At="Now" />
+</PhoneFrame>
+<p class="phone-preview__note">Home as a visitor sees it today, drawn by the app's own screen. Your phone shows it live under Previews.</p>
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
+
+    private static readonly IReadOnlyList<FieldOption> Devices =
+        PhoneDevice.All.Select(device => new FieldOption(device.Name, $"{device.Name} · {device.Size} points")).ToList();
+
+    private PhoneDevice _device = PhoneDevice.IPhone15Pro;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private List<ArrangedSurface> Shown => Hub.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)).ToList();
+
+    [Parameter] public ThemeSpec? Theme { get; set; }
+    [Parameter] public ThemeScheme? Scheme { get; set; }
+
+    private AppearanceSurfaces.ChosenTheme Chosen => AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)));
+}

@@ -18,4 +18,6 @@ public sealed class MediaRef
     [ProtoMember(10)] public string FileName { get; set; } = "";
 
     [JsonIgnore] public bool IsImage => ContentType.StartsWith("image/", StringComparison.Ordinal);
+
+    [JsonIgnore] public bool IsFont => ContentType.StartsWith("font/", StringComparison.Ordinal);
 }

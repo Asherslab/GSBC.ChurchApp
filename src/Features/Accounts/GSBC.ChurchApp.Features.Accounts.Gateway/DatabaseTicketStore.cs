@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Security.Claims;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using Microsoft.AspNetCore.Authentication;
@@ -13,6 +14,7 @@ internal sealed class DatabaseTicketStore(IServiceScopeFactory scopes, TimeProvi
     public static readonly TimeSpan BrowserLifetime = TimeSpan.FromDays(14);
     private static readonly TimeSpan LastSeenResolution = TimeSpan.FromMinutes(5);
     private const int MaximumDeviceNameLength = 200;
+    private readonly ConcurrentDictionary<string, Task<AuthenticationTicket?>> _inFlight = new();
 
     public Task<string> StoreAsync(AuthenticationTicket ticket) => StoreAsync(ticket, null!, CancellationToken.None);
 
@@ -41,7 +43,23 @@ internal sealed class DatabaseTicketStore(IServiceScopeFactory scopes, TimeProvi
 
     public Task<AuthenticationTicket?> RetrieveAsync(string key) => RetrieveAsync(key, null!, CancellationToken.None);
 
-    public async Task<AuthenticationTicket?> RetrieveAsync(string key, HttpContext httpContext, CancellationToken cancellationToken)
+    public Task<AuthenticationTicket?> RetrieveAsync(string key, HttpContext httpContext, CancellationToken cancellationToken) =>
+        _inFlight.GetOrAdd(key, LookUpOnceAsync);
+
+    private async Task<AuthenticationTicket?> LookUpOnceAsync(string key)
+    {
+        await Task.Yield();
+        try
+        {
+            return await LookUpAsync(key);
+        }
+        finally
+        {
+            _inFlight.TryRemove(key, out _);
+        }
+    }
+
+    private async Task<AuthenticationTicket?> LookUpAsync(string key)
     {
         if (!Guid.TryParse(key, out Guid id))
             return null;
@@ -52,14 +70,14 @@ internal sealed class DatabaseTicketStore(IServiceScopeFactory scopes, TimeProvi
         var found = await db.Sessions
             .Where(session => session.Id == id && session.ExpiresAt > now)
             .Join(db.Users, session => session.UserId, user => user.Id, (session, user) => new { Session = session, user.Disabled })
-            .SingleOrDefaultAsync(cancellationToken);
+            .SingleOrDefaultAsync(CancellationToken.None);
         if (found is null || found.Disabled)
             return null;
 
         if (now - found.Session.LastSeenAt > LastSeenResolution)
         {
             found.Session.LastSeenAt = now;
-            await db.SaveChangesAsync(cancellationToken);
+            await db.SaveChangesAsync(CancellationToken.None);
         }
 
         return TicketSerializer.Default.Deserialize(found.Session.Ticket);

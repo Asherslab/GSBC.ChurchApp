@@ -21,7 +21,7 @@ final class DataLayerRuntime: @unchecked Sendable {
     private var wasOnline = true
 
     private init() {
-        transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0) }
+        transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0, sessionSecret: { SessionKeychain.read() }) }
         store = try? FeedStore(directory: Self.storeDirectory())
         let media = try? MediaCache(directory: Self.mediaDirectory())
         self.media = media

@@ -29,6 +29,12 @@ colors:
   night-ink-3: "#8a92a3"
   night-orange-ink: "#f0c493"
   night-line: "rgb(255 255 255 / 0.09)"
+  selected-fill: "#f4efe7"
+  fill-on-surface: "#f4efe7"
+  night-selected-fill: "#34446a"
+  night-fill-on-surface: "#26334f"
+  year-night-selected-fill: "#2f4335"
+  device-bezel: "#000000"
   year-green: "#4a7355"
   year-green-deep: "#3f6449"
   year-accent: "#3b6847"
@@ -249,6 +255,28 @@ components:
     backgroundColor: "{colors.white}"
     rounded: "22px 22px 0 0"
     padding: "10px 20px 20px"
+  row-selected:
+    backgroundColor: "{colors.selected-fill}"
+    rounded: "{rounded.field}"
+    padding: "0 12px"
+  tab-strip-tab:
+    textColor: "{colors.ink-3}"
+    typography: "{typography.label}"
+    height: "44px"
+  tab-strip-tab-active:
+    textColor: "{colors.ink}"
+  preview-banner:
+    backgroundColor: "{colors.orange}"
+    textColor: "#2a1a08"
+    typography: "{typography.caption}"
+    padding: "6px 8px 6px 20px"
+    height: "44px"
+  preview-banner-exit:
+    backgroundColor: "#2a1a08"
+    textColor: "{colors.orange}"
+    rounded: "{rounded.full}"
+    padding: "0 16px"
+    height: "36px"
   badge-count:
     backgroundColor: "{colors.orange}"
     textColor: "#2a1a08"
@@ -303,12 +331,16 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 - **Ink** (ink), **Ink 2** (ink-2), **Ink 3** (ink-3): headings and titles, then body prose and subtitles, then inactive tabs, hints and trailing metadata.
 - **Hairline** (line): row dividers, the section-tab bar's bottom edge, the tab bar's top edge, pressed-row fill.
 - **Danger** (danger): the failing status word on the device check; nowhere else.
+- **Selected Fill** (selected-fill): the chosen row in a list on the page, a tonal step (sand in light) rather than a shadow. Inside the sand drafts column the step goes the other way, to the segment colour (white in light), so the selected row still stands off its ground.
+- **Fill on Surface** (fill-on-surface): fields, quiet buttons and the segmented track inside the white settings panel; sand in light, strong sand in dark, so a sand fill never vanishes into a raised navy panel.
+- **Device Bezel** (device-bezel): the black ring and cutout of the phone frame; device hardware, never a UI colour.
 
 ### Dark scheme
 - **Night** (night) is the page; **Night Surface** (night-surface) doubles as sand, so callouts and the player become raised navy panels, with **Night Surface Strong** (night-surface-strong) for tracks and placeholders.
 - **Night Masthead** (night-masthead) keeps the masthead a step lighter than the page so it still reads as a masthead.
 - **Bright Aqua** (bright-aqua) replaces navy as primary and replaces both aqua roles, with **On Bright Aqua** (on-bright-aqua) as its text. Orange stays the marker; **Night Orange Ink** (night-orange-ink) carries orange text.
 - Warm off-white ink (night-ink, night-ink-2, night-ink-3) rather than pure white.
+- **Night Selected Fill** (night-selected-fill) is the selected row, the same raised step as a selected segment; Fill on Surface becomes **Night Fill on Surface** (night-fill-on-surface, the strong surface). Under the yearly palette in dark the selected row is **Year Night Selected Fill** (year-night-selected-fill) and fills on the panel use Year Night Surface Strong.
 
 ### 2026 yearly palette (staff's choice)
 - **Year Green** (year-green) replaces navy as the masthead and live colour; **Year Green Deep** (year-green-deep) is primary; **Year Accent** (year-accent) is the text-on-light action colour.
@@ -380,9 +412,13 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 ### Named Rules
 **The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow.
 
+**The Tonal Selection Rule.** A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border.
+
 ## Shapes
 
 Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles.
+
+The phone frame carries device geometry, not UI shapes: a 46px screen radius inside a 9px bezel ring, a Dynamic Island capsule (124 by 36px) or a notch (160 by 32px, its bottom corners at 20px). These match the hardware being drawn; they are not part of the radius scale and never appear on a UI box.
 
 The church mark appears only as a mask of the supplied artwork, recoloured with the current text colour: at 7% opacity bleeding off the masthead's right edge, at 10% inside fallback covers, and in the footer and boot screen.
 
@@ -403,6 +439,7 @@ Capsules with a firm press: they scale to 0.96 on press with an ease-out curve, 
 - **Passage chips:** 32px capsules in sand with deep-aqua text and a small open-book icon; tapping opens the passage in the in-app browser.
 - **Pill:** a small (0.7059rem, 700) capsule of orange at 28% with orange-ink text, for status such as "Later release".
 - **Pray button:** a 36px sand capsule that turns aqua when you are praying.
+- **Pill tones:** Marker (the default, orange as above) for "changed in this draft" and "changed for everyone since"; Accent (aqua at 16% with deep-aqua text) for a calm state; Masthead (solid masthead colour with white text) for the event layer. An optional small icon leads the label.
 
 ### Segmented control
 A sand track (12px radius, 3px inset) of equal segments; the selected segment is a white tile (9px radius) with the segment shadow. Used for Automatic, Light, Dark.
@@ -451,6 +488,17 @@ A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabbe
 ### Empty state
 Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an optional quiet button.
 
+### Admin workbench and drafts
+- **Workbench:** three panes in one view: a sand list column (280 to 340px, hairline right edge), a white work area (24 by 32px padding), and a detail pane (320 to 512px) whose content is a lifted white settings panel at the 14px radius. Under 1200px the detail drops beneath the work area; under 760px, or whenever it is asked to be narrow (the app's form), it becomes one column that shows a single pane at a time.
+- **Tab strip:** a wrapping row of label-weight tabs in ink-3, 22px apart and 44px tall, over a hairline; the selected tab turns ink with the 3px orange underline. A tab can carry a count in an orange capsule (tabular figures), and a trailing slot holds an add action in deep aqua. It is the static sibling of the section tabs: it switches what is shown, it does not scroll the page.
+- **Save status:** one caption line at 600 that is polite to screen readers: a small spinner and "Saving…", a deep-aqua check and "Saved", or, on failure, a cloud-off icon and "Couldn't save. Trying again by itself." in orange ink with an underlined "Try now". An optional detail follows in ink-3 after a middle dot.
+- **Selected row:** see the Tonal Selection Rule; the same treatment marks the chosen draft in the list and the chosen row in the work area.
+
+### Previews
+- **Preview banner:** an orange marker strip docked just above the tab bar on every screen while a preview is on: an eye icon, the bold name of what is shown with an optional caption line, an underlined Hide, and a dark capsule Exit in on-marker colour. The page reserves room for it at its foot.
+- **Phone frame:** a phone at its true point size (each supported iPhone's width, height, safe areas and cutout), with a status bar (9:41, signal and battery), the Dynamic Island or notch, and the tab bar; the frame lifts and is scaled to fit the space it is given. It can carry its own palette, so a preview shows another palette without changing the page around it. Rows and tabs inside it do not respond to taps.
+- **Home screen and surface views:** the Home masthead and its Hub tiles are drawn by one component, and each surface registers one view; the app's Home and the admin preview both draw through them, so a preview is the real screen, not a copy.
+
 ### Motion
 One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag.
 
@@ -489,6 +537,13 @@ the admin panel for tokens, type and the shared components.
 | Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes |
 | Loading | `Skeleton` | Rows, lines or a block, with a status for screen readers |
 | Tab bar and More | `ModuleNav` | `NavStyle.TabBar` and `MoreList` (the admin panel keeps `Links`); entries come from `NavEntry.Placement` |
+| Admin workbench | `Workbench` | Aside, main and detail panes; `Narrow` makes it the one-column form; `Showing` picks the pane in one column |
+| Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, with an optional icon |
+| Save state | `SaveStatus` | Saved, waiting, saving, failed with a retry; an optional detail |
+| Tabs with counts | `TabStrip` | `TabOption` value, label and count; orange underline on the selected tab; a trailing slot |
+| Preview banner | `PreviewBanner` | Docked above the tab bar; title, detail, Hide, Exit |
+| Phone preview | `PhoneFrame`, `PhoneDevice` | A true-size device with status bar, cutout and tab bar, scaled to fit its space; an optional palette |
+| Home and surfaces | `HomeScreen`, `SurfaceViews` | The one way Home and the admin preview draw surfaces |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
 
 A development build has More → Design gallery, which shows every block in the current palette.
@@ -503,6 +558,7 @@ A development build has More → Design gallery, which shows every block in the 
 - **Do** size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.
 - **Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.
 - **Do** keep touch targets at 44px or more and give presses a scale and a haptic.
+- **Do** mark a selected row with Selected Fill, a tonal step, and nothing else.
 
 ### Don't:
 - **Don't** lay tab roots out as a grid of tiles or a feed of identical cards.

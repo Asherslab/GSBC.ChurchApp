@@ -1,0 +1,51 @@
+@inject TimeProvider Clock
+
+@if (Layer is null)
+{
+    <div class="layer-band layer-band--none">
+        <span class="layer-band__label">Everyone sees what's published</span>
+        <span class="layer-band__meta">To put the app into a different state for a while, open a draft and choose <b>Turn on for an event</b>.</span>
+    </div>
+}
+else
+{
+    <div class="layer-band @(Scheduled ? "layer-band--scheduled" : "")">
+        <span class="layer-band__dot" aria-hidden="true"></span>
+        <div class="layer-band__body">
+            <span class="layer-band__name">
+                @(Scheduled ? "Everyone will see " : "Everyone sees ")<button type="button" class="layer-band__link" @onclick="() => OnOpen.InvokeAsync(Layer)">@Layer.Name</button>
+            </span>
+            <span class="layer-band__meta">@When</span>
+            @foreach (string dropped in Layer.DroppedFromLayer)
+            {
+                <span class="layer-band__warning"><Icon Name="alert" Size="IconSize.Small" /> Dropped @dropped: it was removed for everyone.</span>
+            }
+        </div>
+        @if (MayChange)
+        {
+            <div class="layer-band__actions">
+                <Button Variant="ButtonVariant.GhostOnMasthead" Small="true" OnClick="() => OnChangeDates.InvokeAsync(Layer)">Change dates</Button>
+                <Button Variant="ButtonVariant.OnMasthead" Small="true" Busy="Busy" OnClick="() => OnTurnOff.InvokeAsync(Layer)">@(Scheduled ? "Cancel" : "Turn off")</Button>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public Draft? Layer { get; set; }
+    [Parameter] public bool MayChange { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<Draft> OnOpen { get; set; }
+    [Parameter] public EventCallback<Draft> OnTurnOff { get; set; }
+    [Parameter] public EventCallback<Draft> OnChangeDates { get; set; }
+
+    private bool Scheduled => Layer?.LayerStartsAt is { } starts && starts > Clock.GetUtcNow().UtcDateTime;
+
+    private string When => Layer switch
+    {
+        { LayerStartsAt: { } starts, LayerEndsAt: { } ends } => $"{DraftWords.When(starts)} to {DraftWords.When(ends)}",
+        { LayerEndsAt: { } ends } => $"Until {DraftWords.When(ends)}",
+        { LayerStartsAt: { } starts } => $"From {DraftWords.When(starts)}, until turned off",
+        _ => "Until it's turned off",
+    };
+}

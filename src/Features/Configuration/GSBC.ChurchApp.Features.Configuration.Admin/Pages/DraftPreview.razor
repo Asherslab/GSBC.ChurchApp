@@ -1,0 +1,8 @@
+@page "/drafts/{DraftId}/preview"
+@layout PreviewLayout
+
+<DraftPreviewWindow DraftId="@DraftId" />
+
+@code {
+    [Parameter] public string DraftId { get; set; } = "";
+}

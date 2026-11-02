@@ -126,19 +126,95 @@ On top of Configuration, with no new feature project:
 - **App versions:** a draft that uses a surface newer than some phones shows "needs app version X",
   as the editor does now.
 
-## What staff see (to be designed before building)
+## What staff see (designed with the owner, 2026-11-02)
 
-The screens matter as much as the model, and are mocked up and reviewed before the code:
+Shaped with the impeccable process: an interview, one round of dealt structures on its decision page, then
+a brief the owner confirmed. The direction contracts are in `.impeccable/surfaces/` (the drafts workspace,
+and previews on the phone); the dealt sketches are in `.impeccable/mocks/decision/drafts/`.
 
-- **Drafts list** (admin panel and app): each draft with its author, what it touches ("Colours, Home
-  screen, 3 changes"), who it's shared with, conflicts, and its actions. The event layer is shown on
-  its own at the top: on, scheduled, or none.
-- **Editing in a draft:** the existing editor with the draft's name in its header, changed rows marked,
-  conflicts on their rows, and *Publish* / *Ask to publish*.
-- **On the phone:** Previews under More, the preview banner, and *as someone else* / *on a date*.
+- **Who:** mostly office staff, every few weeks rather than weekly, since much content (sermons) arrives by
+  itself. Each return has to make sense without remembering how it works. Pastors and leaders preview and
+  approve on their phones.
+- **Must not feel like Git or like ceremony.** On screen there are no branches, diffs, merges, conflicts or
+  revisions. Staff read "What everyone sees" (not "Live"), and a field changed underneath a draft is
+  "Changed for everyone since you edited it" with *Keep mine* / *Use everyone's*. A typo fix is edit, then
+  *Publish now*.
+- **The admin panel's drafts page is a three-pane workbench** (owner's choice): drafts down the left (the
+  event layer as one navy band at the top, then *Waiting to publish*, *Open*, *Published recently* with
+  *Undo*), the chosen draft in the middle (its name, "Saved a moment ago", *Share*, *More*, *Publish now*
+  or *Ask to publish*, area tabs, rows with its changes marked), and on the right the chosen row's settings
+  or a phone-size preview. A **Church year** view of the left column shows the event layer and dated
+  changes across the coming weeks, for scheduling. A row changed for everyone since the draft touched it
+  stays marked until someone settles it.
+- **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. Until
+  Home is built the preview draws an area's surfaces generically.
+- **The phone** gets the same drafts component in one column (More → Drafts), More → Previews (*What
+  everyone sees* or a draft; *Show it as* Me, A visitor, A member; *On a date*), and the banner, docked to
+  the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
+- **Home screen and Colours** in the admin panel become read-only views of what everyone sees; *Change it*
+  starts a draft, or carries on your open one.
+
+## Signing in on the phone for previews (owner, 2026-11-02)
+
+Drafts reach a phone only for someone signed in, and passkeys in the app wait on the Apple enrolment. Until
+then, **development builds only** can link the phone to an account: *Preview on my phone* in the admin
+panel shows a short one-time code, and More → Previews → *Link this phone* redeems it through a gRPC method
+for an app session, whose secret the native layer keeps and sends on each call. The server refuses both
+methods outside Development, so store builds sign in with passkeys only.
+
+
+
+## Status (2026-11-02)
+
+**Built and proven on the owner's iPhone 15 Pro, with the owner watching:** a title changed in the admin
+panel's draft showed on the phone, previewing that draft, within a second of "Saved".
+
+- **The model:** `PlacementPatch` and `DraftComposition` in Platform.Contracts (published, then the event
+  layer if it's on at that moment, then the previewed draft; "changed for everyone since" per field),
+  used by the server's publish and the phone's layout. Tested by `DraftCompositionTests`.
+- **Configuration:** `config.drafts` and `config.draft_changes` (migration `Drafts`), the
+  `gsbc.config.Drafts` service (list, get, create or copy, rename, save, settle, ask to publish,
+  publish, turn on or off for an event, share, unshare, delete), history rows tagged with the draft,
+  a draft's pictures held in use as `config.draft/{id}`, and per-area publish permissions
+  (`config.hub.publish`, `config.appearance.publish`). The direct `Configuration.Save` is gone: every
+  edit is made in a draft. Tested by `DraftEditorTests` and the reworked `PlacementEditorTests`.
+- **Access:** a `draft` scope kind, `config.drafts.preview` (held at a draft: preview it; held
+  everywhere: see every draft), the system roles *Draft reviewer* (given and taken by Configuration
+  when a draft is shared or unshared, and to its author) and *App editor* (`config.*`).
+- **Sync:** a private feed resets for a session whose grants for it changed (`sync.audience_marks`),
+  so unsharing takes a draft off that phone. Tested end to end in `DraftEditorTests`.
+- **Feeds:** `config.drafts` (private, per draft) and the event layer as the `event-layer` record in
+  `config.placements`, with its dates.
+- **Admin panel:** the drafts workbench (`/drafts`), the church-year view, the phone preview (the
+  app's own Home on a chosen iPhone, true size, scaled to fit, with a pop-out window at
+  `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
+  draft.
+- **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
+  (hideable until the app next comes to the foreground), More → Drafts, and Home listing the Hub's
+  link tiles. Development builds link the phone with a code (`/link-phone`).
+
+**Decided while building (no owner question needed):**
+
+- A draft is changed by its author or by someone who sees every draft; people it's shared with only
+  preview it. Editing a draft that's on for an event needs the publish permission, since everyone
+  sees each save.
+- Asking to publish puts a draft under *Waiting to publish*; any later edit takes it back out.
+- *Keep mine* re-bases the change on what everyone sees now; *Use everyone's* drops the fields that
+  changed. Publishing is refused while any are unsettled.
+- Undo of a published draft needs the publish permission for every area it touched.
+- Deleting a draft that's on for an event is refused until it's turned off.
+- **The phone preview can't drift from the app:** Home draws through `HomeScreen` and each surface
+  through `SurfaceViews` (Platform.Ui), which the preview shares. `PreviewRules` (Architecture.Tests)
+  fails if the app's Home stops using `HomeScreen` or a Hub surface has no view. When Home is built,
+  keep everything a draft can change inside `HomeScreen` and register a view for every new surface;
+  device-only parts (sync state, the Connection check) stay outside it.
 
 ## Open
 
+- **The admin panel isn't live yet:** it has no feed store, so it refreshes on its own saves,
+  reconnects and access changes, not when someone else edits the same draft.
+- **More → Drafts on the phone** is hidden until Access joins the app (it needs grants).
+- **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.
 - Notifications ("Conference 2027 is waiting to publish"): with Push.

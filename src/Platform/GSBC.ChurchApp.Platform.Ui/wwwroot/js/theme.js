@@ -11,11 +11,25 @@ window.gsbcTheme = (() => {
     } catch { }
   };
 
+  const customStyle = () => {
+    let style = document.getElementById('gsbc-custom-theme');
+    if (!style) {
+      style = document.createElement('style');
+      style.id = 'gsbc-custom-theme';
+      document.head.append(style);
+    }
+    return style;
+  };
+
   const apply = () => {
+    customStyle().textContent = (read('custom-theme') ?? '') + (read('preview-theme') ?? '');
     const appearance = read('appearance') ?? 'automatic';
     const dark = appearance === 'dark' || (appearance === 'automatic' && darkQuery.matches);
     root.dataset.scheme = dark ? 'dark' : 'light';
-    root.dataset.theme = read('palette-preview') ?? read('palette') ?? 'brand';
+    const preview = read('palette-preview');
+    const staff = read('palette') ?? 'brand';
+    const previewIsMade = preview?.startsWith('custom:') && read('preview-theme');
+    root.dataset.theme = preview ? (previewIsMade ? 'preview-custom' : preview) : staff;
     const masthead = getComputedStyle(root).getPropertyValue('--masthead').trim();
     if (masthead) document.querySelector('meta[name="theme-color"]')?.setAttribute('content', masthead);
   };
@@ -27,7 +41,15 @@ window.gsbcTheme = (() => {
     appearance: () => read('appearance') ?? 'automatic',
     preview: () => read('palette-preview'),
     setAppearance(appearance) { write('appearance', appearance); apply(); },
-    setPalette(palette) { write('palette', palette); apply(); },
-    setPreview(palette) { write('palette-preview', palette); apply(); },
+    setPalette(palette, customCss) {
+      write('palette', palette);
+      write('custom-theme', customCss ?? null);
+      apply();
+    },
+    setPreview(palette, previewCss) {
+      write('palette-preview', palette);
+      write('preview-theme', previewCss ?? null);
+      apply();
+    },
   };
 })();

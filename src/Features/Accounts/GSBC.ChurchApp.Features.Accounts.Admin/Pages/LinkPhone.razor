@@ -1,0 +1,42 @@
+@page "/link-phone"
+@inject AccountsClient Accounts
+
+<h1>Preview on your phone</h1>
+<p class="aside">In a development build of the app, open More → Previews → Link this phone, and type this code. Your phone then receives the drafts you can see, and follows along as they change.</p>
+
+@if (_code is { } shown)
+{
+    <p class="link-code" aria-label="@($"Code {string.Join(' ', shown.Code.ToCharArray())}")">@shown.Code[..3] @shown.Code[3..]</p>
+    <p class="aside">It works once, until <DateLine At="shown.ExpiresAt" Style="DateLineStyle.TimeOnly" />.</p>
+}
+@if (_problem is not null)
+{
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+}
+<div class="ui-actions ui-after">
+    <Button Busy="_busy" Icon="smartphone" OnClick="ShowCodeAsync">@(_code is null ? "Show a code" : "Show a new code")</Button>
+</div>
+
+@code {
+    private CodeReply? _code;
+    private string? _problem;
+    private bool _busy;
+
+    private async Task ShowCodeAsync()
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            _code = await Accounts.StartPhoneLinkAsync();
+        }
+        catch (Grpc.Core.RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

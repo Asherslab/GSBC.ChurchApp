@@ -9,7 +9,12 @@ public static class HubSurfaces
     public static readonly Permission Edit =
         new(EditNode, ScopeKind.Global, "Arrange the app's Home screen: which tiles show, in what order, for whom and when");
 
-    public static readonly SurfaceArea Area = new("home.hub", "Home screen", "The tiles on the app's Home screen", ScopeKind.Global, Edit);
+    public const string PublishNode = "config.hub.publish";
+
+    public static readonly Permission Publish =
+        new(PublishNode, ScopeKind.Global, "Put changes to the Home screen out to everyone, or on for an event");
+
+    public static readonly SurfaceArea Area = new("home.hub", "Home screen", "The tiles on the app's Home screen", ScopeKind.Global, Edit, Publish);
 
     public static readonly IReadOnlyList<Choice> TileColours =
     [
@@ -34,5 +39,5 @@ public static class HubSurfaces
             [Title, Subtitle, Link, Colour, Wide, Image], defaultOrder: 1000, repeatable: true);
     }
 
-    public static readonly SurfaceSet All = new([LinkTile.Surface]);
+    public static SurfaceSet All => new([LinkTile.Surface]);
 }

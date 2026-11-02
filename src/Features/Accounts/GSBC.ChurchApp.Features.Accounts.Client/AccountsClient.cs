@@ -9,10 +9,16 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal)
 {
     private readonly ISessionService _session = channel.CreateGrpcService<ISessionService>();
     private readonly IAccountsService _accounts = channel.CreateGrpcService<IAccountsService>();
+    private readonly IPhoneLinkService _phoneLinks = channel.CreateGrpcService<IPhoneLinkService>();
 
     public event Action? SessionChanged;
 
     public ValueTask<CurrentSession> GetCurrentSessionAsync() => _session.GetCurrentAsync(new GetCurrentSessionRequest());
+
+    public ValueTask<CodeReply> StartPhoneLinkAsync() => _phoneLinks.StartAsync(new Nothing());
+
+    public ValueTask<LinkedPhone> LinkPhoneAsync(string code, string deviceName) =>
+        _phoneLinks.LinkAsync(new LinkPhoneRequest { Code = code, DeviceName = deviceName });
 
     public ValueTask<TicketReply> StartSignUpAsync(string name, string email) =>
         _accounts.StartSignUpAsync(new StartSignUpRequest { DisplayName = name, Email = email });

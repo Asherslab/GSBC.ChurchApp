@@ -55,6 +55,14 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("by");
 
+                    b.Property<Guid?>("DraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("draft_id");
+
+                    b.Property<string>("DraftName")
+                        .HasColumnType("text")
+                        .HasColumnName("draft_name");
+
                     b.Property<Guid>("PlacementId")
                         .HasColumnType("uuid")
                         .HasColumnName("placement_id");
@@ -78,10 +86,146 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data.Migrations
                     b.HasIndex("BatchId")
                         .HasDatabaseName("ix_changes_batch_id");
 
+                    b.HasIndex("DraftId")
+                        .HasDatabaseName("ix_changes_draft_id");
+
                     b.HasIndex("Area", "ScopeId", "At")
                         .HasDatabaseName("ix_changes_area_scope_id_at");
 
                     b.ToTable("changes", "config");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Configuration.Api.Data.DraftChangeRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Area")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("area");
+
+                    b.Property<long>("BasedOnRevision")
+                        .HasColumnType("bigint")
+                        .HasColumnName("based_on_revision");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<Guid>("ChangedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("changed_by");
+
+                    b.Property<Guid>("DraftId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("draft_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasMaxLength(16)
+                        .HasColumnType("character varying(16)")
+                        .HasColumnName("kind");
+
+                    b.Property<string>("Patch")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("patch");
+
+                    b.Property<Guid>("PlacementId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("placement_id");
+
+                    b.Property<string>("ScopeId")
+                        .HasColumnType("text")
+                        .HasColumnName("scope_id");
+
+                    b.Property<string>("Surface")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("surface");
+
+                    b.HasKey("Id")
+                        .HasName("pk_draft_changes");
+
+                    b.HasIndex("PlacementId")
+                        .HasDatabaseName("ix_draft_changes_placement_id");
+
+                    b.HasIndex("DraftId", "PlacementId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_draft_changes_draft_id_placement_id");
+
+                    b.ToTable("draft_changes", "config");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Configuration.Api.Data.DraftRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime?>("AskedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("asked_at");
+
+                    b.Property<Guid>("AuthorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("author_id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.PrimitiveCollection<string>("DroppedFromLayer")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("dropped_from_layer");
+
+                    b.Property<DateTime?>("LayerEndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("layer_ends_at");
+
+                    b.Property<bool>("LayerOn")
+                        .HasColumnType("boolean")
+                        .HasColumnName("layer_on");
+
+                    b.Property<DateTime?>("LayerStartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("layer_starts_at");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<long>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint")
+                        .HasColumnName("revision");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasMaxLength(32)
+                        .HasColumnType("character varying(32)")
+                        .HasColumnName("status");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_drafts");
+
+                    b.HasIndex("LayerOn")
+                        .IsUnique()
+                        .HasDatabaseName("ix_drafts_layer_on")
+                        .HasFilter("layer_on");
+
+                    b.ToTable("drafts", "config");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Configuration.Api.Data.PlacementRecord", b =>
@@ -232,6 +376,16 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Configuration.Api.Data.DraftChangeRecord", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Configuration.Api.Data.DraftRecord", null)
+                        .WithMany()
+                        .HasForeignKey("DraftId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_draft_changes_drafts_draft_id");
                 });
 #pragma warning restore 612, 618
         }

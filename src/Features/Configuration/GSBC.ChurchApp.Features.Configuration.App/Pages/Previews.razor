@@ -1,0 +1,121 @@
+@page "/previews"
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Client.Feeds
+@using GSBC.ChurchApp.Platform.Client.Native
+@using GSBC.ChurchApp.Platform.Client.Signals
+@using GSBC.ChurchApp.Platform.Common
+@implements IDisposable
+@inject ILocalFeeds Feeds
+@inject IPreviewMode Preview
+@inject IAccess Access
+@inject NativeBridge Bridge
+
+<Page Title="Previews" BackHref="more" BackLabel="More">
+    <Masthead Title="Previews" Note="See the app as it will be, on this phone only" />
+
+    <LiveData TValue="Previewable" Load="LoadAsync" Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access">
+        <Section First="true">
+            <ListGroup>
+                <ListRow Title="What everyone sees" Subtitle="@(context.Value.Layer is { } layer ? $"Published, with \"{layer.Name}\" on for an event" : "Published")" Icon="home" IconTone="RowTone.Quiet" OnClick="() => ChooseAsync(null)">
+                    <TrailingContent>@Check(Current?.DraftId is null)</TrailingContent>
+                </ListRow>
+                @foreach (Draft draft in context.Value.Drafts)
+                {
+                    <ListRow Title="@draft.Name" Subtitle="@Describe(draft)" Icon="@(draft.LayerOn ? "calendar" : "pencil")" IconTone="RowTone.Accent" OnClick="() => ChooseAsync(draft)">
+                        <TrailingContent>@Check(Current?.DraftId == draft.Id)</TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+            @if (context.Value.Drafts.Count == 0)
+            {
+                <EmptyState Icon="eye" Title="No drafts to preview" Body="@(Access.SignedIn ? "When someone shares a draft with you, it shows here." : "Drafts reach this phone once you're signed in on it.")">
+                    @if (!Access.SignedIn && Bridge.IsDevelopmentBuild)
+                    {
+                        <Button Href="link-phone" Icon="smartphone">Link this phone</Button>
+                    }
+                </EmptyState>
+            }
+        </Section>
+    </LiveData>
+
+    <Section Title="Show it as" Lead="A visitor isn't signed in. A member is signed in with no staff roles. This changes only what this phone shows.">
+        <Segmented TValue="PreviewViewer" Label="Show it as" Options="Viewers" Value="@(Current?.As ?? PreviewViewer.Me)" ValueChanged="ShowAsAsync" />
+    </Section>
+
+    <Section Title="On a date">
+        <ToggleRow Title="Show a later date" Description="See tiles and event layers before they start" Checked="@(Current?.At is not null)" CheckedChanged="UseDateAsync" />
+        @if (Current?.At is { } at)
+        {
+            <div class="ui-after">
+                <TextField Label="Date and time" Type="datetime-local" Value="@Local(at)" ValueChanged="SetDateAsync" />
+            </div>
+        }
+    </Section>
+</Page>
+
+@code {
+    private const int MostDrafts = 200;
+    private const string LocalFormat = "yyyy-MM-ddTHH:mm";
+    private static readonly string[] LocalFormats = [LocalFormat, "yyyy-MM-ddTHH:mm:ss"];
+
+    private static readonly IReadOnlyList<SegmentOption<PreviewViewer>> Viewers =
+    [
+        new(PreviewViewer.Me, "Me", "user"),
+        new(PreviewViewer.Visitor, "A visitor", "eye"),
+        new(PreviewViewer.Member, "A member", "users"),
+    ];
+
+    private PreviewChoice? Current => Preview.Current;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Preview.Changed += OnPreviewChanged;
+        await Preview.LoadAsync();
+    }
+
+    private async Task<Previewable> LoadAsync()
+    {
+        IReadOnlyList<StoredRecord> drafts = await Feeds.ReadPageAsync(new FeedPageQuery(ConfigurationFeeds.Drafts, Descending: true, Limit: MostDrafts));
+        IReadOnlyList<StoredRecord> layer = await Feeds.ReadPageAsync(new FeedPageQuery(ConfigurationFeeds.Placements, Limit: 1, GroupKey: ConfigurationFeeds.EventLayerRecord));
+        return new Previewable(
+            drafts.Select(record => ConfigurationContractsModel.Instance.Deserialize<Draft>(new MemoryStream(record.Payload))).ToList(),
+            layer.Count == 0 ? null : ConfigurationContractsModel.Instance.Deserialize<EventLayerMessage>(new MemoryStream(layer[0].Payload)));
+    }
+
+    private static string Describe(Draft draft)
+    {
+        string changes = draft.Changes.Count == 1 ? "1 change" : $"{draft.Changes.Count} changes";
+        return draft.LayerOn ? $"On for an event · {changes}" : $"{changes} · edited {ChurchTime.ToChurch(draft.UpdatedAt).ToString("ddd d MMM", CultureInfo.InvariantCulture)}";
+    }
+
+    private Task ChooseAsync(Draft? draft) =>
+        Preview.ChooseAsync(new PreviewChoice(draft?.Id, draft?.Name ?? "", Current?.As ?? PreviewViewer.Me, Current?.At));
+
+    private Task ShowAsAsync(PreviewViewer viewer) =>
+        Preview.ChooseAsync((Current ?? new PreviewChoice(null, "")) with { As = viewer });
+
+    private Task UseDateAsync(bool on) =>
+        Preview.ChooseAsync((Current ?? new PreviewChoice(null, "")) with { At = on ? DateTime.UtcNow.AddDays(7) : null });
+
+    private Task SetDateAsync(string text) =>
+        DateTime.TryParseExact(text, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local)
+            ? Preview.ChooseAsync((Current ?? new PreviewChoice(null, "")) with { At = ChurchTime.ToUtc(local) })
+            : Task.CompletedTask;
+
+    private static string Local(DateTime utc) => ChurchTime.ToChurch(utc).ToString(LocalFormat, CultureInfo.InvariantCulture);
+
+    private static RenderFragment Check(bool chosen) => __builder =>
+    {
+        if (chosen)
+        {
+            <span class="check"><Icon Name="check" Size="IconSize.Small" /></span>
+        }
+    };
+
+    private void OnPreviewChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Preview.Changed -= OnPreviewChanged;
+
+    private sealed record Previewable(List<Draft> Drafts, EventLayerMessage? Layer);
+}

@@ -1,0 +1,179 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using Grpc.Core
+@using Microsoft.AspNetCore.Components.Forms
+@implements IDisposable
+@inject IServiceProvider Services
+
+<div class="font-picker">
+    <div class="font-picker__current">
+        <span class="field__label">@Label</span>
+        <span class="font-picker__name" style="font-family: @Value.Family">@Value.Name</span>
+        <span class="font-picker__source">@(Value.Custom is null ? "Comes with the app" : "Downloaded with the theme")</span>
+    </div>
+    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _open = !_open">@(_open ? "Done" : "Change")</Button>
+</div>
+@if (Hint is not null)
+{
+    <span class="field__hint">@Hint</span>
+}
+@if (_open)
+{
+    <div class="font-picker__panel">
+        <div class="font-picker__options" role="list" aria-label="Fonts that come with the app">
+            @foreach (ThemeFont font in Bundled)
+            {
+                <button type="button" role="listitem" class="font-picker__option @(font.Key == Value.Key ? "font-picker__option--chosen" : "")" style="font-family: @font.Family" @onclick="() => ChooseAsync(font)">
+                    @font.Name
+                    @if (font.Key == Value.Key)
+                    {
+                        <Icon Name="check" Size="IconSize.Small" />
+                    }
+                </button>
+            }
+        </div>
+
+        @if (Library is { MayChooseFromGoogle: true } library)
+        {
+            <TextField Label="Search Google Fonts" Placeholder="Playfair Display, Lora, Nunito…" Value="@_query" ValueChanged="SearchSoon"
+                       Hint="Free to use in the app. The font is copied into the media library." />
+            @if (_results.Count > 0)
+            {
+                <div class="font-picker__results" role="list" aria-label="Google Fonts">
+                    @foreach (FontFamilyChoice family in _results)
+                    {
+                        <button type="button" role="listitem" class="font-picker__option" disabled="@(_busy is not null)" @onclick="() => ImportAsync(library, family.Family)">
+                            <span>@family.Family</span>
+                            <span class="font-picker__category">@(_busy == family.Family ? "Fetching…" : family.Category)</span>
+                        </button>
+                    }
+                </div>
+            }
+            else if (_query.Trim().Length > 0 && !_searching)
+            {
+                <p class="font-picker__note">Nothing on Google Fonts is called that.</p>
+            }
+
+            @if (library.MayUploadFiles)
+            {
+                <div class="font-picker__upload">
+                    <span class="field__label">Or upload a font file</span>
+                    <InputFile OnChange="args => UploadAsync(library, args)" accept=".woff2,.woff,.ttf,.otf" disabled="@(_busy is not null)" />
+                    <span class="field__hint">Only a font the church is licensed to use in an app (an "app" or "embedding" licence; a desktop licence isn't enough).</span>
+                </div>
+            }
+        }
+        @if (_problem is not null)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+    </div>
+}
+
+@code {
+    private static readonly TimeSpan SearchAfter = TimeSpan.FromMilliseconds(300);
+
+    private bool _open;
+    private string _query = "";
+    private bool _searching;
+    private string? _busy;
+    private string? _problem;
+    private IReadOnlyList<FontFamilyChoice> _results = [];
+    private CancellationTokenSource? _pending;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required ThemeFont Value { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ThemeFont> Bundled { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public EventCallback<ThemeFont> ValueChanged { get; set; }
+
+    private IFontLibrary? Library => Services.GetService(typeof(IFontLibrary)) as IFontLibrary;
+
+    private Task ChooseAsync(ThemeFont font)
+    {
+        _problem = null;
+        return ValueChanged.InvokeAsync(font);
+    }
+
+    private void SearchSoon(string query)
+    {
+        _query = query;
+        _pending?.Cancel();
+        _pending = new CancellationTokenSource();
+        _ = SearchAfterAsync(_pending.Token);
+    }
+
+    private async Task SearchAfterAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await Task.Delay(SearchAfter, cancellationToken);
+            _searching = true;
+            IReadOnlyList<FontFamilyChoice> results = _query.Trim().Length == 0 || Library is null ? [] : await Library.SearchAsync(_query, cancellationToken);
+            if (cancellationToken.IsCancellationRequested)
+                return;
+            _results = results;
+            _problem = null;
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _searching = false;
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ImportAsync(IFontLibrary library, string family)
+    {
+        _busy = family;
+        _problem = null;
+        try
+        {
+            await ChooseAsync(ThemeFont.Of(await library.ImportAsync(family)));
+            _query = "";
+            _results = [];
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+
+    private async Task UploadAsync(IFontLibrary library, InputFileChangeEventArgs args)
+    {
+        _busy = args.File.Name;
+        _problem = null;
+        try
+        {
+            await using Stream content = args.File.OpenReadStream(maxAllowedSize: MostFontBytes);
+            await ChooseAsync(ThemeFont.Of(await library.UploadAsync(args.File.Name, args.File.Size, content)));
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        catch (IOException)
+        {
+            _problem = "That file is too big for a font. Use a .woff2 under 2 MB.";
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+
+    private const long MostFontBytes = 2 * 1024 * 1024;
+
+    public void Dispose() => _pending?.Cancel();
+}

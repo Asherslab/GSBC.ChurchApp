@@ -158,7 +158,7 @@ flowchart LR
     PlatformApi --> PlatformContracts & PlatformData
     PlatformContracts --> PlatformPermissions
 
-    ArchitectureTests --> HostsApi & HostsGateway
+    ArchitectureTests --> HostsApi & HostsGateway & PlatformUi
     PermissionsTests --> PlatformPermissions
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi

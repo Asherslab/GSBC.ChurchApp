@@ -21,7 +21,8 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "cachedMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "fetchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prefetchMedia", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setSession", returnType: CAPPluginReturnPromise)
     ]
 
     private let runtime = DataLayerRuntime.shared
@@ -110,6 +111,15 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
             } catch {
                 call.reject(error.localizedDescription)
             }
+        }
+    }
+
+    @objc func setSession(_ call: CAPPluginCall) {
+        SessionKeychain.write(call.getString("secret"))
+        Task {
+            await engine?.pause()
+            await engine?.resume()
+            call.resolve(["signedIn": SessionKeychain.read() != nil])
         }
     }
 

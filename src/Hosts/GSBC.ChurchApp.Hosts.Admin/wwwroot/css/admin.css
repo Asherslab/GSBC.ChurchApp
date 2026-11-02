@@ -3,9 +3,8 @@
 html { font-size: 17px; }
 
 body {
-    margin: 0 auto;
-    max-width: 760px;
-    padding: 24px 16px 48px;
+    margin: 0;
+    padding: 0;
     background: var(--page);
     color: var(--ink);
     font-family: var(--font);
@@ -22,13 +21,39 @@ h1:focus { outline: none; }
 h2 { font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; }
 a { color: var(--accent); }
 
+:root { --chrome-top: 64px; }
+
 .module-nav {
+    position: sticky;
+    top: 0;
+    z-index: 20;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
-    margin: -24px -16px 24px;
-    padding: 12px 16px;
+    padding: 12px max(16px, calc((100% - 1600px) / 2 + 40px));
     background: var(--masthead);
+}
+
+main {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+    align-items: start;
+    gap: 20px 24px;
+    max-width: 1600px;
+    margin: 0 auto;
+    padding: 32px 40px 64px;
+}
+
+main > :is(h1, h2, p, .notice, .aside, nav, form, table, .media-library, .link-code, .ui-actions) { grid-column: 1 / -1; }
+main > h1 { margin: 0; }
+main > p { margin: -8px 0 0; max-width: 72ch; color: var(--ink-2); }
+main > .account-panel { margin: 0; }
+
+main:has(> .workbench), main:has(> .preview-window) { display: block; max-width: none; padding: 0; }
+
+@media (max-width: 760px) {
+    main { padding: 20px 16px 48px; }
+    .module-nav { padding: 12px 16px; }
 }
 
 .module-nav a {
@@ -86,7 +111,7 @@ button:disabled { opacity: 0.5; cursor: default; }
 
 label:not([class]) { display: block; margin: 8px 0; }
 
-input:not([class]), select:not([class]), textarea:not([class]) {
+input:is(:not([class]), .valid, .invalid, .modified):not([type="checkbox"], [type="radio"], [type="file"]), select:is(:not([class]), .valid, .invalid, .modified), textarea:is(:not([class]), .valid, .invalid, .modified) {
     display: block;
     width: min(100%, 360px);
     margin-top: 4px;
@@ -98,7 +123,7 @@ input:not([class]), select:not([class]), textarea:not([class]) {
     font: inherit;
 }
 
-input:not([class]):focus, select:not([class]):focus, textarea:not([class]):focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
+input:is(:not([class]), .valid, .invalid, .modified):focus, select:is(:not([class]), .valid, .invalid, .modified):focus, textarea:is(:not([class]), .valid, .invalid, .modified):focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display: inline; width: auto; accent-color: var(--live); }
 
 .message { color: var(--marker-ink); }
@@ -118,3 +143,4 @@ label.choice input { display: inline; width: auto; margin: 0; }
 .media-thumbnail { width: 96px; height: 72px; object-fit: cover; border-radius: 8px; background: var(--sand-strong); }
 
 .section { padding: 0; }
+.link-code { margin: 18px 0 6px; font-size: var(--text-display); font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }

@@ -12,10 +12,10 @@ public static class ConfigurationAppExtensions
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAppExtensions).Assembly,
             [
-                new NavEntry("Arrange Home", $"configure/{HubSurfaces.Area.Key}", "layout", HubSurfaces.Edit),
-                new NavEntry("Colours for everyone", $"configure/{AppearanceSurfaces.Area.Key}", "palette", AppearanceSurfaces.Edit),
+                new NavEntry("Previews", "previews", "eye"),
+                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit),
             ],
-            [ConfigurationFeeds.Placements]));
+            [ConfigurationFeeds.Placements, ConfigurationFeeds.Drafts]));
         return services.AddConfigurationClient().AddLocalSurfaceLayout();
     }
 }

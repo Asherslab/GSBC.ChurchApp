@@ -18,10 +18,38 @@ namespace GSBC.ChurchApp.Platform.Data.Migrations.Sync
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("sync")
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
+
+            modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.AudienceMark", b =>
+                {
+                    b.Property<string>("SessionId")
+                        .HasColumnType("text")
+                        .HasColumnName("session_id");
+
+                    b.Property<string>("Feed")
+                        .HasColumnType("text")
+                        .HasColumnName("feed");
+
+                    b.Property<string>("Fingerprint")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("fingerprint");
+
+                    b.Property<DateTime>("SeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("seen_at");
+
+                    b.HasKey("SessionId", "Feed")
+                        .HasName("pk_audience_marks");
+
+                    b.HasIndex("SeenAt")
+                        .HasDatabaseName("ix_audience_marks_seen_at");
+
+                    b.ToTable("audience_marks", "sync");
+                });
 
             modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.FeedChangeRecord", b =>
                 {

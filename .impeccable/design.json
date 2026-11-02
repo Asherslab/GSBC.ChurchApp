@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-26T05:09:53+00:00",
+  "generatedAt": "2026-11-02T14:03:50+00:00",
   "title": "Design System: GSBC Church App",
   "extensions": {
     "colorMeta": {
@@ -658,6 +658,102 @@
           "#bcd1ba",
           "#e0f6de"
         ]
+      },
+      "selected-fill": {
+        "role": "neutral",
+        "displayName": "Selected Fill",
+        "canonical": "var(--selected-fill)",
+        "tonalRamp": [
+          "#0e0b06",
+          "#27231e",
+          "#433f39",
+          "#615d56",
+          "#848078",
+          "#a9a49c",
+          "#cfcac2",
+          "#f3eee6"
+        ],
+        "roleHint": "Selected row on the page; a tonal step, no shadow. Light: sand. In the sand drafts column the selected row uses the segment colour instead."
+      },
+      "fill-on-surface": {
+        "role": "neutral",
+        "displayName": "Fill on Surface",
+        "canonical": "var(--fill-on-surface)",
+        "tonalRamp": [
+          "#0e0b06",
+          "#27231e",
+          "#433f39",
+          "#615d56",
+          "#848078",
+          "#a9a49c",
+          "#cfcac2",
+          "#f3eee6"
+        ],
+        "roleHint": "Fields, quiet buttons and the segmented track inside the white settings panel. Light: sand; dark: strong sand."
+      },
+      "night-selected-fill": {
+        "role": "neutral",
+        "displayName": "Night Selected Fill",
+        "canonical": "#34446a",
+        "tonalRamp": [
+          "#111318",
+          "#242a38",
+          "#394460",
+          "#4a5e8c",
+          "#677db1",
+          "#98a4c3",
+          "#c4cad9",
+          "#edeff2"
+        ],
+        "roleHint": "Selected row in the dark scheme (the selected-segment step)."
+      },
+      "night-fill-on-surface": {
+        "role": "neutral",
+        "displayName": "Night Fill on Surface",
+        "canonical": "#26334f",
+        "tonalRamp": [
+          "#020921",
+          "#17233e",
+          "#323f5c",
+          "#4f5d7c",
+          "#7080a1",
+          "#94a5c7",
+          "#b9cbee",
+          "#e7efff"
+        ],
+        "roleHint": "Fill on Surface in the dark scheme (strong surface)."
+      },
+      "year-night-selected-fill": {
+        "role": "neutral",
+        "displayName": "Year Night Selected Fill",
+        "canonical": "#2f4335",
+        "tonalRamp": [
+          "#131614",
+          "#29332c",
+          "#425748",
+          "#5a7c64",
+          "#799f85",
+          "#a2b9a9",
+          "#c9d4cc",
+          "#eef1ef"
+        ],
+        "roleHint": "Selected row in the yearly palette, dark scheme."
+      },
+      "device-bezel": {
+        "role": "neutral",
+        "displayName": "Device Bezel",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#000000",
+          "#1a1a1a",
+          "#333333",
+          "#4d4d4d",
+          "#737373",
+          "#999999",
+          "#c2c2c2",
+          "#ededed"
+        ],
+        "roleHint": "Phone frame bezel ring and cutout only; device hardware, never a UI colour."
       }
     },
     "typographyMeta": {
@@ -741,6 +837,11 @@
         "name": "frosted-bar",
         "value": "backdrop-filter: saturate(1.6) blur(18px); background: 90% page colour; box-shadow: 0 1px 0 var(--line)",
         "purpose": "Section tabs (tab bar uses saturate(1.8) blur(20px) and a top hairline)."
+      },
+      {
+        "name": "device-frame",
+        "value": "0 0 0 9px var(--device-bezel), var(--lift)",
+        "purpose": "The phone frame: a 9px bezel ring drawn as a spread, then the lift."
       }
     ],
     "motion": [
@@ -791,7 +892,14 @@
       "default": "light scheme, brand palette; Appearance setting defaults to Automatic (follows the system)",
       "year": "2026 yearly palette, under comparison with the brand palette; swaps greens and a DM Serif Text masthead title"
     },
-    "rootType": "html font: -apple-system-body when supported, else 17px; all sizes in rem"
+    "rootType": "html font: -apple-system-body when supported, else 17px; all sizes in rem",
+    "deviceGeometry": {
+      "purpose": "Phone frame hardware shapes; not part of the radius scale and never used on UI boxes.",
+      "screenRadius": "46px",
+      "bezel": "9px",
+      "dynamicIsland": "124px x 36px capsule, 11px from the top",
+      "notch": "160px x 32px, bottom corners 20px"
+    }
   },
   "components": [
     {
@@ -873,6 +981,30 @@
       "description": "Five-tab bar; the active tab is deep aqua.",
       "html": "<nav class=\"ds-tabbar\"><a class=\"on\" href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M15 18h-5\"/><path d=\"M18 14h-8\"/><path d=\"M4 22h16a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v16a2 2 0 0 1-4 0v-9a2 2 0 0 1 2-2h2\"/><rect width=\"8\" height=\"4\" x=\"10\" y=\"6\" rx=\"1\"/></svg>Sunday</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M8 2v3\"/><path d=\"M16 2v3\"/><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18\"/></svg>Week</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M3 14h3a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-7a9 9 0 0 1 18 0v7a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3\"/></svg>Listen</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M11 14h2a2 2 0 0 0 0-4h-3c-.6 0-1.1.2-1.4.6L3 16\"/><path d=\"m7 20 1.6-1.4c.3-.4.8-.6 1.4-.6h4c1.1 0 2.1-.4 2.8-1.2l4.6-4.4a2 2 0 0 0-2.75-2.91l-4.2 3.9\"/><path d=\"m2 15 6 6\"/></svg>Prayer</a><a href=\"#\"><svg width=\"24\" height=\"24\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"1\"/><circle cx=\"19\" cy=\"12\" r=\"1\"/><circle cx=\"5\" cy=\"12\" r=\"1\"/></svg>More</a></nav>",
       "css": ".ds-tabbar { display: grid; grid-template-columns: repeat(5, 1fr); padding: 6px 4px 8px; background: rgb(255 255 255 / 0.9); backdrop-filter: saturate(1.8) blur(20px); box-shadow: 0 -0.5px 0 var(--line, rgb(42 61 94 / 0.12)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; min-height: 48px; justify-content: center; font-size: 11px; font-weight: 600; color: var(--ink-3, #6b7384); text-decoration: none; transition: color 150ms; } .ds-tabbar a:hover { color: var(--ink, #18233a); } .ds-tabbar a.on { color: var(--accent, #00776d); } .ds-tabbar a:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-tabbar a:active svg { transform: scale(0.88); } .ds-tabbar svg { transition: transform 200ms cubic-bezier(0.22, 1, 0.36, 1); }"
+    },
+    {
+      "name": "Tab strip with counts",
+      "kind": "nav",
+      "refersTo": "tab-strip-tab",
+      "description": "Static tabs over a hairline; the selected tab is ink with the 3px orange underline, and a tab may carry a count.",
+      "html": "<div class=\"ds-tab-strip\" role=\"tablist\"><button role=\"tab\" aria-selected=\"true\">Home screen <span class=\"ds-count\">3</span></button><button role=\"tab\" aria-selected=\"false\">Colours</button><button role=\"tab\" aria-selected=\"false\">Notices <span class=\"ds-count\">1</span></button></div>",
+      "css": ".ds-tab-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; border-bottom: 1px solid var(--line); font-family: var(--font); } .ds-tab-strip button { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: 44px; padding: 0; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; } .ds-tab-strip button:hover { color: var(--ink-2); } .ds-tab-strip button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; } .ds-tab-strip button[aria-selected=\"true\"] { color: var(--ink); } .ds-tab-strip button[aria-selected=\"true\"]::after { content: \"\"; position: absolute; left: 0; right: 0; bottom: -1px; height: 3px; border-radius: 3px; background: var(--marker); } .ds-count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, var(--marker) 30%, transparent); color: var(--marker-ink); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Selected row",
+      "kind": "custom",
+      "refersTo": "row-selected",
+      "description": "The chosen row in a list: a tonal step widened into the gutter, no shadow.",
+      "html": "<div class=\"ds-rows\"><div class=\"ds-row\">Christmas 2026<small>Changed today</small></div><div class=\"ds-row ds-row--selected\">Easter welcome<small>Shared with 2 people</small></div><div class=\"ds-row\">Typo on Give<small>Waiting to publish</small></div></div>",
+      "css": ".ds-rows { padding: 0 12px; background: var(--page); font-family: var(--font); } .ds-row { display: grid; min-height: 56px; align-content: center; border-bottom: 1px solid var(--line); color: var(--ink); font-size: var(--text-row); font-weight: 600; cursor: pointer; } .ds-row small { color: var(--ink-2); font-size: var(--text-caption); font-weight: 400; } .ds-row:hover { background: var(--line); } .ds-row--selected { margin: 0 -12px; padding: 0 12px; border-radius: var(--radius-field); border-bottom-color: transparent; background: var(--selected-fill); }"
+    },
+    {
+      "name": "Preview banner",
+      "kind": "custom",
+      "refersTo": "preview-banner",
+      "description": "Orange marker strip docked above the tab bar while a preview is on, with Hide and a dark capsule Exit.",
+      "html": "<div class=\"ds-preview-banner\" role=\"status\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg><span class=\"ds-pb-text\"><b>Previewing Christmas 2026</b><small>On this phone only</small></span><button class=\"ds-pb-hide\">Hide</button><button class=\"ds-pb-exit\">Exit</button></div>",
+      "css": ".ds-preview-banner { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 8px 6px 20px; background: var(--marker); color: var(--on-marker); font-family: var(--font); font-size: var(--text-caption); box-shadow: 0 -0.5px 0 var(--line); } .ds-pb-text { flex: 1; display: grid; line-height: 1.3; } .ds-pb-hide { min-height: 36px; padding: 0 10px; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; } .ds-pb-exit { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--on-marker); color: var(--marker); font: inherit; font-weight: 700; cursor: pointer; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-pb-exit:active { transform: scale(0.96); } .ds-preview-banner button:focus-visible { outline: 2px solid var(--on-marker); outline-offset: 2px; }"
     }
   ],
   "narrative": {
@@ -932,6 +1064,11 @@
         "name": "The Flat Page Rule",
         "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow.",
         "section": "elevation"
+      },
+      {
+        "name": "The Tonal Selection Rule",
+        "body": "A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border.",
+        "section": "elevation"
       }
     ],
     "dos": [
@@ -941,7 +1078,8 @@
       "**Do** build content as hairline-divided rows on the white page, and use sand (callouts, sermon head, player, fields) for anything the bulletin would shade.",
       "**Do** size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.",
       "**Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
-      "**Do** keep touch targets at 44px or more and give presses a scale and a haptic."
+      "**Do** keep touch targets at 44px or more and give presses a scale and a haptic.",
+      "**Do** mark a selected row with Selected Fill, a tonal step, and nothing else."
     ],
     "donts": [
       "**Don't** lay tab roots out as a grid of tiles or a feed of identical cards.",
