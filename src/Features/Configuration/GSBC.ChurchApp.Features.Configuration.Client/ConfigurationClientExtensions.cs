@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Client.Configuration;
+using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -13,6 +14,8 @@ public static class ConfigurationClientExtensions
     public static IServiceCollection AddLocalSurfaceLayout(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
-        return services.AddSingleton<ISurfaceLayout, LocalSurfaceLayout>();
+        return services
+            .AddSingleton<ISurfaceLayout, LocalSurfaceLayout>()
+            .AddMediaPrefetch(provider => PlacementMedia.Prefetch(provider.GetRequiredService<SurfaceCatalog>()));
     }
 }

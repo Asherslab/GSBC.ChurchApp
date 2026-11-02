@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Client.Feeds;
+using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using Microsoft.Extensions.DependencyInjection;
@@ -18,5 +19,6 @@ public static class NativeStartup
     {
         await services.GetRequiredService<NativeLocalFeeds>().StartAsync(modules.Feeds);
         await services.GetRequiredService<NativeOutbox>().StartAsync();
+        services.GetService<MediaPrefetcher>()?.Start();
     }
 }
