@@ -14,8 +14,6 @@ public static class ConfigurationAppExtensions
             [
                 new NavEntry("Previews", "previews", "eye"),
                 new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit),
-                new NavEntry("Arrange Home", $"configure/{HubSurfaces.Area.Key}", "layout", HubSurfaces.Edit),
-                new NavEntry("Colours for everyone", $"configure/{AppearanceSurfaces.Area.Key}", "palette", AppearanceSurfaces.Edit),
             ],
             [ConfigurationFeeds.Placements, ConfigurationFeeds.Drafts]));
         return services.AddConfigurationClient().AddLocalSurfaceLayout();

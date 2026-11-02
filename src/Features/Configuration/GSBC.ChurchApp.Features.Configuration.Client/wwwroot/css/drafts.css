@@ -53,14 +53,9 @@
 
 .live-arrangement__actions { margin-bottom: var(--stack); }
 
-@media (min-width: 761px) {
-  body:has(.workbench:not(.workbench--narrow)) { max-width: none; padding: 0; }
-  body:has(.workbench:not(.workbench--narrow)) .module-nav { margin: 0; }
-}
 .preview-window { display: grid; justify-items: center; align-content: start; gap: var(--stack); min-height: 100vh; padding: 16px; background: var(--sand); }
 .preview-window .field { width: min(100%, 393px); }
 .preview-window__title { margin: 0; font-size: var(--text-lead); font-weight: 700; }
-body:has(.preview-window) { max-width: none; padding: 0; }
 .workbench__aside .btn--quiet { background: var(--sand-strong); }
 .detail-pane .toggle-row__title { font-size: var(--text-caption); color: var(--ink-2); }
 .media-setting .field__label { flex-basis: 100%; }

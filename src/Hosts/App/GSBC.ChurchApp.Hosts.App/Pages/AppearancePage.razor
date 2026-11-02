@@ -36,7 +36,7 @@
                 <div class="ui-actions ui-after">
                     <Button Variant="ButtonVariant.Quiet" OnClick="() => Appearance.PreviewAsync(null)">Stop previewing</Button>
                     <Can Permission="AppearanceSurfaces.Edit">
-                        <Button Variant="ButtonVariant.Primary" Href="@($"configure/{AppearanceSurfaces.Area.Key}")">Change for everyone</Button>
+                        <Button Variant="ButtonVariant.Primary" Href="@($"drafts?area={AppearanceSurfaces.Area.Key}")">Change for everyone</Button>
                     </Can>
                 </div>
             }
