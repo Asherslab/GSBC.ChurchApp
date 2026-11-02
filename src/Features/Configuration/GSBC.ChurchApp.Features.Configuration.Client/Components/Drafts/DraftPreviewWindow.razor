@@ -1,0 +1,65 @@
+@implements IAsyncDisposable
+@inject DraftsClient Drafts
+@inject ConfigurationClient Configuration
+@inject SurfaceCatalog Surfaces
+@inject Shell Shell
+
+<RefreshOn Changed="LoadAsync" />
+
+<div class="preview-window">
+    @if (_session is null)
+    {
+        <EmptyState Icon="smartphone" Title="@(_problem is null ? "Loading the preview" : "Can't show this preview")" Body="@_problem" />
+    }
+    else
+    {
+        <h1 class="preview-window__title">@_session.Draft.Name</h1>
+        <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
+    }
+</div>
+
+@code {
+    public const string Channel = "gsbc-drafts";
+
+    [Parameter, EditorRequired] public required string DraftId { get; set; }
+
+    private DraftSession? _session;
+    private string? _problem;
+    private WindowChannel? _channel;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _channel = await Shell.HearAsync(Channel, async saved =>
+        {
+            if (saved == DraftId)
+                await InvokeAsync(async () =>
+                {
+                    await LoadAsync();
+                    StateHasChanged();
+                });
+        });
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        try
+        {
+            DraftSession session = new(await Drafts.GetAsync(DraftId), Surfaces);
+            foreach (SurfaceArea area in new[] { HubSurfaces.Area, AppearanceSurfaces.Area })
+                session.UseLive(new AreaKey(area.Key, null), (await Configuration.GetAreaAsync(area, null)).Placements.Select(placement => placement.ToStored()));
+            _session = session;
+            _problem = null;
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.StatusCode == StatusCode.NotFound ? "This draft was published or deleted." : exception.Status.Detail;
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_channel is not null)
+            await _channel.DisposeAsync();
+    }
+}

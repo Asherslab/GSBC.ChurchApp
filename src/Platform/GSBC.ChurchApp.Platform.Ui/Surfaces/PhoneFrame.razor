@@ -1,4 +1,4 @@
-<div class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@Palette" role="img" aria-label="@Label"
+<div @ref="_frame" class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@Palette" role="img" aria-label="@Label"
      style="@($"width: {Device.Width}px; height: {Device.Height}px; --sat: {Device.TopInset}px; --sab: {Device.BottomInset}px")">
     <div class="phone-frame__screen">
         <div class="topbar" aria-hidden="true"></div>
@@ -23,7 +23,20 @@
     </nav>
 </div>
 
+@inject Shell Shell
+
 @code {
+    private ElementReference _frame;
+    private PhoneDevice? _fitted;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_fitted == Device)
+            return;
+        _fitted = Device;
+        await Shell.FitToSpaceAsync(_frame, Device.Width, Device.Height);
+    }
+
     [Parameter] public string? Palette { get; set; }
     [Parameter] public PhoneDevice Device { get; set; } = PhoneDevice.IPhone15Pro;
     [Parameter] public IReadOnlyList<(string Title, string Icon)> Tabs { get; set; } = [("Home", "home"), ("More", "more")];

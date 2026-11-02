@@ -5,6 +5,7 @@
 @inject IAccess Access
 @inject IPeopleDirectory People
 @inject NavigationManager Navigation
+@inject Shell Shell
 
 <RefreshOn Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" Changed="RefreshAsync" />
 
@@ -315,6 +316,7 @@ else
             }
             else if (_preview)
             {
+                <div class="ui-actions"><Button Variant="ButtonVariant.Quiet" Small="true" Icon="external-link" OnClick="PopOutAsync">Pop out</Button></div>
                 <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
             }
             else if (_form is null)
@@ -601,6 +603,7 @@ else
             _save = SaveState.Saved;
             _problem = null;
             Replace(saved);
+            await Shell.TellOtherWindowsAsync(DraftPreviewWindow.Channel, saved.Id);
         }
         catch (RpcException exception)
         {
@@ -705,6 +708,9 @@ else
         _list = await LoadListAsync();
         Navigation.NavigateTo(BasePath);
     });
+
+    private Task PopOutAsync() =>
+        _session is null ? Task.CompletedTask : Shell.OpenWindowAsync($"{BasePath}/{_session.Draft.Id}/preview", $"preview-{_session.Draft.Id}", 520, 1000).AsTask();
 
     private void OpenMore()
     {
