@@ -27,6 +27,7 @@
     <File Path="docs/features/access.md" />
     <File Path="docs/features/accounts.md" />
     <File Path="docs/features/life-groups.md" />
+    <File Path="docs/features/media.md" />
     <File Path="docs/features/ministries.md" />
     <File Path="docs/features/outreach.md" />
     <File Path="docs/features/site-map.md" />
@@ -47,6 +48,12 @@
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Contracts/GSBC.ChurchApp.Features.Accounts.Contracts.csproj" />
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Data/GSBC.ChurchApp.Features.Accounts.Data.csproj" />
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway/GSBC.ChurchApp.Features.Accounts.Gateway.csproj" />
+  </Folder>
+  <Folder Name="/src/Features/Media/">
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Admin/GSBC.ChurchApp.Features.Media.Admin.csproj" />
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Api/GSBC.ChurchApp.Features.Media.Api.csproj" />
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Client/GSBC.ChurchApp.Features.Media.Client.csproj" />
+    <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Contracts/GSBC.ChurchApp.Features.Media.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Hosts/">
     <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Admin/GSBC.ChurchApp.Hosts.Admin.csproj" />
@@ -78,6 +85,9 @@
   </Folder>
   <Folder Name="/tests/Features/Accounts/">
     <Project Path="tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway.Tests/GSBC.ChurchApp.Features.Accounts.Gateway.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Media/">
+    <Project Path="tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/GSBC.ChurchApp.Features.Media.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />

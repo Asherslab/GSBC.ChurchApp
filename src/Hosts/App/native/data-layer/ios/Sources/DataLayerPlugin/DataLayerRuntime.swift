@@ -6,6 +6,7 @@ final class DataLayerRuntime: @unchecked Sendable {
 
     let transport: GrpcWebTransport?
     let store: FeedStore?
+    let media: MediaCache?
     private(set) var engine: SyncEngine?
     private(set) var outbox: Outbox?
     private(set) var state = SyncState.stopped
@@ -18,6 +19,8 @@ final class DataLayerRuntime: @unchecked Sendable {
     private init() {
         transport = Self.configuredGateway().map { GrpcWebTransport(gateway: $0) }
         store = try? FeedStore(directory: Self.storeDirectory())
+        let media = try? MediaCache(directory: Self.mediaDirectory())
+        self.media = media
         guard let transport, let store else { return }
 
         outbox = Outbox(database: store.database, transport: transport, onChanged: { [weak self] in
@@ -31,7 +34,8 @@ final class DataLayerRuntime: @unchecked Sendable {
                 self.state = state
                 self.stateChanged?(state)
                 if state == .live { Task { await self.outbox?.drain() } }
-            })
+            },
+            onReset: { media?.clearPrivate() })
     }
 
     private static func configuredGateway() -> URL? {
@@ -39,6 +43,10 @@ final class DataLayerRuntime: @unchecked Sendable {
         guard let scheme = info?["GsbcGatewayScheme"] as? String, !scheme.isEmpty,
               let host = info?["GsbcGateway"] as? String, !host.isEmpty else { return nil }
         return URL(string: "\(scheme)://\(host)")
+    }
+
+    private static func mediaDirectory() -> URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("Media")
     }
 
     private static func storeDirectory() -> URL {

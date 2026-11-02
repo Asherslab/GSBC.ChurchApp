@@ -25,6 +25,17 @@ IResourceBuilder<ProjectResource> api = builder
     .WithEnvironment("Accounts__Tokens__PublicKey", tokenKey.ExportSubjectPublicKeyInfoPem())
     .WaitForCompletion(migrator);
 
+IConfigurationSection blobs = builder.Configuration.GetSection("Storage:Blobs");
+if (blobs.Exists())
+{
+    foreach (IConfigurationSection setting in blobs.GetChildren())
+        api.WithEnvironment($"Storage__Blobs__{setting.Key}", setting.Value);
+}
+else
+{
+    builder.AddDevMediaStore(api);
+}
+
 foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
     api.WithEnvironment($"Email__Graph__{setting.Key}", setting.Value);
 

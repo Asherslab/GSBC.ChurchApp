@@ -2,6 +2,7 @@ using Grpc.Core;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
 using GSBC.ChurchApp.Platform.Client.Feeds;
+using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using Microsoft.Extensions.DependencyInjection;
@@ -20,6 +21,7 @@ public static class TransportServiceCollectionExtensions
             .AddSingleton<ILocalFeeds>(provider => provider.GetRequiredService<NativeLocalFeeds>())
             .AddSingleton<NativeOutbox>()
             .AddSingleton<IOutbox>(provider => provider.GetRequiredService<NativeOutbox>())
+            .AddSingleton<IMediaFiles, NativeMediaFiles>()
             .AddSingleton(provider =>
             {
                 NativeBridge bridge = provider.GetRequiredService<NativeBridge>();

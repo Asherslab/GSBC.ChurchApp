@@ -48,10 +48,11 @@ private media and uploads go through short-lived signed R2 URLs handed out by gR
 between the device and R2 and our API only hands out links over gRPC. A gRPC `Media` service
 streaming the bytes was the alternative, turned down because Cloudflare can't cache it.
 
-Not built yet. When it is: the bucket, its custom domain and its CORS are the owner's to set up; each
-object is uploaded with the `immutable` header above as its metadata; and if keys have no file
-extension, the media host needs a cache rule marking it eligible for cache, because Cloudflare only
-caches by extension by default.
+Built 2026-11-02; see [media.md](../features/media.md). Keys are `<sha256>.<extension>`, so
+Cloudflare caches them by default; each object is copied into place with the `immutable` header above.
+Private media is linked only while the caller holds its audience, checked on every link (owner,
+2026-11-02). The buckets, the custom domain, a cache rule, CORS and a lifecycle rule are the owner's
+to set up (media.md lists them).
 
 ## Where Cloudflare caches, and where it doesn't
 
@@ -59,6 +60,7 @@ caches by extension by default.
 |---|---|---|
 | gRPC (all data) | Never: they're POSTs | Sync is the cache |
 | Public media | Forever | Content-addressed |
+| Private media | Never: short-lived signed links | Content-addressed, and the phone checks the hash |
 | Admin panel `.wasm`/`.dll`/JS/CSS | Forever | .NET 10 fingerprints file names |
 | Admin panel `index.html` and unfingerprinted files | No (`no-cache`) | `index.html` names the fingerprinted files |
 | The app itself | Not served from the web | It ships in the store build |

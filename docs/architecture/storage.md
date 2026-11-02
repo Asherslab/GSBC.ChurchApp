@@ -25,7 +25,11 @@
   dollar or two a month.
 - **Two buckets:** public media (behind Cloudflare on a custom domain; see
   [offline-and-caching.md](offline-and-caching.md)) and private files (only through signed URLs).
-- **Keys are content hashes** for media, so a file's URL never changes meaning.
+- **Keys are content hashes** for media (`<sha256>.<extension>`), so a file's URL never changes
+  meaning. Uploads go straight to the bucket through presigned URLs; see
+  [media.md](../features/media.md).
+- **Configuration** is `Storage:Blobs` (service URL, keys, both bucket names, the public base URL), the
+  same in every environment. Development runs SeaweedFS from the AppHost; production points at R2.
 
 ## Dropbox
 

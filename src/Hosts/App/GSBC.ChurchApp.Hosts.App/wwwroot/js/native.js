@@ -17,6 +17,11 @@ window.gsbcNative = (() => {
     outbox: () => dataLayer().outbox().then((result) => result.json),
     retryOutbox: (id) => dataLayer().retryOutbox({ id }),
     discardOutbox: (id) => dataLayer().discardOutbox({ id }),
+    cachedMedia: (key, isPrivate) =>
+      dataLayer().cachedMedia({ key, isPrivate }).then((result) => (result.path ? capacitor().convertFileSrc(result.path) : null)),
+    fetchMedia: (key, url, isPrivate) =>
+      dataLayer().fetchMedia({ key, url, isPrivate }).then((result) => capacitor().convertFileSrc(result.path)),
+    clearPrivateMedia: () => dataLayer().clearPrivateMedia(),
     listenOutbox: (receiver) => {
       dataLayer().addListener('outboxChanged', () => receiver.invokeMethodAsync('OnOutboxChanged'));
     },

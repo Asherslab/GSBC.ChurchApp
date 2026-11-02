@@ -14,6 +14,7 @@ public actor SyncEngine {
     private let store: FeedStore
     private let onFeedsChanged: @Sendable (Set<String>) -> Void
     private let onState: @Sendable (SyncState) -> Void
+    private let onReset: @Sendable () -> Void
 
     private var feeds: [String] = []
     private var watching: Task<Void, Never>?
@@ -21,11 +22,13 @@ public actor SyncEngine {
 
     public init(transport: GrpcWebTransport, store: FeedStore,
          onFeedsChanged: @escaping @Sendable (Set<String>) -> Void,
-         onState: @escaping @Sendable (SyncState) -> Void) {
+         onState: @escaping @Sendable (SyncState) -> Void,
+         onReset: @escaping @Sendable () -> Void = {}) {
         self.transport = transport
         self.store = store
         self.onFeedsChanged = onFeedsChanged
         self.onState = onState
+        self.onReset = onReset
     }
 
     public func start(feeds: [String]) throws {
@@ -85,6 +88,7 @@ public actor SyncEngine {
     }
 
     private func apply(_ batches: [FeedBatch]) {
+        if batches.contains(where: \.reset) { onReset() }
         guard !batches.isEmpty, let changed = try? store.apply(batches), !changed.isEmpty else { return }
         onFeedsChanged(changed)
     }

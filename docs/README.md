@@ -32,8 +32,9 @@ evaluator behind every `[Requires]`, admin screens).
 **Waiting on the owner:**
 
 - The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
-- When media is built: the R2 bucket, its custom domain and a cache rule for it
-  ([offline-and-caching.md](architecture/offline-and-caching.md)).
+- For media, now built: two R2 buckets, the public one's custom domain, a cache rule, CORS and a
+  lifecycle rule on the private one, and an API token in the cluster secret
+  ([media.md](features/media.md), *What the owner sets up*).
 
 **Done by the owner, 2026-11-02:** the Cloudflare zone is set and checked (Browser Cache TTL respects
 our headers, Web Analytics off, app hosts purged), and media goes through R2; see
@@ -84,7 +85,10 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    escalation guards and the admin screens. Open: a private grants feed for offline use in the app.
 5. **Configuration:** surfaces, settings descriptors and the generic editor
    ([data-driven.md](architecture/data-driven.md)).
-6. **Media**, once its route is approved ([offline-and-caching.md](architecture/offline-and-caching.md)).
+6. **Media** ([media.md](features/media.md)). Built 2026-11-02: uploads through signed R2 links named
+   by their SHA-256, private media linked only while you hold its audience, the phone's
+   hash-checked file cache, the admin library page; SeaweedFS in development. Waiting: the owner's R2
+   setup. Open: deleting media, and checking `MediaRef`s on save.
 7. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

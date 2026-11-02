@@ -1,0 +1,75 @@
+@inject MediaClient Media
+
+<Can Permission="MediaPermissions.Upload">
+    <section class="account-panel">
+        <h2>Upload</h2>
+        <MediaUpload OnUploaded="Uploaded" />
+    </section>
+</Can>
+
+<section class="account-panel">
+    <ul class="media-library">
+        @foreach (MediaItemInfo item in _items)
+        {
+            MediaRef media = item.Media!;
+            <li>
+                @if (media.IsImage)
+                {
+                    <MediaImage Media="media" Class="media-thumbnail" />
+                }
+                <span>@(string.IsNullOrEmpty(media.FileName) ? media.Key : media.FileName)</span>
+                <span>@Size(media.Bytes) · @item.UploadedAt.ToLocalTime().ToString("d MMM yyyy")</span>
+                @if (item.PrivateTo is { } audience)
+                {
+                    <span>Private to @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</span>
+                }
+                else if (media.Url is not null)
+                {
+                    <a href="@media.Url" target="_blank" rel="noopener">Open</a>
+                }
+            </li>
+        }
+    </ul>
+    @if (_hasMore)
+    {
+        <button @onclick="LoadMoreAsync" disabled="@_busy">More</button>
+    }
+    @if (_error is not null)
+    {
+        <p class="message">@_error</p>
+    }
+</section>
+
+@code {
+    private const int PageSize = 50;
+    private readonly List<MediaItemInfo> _items = [];
+    private bool _hasMore;
+    private bool _busy;
+    private string? _error;
+
+    protected override Task OnInitializedAsync() => LoadMoreAsync();
+
+    private async Task LoadMoreAsync()
+    {
+        _busy = true;
+        try
+        {
+            MediaList page = await Media.ListAsync(_items.Count, PageSize);
+            _items.AddRange(page.Items.Where(item => item.Media is not null));
+            _hasMore = page.HasMore;
+        }
+        catch (RpcException exception)
+        {
+            _error = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Uploaded(MediaRef media) =>
+        _items.Insert(0, new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow });
+
+    private static string Size(long bytes) => bytes < 1024 * 1024 ? $"{bytes / 1024d:0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
+}

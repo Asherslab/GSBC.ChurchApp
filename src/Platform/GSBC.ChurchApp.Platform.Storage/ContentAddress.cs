@@ -1,12 +1,8 @@
-using System.Security.Cryptography;
-
 namespace GSBC.ChurchApp.Platform.Storage;
 
 public static class ContentAddress
 {
-    public static async Task<string> ForAsync(Stream content, CancellationToken cancellationToken)
-    {
-        byte[] hash = await SHA256.HashDataAsync(content, cancellationToken);
-        return Convert.ToHexStringLower(hash);
-    }
+    public const string ImmutableCacheControl = "public, max-age=31536000, immutable";
+
+    public static string KeyFor(string sha256Hex, string extension) => $"{sha256Hex}.{extension}";
 }
