@@ -3,14 +3,23 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="theme-color" content="#2a3d5e" />
     <title>Good Shepherd</title>
     <base href="/" />
     <link rel="preload" id="webassembly" />
+    <link rel="preload" href="_content/GSBC.ChurchApp.Platform.Ui/fonts/montserrat-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="_content/GSBC.ChurchApp.Platform.Ui/fonts/montserrat-latin-700-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="stylesheet" href="_content/GSBC.ChurchApp.Platform.Ui/css/tokens.css" />
+    <link rel="stylesheet" href="_content/GSBC.ChurchApp.Platform.Ui/css/ui.css" />
     <link rel="stylesheet" href="css/app.css" />
+    <script src="_content/GSBC.ChurchApp.Platform.Ui/js/theme.js"></script>
     <script type="importmap"></script>
 </head>
 <body>
+    <div class="boot" aria-hidden="true"><span class="brand-mark boot__mark"></span></div>
     <div id="app"></div>
+    <script src="_content/GSBC.ChurchApp.Platform.Ui/js/shell.js"></script>
     <script src="js/native.js"></script>
     <script src="_framework/blazor.webassembly#[.{fingerprint}].js"></script>
 </body>

@@ -1,18 +1,76 @@
 @implements IDisposable
 @inject ClientModules Modules
 @inject IAccess Access
+@inject NavigationManager Navigation
+@inject Shell Shell
 
-<nav>
-    @foreach (NavEntry entry in Modules.Navigation.Where(entry => entry.Requires is null || Access.Can(entry.Requires)))
-    {
-        <NavLink href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">@entry.Title</NavLink>
-    }
-</nav>
+@switch (Style)
+{
+    case NavStyle.TabBar:
+        <nav class="tabbar" aria-label="Main">
+            @foreach (NavEntry entry in Permitted.Where(entry => entry.Placement == NavPlacement.Tab))
+            {
+                @Tab(entry.Title, entry.Href, entry.Icon, Section == FirstSegment(entry.Href))
+            }
+            @if (Permitted.Any(entry => entry.Placement == NavPlacement.More))
+            {
+                @Tab("More", MoreHref, "more", Section == MoreHref || Permitted.Any(entry => entry.Placement == NavPlacement.More && Section == FirstSegment(entry.Href)))
+            }
+        </nav>
+        break;
+    case NavStyle.MoreList:
+        <ListGroup>
+            @foreach (NavEntry entry in Permitted.Where(entry => entry.Placement == NavPlacement.More))
+            {
+                <ListRow Title="@entry.Title" Icon="@entry.Icon" Href="@entry.Href" />
+            }
+        </ListGroup>
+        break;
+    default:
+        <nav class="module-nav">
+            @foreach (NavEntry entry in Permitted)
+            {
+                <NavLink href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">@entry.Title</NavLink>
+            }
+        </nav>
+        break;
+}
 
 @code {
-    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
+    [Parameter] public NavStyle Style { get; set; } = NavStyle.Links;
+    [Parameter] public string MoreHref { get; set; } = "more";
 
-    private void OnAccessChanged() => InvokeAsync(StateHasChanged);
+    private IEnumerable<NavEntry> Permitted => Modules.Navigation.Where(entry => entry.Requires is null || Access.Can(entry.Requires));
 
-    public void Dispose() => Access.Changed -= OnAccessChanged;
+    private string Section => FirstSegment(Navigation.ToBaseRelativePath(Navigation.Uri));
+
+    private RenderFragment Tab(string title, string href, string icon, bool active) => @<a class="tabbar__item @(active ? "active" : "")" href="@href" aria-current="@(active ? "page" : null)" @onclick="() => SelectAsync(active)">
+        <Icon Name="@icon" />
+        <span>@title</span>
+    </a>;
+
+    protected override void OnInitialized()
+    {
+        Access.Changed += OnChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+    }
+
+    private async Task SelectAsync(bool active)
+    {
+        await Shell.HapticAsync();
+        if (active)
+            await Shell.ScrollToTopAsync();
+    }
+
+    private static string FirstSegment(string path) => path.Split('/', '?', '#')[0];
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => OnChanged();
+
+    public void Dispose()
+    {
+        Access.Changed -= OnChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
 }

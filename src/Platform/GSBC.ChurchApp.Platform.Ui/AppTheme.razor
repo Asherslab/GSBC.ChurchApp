@@ -1,0 +1,21 @@
+@using GSBC.ChurchApp.Platform.Client.Configuration
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@implements IDisposable
+@inject ISurfaceLayout Layout
+@inject Appearance Appearance
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        Layout.Changed += OnLayoutChanged;
+        await Appearance.LoadAsync();
+        await ApplyAsync();
+    }
+
+    private void OnLayoutChanged() => InvokeAsync(ApplyAsync);
+
+    private async Task ApplyAsync() =>
+        await Appearance.UseStaffPaletteAsync(AppearanceSurfaces.PaletteOf(await Layout.ShownAsync(AppearanceSurfaces.Area)));
+
+    public void Dispose() => Layout.Changed -= OnLayoutChanged;
+}

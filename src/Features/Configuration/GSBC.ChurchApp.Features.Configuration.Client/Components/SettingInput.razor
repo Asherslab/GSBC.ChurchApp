@@ -1,45 +1,23 @@
 @switch (Setting)
 {
     case YesNoSetting yesNo:
-        <label>
-            <input type="checkbox" checked="@yesNo.TryParse(Value, out bool on) && on" @onchange="change => SetAsync(yesNo.Format(change.Value is true))" />
-            @Setting.Label
-        </label>
+        <ToggleRow Title="@Setting.Label" Description="@Help" Checked="@(yesNo.TryParse(Value, out bool on) && on)" CheckedChanged="checkedNow => SetAsync(yesNo.Format(checkedNow))" />
         break;
     case AudienceSetting:
         <AudiencePicker Label="@Setting.Label" Value="@Value" ValueChanged="SetAsync" />
         break;
     case ChoiceSetting choice:
-        <label>
-            @Setting.Label
-            <select value="@Value" @onchange="ChangeAsync">
-                @foreach (Choice option in choice.Choices)
-                {
-                    <option value="@option.Value">@option.Label</option>
-                }
-            </select>
-        </label>
+        <SelectField Label="@Setting.Label" Options="@choice.Choices.Select(option => new FieldOption(option.Value, option.Label)).ToList()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case NumberSetting number:
-        <label>@Setting.Label <input type="number" min="@number.Minimum" max="@number.Maximum" value="@Value" @onchange="ChangeAsync" /></label>
+        <TextField Label="@Setting.Label" Type="number" Min="@number.Minimum.ToString()" Max="@number.Maximum.ToString()" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case DateSetting:
-        <label>@Setting.Label <input type="date" value="@Value" @onchange="ChangeAsync" /></label>
+        <TextField Label="@Setting.Label" Type="date" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
     case TextSetting text:
-        <label>
-            @Setting.Label
-            <input type="@(text.IsLink ? "url" : "text")" maxlength="@text.MaxLength" required="@text.Required" value="@Value" @onchange="ChangeAsync" />
-        </label>
+        <TextField Label="@Setting.Label" Type="@(text.IsLink ? "url" : "text")" MaxLength="text.MaxLength" Required="text.Required" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />
         break;
-}
-@if (Setting.Help.Length > 0)
-{
-    <small>@Setting.Help</small>
-}
-@if (Setting.ProblemWith(Value) is { } problem)
-{
-    <small class="message">@problem</small>
 }
 
 @code {
@@ -47,7 +25,9 @@
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
 
-    private Task ChangeAsync(ChangeEventArgs change) => SetAsync(change.Value?.ToString() ?? "");
+    private string? Help => Setting.Help.Length > 0 ? Setting.Help : null;
+
+    private string? Problem => Setting.ProblemWith(Value);
 
     private Task SetAsync(string value) => ValueChanged.InvokeAsync(value);
 }

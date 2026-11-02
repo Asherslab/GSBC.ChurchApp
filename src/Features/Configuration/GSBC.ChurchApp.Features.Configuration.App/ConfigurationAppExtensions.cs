@@ -11,7 +11,10 @@ public static class ConfigurationAppExtensions
     public static IServiceCollection AddConfigurationApp(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAppExtensions).Assembly,
-            [new NavEntry("Arrange Home", $"configure/{HubSurfaces.Area.Key}", "layout", HubSurfaces.Edit)],
+            [
+                new NavEntry("Arrange Home", $"configure/{HubSurfaces.Area.Key}", "layout", HubSurfaces.Edit),
+                new NavEntry("Colours for everyone", $"configure/{AppearanceSurfaces.Area.Key}", "palette", AppearanceSurfaces.Edit),
+            ],
             [ConfigurationFeeds.Placements]));
         return services.AddConfigurationClient().AddLocalSurfaceLayout();
     }

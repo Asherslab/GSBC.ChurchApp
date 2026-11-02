@@ -1,0 +1,11 @@
+@inject TimeProvider Clock
+
+<time class="date-line @Class" datetime="@At.ToString("O")">@ChurchDates.Describe(At, Style, WithTime, Clock.GetUtcNow().UtcDateTime, Until)</time>
+
+@code {
+    [Parameter, EditorRequired] public required DateTime At { get; set; }
+    [Parameter] public DateTime? Until { get; set; }
+    [Parameter] public DateLineStyle Style { get; set; } = DateLineStyle.Long;
+    [Parameter] public bool WithTime { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

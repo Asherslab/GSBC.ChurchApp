@@ -1,0 +1,13 @@
+@if (Decorative)
+{
+    <span class="brand-mark @Class" aria-hidden="true"></span>
+}
+else
+{
+    <span class="brand-mark @Class" role="img" aria-label="Good Shepherd Baptist Church"></span>
+}
+
+@code {
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public bool Decorative { get; set; }
+}

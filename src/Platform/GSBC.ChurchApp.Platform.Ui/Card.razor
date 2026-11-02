@@ -1,0 +1,59 @@
+@inject Shell Shell
+
+@if (Href is not null)
+{
+    <a class="@Classes" href="@Href" @onclick="TapAsync">@Body</a>
+}
+else if (OnClick.HasDelegate)
+{
+    <button type="button" class="@Classes" @onclick="ClickAsync">@Body</button>
+}
+else
+{
+    <div class="@Classes">@Body</div>
+}
+
+@code {
+    [Parameter] public CardTone Tone { get; set; } = CardTone.Callout;
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public RenderFragment? Media { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Footer { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool Interactive => Href is not null || OnClick.HasDelegate;
+
+    private string Classes => $"card card--{Tone.ToString().ToLowerInvariant()} {(Interactive ? "pressable" : "")} {Class}";
+
+    private RenderFragment Body => @<text>
+        @if (Media is not null)
+        {
+            <span class="card__media">@Media</span>
+        }
+        @if (Tone == CardTone.Masthead)
+        {
+            <BrandMark Class="card__mark" Decorative="true" />
+        }
+        <span class="card__body">
+            @if (Title is not null)
+            {
+                <strong class="card__title">@Title</strong>
+            }
+            @ChildContent
+            @if (Footer is not null)
+            {
+                <span class="card__footer">@Footer</span>
+            }
+        </span>
+    </text>;
+
+    private Task TapAsync() => Shell.HapticAsync().AsTask();
+
+    private async Task ClickAsync()
+    {
+        await TapAsync();
+        await OnClick.InvokeAsync();
+    }
+}

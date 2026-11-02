@@ -1,0 +1,37 @@
+@inject Shell Shell
+
+<PageTitle>@Title · Good Shepherd</PageTitle>
+
+<div class="page-scroll" data-stuck-at="@StuckAt" data-back-href="@BackHref">
+    <header class="topbar @(TopBar == TopBarStyle.Solid ? "topbar--solid" : "")">
+        <div class="topbar__start">
+            @if (BackHref is not null)
+            {
+                <button type="button" class="icon-btn icon-btn--back" @onclick="BackAsync" aria-label="Back to @BackLabel">
+                    <Icon Name="chevron-left" />@BackLabel
+                </button>
+            }
+        </div>
+        <div class="topbar__title" aria-hidden="true">@Title</div>
+        <div class="topbar__end">@Actions</div>
+    </header>
+    <div class="page @(BackHref is null ? "" : "page--push")">
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? BackHref { get; set; }
+    [Parameter] public string BackLabel { get; set; } = "Back";
+    [Parameter] public TopBarStyle TopBar { get; set; } = TopBarStyle.OverMasthead;
+    [Parameter] public int StuckAt { get; set; } = 120;
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private async Task BackAsync()
+    {
+        await Shell.HapticAsync();
+        await Shell.BackAsync(BackHref!);
+    }
+}

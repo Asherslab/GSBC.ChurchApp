@@ -1,0 +1,29 @@
+@inject Shell Shell
+
+<label class="toggle-row @(Disabled ? "toggle-row--disabled" : "")">
+    <span class="toggle-row__body">
+        <span class="toggle-row__title">@Title</span>
+        @if (Description is not null)
+        {
+            <span class="toggle-row__description">@Description</span>
+        }
+    </span>
+    <span class="switch">
+        <input type="checkbox" role="switch" checked="@Checked" disabled="@Disabled" @onchange="ToggleAsync" />
+        <span aria-hidden="true"></span>
+    </span>
+</label>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+    [Parameter] public bool Checked { get; set; }
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private async Task ToggleAsync(ChangeEventArgs change)
+    {
+        await Shell.HapticAsync();
+        await CheckedChanged.InvokeAsync(change.Value is true);
+    }
+}

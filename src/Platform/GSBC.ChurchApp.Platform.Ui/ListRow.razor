@@ -1,0 +1,80 @@
+@inject Shell Shell
+
+@if (Href is not null && !External && !Disabled)
+{
+    <a class="row @Class" href="@Href" @onclick="TapAsync">@Body</a>
+}
+else if (Disabled || (Href is null && !OnClick.HasDelegate))
+{
+    <div class="row @(Disabled ? "row--disabled" : "") @Class" aria-disabled="@(Disabled ? "true" : null)">@Body</div>
+}
+else
+{
+    <button type="button" class="row @Class" @onclick="ActivateAsync">@Body</button>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public RowTone IconTone { get; set; } = RowTone.Primary;
+    [Parameter] public RenderFragment? Leading { get; set; }
+    [Parameter] public string? Trailing { get; set; }
+    [Parameter] public RenderFragment? TrailingContent { get; set; }
+    [Parameter] public RenderFragment? Below { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public bool External { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool Navigates => !Disabled && Href is not null;
+
+    private string ToneClass => IconTone switch
+    {
+        RowTone.Accent => "row__icon--accent",
+        RowTone.Warm => "row__icon--warm",
+        RowTone.Quiet => "row__icon--quiet",
+        _ => "",
+    };
+
+    private RenderFragment Body => @<text>
+        @if (Leading is not null)
+        {
+            @Leading
+        }
+        else if (Icon is not null)
+        {
+            <span class="row__icon @ToneClass"><GSBC.ChurchApp.Platform.Ui.Icon Name="@Icon" Size="IconSize.Small" /></span>
+        }
+        <span class="row__body">
+            <span class="row__title">@Title</span>
+            @if (Subtitle is not null)
+            {
+                <span class="row__subtitle">@Subtitle</span>
+            }
+            @Below
+        </span>
+        @if (Trailing is not null || TrailingContent is not null || Navigates)
+        {
+            <span class="row__trail">
+                @Trailing
+                @TrailingContent
+                @if (Navigates)
+                {
+                    <GSBC.ChurchApp.Platform.Ui.Icon Name="@(External ? "external-link" : "chevron-right")" Size="IconSize.Small" />
+                }
+            </span>
+        }
+    </text>;
+
+    private Task TapAsync() => Shell.HapticAsync().AsTask();
+
+    private async Task ActivateAsync()
+    {
+        await TapAsync();
+        if (Href is not null)
+            await Shell.OpenExternalAsync(Href);
+        await OnClick.InvokeAsync();
+    }
+}

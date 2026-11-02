@@ -1,0 +1,54 @@
+@inject Shell Shell
+
+@if (Href is not null && !Disabled)
+{
+    <a class="@Classes" href="@Href" aria-label="@AriaLabel" @onclick="TapAsync">@Body</a>
+}
+else
+{
+    <button type="@Type" class="@Classes" disabled="@(Disabled || Busy)" aria-busy="@(Busy ? "true" : null)" aria-label="@AriaLabel" @onclick="ClickAsync">@Body</button>
+}
+
+@code {
+    [Parameter] public ButtonVariant Variant { get; set; } = ButtonVariant.Primary;
+    [Parameter] public bool Block { get; set; }
+    [Parameter] public bool Small { get; set; }
+    [Parameter] public string? Icon { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string Type { get; set; } = "button";
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? AriaLabel { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Classes =>
+        $"btn btn--{Kebab(Variant)}{(Block ? " btn--block" : "")}{(Small ? " btn--small" : "")}{(ChildContent is null ? " btn--icon" : "")}";
+
+    private RenderFragment Body => @<text>
+        @if (Busy)
+        {
+            <span class="spinner" aria-hidden="true"></span>
+        }
+        else if (Icon is not null)
+        {
+            <GSBC.ChurchApp.Platform.Ui.Icon Name="@Icon" Size="IconSize.Small" />
+        }
+        @ChildContent
+    </text>;
+
+    private Task TapAsync() => Shell.HapticAsync().AsTask();
+
+    private async Task ClickAsync()
+    {
+        await TapAsync();
+        await OnClick.InvokeAsync();
+    }
+
+    private static string Kebab(ButtonVariant variant) => variant switch
+    {
+        ButtonVariant.OnMasthead => "on-masthead",
+        ButtonVariant.GhostOnMasthead => "ghost-masthead",
+        _ => variant.ToString().ToLowerInvariant(),
+    };
+}

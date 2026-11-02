@@ -7,5 +7,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GSBC.ChurchApp.Platform.Client\GSBC.ChurchApp.Platform.Client.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Platform.Common\GSBC.ChurchApp.Platform.Common.csproj" />
   </ItemGroup>
 </Project>

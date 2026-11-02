@@ -2,24 +2,50 @@
 @using Grpc.Core
 @using GSBC.ChurchApp.Features.Accounts.Client
 @inject AccountsClient Accounts
+@inject TimeProvider Clock
 
-<h1>Good Shepherd</h1>
+<Page Title="Good Shepherd">
+    <Masthead Title="Good Shepherd">
+        <p class="masthead__note"><DateLine At="Clock.GetUtcNow().UtcDateTime" /></p>
+        <div class="home-status"><SyncIndicator OnMasthead="true" /></div>
+    </Masthead>
 
-<p>Server: @_server</p>
+    <Section First="true">
+        <EmptyState Icon="home" Title="Home is on its way" Body="This Sunday, sermons and the week will show here as each part of the app is built." />
+    </Section>
+
+    <Section Title="Connection">
+        <ListGroup>
+            @if (_server is null)
+            {
+                <Skeleton Count="1" Label="Checking the server" />
+            }
+            else
+            {
+                <ListRow Title="@_server" Subtitle="@_detail" Icon="@(_reachable ? "check" : "alert")" IconTone="@(_reachable ? RowTone.Accent : RowTone.Warm)" />
+            }
+        </ListGroup>
+    </Section>
+</Page>
 
 @code {
-    private string _server = "checking…";
+    private string? _server;
+    private string? _detail;
+    private bool _reachable;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
             GSBC.ChurchApp.Features.Accounts.Contracts.CurrentSession session = await Accounts.GetCurrentSessionAsync();
-            _server = session.SignedIn ? $"connected, signed in as {session.DisplayName}" : "connected, not signed in";
+            _reachable = true;
+            _server = "Connected to the church's server";
+            _detail = session.SignedIn ? $"Signed in as {session.DisplayName}" : "Not signed in";
         }
         catch (RpcException exception)
         {
-            _server = $"unreachable ({exception.StatusCode}: {exception.Status.Detail})";
+            _server = "Can't reach the church's server";
+            _detail = $"The app keeps showing what's on this phone and reconnects by itself ({exception.StatusCode}).";
         }
     }
 }

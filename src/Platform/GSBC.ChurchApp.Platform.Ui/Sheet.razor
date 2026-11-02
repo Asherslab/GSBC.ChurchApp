@@ -1,0 +1,51 @@
+@if (Open)
+{
+    <div class="sheet-backdrop" @onclick="CloseAsync"></div>
+    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="@(Title is null ? null : _titleId)" tabindex="-1" @ref="_sheet" @onkeydown="KeyAsync">
+        <div class="sheet__grabber" aria-hidden="true"></div>
+        @if (Title is not null)
+        {
+            <h2 class="sheet__title" id="@_titleId">@Title</h2>
+        }
+        @if (Lead is not null)
+        {
+            <p class="sheet__lead">@Lead</p>
+        }
+        <div class="sheet__body">@ChildContent</div>
+        @if (Actions is not null)
+        {
+            <div class="sheet__actions">@Actions</div>
+        }
+    </div>
+}
+
+@code {
+    private static int _sheets;
+    private readonly string _titleId = $"sheet-{Interlocked.Increment(ref _sheets)}";
+    private ElementReference _sheet;
+    private bool _focused;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Open && !_focused)
+        {
+            _focused = true;
+            await _sheet.FocusAsync();
+        }
+        else if (!Open)
+        {
+            _focused = false;
+        }
+    }
+
+    private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private Task KeyAsync(KeyboardEventArgs key) => key.Key == "Escape" ? CloseAsync() : Task.CompletedTask;
+}

@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Client.Transport;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
+using GSBC.ChurchApp.Platform.Ui;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.AspNetCore.Components.WebAssembly.Hosting;
 
@@ -15,20 +16,22 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 ClientModules modules = new(typeof(Program).Assembly);
-modules.Add(new ClientModule("Home", typeof(Program).Assembly, [new NavEntry("Home", "", "home")]));
-modules.Add(new ClientModule("Storage", typeof(Program).Assembly, [new NavEntry("Storage", "storage", "database")]));
+modules.Add(new ClientModule("Home", typeof(Program).Assembly, [new NavEntry("Home", "", "home", Placement: NavPlacement.Tab)]));
 
 builder.Services
     .AddSingleton(modules)
     .AddPlatformClient()
+    .AddPlatformUi()
     .AddNativeDataLayer(new Uri(builder.Configuration["Gateway"] ?? builder.HostEnvironment.BaseAddress))
     .AddAccountsApp(modules)
     .AddConfigurationApp(modules)
     .AddMediaClient();
+modules.Add(new ClientModule("Settings", typeof(Program).Assembly,
+    [new NavEntry("Appearance", "appearance", "sun"), new NavEntry("Storage", "storage", "database")]));
 
 WebAssemblyHost host = builder.Build();
 NativeBridge bridge = await host.Services.InitialiseNativeAsync();
 if (bridge.IsDevelopmentBuild)
-    modules.Add(new ClientModule("Development", typeof(Program).Assembly, [], [DevelopmentFeeds.Echo]));
+    modules.Add(new ClientModule("Development", typeof(Program).Assembly, [new NavEntry("Design gallery", "gallery", "palette")], [DevelopmentFeeds.Echo]));
 await host.Services.StartNativeDataLayerAsync(modules);
 await host.RunAsync();

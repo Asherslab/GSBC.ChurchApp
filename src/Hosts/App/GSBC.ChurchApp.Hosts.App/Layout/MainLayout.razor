@@ -1,6 +1,16 @@
 @inherits LayoutComponentBase
+@inject Shell Shell
 
-<ModuleNav />
-<main>
+<div class="shell">
     @Body
-</main>
+    <ModuleNav Style="NavStyle.TabBar" />
+</div>
+<AppTheme />
+
+@code {
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            await Shell.StartedAsync();
+    }
+}
