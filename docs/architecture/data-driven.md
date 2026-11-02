@@ -55,3 +55,42 @@ Settings contracts only grow (SPEC §5's additive rule).
 - Editing configuration is itself a permission, per area (`config.hub.edit`, a ministry's
   `ministries.modules.edit` at that ministry), so a leader can arrange their own ministry and nothing
   else.
+
+## Decided when building it (2026-11-02)
+
+How the above is built is in [features/configuration.md](../features/configuration.md). The doc left
+these open; none split into materially different designs, so they were decided and recorded here.
+
+- **Descriptors live in Platform.Contracts** (`Platform.Contracts.Configuration`), not in the
+  Configuration feature. Features can't reference each other, and Ministries, Sermons and the rest
+  must declare surfaces. The Configuration feature owns storage, the service, the feed and the editor.
+- **An area is where surfaces go:** a key, the scope kind it's arranged at, and the permission that
+  edits it (the Hub: global, `config.hub.edit`; a ministry's modules: per ministry,
+  `ministries.modules.edit`). Areas are declared beside the surfaces that use them. The **Hub area is
+  in Platform** because every feature with a tile names it.
+- **Settings are a string map, typed by the descriptor.** Each field is an object
+  (`TextSetting`, `NumberSetting`, `YesNoSetting`, `ChoiceSetting`, `DateSetting`, `ColourSetting`,
+  `AudienceSetting`) that validates a raw value and reads it with its default
+  (`values.Get(LinkTile.Title)`). That's the typed contract, without a protobuf message per surface,
+  and it grows additively: a new field has a default, and an unknown key is ignored by the phone and
+  rejected by the server.
+- **Defaults are not seeded.** A placement row exists only once staff change something. The phone
+  merges each known surface's declared defaults (shown or not, order) with the stored placements, so a
+  new surface appears after an app update with no migration, and scoped areas (every ministry) need no
+  rows at all.
+- **One placement per area, scope and surface,** unless the surface is *repeatable* (staff-made link
+  tiles), whose instances exist only as rows.
+- **Audience is display, not secrecy.** The placements feed is public: it says what to show, not
+  content. A surface for "signed in" or "holds a permission" is hidden from others on the phone, but
+  its settings can be read by anyone, so settings never hold anything private. Content behind a
+  surface keeps its own feed audience.
+- **Audience "a role" is deferred.** The phone holds grants, not roles. Everyone, signed in, and
+  "holds a permission" (at the placement's scope) are built; a role audience comes with Access's private
+  grants feed, if staff need it.
+- **Rollback is per save.** Every save is one change batch, audited with each placement's before and
+  after; rolling back restores the batch's before state, validated against today's descriptors, as a
+  new audited save. A save carries the revision it was based on and is refused if someone else saved
+  since.
+- **"Needs app version X"** is shown for surfaces introduced after the first store release (1.0).
+- **Not yet:** the media field kind (with Media), themes (brand or yearly), and taxonomies, which are
+  each feature's own records.

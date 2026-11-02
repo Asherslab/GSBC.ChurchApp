@@ -1,0 +1,19 @@
+<label>
+    @Label
+    <select value="@Value" @onchange="ChangeAsync">
+        <option value="@Audience.Everyone.Text">Everyone</option>
+        <option value="@Audience.SignedIn.Text">People who are signed in</option>
+        @if (Audience.TryParse(Value, out Audience? current) && current.Node is not null)
+        {
+            <option value="@Value">Only people with a particular permission</option>
+        }
+    </select>
+</label>
+
+@code {
+    [Parameter] public string Label { get; set; } = "Who sees it";
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private Task ChangeAsync(ChangeEventArgs change) => ValueChanged.InvokeAsync(change.Value?.ToString() ?? "");
+}

@@ -8,11 +8,14 @@ public sealed class GrantedAccess : IAccess
 
     public event Action? Changed;
 
+    public bool SignedIn { get; private set; }
+
     public bool Can(Permission permission, string? objectId = null) => _grants.IsAllowed(permission, objectId);
 
-    public void Replace(GrantSet grants)
+    public void Replace(GrantSet grants, bool signedIn)
     {
         _grants = grants;
+        SignedIn = signedIn;
         Changed?.Invoke();
     }
 }

@@ -1,0 +1,220 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Common
+@inject ConfigurationClient Configuration
+@inject SurfaceCatalog Surfaces
+@inject IPeopleDirectory People
+
+<section class="account-panel surface-editor">
+    <h2>@Area.Title</h2>
+    <p>@Area.Description</p>
+    <ol>
+        @for (int index = 0; index < _arranged.Count; index++)
+        {
+            int position = index;
+            ArrangedSurface entry = _arranged[position];
+            <li class="@(entry.Hidden ? "is-hidden" : "")">
+                <strong>@NameOf(entry)</strong>
+                <span>@Summary(entry)</span>
+                @if (entry.Surface.NeedsNewerApp)
+                {
+                    <span class="tag">needs app version @entry.Surface.IntroducedIn</span>
+                }
+                <button disabled="@(_busy || position == 0)" @onclick="() => MoveAsync(position, -1)" aria-label="Move @NameOf(entry) up">Up</button>
+                <button disabled="@(_busy || position == _arranged.Count - 1)" @onclick="() => MoveAsync(position, 1)" aria-label="Move @NameOf(entry) down">Down</button>
+                <button disabled="@_busy" @onclick="() => ToggleAsync(entry)">@(entry.Hidden ? "Show" : "Hide")</button>
+                <button disabled="@_busy" @onclick="() => Edit(entry)">Edit</button>
+            </li>
+        }
+    </ol>
+    @foreach (Surface repeatable in Surfaces.In(Area).Where(surface => surface.Repeatable))
+    {
+        <button disabled="@_busy" @onclick="() => Add(repeatable)">Add a @repeatable.Title.ToLowerInvariant()</button>
+    }
+</section>
+
+@if (_draft is not null)
+{
+    <section class="account-panel">
+        <h2>@(_draft.IsNew && _draft.Surface.Repeatable ? $"New {_draft.Surface.Title.ToLowerInvariant()}" : _draft.Surface.Title)</h2>
+        <p>@_draft.Surface.Description</p>
+        <form @onsubmit="SaveDraftAsync">
+            @foreach (Setting setting in _draft.Surface.Settings)
+            {
+                <SettingInput Setting="setting" Value="@_draft.Values[setting.Key]" ValueChanged="value => _draft.Values[setting.Key] = value" />
+            }
+            <AudiencePicker Value="@_draft.Audience" ValueChanged="value => _draft.Audience = value" />
+            <label>First day shown <input type="date" @bind="_draft.ShowFrom" /></label>
+            <label>Last day shown <input type="date" @bind="_draft.ShowUntil" /></label>
+            <label><input type="checkbox" @bind="_draft.Hidden" /> Hidden</label>
+            <button type="submit" disabled="@(_busy || _draft.Problems.Count > 0)">Save</button>
+            <button type="button" @onclick="() => _draft = null">Cancel</button>
+            @if (!_draft.IsNew)
+            {
+                <button type="button" disabled="@_busy" @onclick="RemoveDraftAsync">@(_draft.Surface.Repeatable ? "Remove" : "Back to how the app starts")</button>
+            }
+        </form>
+    </section>
+}
+
+<section class="account-panel">
+    <h2>Recent changes</h2>
+    @if (_history.Count == 0)
+    {
+        <p>Nothing changed yet.</p>
+    }
+    <ul>
+        @foreach (ChangeBatch batch in _history)
+        {
+            <li>
+                @When(batch.At) · @_names.GetValueOrDefault(batch.By, "Someone") · @Describe(batch)
+                <button disabled="@_busy" @onclick="() => RollBackAsync(batch)">Undo</button>
+            </li>
+        }
+    </ul>
+</section>
+
+@if (_message is not null)
+{
+    <p class="message">@_message</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public required SurfaceArea Area { get; set; }
+    [Parameter] public string? ScopeId { get; set; }
+
+    private IReadOnlyList<ArrangedSurface> _arranged = [];
+    private List<ChangeBatch> _history = [];
+    private Dictionary<string, string> _names = [];
+    private PlacementDraft? _draft;
+    private bool _busy;
+    private string? _message;
+
+    protected override Task OnParametersSetAsync() => RunAsync(LoadAsync);
+
+    private async Task LoadAsync()
+    {
+        AreaPlacements placements = await Configuration.GetAreaAsync(Area, ScopeId);
+        _arranged = SurfaceLayout.Arrange(Surfaces.In(Area), placements.Placements.Select(placement => placement.ToStored()));
+        _history = (await Configuration.ListChangesAsync(Area, ScopeId)).Batches;
+        _names = await NamesAsync(_history.Select(batch => batch.By).Distinct().ToList());
+    }
+
+    private Task MoveAsync(int position, int by) => RunAsync(async () =>
+    {
+        List<ArrangedSurface> reordered = [.. _arranged];
+        (reordered[position], reordered[position + by]) = (reordered[position + by], reordered[position]);
+        List<Placement> moved = reordered
+            .Select((entry, index) => (Draft: PlacementDraft.Of(entry), Order: index * 10))
+            .Where(pair => pair.Draft.Order != pair.Order || pair.Draft.IsNew)
+            .Select(pair =>
+            {
+                pair.Draft.Order = pair.Order;
+                return pair.Draft.ToMessage();
+            })
+            .ToList();
+        await SaveAsync(moved);
+    });
+
+    private Task ToggleAsync(ArrangedSurface entry) => RunAsync(async () =>
+    {
+        PlacementDraft draft = PlacementDraft.Of(entry);
+        draft.Hidden = !draft.Hidden;
+        await SaveAsync([draft.ToMessage()]);
+    });
+
+    private void Edit(ArrangedSurface entry)
+    {
+        _draft = PlacementDraft.Of(entry);
+        _message = null;
+    }
+
+    private void Add(Surface surface)
+    {
+        _draft = PlacementDraft.New(surface, _arranged.Count == 0 ? surface.DefaultOrder : _arranged.Max(entry => entry.Order) + 10);
+        _message = null;
+    }
+
+    private Task SaveDraftAsync() => RunAsync(async () =>
+    {
+        await SaveAsync([_draft!.ToMessage()]);
+        _draft = null;
+    });
+
+    private Task RemoveDraftAsync() => RunAsync(async () =>
+    {
+        await Configuration.SaveAsync(Area, ScopeId, [], [new PlacementReference { Id = _draft!.Id!, Revision = _draft.Revision }]);
+        _draft = null;
+        await LoadAsync();
+        _message = "Saved.";
+    });
+
+    private Task RollBackAsync(ChangeBatch batch) => RunAsync(async () =>
+    {
+        await Configuration.RollBackAsync(batch.Id);
+        _draft = null;
+        await LoadAsync();
+        _message = "Undone.";
+    });
+
+    private async Task SaveAsync(List<Placement> placements)
+    {
+        await Configuration.SaveAsync(Area, ScopeId, placements);
+        await LoadAsync();
+        _message = "Saved. Phones show it within a few seconds.";
+    }
+
+    private async Task<Dictionary<string, string>> NamesAsync(IReadOnlyCollection<string> ids)
+    {
+        try
+        {
+            return (await People.GetAsync(ids)).ToDictionary(person => person.Id, person => person.Name);
+        }
+        catch (RpcException)
+        {
+            return [];
+        }
+    }
+
+    private static string NameOf(ArrangedSurface entry) =>
+        entry.Surface.Repeatable && entry.Surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title
+            ? $"{entry.Values.Get(title)} ({entry.Surface.Title.ToLowerInvariant()})"
+            : entry.Surface.Title;
+
+    private static string Summary(ArrangedSurface entry)
+    {
+        List<string> parts = [entry.Hidden ? "hidden" : entry.Audience == Audience.Everyone ? "shown to everyone" : "shown to some people"];
+        if (entry.StartsAt is { } starts)
+            parts.Add($"from {When(starts)}");
+        if (entry.EndsAt is { } ends)
+            parts.Add($"until {When(ends.AddTicks(-1))}");
+        return string.Join(" · ", parts);
+    }
+
+    private string Describe(ChangeBatch batch)
+    {
+        string what = string.Join(", ", batch.Changes.Select(change =>
+            $"{Surfaces.ByKey.GetValueOrDefault(change.Surface)?.Title ?? change.Surface} {(change.Before is null ? "added" : change.After is null ? "removed" : "changed")}"));
+        return batch.RollsBack is null ? what : $"undid a change: {what}";
+    }
+
+    private static string When(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", CultureInfo.InvariantCulture);
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+            if (exception.StatusCode == StatusCode.Aborted)
+                await LoadAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

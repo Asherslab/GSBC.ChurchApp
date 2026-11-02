@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Configuration.Api.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Configuration.Contracts\GSBC.ChurchApp.Features.Configuration.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
+  </ItemGroup>
+</Project>

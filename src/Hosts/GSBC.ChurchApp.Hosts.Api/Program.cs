@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Access.Api;
 using GSBC.ChurchApp.Features.Accounts.Api;
+using GSBC.ChurchApp.Features.Configuration.Api;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
@@ -11,6 +12,7 @@ builder.AddPlatformApi();
 builder.Services.AddAccountTokenValidation(builder.Configuration);
 builder.Services.AddAccountsApi(builder.Configuration);
 builder.Services.AddAccessApi();
+builder.Services.AddConfigurationApi();
 
 if (builder.Environment.IsDevelopment())
     builder.Services.AddFeed(new FeedDefinition(DevelopmentFeeds.Echo, FeedAudience.Public));
@@ -23,5 +25,6 @@ app.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
 app.MapPlatformApi();
 app.MapAccountsApi();
 app.MapAccessApi();
+app.MapConfigurationApi();
 
 app.Run();

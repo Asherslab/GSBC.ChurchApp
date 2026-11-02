@@ -1,0 +1,22 @@
+@inject SurfaceCatalog Surfaces
+
+@if (Surfaces.Areas.GetValueOrDefault(AreaKey) is { } area)
+{
+    <Can Permission="area.EditPermission" ObjectId="@ScopeId">
+        <ChildContent>
+            <SurfaceEditor Area="area" ScopeId="@ScopeId" />
+        </ChildContent>
+        <Otherwise>
+            <p>You can't arrange @area.Title.ToLowerInvariant().</p>
+        </Otherwise>
+    </Can>
+}
+else
+{
+    <p>There's nothing called "@AreaKey" to arrange in this version of the app.</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string AreaKey { get; set; }
+    [Parameter] public string? ScopeId { get; set; }
+}

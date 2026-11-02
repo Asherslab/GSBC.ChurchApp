@@ -3,5 +3,6 @@
     <ProjectReference Include="..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
     <ProjectReference Include="..\..\Features\Accounts\GSBC.ChurchApp.Features.Accounts.Api\GSBC.ChurchApp.Features.Accounts.Api.csproj" />
     <ProjectReference Include="..\..\Features\Access\GSBC.ChurchApp.Features.Access.Api\GSBC.ChurchApp.Features.Access.Api.csproj" />
+    <ProjectReference Include="..\..\Features\Configuration\GSBC.ChurchApp.Features.Configuration.Api\GSBC.ChurchApp.Features.Configuration.Api.csproj" />
   </ItemGroup>
 </Project>
