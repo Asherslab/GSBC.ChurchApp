@@ -1,0 +1,19 @@
+<GroupedList Items="Abilities" GroupKey="ability => ability.Area" Context="ability">
+    <ItemTemplate>
+        @ability.Description@(EveryMinistry && ability.ScopeKind != ScopeKind.Global.Name ? $", in every {ability.ScopeKind}" : "")
+        @if (ability.Sensitive)
+        {
+            <small class="aside">@AccessWords.Sensitive</small>
+        }
+    </ItemTemplate>
+    <Empty><p>@AccessWords.Nothing</p></Empty>
+</GroupedList>
+
+@code {
+    [Parameter, EditorRequired] public required IEnumerable<string> Nodes { get; set; }
+    [Parameter, EditorRequired] public required Catalog Catalog { get; set; }
+    [Parameter] public bool EveryMinistry { get; set; }
+
+    private IEnumerable<PermissionInfo> Abilities =>
+        Catalog.Permissions.Where(permission => Nodes.Contains(permission.Node));
+}

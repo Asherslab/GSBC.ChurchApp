@@ -7,9 +7,11 @@ public sealed class RoleRecord
     public required string Name { get; set; }
     public string Description { get; set; } = "";
     public required string ScopeKind { get; set; }
+    public bool AppliesToChildren { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<RolePattern> Patterns { get; set; } = [];
     public List<RoleInclude> Includes { get; set; } = [];
+    public List<RoleAssigner> Assigners { get; set; } = [];
 
     public bool IsSystem => SystemKey is not null;
 }
@@ -24,6 +26,12 @@ public sealed class RoleInclude
 {
     public Guid RoleId { get; set; }
     public Guid IncludedRoleId { get; set; }
+}
+
+public sealed class RoleAssigner
+{
+    public Guid RoleId { get; set; }
+    public Guid AssignerRoleId { get; set; }
 }
 
 public sealed class Assignment

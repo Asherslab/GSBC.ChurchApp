@@ -16,9 +16,14 @@ public sealed class AccessClient(ChannelBase channel)
 
     public ValueTask<RoleInfo> SaveRoleAsync(RoleInfo role) => _access.SaveRoleAsync(role);
 
+    public ValueTask<RoleEffect> PreviewRoleAsync(RoleInfo role, bool deleting = false) =>
+        _access.PreviewRoleAsync(new RolePreviewRequest { Role = role, Deleting = deleting });
+
     public ValueTask<Done> DeleteRoleAsync(string id) => _access.DeleteRoleAsync(new RoleReference { Id = id });
 
     public ValueTask<AssignmentList> ListAssignmentsAsync(string? userId) => _access.ListAssignmentsAsync(new AssignmentQuery { UserId = userId });
+
+    public ValueTask<PersonAbilities> ExplainAsync(string userId) => _access.ExplainAsync(new PersonReference { UserId = userId });
 
     public ValueTask<AssignmentInfo> AssignAsync(AssignRequest request) => _access.AssignAsync(request);
 

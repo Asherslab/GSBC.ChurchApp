@@ -56,10 +56,13 @@ owner. The spike uses these names; descriptions marked "sample" are written for 
 - **A leader:** post an announcement, an event or a link, each marked **Everyone** or **Members
   only**; start chats, including leaders-post-only ones; assign people to roster positions; and, in
   Settings, switch modules on and off, change the join setting, let members start chats, accept join
-  requests and see the members.
+  requests, and add and remove members.
+- **An admin:** everything a leader can do, without the title: not listed as a leader on the About.
+  For the person who looks after a ministry's tech (owner, 2026-11-02).
 - **Staff:** everything a leader can do in every ministry, plus **Message all serving teams**: one
   important announcement, with a notification, to the members of every serving team and their
-  sub-teams. Whether a ministry is a serving team is a staff-only setting.
+  sub-teams. Whether a ministry is a serving team is a staff-only setting. Only staff make someone a
+  leader or an admin.
 
 "My ministries" is the top of the directory: your next roster date, then each ministry you're in with
 its latest announcement. Home has it as a Hub tile ("You're on Sunday · Choir item · Morning service,
@@ -299,8 +302,56 @@ quietly. Staff messages to all serving teams are always important.
 Ministries are the first feature that needs a **person**, not an install: membership, a name in a
 chat, a roster match to Elvanto, a leader's role. The SPEC keeps reading account-free (§3), and that
 still holds for the directory and every public item. Members-only content, chats and rosters need
-member sign-in; Life Groups' leader sign-in (passkeys in the app) is the likely start. That design is
-out of scope here; the spike has a "Viewing as" switch (Visitor, Member, Leader, Staff) instead.
+member sign-in; Life Groups' leader sign-in (passkeys in the app) is the likely start. The spike's
+"Viewing as" switch (Visitor, Member, Leader, Staff) stands in for the roles below.
+
+## Roles and the team list
+
+Agreed with the owner 2026-11-02; the Access side is in [access.md](access.md#how-staff-see-access-agreed-2026-11-02).
+
+**Membership lives in the app, for every ministry** (owner, 2026-11-02). A ministry's team is the
+people who hold its **Member**, **Leader** or **Admin** role, as Access assignments at that ministry.
+Elvanto supplies roster dates, positions and replies, matched to app people; it doesn't decide who is
+on a team.
+
+| Role | Given per ministry by | Applies to its teams | On the About |
+|---|---|---|---|
+| Member | Leaders and Admins of the ministry or its parent, Staff; Join on an Open ministry; accepting a join request | No | No |
+| Leader | Staff | Yes | Listed as a leader |
+| Admin | Staff | Yes | Not listed |
+| Staff (everywhere) | The Owner | Every ministry | No |
+
+**The team list** is in Settings → Team (a leader's management screen, gated by a permission, so it
+works in the app and the admin panel alike): the leaders, the admins and the members, each with what
+you may do to them. **Add to team** finds someone by name; **Remove from team**; for staff, **Make a
+leader**, **Make an admin**, **Stop being a leader**. A button you may not press isn't shown; a refusal
+from the server is shown in its words ("Only staff can make someone a leader. Ask the church office.").
+Join requests sit at the top with Accept and Decline. Leave removes your own Member role.
+
+**Abilities** (the permission nodes Ministries declares, in the words staff see):
+
+| Node | Per | Ability | Member | Leader, Admin | Staff |
+|---|---|---|---|---|---|
+| `ministries.team.view` | ministry | Read the team's news, calendar, files and chats | ✓ | ✓ | ✓ |
+| `ministries.roster.reply` | ministry | Reply to their roster | ✓ | ✓ | ✓ |
+| `ministries.news.post` | ministry | Post news | | ✓ | ✓ |
+| `ministries.calendar.post` | ministry | Add events | | ✓ | ✓ |
+| `ministries.files.post` | ministry | Add files and links | | ✓ | ✓ |
+| `ministries.chats.start` | ministry | Start chats | (if the ministry allows) | ✓ | ✓ |
+| `ministries.roster.edit` | ministry | Manage the roster | | ✓ | ✓ |
+| `ministries.members.edit` | ministry | Add and remove members, accept join requests | | ✓ | ✓ |
+| `ministries.settings.edit` | ministry | Change the ministry's settings | | ✓ | ✓ |
+| `ministries.serving.message` | everywhere | Message all serving teams | | | ✓ |
+| `ministries.serving.set` | everywhere | Choose which ministries are serving teams | | | ✓ |
+
+"Members can start chats" is a ministry setting checked by Ministries, not a role change. The Choir
+member reading Music's members-only items is Ministries' feed rule (a child's member reads the
+parent's team side); it isn't a grant at Music.
+
+**What Ministries calls in Access:** see [access.md, What Ministries must
+call](access.md#what-ministries-must-call): its system roles with assignable-by, `IRoleAssignments` for
+giving, taking away and listing holders, `IScopeHierarchy` for its parent and children, and
+`IScopeNames` for ministry names on Access screens.
 
 ## Data and services
 
@@ -343,6 +394,9 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
 - **Chats:** several per ministry; leaders create; members can if enabled; leaders-post-only chats.
   None for Kids or Youth yet (owner, 2026-10-30).
 - **Auth:** out of scope for the POC (owner, 2026-10-30).
+- **Roles:** Member, Leader and Admin per ministry (an Admin can do what a Leader can, without the
+  title); Leaders add members, only staff make leaders and admins; membership lives in the app for
+  every ministry, Elvanto supplies rosters only (owner, 2026-11-02).
 
 ## Open questions
 
@@ -356,7 +410,8 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
    under Impact Youth (needs "followers", above)? Is the Ladies ministry the same group as a ladies'
    Life Group such as Adorning The Heart, and Young Adult LIFE (on Our Team) a Life Group of Young
    Adults?
-5. **Member sign-in.** How a member proves who they are, and how that person is matched to Elvanto.
+5. **Member sign-in.** How a member proves who they are, and how that person is matched to Elvanto
+   for their roster (membership itself is in the app; see Roles and the team list).
 6. **Elvanto:** does its API allow writing roster replies and assignments, and is there a swap or
    replacement request? Rate limits, and whether the church's plan includes API access.
 7. **Leaving and rosters:** does leaving a ministry in the app remove you from future Elvanto rosters,

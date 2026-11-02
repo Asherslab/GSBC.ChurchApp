@@ -1,8 +1,9 @@
 @page "/access/people"
 @inject AccessClient Access
 @inject IPeopleDirectory People
+@inject IScopeNames ScopeNames
 
-<h1>Who holds what</h1>
+<h1>Who can do what</h1>
 
 <section class="account-panel">
     <EditForm Model="this" OnSubmit="SearchAsync" FormName="find">
@@ -19,51 +20,70 @@
 
 @if (_person is not null)
 {
+    <h2>What can @_person.Name do?</h2>
+    @if (_abilities.Places.Count == 0)
+    {
+        <p>@AccessWords.Nothing</p>
+    }
+    @foreach (PlaceAbilities place in _abilities.Places)
+    {
+        <section class="account-panel">
+            <h3>@AccessWords.Place(PlaceName(place.ObjectId), place.IncludesTeams)</h3>
+            <AbilityList Nodes="place.Nodes" Catalog="_catalog" EveryMinistry="place.ObjectId is null" />
+            <p class="aside">Because they're @string.Join(" and ", place.Because.Select(Reason))@(place.ObjectId is null ? "" : $" of {PlaceName(place.ObjectId)}").</p>
+        </section>
+    }
+
     <section class="account-panel">
-        <h2>@_person.Name</h2>
+        <h2>Their roles</h2>
         @if (_assignments.Count == 0)
         {
-            <p>No roles.</p>
+            <p>None.</p>
         }
         <ul>
             @foreach (AssignmentInfo assignment in _assignments)
             {
                 <li>
                     @assignment.RoleName
-                    @(assignment.ScopeObjectId is null ? "" : $"· for {assignment.ScopeObjectId}")
-                    @(assignment.ExpiresAt is { } ends ? $"· until {ends.ToLocalTime():d MMM yyyy}" : "")
-                    @(assignment.Source == "Manual" ? "" : $"· {assignment.Source.ToLowerInvariant()}")
-                    <button class="link" @onclick="() => UnassignAsync(assignment.Id)" disabled="@_busy">Take away</button>
+                    @if (assignment.ScopeObjectId is { } place)
+                    {
+                        <span> · @AccessWords.Place(PlaceName(place), false)</span>
+                    }
+                    <span> @AccessWords.Until(assignment.ExpiresAt)</span>
+                    <button class="link" @onclick="() => TakeAwayAsync(assignment.Id)" disabled="@_busy">Take away</button>
                 </li>
             }
         </ul>
 
         <h3>Give a role</h3>
-        <EditForm Model="this" OnSubmit="AssignAsync" FormName="assign">
+        <EditForm Model="this" OnSubmit="GiveAsync" FormName="give">
             <label>
                 Role
                 <InputSelect @bind-Value="_roleId">
                     <option value="">Choose…</option>
                     @foreach (RoleInfo role in _roles)
                     {
-                        <option value="@role.Id">@role.Name</option>
+                        <option value="@role.Id">@role.Name · @AccessWords.GivenWhere(role)</option>
                     }
                 </InputSelect>
             </label>
-            @if (SelectedRole is { ScopeKind: not "global" } scoped)
+            @if (SelectedRole is { } chosen)
             {
-                <label>Which @scoped.ScopeKind (its id) <InputText @bind-Value="_scopeObjectId" /></label>
+                @if (chosen.ScopeKind != ScopeKind.Global.Name)
+                {
+                    <label>Which @chosen.ScopeKind <InputText @bind-Value="_scopeObjectId" /></label>
+                }
+                <label>Until (leave empty to keep it) <InputDate @bind-Value="_ends" /></label>
+                <p>@_person.Name will be able to:</p>
+                <AbilityList Nodes="chosen.AbilityNodes" Catalog="_catalog" EveryMinistry="chosen.ScopeKind == ScopeKind.Global.Name" />
+                <button type="submit" disabled="@_busy">Give @_person.Name the @chosen.Name role</button>
             }
-            <label>Ends (optional) <InputDate @bind-Value="_ends" /></label>
-            <button type="submit" disabled="@_busy">Give the role</button>
         </EditForm>
     </section>
 }
 
-@if (_message is not null)
-{
-    <p class="message">@_message</p>
-}
+<Notice Tone="NoticeTone.Warning" Text="@_message" />
+<Notice Text="@_done" />
 
 @code {
     [SupplyParameterFromQuery(Name = "user")] public string? UserId { get; set; }
@@ -71,19 +91,24 @@
     private string _query = "";
     private List<PersonSummary> _found = [];
     private PersonSummary? _person;
+    private PersonAbilities _abilities = new();
     private List<AssignmentInfo> _assignments = [];
+    private IReadOnlyDictionary<string, string> _places = new Dictionary<string, string>();
     private List<RoleInfo> _roles = [];
+    private Catalog _catalog = new();
     private string _roleId = "";
     private string? _scopeObjectId;
     private DateTime? _ends;
     private bool _busy;
     private string? _message;
+    private string? _done;
 
     private RoleInfo? SelectedRole => _roles.FirstOrDefault(role => role.Id == _roleId);
 
     protected override Task OnInitializedAsync() => RunAsync(async () =>
     {
         _roles = (await Access.ListRolesAsync()).Roles;
+        _catalog = await Access.ListCatalogAsync();
         if (UserId is not null && (await People.GetAsync([UserId])).FirstOrDefault() is { } person)
             await LoadPersonAsync(person);
     });
@@ -96,14 +121,22 @@
     {
         _person = person;
         _assignments = (await Access.ListAssignmentsAsync(person.Id)).Assignments;
+        _abilities = await Access.ExplainAsync(person.Id);
+        _places = await ScopeNames.NamesAsync(ScopeKind.Ministry.Name, _assignments.Select(assignment => assignment.ScopeObjectId).OfType<string>().ToList());
     }
 
-    private Task AssignAsync() => RunAsync(async () =>
+    private string PlaceName(string? objectId) => objectId is null ? "" : _places.GetValueOrDefault(objectId, objectId);
+
+    private static string Reason(PlaceReason reason) =>
+        $"{(reason.RoleName.Length > 0 && "AEIOU".Contains(reason.RoleName[0]) ? "an" : "a")} {reason.RoleName}{(reason.ExpiresAt is null ? "" : $" ({AccessWords.Until(reason.ExpiresAt)})")}";
+
+    private Task GiveAsync() => RunAsync(async () =>
     {
+        RoleInfo role = SelectedRole!;
         await Access.AssignAsync(new AssignRequest
         {
             UserId = _person!.Id,
-            RoleId = _roleId,
+            RoleId = role.Id,
             ScopeObjectId = _scopeObjectId,
             ExpiresAt = _ends?.Date.AddDays(1).ToUniversalTime(),
         });
@@ -111,20 +144,21 @@
         _scopeObjectId = null;
         _ends = null;
         await LoadPersonAsync(_person);
-        _message = "Role given.";
+        _done = $"{_person.Name} now has the {role.Name} role.";
     });
 
-    private Task UnassignAsync(string id) => RunAsync(async () =>
+    private Task TakeAwayAsync(string id) => RunAsync(async () =>
     {
         await Access.UnassignAsync(id);
         await LoadPersonAsync(_person!);
-        _message = "Role taken away.";
+        _done = "Role taken away.";
     });
 
     private async Task RunAsync(Func<Task> action)
     {
         _busy = true;
         _message = null;
+        _done = null;
         try
         {
             await action();

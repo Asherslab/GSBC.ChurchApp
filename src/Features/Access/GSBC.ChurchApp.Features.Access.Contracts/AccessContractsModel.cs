@@ -18,4 +18,8 @@ namespace GSBC.ChurchApp.Features.Access.Contracts;
 [ProtoSerializable(typeof(AssignmentInfo))]
 [ProtoSerializable(typeof(AssignRequest))]
 [ProtoSerializable(typeof(AssignmentReference))]
+[ProtoSerializable(typeof(PersonReference))]
+[ProtoSerializable(typeof(PersonAbilities))]
+[ProtoSerializable(typeof(RolePreviewRequest))]
+[ProtoSerializable(typeof(RoleEffect))]
 public partial class AccessContractsModel : TypeModel;

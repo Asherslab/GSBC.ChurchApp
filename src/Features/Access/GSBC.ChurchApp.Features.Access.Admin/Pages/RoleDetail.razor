@@ -1,0 +1,123 @@
+@page "/access/roles/{Id}"
+@inject AccessClient Access
+@inject IPeopleDirectory People
+@inject IScopeNames ScopeNames
+
+<p><a href="access/roles">All roles</a></p>
+
+@if (_role is not null)
+{
+    <h1>@_role.Name</h1>
+    <p>@_role.Description</p>
+    <dl class="facts">
+        <dt>Given</dt><dd>@AccessWords.GivenWhere(_role)</dd>
+        <dt>Given by</dt><dd>@AccessWords.GivenBy(_role, _roles)</dd>
+        @if (_role.IsSystem)
+        {
+            <dt>Built in</dt><dd>It comes from the app, so it can't be changed here. Make a copy to adjust it.</dd>
+        }
+    </dl>
+
+    <section class="account-panel">
+        <h2>What it lets people do</h2>
+        <AbilityList Nodes="_role.AbilityNodes" Catalog="_catalog" EveryMinistry="_role.ScopeKind == ScopeKind.Global.Name" />
+    </section>
+
+    <section class="account-panel">
+        <h2>Who has it</h2>
+        @if (_holders.Count == 0)
+        {
+            <p>@AccessWords.Holders(0).</p>
+        }
+        <ul>
+            @foreach (AssignmentInfo holder in _holders)
+            {
+                <li>
+                    <a href="access/people?user=@holder.UserId">@(_names.GetValueOrDefault(holder.UserId) ?? "Someone")</a>
+                    @if (holder.ScopeObjectId is { } place)
+                    {
+                        <span> · @AccessWords.Place(_places.GetValueOrDefault(place, place), _role.AppliesToChildren)</span>
+                    }
+                    <span> @AccessWords.Until(holder.ExpiresAt)</span>
+                </li>
+            }
+        </ul>
+    </section>
+
+    <Can Permission="AccessPermissions.EditRoles">
+        <a class="button" href="access/roles/new?from=@_role.Id">Make a copy</a>
+        @if (!_role.IsSystem)
+        {
+            <a class="button" href="access/roles/@_role.Id/edit">Change</a>
+            <button @onclick="PreviewDeleteAsync" disabled="@_busy">Delete…</button>
+        }
+    </Can>
+
+    @if (_deleteEffect is not null)
+    {
+        <section class="account-panel">
+            <h2>Delete @_role.Name?</h2>
+            <RoleEffectView Effect="_deleteEffect" Catalog="_catalog" />
+            <button @onclick="DeleteAsync" disabled="@_busy">Delete it, and take it from everyone who has it</button>
+            <button class="link" @onclick="() => _deleteEffect = null">Keep it</button>
+        </section>
+    }
+}
+
+<Notice Tone="NoticeTone.Warning" Text="@_message" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    [Inject] private NavigationManager Navigation { get; set; } = null!;
+
+    private List<RoleInfo> _roles = [];
+    private RoleInfo? _role;
+    private Catalog _catalog = new();
+    private List<AssignmentInfo> _holders = [];
+    private Dictionary<string, string> _names = [];
+    private IReadOnlyDictionary<string, string> _places = new Dictionary<string, string>();
+    private RoleEffect? _deleteEffect;
+    private bool _busy;
+    private string? _message;
+
+    protected override Task OnParametersSetAsync() => RunAsync(async () =>
+    {
+        _roles = (await Access.ListRolesAsync()).Roles;
+        _catalog = await Access.ListCatalogAsync();
+        _role = _roles.FirstOrDefault(role => role.Id == Id);
+        if (_role is null)
+        {
+            _message = "That role no longer exists.";
+            return;
+        }
+        _holders = (await Access.ListAssignmentsAsync(null)).Assignments.Where(assignment => assignment.RoleId == Id).ToList();
+        _names = (await People.GetAsync(_holders.Select(holder => holder.UserId).Distinct().ToList())).ToDictionary(person => person.Id, person => person.Name);
+        _places = await ScopeNames.NamesAsync(_role.ScopeKind, _holders.Select(holder => holder.ScopeObjectId).OfType<string>().ToList());
+    });
+
+    private Task PreviewDeleteAsync() => RunAsync(async () => _deleteEffect = await Access.PreviewRoleAsync(_role!, deleting: true));
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Access.DeleteRoleAsync(_role!.Id);
+        Navigation.NavigateTo("access/roles");
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

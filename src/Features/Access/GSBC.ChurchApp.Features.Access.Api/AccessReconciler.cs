@@ -48,8 +48,9 @@ internal sealed class AccessReconciler(
         }
         db.Catalog.RemoveRange(stored.Values);
 
-        Dictionary<string, RoleRecord> roles = await db.Roles.Include(role => role.Patterns)
+        Dictionary<string, RoleRecord> roles = await db.Roles.Include(role => role.Patterns).Include(role => role.Assigners)
             .Where(role => role.SystemKey != null).ToDictionaryAsync(role => role.SystemKey!, cancellationToken);
+        Dictionary<string, RoleRecord> reconciled = [];
         foreach (SystemRole declared in systemRoles)
         {
             if (!roles.Remove(declared.Key, out RoleRecord? role))
@@ -66,11 +67,25 @@ internal sealed class AccessReconciler(
             role.Name = declared.Name;
             role.Description = declared.Description;
             role.ScopeKind = declared.ScopeKind.Name;
+            role.AppliesToChildren = declared.AppliesToChildren;
+            reconciled[declared.Key] = role;
             role.Patterns.RemoveAll(pattern => !declared.Patterns.Contains(pattern.Pattern));
             foreach (string pattern in declared.Patterns.Where(pattern => role.Patterns.All(existing => existing.Pattern != pattern)))
                 role.Patterns.Add(new RolePattern { RoleId = role.Id, Pattern = pattern });
         }
         db.Roles.RemoveRange(roles.Values);
+
+        foreach (SystemRole declared in systemRoles)
+        {
+            RoleRecord role = reconciled[declared.Key];
+            HashSet<Guid> assigners = (declared.AssignableBy ?? [])
+                .Select(key => reconciled.TryGetValue(key, out RoleRecord? assigner)
+                    ? assigner.Id
+                    : throw new InvalidOperationException($"The role '{declared.Key}' is assignable by '{key}', which no feature declares."))
+                .ToHashSet();
+            role.Assigners.RemoveAll(assigner => !assigners.Remove(assigner.AssignerRoleId));
+            role.Assigners.AddRange(assigners.Select(id => new RoleAssigner { RoleId = role.Id, AssignerRoleId = id }));
+        }
 
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);

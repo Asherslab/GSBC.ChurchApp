@@ -6,7 +6,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Access.Api;
 
-internal sealed class AccessEvaluator(AccessDbContext db, GrantCache cache, PermissionCatalog catalog, TimeProvider time) : IAccessEvaluator
+internal sealed class AccessEvaluator(
+    AccessDbContext db, GrantCache cache, PermissionCatalog catalog, IScopeHierarchy hierarchy, TimeProvider time) : IAccessEvaluator
 {
     public async ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken)
     {
@@ -22,30 +23,14 @@ internal sealed class AccessEvaluator(AccessDbContext db, GrantCache cache, Perm
         if (cache.TryGet(userId, out GrantSet cached))
             return cached;
 
-        DateTime now = time.GetUtcNow().UtcDateTime;
-        var assignments = await db.Assignments.AsNoTracking()
-            .Where(assignment => assignment.UserId == userId && (assignment.ExpiresAt == null || assignment.ExpiresAt > now))
-            .Select(assignment => new { assignment.RoleId, assignment.ScopeObjectId })
+        List<Assignment> assignments = await db.ActiveAssignments(time.GetUtcNow().UtcDateTime)
+            .Where(assignment => assignment.UserId == userId)
             .ToListAsync(cancellationToken);
-
         Dictionary<Guid, RoleRecord> roles = await db.LoadRolesWithIncludesAsync(assignments.Select(assignment => assignment.RoleId), cancellationToken);
-        List<Grant> grants = [];
-        foreach (var assignment in assignments)
-        {
-            if (!roles.TryGetValue(assignment.RoleId, out RoleRecord? role) || !ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind))
-                continue;
-            grants.AddRange(RoleGrants.At(PatternsOf(role, roles), kind, assignment.ScopeObjectId));
-        }
 
-        GrantSet compiled = new(grants);
+        GrantSet compiled = await RoleGrants.CompileAsync(
+            assignments.Select(assignment => (assignment.RoleId, assignment.ScopeObjectId)), roles, hierarchy, cancellationToken);
         cache.Set(userId, compiled);
         return compiled;
     }
-
-    public static IEnumerable<string> PatternsOf(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles) =>
-        role.Patterns.Select(pattern => pattern.Pattern)
-            .Concat(role.Includes
-                .Select(include => roles.GetValueOrDefault(include.IncludedRoleId))
-                .OfType<RoleRecord>()
-                .SelectMany(included => included.Patterns.Select(pattern => pattern.Pattern)));
 }

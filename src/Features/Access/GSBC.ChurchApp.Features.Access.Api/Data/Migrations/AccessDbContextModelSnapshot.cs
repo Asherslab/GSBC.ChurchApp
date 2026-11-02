@@ -97,6 +97,25 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                     b.ToTable("catalog", "access");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleAssigner", b =>
+                {
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<Guid>("AssignerRoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("assigner_role_id");
+
+                    b.HasKey("RoleId", "AssignerRoleId")
+                        .HasName("pk_role_assigners");
+
+                    b.HasIndex("AssignerRoleId")
+                        .HasDatabaseName("ix_role_assigners_assigner_role_id");
+
+                    b.ToTable("role_assigners", "access");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleInclude", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -138,6 +157,10 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<bool>("AppliesToChildren")
+                        .HasColumnType("boolean")
+                        .HasColumnName("applies_to_children");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -254,6 +277,23 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                     b.Navigation("Role");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleAssigner", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Access.Api.Data.RoleRecord", null)
+                        .WithMany()
+                        .HasForeignKey("AssignerRoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_role_assigners_roles_assigner_role_id");
+
+                    b.HasOne("GSBC.ChurchApp.Features.Access.Api.Data.RoleRecord", null)
+                        .WithMany("Assigners")
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_role_assigners_roles_role_id");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleInclude", b =>
                 {
                     b.HasOne("GSBC.ChurchApp.Features.Access.Api.Data.RoleRecord", null)
@@ -283,6 +323,8 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleRecord", b =>
                 {
+                    b.Navigation("Assigners");
+
                     b.Navigation("Includes");
 
                     b.Navigation("Patterns");

@@ -1,0 +1,10 @@
+@if (!string.IsNullOrEmpty(Text) || ChildContent is not null)
+{
+    <p class="notice notice-@Tone.ToString().ToLowerInvariant()" role="@(Tone == NoticeTone.Warning ? "alert" : "status")">@Text@ChildContent</p>
+}
+
+@code {
+    [Parameter] public NoticeTone Tone { get; set; } = NoticeTone.Info;
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

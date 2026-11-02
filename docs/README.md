@@ -53,9 +53,9 @@ and inviting, with a real email through the shared mailbox.
 **Not tested end to end yet:** background refresh needs
 measuring on a real phone over a few days. The dev database holds a few `e2e+…@example.com` test accounts.
 
-**Next, in order:** push and get CI green; the Access gaps and permissions UX
-([access.md](features/access.md), *Usability comes first* and *Open*), designed alongside Ministries,
-the first feature whose people assign roles; then features page by page from the build order below.
+**Next, in order:** push and get CI green; then features page by page from the build order below.
+The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),
+*How staff see access*); Ministries plugs into them as described there.
 
 **Working on this repo:** start the backend from Rider's AppHost configuration (stop a running one
 first: its ports are fixed); build with Homebrew's `dotnet` (`global.json`); every new project goes in
