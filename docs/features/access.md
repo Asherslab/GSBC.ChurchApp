@@ -17,7 +17,9 @@ built.
 ## Roles
 
 - **System roles** are declared in code by features and reconciled into the database at start-up;
-  they can be assigned but not edited. Access declares **Owner** (`*`), **Account manager**
+  they can be assigned but not edited. Configuration declares **Draft reviewer** (at a draft: preview
+  it; given and taken away by Configuration when a draft is shared) and **App editor** (`config.*`:
+  arrange and publish the app, see every draft). Access declares **Owner** (`*`), **Account manager**
   (`accounts.*`) and **Access manager** (`access.*`). Ministries will declare its own.
 - **Custom roles** are made in the admin panel by copying a role: a name, a description, the scope
   kind they're assigned at, the abilities ticked, whether they apply to child ministries, and who can

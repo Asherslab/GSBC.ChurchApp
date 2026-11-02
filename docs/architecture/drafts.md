@@ -164,8 +164,57 @@ methods outside Development, so store builds sign in with passkeys only.
 
 
 
+## Status (2026-11-02)
+
+**Built and proven on the owner's iPhone 15 Pro, with the owner watching:** a title changed in the admin
+panel's draft showed on the phone, previewing that draft, within a second of "Saved".
+
+- **The model:** `PlacementPatch` and `DraftComposition` in Platform.Contracts (published, then the event
+  layer if it's on at that moment, then the previewed draft; "changed for everyone since" per field),
+  used by the server's publish and the phone's layout. Tested by `DraftCompositionTests`.
+- **Configuration:** `config.drafts` and `config.draft_changes` (migration `Drafts`), the
+  `gsbc.config.Drafts` service (list, get, create or copy, rename, save, settle, ask to publish,
+  publish, turn on or off for an event, share, unshare, delete), history rows tagged with the draft,
+  a draft's pictures held in use as `config.draft/{id}`, and per-area publish permissions
+  (`config.hub.publish`, `config.appearance.publish`). The direct `Configuration.Save` is gone: every
+  edit is made in a draft. Tested by `DraftEditorTests` and the reworked `PlacementEditorTests`.
+- **Access:** a `draft` scope kind, `config.drafts.preview` (held at a draft: preview it; held
+  everywhere: see every draft), the system roles *Draft reviewer* (given and taken by Configuration
+  when a draft is shared or unshared, and to its author) and *App editor* (`config.*`).
+- **Sync:** a private feed resets for a session whose grants for it changed (`sync.audience_marks`),
+  so unsharing takes a draft off that phone. Tested end to end in `DraftEditorTests`.
+- **Feeds:** `config.drafts` (private, per draft) and the event layer as the `event-layer` record in
+  `config.placements`, with its dates.
+- **Admin panel:** the drafts workbench (`/drafts`), the church-year view, the phone preview (the
+  app's own Home on a chosen iPhone, true size, scaled to fit, with a pop-out window at
+  `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
+  draft.
+- **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
+  (hideable until the app next comes to the foreground), More → Drafts, and Home listing the Hub's
+  link tiles. Development builds link the phone with a code (`/link-phone`).
+
+**Decided while building (no owner question needed):**
+
+- A draft is changed by its author or by someone who sees every draft; people it's shared with only
+  preview it. Editing a draft that's on for an event needs the publish permission, since everyone
+  sees each save.
+- Asking to publish puts a draft under *Waiting to publish*; any later edit takes it back out.
+- *Keep mine* re-bases the change on what everyone sees now; *Use everyone's* drops the fields that
+  changed. Publishing is refused while any are unsettled.
+- Undo of a published draft needs the publish permission for every area it touched.
+- Deleting a draft that's on for an event is refused until it's turned off.
+- **The phone preview can't drift from the app:** Home draws through `HomeScreen` and each surface
+  through `SurfaceViews` (Platform.Ui), which the preview shares. `PreviewRules` (Architecture.Tests)
+  fails if the app's Home stops using `HomeScreen` or a Hub surface has no view. When Home is built,
+  keep everything a draft can change inside `HomeScreen` and register a view for every new surface;
+  device-only parts (sync state, the Connection check) stay outside it.
+
 ## Open
 
+- **The admin panel isn't live yet:** it has no feed store, so it refreshes on its own saves,
+  reconnects and access changes, not when someone else edits the same draft.
+- **More → Drafts on the phone** is hidden until Access joins the app (it needs grants).
+- **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.
 - Notifications ("Conference 2027 is waiting to publish"): with Push.

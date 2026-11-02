@@ -104,10 +104,11 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    verified by the server, dimensions come from the bytes, unused files can be deleted, feeds can
    prefetch their images for offline, and settings can hold an image or rich text
    ([rich-text.md](architecture/rich-text.md)). Not yet run against the API.
-7. **Drafts and previews** ([drafts.md](architecture/drafts.md)), decided 2026-11-02: every change
-   staff arrange is made in a draft, previewed live on their own phone, shared, then published or
-   turned on for an event. Screens mocked up and reviewed first. Before Home, so Home is built on it.
-   Then a design pass over the admin panel's pages, designed for desktop, not the phone.
+7. **Drafts and previews** ([drafts.md](architecture/drafts.md)). Built 2026-11-02 (branch
+   `feature/drafts`): every change staff arrange is made in a draft, previewed live on their own phone
+   (proven on the owner's iPhone: a save shows within a second), shared through Access, then published
+   or turned on for an event. Home must be built on `HomeScreen` and `SurfaceViews` so the admin
+   preview stays true. Next: a design pass over the admin panel's pages, designed for desktop.
 8. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

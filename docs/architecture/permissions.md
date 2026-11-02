@@ -88,7 +88,8 @@ Group round) and a source:
 
 A feed declares its audience: public, signed in, or a scope plus a node (a ministry's private news
 needs `ministries.private.view` at that ministry). Sync only sends what the caller may see. When a
-user's grants change, the feeds whose audience depends on them reset for that user on the next sync,
+user's grants change, the feeds whose audience depends on them reset for that user on the next sync
+(built 2026-11-02: Sync keeps a fingerprint per session and feed in `sync.audience_marks`),
 so the phone never keeps rows it is no longer allowed to read.
 
 ## What changed from the earlier model, and why
