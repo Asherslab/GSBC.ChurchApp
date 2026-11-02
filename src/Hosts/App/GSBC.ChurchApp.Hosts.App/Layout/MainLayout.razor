@@ -8,15 +8,17 @@
 
 <div class="shell">
     @Body
-    @if (Preview.Current is { } preview)
+    @if (Preview.Current is { } preview && !_bannerHidden)
     {
-        <PreviewBanner Title="@BannerTitle(preview)" Detail="@BannerDetail(preview)" OnExit="() => Preview.ChooseAsync(null)" />
+        <PreviewBanner Title="@BannerTitle(preview)" Detail="@BannerDetail(preview)" OnExit="() => Preview.ChooseAsync(null)" OnHide="() => _bannerHidden = true" />
     }
     <ModuleNav Style="NavStyle.TabBar" />
 </div>
 <AppTheme />
 
 @code {
+    private bool _bannerHidden;
+
     protected override async Task OnInitializedAsync()
     {
         Preview.Changed += OnPreviewChanged;
@@ -44,7 +46,11 @@
         return parts.Count == 0 ? null : string.Join(" · ", parts);
     }
 
-    private void OnPreviewChanged() => InvokeAsync(StateHasChanged);
+    private void OnPreviewChanged()
+    {
+        _bannerHidden = false;
+        InvokeAsync(StateHasChanged);
+    }
 
     public void Dispose() => Preview.Changed -= OnPreviewChanged;
 }

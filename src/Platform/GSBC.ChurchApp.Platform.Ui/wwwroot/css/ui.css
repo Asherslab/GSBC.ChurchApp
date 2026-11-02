@@ -438,3 +438,4 @@ button.row:active, a.row:active { background: var(--line); }
 [data-theme-swatch="year-2026"] i:nth-child(3) { background: var(--swatch-year-2026-3); }
 .check { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--live); color: var(--on-live); }
 .row--selected { background: color-mix(in srgb, var(--marker) 14%, transparent); }
+.preview-banner__hide { flex: none; min-height: 36px; padding: 0 10px; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }

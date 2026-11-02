@@ -8,7 +8,11 @@
 
 <RefreshOn Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" Changed="RefreshAsync" />
 
-@if (_list is null)
+@if (_list is null && _loadProblem is not null)
+{
+    <EmptyState Icon="alert" Title="Can't show drafts right now" Body="@_loadProblem" />
+}
+else if (_list is null)
 {
     <Skeleton Count="4" Label="Loading drafts" />
 }
@@ -121,6 +125,7 @@ else
     [Parameter] public string BasePath { get; set; } = "drafts";
 
     private DraftList? _list;
+    private string? _loadProblem;
     private Dictionary<string, string> _names = [];
     private DraftSession? _session;
     private AreaKey _area;
@@ -146,8 +151,9 @@ else
 
     protected override async Task OnParametersSetAsync()
     {
-        _list ??= await LoadListAsync();
-        if (DraftId != _opened)
+        if (_list is null)
+            await RefreshAsync();
+        if (_list is not null && DraftId != _opened)
             await OpenDraftAsync(DraftId);
     }
 
@@ -158,8 +164,7 @@ else
     private bool MayPublishAnything => Surfaces.Areas.Values.Any(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.PublishPermission));
 
     private bool MayPublishDraft => _session is not null
-        && _session.TouchedAreas.All(area => Surfaces.Areas.TryGetValue(area.Area, out SurfaceArea? known) && Access.Can(known.PublishPermission, area.ScopeId))
-        && _session.TouchedAreas.Any();
+        && _session.TouchedAreas.Append(_area).All(area => Surfaces.Areas.TryGetValue(area.Area, out SurfaceArea? known) && Access.Can(known.PublishPermission, area.ScopeId));
 
     private IEnumerable<SurfaceArea> EditableAreas => Surfaces.Areas.Values.Where(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.EditPermission));
 
@@ -400,7 +405,20 @@ else
 
     private async Task RefreshAsync()
     {
-        _list = await LoadListAsync();
+        try
+        {
+            _list = await LoadListAsync();
+            _loadProblem = null;
+        }
+        catch (RpcException exception)
+        {
+            _loadProblem = exception.StatusCode == StatusCode.Unauthenticated
+                ? "Sign in to see and change drafts."
+                : exception.StatusCode == StatusCode.Unavailable ? "The church's server can't be reached. This page tries again when it's back." : exception.Status.Detail;
+            return;
+        }
+        if (DraftId != _opened)
+            await OpenDraftAsync(DraftId);
         if (_session is not null && !_session.HasUnsaved && !_saving && _form is null)
         {
             foreach (AreaKey area in _session.TouchedAreas.Append(_area).Distinct().ToList())

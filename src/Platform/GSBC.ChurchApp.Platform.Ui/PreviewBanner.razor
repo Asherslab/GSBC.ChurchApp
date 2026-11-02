@@ -7,6 +7,10 @@
             <small>@Detail</small>
         }
     </span>
+    @if (OnHide.HasDelegate)
+    {
+        <button type="button" class="preview-banner__hide" @onclick="OnHide">Hide</button>
+    }
     <button type="button" class="preview-banner__exit" @onclick="OnExit">@ExitLabel</button>
 </div>
 
@@ -15,4 +19,5 @@
     [Parameter] public string? Detail { get; set; }
     [Parameter] public string ExitLabel { get; set; } = "Exit";
     [Parameter] public EventCallback OnExit { get; set; }
+    [Parameter] public EventCallback OnHide { get; set; }
 }
