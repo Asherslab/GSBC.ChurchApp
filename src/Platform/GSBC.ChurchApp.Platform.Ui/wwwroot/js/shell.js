@@ -61,6 +61,12 @@ window.gsbcShell = (() => {
   return {
     isNative,
 
+    onReturn(receiver) {
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') receiver.invokeMethodAsync('OnReturned');
+      });
+    },
+
     async haptic(kind) {
       const haptics = plugin('Haptics');
       if (!haptics) return;

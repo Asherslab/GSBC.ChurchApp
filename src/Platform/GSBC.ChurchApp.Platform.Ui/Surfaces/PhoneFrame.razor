@@ -1,0 +1,12 @@
+<div class="phone-frame" data-palette="@Palette" role="img" aria-label="@Label">
+    <div class="phone-frame__screen">
+        <div class="topbar" aria-hidden="true"></div>
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Palette { get; set; }
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

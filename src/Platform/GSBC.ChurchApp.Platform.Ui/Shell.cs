@@ -11,8 +11,25 @@ public enum Haptic
     Warning,
 }
 
-public sealed class Shell(IJSRuntime js)
+public sealed class Shell(IJSRuntime js) : IDisposable
 {
+    private DotNetObjectReference<Shell>? _receiver;
+
+    public event Action? Returned;
+
+    public async ValueTask WatchReturnsAsync()
+    {
+        if (_receiver is not null)
+            return;
+        _receiver = DotNetObjectReference.Create(this);
+        await js.InvokeVoidAsync("gsbcShell.onReturn", _receiver);
+    }
+
+    [JSInvokable]
+    public void OnReturned() => Returned?.Invoke();
+
+    public void Dispose() => _receiver?.Dispose();
+
     public ValueTask HapticAsync(Haptic kind = Haptic.Light) => js.InvokeVoidAsync("gsbcShell.haptic", kind.ToString().ToLowerInvariant());
 
     public ValueTask StartedAsync() => js.InvokeVoidAsync("gsbcShell.started");

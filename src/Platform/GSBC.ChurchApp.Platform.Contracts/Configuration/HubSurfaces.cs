@@ -39,5 +39,5 @@ public static class HubSurfaces
             [Title, Subtitle, Link, Colour, Wide, Image], defaultOrder: 1000, repeatable: true);
     }
 
-    public static readonly SurfaceSet All = new([LinkTile.Surface]);
+    public static SurfaceSet All => new([LinkTile.Surface]);
 }

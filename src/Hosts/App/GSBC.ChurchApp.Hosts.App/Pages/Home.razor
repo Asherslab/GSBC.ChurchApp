@@ -9,28 +9,7 @@
 @inject ISurfaceLayout Layout
 
 <Page Title="Good Shepherd">
-    <Masthead Title="Good Shepherd">
-        <p class="masthead__note"><DateLine At="Clock.GetUtcNow().UtcDateTime" /></p>
-        <div class="home-status"><SyncIndicator OnMasthead="true" /></div>
-    </Masthead>
-
-    <Section First="true">
-        @if (_tiles.Count == 0)
-        {
-            <EmptyState Icon="home" Title="Home is on its way" Body="This Sunday, sermons and the week will show here as each part of the app is built." />
-        }
-        else
-        {
-            <ListGroup>
-                @foreach (ArrangedSurface tile in _tiles)
-                {
-                    <ListRow Title="@tile.Values.Get(HubSurfaces.LinkTile.Title)" Subtitle="@NullIfEmpty(tile.Values.Get(HubSurfaces.LinkTile.Subtitle))"
-                             Icon="link" IconTone="RowTone.Accent" Href="@tile.Values.Get(HubSurfaces.LinkTile.Link)" External="true" />
-                }
-            </ListGroup>
-        }
-    </Section>
-
+    <HomeScreen Shown="_tiles" At="Clock.GetUtcNow().UtcDateTime" Live="true">
     <Section Title="Connection">
         <ListGroup>
             <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()">
@@ -48,6 +27,7 @@
             </LiveData>
         </ListGroup>
     </Section>
+    </HomeScreen>
 </Page>
 
 @code {
@@ -60,15 +40,13 @@
     }
 
     private async Task LoadTilesAsync() =>
-        _tiles = (await Layout.ShownAsync(HubSurfaces.Area)).Where(entry => entry.Surface.Key == HubSurfaces.LinkTile.Surface.Key).ToList();
+        _tiles = await Layout.ShownAsync(HubSurfaces.Area);
 
     private void OnLayoutChanged() => InvokeAsync(async () =>
     {
         await LoadTilesAsync();
         StateHasChanged();
     });
-
-    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
 
     public void Dispose() => Layout.Changed -= OnLayoutChanged;
 

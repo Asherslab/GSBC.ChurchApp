@@ -315,7 +315,7 @@ else
             }
             else if (_preview)
             {
-                <PhonePreview Area="CurrentArea" Arranged="@_session.Arranged(CurrentArea, _area.ScopeId)" Changed="ChangedIds" />
+                <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
             }
             else if (_form is null)
             {
@@ -357,8 +357,6 @@ else
                 .Where(area => Surfaces.Areas.ContainsKey(area.Area))
                 .Select(area => new TabOption<AreaKey>(area, Surfaces.Areas[area.Area].Title, _session.CountIn(area)))
                 .ToList();
-
-    private IReadOnlySet<string> ChangedIds => _session?.Patches.Select(patch => patch.PlacementId).ToHashSet() ?? [];
 
     private string FormTitle => _form is null ? "" : _form.IsNew && _form.Surface.Repeatable && _session?.PatchFor(_formId) is null
         ? $"New {_form.Surface.Title.ToLowerInvariant()}"
@@ -452,9 +450,11 @@ else
         AreaKey? requested = AreaKey is not null && Surfaces.Areas.ContainsKey(AreaKey) ? new AreaKey(AreaKey, null) : null;
         AreaKey? touched = _session.TouchedAreas.Where(area => Surfaces.Areas.ContainsKey(area.Area)).Cast<AreaKey?>().FirstOrDefault();
         _area = requested ?? touched ?? new AreaKey(EditableAreas.FirstOrDefault()?.Key ?? HubSurfaces.Area.Key, null);
-        foreach (AreaKey area in _session.TouchedAreas.Append(_area).Distinct().ToList())
+        foreach (AreaKey area in _session.TouchedAreas.Append(_area).Concat(PreviewAreas).Distinct().ToList())
             await LoadLiveAsync(area);
     }
+
+    private static readonly AreaKey[] PreviewAreas = [new(HubSurfaces.Area.Key, null), new(AppearanceSurfaces.Area.Key, null)];
 
     private async Task LoadLiveAsync(AreaKey area)
     {

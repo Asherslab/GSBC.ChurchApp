@@ -439,3 +439,9 @@ button.row:active, a.row:active { background: var(--line); }
 .check { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--live); color: var(--on-live); }
 .row--selected { background: color-mix(in srgb, var(--marker) 14%, transparent); }
 .preview-banner__hide { flex: none; min-height: 36px; padding: 0 10px; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.phone-frame { position: relative; width: 100%; max-width: 360px; border-radius: 40px; background: var(--page); color: var(--ink); box-shadow: 0 0 0 8px var(--ink-3), var(--lift); overflow: hidden; transform: translateZ(0); --sat: 12px; --sab: 0px; }
+.phone-frame__screen { height: 600px; overflow: hidden auto; scrollbar-width: none; background: var(--page); }
+.phone-frame__screen .masthead { margin-top: calc(-1 * (var(--top-h) + var(--sat))); }
+.phone-frame .row { pointer-events: none; }
+.home-status { display: flex; margin-top: 14px; }
+.phone-frame .section { padding: 0 var(--gutter); }

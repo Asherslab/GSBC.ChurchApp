@@ -1,41 +1,17 @@
 @inject TimeProvider Clock
 
-<div class="phone-preview" aria-label="@($"{Area.Title} on a phone, as a visitor sees it")">
-    <div class="phone-preview__masthead">
-        <span class="brand-mark phone-preview__mark" aria-hidden="true"></span>
-        <b>@Area.Title</b>
-    </div>
-    @if (Shown.Count == 0)
-    {
-        <p class="phone-preview__empty">Nothing shows here for a visitor today.</p>
-    }
-    @foreach (ArrangedSurface entry in Shown)
-    {
-        bool changed = entry.Placement is { } placement && Changed.Contains(placement.Id);
-        <div class="phone-preview__row @(changed ? "phone-preview__row--changed" : "")">
-            @if (entry.Surface.Key == AppearanceSurfaces.Theme.Surface.Key)
-            {
-                string palette = entry.Values.Get(AppearanceSurfaces.Theme.Palette);
-                <span class="swatches" data-theme-swatch="@palette" aria-hidden="true"><i></i><i></i><i></i></span>
-                <span>@(AppearanceSurfaces.Palettes.FirstOrDefault(choice => choice.Value == palette)?.Label ?? palette)</span>
-            }
-            else
-            {
-                <span class="phone-preview__title">@DraftWords.NameOf(entry)</span>
-                @if (entry.Values.Raw.GetValueOrDefault(HubSurfaces.LinkTile.Subtitle.Key) is { Length: > 0 } subtitle)
-                {
-                    <span class="phone-preview__subtitle">@subtitle</span>
-                }
-            }
-        </div>
-    }
-</div>
-<p class="phone-preview__note">How a visitor sees it today. Previews on your phone show the real screen.</p>
+<PhoneFrame Palette="@Palette" Label="Home on a phone, as a visitor sees it with this draft">
+    <HomeScreen Shown="Shown" At="Now" />
+</PhoneFrame>
+<p class="phone-preview__note">Home as a visitor sees it today, drawn by the app's own screen. Your phone shows it live under Previews.</p>
 
 @code {
-    [Parameter, EditorRequired] public required SurfaceArea Area { get; set; }
-    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Arranged { get; set; }
-    [Parameter] public IReadOnlySet<string> Changed { get; set; } = new HashSet<string>();
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
 
-    private List<ArrangedSurface> Shown => Arranged.Where(entry => entry.IsShownTo(Viewer.Anonymous, Clock.GetUtcNow().UtcDateTime)).ToList();
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private List<ArrangedSurface> Shown => Hub.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)).ToList();
+
+    private string Palette => AppearanceSurfaces.PaletteOf(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)));
 }

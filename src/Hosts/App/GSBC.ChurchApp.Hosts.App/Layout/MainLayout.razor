@@ -28,7 +28,11 @@
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender)
+        {
+            Shell.Returned += OnReturned;
+            await Shell.WatchReturnsAsync();
             await Shell.StartedAsync();
+        }
     }
 
     private static string BannerTitle(PreviewChoice preview) =>
@@ -52,5 +56,15 @@
         InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose() => Preview.Changed -= OnPreviewChanged;
+    private void OnReturned()
+    {
+        _bannerHidden = false;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        Preview.Changed -= OnPreviewChanged;
+        Shell.Returned -= OnReturned;
+    }
 }

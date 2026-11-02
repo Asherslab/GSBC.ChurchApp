@@ -35,16 +35,7 @@
 .detail-pane__head h3 { margin: 0; font-size: var(--text-lead); font-weight: 700; overflow-wrap: anywhere; }
 .detail-pane__head span { font-size: var(--text-caption); color: var(--ink-3); }
 
-.phone-preview { overflow: hidden; max-width: 320px; min-height: 420px; border-radius: 34px; background: var(--page); box-shadow: 0 0 0 8px var(--ink), var(--lift); }
-.phone-preview__masthead { position: relative; overflow: hidden; padding: 64px 18px 18px; background: var(--masthead); color: var(--on-masthead); font-size: var(--text-title-lg); }
-.phone-preview__mark { position: absolute; right: -30px; top: 20px; width: 120px; opacity: 0.07; color: var(--on-masthead); }
-.phone-preview__row { display: grid; gap: 2px; margin: 0 16px; padding: 12px 0; border-bottom: 1px solid var(--line); font-size: var(--text-caption); }
-.phone-preview__row:has(.swatches) { display: flex; align-items: center; gap: 10px; }
-.phone-preview__row--changed { background: color-mix(in srgb, var(--marker) 18%, transparent); margin: 0; padding: 12px 16px; }
-.phone-preview__title { font-weight: 600; color: var(--ink); }
-.phone-preview__subtitle { color: var(--ink-2); }
-.phone-preview__empty, .phone-preview__note { margin: 16px; font-size: var(--text-caption); color: var(--ink-3); }
-.phone-preview__note { margin: 12px 0 0; }
+.phone-preview__note { margin: 12px 0 0; font-size: var(--text-caption); line-height: 1.45; color: var(--ink-3); }
 
 .church-year { display: grid; gap: 16px; }
 .church-year__head .section__lead { margin: 4px 0 0; }

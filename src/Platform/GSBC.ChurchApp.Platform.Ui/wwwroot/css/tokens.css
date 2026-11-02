@@ -75,7 +75,8 @@
   color-scheme: light;
 }
 
-:root[data-theme="year-2026"] {
+:root[data-theme="year-2026"],
+[data-palette="year-2026"] {
   --sand: #f3f2e2;
   --sand-strong: #e6e8d3;
   --ink: #1e2a22;
@@ -123,7 +124,8 @@
   color-scheme: dark;
 }
 
-:root[data-theme="year-2026"][data-scheme="dark"] {
+:root[data-theme="year-2026"][data-scheme="dark"],
+:root[data-scheme="dark"] [data-palette="year-2026"] {
   --page: #111a14;
   --surface: #1a261d;
   --sand: #1a261d;

@@ -32,7 +32,7 @@ public static class AppearanceSurfaces
         public static readonly Surface Surface = new("app.theme", Area, "Theme", "Which colours the app uses", [Palette]);
     }
 
-    public static readonly SurfaceSet All = new([Theme.Surface]);
+    public static SurfaceSet All => new([Theme.Surface]);
 
     public static string PaletteOf(IEnumerable<ArrangedSurface> shown) =>
         shown.FirstOrDefault(entry => entry.Surface.Key == Theme.Surface.Key)?.Values.Get(Theme.Palette) ?? Brand;
