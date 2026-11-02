@@ -9,6 +9,7 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
 
     public DbSet<MediaItem> Items => Set<MediaItem>();
     public DbSet<PendingUpload> PendingUploads => Set<PendingUpload>();
+    public DbSet<MediaUse> Uses => Set<MediaUse>();
 
     protected override string Schema => SchemaName;
 
@@ -30,6 +31,13 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
             entity.HasKey(upload => upload.Id);
             entity.HasIndex(upload => upload.ExpiresAt);
             entity.Ignore(upload => upload.StagingKey);
+        });
+        modelBuilder.Entity<MediaUse>(entity =>
+        {
+            entity.ToTable("uses");
+            entity.HasKey(use => new { use.MediaId, use.Owner });
+            entity.HasIndex(use => use.Owner);
+            entity.HasOne<MediaItem>().WithMany().HasForeignKey(use => use.MediaId).OnDelete(DeleteBehavior.Restrict);
         });
     }
 }

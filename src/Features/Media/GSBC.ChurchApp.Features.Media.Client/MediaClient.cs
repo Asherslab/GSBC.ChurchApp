@@ -26,4 +26,6 @@ public sealed class MediaClient(ChannelBase channel, HttpClient http)
     public ValueTask<MediaLink> GetLinkAsync(string id) => _media.GetLinkAsync(new LinkRequest { Id = id });
 
     public ValueTask<MediaList> ListAsync(int skip, int take) => _media.ListAsync(new MediaQuery { Skip = skip, Take = take });
+
+    public ValueTask<Done> DeleteAsync(string id) => _media.DeleteAsync(new DeleteMediaRequest { Id = id });
 }

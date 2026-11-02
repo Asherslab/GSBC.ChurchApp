@@ -1,0 +1,29 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject IServiceProvider Services
+
+@if (Picker is { } picker)
+{
+    <div class="media-chooser">
+        @Render(picker)
+        <button type="button" class="link" @onclick="OnCancel">Cancel</button>
+    </div>
+}
+
+@code {
+    [Parameter] public bool ImagesOnly { get; set; } = true;
+    [Parameter] public EventCallback<MediaRef> OnChosen { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private MediaPicker? Picker => Services.GetService(typeof(MediaPicker)) as MediaPicker;
+
+    private RenderFragment Render(MediaPicker picker) => builder =>
+    {
+        builder.OpenComponent(0, picker.Component);
+        builder.AddComponentParameter(1, MediaPicker.ImagesOnlyParameter, ImagesOnly);
+        builder.AddComponentParameter(2, MediaPicker.OnPickParameter, EventCallback.Factory.Create<MediaRef>(this, media => OnChosen.InvokeAsync(media)));
+        builder.CloseComponent();
+    };
+
+    public static bool IsAvailable(IServiceProvider services) => services.GetService(typeof(MediaPicker)) is MediaPicker;
+}

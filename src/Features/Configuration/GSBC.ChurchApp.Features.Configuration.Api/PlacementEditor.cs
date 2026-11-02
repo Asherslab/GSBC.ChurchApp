@@ -4,7 +4,9 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +15,7 @@ using Npgsql;
 namespace GSBC.ChurchApp.Features.Configuration.Api;
 
 internal sealed class PlacementEditor(
-    ConfigurationDbContext db, SurfaceCatalog surfaces, PermissionCatalog permissions, IAccessEvaluator access, TimeProvider time)
+    ConfigurationDbContext db, SurfaceCatalog surfaces, PermissionCatalog permissions, IAccessEvaluator access, IMediaReferences media, TimeProvider time)
 {
     private const int HistoryBatches = 50;
 
@@ -32,7 +34,7 @@ internal sealed class PlacementEditor(
         foreach (Placement placement in request.Placements)
         {
             Surface surface = SurfaceIn(area, placement.Surface);
-            PlacementState after = Validated(surface, PlacementState.Of(placement));
+            PlacementState after = await ValidatedAsync(surface, PlacementState.Of(placement), cancellationToken);
             PlacementRecord record = string.IsNullOrEmpty(placement.Id)
                 ? Create(area, scopeId, surface, Guid.CreateVersion7(), existing)
                 : Current(existing, placement.Id, placement.Revision, surface);
@@ -109,7 +111,7 @@ internal sealed class PlacementEditor(
             Surface surface = surfaces.ByKey.TryGetValue(target.Surface, out Surface? known) && known.Area.Key == area.Key
                 ? known
                 : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{target.Surface}' isn't in this version of the app any more."));
-            PlacementState after = Validated(surface, target);
+            PlacementState after = await ValidatedAsync(surface, target, cancellationToken);
             record ??= Create(area, scopeId, surface, change.PlacementId, existing);
             changes.Add(new Change(record, record.Revision == 0 ? null : PlacementState.Of(record), after));
         }
@@ -135,6 +137,35 @@ internal sealed class PlacementEditor(
 
         return (area, scopeId);
     }
+
+    private async Task<PlacementState> ValidatedAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
+    {
+        PlacementState claimed = Validated(surface, state);
+        List<(Setting Setting, IHoldsMedia Holder)> holders = MediaHolders(surface);
+        if (holders.Count == 0)
+            return claimed;
+
+        List<MediaRef> refs = holders.SelectMany(field => field.Holder.MediaIn(claimed.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
+        Dictionary<string, MediaRef> verified = (await media.VerifyAsync(refs, cancellationToken)).DistinctBy(item => item.Id).ToDictionary(item => item.Id);
+        SortedDictionary<string, string> values = new(claimed.Values);
+        foreach ((Setting setting, IHoldsMedia holder) in holders)
+        {
+            if (values.TryGetValue(setting.Key, out string? text))
+                values[setting.Key] = holder.WithMedia(text, verified);
+        }
+        return Validated(surface, claimed with { Values = values });
+    }
+
+    private static List<(Setting Setting, IHoldsMedia Holder)> MediaHolders(Surface surface) =>
+        surface.Settings.OfType<IHoldsMedia>().Select(holder => ((Setting)holder, holder)).ToList();
+
+    private IReadOnlyList<MediaRef> MediaOf(string surfaceKey, PlacementState? state) =>
+        state is null || !surfaces.ByKey.TryGetValue(surfaceKey, out Surface? surface)
+            ? []
+            : MediaHolders(surface).SelectMany(field => field.Holder.MediaIn(state.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
+
+    private bool HoldsMedia(string surfaceKey) =>
+        surfaces.ByKey.TryGetValue(surfaceKey, out Surface? surface) && MediaHolders(surface).Count > 0;
 
     private PlacementState Validated(Surface surface, PlacementState state)
     {
@@ -230,7 +261,12 @@ internal sealed class PlacementEditor(
         {
             throw Conflict("it");
         }
+
+        foreach ((PlacementRecord record, _, PlacementState? after) in changes.Where(change => HoldsMedia(change.Record.Surface)))
+            await media.UseAsync(MediaOwner(record.Id), MediaOf(record.Surface, after), cancellationToken);
     }
+
+    private static string MediaOwner(Guid placementId) => $"config.placement/{placementId}";
 
     private static FeedChangeRecord FeedChangeOf(PlacementRecord record, bool deleted) => new()
     {

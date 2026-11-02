@@ -21,6 +21,7 @@ window.gsbcNative = (() => {
       dataLayer().cachedMedia({ key, isPrivate }).then((result) => (result.path ? capacitor().convertFileSrc(result.path) : null)),
     fetchMedia: (key, url, isPrivate) =>
       dataLayer().fetchMedia({ key, url, isPrivate }).then((result) => capacitor().convertFileSrc(result.path)),
+    prefetchMedia: (json) => dataLayer().prefetchMedia({ items: JSON.parse(json) }).then((result) => result.fetched),
     clearPrivateMedia: () => dataLayer().clearPrivateMedia(),
     listenOutbox: (receiver) => {
       dataLayer().addListener('outboxChanged', () => receiver.invokeMethodAsync('OnOutboxChanged'));

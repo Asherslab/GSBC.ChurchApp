@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using ProtoBuf;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Media;
@@ -16,5 +17,5 @@ public sealed class MediaRef
     [ProtoMember(9)] public string AltText { get; set; } = "";
     [ProtoMember(10)] public string FileName { get; set; } = "";
 
-    public bool IsImage => ContentType.StartsWith("image/", StringComparison.Ordinal);
+    [JsonIgnore] public bool IsImage => ContentType.StartsWith("image/", StringComparison.Ordinal);
 }

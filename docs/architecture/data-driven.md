@@ -70,7 +70,7 @@ these open; none split into materially different designs, so they were decided a
   in Platform** because every feature with a tile names it.
 - **Settings are a string map, typed by the descriptor.** Each field is an object
   (`TextSetting`, `NumberSetting`, `YesNoSetting`, `ChoiceSetting`, `DateSetting`, `ColourSetting`,
-  `AudienceSetting`) that validates a raw value and reads it with its default
+  `AudienceSetting`, and since 2026-11-02 `MediaSetting` and `RichTextSetting`) that validates a raw value and reads it with its default
   (`values.Get(LinkTile.Title)`). That's the typed contract, without a protobuf message per surface,
   and it grows additively: a new field has a default, and an unknown key is ignored by the phone and
   rejected by the server.
@@ -92,5 +92,5 @@ these open; none split into materially different designs, so they were decided a
   new audited save. A save carries the revision it was based on and is refused if someone else saved
   since.
 - **"Needs app version X"** is shown for surfaces introduced after the first store release (1.0).
-- **Not yet:** the media field kind (with Media), themes (brand or yearly), and taxonomies, which are
-  each feature's own records.
+- **Not yet:** themes (brand or yearly), and taxonomies, which are each feature's own records. The
+  media field kind and a rich-text one were added on 2026-11-02 ([configuration.md](../features/configuration.md)).

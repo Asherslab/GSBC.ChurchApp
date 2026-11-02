@@ -4,22 +4,41 @@ import Foundation
 public enum MediaCacheError: Error {
     case notAMediaKey
     case contentDoesNotMatchKey
+    case tooLarge
+}
+
+public struct PrefetchItem: Sendable {
+    public let key: String
+    public let url: URL
+    public let bytes: Int
+    public let isPrivate: Bool
+
+    public init(key: String, url: URL, bytes: Int, isPrivate: Bool) {
+        self.key = key
+        self.url = url
+        self.bytes = bytes
+        self.isPrivate = isPrivate
+    }
 }
 
 public final class MediaCache: @unchecked Sendable {
     public static let standardLimit = 200 * 1024 * 1024
+    public static let prefetchBatchLimit = 50 * 1024 * 1024
+    public static let prefetchFileLimit = 5 * 1024 * 1024
 
     private let publicDirectory: URL
     private let privateDirectory: URL
     private let maximumBytes: Int
     private let session: URLSession
+    private let prefetchSession: URLSession
     private let lock = NSLock()
 
-    public init(directory: URL, maximumBytes: Int = standardLimit, session: URLSession = .shared) throws {
+    public init(directory: URL, maximumBytes: Int = standardLimit, session: URLSession = .shared, prefetchSession: URLSession? = nil) throws {
         publicDirectory = directory.appendingPathComponent("public")
         privateDirectory = directory.appendingPathComponent("private")
         self.maximumBytes = maximumBytes
         self.session = session
+        self.prefetchSession = prefetchSession ?? Self.respectingLowDataMode()
         for folder in [publicDirectory, privateDirectory] {
             try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         }
@@ -35,12 +54,20 @@ public final class MediaCache: @unchecked Sendable {
 
     public func fetch(key: String, from url: URL, isPrivate: Bool) async throws -> URL {
         if let file = cached(key: key, isPrivate: isPrivate) { return file }
-        let (downloaded, response) = try await session.download(from: url)
-        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
-            try? FileManager.default.removeItem(at: downloaded)
-            throw URLError(.badServerResponse)
+        return try await download(key: key, from: url, isPrivate: isPrivate, using: session, maximumFileBytes: nil)
+    }
+
+    public func prefetch(_ items: [PrefetchItem], batchLimit: Int = prefetchBatchLimit, fileLimit: Int = prefetchFileLimit) async -> Int {
+        var spent = 0
+        var fetched = 0
+        for item in items {
+            guard Self.isMediaKey(item.key), item.bytes > 0, item.bytes <= fileLimit, spent + item.bytes <= batchLimit,
+                  !FileManager.default.fileExists(atPath: location(key: item.key, isPrivate: item.isPrivate).path) else { continue }
+            guard (try? await download(key: item.key, from: item.url, isPrivate: item.isPrivate, using: prefetchSession, maximumFileBytes: fileLimit)) != nil else { continue }
+            spent += item.bytes
+            fetched += 1
         }
-        return try store(key: key, isPrivate: isPrivate, downloadedFile: downloaded)
+        return fetched
     }
 
     public func clearPrivate() {
@@ -53,9 +80,13 @@ public final class MediaCache: @unchecked Sendable {
         lock.withLock { entries().reduce(0) { $0 + $1.bytes } }
     }
 
-    func store(key: String, isPrivate: Bool, downloadedFile: URL) throws -> URL {
+    func store(key: String, isPrivate: Bool, downloadedFile: URL, maximumFileBytes: Int? = nil) throws -> URL {
         defer { try? FileManager.default.removeItem(at: downloadedFile) }
         guard Self.isMediaKey(key) else { throw MediaCacheError.notAMediaKey }
+        if let maximumFileBytes,
+           let size = try downloadedFile.resourceValues(forKeys: [.fileSizeKey]).fileSize, size > maximumFileBytes {
+            throw MediaCacheError.tooLarge
+        }
         let hash = SHA256.hash(data: try Data(contentsOf: downloadedFile, options: .mappedIfSafe))
         guard hash.map({ String(format: "%02x", $0) }).joined() == String(key.prefix(64)) else {
             throw MediaCacheError.contentDoesNotMatchKey
@@ -70,6 +101,21 @@ public final class MediaCache: @unchecked Sendable {
             evictOverLimit()
         }
         return file
+    }
+
+    private func download(key: String, from url: URL, isPrivate: Bool, using session: URLSession, maximumFileBytes: Int?) async throws -> URL {
+        let (downloaded, response) = try await session.download(from: url)
+        if let http = response as? HTTPURLResponse, !(200..<300).contains(http.statusCode) {
+            try? FileManager.default.removeItem(at: downloaded)
+            throw URLError(.badServerResponse)
+        }
+        return try store(key: key, isPrivate: isPrivate, downloadedFile: downloaded, maximumFileBytes: maximumFileBytes)
+    }
+
+    private static func respectingLowDataMode() -> URLSession {
+        let configuration = URLSessionConfiguration.default
+        configuration.allowsConstrainedNetworkAccess = false
+        return URLSession(configuration: configuration)
     }
 
     private func evictOverLimit() {

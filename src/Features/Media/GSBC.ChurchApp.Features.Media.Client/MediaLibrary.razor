@@ -3,13 +3,13 @@
 <Can Permission="MediaPermissions.Upload">
     <section class="account-panel">
         <h2>Upload</h2>
-        <MediaUpload OnUploaded="Uploaded" />
+        <MediaUpload OnUploaded="UploadedAsync" />
     </section>
 </Can>
 
 <section class="account-panel">
     <ul class="media-library">
-        @foreach (MediaItemInfo item in _items)
+        @foreach (MediaItemInfo item in Shown)
         {
             MediaRef media = item.Media!;
             <li>
@@ -23,9 +23,32 @@
                 {
                     <span>Private to @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</span>
                 }
-                else if (media.Url is not null)
+                else if (media.Url is not null && !Picking)
                 {
                     <a href="@media.Url" target="_blank" rel="noopener">Open</a>
+                }
+                @if (Picking)
+                {
+                    <button type="button" @onclick="() => OnPick.InvokeAsync(media)">Choose</button>
+                }
+                else if (item.Uses > 0)
+                {
+                    <span>Used in @item.Uses @(item.Uses == 1 ? "place" : "places")</span>
+                }
+                else
+                {
+                    <Can Permission="MediaPermissions.Delete">
+                        @if (_confirming == media.Id)
+                        {
+                            <span>Delete it for good?</span>
+                            <button type="button" @onclick="() => DeleteAsync(item)" disabled="@_busy">Delete</button>
+                            <button type="button" class="link" @onclick="() => _confirming = null">Keep</button>
+                        }
+                        else
+                        {
+                            <button type="button" class="link" @onclick="() => _confirming = media.Id">Delete</button>
+                        }
+                    </Can>
                 }
             </li>
         }
@@ -46,6 +69,14 @@
     private bool _hasMore;
     private bool _busy;
     private string? _error;
+    private string? _confirming;
+
+    [Parameter] public EventCallback<MediaRef> OnPick { get; set; }
+    [Parameter] public bool ImagesOnly { get; set; }
+
+    private bool Picking => OnPick.HasDelegate;
+
+    private IEnumerable<MediaItemInfo> Shown => ImagesOnly ? _items.Where(item => item.Media!.IsImage) : _items;
 
     protected override Task OnInitializedAsync() => LoadMoreAsync();
 
@@ -68,8 +99,32 @@
         }
     }
 
-    private void Uploaded(MediaRef media) =>
+    private async Task UploadedAsync(MediaRef media)
+    {
         _items.Insert(0, new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow });
+        if (Picking && (!ImagesOnly || media.IsImage))
+            await OnPick.InvokeAsync(media);
+    }
+
+    private async Task DeleteAsync(MediaItemInfo item)
+    {
+        _busy = true;
+        _error = null;
+        try
+        {
+            await Media.DeleteAsync(item.Media!.Id);
+            _items.Remove(item);
+        }
+        catch (RpcException exception)
+        {
+            _error = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+            _confirming = null;
+        }
+    }
 
     private static string Size(long bytes) => bytes < 1024 * 1024 ? $"{bytes / 1024d:0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
 }

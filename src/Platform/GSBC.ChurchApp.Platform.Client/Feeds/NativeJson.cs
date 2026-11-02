@@ -10,8 +10,11 @@ internal sealed record StoreInfoJson(long FileBytes, StoredFeedJson[] Feeds);
 
 internal sealed record OutboxEntryJson(string Id, string Method, long CreatedAt, int Attempts, string? LastError, bool Failed);
 
+internal sealed record PrefetchItemJson(string Key, string Url, long Bytes, bool IsPrivate);
+
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
 [JsonSerializable(typeof(StoredRecordJson[]))]
 [JsonSerializable(typeof(StoreInfoJson))]
 [JsonSerializable(typeof(OutboxEntryJson[]))]
+[JsonSerializable(typeof(PrefetchItemJson[]))]
 internal sealed partial class NativeJson : JsonSerializerContext;

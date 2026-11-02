@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
+using Npgsql;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
 
@@ -16,13 +17,12 @@ internal sealed class MediaLibrary(
     public static readonly TimeSpan PrivateLinkLifetime = TimeSpan.FromMinutes(5);
     private static readonly TimeSpan PendingKeptFor = TimeSpan.FromDays(1);
     private const int MaximumPage = 200;
-    private const int MaximumTextLength = 200;
 
     public async Task<UploadTicket> BeginUploadAsync(ClaimsPrincipal user, BeginUploadRequest request, CancellationToken cancellationToken)
     {
         if (!MediaTypes.TryGetExtension(request.ContentType, out _))
             throw Invalid($"'{request.ContentType}' files can't be uploaded. Use one of: {string.Join(", ", MediaTypes.Accepted)}.");
-        if (request.FileName.Length > MaximumTextLength || request.AltText.Length > MaximumTextLength)
+        if (request.FileName.Length > MediaRefs.MaximumTextLength || request.AltText.Length > MediaRefs.MaximumTextLength)
             throw Invalid("Keep the file name and description under 200 characters.");
         if (request.PrivateTo is { } audience)
             await CheckAudienceAsync(user, audience, cancellationToken);
@@ -37,8 +37,6 @@ internal sealed class MediaLibrary(
             ContentType = request.ContentType.ToLowerInvariant(),
             FileName = request.FileName.Trim(),
             AltText = request.AltText.Trim(),
-            Width = Math.Max(0, request.Width),
-            Height = Math.Max(0, request.Height),
             AudiencePermission = request.PrivateTo?.Permission,
             AudienceScopeId = NullIfEmpty(request.PrivateTo?.ScopeId),
             ExpiresAt = now + UploadWindow,
@@ -85,8 +83,8 @@ internal sealed class MediaLibrary(
             Key = key,
             ContentType = pending.ContentType,
             Bytes = content.Bytes,
-            Width = pending.Width,
-            Height = pending.Height,
+            Width = content.Dimensions.Width,
+            Height = content.Dimensions.Height,
             FileName = pending.FileName,
             AltText = pending.AltText,
             AudiencePermission = pending.AudiencePermission,
@@ -96,7 +94,7 @@ internal sealed class MediaLibrary(
         };
         db.Items.Add(item);
         await DiscardAsync(pending, cancellationToken);
-        return RefOf(item);
+        return MediaRefs.Of(item, blobs);
     }
 
     public async Task<MediaLink> GetLinkAsync(ClaimsPrincipal user, string id, CancellationToken cancellationToken)
@@ -118,24 +116,54 @@ internal sealed class MediaLibrary(
     public async Task<MediaList> ListAsync(MediaQuery query, CancellationToken cancellationToken)
     {
         int take = query.Take is > 0 and <= MaximumPage ? query.Take : MaximumPage;
-        List<MediaItem> items = await db.Items.AsNoTracking()
+        List<Listed> items = await db.Items.AsNoTracking()
             .OrderByDescending(item => item.UploadedAt)
             .Skip(Math.Max(0, query.Skip))
             .Take(take + 1)
+            .Select(item => new Listed(item, db.Uses.Count(use => use.MediaId == item.Id)))
             .ToListAsync(cancellationToken);
 
         return new MediaList
         {
             HasMore = items.Count > take,
-            Items = items.Take(take).Select(item => new MediaItemInfo
+            Items = items.Take(take).Select(row => new MediaItemInfo
             {
-                Media = RefOf(item),
-                UploadedAt = item.UploadedAt,
-                UploadedBy = item.UploadedBy.ToString(),
-                PrivateTo = item.AudiencePermission is null ? null : new MediaAudience { Permission = item.AudiencePermission, ScopeId = item.AudienceScopeId },
+                Media = MediaRefs.Of(row.Item, blobs),
+                Uses = row.Uses,
+                UploadedAt = row.Item.UploadedAt,
+                UploadedBy = row.Item.UploadedBy.ToString(),
+                PrivateTo = row.Item.AudiencePermission is null ? null : new MediaAudience { Permission = row.Item.AudiencePermission, ScopeId = row.Item.AudienceScopeId },
             }).ToList(),
         };
     }
+
+    public async Task DeleteAsync(string id, CancellationToken cancellationToken)
+    {
+        Guid mediaId = ParseId(id);
+        MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+
+        int uses = await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken);
+        if (uses > 0)
+            throw InUse(uses);
+
+        db.Items.Remove(item);
+        try
+        {
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        catch (DbUpdateException exception) when (exception.InnerException is PostgresException { SqlState: PostgresErrorCodes.ForeignKeyViolation })
+        {
+            throw InUse(await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken));
+        }
+
+        bool bytesStillListed = await db.Items.AnyAsync(other => other.Key == item.Key && (other.AudiencePermission == null) == (item.AudiencePermission == null), cancellationToken);
+        if (!bytesStillListed)
+            await blobs.DeleteAsync(item.IsPrivate ? BlobBucket.Private : BlobBucket.Public, item.Key, cancellationToken);
+    }
+
+    private static RpcException InUse(int uses) =>
+        new(new Status(StatusCode.FailedPrecondition, uses == 1 ? "It's still used in 1 place. Remove it there first." : $"It's still used in {uses} places. Remove it there first."));
 
     private async Task CheckAudienceAsync(ClaimsPrincipal user, MediaAudience audience, CancellationToken cancellationToken)
     {
@@ -152,20 +180,6 @@ internal sealed class MediaLibrary(
         await blobs.DeleteAsync(BlobBucket.Private, pending.StagingKey, cancellationToken);
     }
 
-    private MediaRef RefOf(MediaItem item) => new()
-    {
-        Id = item.Id.ToString(),
-        Key = item.Key,
-        ContentType = item.ContentType,
-        Bytes = item.Bytes,
-        Width = item.Width,
-        Height = item.Height,
-        Url = item.IsPrivate ? null : blobs.PublicUrlOf(item.Key).ToString(),
-        IsPrivate = item.IsPrivate,
-        AltText = item.AltText,
-        FileName = item.FileName,
-    };
-
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
     private static Guid CallerId(ClaimsPrincipal user) =>
@@ -177,4 +191,6 @@ internal sealed class MediaLibrary(
     private static string? NullIfEmpty(string? value) => string.IsNullOrWhiteSpace(value) ? null : value;
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
+
+    private sealed record Listed(MediaItem Item, int Uses);
 }

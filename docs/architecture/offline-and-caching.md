@@ -40,6 +40,8 @@ file's address is its content:
   the phone's file cache keep it forever, and nothing is ever purged.
 - **The phone's file cache** is keyed by hash, size-limited and least-recently-used, so it can never
   show an old version.
+- **Prefetched for offline:** a feed can name the images its records show, and the app fetches them
+  ahead of time within the cache's limits ([media.md](../features/media.md), *Prefetching*).
 
 **Decided (owner, 2026-11-02): media lives in R2.** Public media is served from an R2 bucket on a
 custom domain (e.g. `media.baptist.com.au`) behind Cloudflare and fetched by the phone directly;

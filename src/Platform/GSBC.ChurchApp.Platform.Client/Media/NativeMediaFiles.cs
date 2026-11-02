@@ -1,3 +1,5 @@
+using System.Text.Json;
+using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using Microsoft.JSInterop;
@@ -24,6 +26,28 @@ public sealed class NativeMediaFiles(NativeBridge bridge, IJSRuntime js, IServic
             return null;
         }
     }
+
+    public async ValueTask PrefetchAsync(IReadOnlyList<MediaRef> media)
+    {
+        if (!bridge.IsNative)
+            return;
+
+        List<PrefetchItemJson> items = [];
+        foreach (MediaRef item in media.Where(item => item.IsImage).DistinctBy(item => item.Key))
+        {
+            string? url = item.IsPrivate ? await PrivateLinkIfNotCachedAsync(item) : item.Url;
+            if (url is not null)
+                items.Add(new PrefetchItemJson(item.Key, url, item.Bytes, item.IsPrivate));
+        }
+
+        if (items.Count > 0)
+            await js.InvokeAsync<int>("gsbcNative.prefetchMedia", JsonSerializer.Serialize(items.ToArray(), NativeJson.Default.PrefetchItemJsonArray));
+    }
+
+    private async ValueTask<string?> PrivateLinkIfNotCachedAsync(MediaRef media) =>
+        await js.InvokeAsync<string?>("gsbcNative.cachedMedia", media.Key, true) is null
+            ? await WebMediaFiles.PrivateLinkAsync(services, media)
+            : null;
 
     public async ValueTask ForgetPrivateAsync()
     {

@@ -90,6 +90,25 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                     b.ToTable("items", "media");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaUse", b =>
+                {
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("media_id");
+
+                    b.Property<string>("Owner")
+                        .HasColumnType("text")
+                        .HasColumnName("owner");
+
+                    b.HasKey("MediaId", "Owner")
+                        .HasName("pk_uses");
+
+                    b.HasIndex("Owner")
+                        .HasDatabaseName("ix_uses_owner");
+
+                    b.ToTable("uses", "media");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.PendingUpload", b =>
                 {
                     b.Property<Guid>("Id")
@@ -124,17 +143,9 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("file_name");
 
-                    b.Property<int>("Height")
-                        .HasColumnType("integer")
-                        .HasColumnName("height");
-
                     b.Property<Guid>("UploadedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("uploaded_by");
-
-                    b.Property<int>("Width")
-                        .HasColumnType("integer")
-                        .HasColumnName("width");
 
                     b.HasKey("Id")
                         .HasName("pk_pending_uploads");
@@ -213,6 +224,16 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaUse", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Media.Api.Data.MediaItem", null)
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired()
+                        .HasConstraintName("fk_uses_items_media_id");
                 });
 #pragma warning restore 612, 618
         }

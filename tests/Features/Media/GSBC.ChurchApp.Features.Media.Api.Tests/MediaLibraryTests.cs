@@ -1,3 +1,4 @@
+using System.Buffers.Binary;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Security.Claims;
@@ -10,6 +11,7 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -75,6 +77,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
             .AddBlobStore(configuration)
             .AddMediaData()
             .AddScoped<MediaLibrary>()
+            .AddScoped<IMediaReferences, MediaReferences>()
             .BuildServiceProvider();
 
         IAmazonS3 s3 = _services.GetRequiredService<IAmazonS3>();
@@ -160,6 +163,70 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
     }
 
+    [Fact]
+    public async Task ASavedMediaRefIsTheLibrarysNeverTheClients()
+    {
+        MediaRef photo = await UploadAsync(Person(), Jpeg(seed: 4), "image/jpeg");
+        MediaRef forgedDetails = new()
+        {
+            Id = photo.Id,
+            Key = photo.Key,
+            ContentType = "text/html",
+            Bytes = 1,
+            Url = "https://attacker.example/x.jpg",
+            IsPrivate = true,
+            AltText = "The hall set up for lunch",
+        };
+
+        MediaRef saved = Assert.Single(await ReferencesCallAsync(references => references.VerifyAsync([forgedDetails], Cancellation)));
+
+        Assert.Equal((photo.ContentType, photo.Bytes, photo.Url, photo.IsPrivate), (saved.ContentType, saved.Bytes, saved.Url, saved.IsPrivate));
+        Assert.Equal("The hall set up for lunch", saved.AltText);
+
+        MediaRef otherKey = new() { Id = photo.Id, Key = $"{new string('0', 64)}.jpg" };
+        MediaRef unknown = new() { Id = Guid.CreateVersion7().ToString(), Key = photo.Key };
+        foreach (MediaRef forged in new[] { otherKey, unknown })
+        {
+            RpcException refused = await Assert.ThrowsAsync<RpcException>(() =>
+                ReferencesCallAsync(references => references.VerifyAsync([forged], Cancellation)));
+            Assert.Equal(StatusCode.InvalidArgument, refused.StatusCode);
+        }
+    }
+
+    [Fact]
+    public async Task ImageDimensionsComeFromTheBytesTurnedTheWayThePhotoIsShown()
+    {
+        ClaimsPrincipal staff = Person();
+
+        MediaRef png = await UploadAsync(staff, Png(width: 640, height: 480), "image/png");
+        MediaRef sidewaysPhoto = await UploadAsync(staff, JpegWithOrientation(width: 4000, height: 3000, orientation: 6), "image/jpeg");
+
+        Assert.Equal((640, 480), (png.Width, png.Height));
+        Assert.Equal((3000, 4000), (sidewaysPhoto.Width, sidewaysPhoto.Height));
+    }
+
+    [Fact]
+    public async Task MediaInUseCanNotBeDeletedAndBytesStayWhileAnotherCopyIsListed()
+    {
+        ClaimsPrincipal staff = Person();
+        byte[] bytes = Jpeg(seed: 5);
+        MediaRef used = await UploadAsync(staff, bytes, "image/jpeg");
+        MediaRef sameBytes = await UploadAsync(staff, bytes, "image/jpeg");
+        await ReferencesCallAsync(references => Done(references.UseAsync("news.post/3", [used], Cancellation)));
+
+        RpcException inUse = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => Done(library.DeleteAsync(used.Id, Cancellation))));
+        Assert.Equal(StatusCode.FailedPrecondition, inUse.StatusCode);
+
+        await ReferencesCallAsync(references => Done(references.UseAsync("news.post/3", [], Cancellation)));
+        await LibraryCallAsync(library => Done(library.DeleteAsync(used.Id, Cancellation)));
+        using (HttpResponseMessage stillListed = await _http.GetAsync(sameBytes.Url, Cancellation))
+            Assert.Equal(HttpStatusCode.OK, stillListed.StatusCode);
+
+        await LibraryCallAsync(library => Done(library.DeleteAsync(sameBytes.Id, Cancellation)));
+        using (HttpResponseMessage gone = await _http.GetAsync(sameBytes.Url, Cancellation))
+            Assert.False(gone.IsSuccessStatusCode);
+    }
+
     private async Task<MediaRef> UploadAsync(ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null)
     {
         UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, new BeginUploadRequest
@@ -184,6 +251,18 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         return await call(scope.ServiceProvider.GetRequiredService<MediaLibrary>());
     }
 
+    private async Task<T> ReferencesCallAsync<T>(Func<IMediaReferences, Task<T>> call)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await call(scope.ServiceProvider.GetRequiredService<IMediaReferences>());
+    }
+
+    private static async Task<bool> Done(Task task)
+    {
+        await task;
+        return true;
+    }
+
     private string PublicUrlBase => $"http://{_s3.Hostname}:{_s3.GetMappedPublicPort(S3Port)}/{PublicBucket}";
 
     private static CancellationToken Cancellation => TestContext.Current.CancellationToken;
@@ -199,6 +278,28 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         bytes[1] = 0xD8;
         bytes[2] = 0xFF;
         return bytes;
+    }
+
+    private static byte[] Png(int width, int height)
+    {
+        byte[] bytes = new byte[64];
+        new byte[] { 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, 0, 0, 0, 13 }.CopyTo(bytes, 0);
+        "IHDR"u8.CopyTo(bytes.AsSpan(12));
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(16), (uint)width);
+        BinaryPrimitives.WriteUInt32BigEndian(bytes.AsSpan(20), (uint)height);
+        return bytes;
+    }
+
+    private static byte[] JpegWithOrientation(int width, int height, ushort orientation)
+    {
+        List<byte> bytes = [0xFF, 0xD8];
+        byte[] exif = [.. "Exif\0\0"u8, .. "II"u8, 42, 0, 8, 0, 0, 0, 1, 0, 0x12, 0x01, 3, 0, 1, 0, 0, 0, (byte)orientation, 0, 0, 0, 0, 0, 0, 0];
+        bytes.AddRange([0xFF, 0xE1, (byte)((exif.Length + 2) >> 8), (byte)(exif.Length + 2)]);
+        bytes.AddRange(exif);
+        bytes.AddRange([0xFF, 0xC0, 0, 17, 8, (byte)(height >> 8), (byte)height, (byte)(width >> 8), (byte)width, 3]);
+        bytes.AddRange(new byte[9]);
+        bytes.AddRange([0xFF, 0xD9]);
+        return [.. bytes];
     }
 
     public async ValueTask DisposeAsync()

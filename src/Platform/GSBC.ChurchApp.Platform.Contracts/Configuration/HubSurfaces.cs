@@ -27,10 +27,11 @@ public static class HubSurfaces
             help: "The web page the tile opens, starting with https://");
         public static readonly ColourSetting Colour = new("colour", "Colour", TileColours, "plain");
         public static readonly YesNoSetting Wide = new("wide", "Full width");
+        public static readonly MediaSetting Image = new("image", "Picture", help: "Shown on the tile, behind its title");
 
         public static readonly Surface Surface = new("hub.link", Area, "Link tile",
             "A tile that opens a web page: the Bible, a sign-up form, a campaign",
-            [Title, Subtitle, Link, Colour, Wide], defaultOrder: 1000, repeatable: true);
+            [Title, Subtitle, Link, Colour, Wide, Image], defaultOrder: 1000, repeatable: true);
     }
 
     public static readonly SurfaceSet All = new([LinkTile.Surface]);

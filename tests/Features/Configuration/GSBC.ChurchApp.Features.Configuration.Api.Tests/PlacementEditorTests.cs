@@ -3,7 +3,10 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
@@ -17,12 +20,15 @@ public sealed class PlacementEditorTests : IAsyncLifetime
 {
     private static readonly Permission EditModules = new("ministries.modules.edit", ScopeKind.Ministry, "Arrange a ministry's modules");
     private static readonly SurfaceArea Modules = new("ministry.modules", "Modules", "", ScopeKind.Ministry, EditModules);
+    private static readonly RichTextSetting About = new("about", "About");
     private static readonly Surface News = new("ministry.news", Modules, "News", "", []);
+    private static readonly Surface Welcome = new("ministry.welcome", Modules, "Welcome", "", [About]);
 
-    private static readonly SurfaceSet MinistrySurfaces = new([News]);
+    private static readonly SurfaceSet MinistrySurfaces = new([News, Welcome]);
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
     private readonly AllowedAccess _access = new();
+    private readonly Library _media = new();
     private ServiceProvider _services = null!;
 
     public async ValueTask InitializeAsync()
@@ -36,6 +42,7 @@ public sealed class PlacementEditorTests : IAsyncLifetime
             .AddSingleton(new SurfaceCatalog([HubSurfaces.All, MinistrySurfaces]))
             .AddSingleton(new PermissionCatalog([new PermissionSet([HubSurfaces.Edit, EditModules])]))
             .AddSingleton<IAccessEvaluator>(_access)
+            .AddSingleton<IMediaReferences>(_media)
             .AddScoped<PlacementEditor>()
             .AddSyncData()
             .AddConfigurationData()
@@ -129,6 +136,49 @@ public sealed class PlacementEditorTests : IAsyncLifetime
         Assert.Equal(2, rollBack.Changes.Count);
     }
 
+    [Fact]
+    public async Task ImagesInSettingsAreTheLibrarysAndForgedOrPrivateOnesAreRefused()
+    {
+        ClaimsPrincipal staff = _access.Person((HubSurfaces.EditNode, null));
+        MediaRef photo = _media.Add(new MediaRef { Id = "photo", Key = $"{new string('a', 64)}.jpg", ContentType = "image/jpeg", Url = "https://media.example/a.jpg", Width = 800, Height = 600 });
+        MediaRef notes = _media.Add(new MediaRef { Id = "notes", Key = $"{new string('b', 64)}.jpg", ContentType = "image/jpeg", IsPrivate = true });
+
+        Placement tile = LinkTile("Camp");
+        tile.Values.Add(Value(HubSurfaces.LinkTile.Image, new MediaRef { Id = photo.Id, Key = photo.Key, ContentType = "image/jpeg", Url = "https://attacker.example/x.jpg" }));
+        Placement saved = Assert.Single(await SaveAsync(staff, HubSurfaces.Area, null, tile));
+
+        Assert.True(HubSurfaces.LinkTile.Image.TryParse(saved.Values.Single(value => value.Key == "image").Value, out MediaRef? stored));
+        Assert.Equal((photo.Url, 800), (stored!.Url, stored.Width));
+        Assert.Equal([photo.Id], _media.UsedBy($"config.placement/{saved.Id}"));
+
+        Placement forged = LinkTile("Forged");
+        forged.Values.Add(Value(HubSurfaces.LinkTile.Image, new MediaRef { Id = "missing", ContentType = "image/jpeg" }));
+        Placement privateImage = LinkTile("Private");
+        privateImage.Values.Add(Value(HubSurfaces.LinkTile.Image, new MediaRef { Id = notes.Id, Key = notes.Key, ContentType = "image/jpeg" }));
+
+        Assert.Equal(StatusCode.InvalidArgument, (await Refused(() => SaveAsync(staff, HubSurfaces.Area, null, forged))).StatusCode);
+        Assert.Contains("public image", (await Refused(() => SaveAsync(staff, HubSurfaces.Area, null, privateImage))).Status.Detail);
+        Assert.Single(await GetAsync(staff, HubSurfaces.Area, null));
+    }
+
+    [Fact]
+    public async Task FormattedTextWithAnUnsafeLinkIsNeverStored()
+    {
+        ClaimsPrincipal leader = _access.Person((EditModules.Node, "42"));
+        Placement welcome = new()
+        {
+            Surface = Welcome.Key,
+            Values = [new SettingValue { Key = About.Key, Value = ContentJson.Write(new RichText { Markdown = "[Click me](javascript:alert(1))" }) }],
+        };
+
+        RpcException refused = await Refused(() => SaveAsync(leader, Modules, "42", welcome));
+
+        Assert.Equal(StatusCode.InvalidArgument, refused.StatusCode);
+        Assert.Empty(await GetAsync(leader, Modules, "42"));
+    }
+
+    private static SettingValue Value(MediaSetting setting, MediaRef media) => new() { Key = setting.Key, Value = setting.Format(media) };
+
     private static Placement LinkTile(string title, string link = "https://www.biblegateway.com") => new()
     {
         Surface = HubSurfaces.LinkTile.Surface.Key,
@@ -180,6 +230,29 @@ public sealed class PlacementEditorTests : IAsyncLifetime
     {
         await _services.DisposeAsync();
         await _postgres.DisposeAsync();
+    }
+
+    private sealed class Library : IMediaReferences
+    {
+        private readonly Dictionary<string, MediaRef> _items = [];
+        private readonly Dictionary<string, List<string>> _uses = [];
+
+        public MediaRef Add(MediaRef media) => _items[media.Id] = media;
+
+        public List<string> UsedBy(string owner) => _uses.GetValueOrDefault(owner, []);
+
+        public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<MediaRef>>(claimed
+                .Select(media => _items.TryGetValue(media.Id, out MediaRef? known) && (media.Key.Length == 0 || media.Key == known.Key)
+                    ? known
+                    : throw new RpcException(new Status(StatusCode.InvalidArgument, "Not in the library.")))
+                .ToList());
+
+        public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
+        {
+            _uses[owner] = verified.Select(media => media.Id).ToList();
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class AllowedAccess : IAccessEvaluator

@@ -20,6 +20,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cachedMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "fetchMedia", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "prefetchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise)
     ]
 
@@ -200,6 +201,16 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject(error.localizedDescription)
             }
         }
+    }
+
+    @objc func prefetchMedia(_ call: CAPPluginCall) {
+        guard let media = runtime.media else { return call.reject("The media cache isn't available") }
+        let items = (call.getArray("items") as? [[String: Any]] ?? []).compactMap { item -> PrefetchItem? in
+            guard let key = item["key"] as? String, let url = URL(string: item["url"] as? String ?? ""),
+                  let bytes = (item["bytes"] as? NSNumber)?.intValue else { return nil }
+            return PrefetchItem(key: key, url: url, bytes: bytes, isPrivate: item["isPrivate"] as? Bool ?? false)
+        }
+        Task { call.resolve(["fetched": await media.prefetch(items)]) }
     }
 
     @objc func clearPrivateMedia(_ call: CAPPluginCall) {

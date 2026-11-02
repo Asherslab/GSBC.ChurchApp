@@ -7,6 +7,8 @@ public interface IMediaFiles
     ValueTask<string?> SourceOfAsync(MediaRef media);
 
     ValueTask ForgetPrivateAsync();
+
+    ValueTask PrefetchAsync(IReadOnlyList<MediaRef> media);
 }
 
 public interface IPrivateMediaLinks
