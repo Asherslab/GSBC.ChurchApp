@@ -51,6 +51,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_seen_at");
 
+                    b.Property<string>("SecretHash")
+                        .HasColumnType("text")
+                        .HasColumnName("secret_hash");
+
                     b.Property<byte[]>("Ticket")
                         .IsRequired()
                         .HasColumnType("bytea")
@@ -62,6 +66,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_sessions");
+
+                    b.HasIndex("SecretHash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_sessions_secret_hash");
 
                     b.HasIndex("UserId")
                         .HasDatabaseName("ix_sessions_user_id");
