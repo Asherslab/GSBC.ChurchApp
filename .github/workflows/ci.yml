@@ -3,7 +3,25 @@ name: CI
 on:
   push:
     branches: [ "main" ]
+    paths:
+      - "**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "!.impeccable/**"
+      - "!spikes/**"
+      - "!.run/**"
+      - "docs/architecture/repo-layout.md"
+      - "docs/architecture/architecture.svg"
   pull_request:
+    paths:
+      - "**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "!.impeccable/**"
+      - "!spikes/**"
+      - "!.run/**"
+      - "docs/architecture/repo-layout.md"
+      - "docs/architecture/architecture.svg"
 
 jobs:
   build:

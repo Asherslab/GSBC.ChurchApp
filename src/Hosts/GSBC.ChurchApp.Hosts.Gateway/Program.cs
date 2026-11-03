@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Accounts.Gateway;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
@@ -12,25 +13,25 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 builder.Services.AddAccountsGateway(builder.Configuration);
 builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy")).AddApiTokens();
 builder.Services.AddGrpc(options => options.IgnoreUnknownServices = true);
-builder.Services.AddGrpcHealthChecks();
+builder.Services.AddGrpcHealthChecks().AddCheck("live", () => HealthCheckResult.Healthy());
 
 WebApplication app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+bool development = app.Environment.IsDevelopment();
+app.Use((context, next) =>
 {
-    app.Use((context, next) =>
+    context.Response.OnStarting(() =>
     {
-        context.Response.OnStarting(() =>
-        {
+        if (development)
             context.Response.Headers.CacheControl = "no-store";
-            return Task.CompletedTask;
-        });
-        return next(context);
+        else if (string.IsNullOrEmpty(context.Response.Headers.CacheControl))
+            context.Response.Headers.CacheControl = "no-cache";
+        return Task.CompletedTask;
     });
-}
+    return next(context);
+});
 
 app.UseAppAssociation();
-app.UseStaticFiles();
 app.UseRouting();
 app.UseAuthentication();
 app.UseRateLimiter();

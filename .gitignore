@@ -10,5 +10,3 @@ node_modules/
 /reference/
 /~/
 
-# Written by the gateway at start-up from Apple:TeamId (the dev association file)
-src/Hosts/GSBC.ChurchApp.Hosts.Gateway/generated/

@@ -12,5 +12,5 @@ capacitor-cordova-ios-plugins
 App/App/capacitor.config.json
 App/App/config.xml
 
-# Written by tools/ios/deploy.sh: this machine's team and gateway
-dev.xcconfig
+# Written by tools/ios/deploy.sh: this machine's team, and the gateway when it overrides Dev's
+local.xcconfig

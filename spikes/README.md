@@ -8,5 +8,5 @@ solution; don't iterate on them.
 | [aot-grpc](aot-grpc/README.md) | The evidence behind SPEC §9's AOT rules, and how to re-run it |
 | [app-poc](app-poc/README.md) | The design reference: every screen to rebuild, feature by feature, in `src/` |
 
-The PWA preview's deploy workflow was removed. app.baptist.com.au keeps serving its last image until
-it is removed from `gsbc.argo`.
+The PWA preview at app.baptist.com.au was retired on 2026-11-03, once TestFlight's UAT app replaced it:
+its workflow, image build and `gsbc.argo` manifests are gone.

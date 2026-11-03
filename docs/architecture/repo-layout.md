@@ -36,7 +36,7 @@ src/
     GSBC.ChurchApp.Hosts.AppHost            Aspire, local development only
     App/
       GSBC.ChurchApp.Hosts.App              Blazor WASM AOT
-      shell/                                Capacitor (iOS now; Android later)
+      shell/                                Capacitor (iOS now; Android later); ios/environments/ per app
       native/data-layer/                    the one native plugin (SPEC §5)
 
 tests/                         mirrors src/
@@ -45,6 +45,7 @@ tests/                         mirrors src/
   Features/<Feature>/GSBC.ChurchApp.Features.<Feature>.<Part>.Tests
 
 tools/aot-warnings/            check.sh publishes the app and checks its warning baseline (SPEC §9)
+tools/containers/              publish.sh builds the API, gateway and migrator images (environments.md)
 .config/dotnet-tools.json      dotnet-ef
 docs/                          architecture/, features/ (one per feature), the spec's detail
 spikes/                        frozen; reference only, not in the solution

@@ -88,26 +88,13 @@ A free Apple ID can install it on a phone plugged into the Mac, for 7 days at a 
 notifications, App Attest and TestFlight need the church's paid developer account (SPEC §12); the
 in-app **More → Device check** lists what this build can and can't prove.
 
-## PWA preview at app.baptist.com.au
+## PWA preview (retired)
 
-Short-lived, added 2026-10-27: staff try the layout and feel on their own phones for a week or two
-before the church's developer account and TestFlight exist. The same build runs in Safari; opened in a
-browser tab it offers **Add to Home Screen** (`Components/InstallSheet.razor`), and from the Home Screen
-it opens full screen.
-
-Native-only features say so instead of working: notification previews and Add to calendar report
-"Phone only", haptics do nothing, and the first-run notifications sheet is skipped in a browser tab. Sermons come from the bundled feed snapshot (baptist.com.au
-sends no CORS headers, and a proxy would be a non-gRPC API path). YouTube plays inline.
-
-The service worker (`wwwroot/service-worker.published.js`, ported from Graced) precaches each build
-under its own version, fetching every file cache-busted with its integrity hash, so Cloudflare (whose
-baptist.com.au zone stretches static files to a 4-hour browser cache) can't serve a stale copy. A new
-build installs behind the running one; the app checks when it returns to the foreground and every five
-minutes, and `Components/UpdateBanner.razor` offers Reload.
-
-`pwa/Dockerfile` builds an nginx image (context `spikes/app-poc`); `.github/workflows/app-poc-pwa.yml`
-pushes it to GHCR and pins the tag in gsbc.argo (`clusters/mini/app/church-app-pwa`), the same as
-Graced. Delete the workflow, `pwa/` and the gsbc.argo manifests once TestFlight is running.
+From 2026-10-27 to 2026-11-03 this build also ran in Safari at app.baptist.com.au, so staff could try it
+on their phones before TestFlight existed. Native-only features said so instead of working, and the
+service worker (`wwwroot/service-worker.published.js`, ported from Graced) precached each build under its
+own version so Cloudflare couldn't serve a stale copy. Retired once TestFlight's UAT app replaced it; the
+image build and its deployment are gone.
 
 ## Outreach (letterbox drops)
 

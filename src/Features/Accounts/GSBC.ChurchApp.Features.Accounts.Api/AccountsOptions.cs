@@ -4,5 +4,5 @@ public sealed class AccountsOptions
 {
     public const string Section = "Accounts";
 
-    public string SiteUrl { get; set; } = "https://dev.baptist.com.au";
+    public string SiteUrl { get; set; } = "https://dev-app.baptist.com.au";
 }
