@@ -812,7 +812,7 @@ end), **poster** (tall: icon top, a larger title, a go line; the mark bleeds off
 
 | Kind | Layout | Suits | Draws | Default |
 |---|---|---|---|---|
-| Your own tile, Give, Bible, Prayer, Life Groups, Ministries, Visit us | Words and icon | any | square / row / poster by size; no picture | without a picture |
+| Link tile (Give, Bible, Prayer, Life Groups, Ministries, Visit us, campaigns) | Words and icon | any | square / row / poster by size; no picture | without a picture |
 | | Picture behind | any | behind | 1 × 1 with a picture |
 | | Picture above | any | picture | larger, with a picture |
 | | Picture beside | 2 columns or more | beside | never |

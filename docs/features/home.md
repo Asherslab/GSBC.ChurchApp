@@ -22,15 +22,20 @@ height in grid cells, a colour (a theme tone), an icon, its icon colour, a title
 picture with the part to keep in view, and what it opens. A kind can add settings of its own (This
 week has *How many to show*).
 
-- **Plain tile** (`hub.tile`, Platform.Contracts): staff write everything.
-- **Feature tiles:** the feature fills the content and staff set the look and the words around it.
+- **Link tile** (`hub.tile`, Platform.Contracts): anything that is a title, a line, an icon, a picture and a
+  link (Give, the Bible, Prayer, Life Groups, Ministries, Visit us, a campaign). Staff write everything.
+- **Feature tiles,** only where the content is live from a feature (owner, 2026-11-04, note B):
   - **Notifications** (`hub.notifications`, owned by Notifications): real. "3 unread" with the newest
     title and the unread dot, or the staff's words when nothing is unread.
   - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Latest
     sermon (cover and play), Sunday bulletin (date, the year's theme and verse), This week (the next
-    gatherings from the church's weekly rhythm), Prayer, Outreach day, Life Groups and Ministries show
-    sample content; Give, Bible and Visit us are words and a link. When Sermons (and so on) is built,
-    it takes its kind and view into its own feature and replaces the sample.
+    gatherings from the church's weekly rhythm) and Outreach day (its live "outreach is on" state comes
+    with Outreach) show sample content. When Sermons (and so on) is built, it takes its kind and view into
+    its own feature and replaces the sample.
+  - **Retired kinds:** Prayer, Give, Bible, Life Groups, Ministries and Visit us were kinds for a few hours
+    on 2026-11-04. They're no longer offered (`offered: false`) but still declared, so a tile made with one
+    draws and can be taken out; dev's Hub was rebuilt with Link tiles. Delete them once no placement uses
+    them.
 - The old **link tile** (`hub.link`) still draws, as a tile, for placements made before; it isn't offered
   for new tiles.
 
@@ -85,6 +90,20 @@ and live, Marker, Quiet, or (for uploaded icons) *Its own colours*.
 - Why not a Media file: an `<img>` can't take `currentColor`, so the drawing has to be inline, and
   keeping it in the setting means no second fetch and no offline gap.
 
+### The tile library
+
+Staff keep configured tiles to add again (owner, 2026-11-04, note C). **Save to the library** on a tile stores a
+**saved tile** (`hub.saved`, in the Hub area): its name, its kind and every value, as a template. It shows under
+*Your library* in Add a tile; adding it makes a **new, independent tile** with those values, ready to change.
+**Make a copy** does the same for a tile on the canvas. With nothing chosen, the settings panel lists the
+saved tiles (rename, or take one out). It all goes through drafts and `config.hub.edit` like any placement.
+
+Decided: **templates, not linked copies.** A linked copy would change every tile made from it when the
+template changes, which surprises staff who added it to change a word or a colour; a template keeps each
+tile its own. Saved tiles travel in the public placements feed like every setting, so they hold nothing
+private. A picture in a saved tile isn't held "in use" by Media; if it's deleted, adding the saved tile is
+refused until another picture is chosen.
+
 ### The grid
 
 - `hub.grid` (one per Home) holds the column count: 2 to 4, 2 by default.
@@ -106,15 +125,18 @@ church days, as for every placement.
 
 Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the list editor):
 
-- **Toolbar:** Columns (2, 3, 4), Add a tile, **Show it as** (every tile, a visitor, someone signed in,
-  someone in a role a tile is for) and **On** a date.
-- **The phone:** Home drawn by the app's own `HomeScreen` at true width (never smaller than 74%).
+- **Toolbar** (one row where it fits): Columns (2, 3, 4), **Show it as** (every tile, a visitor, someone
+  signed in, someone in a role a tile is for), a date, and Add a tile. Below it, a toggle lists tiles not on
+  the phone now (hidden, dated, for another audience, or taken out in this draft, with *Put back*).
+- **Width:** in canvas mode the drafts column folds away below 1648 px (an *All drafts* link takes its
+  place), so the phone and the settings always sit side by side.
+- **The phone:** Home drawn by the app's own `HomeScreen`, fitted to the window (never smaller than 72%)
+  and kept in view while the settings scroll. Tiles changed in this draft carry an orange *Changed* or
+  *Added* capsule.
   Click a tile to choose it: an orange outline, its size, and a corner grip. Drag a tile to move it
   (dropping on another tile takes its place; the phone's screen scrolls near its edges); drag the grip
   to resize. Keyboard: Tab to a tile, arrows move it, Shift with arrows resizes it; each move is
   announced.
-- **Not on the phone now:** tiles hidden, outside their dates or for another audience, and tiles taken
-  out in this draft (*Put back*).
 - **Settings:** the chosen tile's proof in light or dark with both contrast readings, size steppers,
   colour swatches, icon picker and upload, words, picture and the part to keep in view, Opens (a place
   through the place picker, or a web page), who sees it, its dates and Shown. With nothing chosen: the
@@ -155,6 +177,9 @@ declaring one path fail at start-up, so it can't be forgotten.
   picture behind at 1 × 1 and above when larger; the sermon is cover first; the bulletin is the poster
   family; This week is the agenda; Notifications is count and newest at 1 × 1, newest in full one row
   wide, unread dots when tall; Outreach is the invitation. Alternatives are listed in DESIGN.md.
+- **Margins** match the POC (20 px gutter, 12 px gap, 22 px under the masthead); the first install had a
+  doubled inset, fixed before the owner's note A was written up. This week's *Calendar ›* sits beside its
+  heading again.
 - **Varied defaults** (finish review): Outreach in Marker soft, Life Groups (Marker soft) and Ministries
   (Live soft) as a 1 × 1 pair, Visit us Raised, so the lower Hub isn't a run of identical sand rows.
 
