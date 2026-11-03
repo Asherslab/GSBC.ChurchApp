@@ -6,13 +6,27 @@
 
 <div class="hub-canvas" @ref="_canvas">
     <div class="hub-canvas__bar">
-        <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
-        <SelectField Label="Show it as" Options="ViewerChoices" Value="@_viewer" ValueChanged="viewer => _viewer = viewer" />
-        <TextField Label="On" Type="date" Value="@Iso(_on)" ValueChanged="value => _on = FromIso(value)" />
+        <div class="hub-canvas__control">
+            <span id="hub-columns">Columns</span>
+            <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
+        </div>
         <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
+        <label class="hub-canvas__control hub-canvas__control--wide">
+            <span>Show it as</span>
+            <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? EveryTile">
+                @foreach (FieldOption option in ViewerChoices)
+                {
+                    <option value="@option.Value">@option.Label</option>
+                }
+            </select>
+        </label>
+        <label class="hub-canvas__control">
+            <span>On</span>
+            <input class="hub-canvas__select" type="date" value="@Iso(_on)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
+        </label>
     </div>
 
-    <div class="hub-canvas__stage" data-fit-height>
+    <div class="hub-canvas__stage" data-fit-least="0.74">
         <PhoneFrame Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
             <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
         </PhoneFrame>
@@ -80,7 +94,7 @@
 
     private IReadOnlyList<FieldOption> ViewerChoices =>
     [
-        new(EveryTile, "Every tile, whoever it's for"),
+        new(EveryTile, "Every tile"),
         new(Visitor, "A visitor, not signed in"),
         new(SignedIn, "Someone signed in"),
         .. RolesInUse.Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),

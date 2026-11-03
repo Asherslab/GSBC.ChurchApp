@@ -72,7 +72,7 @@ window.gsbcShell = (() => {
           ? holder.clientHeight - above
           : innerHeight - Math.max(chrome + 16, holder.getBoundingClientRect().top) - above - 24;
         const scale = Math.min(1, holder.clientWidth / (width + bezel), tall / (height + bezel));
-        frame.style.zoom = Math.max(0.4, scale).toFixed(3);
+        frame.style.zoom = Math.max(parseFloat(holder.dataset.fitLeast) || 0.4, scale).toFixed(3);
       };
       frame.style.zoom = '';
       update();

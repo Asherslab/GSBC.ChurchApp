@@ -857,7 +857,6 @@ button.row:active, a.row:active { background: var(--line); }
   grid-template-columns: repeat(var(--hub-columns, 2), minmax(0, 1fr));
   grid-auto-rows: auto;
   gap: var(--hub-gap);
-  padding: 0 var(--gutter);
   container-type: inline-size;
 }
 .hub-cell { position: relative; display: flex; min-width: 0; min-height: calc(var(--tile-rows) * var(--hub-row) + (var(--tile-rows) - 1) * var(--hub-gap)); }

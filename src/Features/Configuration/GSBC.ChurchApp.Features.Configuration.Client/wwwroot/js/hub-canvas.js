@@ -52,7 +52,16 @@ export function attach(canvas, receiver) {
     }
     if (gesture.kind === 'move') {
       const { scale } = gesture.metrics;
-      gesture.cell.style.transform = `translate(${dx / scale}px, ${dy / scale}px)`;
+      const screen = canvas.querySelector('.phone-frame__screen');
+      if (screen) {
+        const edge = screen.getBoundingClientRect();
+        const by = event.clientY < edge.top + 64 ? -16 : event.clientY > edge.bottom - 64 ? 16 : 0;
+        if (by !== 0) {
+          screen.scrollTop += by;
+          gesture.scrolled = (gesture.scrolled ?? 0) + by;
+        }
+      }
+      gesture.cell.style.transform = `translate(${dx / scale}px, ${(dy + (gesture.scrolled ?? 0)) / scale}px)`;
       const over = document.elementsFromPoint(event.clientX, event.clientY)
         .map(cellOf).find((found) => found && found !== gesture.cell && canvas.contains(found));
       cells().forEach((cell) => cell.classList.toggle('hub-cell--target', cell === over));

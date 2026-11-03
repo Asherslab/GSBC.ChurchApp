@@ -87,9 +87,13 @@
 .detail-pane .phone-frame { justify-self: center; }
 
 .hub-canvas { display: grid; gap: 14px; }
-.hub-canvas__bar { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; }
-.hub-canvas__bar > .field { width: auto; min-width: 11rem; }
-.hub-canvas__bar > .btn { margin-left: auto; }
+.hub-canvas__bar { display: grid; grid-template-columns: auto auto; justify-content: space-between; align-items: center; gap: 10px 16px; }
+.hub-canvas__control { display: flex; align-items: center; gap: 10px; min-width: 0; font-size: var(--text-label); font-weight: 600; color: var(--ink-2); }
+.hub-canvas__control .segmented { min-width: 8.5rem; }
+.hub-canvas__control--wide { min-width: 0; }
+.hub-canvas__control--wide .hub-canvas__select { flex: 1; min-width: 0; }
+.hub-canvas__select { height: 38px; padding: 0 10px; border: 0; border-radius: var(--radius-field); background: var(--sand); color: var(--ink); font: inherit; font-size: var(--text-caption); font-weight: 600; }
+.hub-canvas__select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .hub-canvas__stage { display: grid; justify-items: center; padding: 6px 0 0; }
 .hub-canvas__keys { margin: 0; font-size: var(--text-caption); line-height: 1.45; color: var(--ink-3); text-align: center; text-wrap: balance; }
 .hub-canvas__hidden { display: grid; gap: 6px; }
@@ -131,7 +135,7 @@
 .stepper__button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .hub-swatches { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
-.hub-swatch { --tile-bg: var(--sand); --tile-ink: var(--ink); height: 44px; border: 0; border-radius: var(--radius-field); background: var(--tile-bg); color: var(--tile-ink); box-shadow: inset 0 0 0 1px var(--line); font: inherit; font-weight: 700; cursor: pointer; }
+.hub-swatch { height: 44px; border: 0; border-radius: var(--radius-field); background: var(--tile-bg, var(--sand)); color: var(--tile-ink, var(--ink)); box-shadow: inset 0 0 0 1px var(--line); font: inherit; font-weight: 700; cursor: pointer; }
 .hub-swatch--on { outline: 2px solid var(--marker); outline-offset: 2px; }
 .hub-swatch:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
@@ -161,3 +165,4 @@
 .add-tile__words span { font-size: var(--text-caption); line-height: 1.4; color: var(--ink-2); }
 .add-tile__words .pill { justify-self: start; margin-top: 4px; }
 .add-tile__size { font-size: var(--text-caption); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.tile-settings .media-setting .field__label { display: none; }

@@ -2,6 +2,7 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.Destinations
 @inject IJSRuntime JS
+@inject SurfaceViews Views
 
 <div class="tile-settings">
     <header class="tile-settings__head">
@@ -17,7 +18,7 @@
                 <div class="tile-settings__sample" data-preview-scheme="@scheme" data-palette="@Palette" style="--hub-columns: @Math.Min(Look.Columns, 2)">
                     <CascadingValue Value="Proof">
                         <div class="hub-cell" style="--tile-rows: @Math.Min(Look.Rows, 2)" data-proof="@scheme">
-                            <HubTile Look="@(Look with { Columns = Math.Min(Look.Columns, 2), Rows = Math.Min(Look.Rows, 2) })" Title="@ProofTitle" Lines="[Look.Text]" />
+                            @Views.For(ProofEntry)
                         </div>
                     </CascadingValue>
                 </div>
@@ -169,7 +170,20 @@
 
     private string Heading => Kind.IsPlain ? Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title : Kind.Surface.Title;
 
-    private string ProofTitle => Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title;
+    private ArrangedSurface ProofEntry
+    {
+        get
+        {
+            StoredPlacement stored = Draft.ToStored(Draft.Id ?? Guid.Empty.ToString());
+            Dictionary<string, string> values = new(stored.Values)
+            {
+                [HubTileKeys.Columns] = Math.Min(Look.Columns, 2).ToString(CultureInfo.InvariantCulture),
+                [HubTileKeys.Rows] = Math.Min(Look.Rows, 2).ToString(CultureInfo.InvariantCulture),
+            };
+            return new ArrangedSurface(Kind.Surface, stored with { Values = values });
+        }
+    }
+
 
     private string FromWords => Kind.IsPlain
         ? "Your own tile: everything on it is yours to write"
