@@ -12,6 +12,6 @@ public static class NotificationsAdminExtensions
         modules.Add(new ClientModule("Notifications", typeof(NotificationsAdminExtensions).Assembly,
             [new NavEntry("Announcements", "announcements", "send", NotificationsPermissions.Write, Group: NavGroups.Content,
                 Summary: "Tell the church something, on everyone's phone")]));
-        return services.AddAnnouncements();
+        return services.AddAnnouncements().AddSingleton<IOfficeWeekSource, AnnouncementsOfficeWeek>();
     }
 }

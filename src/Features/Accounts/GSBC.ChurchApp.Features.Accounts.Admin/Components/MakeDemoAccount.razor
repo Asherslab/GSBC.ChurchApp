@@ -9,6 +9,10 @@
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     <Notice Text="@_made" />
     <div class="panel-actions">
+        @if (_made is not null)
+        {
+            <Button Icon="key" OnClick="OnMakeCode">Make a code for it</Button>
+        }
         <Button Type="submit" Icon="plus" Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)">Make the demo account</Button>
         <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
     </div>
@@ -23,6 +27,7 @@
 
     [Parameter] public EventCallback OnMade { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnMakeCode { get; set; }
 
     private async Task MakeAsync()
     {
@@ -31,7 +36,7 @@
         try
         {
             await Accounts.CreateDemoAccountAsync(_name.Trim(), _email.Trim());
-            _made = $"{_email.Trim()} is ready. Make a code for it next.";
+            _made = $"{_email.Trim()} is ready. Next, make a sign-in code for it.";
             _email = "";
             await OnMade.InvokeAsync();
         }

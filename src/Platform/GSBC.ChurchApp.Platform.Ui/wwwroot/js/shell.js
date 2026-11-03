@@ -124,6 +124,15 @@ window.gsbcShell = (() => {
       scroller()?.scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
     },
 
+    async copy(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        return false;
+      }
+    },
+
     openExternal(url) {
       if (isNative()) window.location.href = url;
       else window.open(url, '_blank', 'noopener');

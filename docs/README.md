@@ -120,6 +120,17 @@ and quiet hours, the silent push for sync, announcements in the admin panel, and
 Tested against Postgres; waiting on the owner's APNs key and App Attest/Push capabilities before it runs on a
 phone (notifications.md, *What the owner sets up*).
 
+**Design review of this round (2026-11-03, branch `feature/design-review`):** an impeccable critique of
+every screen the five merges added (23/40, snapshot in `.impeccable/critique/`). The inbox and
+Announcements were reshaped with the owner on the decision page: the inbox opens on *Waiting* (things
+that need you, which leave once they're done, wherever: notifications can wait, settle and say who they're
+for, through Access), and Announcements is the office's fortnight with a writing desk, a lock-screen proof,
+autosave, a confirm sheet and read counts. Also: App review's code has a Copy button and leads with
+the demo account, Insights' chart and private counts read calmly, App health is the Developer role's,
+and the sidebar has a group *The app*. Checked on `dev-app.baptist.com.au` and natively in the iOS
+Simulator (signed in with a review code). Shared components added in Platform.Ui: `DayRail`,
+`LockScreenProof`, `CopyField`; `ListRow` gained `Unread`, `Segmented` a count, `Pill` a Quiet tone.
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),

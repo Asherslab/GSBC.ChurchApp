@@ -1,49 +1,78 @@
-@using System.Globalization
 @using GSBC.ChurchApp.Platform.Common
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @inject Inbox Inbox
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject TimeProvider Clock
 
 <LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    @{ List<InboxEntry> waiting = context.Value.Where(entry => entry.Item.Waiting).ToList(); }
     @if (context.Value.Count == 0)
     {
-        <EmptyState Icon="bell" Title="Nothing yet" Body="Notices from the church, your groups and anything waiting for you will show here." />
+        <EmptyState Icon="bell" Title="Nothing yet" Body="Announcements from the church, and anything that needs you, will show here." />
     }
     else
     {
-        <Section First="true">
-            <Trailing>
-                @if (context.Value.Any(entry => entry.Unread))
-                {
-                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Inbox.MarkReadAsync(context.Value)">Mark all as read</Button>
-                }
-            </Trailing>
-            <ChildContent>
+        @if (waiting.Count > 0)
+        {
+            <div class="inbox-switch">
+                <Segmented TValue="bool" Label="Show" Options="Switch(waiting.Count)" Value="_showingWaiting" ValueChanged="showing => _showingWaiting = showing" />
+            </div>
+        }
+        @if (waiting.Count > 0 && _showingWaiting)
+        {
+            <Section First="true">
+                <ListGroup>
+                    @foreach (InboxEntry entry in waiting)
+                    {
+                        <ListRow Title="@entry.Item.Title" Subtitle="@NullIfEmpty(entry.Item.Body)" Icon="@IconOf(entry.Item)" IconTone="RowTone.Warm" Unread="entry.Unread"
+                                 Trailing="@When(entry.Item.RaisedAt)" Reading="true" OnClick="() => OpenAsync(entry)">
+                            <Below>
+                                <span class="inbox-action">@ActionOf(entry.Item)<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                            </Below>
+                        </ListRow>
+                    }
+                </ListGroup>
+                <p class="hint">Things that need you stay here until they're done, wherever you do them.</p>
+            </Section>
+        }
+        else
+        {
+            <Section First="true">
                 <ListGroup>
                     @foreach (InboxEntry entry in context.Value)
                     {
-                        <ListRow Title="@entry.Item.Title" Subtitle="@Subtitle(entry.Item)" Icon="@IconOf(entry.Item)" IconTone="@(entry.Unread ? RowTone.Warm : RowTone.Quiet)"
-                                 Trailing="@When(entry.Item.RaisedAt)" Reading="true" OnClick="() => OpenAsync(entry)">
+                        <ListRow Title="@entry.Item.Title" Subtitle="@NullIfEmpty(entry.Item.Body)" Icon="@IconOf(entry.Item)" IconTone="@(entry.Item.Waiting ? RowTone.Warm : RowTone.Quiet)"
+                                 Unread="entry.Unread" Trailing="@When(entry.Item.RaisedAt)" Reading="true" OnClick="() => OpenAsync(entry)">
                             <TitleExtra>
-                                @if (entry.Unread)
+                                @if (entry.Item.Test)
                                 {
-                                    <span class="unread-dot" role="img" aria-label="Unread"></span>
+                                    <Pill Tone="PillTone.Accent">Test</Pill>
                                 }
                             </TitleExtra>
                         </ListRow>
                     }
                 </ListGroup>
-            </ChildContent>
-        </Section>
+                @if (context.Value.Any(entry => entry.Unread))
+                {
+                    <div class="ui-after">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="check" OnClick="() => Inbox.MarkReadAsync(context.Value)">Mark all as read</Button>
+                    </div>
+                }
+            </Section>
+        }
     }
 </LiveData>
 
 @code {
+    private bool _showingWaiting = true;
+
+    private static IReadOnlyList<SegmentOption<bool>> Switch(int waiting) => [new(true, "Waiting", Count: waiting), new(false, "Everything")];
+
     private async Task OpenAsync(InboxEntry entry)
     {
         await Inbox.MarkReadAsync([entry]);
-        if (entry.Item.Link is not { } link)
+        if (entry.Item.InAdminPanel || entry.Item.Link is not { } link)
             return;
         if (LinkTargets.InAppRoute(link) is { } route)
             Navigation.NavigateTo(route);
@@ -51,17 +80,17 @@
             await Shell.OpenExternalAsync(link);
     }
 
-    private static string Subtitle(InboxItem item) =>
-        string.IsNullOrEmpty(item.Body) ? item.Area : $"{item.Body}";
+    private static string ActionOf(InboxItem item) => item.InAdminPanel ? "Do this in the admin panel" : item.Action ?? "Open it";
 
-    private static string IconOf(InboxItem item) => item.Urgent ? "alert" : item.Test ? "eye" : "bell";
+    private static string IconOf(InboxItem item) => item.Urgent ? "alert" : item.Test ? "smartphone" : item.Waiting ? "clock" : "bell";
 
-    private static string When(DateTime raisedAt)
+    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
+
+    private string When(DateTime raisedAt)
     {
-        DateTime church = ChurchTime.ToChurch(raisedAt);
-        DateTime today = ChurchTime.ToChurch(DateTime.UtcNow).Date;
-        return church.Date == today ? church.ToString("h:mmtt", CultureInfo.InvariantCulture).ToLowerInvariant()
-            : church.Date == today.AddDays(-1) ? "Yesterday"
-            : church.ToString("d MMM", CultureInfo.InvariantCulture);
+        DateTime now = Clock.GetUtcNow().UtcDateTime;
+        return ChurchTime.ToChurch(raisedAt).Date == ChurchTime.ToChurch(now).Date
+            ? ChurchDates.Time(ChurchTime.ToChurch(raisedAt))
+            : ChurchDates.Describe(raisedAt, DateLineStyle.Relative, withTime: false, now);
     }
 }

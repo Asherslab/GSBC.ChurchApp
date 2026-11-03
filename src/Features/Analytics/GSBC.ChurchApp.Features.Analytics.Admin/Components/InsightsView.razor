@@ -5,19 +5,22 @@
     @{ InsightsSummary summary = context.Value; }
     <p class="insights-note">@AsOf(summary) @InsightsWords.PhonesNotPeople</p>
 
-    <Section First="true" Title="This week">
+    <Section First="true" Title="At a glance">
         <div class="stat-tiles">
-            <StatTile Value="@InsightsWords.Headline(summary.ThisWeek)" Label="phones opened the app this week"
+            <StatTile Value="@InsightsWords.Headline(summary.ThisWeek)" Quiet="InsightsWords.IsPrivate(summary.ThisWeek)" Label="phones opened the app this week"
                       Change="@InsightsWords.Change(summary.ThisWeek, summary.LastWeek, "last week")" Explanation="@AnalyticsMeasures.ActiveWeek.Counts" />
-            <StatTile Value="@InsightsWords.Headline(summary.ThisMonth)" Label="phones opened it this month" Explanation="@AnalyticsMeasures.ActiveMonth.Counts" />
-            <StatTile Value="@InsightsWords.Headline(summary.NewThisMonth)" Label="new phones this month"
+            <StatTile Value="@InsightsWords.Headline(summary.ThisMonth)" Quiet="InsightsWords.IsPrivate(summary.ThisMonth)" Label="phones opened it this month" Explanation="@AnalyticsMeasures.ActiveMonth.Counts" />
+            <StatTile Value="@InsightsWords.Headline(summary.NewThisMonth)" Quiet="InsightsWords.IsPrivate(summary.NewThisMonth)" Label="new phones this month"
                       Change="@InsightsWords.Change(summary.NewThisMonth, summary.NewLastMonth, "last month")" Explanation="@AnalyticsMeasures.Installed.Counts" />
         </div>
         @if (Split(summary) is { Length: > 0 } split)
         {
             <p class="insights-groups"><span class="insights-groups__lead">Who that is:</span> @split</p>
         }
-        <p class="insights-groups">@InsightsWords.Number(summary.ReturningThisWeek) of them also opened the app last week.</p>
+        @if (summary.ReturningThisWeek is { FewerThanFive: false, Value: > 0 })
+        {
+            <p class="insights-groups">@InsightsWords.Number(summary.ReturningThisWeek) of them also opened the app last week.</p>
+        }
     </Section>
 
     <Section Title="The last 12 weeks" Lead="Phones that opened the app each week, Monday to Sunday. Easter, Christmas and holidays show as they happen.">

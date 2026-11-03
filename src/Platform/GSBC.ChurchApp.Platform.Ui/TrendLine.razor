@@ -8,6 +8,12 @@
             <span class="trend-line__key"><span class="trend-line__swatch trend-line__swatch--comparison"></span>@ComparisonName</span>
         </div>
     }
+    @if (DrawnPoints < 2)
+    {
+        <p class="trend-line__empty">@Empty</p>
+    }
+    else
+    {
     <div class="trend-line__plot" @onpointerleave="() => _hover = null">
         <svg viewBox="0 0 @Width @Height" role="img" aria-label="@Label" class="trend-line__svg">
             @foreach (double tick in Ticks)
@@ -36,8 +42,7 @@
             @for (int index = 0; index < Points.Count; index++)
             {
                 int column = index;
-                <rect class="trend-line__hit" x="@F(X(column) - Step / 2)" y="@Top" width="@F(Step)" height="@(Height - Top - Bottom)" tabindex="0"
-                      aria-label="@Describe(column)" @onpointerenter="() => _hover = column" @onfocus="() => _hover = column" @onblur="() => _hover = null" />
+                <rect class="trend-line__hit" x="@F(X(column) - Step / 2)" y="@Top" width="@F(Step)" height="@(Height - Top - Bottom)" @onpointerenter="() => _hover = column" />
             }
         </svg>
         @if (_hover is { } shown)
@@ -52,6 +57,7 @@
             </div>
         }
     </div>
+    }
     @if (Note is not null)
     {
         <figcaption class="trend-line__note">@Note</figcaption>
@@ -90,6 +96,9 @@
     [Parameter] public string ComparisonName { get; set; } = "Last year";
     [Parameter] public string PeriodName { get; set; } = "Week";
     [Parameter] public string? Note { get; set; }
+    [Parameter] public string Empty { get; set; } = "Not enough to draw yet. It fills in as phones report; the table below has every number.";
+
+    private int DrawnPoints => Points.Count(point => point.Value is not null);
 
     private double Step => Points.Count <= 1 ? Width - Left - Right : (Width - Left - Right) / (double)(Points.Count - 1);
 
@@ -136,11 +145,6 @@
             ? $"right: {F(100 - percent)}%"
             : $"left: {F(percent)}%";
     }
-
-    private string Describe(int index) =>
-        Comparison is not null && index < Comparison.Count
-            ? $"{Points[index].Label}: {Points[index].Shown} {SeriesName}, {Comparison[index].Shown} {ComparisonName}"
-            : $"{Points[index].Label}: {Points[index].Shown}";
 
     private static double NiceCeiling(double value)
     {

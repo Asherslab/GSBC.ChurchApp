@@ -2,7 +2,7 @@
 
 @if (Waiting.Count > 0)
 {
-    <h3 class="draft-list__head">Waiting to publish <span class="tab-strip__count">@Waiting.Count</span></h3>
+    <h2 class="draft-list__head">Waiting to publish <span class="tab-strip__count">@Waiting.Count</span></h2>
     <ListGroup>
         @foreach (Draft draft in Waiting)
         {
@@ -12,10 +12,10 @@
     </ListGroup>
 }
 
-<h3 class="draft-list__head">
+<h2 class="draft-list__head">
     Open
     <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="OnNew">New draft</Button>
-</h3>
+</h2>
 @if (Open.Count == 0)
 {
     <p class="draft-list__empty">A draft is a set of changes to the app that only you, and people you share it with, can see until it's published.</p>
@@ -44,7 +44,7 @@ else
 
 @if (List.Published.Count > 0)
 {
-    <h3 class="draft-list__head">Published recently</h3>
+    <h2 class="draft-list__head">Published recently</h2>
     <ListGroup>
         @foreach (PublishedDraft published in List.Published)
         {

@@ -45,6 +45,7 @@ public static class NotificationsApiExtensions
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Preferences, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Public, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Kinds, FeedAudience.Public));
+        services.AddFeed(new FeedDefinition(NotificationsFeeds.Announcements, FeedAudience.Holding(NotificationsPermissions.Write)));
         return services;
     }
 

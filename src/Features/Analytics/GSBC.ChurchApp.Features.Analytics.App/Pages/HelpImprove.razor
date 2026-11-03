@@ -7,12 +7,12 @@
 
     <Section First="true">
         <ListGroup>
-            <ToggleRow Title="Help improve the app" Description="Send anonymous counts of what's used, and error reports. Nothing about you is sent."
+            <ToggleRow Title="Send anonymous counts and error reports" Description="Counts of what's used, and what went wrong. Nothing about you is sent."
                        Checked="Consent.Enabled" CheckedChanged="Consent.SetAsync" Disabled="!Consent.CanChange" />
         </ListGroup>
         @if (!Consent.CanChange)
         {
-            <p class="ui-after">This is a setting of the phone app.</p>
+            <p class="ui-after">You can change this in the app on your phone.</p>
         }
     </Section>
 

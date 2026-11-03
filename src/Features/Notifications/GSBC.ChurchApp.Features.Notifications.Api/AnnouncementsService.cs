@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
@@ -71,6 +72,7 @@ internal sealed class AnnouncementsService(
         record.AudienceUserId = Guid.TryParse(request.Audience.UserId, out Guid userId) ? userId : null;
         record.State = AnnouncementState.Draft;
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
+        Mark(record);
         await db.SaveChangesAsync(context.CancellationToken);
         return Message(record);
     }
@@ -81,6 +83,7 @@ internal sealed class AnnouncementsService(
         if (record.State == AnnouncementState.Sent)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's been sent, so it stays in the history."));
         db.Announcements.Remove(record);
+        Mark(record, deleted: true);
         await db.SaveChangesAsync(context.CancellationToken);
         await raiser.SettleAsync(Subject(record), context.CancellationToken);
         return new Done();
@@ -100,6 +103,7 @@ internal sealed class AnnouncementsService(
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Only an announcement still being written can be put forward."));
         record.State = AnnouncementState.WaitingToSend;
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
+        Mark(record);
         await db.SaveChangesAsync(context.CancellationToken);
         await raiser.RaiseAsync(new Notification(
             AnnouncementNotifications.WaitingToSend,
@@ -129,6 +133,7 @@ internal sealed class AnnouncementsService(
             record.State = AnnouncementState.Scheduled;
             record.SendAt = sendAt;
             record.UpdatedAt = now;
+            Mark(record);
             await db.SaveChangesAsync(context.CancellationToken);
             await raiser.SettleAsync(Subject(record), context.CancellationToken);
             return Message(record);
@@ -146,6 +151,7 @@ internal sealed class AnnouncementsService(
         record.State = AnnouncementState.Draft;
         record.SendAt = null;
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
+        Mark(record);
         await db.SaveChangesAsync(context.CancellationToken);
         return Message(record);
     }
@@ -160,11 +166,15 @@ internal sealed class AnnouncementsService(
         record.ReachedPeople = people;
         record.ReachedPhones = phones;
         record.NotificationId = await raiser.RaisedAsync(Notification(record, audience), cancellationToken);
+        Mark(record);
         await db.SaveChangesAsync(cancellationToken);
         await raiser.SettleAsync(Subject(record), cancellationToken);
     }
 
     private static string Subject(AnnouncementRecord record) => $"announcement/{record.Id}";
+
+    private void Mark(AnnouncementRecord record, bool deleted = false) =>
+        db.FeedChanges.Add(FeedChangeRecord.Marker(NotificationsFeeds.Announcements, record.Id.ToString(), time.GetUtcNow().UtcDateTime, deleted));
 
     private static Notification Notification(AnnouncementRecord record, NotificationAudience audience) =>
         new(AnnouncementNotifications.Announcement, audience, record.Title, record.Body, Link: record.Link, Urgent: record.Urgent);

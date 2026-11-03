@@ -1,10 +1,10 @@
 @if (Code.TurnedOffAt is not null)
 {
-    <Pill Tone="PillTone.Masthead">Turned off</Pill>
+    <Pill Tone="PillTone.Quiet">Turned off</Pill>
 }
 else if (Code.ExpiresAt <= DateTime.UtcNow)
 {
-    <Pill>Expired</Pill>
+    <Pill Tone="PillTone.Quiet">Expired</Pill>
 }
 else
 {

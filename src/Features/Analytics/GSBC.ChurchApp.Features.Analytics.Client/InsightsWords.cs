@@ -19,6 +19,8 @@ public static class InsightsWords
 
     public static string Headline(Tally? tally) => tally is { FewerThanFive: true } ? "Fewer than 5" : Number(tally);
 
+    public static bool IsPrivate(Tally? tally) => tally is { FewerThanFive: true };
+
     public static string? Change(Tally? now, Tally? before, string period)
     {
         if (now is null || before is null || now.FewerThanFive || before.FewerThanFive || before.Value == 0)
