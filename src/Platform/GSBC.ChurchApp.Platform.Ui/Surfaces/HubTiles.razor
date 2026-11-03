@@ -1,12 +1,42 @@
 @inject SurfaceViews Views
 
-<ListGroup>
-    @foreach (ArrangedSurface entry in Shown.Where(entry => Views.For(entry) is not null))
-    {
-        <SurfaceView Entry="entry" />
-    }
-</ListGroup>
+<CascadingValue Value="Context" IsFixed="false">
+    <div class="hub-grid" style="--hub-columns: @Context.Columns">
+        @for (int index = 0; index < Tiles.Count; index++)
+        {
+            HubCell cell = new(Tiles[index], Places[index], index);
+            <div class="hub-cell @(cell.Place.Columns == Context.Columns && cell.Place.Rows == 1 ? "hub-cell--line" : "")" data-tile="@KeyOf(cell.Entry)"
+                 style="grid-column: @cell.Place.Column / span @cell.Place.Columns; grid-row: @cell.Place.Row / span @cell.Place.Rows; --tile-rows: @cell.Place.Rows">
+                <SurfaceView Entry="cell.Entry" />
+                @Overlay?.Invoke(cell)
+            </div>
+        }
+    </div>
+</CascadingValue>
 
 @code {
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Shown { get; set; }
+    [Parameter] public bool Live { get; set; }
+    [Parameter] public RenderFragment<HubCell>? Overlay { get; set; }
+
+    private HubContext Context { get; set; } = HubContext.Still;
+    private IReadOnlyList<ArrangedSurface> Tiles { get; set; } = [];
+    private IReadOnlyList<TilePlace> Places { get; set; } = [];
+
+    public static string KeyOf(ArrangedSurface entry) => entry.Placement?.Id ?? entry.Surface.Key;
+
+    public static IReadOnlyList<ArrangedSurface> TilesIn(IEnumerable<ArrangedSurface> shown, SurfaceViews views) =>
+        shown.Where(entry => !HubSurfaces.IsArrangement(entry.Surface) && views.Has(entry.Surface)).ToList();
+
+    public static TileSpan SpanOf(ArrangedSurface entry) => new(
+        entry.Values.Raw.TryGetValue(HubTileKeys.Columns, out string? columns) && int.TryParse(columns, out int width) ? width : 1,
+        entry.Values.Raw.TryGetValue(HubTileKeys.Rows, out string? rows) && int.TryParse(rows, out int height) ? height : 1);
+
+    protected override void OnParametersSet()
+    {
+        Tiles = TilesIn(Shown, Views);
+        int columns = HubSurfaces.Grid.ColumnsIn(Shown);
+        Places = HubGrid.Pack(columns, Tiles.Select(SpanOf).ToList());
+        Context = new HubContext(Live, columns, HubSurfaces.Icon.In(Shown));
+    }
 }

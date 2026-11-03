@@ -7,20 +7,25 @@
 </Masthead>
 
 <Section First="true">
-    @if (Shown.Count == 0)
+    @if (!HasTiles)
     {
         <EmptyState Icon="home" Title="Home is on its way" Body="This Sunday, sermons and the week will show here as each part of the app is built." />
     }
     else
     {
-        <HubTiles Shown="Shown" />
+        <HubTiles Shown="Shown" Live="Live" Overlay="Overlay" />
     }
 </Section>
 @ChildContent
+
+@inject SurfaceViews Views
 
 @code {
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Shown { get; set; }
     [Parameter, EditorRequired] public required DateTime At { get; set; }
     [Parameter] public bool Live { get; set; }
+    [Parameter] public RenderFragment<HubCell>? Overlay { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool HasTiles => HubTiles.TilesIn(Shown, Views).Count > 0;
 }

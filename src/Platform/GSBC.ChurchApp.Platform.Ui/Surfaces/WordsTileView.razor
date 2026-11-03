@@ -1,0 +1,13 @@
+@inject IEnumerable<HubTileKind> Kinds
+
+@if (Kind is { } kind)
+{
+    TileLook look = TileLook.Of(kind, Entry.Values);
+    <HubTile Look="look" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />
+}
+
+@code {
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private HubTileKind? Kind => Kinds.FirstOrDefault(kind => kind.Surface.Key == Entry.Surface.Key);
+}

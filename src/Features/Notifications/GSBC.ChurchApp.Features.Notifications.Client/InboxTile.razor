@@ -1,0 +1,31 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject IServiceProvider Services
+
+@if (Services.GetService(typeof(Inbox)) is Inbox inbox)
+{
+    <LiveData TValue="IReadOnlyList<InboxEntry>" Load="inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+        <ChildContent>@Drawn(context.Value)</ChildContent>
+        <Loading>@Drawn([])</Loading>
+        <Failed>@Drawn([])</Failed>
+    </LiveData>
+}
+else
+{
+    @Drawn([])
+}
+
+@code {
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(NotificationsTiles.Inbox, Entry.Values);
+
+    private RenderFragment Drawn(IReadOnlyList<InboxEntry> entries)
+    {
+        TileLook look = Look;
+        List<InboxEntry> unread = entries.Where(entry => entry.Unread).ToList();
+        return unread.Count == 0
+            ? @<HubTile Look="look" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />
+            : @<HubTile Look="@(look with { IconTone = "warm" })" Title="@($"{unread.Count} unread")" Lines="[unread[0].Item.Title]" Unread="true" PlacementId="@Entry.Placement?.Id" />;
+    }
+}

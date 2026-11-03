@@ -14,12 +14,8 @@ public static class UiServiceCollectionExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddDestinations(ShellDestinations.All);
-        return services.AddSingleton<Shell>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton(new SurfaceViews()
-            .Add(HubSurfaces.LinkTile.Surface, entry => builder =>
-            {
-                builder.OpenComponent<LinkTileView>(0);
-                builder.AddComponentParameter(1, nameof(LinkTileView.Entry), entry);
-                builder.CloseComponent();
-            }));
+        return services.AddSingleton<Shell>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton<SurfaceViews>()
+            .AddSurfaceView<LinkTileView>(HubSurfaces.LinkTile.Surface)
+            .AddHubTile<WordsTileView>(HubSurfaces.PlainTile);
     }
 }

@@ -1,16 +1,10 @@
-@inject GSBC.ChurchApp.Platform.Client.Analytics.IUsage Usage
-
-<ListRow Title="@Entry.Values.Get(HubSurfaces.LinkTile.Title)" Subtitle="@NullIfEmpty(Entry.Values.Get(HubSurfaces.LinkTile.Subtitle))"
-         Icon="link" IconTone="RowTone.Accent" Href="@Entry.Values.Get(HubSurfaces.LinkTile.Link)" External="true" OnClick="Tapped" />
+<HubTile Look="Look" Title="@Entry.Values.Get(HubSurfaces.LinkTile.Title)" Lines="[Entry.Values.Get(HubSurfaces.LinkTile.Subtitle)]" PlacementId="@Entry.Placement?.Id" />
 
 @code {
     [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
 
-    private void Tapped()
-    {
-        if (Entry.Placement is { } placement)
-            Usage.Count(HubSurfaces.TileTapped, placement.Id);
-    }
-
-    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
+    private TileLook Look => new(
+        Entry.Values.Get(HubSurfaces.LinkTile.Wide) ? HubGrid.MostColumns : 1, 1,
+        Entry.Values.Get(HubSurfaces.LinkTile.Colour) switch { "navy" => TileTones.Masthead, "aqua" => TileTones.LiveSoft, "plain" => TileTones.Raised, _ => TileTones.Sand },
+        "link", IconTones.Auto, "", "", Entry.Values.Get(HubSurfaces.LinkTile.Image), FocalPoint.Centre, Entry.Values.Get(HubSurfaces.LinkTile.Link));
 }

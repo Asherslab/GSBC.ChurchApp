@@ -1,0 +1,32 @@
+@inject TimeProvider Clock
+@inject IServiceProvider Services
+
+<HubTile Look="Look" Title="Sunday's sermon" Lines="[Line]" PlacementId="@Entry.Placement?.Id" Cover="Cover" Action="Play" />
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(WaitingTiles.Sermon, Entry.Values);
+
+    private string Line => $"{ChurchDates.Describe(WaitingWeek.LastSunday(Clock), DateLineStyle.Short, false, Clock.GetUtcNow().UtcDateTime)} · baptist.com.au";
+
+    private static readonly RenderFragment Cover = @<span class="hub-cover"><BrandMark Decorative="true" /></span>;
+
+    private RenderFragment Play => @<text>
+        @if (Hub.Live)
+        {
+            <button type="button" class="hub-play" aria-label="Play Sunday's sermon" @onclick="OpenAsync"><Icon Name="play" /></button>
+        }
+        else
+        {
+            <span class="hub-play" aria-hidden="true"><Icon Name="play" /></span>
+        }
+    </text>;
+
+    private async Task OpenAsync()
+    {
+        if (Services.GetService(typeof(GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener)) is GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener opener && Look.Link.Length > 0)
+            await opener.OpenAsync(Look.Link);
+    }
+}

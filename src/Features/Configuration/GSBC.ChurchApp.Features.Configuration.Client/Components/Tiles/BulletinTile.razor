@@ -1,0 +1,13 @@
+@inject TimeProvider Clock
+
+<HubTile Look="Look" Title="Almighty God" Lines="[Sunday, Verse]" Go="@Look.Title" PlacementId="@Entry.Placement?.Id" />
+
+@code {
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private const string Verse = "Job 33:4";
+
+    private TileLook Look => TileLook.Of(WaitingTiles.Bulletin, Entry.Values);
+
+    private string Sunday => $"Sunday {ChurchTime.ToChurch(WaitingWeek.ThisSunday(Clock)):d MMMM}";
+}

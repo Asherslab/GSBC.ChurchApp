@@ -3,15 +3,12 @@ using Microsoft.AspNetCore.Components;
 
 namespace GSBC.ChurchApp.Platform.Ui.Surfaces;
 
-public sealed class SurfaceViews
+public sealed class SurfaceViews(IEnumerable<SurfaceViewRegistration> registrations)
 {
-    private readonly Dictionary<string, Func<ArrangedSurface, RenderFragment>> _views = [];
+    private readonly Dictionary<string, Func<ArrangedSurface, RenderFragment>> _views =
+        registrations.GroupBy(registration => registration.Surface.Key).ToDictionary(group => group.Key, group => group.Last().View);
 
-    public SurfaceViews Add(Surface surface, Func<ArrangedSurface, RenderFragment> view)
-    {
-        _views[surface.Key] = view;
-        return this;
-    }
+    public bool Has(Surface surface) => _views.ContainsKey(surface.Key);
 
     public RenderFragment? For(ArrangedSurface entry) => _views.GetValueOrDefault(entry.Surface.Key)?.Invoke(entry);
 }

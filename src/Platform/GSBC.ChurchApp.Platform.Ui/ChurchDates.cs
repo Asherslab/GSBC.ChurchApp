@@ -37,7 +37,7 @@ public static class ChurchDates
         return churchLocal.Minute == 0 ? $"{hour}{suffix}" : $"{hour}:{churchLocal.Minute:00}{suffix}";
     }
 
-    private static string Relative(DateTime day, DateTime today) => (day - today).Days switch
+    public static string Relative(DateTime day, DateTime today) => (day - today).Days switch
     {
         0 => "Today",
         1 => "Tomorrow",

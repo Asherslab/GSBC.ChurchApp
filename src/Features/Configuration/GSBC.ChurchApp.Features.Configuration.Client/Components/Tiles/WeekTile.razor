@@ -1,0 +1,20 @@
+@inject TimeProvider Clock
+
+<HubTile Look="Look" Title="@Look.Title" Go="@Look.Text" PlacementId="@Entry.Placement?.Id">
+    <span class="hub-list">
+        @foreach (WaitingWeek.Gathering gathering in WaitingWeek.Next(Clock, Entry.Values.Get(WaitingTiles.WeekEntries)))
+        {
+            DateTime at = ChurchTime.ToChurch(gathering.StartsAt);
+            <span class="hub-list__entry">
+                <span class="hub-list__when">@ChurchDates.Time(at)<small>@ChurchDates.Relative(at.Date, ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date)</small></span>
+                <span class="hub-list__what">@gathering.What</span>
+            </span>
+        }
+    </span>
+</HubTile>
+
+@code {
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(WaitingTiles.Week, Entry.Values) with { Icon = "" };
+}
