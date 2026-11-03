@@ -1,41 +1,84 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject TimeProvider Clock
 
 <h2 class="panel-title">@Person.DisplayName</h2>
 <p class="panel-lead">@Person.Email</p>
 
 <dl class="facts">
     <dt>Account</dt>
-    <dd><PersonState Person="Person" /></dd>
-    <dt>Joined</dt>
-    <dd><DateLine At="Person.CreatedAt" /></dd>
-    <dt>Passkey</dt>
-    <dd>@(Person.HasPasskey ? "Has one" : "Not made yet")</dd>
-    <dt>Email</dt>
-    <dd>@(Person.EmailConfirmed ? "Confirmed" : "Not confirmed yet")</dd>
+    <dd><PersonState Person="Person" Invitation="Invitation" /></dd>
+    @if (Invitation is null)
+    {
+        <dt>Joined</dt>
+        <dd><DateLine At="Person.CreatedAt" /></dd>
+        <dt>Passkey</dt>
+        <dd>@(Person.HasPasskey ? "Has one" : "Not made yet")</dd>
+        <dt>Email</dt>
+        <dd>@(Person.EmailConfirmed ? "Confirmed" : "Not confirmed yet")</dd>
+    }
+    else
+    {
+        <dt>Invited by</dt>
+        <dd>@(Invitation.InvitedBy ?? "Not recorded")</dd>
+        <dt>Invited</dt>
+        <dd><DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Short" WithTime="true" /></dd>
+    }
 </dl>
 
 <div class="panel-actions">
     <Button Variant="ButtonVariant.Quiet" Icon="key" Href="@($"access/people?user={Person.Id}")">See what they can do</Button>
 </div>
 
-<Can Permission="AccountsPermissions.Manage">
-    <section class="panel-section" aria-labelledby="recovery-@Person.Id">
-        <h3 class="panel-subtitle" id="recovery-@Person.Id">Lost their passkey?</h3>
-        <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
-        @if (_link is not null)
-        {
-            <CopyField Label="Recovery link" Value="@_link.Code" />
-            <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
-        }
-        <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
+@if (Invitation is not null)
+{
+    <section class="panel-section" aria-labelledby="invitation-@Person.Id">
+        <h3 class="panel-subtitle" id="invitation-@Person.Id">@(InvitationExpired ? "Their invitation has expired" : "Invited, not accepted yet")</h3>
+        <p class="panel-lead">
+            They haven't set up their sign-in yet.
+            @if (InvitationExpired)
+            {
+                <text>The link stopped working <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Relative" />.</text>
+            }
+            else
+            {
+                <text>The link in their email works until <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Short" WithTime="true" />.</text>
+            }
+        </p>
+        <Can Permission="AccountsPermissions.Manage">
+            @if (_resent)
+            {
+                <Notice Text="@($"A new invitation is on its way to {Person.Email}. The old link no longer works.")" />
+            }
+            <div class="panel-actions">
+                <Button Variant="ButtonVariant.Quiet" Icon="send" Busy="_busy" OnClick="ResendAsync">Send it again</Button>
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _withdrawing = true">Withdraw the invitation</Button>
+            </div>
+            <p class="panel-hint">Sending it again makes a new link that works for 7 days. Withdrawing stops the link and removes the account they haven't set up.</p>
+        </Can>
     </section>
+}
 
-    <section class="panel-section" aria-labelledby="switch-@Person.Id">
-        <h3 class="panel-subtitle" id="switch-@Person.Id">@(Person.Disabled ? "Turned off" : "Turn the account off")</h3>
-        <p class="panel-lead">@(Person.Disabled ? "They can't sign in. Turning it back on lets them use their passkey again." : "They're signed out everywhere and can't sign in until it's turned back on. Nothing they made is deleted.")</p>
-        <Button Variant="@(Person.Disabled ? ButtonVariant.Quiet : ButtonVariant.Danger)" Busy="_busy" OnClick="ToggleAsync">@(Person.Disabled ? "Turn it back on" : "Turn the account off")</Button>
-    </section>
+<Can Permission="AccountsPermissions.Manage">
+    @if (Invitation is null)
+    {
+        <section class="panel-section" aria-labelledby="recovery-@Person.Id">
+            <h3 class="panel-subtitle" id="recovery-@Person.Id">Lost their passkey?</h3>
+            <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
+            @if (_link is not null)
+            {
+                <CopyField Label="Recovery link" Value="@_link.Code" />
+                <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
+            }
+            <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
+        </section>
+
+        <section class="panel-section" aria-labelledby="switch-@Person.Id">
+            <h3 class="panel-subtitle" id="switch-@Person.Id">@(Person.Disabled ? "Turned off" : "Turn the account off")</h3>
+            <p class="panel-lead">@(Person.Disabled ? "They can't sign in. Turning it back on lets them use their passkey again." : "They're signed out everywhere and can't sign in until it's turned back on. Nothing they made is deleted.")</p>
+            <Button Variant="@(Person.Disabled ? ButtonVariant.Quiet : ButtonVariant.Danger)" Busy="_busy" OnClick="ToggleAsync">@(Person.Disabled ? "Turn it back on" : "Turn the account off")</Button>
+        </section>
+    }
 
     <section class="panel-section" aria-labelledby="activity-@Person.Id">
         <h3 class="panel-subtitle" id="activity-@Person.Id">Recent activity</h3>
@@ -62,13 +105,42 @@
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
+<Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
+       Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private CodeReply? _link;
     private bool _busy;
     private string? _problem;
 
     [Parameter, EditorRequired] public required PersonInfo Person { get; set; }
+    [Parameter] public InvitationInfo? Invitation { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public EventCallback OnRemoved { get; set; }
+
+    private bool _resent;
+    private bool _withdrawing;
+
+    private bool InvitationExpired => Invitation is { } invitation && invitation.ExpiresAt <= Clock.GetUtcNow().UtcDateTime;
+
+    private Task ResendAsync() => RunAsync(async () =>
+    {
+        await Accounts.ResendInvitationAsync(Person.Id);
+        _resent = true;
+        await OnChanged.InvokeAsync();
+    });
+
+    private Task WithdrawAsync() => RunAsync(async () =>
+    {
+        await Accounts.WithdrawInvitationAsync(Person.Id);
+        _withdrawing = false;
+        await OnRemoved.InvokeAsync();
+    });
 
     private async Task<List<AuditInfo>> LoadAuditAsync() => (await Accounts.ListAuditAsync(Person.Id)).Entries;
 
@@ -110,6 +182,8 @@
         "recovery-issued" => "Recovery link made",
         "code-redeemed" => "Used a link",
         "invited" => "Invited",
+        "invitation-resent" => "Invitation sent again",
+        "invitation-withdrawn" => "Invitation withdrawn",
         "session-ended" => "Signed out on a device",
         "signed-out-everywhere" => "Signed out everywhere",
         "name-changed" => "Changed their name",

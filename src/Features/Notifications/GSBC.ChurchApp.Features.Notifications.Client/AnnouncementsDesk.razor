@@ -93,7 +93,7 @@
                                     }
                                     else
                                     {
-                                        <p class="announcement-check__note">As soon as you send it. Between 9pm and 7am it waits until 7am, unless it's urgent.</p>
+                                        <p class="announcement-check__note">@NowLine</p>
                                     }
                                 }
                                 else
@@ -121,8 +121,7 @@
                         <div class="announcement-check">
                             <dt>Urgent</dt>
                             <dd>
-                                <ToggleRow Title="Urgent" Description="Goes straight away, even overnight, and breaks through Focus. For a cancelled service or a change of venue." Checked="_editing.Urgent"
-                                           CheckedChanged="value => Change(a => a.Urgent = value)" />
+                                <ToggleRow Title="Urgent" Description="@UrgentDescription" Checked="_editing.Urgent" CheckedChanged="value => Change(a => a.Urgent = value)" />
                             </dd>
                         </div>
                     </dl>
@@ -187,19 +186,27 @@
         {
             <Notice Tone="NoticeTone.Warning" Text="No phone with notifications on would get it right now. It still goes into the app's notifications." />
         }
+        @if (QuietUntil is { } morning)
+        {
+            <Notice Text="@($"Phones buzz {MorningWords(morning)} (quiet hours). Turn on Urgent to buzz them {(_later ? $"at {ChurchDates.Time(ChurchTime.ToChurch(LaterAt!.Value))}" : "now")}.")" />
+        }
+        @if (InQuietHours)
+        {
+            <ToggleRow Title="Urgent" Description="Phones buzz straight away and it breaks through Focus." Checked="_editing.Urgent" CheckedChanged="value => Change(a => a.Urgent = value)" />
+        }
         <LockScreenProof Title="@_editing.Title" Body="@_editing.Body" TimeSensitive="_editing.Urgent" Date="@Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)" />
         <dl class="announcement-confirm">
             <div><dt>Who it's for</dt><dd>@ReachSummary</dd></div>
-            <div><dt>When</dt><dd>@(_later ? LaterLine : "Now")</dd></div>
+            <div><dt>When</dt><dd>@(_later ? LaterAt is { } at ? $"Goes out {Describe(at)}" : LaterLine : QuietUntil is null ? "Now" : "Now in the app")@(QuietUntil is { } held ? $"; phones buzz {MorningWords(held)}" : "")</dd></div>
             @if (_editing.Urgent)
             {
-                <div><dt>Urgent</dt><dd>Yes: it breaks through Focus and quiet hours</dd></div>
+                <div><dt>Urgent</dt><dd>Yes: phones buzz straight away, even in quiet hours, and it breaks through Focus</dd></div>
             }
         </dl>
     </ChildContent>
     <Actions>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Back to writing</Button>
-        <Button Icon="send" Busy="_busy" OnClick="SendAsync">@(_later ? "Schedule it" : "Send it now")</Button>
+        <Button Icon="send" Busy="_busy" OnClick="SendAsync">@(_later ? "Schedule it" : QuietUntil is null ? "Send it now" : "Send it")</Button>
     </Actions>
 </Sheet>
 
@@ -273,18 +280,67 @@
 
     private string SendLabel => _later ? "Schedule it" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")}" : "Send it";
 
-    private string ConfirmTitle => _later ? "Schedule this announcement?" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")} now?" : "Send it now?";
+    private string ConfirmTitle => _later ? "Schedule this announcement?" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")}{Now}?" : $"Send it{Now}?";
+
+    private string Now => QuietUntil is null ? " now" : "";
 
     private string ConfirmLead => _later
         ? "You can still cancel it until it goes."
-        : "It goes straight to people's phones and into the app's notifications. It can't be taken back.";
+        : QuietUntil is null
+            ? "It goes straight to people's phones and into the app's notifications. It can't be taken back."
+            : "It goes into the app's notifications straight away and can't be taken back.";
 
     private DateTime? LaterAt =>
         DateTime.TryParseExact($"{_day} {_time}", $"{DayFormat} {TimeFormat}", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local) && local > ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime)
             ? ChurchTime.ToUtc(local)
             : null;
 
-    private string LaterLine => LaterAt is { } at ? $"Goes out {Describe(at)}." : "Choose a day and a time that haven't passed.";
+    private string LaterLine => LaterAt is { } at ? $"Goes out {Describe(at)}.{QuietSentence(at, _editing.Urgent)}" : "Choose a day and a time that haven't passed.";
+
+    private string NowLine => HeldUntil(Clock.GetUtcNow().UtcDateTime) is { } morning
+        ? _editing.Urgent
+            ? "It's quiet hours, but it's urgent, so phones buzz as soon as you send it."
+            : $"It's quiet hours ({QuietHoursWords}), so it goes into the app now and phones buzz {MorningWords(morning)}. Turn on Urgent to buzz them now."
+        : $"As soon as you send it. In quiet hours ({QuietHoursWords}) phones wait until {ChurchDates.Time(DateTime.Today.Add(QuietHours.Ends.ToTimeSpan()))}, unless it's urgent.";
+
+    private static string UrgentDescription =>
+        $"Phones buzz straight away, even in quiet hours ({QuietHoursWords}), and it breaks through Focus. Keep it for what people must know now, such as a cancelled service or a change of venue.";
+
+    private static string QuietHoursWords =>
+        $"{ChurchDates.Time(DateTime.Today.Add(QuietHours.Starts.ToTimeSpan()))}–{ChurchDates.Time(DateTime.Today.Add(QuietHours.Ends.ToTimeSpan()))}";
+
+    private DateTime? SendsAt => _later ? LaterAt : Clock.GetUtcNow().UtcDateTime;
+
+    private bool InQuietHours => SendsAt is { } at && HeldUntil(at) is not null;
+
+    private DateTime? QuietUntil => _editing.Urgent || SendsAt is not { } at ? null : HeldUntil(at);
+
+    private static DateTime? HeldUntil(DateTime utc) =>
+        QuietHours.HeldUntil(ChurchTime.ToChurch(utc)) is { } morning ? ChurchTime.ToUtc(morning) : null;
+
+    private string QuietSentence(DateTime sendUtc, bool urgent)
+    {
+        if (urgent || HeldUntil(sendUtc) is not { } morning)
+            return "";
+        bool past = morning <= Clock.GetUtcNow().UtcDateTime;
+        return past
+            ? $" It went out in quiet hours, so phones got it {MorningWords(morning)}."
+            : $" That's in quiet hours, so phones get it {MorningWords(morning)}.";
+    }
+
+    private string MorningWords(DateTime morningUtc)
+    {
+        DateTime morning = ChurchTime.ToChurch(morningUtc);
+        string time = ChurchDates.Time(morning);
+        return (morning.Date - Today).Days switch
+        {
+            0 => $"at {time}",
+            1 => $"at {time} tomorrow",
+            -1 => $"at {time} yesterday",
+            > 1 and < 7 => $"at {time} on {morning.ToString("dddd", CultureInfo.InvariantCulture)}",
+            _ => $"at {time} on {morning.ToString("ddd d MMM", CultureInfo.InvariantCulture)}",
+        };
+    }
 
     private string OpensWords => _opens switch
     {
@@ -462,7 +518,9 @@
         Announcement sent = await Announcements.SendAsync((await SavedAsync()).Id, at);
         Show(sent);
         _confirming = false;
-        _told = sent.State == Scheduled ? $"Scheduled. It goes out {Describe(sent.SendAt!.Value)}." : $"Sent to about {Count(sent.ReachedPhones, "phone")} at {ChurchDates.Time(ChurchTime.ToChurch(sent.SentAt!.Value))}.";
+        _told = sent.State == Scheduled
+            ? $"Scheduled. It goes out {Describe(sent.SendAt!.Value)}.{QuietSentence(sent.SendAt.Value, sent.Urgent)}"
+            : $"Sent to about {Count(sent.ReachedPhones, "phone")} at {ChurchDates.Time(ChurchTime.ToChurch(sent.SentAt!.Value))}.{QuietSentence(sent.SentAt.Value, sent.Urgent)}";
     });
 
     private Task CancelAsync() => RunAsync(async () =>
@@ -522,8 +580,8 @@
 
     private string SentLine(Announcement announcement) => announcement.State switch
     {
-        Sent => $"Sent {Describe(announcement.SentAt!.Value)} to about {Count(announcement.ReachedPhones, "phone")}. Read by {Count(announcement.ReadBy, "person", "people")} so far; phones not signed in aren't counted.",
-        Scheduled => $"Scheduled: it goes out {Describe(announcement.SendAt!.Value)}.",
+        Sent => $"Sent {Describe(announcement.SentAt!.Value)} to about {Count(announcement.ReachedPhones, "phone")}.{QuietSentence(announcement.SentAt.Value, announcement.Urgent)} Read by {Count(announcement.ReadBy, "person", "people")} so far; phones not signed in aren't counted.",
+        Scheduled => $"Scheduled: it goes out {Describe(announcement.SendAt!.Value)}.{QuietSentence(announcement.SendAt.Value, announcement.Urgent)}",
         _ => "Cancelled.",
     };
 
@@ -535,7 +593,13 @@
         _ => "Being written",
     };
 
-    private string Describe(DateTime utc) => ChurchDates.Describe(utc, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime);
+    private string Describe(DateTime utc)
+    {
+        string described = ChurchDates.Describe(utc, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime);
+        return described.StartsWith("Today", StringComparison.Ordinal) || described.StartsWith("Tomorrow", StringComparison.Ordinal) || described.StartsWith("Yesterday", StringComparison.Ordinal)
+            ? char.ToLowerInvariant(described[0]) + described[1..]
+            : described;
+    }
 
     private static string Count(int count, string one, string? many = null) => $"{count} {(count == 1 ? one : many ?? one + "s")}";
 

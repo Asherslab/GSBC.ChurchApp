@@ -1,6 +1,12 @@
+@inject TimeProvider Clock
+
 @if (Person.Disabled)
 {
     <Pill Tone="PillTone.Masthead">Turned off</Pill>
+}
+else if (Invitation is not null)
+{
+    <Pill Tone="@(Expired ? PillTone.Quiet : PillTone.Marker)" Icon="send">@(Expired ? "Invitation expired" : "Invited")</Pill>
 }
 else if (!Person.HasPasskey)
 {
@@ -17,4 +23,7 @@ else
 
 @code {
     [Parameter, EditorRequired] public required PersonInfo Person { get; set; }
+    [Parameter] public InvitationInfo? Invitation { get; set; }
+
+    private bool Expired => Invitation is { } invitation && invitation.ExpiresAt <= Clock.GetUtcNow().UtcDateTime;
 }

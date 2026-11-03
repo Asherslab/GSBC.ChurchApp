@@ -351,7 +351,7 @@ parent's team side); it isn't a grant at Music.
 **What Ministries calls in Access:** see [access.md, What Ministries must
 call](access.md#what-ministries-must-call): its system roles with assignable-by, `IRoleAssignments` for
 giving, taking away and listing holders, `IScopeHierarchy` for its parent and children, and
-`IScopeNames` for ministry names on Access screens.
+an `IScopeNamer` for ministry names on Access screens.
 
 ## Data and services
 

@@ -32,7 +32,7 @@ public static class AccountsApiExtensions
             [AccountsPermissions.ViewNode, AccountsPermissions.ManageNode, AccountsPermissions.ReviewAccessNode]));
         services.AddSystemRole(DemoAccounts.Role);
         services.AddToSystemRole(DeveloperRole, AccountsPermissions.ConnectToolNode);
-        services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>();
+        services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>().AddScoped<Invitations>();
         services.AddHostedService<AccountsCleanup>();
         services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));
         services.AddScoped<IInstallVerifier, InstallVerifier>();

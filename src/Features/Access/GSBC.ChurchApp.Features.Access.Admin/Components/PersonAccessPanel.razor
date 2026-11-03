@@ -2,7 +2,7 @@
 @inject IPeopleDirectory People
 @inject IScopeNames ScopeNames
 
-<LiveData @ref="_live" TValue="PersonView" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load what they can do">
+<LiveData @ref="_live" TValue="PersonView" Feeds="[AccessFeeds.Roles, .. ScopeNames.Feeds]" Load="LoadAsync" FailedTitle="Can't load what they can do">
     <header class="person-head">
         <h2 class="person-head__name">@context.Value.Person.Name</h2>
         <p class="person-head__email">@context.Value.Person.Email</p>
@@ -19,7 +19,7 @@
             {
                 <div class="access-place">
                     <h3 class="panel-subtitle">@(place.ObjectId is null ? "Everywhere" : PlaceLine(context.Value, place.ObjectId, place.IncludesTeams))</h3>
-                    <p class="panel-hint">Because they're @string.Join(" and ", place.Because.Select(Reason))@(place.ObjectId is not null && context.Value.Places.Get(place.ObjectId) is { } named ? $" of {named.Name}" : "").</p>
+                    <p class="panel-hint">Because they're @string.Join(" and ", place.Because.Select(Reason))@(place.ObjectId is not null && context.Value.Places.Get(place.ObjectId) is { } named ? (context.Value.Places.Kinds[place.ObjectId] == ScopeKind.Draft.Name ? $" for “{named.Name}”" : $" of {named.Name}") : "").</p>
                     <AbilityList Nodes="place.Nodes" Catalog="context.Value.Catalog" EveryMinistry="place.ObjectId is null" />
                 </div>
             }

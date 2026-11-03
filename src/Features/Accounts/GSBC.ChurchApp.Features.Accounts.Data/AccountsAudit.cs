@@ -33,6 +33,8 @@ public static class AuditActions
     public const string RecoveryIssued = "recovery-issued";
     public const string CodeRedeemed = "code-redeemed";
     public const string Invited = "invited";
+    public const string InvitationResent = "invitation-resent";
+    public const string InvitationWithdrawn = "invitation-withdrawn";
     public const string SessionEnded = "session-ended";
     public const string SignedOutEverywhere = "signed-out-everywhere";
     public const string NameChanged = "name-changed";

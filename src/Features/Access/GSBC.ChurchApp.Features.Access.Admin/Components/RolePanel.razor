@@ -47,7 +47,7 @@
 
 <section class="panel-section" aria-labelledby="holders-@Role.Id">
     <h3 class="panel-subtitle" id="holders-@Role.Id">Who has it</h3>
-    <LiveData TValue="IReadOnlyList<Holder>" Feeds="[AccessFeeds.Roles]" Load="LoadHoldersAsync" FailedTitle="Can't load who has it">
+    <LiveData TValue="IReadOnlyList<Holder>" Feeds="[AccessFeeds.Roles, .. ScopeNames.Feeds]" Load="LoadHoldersAsync" FailedTitle="Can't load who has it">
         @if (context.Value.Count == 0)
         {
             <p class="panel-hint">@AccessWords.Holders(0).</p>

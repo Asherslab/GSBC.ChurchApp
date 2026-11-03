@@ -254,3 +254,26 @@ public sealed class ToolConnection
 {
     [ProtoMember(1)] public string Session { get; set; } = "";
 }
+
+[ProtoContract]
+public sealed class InvitationList
+{
+    [ProtoMember(1)] public List<InvitationInfo> Invitations { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class InvitationInfo
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+    [ProtoMember(2)] public string DisplayName { get; set; } = "";
+    [ProtoMember(3)] public string Email { get; set; } = "";
+    [ProtoMember(4)] public string? InvitedBy { get; set; }
+    [ProtoMember(5)] public DateTime InvitedAt { get; set; }
+    [ProtoMember(6)] public DateTime ExpiresAt { get; set; }
+}
+
+[ProtoContract]
+public sealed class InvitationRequest
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+}

@@ -36,6 +36,15 @@ autofill offers passkeys). On success the gateway starts a session.
 The page calls `Accounts.Redeem(code)`, which returns a registration ticket for that account, then runs
 the *register a passkey* ceremony.
 
+**Invitations not yet accepted** (2026-11-04). `Accounts.ListInvitations` (`accounts.view`) lists every
+unused invitation whose account has no passkey yet: who, who invited them (from the audit log), when, and
+when the link stops working (expired ones stay listed until the cleanup removes the account).
+`Accounts.ResendInvitation` (`accounts.manage`) replaces the link with a new 7-day one and emails it;
+`Accounts.WithdrawInvitation` (`accounts.manage`) stops the link and deletes the account that was never
+set up, as the cleanup would a week later. The admin panel's People shows them under the *Invited*
+filter, with both actions on the person's panel, and an invitation still waiting after two days, or
+expired, reaches Home's *Needs you* (`InvitationsOfficeWeek`, for holders of `accounts.manage`).
+
 **Review sign-in.** In the app, signed out: **Have a sign-in code?** → email and code →
 `Accounts.SignInWithCode` (gRPC, public, rate-limited and throttled) answers with an app session secret,
 which the native layer keeps. Staff make demo accounts and codes on the admin panel's **App review** page

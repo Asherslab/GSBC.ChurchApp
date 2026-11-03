@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Features.Configuration.Client.Components;
 using GSBC.ChurchApp.Features.Configuration.Client;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -16,7 +17,7 @@ public static class ConfigurationAdminExtensions
             [
                 new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit, Group: NavGroups.Content, Summary: "Change the app's home screen, colours and fonts, then publish"),
             ]));
-        return services.AddConfigurationClient().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>()
+        return services.AddConfigurationClient().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>().AddSingleton<IScopeNamer, DraftScopeNames>()
             .AddPlacePreview<HomePlacePreview>(place => place.Path == ShellDestinations.Home.Path)
             .AddPlaceAction(new PlaceAction("Change it in a draft", "pencil", place => place.Path == ShellDestinations.Home.Path ? "drafts" : null, HubSurfaces.Edit, Leads: true));
     }

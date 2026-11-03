@@ -42,4 +42,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 [ProtoSerializable(typeof(TurnOffReviewCodeRequest))]
 [ProtoSerializable(typeof(ConnectToolRequest))]
 [ProtoSerializable(typeof(ToolConnection))]
+[ProtoSerializable(typeof(InvitationList))]
+[ProtoSerializable(typeof(InvitationInfo))]
+[ProtoSerializable(typeof(InvitationRequest))]
 public partial class AccountsContractsModel : TypeModel;

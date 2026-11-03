@@ -19,7 +19,7 @@ public static class ClientServiceCollectionExtensions
         services.AddSingleton<ClientSignals>();
         services.AddSingleton<GrantedAccess>();
         services.AddSingleton<IAccess>(provider => provider.GetRequiredService<GrantedAccess>());
-        services.TryAddSingleton<IScopeNames, UnnamedScopes>();
+        services.TryAddSingleton<IScopeNames, ScopeNames>();
         services.TryAddSingleton<IMediaFiles, WebMediaFiles>();
         services.TryAddSingleton<IDeviceSession, CookieSession>();
         services.AddSingleton<CurrentPage>();
