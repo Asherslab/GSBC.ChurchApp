@@ -1,0 +1,149 @@
+@inject AccessClient Access
+@inject IPeopleDirectory People
+@inject IScopeNames ScopeNames
+
+<LiveData @ref="_live" TValue="PersonView" Load="LoadAsync" FailedTitle="Can't load what they can do">
+    <TitleBand Title="@context.Value.Person.Name" BrowserTitle="Who can do what" Lead="@context.Value.Person.Email" />
+
+    <div class="access-columns">
+        <section class="editor-section" aria-labelledby="can-do">
+            <h2 class="section__title" id="can-do">What can @FirstName(context.Value.Person) do?</h2>
+            @if (context.Value.Abilities.Places.Count == 0)
+            {
+                <p class="panel-hint">@AccessWords.Nothing</p>
+            }
+            @foreach (PlaceAbilities place in context.Value.Abilities.Places)
+            {
+                <div class="access-place">
+                    <h3 class="panel-subtitle">@(place.ObjectId is null ? "Everywhere" : AccessWords.Place(PlaceName(context.Value, place.ObjectId), place.IncludesTeams))</h3>
+                    <p class="panel-hint">Because they're @string.Join(" and ", place.Because.Select(Reason))@(place.ObjectId is null ? "" : $" of {PlaceName(context.Value, place.ObjectId)}").</p>
+                    <AbilityList Nodes="place.Nodes" Catalog="context.Value.Catalog" EveryMinistry="place.ObjectId is null" />
+                </div>
+            }
+        </section>
+
+        <aside class="split-view__panel access-roles" aria-labelledby="their-roles">
+            <h2 class="panel-title" id="their-roles">Their roles</h2>
+            @if (context.Value.Assignments.Count == 0)
+            {
+                <p class="panel-hint">None yet.</p>
+            }
+            else
+            {
+                <ul class="holders">
+                    @foreach (AssignmentInfo assignment in context.Value.Assignments)
+                    {
+                        <li>
+                            <span>
+                                <span class="cell-strong">@assignment.RoleName</span>
+                                <span class="quiet">@(assignment.ScopeObjectId is { } place ? AccessWords.Place(PlaceName(context.Value, place), false) : "") @AccessWords.Until(assignment.ExpiresAt)</span>
+                            </span>
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => TakeAwayAsync(assignment)">Take away</Button>
+                        </li>
+                    }
+                </ul>
+            }
+
+            <section class="panel-section" aria-labelledby="give-role">
+                <h3 class="panel-subtitle" id="give-role">Give a role</h3>
+                <div class="panel-form">
+                    <SelectField Label="Role" Options="RoleOptions(context.Value)" @bind-Value="_roleId" />
+                    @if (context.Value.Roles.FirstOrDefault(role => role.Id == _roleId) is { } chosen)
+                    {
+                        @if (chosen.ScopeKind != ScopeKind.Global.Name)
+                        {
+                            <TextField Label="@($"Which {chosen.ScopeKind}")" @bind-Value="_scopeObjectId" />
+                        }
+                        <TextField Label="Until" Type="date" Value="@(_ends ?? "")" ValueChanged="value => _ends = value.Length == 0 ? null : value" Hint="Leave it empty to keep the role." />
+                        <div>
+                            <p class="panel-lead">@FirstName(context.Value.Person) will be able to:</p>
+                            <AbilityList Nodes="chosen.AbilityNodes" Catalog="context.Value.Catalog" EveryMinistry="chosen.ScopeKind == ScopeKind.Global.Name" />
+                        </div>
+                        <Button Icon="check" Busy="_busy" OnClick="() => GiveAsync(context.Value.Person, chosen)">Give @FirstName(context.Value.Person) the @chosen.Name role</Button>
+                    }
+                </div>
+            </section>
+            <Notice Tone="NoticeTone.Warning" Text="@_message" />
+            <Notice Text="@_done" />
+        </aside>
+    </div>
+</LiveData>
+
+@code {
+    private LiveData<PersonView>? _live;
+    private string _roleId = "";
+    private string? _scopeObjectId;
+    private string? _ends;
+    private bool _busy;
+    private string? _message;
+    private string? _done;
+
+    [Parameter, EditorRequired] public required string UserId { get; set; }
+
+    private async Task<PersonView> LoadAsync()
+    {
+        Task<IReadOnlyList<PersonSummary>> person = People.GetAsync([UserId]);
+        Task<AssignmentList> assignments = Access.ListAssignmentsAsync(UserId).AsTask();
+        Task<PersonAbilities> abilities = Access.ExplainAsync(UserId).AsTask();
+        Task<RoleList> roles = Access.ListRolesAsync().AsTask();
+        Task<Catalog> catalog = Access.ListCatalogAsync().AsTask();
+        List<AssignmentInfo> held = (await assignments).Assignments;
+        IReadOnlyDictionary<string, string> places = await ScopeNames.NamesAsync(ScopeKind.Ministry.Name, held.Select(assignment => assignment.ScopeObjectId).OfType<string>().ToList());
+        PersonSummary found = (await person).FirstOrDefault() ?? new PersonSummary(UserId, "Someone", "", false);
+        return new PersonView(found, held, await abilities, places, (await roles).Roles, await catalog);
+    }
+
+    private static string FirstName(PersonSummary person) => person.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? person.Name;
+
+    private static string PlaceName(PersonView view, string objectId) => view.Places.GetValueOrDefault(objectId, objectId);
+
+    private static IReadOnlyList<FieldOption> RoleOptions(PersonView view) =>
+        [new("", "Choose a role…"), .. view.Roles.Select(role => new FieldOption(role.Id, $"{role.Name} · {AccessWords.GivenWhere(role)}"))];
+
+    private static string Reason(PlaceReason reason) =>
+        $"{(reason.RoleName.Length > 0 && "AEIOU".Contains(reason.RoleName[0]) ? "an" : "a")} {reason.RoleName}{(reason.ExpiresAt is null ? "" : $" ({AccessWords.Until(reason.ExpiresAt)})")}";
+
+    private Task GiveAsync(PersonSummary person, RoleInfo role) => RunAsync(async () =>
+    {
+        await Access.AssignAsync(new AssignRequest
+        {
+            UserId = person.Id,
+            RoleId = role.Id,
+            ScopeObjectId = _scopeObjectId,
+            ExpiresAt = DateTime.TryParse(_ends, out DateTime ends) ? ends.Date.AddDays(1).ToUniversalTime() : null,
+        });
+        _roleId = "";
+        _scopeObjectId = null;
+        _ends = null;
+        _done = $"{person.Name} now has the {role.Name} role.";
+    });
+
+    private Task TakeAwayAsync(AssignmentInfo assignment) => RunAsync(async () =>
+    {
+        await Access.UnassignAsync(assignment.Id);
+        _done = $"{assignment.RoleName} taken away.";
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        _done = null;
+        try
+        {
+            await action();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed record PersonView(PersonSummary Person, List<AssignmentInfo> Assignments, PersonAbilities Abilities, IReadOnlyDictionary<string, string> Places, List<RoleInfo> Roles, Catalog Catalog);
+}

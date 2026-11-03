@@ -1,0 +1,121 @@
+@inject AccessClient Access
+@inject IPeopleDirectory People
+@inject IScopeNames ScopeNames
+
+<h2 class="panel-title">@Role.Name</h2>
+<p class="panel-lead">@Role.Description</p>
+
+<dl class="facts">
+    <dt>Given</dt>
+    <dd>@AccessWords.GivenWhere(Role)</dd>
+    <dt>Given by</dt>
+    <dd>@AccessWords.GivenBy(Role, Roles)</dd>
+    @if (Role.IsSystem)
+    {
+        <dt>Built in</dt>
+        <dd>It comes from the app, so it can't be changed here. Make a copy to adjust it.</dd>
+    }
+</dl>
+
+<Can Permission="AccessPermissions.EditRoles">
+    <div class="panel-actions">
+        <Button Variant="ButtonVariant.Quiet" Icon="plus" Href="@($"access/roles/new?from={Role.Id}")">Make a copy</Button>
+        @if (!Role.IsSystem)
+        {
+            <Button Variant="ButtonVariant.Quiet" Icon="pencil" Href="@($"access/roles/{Role.Id}/edit")">Change</Button>
+            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="PreviewDeleteAsync">Delete…</Button>
+        }
+    </div>
+</Can>
+
+@if (_deleteEffect is not null)
+{
+    <section class="panel-section panel-confirm" aria-labelledby="delete-@Role.Id">
+        <h3 class="panel-subtitle" id="delete-@Role.Id">Delete @Role.Name?</h3>
+        <RoleEffectView @key="_deleteEffect" Effect="_deleteEffect" Catalog="Catalog" />
+        <div class="panel-actions">
+            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it, and take it from everyone who has it</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleteEffect = null">Keep it</Button>
+        </div>
+    </section>
+}
+
+<section class="panel-section" aria-labelledby="abilities-@Role.Id">
+    <h3 class="panel-subtitle" id="abilities-@Role.Id">What it lets people do</h3>
+    <AbilityList Nodes="Role.AbilityNodes" Catalog="Catalog" EveryMinistry="Role.ScopeKind == ScopeKind.Global.Name" />
+</section>
+
+<section class="panel-section" aria-labelledby="holders-@Role.Id">
+    <h3 class="panel-subtitle" id="holders-@Role.Id">Who has it</h3>
+    <LiveData TValue="IReadOnlyList<Holder>" Load="LoadHoldersAsync" FailedTitle="Can't load who has it">
+        @if (context.Value.Count == 0)
+        {
+            <p class="panel-hint">@AccessWords.Holders(0).</p>
+        }
+        else
+        {
+            <ul class="holders">
+                @foreach (Holder holder in context.Value)
+                {
+                    <li>
+                        <a href="access/people?user=@holder.UserId">@holder.Name</a>
+                        <span class="quiet">@holder.Detail</span>
+                    </li>
+                }
+            </ul>
+        }
+    </LiveData>
+</section>
+
+<Notice Tone="NoticeTone.Warning" Text="@_message" />
+
+@code {
+    private RoleEffect? _deleteEffect;
+    private bool _busy;
+    private string? _message;
+
+    [Parameter, EditorRequired] public required RoleInfo Role { get; set; }
+    [Parameter, EditorRequired] public required List<RoleInfo> Roles { get; set; }
+    [Parameter, EditorRequired] public required Catalog Catalog { get; set; }
+    [Parameter] public EventCallback OnDeleted { get; set; }
+
+    private async Task<IReadOnlyList<Holder>> LoadHoldersAsync()
+    {
+        List<AssignmentInfo> holders = (await Access.ListAssignmentsAsync(null)).Assignments.Where(assignment => assignment.RoleId == Role.Id).ToList();
+        Dictionary<string, string> names = (await People.GetAsync(holders.Select(holder => holder.UserId).Distinct().ToList())).ToDictionary(person => person.Id, person => person.Name);
+        IReadOnlyDictionary<string, string> places = await ScopeNames.NamesAsync(Role.ScopeKind, holders.Select(holder => holder.ScopeObjectId).OfType<string>().ToList());
+        return holders
+            .Select(holder => new Holder(holder.UserId, names.GetValueOrDefault(holder.UserId) ?? "Someone",
+                string.Join(" ", new[] { holder.ScopeObjectId is { } place ? AccessWords.Place(places.GetValueOrDefault(place, place), Role.AppliesToChildren) : null, AccessWords.Until(holder.ExpiresAt) }.Where(part => !string.IsNullOrWhiteSpace(part)))))
+            .OrderBy(holder => holder.Name, StringComparer.CurrentCultureIgnoreCase)
+            .ToList();
+    }
+
+    private Task PreviewDeleteAsync() => RunAsync(async () => _deleteEffect = await Access.PreviewRoleAsync(Role, deleting: true));
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Access.DeleteRoleAsync(Role.Id);
+        await OnDeleted.InvokeAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed record Holder(string UserId, string Name, string Detail);
+}

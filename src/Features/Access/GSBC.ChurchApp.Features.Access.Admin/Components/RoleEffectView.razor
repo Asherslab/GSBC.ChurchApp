@@ -8,40 +8,41 @@
 else
 {
     <Notice Tone="NoticeTone.Warning">This changes what @AccessWords.Holders(Effect.People.Count) can do.</Notice>
-    <ul>
-        @foreach (PersonEffect person in Effect.People)
-        {
-            <li>
-                <strong>@(_names.GetValueOrDefault(person.UserId) ?? "Someone")</strong>
-                @if (person.Gains.Count > 0)
-                {
-                    <div>Gains: @Describe(person.Gains)</div>
-                }
-                @if (person.Losses.Count > 0)
-                {
-                    <div>Loses: @Describe(person.Losses)</div>
-                }
-            </li>
-        }
-    </ul>
+    <LiveData TValue="Names" Load="LoadAsync">
+        <ul class="effect-list">
+            @foreach (PersonEffect person in Effect.People)
+            {
+                <li>
+                    <strong>@(context.Value.People.GetValueOrDefault(person.UserId) ?? "Someone")</strong>
+                    @if (person.Gains.Count > 0)
+                    {
+                        <span class="effect-list__gains">Gains: @Describe(person.Gains, context.Value.Places)</span>
+                    }
+                    @if (person.Losses.Count > 0)
+                    {
+                        <span class="effect-list__losses">Loses: @Describe(person.Losses, context.Value.Places)</span>
+                    }
+                </li>
+            }
+        </ul>
+    </LiveData>
 }
 
 @code {
     [Parameter, EditorRequired] public required RoleEffect Effect { get; set; }
     [Parameter, EditorRequired] public required Catalog Catalog { get; set; }
 
-    private Dictionary<string, string> _names = [];
-    private IReadOnlyDictionary<string, string> _places = new Dictionary<string, string>();
-
-    protected override async Task OnParametersSetAsync()
+    private async Task<Names> LoadAsync()
     {
-        _names = (await People.GetAsync(Effect.People.Select(person => person.UserId).ToList())).ToDictionary(person => person.Id, person => person.Name);
+        Dictionary<string, string> people = (await People.GetAsync(Effect.People.Select(person => person.UserId).ToList())).ToDictionary(person => person.Id, person => person.Name);
         List<string> places = Effect.People.SelectMany(person => person.Gains.Concat(person.Losses)).Select(change => change.ObjectId).OfType<string>().Distinct().ToList();
-        _places = await ScopeNames.NamesAsync(ScopeKind.Ministry.Name, places);
+        return new Names(people, await ScopeNames.NamesAsync(ScopeKind.Ministry.Name, places));
     }
 
-    private string Describe(IEnumerable<AbilityChange> changes) =>
+    private string Describe(IEnumerable<AbilityChange> changes, IReadOnlyDictionary<string, string> places) =>
         string.Join("; ", changes.Select(change =>
             $"{Catalog.Permissions.FirstOrDefault(permission => permission.Node == change.Node)?.Description ?? change.Node}" +
-            (change.ObjectId is { } place ? $" (in {_places.GetValueOrDefault(place, place)})" : "")));
+            (change.ObjectId is { } place ? $" (in {places.GetValueOrDefault(place, place)})" : "")));
+
+    private sealed record Names(Dictionary<string, string> People, IReadOnlyDictionary<string, string> Places);
 }
