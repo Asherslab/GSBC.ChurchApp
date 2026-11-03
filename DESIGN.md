@@ -239,6 +239,11 @@ components:
     textColor: "{colors.orange-ink}"
     rounded: "{rounded.full}"
     padding: "3px 9px"
+  pill-quiet:
+    backgroundColor: "{colors.fill-on-surface}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.full}"
+    padding: "3px 9px"
   segmented:
     backgroundColor: "{colors.sand}"
     rounded: "{rounded.field}"
@@ -248,6 +253,19 @@ components:
     textColor: "{colors.ink}"
     rounded: "{rounded.inner}"
     height: "36px"
+  segmented-count:
+    textColor: "{colors.orange-ink}"
+    rounded: "{rounded.full}"
+    height: "18px"
+    padding: "0 5px"
+    typography: "{typography.pill}"
+  row-unread-dot:
+    backgroundColor: "{colors.orange}"
+    rounded: "{rounded.full}"
+    size: "9px"
+  inbox-action:
+    textColor: "{colors.aqua-deep}"
+    typography: "{typography.label}"
   player:
     backgroundColor: "{colors.sand}"
     rounded: "{rounded.card}"
@@ -375,6 +393,44 @@ components:
     rounded: "{rounded.inner}"
     padding: "6px 10px"
     typography: "{typography.caption}"
+  office-rail-day-fortnight:
+    backgroundColor: "{colors.white}"
+    rounded: "{rounded.tile}"
+    padding: "8px 8px 10px"
+    width: "56px"
+  office-rail-span-fortnight:
+    rounded: "{rounded.inner}"
+    padding: "5px 7px"
+    typography: "{typography.pill}"
+  announcement-chip:
+    textColor: "{colors.orange-ink}"
+    rounded: "{rounded.full}"
+    height: "34px"
+    padding: "7px 12px"
+    typography: "{typography.caption}"
+  lock-proof:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    padding: "18px 12px 14px"
+  lock-proof-note:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.touch}"
+    padding: "10px 12px 12px"
+  copy-field-input:
+    backgroundColor: "{colors.fill-on-surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
+    height: "40px"
+    padding: "0 12px"
+    typography: "{typography.row-title}"
+  stat-tile-value:
+    textColor: "{colors.ink}"
+    typography: "{typography.display}"
+  stat-tile-value-quiet:
+    textColor: "{colors.ink-2}"
+    typography: "{typography.title}"
   table-header:
     textColor: "{colors.ink-3}"
     typography: "{typography.caption}"
@@ -444,21 +500,21 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 
 ### Secondary
 - **Brand Aqua** (aqua): live state. The live dot, the "Watch" button when a service is streaming, switch-on, the selected check, and the "praying" state on the prayer wall.
-- **Deep Aqua** (aqua-deep): aqua darkened for text on white and sand. Active tab-bar item, section links, passage chips, the series line on detail pages, tags, focus rings, input carets, and fact icons.
+- **Deep Aqua** (aqua-deep): aqua darkened for text on white and sand. Active tab-bar item, section links, passage chips, the series line on detail pages, tags, focus rings, input carets, and fact icons. Also the inbox's action line under a waiting row, and the main series of a trend chart.
 
 ### Tertiary
-- **Bulletin Orange** (orange): the marker. The sliding section-tab underline, outline bullets, unread dots, the unread badge on the bell, audio progress and the player's scrubber, today's event dot on the day rail, and text selection. In the admin panel: the sidebar's current-page bar and its count capsules, a sorted column's arrow (in orange ink), and draft capsules on the office week.
-- **Orange Ink** (orange-ink): orange darkened for text, used in pills ("Later release") and warm row icons.
+- **Bulletin Orange** (orange): the marker. The sliding section-tab underline, outline bullets, unread dots, the unread badge on the bell, audio progress and the player's scrubber, today's event dot on the day rail, and text selection. In the admin panel: the sidebar's current-page bar and its count capsules, a sorted column's arrow (in orange ink), draft and scheduled capsules on the office rail, the "Not sent yet" chips, and the 2px outline on the chosen capsule or chip.
+- **Orange Ink** (orange-ink): orange darkened for text, used in pills ("Later release"), warm row icons, count capsules in tabs and segments, and "Time sensitive" on the lock-screen proof.
 - **Brand Beige** (beige): the masthead note line, the day rail's event dots, and the admin sidebar's group labels and mark; beige reads as text only on navy.
 
 ### Neutral
 - **Page White** (white): the page and surface in light scheme, and all text on the masthead.
 - **Sand** (sand) and **Strong Sand** (sand-strong): the bulletin's shaded boxes. Callouts, the sermon head, the player, fields and notes, quiet buttons, chips, the segmented track, row-icon tiles; strong sand for image placeholders, progress tracks, the switch off-state and disabled buttons.
-- **Ink** (ink), **Ink 2** (ink-2), **Ink 3** (ink-3): headings and titles, then body prose and subtitles, then inactive tabs, hints and trailing metadata.
+- **Ink** (ink), **Ink 2** (ink-2), **Ink 3** (ink-3): headings and titles, then body prose and subtitles, then inactive tabs, hints and trailing metadata. Ink 3 is also a trend chart's comparison series, always dashed.
 - **Hairline** (line): row dividers, the section-tab bar's bottom edge, the tab bar's top edge, pressed-row fill.
 - **Danger** (danger): the failing status word on the device check; nowhere else.
 - **Selected Fill** (selected-fill): the chosen row in a list on the page, a tonal step (sand in light) rather than a shadow. Inside the sand drafts column the step goes the other way, to the segment colour (white in light), so the selected row still stands off its ground.
-- **Fill on Surface** (fill-on-surface): fields, quiet buttons and the segmented track inside the white settings panel; sand in light, strong sand in dark, so a sand fill never vanishes into a raised navy panel.
+- **Fill on Surface** (fill-on-surface): fields, quiet buttons and the segmented track inside the white settings panel; sand in light, strong sand in dark, so a sand fill never vanishes into a raised navy panel. Also the quiet pill and the copy field.
 - **Device Bezel** (device-bezel): the black ring and cutout of the phone frame; device hardware, never a UI colour.
 
 ### Dark scheme
@@ -502,7 +558,7 @@ The root size is the iOS body text style (`font: -apple-system-body`) when the p
 - **Label** (600, 0.8529rem / 14.5px): section tabs, section links, the series link, the top bar title (0.9412rem).
 - **Caption** (400, 0.8235rem / 14px, 1.35): row subtitles, metadata, hints, chips and small buttons (at 600).
 - **Micro** (600, 0.6471rem / 11px): tab-bar labels, the unread badge (700), day-rail weekdays (+0.04em). In the admin panel, uppercase for the sidebar's group labels (+0.06em) and the office week's weekdays (+0.04em).
-- **Pill** (700, 0.7059rem / 12px, 1.3): pills, the sidebar's count capsules (tabular), and the date line inside an office-week capsule (at the capsule's weight).
+- **Pill** (700, 0.7059rem / 12px, 1.3): pills, the sidebar's count capsules (tabular), the date line inside an office-week capsule (at the capsule's weight), and the whole capsule on the fortnight rail.
 
 The admin panel keeps the 17px root (there is no iOS body style on a desk) and the same rem steps: its title band uses Headline, its section heads Title, its tables row-title size at 400 with caption-size headers.
 
@@ -527,8 +583,9 @@ The Week tab replaces section tabs with a seven-column day rail inside the masth
 A two-column shell: a 248px navy sidebar, sticky at the full window height and scrolling on its own, beside a work area padded 28px top, 40px at the sides and 64px at the foot. Each page opens on a title band (headline title, an optional caption lead up to 72ch, actions at the end, bottom-aligned and wrapping), then its content, capped at 1440px. Full-bleed views (the workbench, the preview window, the sign-in stage) cancel the work area's padding and run edge to edge.
 
 - **Office week:** the home page is the rail (36px below it), then two columns at 1.4 to 1 with a 48px gap: "Needs you" and "Your areas", both hairline rows at least 64px tall with a 34px leading tile.
+- **Announcements desk:** the fortnight rail, the "Not sent yet" chips tucked under it, then the writing column beside a sticky proof aside (280 to 340px, 24px from the top) with a 40px gap, capped at 1180px; "Sent earlier" follows as a table.
 - **Split view:** a list beside a detail column of 340 to 440px with a 32px gap, capped at 1600px; the detail is sticky 24px from the top and scrolls within the window height. Between 1201 and 1440px the detail narrows to 300 to 360px with a 24px gap. Under 1200px it drops beneath the list. A table inside the list hides its optional columns once the list is narrower than 760px.
-- **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the three-pane workbench narrows its outer panes at 1648px and drops the detail under the work area at 1428px; the office week stacks its columns and lets the rail scroll sideways (days at least 84px) at 1228px; the Access page stacks its role column above the place at 1328px.
+- **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the three-pane workbench narrows its outer panes at 1648px and drops the detail under the work area at 1428px; the office week stacks its columns and lets the seven-day rail scroll sideways (days at least 84px) at 1228px, where the announcements desk also drops its proof under the writing column (static, up to 360px); the fortnight rail always keeps days at least 56px and scrolls sideways when they don't fit; the Access page stacks its role column above the place at 1328px.
 - **Narrow (900px and under):** the sidebar becomes a sticky top strip (8 by 12px padding) that scrolls sideways: the mark without its name, the links in one row without group labels, and the marker bar turned into a 3px underline. The work area padding drops to 20px top, 16px sides and 48px foot.
 
 ### Named Rules
@@ -536,7 +593,7 @@ A two-column shell: a 248px navy sidebar, sticky at the full window height and s
 
 **The Masthead First Rule.** Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar). The admin panel has no masthead: its navy is the sidebar, and every page opens on a title band.
 
-**The One Column Rule.** No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the office week's rail and two columns, split views and the workbench, and still no grid of tool tiles.
+**The One Column Rule.** No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench and the announcements desk's writing and proof columns, and still no grid of tool tiles.
 
 ## Elevation & Depth
 
@@ -550,7 +607,7 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 - **Badge ring** (`0 0 0 2px` masthead colour): separates the unread badge from the bell.
 
 ### Named Rules
-**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow.
+**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
 
 **The Tonal Selection Rule.** A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border.
 
@@ -560,7 +617,7 @@ Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (
 
 The admin panel uses the same scale: sidebar links, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields and the search field at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. The upload drop zone is the one dashed border: 1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus.
 
-The phone frame carries device geometry, not UI shapes: a 46px screen radius inside a 9px bezel ring, a Dynamic Island capsule (124 by 36px) or a notch (160 by 32px, its bottom corners at 20px). These match the hardware being drawn; they are not part of the radius scale and never appear on a UI box.
+The phone frame carries device geometry, not UI shapes: a 46px screen radius inside a 9px bezel ring, a Dynamic Island capsule (124 by 36px) or a notch (160 by 32px, its bottom corners at 20px). The lock-screen proof draws a lock screen the same way: a 3.2rem tabular clock, and a 20px app icon at a 28% radius. These match the hardware being drawn; they are not part of the radius scale and never appear on a UI box.
 
 The church mark appears only as a mask of the supplied artwork, recoloured with the current text colour: at 7% opacity bleeding off the masthead's right edge, at 10% inside fallback covers, and in the footer and boot screen.
 
@@ -581,17 +638,19 @@ Capsules with a firm press: they scale to 0.96 on press with an ease-out curve, 
 - **Passage chips:** 32px capsules in sand with deep-aqua text and a small open-book icon; tapping opens the passage in the in-app browser.
 - **Pill:** a small (0.7059rem, 700) capsule of orange at 28% with orange-ink text, for status such as "Later release".
 - **Pray button:** a 36px sand capsule that turns aqua when you are praying.
-- **Pill tones:** Marker (the default, orange as above) for "changed in this draft" and "changed for everyone since"; Accent (aqua at 16% with deep-aqua text) for a calm state; Masthead (solid masthead colour with white text) for the event layer. An optional small icon leads the label.
+- **Pill tones:** Marker (the default, orange as above) for "changed in this draft" and "changed for everyone since"; Accent (aqua at 16% with deep-aqua text) for a calm state, and "Test" on a test notification; Masthead (solid masthead colour with white text) for the event layer; Quiet (fill-on-surface with ink-2 text) for a state that no longer matters, such as an expired or turned-off code, and the "Crash" mark in App health. An optional small icon leads the label.
 
 ### Segmented control
-A sand track (12px radius, 3px inset) of equal segments; the selected segment is a white tile (9px radius) with the segment shadow. Used for Automatic, Light, Dark.
+A sand track (12px radius, 3px inset) of equal segments; the selected segment is a white tile (9px radius) with the segment shadow. Used for Automatic, Light, Dark, the inbox's Waiting and Everything, and an announcement's Now and Later. A segment can carry a count in the same orange capsule as the tab strip's (shown only above zero).
 
 ### Lists and rows
 The workhorse. A row is a full-width line at least 56px tall: optional leading tile or thumbnail, a title (row title) with an optional caption subtitle, and trailing metadata with a chevron (or an external-link icon when it leaves the app). Rows are divided by hairlines, start with a hairline above the list, and fill with the hairline colour while pressed.
 - **Leading tiles:** 34px, 10px radius; sand with navy icon by default, aqua at 16% with deep-aqua icon for actions, orange at 30% with orange-ink icon for warm items, sand with ink-3 for quiet ones.
 - **Thumbnails:** 96px wide at 16:9, 8px radius, because sermon graphics are made for 1920 by 1080 screens; a progress track (4px, strong sand, orange fill) can sit under the subtitle for sermons in progress.
 - **Agenda rows:** a 66px tabular time column in navy before the title; past entries fade to 55%.
-- **Inbox rows:** a 9px orange dot marks unread, with the title at 700; read rows drop the dot and the title to 500.
+- **Unread and read rows:** an unread row has a 9px orange dot in a 17px gutter before its title, and the title at 700; a read row has no dot and its title at 500. Rows that are neither keep 600.
+- **Inbox:** the Notifications page's masthead note counts what needs you ("2 waiting for you · 3 new"). While something waits, a Waiting and Everything switch sits above the list, its Waiting segment carrying the count. Waiting rows are reading rows on the warm tile with an action line below in deep aqua at label size and 600 ("Preview it" and a chevron, or "Do this in the admin panel"), and a hint under the list. Everything shows every item (warm tiles for those still waiting, quiet tiles for the rest), an Accent "Test" pill on test notifications, and a small quiet "Mark all as read" under the list while anything is unread.
+- **Hint:** a caption line in ink-2, up to 65ch, 14px under a list, for one sentence about how the list behaves.
 - **Toggle rows:** a title and caption beside a 51 by 31px switch (strong sand off, aqua on, white knob).
 - **Boxed list:** the same rows inside a white, lifted, 14px panel with 16px side padding.
 - **Reading rows:** for entries you read rather than tap. Top-aligned, 22px above and below, the leading tile nudged up to sit with the title, and the subtitle at body size in ink, up to 65ch. Anything more (facts, a text link) goes below the subtitle.
@@ -610,11 +669,12 @@ The workhorse. A row is a full-width line at least 56px tall: optional leading t
 - **Style:** borderless sand fill, 12px radius, 13 by 14px padding, body size; a 600 caption label above in ink-2. Notes fields use the 14px radius and a 180px minimum height.
 - **Focus:** no outline; a 2px inset ring in deep aqua. Elsewhere focus-visible is a 2px deep-aqua outline at 2px offset.
 - **Search field (admin):** a 40px fill-on-surface field at the 12px radius, up to 420px wide, with a leading search icon in ink-3, row-size text, an ink-2 placeholder and a deep-aqua caret; focus is the 2px inset deep-aqua ring on the whole field. It settles 250ms after typing stops before it searches.
+- **Copy field:** a labelled, read-only 40px field in fill-on-surface at the 12px radius (row-size tabular text, a little tracking), with a small quiet Copy button beside it that turns to "Copied" with a check, and a polite caption status line beneath (a hint, or how to copy by hand if copying fails). Used for sign-in codes and recovery links; selecting the field selects the whole value.
 
 ### Navigation
-- **Top bar:** 48px plus the top safe area, three-column (back, centred title, actions). Transparent over the masthead with white icons; once the page scrolls past the masthead (a per-page threshold) it turns solid navy and the title fades up into view. Detail pages with a hero use it solid from the start.
+- **Top bar:** 48px plus the top safe area, three-column (back, centred title, actions). Transparent over the masthead with white icons; once the page scrolls past the masthead (a per-page threshold) it turns solid navy and the title fades up into view. Detail pages with a hero use it solid from the start. The back button carries the parent's name, and is spoken as "Back to" that name, or just "Back" when that is its label.
 - **Tab bar:** fixed, five equal items (Sunday, Week, Listen, Prayer, More), each a 24px icon over an 11px 600 label in ink-3; the active tab is deep aqua. Tapping the active tab scrolls to the top. While audio plays, three small orange bars animate beside the Listen icon on every screen. Frosted page colour with a hairline top edge.
-- **Notifications bell:** a 44px icon button in the top bar of every tab root, with an 18px orange count badge ringed in masthead navy; it opens the inbox.
+- **Notifications bell:** a 44px icon button in the top bar of every tab root, with an 18px orange count badge ringed in masthead navy; it opens the inbox, a pushed page whose top bar carries a sliders icon button to Notification settings.
 
 ### Masthead (signature)
 The cover of every tab root: navy ground, the mark at 7% opacity, 210px wide, bleeding off the right; the display title (balanced, up to 13 characters a line); a note line in beige at 600 (verse and date, a date range, a one-line purpose); then an optional slot for the screen's live element. The masthead sits under the transparent top bar, padded down by the safe area plus 56px.
@@ -630,7 +690,7 @@ A sticky, horizontally scrolling row of 600 labels in ink-3 (18px apart) that pi
 - **Player:** a sand panel (14px radius) with a 48px navy round play toggle, label and tabular position, 15s back and 30s forward skip buttons, and an orange-accented scrubber.
 
 ### Sheet
-A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome, confirmations and What's new.
+A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome, confirmations and What's new. On wide screens (720px and up) the sheet is centred, and one without a cover hides its grabber.
 - **Cover:** an optional navy band across the top of the sheet, edge to edge, in the masthead's colours. The grabber sits on it in the masthead chip colour, and the mark bleeds off the right at 7% (180px wide). The cover says what the sheet is about, so a covered sheet is usually named by its label rather than a title.
 - **Paged sheet:** steps through a few items in one sheet, each with its own cover and body. Under the body, orange page dots mark where you are: 8px, the current one widening to a 20px capsule, each in a 36 by 44px target. Swipe left or right on the cover or the body to turn the page. The actions are an optional per-page action (primary) over Next, which reads Done on the last page; with no action, Next is the primary. Only a page change slides: the next page comes in 14px from the right, the previous from the left (260ms). Opening shows only the sheet's rise. One item shows no dots.
 - **What's new:** the first paged sheet, shown once after an update. Its cover is a 44px icon tile on the masthead chip (12px radius) beside the highlight's title in headline type, with the beige note line ("New in 1.1") under the title. The body is the summary at lead size, an optional 16:9 picture and the icon fact list. More → What's new lists every version as a section of reading rows, highlights on the warm tile. The model is in [docs/architecture/changelog.md](docs/architecture/changelog.md).
@@ -646,40 +706,57 @@ Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an opt
 - **Admin overrides:** in the admin panel the workbench fills the window height, narrows its outer panes to 260 to 300px and 320 to 400px at 1648px, and drops the detail under the work area (24 by 32px padding, a hairline above) at 1428px.
 
 ### Admin sidebar (signature)
-The admin panel's masthead, turned on its side. A 248px navy column, 22px between its parts: the mark in beige at 30px beside "Good Shepherd" at 700, then the navigation in groups (Content, People, and You at the foot, set off by a 1px rule of the masthead tint and pushed to the bottom). Each group has an uppercase micro label in beige. Links are 38px, label type at 600 with a small icon, in white at 76%; hover fills them with the masthead tint at 60%, and the current link takes the full tint and white text while a 3px orange bar, rounded on its outer end, scales in from its centre at the sidebar's left edge (240ms, ease-out). A count of things waiting sits at the end of a link in an orange capsule (20px, pill type, tabular, on-marker text), only when the count is above zero, and refreshes as you move between pages. Focus rings in the sidebar are orange.
+The admin panel's masthead, turned on its side. A 248px navy column, 22px between its parts: the mark in beige at 30px beside "Good Shepherd" at 700, then the navigation in groups (Content, People, The app, and You always last at the foot, set off by a 1px rule of the masthead tint and pushed to the bottom). Each group has an uppercase micro label in beige. Links are 38px, label type at 600 with a small icon, in white at 76%; hover fills them with the masthead tint at 60%, and the current link takes the full tint and white text while a 3px orange bar, rounded on its outer end, scales in from its centre at the sidebar's left edge (240ms, ease-out). A count of things waiting sits at the end of a link in an orange capsule (20px, pill type, tabular, on-marker text), only when the count is above zero, and refreshes as you move between pages. Focus rings in the sidebar are orange.
 
 ### Title band
 The page head in the admin panel: a headline-size title (balanced, focus target for navigation), an optional caption lead in ink-2 up to 72ch, or a lead slot, an optional back link in deep aqua above the title, and actions at the end. It also sets the browser title as "Page · Good Shepherd admin".
 
 ### Office week (signature)
-- **Rail:** a sand track (14px radius, 10px padding, 8px column gap, at least 196px tall) of seven white day columns at the 10px radius that run the rail's full height. Each column carries an uppercase micro weekday in ink-3 ("Today" for the first, in orange ink) over a tabular title-large date. Today is outlined with an inset 2px primary ring.
-- **Capsules:** each dated item is a capsule (9px radius, 6 by 10px padding, caption) laid across the days it covers, one row per item: a 600 title cut off with an ellipsis over a tabular pill-size date range at 80%. Three kinds: **Everyone** (what everyone sees) in a primary fill with on-primary text; **Event layer** in accent at 16% on the surface with accent text; **Draft** (waiting in a draft) in marker at 32% on the surface with marker-ink text. A capsule presses to 0.98.
-- **Legend and quiet state:** a caption legend in ink-3 with 14 by 10px swatches appears only when something is dated; with nothing dated, one centred caption line in ink-3 sits across the rail.
+- **Day rail:** one shared rail, a week on the home page and a fortnight on Announcements. A sand track (14px radius, 10px padding, 8px column gap, at least 196px tall) of white day columns at the 10px radius that run the rail's full height. Each column carries an uppercase micro weekday in ink-3 ("Today" on today, in orange ink) over a tabular title-large date. Today is outlined with an inset 2px primary ring; days before today keep their column but fade their contents to 55%.
+- **Fortnight:** fourteen days from this week's Monday, each at least 56px wide with a 6px gap and 8 by 8px padding, the rail as tall as its contents and scrolling sideways when the days don't fit; its capsules are tighter (5 by 7px) and set entirely in pill type. A span covering the whole rail reads "The whole fortnight" instead of "All week".
+- **Capsules:** each dated item is a capsule (9px radius, 6 by 10px padding, caption) laid across the days it covers: a 600 title cut off with an ellipsis over a tabular pill-size date range at 80%. Capsules pack into bands: each takes the highest band where it doesn't touch another, so items on different days share a line. Three kinds: **Everyone** (what everyone sees) in a primary fill with on-primary text; **Event layer** in accent at 16% on the surface with accent text; **Draft** (not out yet) in marker at 32% on the surface with marker-ink text. A capsule presses to 0.98; the chosen one has a 2px marker outline at a 2px offset.
+- **Moments:** an item at one time rather than across days (an announcement's send time) reserves its own day and the next two (fewer at the rail's end), so its title has room for two lines; another item that close moves down a band. Its second line is the time alone ("7am"); the full day and time are in its tooltip.
+- **Legend and quiet state:** a caption legend in ink-3 with 14 by 10px swatches appears only when something is dated, and lists only the kinds on the rail, each in the page's own words (the home page's Draft reads "Not out yet: a draft or a scheduled announcement"). With nothing dated, one centred caption line in ink-3 sits across the rail.
 - **Needs you:** hairline rows with a marker-tinted tile (orange at 30%, orange-ink pencil), a 600 title link, a caption detail with a relative date, and a small quiet button for the action. With nothing waiting, a single hairline-ruled line with a deep-aqua check.
 - **Your areas:** hairline rows linking to each area: a sand tile with a primary icon, a 600 title, a one-line caption purpose in ink-2, and an ink-3 chevron; hover fills the row with sand at 60%.
 
+### Announcements desk
+The page where staff write, check and send an announcement, set as the fortnight it will land in.
+- **Fortnight rail:** this week and next, with sent announcements as primary capsules and scheduled ones as marker capsules, each a moment at its send time. While a time is being chosen, the announcement being written shows as a live "this one" capsule at that time, outlined as the chosen one.
+- **Not sent yet:** a row of 34px marker capsules (marker at 32% on the surface, marker-ink, caption) after a 600 caption label in ink-2: each a 600 title cut off at 28ch beside its state in pill type. The one open on the desk has the 2px marker outline; they press to 0.98.
+- **Writing column:** a title-size heading with Save status beside it, then the title and message fields, then a checklist: hairline rows (14px above and below) with a 120px label column at label size and 600 in ink-2, the field's own label hidden. The rows are Who it's for (with how many phones it would reach as its hint), When (a Now and Later segmented control; Later adds a day field beside a list of times written the church's way, up to 160px, and a caption line saying when it goes), Opens, and Urgent (a toggle). Actions close the column: a small Danger Delete on the left, then Send to my phone (quiet) and a primary button that names its reach ("Send to 42 phones", or "Schedule it").
+- **Proof aside:** the lock-screen proof, captioned with what tapping opens, then "In the app's notifications" (label size, 600, ink-2) over the unread row it will become, its message clamped to two lines.
+- **Confirm sheet:** sending opens a sheet with the lock-screen proof and a hairline summary (a 110px label column: Who it's for, When, and Urgent when it is), a warning notice when no phone would get it, and Back to writing beside the primary send.
+- **Sent earlier:** a data table of what went out before this week, newest first: when it went, how many phones it reached and how many have read it.
+- **Sent or scheduled:** the writing column becomes the state line and the message in prose (65ch); a scheduled one offers a quiet "Don't send it: back to writing".
+
 ### Data table
 The admin's working list. A toolbar row (search, filter chips) wraps above a full-width table at row-title size. Headers are caption-size 600 in ink-3 over a hairline; sortable headers are buttons whose arrow is hidden until hover and shows in orange ink on the sorted column (fading 160ms). Rows are divided by hairlines with 12px cells; numbers and dates align right in tabular figures, secondary cells are caption in ink-2, long text is cut off at 30ch. A selectable row shows a pointer, fills with selected-fill at 55% on hover and the full selected-fill when chosen; focus is an inset 2px deep-aqua ring, and the arrow keys move the selection. An empty table shows an empty state beneath it.
+
+### Charts
+- **Stat tile:** a hairline above, the value in display size at 700, a row-size 600 label in ink, then an optional caption change in ink-2 and explanation in ink-3. A value too small to show (Fewer than 5) is the quiet tile: title size in ink-2.
+- **Trend line:** the main series is a 2px deep-aqua line ending in a labelled dot, the comparison series a 2px dashed ink-3 line (its legend swatch dashed too), over hairline gridlines with pill-size tabular ticks, the plot capped at 760px. A hover crosshair shows a lifted tooltip. Columns are not focusable: the table of every number under the chart, behind a deep-aqua 600 summary, is the accessible view. With fewer than two points the chart is a sand panel at the 14px radius with one caption line in ink-2.
 
 ### Split view
 The admin's table-and-detail layout. The detail is a hairline-ruled column, not a card: 28px from a 1px line on its left, flat on the white page. When it drops beneath the list, the line moves above it. Without a selection the list takes the full width.
 
 ### Sign-in and gates
-- **Sign-in card:** a white card at the 14px radius, lifted, up to 460px wide (28px padding, 20px at the foot), centred on a full-window sand stage, with the mark and name in primary at 700 at its head; fields and quiet buttons inside it use fill-on-surface.
+- **Sign-in card:** a white card at the 14px radius, lifted, up to 460px wide (28px padding, 20px at the foot), centred on a full-window sand stage, with the mark and name in primary at 700 at its head; fields and quiet buttons inside it use fill-on-surface. A small quiet "App reviewer? Sign in with a code" switches it to the code form.
 - **Gate:** when a page needs signing in or a permission the person lacks, the title band stays and an empty state sits in a sand box at the 14px radius beneath it. A page that doesn't exist and a page that fails show the empty state alone, with a quiet button home or to try again.
 
 ### Previews
 - **Preview banner:** an orange marker strip docked just above the tab bar on every screen while a preview is on: an eye icon, the bold name of what is shown with an optional caption line, an underlined Hide, and a dark capsule Exit in on-marker colour. The page reserves room for it at its foot.
 - **Phone frame:** a phone at its true point size (each supported iPhone's width, height, safe areas and cutout), with a status bar (9:41, signal and battery), the Dynamic Island or notch, and the tab bar; the frame lifts and is scaled to fit the space it is given. It can carry its own palette, so a preview shows another palette without changing the page around it. Rows and tabs inside it do not respond to taps.
+- **Lock-screen proof:** what a notification will look like on a locked phone. A masthead-coloured panel at the 14px radius with the date in caption at 600 (on-masthead at 76%) over a 9:41 clock, then a page-coloured notification at the sheet's 22px radius: a row with a 20px masthead app icon, the app name in uppercase pill type, "Time sensitive" in marker ink when it is urgent, and "now" in ink-3, then the title at row size and 600 and the message clamped to four lines. Empty fields show placeholder words in ink-3. An optional caption sits under the panel.
 - **Home screen and surface views:** the Home masthead and its Hub tiles are drawn by one component, and each surface registers one view; the app's Home and the admin preview both draw through them, so a preview is the real screen, not a copy.
 
 ### Motion
-One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. In the admin panel the sidebar's marker bar scales in over 240ms, hovers and fills ease over 160ms (120ms for table rows), and sort arrows fade over 160ms. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag.
+One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. In the admin panel the sidebar's marker bar scales in over 240ms, hovers and fills ease over 160ms (120ms for table rows), and sort arrows fade over 160ms. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag, in the app and the admin panel alike.
 
 ## Implementation
 
 The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`, and both hosts link it: the app in full,
-the admin panel for tokens, type and the shared components. The admin shell, the office week and admin-only page styles live in the admin host's `wwwroot/css/admin.css`.
+the admin panel for tokens, type and the shared components. The admin shell, the office week's columns and admin-only page styles live in the admin host's `wwwroot/css/admin.css`; the day rail is shared and lives in `ui.css`. A feature's own screens are styled in its Client's `wwwroot/css` (the announcements desk and the inbox in `notifications.css`).
 
 - **Tokens:** `wwwroot/css/tokens.css` holds every literal colour: the semantic roles, redefined per
   `data-theme` and `data-scheme`, plus the palette-picker swatches. `ui.css` styles the components from
@@ -700,7 +777,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Masthead | `Masthead` | Title, note, and a slot for the live element |
 | Section and section head | `Section` | Title, lead, a "see all" link, a trailing slot |
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads, via `Media`), `Masthead` |
-| Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled; `Reading` for entries to read, `TitleExtra` for a pill after the title, `Below` for more |
+| Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled; `Reading` for entries to read, `TitleExtra` for a pill after the title, `Below` for more; `Unread` true or false sets the dot and the title weight |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included; the indicator sits under the top bar. Touch only, so offer a button too |
 | Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (then name it with `Label`) |
 | Paged sheet | `PagedSheet` | `Count`, a `Cover` and `Page` per index, an optional `Action`; page dots, swipe, Next and Done |
@@ -710,22 +787,26 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Dates and times | `DateLine` | Church time, `Long`/`Short`/`Relative`/`TimeOnly`, ranges, "10:30am" and "6pm" as the bulletin writes them |
 | Live/sync | `SyncIndicator` | Up to date, catching up, offline; plain or on the masthead |
 | Buttons | `Button` | Primary, Quiet, On masthead, Ghost on masthead, Live, Danger; block, small, icon-only, busy |
-| Fields | `TextField`, `SelectField`, `ToggleRow`, `Segmented` | Labels tied to inputs; hint and problem lines are described-by |
+| Fields | `TextField`, `SelectField`, `ToggleRow`, `Segmented` | Labels tied to inputs; hint and problem lines are described-by; a `SegmentOption` can carry a `Count` |
+| Copy a value | `CopyField` | Label, read-only value, Copy that turns to Copied, a polite status line |
 | Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes |
 | Loading | `Skeleton` | Rows, lines or a block, with a status for screen readers |
-| Tab bar and More | `ModuleNav` | `NavStyle.TabBar` and `MoreList`; the admin panel's sidebar is `Links`, grouped by `NavEntry.Group` (`NavGroups`), with `Counts` for the orange capsules; entries come from `NavEntry.Placement` |
+| Tab bar and More | `ModuleNav` | `NavStyle.TabBar` and `MoreList`; the admin panel's sidebar is `Links`, grouped by `NavEntry.Group` (`NavGroups`: Content, People, The app, You, with You always last), with `Counts` for the orange capsules; entries come from `NavEntry.Placement` |
 | Admin title band | `TitleBand` | Title, lead or lead slot, back link, actions; sets the browser title |
 | Admin tables | `DataTable`, `TableColumn` | Columns with a cell, an optional sort key and a class (`num`, `optional`, `quiet`, `truncate`); a toolbar slot, an empty slot, selection with the arrow keys |
 | Table and detail | `SplitView` | A list and an optional detail column, hairline-ruled |
 | Search | `SearchField` | Labelled, settles before it reports the value |
 | Filters | `FilterChips`, `FilterOption` | One choice from a set, with optional counts |
 | Office week | `IOfficeWeekSource`, `OfficeWeek` | Features contribute tasks and dated spans (`Everyone`, `Layer`, `Draft`); `NavEntry.Summary` is an area's one-line purpose on the home page |
+| Day rail | `DayRail` | `First`, `Today`, `Days` (7, or 14 for a fortnight), the spans, a hidden heading, the quiet line, a `Legend` of kinds and words, and the `Selected` href; a span whose end equals its start is a moment |
 | Admin workbench | `Workbench` | Aside, main and detail panes; `Narrow` makes it the one-column form; `Showing` picks the pane in one column |
-| Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, with an optional icon |
+| Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, `Quiet`, with an optional icon |
+| Charts | `StatTile`, `TrendLine` | `Quiet` for a value too small to show; a main and an optional comparison series, a table of every number, an `Empty` line under two points |
 | Save state | `SaveStatus` | Saved, waiting, saving, failed with a retry; an optional detail |
 | Tabs with counts | `TabStrip` | `TabOption` value, label and count; orange underline on the selected tab; a trailing slot |
 | Preview banner | `PreviewBanner` | Docked above the tab bar; title, detail, Hide, Exit |
 | Phone preview | `PhoneFrame`, `PhoneDevice` | A true-size device with status bar, cutout and tab bar, scaled to fit its space; an optional palette |
+| Lock-screen proof | `LockScreenProof` | Title, body, `TimeSensitive`, the date line, and a caption slot |
 | Home and surfaces | `HomeScreen`, `SurfaceViews` | The one way Home and the admin preview draw surfaces |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
 
