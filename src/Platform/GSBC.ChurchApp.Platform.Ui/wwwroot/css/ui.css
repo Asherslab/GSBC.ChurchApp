@@ -832,7 +832,7 @@ button.row:active, a.row:active { background: var(--line); }
 .place-explorer__link { margin: 0; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .place-explorer__note { max-width: 40ch; margin: 0; color: var(--ink-3); font-size: var(--text-caption); }
 .place-phone { min-height: 100%; }
-.row--selected .row__icon:not(.row__icon--accent) { background: var(--segment-on); }
+.row--selected .row__icon:not(.row__icon--accent) { background: var(--page); }
 
 .place-field { display: grid; gap: 6px; justify-items: start; }
 .place-field__chosen { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 8px 8px 12px; border-radius: var(--radius-field); background: var(--fill-on-surface); }
