@@ -52,7 +52,7 @@
             }
             <div class="panel-actions">
                 <Button Variant="ButtonVariant.Quiet" Icon="send" Busy="_busy" OnClick="ResendAsync">Send it again</Button>
-                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw the invitation</Button>
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _withdrawing = true">Withdraw the invitation</Button>
             </div>
             <p class="panel-hint">Sending it again makes a new link that works for 7 days. Withdrawing stops the link and removes the account they haven't set up.</p>
         </Can>
@@ -105,6 +105,14 @@
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
+<Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
+       Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private CodeReply? _link;
     private bool _busy;
@@ -116,6 +124,7 @@
     [Parameter] public EventCallback OnRemoved { get; set; }
 
     private bool _resent;
+    private bool _withdrawing;
 
     private bool InvitationExpired => Invitation is { } invitation && invitation.ExpiresAt <= Clock.GetUtcNow().UtcDateTime;
 
@@ -129,6 +138,7 @@
     private Task WithdrawAsync() => RunAsync(async () =>
     {
         await Accounts.WithdrawInvitationAsync(Person.Id);
+        _withdrawing = false;
         await OnRemoved.InvokeAsync();
     });
 

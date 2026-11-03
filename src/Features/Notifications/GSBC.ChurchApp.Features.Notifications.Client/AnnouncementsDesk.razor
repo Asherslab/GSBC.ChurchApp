@@ -188,7 +188,7 @@
         }
         @if (QuietUntil is { } morning)
         {
-            <Notice Text="@($"Phones get this {MorningWords(morning)} (quiet hours). Turn on Urgent to send it {(_later ? $"at {ChurchDates.Time(ChurchTime.ToChurch(LaterAt!.Value))}" : "now")}.")" />
+            <Notice Text="@($"Phones buzz {MorningWords(morning)} (quiet hours). Turn on Urgent to buzz them {(_later ? $"at {ChurchDates.Time(ChurchTime.ToChurch(LaterAt!.Value))}" : "now")}.")" />
         }
         @if (InQuietHours)
         {
@@ -197,7 +197,7 @@
         <LockScreenProof Title="@_editing.Title" Body="@_editing.Body" TimeSensitive="_editing.Urgent" Date="@Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)" />
         <dl class="announcement-confirm">
             <div><dt>Who it's for</dt><dd>@ReachSummary</dd></div>
-            <div><dt>When</dt><dd>@(_later ? LaterAt is { } at ? $"Goes out {Describe(at)}" : LaterLine : "Now")@(QuietUntil is { } held ? $"; phones {MorningWords(held)}" : "")</dd></div>
+            <div><dt>When</dt><dd>@(_later ? LaterAt is { } at ? $"Goes out {Describe(at)}" : LaterLine : QuietUntil is null ? "Now" : "Now in the app")@(QuietUntil is { } held ? $"; phones buzz {MorningWords(held)}" : "")</dd></div>
             @if (_editing.Urgent)
             {
                 <div><dt>Urgent</dt><dd>Yes: phones buzz straight away, even in quiet hours, and it breaks through Focus</dd></div>
@@ -593,7 +593,13 @@
         _ => "Being written",
     };
 
-    private string Describe(DateTime utc) => ChurchDates.Describe(utc, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime);
+    private string Describe(DateTime utc)
+    {
+        string described = ChurchDates.Describe(utc, DateLineStyle.Relative, withTime: true, Clock.GetUtcNow().UtcDateTime);
+        return described.StartsWith("Today", StringComparison.Ordinal) || described.StartsWith("Tomorrow", StringComparison.Ordinal) || described.StartsWith("Yesterday", StringComparison.Ordinal)
+            ? char.ToLowerInvariant(described[0]) + described[1..]
+            : described;
+    }
 
     private static string Count(int count, string one, string? many = null) => $"{count} {(count == 1 ? one : many ?? one + "s")}";
 

@@ -24,7 +24,7 @@
             <Empty>
                 @if (_filter == PeopleFilter.Invited && _query.Length == 0)
                 {
-                    <EmptyState Icon="send" Title="Every invitation has been accepted" Body="People you invite show here until they set up their sign-in." />
+                    <EmptyState Icon="send" Title="No invitations waiting" Body="People you invite show here until they set up their sign-in." />
                 }
                 else
                 {
@@ -44,6 +44,7 @@
     private bool _inviting;
 
     [SupplyParameterFromQuery] public string? Show { get; set; }
+    [SupplyParameterFromQuery(Name = "person")] public string? PersonId { get; set; }
 
     private IReadOnlyList<TableColumn<PersonInfo>> Columns =>
     [
@@ -72,6 +73,12 @@
         List<InvitationInfo> invitations = (await Accounts.ListInvitationsAsync()).Invitations;
         List<PersonInfo> people = (await searching).People;
         _invitations = invitations.ToDictionary(invitation => invitation.UserId);
+        if (_selected is null && PersonId is { } chosen && _invitations.TryGetValue(chosen, out InvitationInfo? linked))
+        {
+            _selected = AsPerson(linked);
+            PersonId = null;
+            _ = InvokeAsync(StateHasChanged);
+        }
         _selected = _selected is null ? null
             : people.FirstOrDefault(person => person.Id == _selected.Id) ?? (_invitations.TryGetValue(_selected.Id, out InvitationInfo? invited) ? AsPerson(invited) : _selected);
         return new PeopleView(people, invitations.Select(AsPerson).ToList());
@@ -93,7 +100,7 @@
     {
         PeopleFilter.Invited => _invitations.ContainsKey(person.Id),
         PeopleFilter.NoPasskey => !person.HasPasskey && !person.Disabled && !_invitations.ContainsKey(person.Id),
-        PeopleFilter.Unconfirmed => !person.EmailConfirmed && !person.Disabled,
+        PeopleFilter.Unconfirmed => !person.EmailConfirmed && !person.Disabled && !_invitations.ContainsKey(person.Id),
         PeopleFilter.TurnedOff => person.Disabled,
         _ => true,
     };

@@ -375,7 +375,7 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
   sheet with the proof, the reach and the time, and warns at 0 phones; afterwards it says
   "Sent to about 240 phones at 9:14am". When quiet hours will hold a non-urgent one, the When note, the
   confirm sheet (which then carries the Urgent switch) and the sent or scheduled line say when phones
-  get it: "Phones get this at 7am (quiet hours). Turn on Urgent to send it now." (2026-11-04). A sent one shows how many people have read it (signed-in
+  get it: "Phones buzz at 7am (quiet hours). Turn on Urgent to buzz them now." (2026-11-04). A sent one shows how many people have read it (signed-in
   readers; phones not signed in aren't counted). Older sent ones are in a *Sent earlier* table.
   Scheduled ones show on Home's week, waiting-to-send under *Needs you* and as the sidebar count
   (`AnnouncementsOfficeWeek`). The list follows the `notifications.announcements` marker feed (for
