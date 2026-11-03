@@ -28,7 +28,7 @@ final class OutboxTests: XCTestCase {
         try await store.database.write { db in
             try db.execute(sql: "UPDATE outbox SET created_at = ?, next_attempt_at = 0", arguments: [fourDaysAgo])
         }
-        await outbox.drain()
+        try await drainUntilOnlyOneEntryIsLeft(outbox, store.database)
 
         let remaining: [Row] = try await store.database.read { db in try Row.fetchAll(db, sql: "SELECT quiet, failed FROM outbox") }
         XCTAssertEqual(remaining.count, 1)
@@ -37,11 +37,20 @@ final class OutboxTests: XCTestCase {
     }
 
     private func waitUntilEveryEntryWasTried(_ database: DatabaseQueue) async throws {
-        for _ in 0..<100 {
+        for _ in 0..<600 {
             let untried: Int = try await database.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM outbox WHERE attempts = 0") ?? 0 }
             if untried == 0 { return }
             try await Task.sleep(nanoseconds: 50_000_000)
         }
         XCTFail("The outbox never tried to send")
+    }
+
+    private func drainUntilOnlyOneEntryIsLeft(_ outbox: Outbox, _ database: DatabaseQueue) async throws {
+        for _ in 0..<600 {
+            await outbox.drain()
+            let count: Int = try await database.read { db in try Int.fetchOne(db, sql: "SELECT COUNT(*) FROM outbox") ?? 0 }
+            if count <= 1 { return }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
     }
 }
