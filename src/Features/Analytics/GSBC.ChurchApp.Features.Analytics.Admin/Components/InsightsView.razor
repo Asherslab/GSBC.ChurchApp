@@ -50,11 +50,11 @@
 
     @if (summary.States.Count > 0)
     {
-        <Section Title="How phones are set up" Lead="Each phone that used the app this week counts once.">
+        <Section Title="How phones are set up">
             <div class="insights-top">
                 @foreach (TopList list in summary.States)
                 {
-                    <RankedList Title="@list.Label" Explanation="@list.Counts"
+                    <RankedList Title="@list.Label" Explanation="@list.Counts" Numbered="false"
                                 Items="@list.Entries.Select(entry => new RankedItem(entry.Label, InsightsWords.Number(entry.Count))).ToList()" />
                 }
             </div>

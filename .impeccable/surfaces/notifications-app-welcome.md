@@ -28,7 +28,7 @@ system prompt on launch, a multi-page onboarding carousel, and a second sheet st
 OWN-WORLD: The existing shell's covered sheet: navy cover band with the mark at 7%, a 44px bell tile on the
 masthead chip beside "Hear from the church" in headline type, a beige note line; the lead line at lead size;
 a full-width primary capsule and a quiet "Not now" under it. The second step keeps the band ("Notifications
-are on", note "Choose what can buzz your phone") over the settings' hairline toggle rows and Done.
+are on", note "Change these any time in More") over the settings' hairline toggle rows and Done.
 
 STORY: I open the app for the first time, read one line about what the church sends, tap Turn on notifications,
 say Allow, and see the one or two kinds I can turn off; I tap Done and I'm on Home.
@@ -36,7 +36,7 @@ say Allow, and see the one or two kinds I can turn off; I tap Done and I'm on Ho
 FIRST VIEWPORT: Home behind a 38% scrim; the sheet from the bottom: cover band with bell tile, title and note;
 the line; Turn on notifications (primary); Not now (quiet).
 
-FORM: extension of the existing covered sheet (What's new); no concept round, the owner specified the structure;
-seed: none (unavailable).
+FORM: extension of the existing covered sheet (What's new). Concept round waived: new-work says not to roll for
+a local extension or a precisely specified request, and the owner specified the structure (2026-11-03).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
