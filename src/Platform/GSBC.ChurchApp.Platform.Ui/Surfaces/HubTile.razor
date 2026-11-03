@@ -31,7 +31,10 @@
             </span>
         }
         <span class="hub-tile__words">
-            <strong class="hub-tile__title">
+            @if (GoBeside && Go is { Length: > 0 })
+            {
+                <span class="hub-tile__head">
+                    <strong class="hub-tile__title">
                 @if (Live)
                 {
                     <span class="live-dot" aria-hidden="true"></span>
@@ -42,12 +45,29 @@
                 }
                 @Title
             </strong>
+                    <span class="hub-tile__go hub-tile__go--beside">@Go<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                </span>
+            }
+            else
+            {
+                <strong class="hub-tile__title">
+                @if (Live)
+                {
+                    <span class="live-dot" aria-hidden="true"></span>
+                }
+                @if (Unread)
+                {
+                    <i class="hub-tile__dot" aria-hidden="true"></i>
+                }
+                @Title
+            </strong>
+            }
             @foreach (string line in Lines.Where(line => line.Length > 0))
             {
                 <span class="hub-tile__line">@line</span>
             }
             @ChildContent
-            @if (Go is { Length: > 0 } && Shape != TileShape.Square)
+            @if (Go is { Length: > 0 } && Shape != TileShape.Square && !GoBeside)
             {
                 <span class="hub-tile__go">@Go<Icon Name="chevron-right" Size="IconSize.Small" /></span>
             }
@@ -83,6 +103,7 @@
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public TileShape? Layout { get; set; }
+    [Parameter] public bool GoBeside { get; set; }
 
     private string? Target => Href ?? (Look.Link.Length > 0 ? Look.Link : null);
 

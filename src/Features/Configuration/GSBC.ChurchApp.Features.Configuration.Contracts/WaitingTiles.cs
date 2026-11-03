@@ -62,7 +62,7 @@ public static class WaitingTiles
         "Asks for prayer requests and opens the prayer wall", "Prayer",
         new TileDefaults("How can we pray for you?", "Share a request with the pastoral team", Tone: TileTones.LiveSoft, Icon: "prayer",
             Link: ComingSoonDestinations.Prayer.Path),
-        sample: true);
+        sample: true, offered: false);
 
     public static readonly HubTileKind Outreach = new("hub.outreach", "Outreach day",
         "Invites people to letterbox drops, and goes live while outreach is on", "Outreach",
@@ -79,27 +79,27 @@ public static class WaitingTiles
         "Your Life Group, or finding one", "Life Groups",
         new TileDefaults("Life Groups", "Find a group near you", Tone: TileTones.MarkerSoft, Icon: "users", Link: ComingSoonDestinations.LifeGroups.Path,
             TitleLabel: "Title for people not in a group"),
-        sample: true);
+        sample: true, offered: false);
 
     public static readonly HubTileKind Ministries = new("hub.ministries", "Ministries",
         "The church's ministries: kids, youth, music and more", "Ministries",
         new TileDefaults("Ministries", "Kids, youth, music and more", Tone: TileTones.LiveSoft, Icon: "sparkles", Link: ComingSoonDestinations.Ministries.Path),
-        sample: true);
+        sample: true, offered: false);
 
     public static readonly HubTileKind Give = new("hub.give", "Give",
         "Opens giving online", "Giving",
-        new TileDefaults("Give", "Online at baptist.com.au", Icon: "heart", Link: "https://baptist.com.au/give"));
+        new TileDefaults("Give", "Online at baptist.com.au", Icon: "heart", Link: "https://baptist.com.au/give"), offered: false);
 
     public static readonly HubTileKind Bible = new("hub.bible", "Bible",
         "Opens the Bible", "the Bible",
-        new TileDefaults("Bible", "King James Version", Icon: "book-open", Link: "https://www.biblegateway.com/versions/King-James-Version-KJV-Bible/"));
+        new TileDefaults("Bible", "King James Version", Icon: "book-open", Link: "https://www.biblegateway.com/versions/King-James-Version-KJV-Bible/"), offered: false);
 
     public static readonly HubTileKind Visit = new("hub.visit", "Visit us",
         "When and where the church meets", "church details",
         new TileDefaults("Visit us", "Sundays 10:30am and 6pm · 185 Old Northern Road, Albany Creek", Columns: 2, Tone: TileTones.Raised, Icon: "map-pin",
-            Link: "https://maps.apple.com/?q=185+Old+Northern+Road,+Albany+Creek+QLD+4035"));
+            Link: "https://maps.apple.com/?q=185+Old+Northern+Road,+Albany+Creek+QLD+4035"), offered: false);
 
-    public static readonly IReadOnlyList<HubTileKind> All = [Sermon, Bulletin, Week, Prayer, Give, Outreach, Bible, LifeGroups, Ministries, Visit];
+    public static readonly IReadOnlyList<HubTileKind> All = [Sermon, Bulletin, Week, Outreach, Prayer, Give, Bible, LifeGroups, Ministries, Visit];
 
     public static SurfaceSet Surfaces => new(All.Select(kind => kind.Surface).ToList());
 }

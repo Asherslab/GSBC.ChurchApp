@@ -531,7 +531,10 @@ button.row:active, a.row:active { background: var(--line); }
 .masthead--home .masthead__extra { margin-top: 8px; }
 .home-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .home-line .masthead__note { margin: 0; }
-.masthead--home + .section--first, .section--first:has(.hub-grid) { margin-top: 16px; }
+.section--first:has(.hub-grid) { margin-top: 22px; }
+.hub-tile__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
+.hub-tile__go--beside { margin-top: 0; flex: none; }
+.hub-tile--list .hub-tile__words { margin-top: 0; padding-top: 0; }
 .phone-frame .topbar { background: var(--masthead); }
 .phone-frame .section { padding: 0 var(--gutter); }
 :root { scrollbar-color: var(--sand-strong) var(--page); }

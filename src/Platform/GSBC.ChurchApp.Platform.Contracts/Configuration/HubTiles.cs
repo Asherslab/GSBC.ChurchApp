@@ -214,8 +214,9 @@ public static class HubTileKeys
 public sealed class HubTileKind
 {
     public HubTileKind(string key, string title, string description, string from, TileDefaults defaults, bool sample = false,
-        IReadOnlyList<Setting>? more = null, IReadOnlyList<TileVariant>? variants = null)
+        IReadOnlyList<Setting>? more = null, IReadOnlyList<TileVariant>? variants = null, bool offered = true)
     {
+        Offered = offered;
         Variants = variants ?? TileVariants.Words;
         Tile = TileSettings.For(defaults, Variants);
         Defaults = defaults;
@@ -227,6 +228,7 @@ public sealed class HubTileKind
     public Surface Surface { get; }
     public TileSettings Tile { get; }
     public IReadOnlyList<TileVariant> Variants { get; }
+    public bool Offered { get; }
 
     public IReadOnlyList<TileVariant> VariantsFor(TileSpan span) => Variants.Where(variant => variant.Suits(span)).ToList();
 
@@ -297,4 +299,45 @@ public static class TileVariants
         new(PictureBeside, "Picture beside", "A square picture at the start with the words beside it",
             TileVariant.Wide, (_, _) => false),
     ];
+}
+
+public sealed class TemplateSetting(string key, string label, string help = "")
+    : Setting<IReadOnlyDictionary<string, string>>(key, label, new Dictionary<string, string>(), help)
+{
+    public const int MostCharacters = 8_000;
+
+    public override bool TryParse(string text, out IReadOnlyDictionary<string, string> value)
+    {
+        Dictionary<string, string> values = [];
+        value = values;
+        foreach (string pair in text.Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            string[] parts = pair.Split('=', 2);
+            if (parts.Length != 2)
+                return false;
+            values[Uri.UnescapeDataString(parts[0])] = Uri.UnescapeDataString(parts[1]);
+        }
+        return true;
+    }
+
+    public override string Format(IReadOnlyDictionary<string, string> value) =>
+        string.Join('&', value.OrderBy(pair => pair.Key, StringComparer.Ordinal)
+            .Select(pair => $"{Uri.EscapeDataString(pair.Key)}={Uri.EscapeDataString(pair.Value)}"));
+
+    public override string? ProblemWith(string text) =>
+        text.Length > MostCharacters ? $"{Label} is too long to keep." : TryParse(text, out _) ? null : $"{Label} isn't a saved tile.";
+}
+
+public sealed class KindSetting(string key, string label) : Setting<string>(key, label, "", "")
+{
+    public override bool TryParse(string text, out string value)
+    {
+        value = text;
+        return ProblemWith(text) is null;
+    }
+
+    public override string Format(string value) => value;
+
+    public override string? ProblemWith(string text) =>
+        text.Length is > 0 and <= 80 && text.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '.' or '-') ? null : $"{Label} isn't a kind of tile.";
 }

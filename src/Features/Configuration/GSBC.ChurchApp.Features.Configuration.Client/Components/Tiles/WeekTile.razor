@@ -10,7 +10,7 @@ else if (Span is { Columns: 1, Rows: 1 } && Coming.FirstOrDefault() is { } next)
 }
 else
 {
-    <HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
+    <HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" GoBeside="true" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
         <span class="hub-list">
             @foreach (WaitingWeek.Gathering gathering in Coming.Take(Fits))
             {

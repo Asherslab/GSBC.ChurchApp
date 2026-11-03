@@ -38,6 +38,25 @@ public sealed class TileVariantTests
         Assert.NotNull(Plain.Tile.Layout.ProblemWith("poster"));
     }
 
+    [Fact]
+    public void ASavedTileKeepsEveryValueExactlyEvenWithSymbolsAndPictures()
+    {
+        Dictionary<string, string> tile = new()
+        {
+            [HubTileKeys.Title] = "Give & grow = 100% joy",
+            [HubTileKeys.Link] = "https://baptist.com.au/give?campaign=a&b=c",
+            [HubTileKeys.Image] = """{"id":"p","key":"public/p.jpg"}""",
+            [HubTileKeys.Columns] = "2",
+        };
+
+        string stored = HubSurfaces.Saved.Tile.Format(tile);
+
+        Assert.Null(HubSurfaces.Saved.Tile.ProblemWith(stored));
+        Assert.True(HubSurfaces.Saved.Tile.TryParse(stored, out IReadOnlyDictionary<string, string> back));
+        Assert.Equal(tile.OrderBy(pair => pair.Key), back.OrderBy(pair => pair.Key));
+        Assert.NotNull(HubSurfaces.Saved.Kind.ProblemWith("<script>"));
+    }
+
     private static TileLook Look(int columns, int rows, bool picture, string layout) =>
         new(columns, rows, TileTones.Sand, "", IconTones.Auto, "Camp", "", picture ? Photo : null, FocalPoint.Centre, "", layout);
 }

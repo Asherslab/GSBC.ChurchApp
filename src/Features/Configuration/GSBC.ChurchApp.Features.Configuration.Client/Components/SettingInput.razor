@@ -58,6 +58,8 @@
         </div>
         break;
     case FocusSetting:
+    case TemplateSetting:
+    case KindSetting:
         break;
     case TextSetting text:
         <TextField Label="@Setting.Label" Type="@(text.IsLink ? "url" : "text")" MaxLength="text.MaxLength" Required="text.Required" Value="@Value" ValueChanged="SetAsync" Hint="@Help" Problem="@Problem" />

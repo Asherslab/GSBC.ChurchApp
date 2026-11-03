@@ -51,5 +51,5 @@
 
     private IReadOnlyList<string> ListeningLines => [Span.Columns > 1 || Span.Rows > 1 ? $"{Date} · 38 min" : "38 min"];
 
-    private IReadOnlyList<string> AboveLines => Span is { Columns: > 1, Rows: > 1 } ? [$"{Date} · baptist.com.au", "38 min"] : [Date];
+    private IReadOnlyList<string> AboveLines => Span is { Columns: > 1, Rows: > 1 } ? [$"{Date} · 38 min"] : [Date];
 }

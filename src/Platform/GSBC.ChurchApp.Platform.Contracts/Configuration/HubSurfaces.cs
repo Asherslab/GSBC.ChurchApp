@@ -68,11 +68,22 @@ public static class HubSurfaces
                 .ToDictionary(entry => IconSetting.Custom(entry.Placement!.Id), entry => entry.Values.Get(Drawing));
     }
 
-    public static readonly HubTileKind PlainTile = new("hub.tile", "Plain tile",
-        "Your own words, picture, icon and link: a campaign, a sign-up, a page on the website", "",
+    public static class Saved
+    {
+        public static readonly TextSetting Name = new("name", "Name", "A saved tile", required: true, maxLength: 60);
+        public static readonly KindSetting Kind = new("kind", "Kind of tile");
+        public static readonly TemplateSetting Tile = new("tile", "The tile");
+
+        public static readonly Surface Surface = new("hub.saved", Area, "Saved tile", "A tile kept in the library to add again",
+            [Name, Kind, Tile], defaultOrder: 6000, repeatable: true);
+    }
+
+    public static readonly HubTileKind PlainTile = new("hub.tile", "Link tile",
+        "Your own words, icon, picture and link: Give, the Bible, Visit us, a campaign, a page on the website", "",
         new TileDefaults("A new tile", Icon: "sparkles", TitleRequired: true));
 
-    public static bool IsArrangement(Surface surface) => surface.Key == Grid.Surface.Key || surface.Key == Icon.Surface.Key;
+    public static bool IsArrangement(Surface surface) =>
+        surface.Key == Grid.Surface.Key || surface.Key == Icon.Surface.Key || surface.Key == Saved.Surface.Key;
 
-    public static SurfaceSet All => new([LinkTile.Surface, Grid.Surface, Icon.Surface, PlainTile.Surface]);
+    public static SurfaceSet All => new([LinkTile.Surface, Grid.Surface, Icon.Surface, Saved.Surface, PlainTile.Surface]);
 }

@@ -10,7 +10,6 @@
             <span id="hub-columns">Columns</span>
             <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
         </div>
-        <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
         <label class="hub-canvas__control hub-canvas__control--wide">
             <span>Show it as</span>
             <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? EveryTile">
@@ -20,13 +19,23 @@
                 }
             </select>
         </label>
-        <label class="hub-canvas__control">
-            <span>On</span>
-            <input class="hub-canvas__select" type="date" value="@Iso(_on)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
-        </label>
+        <input class="hub-canvas__select hub-canvas__date" type="date" aria-label="On a date" value="@Iso(_on)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
+        <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
     </div>
+    @if (NotShown.Count > 0 || Removed.Count > 0)
+    {
+        <button type="button" class="hub-canvas__hidden-toggle" aria-expanded="@(_listing ? "true" : "false")" @onclick="() => _listing = !_listing">
+            <Icon Name="eye-off" Size="IconSize.Small" />
+            @HiddenWords
+            <Icon Name="@(_listing ? "chevron-down" : "chevron-right")" Size="IconSize.Small" />
+        </button>
+    }
+    @if (_listing && (NotShown.Count > 0 || Removed.Count > 0))
+    {
+        @HiddenList
+    }
 
-    <div class="hub-canvas__stage" data-fit-least="0.62">
+    <div class="hub-canvas__stage" data-fit-least="0.72">
         <PhoneFrame Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
             <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
         </PhoneFrame>
@@ -34,25 +43,6 @@
     <p class="hub-canvas__keys">Drag a tile to move it, or its corner to resize it. With the keyboard: Tab to a tile, then arrows move it and Shift with arrows resizes it.</p>
     <p class="visually-hidden" aria-live="polite">@_announced</p>
 
-    @if (NotShown.Count > 0 || Removed.Count > 0)
-    {
-        <section class="hub-canvas__hidden" aria-labelledby="hub-hidden">
-            <h3 id="hub-hidden">Not on the phone @(_viewer == EveryTile ? "now" : $"for {ViewerWords}")</h3>
-            <ListGroup>
-                @foreach ((ArrangedSurface entry, string why) in NotShown)
-                {
-                    <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@why" Icon="eye-off" IconTone="RowTone.Quiet"
-                             Class="@(HubTiles.KeyOf(entry) == SelectedKey ? "row--selected" : null)" OnClick="() => OnChoose.InvokeAsync(entry)" />
-                }
-                @foreach (PlacementPatch removed in Removed)
-                {
-                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(HubTileKeys.Title) ?? "A tile")" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
-                        <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
-                    </ListRow>
-                }
-            </ListGroup>
-        </section>
-    }
 </div>
 
 @code {
@@ -61,6 +51,7 @@
     private const string SignedIn = "signed-in";
 
     private ElementReference _canvas;
+    private bool _listing;
     private IJSObjectReference? _module;
     private IJSObjectReference? _attached;
     private DotNetObjectReference<HubCanvas>? _self;
@@ -128,6 +119,33 @@
     private List<ArrangedSurface> Shown => Hub.Where(entry => HubSurfaces.IsArrangement(entry.Surface) || ShownNow(entry)).ToList();
 
     private List<(ArrangedSurface Entry, string Why)> NotShown => Tiles.Where(entry => !ShownNow(entry)).Select(entry => (entry, WhyHidden(entry))).ToList();
+
+    private string HiddenWords => (NotShown.Count, Removed.Count) switch
+    {
+        (> 0, > 0) => $"{NotShown.Count} not on the phone now, {Removed.Count} taken out",
+        (> 0, _) => $"{NotShown.Count} not on the phone now",
+        _ => $"{Removed.Count} taken out in this draft",
+    };
+
+    private RenderFragment HiddenList => __builder =>
+    {
+        <section class="hub-canvas__hidden" aria-labelledby="hub-hidden">
+                    <h3 id="hub-hidden">Not on the phone @(_viewer == EveryTile ? "now" : $"for {ViewerWords}")</h3>
+                    <ListGroup>
+                        @foreach ((ArrangedSurface entry, string why) in NotShown)
+                        {
+                            <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@why" Icon="eye-off" IconTone="RowTone.Quiet"
+                                     Class="@(HubTiles.KeyOf(entry) == SelectedKey ? "row--selected" : null)" OnClick="() => OnChoose.InvokeAsync(entry)" />
+                        }
+                        @foreach (PlacementPatch removed in Removed)
+                        {
+                            <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(HubTileKeys.Title) ?? "A tile")" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                                <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </section>
+    };
 
     private string WhyHidden(ArrangedSurface entry)
     {

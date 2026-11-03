@@ -53,7 +53,7 @@ else
 
     @if (_session is not null)
     {
-        <AddTileSheet Open="_addingTile" OpenChanged="open => _addingTile = open" OnChosen="AddTile" />
+        <AddTileSheet Open="_addingTile" OpenChanged="open => _addingTile = open" OnChosen="AddTile" Saved="SavedTiles" OnSaved="AddSaved" />
         <ShareSheet Draft="_session.Draft" Open="_sharing" OpenChanged="open => _sharing = open" Names="_names" OnShare="ShareAsync" OnUnshare="UnshareAsync" />
         <EventLayerSheet Draft="_session.Draft" Open="_turningOn" OpenChanged="open => _turningOn = open" Busy="_busy" Problem="@_problem"
                          Replacing="@(Layer is { } layer && layer.Id != _session.Draft.Id ? layer.Name : null)" OnTurnOn="TurnOnAsync" />
@@ -131,6 +131,7 @@ else
 
     private ThemeScheme _themeScheme;
     private bool _addingTile;
+    private string? _savedNote;
     private IReadOnlyDictionary<Guid, string> _roleNames = new Dictionary<Guid, string>();
     private DraftList? _list;
     private string? _loadProblem;
@@ -387,7 +388,7 @@ else
         }
         else
         {
-            <HubLibrary Icons="CustomIconEntries" OnChoose="Select" />
+            <HubLibrary Icons="CustomIconEntries" Saved="SavedTiles" OnChoose="Select" />
         }
     };
 
@@ -453,6 +454,11 @@ else
             {
                 <Button Variant="ButtonVariant.Quiet" Small="@(!Narrow)" Block="Narrow" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo this change</Button>
             }
+            if (IsHub && TileKind is not null && !Narrow)
+            {
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="CopyTile">Make a copy</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="SaveTile">@(_savedNote ?? "Save to the library")</Button>
+            }
             if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
             {
                 <Button Variant="ButtonVariant.Danger" Small="@(!Narrow)" Block="Narrow" OnClick="RemoveSelectedAsync">@(_form.Surface.Repeatable ? "Take it out" : "Back to how the app starts")</Button>
@@ -482,6 +488,52 @@ else
     private static IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => session.Patches
         .Where(patch => patch.Kind != PatchKind.Remove && patch.Touches(HubSurfaces.Area.Key, null))
         .ToDictionary(patch => patch.PlacementId, patch => patch.Kind == PatchKind.Add ? "Added" : "Changed");
+
+    private IReadOnlyList<ArrangedSurface> SavedTiles => _session is null
+        ? []
+        : _session.Arranged(HubSurfaces.Area, null).Where(entry => entry.Surface == HubSurfaces.Saved.Surface && entry.Placement is not null).ToList();
+
+    private void SaveTile()
+    {
+        if (_form is null || TileKind is not { } kind)
+            return;
+        PlacementDraft saved = PlacementDraft.New(HubSurfaces.Saved.Surface, HubSurfaces.Saved.Surface.DefaultOrder);
+        string title = _form.Values.GetValueOrDefault(HubTileKeys.Title, "");
+        saved.Values[HubSurfaces.Saved.Name.Key] = title.Length > 0 ? title : kind.Surface.Title;
+        saved.Values[HubSurfaces.Saved.Kind.Key] = kind.Surface.Key;
+        saved.Values[HubSurfaces.Saved.Tile.Key] = HubSurfaces.Saved.Tile.Format(_form.Values);
+        _session!.Set(new AreaKey(HubSurfaces.Area.Key, null), saved.ToStored(Guid.CreateVersion7().ToString()));
+        _savedNote = "Saved to the library";
+        SaveSoon();
+    }
+
+    private void CopyTile()
+    {
+        if (_form is null || TileKind is not { } kind)
+            return;
+        AddFrom(kind, _form.Values, _form.Order + 5);
+    }
+
+    private void AddSaved(ArrangedSurface saved)
+    {
+        _addingTile = false;
+        if (TileKinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind)) is not { } kind)
+            return;
+        IReadOnlyList<ArrangedSurface> tiles = HubTilesNow;
+        AddFrom(kind, saved.Values.Get(HubSurfaces.Saved.Tile), tiles.Count == 0 ? 0 : tiles.Max(entry => entry.Order) + 10);
+    }
+
+    private void AddFrom(HubTileKind kind, IReadOnlyDictionary<string, string> values, int order)
+    {
+        PlacementDraft added = PlacementDraft.New(kind.Surface, order);
+        foreach (Setting setting in kind.Surface.Settings.Where(setting => values.ContainsKey(setting.Key)))
+            added.Values[setting.Key] = values[setting.Key];
+        string id = Guid.CreateVersion7().ToString();
+        _session!.Set(_area, added.ToStored(id));
+        SaveSoon();
+        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(entry => entry.Placement?.Id == id) is { } entry)
+            Select(entry);
+    }
 
     private void AddTile(HubTileKind kind)
     {
@@ -808,6 +860,7 @@ else
 
     private void Select(ArrangedSurface entry)
     {
+        _savedNote = null;
         _changedWhileEditing = false;
         _form = PlacementDraft.Of(entry);
         _formId = entry.Placement?.Id ?? Guid.CreateVersion7().ToString();
