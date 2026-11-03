@@ -176,11 +176,12 @@ public sealed record TileSettings(
     TextSetting Text,
     MediaSetting Image,
     FocusSetting Focus,
-    LinkSetting Link)
+    LinkSetting Link,
+    ChoiceSetting Layout)
 {
-    public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link];
+    public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout];
 
-    public static TileSettings For(TileDefaults defaults) => new(
+    public static TileSettings For(TileDefaults defaults, IReadOnlyList<TileVariant> variants) => new(
         new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "In columns of the grid"),
         new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "In rows of the grid"),
         new ColourSetting(HubTileKeys.Tone, "Colour", TileTones.Choices, (defaults.Tone ?? TileTones.Sand).Value),
@@ -190,7 +191,9 @@ public sealed record TileSettings(
         new TextSetting(HubTileKeys.Text, defaults.TextLabel, defaults.Text, maxLength: 140, help: defaults.TextHelp),
         new MediaSetting(HubTileKeys.Image, "Picture", help: "Fills the top of the tile, or all of a small one"),
         new FocusSetting(HubTileKeys.Focus, "Keep in view"),
-        new LinkSetting(HubTileKeys.Link, "Opens", defaults.Link));
+        new LinkSetting(HubTileKeys.Link, "Opens", defaults.Link),
+        new ChoiceSetting(HubTileKeys.Layout, "Layout",
+            [new Choice(TileVariant.Automatic, "Automatic"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic));
 }
 
 public static class HubTileKeys
@@ -205,14 +208,16 @@ public static class HubTileKeys
     public const string Image = "image";
     public const string Focus = "focus";
     public const string Link = "link";
+    public const string Layout = "layout";
 }
 
 public sealed class HubTileKind
 {
     public HubTileKind(string key, string title, string description, string from, TileDefaults defaults, bool sample = false,
-        IReadOnlyList<Setting>? more = null)
+        IReadOnlyList<Setting>? more = null, IReadOnlyList<TileVariant>? variants = null)
     {
-        Tile = TileSettings.For(defaults);
+        Variants = variants ?? TileVariants.Words;
+        Tile = TileSettings.For(defaults, Variants);
         Defaults = defaults;
         From = from;
         Sample = sample;
@@ -221,6 +226,20 @@ public sealed class HubTileKind
 
     public Surface Surface { get; }
     public TileSettings Tile { get; }
+    public IReadOnlyList<TileVariant> Variants { get; }
+
+    public IReadOnlyList<TileVariant> VariantsFor(TileSpan span) => Variants.Where(variant => variant.Suits(span)).ToList();
+
+    public TileVariant DefaultFor(TileSpan span, bool hasPicture) =>
+        Variants.FirstOrDefault(variant => variant.Suits(span) && variant.IsDefault(span, hasPicture))
+        ?? Variants.First(variant => variant.Suits(span));
+
+    public TileVariant VariantFor(TileLook look, int gridColumns)
+    {
+        TileSpan span = new(Math.Clamp(look.Columns, 1, Math.Max(1, gridColumns)), look.Rows);
+        TileVariant? chosen = Variants.FirstOrDefault(variant => variant.Key == look.Layout);
+        return chosen is not null && chosen.Suits(span) ? chosen : DefaultFor(span, look.Image is not null);
+    }
     public TileDefaults Defaults { get; }
     public string From { get; }
     public bool Sample { get; }
@@ -229,7 +248,7 @@ public sealed class HubTileKind
 }
 
 public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon, string IconTone, string Title, string Text,
-    Media.MediaRef? Image, FocalPoint Focus, string Link)
+    Media.MediaRef? Image, FocalPoint Focus, string Link, string Layout = TileVariant.Automatic)
 {
     public static TileLook Of(HubTileKind kind, SettingValues values) => new(
         values.Get(kind.Tile.Columns),
@@ -241,5 +260,41 @@ public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon,
         values.Get(kind.Tile.Text),
         values.Get(kind.Tile.Image),
         values.Get(kind.Tile.Focus),
-        values.Get(kind.Tile.Link));
+        values.Get(kind.Tile.Link),
+        values.Get(kind.Tile.Layout));
+}
+
+public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault)
+{
+    public const string Automatic = "auto";
+
+    public static bool AnySize(TileSpan span) => true;
+
+    public static bool Small(TileSpan span) => span is { Columns: 1, Rows: 1 };
+
+    public static bool OneRowWide(TileSpan span) => span is { Rows: 1, Columns: > 1 };
+
+    public static bool Tall(TileSpan span) => span.Rows > 1;
+
+    public static bool Wide(TileSpan span) => span.Columns > 1;
+}
+
+public static class TileVariants
+{
+    public const string WordsKey = "words";
+    public const string PictureAbove = "above";
+    public const string PictureBehind = "behind";
+    public const string PictureBeside = "beside";
+
+    public static readonly IReadOnlyList<TileVariant> Words =
+    [
+        new(WordsKey, "Words and icon", "The title, the line under it and the icon; a picture isn't shown",
+            TileVariant.AnySize, (_, picture) => !picture),
+        new(PictureBehind, "Picture behind", "The picture fills the tile with the words over a shade",
+            TileVariant.AnySize, (span, picture) => picture && TileVariant.Small(span)),
+        new(PictureAbove, "Picture above", "The picture fills the top and the words sit under it",
+            TileVariant.AnySize, (_, picture) => picture),
+        new(PictureBeside, "Picture beside", "A square picture at the start with the words beside it",
+            TileVariant.Wide, (_, _) => false),
+    ];
 }

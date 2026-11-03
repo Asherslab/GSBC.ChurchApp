@@ -1,0 +1,77 @@
+{
+  "title": "Sunday bulletin: what the tile becomes at each size",
+  "question": "Each size gets a designed layout instead of being refused. Which layouts should Sunday bulletin offer? Good alternatives stay selectable in the tile's settings; you pick defaults per size.",
+  "seed": "seed:3a6fbde649f2e13c",
+  "options": [
+    {
+      "id": "verse",
+      "kind": "assigned",
+      "label": "Verse card",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The week's verse in large type, the date small: a devotional tile rather than a doorway.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Sunday bulletin at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/bulletin/verse.html",
+      "htmlFrame": "1440x900",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "poster",
+      "kind": "dealt",
+      "label": "Poster",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The bulletin's cover: icon, the year's theme large, date and verse, Read the bulletin. Needs two rows; one row tall it becomes a single line.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Sunday bulletin at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/bulletin/poster.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "theme",
+      "kind": "dealt",
+      "label": "Theme first",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The theme is the title at every size; the date and verse follow as room allows.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Sunday bulletin at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/bulletin/theme.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

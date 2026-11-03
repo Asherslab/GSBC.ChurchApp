@@ -181,3 +181,18 @@ export function reveal(selector) {
   const box = element.getBoundingClientRect();
   if (box.top > innerHeight * 0.6) element.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
+
+export function show(canvas, key) {
+  requestAnimationFrame(() => {
+    const cell = canvas.querySelector(`.hub-cell[data-tile="${CSS.escape(key)}"]`);
+    const screen = canvas.querySelector('.phone-frame__screen');
+    const tabs = canvas.querySelector('.phone-frame .tabbar');
+    if (!cell || !screen) return;
+    const box = cell.getBoundingClientRect();
+    const view = screen.getBoundingClientRect();
+    const bottom = (tabs ? tabs.getBoundingClientRect().top : view.bottom) - 16;
+    const scale = view.height / screen.clientHeight || 1;
+    if (box.bottom > bottom) screen.scrollTop += (box.bottom - bottom) / scale;
+    else if (box.top < view.top + 70 * scale) screen.scrollTop -= (view.top + 70 * scale - box.top) / scale;
+  });
+}

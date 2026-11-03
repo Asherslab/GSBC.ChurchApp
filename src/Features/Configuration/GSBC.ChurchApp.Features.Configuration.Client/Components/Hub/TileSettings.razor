@@ -39,6 +39,17 @@
     </fieldset>
 
     <fieldset class="tile-settings__group">
+        <legend>Layout at this size</legend>
+        <div class="layout-picker" role="radiogroup" aria-label="Layout at this size">
+            @LayoutChoice(TileVariant.Automatic, $"Automatic: {Kind.DefaultFor(Span, Look.Image is not null).Label}", "Changes with the tile's size", true)
+            @foreach (TileVariant variant in Kind.Variants)
+            {
+                @LayoutChoice(variant.Key, variant.Label, variant.Suits(Span) ? variant.Description : "Needs a wider tile", variant.Suits(Span))
+            }
+        </div>
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
         <legend>Colour, from the theme</legend>
         <div class="hub-swatches" role="radiogroup" aria-label="Colour">
             @foreach (TileTone tone in TileTones.All)
@@ -166,7 +177,7 @@
     private static readonly IReadOnlyList<FocalPoint> FocalPoints =
         [new(0, 0), new(50, 0), new(100, 0), new(0, 50), new(50, 50), new(100, 50), new(0, 100), new(50, 100), new(100, 100)];
 
-    private static readonly IReadOnlyList<SegmentOption<bool>> LinkKinds = [new(false, "A place in the app", "smartphone"), new(true, "A web page", "globe")];
+    private static readonly IReadOnlyList<SegmentOption<bool>> LinkKinds = [new(false, "In the app", "smartphone"), new(true, "A web page", "globe")];
 
     private TileLook Look => TileLook.Of(Kind, new SettingValues(Draft.Values));
 
@@ -233,6 +244,18 @@
         {
         }
     }
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Columns), Look.Rows);
+
+    private RenderFragment LayoutChoice(string key, string label, string description, bool suits) => __builder =>
+    {
+        bool chosen = Look.Layout == key || (key == TileVariant.Automatic && Kind.Variants.All(variant => variant.Key != Look.Layout));
+        <button type="button" role="radio" aria-checked="@(chosen ? "true" : "false")" disabled="@(!suits)"
+                class="layout-picker__choice @(chosen ? "layout-picker__choice--on" : "")" @onclick="() => SetAsync(Kind.Tile.Layout.Key, key)">
+            <strong>@label</strong>
+            <span>@description</span>
+        </button>
+    };
 
     private RenderFragment Stepper(string label, int value, int shown, int least, int most, Func<int, Task> set, string unit) => __builder =>
     {

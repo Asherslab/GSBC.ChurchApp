@@ -1,0 +1,77 @@
+{
+  "title": "Your own tile (and Give, Bible, Prayer, Life Groups, Ministries, Visit us): what the tile becomes at each size",
+  "question": "Each size gets a designed layout instead of being refused. Which layouts should Your own tile (and Give, Bible, Prayer, Life Groups, Ministries, Visit us) offer? Good alternatives stay selectable in the tile's settings; you pick defaults per size.",
+  "seed": "seed:8aba4e38306bb00b",
+  "options": [
+    {
+      "id": "above",
+      "kind": "assigned",
+      "label": "Picture above",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The picture fills the top and the words sit under it; a 1 \u00d7 1 keeps a strip of picture.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Your own tile (and Give, Bible, Prayer, Life Groups, Ministries, Visit us) at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/link/above.html",
+      "htmlFrame": "1440x900",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "behind",
+      "kind": "dealt",
+      "label": "Picture behind",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The picture fills the whole tile with the words over a shade: strongest for a campaign.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Your own tile (and Give, Bible, Prayer, Life Groups, Ministries, Visit us) at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/link/behind.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "beside",
+      "kind": "dealt",
+      "label": "Picture beside",
+      "lineage": "a tile drawn for its size",
+      "thesis": "A square picture at the start with the words beside it; needs two columns, so a 1 \u00d7 1 falls back to words and icon.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Your own tile (and Give, Bible, Prayer, Life Groups, Ministries, Visit us) at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/link/beside.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

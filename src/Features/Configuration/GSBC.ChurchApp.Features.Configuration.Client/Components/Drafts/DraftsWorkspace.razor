@@ -21,7 +21,7 @@ else if (_list is null)
 }
 else
 {
-    <Workbench Narrow="Narrow" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
+    <Workbench Narrow="Narrow" Class="@(!Narrow && _session is not null && IsHub && _view == View.Drafts ? "workbench--canvas" : null)" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
         <Aside>
             <div class="drafts-column">
                 <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
@@ -193,6 +193,10 @@ else
             {
                 <button type="button" class="draft-pane__back" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> Drafts</button>
             }
+            else if (IsHub)
+            {
+                <button type="button" class="draft-pane__back draft-pane__back--folded" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> All drafts</button>
+            }
             <header class="draft-pane__head">
                 <div class="draft-pane__title">
                     <h2>@draft.Name</h2>
@@ -267,7 +271,7 @@ else
                     <HubCanvas Hub="@session.Arranged(area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)" SelectedKey="@_selectedKey"
                                Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()"
                                RoleNames="_roleNames" OnChoose="Select" OnMove="MoveTileAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
-                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" />
+                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" />
                 }
                 else
                 {
@@ -474,6 +478,10 @@ else
     private IReadOnlyList<ArrangedSurface> HubTilesNow => _session is null
         ? []
         : _session.Arranged(HubSurfaces.Area, null).Where(entry => TileKinds.Any(kind => kind.Surface == entry.Surface) || entry.Surface == HubSurfaces.LinkTile.Surface).ToList();
+
+    private static IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => session.Patches
+        .Where(patch => patch.Kind != PatchKind.Remove && patch.Touches(HubSurfaces.Area.Key, null))
+        .ToDictionary(patch => patch.PlacementId, patch => patch.Kind == PatchKind.Add ? "Added" : "Changed");
 
     private void AddTile(HubTileKind kind)
     {

@@ -1,4 +1,4 @@
-<header class="masthead">
+<header class="masthead @Class">
     <BrandMark Class="masthead__mark" Decorative="true" />
     <h1 tabindex="-1">@Title</h1>
     @if (Note is not null)
@@ -15,4 +15,5 @@
     [Parameter, EditorRequired] public required string Title { get; set; }
     [Parameter] public string? Note { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
 }

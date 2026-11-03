@@ -15,4 +15,6 @@ public enum TileShape
     Row,
     Poster,
     Picture,
+    Behind,
+    Beside,
 }

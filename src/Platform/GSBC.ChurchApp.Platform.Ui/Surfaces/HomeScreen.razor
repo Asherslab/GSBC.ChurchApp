@@ -1,9 +1,11 @@
-<Masthead Title="Good Shepherd">
-    <p class="masthead__note"><DateLine At="At" /></p>
-    @if (Live)
-    {
-        <div class="home-status"><SyncIndicator OnMasthead="true" /></div>
-    }
+<Masthead Title="Good Shepherd" Class="masthead--home">
+    <div class="home-line">
+        <p class="masthead__note"><DateLine At="At" /></p>
+        @if (Live)
+        {
+            <SyncIndicator OnMasthead="true" />
+        }
+    </div>
 </Masthead>
 
 <Section First="true">

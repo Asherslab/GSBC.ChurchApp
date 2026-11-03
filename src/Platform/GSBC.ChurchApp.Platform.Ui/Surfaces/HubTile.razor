@@ -6,7 +6,7 @@
     {
         <button type="button" class="hub-tile__hit" aria-label="@Spoken" @onclick="OpenAsync"></button>
     }
-    @if (Shape == TileShape.Picture)
+    @if (Shape is TileShape.Picture or TileShape.Behind or TileShape.Beside)
     {
         <span class="hub-tile__picture">
             @if (Look.Image is { } image)
@@ -52,7 +52,7 @@
                 <span class="hub-tile__go">@Go<Icon Name="chevron-right" Size="IconSize.Small" /></span>
             }
         </span>
-        @if (Shape is TileShape.Row or TileShape.Picture && HasIcon && Action is null)
+        @if (Shape is TileShape.Row or TileShape.Picture or TileShape.Beside && HasIcon && Action is null)
         {
             <HubIcon Look="Look" />
         }
@@ -82,6 +82,7 @@
     [Parameter] public RenderFragment? Action { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public TileShape? Layout { get; set; }
 
     private string? Target => Href ?? (Look.Link.Length > 0 ? Look.Link : null);
 
@@ -91,9 +92,17 @@
 
     private int Width => Math.Min(Look.Columns, Hub.Columns);
 
-    private TileShape Shape => (Look.Image is not null || Cover is not null) && (Look.Rows > 1 || Width > 1)
-        ? TileShape.Picture
-        : Look.Rows > 1 ? TileShape.Poster : Width > 1 ? TileShape.Row : TileShape.Square;
+    private bool HasPicture => Look.Image is not null || Cover is not null;
+
+    private TileShape Shape => Layout switch
+    {
+        TileShape.Picture or TileShape.Behind or TileShape.Beside when !HasPicture => Plain,
+        TileShape.Beside when Width < 2 => Plain,
+        { } chosen => chosen,
+        _ => HasPicture && (Look.Rows > 1 || Width > 1) ? TileShape.Picture : Plain,
+    };
+
+    private TileShape Plain => Look.Rows > 1 ? TileShape.Poster : Width > 1 ? TileShape.Row : TileShape.Square;
 
     private string Spoken => string.Join(". ", Lines.Where(line => line.Length > 0).Prepend(Title));
 

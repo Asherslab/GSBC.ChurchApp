@@ -1,0 +1,77 @@
+{
+  "title": "Latest sermon: what the tile becomes at each size",
+  "question": "Each size gets a designed layout instead of being refused. Which layouts should Latest sermon offer? Good alternatives stay selectable in the tile's settings; you pick defaults per size.",
+  "seed": "seed:b6786a57597b96f6",
+  "options": [
+    {
+      "id": "series",
+      "kind": "assigned",
+      "label": "Series card",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The sermon series leads, with this week's sermon under it: for churches preaching through a book.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Latest sermon at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/sermon/series.html",
+      "htmlFrame": "1440x900",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "progress",
+      "kind": "dealt",
+      "label": "Where you're up to",
+      "lineage": "a tile drawn for its size",
+      "thesis": "Listening first: the play button and how far you got lead, the cover recedes.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Latest sermon at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/sermon/progress.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "cover",
+      "kind": "dealt",
+      "label": "Cover first",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The cover art carries it: just cover and play at 1 \u00d7 1, the title beside the cover at 2 \u00d7 1, the title under it when taller.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Latest sermon at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/sermon/cover.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

@@ -1,13 +1,46 @@
 @inject TimeProvider Clock
 
-<HubTile Look="Look" Title="Almighty God" Lines="[Sunday, Verse]" Go="@Look.Title" PlacementId="@Entry.Placement?.Id" />
+@switch (Variant.Key)
+{
+    case WaitingTiles.Layouts.Verse:
+        <HubTile Look="@(Look with { Icon = "" })" Layout="@(Span.Rows > 1 ? TileShape.Poster : Span.Columns > 1 ? TileShape.Row : TileShape.Square)" Title="@VerseText" Lines="VerseLines" Class="hub-tile--verse" PlacementId="@Entry.Placement?.Id" />
+        break;
+    case WaitingTiles.Layouts.Theme:
+        <HubTile Look="Look" Title="Almighty God" Lines="ThemeLines" Class="hub-tile--theme" PlacementId="@Entry.Placement?.Id" />
+        break;
+    case var _ when Span is { Columns: 1, Rows: 1 }:
+        <HubTile Look="Look" Title="@ShortSunday" Lines="[Look.Title]" PlacementId="@Entry.Placement?.Id" />
+        break;
+    case var _ when Span.Rows == 1:
+        <HubTile Look="Look" Title="Almighty God" Lines="RowLines" Go="@Look.Title" PlacementId="@Entry.Placement?.Id" />
+        break;
+    default:
+        <HubTile Look="Look" Title="Almighty God" Lines="[Sunday, Verse]" Go="@Look.Title" PlacementId="@Entry.Placement?.Id" />
+        break;
+}
 
 @code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
     [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
 
     private const string Verse = "Job 33:4";
+    private const string VerseText = "The Spirit of God hath made me, and the breath of the Almighty hath given me life.";
 
     private TileLook Look => TileLook.Of(WaitingTiles.Bulletin, Entry.Values);
 
-    private string Sunday => $"Sunday {ChurchTime.ToChurch(WaitingWeek.ThisSunday(Clock)):d MMMM}";
+    private TileVariant Variant => WaitingTiles.Bulletin.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
+    private DateTime SundayAt => ChurchTime.ToChurch(WaitingWeek.ThisSunday(Clock));
+
+    private string Sunday => $"Sunday {SundayAt:d MMMM}";
+
+    private string ShortSunday => $"Sunday {SundayAt:d MMM}";
+
+    private IReadOnlyList<string> VerseLines => [$"{Verse} · {ShortSunday}"];
+
+    private IReadOnlyList<string> RowLines => [$"{Sunday} · {Verse}"];
+
+    private IReadOnlyList<string> ThemeLines => Span is { Columns: 1, Rows: 1 } ? [ShortSunday] : RowLines;
 }

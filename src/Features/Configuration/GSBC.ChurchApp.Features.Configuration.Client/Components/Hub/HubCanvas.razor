@@ -26,7 +26,7 @@
         </label>
     </div>
 
-    <div class="hub-canvas__stage" data-fit-least="0.74">
+    <div class="hub-canvas__stage" data-fit-least="0.62">
         <PhoneFrame Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
             <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
         </PhoneFrame>
@@ -73,6 +73,7 @@
     [Parameter] public IReadOnlyList<PlacementPatch> Removed { get; set; } = [];
     [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
     [Parameter] public string? SelectedKey { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> Marks { get; set; } = new Dictionary<string, string>();
     [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
     [Parameter] public EventCallback<(ArrangedSurface Tile, int To)> OnMove { get; set; }
     [Parameter] public EventCallback<(ArrangedSurface Tile, int Columns, int Rows)> OnResize { get; set; }
@@ -144,6 +145,10 @@
         bool selected = HubTiles.KeyOf(cell.Entry) == SelectedKey;
         <div class="hub-arrange @(selected ? "hub-arrange--selected" : "")" data-arrange tabindex="0" role="button" aria-pressed="@(selected ? "true" : "false")"
              aria-label="@($"{DraftWords.NameOf(cell.Entry)}, {cell.Place.Columns} by {cell.Place.Rows}, tile {cell.Index + 1} of {Tiles.Count(ShownNow)}")">
+            @if (Marks.GetValueOrDefault(HubTiles.KeyOf(cell.Entry)) is { } mark)
+            {
+                <span class="hub-arrange__mark">@mark</span>
+            }
             @if (selected)
             {
                 <span class="hub-arrange__size" data-size>@cell.Place.Columns × @cell.Place.Rows</span>
@@ -172,7 +177,10 @@
             return;
         await InvokeAsync(() => OnChoose.InvokeAsync(entry));
         if (_module is not null)
+        {
             await _module.InvokeVoidAsync("reveal", ".workbench__detail");
+            await _module.InvokeVoidAsync("show", _canvas, key);
+        }
     }
 
     [JSInvokable]
