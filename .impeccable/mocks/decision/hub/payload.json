@@ -1,0 +1,44 @@
+{
+  "title": "Arranging Home: the Hub editor in the admin panel",
+  "question": "Staff arrange Home's tiles in a draft: add a tile (plain, or one a feature fills), size it in columns and rows, recolour it from the theme, give it an icon (built in, or an SVG they upload), say where it opens, and who sees it and when. Which arrangement of the Drafts workbench should do that?",
+  "buildPath": {"value": "code", "toggle": false},
+  "options": [
+    {
+      "id": "tiles-in-order",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Tiles in order, with the phone beside",
+      "lineage": "a running sheet: the order of service as a list",
+      "thesis": "The middle pane lists the tiles in their order as rows, each with a drag handle, its size as chips (2 × 1) and its colour swatch; the phone on the right redraws Home as you change them; the chosen row's settings open in a sheet.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "hairline rows", "size chips", "phone frame"],
+      "viewport": "Drafts column on the left; the draft's head and the Home screen tab; then rows: Latest sermon 2 × 2, Sunday bulletin 1 × 2 navy, Prayer 1 × 1, Give 1 × 1 … each with a handle, chips and a swatch; on the right a true-size phone drawing Home.",
+      "risk": "Sizes and colours are read as words and chips rather than seen where they land; resizing is a number, not a gesture.",
+      "html": ".impeccable/mocks/decision/hub/tiles-in-order.html"
+    },
+    {
+      "id": "phone-canvas",
+      "kind": "dealt",
+      "label": "The phone is the canvas",
+      "lineage": "laying out a page on the printer's proof",
+      "thesis": "The middle pane is the phone at true size, drawn by the app's own Home: drag a tile to move it, drag its corner to resize it on the grid, click it to edit it in the settings panel on the right. Columns, Add a tile and 'Show it as' sit in a strip above the phone.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "phone frame", "grid guides", "lifted settings panel"],
+      "viewport": "Drafts column; the draft head; a strip with Columns 2 3 4, Show it as Everyone, Add a tile; the phone centred with the selected tile outlined in orange with a corner handle and its size (2 × 1); on the right the tile's settings: kind, text, colour swatches with a contrast check, icon picker, opens, who sees it, dates.",
+      "risk": "Tiles hidden for this audience or outside their dates aren't on the phone; they need a list of their own under it.",
+      "html": ".impeccable/mocks/decision/hub/phone-canvas.html"
+    },
+    {
+      "id": "who-sees-what",
+      "kind": "dealt",
+      "label": "Who sees what, side by side",
+      "lineage": "proof sheets for each edition of the bulletin",
+      "thesis": "The stage shows Home three times, for a visitor, a member and on a chosen date, so audience and dates are seen rather than read; you arrange on any one and the others follow; settings in the panel on the right.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "three phone frames", "audience labels", "date chip"],
+      "viewport": "Drafts column collapsed to an icon strip; three phones at 80% across the middle labelled A visitor, A member, Sunday 8 Nov 9am; a tile only members see is drawn in the member phone and dashed in the visitor's; settings on the right.",
+      "risk": "Three phones are small on a 1280 window, and arranging on a scaled phone is fiddly.",
+      "html": ".impeccable/mocks/decision/hub/who-sees-what.html"
+    }
+  ]
+}
