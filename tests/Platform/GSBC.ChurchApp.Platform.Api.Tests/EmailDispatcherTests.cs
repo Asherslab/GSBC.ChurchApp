@@ -36,7 +36,7 @@ public sealed class EmailDispatcherTests : IAsyncLifetime
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
         {
             EmailDbContext db = scope.ServiceProvider.GetRequiredService<EmailDbContext>();
-            db.OutgoingEmails.Add(new OutgoingEmail { To = "ada@example.com", Subject = "Hello", Body = "Hi", CreatedAt = Start, NextAttemptAt = Start });
+            db.OutgoingEmails.Add(new OutgoingEmail { To = "ada@church.org.au", Subject = "Hello", Body = "Hi", CreatedAt = Start, NextAttemptAt = Start });
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -49,7 +49,28 @@ public sealed class EmailDispatcherTests : IAsyncLifetime
         OutgoingEmail email = await check.ServiceProvider.GetRequiredService<EmailDbContext>().OutgoingEmails.SingleAsync(TestContext.Current.CancellationToken);
         Assert.NotNull(email.SentAt);
         Assert.Equal(1, email.Attempts);
-        Assert.Equal(["ada@example.com"], transport.Delivered);
+        Assert.Equal(["ada@church.org.au"], transport.Delivered);
+    }
+
+    [Fact]
+    public async Task AReservedTestAddressIsNeverSent()
+    {
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            EmailDbContext db = scope.ServiceProvider.GetRequiredService<EmailDbContext>();
+            db.OutgoingEmails.Add(new OutgoingEmail { To = "e2e+places@example.com", Subject = "Code", Body = "Hi", CreatedAt = Start, NextAttemptAt = Start });
+            db.OutgoingEmails.Add(new OutgoingEmail { To = "tester@phone.test", Subject = "Code", Body = "Hi", CreatedAt = Start, NextAttemptAt = Start });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        FlakyTransport transport = new(failures: 0);
+        await DeliverAsync(transport, Start);
+        Assert.Equal(0, await DeliverAsync(transport, Start.AddDays(1)));
+
+        await using AsyncServiceScope check = _services.CreateAsyncScope();
+        List<OutgoingEmail> emails = await check.ServiceProvider.GetRequiredService<EmailDbContext>().OutgoingEmails.ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Empty(transport.Delivered);
+        Assert.All(emails, email => Assert.Equal(ReservedAddresses.NotSent, email.LastError));
     }
 
     private async Task<int> DeliverAsync(IEmailTransport transport, DateTime now)

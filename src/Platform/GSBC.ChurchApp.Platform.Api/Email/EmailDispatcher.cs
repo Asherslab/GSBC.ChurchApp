@@ -29,6 +29,15 @@ public sealed class EmailDispatcher(EmailDbContext db, IEmailTransport transport
 
         foreach (OutgoingEmail email in due)
         {
+            if (ReservedAddresses.IsReserved(email.To))
+            {
+                email.GaveUpAt = now;
+                email.LastError = ReservedAddresses.NotSent;
+                email.LeaseUntil = null;
+                logger.LogInformation("Didn't send email {EmailId}: its address is a reserved test address", email.Id);
+                continue;
+            }
+
             try
             {
                 await transport.SendAsync(new EmailMessage(email.To, email.Subject, email.Body), cancellationToken);
