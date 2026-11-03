@@ -11,6 +11,7 @@ public sealed class AccountSession
     public DateTime ExpiresAt { get; set; }
     public byte[] Ticket { get; set; } = [];
     public string? SecretHash { get; set; }
+    public Guid? ReviewCodeId { get; set; }
 }
 
 public enum SessionClient

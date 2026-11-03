@@ -107,6 +107,9 @@ public final class FeedStore: Sendable {
                 CREATE INDEX records_by_stored_cursor ON records (feed, stored_cursor);
                 """)
         }
+        migrator.registerMigration("v4-quiet-outbox") { db in
+            try db.execute(sql: "ALTER TABLE outbox ADD COLUMN quiet INTEGER NOT NULL DEFAULT 0")
+        }
         return migrator
     }
 

@@ -1,0 +1,55 @@
+@inject HealthClient Health
+@inject TimeProvider Time
+
+<LiveData TValue="ErrorKindDetail" Load="LoadAsync" FailedTitle="Can't load this error">
+    @{ ErrorKindSummary kind = context.Value.Kind!; }
+    <h2 class="panel-title health-title">@HealthWords.ShortType(kind.ExceptionType)</h2>
+    <p class="panel-lead">@HealthWords.Origin(kind.Origin)@(kind.NativeCrash ? ": a native crash, so the app closed" : ""). @HealthWords.Times(kind.Count) in the last 30 days.</p>
+
+    <dl class="facts">
+        <dt>Type</dt>
+        <dd class="health-code">@kind.ExceptionType</dd>
+        <dt>First seen</dt>
+        <dd>@When(kind.FirstSeen)</dd>
+        <dt>Last seen</dt>
+        <dd>@When(kind.LastSeen)</dd>
+        @if (kind.AppVersions.Count > 0)
+        {
+            <dt>Versions</dt>
+            <dd>@string.Join(", ", kind.AppVersions)</dd>
+        }
+    </dl>
+
+    <section class="panel-section" aria-labelledby="frames-@Id">
+        <h3 class="panel-subtitle" id="frames-@Id">Where it happened</h3>
+        @if (context.Value.Frames.Count == 0)
+        {
+            <p class="panel-hint">No stack was reported.</p>
+        }
+        else
+        {
+            <ol class="health-frames">
+                @foreach (string frame in context.Value.Frames)
+                {
+                    <li><code>@frame</code></li>
+                }
+            </ol>
+            @if (kind.NativeCrash)
+            {
+                <p class="panel-hint">Native frames are a binary and an offset. Xcode's Organizer shows the same crash with names.</p>
+            }
+        }
+    </section>
+
+    <HealthBreakdown Title="Pages" Lines="context.Value.Routes" Id="@($"routes-{Id}")" />
+    <HealthBreakdown Title="Builds" Lines="context.Value.Builds" Id="@($"builds-{Id}")" />
+    <HealthBreakdown Title="Devices" Lines="context.Value.Platforms" Id="@($"platforms-{Id}")" />
+</LiveData>
+
+@code {
+    [Parameter, EditorRequired] public required Guid Id { get; set; }
+
+    private Task<ErrorKindDetail> LoadAsync() => Health.GetErrorKindAsync(Id).AsTask();
+
+    private string When(DateTime utc) => ChurchDates.Describe(utc, DateLineStyle.Short, withTime: true, Time.GetUtcNow().UtcDateTime);
+}

@@ -11,3 +11,9 @@ public sealed record PermissionHolders(IReadOnlyList<Guid> People, IReadOnlyList
 {
     public static readonly PermissionHolders None = new([], []);
 }
+
+internal sealed class NoPermissionHolders : IPermissionHolders
+{
+    public ValueTask<PermissionHolders> HoldersAsync(Permission permission, string? objectId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(PermissionHolders.None);
+}

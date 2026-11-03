@@ -4,7 +4,9 @@ using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Hosting;
+using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -25,10 +27,15 @@ public static class AccountsApiExtensions
             .AddEntityFrameworkStores<AccountsDbContext>();
         services.AddSystemRole(new SystemRole("account-manager", "Account manager",
             "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global, ["accounts.*"]));
+        services.AddSystemRole(DemoAccounts.Role);
+        services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>();
         services.AddHostedService<AccountsCleanup>();
         services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));
         services.AddScoped<IInstallVerifier, InstallVerifier>();
         services.AddScoped<IPeopleIndex, AccountsPeopleIndex>();
+        services.AddScoped<ISignedInSessions, AccountSessionCheck>();
+        services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
+        services.AddScoped<IAccountEmails, AccountEmailLookup>();
         return services.AddPermissions(AccountsPermissions.All);
     }
 

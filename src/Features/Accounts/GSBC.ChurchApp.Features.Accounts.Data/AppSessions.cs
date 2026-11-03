@@ -13,7 +13,7 @@ public static class AppSessions
     private const int SecretBytes = 32;
     private const int MaximumDeviceNameLength = 200;
 
-    public static string Start(AccountsDbContext db, Guid userId, string? deviceName, DateTime now)
+    public static string Start(AccountsDbContext db, Guid userId, string? deviceName, DateTime now, Guid? reviewCodeId = null)
     {
         string secret = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(SecretBytes));
         string device = deviceName?.Trim() ?? "";
@@ -27,6 +27,7 @@ public static class AppSessions
             LastSeenAt = now,
             ExpiresAt = now + Lifetime,
             SecretHash = HashOf(secret),
+            ReviewCodeId = reviewCodeId,
         });
         return secret;
     }

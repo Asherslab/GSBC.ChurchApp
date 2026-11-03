@@ -1,0 +1,158 @@
+@using System.Globalization
+
+<figure class="trend-line">
+    @if (Comparison is not null)
+    {
+        <div class="trend-line__legend">
+            <span class="trend-line__key"><span class="trend-line__swatch trend-line__swatch--main"></span>@SeriesName</span>
+            <span class="trend-line__key"><span class="trend-line__swatch trend-line__swatch--comparison"></span>@ComparisonName</span>
+        </div>
+    }
+    <div class="trend-line__plot" @onpointerleave="() => _hover = null">
+        <svg viewBox="0 0 @Width @Height" role="img" aria-label="@Label" class="trend-line__svg">
+            @foreach (double tick in Ticks)
+            {
+                <line class="trend-line__grid" x1="@Left" x2="@(Width - Right)" y1="@F(Y(tick))" y2="@F(Y(tick))" />
+                <SvgLabel Class="trend-line__tick" X="@F(Left - 8)" Y="@F(Y(tick) + 4)" Anchor="end" Text="@Compact(tick)" />
+            }
+            @foreach (int index in XLabelIndexes)
+            {
+                <SvgLabel Class="trend-line__tick" X="@F(X(index))" Y="@F(Height - 6)" Anchor="@Anchor(index)" Text="@Points[index].Label" />
+            }
+            @if (Comparison is not null)
+            {
+                <path class="trend-line__series trend-line__series--comparison" d="@PathOf(Comparison)" />
+            }
+            <path class="trend-line__series trend-line__series--main" d="@PathOf(Points)" />
+            @if (_hover is { } hovered)
+            {
+                <line class="trend-line__crosshair" x1="@F(X(hovered))" x2="@F(X(hovered))" y1="@Top" y2="@(Height - Bottom)" />
+            }
+            @if (LastShown is { } last)
+            {
+                <circle class="trend-line__end" cx="@F(X(last))" cy="@F(Y(Points[last].Value!.Value))" r="4" />
+                <SvgLabel Class="trend-line__end-label" X="@F(X(last) + 10)" Y="@F(Y(Points[last].Value!.Value) + 4)" Text="@Points[last].Shown" />
+            }
+            @for (int index = 0; index < Points.Count; index++)
+            {
+                int column = index;
+                <rect class="trend-line__hit" x="@F(X(column) - Step / 2)" y="@Top" width="@F(Step)" height="@(Height - Top - Bottom)" tabindex="0"
+                      aria-label="@Describe(column)" @onpointerenter="() => _hover = column" @onfocus="() => _hover = column" @onblur="() => _hover = null" />
+            }
+        </svg>
+        @if (_hover is { } shown)
+        {
+            <div class="trend-line__tooltip" style="@TooltipPosition(shown)" aria-hidden="true">
+                <span class="trend-line__tooltip-title">@Points[shown].Label</span>
+                <span class="trend-line__tooltip-row"><span class="trend-line__swatch trend-line__swatch--main"></span><strong>@Points[shown].Shown</strong> @SeriesName</span>
+                @if (Comparison is not null && shown < Comparison.Count)
+                {
+                    <span class="trend-line__tooltip-row"><span class="trend-line__swatch trend-line__swatch--comparison"></span><strong>@Comparison[shown].Shown</strong> @ComparisonName</span>
+                }
+            </div>
+        }
+    </div>
+    @if (Note is not null)
+    {
+        <figcaption class="trend-line__note">@Note</figcaption>
+    }
+    <details class="trend-line__table">
+        <summary>Show as a table</summary>
+        <table>
+            <thead>
+                <tr><th scope="col">@PeriodName</th><th scope="col">@SeriesName</th>@if (Comparison is not null) {<th scope="col">@ComparisonName</th>}</tr>
+            </thead>
+            <tbody>
+                @for (int index = 0; index < Points.Count; index++)
+                {
+                    <tr><td>@Points[index].Label</td><td>@Points[index].Shown</td>@if (Comparison is not null && index < Comparison.Count) {<td>@Comparison[index].Shown</td>}</tr>
+                }
+            </tbody>
+        </table>
+    </details>
+</figure>
+
+@code {
+    private const int Width = 640;
+    private const int Height = 220;
+    private const int Left = 44;
+    private const int Right = 64;
+    private const int Top = 12;
+    private const int Bottom = 28;
+    private const int TickCount = 3;
+
+    private int? _hover;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<TrendPoint> Points { get; set; }
+    [Parameter] public IReadOnlyList<TrendPoint>? Comparison { get; set; }
+    [Parameter] public string SeriesName { get; set; } = "This year";
+    [Parameter] public string ComparisonName { get; set; } = "Last year";
+    [Parameter] public string PeriodName { get; set; } = "Week";
+    [Parameter] public string? Note { get; set; }
+
+    private double Step => Points.Count <= 1 ? Width - Left - Right : (Width - Left - Right) / (double)(Points.Count - 1);
+
+    private double Maximum => NiceCeiling(Points.Concat(Comparison ?? []).Select(point => point.Value ?? 0).DefaultIfEmpty(0).Max());
+
+    private IEnumerable<double> Ticks => Enumerable.Range(0, TickCount).Select(tick => Maximum * tick / (TickCount - 1));
+
+    private IEnumerable<int> XLabelIndexes => Points.Count switch
+    {
+        0 => [],
+        1 => [0],
+        _ => new[] { 0, Points.Count / 2, Points.Count - 1 }.Distinct(),
+    };
+
+    private int? LastShown => Enumerable.Range(0, Points.Count).Reverse().Cast<int?>().FirstOrDefault(index => Points[index!.Value].Value is not null);
+
+    private double X(int index) => Points.Count <= 1 ? Left : Left + index * Step;
+
+    private double Y(double value) => Top + (Height - Top - Bottom) * (1 - (Maximum <= 0 ? 0 : value / Maximum));
+
+    private string PathOf(IReadOnlyList<TrendPoint> series)
+    {
+        System.Text.StringBuilder path = new();
+        bool drawing = false;
+        for (int index = 0; index < series.Count && index < Points.Count; index++)
+        {
+            if (series[index].Value is not { } value)
+            {
+                drawing = false;
+                continue;
+            }
+            path.Append(drawing ? " L" : " M").Append(F(X(index))).Append(' ').Append(F(Y(value)));
+            drawing = true;
+        }
+        return path.ToString().Trim();
+    }
+
+    private string Anchor(int index) => index == 0 ? "start" : index == Points.Count - 1 ? "end" : "middle";
+
+    private string TooltipPosition(int index)
+    {
+        double percent = X(index) / Width * 100;
+        return percent > 60
+            ? $"right: {F(100 - percent)}%"
+            : $"left: {F(percent)}%";
+    }
+
+    private string Describe(int index) =>
+        Comparison is not null && index < Comparison.Count
+            ? $"{Points[index].Label}: {Points[index].Shown} {SeriesName}, {Comparison[index].Shown} {ComparisonName}"
+            : $"{Points[index].Label}: {Points[index].Shown}";
+
+    private static double NiceCeiling(double value)
+    {
+        if (value <= 0)
+            return 10;
+        double magnitude = Math.Pow(10, Math.Floor(Math.Log10(value)));
+        double scaled = value / magnitude;
+        double nice = scaled <= 1 ? 1 : scaled <= 2 ? 2 : scaled <= 5 ? 5 : 10;
+        return nice * magnitude;
+    }
+
+    private static string Compact(double value) => value >= 1000 ? $"{value / 1000:0.#}K" : value.ToString("0", CultureInfo.InvariantCulture);
+
+    private static string F(double value) => value.ToString("0.#", CultureInfo.InvariantCulture);
+}

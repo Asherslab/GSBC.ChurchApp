@@ -1,0 +1,27 @@
+<div class="ranked-list">
+    <h3 class="ranked-list__title">@Title</h3>
+    @if (Explanation is not null)
+    {
+        <p class="ranked-list__explanation">@Explanation</p>
+    }
+    @if (Items.Count == 0)
+    {
+        <p class="ranked-list__empty">@Empty</p>
+    }
+    else
+    {
+        <ol class="ranked-list__items">
+            @foreach (RankedItem item in Items)
+            {
+                <li class="ranked-list__item"><span class="ranked-list__label">@item.Label</span><span class="ranked-list__value">@item.Value</span></li>
+            }
+        </ol>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<RankedItem> Items { get; set; }
+    [Parameter] public string? Explanation { get; set; }
+    [Parameter] public string Empty { get; set; } = "Nothing yet.";
+}

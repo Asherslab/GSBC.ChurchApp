@@ -9,6 +9,7 @@ namespace GSBC.ChurchApp.Platform.Api.RateLimiting;
 public static class RateLimits
 {
     public const string PublicWrites = "public-writes";
+    public const string Reports = "reports";
 
     public static IServiceCollection AddPlatformRateLimits(this IServiceCollection services) =>
         services.AddRateLimiter(options =>
@@ -17,6 +18,9 @@ public static class RateLimits
             options.AddPolicy(PublicWrites, context => RateLimitPartition.GetFixedWindowLimiter(
                 ClientAddress(context),
                 _ => new FixedWindowRateLimiterOptions { PermitLimit = 10, Window = TimeSpan.FromMinutes(1) }));
+            options.AddPolicy(Reports, context => RateLimitPartition.GetFixedWindowLimiter(
+                ClientAddress(context),
+                _ => new FixedWindowRateLimiterOptions { PermitLimit = 600, Window = TimeSpan.FromMinutes(1) }));
         });
 
     public static string ClientAddress(HttpContext context) =>

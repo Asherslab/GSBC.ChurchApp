@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Access.Admin;
+using GSBC.ChurchApp.Features.Analytics.Admin;
 using GSBC.ChurchApp.Features.Accounts.Admin;
 using GSBC.ChurchApp.Features.Configuration.Admin;
 using GSBC.ChurchApp.Features.Media.Admin;
@@ -27,7 +28,8 @@ builder.Services
     .AddMediaAdmin(modules)
     .AddNotificationsAdmin(modules)
     .AddAccountsAdmin(modules)
-    .AddAccessAdmin(modules);
+    .AddAccessAdmin(modules)
+    .AddAnalyticsAdmin(modules);
 
 WebAssemblyHost host = builder.Build();
 await host.Services.RunClientStartupTasksAsync();

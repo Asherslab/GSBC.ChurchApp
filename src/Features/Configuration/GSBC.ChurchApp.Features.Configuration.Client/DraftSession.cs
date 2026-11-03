@@ -71,6 +71,15 @@ internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces)
         return (set, cleared);
     }
 
+    public void Forget(string placementId)
+    {
+        _dirty.Remove(placementId);
+        if (Draft.Patches().FirstOrDefault(patch => patch.PlacementId == placementId) is { } saved)
+            _patches[placementId] = saved;
+        else
+            _patches.Remove(placementId);
+    }
+
     public void MarkUnsaved(IEnumerable<PatchMessage> set, IEnumerable<string> cleared) =>
         _dirty.UnionWith(set.Select(patch => patch.PlacementId).Concat(cleared));
 

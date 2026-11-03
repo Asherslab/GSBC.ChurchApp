@@ -14,6 +14,10 @@ builds on SPEC §5.
 - **Screens read the store, never the network.** A screen renders what is stored at once and
   re-renders when Sync says its feed changed. There is no fetch-then-show path to go stale or fail.
 - **Writes go to the outbox** and show as pending until the server confirms them (SPEC §5).
+  **Quiet entries** (built 2026-11-03 for [analytics](../features/analytics.md)) are the exception: usage
+  and error reports never show in Storage, never raise "couldn't send", and are deleted silently when
+  they give up (three days). `IOutbox.EnqueueQuietlyAsync`, and `DiscardQuietAsync` when someone turns
+  "Help improve the app" off.
 - **Gone means gone.** A feed the app no longer registers is dropped; a format change resets a feed.
 - **The sync stream is the phone's connection.** Its state (live, catching up, offline) is the one
   signal for "online", and a retry while offline still reads as offline, so nothing flickers.
@@ -129,5 +133,35 @@ it goes into the file cache like any other media.
 
 ## The admin panel
 
-Online only. It keeps state in memory, fed by the same `Watch` stream (SPEC §5), so staff see each
-other's changes live.
+Online only, with no store. Its pages stay current the way the phone's do (`ClientSignals`, `LiveData`,
+`RefreshOn`), fed by the same `Sync.Watch` stream over gRPC-Web (built 2026-11-03), so staff see each
+other's changes within a second or two.
+
+- **One stream, generic.** `FeedWatch` (Platform.Client, registered by `AddGrpcWebTransport`) holds one
+  `Watch` call for every feed the open pages name. `LiveData` and `RefreshOn` follow the feeds they're
+  given, so naming a feed is all a page does; no feature wires anything up.
+- **Signals, not data.** The browser keeps a cursor per feed and nothing else. A change becomes a feed
+  change in `ClientSignals`, and the page reloads through its own gRPC methods.
+- **It starts at now.** A feed the browser hasn't watched yet is asked for with `FeedCursor.Latest`, so
+  no history is replayed. When the stream is up those feeds get one reload, which closes the gap between
+  a page's first load and the stream starting.
+- **Admin records need a feed too.** Records that never go to phones get a feed of *markers*
+  (`FeedChangeRecord.Marker`: no payload, just which record changed): `access.roles` (any change to
+  roles or who holds them; audience `access.view`), `media.library` (an item added, deleted, or used
+  or no longer used; `media.view`) and `accounts.people` (written with every audit entry;
+  `accounts.view`). The audience is checked per row on the server like every feed, so nobody hears of a
+  change they couldn't see. A new admin screen showing records phones don't sync adds one.
+- **Your own access** follows `access.grants`, so a role given or taken away by someone else changes
+  the sidebar and the pages at once.
+- **Reconnects** resume from the cursors, so nothing is missed. A dropped stream is retried at once,
+  then with backoff and jitter up to 30 seconds; the panel only counts as offline after the second
+  failure, and coming back online reloads every page.
+- **A tab in the background:** a stream with no heartbeat for 75 seconds is treated as dead. Coming back
+  to the tab, or the network coming back, reconnects at once (`feed-watch.js`).
+- **A session that ends** (signed out everywhere, ended from another device, expired): the server checks
+  a stream's sign-in each time it wakes, on every change and every heartbeat, and ends the stream with
+  `Unauthenticated` once the session is gone (`ISignedInSessions`, answered by Accounts). The browser
+  reconnects without it, its private feeds reset, and the panel asks to sign in. Phones' streams get the
+  same check.
+- **Editing something that changes underneath you:** see [drafts.md](drafts.md), *Live in the admin
+  panel*.

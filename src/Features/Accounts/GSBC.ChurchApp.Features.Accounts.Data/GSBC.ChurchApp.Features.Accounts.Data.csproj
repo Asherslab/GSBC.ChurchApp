@@ -8,5 +8,6 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Data\GSBC.ChurchApp.Platform.Data.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Accounts.Contracts\GSBC.ChurchApp.Features.Accounts.Contracts.csproj" />
   </ItemGroup>
 </Project>

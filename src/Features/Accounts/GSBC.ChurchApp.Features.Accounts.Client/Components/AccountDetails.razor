@@ -1,7 +1,7 @@
 @inject AccountsClient Accounts
 @inject IPasskeyCeremonies Passkeys
 
-<LiveData @ref="_live" TValue="AccountView" Load="LoadAsync" FailedTitle="Can't reach the church's server">
+<LiveData @ref="_live" TValue="AccountView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't reach the church's server">
     <Section First="true" Title="You">
         <TextField Label="Name" Value="@(_name ?? context.Value.Profile.DisplayName)" ValueChanged="value => _name = value" AutoComplete="name" />
         <div class="ui-actions ui-after">
@@ -12,7 +12,7 @@
                 <ListRow Title="@context.Value.Profile.Email" Subtitle="@(context.Value.Profile.EmailConfirmed ? "Confirmed" : "Not confirmed yet")" Icon="send" IconTone="RowTone.Quiet" />
             </ListGroup>
         </div>
-        @if (!context.Value.Profile.EmailConfirmed)
+        @if (!context.Value.Profile.EmailConfirmed && !context.Value.Profile.DemoAccount)
         {
             <div class="ui-after">
                 <TextField Label="Code from the email" Value="@_code" ValueChanged="value => _code = value" AutoComplete="one-time-code" Hint="Confirming lets you get back in by email if you lose your passkeys." />
@@ -24,24 +24,35 @@
         }
     </Section>
 
-    <Section Title="Passkeys" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
-        <ListGroup>
-            @foreach (PasskeySummary passkey in context.Value.Passkeys)
-            {
-                <ListRow Title="@passkey.Name" Subtitle="@PasskeyLine(passkey)" Icon="key" IconTone="RowTone.Accent">
-                    <TrailingContent>
-                        @if (context.Value.Passkeys.Count > 1)
-                        {
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RemoveAsync(passkey.Id)">Remove</Button>
-                        }
-                    </TrailingContent>
-                </ListRow>
-            }
-        </ListGroup>
-        <div class="ui-after">
-            <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" OnClick="AddPasskeyAsync">Add a passkey on this device</Button>
-        </div>
-    </Section>
+    @if (context.Value.Profile.DemoAccount)
+    {
+        <Section Title="Signed in with a code">
+            <Card Title="This is a demo account">
+                It's for reviewing the app, so it signs in with a code instead of a passkey and has no personal data.
+            </Card>
+        </Section>
+    }
+    else
+    {
+        <Section Title="Passkeys" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
+            <ListGroup>
+                @foreach (PasskeySummary passkey in context.Value.Passkeys)
+                {
+                    <ListRow Title="@passkey.Name" Subtitle="@PasskeyLine(passkey)" Icon="key" IconTone="RowTone.Accent">
+                        <TrailingContent>
+                            @if (context.Value.Passkeys.Count > 1)
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RemoveAsync(passkey.Id)">Remove</Button>
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+            <div class="ui-after">
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" OnClick="AddPasskeyAsync">Add a passkey on this device</Button>
+            </div>
+        </Section>
+    }
 
     <Section Title="Where you're signed in">
         <ListGroup>

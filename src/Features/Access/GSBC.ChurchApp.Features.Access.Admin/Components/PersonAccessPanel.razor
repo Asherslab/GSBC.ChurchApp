@@ -2,7 +2,7 @@
 @inject IPeopleDirectory People
 @inject IScopeNames ScopeNames
 
-<LiveData @ref="_live" TValue="PersonView" Load="LoadAsync" FailedTitle="Can't load what they can do">
+<LiveData @ref="_live" TValue="PersonView" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load what they can do">
     <header class="person-head">
         <h2 class="person-head__name">@context.Value.Person.Name</h2>
         <p class="person-head__email">@context.Value.Person.Email</p>

@@ -35,6 +35,13 @@ outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone
 (passkeys, sessions, recovery, invitations, staff tools), and Access (roles, assignments, the
 evaluator behind every `[Requires]`, admin screens).
 
+**Analytics and error reporting (2026-11-03, branch `feature/analytics`):** errors from phones (Blazor and
+iOS native crashes), the admin panel and the server reach App health in the admin panel, with an email per
+new kind; failed calls are counted by the server and the phones; usage totals (phones per day, week and
+month, new phones, Hub tile taps) reach Insights for the Insights viewer role. Everything travels as quiet
+outbox entries over gRPC; "Help improve the app" under More turns it off
+([analytics.md](features/analytics.md)).
+
 **Waiting on the owner:**
 
 - ~~The Apple enrolment~~: done 2026-11-03. The church is enrolled as an organisation (the church
@@ -90,6 +97,21 @@ install shows nothing; a staged update shows the highlight once) and deployed to
 What to Test call and the tag push first run with the first TestFlight build.
 
 **Admin panel (2026-11-03, branch `feature/admin-design`):** redesigned for a computer (build order 7); checked on `dev-app.baptist.com.au` at 1280, 1440 and 1920, light and dark.
+
+**Review sign-in codes (2026-11-03, branch `feature/review-code`):** Apple's reviewers sign in to a
+demo account (the App reviewer role) with a sign-in code made on the admin panel's App review page,
+through the gRPC `Accounts.SignInWithCode`; no passwords and no new API path
+([identity.md](architecture/identity.md), *Review sign-in codes*). Tested against Postgres and natively;
+what goes in App Store Connect is in [environments.md](architecture/environments.md), *Sign-in for Apple's
+reviewers*.
+
+**The admin panel is live (2026-11-03, branch `feature/admin-live`):** pages update within a second or
+two when anyone changes what they show (drafts, publishing, media, roles, people, your own access), over
+the same `Sync.Watch` stream as the phone, and an open stream ends when its sign-in does
+([offline-and-caching.md](architecture/offline-and-caching.md), *The admin panel*; two people in one
+draft: [drafts.md](architecture/drafts.md), *Live in the admin panel*). Proven through `dev-app.baptist.com.au`: the
+stream starts at the latest cursor and a committed change arrives at once; the two-window test with two
+signed-in accounts is the owner's to run (it needs their passkeys).
 
 **Notifications and push (2026-11-03, branch `feature/notifications`):** the design is approved
 ([notifications.md](architecture/notifications.md)) and built: App Attest (the `[AppInstall]` tier), phones as

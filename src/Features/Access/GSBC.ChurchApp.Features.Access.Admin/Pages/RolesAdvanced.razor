@@ -3,7 +3,7 @@
 
 <TitleBand Title="Roles: developer tool" BackHref="access/roles" BackText="Roles" Lead="Raw permission patterns and included roles. Staff use Roles, which copies a built-in role and shows what changes before saving." />
 
-<LiveData @ref="_live" TValue="ToolData" Load="LoadAsync" FailedTitle="Can't load roles right now">
+<LiveData @ref="_live" TValue="ToolData" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load roles right now">
     <SplitView Detail="@Editor(context.Value)" DetailLabel="Edit a role">
         <DataTable TItem="RoleInfo" Label="Roles" Items="context.Value.Roles" Columns="RoleColumns(context.Value.Roles)" Key="role => role.Id"
                    Selected="_editing" SelectedChanged="Edit" SortColumn="0">

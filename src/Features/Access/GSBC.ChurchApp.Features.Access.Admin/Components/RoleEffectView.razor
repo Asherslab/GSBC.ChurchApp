@@ -8,7 +8,7 @@
 else
 {
     <Notice Tone="NoticeTone.Warning">This changes what @AccessWords.Holders(Effect.People.Count) can do.</Notice>
-    <LiveData TValue="Names" Load="LoadAsync">
+    <LiveData TValue="Names" Feeds="[AccessFeeds.Roles]" Load="LoadAsync">
         <ul class="effect-list">
             @foreach (PersonEffect person in Effect.People)
             {

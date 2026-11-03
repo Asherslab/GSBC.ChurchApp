@@ -10,14 +10,14 @@ public sealed class ClientSignals : IDisposable
 {
     private static readonly IReadOnlySet<string> NoFeeds = new HashSet<string>();
 
-    private readonly ILocalFeeds? _feeds;
+    private readonly IFeedSignals? _feeds;
     private readonly IOutbox? _outbox;
     private readonly IAccess _access;
     private readonly SessionSignal _session;
 
     public ClientSignals(IServiceProvider services, IAccess access, SessionSignal session)
     {
-        _feeds = services.GetService<ILocalFeeds>();
+        _feeds = services.GetService<IFeedSignals>();
         _outbox = services.GetService<IOutbox>();
         _access = access;
         _session = session;
@@ -37,6 +37,12 @@ public sealed class ClientSignals : IDisposable
     public bool Online { get; private set; }
 
     public event Action<ClientChange>? Changed;
+
+    public void Follow(IReadOnlyCollection<string>? feeds)
+    {
+        if (feeds is { Count: > 0 })
+            _feeds?.Follow(feeds);
+    }
 
     public void Dispose()
     {

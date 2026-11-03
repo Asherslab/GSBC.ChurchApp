@@ -148,9 +148,11 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   stays marked until someone settles it.
 - **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. Until
   Home is built the preview draws an area's surfaces generically.
-- **The phone** gets the same drafts component in one column (More → Drafts), More → Previews (*What
+- **The phone** gets More → Previews (*What
   everyone sees* or a draft; *Show it as* Me, A visitor, A member; *On a date*), and the banner, docked to
   the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
+- **Drafts are made and edited in the admin panel only;** the app has no Drafts screen (owner,
+  2026-11-03: admin work stays in the admin panel).
 - **Home screen and Colours** in the admin panel become read-only views of what everyone sees; *Change it*
   starts a draft, or carries on your open one.
 
@@ -189,8 +191,23 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
   draft.
 - **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
-  (hideable until the app next comes to the foreground), More → Drafts, and Home listing the Hub's
+  (hideable until the app next comes to the foreground), and Home listing the Hub's
   link tiles. The phone previews from the signed-in account.
+
+### Live in the admin panel (2026-11-03)
+
+The drafts page follows `config.drafts` and `config.placements` through the admin panel's live stream
+([offline-and-caching.md](offline-and-caching.md), *The admin panel*), so someone else's save shows
+within a second or two:
+
+- **The draft you have open** takes in their changes as they save. Saves are per row, so two people
+  working on different rows of one draft don't disturb each other.
+- **The row you're editing** keeps what you've typed. If their save changed that same row, it says
+  *Someone else changed this while you were editing it. What you type next saves over their change*,
+  with *Show their version* (drops your unsaved typing for that row and shows theirs) and *Keep mine*.
+- **What everyone sees** (Live) is refreshed when you close the row you're editing, so the form doesn't
+  shift under you; a field changed for everyone then shows as usual, to settle before publishing.
+- **A draft published or deleted by someone else** closes, with a note saying so.
 
 **Decided while building (no owner question needed):**
 
@@ -210,8 +227,6 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
 
 ## Open
 
-- **The admin panel isn't live yet:** it has no feed store, so it refreshes on its own saves,
-  reconnects and access changes, not when someone else edits the same draft.
 - **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.

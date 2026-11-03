@@ -19,6 +19,12 @@ Three apps that sit side by side on one phone, each with its own backend, passke
 | `GSBC_DEVELOPMENT_BUILD` | `YES`: the development feed and tools | `NO` | `NO` |
 | Caching | `no-store` on everything | Production's | Production's |
 
+**Which environment a report came from:** each environment's app reports errors and usage to its own
+backend, so App health and Insights in UAT's admin panel only ever show UAT's phones, and dev's only dev's.
+App health names its environment (the host of `Accounts:SiteUrl`) in its lead and in the new-error email,
+and marks errors that only came from development builds ("Dev builds"), which covers a dev build pointed at
+UAT's gateway ([analytics.md](../features/analytics.md)).
+
 A passkey can never change domain, so each environment's accounts are its own: a UAT account doesn't
 exist in dev, and dev's passkeys from before the rename (on `dev.baptist.com.au`) don't work on
 `dev-app.baptist.com.au`. Recover the account by email and add a passkey. An account holding a sensitive
@@ -138,6 +144,45 @@ the uploaded commit `testflight/uat/<build>` and sets the build's What to Test f
 the previous tag, once Apple has processed it ([changelog.md](changelog.md)). **A TestFlight build expires 90 days after upload** and then won't open, so cut a fresh one at
 least every couple of months even when nothing changed, and before showing staff anything new. Only
 UAT's backend has to be up; the build carries everything else.
+
+## Sign-in for Apple's reviewers
+
+Apple reviews a build before external TestFlight testers get it and before it goes on the App Store, and
+its reviewers can't make a passkey on a church account. They sign in to a **demo account** with a
+**sign-in code** instead ([identity.md](identity.md), *Review sign-in codes*). Codes belong to one
+environment: make them in UAT's admin panel (`uat-app.baptist.com.au`) for TestFlight, and in
+production's for the App Store.
+
+**Once per environment:** admin panel → **App review** → **Make a demo account**: name `App Review`, an
+email of its own that no one uses, such as `review@baptist.com.au` (nothing is ever sent to it). It
+needs the Account manager role, which the Owner holds.
+
+**For each review:** **App review** → **Make a code**: what it's for (`TestFlight 1.0 (12)`), 30 days →
+copy the code (`ABCD-EFGH-JKMN`); it's shown only once. Then, in App Store Connect:
+
+- **External TestFlight:** **Apps** → **GSBC UAT** → **TestFlight** → **Test Information** → **Beta App
+  Review Information**.
+- **The App Store:** **Apps** → the app → the version being submitted → **App Review Information**.
+
+Fill in both the same way:
+
+| Field | What goes in it |
+|---|---|
+| **Sign-in required** | Ticked |
+| **User name** | The demo account's email, `review@baptist.com.au` |
+| **Password** | The code, `ABCD-EFGH-JKMN` |
+| **Notes** | The text below |
+
+> This app signs in with passkeys, so there are no passwords. For review there's a demo account
+> that signs in with a code. Open **More → Account**, tap **Have a sign-in code?**, and enter the user
+> name above as the email and the password above as the sign-in code. The demo account has no personal
+> data and no staff tools. Everything public in the app works without signing in.
+
+The code works as often as needed until it expires, so several reviewers can share it. Once Apple has
+approved the build, turn the code off (**App review** → the code → **Turn the code off**); anyone
+signed in with it is signed out. Every use is in the demo account's activity (**People** → the demo
+account). Five wrong codes for the account in 15 minutes lock it for 15 minutes, so if a reviewer reports
+that the code didn't work, check the code in App Store Connect before making a new one.
 
 ## Setting it up (owner, in this order)
 

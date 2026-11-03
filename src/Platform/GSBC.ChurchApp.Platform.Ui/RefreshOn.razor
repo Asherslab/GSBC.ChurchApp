@@ -10,6 +10,8 @@
 
     protected override void OnInitialized() => Signals.Changed += OnChanged;
 
+    protected override void OnParametersSet() => Signals.Follow(Feeds);
+
     private void OnChanged(ClientChange change)
     {
         if (change.Concerns(Kinds, Feeds))

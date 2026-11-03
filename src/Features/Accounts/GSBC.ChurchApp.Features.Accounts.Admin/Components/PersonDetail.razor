@@ -42,7 +42,7 @@
 
     <section class="panel-section" aria-labelledby="activity-@Person.Id">
         <h3 class="panel-subtitle" id="activity-@Person.Id">Recent activity</h3>
-        <LiveData TValue="List<AuditInfo>" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
+        <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
             @if (context.Value.Count == 0)
             {
                 <p class="panel-hint">Nothing yet.</p>
@@ -118,6 +118,11 @@
         "name-changed" => "Changed their name",
         "disabled" => "Account turned off",
         "enabled" => "Account turned back on",
+        "demo-account-created" => "Made as a demo account",
+        "review-code-created" => "Sign-in code made",
+        "review-code-turned-off" => "Sign-in code turned off",
+        "review-code-used" => "Signed in with a code",
+        "review-code-refused" => "A sign-in code was refused",
         _ => action,
     };
 }

@@ -1,0 +1,60 @@
+@using Grpc.Core
+@inject AccountsClient Accounts
+
+<h2 class="panel-title">@Code.Label</h2>
+<p class="panel-lead">@(Account is null ? "Its demo account was removed." : $"Signs in to {Account.DisplayName}, {Account.Email}.")</p>
+
+<dl class="facts">
+    <dt>State</dt>
+    <dd><ReviewCodeState Code="Code" /></dd>
+    <dt>Made</dt>
+    <dd><DateLine At="Code.CreatedAt" /> by @Code.CreatedBy</dd>
+    <dt>@(Code.TurnedOffAt is null ? "Expires" : "Turned off")</dt>
+    <dd><DateLine At="@(Code.TurnedOffAt ?? Code.ExpiresAt)" /></dd>
+    <dt>Used</dt>
+    <dd>@(Code.Uses == 0 ? "Not yet" : Code.Uses == 1 ? "Once" : $"{Code.Uses} times")</dd>
+    @if (Code.LastUsedAt is { } lastUsed)
+    {
+        <dt>Last used</dt>
+        <dd><DateLine At="lastUsed" WithTime="true" /></dd>
+    }
+</dl>
+
+@if (ReviewCodeState.Order(Code) == 0)
+{
+    <section class="panel-section" aria-labelledby="turn-off-@Code.Id">
+        <h3 class="panel-subtitle" id="turn-off-@Code.Id">Turn the code off</h3>
+        <p class="panel-lead">It stops working at once, and anyone signed in with it is signed out. Turn it off once Apple has approved the build.</p>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="TurnOffAsync">Turn the code off</Button>
+    </section>
+}
+
+<Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+@code {
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required ReviewCodeInfo Code { get; set; }
+    [Parameter] public DemoAccountInfo? Account { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private async Task TurnOffAsync()
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await Accounts.TurnOffReviewCodeAsync(Code.Id);
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

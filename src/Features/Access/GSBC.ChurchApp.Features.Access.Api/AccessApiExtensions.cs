@@ -22,6 +22,7 @@ public static class AccessApiExtensions
         services.AddScoped<AccessChanges>();
         services.AddHostedService<GrantsFeedSweep>();
         services.AddFeed(new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords));
+        services.AddFeed(new FeedDefinition(AccessFeeds.Roles, FeedAudience.Holding(AccessPermissions.View)));
         services.AddScoped<AssignmentRules>();
         services.AddScoped<AccessInsights>();
         services.AddScoped<RoleAssignments>();

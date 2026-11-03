@@ -13,6 +13,7 @@
     <ProjectReference Include="..\..\Features\Access\GSBC.ChurchApp.Features.Access.Api\GSBC.ChurchApp.Features.Access.Api.csproj" />
     <ProjectReference Include="..\..\Features\Configuration\GSBC.ChurchApp.Features.Configuration.Api\GSBC.ChurchApp.Features.Configuration.Api.csproj" />
     <ProjectReference Include="..\..\Features\Media\GSBC.ChurchApp.Features.Media.Api\GSBC.ChurchApp.Features.Media.Api.csproj" />
+    <ProjectReference Include="..\..\Features\Analytics\GSBC.ChurchApp.Features.Analytics.Api\GSBC.ChurchApp.Features.Analytics.Api.csproj" />
     <ProjectReference Include="..\..\Features\Notifications\GSBC.ChurchApp.Features.Notifications.Api\GSBC.ChurchApp.Features.Notifications.Api.csproj" />
   </ItemGroup>
 </Project>

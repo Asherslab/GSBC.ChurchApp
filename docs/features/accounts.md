@@ -12,6 +12,8 @@ built. Permissions (who may do what) are the Access feature, next.
 | Signed in | See and remove their passkeys, add another, see and end their sessions, sign out everywhere, change their name |
 | Forgot / lost device | Ask for a recovery code by email (confirmed email, no sensitive permissions) and register a new passkey |
 | Staff with `accounts.manage` | Invite someone by email; give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account |
+| Staff with `accounts.review.manage` | Make a demo account and sign-in codes for Apple's reviewers; turn a code off ([identity.md](../architecture/identity.md), *Review sign-in codes*) |
+| Apple's reviewers | Sign in to a demo account with its email and a sign-in code, in the app |
 
 ## Flows
 
@@ -32,6 +34,13 @@ autofill offers passkeys). On success the gateway starts a session.
 `<site>/welcome?code=…`, a client-side route of the app or admin panel (static files, not an API path).
 The page calls `Accounts.Redeem(code)`, which returns a registration ticket for that account, then runs
 the *register a passkey* ceremony.
+
+**Review sign-in.** In the app, signed out: **Have a sign-in code?** → email and code →
+`Accounts.SignInWithCode` (gRPC, public, rate-limited and throttled) answers with an app session secret,
+which the native layer keeps. Staff make demo accounts and codes on the admin panel's **App review** page
+(`/app-review`): `Accounts.CreateDemoAccount`, `CreateReviewCode`, `TurnOffReviewCode` and
+`GetReviewAccess`, all needing `accounts.review.manage`. Codes are in `accounts.review_codes`; a session
+started with one names it (`sessions.review_code_id`).
 
 **Recovery.** `Accounts.RequestRecovery(email)` (public, rate-limited, always answers the same so it
 doesn't reveal who has an account) emails a code when allowed. Staff can issue one with

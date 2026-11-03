@@ -14,7 +14,7 @@
 </TitleBand>
 
 <SplitView Detail="@Detail" DetailLabel="@(_inviting ? "Invite someone" : _selected?.DisplayName ?? "Person")">
-    <LiveData @ref="_live" TValue="List<PersonInfo>" Load="LoadAsync" FailedTitle="Can't load people right now">
+    <LiveData @ref="_live" TValue="List<PersonInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
         <DataTable TItem="PersonInfo" Label="People" Items="Shown(context.Value)" Columns="Columns" Key="person => person.Id"
                    Selected="_selected" SelectedChanged="Select" SortColumn="0">
             <Toolbar>

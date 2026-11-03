@@ -299,8 +299,8 @@ person, and 60 days for the public feed.
   "reached 410 phones · 38 opened" when analytics exist), the chosen one on the right with the
   composer and a lock-screen preview. Waiting-to-send shows on the office week's *Needs you*
   (`IOfficeWeekSource`) and as a count on the sidebar link.
-- The same component works in the app for people holding the permission, as every management screen
-  does.
+- It's an admin-panel screen only (AGENTS.md, *Admin work stays in the admin panel*); the app shows
+  staff only what's for everyone: the inbox, the bell and their preferences.
 
 ## How it's built
 

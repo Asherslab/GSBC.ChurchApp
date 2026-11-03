@@ -33,4 +33,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 [ProtoSerializable(typeof(BeginAttestationRequest))]
 [ProtoSerializable(typeof(AttestationChallenge))]
 [ProtoSerializable(typeof(AttestRequest))]
+[ProtoSerializable(typeof(SignInWithCodeRequest))]
+[ProtoSerializable(typeof(CodeSession))]
+[ProtoSerializable(typeof(ReviewAccess))]
+[ProtoSerializable(typeof(CreateDemoAccountRequest))]
+[ProtoSerializable(typeof(CreateReviewCodeRequest))]
+[ProtoSerializable(typeof(TurnOffReviewCodeRequest))]
 public partial class AccountsContractsModel : TypeModel;

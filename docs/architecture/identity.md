@@ -101,6 +101,39 @@ then registered through the approved ceremony with that ticket, the same path as
 invitation, so sign-up adds no API path (AGENTS.md). Rate limits apply per IP and per email, and an
 account's email must be confirmed before it can recover by email.
 
+## Review sign-in codes (built 2026-11-03)
+
+Apple's reviewers need a way in and can't make a passkey, and the owner wants no passwords (owner,
+2026-11-03): a **sign-in code** that signs in to a **demo account** only. What goes in App Store Connect
+is in [environments.md](environments.md), *Sign-in for Apple's reviewers*.
+
+- **A demo account is an ordinary account holding the App reviewer system role** (`app-reviewer`,
+  declared by Accounts, granting nothing). There's no flag on the account: Access says who is a demo
+  account, as for everything else. Staff with `accounts.review.manage` (sensitive; Account managers hold
+  it through `accounts.*`) make one in the admin panel, and Accounts gives it the role as a feature.
+- **A code only ever reaches a demo account:** it must hold the role, have no passkey (a passkey means
+  a real person) and hold nothing sensitive (so giving it Owner by mistake stops its codes rather than
+  exposing Owner). The checks run on every sign-in, not only when the code is made.
+- **A demo account never gets a passkey:** sign-up, invitations and recovery refuse its email, and the
+  gateway's *register a passkey* ceremony refuses a session that came from a code. The Account screen
+  says it's a demo account and offers no passkeys.
+- **Codes:** 12 characters from `ACDEFGHJKMNPQRTUVWXY34679` (no 0/O, 1/I/L, 2/Z, 5/S, 8/B), shown as
+  `ABCD-EFGH-JKMN`; typing ignores case, spaces and dashes. Only the SHA-256 is stored, and the code is
+  shown once. A code lasts 30 days by default (1 to 180), works any number of times, and can be turned off.
+- **Signing in** is a gRPC method, `Accounts.SignInWithCode(email, code)`, `[Public]` and rate-limited, so
+  it needs no new API path. It answers with an app session secret, the same as the passkey ceremonies
+  with `app: true`. The phone's native layer makes the call itself (`CodeSignIn`) and keeps the secret in
+  the Keychain; the WebView only hears the outcome, and the native `unary` refuses that method so the
+  WebView can never receive a secret. It's the app only: there's no cookie path, so the admin panel
+  doesn't offer it (Apple only reviews the app).
+- **A code session lives only as long as its code:** turning a code off deletes its sessions, and the
+  gateway stops honouring a session whose code expired or was turned off.
+- **Throttled:** besides the per-IP rate limit, five refusals for one account, or ten from one address,
+  in 15 minutes refuse every attempt (right or wrong) until the window passes. Counted from the audit log,
+  so it holds across API instances.
+- **Audited:** making a demo account, making and turning off a code, every sign-in with a code (with the
+  code's label and the address) and every refusal.
+
 ## Minimal personal data
 
 An account has a display name, an email (for recovery and invitations) and its passkeys. It is not a

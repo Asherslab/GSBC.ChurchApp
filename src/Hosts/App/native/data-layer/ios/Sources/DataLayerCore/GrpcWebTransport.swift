@@ -23,8 +23,9 @@ public protocol RequestSigner: Sendable {
 
 public struct GrpcWebTransport: Sendable {
     public init(gateway: URL, sessionSecret: @escaping @Sendable () -> String? = { nil },
-                onSessionEnded: @escaping @Sendable () -> Void = {}, signer: RequestSigner? = nil) {
+                onSessionEnded: @escaping @Sendable () -> Void = {}, session: URLSession = .shared, signer: RequestSigner? = nil) {
         self.gateway = gateway
+        self.session = session
         self.sessionSecret = sessionSecret
         self.onSessionEnded = onSessionEnded
         self.signer = signer
@@ -42,6 +43,7 @@ public struct GrpcWebTransport: Sendable {
     private static let streamIdleTimeout: TimeInterval = 90
 
     public let gateway: URL
+    private let session: URLSession
     private let sessionSecret: @Sendable () -> String?
     private let onSessionEnded: @Sendable () -> Void
     private let signer: RequestSigner?
@@ -55,7 +57,7 @@ public struct GrpcWebTransport: Sendable {
         if let signer, !Self.unsignedPrefixes.contains(where: method.hasPrefix) {
             headers.merge(await signer.headers(method: method, body: framed)) { mine, _ in mine }
         }
-        let (data, response) = try await URLSession.shared.data(for: try request(method, framed, headers))
+        let (data, response) = try await session.data(for: try request(method, framed, headers))
         noticeEndedSession(response)
         let http = try Self.successful(response)
 
@@ -79,7 +81,7 @@ public struct GrpcWebTransport: Sendable {
                 do {
                     var request = try request(method, Self.frame(message), [:])
                     request.timeoutInterval = Self.streamIdleTimeout
-                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    let (bytes, response) = try await session.bytes(for: request)
                     noticeEndedSession(response)
                     let http = try Self.successful(response)
 

@@ -62,6 +62,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
                 new FeedDefinition(ConfigurationFeeds.Drafts, FeedAudience.Holding(ConfigurationPermissions.PreviewDraft))]))
             .AddSingleton<FeedChangeBroadcaster>()
             .AddScoped<SyncService>()
+            .AddSingleton<ISignedInSessions, AlwaysSignedIn>()
             .AddScoped<PlacementEditor>()
             .AddScoped<DraftEditor>()
             .AddSyncData()
@@ -272,5 +273,10 @@ public abstract class ConfigurationHost : IAsyncLifetime
             Permission permission = catalog.ByNode[node];
             return new Grant(PermissionPattern.Parse(node), scopeId is null ? Scope.Global : Scope.Of(permission.ScopeKind, scopeId));
         }
+    }
+
+    private sealed class AlwaysSignedIn : ISignedInSessions
+    {
+        public ValueTask<bool> IsCurrentAsync(string sessionId, CancellationToken cancellationToken) => ValueTask.FromResult(true);
     }
 }

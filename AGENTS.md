@@ -70,8 +70,8 @@ invitations, is gRPC unless it is added here.
 
 Feature-first, with solution folders that mirror the disk: see
 [docs/architecture/repo-layout.md](docs/architecture/repo-layout.md). Features never reference each
-other. A management screen goes in the feature's Client, gated by a permission, so it works in the
-app and the admin panel alike. The backbone's design is in [docs/](docs/README.md); read the relevant
+other. A management screen goes in the feature's Client, gated by a permission, and is hosted by the
+admin panel. The backbone's design is in [docs/](docs/README.md); read the relevant
 doc before changing auth, permissions, sync, storage or configuration.
 
 **Keep the project map current.** Adding, removing, renaming or re-referencing a project means updating
@@ -102,6 +102,13 @@ Two features with their own copies of the same UI is a defect: merge them into o
 or the session or permissions change; never load once in `OnInitialized` and leave it. See
 [offline-and-caching.md](docs/architecture/offline-and-caching.md), *Screens update themselves*.
 `LiveDataRules` enforces it.
+
+# Admin work stays in the admin panel
+
+Staff tools (drafts, insights, roles, people, media, announcements) are built for the admin panel on
+a computer. **Before designing an admin screen for the phone, or putting one in the app, ask the owner
+and wait for a yes** (owner, 2026-11-03). The app shows staff only what they need on their phone,
+such as previewing a draft on it.
 
 # Who may see or do something: always the permission system
 

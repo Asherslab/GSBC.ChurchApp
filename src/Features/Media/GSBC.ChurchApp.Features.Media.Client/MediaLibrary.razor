@@ -1,6 +1,6 @@
 @inject MediaClient Media
 
-<LiveData @ref="_live" TValue="MediaList" Load="LoadAsync" FailedTitle="Can't load the library right now">
+<LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
     <SplitView Detail="@Detail" DetailLabel="@(_uploading ? "Upload" : "Picture")">
         <DataTable TItem="MediaItemInfo" Label="Media" Items="Shown(context.Value)" Columns="Columns" Key="item => item.Media!.Id"
                    Selected="_selected" SelectedChanged="Select" SortColumn="3" SortDescending="true">

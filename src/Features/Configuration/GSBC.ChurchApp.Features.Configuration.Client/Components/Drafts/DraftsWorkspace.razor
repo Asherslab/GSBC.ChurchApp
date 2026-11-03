@@ -87,6 +87,7 @@ else
                 <ChildContent>
                     @if (_form is not null)
                     {
+                        @ChangedWhileEditing
                         <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
                     }
                 </ChildContent>
@@ -150,6 +151,9 @@ else
     private string _newName = "";
     private string _rename = "";
     private string? _opened;
+    private bool _behind;
+    private bool _missedWhileSaving;
+    private bool _changedWhileEditing;
 
     protected override async Task OnParametersSetAsync()
     {
@@ -245,6 +249,7 @@ else
                 {
                     <div class="theme-editor">
                         <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> Everything in @area.Title</button>
+                        @ChangedWhileEditing
                         <PlacementForm Draft="_form!" Changed="FormChangedAsync" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
                         <div class="ui-actions">@FormActions</div>
                     </div>
@@ -359,8 +364,22 @@ else
                 <h3>@FormTitle</h3>
                 <span>@_form.Surface.Description</span>
             </div>
+            @ChangedWhileEditing
             <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
             <div class="ui-actions">@FormActions</div>
+        }
+    };
+
+    private RenderFragment ChangedWhileEditing => __builder =>
+    {
+        if (_changedWhileEditing)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="Someone else changed this while you were editing it. What you type next saves over their change.">
+                <span class="ui-actions">
+                    <Button Small="true" OnClick="ShowTheirs">Show their version</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _changedWhileEditing = false">Keep mine</Button>
+                </span>
+            </Notice>
         }
     };
 
@@ -445,6 +464,8 @@ else
 
     private async Task RefreshAsync()
     {
+        _behind = false;
+        _missedWhileSaving = false;
         try
         {
             _list = await LoadListAsync();
@@ -459,11 +480,76 @@ else
         }
         if (DraftId != _opened)
             await OpenDraftAsync(DraftId);
-        if (_session is not null && !_session.HasUnsaved && !_saving && _form is null)
+        if (_session is null)
+            return;
+        if (_saving)
+        {
+            _behind = _missedWhileSaving = true;
+            return;
+        }
+        CatchUpWithOthers();
+        if (_session is not null && !_session.HasUnsaved && _form is null)
         {
             foreach (AreaKey area in _session.TouchedAreas.Append(_area).Distinct().ToList())
                 await LoadLiveAsync(area);
         }
+        else if (_session is not null)
+        {
+            _behind = true;
+        }
+    }
+
+    private void CatchUpWithOthers()
+    {
+        Draft? latest = _list!.Drafts.FirstOrDefault(draft => draft.Id == _session!.Draft.Id);
+        if (latest is null)
+        {
+            _message = $"\"{_session!.Draft.Name}\" isn't there any more: someone published or deleted it.";
+            _session = null;
+            Deselect();
+            Navigation.NavigateTo(BasePath);
+            return;
+        }
+        if (latest.Revision == _session!.Draft.Revision)
+            return;
+
+        PatchMessage? before = _session.Draft.Changes.FirstOrDefault(change => change.PlacementId == _formId);
+        PatchMessage? after = latest.Changes.FirstOrDefault(change => change.PlacementId == _formId);
+        _session.Accept(latest);
+        if (_form is not null && !SamePatch(before, after))
+            _changedWhileEditing = true;
+    }
+
+    private static bool SamePatch(PatchMessage? before, PatchMessage? after) =>
+        before is null || after is null ? before == after : Encode(before).AsSpan().SequenceEqual(Encode(after));
+
+    private static byte[] Encode(PatchMessage patch)
+    {
+        using MemoryStream stream = new();
+        ConfigurationContractsModel.Instance.Serialize(stream, patch);
+        return stream.ToArray();
+    }
+
+    private void ShowTheirs()
+    {
+        if (_session is null || _formId is null)
+            return;
+        _session.Forget(_formId);
+        _changedWhileEditing = false;
+        if (_session.Arranged(CurrentArea!, _area.ScopeId).FirstOrDefault(entry => KeyOf(entry) == _formId) is { } entry)
+            Select(entry);
+        else
+            Deselect();
+    }
+
+    private void CatchUpLater()
+    {
+        if (_behind)
+            _ = InvokeAsync(async () =>
+            {
+                await RefreshAsync();
+                StateHasChanged();
+            });
     }
 
     private async Task OpenDraftAsync(string? draftId)
@@ -537,6 +623,7 @@ else
 
     private void Select(ArrangedSurface entry)
     {
+        _changedWhileEditing = false;
         _form = PlacementDraft.Of(entry);
         _formId = entry.Placement?.Id ?? Guid.CreateVersion7().ToString();
         _selectedKey = KeyOf(entry);
@@ -555,6 +642,8 @@ else
         _form = null;
         _formId = null;
         _selectedKey = null;
+        _changedWhileEditing = false;
+        CatchUpLater();
     }
 
     private Task FormChangedAsync()
@@ -661,6 +750,8 @@ else
 
         if (_session.HasUnsaved && _save != SaveState.Failed)
             SaveSoon();
+        else if (_missedWhileSaving || _form is null)
+            CatchUpLater();
         StateHasChanged();
     }
 

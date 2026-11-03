@@ -1,0 +1,18 @@
+@if (Code.TurnedOffAt is not null)
+{
+    <Pill Tone="PillTone.Masthead">Turned off</Pill>
+}
+else if (Code.ExpiresAt <= DateTime.UtcNow)
+{
+    <Pill>Expired</Pill>
+}
+else
+{
+    <Pill Tone="PillTone.Accent">Works</Pill>
+}
+
+@code {
+    [Parameter, EditorRequired] public required ReviewCodeInfo Code { get; set; }
+
+    public static int Order(ReviewCodeInfo code) => code.TurnedOffAt is not null ? 2 : code.ExpiresAt <= DateTime.UtcNow ? 1 : 0;
+}

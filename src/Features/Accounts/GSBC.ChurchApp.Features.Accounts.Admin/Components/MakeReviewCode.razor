@@ -1,0 +1,72 @@
+@using Grpc.Core
+@inject AccountsClient Accounts
+
+<h2 class="panel-title">Make a code</h2>
+@if (_made is not null)
+{
+    <p class="panel-lead">Copy it now: it's shown only this once. Put it in App Store Connect's password field.</p>
+    <label class="link-box">
+        <span class="visually-hidden">Sign-in code</span>
+        <input readonly value="@_made.Code" onfocus="this.select()" />
+    </label>
+    <p class="panel-hint">For @_email. Works until <DateLine At="_made.ExpiresAt" />, as many times as needed.</p>
+    <div class="panel-actions">
+        <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Done</Button>
+    </div>
+}
+else if (DemoAccounts.Count == 0)
+{
+    <p class="panel-lead">Make a demo account first. Codes only ever sign in to a demo account.</p>
+}
+else
+{
+    <p class="panel-lead">Anyone with the demo account's email and this code can sign in to it until the code expires or you turn it off.</p>
+    <form class="panel-form" @onsubmit="MakeAsync">
+        <SelectField Label="Demo account" Options="Choices" Value="@UserId" ValueChanged="value => _userId = value" />
+        <TextField Label="What it's for" @bind-Value="_label" AutoComplete="off" Hint="Such as TestFlight 1.2 or App Store 1.0" MaxLength="80" />
+        <TextField Label="Works for (days)" Type="number" Value="@_days" ValueChanged="value => _days = value" Min="1" Max="180" Hint="30 days is usually enough for a review" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        <div class="panel-actions">
+            <Button Type="submit" Icon="key" Busy="_busy" Disabled="@(!int.TryParse(_days, out _))">Make the code</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
+        </div>
+    </form>
+}
+
+@code {
+    private string? _userId;
+    private string _label = "";
+    private string _days = "30";
+    private string _email = "";
+    private CodeReply? _made;
+    private string? _problem;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public required List<DemoAccountInfo> DemoAccounts { get; set; }
+    [Parameter] public EventCallback OnMade { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private IReadOnlyList<FieldOption> Choices => DemoAccounts.Select(account => new FieldOption(account.UserId, $"{account.DisplayName} ({account.Email})")).ToList();
+
+    private string UserId => _userId ?? DemoAccounts[0].UserId;
+
+    private async Task MakeAsync()
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            _made = await Accounts.CreateReviewCodeAsync(UserId, _label.Trim(), int.Parse(_days));
+            _email = DemoAccounts.First(account => account.UserId == UserId).Email;
+            await OnMade.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,88 @@
+@page "/app-review"
+@inject AccountsClient Accounts
+
+<TitleBand Title="App review" Lead="Apple's reviewers can't make a passkey, so they sign in to a demo account with a sign-in code. Each code works for everyone who has it until it expires or you turn it off.">
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" Icon="user" OnClick="() => Open(Panel.MakeDemoAccount)">Make a demo account</Button>
+        <Button Icon="plus" OnClick="() => Open(Panel.MakeCode)">Make a code</Button>
+    </Actions>
+</TitleBand>
+
+<SplitView Detail="@Detail" DetailLabel="@DetailLabel">
+    <LiveData @ref="_live" TValue="ReviewAccess" Load="LoadAsync" FailedTitle="Can't load app review right now">
+        @foreach (DemoAccountInfo account in context.Value.DemoAccounts.Where(account => account.Problem is not null))
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@($"{account.DisplayName} ({account.Email}): {account.Problem}")" />
+        }
+        <DataTable TItem="ReviewCodeInfo" Label="Sign-in codes" Items="context.Value.Codes" Columns="Columns" Key="code => code.Id"
+                   Selected="_selected" SelectedChanged="Select" SortColumn="4" SortDescending="true">
+            <Empty>
+                <EmptyState Icon="key" Title="@(context.Value.DemoAccounts.Count == 0 ? "No demo account yet" : "No sign-in codes yet")"
+                            Body="@(context.Value.DemoAccounts.Count == 0 ? "Make a demo account first: a name and an email of its own, such as review@ your church's domain." : "Make a code before you send a build to Apple for review.")" />
+            </Empty>
+        </DataTable>
+    </LiveData>
+</SplitView>
+
+@code {
+    private enum Panel { None, MakeCode, MakeDemoAccount, Code }
+
+    private LiveData<ReviewAccess>? _live;
+    private ReviewAccess? _access;
+    private ReviewCodeInfo? _selected;
+    private Panel _panel;
+
+    private RenderFragment? Detail => _panel switch
+    {
+        Panel.MakeCode when _access is not null => @<MakeReviewCode DemoAccounts="_access.DemoAccounts" OnMade="ReloadAsync" OnCancel="Close" />,
+        Panel.MakeDemoAccount => @<MakeDemoAccount OnMade="ReloadAsync" OnCancel="Close" />,
+        Panel.Code when _selected is not null => @<ReviewCodeDetail @key="_selected.Id" Code="_selected" Account="AccountOf(_selected)" OnChanged="ReloadAsync" />,
+        _ => null,
+    };
+
+    private string DetailLabel => _panel switch
+    {
+        Panel.MakeCode => "Make a code",
+        Panel.MakeDemoAccount => "Make a demo account",
+        _ => _selected?.Label ?? "Sign-in code",
+    };
+
+    private async Task<ReviewAccess> LoadAsync()
+    {
+        _access = await Accounts.GetReviewAccessAsync();
+        _selected = _selected is null ? null : _access.Codes.FirstOrDefault(code => code.Id == _selected.Id);
+        return _access;
+    }
+
+    private IReadOnlyList<TableColumn<ReviewCodeInfo>> Columns =>
+    [
+        new("Label", item => @<span class="cell-strong">@item.Label</span>, item => item.Label),
+        new("Demo account", item => @<span class="quiet truncate">@(AccountOf(item)?.Email ?? "Removed")</span>, item => AccountOf(item)?.Email),
+        new("State", item => @<ReviewCodeState Code="item" />, item => ReviewCodeState.Order(item)),
+        new("Uses", item => @<span>@item.Uses</span>, item => item.Uses, "num"),
+        new("Made", item => @<DateLine At="item.CreatedAt" Style="DateLineStyle.Short" />, item => item.CreatedAt, "num optional"),
+        new("Expires", item => @<DateLine At="item.ExpiresAt" Style="DateLineStyle.Short" />, item => item.ExpiresAt, "num optional"),
+    ];
+
+    private DemoAccountInfo? AccountOf(ReviewCodeInfo code) => _access?.DemoAccounts.FirstOrDefault(account => account.UserId == code.UserId);
+
+    private void Open(Panel panel)
+    {
+        _selected = null;
+        _panel = panel;
+    }
+
+    private void Select(ReviewCodeInfo code)
+    {
+        _selected = code;
+        _panel = Panel.Code;
+    }
+
+    private void Close() => _panel = Panel.None;
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

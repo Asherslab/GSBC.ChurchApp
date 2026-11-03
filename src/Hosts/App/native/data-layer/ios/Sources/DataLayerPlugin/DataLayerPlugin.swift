@@ -18,12 +18,15 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "outbox", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "retryOutbox", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "discardQuietOutbox", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "takeCrashes", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "cachedMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "fetchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "prefetchMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "registerPasskey", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signInWithCode", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preference", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise),
@@ -58,6 +61,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         DataLayerPush.shared.onLinkOpened = { [weak self] path in
             self?.notifyListeners("linkOpened", data: ["path": path], retainUntilConsumed: true)
         }
+        CrashCollector.shared.crashesArrived = { [weak self] in
+            self?.notifyListeners("crashesArrived", data: [:], retainUntilConsumed: true)
+        }
+        CrashCollector.shared.start()
         NotificationCenter.default.addObserver(self, selector: #selector(linkOpened(_:)),
                                                name: .capacitorSceneOpenUniversalLink, object: nil)
 
@@ -68,6 +75,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc private func appBecameActive() {
+        notifyListeners("appStateChanged", data: ["active": true])
         Task {
             await engine?.resume()
             await outbox?.sendWaitingNow()
@@ -82,6 +90,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc private func appEnteredBackground() {
+        notifyListeners("appStateChanged", data: ["active": false])
         DataLayerBackground.schedule()
         Task { await engine?.pause() }
     }
@@ -90,6 +99,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         guard let method = call.getString("method"),
               let request = Data(base64Encoded: call.getString("request") ?? "") else {
             call.reject("unary needs a method and a base64 request")
+            return
+        }
+        guard method != CodeSignIn.method else {
+            call.reject("Sign in with a code through signInWithCode, so the session stays on this phone.")
             return
         }
         guard let transport else {
@@ -150,6 +163,19 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         ceremony(call) { await $0.register(ticket: ticket) }
     }
 
+    @objc func signInWithCode(_ call: CAPPluginCall) {
+        guard let transport else { return resolve(call, .failed("This build has no gateway configured.")) }
+        let email = call.getString("email") ?? ""
+        let code = call.getString("code") ?? ""
+        let wasSignedIn = runtime.signedIn
+        Task {
+            let outcome = await CodeSignIn(transport: transport, vault: DataLayerRuntime.vault, deviceName: UIDevice.current.model)
+                .signIn(email: email, code: code)
+            if outcome.ok && !wasSignedIn { await runtime.sessionStarted() }
+            resolve(call, outcome)
+        }
+    }
+
     @objc func signOut(_ call: CAPPluginCall) {
         Task {
             await runtime.forgetSession()
@@ -190,7 +216,8 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func status(_ call: CAPPluginCall) {
         let info = Bundle.main.infoDictionary
         call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild, "signedIn": runtime.signedIn,
-                      "version": info?["CFBundleShortVersionString"] as? String ?? "", "build": info?["CFBundleVersion"] as? String ?? ""])
+                      "version": info?["CFBundleShortVersionString"] as? String ?? "", "build": info?["CFBundleVersion"] as? String ?? "",
+                      "platform": "ios", "osMajor": ProcessInfo.processInfo.operatingSystemVersion.majorVersion])
     }
 
     @objc func preference(_ call: CAPPluginCall) {
@@ -264,7 +291,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         Task {
             do {
-                call.resolve(["id": try await outbox.enqueue(method: method, request: request)])
+                call.resolve(["id": try await outbox.enqueue(method: method, request: request, quiet: call.getBool("quiet") ?? false)])
             } catch {
                 call.reject(error.localizedDescription)
             }
@@ -294,6 +321,26 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
     @objc func discardOutbox(_ call: CAPPluginCall) {
         changeOutbox(call) { outbox, id in try await outbox.discard(id: id) }
+    }
+
+    @objc func discardQuietOutbox(_ call: CAPPluginCall) {
+        guard let outbox else { return call.resolve() }
+        Task {
+            do {
+                try await outbox.discardQuiet()
+                call.resolve()
+            } catch {
+                call.reject(error.localizedDescription)
+            }
+        }
+    }
+
+    @objc func takeCrashes(_ call: CAPPluginCall) {
+        let crashes = CrashCollector.shared.inbox.take().map { crash -> [String: Any] in
+            ["type": crash.type, "frames": crash.frames, "crashedAt": crash.crashedAt,
+             "appVersion": crash.appVersion, "appBuild": crash.appBuild]
+        }
+        call.resolve(["json": Self.json(crashes)])
     }
 
     @objc func cachedMedia(_ call: CAPPluginCall) {

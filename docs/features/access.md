@@ -20,7 +20,8 @@ built.
   they can be assigned but not edited. Configuration declares **Draft reviewer** (at a draft: preview
   it; given and taken away by Configuration when a draft is shared) and **App editor** (`config.*`:
   arrange and publish the app, see every draft). Access declares **Owner** (`*`), **Account manager**
-  (`accounts.*`) and **Access manager** (`access.*`). Ministries will declare its own.
+  (`accounts.*`) and **Access manager** (`access.*`). Analytics declares **Insights viewer**
+  (`analytics.view`; nobody holds it by default). Ministries will declare its own.
 - **Custom roles** are made in the admin panel by copying a role: a name, a description, the scope
   kind they're assigned at, the abilities ticked, whether they apply to child ministries, and who can
   give them. The developer tool can also set raw patterns (`ministries.news.*`,

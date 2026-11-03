@@ -51,6 +51,13 @@
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Data/GSBC.ChurchApp.Features.Accounts.Data.csproj" />
     <Project Path="src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway/GSBC.ChurchApp.Features.Accounts.Gateway.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Analytics/">
+    <Project Path="src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Admin/GSBC.ChurchApp.Features.Analytics.Admin.csproj" />
+    <Project Path="src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Api/GSBC.ChurchApp.Features.Analytics.Api.csproj" />
+    <Project Path="src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.App/GSBC.ChurchApp.Features.Analytics.App.csproj" />
+    <Project Path="src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Client/GSBC.ChurchApp.Features.Analytics.Client.csproj" />
+    <Project Path="src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Contracts/GSBC.ChurchApp.Features.Analytics.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Features/Configuration/">
     <Project Path="src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Admin/GSBC.ChurchApp.Features.Configuration.Admin.csproj" />
     <Project Path="src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api/GSBC.ChurchApp.Features.Configuration.Api.csproj" />
@@ -106,6 +113,9 @@
   <Folder Name="/tests/Features/Accounts/">
     <Project Path="tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api.Tests/GSBC.ChurchApp.Features.Accounts.Api.Tests.csproj" />
     <Project Path="tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway.Tests/GSBC.ChurchApp.Features.Accounts.Gateway.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Analytics/">
+    <Project Path="tests/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Api.Tests/GSBC.ChurchApp.Features.Analytics.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Configuration/">
     <Project Path="tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/GSBC.ChurchApp.Features.Configuration.Api.Tests.csproj" />

@@ -1,0 +1,35 @@
+@page "/help-improve"
+@implements IDisposable
+@inject AnalyticsConsent Consent
+
+<Page Title="Help improve the app" BackHref="more" BackLabel="More">
+    <Masthead Title="Help improve the app" Note="Anonymous totals and error reports" />
+
+    <Section First="true">
+        <ListGroup>
+            <ToggleRow Title="Help improve the app" Description="Send anonymous counts of what's used, and error reports. Nothing about you is sent."
+                       Checked="Consent.Enabled" CheckedChanged="Consent.SetAsync" Disabled="!Consent.CanChange" />
+        </ListGroup>
+        @if (!Consent.CanChange)
+        {
+            <p class="ui-after">This is a setting of the phone app.</p>
+        }
+    </Section>
+
+    <Section Title="What's sent" Lead="How we learn what's useful.">
+        <div class="privacy-copy">
+            <p>The app counts how it's used (how many phones opened it this week, which sermons were played, how many phones a notice reached), so the church knows what's helpful. These are totals only. They don't include your name, your account, an ID for your phone, your location or anything you type, and we can't tell what any one person did.</p>
+            <p>If something goes wrong in the app, it sends an error report (what failed, the app and system version) with nothing about you in it.</p>
+            <p>Totals are kept for about two years and then summarised by month; error reports are deleted after 30 days. Everything stays on the church's own systems; no analytics company is involved.</p>
+            <p>Turning this off stops both, and anything not yet sent is thrown away.</p>
+        </div>
+    </Section>
+</Page>
+
+@code {
+    protected override void OnInitialized() => Consent.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Consent.Changed -= OnChanged;
+}

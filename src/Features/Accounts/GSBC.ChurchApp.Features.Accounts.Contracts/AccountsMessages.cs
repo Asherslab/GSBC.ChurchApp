@@ -40,6 +40,7 @@ public sealed class Profile
     [ProtoMember(2)] public string DisplayName { get; set; } = "";
     [ProtoMember(3)] public string Email { get; set; } = "";
     [ProtoMember(4)] public bool EmailConfirmed { get; set; }
+    [ProtoMember(5)] public bool DemoAccount { get; set; }
 }
 
 [ProtoContract]
@@ -175,4 +176,69 @@ public sealed class AuditInfo
     [ProtoMember(3)] public string? UserId { get; set; }
     [ProtoMember(4)] public string? ActorId { get; set; }
     [ProtoMember(5)] public string? Detail { get; set; }
+}
+
+[ProtoContract]
+public sealed class SignInWithCodeRequest
+{
+    [ProtoMember(1)] public string Email { get; set; } = "";
+    [ProtoMember(2)] public string Code { get; set; } = "";
+    [ProtoMember(3)] public string? Device { get; set; }
+}
+
+[ProtoContract]
+public sealed class CodeSession
+{
+    [ProtoMember(1)] public string Session { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class ReviewAccess
+{
+    [ProtoMember(1)] public List<DemoAccountInfo> DemoAccounts { get; set; } = [];
+    [ProtoMember(2)] public List<ReviewCodeInfo> Codes { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class DemoAccountInfo
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+    [ProtoMember(2)] public string DisplayName { get; set; } = "";
+    [ProtoMember(3)] public string Email { get; set; } = "";
+    [ProtoMember(4)] public string? Problem { get; set; }
+}
+
+[ProtoContract]
+public sealed class ReviewCodeInfo
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string UserId { get; set; } = "";
+    [ProtoMember(3)] public string Label { get; set; } = "";
+    [ProtoMember(4)] public string CreatedBy { get; set; } = "";
+    [ProtoMember(5)] public DateTime CreatedAt { get; set; }
+    [ProtoMember(6)] public DateTime ExpiresAt { get; set; }
+    [ProtoMember(7)] public DateTime? TurnedOffAt { get; set; }
+    [ProtoMember(8)] public int Uses { get; set; }
+    [ProtoMember(9)] public DateTime? LastUsedAt { get; set; }
+}
+
+[ProtoContract]
+public sealed class CreateDemoAccountRequest
+{
+    [ProtoMember(1)] public string DisplayName { get; set; } = "";
+    [ProtoMember(2)] public string Email { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class CreateReviewCodeRequest
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+    [ProtoMember(2)] public string Label { get; set; } = "";
+    [ProtoMember(3)] public int Days { get; set; }
+}
+
+[ProtoContract]
+public sealed class TurnOffReviewCodeRequest
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
 }
