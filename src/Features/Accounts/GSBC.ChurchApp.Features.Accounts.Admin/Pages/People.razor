@@ -14,7 +14,7 @@
 </TitleBand>
 
 <SplitView Detail="@Detail" DetailLabel="@(_inviting ? "Invite someone" : _selected?.DisplayName ?? "Person")">
-    <LiveData @ref="_live" TValue="List<PersonInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
+    <LiveData @ref="_live" TValue="PeopleView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
         <DataTable TItem="PersonInfo" Label="People" Items="Shown(context.Value)" Columns="Columns" Key="person => person.Id"
                    Selected="_selected" SelectedChanged="Select" SortColumn="0">
             <Toolbar>
@@ -22,45 +22,77 @@
                 <FilterChips TValue="PeopleFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
             </Toolbar>
             <Empty>
-                <EmptyState Icon="users" Title="@(_query.Length > 0 ? $"No one matches “{_query}”" : "No one here")" Body="Try part of their name or email, or show everyone." />
+                @if (_filter == PeopleFilter.Invited && _query.Length == 0)
+                {
+                    <EmptyState Icon="send" Title="Every invitation has been accepted" Body="People you invite show here until they set up their sign-in." />
+                }
+                else
+                {
+                    <EmptyState Icon="users" Title="@(_query.Length > 0 ? $"No one matches “{_query}”" : "No one here")" Body="Try part of their name or email, or show everyone." />
+                }
             </Empty>
         </DataTable>
     </LiveData>
 </SplitView>
 
 @code {
-    private LiveData<List<PersonInfo>>? _live;
+    private LiveData<PeopleView>? _live;
+    private Dictionary<string, InvitationInfo> _invitations = [];
     private string _query = "";
     private PeopleFilter _filter = PeopleFilter.Everyone;
     private PersonInfo? _selected;
     private bool _inviting;
 
-    private static readonly IReadOnlyList<TableColumn<PersonInfo>> Columns =
+    [SupplyParameterFromQuery] public string? Show { get; set; }
+
+    private IReadOnlyList<TableColumn<PersonInfo>> Columns =>
     [
         new("Name", person => @<span class="cell-strong">@person.DisplayName</span>, person => person.DisplayName),
         new("Email", person => @<span class="quiet truncate" title="@person.Email">@person.Email</span>, person => person.Email),
-        new("Account", person => @<PersonState Person="person" />, person => StateOrder(person)),
+        new("Account", person => @<PersonState Person="person" Invitation="@_invitations.GetValueOrDefault(person.Id)" />, person => StateOrder(person)),
         new("Joined", person => @<DateLine At="person.CreatedAt" Style="DateLineStyle.Short" />, person => person.CreatedAt, "num optional"),
     ];
 
     private RenderFragment? Detail => _inviting
         ? @<InvitePerson OnSent="InvitedAsync" OnCancel="() => _inviting = false" />
-        : _selected is null ? null : @<PersonDetail @key="_selected.Id" Person="_selected" OnChanged="ChangedAsync" />;
+        : _selected is null ? null : @<PersonDetail @key="_selected.Id" Person="_selected" Invitation="@_invitations.GetValueOrDefault(_selected.Id)" OnChanged="ChangedAsync" OnRemoved="RemovedAsync" />;
 
-    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
-
-    private async Task<List<PersonInfo>> LoadAsync()
+    protected override void OnInitialized()
     {
-        List<PersonInfo> people = (await Accounts.SearchPeopleAsync(_query)).People;
-        _selected = _selected is null ? null : people.FirstOrDefault(person => person.Id == _selected.Id) ?? _selected;
-        return people;
+        if (Show == InvitedQuery)
+            _filter = PeopleFilter.Invited;
+        Access.Changed += OnAccessChanged;
     }
 
-    private IEnumerable<PersonInfo> Shown(List<PersonInfo> people) => people.Where(person => Matches(person, _filter));
+    private const string InvitedQuery = "invited";
 
-    private static bool Matches(PersonInfo person, PeopleFilter filter) => filter switch
+    private async Task<PeopleView> LoadAsync()
     {
-        PeopleFilter.NoPasskey => !person.HasPasskey && !person.Disabled,
+        ValueTask<PeopleList> searching = Accounts.SearchPeopleAsync(_query);
+        List<InvitationInfo> invitations = (await Accounts.ListInvitationsAsync()).Invitations;
+        List<PersonInfo> people = (await searching).People;
+        _invitations = invitations.ToDictionary(invitation => invitation.UserId);
+        _selected = _selected is null ? null
+            : people.FirstOrDefault(person => person.Id == _selected.Id) ?? (_invitations.TryGetValue(_selected.Id, out InvitationInfo? invited) ? AsPerson(invited) : _selected);
+        return new PeopleView(people, invitations.Select(AsPerson).ToList());
+    }
+
+    private static PersonInfo AsPerson(InvitationInfo invitation) => new()
+    {
+        Id = invitation.UserId,
+        DisplayName = invitation.DisplayName,
+        Email = invitation.Email,
+        CreatedAt = invitation.InvitedAt,
+    };
+
+    private IEnumerable<PersonInfo> Shown(PeopleView view) => _filter == PeopleFilter.Invited
+        ? view.Invited.Where(person => _query.Length == 0 || person.DisplayName.Contains(_query, StringComparison.OrdinalIgnoreCase) || person.Email.Contains(_query, StringComparison.OrdinalIgnoreCase))
+        : view.People.Where(person => Matches(person, _filter));
+
+    private bool Matches(PersonInfo person, PeopleFilter filter) => filter switch
+    {
+        PeopleFilter.Invited => _invitations.ContainsKey(person.Id),
+        PeopleFilter.NoPasskey => !person.HasPasskey && !person.Disabled && !_invitations.ContainsKey(person.Id),
         PeopleFilter.Unconfirmed => !person.EmailConfirmed && !person.Disabled,
         PeopleFilter.TurnedOff => person.Disabled,
         _ => true,
@@ -68,13 +100,14 @@
 
     private static string FilterLabel(PeopleFilter filter) => filter switch
     {
+        PeopleFilter.Invited => "Invited, not accepted",
         PeopleFilter.NoPasskey => "No passkey yet",
         PeopleFilter.Unconfirmed => "Email not confirmed",
         PeopleFilter.TurnedOff => "Turned off",
         _ => "Everyone",
     };
 
-    private static int StateOrder(PersonInfo person) => person.Disabled ? 3 : !person.HasPasskey ? 1 : !person.EmailConfirmed ? 2 : 0;
+    private int StateOrder(PersonInfo person) => person.Disabled ? 4 : _invitations.ContainsKey(person.Id) ? 1 : !person.HasPasskey ? 2 : !person.EmailConfirmed ? 3 : 0;
 
     private async Task SearchAsync(string query)
     {
@@ -83,8 +116,9 @@
             await _live.ReloadAsync();
     }
 
-    private static IReadOnlyList<FilterOption<PeopleFilter>> Filters(List<PersonInfo> people) =>
-        Enum.GetValues<PeopleFilter>().Select(filter => new FilterOption<PeopleFilter>(filter, FilterLabel(filter), people.Count(person => Matches(person, filter)))).ToList();
+    private IReadOnlyList<FilterOption<PeopleFilter>> Filters(PeopleView view) =>
+        Enum.GetValues<PeopleFilter>().Select(filter => new FilterOption<PeopleFilter>(filter, FilterLabel(filter),
+            filter == PeopleFilter.Invited ? view.Invited.Count : view.People.Count(person => Matches(person, filter)))).ToList();
 
     private void Select(PersonInfo person)
     {
@@ -110,6 +144,12 @@
             await _live.ReloadAsync();
     }
 
+    private async Task RemovedAsync()
+    {
+        _selected = null;
+        await ChangedAsync();
+    }
+
     private void OnAccessChanged() => InvokeAsync(StateHasChanged);
 
     public void Dispose() => Access.Changed -= OnAccessChanged;
@@ -117,8 +157,11 @@
     public enum PeopleFilter
     {
         Everyone,
+        Invited,
         NoPasskey,
         Unconfirmed,
         TurnedOff,
     }
+
+    private sealed record PeopleView(List<PersonInfo> People, List<PersonInfo> Invited);
 }

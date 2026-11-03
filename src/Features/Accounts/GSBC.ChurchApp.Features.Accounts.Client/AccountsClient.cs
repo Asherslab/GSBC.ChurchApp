@@ -67,6 +67,12 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal, ID
 
     public ValueTask<Done> InviteAsync(string name, string email) => _accounts.InviteAsync(new InviteRequest { DisplayName = name, Email = email });
 
+    public ValueTask<InvitationList> ListInvitationsAsync() => _accounts.ListInvitationsAsync(new Nothing());
+
+    public ValueTask<Done> ResendInvitationAsync(string userId) => _accounts.ResendInvitationAsync(new InvitationRequest { UserId = userId });
+
+    public ValueTask<Done> WithdrawInvitationAsync(string userId) => _accounts.WithdrawInvitationAsync(new InvitationRequest { UserId = userId });
+
     public ValueTask<CodeReply> IssueRecoveryCodeAsync(string userId) => _accounts.IssueRecoveryCodeAsync(new IssueRecoveryCodeRequest { UserId = userId });
 
     public ValueTask<ReviewAccess> GetReviewAccessAsync() => _accounts.GetReviewAccessAsync(new Nothing());

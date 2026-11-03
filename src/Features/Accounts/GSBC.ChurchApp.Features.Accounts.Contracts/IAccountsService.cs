@@ -58,6 +58,15 @@ public interface IAccountsService
     [Requires(AccountsPermissions.ManageNode)]
     ValueTask<Done> InviteAsync(InviteRequest request, CallContext context = default);
 
+    [Requires(AccountsPermissions.ViewNode)]
+    ValueTask<InvitationList> ListInvitationsAsync(Nothing request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ManageNode)]
+    ValueTask<Done> ResendInvitationAsync(InvitationRequest request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ManageNode)]
+    ValueTask<Done> WithdrawInvitationAsync(InvitationRequest request, CallContext context = default);
+
     [Requires(AccountsPermissions.ManageNode)]
     ValueTask<Done> SetDisabledAsync(SetDisabledRequest request, CallContext context = default);
 

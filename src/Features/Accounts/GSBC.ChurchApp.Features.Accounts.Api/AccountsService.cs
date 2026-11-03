@@ -25,6 +25,7 @@ internal sealed class AccountsService(
     IOptions<AccountsOptions> options,
     DemoAccounts demo,
     ReviewSignIns reviews,
+    Invitations invitations,
     TimeProvider time) : IAccountsService
 {
     private const int MaximumNameLength = 80;
@@ -240,10 +241,22 @@ internal sealed class AccountsService(
         CancellationToken cancellationToken = context.CancellationToken;
 
         AccountUser user = await FindAbandonedOrCreateAsync(name, address, cancellationToken);
-        string link = Link(codes.IssueToken(user.Id, CodePurpose.Invitation, OneTimeCodes.InvitationLifetime));
-        audit.Record(AuditActions.Invited, user.Id, Caller(context).UserId);
-        await db.SaveChangesAsync(cancellationToken);
-        await email.SendAsync(AccountEmails.Invite(address, name, link), cancellationToken);
+        await invitations.SendAsync(user, Caller(context).UserId, AuditActions.Invited, cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<InvitationList> ListInvitationsAsync(Nothing request, CallContext context = default) =>
+        await invitations.ListAsync(context.CancellationToken);
+
+    public async ValueTask<Done> ResendInvitationAsync(InvitationRequest request, CallContext context = default)
+    {
+        await invitations.ResendAsync(request.UserId, Caller(context).UserId, context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> WithdrawInvitationAsync(InvitationRequest request, CallContext context = default)
+    {
+        await invitations.WithdrawAsync(request.UserId, Caller(context).UserId, context.CancellationToken);
         return new Done();
     }
 
