@@ -18,8 +18,8 @@
             @foreach (PlaceAbilities place in context.Value.Abilities.Places)
             {
                 <div class="access-place">
-                    <h3 class="panel-subtitle">@(place.ObjectId is null ? "Everywhere" : AccessWords.Place(PlaceName(context.Value, place.ObjectId), place.IncludesTeams))</h3>
-                    <p class="panel-hint">Because they're @string.Join(" and ", place.Because.Select(Reason))@(place.ObjectId is null ? "" : $" of {PlaceName(context.Value, place.ObjectId)}").</p>
+                    <h3 class="panel-subtitle">@(place.ObjectId is null ? "Everywhere" : PlaceLine(context.Value, place.ObjectId, place.IncludesTeams))</h3>
+                    <p class="panel-hint">Because they're @string.Join(" and ", place.Because.Select(Reason))@(place.ObjectId is not null && context.Value.Places.Get(place.ObjectId) is { } named ? $" of {named.Name}" : "").</p>
                     <AbilityList Nodes="place.Nodes" Catalog="context.Value.Catalog" EveryMinistry="place.ObjectId is null" />
                 </div>
             }
@@ -39,7 +39,7 @@
                         <li>
                             <span>
                                 <span class="cell-strong">@assignment.RoleName</span>
-                                <span class="quiet">@(assignment.ScopeObjectId is { } place ? AccessWords.Place(PlaceName(context.Value, place), false) : "") @AccessWords.Until(assignment.ExpiresAt)</span>
+                                <span class="quiet">@(assignment.ScopeObjectId is { } place ? PlaceLine(context.Value, place, false) : "") @AccessWords.Until(assignment.ExpiresAt)</span>
                             </span>
                             <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => TakeAwayAsync(assignment)">Take away</Button>
                         </li>
@@ -90,14 +90,26 @@
         Task<RoleList> roles = Access.ListRolesAsync().AsTask();
         Task<Catalog> catalog = Access.ListCatalogAsync().AsTask();
         List<AssignmentInfo> held = (await assignments).Assignments;
-        IReadOnlyDictionary<string, string> places = await ScopeNames.NamesAsync(ScopeKind.Ministry.Name, held.Select(assignment => assignment.ScopeObjectId).OfType<string>().ToList());
+        List<RoleInfo> allRoles = (await roles).Roles;
+        Places places = new();
+        foreach (IGrouping<string, AssignmentInfo> kind in held.Where(assignment => assignment.ScopeObjectId is not null)
+                     .GroupBy(assignment => allRoles.FirstOrDefault(role => role.Id == assignment.RoleId)?.ScopeKind ?? ScopeKind.Ministry.Name))
+        {
+            IReadOnlyDictionary<string, string> names = await ScopeNames.NamesAsync(kind.Key, kind.Select(assignment => assignment.ScopeObjectId!).Distinct().ToList());
+            foreach (string objectId in kind.Select(assignment => assignment.ScopeObjectId!).Distinct())
+                places.Add(objectId, kind.Key, names.GetValueOrDefault(objectId));
+        }
+
         PersonSummary found = (await person).FirstOrDefault() ?? new PersonSummary(UserId, "Someone", "", false);
-        return new PersonView(found, held, await abilities, places, (await roles).Roles, await catalog);
+        return new PersonView(found, held, await abilities, places, allRoles, await catalog);
     }
 
     private static string FirstName(PersonSummary person) => person.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? person.Name;
 
-    private static string PlaceName(PersonView view, string objectId) => view.Places.GetValueOrDefault(objectId, objectId);
+    private static string PlaceLine(PersonView view, string objectId, bool includesTeams) =>
+        view.Places.Kinds.TryGetValue(objectId, out string? kind)
+            ? AccessWords.PlaceOf(objectId, view.Places.Get(objectId)?.Name, kind, includesTeams)
+            : AccessWords.PlaceOf(objectId, null, ScopeKind.Ministry.Name, includesTeams);
 
     private static IReadOnlyList<FieldOption> RoleOptions(PersonView view) =>
         [new("", "Choose a role…"), .. view.Roles.Select(role => new FieldOption(role.Id, $"{role.Name} · {AccessWords.GivenWhere(role)}"))];
@@ -147,5 +159,23 @@
         }
     }
 
-    private sealed record PersonView(PersonSummary Person, List<AssignmentInfo> Assignments, PersonAbilities Abilities, IReadOnlyDictionary<string, string> Places, List<RoleInfo> Roles, Catalog Catalog);
+    private sealed class Places
+    {
+        private readonly Dictionary<string, string> _names = [];
+
+        public Dictionary<string, string> Kinds { get; } = [];
+
+        public void Add(string objectId, string kind, string? name)
+        {
+            Kinds[objectId] = kind;
+            if (name is not null && name != objectId)
+                _names[objectId] = name;
+        }
+
+        public Place? Get(string objectId) => _names.TryGetValue(objectId, out string? name) ? new Place(name) : null;
+    }
+
+    private sealed record Place(string Name);
+
+    private sealed record PersonView(PersonSummary Person, List<AssignmentInfo> Assignments, PersonAbilities Abilities, Places Places, List<RoleInfo> Roles, Catalog Catalog);
 }

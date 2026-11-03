@@ -86,7 +86,7 @@
         IReadOnlyDictionary<string, string> places = await ScopeNames.NamesAsync(Role.ScopeKind, holders.Select(holder => holder.ScopeObjectId).OfType<string>().ToList());
         return holders
             .Select(holder => new Holder(holder.UserId, names.GetValueOrDefault(holder.UserId) ?? "Someone",
-                string.Join(" ", new[] { holder.ScopeObjectId is { } place ? AccessWords.Place(places.GetValueOrDefault(place, place), Role.AppliesToChildren) : null, AccessWords.Until(holder.ExpiresAt) }.Where(part => !string.IsNullOrWhiteSpace(part)))))
+                string.Join(" ", new[] { holder.ScopeObjectId is { } place ? AccessWords.PlaceOf(place, places.GetValueOrDefault(place), Role.ScopeKind, Role.AppliesToChildren) : null, AccessWords.Until(holder.ExpiresAt) }.Where(part => !string.IsNullOrWhiteSpace(part)))))
             .OrderBy(holder => holder.Name, StringComparer.CurrentCultureIgnoreCase)
             .ToList();
     }

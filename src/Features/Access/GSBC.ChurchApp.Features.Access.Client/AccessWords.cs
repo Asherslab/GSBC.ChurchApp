@@ -8,6 +8,11 @@ public static class AccessWords
     public static string Place(string? placeName, bool includesTeams) =>
         placeName is null ? "Everywhere" : includesTeams ? $"In {placeName} and its teams" : $"In {placeName}";
 
+    public static string PlaceOf(string objectId, string? name, string scopeKind, bool includesTeams) =>
+        name is null || name == objectId
+            ? includesTeams ? $"For one {scopeKind}, and its teams" : $"For one {scopeKind}"
+            : Place(name, includesTeams);
+
     public static string GivenWhere(RoleInfo role) =>
         role.ScopeKind == ScopeKind.Global.Name ? "Everywhere"
         : role.AppliesToChildren ? $"For one {role.ScopeKind}, and its teams"
