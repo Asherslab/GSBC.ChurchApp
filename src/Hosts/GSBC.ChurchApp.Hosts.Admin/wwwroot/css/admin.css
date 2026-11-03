@@ -374,3 +374,23 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .person-head__email { margin: 2px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
 
 .module-nav__count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: auto; padding: 0 6px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; }
+
+.admin-boot {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 18px;
+    min-height: 100vh;
+    color: var(--primary);
+    animation: admin-boot-in 400ms var(--ease-out) 300ms both;
+}
+
+.admin-boot__mark { width: 56px; animation: admin-boot-pulse 1.6s ease-in-out infinite; }
+.admin-boot__text { color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
+
+@keyframes admin-boot-in { from { opacity: 0; } }
+@keyframes admin-boot-pulse { 50% { opacity: 0.45; } }
+
+@media (prefers-reduced-motion: reduce) {
+    .admin-boot, .admin-boot__mark { animation: none; }
+}
