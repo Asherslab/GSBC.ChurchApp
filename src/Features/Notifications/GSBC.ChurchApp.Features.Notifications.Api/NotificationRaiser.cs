@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using Microsoft.EntityFrameworkCore;
@@ -164,10 +165,13 @@ internal sealed class NotificationRaiser(
                 PacingGroup = pacingGroup,
                 Summarised = overLimit,
                 CreatedAt = now,
-                DueAt = interrupts ? due : QuietHours.NextSendable(due),
+                DueAt = interrupts ? due : AfterQuietHours(due),
             });
         }
     }
+
+    private static DateTime AfterQuietHours(DateTime utc) =>
+        QuietHours.HeldUntil(ChurchTime.ToChurch(utc)) is { } morning ? ChurchTime.ToUtc(morning) : utc;
 
     private async Task<List<Device>> DevicesAsync(Recipients recipients, CancellationToken cancellationToken)
     {
