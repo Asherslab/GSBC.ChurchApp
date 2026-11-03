@@ -242,15 +242,15 @@ button.row:active, a.row:active { background: var(--line); }
 .sheet__mark { position: absolute; right: -44px; top: -18px; width: 180px; opacity: 0.07; z-index: -1; pointer-events: none; }
 
 .paged__cover, .paged__page { touch-action: pan-y; }
-.paged__cover.paged--forward, .paged__page.paged--forward { animation: page-in 260ms var(--ease-out) both; }
-.paged__cover.paged--back, .paged__page.paged--back { animation: page-back 260ms var(--ease-out) both; }
+.paged__cover.paged--forward, .paged__page.paged--forward { animation: paged-in 260ms var(--ease-out) both; }
+.paged__cover.paged--back, .paged__page.paged--back { animation: paged-back 260ms var(--ease-out) both; }
 .paged__page { display: grid; gap: var(--stack); }
 .paged__dots { display: flex; justify-content: center; margin-top: 2px; }
 .paged__dot { width: 36px; height: var(--touch); padding: 0; border: 0; background: none; cursor: pointer; }
 .paged__dot::before { content: ""; display: block; width: 8px; height: 8px; margin: auto; border-radius: var(--radius-full); background: var(--line); transition: width 240ms var(--ease-out), background-color 240ms var(--ease-out); }
 .paged__dot.is-current::before { width: 20px; background: var(--marker); }
-@keyframes page-in { from { opacity: 0; transform: translateX(14px); } }
-@keyframes page-back { from { opacity: 0; transform: translateX(-14px); } }
+@keyframes paged-in { from { opacity: 0; transform: translateX(14px); } }
+@keyframes paged-back { from { opacity: 0; transform: translateX(-14px); } }
 
 .facts { display: grid; gap: 0; margin: 0; }
 .fact { display: grid; grid-template-columns: 34px 1fr; column-gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }

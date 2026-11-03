@@ -84,8 +84,9 @@ owner's iPhone for review.
 in `changelog/`, built into the app by a source generator (staff wording in dev and UAT, the everyone line
 in Release); the highlights show once after an update, and More → What's new lists every version; the
 TestFlight workflow sets What to Test from the notes since the last upload's tag
-([changelog.md](architecture/changelog.md)). Tested in the browser at phone size; the What to Test call and
-the tag push first run with the first TestFlight build.
+([changelog.md](architecture/changelog.md)). The show-once rule proven natively in the iOS Simulator (a fresh
+install shows nothing; a staged update shows the highlight once) and deployed to the owner's iPhone; the
+What to Test call and the tag push first run with the first TestFlight build.
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
