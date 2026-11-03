@@ -170,7 +170,7 @@ Fill in both the same way:
 > This app signs in with passkeys, so there are no passwords. For review there's a demo account
 > that signs in with a code. Open **More → Account**, tap **Have a sign-in code?**, and enter the user
 > name above as the email and the password above as the sign-in code. The demo account has no personal
-> data and can't make changes. Everything public in the app works without signing in.
+> data and no staff tools. Everything public in the app works without signing in.
 
 The code works as often as needed until it expires, so several reviewers can share it. Once Apple has
 approved the build, turn the code off (**App review** → the code → **Turn the code off**); anyone
