@@ -296,8 +296,7 @@ reveals anything about a person.
 
 ## What staff see
 
-One page, **Insights**, in the admin panel and in the app for those who hold `analytics.view` (it
-lives in Analytics.Client, like every management screen). It's written as sentences, not
+One page, **Insights**, in the admin panel only *(owner, 2026-11-03)*. It's written as sentences, not
 dashboards:
 
 1. **Three headline numbers, each compared with last week:**
@@ -383,6 +382,7 @@ week" appears once two features report.
    and an offset; Xcode's Organizer has the same crashes symbolicated.
 4. **The admin panel reports its unhandled errors too**, straight to `Diagnostics.Report` (a browser has
    no outbox). It still sends no usage counts.
+5. **Insights is in the admin panel only**, not in the app, even for holders of `analytics.view`.
 
 ### The recommendations, as settled
 
@@ -410,7 +410,7 @@ week" appears once two features report.
 | `IClientDiagnostics` and `CurrentPage` (the route template); every feature's calls go through `ObservedChannel` | Platform.Client |
 | `Measure`, `AddMeasures`, `MeasureCatalog`, `ISubjectNames`, `IUsage` | Platform.Contracts, Platform.Api, Platform.Client |
 | The error reporter (a logger provider for unhandled render errors, unhandled and unobserved exceptions, failed calls, native crashes) and the usage counter | Analytics.Client |
-| App health (admin) and Insights (admin, and the app under More for holders) | Analytics.Admin, Analytics.App |
+| App health and Insights, both in the admin panel only | Analytics.Admin |
 | "Help improve the app" under More: the switch and the privacy notice | Analytics.App |
 | `StatTile`, `TrendLine` (plain SVG, two series at most: this year in the accent, last year in the de-emphasis gray, with a crosshair, a legend and a table view), `RankedList` | Platform.Ui |
 | Quiet outbox entries, MetricKit crash collection | the native data layer (iOS) |

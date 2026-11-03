@@ -247,7 +247,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Api` | Error reports grouped into kinds, failed calls from the server's own interceptor and from the phones, an email to `analytics.health.view` holders when a new kind appears, the Insights viewer role, and pruning (schema `analytics`) | No |
 | `GSBC.ChurchApp.Features.Analytics.Client` | The error reporter behind `IClientDiagnostics` (unhandled exceptions, failed calls, native crashes, sent through the quiet outbox on the phone), the "Help improve the app" consent, and Analytics' gRPC proxies | Yes |
 | `GSBC.ChurchApp.Features.Analytics.App` | The phone's "Help improve the app" page: the switch and the privacy notice | Yes |
-| `GSBC.ChurchApp.Features.Analytics.Admin` | The App health page | Yes |
+| `GSBC.ChurchApp.Features.Analytics.Admin` | The App health and Insights pages (admin panel only) | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
