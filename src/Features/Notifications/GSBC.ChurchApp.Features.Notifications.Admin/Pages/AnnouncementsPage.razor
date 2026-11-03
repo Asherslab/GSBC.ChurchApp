@@ -1,0 +1,11 @@
+@page "/announcements"
+@page "/announcements/{Id}"
+
+<PageTitle>Announcements · Good Shepherd</PageTitle>
+<AnnouncementsWorkbench Id="@(Id == NewAnnouncement ? null : Id)" />
+
+@code {
+    private const string NewAnnouncement = "new";
+
+    [Parameter] public string? Id { get; set; }
+}

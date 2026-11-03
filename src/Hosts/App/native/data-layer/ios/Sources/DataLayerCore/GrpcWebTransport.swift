@@ -17,13 +17,18 @@ public struct GrpcError: Error {
     public let message: String
 }
 
+public protocol RequestSigner: Sendable {
+    func headers(method: String, body: Data) async -> [String: String]
+}
+
 public struct GrpcWebTransport: Sendable {
     public init(gateway: URL, sessionSecret: @escaping @Sendable () -> String? = { nil },
-                onSessionEnded: @escaping @Sendable () -> Void = {}, session: URLSession = .shared) {
+                onSessionEnded: @escaping @Sendable () -> Void = {}, session: URLSession = .shared, signer: RequestSigner? = nil) {
         self.gateway = gateway
         self.session = session
         self.sessionSecret = sessionSecret
         self.onSessionEnded = onSessionEnded
+        self.signer = signer
     }
 
     public static let ok = 0
@@ -41,11 +46,18 @@ public struct GrpcWebTransport: Sendable {
     private let session: URLSession
     private let sessionSecret: @Sendable () -> String?
     private let onSessionEnded: @Sendable () -> Void
+    private let signer: RequestSigner?
+    private static let unsignedPrefixes = ["/gsbc.sync.Sync/", InstallMessages.beginMethod, InstallMessages.attestMethod]
     public static let sessionHeader = "X-Gsbc-Session"
     public static let sessionEndedHeader = "X-Gsbc-Session-Ended"
 
     public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
-        let (data, response) = try await session.data(for: try request(method, message, headers))
+        let framed = Self.frame(message)
+        var headers = headers
+        if let signer, !Self.unsignedPrefixes.contains(where: method.hasPrefix) {
+            headers.merge(await signer.headers(method: method, body: framed)) { mine, _ in mine }
+        }
+        let (data, response) = try await session.data(for: try request(method, framed, headers))
         noticeEndedSession(response)
         let http = try Self.successful(response)
 
@@ -67,7 +79,7 @@ public struct GrpcWebTransport: Sendable {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    var request = try request(method, message, [:])
+                    var request = try request(method, Self.frame(message), [:])
                     request.timeoutInterval = Self.streamIdleTimeout
                     let (bytes, response) = try await session.bytes(for: request)
                     noticeEndedSession(response)
@@ -97,7 +109,7 @@ public struct GrpcWebTransport: Sendable {
         }
     }
 
-    private func request(_ method: String, _ message: Data, _ headers: [String: String]) throws -> URLRequest {
+    private func request(_ method: String, _ body: Data, _ headers: [String: String]) throws -> URLRequest {
         guard let url = URL(string: gateway.absoluteString + method) else {
             throw GrpcError(status: Self.unavailable, message: "Bad method path \(method)")
         }
@@ -108,7 +120,7 @@ public struct GrpcWebTransport: Sendable {
         request.setValue("1", forHTTPHeaderField: "X-Grpc-Web")
         if let secret = sessionSecret() { request.setValue(secret, forHTTPHeaderField: Self.sessionHeader) }
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
-        request.httpBody = Self.frame(message)
+        request.httpBody = body
         return request
     }
 

@@ -8,6 +8,7 @@ public sealed class RoleRecord
     public string Description { get; set; } = "";
     public required string ScopeKind { get; set; }
     public bool AppliesToChildren { get; set; }
+    public bool PhoneHoldable { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<RolePattern> Patterns { get; set; } = [];
     public List<RoleInclude> Includes { get; set; } = [];
@@ -45,6 +46,16 @@ public sealed class Assignment
     public DateTime? ExpiresAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public Guid? CreatedBy { get; set; }
+}
+
+public sealed class PhoneAssignment
+{
+    public Guid Id { get; set; }
+    public Guid InstallId { get; set; }
+    public Guid RoleId { get; set; }
+    public string? ScopeObjectId { get; set; }
+    public DateTime? ExpiresAt { get; set; }
+    public DateTime CreatedAt { get; set; }
 }
 
 public enum AssignmentSource

@@ -41,6 +41,9 @@ else
 foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
     api.WithEnvironment($"Email__Graph__{setting.Key}", setting.Value);
 
+foreach (IConfigurationSection setting in builder.Configuration.GetSection("Notifications:Apns").GetChildren())
+    api.WithEnvironment($"Notifications__Apns__{setting.Key}", setting.Value);
+
 IResourceBuilder<ProjectResource> gateway = builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
@@ -55,7 +58,10 @@ IResourceBuilder<ProjectResource> gateway = builder
 
 string teamFile = Path.Combine(builder.AppHostDirectory, "..", "App", "shell", ".team");
 if (File.Exists(teamFile) && File.ReadAllText(teamFile).Trim() is { Length: > 0 } teamId)
+{
     gateway.WithEnvironment("Apple__TeamId", teamId);
+    api.WithEnvironment("Apple__TeamId", teamId);
+}
 
 if (tunnel is not null)
 {

@@ -59,6 +59,14 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public ValueTask<string> TakeCrashesAsync() => js.InvokeAsync<string>("gsbcNative.takeCrashes");
 
+    public ValueTask<bool> ProveInstallAsync() => IsNative ? js.InvokeAsync<bool>("gsbcNative.proveInstall") : ValueTask.FromResult(false);
+
+    public ValueTask<string> PushPermissionAsync() => js.InvokeAsync<string>("gsbcNative.pushPermission");
+
+    public ValueTask<NativePushRegistration> RegisterPushAsync() => js.InvokeAsync<NativePushRegistration>("gsbcNative.registerPush");
+
+    public ValueTask SetBadgeAsync(int count) => IsNative ? js.InvokeVoidAsync("gsbcNative.setBadge", count) : ValueTask.CompletedTask;
+
     public ValueTask<NativeUnaryResult> UnaryAsync(string method, byte[] request, CancellationToken cancellationToken) =>
         js.InvokeAsync<NativeUnaryResult>("gsbcNative.unary", cancellationToken, method, Convert.ToBase64String(request));
 
@@ -84,5 +92,7 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 public sealed record NativeAppVersion(string? Version, string? Build);
 
 public sealed record NativeDevice(string? Platform, int OsMajor);
+
+public sealed record NativePushRegistration(string Permission, string? Token, string? Environment, string? AppId);
 
 public sealed record NativeUnaryResult(int Status, string? Message, string? Response);

@@ -6,6 +6,7 @@ final class DataLayerRuntime: @unchecked Sendable {
     static let shared = DataLayerRuntime()
 
     static let vault = SessionKeychain()
+    static let installs = InstallAttestation()
 
     let transport: GrpcWebTransport?
     let store: FeedStore?
@@ -29,7 +30,8 @@ final class DataLayerRuntime: @unchecked Sendable {
     private init() {
         transport = Self.configuredGateway().map {
             GrpcWebTransport(gateway: $0, sessionSecret: { DataLayerRuntime.vault.read() },
-                             onSessionEnded: { DataLayerRuntime.shared.sessionEndedElsewhere() })
+                             onSessionEnded: { DataLayerRuntime.shared.sessionEndedElsewhere() },
+                             signer: DataLayerRuntime.installs)
         }
         store = try? FeedStore(directory: Self.storeDirectory())
         let media = try? MediaCache(directory: Self.mediaDirectory())

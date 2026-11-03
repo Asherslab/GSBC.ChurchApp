@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Analytics.Admin;
 using GSBC.ChurchApp.Features.Accounts.Admin;
 using GSBC.ChurchApp.Features.Configuration.Admin;
 using GSBC.ChurchApp.Features.Media.Admin;
+using GSBC.ChurchApp.Features.Notifications.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
 using GSBC.ChurchApp.Platform.Client;
 using GSBC.ChurchApp.Platform.Client.Modules;
@@ -25,6 +26,7 @@ builder.Services
     .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
     .AddConfigurationAdmin(modules)
     .AddMediaAdmin(modules)
+    .AddNotificationsAdmin(modules)
     .AddAccountsAdmin(modules)
     .AddAccessAdmin(modules)
     .AddAnalyticsAdmin(modules);

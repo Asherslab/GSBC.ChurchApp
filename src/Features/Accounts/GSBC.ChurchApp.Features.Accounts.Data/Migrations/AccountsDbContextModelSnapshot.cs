@@ -179,6 +179,59 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                     b.ToTable("users", "accounts");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.AppInstall", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("AppId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("app_id");
+
+                    b.Property<DateTime>("AttestedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("attested_at");
+
+                    b.Property<bool>("Blocked")
+                        .HasColumnType("boolean")
+                        .HasColumnName("blocked");
+
+                    b.Property<long>("Counter")
+                        .HasColumnType("bigint")
+                        .HasColumnName("counter");
+
+                    b.Property<string>("Environment")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("environment");
+
+                    b.Property<string>("KeyId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("key_id");
+
+                    b.Property<DateTime>("LastSeenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_seen_at");
+
+                    b.Property<byte[]>("PublicKey")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("public_key");
+
+                    b.HasKey("Id")
+                        .HasName("pk_installs");
+
+                    b.HasIndex("KeyId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_installs_key_id");
+
+                    b.ToTable("installs", "accounts");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.AuditEntry", b =>
                 {
                     b.Property<long>("Id")
@@ -223,6 +276,22 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasDatabaseName("ix_audit_user_id_at");
 
                     b.ToTable("audit", "accounts");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.InstallChallenge", b =>
+                {
+                    b.Property<byte[]>("Challenge")
+                        .HasColumnType("bytea")
+                        .HasColumnName("challenge");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.HasKey("Challenge")
+                        .HasName("pk_install_challenges");
+
+                    b.ToTable("install_challenges", "accounts");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.OneTimeCode", b =>

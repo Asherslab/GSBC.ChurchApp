@@ -15,6 +15,7 @@
 | [environments.md](architecture/environments.md) | Dev, UAT and production: apps, hosts, what deploys when, TestFlight, the owner's set-up |
 | [data-driven.md](architecture/data-driven.md) | What staff can reshape without a release, and how |
 | [drafts.md](architecture/drafts.md) | Drafts, the event layer and previewing on your own phone, before anything reaches everyone |
+| [notifications.md](architecture/notifications.md) | Notification kinds any feature raises, audiences through Access, the inbox, push, silent sync, announcements |
 | [changelog.md](architecture/changelog.md) | Release notes: one file per change, built into the app; What's new after an update; versions; TestFlight's What to Test |
 | [rich-text.md](architecture/rich-text.md) | The one formatted-text format: a Markdown subset, checked on save, one renderer and editor |
 
@@ -111,6 +112,13 @@ the same `Sync.Watch` stream as the phone, and an open stream ends when its sign
 draft: [drafts.md](architecture/drafts.md), *Live in the admin panel*). Proven through `dev-app.baptist.com.au`: the
 stream starts at the latest cursor and a committed change arrives at once; the two-window test with two
 signed-in accounts is the owner's to run (it needs their passkeys).
+
+**Notifications and push (2026-11-03, branch `feature/notifications`):** the design is approved
+([notifications.md](architecture/notifications.md)) and built: App Attest (the `[AppInstall]` tier), phones as
+holders in Access, notification kinds any feature raises, the inbox and the bell, preferences, APNs with pacing
+and quiet hours, the silent push for sync, announcements in the admin panel, and drafts as the first source.
+Tested against Postgres; waiting on the owner's APNs key and App Attest/Push capabilities before it runs on a
+phone (notifications.md, *What the owner sets up*).
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.

@@ -28,7 +28,7 @@ internal sealed class NewErrorKinds(
                 return;
 
             IReadOnlyList<string> recipients = await accounts.EmailsOfAsync(
-                await holders.HoldersOfAsync(AnalyticsPermissions.HealthViewNode, cancellationToken), cancellationToken);
+                (await holders.HoldersAsync(AnalyticsPermissions.HealthView, null, cancellationToken)).People, cancellationToken);
 
             List<ErrorKindRecord> announced = await db.ErrorKinds
                 .Where(kind => kinds.Contains(kind.Id) && kind.NotifiedAt == null)

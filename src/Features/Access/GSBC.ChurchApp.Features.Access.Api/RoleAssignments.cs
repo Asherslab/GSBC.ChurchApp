@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Access.Api;
 
-internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes, AssignmentRules rules, TimeProvider time) : IRoleAssignments
+internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes, AssignmentRules rules, TimeProvider time) : IRoleAssignments, IPhoneRoles
 {
     public async ValueTask<AssignmentOutcome> GiveAsync(
         Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
@@ -52,11 +52,98 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
 
     public async ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => await changes.AnnounceAsync(cancellationToken);
 
+    async ValueTask IPhoneRoles.GiveAsync(Guid installId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
+    {
+        RoleRecord role = await PhoneRoleAsync(roleKey, objectId, cancellationToken);
+        PhoneAssignment? existing = await db.PhoneAssignments.SingleOrDefaultAsync(assignment =>
+            assignment.InstallId == installId && assignment.RoleId == role.Id && assignment.ScopeObjectId == objectId, cancellationToken);
+        if (existing is null)
+        {
+            db.PhoneAssignments.Add(new PhoneAssignment
+            {
+                Id = Guid.CreateVersion7(),
+                InstallId = installId,
+                RoleId = role.Id,
+                ScopeObjectId = objectId,
+                ExpiresAt = expiresAt,
+                CreatedAt = Now,
+            });
+        }
+        else
+        {
+            existing.ExpiresAt = expiresAt;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    async ValueTask IPhoneRoles.TakeAwayAsync(Guid installId, string roleKey, string? objectId, CancellationToken cancellationToken)
+    {
+        RoleRecord role = await SystemRoleAsync(roleKey, cancellationToken);
+        await db.PhoneAssignments
+            .Where(assignment => assignment.InstallId == installId && assignment.RoleId == role.Id && assignment.ScopeObjectId == objectId)
+            .ExecuteDeleteAsync(cancellationToken);
+    }
+
+    async ValueTask<IReadOnlyList<HeldRole>> IPhoneRoles.HeldAsync(Guid installId, CancellationToken cancellationToken)
+    {
+        DateTime now = Now;
+        return await db.PhoneAssignments.AsNoTracking()
+            .Where(assignment => assignment.InstallId == installId && (assignment.ExpiresAt == null || assignment.ExpiresAt > now))
+            .Join(db.Roles.Where(role => role.SystemKey != null), assignment => assignment.RoleId, role => role.Id,
+                (assignment, role) => new HeldRole(role.SystemKey!, assignment.ScopeObjectId, assignment.ExpiresAt))
+            .ToListAsync(cancellationToken);
+    }
+
+    async ValueTask IPhoneRoles.MoveToPersonAsync(Guid installId, Guid userId, CancellationToken cancellationToken)
+    {
+        DateTime now = Now;
+        List<PhoneAssignment> held = await db.PhoneAssignments.Where(assignment => assignment.InstallId == installId).ToListAsync(cancellationToken);
+        foreach (PhoneAssignment phone in held.Where(assignment => assignment.ExpiresAt == null || assignment.ExpiresAt > now))
+        {
+            Assignment? existing = await db.Assignments.SingleOrDefaultAsync(assignment =>
+                assignment.UserId == userId && assignment.RoleId == phone.RoleId && assignment.ScopeObjectId == phone.ScopeObjectId, cancellationToken);
+            if (existing is null)
+            {
+                db.Assignments.Add(new Assignment
+                {
+                    Id = Guid.CreateVersion7(),
+                    UserId = userId,
+                    RoleId = phone.RoleId,
+                    ScopeObjectId = phone.ScopeObjectId,
+                    Source = AssignmentSource.Derived,
+                    ExpiresAt = phone.ExpiresAt,
+                    CreatedAt = now,
+                });
+            }
+            else if (existing.ExpiresAt is { } ends && (phone.ExpiresAt is null || phone.ExpiresAt > ends))
+            {
+                existing.ExpiresAt = phone.ExpiresAt;
+            }
+        }
+
+        db.PhoneAssignments.RemoveRange(held);
+        await db.SaveChangesAsync(cancellationToken);
+        if (held.Count > 0)
+            await changes.AnnounceAsync(cancellationToken);
+    }
+
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
     private async Task<RoleRecord> SystemRoleAsync(string roleKey, CancellationToken cancellationToken) =>
         await db.Roles.AsNoTracking().Include(role => role.Assigners).SingleOrDefaultAsync(role => role.SystemKey == roleKey, cancellationToken)
         ?? throw new InvalidOperationException($"No system role '{roleKey}' is declared.");
+
+    private async Task<RoleRecord> PhoneRoleAsync(string roleKey, string? objectId, CancellationToken cancellationToken)
+    {
+        RoleRecord role = await SystemRoleAsync(roleKey, cancellationToken);
+        if (!role.PhoneHoldable)
+            throw new InvalidOperationException($"The role '{roleKey}' can't be given to a phone.");
+        ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
+        if (AssignmentRules.ScopeProblem(kind, objectId) is { } problem)
+            throw new ArgumentException(problem, nameof(objectId));
+        return role;
+    }
 
     private async Task AddAsync(
         Guid userId, RoleRecord role, string? objectId, DateTime? expiresAt, AssignmentSource source, Guid? createdBy, CancellationToken cancellationToken)

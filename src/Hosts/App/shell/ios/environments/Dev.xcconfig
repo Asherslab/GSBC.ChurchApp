@@ -8,4 +8,7 @@ GSBC_GATEWAY = dev-app.baptist.com.au
 GSBC_ASSOCIATED_DOMAIN = dev-app.baptist.com.au
 GSBC_DEVELOPMENT_BUILD = YES
 
+GSBC_APS_ENVIRONMENT = development
+GSBC_APP_ATTEST_ENVIRONMENT = development
+
 #include? "../local.xcconfig"

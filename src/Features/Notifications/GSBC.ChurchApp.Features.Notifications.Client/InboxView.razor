@@ -1,0 +1,67 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Common
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@inject Inbox Inbox
+@inject NavigationManager Navigation
+@inject Shell Shell
+
+<LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    @if (context.Value.Count == 0)
+    {
+        <EmptyState Icon="bell" Title="Nothing yet" Body="Notices from the church, your groups and anything waiting for you will show here." />
+    }
+    else
+    {
+        <Section First="true">
+            <Trailing>
+                @if (context.Value.Any(entry => entry.Unread))
+                {
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Inbox.MarkReadAsync(context.Value)">Mark all as read</Button>
+                }
+            </Trailing>
+            <ChildContent>
+                <ListGroup>
+                    @foreach (InboxEntry entry in context.Value)
+                    {
+                        <ListRow Title="@entry.Item.Title" Subtitle="@Subtitle(entry.Item)" Icon="@IconOf(entry.Item)" IconTone="@(entry.Unread ? RowTone.Warm : RowTone.Quiet)"
+                                 Trailing="@When(entry.Item.RaisedAt)" Reading="true" OnClick="() => OpenAsync(entry)">
+                            <TitleExtra>
+                                @if (entry.Unread)
+                                {
+                                    <span class="unread-dot" role="img" aria-label="Unread"></span>
+                                }
+                            </TitleExtra>
+                        </ListRow>
+                    }
+                </ListGroup>
+            </ChildContent>
+        </Section>
+    }
+</LiveData>
+
+@code {
+    private async Task OpenAsync(InboxEntry entry)
+    {
+        await Inbox.MarkReadAsync([entry]);
+        if (entry.Item.Link is not { } link)
+            return;
+        if (LinkTargets.InAppRoute(link) is { } route)
+            Navigation.NavigateTo(route);
+        else if (LinkTargets.KindOf(link) == LinkKind.Web)
+            await Shell.OpenExternalAsync(link);
+    }
+
+    private static string Subtitle(InboxItem item) =>
+        string.IsNullOrEmpty(item.Body) ? item.Area : $"{item.Body}";
+
+    private static string IconOf(InboxItem item) => item.Urgent ? "alert" : item.Test ? "eye" : "bell";
+
+    private static string When(DateTime raisedAt)
+    {
+        DateTime church = ChurchTime.ToChurch(raisedAt);
+        DateTime today = ChurchTime.ToChurch(DateTime.UtcNow).Date;
+        return church.Date == today ? church.ToString("h:mmtt", CultureInfo.InvariantCulture).ToLowerInvariant()
+            : church.Date == today.AddDays(-1) ? "Yesterday"
+            : church.ToString("d MMM", CultureInfo.InvariantCulture);
+    }
+}

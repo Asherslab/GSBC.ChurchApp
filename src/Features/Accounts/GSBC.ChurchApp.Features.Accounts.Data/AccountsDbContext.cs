@@ -13,6 +13,8 @@ public sealed class AccountsDbContext(DbContextOptions<AccountsDbContext> option
     public DbSet<AccountSession> Sessions => Set<AccountSession>();
     public DbSet<OneTimeCode> Codes => Set<OneTimeCode>();
     public DbSet<AuditEntry> Audit => Set<AuditEntry>();
+    public DbSet<AppInstall> Installs => Set<AppInstall>();
+    public DbSet<InstallChallenge> InstallChallenges => Set<InstallChallenge>();
     public DbSet<ReviewCode> ReviewCodes => Set<ReviewCode>();
     public DbSet<FeedChangeRecord> FeedChanges => Set<FeedChangeRecord>();
 
@@ -58,6 +60,20 @@ public sealed class AccountsDbContext(DbContextOptions<AccountsDbContext> option
             entity.HasIndex(code => code.UserId);
             entity.Property(code => code.Label).HasMaxLength(Data.ReviewCodes.LabelLength);
             entity.HasOne<AccountUser>().WithMany().HasForeignKey(code => code.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<AppInstall>(entity =>
+        {
+            entity.ToTable("installs");
+            entity.HasKey(install => install.Id);
+            entity.HasIndex(install => install.KeyId).IsUnique();
+            entity.Property(install => install.Environment).HasConversion<string>();
+        });
+
+        modelBuilder.Entity<InstallChallenge>(entity =>
+        {
+            entity.ToTable("install_challenges");
+            entity.HasKey(challenge => challenge.Challenge);
         });
     }
 }

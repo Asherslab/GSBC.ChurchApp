@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -108,7 +109,8 @@ internal sealed class AnalyticsHost : IAsyncDisposable
 
     private sealed class Holders(IReadOnlyList<Guid> holders) : IPermissionHolders
     {
-        public ValueTask<IReadOnlyList<Guid>> HoldersOfAsync(string node, CancellationToken cancellationToken) => ValueTask.FromResult(holders);
+        public ValueTask<PermissionHolders> HoldersAsync(Permission permission, string? objectId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(new PermissionHolders(holders, []));
     }
 
     private sealed class Emails(Dictionary<Guid, string> emails) : IAccountEmails

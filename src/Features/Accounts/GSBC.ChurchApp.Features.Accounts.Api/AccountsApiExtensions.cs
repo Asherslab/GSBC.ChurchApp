@@ -1,5 +1,8 @@
 using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Features.Accounts.Api.Installs;
 using GSBC.ChurchApp.Features.Accounts.Data;
+using GSBC.ChurchApp.Platform.Api.Installs;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Hosting;
@@ -27,6 +30,9 @@ public static class AccountsApiExtensions
         services.AddSystemRole(DemoAccounts.Role);
         services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>();
         services.AddHostedService<AccountsCleanup>();
+        services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));
+        services.AddScoped<IInstallVerifier, InstallVerifier>();
+        services.AddScoped<IPeopleIndex, AccountsPeopleIndex>();
         services.AddScoped<ISignedInSessions, AccountSessionCheck>();
         services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
         services.AddScoped<IAccountEmails, AccountEmailLookup>();
@@ -37,6 +43,15 @@ public static class AccountsApiExtensions
     {
         endpoints.MapGrpcService<SessionService>();
         endpoints.MapGrpcService<AccountsService>();
+        endpoints.MapGrpcService<InstallsService>();
         return endpoints;
+    }
+
+    private static string[] AppIds(IConfiguration configuration)
+    {
+        IConfigurationSection apple = configuration.GetSection("Apple");
+        return apple["TeamId"] is { Length: > 0 } teamId
+            ? [$"{teamId.Trim()}.{(apple["BundleId"] is { Length: > 0 } bundleId ? bundleId : "au.com.baptist.app")}"]
+            : [];
     }
 }

@@ -64,6 +64,10 @@
         new(PreviewViewer.Member, "A member", "users"),
     ];
 
+    [SupplyParameterFromQuery(Name = "draft")] public string? Opened { get; set; }
+
+    private string? _openedChosen;
+
     private PreviewChoice? Current => Preview.Current;
 
     protected override async Task OnInitializedAsync()
@@ -76,9 +80,20 @@
     {
         IReadOnlyList<StoredRecord> drafts = await Feeds.ReadPageAsync(new FeedPageQuery(ConfigurationFeeds.Drafts, Descending: true, Limit: MostDrafts));
         IReadOnlyList<StoredRecord> layer = await Feeds.ReadPageAsync(new FeedPageQuery(ConfigurationFeeds.Placements, Limit: 1, GroupKey: ConfigurationFeeds.EventLayerRecord));
-        return new Previewable(
+        Previewable previewable = new(
             drafts.Select(record => ConfigurationContractsModel.Instance.Deserialize<Draft>(new MemoryStream(record.Payload))).ToList(),
             layer.Count == 0 ? null : ConfigurationContractsModel.Instance.Deserialize<EventLayerMessage>(new MemoryStream(layer[0].Payload)));
+        await PreviewOpenedAsync(previewable);
+        return previewable;
+    }
+
+    private async Task PreviewOpenedAsync(Previewable previewable)
+    {
+        if (Opened is null || Opened == _openedChosen || previewable.Drafts.FirstOrDefault(draft => draft.Id == Opened) is not { } opened)
+            return;
+        _openedChosen = Opened;
+        if (Current?.DraftId != opened.Id)
+            await ChooseAsync(opened);
     }
 
     private static string Describe(Draft draft)

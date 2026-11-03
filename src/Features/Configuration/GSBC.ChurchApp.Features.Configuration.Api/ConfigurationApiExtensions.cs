@@ -24,6 +24,7 @@ public static class ConfigurationApiExtensions
             "Sees a draft on their phone before it's published", ScopeKind.Draft, [ConfigurationPermissions.PreviewDraft.Node], AssignableBy: []));
         services.AddSystemRole(new SystemRole("app-editor", "App editor",
             "Arranges the app's Home screen and colours, sees every draft, and publishes", ScopeKind.Global, ["config.*"]));
+        services.AddNotificationKinds(DraftNotifications.All);
         services.AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
         services.AddMeasures(HubSurfaces.TileTapped);
         services.AddScoped<ISubjectNames, HubTileNames>();

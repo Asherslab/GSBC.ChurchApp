@@ -112,6 +112,14 @@ flowchart LR
         AnalyticsContracts["Features.Analytics.Contracts"]
     end
 
+    subgraph Notifications["Features / Notifications"]
+        NotificationsApp["Features.Notifications.App"]
+        NotificationsAdmin["Features.Notifications.Admin"]
+        NotificationsClient["Features.Notifications.Client"]
+        NotificationsApi["Features.Notifications.Api"]
+        NotificationsContracts["Features.Notifications.Contracts"]
+    end
+
     subgraph ReleaseNotes["Features / ReleaseNotes"]
         ReleaseNotesApp["Features.ReleaseNotes.App"]
         ReleaseNotesGenerator["Features.ReleaseNotes.Generator"]
@@ -139,15 +147,16 @@ flowchart LR
         ConfigurationTests["Features.Configuration.Api.Tests"]
         MediaTests["Features.Media.Api.Tests"]
         AnalyticsTests["Features.Analytics.Api.Tests"]
+        NotificationsTests["Features.Notifications.Api.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -171,6 +180,11 @@ flowchart LR
     MediaClient --> MediaContracts & PlatformClient & PlatformUi
     MediaApi --> MediaContracts & PlatformApi & PlatformStorage
     MediaContracts --> PlatformContracts
+    NotificationsApp --> NotificationsClient
+    NotificationsAdmin --> NotificationsClient
+    NotificationsClient --> NotificationsContracts & PlatformClient & PlatformUi & PlatformCommon
+    NotificationsApi --> NotificationsContracts & PlatformApi & PlatformCommon
+    NotificationsContracts --> PlatformContracts
 
     AnalyticsApp --> AnalyticsClient
     AnalyticsAdmin --> AnalyticsClient
@@ -195,6 +209,7 @@ flowchart LR
     ConfigurationTests --> ConfigurationApi
     MediaTests --> MediaApi
     AnalyticsTests --> AnalyticsApi
+    NotificationsTests --> NotificationsApi
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -250,6 +265,11 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Client` | The error reporter behind `IClientDiagnostics` (unhandled exceptions, failed calls, native crashes, sent through the quiet outbox on the phone), the "Help improve the app" consent, and Analytics' gRPC proxies | Yes |
 | `GSBC.ChurchApp.Features.Analytics.App` | The phone's "Help improve the app" page: the switch and the privacy notice | Yes |
 | `GSBC.ChurchApp.Features.Analytics.Admin` | The App health and Insights pages (admin panel only) | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Contracts` | The `Notifications` and `Announcements` services, the inbox, kinds and preferences feeds, the announcement kinds and the `notifications.announcements.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Api` | `INotifications`: audiences through Access, the inbox feeds, preferences, pacing, quiet hours; push through APNs with retries and dead tokens dropped; the silent push for sync; announcements and their schedule (schema `notifications`) | No |
+| `GSBC.ChurchApp.Features.Notifications.Client` | The inbox (`Inbox`, also the bell's `IInboxCount`), push registration, preferences, and the shared `InboxView`, `NotificationSettings` and `AnnouncementsWorkbench` components | Yes |
+| `GSBC.ChurchApp.Features.Notifications.App` | The phone's Notifications list (from the bell) and More → Notifications | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
@@ -261,11 +281,12 @@ flowchart LR
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
-| `GSBC.ChurchApp.Features.Accounts.Api.Tests` | Against Postgres: a review sign-in code works only while live, never reaches an account that isn't a demo account, and wrong guesses are throttled | No |
+| `GSBC.ChurchApp.Features.Accounts.Api.Tests` | Against Postgres: a review sign-in code works only while live, never reaches an account that isn't a demo account, and wrong guesses are throttled. App Attest: a genuine attestation is accepted, and refused for another challenge, app or root; an assertion only for its own request, once | No |
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores; images in settings are the library's; unsafe rich text is never stored | No |
 | `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience, a saved `MediaRef` is the library's, dimensions come from the bytes, files in use can't be deleted | No |
 | `GSBC.ChurchApp.Features.Analytics.Api.Tests` | Against Postgres: one kind per error however many phones report it, a resent report counts once, the owner hears once per new kind, only the app and admin panel may report and only about recent days, failed calls add up, errors go after 30 days; stack summaries keep no paths or build numbers | No |
+| `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |

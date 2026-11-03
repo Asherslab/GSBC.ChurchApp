@@ -1,0 +1,57 @@
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Client.Feeds
+@using GSBC.ChurchApp.Platform.Client.Native
+@implements IDisposable
+@inject ILocalFeeds Feeds
+@inject IAccess Access
+@inject PushRegistration Push
+@inject NotificationPreferences Preferences
+
+@if (Push.Permission == PushRegistration.Denied)
+{
+    <Notice Tone="NoticeTone.Warning" Text="Notifications are off for this app in your iPhone's Settings. Turn them on there to hear from the church." />
+}
+else if (Push.Permission != PushRegistration.Granted)
+{
+    <Section First="true">
+        <Card Title="Hear from the church">
+            <ChildContent><p>Get a notification when the church sends an announcement, or something is waiting for you.</p></ChildContent>
+            <Footer><Button Busy="_turningOn" OnClick="TurnOnAsync">Turn on notifications</Button></Footer>
+        </Card>
+    </Section>
+}
+
+<LiveData TValue="IReadOnlyList<KindChoice>" Load="Preferences.LoadAsync" Feeds="NotificationPreferences.Feeds">
+    @foreach (IGrouping<string, KindChoice> area in context.Value.GroupBy(choice => choice.Kind.Area))
+    {
+        <Section Title="@area.Key">
+            <ListGroup>
+                @foreach (KindChoice choice in area)
+                {
+                    <ToggleRow Title="@choice.Kind.Description" Description="@(choice.Kind.Mandatory ? "Always on: it's about your account's safety" : null)"
+                               Checked="choice.Push" Disabled="choice.Kind.Mandatory" CheckedChanged="push => Preferences.SetAsync(choice.Kind, push)" />
+                }
+            </ListGroup>
+        </Section>
+    }
+    <Section>
+        <p class="hint">Everything still reaches your notifications list; these only choose what can buzz your phone.@(Access.SignedIn ? "" : " Sign in to keep your choices on every phone you use.")</p>
+    </Section>
+</LiveData>
+
+@code {
+    private bool _turningOn;
+
+    protected override void OnInitialized() => Push.Changed += OnChanged;
+
+    private async Task TurnOnAsync()
+    {
+        _turningOn = true;
+        await Push.TurnOnAsync();
+        _turningOn = false;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Push.Changed -= OnChanged;
+}

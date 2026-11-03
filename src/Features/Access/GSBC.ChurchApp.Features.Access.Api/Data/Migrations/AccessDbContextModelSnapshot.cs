@@ -97,6 +97,46 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                     b.ToTable("catalog", "access");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.PhoneAssignment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<DateTime?>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<Guid>("InstallId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("install_id");
+
+                    b.Property<Guid>("RoleId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("role_id");
+
+                    b.Property<string>("ScopeObjectId")
+                        .HasColumnType("text")
+                        .HasColumnName("scope_object_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_phone_assignments");
+
+                    b.HasIndex("RoleId")
+                        .HasDatabaseName("ix_phone_assignments_role_id");
+
+                    b.HasIndex("InstallId", "RoleId", "ScopeObjectId")
+                        .IsUnique()
+                        .HasDatabaseName("ix_phone_assignments_install_id_role_id_scope_object_id");
+
+                    b.ToTable("phone_assignments", "access");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleAssigner", b =>
                 {
                     b.Property<Guid>("RoleId")
@@ -175,6 +215,10 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("name");
+
+                    b.Property<bool>("PhoneHoldable")
+                        .HasColumnType("boolean")
+                        .HasColumnName("phone_holdable");
 
                     b.Property<string>("ScopeKind")
                         .IsRequired()
@@ -275,6 +319,16 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                         .HasConstraintName("fk_assignments_roles_role_id");
 
                     b.Navigation("Role");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.PhoneAssignment", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Access.Api.Data.RoleRecord", null)
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_phone_assignments_roles_role_id");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Access.Api.Data.RoleAssigner", b =>

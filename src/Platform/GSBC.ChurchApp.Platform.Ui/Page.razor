@@ -13,7 +13,13 @@
             }
         </div>
         <div class="topbar__title" aria-hidden="true">@Title</div>
-        <div class="topbar__end">@Actions</div>
+        <div class="topbar__end">
+            @Actions
+            @if (BackHref is null)
+            {
+                <InboxBell />
+            }
+        </div>
     </header>
     <div class="page @(BackHref is null ? "" : "page--push")">
         @ChildContent

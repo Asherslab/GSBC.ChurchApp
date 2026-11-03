@@ -1,0 +1,36 @@
+@using GSBC.ChurchApp.Platform.Client.Notifications
+@implements IDisposable
+@inject IServiceProvider Services
+
+@if (_count is not null)
+{
+    <a class="icon-btn" href="@_count.Href" aria-label="@Label">
+        <Icon Name="bell" />
+        @if (_count.Unread > 0)
+        {
+            <span class="badge-count" aria-hidden="true">@(_count.Unread > MostShown ? $"{MostShown}+" : _count.Unread.ToString())</span>
+        }
+    </a>
+}
+
+@code {
+    private const int MostShown = 99;
+    private IInboxCount? _count;
+
+    private string Label => _count is { Unread: > 0 } count ? $"Notifications, {count.Unread} unread" : "Notifications";
+
+    protected override void OnInitialized()
+    {
+        _count = Services.GetService(typeof(IInboxCount)) as IInboxCount;
+        if (_count is not null)
+            _count.Changed += OnChanged;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (_count is not null)
+            _count.Changed -= OnChanged;
+    }
+}

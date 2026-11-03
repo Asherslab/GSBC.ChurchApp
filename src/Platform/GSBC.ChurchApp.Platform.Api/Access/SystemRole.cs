@@ -9,4 +9,5 @@ public sealed record SystemRole(
     ScopeKind ScopeKind,
     IReadOnlyList<string> Patterns,
     IReadOnlyList<string>? AssignableBy = null,
-    bool AppliesToChildren = false);
+    bool AppliesToChildren = false,
+    bool PhoneHoldable = false);

@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Analytics.App;
 using GSBC.ChurchApp.Features.Accounts.App;
 using GSBC.ChurchApp.Features.Configuration.App;
 using GSBC.ChurchApp.Features.Media.Client;
+using GSBC.ChurchApp.Features.Notifications.App;
 using GSBC.ChurchApp.Features.ReleaseNotes.App;
 using GSBC.ChurchApp.Hosts.App;
 using GSBC.ChurchApp.Platform.Client;
@@ -29,7 +30,8 @@ builder.Services
     .AddAccountsApp(modules)
     .AddAccessOnPhone(modules)
     .AddConfigurationApp(modules)
-    .AddMediaClient();
+    .AddMediaClient()
+    .AddNotificationsApp(modules);
 modules.Add(new ClientModule("Settings", typeof(Program).Assembly,
     [new NavEntry("Appearance", "appearance", "sun"), new NavEntry("Storage", "storage", "database")]));
 builder.Services.AddReleaseNotesApp(modules);
