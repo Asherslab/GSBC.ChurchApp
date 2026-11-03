@@ -94,7 +94,9 @@ What to Test call and the tag push first run with the first TestFlight build.
 two when anyone changes what they show (drafts, publishing, media, roles, people, your own access), over
 the same `Sync.Watch` stream as the phone, and an open stream ends when its sign-in does
 ([offline-and-caching.md](architecture/offline-and-caching.md), *The admin panel*; two people in one
-draft: [drafts.md](architecture/drafts.md), *Live in the admin panel*).
+draft: [drafts.md](architecture/drafts.md), *Live in the admin panel*). Proven through `dev-app.baptist.com.au`: the
+stream starts at the latest cursor and a committed change arrives at once; the two-window test with two
+signed-in accounts is the owner's to run (it needs their passkeys).
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
