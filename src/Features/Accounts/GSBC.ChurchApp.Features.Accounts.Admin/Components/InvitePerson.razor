@@ -1,0 +1,47 @@
+@using Grpc.Core
+@inject AccountsClient Accounts
+
+<h2 class="panel-title">Invite someone</h2>
+<p class="panel-lead">They get an email with a link to make their account and a passkey. Give them a role afterwards in Who can do what.</p>
+<form class="panel-form" @onsubmit="SendAsync">
+    <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" />
+    <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" />
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    <Notice Text="@_sent" />
+    <div class="panel-actions">
+        <Button Type="submit" Icon="send" Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)">Send the invitation</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
+    </div>
+</form>
+
+@code {
+    private string _name = "";
+    private string _email = "";
+    private string? _problem;
+    private string? _sent;
+    private bool _busy;
+
+    [Parameter] public EventCallback OnSent { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task SendAsync()
+    {
+        _busy = true;
+        _problem = _sent = null;
+        try
+        {
+            await Accounts.InviteAsync(_name.Trim(), _email.Trim());
+            _sent = $"Invitation sent to {_email.Trim()}.";
+            _name = _email = "";
+            await OnSent.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
