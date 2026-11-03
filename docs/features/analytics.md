@@ -450,7 +450,7 @@ look at it without the admin panel. `tools/health/errors.sh` reads the same two 
 health screen calls, through the gateway with gRPC-Web, as a **connected tool** of the person's own account.
 
 ```bash
-tools/health/connect.sh dev            # once: paste the session secret from the admin panel (not echoed)
+tools/health/connect.sh dev            # once: paste the secret (not echoed), or copy it first when there is no keyboard
 tools/health/errors.sh --env dev       # error kinds and failed calls, the last 7 days (--days 30 at most)
 tools/health/errors.sh --env dev 0195f0aa   # one error in full: type, where, frames, routes, platforms, builds, by day
 ```

@@ -8,8 +8,13 @@ case "$environment" in
 esac
 service="gsbc-tool-$environment"
 
-read -rsp "Paste the session secret from the $environment admin panel's Account page: " secret
-echo
+if [[ -t 0 ]]; then
+  read -rsp "Paste the session secret from the $environment admin panel's Account page: " secret
+  echo
+else
+  secret="$(pbpaste | tr -d '[:space:]')"
+  echo "No keyboard here, so the secret was taken from the clipboard."
+fi
 if [[ ! "$secret" =~ ^[A-Za-z0-9_-]{40,}$ ]]; then
   echo "That doesn't look like a session secret. Copy it again with the Copy button." >&2
   exit 1
