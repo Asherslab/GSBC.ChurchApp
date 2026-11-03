@@ -269,6 +269,7 @@ button.row:active, a.row:active { background: var(--line); }
 .sheet-heading__note { margin: 10px 0 0 58px; font-size: var(--text-label); font-weight: 600; color: var(--masthead-note); }
 .sheet__summary { margin: 4px 0 0; max-width: 65ch; font-size: var(--text-lead); line-height: 1.55; color: var(--ink); text-wrap: pretty; }
 .sheet__step { display: grid; gap: var(--stack); }
+.sheet .section { margin-top: 0; padding-inline: 0; }
 .sheet__step--next { animation: paged-in 260ms var(--ease-out) both; }
 .paged__cover, .paged__page { touch-action: pan-y; }
 .paged__cover.paged--forward, .paged__page.paged--forward { animation: paged-in 260ms var(--ease-out) both; }

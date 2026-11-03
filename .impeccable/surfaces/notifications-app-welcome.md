@@ -27,8 +27,8 @@ system prompt on launch, a multi-page onboarding carousel, and a second sheet st
 
 OWN-WORLD: The existing shell's covered sheet: navy cover band with the mark at 7%, a 44px bell tile on the
 masthead chip beside "Hear from the church" in headline type, a beige note line; the lead line at lead size;
-a full-width primary capsule and a quiet "Not now" under it. The second step keeps the band ("Choose what
-buzzes your phone", note "Notifications are on") over the settings' hairline toggle rows and Done.
+a full-width primary capsule and a quiet "Not now" under it. The second step keeps the band ("Notifications
+are on", note "Choose what can buzz your phone") over the settings' hairline toggle rows and Done.
 
 STORY: I open the app for the first time, read one line about what the church sends, tap Turn on notifications,
 say Allow, and see the one or two kinds I can turn off; I tap Done and I'm on Home.
