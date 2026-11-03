@@ -1,5 +1,16 @@
 @page "/media"
+@using GSBC.ChurchApp.Features.Media.Contracts
 
-<h1>Media</h1>
+<TitleBand Title="Media" Lead="Every picture and PDF uploaded for the app. Choose one to see it, open it, or delete it if nothing uses it.">
+    <Actions>
+        <Can Permission="MediaPermissions.Upload">
+            <Button Icon="plus" OnClick="() => _library?.StartUpload()">Upload</Button>
+        </Can>
+    </Actions>
+</TitleBand>
 
-<MediaLibrary />
+<MediaLibrary @ref="_library" />
+
+@code {
+    private MediaLibrary? _library;
+}

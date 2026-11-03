@@ -1,7 +1,8 @@
 @page "/welcome"
 
-<h1>Good Shepherd</h1>
-<Welcome Code="@Code" />
+<SignInStage Title="Welcome">
+    <Welcome Code="@Code" />
+</SignInStage>
 
 @code {
     [SupplyParameterFromQuery] public string? Code { get; set; }

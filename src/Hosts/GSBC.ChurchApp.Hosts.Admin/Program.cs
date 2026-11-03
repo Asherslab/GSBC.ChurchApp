@@ -22,10 +22,10 @@ builder.Services
     .AddPlatformClient()
     .AddPlatformUi()
     .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
-    .AddAccountsAdmin(modules)
-    .AddAccessAdmin(modules)
     .AddConfigurationAdmin(modules)
-    .AddMediaAdmin(modules);
+    .AddMediaAdmin(modules)
+    .AddAccountsAdmin(modules)
+    .AddAccessAdmin(modules);
 
 WebAssemblyHost host = builder.Build();
 await host.Services.RunClientStartupTasksAsync();

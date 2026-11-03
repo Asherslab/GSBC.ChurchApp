@@ -1,135 +1,124 @@
 @page "/people"
 @using Grpc.Core
+@using GSBC.ChurchApp.Platform.Client.Access
+@implements IDisposable
 @inject AccountsClient Accounts
+@inject IAccess Access
 
-<h1>People</h1>
-
-<Can Permission="AccountsPermissions.Manage">
-    <section class="account-panel">
-        <h2>Invite someone</h2>
-        <EditForm Model="this" OnSubmit="InviteAsync" FormName="invite">
-            <label>Name <InputText @bind-Value="_inviteName" /></label>
-            <label>Email <InputText @bind-Value="_inviteEmail" type="email" /></label>
-            <button type="submit" disabled="@_busy">Send the invitation</button>
-        </EditForm>
-    </section>
-</Can>
-
-<section class="account-panel">
-    <EditForm Model="this" OnSubmit="SearchAsync" FormName="search">
-        <label>Find someone <InputText @bind-Value="_query" placeholder="Name or email" /></label>
-        <button type="submit" disabled="@_busy">Search</button>
-    </EditForm>
-    <ul>
-        @foreach (PersonInfo person in _people)
-        {
-            <li>
-                <button class="link" @onclick="() => SelectAsync(person)">@person.DisplayName</button>
-                @person.Email
-                @(person.EmailConfirmed ? "" : "· email not confirmed")
-                @(person.HasPasskey ? "" : "· no passkey yet")
-                @(person.Disabled ? "· disabled" : "")
-            </li>
-        }
-    </ul>
-</section>
-
-@if (_selected is not null)
-{
-    <section class="account-panel">
-        <h2>@_selected.DisplayName</h2>
-        <p>@_selected.Email · joined @_selected.CreatedAt.ToLocalTime().ToString("d MMM yyyy")</p>
-        <p><a href="access/people?user=@_selected.Id">Roles</a></p>
+<TitleBand Title="People" Lead="Everyone with an account. Invite staff, send someone a recovery link, or turn an account off.">
+    <Actions>
         <Can Permission="AccountsPermissions.Manage">
-            <button @onclick="IssueRecoveryAsync" disabled="@_busy">Give a recovery link</button>
-            <button @onclick="ToggleDisabledAsync" disabled="@_busy">@(_selected.Disabled ? "Enable the account" : "Disable the account")</button>
-            @if (_recoveryLink is not null)
-            {
-                <p>Give them this link (works until @_recoveryExpires?.ToLocalTime().ToString("h:mm tt")): <code>@_recoveryLink</code></p>
-            }
-            <h3>Recent activity</h3>
-            <ul>
-                @foreach (AuditInfo entry in _audit)
-                {
-                    <li>@entry.At.ToLocalTime().ToString("d MMM, h:mm tt") · @entry.Action @(entry.ActorId is { Length: > 0 } actor && actor != _selected.Id ? "(by staff)" : "")</li>
-                }
-            </ul>
+            <Button Icon="plus" OnClick="StartInvite">Invite someone</Button>
         </Can>
-    </section>
-}
+    </Actions>
+</TitleBand>
 
-@if (_message is not null)
-{
-    <p class="message">@_message</p>
-}
+<SplitView Detail="@Detail" DetailLabel="@(_inviting ? "Invite someone" : _selected?.DisplayName ?? "Person")">
+    <LiveData @ref="_live" TValue="List<PersonInfo>" Load="LoadAsync" FailedTitle="Can't load people right now">
+        <DataTable TItem="PersonInfo" Label="People" Items="Shown(context.Value)" Columns="Columns" Key="person => person.Id"
+                   Selected="_selected" SelectedChanged="Select" SortColumn="0">
+            <Toolbar>
+                <SearchField Label="Find someone" Placeholder="Find someone by name or email" Value="@_query" ValueChanged="SearchAsync" />
+                <FilterChips TValue="PeopleFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
+            </Toolbar>
+            <Empty>
+                <EmptyState Icon="users" Title="@(_query.Length > 0 ? $"No one matches “{_query}”" : "No one here")" Body="Try part of their name or email, or show everyone." />
+            </Empty>
+        </DataTable>
+    </LiveData>
+</SplitView>
 
 @code {
+    private LiveData<List<PersonInfo>>? _live;
     private string _query = "";
-    private string _inviteName = "";
-    private string _inviteEmail = "";
-    private List<PersonInfo> _people = [];
+    private PeopleFilter _filter = PeopleFilter.Everyone;
     private PersonInfo? _selected;
-    private List<AuditInfo> _audit = [];
-    private string? _recoveryLink;
-    private DateTime? _recoveryExpires;
-    private bool _busy;
-    private string? _message;
+    private bool _inviting;
 
-    protected override Task OnInitializedAsync() => SearchAsync();
+    private static readonly IReadOnlyList<TableColumn<PersonInfo>> Columns =
+    [
+        new("Name", person => @<span class="cell-strong">@person.DisplayName</span>, person => person.DisplayName),
+        new("Email", person => @<span class="quiet truncate" title="@person.Email">@person.Email</span>, person => person.Email),
+        new("Account", person => @<PersonState Person="person" />, person => StateOrder(person)),
+        new("Joined", person => @<DateLine At="person.CreatedAt" Style="DateLineStyle.Short" />, person => person.CreatedAt, "num optional"),
+    ];
 
-    private Task SearchAsync() => RunAsync(async () => _people = (await Accounts.SearchPeopleAsync(_query)).People);
+    private RenderFragment? Detail => _inviting
+        ? @<InvitePerson OnSent="InvitedAsync" OnCancel="() => _inviting = false" />
+        : _selected is null ? null : @<PersonDetail @key="_selected.Id" Person="_selected" OnChanged="ChangedAsync" />;
 
-    private Task InviteAsync() => RunAsync(async () =>
+    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
+
+    private async Task<List<PersonInfo>> LoadAsync()
     {
-        await Accounts.InviteAsync(_inviteName, _inviteEmail);
-        _message = $"Invitation sent to {_inviteEmail}.";
-        _inviteName = _inviteEmail = "";
-        _people = (await Accounts.SearchPeopleAsync(_query)).People;
-    });
+        List<PersonInfo> people = (await Accounts.SearchPeopleAsync(_query)).People;
+        _selected = _selected is null ? null : people.FirstOrDefault(person => person.Id == _selected.Id) ?? _selected;
+        return people;
+    }
 
-    private Task SelectAsync(PersonInfo person) => RunAsync(async () =>
+    private IEnumerable<PersonInfo> Shown(List<PersonInfo> people) => people.Where(person => Matches(person, _filter));
+
+    private static bool Matches(PersonInfo person, PeopleFilter filter) => filter switch
     {
+        PeopleFilter.NoPasskey => !person.HasPasskey && !person.Disabled,
+        PeopleFilter.Unconfirmed => !person.EmailConfirmed && !person.Disabled,
+        PeopleFilter.TurnedOff => person.Disabled,
+        _ => true,
+    };
+
+    private static string FilterLabel(PeopleFilter filter) => filter switch
+    {
+        PeopleFilter.NoPasskey => "No passkey yet",
+        PeopleFilter.Unconfirmed => "Email not confirmed",
+        PeopleFilter.TurnedOff => "Turned off",
+        _ => "Everyone",
+    };
+
+    private static int StateOrder(PersonInfo person) => person.Disabled ? 3 : !person.HasPasskey ? 1 : !person.EmailConfirmed ? 2 : 0;
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private static IReadOnlyList<FilterOption<PeopleFilter>> Filters(List<PersonInfo> people) =>
+        Enum.GetValues<PeopleFilter>().Select(filter => new FilterOption<PeopleFilter>(filter, FilterLabel(filter), people.Count(person => Matches(person, filter)))).ToList();
+
+    private void Select(PersonInfo person)
+    {
+        _inviting = false;
         _selected = person;
-        _recoveryLink = null;
-        _audit = [];
-        try
-        {
-            _audit = (await Accounts.ListAuditAsync(person.Id)).Entries;
-        }
-        catch (RpcException exception) when (exception.StatusCode == StatusCode.PermissionDenied)
-        {
-        }
-    });
+    }
 
-    private Task IssueRecoveryAsync() => RunAsync(async () =>
+    private void StartInvite()
     {
-        CodeReply reply = await Accounts.IssueRecoveryCodeAsync(_selected!.Id);
-        _recoveryLink = reply.Code;
-        _recoveryExpires = reply.ExpiresAt;
-    });
+        _selected = null;
+        _inviting = true;
+    }
 
-    private Task ToggleDisabledAsync() => RunAsync(async () =>
+    private async Task InvitedAsync()
     {
-        await Accounts.SetDisabledAsync(_selected!.Id, !_selected.Disabled);
-        _selected.Disabled = !_selected.Disabled;
-        _message = _selected.Disabled ? "Disabled, and signed out everywhere." : "Enabled.";
-    });
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
 
-    private async Task RunAsync(Func<Task> action)
+    private async Task ChangedAsync()
     {
-        _busy = true;
-        _message = null;
-        try
-        {
-            await action();
-        }
-        catch (RpcException exception)
-        {
-            _message = exception.Status.Detail;
-        }
-        finally
-        {
-            _busy = false;
-        }
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private void OnAccessChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Access.Changed -= OnAccessChanged;
+
+    public enum PeopleFilter
+    {
+        Everyone,
+        NoPasskey,
+        Unconfirmed,
+        TurnedOff,
     }
 }

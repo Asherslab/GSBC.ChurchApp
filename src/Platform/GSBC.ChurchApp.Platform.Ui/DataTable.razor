@@ -1,0 +1,158 @@
+@typeparam TItem
+
+<div class="data-table @Class">
+    @if (Toolbar is not null)
+    {
+        <div class="data-table__toolbar">@Toolbar</div>
+    }
+    <div class="data-table__scroll">
+        <table class="data-table__table" aria-label="@Label">
+            <thead>
+                <tr>
+                    @for (int index = 0; index < Columns.Count; index++)
+                    {
+                        int column = index;
+                        TableColumn<TItem> definition = Columns[column];
+                        <th scope="col" class="@definition.Class" aria-sort="@AriaSort(column)">
+                            @if (definition.SortBy is null)
+                            {
+                                @definition.Title
+                            }
+                            else
+                            {
+                                <button type="button" class="data-table__sort" @onclick="() => SortOn(column)">
+                                    @definition.Title
+                                    <Icon Name="@(_sortColumn == column && _descending ? "arrow-down" : "arrow-up")" Size="IconSize.Small" Class="@(_sortColumn == column ? "data-table__arrow data-table__arrow--on" : "data-table__arrow")" />
+                                </button>
+                            }
+                        </th>
+                    }
+                </tr>
+            </thead>
+            <tbody @onkeydown="OnKeyAsync">
+                @for (int index = 0; index < _rows.Count; index++)
+                {
+                    int row = index;
+                    TItem item = _rows[row];
+                    string key = Key(item);
+                    bool selected = IsSelected(item);
+                    <tr @key="key" class="data-table__row @(selected ? "data-table__row--selected" : "") @(RowClass?.Invoke(item))" tabindex="@(selected || (_selectedIndex < 0 && row == 0) ? 0 : -1)"
+                        aria-selected="@(SelectedChanged.HasDelegate ? selected.ToString().ToLowerInvariant() : null)" @ref="_rowElements[key]" @onclick="() => SelectAsync(row)">
+                        @foreach (TableColumn<TItem> definition in Columns)
+                        {
+                            <td class="@definition.Class">@definition.Cell(item)</td>
+                        }
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+    @if (_rows.Count == 0)
+    {
+        <div class="data-table__empty">@Empty</div>
+    }
+</div>
+
+@code {
+    private List<TItem> _rows = [];
+    private readonly Dictionary<string, ElementReference> _rowElements = [];
+    private int _sortColumn = -1;
+    private bool _descending;
+    private int _selectedIndex = -1;
+    private bool _sortChosen;
+    private bool _focusSelected;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<TableColumn<TItem>> Columns { get; set; }
+    [Parameter, EditorRequired] public required IEnumerable<TItem> Items { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, string> Key { get; set; }
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public TItem? Selected { get; set; }
+    [Parameter] public EventCallback<TItem> SelectedChanged { get; set; }
+    [Parameter] public int SortColumn { get; set; } = -1;
+    [Parameter] public bool SortDescending { get; set; }
+    [Parameter] public Func<TItem, string?>? RowClass { get; set; }
+    [Parameter] public RenderFragment? Toolbar { get; set; }
+    [Parameter] public RenderFragment? Empty { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (!_sortChosen)
+        {
+            _sortColumn = SortColumn;
+            _descending = SortDescending;
+        }
+
+        Arrange();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_focusSelected && _selectedIndex >= 0 && _selectedIndex < _rows.Count && _rowElements.TryGetValue(Key(_rows[_selectedIndex]), out ElementReference row))
+        {
+            _focusSelected = false;
+            await row.FocusAsync();
+        }
+    }
+
+    private void Arrange()
+    {
+        IEnumerable<TItem> rows = Items;
+        if (_sortColumn >= 0 && _sortColumn < Columns.Count && Columns[_sortColumn].SortBy is { } sortBy)
+            rows = _descending ? rows.OrderByDescending(sortBy, ValueComparer.Instance) : rows.OrderBy(sortBy, ValueComparer.Instance);
+
+        _rows = rows.ToList();
+        _selectedIndex = _rows.FindIndex(IsSelected);
+    }
+
+    private bool IsSelected(TItem item) => Selected is not null && Key(item) == Key(Selected);
+
+    private void SortOn(int column)
+    {
+        _descending = _sortColumn == column && !_descending;
+        _sortColumn = column;
+        _sortChosen = true;
+        Arrange();
+    }
+
+    private string? AriaSort(int column) =>
+        Columns[column].SortBy is null ? null : _sortColumn != column ? "none" : _descending ? "descending" : "ascending";
+
+    private async Task SelectAsync(int row)
+    {
+        if (!SelectedChanged.HasDelegate || row < 0 || row >= _rows.Count)
+            return;
+
+        _selectedIndex = row;
+        await SelectedChanged.InvokeAsync(_rows[row]);
+    }
+
+    private async Task OnKeyAsync(KeyboardEventArgs args)
+    {
+        int step = args.Key switch
+        {
+            "ArrowDown" => 1,
+            "ArrowUp" => -1,
+            _ => 0,
+        };
+        if (step == 0 || _rows.Count == 0)
+            return;
+
+        _focusSelected = true;
+        await SelectAsync(Math.Clamp(_selectedIndex + step, 0, _rows.Count - 1));
+    }
+
+    private sealed class ValueComparer : IComparer<IComparable?>
+    {
+        public static ValueComparer Instance { get; } = new();
+
+        public int Compare(IComparable? x, IComparable? y) => (x, y) switch
+        {
+            (null, null) => 0,
+            (null, _) => 1,
+            (_, null) => -1,
+            (string left, string right) => string.Compare(left, right, StringComparison.CurrentCultureIgnoreCase),
+            _ => x.CompareTo(y),
+        };
+    }
+}

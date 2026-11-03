@@ -1,0 +1,20 @@
+@if (Person.Disabled)
+{
+    <Pill Tone="PillTone.Masthead">Turned off</Pill>
+}
+else if (!Person.HasPasskey)
+{
+    <Pill>No passkey yet</Pill>
+}
+else if (!Person.EmailConfirmed)
+{
+    <Pill>Email not confirmed</Pill>
+}
+else
+{
+    <span class="quiet">Ready</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public required PersonInfo Person { get; set; }
+}

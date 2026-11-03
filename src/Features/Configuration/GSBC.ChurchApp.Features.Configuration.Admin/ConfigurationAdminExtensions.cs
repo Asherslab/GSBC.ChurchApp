@@ -11,8 +11,8 @@ public static class ConfigurationAdminExtensions
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAdminExtensions).Assembly,
             [
-                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit),
+                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit, Group: NavGroups.Content, Summary: "Change the app's home screen, colours and fonts, then publish"),
             ]));
-        return services.AddConfigurationClient();
+        return services.AddConfigurationClient().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>();
     }
 }

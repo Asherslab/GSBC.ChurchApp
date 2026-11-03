@@ -1,23 +1,25 @@
 @inject MediaClient Media
 
 <div class="media-upload">
-    <label>
-        @Label
-        <InputFile OnChange="Choose" accept="@string.Join(",", MediaTypes.Accepted)" disabled="@_busy" />
+    <label class="media-upload__drop @(_busy ? "media-upload__drop--busy" : "")">
+        <Icon Name="image" />
+        <span class="media-upload__label">@Label</span>
+        <span class="media-upload__hint">@(_file is null ? "Click to choose a file from this computer" : _file.Name)</span>
+        <InputFile OnChange="Choose" accept="@string.Join(",", MediaTypes.Accepted)" disabled="@_busy" class="visually-hidden" />
     </label>
     @if (_file is not null)
     {
-        <label>Description (for people using screen readers) <InputText @bind-Value="_altText" /></label>
+        <TextField Label="Description" Hint="For people using screen readers: what the picture shows." @bind-Value="_altText" />
         @if (MediaTypes.IsLarge(_file.Size))
         {
-            <p class="warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</p>
+            <Notice Tone="NoticeTone.Warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</Notice>
         }
-        <button @onclick="UploadAsync" disabled="@_busy">@(_busy ? "Uploading…" : MediaTypes.IsLarge(_file.Size) ? "Upload anyway" : "Upload")</button>
+        <div class="panel-actions">
+            <Button Icon="arrow-up" Busy="_busy" OnClick="UploadAsync">@(MediaTypes.IsLarge(_file.Size) ? "Upload anyway" : "Upload")</Button>
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _file = null">Choose another</Button>
+        </div>
     }
-    @if (_error is not null)
-    {
-        <p class="message">@_error</p>
-    }
+    <Notice Tone="NoticeTone.Warning" Text="@_error" />
 </div>
 
 @code {

@@ -88,6 +88,8 @@ TestFlight workflow sets What to Test from the notes since the last upload's tag
 install shows nothing; a staged update shows the highlight once) and deployed to the owner's iPhone; the
 What to Test call and the tag push first run with the first TestFlight build.
 
+**Admin panel (2026-11-03, branch `feature/admin-design`):** redesigned for a computer (build order 7); checked on `dev-app.baptist.com.au` at 1280, 1440 and 1920, light and dark.
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),
@@ -134,7 +136,16 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    `feature/drafts`): every change staff arrange is made in a draft, previewed live on their own phone
    (proven on the owner's iPhone: a save shows within a second), shared through Access, then published
    or turned on for an event. Home must be built on `HomeScreen` and `SurfaceViews` so the admin
-   preview stays true. Next: a design pass over the admin panel's pages, designed for desktop.
+   preview stays true.
+   - **The admin panel for the desk** (2026-11-03, branch `feature/admin-design`, an Impeccable run;
+     brief in `.impeccable/surfaces/src-hosts-gsbc-churchapp-hosts-admin.md`): a navy sidebar, a home
+     page for this week (dated changes on a seven-day rail and what needs you, from features'
+     `IOfficeWeekSource`), sign-in, not-found and error states, and People, Roles, Who can do what and
+     Media as sortable, filterable tables with the chosen row beside them (`DataTable`, `SplitView`,
+     `SearchField`, `FilterChips` in Platform.Ui). Every admin page loads through `LiveData`. Open:
+     invitations not yet accepted can't be listed (no gRPC method yet), so Needs you shows drafts only;
+     a role given for one draft reads "For one draft" because nothing names draft scopes yet
+     (`IScopeNames`).
 8. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

@@ -6,14 +6,6 @@ public sealed partial class LiveDataRules
 {
     private static readonly string[] NotYetMigrated =
     [
-        "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/RoleDetail.razor",
-        "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Components/RoleEffectView.razor",
-        "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/RolesAdvanced.razor",
-        "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/PersonAccess.razor",
-        "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/RoleEditor.razor",
-        "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/Roles.razor",
-        "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Pages/People.razor",
-        "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor",
     ];
 
     [Fact]

@@ -1,119 +1,195 @@
 @inject MediaClient Media
 
-<Can Permission="MediaPermissions.Upload">
-    <section class="account-panel">
-        <h2>Upload</h2>
-        <MediaUpload OnUploaded="UploadedAsync" />
-    </section>
-</Can>
-
-<section class="account-panel">
-    <ul class="media-library">
-        @foreach (MediaItemInfo item in Shown)
+<LiveData @ref="_live" TValue="MediaList" Load="LoadAsync" FailedTitle="Can't load the library right now">
+    <SplitView Detail="@Detail" DetailLabel="@(_uploading ? "Upload" : "Picture")">
+        <DataTable TItem="MediaItemInfo" Label="Media" Items="Shown(context.Value)" Columns="Columns" Key="item => item.Media!.Id"
+                   Selected="_selected" SelectedChanged="Select" SortColumn="3" SortDescending="true">
+            <Toolbar>
+                <SearchField Label="Find a file" Placeholder="Find a file" @bind-Value="_query" />
+                <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
+            </Toolbar>
+            <Empty>
+                <EmptyState Icon="image" Title="@(_query.Length > 0 || _filter != MediaFilter.All ? "Nothing matches" : "No pictures yet")" Body="@(_query.Length > 0 || _filter != MediaFilter.All ? "Try another word, or show everything." : "Upload a picture to use it on the app's tiles and pages.")" />
+            </Empty>
+        </DataTable>
+        @if (context.Value.HasMore)
         {
-            MediaRef media = item.Media!;
-            <li>
-                @if (media.IsImage)
-                {
-                    <MediaImage Media="media" Class="media-thumbnail" />
-                }
-                <span>@(string.IsNullOrEmpty(media.FileName) ? media.Key : media.FileName)</span>
-                <span>@Size(media.Bytes) · @item.UploadedAt.ToLocalTime().ToString("d MMM yyyy")</span>
-                @if (item.PrivateTo is { } audience)
-                {
-                    <span>Private to @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</span>
-                }
-                else if (media.Url is not null && !Picking)
-                {
-                    <a href="@media.Url" target="_blank" rel="noopener">Open</a>
-                }
-                @if (Picking)
-                {
-                    <button type="button" @onclick="() => OnPick.InvokeAsync(media)">Choose</button>
-                }
-                else if (item.Uses > 0)
-                {
-                    <span>Used in @item.Uses @(item.Uses == 1 ? "place" : "places")</span>
-                }
-                else
-                {
-                    <Can Permission="MediaPermissions.Delete">
-                        @if (_confirming == media.Id)
-                        {
-                            <span>Delete it for good?</span>
-                            <button type="button" @onclick="() => DeleteAsync(item)" disabled="@_busy">Delete</button>
-                            <button type="button" class="link" @onclick="() => _confirming = null">Keep</button>
-                        }
-                        else
-                        {
-                            <button type="button" class="link" @onclick="() => _confirming = media.Id">Delete</button>
-                        }
-                    </Can>
-                }
-            </li>
+            <div class="media-more">
+                <Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button>
+            </div>
         }
-    </ul>
-    @if (_hasMore)
-    {
-        <button @onclick="LoadMoreAsync" disabled="@_busy">More</button>
-    }
-    @if (_error is not null)
-    {
-        <p class="message">@_error</p>
-    }
-</section>
+    </SplitView>
+</LiveData>
 
 @code {
     private const int PageSize = 50;
-    private readonly List<MediaItemInfo> _items = [];
-    private bool _hasMore;
+
+    private LiveData<MediaList>? _live;
+    private int _wanted = PageSize;
+    private string _query = "";
+    private MediaFilter _filter = MediaFilter.All;
+    private MediaItemInfo? _selected;
+    private bool _uploading;
+    private bool _confirming;
     private bool _busy;
     private string? _error;
-    private string? _confirming;
 
     [Parameter] public EventCallback<MediaRef> OnPick { get; set; }
     [Parameter] public bool ImagesOnly { get; set; }
 
     private bool Picking => OnPick.HasDelegate;
 
-    private IEnumerable<MediaItemInfo> Shown => ImagesOnly ? _items.Where(item => item.Media!.IsImage) : _items;
+    private static readonly IReadOnlyList<TableColumn<MediaItemInfo>> Columns =
+    [
+        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="book-open" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
+        new("Name", item => @<span class="media-name"><span class="cell-strong">@NameOf(item.Media!)</span>@if (item.Media!.AltText.Length > 0) {<span class="quiet">@item.Media.AltText</span>}</span>, item => NameOf(item.Media!)),
+        new("Used in", item => @<span>@(item.Uses == 0 ? "Not used" : item.Uses == 1 ? "1 place" : $"{item.Uses} places")</span>, item => item.Uses, "nowrap"),
+        new("Uploaded", item => @<DateLine At="item.UploadedAt" Style="DateLineStyle.Short" />, item => item.UploadedAt, "num"),
+        new("Size", item => @<span>@Size(item.Media!.Bytes)</span>, item => item.Media!.Bytes, "num optional"),
+    ];
 
-    protected override Task OnInitializedAsync() => LoadMoreAsync();
+    private RenderFragment? Detail => _uploading
+        ? @<text>
+              <h2 class="panel-title">Upload</h2>
+              <p class="panel-lead">Pictures (JPEG, PNG, WebP) or a PDF.</p>
+              <MediaUpload OnUploaded="UploadedAsync" />
+              <div class="panel-actions"><Button Variant="ButtonVariant.Quiet" OnClick="() => _uploading = false">Close</Button></div>
+          </text>
+        : _selected?.Media is not { } media ? null : @<text>
+              @if (media.IsImage)
+              {
+                  <MediaImage @key="media.Id" Media="media" Class="media-preview" />
+              }
+              <h2 class="panel-title media-detail__title">@NameOf(media)</h2>
+              @if (media.AltText.Length > 0)
+              {
+                  <p class="panel-lead">@media.AltText</p>
+              }
+              <dl class="facts">
+                  <dt>Uploaded</dt>
+                  <dd><DateLine At="_selected.UploadedAt" /></dd>
+                  @if (media.Width > 0)
+                  {
+                      <dt>Size</dt>
+                      <dd>@media.Width × @media.Height · @Size(media.Bytes)</dd>
+                  }
+                  else
+                  {
+                      <dt>Size</dt>
+                      <dd>@Size(media.Bytes)</dd>
+                  }
+                  <dt>Used in</dt>
+                  <dd>@(_selected.Uses == 0 ? "Nowhere yet" : _selected.Uses == 1 ? "1 place" : $"{_selected.Uses} places")</dd>
+                  @if (_selected.PrivateTo is { } audience)
+                  {
+                      <dt>Who sees it</dt>
+                      <dd>Only people with @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</dd>
+                  }
+              </dl>
+              <div class="panel-actions">
+                  @if (Picking)
+                  {
+                      <Button Icon="check" OnClick="() => OnPick.InvokeAsync(media)">Choose</Button>
+                  }
+                  else if (media.Url is not null && _selected.PrivateTo is null)
+                  {
+                      <a class="btn btn--quiet" href="@media.Url" target="_blank" rel="noopener"><Icon Name="external-link" Size="IconSize.Small" />Open</a>
+                  }
+              </div>
+              @if (!Picking && _selected.Uses == 0)
+              {
+                  <Can Permission="MediaPermissions.Delete">
+                      <section class="panel-section @(_confirming ? "panel-confirm" : "")" aria-label="Delete">
+                          @if (_confirming)
+                          {
+                              <h3 class="panel-subtitle">Delete it for good?</h3>
+                              <p class="panel-lead">It isn't used anywhere, so nothing in the app changes.</p>
+                              <div class="panel-actions">
+                                  <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete</Button>
+                                  <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep it</Button>
+                              </div>
+                          }
+                          else
+                          {
+                              <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => _confirming = true">Delete…</Button>
+                          }
+                      </section>
+                  </Can>
+              }
+              else if (!Picking)
+              {
+                  <p class="panel-hint">It can be deleted once nothing uses it.</p>
+              }
+              <Notice Tone="NoticeTone.Warning" Text="@_error" />
+          </text>;
 
-    private async Task LoadMoreAsync()
+    private async Task<MediaList> LoadAsync()
     {
-        _busy = true;
-        try
-        {
-            MediaList page = await Media.ListAsync(_items.Count, PageSize);
-            _items.AddRange(page.Items.Where(item => item.Media is not null));
-            _hasMore = page.HasMore;
-        }
-        catch (RpcException exception)
-        {
-            _error = exception.Status.Detail;
-        }
-        finally
-        {
-            _busy = false;
-        }
+        MediaList page = await Media.ListAsync(0, _wanted);
+        page.Items.RemoveAll(item => item.Media is null);
+        _selected = _selected is null ? null : page.Items.FirstOrDefault(item => item.Media!.Id == _selected.Media!.Id);
+        return page;
+    }
+
+    private IEnumerable<MediaItemInfo> Shown(MediaList list) => list.Items.Where(item => (!ImagesOnly || item.Media!.IsImage) && Matches(item, _filter)
+        && (_query.Length == 0 || NameOf(item.Media!).Contains(_query, StringComparison.CurrentCultureIgnoreCase) || item.Media!.AltText.Contains(_query, StringComparison.CurrentCultureIgnoreCase)));
+
+    private static bool Matches(MediaItemInfo item, MediaFilter filter) => filter switch
+    {
+        MediaFilter.Pictures => item.Media!.IsImage,
+        MediaFilter.Documents => !item.Media!.IsImage,
+        MediaFilter.Unused => item.Uses == 0,
+        _ => true,
+    };
+
+    private static IReadOnlyList<FilterOption<MediaFilter>> Filters(MediaList list) =>
+    [
+        new(MediaFilter.All, "All", list.Items.Count),
+        new(MediaFilter.Pictures, "Pictures", list.Items.Count(item => Matches(item, MediaFilter.Pictures))),
+        new(MediaFilter.Documents, "PDFs and files", list.Items.Count(item => Matches(item, MediaFilter.Documents))),
+        new(MediaFilter.Unused, "Not used", list.Items.Count(item => Matches(item, MediaFilter.Unused))),
+    ];
+
+    private void Select(MediaItemInfo item)
+    {
+        _uploading = false;
+        _confirming = false;
+        _error = null;
+        _selected = item;
+    }
+
+    public void StartUpload()
+    {
+        _selected = null;
+        _uploading = true;
+        StateHasChanged();
+    }
+
+    private async Task MoreAsync()
+    {
+        _wanted += PageSize;
+        await ReloadAsync();
     }
 
     private async Task UploadedAsync(MediaRef media)
     {
-        _items.Insert(0, new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow });
+        _uploading = false;
+        _selected = new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow };
+        await ReloadAsync();
         if (Picking && (!ImagesOnly || media.IsImage))
             await OnPick.InvokeAsync(media);
     }
 
-    private async Task DeleteAsync(MediaItemInfo item)
+    private async Task DeleteAsync()
     {
         _busy = true;
         _error = null;
         try
         {
-            await Media.DeleteAsync(item.Media!.Id);
-            _items.Remove(item);
+            await Media.DeleteAsync(_selected!.Media!.Id);
+            _selected = null;
+            _confirming = false;
+            await ReloadAsync();
         }
         catch (RpcException exception)
         {
@@ -122,9 +198,20 @@
         finally
         {
             _busy = false;
-            _confirming = null;
         }
     }
 
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private static string NameOf(MediaRef media) => string.IsNullOrEmpty(media.FileName) ? media.Key : media.FileName;
+
     private static string Size(long bytes) => bytes < 1024 * 1024 ? $"{bytes / 1024d:0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
+
+    public enum MediaFilter
+    {
+        All,
+        Pictures,
+        Documents,
+        Unused,
+    }
 }

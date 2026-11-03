@@ -52,6 +52,16 @@
         ],
         "createdAt": "2026-11-03T05:06:43.460Z",
         "reason": "Claude: decision-round sketch for the What's new moment, not shipped UI"
+
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/week-desk.html"
+        ],
+        "createdAt": "2026-11-03T06:11:31.639Z",
+        "reason": "model: decision-round HTML sketch, a fixed skeleton thumbnail the owner already locked; it never ships"
       }
     ]
   }

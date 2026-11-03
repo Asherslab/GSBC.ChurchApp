@@ -1,0 +1,22 @@
+@typeparam TValue
+
+<div class="filter-chips" role="group" aria-label="@Label">
+    @foreach (FilterOption<TValue> option in Options)
+    {
+        bool on = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
+        <button type="button" class="filter-chip @(on ? "filter-chip--on" : "")" aria-pressed="@(on ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(option.Value)">
+            @option.Label
+            @if (option.Count is { } count)
+            {
+                <span class="filter-chip__count">@count</span>
+            }
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<FilterOption<TValue>> Options { get; set; }
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+}

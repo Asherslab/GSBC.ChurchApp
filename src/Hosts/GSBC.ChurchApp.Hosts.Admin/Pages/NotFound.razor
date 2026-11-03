@@ -1,0 +1,11 @@
+@page "/{*Path}"
+
+<PageTitle>Not found · Good Shepherd admin</PageTitle>
+<h1 class="visually-hidden" tabindex="-1">Not found</h1>
+<EmptyState Icon="map-pin" Title="There's no page here" Body="The link may be old, or the page may have moved. Everything is still in the list on the left.">
+    <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Go to this week</Button>
+</EmptyState>
+
+@code {
+    [Parameter] public string? Path { get; set; }
+}
