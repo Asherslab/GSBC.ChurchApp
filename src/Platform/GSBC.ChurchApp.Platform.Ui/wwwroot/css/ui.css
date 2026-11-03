@@ -767,7 +767,8 @@ button.row:active, a.row:active { background: var(--line); }
 .office-rail__swatch { width: 14px; height: 10px; border-radius: 3px; }
 
 
-.office-rail__span--moment .office-rail__span-title { display: -webkit-box; white-space: normal; overflow-wrap: break-word; hyphens: auto; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
+.office-rail__span--moment .office-rail__span-title { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.office-rail__span-when { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .office-rail--fortnight .office-rail__grid { grid-template-columns: repeat(var(--days), minmax(56px, 1fr)); column-gap: 6px; min-height: 0; overflow-x: auto; }
 .office-rail--fortnight .office-rail__day { padding: 8px 8px 10px; }
 .office-rail--fortnight .office-rail__span { margin: 0 4px 6px; padding: 5px 7px; font-size: var(--text-pill); }

@@ -4,7 +4,8 @@
 
 <section class="office-rail @(Days > WeekLength ? "office-rail--fortnight" : "")" aria-labelledby="@_headingId">
     <h2 class="visually-hidden" id="@_headingId">@Heading</h2>
-    <div class="office-rail__grid" style="--days: @Days; --rows: @(Math.Max(Spans.Count, 1))">
+    @{ IReadOnlyList<Placed> placed = Layout(); }
+    <div class="office-rail__grid" style="--days: @Days; --rows: @(Math.Max(placed.Count == 0 ? 1 : placed.Max(item => item.Row), 1))">
         @for (int day = 0; day < Days; day++)
         {
             DateTime date = First.AddDays(day);
@@ -17,10 +18,10 @@
         {
             <p class="office-rail__quiet">@Quiet</p>
         }
-        @foreach ((OfficeSpan span, int row) in Spans.OrderBy(span => span.StartsAt).Select((span, index) => (span, index)))
+        @foreach ((OfficeSpan span, int row, int first, int last) in placed)
         {
             <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant() @(IsMoment(span) ? "office-rail__span--moment" : "")" href="@span.Href"
-               aria-current="@(span.Href is not null && span.Href == Selected ? "page" : null)" style="grid-column: @Columns(span); grid-row: @(row + 2)" title="@SpanTitle(span)">
+               aria-current="@(span.Href is not null && span.Href == Selected ? "page" : null)" style="grid-column: @first / @(last + 1); grid-row: @(row + 1)" title="@SpanTitle(span)">
                 <span class="office-rail__span-title">@span.Title</span>
                 <span class="office-rail__span-when">@Range(span)</span>
             </a>
@@ -55,9 +56,40 @@
 
     private string DayClass(DateTime date) => date == Today ? "office-rail__day--today" : date < Today ? "office-rail__day--past" : "";
 
+    private const int MomentReach = 3;
+
+    private sealed record Placed(OfficeSpan Span, int Row, int First, int Last);
+
     private static bool IsMoment(OfficeSpan span) => span.EndsAt == span.StartsAt;
 
-    private string Columns(OfficeSpan span) => $"{Column(span.StartsAt)} / {Column(LastMoment(span)) + 1}";
+    private IReadOnlyList<Placed> Layout()
+    {
+        List<List<Placed>> rows = [];
+        foreach (OfficeSpan span in Spans.OrderBy(span => span.StartsAt))
+        {
+            int first = Column(span.StartsAt);
+            int last = Column(LastMoment(span));
+            List<Placed>? row = rows.FirstOrDefault(placed => placed.All(other => other.Last < first || other.First > last));
+            if (row is null)
+            {
+                row = [];
+                rows.Add(row);
+            }
+            row.Add(new Placed(span, rows.IndexOf(row) + 1, first, last));
+        }
+        return rows.SelectMany(StretchMoments).ToList();
+    }
+
+    private IEnumerable<Placed> StretchMoments(List<Placed> row)
+    {
+        List<Placed> ordered = row.OrderBy(item => item.First).ToList();
+        for (int index = 0; index < ordered.Count; index++)
+        {
+            Placed item = ordered[index];
+            int nextTaken = index + 1 < ordered.Count ? ordered[index + 1].First - 1 : Days;
+            yield return IsMoment(item.Span) ? item with { Last = Math.Min(item.First + MomentReach - 1, nextTaken) } : item;
+        }
+    }
 
     private int Column(DateTime utc) => Math.Clamp((int)Math.Floor((utc - From).TotalDays) + 1, 1, Days);
 
@@ -71,14 +103,14 @@
             (true, true) => whole,
             (true, false) => $"Until {Short(LastMoment(span))}",
             (false, true) => $"From {Short(span.StartsAt)}",
-            _ when span.EndsAt == span.StartsAt => Moment(span.StartsAt),
+            _ when span.EndsAt == span.StartsAt => ChurchDates.Time(ChurchTime.ToChurch(DateTime.SpecifyKind(span.StartsAt, DateTimeKind.Utc))),
             _ => Column(span.StartsAt) == Column(LastMoment(span)) ? Short(span.StartsAt) : $"{Short(span.StartsAt)} to {Short(LastMoment(span))}",
         };
     }
 
     private static DateTime LastMoment(OfficeSpan span) => span.EndsAt > span.StartsAt ? span.EndsAt.AddTicks(-1) : span.EndsAt;
 
-    private string SpanTitle(OfficeSpan span) => $"{span.Title}: {Range(span)}";
+    private string SpanTitle(OfficeSpan span) => IsMoment(span) ? $"{span.Title}: {Moment(span.StartsAt)}" : $"{span.Title}: {Range(span)}";
 
     private static string Short(DateTime utc) => ChurchTime.ToChurch(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToString("ddd d", CultureInfo.InvariantCulture);
 
