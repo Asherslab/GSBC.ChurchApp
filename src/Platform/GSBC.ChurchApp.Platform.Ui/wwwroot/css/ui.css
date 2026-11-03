@@ -295,7 +295,7 @@ button.row:active, a.row:active { background: var(--line); }
 @keyframes fade { from { opacity: 0; } }
 
 .empty { display: grid; justify-items: center; gap: 8px; padding: 32px 24px; text-align: center; color: var(--ink-2); }
-.empty .icon { color: var(--accent); }
+.empty > .icon { color: var(--accent); }
 .empty__title { margin-top: 4px; font-size: var(--text-lead); color: var(--ink); }
 .empty__body { max-width: 36ch; font-size: var(--text-row); line-height: 1.45; }
 .empty__action { margin-top: 10px; }
