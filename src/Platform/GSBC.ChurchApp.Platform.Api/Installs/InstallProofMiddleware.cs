@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.IO.Pipelines;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 
@@ -14,16 +16,27 @@ public sealed class InstallProofMiddleware(RequestDelegate next)
     {
         if (context.Request.Headers[KeyHeader].ToString() is { Length: > 0 } keyId
             && TryBase64(context.Request.Headers[AssertionHeader].ToString()) is { } assertion
-            && context.Request.ContentLength is null or <= MaxSignedBody)
+            && context.Request.ContentLength is null or <= MaxSignedBody
+            && await PeekBodyAsync(context.Request.BodyReader, context.RequestAborted) is { } body)
         {
-            context.Request.EnableBuffering(MaxSignedBody);
-            using MemoryStream body = new();
-            await context.Request.Body.CopyToAsync(body, context.RequestAborted);
-            context.Request.Body.Position = 0;
-            context.Items[ProofKey] = new InstallProof(keyId, assertion, ClientData(context.Request.Path, body.ToArray()));
+            context.Items[ProofKey] = new InstallProof(keyId, assertion, ClientData(context.Request.Path, body));
         }
 
         await next(context);
+    }
+
+    private static async Task<byte[]?> PeekBodyAsync(PipeReader reader, CancellationToken cancellationToken)
+    {
+        while (true)
+        {
+            ReadResult read = await reader.ReadAsync(cancellationToken);
+            ReadOnlySequence<byte> buffer = read.Buffer;
+            bool tooLarge = buffer.Length > MaxSignedBody;
+            byte[]? body = read.IsCompleted && !tooLarge ? buffer.ToArray() : null;
+            reader.AdvanceTo(buffer.Start, buffer.End);
+            if (read.IsCompleted || tooLarge)
+                return body;
+        }
     }
 
     public static byte[] ClientData(string methodPath, byte[] body) =>
