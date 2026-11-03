@@ -152,7 +152,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task TheAssociationFileNamesTheConfiguredTeamAndBundle()
+    public async Task TheAssociationFileNamesTheConfiguredTeamAndBundleAndOpensSharedLinks()
     {
         HttpResponseMessage response = await Browser().GetAsync(AppAssociation.RequestPath, TestContext.Current.CancellationToken);
 
@@ -161,7 +161,9 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         using JsonDocument association = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
         string app = $"{TeamId}.{UatBundleId}";
         Assert.Equal(app, association.RootElement.GetProperty("webcredentials").GetProperty("apps")[0].GetString());
-        Assert.Equal(app, association.RootElement.GetProperty("applinks").GetProperty("details")[0].GetProperty("appIDs")[0].GetString());
+        JsonElement details = association.RootElement.GetProperty("applinks").GetProperty("details")[0];
+        Assert.Equal(app, details.GetProperty("appIDs")[0].GetString());
+        Assert.Contains("/open/*", details.GetProperty("components").EnumerateArray().Select(component => component.GetProperty("/").GetString()));
     }
 
     private static Task<HttpResponseMessage> TokenWithSessionAsync(HttpClient phone, string secret)

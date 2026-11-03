@@ -19,6 +19,7 @@ public static class ConfigurationApiExtensions
         services.AddConfigurationData();
         services.AddScoped<PlacementEditor>();
         services.AddScoped<DraftEditor>();
+        services.AddDestinations(ConfigurationDestinations.All);
         services.AddPermissions(HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, ConfigurationPermissions.PreviewDraft);
         services.AddSystemRole(new SystemRole(ConfigurationPermissions.DraftReviewerRole, "Draft reviewer",
             "Sees a draft on their phone before it's published", ScopeKind.Draft, [ConfigurationPermissions.PreviewDraft.Node], AssignableBy: []));

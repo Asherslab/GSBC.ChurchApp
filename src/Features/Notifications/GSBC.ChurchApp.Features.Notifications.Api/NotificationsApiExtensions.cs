@@ -39,6 +39,7 @@ public static class NotificationsApiExtensions
 
         services.AddNotificationKinds(AnnouncementNotifications.All);
         services.AddPermissions(NotificationsPermissions.All);
+        services.AddDestinations(NotificationsDestinations.All);
         services.AddSystemRole(new SystemRole(NotificationsPermissions.AnnouncerRole, "Announcer",
             "Writes and sends announcements to the church", ScopeKind.Global, ["notifications.announcements.*"]));
         services.AddFeed(new FeedDefinition(NotificationsFeeds.Inbox, FeedAudience.OwnRecords));

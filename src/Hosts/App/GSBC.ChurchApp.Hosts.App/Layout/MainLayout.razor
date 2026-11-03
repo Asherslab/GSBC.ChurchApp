@@ -6,7 +6,7 @@
 @inject Shell Shell
 @inject IPreviewMode Preview
 @inject GSBC.ChurchApp.Platform.Client.Native.NativeBridge Bridge
-@inject NavigationManager Navigation
+@inject GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener Links
 
 <div class="shell">
     @Body
@@ -35,7 +35,7 @@
             Shell.Returned += OnReturned;
             await Shell.WatchReturnsAsync();
             await Shell.StartedAsync();
-            await Bridge.OpenLinksWithAsync(path => Navigation.NavigateTo(path.TrimStart('/')));
+            await Bridge.OpenLinksWithAsync(path => InvokeAsync(() => Links.OpenAsync(path)));
         }
     }
 

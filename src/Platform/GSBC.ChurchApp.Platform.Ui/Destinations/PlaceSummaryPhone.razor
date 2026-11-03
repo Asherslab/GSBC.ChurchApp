@@ -1,0 +1,22 @@
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@inject DestinationsClient Destinations
+
+<PhoneFrame Label="@($"{Destination.Title}, as it opens in the app")">
+    <div class="place-phone">
+        <Masthead Title="@Destination.Title" Note="@Destination.Where" />
+        <Section First="true">
+            <ListGroup>
+                <ListRow Title="@(OpensOutside ? "Opens in the phone's browser" : "Opens this page in the app")" Subtitle="@Destination.WhoCanOpen"
+                         Icon="@(OpensOutside ? "external-link" : Destination.Icon)" IconTone="RowTone.Accent" />
+            </ListGroup>
+            <p class="place-phone__note">This place isn't drawn here yet. On a phone it opens as the app shows it.</p>
+        </Section>
+    </div>
+</PhoneFrame>
+
+@code {
+    [Parameter, EditorRequired] public required Destination Destination { get; set; }
+
+    private bool OpensOutside => Destinations.Catalog.KindByKey(Destination.Kind)?.OpensOutside == true;
+}

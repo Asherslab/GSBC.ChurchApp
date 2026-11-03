@@ -25,6 +25,7 @@ public static class AnalyticsApiExtensions
         services.AddSingleton<ServerErrorInterceptor>();
         services.Configure<GrpcServiceOptions>(ObserveBeforeTiers);
         services.AddPermissions(AnalyticsPermissions.All);
+        services.AddDestinations(AnalyticsDestinations.All);
         services.AddMeasures(AnalyticsMeasures.All);
         services.AddSystemRole(new SystemRole(AnalyticsPermissions.InsightsViewerRole, "Insights viewer",
             "See how the app is used: how many phones open it, what's popular, whether notices were seen. Totals only, never anything about a person",

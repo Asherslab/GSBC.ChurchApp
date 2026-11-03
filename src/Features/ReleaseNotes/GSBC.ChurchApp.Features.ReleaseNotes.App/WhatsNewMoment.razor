@@ -2,7 +2,7 @@
 @implements IDisposable
 @inject WhatsNew WhatsNew
 @inject NativeBridge Bridge
-@inject NavigationManager Navigation
+@inject GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener Links
 
 @if (WhatsNew.Showing is { Count: > 0 } highlights)
 {
@@ -51,10 +51,10 @@
 
     private void Closed(bool open) => WhatsNew.Dismiss();
 
-    private void ShowMe(string link)
+    private Task ShowMe(string link)
     {
         WhatsNew.Dismiss();
-        Navigation.NavigateTo(link);
+        return Links.OpenAsync(link);
     }
 
     private void OnChanged() => InvokeAsync(StateHasChanged);

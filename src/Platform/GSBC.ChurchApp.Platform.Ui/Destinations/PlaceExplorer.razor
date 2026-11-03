@@ -1,0 +1,49 @@
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@inject DestinationsClient Destinations
+@inject IEnumerable<PlaceAction> Actions
+@inject IAccess Access
+@inject NavigationManager Navigation
+
+<div class="place-explorer">
+    <PlaceDirectory Chosen="@At" OnChoose="place => AtChanged.InvokeAsync(place.Path)" />
+    <aside class="place-explorer__aside" aria-label="The chosen place">
+        <LiveData @key="At" TValue="Destination" Load="() => Destinations.DescribeAsync(At).AsTask()" Feeds="Destinations.Feeds">
+            @if (context.Value is { State: DestinationState.Available } place)
+            {
+                <div class="place-explorer__phone" data-fit-height>
+                    <PlacePhone Destination="place" />
+                </div>
+                <h2 class="place-explorer__title">@place.Title</h2>
+                <p class="place-explorer__where">@place.Where</p>
+                <p class="place-explorer__who"><Icon Name="users" Size="IconSize.Small" />@WhoLine(place)</p>
+                <div class="place-explorer__actions">
+                    @foreach ((PlaceAction action, string href) in ActionsFor(place))
+                    {
+                        <Button Variant="@(action.Leads ? ButtonVariant.Primary : ButtonVariant.Quiet)" Small="true" Icon="@action.Icon" Href="@href">@action.Label</Button>
+                    }
+                </div>
+                <CopyField Label="Link to share" Value="@DestinationPaths.Shareable(new Uri(Navigation.BaseUri), place.Path)"
+                           Hint="On a phone with the app, it opens there. Anyone else is shown how to get the app." />
+            }
+            else
+            {
+                <EmptyState Icon="map-pin" Title="Can't show this place" Body="@PlaceWords.Unavailable(context.Value.State)" />
+            }
+        </LiveData>
+    </aside>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string At { get; set; }
+    [Parameter] public EventCallback<string> AtChanged { get; set; }
+
+    private static string WhoLine(Destination place) => place.WhoCanOpen == "Everyone" ? "Everyone can open it" : $"{place.WhoCanOpen} can open it";
+
+    private IEnumerable<(PlaceAction Action, string Href)> ActionsFor(Destination place) => Actions
+        .Where(action => action.Requires is null || Access.Can(action.Requires))
+        .Select(action => (action, action.HrefFor(place)))
+        .Where(pair => pair.Item2 is not null)
+        .OrderByDescending(pair => pair.action.Leads)
+        .Select(pair => (pair.action, pair.Item2!));
+}

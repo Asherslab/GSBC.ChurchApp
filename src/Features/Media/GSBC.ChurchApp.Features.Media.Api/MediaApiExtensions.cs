@@ -21,6 +21,8 @@ public static class MediaApiExtensions
         services.AddBlobStore(configuration);
         services.AddScoped<MediaLibrary>();
         services.AddScoped<IMediaReferences, MediaReferences>();
+        services.AddDestinations(MediaDestinations.All);
+        services.AddDestinationSource<MediaDestinationSource>();
         services.AddPermissions(MediaPermissions.All);
         services.AddFeed(new FeedDefinition(MediaFeeds.Library, FeedAudience.Holding(MediaPermissions.View)));
         services.AddSystemRole(new SystemRole("media-editor", "Media editor", "Upload images and files, and see the media library",

@@ -1,0 +1,45 @@
+@page "/open/{*Path}"
+@layout StageLayout
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@inject DestinationsClient Destinations
+@inject IAccess Access
+
+<PageTitle>Open in the app · Good Shepherd</PageTitle>
+<div class="sign-in-stage open-stage">
+    <div class="sign-in-card open-card">
+        <div class="sign-in-card__brand">
+            <BrandMark Decorative="true" />
+            <span>Good Shepherd</span>
+        </div>
+        <LiveData @key="PlacePath" TValue="Destination" Load="() => Destinations.DescribeAsync(PlacePath).AsTask()" Feeds="Destinations.Feeds">
+            @if (context.Value is { State: DestinationState.Available } place)
+            {
+                <div class="open-card__place">
+                    <span class="row__icon @(place.Area == DestinationAreas.Pages.Key ? "" : "row__icon--accent")"><Icon Name="@place.Icon" Size="IconSize.Small" /></span>
+                    <span>
+                        <h1 class="open-card__title" tabindex="-1">@place.Title</h1>
+                        <span class="open-card__where">@place.Where</span>
+                    </span>
+                </div>
+            }
+            else
+            {
+                <h1 class="open-card__title" tabindex="-1">A place in the church app</h1>
+            }
+            <p class="open-card__body">This link opens in the Good Shepherd app. On a phone with the app, tapping the link opens it there straight away.</p>
+            <p class="open-card__body">Haven't got the app yet? Ask at the church office how to get it, then tap the link again.</p>
+            @if (Access.SignedIn)
+            {
+                <Button Variant="ButtonVariant.Quiet" Icon="map-pin" Href="@($"places?at={Uri.EscapeDataString(PlacePath)}")">See it in Places in the app</Button>
+            }
+        </LiveData>
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Path { get; set; }
+
+    private string PlacePath => "/" + (Path ?? "");
+}

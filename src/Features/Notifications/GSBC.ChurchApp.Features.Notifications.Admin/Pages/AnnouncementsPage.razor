@@ -1,8 +1,9 @@
 @page "/announcements"
 @page "/announcements/{Id}"
 
-<AnnouncementsDesk Id="@Id" />
+<AnnouncementsDesk Id="@Id" OpensPlace="@Opens" />
 
 @code {
     [Parameter] public string? Id { get; set; }
+    [SupplyParameterFromQuery] public string? Opens { get; set; }
 }

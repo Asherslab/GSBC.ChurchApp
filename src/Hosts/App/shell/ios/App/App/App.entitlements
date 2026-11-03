@@ -9,7 +9,7 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>webcredentials:$(GSBC_ASSOCIATED_DOMAIN)</string>
-		<string>applinks:$(GSBC_ASSOCIATED_DOMAIN)</string>
+		<string>applinks:$(GSBC_LINKS_DOMAIN)</string>
 	</array>
 </dict>
 </plist>

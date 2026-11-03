@@ -298,7 +298,8 @@ person, and 60 days for the public feed.
 ## Staff announcements (decision 5)
 
 - **An announcement** (`notifications.announcements`): title, body (plain text; push can't show rich
-  text), an optional link (an in-app page, or the web), who it's for, urgent or not, and its state:
+  text), an optional link (a place in the app, chosen from Places in the app's list with
+  `PlaceField` ([destinations.md](destinations.md)), or the web), who it's for, urgent or not, and its state:
   draft, waiting to send, scheduled, sent, cancelled.
 - **Who it's for,** in staff words, built on `NotificationAudience`: *Everyone with the app*,
   *Everyone signed in*, *Followers and members of a ministry* (when Ministries exists), *People who

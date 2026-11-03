@@ -1,0 +1,53 @@
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@inject DestinationsClient Destinations
+@inject TimeProvider Clock
+
+<div class="place-field">
+    @if (Value is { Length: > 0 } path)
+    {
+        <LiveData @key="path" TValue="Destination" Load="() => Destinations.DescribeAsync(path).AsTask()" Feeds="Destinations.Feeds">
+            <div class="place-field__chosen @(context.Value.State == DestinationState.Available ? "" : "place-field__chosen--missing")">
+                <span class="row__icon @(context.Value.Area == DestinationAreas.Pages.Key ? "" : "row__icon--accent")">
+                    <Icon Name="@(context.Value.State == DestinationState.Available ? context.Value.Icon : "alert")" Size="IconSize.Small" />
+                </span>
+                <span class="place-field__words">
+                    <span class="place-field__title">@(context.Value.State == DestinationState.Available ? context.Value.Title : "This place can't be opened")</span>
+                    <span class="place-field__where">@(context.Value.State == DestinationState.Available ? PlaceWords.Subtitle(context.Value, Clock.GetUtcNow().UtcDateTime) : PlaceWords.Unavailable(context.Value.State))</span>
+                </span>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => _choosing = true">Change</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Open nothing" OnClick="() => ValueChanged.InvokeAsync(null)" />
+            </div>
+        </LiveData>
+    }
+    else
+    {
+        <Button Variant="ButtonVariant.Quiet" Icon="map-pin" OnClick="() => _choosing = true">@ChooseLabel</Button>
+    }
+    @if (Problem is not null)
+    {
+        <p class="field__problem" role="alert">@Problem</p>
+    }
+</div>
+
+<Sheet Open="_choosing" OpenChanged="open => _choosing = open" Wide="true" Title="@SheetTitle" Lead="@SheetLead">
+    <PlaceDirectory Chosen="@Value" OpenableBy="@OpenableBy" OnChoose="ChooseAsync" />
+</Sheet>
+
+@code {
+    private bool _choosing;
+
+    [Parameter] public string? Value { get; set; }
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public string? OpenableBy { get; set; }
+    [Parameter] public string ChooseLabel { get; set; } = "Choose a place in the app";
+    [Parameter] public string SheetTitle { get; set; } = "Choose a place in the app";
+    [Parameter] public string? SheetLead { get; set; }
+    [Parameter] public string? Problem { get; set; }
+
+    private async Task ChooseAsync(Destination place)
+    {
+        _choosing = false;
+        await ValueChanged.InvokeAsync(place.Path);
+    }
+}

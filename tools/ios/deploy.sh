@@ -72,6 +72,7 @@ DEVELOPMENT_TEAM = $(tr -d '[:space:]' < "$team_file")
 GSBC_GATEWAY_SCHEME = $gateway_scheme
 GSBC_GATEWAY = $gateway_host
 GSBC_ASSOCIATED_DOMAIN = $associated_domain
+GSBC_LINKS_DOMAIN = $associated_domain
 XC
 
 echo "== Publishing the app ($configuration)"

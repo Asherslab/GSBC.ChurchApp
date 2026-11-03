@@ -1,0 +1,46 @@
+{
+  "title": "Choosing a place in the app to link to",
+  "question": "Staff pick where an announcement (and later a tile or a link in text) opens: a page like What's new, or one thing such as an event or a file. Search and browsing by area count equally. Which form should the picker take?",
+  "options": [
+    {
+      "id": "in-place",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Pick it where you are",
+      "lineage": "a search box that drops down, like choosing a recipient in an email",
+      "thesis": "The 'What it opens' row becomes a field you type into; a panel drops under it with area chips across the top and results grouped by area.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "sand field", "area chips", "place token"],
+      "viewport": "The Announcements desk with the Opens row open: a 600px panel under the field, chips (All, Pages, Events, Files), then Upcoming events and Pages as hairline rows with icon tiles. The chosen place then sits in the row as a token: icon, name, area, Copy link, Change.",
+      "risk": "A drop-down panel is cramped for browsing a long list of events; browsing deep needs a lot of scrolling inside it.",
+      "html": ".impeccable/mocks/decision/destinations/in-place.html"
+    },
+    {
+      "id": "step-by-step",
+      "kind": "dealt",
+      "label": "Area, then the thing",
+      "lineage": "a two-step chooser, like picking a folder then a file",
+      "thesis": "A centred sheet opens on the areas of the app as rows (Pages, Events, Files, with counts); choosing one shows its items, with search above both steps.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "centred sheet", "area rows", "back step"],
+      "viewport": "A centred 640px sheet over the desk: the heading 'Choose what it opens', search, then step two for Events: a back link to every area, and this month's events as rows with dates, the chosen one marked.",
+      "risk": "Two steps for every pick; searching across areas has to switch the sheet out of its steps.",
+      "html": ".impeccable/mocks/decision/destinations/step-by-step.html"
+    },
+    {
+      "id": "places-page",
+      "kind": "dealt",
+      "label": "A page of every place, and the same view as a picker",
+      "lineage": "a site's directory: every page and item with its link",
+      "thesis": "A new admin page, Places in the app, lists every place: areas down the left, search across the top, items in the middle, the chosen one's link and who can open it beside them; the field opens the same view in a wide sheet.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "area list", "hairline table", "copy field"],
+      "viewport": "The sidebar's group The app gains Places in the app. The page: title band, search, a 220px area list (Pages 9, Events 14, Files 32), a table of places, and a detail column with the name, who can open it, and the link to copy.",
+      "risk": "The biggest build: a whole page plus the picker. Staff may never visit the page if the picker does the job.",
+      "html": ".impeccable/mocks/decision/destinations/places-page.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

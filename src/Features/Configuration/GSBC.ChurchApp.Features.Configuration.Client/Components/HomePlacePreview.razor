@@ -1,0 +1,32 @@
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Ui.Destinations
+@inject ConfigurationClient Configuration
+@inject SurfaceCatalog Surfaces
+@inject IAccess Access
+
+@if (Access.Can(HubSurfaces.Edit) && Access.Can(AppearanceSurfaces.Edit))
+{
+    <LiveData TValue="PublishedHome" Load="LoadAsync" Feeds="[ConfigurationFeeds.Placements]">
+        <PhonePreview Hub="context.Value.Hub" Appearance="context.Value.Appearance" Compact="true" />
+    </LiveData>
+}
+else
+{
+    <PlaceSummaryPhone Destination="Destination" />
+}
+
+@code {
+    [Parameter, EditorRequired] public required Destination Destination { get; set; }
+
+    private async Task<PublishedHome> LoadAsync()
+    {
+        AreaPlacements hub = await Configuration.GetAreaAsync(HubSurfaces.Area, null);
+        AreaPlacements appearance = await Configuration.GetAreaAsync(AppearanceSurfaces.Area, null);
+        return new PublishedHome(Arranged(HubSurfaces.Area, hub), Arranged(AppearanceSurfaces.Area, appearance));
+    }
+
+    private IReadOnlyList<ArrangedSurface> Arranged(SurfaceArea area, AreaPlacements placements) =>
+        SurfaceLayout.Arrange(Surfaces.In(area), placements.Placements.Select(placement => placement.ToStored()));
+
+    private sealed record PublishedHome(IReadOnlyList<ArrangedSurface> Hub, IReadOnlyList<ArrangedSurface> Appearance);
+}

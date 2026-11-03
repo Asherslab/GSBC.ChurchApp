@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using ProtoBuf;
 using ProtoBuf.Meta;
@@ -11,4 +12,9 @@ namespace GSBC.ChurchApp.Platform.Contracts;
 [ProtoSerializable(typeof(PullReply))]
 [ProtoSerializable(typeof(WatchRequest))]
 [ProtoSerializable(typeof(WatchEvent))]
+[ProtoSerializable(typeof(Destination))]
+[ProtoSerializable(typeof(DestinationSearch))]
+[ProtoSerializable(typeof(DestinationGroup))]
+[ProtoSerializable(typeof(DestinationResults))]
+[ProtoSerializable(typeof(DestinationRequest))]
 public partial class PlatformContractsModel : TypeModel;
