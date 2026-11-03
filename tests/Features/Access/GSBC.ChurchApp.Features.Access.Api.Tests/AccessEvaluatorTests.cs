@@ -24,6 +24,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     private static readonly Permission EditRoster = new("ministries.roster.edit", ScopeKind.Ministry, "Edit the roster");
     private static readonly Permission ManageAccounts = new("accounts.manage", ScopeKind.Global, "Manage accounts", isSensitive: true);
     private static readonly Permission ViewAccounts = new("accounts.view", ScopeKind.Global, "View accounts", isSensitive: true);
+    private static readonly Permission ReceiveNotices = new("ministries.notices.receive", ScopeKind.Ministry, "Get notices");
 
     private static readonly SystemRole[] SystemRoles =
     [
@@ -34,6 +35,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         new("leader", "Leader", "", ScopeKind.Ministry, ["ministries.*"], AssignableBy: ["staff"], AppliesToChildren: true),
         new("admin", "Admin", "", ScopeKind.Ministry, ["ministries.*"], AssignableBy: ["staff"], AppliesToChildren: true),
         new("staff", "Staff", "", ScopeKind.Global, ["ministries.*"], AssignableBy: []),
+        new("follower", "Follower", "", ScopeKind.Ministry, ["ministries.notices.receive"], PhoneHoldable: true),
     ];
 
     private const string Music = "music";
@@ -46,7 +48,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
-        _catalog = new PermissionCatalog([new PermissionSet([.. AccessPermissions.All, PostNews, ReadNews, EditRoster, ManageAccounts, ViewAccounts])]);
+        _catalog = new PermissionCatalog([new PermissionSet([.. AccessPermissions.All, PostNews, ReadNews, EditRoster, ManageAccounts, ViewAccounts, ReceiveNotices])]);
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
                 .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
@@ -59,7 +61,10 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             .AddScoped<IAccessEvaluator>(provider => provider.GetRequiredService<AccessEvaluator>())
             .AddScoped<AssignmentRules>()
             .AddScoped<AccessInsights>()
-            .AddScoped<IRoleAssignments, RoleAssignments>()
+            .AddScoped<RoleAssignments>()
+            .AddScoped<IRoleAssignments>(provider => provider.GetRequiredService<RoleAssignments>())
+            .AddScoped<IPhoneRoles>(provider => provider.GetRequiredService<RoleAssignments>())
+            .AddScoped<IPermissionHolders, PermissionHolderLookup>()
             .AddScoped<GrantsFeed>()
             .AddScoped<AccessChanges>()
             .AddSingleton(new FeedRegistry([new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords)]))
@@ -122,6 +127,32 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
 
         Assert.False(await IsLastActiveOwnerAsync(current));
         Assert.False(await IsLastActiveOwnerAsync(second));
+    }
+
+    [Fact]
+    public async Task APhoneFollowsWithoutAnAccountAndTheFollowMovesToThePersonWhoSignsIn()
+    {
+        Guid phone = Guid.CreateVersion7(), leader = Guid.CreateVersion7(), signsIn = Guid.CreateVersion7();
+        await AssignAsync(leader, await SystemRoleAsync("leader"), scopeObjectId: Music);
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        IPhoneRoles phones = scope.ServiceProvider.GetRequiredService<IPhoneRoles>();
+        IPermissionHolders holders = scope.ServiceProvider.GetRequiredService<IPermissionHolders>();
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+
+        await phones.GiveAsync(phone, "follower", Music, null, cancellationToken);
+        await Assert.ThrowsAsync<InvalidOperationException>(async () => await phones.GiveAsync(phone, "member", Music, null, cancellationToken));
+
+        PermissionHolders music = await holders.HoldersAsync(ReceiveNotices, Music, cancellationToken);
+        Assert.Equal([phone], music.Phones);
+        Assert.Equal([leader], music.People);
+        Assert.Empty((await holders.HoldersAsync(ReceiveNotices, "youth", cancellationToken)).Phones);
+
+        await phones.MoveToPersonAsync(phone, signsIn, cancellationToken);
+
+        PermissionHolders moved = await holders.HoldersAsync(ReceiveNotices, Music, cancellationToken);
+        Assert.Empty(moved.Phones);
+        Assert.Equal(new HashSet<Guid> { leader, signsIn }, moved.People.ToHashSet());
+        Assert.Empty(await phones.HeldAsync(phone, cancellationToken));
     }
 
     private async Task<bool> IsLastActiveOwnerAsync(Assignment assignment)

@@ -68,6 +68,7 @@ internal sealed class AccessReconciler(
             role.Description = declared.Description;
             role.ScopeKind = declared.ScopeKind.Name;
             role.AppliesToChildren = declared.AppliesToChildren;
+            role.PhoneHoldable = declared.PhoneHoldable;
             reconciled[declared.Key] = role;
             role.Patterns.RemoveAll(pattern => !declared.Patterns.Contains(pattern.Pattern));
             foreach (string pattern in declared.Patterns.Where(pattern => role.Patterns.All(existing => existing.Pattern != pattern)))

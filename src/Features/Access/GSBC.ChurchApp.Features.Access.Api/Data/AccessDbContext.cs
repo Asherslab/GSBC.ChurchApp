@@ -13,6 +13,7 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
     public DbSet<RoleInclude> RoleIncludes => Set<RoleInclude>();
     public DbSet<RoleAssigner> RoleAssigners => Set<RoleAssigner>();
     public DbSet<Assignment> Assignments => Set<Assignment>();
+    public DbSet<PhoneAssignment> PhoneAssignments => Set<PhoneAssignment>();
     public DbSet<CatalogEntry> Catalog => Set<CatalogEntry>();
 
     protected override string Schema => SchemaName;
@@ -72,6 +73,13 @@ public sealed class AccessDbContext(DbContextOptions<AccessDbContext> options) :
             entity.HasIndex(assignment => assignment.UserId);
             entity.Property(assignment => assignment.Source).HasConversion<string>();
             entity.HasOne(assignment => assignment.Role).WithMany().HasForeignKey(assignment => assignment.RoleId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<PhoneAssignment>(entity =>
+        {
+            entity.ToTable("phone_assignments");
+            entity.HasKey(assignment => assignment.Id);
+            entity.HasIndex(assignment => new { assignment.InstallId, assignment.RoleId, assignment.ScopeObjectId }).IsUnique();
+            entity.HasOne<RoleRecord>().WithMany().HasForeignKey(assignment => assignment.RoleId).OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<CatalogEntry>(entity =>
         {

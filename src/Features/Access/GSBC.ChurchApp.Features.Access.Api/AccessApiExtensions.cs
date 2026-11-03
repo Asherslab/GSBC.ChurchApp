@@ -24,7 +24,10 @@ public static class AccessApiExtensions
         services.AddFeed(new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords));
         services.AddScoped<AssignmentRules>();
         services.AddScoped<AccessInsights>();
-        services.AddScoped<IRoleAssignments, RoleAssignments>();
+        services.AddScoped<RoleAssignments>();
+        services.AddScoped<IRoleAssignments>(provider => provider.GetRequiredService<RoleAssignments>());
+        services.AddScoped<IPhoneRoles>(provider => provider.GetRequiredService<RoleAssignments>());
+        services.AddScoped<IPermissionHolders, PermissionHolderLookup>();
         services.AddSingleton(provider =>
         {
             GrantCache cache = provider.GetRequiredService<GrantCache>();

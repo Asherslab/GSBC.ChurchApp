@@ -136,11 +136,15 @@ There is no list of recipients anywhere in a feature. "Members of Music" is
   returns every person and phone whose compiled grants allow the node at that scope, including
   wildcards, denials, roles that apply to a ministry's teams, and end dates. It reads the same
   compiled grants the evaluator caches, so "who gets this" and "who may see this" can't disagree.
-- **Phones as holders.** `access.assignments` gets a holder kind: a person (`user_id`) or a phone
-  (`install_id`), exactly one. Only roles marked *may be given to a phone* can be (Follower, today),
-  so a phone can never hold anything else, whatever an assignment says. A phone's grants come
-  through the same compiler and a phone's own grants feed row, so `IAccess.Can` works on a signed-out
-  phone for "am I following Music?".
+- **Phones as holders.** A phone's roles are kept apart from people's, in
+  `access.phone_assignments` (install, role, place, end date), through `IPhoneRoles`
+  (Platform.Api). Only roles declared `PhoneHoldable` can be given to a phone (Follower, today), so a
+  phone can never hold anything else. They compile through the same `RoleGrants`, so
+  `IPermissionHolders` treats both alike, while people's lists, the evaluator and the grants feed
+  never see a phone. A signed-out phone can't read a private feed (Sync is public and unsigned), so
+  **the phone keeps its own follows** locally, from the Follow reply and an `[AppInstall]`
+  `MyFollows` call, as life-groups.md planned. Built 2026-11-03, tested in
+  `AccessEvaluatorTests` (a phone follows, a phone can't be given Member, the follow moves on sign-in).
 
 **Following** (Ministries builds the button; this station builds the parts):
 
@@ -149,7 +153,7 @@ There is no list of recipients anywhere in a feature. "Members of Music" is
 - Follow and Unfollow are App writes (`[AppInstall]`): `GiveAsFeatureAsync` to the install, or to
   the person when signed in. Rate-limited per install.
 - **Signing in** moves every assignment held by that phone to the person
-  (`IRoleAssignments.MoveInstallToPersonAsync`), merging duplicates, so the follows go with them
+  (`IPhoneRoles.MoveToPersonAsync`), merging duplicates, so the follows go with them
   (decision 4). Signing out leaves the phone following nothing; the person keeps the follows.
 - Until Ministries exists there's nothing to follow; the model and tests are built now.
 
@@ -194,7 +198,7 @@ Two feeds, because a signed-out phone has no person to hold a private feed for:
 | `notifications.public` | public | notifications for *everyone* and for *followers of a ministry*; each says which ministry | on the phone only |
 
 A signed-in phone shows `notifications.inbox`. A signed-out phone shows the `notifications.public`
-rows for everyone plus the ministries it follows (from its own grants). Anything sent to phones is,
+rows for everyone plus the ministries it follows (the follows it keeps). Anything sent to phones is,
 by construction, public content: Follower only covers public notices. Retention: the latest 200 per
 person, and 60 days for the public feed.
 
