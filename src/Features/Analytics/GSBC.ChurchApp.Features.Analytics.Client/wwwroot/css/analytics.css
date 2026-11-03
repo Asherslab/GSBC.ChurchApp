@@ -1,0 +1,15 @@
+.health-where { overflow-wrap: anywhere; }
+.health-title { overflow-wrap: anywhere; }
+.health-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.health-frames { display: grid; gap: 6px; margin: 8px 0 0; padding: 0 0 0 20px; font-size: var(--text-caption); }
+.health-frames code { overflow-wrap: anywhere; }
+
+.privacy-copy { display: grid; gap: 12px; max-width: 65ch; }
+.privacy-copy p { margin: 0; color: var(--ink); font-size: var(--text-body); line-height: 1.5; }
+
+.insights-note { max-width: 72ch; margin: 0 0 8px; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
+.insights-groups { margin: 14px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
+.insights-groups__lead { color: var(--ink); font-weight: 600; }
+.insights-quiet { margin: 0; color: var(--ink-3); font-size: var(--text-caption); }
+.insights-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px 32px; }
+.insights-devices summary { margin-bottom: 14px; color: var(--ink); font-size: var(--text-row); cursor: pointer; }

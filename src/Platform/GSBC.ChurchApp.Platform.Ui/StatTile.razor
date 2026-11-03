@@ -1,0 +1,19 @@
+<div class="stat-tile">
+    <p class="stat-tile__value">@Value</p>
+    <p class="stat-tile__label">@Label</p>
+    @if (Change is not null)
+    {
+        <p class="stat-tile__change">@Change</p>
+    }
+    @if (Explanation is not null)
+    {
+        <p class="stat-tile__explanation">@Explanation</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string? Change { get; set; }
+    [Parameter] public string? Explanation { get; set; }
+}

@@ -1,0 +1,13 @@
+@page "/insights"
+
+<TitleBand Title="Insights" Lead="How the app is used: totals of phones and taps, never anything about a person.">
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="() => _view?.RefreshAsync() ?? Task.CompletedTask">Refresh</Button>
+    </Actions>
+</TitleBand>
+
+<InsightsView @ref="_view" />
+
+@code {
+    private InsightsView? _view;
+}

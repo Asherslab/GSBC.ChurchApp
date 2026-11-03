@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Analytics;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
@@ -13,6 +14,9 @@ public static class HubSurfaces
 
     public static readonly Permission Publish =
         new(PublishNode, ScopeKind.Global, "Put changes to the Home screen out to everyone, or on for an event");
+
+    public static readonly Measure TileTapped = new("hub.tile.tapped", "Home screen tiles tapped",
+        "Taps on each Home screen tile. One person tapping twice counts twice", SubjectKinds.HubTile, SplitByGroup: true);
 
     public static readonly SurfaceArea Area = new("home.hub", "Home screen", "The tiles on the app's Home screen", ScopeKind.Global, Edit, Publish);
 

@@ -26,6 +26,7 @@ public static class AccessApiExtensions
         services.AddScoped<AssignmentRules>();
         services.AddScoped<AccessInsights>();
         services.AddScoped<IRoleAssignments, RoleAssignments>();
+        services.AddScoped<IPermissionHolders, PermissionHolders>();
         services.AddSingleton(provider =>
         {
             GrantCache cache = provider.GetRequiredService<GrantCache>();

@@ -3,9 +3,11 @@
 @attribute [UnconditionalSuppressMessage("Trimming", "IL2110", Justification = "The Razor compiler references Router.NotFoundPage's annotated setter; no page type flows through it, and page and layout assemblies are rooted (SPEC §9).")]
 @attribute [UnconditionalSuppressMessage("Trimming", "IL2111", Justification = "As above.")]
 @inject ClientModules Modules
+@inject GSBC.ChurchApp.Platform.Client.Diagnostics.CurrentPage CurrentPage
 
 <Router AppAssembly="AppAssembly" AdditionalAssemblies="Modules.AdditionalAssemblies">
     <Found Context="routeData">
+        @{ CurrentPage.Template = routeData.Template; }
         <RouteView RouteData="routeData" DefaultLayout="Layout" />
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>

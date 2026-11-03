@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -28,6 +29,7 @@ public static class AccountsApiExtensions
         services.AddHostedService<AccountsCleanup>();
         services.AddScoped<ISignedInSessions, AccountSessionCheck>();
         services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
+        services.AddScoped<IAccountEmails, AccountEmailLookup>();
         return services.AddPermissions(AccountsPermissions.All);
     }
 

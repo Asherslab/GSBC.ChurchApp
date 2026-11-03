@@ -1,0 +1,74 @@
+@inject InsightsClient Insights
+@inject TimeProvider Time
+
+<LiveData @ref="_live" TValue="InsightsSummary" Load="LoadAsync" FailedTitle="Can't load the numbers right now">
+    @{ InsightsSummary summary = context.Value; }
+    <p class="insights-note">@AsOf(summary) @InsightsWords.PhonesNotPeople</p>
+
+    <Section First="true" Title="This week">
+        <div class="stat-tiles">
+            <StatTile Value="@InsightsWords.Headline(summary.ThisWeek)" Label="phones opened the app this week"
+                      Change="@InsightsWords.Change(summary.ThisWeek, summary.LastWeek, "last week")" Explanation="@AnalyticsMeasures.ActiveWeek.Counts" />
+            <StatTile Value="@InsightsWords.Headline(summary.ThisMonth)" Label="phones opened it this month" Explanation="@AnalyticsMeasures.ActiveMonth.Counts" />
+            <StatTile Value="@InsightsWords.Headline(summary.NewThisMonth)" Label="new phones this month"
+                      Change="@InsightsWords.Change(summary.NewThisMonth, summary.NewLastMonth, "last month")" Explanation="@AnalyticsMeasures.Installed.Counts" />
+        </div>
+        @if (Split(summary) is { Length: > 0 } split)
+        {
+            <p class="insights-groups"><span class="insights-groups__lead">Who that is:</span> @split</p>
+        }
+        <p class="insights-groups">@InsightsWords.Number(summary.ReturningThisWeek) of them also opened the app last week.</p>
+    </Section>
+
+    <Section Title="The last 12 weeks" Lead="Phones that opened the app each week, Monday to Sunday. Easter, Christmas and holidays show as they happen.">
+        <TrendLine Label="Phones that opened the app each week, for the last 12 weeks" PeriodName="Week of"
+                   Points="@summary.Weeks.Select(week => InsightsWords.Point(week)).ToList()"
+                   Comparison="@(summary.WeeksLastYear.Count == 0 ? null : summary.WeeksLastYear.Select(week => InsightsWords.Point(week, withYear: true)).ToList())"
+                   SeriesName="Phones" ComparisonName="Same weeks last year"
+                   Note="@(summary.Weeks.Any(week => week.Phones?.FewerThanFive == true) ? "Weeks with fewer than 5 phones are left as gaps." : null)" />
+    </Section>
+
+    <Section Title="Most popular this week">
+        @if (summary.Top.Count == 0)
+        {
+            <p class="insights-quiet">Nothing has been tapped yet this week. Lists of the most played sermons, opened events and seen notices join this as those parts of the app arrive.</p>
+        }
+        else
+        {
+            <div class="insights-top">
+                @foreach (TopList list in summary.Top)
+                {
+                    <RankedList Title="@list.Label" Explanation="@list.Counts"
+                                Items="@list.Entries.Select(entry => new RankedItem(entry.Label, InsightsWords.Number(entry.Count))).ToList()" />
+                }
+            </div>
+        }
+    </Section>
+
+    <Section Title="Phones and app versions">
+        <details class="insights-devices">
+            <summary>@InsightsWords.Number(summary.OnLatestVersion) of this week's phones are on the latest version@(summary.LatestVersion.Length > 0 ? $", {summary.LatestVersion}" : "")</summary>
+            <div class="insights-top">
+                <RankedList Title="iPhone and Android" Items="@summary.Platforms.Select(entry => new RankedItem(entry.Label, InsightsWords.Number(entry.Count))).ToList()" Empty="No phones this week yet." />
+                <RankedList Title="App versions" Items="@summary.Versions.Select(entry => new RankedItem(entry.Label, InsightsWords.Number(entry.Count))).ToList()" Empty="No phones this week yet." />
+            </div>
+        </details>
+    </Section>
+</LiveData>
+
+@code {
+    private LiveData<InsightsSummary>? _live;
+
+    public Task RefreshAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private Task<InsightsSummary> LoadAsync() => Insights.GetSummaryAsync().AsTask();
+
+    private static string Split(InsightsSummary summary) =>
+        string.Join(" · ", summary.Groups
+            .Where(group => group.Phones is { Value: > 0 } or { FewerThanFive: true })
+            .Select(group => $"{InsightsWords.Number(group.Phones)} {InsightsWords.Group(group.Group)}"));
+
+    private string AsOf(InsightsSummary summary) => summary.LastReportAt is { } at
+        ? $"As of the last report, {ChurchDates.Describe(at, DateLineStyle.Relative, withTime: true, Time.GetUtcNow().UtcDateTime)}. Phones report about once an hour while the app is used."
+        : "No phone has reported yet. Phones report about once an hour while the app is used.";
+}

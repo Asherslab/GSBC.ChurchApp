@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Access.Client;
+using GSBC.ChurchApp.Features.Analytics.App;
 using GSBC.ChurchApp.Features.Accounts.App;
 using GSBC.ChurchApp.Features.Configuration.App;
 using GSBC.ChurchApp.Features.Media.Client;
@@ -32,6 +33,7 @@ builder.Services
 modules.Add(new ClientModule("Settings", typeof(Program).Assembly,
     [new NavEntry("Appearance", "appearance", "sun"), new NavEntry("Storage", "storage", "database")]));
 builder.Services.AddReleaseNotesApp(modules);
+builder.Services.AddAnalyticsApp(modules);
 
 WebAssemblyHost host = builder.Build();
 NativeBridge bridge = await host.Services.InitialiseNativeAsync();

@@ -14,6 +14,10 @@ builds on SPEC §5.
 - **Screens read the store, never the network.** A screen renders what is stored at once and
   re-renders when Sync says its feed changed. There is no fetch-then-show path to go stale or fail.
 - **Writes go to the outbox** and show as pending until the server confirms them (SPEC §5).
+  **Quiet entries** (built 2026-11-03 for [analytics](../features/analytics.md)) are the exception: usage
+  and error reports never show in Storage, never raise "couldn't send", and are deleted silently when
+  they give up (three days). `IOutbox.EnqueueQuietlyAsync`, and `DiscardQuietAsync` when someone turns
+  "Help improve the app" off.
 - **Gone means gone.** A feed the app no longer registers is dropped; a format change resets a feed.
 - **The sync stream is the phone's connection.** Its state (live, catching up, offline) is the one
   signal for "online", and a retry while offline still reads as offline, so nothing flickers.

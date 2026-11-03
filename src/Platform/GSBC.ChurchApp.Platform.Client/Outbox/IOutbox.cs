@@ -15,6 +15,10 @@ public interface IOutbox
 
     ValueTask<string> EnqueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request, TypeModel model);
 
+    ValueTask EnqueueQuietlyAsync(string method, byte[] request);
+
+    ValueTask DiscardQuietAsync();
+
     ValueTask<IReadOnlyList<OutboxEntry>> ListAsync();
 
     ValueTask RetryAsync(string id);

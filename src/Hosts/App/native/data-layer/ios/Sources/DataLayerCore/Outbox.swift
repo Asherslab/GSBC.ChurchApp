@@ -29,21 +29,23 @@ public actor Outbox {
         self.onChanged = onChanged
     }
 
-    public func enqueue(method: String, request: Data) throws -> String {
+    public func enqueue(method: String, request: Data, quiet: Bool = false) throws -> String {
         let id = UUID().uuidString
         let now = Self.now()
         try database.write { db in
-            try db.execute(sql: "INSERT INTO outbox (id, method, request, created_at, next_attempt_at) VALUES (?, ?, ?, ?, ?)",
-                           arguments: [id, method, request, now, now])
+            try db.execute(sql: "INSERT INTO outbox (id, method, request, created_at, next_attempt_at, quiet) VALUES (?, ?, ?, ?, ?, ?)",
+                           arguments: [id, method, request, now, now, quiet])
         }
-        onChanged()
+        if !quiet {
+            onChanged()
+        }
         Task { await drain() }
         return id
     }
 
     public func entries() throws -> [OutboxEntry] {
         try database.read { db in
-            try Row.fetchAll(db, sql: "SELECT id, method, created_at, attempts, last_error, failed FROM outbox ORDER BY created_at").map { row in
+            try Row.fetchAll(db, sql: "SELECT id, method, created_at, attempts, last_error, failed FROM outbox WHERE quiet = 0 ORDER BY created_at").map { row in
                 OutboxEntry(id: row["id"], method: row["method"], createdAt: row["created_at"],
                             attempts: row["attempts"], lastError: row["last_error"], failed: row["failed"])
             }
@@ -62,6 +64,10 @@ public actor Outbox {
     public func discard(id: String) throws {
         try database.write { db in try db.execute(sql: "DELETE FROM outbox WHERE id = ?", arguments: [id]) }
         onChanged()
+    }
+
+    public func discardQuiet() throws {
+        try database.write { db in try db.execute(sql: "DELETE FROM outbox WHERE quiet = 1") }
     }
 
     public func sendWaitingNow() async {
@@ -83,18 +89,19 @@ public actor Outbox {
         scheduleWake()
     }
 
-    private func nextDue() throws -> (id: String, method: String, request: Data, createdAt: Int64, attempts: Int)? {
+    private func nextDue() throws -> DueEntry? {
         try database.read { db in
             try Row.fetchOne(db, sql: """
-                SELECT id, method, request, created_at, attempts FROM outbox
+                SELECT id, method, request, created_at, attempts, quiet FROM outbox
                 WHERE failed = 0 AND next_attempt_at <= ? ORDER BY created_at LIMIT 1
                 """, arguments: [Self.now()]).map { row in
-                (row["id"], row["method"], row["request"], row["created_at"], row["attempts"])
+                DueEntry(id: row["id"], method: row["method"], request: row["request"], createdAt: row["created_at"],
+                         attempts: row["attempts"], quiet: row["quiet"])
             }
         }
     }
 
-    private func send(_ entry: (id: String, method: String, request: Data, createdAt: Int64, attempts: Int)) async {
+    private func send(_ entry: DueEntry) async {
         let status: Int
         let message: String
         do {
@@ -116,12 +123,16 @@ public actor Outbox {
                 let backoff = min(Self.maximumBackoffSeconds, 5 * pow(2, Double(min(attempts, 10)))) * Double.random(in: 0.8...1.2)
                 try db.execute(sql: "UPDATE outbox SET attempts = ?, next_attempt_at = ?, last_error = ? WHERE id = ?",
                                arguments: [attempts, now + Int64(backoff * 1000), message, entry.id])
+            } else if entry.quiet {
+                try db.execute(sql: "DELETE FROM outbox WHERE id = ?", arguments: [entry.id])
             } else {
                 try db.execute(sql: "UPDATE outbox SET attempts = ?, failed = 1, last_error = ? WHERE id = ?",
                                arguments: [attempts, message.isEmpty ? "status \(status)" : message, entry.id])
             }
         }
-        onChanged()
+        if !entry.quiet {
+            onChanged()
+        }
     }
 
     private func scheduleWake() {
@@ -138,4 +149,13 @@ public actor Outbox {
     }
 
     private static func now() -> Int64 { Int64(Date().timeIntervalSince1970 * 1000) }
+}
+
+private struct DueEntry {
+    let id: String
+    let method: String
+    let request: Data
+    let createdAt: Int64
+    let attempts: Int
+    let quiet: Bool
 }

@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Access.Api;
+using GSBC.ChurchApp.Features.Analytics.Api;
 using GSBC.ChurchApp.Features.Accounts.Api;
 using GSBC.ChurchApp.Features.Configuration.Api;
 using GSBC.ChurchApp.Features.Media.Api;
@@ -15,6 +16,7 @@ builder.Services.AddAccountsApi(builder.Configuration);
 builder.Services.AddAccessApi();
 builder.Services.AddConfigurationApi();
 builder.Services.AddMediaApi(builder.Configuration);
+builder.Services.AddAnalyticsApi();
 
 if (builder.Environment.IsDevelopment())
     builder.Services.AddFeed(new FeedDefinition(DevelopmentFeeds.Echo, FeedAudience.Public));
@@ -29,5 +31,6 @@ app.MapAccountsApi();
 app.MapAccessApi();
 app.MapConfigurationApi();
 app.MapMediaApi();
+app.MapAnalyticsApi();
 
 app.Run();
