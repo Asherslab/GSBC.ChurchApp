@@ -72,6 +72,13 @@ something waits until no build that uses it is still in TestFlight.
 between Postgres and the API and gateway, as `Hosts.Migrator` runs in the AppHost (SPEC §10). The API
 never migrates on start-up, and a failed migration fails the sync, leaving the old API running.
 
+**Native gRPC through Cloudflare** (proven 2026-11-03): the zone's gRPC switch on, and the tunnel taken
+through Traefik so cloudflared speaks HTTP/2 over TLS to the origin. **`baptist-tunnel-mini` must run
+`protocol: http2`** (gsbc.argo, `cluster-tunnels.yaml`): over the default QUIC transport cloudflared drops
+gRPC's trailers, and calls fail with "server closed the stream without sending trailers"
+([cloudflared#1641](https://github.com/cloudflare/cloudflared/issues/1641)). Cloudflare's docs still call
+gRPC over a public-hostname tunnel unsupported, so the UAT workflow checks it on every deploy.
+
 **Health probes are gRPC** (`grpc.health.v1`): liveness is the bare service, readiness (`ready`) adds the
 database. The tier check lets the health service through, and both hosts answer `SERVING` rather than
 `UNKNOWN` (`HealthProbeTests`). Health checks aren't routed by the gateway, so only the kubelet reaches

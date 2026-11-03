@@ -568,7 +568,9 @@ a YARP gateway (§6) that is reached through the usual Cloudflare tunnel and ing
 - **To verify in the skeleton:** native gRPC from phones goes through Cloudflare, so confirm the
   tunnel and the Traefik ingress carry it end to end. Cloudflare's gRPC support has to be enabled for
   the zone, and both Traefik and YARP must carry HTTP/2 end to end (h2c inside the cluster). If it can't be made to work, the native
-  layer falls back to gRPC-Web, still over HTTP/2.
+  layer falls back to gRPC-Web, still over HTTP/2. **Proven 2026-11-03** at `uat-app.baptist.com.au`: it
+  needs the tunnel on HTTP/2 to the edge as well (cloudflared drops trailers over QUIC); see
+  [environments.md](docs/architecture/environments.md).
 
 ### Services
 
