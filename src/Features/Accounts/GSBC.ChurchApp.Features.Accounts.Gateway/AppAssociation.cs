@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.StaticFiles;
 using Microsoft.Extensions.Configuration;
@@ -15,7 +16,7 @@ public static partial class AppAssociation
     public const string Section = "Apple";
     public const string RequestPath = "/.well-known/apple-app-site-association";
     public const string DefaultBundleId = "au.com.baptist.app";
-    private static readonly string[] LinksIntoTheApp = ["/welcome", "/welcome/*"];
+    public static readonly IReadOnlyList<string> LinksIntoTheApp = ["/welcome", "/welcome/*", $"/{DestinationPaths.SharedPrefix}", $"/{DestinationPaths.SharedPrefix}/*"];
 
     public static string Json(string teamId, string bundleId)
     {

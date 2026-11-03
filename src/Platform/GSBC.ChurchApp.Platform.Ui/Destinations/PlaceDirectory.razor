@@ -1,0 +1,77 @@
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@inject DestinationsClient Destinations
+
+<div class="place-directory">
+    <div class="place-directory__tools">
+        <SearchField Label="Search every place" Placeholder="Search every place" Value="@_text" ValueChanged="SearchAsync" Class="place-directory__search" />
+        <FilterChips TValue="string" Label="Area" Options="Areas" Value="@_area" ValueChanged="ChooseAreaAsync" />
+    </div>
+    @if (Hint is not null)
+    {
+        <p class="place-directory__hint">@Hint</p>
+    }
+    <LiveData @ref="_live" TValue="DestinationResults" Load="LoadAsync" Feeds="Destinations.Feeds">
+        @if (context.Value.Groups.All(group => group.Destinations.Count == 0))
+        {
+            <EmptyState Icon="search" Title="@(_text.Trim().Length > 0 ? $"Nothing called “{_text.Trim()}”" : "Nothing here yet")"
+                        Body="@(_text.Trim().Length > 0 ? "Try fewer letters, or look under another area." : "Places show here as they're added to the app.")" />
+        }
+        @foreach (DestinationGroup group in context.Value.Groups.Where(group => group.Destinations.Count > 0))
+        {
+            <section class="place-directory__group" aria-label="@group.Title">
+                <h3 class="place-directory__head">@group.Title</h3>
+                <div class="place-directory__rows">
+                    @foreach (Destination place in group.Destinations)
+                    {
+                        <ListRow Title="@place.Title" Subtitle="@PlaceWords.Subtitle(place, Now)" Icon="@place.Icon" IconTone="@(place.Area == DestinationAreas.Pages.Key ? RowTone.Primary : RowTone.Accent)"
+                                 Trailing="@PlaceWords.Short(place)" Class="@(place.Path == Chosen ? "row--selected" : null)" OnClick="() => OnChoose.InvokeAsync(place)" />
+                    }
+                </div>
+                @if (group.HasMore && _area.Length == 0)
+                {
+                    <button type="button" class="place-directory__more" @onclick="() => ChooseAreaAsync(group.Area)">Show all @group.Title.ToLowerInvariant()<Icon Name="chevron-right" Size="IconSize.Small" /></button>
+                }
+                else if (group.HasMore)
+                {
+                    <p class="place-directory__hint">Showing the first @group.Destinations.Count. Search to find the rest.</p>
+                }
+            </section>
+        }
+    </LiveData>
+</div>
+
+@inject TimeProvider Clock
+
+@code {
+    private LiveData<DestinationResults>? _live;
+    private string _text = "";
+    private string _area = "";
+
+    [Parameter] public string? Chosen { get; set; }
+    [Parameter] public string? OpenableBy { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public EventCallback<Destination> OnChoose { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private IReadOnlyList<FilterOption<string>> Areas =>
+        [new("", "All"), .. Destinations.Catalog.Areas.Select(area => new FilterOption<string>(area.Key, area.Title))];
+
+    private Task<DestinationResults> LoadAsync() =>
+        Destinations.SearchAsync(_text, _area.Length == 0 ? null : _area, OpenableBy).AsTask();
+
+    private async Task SearchAsync(string text)
+    {
+        _text = text;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private async Task ChooseAreaAsync(string area)
+    {
+        _area = area;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

@@ -1,4 +1,6 @@
+using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Client.Analytics;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Notifications;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +11,7 @@ public static class NotificationsClientExtensions
 {
     public static IServiceCollection AddNotificationsOnPhone(this IServiceCollection services) =>
         services
+            .AddDestinations(NotificationsDestinations.All)
             .AddSingleton<Inbox>()
             .AddSingleton<IInboxCount>(provider => provider.GetRequiredService<Inbox>())
             .AddSingleton<NotificationPreferences>()
@@ -17,5 +20,5 @@ public static class NotificationsClientExtensions
             .AddSingleton<IWeeklyState, PushSetting>();
 
     public static IServiceCollection AddAnnouncements(this IServiceCollection services) =>
-        services.AddSingleton(provider => new AnnouncementsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
+        services.AddDestinations(NotificationsDestinations.All).AddSingleton(provider => new AnnouncementsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
 }

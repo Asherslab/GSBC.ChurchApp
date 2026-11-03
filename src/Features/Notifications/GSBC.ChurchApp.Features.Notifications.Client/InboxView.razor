@@ -1,8 +1,6 @@
 @using GSBC.ChurchApp.Platform.Common
-@using GSBC.ChurchApp.Platform.Contracts.Content
 @inject Inbox Inbox
-@inject NavigationManager Navigation
-@inject Shell Shell
+@inject GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener Links
 @inject TimeProvider Clock
 
 <LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
@@ -74,10 +72,7 @@
         await Inbox.MarkReadAsync([entry]);
         if (entry.Item.InAdminPanel || entry.Item.Link is not { } link)
             return;
-        if (LinkTargets.InAppRoute(link) is { } route)
-            Navigation.NavigateTo(route);
-        else if (LinkTargets.KindOf(link) == LinkKind.Web)
-            await Shell.OpenExternalAsync(link);
+        await Links.OpenAsync(link);
     }
 
     private static string ActionOf(InboxItem item) => item.InAdminPanel ? "Do this in the admin panel" : item.Action ?? "Open it";

@@ -1,0 +1,27 @@
+@page "/places"
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Ui.Destinations
+@using GSBC.ChurchApp.Platform.Client.Access
+@inject NavigationManager Navigation
+@inject IAccess Access
+
+<TitleBand Title="Places in the app" Lead="Every page and thing in the app you can send people to. Copy its link, announce it, or change it." />
+@if (Access.SignedIn)
+{
+    <PlaceExplorer At="@(At ?? ShellDestinations.Home.Path)" AtChanged="Choose" />
+}
+else
+{
+    <div class="admin-gate">
+        <EmptyState Icon="key" Title="Sign in to see this" Body="Use the passkey on this computer or your phone.">
+            <Button Href="account" Icon="user">Sign in</Button>
+        </EmptyState>
+    </div>
+}
+
+@code {
+    [SupplyParameterFromQuery] public string? At { get; set; }
+
+    private void Choose(string path) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("at", path), new NavigationOptions { ReplaceHistoryEntry = true });
+}

@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Features.Analytics.Contracts;
 using GSBC.ChurchApp.Platform.Client.Analytics;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
@@ -13,6 +14,7 @@ public static class AnalyticsClientExtensions
     public static IServiceCollection AddAnalyticsClient(this IServiceCollection services, ReportOrigin origin)
     {
         services.TryAddSingleton(TimeProvider.System);
+        services.AddDestinations(AnalyticsDestinations.All);
         services.AddSingleton<AnalyticsConsent>();
         services.AddSingleton(provider => new ErrorReporter(provider, provider.GetRequiredService<AnalyticsConsent>(),
             provider.GetRequiredService<CurrentPage>(), provider.GetRequiredService<TimeProvider>(), origin));

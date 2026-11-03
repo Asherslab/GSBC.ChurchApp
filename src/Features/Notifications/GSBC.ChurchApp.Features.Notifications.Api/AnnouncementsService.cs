@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
@@ -12,7 +13,7 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Features.Notifications.Api;
 
 internal sealed class AnnouncementsService(
-    NotificationsDbContext db, NotificationRaiser raiser, PermissionCatalog permissions, TimeProvider time) : IAnnouncementsService
+    NotificationsDbContext db, NotificationRaiser raiser, PermissionCatalog permissions, DestinationCatalog destinations, TimeProvider time) : IAnnouncementsService
 {
     public const int TitleLimit = 80;
     public const int BodyLimit = 600;
@@ -47,6 +48,8 @@ internal sealed class AnnouncementsService(
         string? link = string.IsNullOrWhiteSpace(request.Link) ? null : request.Link.Trim();
         if (link is not null && LinkTargets.KindOf(link) is not (LinkKind.InApp or LinkKind.Web))
             throw Invalid("A link is a page in the app (/…) or a web address (https://…).");
+        if (link is not null && LinkTargets.KindOf(link) == LinkKind.InApp && destinations.Resolve(link) is null)
+            throw Invalid("That isn't a place in the app. Choose one from the list.");
         AudienceOf(request.Audience);
 
         AnnouncementRecord? record = Guid.TryParse(request.Id, out Guid id) ? await db.Announcements.FindAsync([id], context.CancellationToken) : null;

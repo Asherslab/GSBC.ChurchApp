@@ -40,6 +40,7 @@ public static class AccountsApiExtensions
         services.AddScoped<ISignedInSessions, AccountSessionCheck>();
         services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
         services.AddScoped<IAccountEmails, AccountEmailLookup>();
+        services.AddDestinations(AccountsDestinations.All);
         return services.AddPermissions(AccountsPermissions.All);
     }
 

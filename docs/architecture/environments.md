@@ -40,7 +40,8 @@ session survived the app being completely closed.
 ## The app's environments
 
 `src/Hosts/App/shell/ios/environments/{Dev,UAT,Release}.xcconfig` hold each one's bundle id, name,
-icon, gateway, associated domain (`webcredentials:` and `applinks:`) and `GSBC_DEVELOPMENT_BUILD`; the
+icon, gateway, associated domain (`webcredentials:`), links domain (`applinks:`, the gateway's host) and
+`GSBC_DEVELOPMENT_BUILD`; the
 Xcode project only points each configuration at its file. Dev is the `Debug` configuration because Swift
 packages only know Debug and Release.
 

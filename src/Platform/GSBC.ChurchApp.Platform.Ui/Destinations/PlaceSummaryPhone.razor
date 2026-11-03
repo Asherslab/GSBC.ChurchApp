@@ -1,0 +1,11 @@
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+
+<PhoneFrame Label="@($"{Destination.Title}, as it opens in the app")">
+    <div class="place-phone">
+        <Masthead Title="@Destination.Title" Note="@Destination.Where" />
+    </div>
+</PhoneFrame>
+
+@code {
+    [Parameter, EditorRequired] public required Destination Destination { get; set; }
+}

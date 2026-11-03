@@ -1,0 +1,46 @@
+{
+  "title": "Places in the app: the directory staff work from",
+  "question": "One admin page lists every place in the app (pages, events, files) and lets you act on it: copy its link, announce it, change it (in a draft, in Media), and see who can open it. The picker in Announcements reuses the same view. Which arrangement?",
+  "options": [
+    {
+      "id": "explorer",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Explore it beside a phone",
+      "lineage": "a site map beside the screen it describes",
+      "thesis": "The directory on the left, and the chosen place drawn in a phone frame on the right, with its actions under the phone.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "area chips", "hairline rows", "phone frame"],
+      "viewport": "Title band and search; area chips (All, Pages, Events, Files); a list of places grouped by area; on the right a phone showing Home as everyone sees it, with Copy link, Announce it, Change it in a draft and who can open it beneath.",
+      "risk": "Only Home can be drawn live today; other places show a summary card in the phone until their features draw a preview.",
+      "html": ".impeccable/mocks/decision/destinations/explorer.html"
+    },
+    {
+      "id": "search-first",
+      "kind": "dealt",
+      "label": "Search with actions on every row",
+      "lineage": "a launcher: type, then act",
+      "thesis": "A large search across everything leads the page; each result row carries its actions (Copy link, Announce, Change) at its end, with area chips and what's coming up below.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "wide search", "action buttons", "area chips"],
+      "viewport": "Title band; a 640px search field; chips for areas; then rows under Coming up, Pages and Recently added files, each with small quiet buttons at its end.",
+      "risk": "Rows get busy with three buttons each; fewer words fit per row.",
+      "html": ".impeccable/mocks/decision/destinations/search-first.html"
+    },
+    {
+      "id": "site-map",
+      "kind": "dealt",
+      "label": "The app as an outline",
+      "lineage": "a printed site map: the app's own structure",
+      "thesis": "The page draws the app the way people move through it (Home, Notifications, More and what's under it, then each area's items) as an indented outline; choosing a line opens its detail and actions beside it.",
+      "palette": ["#2a3d5e", "#ffffff", "#f4efe7", "#e7ae74", "#00776d"],
+      "materials": ["Montserrat", "indented outline", "detail column", "copy field"],
+      "viewport": "Title band and search; an outline: Home (with its tiles), Notifications, More → What's new, Help improve the app…, Events → each event, Files → each file; on the right the chosen place: name, who can open it, link to copy, Announce it, Change it.",
+      "risk": "Items with no place in the app's menus (a file, one event) sit under their area, which is less tidy than the menus.",
+      "html": ".impeccable/mocks/decision/destinations/site-map.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

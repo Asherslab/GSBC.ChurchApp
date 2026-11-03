@@ -1,0 +1,87 @@
+@page "/unavailable"
+@page "/open/{*Path}"
+@page "/{*Path}"
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Ui.Destinations
+@inject LinkOpener Links
+@inject NavigationManager Navigation
+@inject IAccess Access
+
+<Page Title="@Heading" BackHref="" BackLabel="Home">
+    <Masthead Title="@Heading" />
+    <Section First="true">
+        @switch (_state)
+        {
+            case null:
+                <Skeleton Count="1" />
+                break;
+            case DestinationState.Available:
+                <EmptyState Icon="external-link" Title="Opened in your browser" Body="Come back here when you're done.">
+                    <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="OpenAgainAsync">Open it again</Button>
+                </EmptyState>
+                break;
+            case DestinationState.NotForYou when !Access.SignedIn:
+                <EmptyState Icon="key" Title="Sign in to see this" Body="It's for people signed in to the app. Sign in with your passkey, then open the link again.">
+                    <Button Icon="user" Href="account">Sign in</Button>
+                </EmptyState>
+                break;
+            case DestinationState.NotForYou:
+                <EmptyState Icon="lock" Title="This isn't available to you" Body="It's only for some people at the church. If you think you should see it, ask the church office.">
+                    <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Go home</Button>
+                </EmptyState>
+                break;
+            case DestinationState.Gone:
+                <EmptyState Icon="map-pin" Title="This has been taken down" Body="It may have finished, or the church may have removed it.">
+                    <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Go home</Button>
+                </EmptyState>
+                break;
+            default:
+                <EmptyState Icon="map-pin" Title="There's nothing here" Body="The link may be old. If someone sent it to you recently, the app may need updating from the App Store.">
+                    <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Go home</Button>
+                </EmptyState>
+                break;
+        }
+    </Section>
+</Page>
+
+@code {
+    private DestinationState? _state;
+    private string _target = "";
+
+    [Parameter] public string? Path { get; set; }
+    [SupplyParameterFromQuery(Name = "to")] public string? To { get; set; }
+    [SupplyParameterFromQuery(Name = "why")] public string? Why { get; set; }
+
+    private string Heading => _state switch
+    {
+        DestinationState.Available => "Opened",
+        DestinationState.NotForYou or DestinationState.Gone => "Not available",
+        null => "Opening",
+        _ => "Not found",
+    };
+
+    protected override async Task OnParametersSetAsync()
+    {
+        string relative = "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+        _state = null;
+        if (relative.StartsWith("/unavailable", StringComparison.Ordinal))
+        {
+            _target = To ?? "";
+            _state = Enum.TryParse(Why, ignoreCase: true, out DestinationState why) ? why : DestinationState.Unknown;
+            return;
+        }
+
+        _target = relative;
+        if (Links.Resolve(relative) is ResolvedItem { Kind.OpensOutside: true } item)
+        {
+            _target = item.Path;
+            _state = (await Links.OpenOutsideAsync(item.Path, replace: true)).State;
+        }
+        else if (relative.StartsWith("/" + DestinationPaths.SharedPrefix, StringComparison.Ordinal))
+            await Links.OpenAsync(relative, replace: true);
+        else
+            _state = DestinationState.Unknown;
+    }
+
+    private Task OpenAgainAsync() => Links.OpenOutsideAsync(_target);
+}

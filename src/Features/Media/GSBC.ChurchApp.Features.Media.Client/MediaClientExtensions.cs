@@ -1,3 +1,5 @@
+using GSBC.ChurchApp.Features.Media.Contracts;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using Microsoft.Extensions.DependencyInjection;
@@ -11,6 +13,7 @@ public static class MediaClientExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         return services
+            .AddDestinations(MediaDestinations.All)
             .AddSingleton(provider => new MediaClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
             .AddSingleton<IPrivateMediaLinks, PrivateMediaLinks>()
             .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<MediaClient>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))

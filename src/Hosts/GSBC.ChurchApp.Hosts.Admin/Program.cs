@@ -17,7 +17,8 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 ClientModules modules = new(typeof(Program).Assembly);
-modules.Add(new ClientModule("Home", typeof(Program).Assembly, [new NavEntry("Home", "", "home")]));
+modules.Add(new ClientModule("Home", typeof(Program).Assembly,
+    [new NavEntry("Home", "", "home"), new NavEntry("Places in the app", "places", "map-pin", Group: NavGroups.TheApp, Summary: "Every page and thing in the app, with its link")]));
 
 builder.Services
     .AddSingleton(modules)

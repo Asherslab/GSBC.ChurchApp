@@ -1,0 +1,23 @@
+@using GSBC.ChurchApp.Platform.Client.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@inject IEnumerable<PlacePreview> Previews
+
+@if (Previews.FirstOrDefault(preview => preview.Shows(Destination)) is { } preview)
+{
+    @Render(preview)
+}
+else
+{
+    <PlaceSummaryPhone Destination="Destination" />
+}
+
+@code {
+    [Parameter, EditorRequired] public required Destination Destination { get; set; }
+
+    private RenderFragment Render(PlacePreview preview) => builder =>
+    {
+        builder.OpenComponent(0, preview.Component);
+        builder.AddComponentParameter(1, nameof(Destination), Destination);
+        builder.CloseComponent();
+    };
+}

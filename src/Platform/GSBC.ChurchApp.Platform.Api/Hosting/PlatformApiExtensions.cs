@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Analytics;
+using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.Notifications;
@@ -9,6 +10,7 @@ using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Api.Tiers;
 using GSBC.ChurchApp.Platform.Contracts.Analytics;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -58,6 +60,9 @@ public static class PlatformApiExtensions
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<MeasureCatalog>();
         services.AddSingleton<FeedRegistry>();
+        services.AddSingleton<DestinationCatalog>();
+        services.AddScoped<DestinationDirectory>();
+        services.AddDestinations(ShellDestinations.All);
         services.AddSingleton<FeedChangeBroadcaster>();
         services.AddSingleton(provider =>
         {
@@ -102,6 +107,7 @@ public static class PlatformApiExtensions
         app.UseMiddleware<InstallProofMiddleware>();
         app.MapGrpcHealthChecksService();
         app.MapGrpcService<SyncService>();
+        app.MapGrpcService<DestinationsService>();
         return app;
     }
 
@@ -122,6 +128,12 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddNotificationKinds(this IServiceCollection services, params IReadOnlyList<NotificationKind> kinds) =>
         services.AddSingleton(new NotificationKindSet(kinds));
+
+    public static IServiceCollection AddDestinations(this IServiceCollection services, DestinationSet destinations) =>
+        services.AddSingleton(destinations);
+
+    public static IServiceCollection AddDestinationSource<TSource>(this IServiceCollection services) where TSource : class, IDestinationSource =>
+        services.AddScoped<IDestinationSource, TSource>();
 
     public static IServiceCollection AddSystemRole(this IServiceCollection services, SystemRole role) =>
         services.AddSingleton(role);

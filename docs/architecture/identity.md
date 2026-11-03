@@ -38,16 +38,19 @@ different kind of account. Reading public content still needs no account (SPEC Â
 tracked files: it lives in the gitignored `src/Hosts/App/shell/.team`, which `tools/ios/deploy.sh`
 puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
 
-- **Associated Domains** (`App.entitlements`): `webcredentials:` and `applinks:` on
-  `$(GSBC_ASSOCIATED_DOMAIN)`, set per environment in `ios/environments/*.xcconfig`: `dev-app.baptist.com.au`,
-  `uat-app.baptist.com.au`, and `baptist.com.au` for release builds.
+- **Associated Domains** (`App.entitlements`): `webcredentials:` on `$(GSBC_ASSOCIATED_DOMAIN)` and
+  `applinks:` on `$(GSBC_LINKS_DOMAIN)`, set per environment in `ios/environments/*.xcconfig`. Both are
+  `dev-app.baptist.com.au` and `uat-app.baptist.com.au` in those builds. Release builds use `baptist.com.au`
+  for passkeys and `app.baptist.com.au` (the gateway, which the phone accepts links from) for links
+  (2026-11-03, [destinations.md](destinations.md)).
 - **Each gateway's association file** is written at start-up from `Apple:TeamId` and `Apple:BundleId`
   (`au.com.baptist.app.dev` in development, `.uat` in UAT's `config.yaml`, production's by default) into
   a temporary folder, and served as a static file at `/.well-known/apple-app-site-association`: the same
   bytes on every request, `application/json`, no redirect (`no-store` in development, `no-cache` elsewhere).
   Apple's CDN fetches it through Cloudflare (checked 2026-11-03). `AppAssociation.Json` writes it; a
   gateway test checks it names the configured team and bundle.
-- **Applinks:** `/welcome` (invitations and recovery links) opens the app.
+- **Applinks:** `/welcome` (invitations and recovery links) and `/open/*` (shared links to a place in the
+  app, [destinations.md](destinations.md)) open the app.
 
 **Needs setting up outside this repo (owner):**
 
@@ -56,7 +59,9 @@ puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
   `baptist.com.au`: `{"applinks":{"details":[{"appIDs":["YNT9A4LGVA.au.com.baptist.app"],
   "components":[{"/":"/welcome"},{"/":"/welcome/*"}]}]},"webcredentials":{"apps":["YNT9A4LGVA.au.com.baptist.app"]}}`,
   as `application/json`, with no redirect. Production's `Accounts:Passkeys:AllowedOrigins` must include
-  `https://baptist.com.au`, the origin the phone's passkeys report.
+  `https://baptist.com.au`, the origin the phone's passkeys report. Only its `webcredentials` part matters
+  now: since 2026-11-03 production links open the app from `app.baptist.com.au`, whose gateway serves its own
+  file ([destinations.md](destinations.md)).
 - Android's `assetlinks.json` at the same apex, when Android is built.
 
 ## Sessions

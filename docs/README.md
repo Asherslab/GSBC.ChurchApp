@@ -18,6 +18,7 @@
 | [notifications.md](architecture/notifications.md) | Notification kinds any feature raises, audiences through Access, the inbox, push, silent sync, announcements |
 | [changelog.md](architecture/changelog.md) | Release notes: one file per change, built into the app; What's new after an update; versions; TestFlight's What to Test |
 | [rich-text.md](architecture/rich-text.md) | The one formatted-text format: a Markdown subset, checked on save, one renderer and editor |
+| [destinations.md](architecture/destinations.md) | Places in the app: pages and items features declare, finding them over gRPC, the picker, shared `/open` links, the phone's one router |
 
 ## Features
 
@@ -146,6 +147,16 @@ phones with notifications on, turned off or not chosen yet, once a week and anon
 (the permission is re-read when the app becomes active), a tapped notification opens its link (Capacitor had
 taken the notification delegate; `ios.handleApplicationNotifications: false`), and a moment on the day rail
 stays in its own day.
+
+**Places in the app (2026-11-03, branch `feature/app-destinations`):** every page and item a feature declares
+is a place: the admin panel's Places in the app lists them (search and areas) beside a phone showing the
+chosen one, with Copy link, Announce it, Change it in a draft and Open in Media; Announcements → What it opens
+picks from the same list, offering only what the announcement's audience can open; links are
+`https://<app host>/open/…` and open the app (the association file and `applinks:` on the app host), or an
+"Open in the app" page elsewhere; on the phone one router opens every link and says kindly when a place is gone
+or not for you ([destinations.md](architecture/destinations.md)). Files are the first items; Sermons and Events
+plug in with an `IDestinationSource`. Checked on `dev-app.baptist.com.au`; the universal link on a phone
+waits for the next install of GSBC Dev.
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
