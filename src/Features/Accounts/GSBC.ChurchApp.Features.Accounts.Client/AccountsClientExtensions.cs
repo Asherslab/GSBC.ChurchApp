@@ -6,5 +6,5 @@ namespace GSBC.ChurchApp.Features.Accounts.Client;
 public static class AccountsClientExtensions
 {
     public static IServiceCollection AddAccountsClient(this IServiceCollection services) =>
-        services.AddSingleton<AccountsClient>().AddScoped<PasskeyCeremonies>().AddSingleton<IPeopleDirectory, AccountsPeopleDirectory>();
+        services.AddSingleton<AccountsClient>().AddScoped<IPasskeyCeremonies, BrowserPasskeyCeremonies>().AddSingleton<IPeopleDirectory, AccountsPeopleDirectory>();
 }

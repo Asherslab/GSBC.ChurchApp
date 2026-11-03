@@ -18,9 +18,11 @@ public static class PasskeyEndpoints
 
     public sealed record CreationOptionsRequest(string? Ticket);
 
-    public sealed record RegisterRequest(string Credential, string? Ticket, string? Name);
+    public sealed record RegisterRequest(string Credential, string? Ticket, string? Name, bool App = false);
 
-    public sealed record SignInRequest(string Credential);
+    public sealed record SignInRequest(string Credential, bool App = false, string? Device = null);
+
+    public sealed record CeremonyReply(bool SignedIn, string? Session = null);
 
     public static IEndpointRouteBuilder MapPasskeyCeremonies(this IEndpointRouteBuilder endpoints)
     {
@@ -58,7 +60,7 @@ public static class PasskeyEndpoints
 
     private static async Task<IResult> RegisterAsync(
         RegisterRequest request, HttpContext http, SignInManager<AccountUser> signIn, UserManager<AccountUser> users,
-        OneTimeCodes codes, AccountsAudit audit, AccountsDbContext db, CancellationToken cancellationToken)
+        OneTimeCodes codes, AccountsAudit audit, AccountsDbContext db, TimeProvider time, CancellationToken cancellationToken)
     {
         PasskeyAttestationResult? attestation = await WithinCeremonyAsync(() => signIn.PerformPasskeyAttestationAsync(request.Credential));
         if (attestation is null)
@@ -91,14 +93,15 @@ public static class PasskeyEndpoints
 
         string? address = ClientAddress(http);
         audit.Record(AuditActions.PasskeyAdded, user.Id, remoteAddress: address);
+        string? session = null;
         if (fromTicket)
         {
-            await signIn.SignInAsync(user, isPersistent: true);
+            session = await StartSessionAsync(user, request.App, request.Name, signIn, db, time);
             audit.Record(AuditActions.SignedIn, user.Id, remoteAddress: address);
         }
 
         await db.SaveChangesAsync(cancellationToken);
-        return Results.Ok(new { signedIn = true });
+        return Results.Ok(new CeremonyReply(true, session));
     }
 
     private static async Task<IResult> RequestOptionsAsync(SignInManager<AccountUser> signIn) =>
@@ -106,7 +109,7 @@ public static class PasskeyEndpoints
 
     private static async Task<IResult> SignInAsync(
         SignInRequest request, HttpContext http, SignInManager<AccountUser> signIn, UserManager<AccountUser> users,
-        AccountsAudit audit, AccountsDbContext db, CancellationToken cancellationToken)
+        AccountsAudit audit, AccountsDbContext db, TimeProvider time, CancellationToken cancellationToken)
     {
         PasskeyAssertionResult<AccountUser>? assertion = await WithinCeremonyAsync(() => signIn.PerformPasskeyAssertionAsync(request.Credential));
         if (assertion is null)
@@ -117,10 +120,20 @@ public static class PasskeyEndpoints
             return Results.Problem("This account is disabled.", statusCode: StatusCodes.Status403Forbidden);
 
         await users.AddOrUpdatePasskeyAsync(assertion.User, assertion.Passkey);
-        await signIn.SignInAsync(assertion.User, isPersistent: true);
+        string? session = await StartSessionAsync(assertion.User, request.App, request.Device, signIn, db, time);
         audit.Record(AuditActions.SignedIn, assertion.User.Id, remoteAddress: ClientAddress(http));
         await db.SaveChangesAsync(cancellationToken);
-        return Results.Ok(new { signedIn = true });
+        return Results.Ok(new CeremonyReply(true, session));
+    }
+
+    private static async Task<string?> StartSessionAsync(
+        AccountUser user, bool app, string? device, SignInManager<AccountUser> signIn, AccountsDbContext db, TimeProvider time)
+    {
+        if (app)
+            return AppSessions.Start(db, user.Id, device, time.GetUtcNow().UtcDateTime);
+
+        await signIn.SignInAsync(user, isPersistent: true);
+        return null;
     }
 
     private static async Task<T?> WithinCeremonyAsync<T>(Func<Task<T>> step) where T : class

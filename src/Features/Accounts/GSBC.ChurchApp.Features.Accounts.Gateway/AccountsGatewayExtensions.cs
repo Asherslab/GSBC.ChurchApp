@@ -77,15 +77,25 @@ public static class AccountsGatewayExtensions
     }
 
     public static IReverseProxyBuilder AddApiTokens(this IReverseProxyBuilder proxy) =>
-        proxy.AddTransforms(transforms => transforms.AddRequestTransform(transform =>
+        proxy.AddTransforms(transforms =>
         {
-            transform.ProxyRequest.Headers.Authorization = null;
-            transform.ProxyRequest.Headers.Remove(AppSessions.Header);
-            string? token = transform.HttpContext.RequestServices.GetRequiredService<ApiTokenIssuer>().Issue(transform.HttpContext.User);
-            if (token is not null)
-                transform.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
-            return ValueTask.CompletedTask;
-        }));
+            transforms.AddRequestTransform(transform =>
+            {
+                transform.ProxyRequest.Headers.Authorization = null;
+                transform.ProxyRequest.Headers.Remove(AppSessions.Header);
+                string? token = transform.HttpContext.RequestServices.GetRequiredService<ApiTokenIssuer>().Issue(transform.HttpContext.User);
+                if (token is not null)
+                    transform.ProxyRequest.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+                return ValueTask.CompletedTask;
+            });
+            transforms.AddResponseTransform(transform =>
+            {
+                HttpContext http = transform.HttpContext;
+                if (http.Request.Headers.ContainsKey(AppSessions.Header) && http.User.Identity?.IsAuthenticated != true)
+                    http.Response.Headers[AppSessions.EndedHeader] = "true";
+                return ValueTask.CompletedTask;
+            });
+        });
 
     private static Task Respond(HttpResponse response, int status)
     {

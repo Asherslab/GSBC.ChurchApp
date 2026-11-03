@@ -29,7 +29,9 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+app.UseAppAssociation();
 app.UseStaticFiles();
+app.UseRouting();
 app.UseAuthentication();
 app.UseRateLimiter();
 app.MapStaticAssets();

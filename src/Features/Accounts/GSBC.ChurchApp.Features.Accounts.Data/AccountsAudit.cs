@@ -30,5 +30,4 @@ public static class AuditActions
     public const string NameChanged = "name-changed";
     public const string Disabled = "disabled";
     public const string Enabled = "enabled";
-    public const string PhoneLinked = "phone-linked";
 }

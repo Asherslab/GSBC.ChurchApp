@@ -45,7 +45,7 @@ Recovering never removes existing passkeys; the person removes lost ones afterwa
 - **Browser:** the cookie holds only the session id (ASP.NET Core's cookie `SessionStore`, backed by
   that table). HttpOnly, Secure, SameSite=Strict.
 - **App:** the native layer keeps a session secret in the Keychain and sends it as a header; it never
-  reaches the WebView. Needs Associated Domains, so it waits for the enrolment.
+  reaches the WebView ([identity.md](../architecture/identity.md), *Signing in on the phone*).
 - **The gateway swaps either for an API token** on every proxied call: a JWT signed by the gateway
   (ES256), 5 minutes, carrying user id and session id only. The API checks issuer, audience, signature
   and expiry, and the session is checked again live for anything sensitive.
@@ -79,7 +79,8 @@ far) put it in `Data`, shared by `Api` and `Gateway`.
    is a valid passkey domain in the browser), then through `dev.baptist.com.au`.
 2. The admin panel's sign-in and account screens; the token transform; the API's token check.
 3. The app's account screens, read-only signed out.
-4. After the enrolment: Associated Domains, native passkeys in the app, the Keychain session.
+4. After the enrolment: Associated Domains, native passkeys in the app, the Keychain session (built
+   2026-11-03).
 
 ## Status (2026-11-01)
 
@@ -100,7 +101,12 @@ development the emails (confirmation codes, links) appear in the API's log in th
   ([email.md](../architecture/email.md)); a staff invitation was sent, accepted and signed in end to
   end in development. Production needs the email secret in the cluster, later
   ([email.md](../architecture/email.md), *Going to production*).
-- *The Apple enrolment:* Associated Domains, then passkeys and the Keychain session in the app.
+- ~~*The Apple enrolment*~~: done 2026-11-03 (the church, as an organisation). Built the same day:
+  Associated Domains, native passkeys in the app (sign in, sign up, add a passkey, invitation and
+  recovery links), the Keychain session, signing out clearing private data, and `/welcome` links
+  opening the app. Tested by `Features.Accounts.Gateway.Tests` (the phone gets a secret, not a cookie,
+  until the session ends; the association file) and the native `PasskeyCeremonyTests`, and proven on
+  the owner's iPhone ([identity.md](../architecture/identity.md), *Signing in on the phone*).
 - *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
   `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.
 

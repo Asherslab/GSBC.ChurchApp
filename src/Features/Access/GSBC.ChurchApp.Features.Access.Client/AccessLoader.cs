@@ -27,7 +27,7 @@ internal sealed class AccessLoader(AccessClient access, GrantedAccess granted, S
         }
     }
 
-    private static GrantSet ToGrantSet(GrantList list) =>
+    public static GrantSet ToGrantSet(GrantList list) =>
         new(list.Grants
             .Select(grant => PermissionPattern.TryParse(grant.Pattern, out PermissionPattern? pattern) && ScopeKind.TryParse(grant.ScopeKind, out ScopeKind kind)
                 ? new Grant(pattern, kind == ScopeKind.Global ? Scope.Global : Scope.Of(kind, grant.ObjectId ?? ""))

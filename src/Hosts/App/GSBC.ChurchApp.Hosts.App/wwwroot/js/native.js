@@ -2,14 +2,16 @@ window.gsbcNative = (() => {
   const capacitor = () => window.Capacitor;
   const isNative = () => !!capacitor()?.isNativePlatform?.();
   const dataLayer = () => capacitor().Plugins.DataLayer;
+  const outcome = (result) => (result.ok ? null : result.error || 'Something went wrong. Try again.');
 
   return {
     isNative,
     unary: (method, request) => dataLayer().unary({ method, request }),
-    startSync: (feeds) => dataLayer().startSync({ feeds }),
+    startSync: (feeds, privateFeeds) => dataLayer().startSync({ feeds, privateFeeds }),
     pull: () => dataLayer().pull(),
     status: () => dataLayer().status().then((result) => result.state),
     isDevelopmentBuild: () => isNative() && dataLayer().status().then((result) => !!result.developmentBuild),
+    isSignedIn: () => isNative() && dataLayer().status().then((result) => !!result.signedIn),
     readPage: (feed, order, descending, limit, offset, groupKey) =>
       dataLayer().readPage({ feed, order, descending, limit, offset, groupKey }).then((result) => result.json),
     storeInfo: () => dataLayer().storeInfo().then((result) => result.json),
@@ -23,7 +25,15 @@ window.gsbcNative = (() => {
       dataLayer().fetchMedia({ key, url, isPrivate }).then((result) => capacitor().convertFileSrc(result.path)),
     prefetchMedia: (json) => dataLayer().prefetchMedia({ items: JSON.parse(json) }).then((result) => result.fetched),
     clearPrivateMedia: () => dataLayer().clearPrivateMedia(),
-    setSession: (secret) => dataLayer().setSession({ secret }).then((result) => !!result.signedIn),
+    signIn: () => dataLayer().signIn().then(outcome),
+    registerPasskey: (ticket) => dataLayer().registerPasskey({ ticket }).then(outcome),
+    signOut: () => dataLayer().signOut(),
+    listenSession: (receiver) => {
+      dataLayer().addListener('sessionChanged', (event) => receiver.invokeMethodAsync('OnSessionChanged', !!event.signedIn));
+    },
+    listenLinks: (receiver) => {
+      dataLayer().addListener('linkOpened', (event) => receiver.invokeMethodAsync('OnLinkOpened', event.path));
+    },
     listenOutbox: (receiver) => {
       dataLayer().addListener('outboxChanged', () => receiver.invokeMethodAsync('OnOutboxChanged'));
     },

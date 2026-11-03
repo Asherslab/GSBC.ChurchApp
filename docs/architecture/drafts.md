@@ -154,13 +154,12 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
 - **Home screen and Colours** in the admin panel become read-only views of what everyone sees; *Change it*
   starts a draft, or carries on your open one.
 
-## Signing in on the phone for previews (owner, 2026-11-02)
+## Signing in on the phone for previews
 
-Drafts reach a phone only for someone signed in, and passkeys in the app wait on the Apple enrolment. Until
-then, **development builds only** can link the phone to an account: *Preview on my phone* in the admin
-panel shows a short one-time code, and More → Previews → *Link this phone* redeems it through a gRPC method
-for an app session, whose secret the native layer keeps and sends on each call. The server refuses both
-methods outside Development, so store builds sign in with passkeys only.
+Drafts reach a phone only for someone signed in. Since 2026-11-03 that's the real account, with a
+passkey in the app ([identity.md](identity.md), *Signing in on the phone*); signed out, More →
+Previews offers *Sign in*. The development-only *Link this phone* is gone (owner, 2026-11-03).
+Previewing a draft from the signed-in account was proven on the owner's iPhone the same day.
 
 
 
@@ -191,7 +190,7 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   draft.
 - **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
   (hideable until the app next comes to the foreground), More → Drafts, and Home listing the Hub's
-  link tiles. Development builds link the phone with a code (`/link-phone`).
+  link tiles. The phone previews from the signed-in account.
 
 **Decided while building (no owner question needed):**
 
@@ -213,7 +212,6 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
 
 - **The admin panel isn't live yet:** it has no feed store, so it refreshes on its own saves,
   reconnects and access changes, not when someone else edits the same draft.
-- **More → Drafts on the phone** is hidden until Access joins the app (it needs grants).
 - **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.

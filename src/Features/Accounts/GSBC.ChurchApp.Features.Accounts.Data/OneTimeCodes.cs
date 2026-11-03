@@ -11,11 +11,8 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
     public static readonly TimeSpan ConfirmationLifetime = TimeSpan.FromDays(1);
     public static readonly TimeSpan InvitationLifetime = TimeSpan.FromDays(7);
     public static readonly TimeSpan RecoveryLifetime = TimeSpan.FromHours(2);
-    public static readonly TimeSpan PhoneLinkLifetime = TimeSpan.FromMinutes(10);
 
     private const int TokenBytes = 32;
-    private const int ShortCodeLength = 6;
-    private const string ShortCodeAlphabet = "ACDEFGHJKMNPQRTWXY34679";
     private const int MaximumFailedAttempts = 5;
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
@@ -37,15 +34,6 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
         Add(Hash($"{userId}:{digits}"), userId, purpose, lifetime);
         return digits;
     }
-
-    public string IssueShortCode(Guid userId, CodePurpose purpose, TimeSpan lifetime)
-    {
-        string code = new(Enumerable.Range(0, ShortCodeLength).Select(_ => ShortCodeAlphabet[RandomNumberGenerator.GetInt32(ShortCodeAlphabet.Length)]).ToArray());
-        Add(Hash(code), userId, purpose, lifetime);
-        return code;
-    }
-
-    public static string NormaliseShortCode(string typed) => new(typed.Where(char.IsLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
 
     public Task<OneTimeCode?> FindTokenAsync(string token, IReadOnlyCollection<CodePurpose> purposes, CancellationToken cancellationToken)
     {

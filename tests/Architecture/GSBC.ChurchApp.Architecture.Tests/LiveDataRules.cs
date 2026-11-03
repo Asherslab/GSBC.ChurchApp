@@ -12,7 +12,6 @@ public sealed partial class LiveDataRules
         "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/PersonAccess.razor",
         "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/RoleEditor.razor",
         "src/Features/Access/GSBC.ChurchApp.Features.Access.Admin/Pages/Roles.razor",
-        "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/Components/AccountDetails.razor",
         "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Admin/Pages/People.razor",
         "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor",
     ];

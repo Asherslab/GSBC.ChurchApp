@@ -1,15 +1,16 @@
+import DataLayerCore
 import Foundation
 import Security
 
-enum SessionKeychain {
-    private static let service = "au.com.baptist.churchapp.session"
+struct SessionKeychain: SessionVault {
+    private static let service = "au.com.baptist.app.session"
     private static let account = "app-session"
 
-    static func read() -> String? {
+    func read() -> String? {
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrService as String: Self.service,
+            kSecAttrAccount as String: Self.account,
             kSecReturnData as String: true,
             kSecMatchLimit as String: kSecMatchLimitOne,
         ]
@@ -18,11 +19,11 @@ enum SessionKeychain {
         return String(data: data, encoding: .utf8)
     }
 
-    static func write(_ secret: String?) {
+    func write(_ secret: String?) {
         let match: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
-            kSecAttrService as String: service,
-            kSecAttrAccount as String: account,
+            kSecAttrService as String: Self.service,
+            kSecAttrAccount as String: Self.account,
         ]
         SecItemDelete(match as CFDictionary)
         guard let secret, let data = secret.data(using: .utf8) else { return }

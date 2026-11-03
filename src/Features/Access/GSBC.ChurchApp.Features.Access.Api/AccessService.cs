@@ -9,25 +9,14 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AccessService(
-    AccessDbContext db, IAccessEvaluator evaluator, AssignmentRules rules, AccessInsights insights, PermissionCatalog catalog, TimeProvider time)
+    AccessDbContext db, AccessChanges changes, IAccessEvaluator evaluator, AssignmentRules rules, AccessInsights insights, PermissionCatalog catalog, TimeProvider time)
     : IAccessService
 {
     public const string OwnerKey = "owner";
     private const int MaximumNameLength = 60;
 
-    public async ValueTask<GrantList> GetMineAsync(Nothing request, CallContext context = default)
-    {
-        GrantSet grants = await evaluator.GrantsForAsync(CallerId(context), context.CancellationToken);
-        return new GrantList
-        {
-            Grants = grants.Grants.Select(grant => new GrantMessage
-            {
-                Pattern = grant.Pattern.Text,
-                ScopeKind = grant.Scope.Kind.Name,
-                ObjectId = grant.Scope.ObjectId,
-            }).ToList(),
-        };
-    }
+    public async ValueTask<GrantList> GetMineAsync(Nothing request, CallContext context = default) =>
+        GrantsFeed.Messages(await evaluator.GrantsForAsync(CallerId(context), context.CancellationToken));
 
     public ValueTask<Catalog> ListCatalogAsync(Nothing request, CallContext context = default) => ValueTask.FromResult(new Catalog
     {
@@ -93,7 +82,7 @@ internal sealed class AccessService(
         role.Assigners.AddRange(draft.Assigners);
 
         await db.SaveChangesAsync(cancellationToken);
-        await db.AnnounceChangeAsync(cancellationToken);
+        await changes.AnnounceAsync(cancellationToken);
         Dictionary<Guid, RoleRecord> saved = await db.LoadRolesWithIncludesAsync([role.Id], cancellationToken);
         return ToInfo(saved[role.Id], saved, await HolderCountAsync(role.Id, cancellationToken));
     }
@@ -117,7 +106,7 @@ internal sealed class AccessService(
 
         db.Roles.Remove(role);
         await db.SaveChangesAsync(context.CancellationToken);
-        await db.AnnounceChangeAsync(context.CancellationToken);
+        await changes.AnnounceAsync(context.CancellationToken);
         return new Done();
     }
 
@@ -165,7 +154,7 @@ internal sealed class AccessService(
         };
         db.Assignments.Add(assignment);
         await db.SaveChangesAsync(cancellationToken);
-        await db.AnnounceChangeAsync(cancellationToken);
+        await changes.AnnounceAsync(cancellationToken);
         assignment.Role = role;
         return ToInfo(assignment);
     }
@@ -184,7 +173,7 @@ internal sealed class AccessService(
 
         db.Assignments.Remove(assignment);
         await db.SaveChangesAsync(cancellationToken);
-        await db.AnnounceChangeAsync(cancellationToken);
+        await changes.AnnounceAsync(cancellationToken);
         return new Done();
     }
 

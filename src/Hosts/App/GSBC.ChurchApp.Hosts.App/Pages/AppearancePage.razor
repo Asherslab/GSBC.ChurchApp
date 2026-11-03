@@ -1,10 +1,8 @@
 @page "/appearance"
-@using GSBC.ChurchApp.Platform.Client.Native
 @using GSBC.ChurchApp.Platform.Contracts.Configuration
 @implements IDisposable
 @inject Appearance Appearance
 @inject IAccess Access
-@inject NativeBridge Bridge
 @inject GSBC.ChurchApp.Platform.Client.Configuration.ISurfaceLayout Layout
 
 <Page Title="Appearance" BackHref="more" BackLabel="More">
@@ -54,7 +52,7 @@
         new(ColourScheme.Dark, "Dark", "moon"),
     ];
 
-    private bool CanPreview => Access.Can(AppearanceSurfaces.Edit) || Bridge.IsDevelopmentBuild;
+    private bool CanPreview => Access.Can(AppearanceSurfaces.Edit);
 
     private sealed record MadeTheme(string Palette, ThemeSpec Spec);
 

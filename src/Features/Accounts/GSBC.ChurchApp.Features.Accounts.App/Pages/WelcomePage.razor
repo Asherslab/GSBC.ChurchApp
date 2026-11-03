@@ -1,0 +1,14 @@
+@page "/welcome"
+
+<Page Title="Welcome" BackHref="more" BackLabel="More">
+    <Masthead Title="Good Shepherd" Note="Set up your sign-in" />
+    <Welcome Code="@Code">
+        <Next>
+            <Button Href="account" Variant="ButtonVariant.Quiet" Icon="user">Your account</Button>
+        </Next>
+    </Welcome>
+</Page>
+
+@code {
+    [SupplyParameterFromQuery] public string? Code { get; set; }
+}

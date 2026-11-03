@@ -17,6 +17,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Ui\GSBC.ChurchApp.Platform.Ui.csproj" />
+    <ProjectReference Include="..\..\..\Features\Access\GSBC.ChurchApp.Features.Access.Client\GSBC.ChurchApp.Features.Access.Client.csproj" />
     <ProjectReference Include="..\..\..\Features\Accounts\GSBC.ChurchApp.Features.Accounts.App\GSBC.ChurchApp.Features.Accounts.App.csproj" />
     <ProjectReference Include="..\..\..\Features\Configuration\GSBC.ChurchApp.Features.Configuration.App\GSBC.ChurchApp.Features.Configuration.App.csproj" />
     <ProjectReference Include="..\..\..\Features\Media\GSBC.ChurchApp.Features.Media.Client\GSBC.ChurchApp.Features.Media.Client.csproj" />

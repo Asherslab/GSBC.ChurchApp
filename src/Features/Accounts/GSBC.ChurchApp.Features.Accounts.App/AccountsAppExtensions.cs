@@ -10,6 +10,6 @@ public static class AccountsAppExtensions
     {
         modules.Add(new ClientModule("Accounts", typeof(AccountsAppExtensions).Assembly,
             [new NavEntry("Account", "account", "user")]));
-        return services.AddAccountsClient();
+        return services.AddAccountsClient().AddScoped<IPasskeyCeremonies, NativePasskeyCeremonies>();
     }
 }

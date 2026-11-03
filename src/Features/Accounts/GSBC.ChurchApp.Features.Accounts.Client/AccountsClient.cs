@@ -5,20 +5,14 @@ using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Accounts.Client;
 
-public sealed class AccountsClient(ChannelBase channel, SessionSignal signal)
+public sealed class AccountsClient(ChannelBase channel, SessionSignal signal, IDeviceSession device)
 {
     private readonly ISessionService _session = channel.CreateGrpcService<ISessionService>();
     private readonly IAccountsService _accounts = channel.CreateGrpcService<IAccountsService>();
-    private readonly IPhoneLinkService _phoneLinks = channel.CreateGrpcService<IPhoneLinkService>();
 
     public event Action? SessionChanged;
 
     public ValueTask<CurrentSession> GetCurrentSessionAsync() => _session.GetCurrentAsync(new GetCurrentSessionRequest());
-
-    public ValueTask<CodeReply> StartPhoneLinkAsync() => _phoneLinks.StartAsync(new Nothing());
-
-    public ValueTask<LinkedPhone> LinkPhoneAsync(string code, string deviceName) =>
-        _phoneLinks.LinkAsync(new LinkPhoneRequest { Code = code, DeviceName = deviceName });
 
     public ValueTask<TicketReply> StartSignUpAsync(string name, string email) =>
         _accounts.StartSignUpAsync(new StartSignUpRequest { DisplayName = name, Email = email });
@@ -43,18 +37,26 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal)
 
     public ValueTask<Done> EndSessionAsync(string id) => _accounts.EndSessionAsync(new EndSessionRequest { Id = id });
 
-    public async Task SignOutAsync()
+    public Task SignOutAsync() => ForgettingThisDeviceAsync(async () =>
     {
         SessionList sessions = await ListSessionsAsync();
         if (sessions.Sessions.FirstOrDefault(session => session.Current) is { } current)
             await EndSessionAsync(current.Id);
-        await NotifySessionChangedAsync();
-    }
+    });
 
-    public async Task SignOutEverywhereAsync()
+    public Task SignOutEverywhereAsync() => ForgettingThisDeviceAsync(async () => await _accounts.SignOutEverywhereAsync(new Nothing()));
+
+    private async Task ForgettingThisDeviceAsync(Func<Task> endOnServer)
     {
-        await _accounts.SignOutEverywhereAsync(new Nothing());
-        await NotifySessionChangedAsync();
+        try
+        {
+            await endOnServer();
+        }
+        finally
+        {
+            await device.ForgetAsync();
+            await NotifySessionChangedAsync();
+        }
     }
 
     public ValueTask<PeopleList> SearchPeopleAsync(string query) => _accounts.SearchPeopleAsync(new SearchPeopleRequest { Query = query });

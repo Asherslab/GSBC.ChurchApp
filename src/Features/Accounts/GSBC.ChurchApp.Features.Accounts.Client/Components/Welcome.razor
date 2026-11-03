@@ -1,34 +1,37 @@
 @inject AccountsClient Accounts
-@inject PasskeyCeremonies Passkeys
+@inject IPasskeyCeremonies Passkeys
 
-<section class="account-panel">
-    <h2>Welcome</h2>
+<Section First="true" Title="Welcome" Lead="@Lead">
     @if (_done)
     {
-        <p>You're signed in. Your new passkey is saved on this device.</p>
+        <Notice Text="You're signed in. Your new passkey is saved on this device." />
+        @if (Next is not null)
+        {
+            <div class="ui-after">@Next</div>
+        }
     }
-    else if (string.IsNullOrWhiteSpace(Code))
+    else if (!string.IsNullOrWhiteSpace(Code))
     {
-        <p>This link is missing its code. Open the link from your email again.</p>
+        <Button Block="true" Icon="key" Busy="_busy" OnClick="CreateAsync">Create a passkey</Button>
     }
-    else
-    {
-        <p>Create a passkey on this device to sign in. Your phone or computer will ask you to confirm with Face ID, Touch ID or your screen lock.</p>
-        <button @onclick="CreateAsync" disabled="@_busy">Create a passkey</button>
-    }
-
     @if (_message is not null)
     {
-        <p class="message">@_message</p>
+        <div class="ui-after"><Notice Tone="NoticeTone.Warning" Text="@_message" /></div>
     }
-</section>
+</Section>
 
 @code {
     [Parameter] public string? Code { get; set; }
 
+    [Parameter] public RenderFragment? Next { get; set; }
+
     private bool _busy;
     private bool _done;
     private string? _message;
+
+    private string? Lead => _done ? null
+        : string.IsNullOrWhiteSpace(Code) ? "This link is missing its code. Open the link from your email again."
+        : "Create a passkey on this device to sign in. Face ID, Touch ID or your screen lock confirms it's you.";
 
     private async Task CreateAsync()
     {

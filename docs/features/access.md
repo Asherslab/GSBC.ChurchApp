@@ -44,8 +44,15 @@ can grant Owner to itself.
 - `AccessEvaluator` (the API's `IAccessEvaluator`) compiles a user's grants (assignments → roles →
   patterns, includes expanded, expired assignments dropped) and caches them per user. Any change to
   roles or assignments sends a Postgres `NOTIFY`, and every API instance drops its cache.
-- The phone and the admin panel get their grants from `Access.GetMine` after signing in, and the
-  shared `IAccess` / `<Can>` use them to show tools. The server checks every call anyway.
+- The admin panel gets its grants from `Access.GetMine` after signing in. The phone gets them from
+  the private **`access.grants` feed** (built 2026-11-03): Access compiles each person's grants and
+  publishes a row for them whenever roles or assignments change (`GrantsFeed`, through
+  `AccessChanges`), and every 5 minutes for assignments that expire. The feed's audience is
+  *own records*, so Sync sends each person only their own row and a signed-out phone nothing. So the
+  phone knows its permissions offline, and a role given in the admin panel shows its tools on the
+  phone within a second. The shared `IAccess` / `<Can>` use them either way; the server checks every
+  call anyway. Tested in `Features.Access.Api.Tests`, and proven on the owner's iPhone (a role given
+  in the admin panel showed its tool on the phone live).
 - Navigation entries can name a permission, and are hidden from people who don't hold it.
 
 ## Sensitive permissions
@@ -248,7 +255,5 @@ and tested; Ministries only has to call them):
 
 ## Open
 
-- A private sync feed for your own grants, so permission-gated tools work offline in the app: with the
-  first phone feature that needs it.
 - Whether a Leader should be able to give their ministry an Admin after all (the owner chose staff
   only, 2026-11-02); revisit after the first ministries use it.

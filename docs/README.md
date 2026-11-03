@@ -20,12 +20,13 @@
 
 One doc per feature in [features/](features/), written before its code.
 
-## Where we are (2026-11-02)
+## Where we are (2026-11-03)
 
 All work is on the branch `skeleton/backbone`, **not pushed**, so CI has never run on it. The owner is
 keeping it local for now (2026-11-02): don't push without asking.
 
-**Working end to end:** the skeleton and its rules, the native data layer on iOS (store, live sync,
+**Working end to end:** signing in on the phone with a passkey (2026-11-03, proven on the owner's
+iPhone; [identity.md](architecture/identity.md)), the skeleton and its rules, the native data layer on iOS (store, live sync,
 outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone configurations,
 `dev.baptist.com.au` through a Cloudflare tunnel started by the AppHost), Accounts in the browser
 (passkeys, sessions, recovery, invitations, staff tools), and Access (roles, assignments, the
@@ -33,7 +34,13 @@ evaluator behind every `[Requires]`, admin screens).
 
 **Waiting on the owner:**
 
-- The Apple enrolment: passkeys in the app (Associated Domains), silent push, TestFlight.
+- ~~The Apple enrolment~~: done 2026-11-03. The church is enrolled as an organisation (the church
+  is the seller), team `YNT9A4LGVA`. Passkeys in the app are built on it. Next on the owner's side:
+  - an **APNs key** for silent push: a secret, so it goes in user secrets or the cluster secret,
+    never in chat or the repo;
+  - the **App Store Connect record** for TestFlight (bundle `au.com.baptist.app`);
+  - the **production association file** at the `baptist.com.au` apex through Cloudflare
+    ([identity.md](architecture/identity.md), *Apple*).
 - For media, now built: two R2 buckets, the public one's custom domain, a cache rule, CORS and a
   lifecycle rule on the private one, and an API token in the cluster secret
   ([media.md](features/media.md), *What the owner sets up*).
@@ -90,9 +97,10 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    enrolment and an APNs key.
 3. **Accounts** ([accounts.md](features/accounts.md)). Built in the browser: sign-up, sign-in,
    passkeys, sessions, recovery, invitations and the session-to-token swap. Waiting: Access (for
-   staff actions), the shared mailbox (real email) and the enrolment (passkeys in the app).
+   staff actions), the shared mailbox (real email) and the enrolment (passkeys in the app). All three
+   done; passkeys and the Keychain session in the app built 2026-11-03 (branch `feature/phone-sign-in`).
 4. **Access** ([access.md](features/access.md)). Built: roles, assignments, the cached evaluator,
-   escalation guards and the admin screens. Open: a private grants feed for offline use in the app.
+   escalation guards and the admin screens. The private grants feed for the phone built 2026-11-03.
 5. **Configuration** ([configuration.md](features/configuration.md)). Built: surfaces and settings
    descriptors in Platform, the `config` schema and service (validated, permission per area, audited,
    rolled back), the placements feed, `ISurfaceLayout` for the phone, the generic editor in the app and

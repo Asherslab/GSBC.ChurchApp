@@ -1,12 +1,18 @@
+using System.Security.Claims;
+using Grpc.Core;
 using GSBC.ChurchApp.Features.Access.Api.Data;
 using GSBC.ChurchApp.Features.Access.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Sync;
+using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
+using ProtoBuf.Grpc;
 using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Access.Api.Tests;
@@ -54,10 +60,17 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             .AddScoped<AssignmentRules>()
             .AddScoped<AccessInsights>()
             .AddScoped<IRoleAssignments, RoleAssignments>()
+            .AddScoped<GrantsFeed>()
+            .AddScoped<AccessChanges>()
+            .AddSingleton(new FeedRegistry([new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords)]))
+            .AddSingleton<FeedChangeBroadcaster>()
+            .AddScoped<SyncService>()
+            .AddSyncData()
             .AddAccessData()
             .BuildServiceProvider();
 
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         AccessDbContext db = scope.ServiceProvider.GetRequiredService<AccessDbContext>();
         await db.Database.MigrateAsync();
         await new AccessReconciler(_services.GetRequiredService<IServiceScopeFactory>(), _catalog, SystemRoles, TimeProvider.System,
@@ -204,6 +217,60 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         Assert.Equal("Leader", Assert.Single(music.Because).RoleName);
     }
 
+    [Fact]
+    public async Task APhoneReceivesOnlyItsOwnPersonsGrantsAndHearsWhenTheyChange()
+    {
+        Guid staff = Guid.CreateVersion7(), leader = Guid.CreateVersion7(), member = Guid.CreateVersion7();
+        await AssignAsync(staff, await SystemRoleAsync("staff"));
+        Assert.True((await GiveAsync(staff, leader, "leader", Music)).Done);
+        Assert.True((await GiveAsync(staff, member, "member", Choir)).Done);
+
+        FeedBatch leadersPhone = await PullGrantsAsync(Person(leader), 0);
+        FeedChange leaders = Assert.Single(leadersPhone.Changes);
+        Assert.Equal(leader.ToString(), leaders.Id);
+        Assert.Contains(Decode(leaders), grant => grant is { Pattern: "ministries.*", ObjectId: Music });
+        Assert.DoesNotContain(Decode(leaders), grant => grant.ObjectId == Choir && grant.Pattern == "ministries.news.read");
+        Assert.Equal([member.ToString()], (await PullGrantsAsync(Person(member), 0)).Changes.Select(change => change.Id));
+
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            Assert.True((await scope.ServiceProvider.GetRequiredService<IRoleAssignments>()
+                .TakeAwayAsync(staff, leader, "leader", Music, TestContext.Current.CancellationToken)).Done);
+
+        FeedChange taken = Assert.Single((await PullGrantsAsync(Person(leader), leadersPhone.Cursor)).Changes);
+        Assert.Empty(Decode(taken));
+    }
+
+    [Fact]
+    public async Task ASignedOutPhoneIsToldToDropPrivateFeedsAndReceivesNothing()
+    {
+        Guid staff = Guid.CreateVersion7();
+        await AssignAsync(staff, await SystemRoleAsync("staff"));
+        Assert.True((await GiveAsync(staff, Guid.CreateVersion7(), "leader", Music)).Done);
+        ClaimsPrincipal signedOut = new(new ClaimsIdentity());
+
+        FeedBatch fromScratch = await PullGrantsAsync(signedOut, 0);
+        FeedBatch afterSigningOut = await PullGrantsAsync(signedOut, 42);
+
+        Assert.Empty(fromScratch.Changes);
+        Assert.True(afterSigningOut.Reset);
+        Assert.Empty(afterSigningOut.Changes);
+    }
+
+    private async Task<FeedBatch> PullGrantsAsync(ClaimsPrincipal caller, long cursor)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        PullReply reply = await scope.ServiceProvider.GetRequiredService<SyncService>().PullAsync(
+            new PullRequest { Cursors = [new FeedCursor { Feed = AccessFeeds.Grants, Cursor = cursor }] },
+            new CallContext(caller, new PersonCallContext(caller)));
+        return reply.Feeds.SingleOrDefault() ?? new FeedBatch { Feed = AccessFeeds.Grants, Cursor = cursor };
+    }
+
+    private static ClaimsPrincipal Person(Guid userId) => new(new ClaimsIdentity(
+        [new Claim(Caller.UserIdClaim, userId.ToString()), new Claim(Caller.SessionIdClaim, Guid.CreateVersion7().ToString())], "test"));
+
+    private static List<GrantMessage> Decode(FeedChange change) =>
+        AccessContractsModel.Instance.Deserialize<GrantList>(new MemoryStream(change.Payload)).Grants;
+
     private async Task<AssignmentOutcome> GiveAsync(Guid actor, Guid user, string roleKey, string objectId)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
@@ -261,6 +328,27 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         db.Assignments.Add(assignment);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         return assignment;
+    }
+
+    private sealed class PersonCallContext(ClaimsPrincipal person) : ServerCallContext
+    {
+        private readonly Dictionary<object, object> _state = new() { ["__HttpContext"] = new DefaultHttpContext { User = person } };
+
+        protected override IDictionary<object, object> UserStateCore => _state;
+        protected override string MethodCore => "";
+        protected override string HostCore => "";
+        protected override string PeerCore => "";
+        protected override DateTime DeadlineCore => DateTime.MaxValue;
+        protected override Metadata RequestHeadersCore => [];
+        protected override CancellationToken CancellationTokenCore => TestContext.Current.CancellationToken;
+        protected override Metadata ResponseTrailersCore => [];
+        protected override Status StatusCore { get; set; }
+        protected override WriteOptions? WriteOptionsCore { get; set; }
+        protected override AuthContext AuthContextCore => new(null, []);
+
+        protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions? options) => throw new NotSupportedException();
+
+        protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) => Task.CompletedTask;
     }
 
     public async ValueTask DisposeAsync()

@@ -129,6 +129,8 @@ public sealed class SyncService(
     private async Task<List<FeedChangeRecord>> VisibleRowsAsync(
         FeedDefinition feed, List<FeedChangeRecord> rows, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
+        if (feed.Audience is FeedAudience.OwnRecordsAudience)
+            return Caller.UserId(user)?.ToString() is { } userId ? rows.Where(row => row.ScopeId == userId).ToList() : [];
         if (feed.Audience is not FeedAudience.PermissionAudience audience)
             return rows;
 
@@ -169,7 +171,7 @@ public sealed class SyncService(
         feed.Audience switch
         {
             FeedAudience.PublicAudience => true,
-            FeedAudience.SignedInAudience => IsSignedIn(user),
+            FeedAudience.SignedInAudience or FeedAudience.OwnRecordsAudience => IsSignedIn(user),
             FeedAudience.PermissionAudience audience when audience.Permission.ScopeKind == ScopeKind.Global =>
                 IsSignedIn(user) && await access.IsAllowedAsync(user, audience.Permission.Node, null, cancellationToken),
             FeedAudience.PermissionAudience => IsSignedIn(user),

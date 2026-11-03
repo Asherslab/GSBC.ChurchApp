@@ -18,9 +18,11 @@ public struct GrpcError: Error {
 }
 
 public struct GrpcWebTransport: Sendable {
-    public init(gateway: URL, sessionSecret: @escaping @Sendable () -> String? = { nil }) {
+    public init(gateway: URL, sessionSecret: @escaping @Sendable () -> String? = { nil },
+                onSessionEnded: @escaping @Sendable () -> Void = {}) {
         self.gateway = gateway
         self.sessionSecret = sessionSecret
+        self.onSessionEnded = onSessionEnded
     }
 
     public static let ok = 0
@@ -36,10 +38,13 @@ public struct GrpcWebTransport: Sendable {
 
     public let gateway: URL
     private let sessionSecret: @Sendable () -> String?
+    private let onSessionEnded: @Sendable () -> Void
     public static let sessionHeader = "X-Gsbc-Session"
+    public static let sessionEndedHeader = "X-Gsbc-Session-Ended"
 
     public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
         let (data, response) = try await URLSession.shared.data(for: try request(method, message, headers))
+        noticeEndedSession(response)
         let http = try Self.successful(response)
 
         var trailers = Self.grpcHeaders(http)
@@ -63,6 +68,7 @@ public struct GrpcWebTransport: Sendable {
                     var request = try request(method, message, [:])
                     request.timeoutInterval = Self.streamIdleTimeout
                     let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    noticeEndedSession(response)
                     let http = try Self.successful(response)
 
                     var trailers = Self.grpcHeaders(http)
@@ -102,6 +108,10 @@ public struct GrpcWebTransport: Sendable {
         for (name, value) in headers { request.setValue(value, forHTTPHeaderField: name) }
         request.httpBody = Self.frame(message)
         return request
+    }
+
+    private func noticeEndedSession(_ response: URLResponse) {
+        if (response as? HTTPURLResponse)?.value(forHTTPHeaderField: Self.sessionEndedHeader) != nil { onSessionEnded() }
     }
 
     private static func successful(_ response: URLResponse) throws -> HTTPURLResponse {

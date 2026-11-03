@@ -113,8 +113,7 @@ release. It is the smallest design that fits the machinery above:
   colours before Blazor runs; a change arrives through sync like any placement.
 - **Previewing.** Anyone holding `config.appearance.edit` can try a palette on their own phone
   (More → Appearance) without changing it for everyone, then "Change for everyone" opens the editor.
-  Until people can sign in on the phone (passkeys wait on the Apple enrolment), development builds
-  offer the preview too; drop that once staff can sign in on the phone.
+  They sign in on the phone with their passkey, so the preview needs nothing else.
 - **Light, dark or automatic** is each person's own, kept on the phone.
 - **The built-in palettes are code** (`tokens.css`, changed with a release, SPEC §4).
 - **Staff can make their own (owner, 2026-11-03).** A repeatable surface `app.custom-theme` holds a

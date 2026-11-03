@@ -176,17 +176,3 @@ public sealed class AuditInfo
     [ProtoMember(4)] public string? ActorId { get; set; }
     [ProtoMember(5)] public string? Detail { get; set; }
 }
-
-[ProtoContract]
-public sealed class LinkPhoneRequest
-{
-    [ProtoMember(1)] public string Code { get; set; } = "";
-    [ProtoMember(2)] public string DeviceName { get; set; } = "";
-}
-
-[ProtoContract]
-public sealed class LinkedPhone
-{
-    [ProtoMember(1)] public string Secret { get; set; } = "";
-    [ProtoMember(2)] public string DisplayName { get; set; } = "";
-}

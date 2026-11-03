@@ -23,6 +23,8 @@ gateway="${GSBC_GATEWAY:-http://$(scutil --get LocalHostName).local:5300}"
 case "$gateway" in http://*|https://*) ;; *) gateway="http://$gateway" ;; esac
 gateway_scheme="${gateway%%://*}"
 gateway_host="${gateway#*://}"
+associated_domain=baptist.com.au
+[ "$gateway_scheme" = https ] && associated_domain="${gateway_host%%[:/]*}"
 bundle_id="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["appId"])' "$shell/capacitor.config.json")"
 
 find_device() {
@@ -67,10 +69,11 @@ DEVELOPMENT_TEAM = $(tr -d '[:space:]' < "$team_file")
 GSBC_GATEWAY_SCHEME = $gateway_scheme
 GSBC_GATEWAY = $gateway_host
 GSBC_DEVELOPMENT_BUILD = YES
+GSBC_ASSOCIATED_DOMAIN = $associated_domain
 XC
 
 echo "== Publishing the app ($configuration)"
-rm -rf "$root/out/app"
+rm -rf "$root/out/app" && mkdir -p "$root/out"
 dotnet publish "$app" -c "$configuration" -o "$root/out/app" -nologo > "$root/out/app.publish.log" 2>&1 \
   || { tail -30 "$root/out/app.publish.log"; exit 1; }
 

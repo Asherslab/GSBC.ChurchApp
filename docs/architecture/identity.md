@@ -14,25 +14,43 @@ different kind of account. Reading public content still needs no account (SPEC �
 - **Dev has its own relying party: `dev.baptist.com.au`** (decided 2026-11-01), reached through the dev
   proxy ([tools/dev-proxy](../../tools/dev-proxy/README.md)). Test passkeys never sit beside real ones
   in people's keychains. On a dev Mac with no tunnel, the browser accepts `localhost` as the RP.
-- **Bundle id: `au.com.baptist.churchapp`** (decided 2026-11-01), so the app id in the association
-  files is `<team id>.au.com.baptist.churchapp`.
+- **Bundle id: `au.com.baptist.app`** (owner, 2026-11-03), so the app id in the association files is
+  `<team id>.au.com.baptist.app`. It replaced `au.com.baptist.churchapp` (decided 2026-11-01), which
+  is stuck on the owner's expired personal developer team: Xcode registered it there while that
+  membership was paid, and an expired team can't remove an App ID, so the church's team can't
+  register it.
 - **The ceremonies are the approved non-gRPC paths** in AGENTS.md: begin/complete for sign-in and for
   registering a passkey, at the gateway, called by the browser's WebAuthn API and by the app's
   native layer (the platform passkey APIs produce the same JSON).
 - **ASP.NET Core Identity's passkey support** at the gateway, as in MealPlanner: user verification
   required, no attestation, challenges single-use and short-lived, every POST checks its origin.
 
-## Needs setting up outside this repo (owner)
+## Apple (the church's developer account)
 
-- `https://baptist.com.au/.well-known/apple-app-site-association`, served at the apex in front of the
-  website (a Cloudflare rule or Worker), with `webcredentials` (passkeys) and `applinks` (invitation
-  and recovery links open the app). It needs the Apple team id, so it waits for enrolment.
-- The app's Associated Domains entitlement: `webcredentials:baptist.com.au`, `applinks:baptist.com.au`
-  (and `dev.baptist.com.au` for dev builds). Associated Domains needs the paid developer account, so
-  passkeys in the app wait for the enrolment; passkeys in the browser can be built and tested first.
-- Dev's association file is served by the dev gateway as a static file at
-  `dev.baptist.com.au/.well-known/apple-app-site-association`, written from the dev Mac's team id
-  (gitignored), so it needs nothing from the apex website.
+**The church is enrolled as an organisation** (owner, 2026-11-03: the church is the seller), team id
+`YNT9A4LGVA`. The team id isn't a secret (every association file publishes it), but it stays out of
+tracked files: it lives in the gitignored `src/Hosts/App/shell/.team`, which `tools/ios/deploy.sh`
+puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
+
+- **Associated Domains** (`App.entitlements`): `webcredentials:` and `applinks:` on
+  `$(GSBC_ASSOCIATED_DOMAIN)`, which is `baptist.com.au` for release builds and the gateway's host for
+  development builds (`deploy.sh` sets it: `dev.baptist.com.au`).
+- **Dev's association file** is written by the dev gateway at start-up from `Apple:TeamId` (into the
+  gitignored `generated/`) and served as a static file at
+  `dev.baptist.com.au/.well-known/apple-app-site-association`: the same bytes on every request,
+  `application/json`, no redirect, `no-store` in development. Apple's CDN fetches it through
+  Cloudflare (checked 2026-11-03). `AppAssociation.Json` writes it; a gateway test checks it names
+  the configured team and bundle.
+- **Applinks:** `/welcome` (invitations and recovery links) opens the app.
+
+**Needs setting up outside this repo (owner):**
+
+- `https://baptist.com.au/.well-known/apple-app-site-association` for production, at the apex in
+  front of the website (a Cloudflare rule or Worker), with the same content as dev's but for
+  `baptist.com.au`: `{"applinks":{"details":[{"appIDs":["YNT9A4LGVA.au.com.baptist.app"],
+  "components":[{"/":"/welcome"},{"/":"/welcome/*"}]}]},"webcredentials":{"apps":["YNT9A4LGVA.au.com.baptist.app"]}}`,
+  as `application/json`, with no redirect. Production's `Accounts:Passkeys:AllowedOrigins` must include
+  `https://baptist.com.au`, the origin the phone's passkeys report.
 - Android's `assetlinks.json` at the same apex, when Android is built.
 
 ## Sessions
@@ -82,14 +100,31 @@ account's email must be confirmed before it can recover by email.
 An account has a display name, an email (for recovery and invitations) and its passkeys. It is not a
 church directory (SPEC §1's non-goals). A link to an Elvanto person can be added when rosters need it.
 
-## Development builds: linking a phone with a code (owner, 2026-11-02)
+## Signing in on the phone (built 2026-11-03)
 
-Until passkeys work in the app, a development build can be linked to an account for previews: the
-admin panel's *Preview on your phone* shows a six-character one-time code (`Accounts.PhoneLinks.Start`,
-ten minutes), the app's *Link this phone* redeems it (`Accounts.PhoneLinks.Link`, rate-limited) for an
-app session, and its secret goes in the iOS Keychain and is sent as `X-Gsbc-Session`. The gateway
-authenticates that header like the browser's cookie, strips it, and issues the usual API token. Both
-methods refuse outside Development. The session is listed and ended like any other.
+The native layer runs the approved ceremonies itself, with the platform passkey API
+(`ASAuthorizationPlatformPublicKeyCredentialProvider`), and sends `app: true`, so the gateway answers
+with a session secret instead of setting a cookie. The secret goes straight into the iOS Keychain
+(`SessionKeychain`, this device only, after first unlock) and is sent as `X-Gsbc-Session` on every
+gRPC call; the gateway authenticates it like the browser's cookie, strips it, and issues the usual
+API token. The WebView only ever hears "signed in" or the reason it failed (`SessionSecretRules` and
+the native `PasskeyCeremonyTests` hold this).
+
+- **Sign in, sign up, add a passkey, accept an invitation, recover:** the shared `SignIn`,
+  `Welcome` and `AccountDetails` components, through `IPasskeyCeremonies` (the browser's WebAuthn in
+  the admin panel, the native layer in the app).
+- **Signing out** ends the session on the server and forgets the secret; **a session ended elsewhere**
+  (sign out everywhere, staff ending it, a disabled account) comes back as `X-Gsbc-Session-Ended` on
+  the next call, and the phone forgets it too. Either way, and on signing in, the phone clears its
+  private feeds and private media.
+- App sessions last 90 days from last use.
+- *Link this phone*, the development-only stopgap, was removed (owner, 2026-11-03).
+
+**Proven on the owner's iPhone, with the owner, 2026-11-03** (through `dev.baptist.com.au`): signing in
+with a passkey made earlier in Safari, the session surviving the app being completely closed, a Hub
+role given in the admin panel showing More → Drafts on the phone live, previewing a draft while
+signed in, signing out clearing drafts and staff tools, and an invitation link opening the app and
+creating its passkey there.
 
 ## Open
 

@@ -13,7 +13,9 @@ public sealed class ClientModules(Assembly hostAssembly)
 
     public IEnumerable<NavEntry> Navigation => _modules.SelectMany(module => module.Navigation);
 
-    public IReadOnlyCollection<string> Feeds => _modules.SelectMany(module => module.Feeds ?? []).ToHashSet();
+    public IReadOnlyCollection<string> Feeds => _modules.SelectMany(module => module.Feeds ?? []).Concat(PrivateFeeds).ToHashSet();
+
+    public IReadOnlyCollection<string> PrivateFeeds => _modules.SelectMany(module => module.PrivateFeeds ?? []).ToHashSet();
 
     public ClientModules Add(ClientModule module)
     {
