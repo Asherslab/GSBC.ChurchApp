@@ -56,6 +56,8 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             .AddSingleton(TimeProvider.System)
             .AddSingleton(_catalog)
             .AddSingleton<GrantCache>()
+            .AddHttpContextAccessor()
+            .AddSingleton<ToolCallers>()
             .AddSingleton<IScopeHierarchy>(new MusicOverChoir())
             .AddScoped<AccessEvaluator>()
             .AddScoped<IAccessEvaluator>(provider => provider.GetRequiredService<AccessEvaluator>())
@@ -79,7 +81,8 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         AccessDbContext db = scope.ServiceProvider.GetRequiredService<AccessDbContext>();
         await db.Database.MigrateAsync();
-        await new AccessReconciler(_services.GetRequiredService<IServiceScopeFactory>(), _catalog, SystemRoles, TimeProvider.System,
+        await new AccessReconciler(_services.GetRequiredService<IServiceScopeFactory>(), _catalog, SystemRoles,
+            [new SystemRolePatterns("member", ["ministries.notices.receive"])], TimeProvider.System,
             NullLogger<AccessReconciler>.Instance).ReconcileAsync(db, TestContext.Current.CancellationToken);
     }
 
@@ -99,6 +102,42 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         Assert.False(grants.IsAllowed(EditRoster, "42"));
         Assert.False(grants.IsAllowed(PostNews, "7"));
         Assert.False(grants.IsAllowed(AccessPermissions.EditRoles));
+    }
+
+    [Fact]
+    public async Task AToolActingForAnOwnerIsRefusedEverythingSensitiveEvenIndirectly()
+    {
+        Guid owner = Guid.CreateVersion7();
+        await AssignAsync(owner, await SystemRoleAsync(AccessService.OwnerKey));
+        ClaimsPrincipal tool = Person(owner, new Claim(Caller.ToolClaim, bool.TrueString));
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        IAccessEvaluator access = scope.ServiceProvider.GetRequiredService<IAccessEvaluator>();
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+
+        Assert.True(await access.IsAllowedAsync(Person(owner), ManageAccounts.Node, null, cancellationToken));
+        Assert.False(await access.IsAllowedAsync(tool, ManageAccounts.Node, null, cancellationToken));
+        Assert.True(await access.IsAllowedAsync(tool, PostNews.Node, Music, cancellationToken));
+
+        scope.ServiceProvider.GetRequiredService<IHttpContextAccessor>().HttpContext = new DefaultHttpContext { User = tool };
+        GrantSet grants = await access.GrantsForAsync(owner, cancellationToken);
+        Assert.False(grants.IsAllowed(ManageAccounts));
+        Assert.False(grants.IsAllowed(AccessPermissions.EditAssignments, Music));
+        Assert.True(grants.IsAllowed(ReadNews, Music));
+        Assert.NotNull(await scope.ServiceProvider.GetRequiredService<AssignmentRules>().RefusalAsync(
+            owner, await scope.ServiceProvider.GetRequiredService<AccessDbContext>().Roles.Include(role => role.Assigners)
+                .SingleAsync(role => role.SystemKey == "member", cancellationToken), Music, cancellationToken));
+    }
+
+    [Fact]
+    public async Task AFeatureCanAddItsPermissionsToARoleAnotherFeatureDeclares()
+    {
+        Guid person = Guid.CreateVersion7();
+        await AssignAsync(person, await SystemRoleAsync("member"), scopeObjectId: Music);
+
+        GrantSet grants = await GrantsAsync(person);
+
+        Assert.True(grants.IsAllowed(ReadNews, Music));
+        Assert.True(grants.IsAllowed(ReceiveNotices, Music));
     }
 
     [Fact]
@@ -297,8 +336,8 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         return reply.Feeds.SingleOrDefault() ?? new FeedBatch { Feed = AccessFeeds.Grants, Cursor = cursor };
     }
 
-    private static ClaimsPrincipal Person(Guid userId) => new(new ClaimsIdentity(
-        [new Claim(Caller.UserIdClaim, userId.ToString()), new Claim(Caller.SessionIdClaim, Guid.CreateVersion7().ToString())], "test"));
+    private static ClaimsPrincipal Person(Guid userId, params Claim[] more) => new(new ClaimsIdentity(
+        [new Claim(Caller.UserIdClaim, userId.ToString()), new Claim(Caller.SessionIdClaim, Guid.CreateVersion7().ToString()), .. more], "test"));
 
     private static List<GrantMessage> Decode(FeedChange change) =>
         AccessContractsModel.Instance.Deserialize<GrantList>(new MemoryStream(change.Payload)).Grants;

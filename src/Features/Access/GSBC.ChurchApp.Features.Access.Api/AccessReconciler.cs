@@ -8,8 +8,8 @@ using Microsoft.Extensions.Logging;
 namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AccessReconciler(
-    IServiceScopeFactory scopes, PermissionCatalog catalog, IEnumerable<SystemRole> systemRoles, TimeProvider time,
-    ILogger<AccessReconciler> logger) : BackgroundService
+    IServiceScopeFactory scopes, PermissionCatalog catalog, IEnumerable<SystemRole> systemRoles, IEnumerable<SystemRolePatterns> additions,
+    TimeProvider time, ILogger<AccessReconciler> logger) : BackgroundService
 {
     private const long AdvisoryLockKey = 0x6773_6263_6163_6373;
     private static readonly TimeSpan RetryDelay = TimeSpan.FromSeconds(10);
@@ -51,7 +51,7 @@ internal sealed class AccessReconciler(
         Dictionary<string, RoleRecord> roles = await db.Roles.Include(role => role.Patterns).Include(role => role.Assigners)
             .Where(role => role.SystemKey != null).ToDictionaryAsync(role => role.SystemKey!, cancellationToken);
         Dictionary<string, RoleRecord> reconciled = [];
-        foreach (SystemRole declared in systemRoles)
+        foreach (SystemRole declared in WithAdditions())
         {
             if (!roles.Remove(declared.Key, out RoleRecord? role))
             {
@@ -91,5 +91,18 @@ internal sealed class AccessReconciler(
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
         await db.AnnounceChangeAsync(cancellationToken);
+    }
+
+    private IEnumerable<SystemRole> WithAdditions()
+    {
+        List<SystemRole> roles = systemRoles.ToList();
+        foreach (SystemRolePatterns addition in additions)
+        {
+            int index = roles.FindIndex(role => role.Key == addition.RoleKey);
+            if (index < 0)
+                throw new InvalidOperationException($"Patterns are added to the role '{addition.RoleKey}', which no feature declares.");
+            roles[index] = roles[index] with { Patterns = [.. roles[index].Patterns, .. addition.Patterns.Except(roles[index].Patterns)] };
+        }
+        return roles;
     }
 }

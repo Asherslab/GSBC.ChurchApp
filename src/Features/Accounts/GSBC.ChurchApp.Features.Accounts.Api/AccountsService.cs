@@ -211,6 +211,19 @@ internal sealed class AccountsService(
         return new Done();
     }
 
+    public async ValueTask<ToolConnection> ConnectToolAsync(ConnectToolRequest request, CallContext context = default)
+    {
+        (Guid userId, _) = Caller(context);
+        string name = request.Name.Trim();
+        if (name.Length is 0 or > AppSessions.MaximumToolNameLength)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Name the tool, in up to {AppSessions.MaximumToolNameLength} characters, such as Claude on your Mac."));
+
+        string session = AppSessions.StartTool(db, userId, name, time.GetUtcNow().UtcDateTime);
+        audit.Record(AuditActions.ToolConnected, userId, detail: name, remoteAddress: Address(context));
+        await db.SaveChangesAsync(context.CancellationToken);
+        return new ToolConnection { Session = session };
+    }
+
     public async ValueTask<Done> SignOutEverywhereAsync(Nothing request, CallContext context = default)
     {
         (Guid userId, _) = Caller(context);

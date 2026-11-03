@@ -6,6 +6,9 @@ public sealed class GrantSet(IReadOnlyList<Grant> grants)
 
     public IReadOnlyList<Grant> Grants { get; } = grants;
 
+    public GrantSet Refusing(IEnumerable<Permission> permissions) =>
+        new([.. Grants, .. permissions.Select(permission => new Grant(PermissionPattern.Parse($"-{permission.Node}"), Scope.Global))]);
+
     public bool IsAllowedSomewhere(Permission permission) =>
         IsAllowed(permission) || Grants
             .Where(grant => !grant.Scope.IsGlobal && grant.Scope.Kind == permission.ScopeKind)

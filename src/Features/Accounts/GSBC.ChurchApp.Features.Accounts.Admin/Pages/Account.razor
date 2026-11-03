@@ -11,7 +11,13 @@ else if (_session.SignedIn)
 {
     <TitleBand Title="Account" Lead="@SignedInLead" />
     <div class="account-column">
-        <AccountDetails />
+        <AccountDetails>
+            <AfterSessions Context="reload">
+                <Can Permission="AccountsPermissions.ConnectTool">
+                    <ConnectTool OnConnected="reload" />
+                </Can>
+            </AfterSessions>
+        </AccountDetails>
     </div>
 }
 else
@@ -24,7 +30,7 @@ else
 @code {
     private CurrentSession? _session;
 
-    private string SignedInLead => $"Signed in as {_session?.DisplayName}. Your name, your passkeys, and the devices you use.";
+    private string SignedInLead => $"Signed in as {_session?.DisplayName}. Your name, your passkeys, and the devices and tools you use.";
 
     protected override async Task OnInitializedAsync()
     {

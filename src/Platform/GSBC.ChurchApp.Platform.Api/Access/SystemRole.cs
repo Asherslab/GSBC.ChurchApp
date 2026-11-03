@@ -11,3 +11,5 @@ public sealed record SystemRole(
     IReadOnlyList<string>? AssignableBy = null,
     bool AppliesToChildren = false,
     bool PhoneHoldable = false);
+
+public sealed record SystemRolePatterns(string RoleKey, IReadOnlyList<string> Patterns);

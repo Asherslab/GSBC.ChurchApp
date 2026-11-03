@@ -18,6 +18,8 @@ namespace GSBC.ChurchApp.Features.Accounts.Api;
 
 public static class AccountsApiExtensions
 {
+    private const string DeveloperRole = "developer";
+
     public static IServiceCollection AddAccountsApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.Configure<AccountsOptions>(configuration.GetSection(AccountsOptions.Section));
@@ -26,8 +28,10 @@ public static class AccountsApiExtensions
             .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
             .AddEntityFrameworkStores<AccountsDbContext>();
         services.AddSystemRole(new SystemRole("account-manager", "Account manager",
-            "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global, ["accounts.*"]));
+            "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global,
+            [AccountsPermissions.ViewNode, AccountsPermissions.ManageNode, AccountsPermissions.ReviewAccessNode]));
         services.AddSystemRole(DemoAccounts.Role);
+        services.AddToSystemRole(DeveloperRole, AccountsPermissions.ConnectToolNode);
         services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>();
         services.AddHostedService<AccountsCleanup>();
         services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));

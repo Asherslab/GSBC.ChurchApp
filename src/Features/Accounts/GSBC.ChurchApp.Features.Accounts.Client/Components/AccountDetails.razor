@@ -58,7 +58,7 @@
         <ListGroup>
             @foreach (SessionSummary session in context.Value.Sessions)
             {
-                <ListRow Title="@(session.Current ? "This device" : session.DeviceName ?? session.Client)" Subtitle="@($"Last used {session.LastSeenAt.ToLocalTime():d MMM, h:mm tt}")" Icon="smartphone" IconTone="RowTone.Quiet">
+                <ListRow Title="@(session.Current ? "This device" : session.DeviceName ?? session.Client)" Subtitle="@SessionLine(session)" Icon="@(IsTool(session) ? "terminal" : "smartphone")" IconTone="RowTone.Quiet">
                     <TrailingContent>
                         @if (!session.Current)
                         {
@@ -73,6 +73,8 @@
             <Button Busy="_busy" OnClick="() => RunAsync(Accounts.SignOutAsync)">Sign out</Button>
         </div>
     </Section>
+
+    @AfterSessions?.Invoke(ReloadAsync)
 </LiveData>
 
 @if (_message is not null)
@@ -89,6 +91,18 @@
     private bool _busy;
     private string? _message;
     private NoticeTone _messageTone = NoticeTone.Info;
+
+    [Parameter] public RenderFragment<Func<Task>>? AfterSessions { get; set; }
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private static bool IsTool(SessionSummary session) => session.Client == "Tool";
+
+    private static string SessionLine(SessionSummary session)
+    {
+        string lastUsed = $"{session.LastSeenAt.ToLocalTime():d MMM, h:mm tt}";
+        return IsTool(session) ? $"A connected tool · last used {lastUsed}" : $"Last used {lastUsed}";
+    }
 
     private async Task<AccountView> LoadAsync() => new(
         await Accounts.GetProfileAsync(),

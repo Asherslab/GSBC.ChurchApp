@@ -18,6 +18,14 @@ public sealed class ApiTokenIssuer(IConfiguration configuration, TimeProvider ti
             return null;
 
         DateTime now = time.GetUtcNow().UtcDateTime;
+        Dictionary<string, object> claims = new()
+        {
+            [AccountClaims.UserId] = userId,
+            [AccountClaims.SessionId] = user.FindFirstValue(AccountClaims.SessionId) ?? "",
+            [AccountClaims.Name] = user.FindFirstValue(AccountClaims.Name) ?? "",
+        };
+        if (user.HasClaim(AccountClaims.Tool, bool.TrueString))
+            claims[AccountClaims.Tool] = bool.TrueString;
         return _handler.CreateToken(new SecurityTokenDescriptor
         {
             Issuer = AccountTokens.Issuer,
@@ -26,12 +34,7 @@ public sealed class ApiTokenIssuer(IConfiguration configuration, TimeProvider ti
             NotBefore = now,
             Expires = now + AccountTokens.Lifetime,
             SigningCredentials = credentials,
-            Claims = new Dictionary<string, object>
-            {
-                [AccountClaims.UserId] = userId,
-                [AccountClaims.SessionId] = user.FindFirstValue(AccountClaims.SessionId) ?? "",
-                [AccountClaims.Name] = user.FindFirstValue(AccountClaims.Name) ?? "",
-            },
+            Claims = claims,
         });
     }
 

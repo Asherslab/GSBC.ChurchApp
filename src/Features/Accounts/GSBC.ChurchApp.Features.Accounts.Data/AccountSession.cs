@@ -18,4 +18,5 @@ public enum SessionClient
 {
     Browser,
     App,
+    Tool,
 }

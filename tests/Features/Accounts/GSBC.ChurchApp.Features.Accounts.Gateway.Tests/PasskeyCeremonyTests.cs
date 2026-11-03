@@ -152,6 +152,38 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AConnectedToolIsMarkedOnItsTokenCannotAddAPasskeyAndStopsWhenEnded()
+    {
+        (Guid userId, _) = await NewAccountWithTicketAsync("developer@example.com");
+        string secret;
+        await using (AsyncServiceScope scope = _app.Services.CreateAsyncScope())
+        {
+            AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
+            secret = AppSessions.StartTool(db, userId, "Claude on a Mac", DateTime.UtcNow);
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+        using HttpClient tool = Browser();
+
+        HttpResponseMessage token = await TokenWithSessionAsync(tool, secret);
+        Assert.Equal(HttpStatusCode.OK, token.StatusCode);
+        JsonWebToken issued = new(await token.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
+        Assert.Equal(bool.TrueString, issued.GetPayloadValue<string>(AccountClaims.Tool));
+
+        HttpRequestMessage addPasskey = new(HttpMethod.Post, $"{PasskeyEndpoints.Prefix}/creation-options") { Content = JsonContent.Create(new { }) };
+        addPasskey.Headers.Add(AppSessions.Header, secret);
+        Assert.Equal(HttpStatusCode.Forbidden, (await tool.SendAsync(addPasskey, TestContext.Current.CancellationToken)).StatusCode);
+
+        await using (AsyncServiceScope scope = _app.Services.CreateAsyncScope())
+        {
+            AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
+            AccountSession session = await db.Sessions.SingleAsync(session => session.UserId == userId, TestContext.Current.CancellationToken);
+            Assert.Equal(AppSessions.ToolLifetime, session.ExpiresAt - session.LastSeenAt);
+            await EndSessionAsync(session.Id);
+        }
+        Assert.Equal(HttpStatusCode.Unauthorized, (await TokenWithSessionAsync(tool, secret)).StatusCode);
+    }
+
+    [Fact]
     public async Task TheAssociationFileNamesTheConfiguredTeamAndBundle()
     {
         HttpResponseMessage response = await Browser().GetAsync(AppAssociation.RequestPath, TestContext.Current.CancellationToken);

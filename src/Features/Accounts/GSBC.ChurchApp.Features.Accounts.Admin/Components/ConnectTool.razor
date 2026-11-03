@@ -1,0 +1,65 @@
+@using Grpc.Core
+@inject AccountsClient Accounts
+@inject NavigationManager Navigation
+
+<Section Title="Connect a tool" Lead="A tool, such as Claude on your computer, can then read what you can see here, like App health. It can't use anything sensitive: roles, people's details, accounts or the pastoral inbox.">
+    @if (_secret is not null)
+    {
+        <CopyField Label="@($"Session secret for {_connectedName}")" Value="@_secret" Hint="Copy it now: it's shown only this once." />
+        <p class="ui-after">In a terminal in the app's repository, run <code>tools/health/connect.sh @EnvironmentName</code> and paste it. It stops working after 30 days unused, or when you sign it out above.</p>
+        <div class="ui-actions ui-after">
+            <Button Variant="ButtonVariant.Quiet" OnClick="Done">Done</Button>
+        </div>
+    }
+    else
+    {
+        <form @onsubmit="ConnectAsync">
+            <TextField Label="Name" @bind-Value="_name" AutoComplete="off" MaxLength="80" Hint="So you know it in the list above, such as Claude on my Mac" />
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            <div class="ui-actions ui-after">
+                <Button Type="submit" Icon="terminal" Busy="_busy" Disabled="@(_name.Trim().Length == 0)">Connect</Button>
+            </div>
+        </form>
+    }
+</Section>
+
+@code {
+    private string _name = "";
+    private string _connectedName = "";
+    private string? _secret;
+    private string? _problem;
+    private bool _busy;
+
+    [Parameter] public EventCallback OnConnected { get; set; }
+
+    private string EnvironmentName => new Uri(Navigation.BaseUri).Host switch
+    {
+        var host when host.StartsWith("uat-", StringComparison.OrdinalIgnoreCase) => "uat",
+        var host when host.StartsWith("dev-", StringComparison.OrdinalIgnoreCase) || host == "localhost" => "dev",
+        _ => "prod",
+    };
+
+    private async Task ConnectAsync()
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            ToolConnection connection = await Accounts.ConnectToolAsync(_name.Trim());
+            _connectedName = _name.Trim();
+            _secret = connection.Session;
+            _name = "";
+            await OnConnected.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Done() => _secret = null;
+}
