@@ -122,6 +122,7 @@ None of these are in any repository. GitHub (this repo):
 |---|---|---|
 | `ARGO_REPO_TOKEN` | Repository secret | A token with write access to `asherslab/gsbc.argo` |
 | `ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_P8` | `uat` environment secrets | The App Store Connect API key |
+| `IOS_DEV_CERT_P12`, `IOS_DEV_CERT_PASSWORD` | `uat` environment secrets | The team's Apple Development certificate and private key (base64 `.p12`), and its password |
 | `APPLE_TEAM_ID` | `uat` environment variable | The church's team id |
 
 The cluster (namespace `church-app-uat`, made by the owner; commands in `gsbc.argo`'s
@@ -213,6 +214,12 @@ that the code didn't work, check the code in App Store Connect before making a n
   **Deployment branches and tags**: **Selected branches and tags** → add `main`.
 - In `uat`: **Environment secrets** → `ASC_KEY_ID`, `ASC_ISSUER_ID`, and `ASC_KEY_P8` (the whole `.p8`
   file, `BEGIN` and `END` lines included); **Environment variables** → `APPLE_TEAM_ID` = `YNT9A4LGVA`.
+- In `uat`, also `IOS_DEV_CERT_P12` and `IOS_DEV_CERT_PASSWORD`: the team's **Apple Development**
+  certificate exported from Keychain Access as a `.p12` (`base64 -i cert.p12 | pbcopy`), and its password.
+  The workflow signs the archive with it from a temporary keychain. Without it, every run asked Apple for a
+  new development certificate, and at three the API refused and the archive failed with "The data couldn't be
+  read because it isn't in the correct format" (2026-11-04). It expires after a year (this one on
+  2027-11-03): make a new one in Xcode, export it, and replace both secrets.
 - **Secrets and variables** → **Actions**: check `ARGO_REPO_TOKEN` exists (the POC preview used it) and
   hasn't expired. If not: a fine-grained token for `asherslab/gsbc.argo` with **Contents: Read and write**.
 
