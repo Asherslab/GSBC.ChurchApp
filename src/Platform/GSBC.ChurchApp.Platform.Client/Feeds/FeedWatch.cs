@@ -86,14 +86,14 @@ public sealed class FeedWatch : IFeedSignals, IDisposable
                         _lastHeard = DateTime.UtcNow;
                         failures = 0;
                         HashSet<string> changed = Apply(message);
-                        if (!heard)
-                        {
-                            heard = true;
+                        bool first = !heard;
+                        heard = true;
+                        if (first)
                             changed.UnionWith(fromLatest);
-                            SetState(SyncState.Live);
-                        }
                         if (changed.Count > 0)
                             FeedsChanged?.Invoke(changed);
+                        if (first)
+                            SetState(SyncState.Live);
                     }
                 }
                 catch (Exception) when (!_stopped.IsCancellationRequested)
