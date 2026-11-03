@@ -690,10 +690,12 @@ A sticky, horizontally scrolling row of 600 labels in ink-3 (18px apart) that pi
 - **Player:** a sand panel (14px radius) with a 48px navy round play toggle, label and tabular position, 15s back and 30s forward skip buttons, and an orange-accented scrubber.
 
 ### Sheet
-A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome, confirmations and What's new. On wide screens (720px and up) the sheet is centred, and one without a cover hides its grabber.
+A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome, the notifications welcome, confirmations and What's new. On wide screens (720px and up) the sheet is centred, and one without a cover hides its grabber. Sections inside a sheet drop the page gutter and their top margin, and take the sheet's.
 - **Cover:** an optional navy band across the top of the sheet, edge to edge, in the masthead's colours. The grabber sits on it in the masthead chip colour, and the mark bleeds off the right at 7% (180px wide). The cover says what the sheet is about, so a covered sheet is usually named by its label rather than a title.
 - **Paged sheet:** steps through a few items in one sheet, each with its own cover and body. Under the body, orange page dots mark where you are: 8px, the current one widening to a 20px capsule, each in a 36 by 44px target. Swipe left or right on the cover or the body to turn the page. The actions are an optional per-page action (primary) over Next, which reads Done on the last page; with no action, Next is the primary. Only a page change slides: the next page comes in 14px from the right, the previous from the left (260ms). Opening shows only the sheet's rise. One item shows no dots.
-- **What's new:** the first paged sheet, shown once after an update. Its cover is a 44px icon tile on the masthead chip (12px radius) beside the highlight's title in headline type, with the beige note line ("New in 1.1") under the title. The body is the summary at lead size, an optional 16:9 picture and the icon fact list. More → What's new lists every version as a section of reading rows, highlights on the warm tile. The model is in [docs/architecture/changelog.md](docs/architecture/changelog.md).
+- **Sheet heading:** a covered sheet's head: a 44px icon tile on the masthead chip (12px radius) beside the title in headline type at 700 (balanced), with an optional beige note line at label size and 600 under the title, aligned with it. What's new and the notifications welcome both use it.
+- **What's new:** the first paged sheet, shown once after an update. Its cover is the sheet heading: the highlight's icon and title, with the note line ("New in 1.1"). The body is the summary at lead size, an optional 16:9 picture and the icon fact list. More → What's new lists every version as a section of reading rows, highlights on the warm tile. The model is in [docs/architecture/changelog.md](docs/architecture/changelog.md).
+- **Notifications welcome:** one sheet that asks before iOS does, shown once on the first open while the phone's notification permission is undecided; it comes before What's new, and only one opening sheet shows per open. Step one: a bell sheet heading, "Hear from the church" with the note "Notifications", one lead-size line saying what the church sends, then Turn on notifications (primary, block) over Not now (quiet). Turn on raises the system dialog; on Allow the same sheet becomes step two, "Notifications are on" with the note "Change these any time in More", over the notification settings' toggle rows and Done. Step two's cover and body slide in like a paged sheet's next page (14px, 260ms); there are no page dots. Not now, or closing on step one, is remembered and the sheet doesn't come back.
 
 ### Empty state
 Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an optional quiet button.
@@ -735,6 +737,7 @@ The admin's working list. A toolbar row (search, filter chips) wraps above a ful
 
 ### Charts
 - **Stat tile:** a hairline above, the value in display size at 700, a row-size 600 label in ink, then an optional caption change in ink-2 and explanation in ink-3. A value too small to show (Fewer than 5) is the quiet tile: title size in ink-2.
+- **Ranked list:** a row-size title at 700 and a caption explanation in ink-3, over hairline rows (at least 40px, caption size): the rank in ink-3 tabular figures, the label in ink, the value in ink-2 tabular figures at the end. Unnumbered, it drops the rank, for counts that aren't a ranking (Insights' "How phones are set up").
 - **Trend line:** the main series is a 2px deep-aqua line ending in a labelled dot, the comparison series a 2px dashed ink-3 line (its legend swatch dashed too), over hairline gridlines with pill-size tabular ticks, the plot capped at 760px. A hover crosshair shows a lifted tooltip. Columns are not focusable: the table of every number under the chart, behind a deep-aqua 600 summary, is the accessible view. With fewer than two points the chart is a sand panel at the 14px radius with one caption line in ink-2.
 
 ### Split view
@@ -780,6 +783,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled; `Reading` for entries to read, `TitleExtra` for a pill after the title, `Below` for more; `Unread` true or false sets the dot and the title weight |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included; the indicator sits under the top bar. Touch only, so offer a button too |
 | Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (then name it with `Label`) |
+| Sheet heading | `SheetHeading` | `Icon`, `Title` and an optional `Note`; goes in a sheet's `Cover` |
 | Paged sheet | `PagedSheet` | `Count`, a `Cover` and `Page` per index, an optional `Action`; page dots, swipe, Next and Done |
 | Facts | `FactList`, `Fact` | Label and text, with an optional icon tile; a fact with no text is skipped |
 | Link in a row | `TextLink` | Deep-aqua label with a chevron and a haptic |
@@ -802,6 +806,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Admin workbench | `Workbench` | Aside, main and detail panes; `Narrow` makes it the one-column form; `Showing` picks the pane in one column |
 | Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, `Quiet`, with an optional icon |
 | Charts | `StatTile`, `TrendLine` | `Quiet` for a value too small to show; a main and an optional comparison series, a table of every number, an `Empty` line under two points |
+| Ranked list | `RankedList`, `RankedItem` | Title, explanation, label and value items, an `Empty` line; `Numbered` (default true) shows the rank |
 | Save state | `SaveStatus` | Saved, waiting, saving, failed with a retry; an optional detail |
 | Tabs with counts | `TabStrip` | `TabOption` value, label and count; orange underline on the selected tab; a trailing slot |
 | Preview banner | `PreviewBanner` | Docked above the tab bar; title, detail, Hide, Exit |
