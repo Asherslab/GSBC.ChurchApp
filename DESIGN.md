@@ -797,6 +797,42 @@ The app laid out on the desk: every place in the app, grouped by area, beside a 
 - **Lock-screen proof:** what a notification will look like on a locked phone. A masthead-coloured panel at the 14px radius with the date in caption at 600 (on-masthead at 76%) over a 9:41 clock, then a page-coloured notification at the sheet's 22px radius: a row with a 20px masthead app icon, the app name in uppercase pill type, "Time sensitive" in marker ink when it is urgent, and "now" in ink-3, then the title at row size and 600 and the message clamped to four lines. Empty fields show placeholder words in ink-3. An optional caption sits under the panel.
 - **Home screen and surface views:** the Home masthead and its Hub tiles are drawn by one component, and each surface registers one view; the app's Home and the admin preview both draw through them, so a preview is the real screen, not a copy.
 
+### Home tiles and their layouts (signature)
+Home is a grid of tiles in theme tones (docs/features/home.md). A tile is never refused for its size: each kind
+declares **layouts** (`TileVariant`: a key, a label, the sizes it suits, when it's the default), and the tile
+draws the layout chosen in its settings, or **Automatic**, which picks the default for its size. A layout that
+doesn't suit the size falls back to the default. Sizes are read against the grid (a 3-wide tile on 2 columns is
+2 × 1). Every kind brings its own catalogue the same way; add new layouts to this table as they come up
+(owner, 2026-11-04: "options as they come up").
+
+The frame draws six shapes (`TileShape`): **square** (icon top, words at the foot), **row** (words, icon at the
+end), **poster** (tall: icon top, a larger title, a go line; the mark bleeds off dark tones), **picture**
+(picture or cover above the words), **behind** (picture fills the tile, words over a masthead-deep shade, text in
+`on-masthead`) and **beside** (a square picture at the start, needs two columns).
+
+| Kind | Layout | Suits | Draws | Default |
+|---|---|---|---|---|
+| Your own tile, Give, Bible, Prayer, Life Groups, Ministries, Visit us | Words and icon | any | square / row / poster by size; no picture | without a picture |
+| | Picture behind | any | behind | 1 × 1 with a picture |
+| | Picture above | any | picture | larger, with a picture |
+| | Picture beside | 2 columns or more | beside | never |
+| Latest sermon | Cover first | any | 1 × 1: cover and play only; one row: title beside the cover; taller: cover above the title, 2 × 2 adds the length | always |
+| | Where you're up to | any | play, title and how long (progress once Sermons plays), no cover | never |
+| Sunday bulletin | Poster | any | 1 × 1: "Sunday 8 Nov" and the open words; one row: theme with date · verse; taller: the bulletin cover | always |
+| | Theme first | any | the year's theme as the title at every size | never |
+| | Verse | any | the week's verse in large type, the reference small | never |
+| This week | Agenda | any | 1 × 1: the next thing ("Next · Wed 7pm"); one row: up to three; taller: as many as fit, up to *Most to show* | always |
+| | Just a link | any | icon, title and "4 on at church" | never |
+| Notifications | Count and newest | any | bell, "3 unread", the newest title | 1 × 1 |
+| | Newest in full | any | the newest notice and its first lines, the count above | one row, wider |
+| | Unread dots | any | the newest titles each with an unread dot; taller shows more | two rows or more |
+| | (nothing unread) | | the staff's words, any layout | |
+| Outreach day | Invitation | any | 1 × 1: icon and title; one row: a row with the line; taller: a poster with "Find a route" | always |
+| | Just a link | any | icon and title | never |
+
+Recorded on the decision pages but not built: This week as a day strip, the sermon series card, Outreach's map
+card (needs real routes). The pages are in `.impeccable/mocks/decision/hub-variants/<kind>/`.
+
 ### Motion
 One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. In the admin panel the sidebar's marker bar scales in over 240ms, hovers and fills ease over 160ms (120ms for table rows), and sort arrows fade over 160ms. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag, in the app and the admin panel alike.
 

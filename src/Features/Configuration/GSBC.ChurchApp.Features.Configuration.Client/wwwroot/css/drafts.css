@@ -104,7 +104,7 @@
 .hub-arrange:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 .hub-arrange--selected,
 .hub-arrange--selected:hover { box-shadow: 0 0 0 2px var(--marker); }
-.hub-arrange__size { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
+.hub-arrange__size { padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
 .hub-arrange__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page); border-radius: var(--radius-inner); background: var(--marker); cursor: nwse-resize; }
 .hub-canvas--moving .hub-arrange { cursor: grabbing; }
 .hub-cell--lifted { z-index: 5; filter: drop-shadow(0 14px 22px color-mix(in srgb, var(--ink) 28%, transparent)); }
@@ -179,7 +179,7 @@
 .tile-settings .place-field__words { flex: 1 1 calc(100% - 50px); }
 .tile-settings :is(.place-field__title, .place-field__where) { white-space: normal; }
 
-.hub-arrange__mark { position: absolute; left: 8px; top: 8px; padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; pointer-events: none; }
+.hub-arrange__mark { padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; pointer-events: none; }
 .draft-pane__back--folded { display: none; }
 @media (max-width: 1428px) {
   .workbench.workbench--canvas.workbench--canvas { grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); }
@@ -188,3 +188,4 @@
   .workbench.workbench--canvas.workbench--canvas .workbench__detail { grid-column: 2; grid-row: 1; padding: 16px; border-top: 0; }
   .workbench--canvas .draft-pane__back--folded { display: inline-flex; }
 }
+.hub-arrange__tags { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; pointer-events: none; }

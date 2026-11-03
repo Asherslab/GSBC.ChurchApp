@@ -145,13 +145,18 @@
         bool selected = HubTiles.KeyOf(cell.Entry) == SelectedKey;
         <div class="hub-arrange @(selected ? "hub-arrange--selected" : "")" data-arrange tabindex="0" role="button" aria-pressed="@(selected ? "true" : "false")"
              aria-label="@($"{DraftWords.NameOf(cell.Entry)}, {cell.Place.Columns} by {cell.Place.Rows}, tile {cell.Index + 1} of {Tiles.Count(ShownNow)}")">
-            @if (Marks.GetValueOrDefault(HubTiles.KeyOf(cell.Entry)) is { } mark)
-            {
-                <span class="hub-arrange__mark">@mark</span>
-            }
+            <span class="hub-arrange__tags">
+                @if (Marks.GetValueOrDefault(HubTiles.KeyOf(cell.Entry)) is { } mark)
+                {
+                    <span class="hub-arrange__mark">@mark</span>
+                }
+                @if (selected)
+                {
+                    <span class="hub-arrange__size" data-size>@cell.Place.Columns × @cell.Place.Rows</span>
+                }
+            </span>
             @if (selected)
             {
-                <span class="hub-arrange__size" data-size>@cell.Place.Columns × @cell.Place.Rows</span>
                 <span class="hub-arrange__grip" data-grip aria-hidden="true"></span>
             }
         </div>
