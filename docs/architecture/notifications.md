@@ -5,7 +5,7 @@ push that makes the phone sync. The owner (2026-11-03): "We should make a proper
 for this. There will be a lot of places they could come from." Backbone, like drafts: designed and
 decided before anything raises one.
 
-**Status: proposed, waiting for the owner's approval.** Nothing below is built yet.
+**Status: approved by the owner, 2026-11-03,** with one change (decision 9). Being built.
 
 ## Decisions (owner, 2026-11-03)
 
@@ -29,6 +29,10 @@ decided before anything raises one.
 8. **A notification about a thing opens that thing** when it's tapped, on the lock screen or in the
    inbox: the event, the ministry notice, the message, the draft. Every such notification carries
    the thing's in-app link, and raising one without a link is refused.
+9. **No one rate limit for every kind** (owner, at approval: "3-per-hour doesn't make sense for a busy
+   ministry chat"). Each kind declares its own pacing. A chat message pushes every time, as a
+   messaging app does, grouped by chat in Notification Centre, and a chat can be muted. Kinds that
+   staff or leaders raise (notices, announcements) are the ones with a limit.
 
 ## The pieces
 
@@ -75,7 +79,7 @@ A kind has:
 | `ScopeKind` | `null`, or `Ministry`: the switch is then per ministry ("Music: notices") |
 | `MayBeUrgent` | Whether a raise may be urgent (skips quiet hours, time-sensitive on iOS) |
 | `EmailAllowed` | Off for every kind except security, for now (decision 6) |
-| Rate limit | Pushes per recipient, per subject scope, per hour, before they collapse (below) |
+| `Pacing` | `EveryOne` (each pushes: chat messages, security), or `Limited(n, per)`: past *n* pushes per recipient and ministry in that time, they collapse (below). Declared per kind (decision 9) |
 
 `Platform.Contracts.Notifications` holds `NotificationKind` (AOT; the phone reads it).
 `Platform.Api.Notifications.INotifications` is the one call a feature makes:
@@ -219,10 +223,15 @@ person, and 60 days for the public feed.
 - **The badge** is the person's unread count, sent with every visible push and set by the phone when
   the inbox changes. A signed-out phone's badge is set by the phone alone (the server can't count
   its reads).
-- **Rate limits and collapsing:** each kind has a limit per recipient per subject scope per hour
-  (default 3). Past it, the recipient gets one summary push after a 10-minute pause ("3 new notices
-  in Music"), with the area's link, and every item is still in the inbox. Life Group urgent notices
-  keep their own per-group daily limit on posting (life-groups.md).
+- **Pacing and collapsing** (decision 9), per kind:
+  - `EveryOne`: every notification pushes. Chat messages are this: each message is its own push,
+    grouped by chat (`thread-id`), and tapping one opens that chat. A person can mute a chat or a
+    ministry's chats (a preference at that scope), as in any messaging app.
+  - `Limited(n, per)`: notices and announcements. Past *n* in that time for one recipient and
+    ministry, the rest wait 10 minutes and go as one summary push ("3 new notices in Music") with the
+    area's link; every item is still in the inbox. Life Group urgent notices also keep their
+    per-group daily limit on posting (life-groups.md).
+  - A kind that doesn't say is `EveryOne`; the limit is opt-in, not a default.
 - **Quiet hours** (decision 7): a non-urgent push due between 21:00 and 07:00 church time
   (`ChurchTime`) waits until 07:00, collapsed with anything else waiting for that person.
 
