@@ -133,6 +133,24 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ASessionFromASignInCodeCannotAddAPasskeyAndEndsWithItsCode()
+    {
+        (Guid userId, _) = await NewAccountWithTicketAsync("review@example.com");
+        (Guid codeId, string secret) = await CodeSessionAsync(userId);
+        using HttpClient phone = Browser();
+
+        Assert.Equal(HttpStatusCode.OK, (await TokenWithSessionAsync(phone, secret)).StatusCode);
+        HttpRequestMessage addPasskey = new(HttpMethod.Post, $"{PasskeyEndpoints.Prefix}/creation-options") { Content = JsonContent.Create(new { }) };
+        addPasskey.Headers.Add(AppSessions.Header, secret);
+        Assert.Equal(HttpStatusCode.Forbidden, (await phone.SendAsync(addPasskey, TestContext.Current.CancellationToken)).StatusCode);
+
+        await using (AsyncServiceScope scope = _app.Services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<AccountsDbContext>().ReviewCodes.Where(code => code.Id == codeId)
+                .ExecuteUpdateAsync(update => update.SetProperty(code => code.TurnedOffAt, DateTime.UtcNow), TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await TokenWithSessionAsync(phone, secret)).StatusCode);
+    }
+
+    [Fact]
     public async Task TheAssociationFileNamesTheConfiguredTeamAndBundle()
     {
         HttpResponseMessage response = await Browser().GetAsync(AppAssociation.RequestPath, TestContext.Current.CancellationToken);
@@ -182,6 +200,25 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         string ticket = scope.ServiceProvider.GetRequiredService<OneTimeCodes>().IssueToken(id, CodePurpose.RegisterPasskey, OneTimeCodes.TicketLifetime);
         await scope.ServiceProvider.GetRequiredService<AccountsDbContext>().SaveChangesAsync();
         return (id, ticket);
+    }
+
+    private async Task<(Guid CodeId, string Secret)> CodeSessionAsync(Guid userId)
+    {
+        await using AsyncServiceScope scope = _app.Services.CreateAsyncScope();
+        AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
+        ReviewCode code = new()
+        {
+            Id = Guid.CreateVersion7(),
+            Hash = ReviewCodes.HashOf(ReviewCodes.NewCode()),
+            UserId = userId,
+            Label = "Test",
+            CreatedAt = DateTime.UtcNow,
+            ExpiresAt = DateTime.UtcNow.AddDays(1),
+        };
+        db.ReviewCodes.Add(code);
+        string secret = AppSessions.Start(db, userId, "iPhone", DateTime.UtcNow, code.Id);
+        await db.SaveChangesAsync();
+        return (code.Id, secret);
     }
 
     private async Task<int> SessionCountAsync(Guid userId)

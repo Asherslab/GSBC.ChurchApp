@@ -30,4 +30,9 @@ public static class AuditActions
     public const string NameChanged = "name-changed";
     public const string Disabled = "disabled";
     public const string Enabled = "enabled";
+    public const string DemoAccountCreated = "demo-account-created";
+    public const string ReviewCodeCreated = "review-code-created";
+    public const string ReviewCodeTurnedOff = "review-code-turned-off";
+    public const string ReviewCodeUsed = "review-code-used";
+    public const string ReviewCodeRefused = "review-code-refused";
 }

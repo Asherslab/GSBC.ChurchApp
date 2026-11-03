@@ -124,6 +124,7 @@ flowchart LR
         ContractsTests["Platform.Contracts.Tests"]
         ApiTests["Platform.Api.Tests"]
         GatewayTests["Features.Accounts.Gateway.Tests"]
+        AccountsApiTests["Features.Accounts.Api.Tests"]
         AccessTests["Features.Access.Api.Tests"]
         ConfigurationTests["Features.Configuration.Api.Tests"]
         MediaTests["Features.Media.Api.Tests"]
@@ -172,6 +173,7 @@ flowchart LR
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi
     GatewayTests --> AccountsGateway
+    AccountsApiTests --> AccountsApi
     AccessTests --> AccessApi
     ConfigurationTests --> ConfigurationApi
     MediaTests --> MediaApi
@@ -236,6 +238,7 @@ flowchart LR
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
+| `GSBC.ChurchApp.Features.Accounts.Api.Tests` | Against Postgres: a review sign-in code works only while live, never reaches an account that isn't a demo account, and wrong guesses are throttled | No |
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores; images in settings are the library's; unsafe rich text is never stored | No |
 | `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience, a saved `MediaRef` is the library's, dimensions come from the bytes, files in use can't be deleted | No |

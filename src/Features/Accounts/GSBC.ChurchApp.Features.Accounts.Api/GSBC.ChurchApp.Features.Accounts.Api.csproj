@@ -6,6 +6,9 @@
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Accounts.Api.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Accounts.Contracts\GSBC.ChurchApp.Features.Accounts.Contracts.csproj" />
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Accounts.Data\GSBC.ChurchApp.Features.Accounts.Data.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
