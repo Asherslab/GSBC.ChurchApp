@@ -17,14 +17,14 @@ const string Locale = "en-AU";
 
 using HttpClient api = new() { BaseAddress = new Uri("https://api.appstoreconnect.apple.com/v1/") };
 
-string appId = (await GetAsync($"apps?filter[bundleId]={bundleId}&limit=1"))["data"]![0]?["id"]?.GetValue<string>()
+string appId = (await GetAsync($"apps?filter[bundleId]={bundleId}&limit=1"))["data"]!.AsArray().FirstOrDefault()?["id"]?.GetValue<string>()
     ?? throw new InvalidOperationException($"No app in App Store Connect has the bundle id {bundleId}.");
 
 DateTime giveUpAt = DateTime.UtcNow + waitAtMost;
 string? buildId = null;
 while (true)
 {
-    JsonNode? build = (await GetAsync($"builds?filter[app]={appId}&filter[version]={buildNumber}&filter[preReleaseVersion.version]={version}&limit=1"))["data"]![0];
+    JsonNode? build = (await GetAsync($"builds?filter[app]={appId}&filter[version]={buildNumber}&filter[preReleaseVersion.version]={version}&limit=1"))["data"]!.AsArray().FirstOrDefault();
     string? state = build?["attributes"]?["processingState"]?.GetValue<string>();
     Console.WriteLine($"Build {version} ({buildNumber}): {state ?? "not visible yet"}");
     if (state == "VALID")
