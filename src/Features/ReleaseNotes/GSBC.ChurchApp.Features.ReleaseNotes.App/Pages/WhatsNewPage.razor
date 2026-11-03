@@ -27,12 +27,11 @@
                             }
                         </TitleExtra>
                         <Below>
-                            @if (WhatsNew.ForStaff && (note.Changed ?? note.Where ?? note.Try) is not null)
+                            @if (WhatsNew.ForStaff && (note.Changed ?? note.Where) is not null)
                             {
                                 <FactList>
                                     <Fact Label="What changed" Text="@note.Changed" />
                                     <Fact Label="Where to find it" Text="@note.Where" />
-                                    <Fact Label="What to try" Text="@note.Try" />
                                 </FactList>
                             }
                             @if (note.Link is { } link)

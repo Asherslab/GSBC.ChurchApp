@@ -12,8 +12,7 @@ public sealed record ReleaseNote(
     string? Image,
     string? Area,
     string? Changed,
-    string? Where,
-    string? Try)
+    string? Where)
 {
     public const string ImageFolder = "_content/GSBC.ChurchApp.Features.ReleaseNotes.App/release-notes/";
 

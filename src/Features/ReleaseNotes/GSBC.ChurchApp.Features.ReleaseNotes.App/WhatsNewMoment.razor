@@ -20,11 +20,10 @@
                 <img class="highlight__image" src="@image" alt="" />
             }
             <p class="highlight__summary">@highlights[page].Summary</p>
-            @if (highlights[page].Where is not null || highlights[page].Try is not null)
+            @if (highlights[page].Where is not null)
             {
                 <FactList>
                     <Fact Label="Where to find it" Text="@highlights[page].Where" Icon="map-pin" />
-                    <Fact Label="What to try" Text="@highlights[page].Try" Icon="check" />
                 </FactList>
             }
         </Page>

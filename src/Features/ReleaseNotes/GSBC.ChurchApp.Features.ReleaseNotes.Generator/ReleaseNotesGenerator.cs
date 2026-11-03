@@ -99,7 +99,7 @@ public sealed class ReleaseNotesGenerator : IIncrementalGenerator
                 $"        new({Literal(note.Id)}, {Literal(note.Version)}, {Literal(note.Title)}, {Literal(note.Summary)}, " +
                 $"{(note.Highlight ? "true" : "false")}, {(note.Audience == NoteAudience.Staff ? "true" : "false")}, " +
                 $"{Literal(note.Icon)}, {Literal(note.Link)}, {Literal(note.Image)}, {Literal(note.Area)}, " +
-                $"{Literal(note.Changed)}, {Literal(note.Where)}, {Literal(note.Try)}),");
+                $"{Literal(note.Changed)}, {Literal(note.Where)}),");
         }
         source.AppendLine("    ];");
         source.AppendLine("}");

@@ -22,7 +22,7 @@ public sealed class WhatsNewTests
     }
 
     private static ReleaseNote Note(string id, bool highlight) =>
-        new(id, null, id, "A line for everyone.", highlight, false, null, null, null, null, null, null, null);
+        new(id, null, id, "A line for everyone.", highlight, false, null, null, null, null, null, null);
 
     private sealed class Phone : ILocalPreferences
     {

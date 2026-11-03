@@ -6,6 +6,10 @@ place before more features land.
 - **People using the app** get sharp, simple notes: one short line per change, in the church's plain voice.
 - **UAT testers are staff.** Their notes say more: what changed, where to find it, what to try. Still not
   technical: no class names, no PR talk.
+- **The app presents; TestFlight asks for testing.** In the app, even in UAT, notes read as
+  presenting a feature to the person using it (what changed, where to find it). The testing steps (`Try:`)
+  go only to TestFlight's What to Test, never into the app (owner, 2026-11-03: the app's "What to try"
+  read as dev-tester focused, not user focused).
 - **Big new things are presented once,** on the first open after an update: a short, designed What's new
   moment, not a wall of text.
 
