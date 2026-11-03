@@ -12,6 +12,16 @@ window.gsbcNative = (() => {
     status: () => dataLayer().status().then((result) => result.state),
     isDevelopmentBuild: () => isNative() && dataLayer().status().then((result) => !!result.developmentBuild),
     isSignedIn: () => isNative() && dataLayer().status().then((result) => !!result.signedIn),
+    appVersion: () => (isNative() ? dataLayer().status().then((result) => ({ version: result.version || null, build: result.build || null })) : { version: null, build: null }),
+    preference: (key) => {
+      if (isNative()) return dataLayer().preference({ key }).then((result) => result.value ?? null);
+      try { return localStorage.getItem(`gsbc:${key}`); } catch { return null; }
+    },
+    setPreference: (key, value) => {
+      if (isNative()) return dataLayer().setPreference({ key, value });
+      try { value === null ? localStorage.removeItem(`gsbc:${key}`) : localStorage.setItem(`gsbc:${key}`, value); } catch { }
+      return null;
+    },
     readPage: (feed, order, descending, limit, offset, groupKey) =>
       dataLayer().readPage({ feed, order, descending, limit, offset, groupKey }).then((result) => result.json),
     storeInfo: () => dataLayer().storeInfo().then((result) => result.json),

@@ -12,6 +12,7 @@ on:
       - "!.run/**"
       - "docs/architecture/repo-layout.md"
       - "docs/architecture/architecture.svg"
+      - "changelog/**"
   pull_request:
     paths:
       - "**"
@@ -22,6 +23,7 @@ on:
       - "!.run/**"
       - "docs/architecture/repo-layout.md"
       - "docs/architecture/architecture.svg"
+      - "changelog/**"
 
 jobs:
   build:

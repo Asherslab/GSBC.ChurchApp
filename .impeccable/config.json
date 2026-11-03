@@ -34,6 +34,24 @@
         ],
         "createdAt": "2026-11-02T12:56:44.584Z",
         "reason": "Claude: frozen decision-round sketch (owner chose from it 2026-11-02); not shipped UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/whats-new/masthead.html"
+        ],
+        "createdAt": "2026-11-03T05:06:43.413Z",
+        "reason": "Claude: decision-round sketch for the What's new moment, not shipped UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/whats-new/slip.html"
+        ],
+        "createdAt": "2026-11-03T05:06:43.460Z",
+        "reason": "Claude: decision-round sketch for the What's new moment, not shipped UI"
       }
     ]
   }

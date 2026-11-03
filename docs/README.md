@@ -15,6 +15,7 @@
 | [environments.md](architecture/environments.md) | Dev, UAT and production: apps, hosts, what deploys when, TestFlight, the owner's set-up |
 | [data-driven.md](architecture/data-driven.md) | What staff can reshape without a release, and how |
 | [drafts.md](architecture/drafts.md) | Drafts, the event layer and previewing on your own phone, before anything reaches everyone |
+| [changelog.md](architecture/changelog.md) | Release notes: one file per change, built into the app; What's new after an update; versions; TestFlight's What to Test |
 | [rich-text.md](architecture/rich-text.md) | The one formatted-text format: a Markdown subset, checked on save, one renderer and editor |
 
 ## Features
@@ -78,6 +79,14 @@ admin panel work through `dev-media.baptist.com.au` (owner, 2026-11-02); backgro
 (tab bar, pushed pages, edge-swipe back, safe areas) and the shared building blocks in Platform.Ui
 (DESIGN.md, *Implementation*); the theme is staff's choice as data (data-driven.md, *Themes*). On the
 owner's iPhone for review.
+
+**Release notes and What's new (2026-11-03, branch `feature/changelog`):** notes are one file per change
+in `changelog/`, built into the app by a source generator (staff wording in dev and UAT, the everyone line
+in Release); the highlights show once after an update, and More → What's new lists every version; the
+TestFlight workflow sets What to Test from the notes since the last upload's tag
+([changelog.md](architecture/changelog.md)). The show-once rule proven natively in the iOS Simulator (a fresh
+install shows nothing; a staged update shows the highlight once) and deployed to the owner's iPhone; the
+What to Test call and the tag push first run with the first TestFlight build.
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.

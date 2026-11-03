@@ -255,6 +255,32 @@ components:
     backgroundColor: "{colors.white}"
     rounded: "22px 22px 0 0"
     padding: "10px 20px 20px"
+  sheet-cover:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+    padding: "10px 20px 24px"
+  page-dot:
+    backgroundColor: "{colors.line}"
+    rounded: "{rounded.full}"
+    size: "8px"
+  page-dot-current:
+    backgroundColor: "{colors.orange}"
+    rounded: "{rounded.full}"
+    width: "20px"
+    height: "8px"
+  row-reading:
+    textColor: "{colors.ink}"
+    typography: "{typography.row-title}"
+    padding: "22px 0"
+  fact-icon:
+    backgroundColor: "{colors.sand}"
+    textColor: "{colors.navy}"
+    rounded: "{rounded.tile}"
+    size: "34px"
+  text-link:
+    textColor: "{colors.aqua-deep}"
+    typography: "{typography.label}"
+    height: "44px"
   row-selected:
     backgroundColor: "{colors.selected-fill}"
     rounded: "{rounded.field}"
@@ -452,6 +478,10 @@ The workhorse. A row is a full-width line at least 56px tall: optional leading t
 - **Inbox rows:** a 9px orange dot marks unread, with the title at 700; read rows drop the dot and the title to 500.
 - **Toggle rows:** a title and caption beside a 51 by 31px switch (strong sand off, aqua on, white knob).
 - **Boxed list:** the same rows inside a white, lifted, 14px panel with 16px side padding.
+- **Reading rows:** for entries you read rather than tap. Top-aligned, 22px above and below, the leading tile nudged up to sit with the title, and the subtitle at body size in ink, up to 65ch. Anything more (facts, a text link) goes below the subtitle.
+- **Title extra:** a slot just after the title, for a pill such as "Staff only".
+- **Fact list:** labelled lines on hairlines: a 600 caption label in ink-3 over row-size text in ink. With an icon, each fact has a 34px sand tile with a navy icon, as a row does, and every fact starts with a hairline. Plain facts set their text in ink-2 and drop the first hairline, so they read as a row's detail. A fact with no text is not shown.
+- **Text link:** a deep-aqua 600 label-size link with a trailing chevron and a 44px target, for a "Show me" inside a row.
 
 ### Cards / Containers
 - **Callout:** sand, 14px radius, 15 by 16px padding, a bold lead line then text. The bulletin's shaded box (Your challenge this week).
@@ -483,7 +513,10 @@ A sticky, horizontally scrolling row of 600 labels in ink-3 (18px apart) that pi
 - **Player:** a sand panel (14px radius) with a 48px navy round play toggle, label and tabular position, 15s back and 30s forward skip buttons, and an orange-accented scrubber.
 
 ### Sheet
-A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome and confirmations.
+A bottom sheet over a 38% black scrim: page-coloured, top corners 22px, a grabber, a title-large heading and ink-2 lead, rising 320ms with the ease-out curve. Used for My notes, the first-launch topics welcome, confirmations and What's new.
+- **Cover:** an optional navy band across the top of the sheet, edge to edge, in the masthead's colours. The grabber sits on it in the masthead chip colour, and the mark bleeds off the right at 7% (180px wide). The cover says what the sheet is about, so a covered sheet is usually named by its label rather than a title.
+- **Paged sheet:** steps through a few items in one sheet, each with its own cover and body. Under the body, orange page dots mark where you are: 8px, the current one widening to a 20px capsule, each in a 36 by 44px target. Swipe left or right on the cover or the body to turn the page. The actions are an optional per-page action (primary) over Next, which reads Done on the last page; with no action, Next is the primary. Only a page change slides: the next page comes in 14px from the right, the previous from the left (260ms). Opening shows only the sheet's rise. One item shows no dots.
+- **What's new:** the first paged sheet, shown once after an update. Its cover is a 44px icon tile on the masthead chip (12px radius) beside the highlight's title in headline type, with the beige note line ("New in 1.1") under the title. The body is the summary at lead size, an optional 16:9 picture and the icon fact list. More → What's new lists every version as a section of reading rows, highlights on the warm tile. The model is in [docs/architecture/changelog.md](docs/architecture/changelog.md).
 
 ### Empty state
 Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an optional quiet button.
@@ -500,7 +533,7 @@ Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an opt
 - **Home screen and surface views:** the Home masthead and its Hub tiles are drawn by one component, and each surface registers one view; the app's Home and the admin preview both draw through them, so a preview is the real screen, not a copy.
 
 ### Motion
-One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag.
+One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag.
 
 ## Implementation
 
@@ -526,9 +559,12 @@ the admin panel for tokens, type and the shared components.
 | Masthead | `Masthead` | Title, note, and a slot for the live element |
 | Section and section head | `Section` | Title, lead, a "see all" link, a trailing slot |
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads, via `Media`), `Masthead` |
-| Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled |
+| Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled; `Reading` for entries to read, `TitleExtra` for a pill after the title, `Below` for more |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included; the indicator sits under the top bar. Touch only, so offer a button too |
-| Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens |
+| Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (then name it with `Label`) |
+| Paged sheet | `PagedSheet` | `Count`, a `Cover` and `Page` per index, an optional `Action`; page dots, swipe, Next and Done |
+| Facts | `FactList`, `Fact` | Label and text, with an optional icon tile; a fact with no text is skipped |
+| Link in a row | `TextLink` | Deep-aqua label with a chevron and a haptic |
 | Empty state | `EmptyState` | Icon, title, line, an action slot |
 | Dates and times | `DateLine` | Church time, `Long`/`Short`/`Relative`/`TimeOnly`, ranges, "10:30am" and "6pm" as the bulletin writes them |
 | Live/sync | `SyncIndicator` | Up to date, catching up, offline; plain or on the masthead |

@@ -1,0 +1,17 @@
+@if (!string.IsNullOrWhiteSpace(Text))
+{
+    <div class="fact @(Icon is null ? "fact--plain" : "")">
+        @if (Icon is not null)
+        {
+            <span class="fact__icon"><Icon Name="@Icon" Size="IconSize.Small" /></span>
+        }
+        <dt class="fact__label">@Label</dt>
+        <dd class="fact__text">@Text</dd>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string? Text { get; set; }
+    [Parameter] public string? Icon { get; set; }
+}

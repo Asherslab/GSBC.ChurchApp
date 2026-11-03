@@ -1,0 +1,64 @@
+@page "/whats-new"
+@using GSBC.ChurchApp.Platform.Client.Native
+@inject WhatsNew WhatsNew
+@inject NativeBridge Bridge
+
+<Page Title="What's new" BackHref="more" BackLabel="More">
+    <Masthead Title="What's new" Note="@OnThisPhone" />
+
+    @if (WhatsNew.Notes.Count == 0)
+    {
+        <Section First="true">
+            <EmptyState Title="Nothing new to tell yet" Body="Changes to the app will be listed here." />
+        </Section>
+    }
+    @foreach ((IGrouping<string?, ReleaseNote> version, int index) in WhatsNew.Notes.GroupBy(note => note.Version).Select((group, index) => (group, index)))
+    {
+        <Section Title="@ReleaseNoteLabels.Heading(version.Key, WhatsNew.ForStaff, Bridge.AppVersion)" First="index == 0">
+            <ListGroup>
+                @foreach (ReleaseNote note in version)
+                {
+                    <ListRow Reading="true" Title="@note.Title" Subtitle="@note.Summary" Icon="@(note.Icon ?? "sparkles")"
+                             IconTone="@(note.Highlight ? RowTone.Warm : RowTone.Primary)">
+                        <TitleExtra>
+                            @if (WhatsNew.ForStaff && note.StaffOnly)
+                            {
+                                <Pill Tone="PillTone.Accent">Staff only</Pill>
+                            }
+                        </TitleExtra>
+                        <Below>
+                            @if (WhatsNew.ForStaff && (note.Changed ?? note.Where ?? note.Try) is not null)
+                            {
+                                <FactList>
+                                    <Fact Label="What changed" Text="@note.Changed" />
+                                    <Fact Label="Where to find it" Text="@note.Where" />
+                                    <Fact Label="What to try" Text="@note.Try" />
+                                </FactList>
+                            }
+                            @if (note.Link is { } link)
+                            {
+                                <TextLink Href="@link">Show me</TextLink>
+                            }
+                        </Below>
+                    </ListRow>
+                }
+            </ListGroup>
+        </Section>
+    }
+
+    @if (Bridge.IsDevelopmentBuild && WhatsNew.Notes.Any(note => note.Highlight))
+    {
+        <Section>
+            <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="WhatsNew.ShowLatestAgain">Show the latest highlights again</Button>
+        </Section>
+    }
+</Page>
+
+@code {
+    private string OnThisPhone => (Bridge.AppVersion, Bridge.AppBuild) switch
+    {
+        ({ } version, { } build) when WhatsNew.ForStaff => $"Version {version} (build {build}) on this phone",
+        ({ } version, _) => $"Version {version} on this phone",
+        _ => "What's changed in the app",
+    };
+}

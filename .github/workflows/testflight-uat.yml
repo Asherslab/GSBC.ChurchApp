@@ -12,11 +12,17 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: macos-26
     environment: uat
+    permissions:
+      contents: write
     env:
       SHELL_DIR: src/Hosts/App/shell
       ARCHIVE: ${{ github.workspace }}/out/App.xcarchive
+      BUNDLE_ID: au.com.baptist.app.uat
+      UAT_TAG: testflight/uat/${{ github.run_number }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-dotnet@v4
         with:
@@ -24,7 +30,22 @@ jobs:
 
       - run: dotnet workload install wasm-tools
 
-      - name: Publish the app (Release, AOT) and check its warnings against the baseline
+      - name: Write What to Test from the staff notes since the last TestFlight build
+        run: |
+          echo "MARKETING_VERSION=$(sed -n 's/^MARKETING_VERSION = //p' "$SHELL_DIR/ios/environments/Version.xcconfig")" >> "$GITHUB_ENV"
+          tools/release-notes/what-to-test.sh > "$RUNNER_TEMP/what-to-test.txt"
+          {
+            echo "## What to Test"
+            echo
+            echo '```text'
+            cat "$RUNNER_TEMP/what-to-test.txt"
+            echo
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Publish the app (Release, AOT, staff release notes) and check its warnings against the baseline
+        env:
+          GsbcReleaseNotes: staff
         run: tools/aot-warnings/check.sh
 
       - name: Sync the iOS shell
@@ -80,6 +101,17 @@ jobs:
             -allowProvisioningUpdates \
             -authenticationKeyPath "$ASC_KEY_PATH" -authenticationKeyID "$ASC_KEY_ID" -authenticationKeyIssuerID "$ASC_ISSUER_ID"
           echo "Uploaded build ${{ github.run_number }} of GSBC UAT. It appears in TestFlight once Apple has processed it."
+
+      - name: Tag the uploaded commit, so the next build's notes start here
+        run: |
+          git tag "$UAT_TAG"
+          git push origin "$UAT_TAG"
+
+      - name: Set What to Test once Apple has processed the build
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+        run: dotnet run tools/release-notes/SetWhatToTest.cs -- "$BUNDLE_ID" "$MARKETING_VERSION" "${{ github.run_number }}" "$RUNNER_TEMP/what-to-test.txt"
 
       - name: Remove the API key
         if: always()

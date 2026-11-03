@@ -1,0 +1,10 @@
+@inject Shell Shell
+
+<a class="text-link" href="@Href" @onclick="TapAsync">@ChildContent<Icon Name="chevron-right" Size="IconSize.Small" /></a>
+
+@code {
+    [Parameter, EditorRequired] public required string Href { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private Task TapAsync() => Shell.HapticAsync().AsTask();
+}

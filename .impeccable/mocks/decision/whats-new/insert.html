@@ -1,0 +1,42 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Montserrat,sans-serif;background:#2a3d5e;color:#18233a;position:relative}
+.scrim{position:absolute;inset:0;background:rgba(0,0,0,.38)}
+.behind{position:absolute;inset:0;background:#fff}
+.behind .m{height:230px;background:#2a3d5e}
+.sheet{position:absolute;left:0;right:0;bottom:0;top:62px;background:#fff;border-radius:22px 22px 0 0;overflow:hidden;display:flex;flex-direction:column}
+.band{background:#2a3d5e;color:#fff;padding:12px 22px 22px;position:relative;overflow:hidden}
+.grab{width:38px;height:5px;border-radius:3px;background:rgba(255,255,255,.35);margin:0 auto 18px}
+.ring{position:absolute;right:-60px;top:-10px;width:180px;height:180px;border:30px solid rgba(255,255,255,.07);border-radius:50%}
+.kick{color:#d5c9b7;font-weight:600;font-size:15px}
+.band h2{font-size:27px;letter-spacing:-.02em;margin-top:4px}
+.pager{display:flex;gap:18px;padding:0 22px;border-bottom:1px solid rgba(42,61,94,.12);font-weight:600;font-size:14.5px;color:#6b7384}
+.pager span{padding:14px 0 12px;position:relative}
+.pager .on{color:#18233a}.pager .on:after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:#e7ae74;border-radius:2px}
+.body{padding:34px 22px 0;flex:1}
+.icon{width:72px;height:72px;border-radius:18px;background:#f4efe7;display:grid;place-items:center;color:#2a3d5e;font-size:30px;font-weight:700;margin-bottom:22px}
+.body h3{font-size:27px;letter-spacing:-.02em;line-height:1.15;margin-bottom:12px}
+.body p{font-size:16px;line-height:1.62;color:#545e70;max-width:32ch}
+.where{margin-top:20px;background:#f4efe7;border-radius:14px;padding:14px 16px;font-size:14px;color:#545e70}
+.where b{color:#18233a;font-weight:600;display:block;margin-bottom:2px;font-size:15px}
+.acts{padding:16px 22px 40px;display:flex;flex-direction:column;gap:10px}
+.b{height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:16px}
+.b1{background:#2a3d5e;color:#fff}.b2{background:#f4efe7;color:#18233a}
+</style></head><body>
+<div class="behind"><div class="m"></div></div>
+<div class="scrim"></div>
+<div class="sheet">
+  <div class="band"><div class="grab"></div><div class="ring"></div><div class="kick">New in 1.1</div><h2>What's new</h2></div>
+  <div class="pager"><span class="on">Sign in</span><span>Themes</span></div>
+  <div class="body">
+    <div class="icon">⚿</div>
+    <h3>Sign in with your phone</h3>
+    <p>Use Face ID or Touch ID to sign in. No passwords to remember.</p>
+    <div class="where"><b>Where to find it</b>More → Account</div>
+  </div>
+  <div class="acts"><span class="b b1">Show me</span><span class="b b2">Next</span></div>
+</div>
+</body></html>

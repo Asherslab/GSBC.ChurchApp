@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <PackageReference Include="xunit.v3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Features\ReleaseNotes\GSBC.ChurchApp.Features.ReleaseNotes.App\GSBC.ChurchApp.Features.ReleaseNotes.App.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Features\ReleaseNotes\GSBC.ChurchApp.Features.ReleaseNotes.Generator\GSBC.ChurchApp.Features.ReleaseNotes.Generator.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+</Project>

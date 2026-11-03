@@ -29,7 +29,7 @@
     <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
   </PropertyGroup>
 
-  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj'">
+  <ItemGroup Condition="'$(MSBuildProjectExtension)' == '.csproj' and !$(MSBuildProjectName.EndsWith('.Generator'))">
     <!-- Direct in every project: protobuf-net ships its props in build/, not buildTransitive/ (SPEC §9 rule 2). -->
     <PackageReference Include="protobuf-net" />
   </ItemGroup>

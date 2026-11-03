@@ -14,6 +14,10 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public bool SignedIn { get; private set; }
 
+    public string? AppVersion { get; private set; }
+
+    public string? AppBuild { get; private set; }
+
     public async Task InitialiseAsync()
     {
         IsNative = await js.InvokeAsync<bool>("gsbcNative.isNative");
@@ -22,6 +26,7 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
         IsDevelopmentBuild = await js.InvokeAsync<bool>("gsbcNative.isDevelopmentBuild");
         SignedIn = await js.InvokeAsync<bool>("gsbcNative.isSignedIn");
+        (AppVersion, AppBuild) = await js.InvokeAsync<NativeAppVersion>("gsbcNative.appVersion");
         _receiver = DotNetObjectReference.Create(this);
         await js.InvokeVoidAsync("gsbcNative.listenSession", _receiver);
     }
@@ -54,5 +59,7 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public void Dispose() => _receiver?.Dispose();
 }
+
+public sealed record NativeAppVersion(string? Version, string? Build);
 
 public sealed record NativeUnaryResult(int Status, string? Message, string? Response);
