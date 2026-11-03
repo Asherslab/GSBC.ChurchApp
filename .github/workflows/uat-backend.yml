@@ -22,6 +22,8 @@ jobs:
     permissions:
       contents: read
       packages: write
+    outputs:
+      runtime: ${{ steps.build.outputs.runtime }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -41,6 +43,10 @@ jobs:
 
       - name: Build and push the API, gateway and migrator (linux/arm64)
         run: tools/containers/publish.sh "sha-$SHA;uat" ghcr.io
+
+      - name: Note this build's fingerprinted runtime, to tell when it is live
+        id: build
+        run: echo "runtime=$(basename src/Hosts/GSBC.ChurchApp.Hosts.Gateway/bin/Release/net10.0/publish/wwwroot/_framework/dotnet.native.*.wasm)" >> "$GITHUB_OUTPUT"
 
   deploy:
     needs: images
@@ -87,13 +93,25 @@ jobs:
           fi
 
   check:
-    needs: deploy
+    needs: [ images, deploy ]
     if: needs.deploy.outputs.deployed == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           ref: ${{ env.SHA }}
+
+      - name: Wait until Cloudflare serves this build
+        env:
+          RUNTIME: ${{ needs.images.outputs.runtime }}
+        run: |
+          for attempt in $(seq 1 40); do
+            if curl -sS --max-time 10 "$SITE/_framework/dotnet.js" | grep -q "$RUNTIME"; then
+              echo "$RUNTIME is live (attempt $attempt)"; sleep 30; exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::uat-app.baptist.com.au never served $RUNTIME"; exit 1
 
       - name: Install grpcurl
         run: |
