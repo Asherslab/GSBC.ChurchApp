@@ -159,6 +159,7 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
 Drafts reach a phone only for someone signed in. Since 2026-11-03 that's the real account, with a
 passkey in the app ([identity.md](identity.md), *Signing in on the phone*); signed out, More →
 Previews offers *Sign in*. The development-only *Link this phone* is gone (owner, 2026-11-03).
+Previewing a draft from the signed-in account was proven on the owner's iPhone the same day.
 
 
 

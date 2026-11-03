@@ -20,12 +20,13 @@
 
 One doc per feature in [features/](features/), written before its code.
 
-## Where we are (2026-11-02)
+## Where we are (2026-11-03)
 
 All work is on the branch `skeleton/backbone`, **not pushed**, so CI has never run on it. The owner is
 keeping it local for now (2026-11-02): don't push without asking.
 
-**Working end to end:** the skeleton and its rules, the native data layer on iOS (store, live sync,
+**Working end to end:** signing in on the phone with a passkey (2026-11-03, proven on the owner's
+iPhone; [identity.md](architecture/identity.md)), the skeleton and its rules, the native data layer on iOS (store, live sync,
 outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone configurations,
 `dev.baptist.com.au` through a Cloudflare tunnel started by the AppHost), Accounts in the browser
 (passkeys, sessions, recovery, invitations, staff tools), and Access (roles, assignments, the

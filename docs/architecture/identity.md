@@ -120,6 +120,12 @@ the native `PasskeyCeremonyTests` hold this).
 - App sessions last 90 days from last use.
 - *Link this phone*, the development-only stopgap, was removed (owner, 2026-11-03).
 
+**Proven on the owner's iPhone, with the owner, 2026-11-03** (through `dev.baptist.com.au`): signing in
+with a passkey made earlier in Safari, the session surviving the app being completely closed, a Hub
+role given in the admin panel showing More → Drafts on the phone live, previewing a draft while
+signed in, signing out clearing drafts and staff tools, and an invitation link opening the app and
+creating its passkey there.
+
 ## Open
 
 - ~~Email~~: done 2026-11-02. It goes out as `app@baptist.com.au`, a Microsoft 365 shared mailbox,

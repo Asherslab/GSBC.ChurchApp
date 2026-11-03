@@ -51,7 +51,8 @@ can grant Owner to itself.
   *own records*, so Sync sends each person only their own row and a signed-out phone nothing. So the
   phone knows its permissions offline, and a role given in the admin panel shows its tools on the
   phone within a second. The shared `IAccess` / `<Can>` use them either way; the server checks every
-  call anyway. Tested in `Features.Access.Api.Tests`.
+  call anyway. Tested in `Features.Access.Api.Tests`, and proven on the owner's iPhone (a role given
+  in the admin panel showed its tool on the phone live).
 - Navigation entries can name a permission, and are hidden from people who don't hold it.
 
 ## Sensitive permissions

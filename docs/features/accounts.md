@@ -105,7 +105,8 @@ development the emails (confirmation codes, links) appear in the API's log in th
   Associated Domains, native passkeys in the app (sign in, sign up, add a passkey, invitation and
   recovery links), the Keychain session, signing out clearing private data, and `/welcome` links
   opening the app. Tested by `Features.Accounts.Gateway.Tests` (the phone gets a secret, not a cookie,
-  until the session ends; the association file) and the native `PasskeyCeremonyTests`.
+  until the session ends; the association file) and the native `PasskeyCeremonyTests`, and proven on
+  the owner's iPhone ([identity.md](../architecture/identity.md), *Signing in on the phone*).
 - *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
   `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.
 
