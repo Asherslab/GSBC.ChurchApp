@@ -80,6 +80,9 @@ A kind has:
 | `MayBeUrgent` | Whether a raise may be urgent (skips quiet hours, time-sensitive on iOS) |
 | `EmailAllowed` | Off for every kind except security, for now (decision 6) |
 | `Pacing` | `EveryOne` (each pushes: chat messages, security), or `Limited(n, per)`: past *n* pushes per recipient and ministry in that time, they collapse (below). Declared per kind (decision 9) |
+| `Waits` | It asks something of you (a draft to publish, a draft shared with you, an announcement to send). It shows under *Waiting* in the inbox until the feature **settles** its subject (below) |
+| `For` | The permission its audience holds. The phone's preferences list only kinds a person could get, checked with `IAccess.CanSomewhere` (held anywhere, at any scope); a kind without one is for everyone (owner, 2026-11-03: "through permissions") |
+| `InAdminPanel` | Its task is done in the admin panel (an announcement waiting to send). On the phone the row says so and doesn't open anything |
 
 `Platform.Contracts.Notifications` holds `NotificationKind` (AOT; the phone reads it).
 `Platform.Api.Notifications.INotifications` is the one call a feature makes:
@@ -89,11 +92,17 @@ await notifications.RaiseAsync(new Notification(
     DraftNotifications.WaitingToPublish,
     NotificationAudience.Holding(ConfigPermissions.HubPublish),
     Title: $"“{draft.Name}” is waiting to publish",
-    Body: $"{author} asked for it to be published.",
-    Link: $"/drafts/{draft.Id}",
-    Subject: $"draft/{draft.Id}"), cancellationToken);
+    Body: $"{author} asked for it to be published. Publish it from the admin panel.",
+    Link: $"/previews?draft={draft.Id}",
+    Subject: $"draft/{draft.Id}",
+    Action: "Preview it"), cancellationToken);
 ```
 
+- **`Action`** (optional) names what opening it does, in the inbox's words: *Preview it*.
+- **Settling.** `INotifications.SettleAsync(subject)` marks every waiting notification about that subject
+  done and re-sends its inbox (and public) rows, so it leaves *Waiting* on every device. Drafts settle
+  `draft/{id}` when a draft is published or deleted; Announcements settle `announcement/{id}` once it's
+  sent, scheduled or deleted. Tested in `NotificationsTests` and `DraftEditorTests`.
 - **`Link`** is an in-app route, checked by `LinkTargets` (`InApp` only). **`Subject`** names the
   thing (`draft/42`, `event/9`, `ministry/music/notice/17`). A notification with a subject must have a
   link (decision 8); `RaiseAsync` throws otherwise, and a test raises every declared kind in its
@@ -206,6 +215,13 @@ person, and 60 days for the public feed.
   offline and reaches the person's other devices through the feed.
 - **Opening a row** opens its link and marks it read. A row whose thing is gone (a deleted event)
   opens the page's own not-found state.
+- **Shape (owner, 2026-11-03, "Waiting and Everything"):** a segmented switch under the masthead,
+  *Waiting* (with an orange count) and *Everything*. It opens on *Waiting* while anything waits and
+  disappears when nothing does. The masthead's note says "2 waiting for you · 3 new". Waiting rows
+  carry their action ("Preview it", or "Do this in the admin panel"); unread rows have the orange dot
+  and a 700 title (`ListRow Unread`). *Mark all as read* sits under *Everything*. The top bar's
+  sliders button opens Notification settings. Direction contract:
+  `.impeccable/surfaces/ures-notifications-client-inboxview-razor-001fb91d.md`.
 - **Collapsed rows** ("3 new notices in Music") open the area, not one item.
 
 ### Push (APNs now, FCM later)
@@ -267,7 +283,7 @@ person, and 60 days for the public feed.
 
 ## People's control
 
-- **More → Notifications** on the phone: each area's kinds with a push switch, per ministry where
+- **More → Notification settings** on the phone (also from the inbox's top bar): each area's kinds with a push switch, per ministry where
   the kind is per ministry ("Music: notices" beside Follow), mandatory ones shown on and locked with
   "Always on: it's about your account's safety". The iOS permission prompt is asked the first time
   something would push (following a group, signing in), not at launch, and if it's been refused the
@@ -294,11 +310,19 @@ person, and 60 days for the public feed.
 - **Send to my phone** sends it to you alone, marked *Test*, so you see the lock screen and the
   inbox before anyone else does.
 - **Scheduling** in church time; a scheduled announcement can be changed or cancelled until it goes.
-- **The admin panel's Announcements page** (desktop, DESIGN.md's admin section, `DataTable` and
-  `SplitView` as People and Media are): the list on the left (Waiting to send, Scheduled, Sent with
-  "reached 410 phones · 38 opened" when analytics exist), the chosen one on the right with the
-  composer and a lock-screen preview. Waiting-to-send shows on the office week's *Needs you*
-  (`IOfficeWeekSource`) and as a count on the sidebar link.
+- **The admin panel's Announcements page** (owner, 2026-11-03: "The fortnight ahead"; mostly the
+  office, a few a month; writing it well is what's easiest). It opens on this week and next as the
+  office week's rail (`DayRail`, shared with Home), sent ones in primary and scheduled ones as marker
+  dots on their day; unsent ones (being written, waiting to send) are chips under it. Below is the
+  desk: title and message, then a checklist (who it's for with its reach, when: Now or Later with a
+  day and a time in church words, what it opens, urgent), beside a lock-screen proof
+  (`LockScreenProof`). It saves as you type (`SaveStatus`, as Drafts does). *Send* opens a confirm
+  sheet with the proof, the reach and the time, and warns at 0 phones; afterwards it says
+  "Sent to about 240 phones at 9:14am". A sent one shows how many people have read it (signed-in
+  readers; phones not signed in aren't counted). Older sent ones are in a *Sent earlier* table.
+  Scheduled ones show on Home's week, waiting-to-send under *Needs you* and as the sidebar count
+  (`AnnouncementsOfficeWeek`). The list follows the `notifications.announcements` marker feed (for
+  holders of `.write`). Direction contract: `.impeccable/surfaces/bc-churchapp-features-notifications-admin-de737a5a.md`.
 - It's an admin-panel screen only (AGENTS.md, *Admin work stays in the admin panel*); the app shows
   staff only what's for everyone: the inbox, the bell and their preferences.
 
@@ -385,8 +409,9 @@ station, and push waits for the owner's APNs key):
   device), dead tokens dropped, `SyncNudger`, announcements and their scheduler, the *Announcer*
   role. `NotificationsTests`.
 - **Drafts:** *Ask to publish* tells holders of the publish permission of the draft's first area
-  (alphabetically: everyone who can publish it holds that one), linking `/drafts/{id}`; *Share*
-  tells the person, linking `/previews?draft={id}`, which starts previewing it.
+  (alphabetically: everyone who can publish it holds that one); *Share* tells the person. Both link
+  `/previews?draft={id}` (the phone has no Drafts screen: admin work stays in the admin panel), say
+  *Preview it*, wait for you, and settle when the draft is published or deleted.
   `DraftEditorTests`.
 - **Phone:** `DataLayerPush` (the notification delegate: a tap hands its `link` to Blazor through
   the existing `linkOpened` path, waiting for Blazor on a cold start; a silent push runs one Sync

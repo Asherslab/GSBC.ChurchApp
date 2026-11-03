@@ -1,4 +1,4 @@
-<div class="stat-tile">
+<div class="stat-tile @(Quiet ? "stat-tile--quiet" : "")">
     <p class="stat-tile__value">@Value</p>
     <p class="stat-tile__label">@Label</p>
     @if (Change is not null)
@@ -16,4 +16,5 @@
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public string? Change { get; set; }
     [Parameter] public string? Explanation { get; set; }
+    [Parameter] public bool Quiet { get; set; }
 }

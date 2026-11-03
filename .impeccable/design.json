@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-03T07:10:00+00:00",
+  "generatedAt": "2026-11-03T12:00:00+00:00",
   "title": "Design System: GSBC Church App",
   "extensions": {
     "colorMeta": {
@@ -913,7 +913,7 @@
       {
         "name": "reduced-motion",
         "value": "all animations and transitions 1ms",
-        "purpose": "prefers-reduced-motion: reduce."
+        "purpose": "prefers-reduced-motion: reduce, in the app and the admin panel alike (the admin panel collapses every transition too)."
       },
       {
         "name": "sidebar-marker",
@@ -940,7 +940,7 @@
       {
         "name": "admin-office-stack",
         "value": "1228px",
-        "purpose": "Office week columns stack; rail scrolls sideways (980px work area + 248px sidebar)."
+        "purpose": "Office week columns stack; the seven-day rail scrolls sideways (days at least 84px); the announcements desk drops its proof under the writing column (980px work area + 248px sidebar)."
       },
       {
         "name": "admin-access-stack",
@@ -971,6 +971,11 @@
         "name": "table-optional-columns",
         "value": "760px (list container)",
         "purpose": "Optional table columns hide when the split-view list is narrower."
+      },
+      {
+        "name": "sheet-centred",
+        "value": "720px",
+        "purpose": "Sheets centre on the screen; a sheet without a cover hides its grabber."
       }
     ],
     "themes": {
@@ -985,6 +990,15 @@
       "bezel": "9px",
       "dynamicIsland": "124px x 36px capsule, 11px from the top",
       "notch": "160px x 32px, bottom corners 20px"
+    },
+    "dayRail": {
+      "purpose": "The shared office-week rail (DayRail): a week on the admin home page, a fortnight on Announcements.",
+      "week": "7 days from today; columns minmax(0,1fr), at least 84px and scrolling sideways at 1228px and under.",
+      "fortnight": "14 days from this week's Monday; columns at least 56px, 6px gap, 8px 8px 10px day padding, capsules 5px 7px in pill type; scrolls sideways when the days don't fit.",
+      "pastDays": "contents at opacity 0.55",
+      "packing": "each capsule takes the highest band where it doesn't touch another",
+      "moment": "a span whose end equals its start reserves its day and the next two (clipped at the rail's end), shows a two-line title and the time alone",
+      "selected": "outline: 2px solid var(--marker); outline-offset: 2px"
     }
   },
   "components": [
@@ -1024,17 +1038,17 @@
       "name": "List rows",
       "kind": "card",
       "refersTo": "row",
-      "description": "Hairline-divided rows: leading tile, title and caption, trailing chevron; the unread inbox variant.",
-      "html": "<div class=\"ds-list\"><a class=\"ds-row\" href=\"#\"><span class=\"ds-row-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg></span><span class=\"ds-row-body\"><span class=\"ds-row-title\">Service times</span><span class=\"ds-row-sub\">Sunday 9:00, 10:30 and 6:00</span></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></a><a class=\"ds-row\" href=\"#\"><span class=\"ds-dot\"></span><span class=\"ds-row-body\"><span class=\"ds-row-title ds-unread\">Evening service moved</span><span class=\"ds-row-sub\">This Sunday only, 6:30pm.</span></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></a></div>",
-      "css": ".ds-list { border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-row { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 12px 0; border-bottom: 1px solid var(--line, rgb(42 61 94 / 0.12)); color: var(--ink-3, #6b7384); text-decoration: none; transition: background 120ms; } .ds-row:hover, .ds-row:active { background: var(--line, rgb(42 61 94 / 0.12)); } .ds-row:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-row-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--sand, #f4efe7); color: var(--primary, #2a3d5e); flex: none; } .ds-row-body { flex: 1; min-width: 0; } .ds-row-title { display: block; font-weight: 600; font-size: 15.5px; line-height: 1.3; color: var(--ink, #18233a); } .ds-row-title.ds-unread { font-weight: 700; } .ds-row-sub { display: block; margin-top: 2px; font-size: 14px; line-height: 1.35; color: var(--ink-2, #545e70); } .ds-dot { width: 9px; height: 9px; border-radius: 5px; background: var(--marker, #e7ae74); flex: none; align-self: flex-start; margin-top: 7px; }"
+      "description": "Hairline-divided rows: leading tile, title and caption, trailing chevron; an unread row has a 9px marker dot in a 17px gutter and a 700 title, a read row a 500 title.",
+      "html": "<div class=\"ds-list\"><a class=\"ds-row\" href=\"#\"><span class=\"ds-row-icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg></span><span class=\"ds-row-body\"><span class=\"ds-row-title\">Service times</span><span class=\"ds-row-sub\">Sunday 9:00, 10:30 and 6:00</span></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></a><a class=\"ds-row\" href=\"#\"><span class=\"ds-row-icon ds-row-icon--warm\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><circle cx=\"12\" cy=\"12\" r=\"10\"/><path d=\"M12 6v6l4 2\"/></svg></span><span class=\"ds-row-body\"><span class=\"ds-row-title ds-unread\"><span class=\"ds-dot\"></span>Home screen draft to check</span><span class=\"ds-row-sub\">Advent tiles are ready for a look.</span><span class=\"ds-action\">Preview it<svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></span></span><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></a></div>",
+      "css": ".ds-list { border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-row { display: flex; align-items: center; gap: 14px; min-height: 56px; padding: 12px 0; border-bottom: 1px solid var(--line, rgb(42 61 94 / 0.12)); color: var(--ink-3, #6b7384); text-decoration: none; transition: background 120ms; } .ds-row:hover, .ds-row:active { background: var(--line, rgb(42 61 94 / 0.12)); } .ds-row:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-row-icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: var(--sand, #f4efe7); color: var(--primary, #2a3d5e); flex: none; } .ds-row-body { flex: 1; min-width: 0; } .ds-row-title { display: block; font-weight: 600; font-size: 15.5px; line-height: 1.3; color: var(--ink, #18233a); } .ds-row-title.ds-unread { font-weight: 700; } .ds-row-sub { display: block; margin-top: 2px; font-size: 14px; line-height: 1.35; color: var(--ink-2, #545e70); } .ds-row-icon--warm { background: color-mix(in srgb, var(--marker, #e7ae74) 30%, transparent); color: var(--marker-ink, #8a5422); } .ds-row-title.ds-unread { position: relative; padding-left: 17px; } .ds-dot { position: absolute; top: 0.42em; left: 0; width: 9px; height: 9px; border-radius: 999px; background: var(--marker, #e7ae74); } .ds-action { display: inline-flex; align-items: center; gap: 2px; margin-top: 6px; color: var(--accent, #00776d); font-size: 14.5px; font-weight: 600; }"
     },
     {
       "name": "Passage chips and pill",
       "kind": "chip",
       "refersTo": "passage-chip",
-      "description": "Bible passage capsules under sermon outline points, and the orange status pill.",
-      "html": "<div class=\"ds-chips\"><button class=\"ds-passage\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/></svg>Job 33:4</button><button class=\"ds-passage\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/></svg>Psalm 139:1–6</button><span class=\"ds-pill\">Later release</span></div>",
-      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-passage { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 11px; border: 0; border-radius: 16px; background: var(--sand, #f4efe7); color: var(--accent, #00776d); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 150ms, transform 140ms; } .ds-passage:hover { background: var(--sand-strong, #e9e1d4); } .ds-passage:active { transform: scale(0.96); } .ds-passage:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-pill { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--marker, #e7ae74) 28%, transparent); color: var(--marker-ink, #8a5422); font-size: 12px; font-weight: 700; }"
+      "description": "Bible passage capsules under sermon outline points, and the pill in its Marker, Accent and Quiet tones.",
+      "html": "<div class=\"ds-chips\"><button class=\"ds-passage\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/></svg>Job 33:4</button><button class=\"ds-passage\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.25\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 7v14\"/><path d=\"M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z\"/></svg>Psalm 139:1–6</button><span class=\"ds-pill\">Later release</span><span class=\"ds-pill ds-pill--accent\">Test</span><span class=\"ds-pill ds-pill--quiet\">Expired</span></div>",
+      "css": ".ds-chips { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-passage { display: inline-flex; align-items: center; gap: 5px; min-height: 32px; padding: 0 11px; border: 0; border-radius: 16px; background: var(--sand, #f4efe7); color: var(--accent, #00776d); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 150ms, transform 140ms; } .ds-passage:hover { background: var(--sand-strong, #e9e1d4); } .ds-passage:active { transform: scale(0.96); } .ds-passage:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-pill { display: inline-flex; padding: 3px 9px; border-radius: 999px; background: color-mix(in srgb, var(--marker, #e7ae74) 28%, transparent); color: var(--marker-ink, #8a5422); font-size: 12px; font-weight: 700; } .ds-pill--accent { background: color-mix(in srgb, var(--live, #009c8f) 16%, transparent); color: var(--accent, #00776d); } .ds-pill--quiet { background: var(--fill-on-surface, #f4efe7); color: var(--ink-2, #545e70); }"
     },
     {
       "name": "Filter chips",
@@ -1056,9 +1070,9 @@
       "name": "Segmented control",
       "kind": "custom",
       "refersTo": "segmented",
-      "description": "Sand track of equal segments; the selected one is a white tile.",
-      "html": "<div class=\"ds-seg\" role=\"tablist\"><button aria-pressed=\"true\">Automatic</button><button aria-pressed=\"false\">Light</button><button aria-pressed=\"false\">Dark</button></div>",
-      "css": ".ds-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 12px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-seg button { min-height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 180ms, color 180ms; } .ds-seg button:hover { color: var(--ink, #18233a); } .ds-seg button[aria-pressed=\"true\"] { background: var(--surface, #ffffff); color: var(--ink, #18233a); box-shadow: 0 1px 3px rgb(0 0 0 / 0.14); } .ds-seg button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+      "description": "Sand track of equal segments; the selected one is a white tile with the segment shadow; a segment can carry an orange count.",
+      "html": "<div class=\"ds-seg\" role=\"radiogroup\" aria-label=\"Show\"><button role=\"radio\" aria-checked=\"true\">Waiting<span class=\"ds-seg__count\">2</span></button><button role=\"radio\" aria-checked=\"false\">Everything</button></div><div class=\"ds-seg\" role=\"tablist\"><button aria-pressed=\"true\">Automatic</button><button aria-pressed=\"false\">Light</button><button aria-pressed=\"false\">Dark</button></div>",
+      "css": ".ds-seg { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 3px; border-radius: 12px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-seg button { min-height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background 180ms, color 180ms; } .ds-seg button:hover { color: var(--ink, #18233a); } .ds-seg button[aria-pressed=\"true\"] { background: var(--surface, #ffffff); color: var(--ink, #18233a); box-shadow: 0 1px 3px rgb(0 0 0 / 0.14); } .ds-seg button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-seg button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; } .ds-seg__count { display: inline-grid; place-items: center; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: color-mix(in srgb, var(--marker, #e7ae74) 30%, transparent); color: var(--marker-ink, #8a5422); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-seg + .ds-seg { margin-top: 10px; }"
     },
     {
       "name": "Tab bar",
@@ -1125,12 +1139,12 @@
       "css": ".ds-band { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-band h1 { margin: 0; color: var(--ink, #18233a); font-size: 27px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; } .ds-band p { margin: 4px 0 0; max-width: 72ch; color: var(--ink-2, #545e70); font-size: 14px; } .ds-band button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 22px; background: var(--primary, #2a3d5e); color: #fff; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; } .ds-band button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
     },
     {
-      "name": "Office week rail",
+      "name": "Day rail (office week and fortnight)",
       "kind": "custom",
       "refersTo": "office-rail",
-      "description": "Sand track of white day columns; today outlined in primary; dated capsules in three kinds.",
-      "html": "<div class=\"ds-rail\"><div class=\"ds-rail__day ds-rail__day--today\" style=\"grid-column:1\"><span>Today</span><b>3</b></div><div class=\"ds-rail__day\" style=\"grid-column:2\"><span>Wed</span><b>4</b></div><div class=\"ds-rail__day\" style=\"grid-column:3\"><span>Thu</span><b>5</b></div><div class=\"ds-rail__day\" style=\"grid-column:4\"><span>Fri</span><b>6</b></div><div class=\"ds-rail__day\" style=\"grid-column:5\"><span>Sat</span><b>7</b></div><div class=\"ds-rail__day\" style=\"grid-column:6\"><span>Sun</span><b>8</b></div><div class=\"ds-rail__day\" style=\"grid-column:7\"><span>Mon</span><b>9</b></div><a class=\"ds-rail__span ds-rail__span--everyone\" style=\"grid-column:1/8;grid-row:2\" href=\"#\"><b>Home screen</b><small>All week</small></a><a class=\"ds-rail__span ds-rail__span--layer\" style=\"grid-column:6/7;grid-row:3\" href=\"#\"><b>Carols night</b><small>Sun 8</small></a><a class=\"ds-rail__span ds-rail__span--draft\" style=\"grid-column:4/8;grid-row:4\" href=\"#\"><b>Advent tiles</b><small>From Fri 6</small></a></div>",
-      "css": ".ds-rail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: 3.8em repeat(3, minmax(44px, auto)) minmax(16px, 1fr); column-gap: 8px; padding: 10px; border-radius: 14px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-rail__day { grid-row: 1 / -1; display: grid; align-content: start; gap: 2px; padding: 10px 12px 12px; border-radius: 10px; background: var(--page, #fff); } .ds-rail__day span { color: var(--ink-3, #6b7384); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; } .ds-rail__day b { color: var(--ink, #18233a); font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.1; } .ds-rail__day--today { box-shadow: inset 0 0 0 2px var(--primary, #2a3d5e); } .ds-rail__day--today span { color: var(--marker-ink, #8a5422); } .ds-rail__span { z-index: 1; display: grid; align-self: start; min-width: 0; margin: 0 6px 6px; padding: 6px 10px; border-radius: 9px; font-size: 14px; line-height: 1.3; text-decoration: none; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-rail__span:active { transform: scale(0.98); } .ds-rail__span:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-rail__span b { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; } .ds-rail__span small { font-size: 12px; opacity: 0.8; font-variant-numeric: tabular-nums; } .ds-rail__span--everyone { background: var(--primary, #2a3d5e); color: #fff; } .ds-rail__span--layer { background: color-mix(in srgb, var(--accent, #00776d) 16%, #fff); color: var(--accent, #00776d); } .ds-rail__span--draft { background: color-mix(in srgb, var(--marker, #e7ae74) 32%, #fff); color: var(--marker-ink, #8a5422); }"
+      "description": "Sand track of white day columns; past days fade; today outlined in primary; capsules pack into bands; a moment shows its time; the chosen capsule has a marker outline.",
+      "html": "<div class=\"ds-rail\"><div class=\"ds-rail__day ds-rail__day--today\" style=\"grid-column:1\"><span>Today</span><b>3</b></div><div class=\"ds-rail__day\" style=\"grid-column:2\"><span>Wed</span><b>4</b></div><div class=\"ds-rail__day\" style=\"grid-column:3\"><span>Thu</span><b>5</b></div><div class=\"ds-rail__day\" style=\"grid-column:4\"><span>Fri</span><b>6</b></div><div class=\"ds-rail__day\" style=\"grid-column:5\"><span>Sat</span><b>7</b></div><div class=\"ds-rail__day\" style=\"grid-column:6\"><span>Sun</span><b>8</b></div><div class=\"ds-rail__day\" style=\"grid-column:7\"><span>Mon</span><b>9</b></div><a class=\"ds-rail__span ds-rail__span--everyone\" style=\"grid-column:1/8;grid-row:2\" href=\"#\"><b>Home screen</b><small>All week</small></a><a class=\"ds-rail__span ds-rail__span--layer\" style=\"grid-column:6/7;grid-row:3\" href=\"#\"><b>Carols night</b><small>Sun 8</small></a><a class=\"ds-rail__span ds-rail__span--draft\" style=\"grid-column:2/5;grid-row:3\" href=\"#\" aria-current=\"page\"><b class=\"ds-moment\">Carols night reminder for everyone</b><small>7am</small></a></div>",
+      "css": ".ds-rail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: 3.8em repeat(3, minmax(44px, auto)) minmax(16px, 1fr); column-gap: 8px; padding: 10px; border-radius: 14px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-rail__day { grid-row: 1 / -1; display: grid; align-content: start; gap: 2px; padding: 10px 12px 12px; border-radius: 10px; background: var(--page, #fff); } .ds-rail__day span { color: var(--ink-3, #6b7384); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; } .ds-rail__day b { color: var(--ink, #18233a); font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.1; } .ds-rail__day--today { box-shadow: inset 0 0 0 2px var(--primary, #2a3d5e); } .ds-rail__day--today span { color: var(--marker-ink, #8a5422); } .ds-rail__span { z-index: 1; display: grid; align-self: start; min-width: 0; margin: 0 6px 6px; padding: 6px 10px; border-radius: 9px; font-size: 14px; line-height: 1.3; text-decoration: none; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-rail__span:active { transform: scale(0.98); } .ds-rail__span:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-rail__span b { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; } .ds-rail__span small { font-size: 12px; opacity: 0.8; font-variant-numeric: tabular-nums; } .ds-rail__span--everyone { background: var(--primary, #2a3d5e); color: #fff; } .ds-rail__span--layer { background: color-mix(in srgb, var(--accent, #00776d) 16%, #fff); color: var(--accent, #00776d); } .ds-rail__span--draft { background: color-mix(in srgb, var(--marker, #e7ae74) 32%, #fff); color: var(--marker-ink, #8a5422); } .ds-rail__day--past > * { opacity: 0.55; } .ds-rail__span[aria-current=\"page\"] { outline: 2px solid var(--marker, #e7ae74); outline-offset: 2px; } .ds-moment { display: -webkit-box; white-space: normal; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }"
     },
     {
       "name": "Data table",
@@ -1163,6 +1177,30 @@
       "description": "The detail beside a table: a hairline-ruled column, not a card.",
       "html": "<div class=\"ds-split\"><div class=\"ds-split__list\">Table</div><aside class=\"ds-split__panel\"><h2>B. Staff</h2><p>Joined 28 October</p></aside></div>",
       "css": ".ds-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: 32px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-split__list { color: var(--ink-3, #6b7384); } .ds-split__panel { padding: 4px 0 24px 28px; border-left: 1px solid var(--line, rgb(42 61 94 / 0.12)); } .ds-split__panel h2 { margin: 0 0 4px; color: var(--ink, #18233a); font-size: 20px; font-weight: 700; letter-spacing: -0.015em; } .ds-split__panel p { margin: 0; color: var(--ink-2, #545e70); font-size: 14px; }"
+    },
+    {
+      "name": "Lock-screen proof",
+      "kind": "custom",
+      "refersTo": "lock-proof",
+      "description": "How an announcement will look on a locked phone: a masthead panel with the date and clock, and a page-coloured notification at the sheet radius.",
+      "html": "<figure class=\"ds-lock\" aria-label=\"How it looks on a phone's lock screen\"><div class=\"ds-lock__screen\" aria-hidden=\"true\"><span class=\"ds-lock__date\">Thursday 5 November</span><span class=\"ds-lock__time\">9:41</span></div><div class=\"ds-lock__note\"><span class=\"ds-lock__app\"><span class=\"ds-lock__icon\"><svg width=\"12\" height=\"12\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\"><circle cx=\"12\" cy=\"12\" r=\"8\"/></svg></span><span class=\"ds-lock__name\">Good Shepherd</span><span class=\"ds-lock__flag\">Time sensitive</span><span class=\"ds-lock__when\">now</span></span><span class=\"ds-lock__title\">No evening service this Sunday</span><span class=\"ds-lock__body\">The building is closed for repairs. Join us at 10:30am instead, or watch online.</span></div><figcaption class=\"ds-lock__caption\">Tapping it opens the notifications list.</figcaption></figure>",
+      "css": ".ds-lock { display: grid; max-width: 340px; margin: 0; padding: 18px 12px 14px; border-radius: 14px; background: var(--masthead, #2a3d5e); color: var(--on-masthead, #fff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-lock__screen { display: grid; justify-items: center; gap: 2px; padding-bottom: 22px; } .ds-lock__date { color: var(--on-masthead-2, rgb(255 255 255 / 0.76)); font-size: 14px; font-weight: 600; } .ds-lock__time { font-size: 54px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; } .ds-lock__note { display: grid; gap: 2px; padding: 10px 12px 12px; border-radius: 22px; background: var(--surface, #fff); color: var(--ink, #18233a); } .ds-lock__app { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; color: var(--ink-2, #545e70); font-size: 12px; font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; } .ds-lock__icon { display: grid; flex: none; place-items: center; width: 20px; height: 20px; border-radius: 28%; background: var(--masthead, #2a3d5e); color: var(--on-masthead, #fff); } .ds-lock__name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; } .ds-lock__flag { color: var(--marker-ink, #8a5422); } .ds-lock__when { color: var(--ink-3, #6b7384); text-transform: none; letter-spacing: 0; font-weight: 400; } .ds-lock__title { font-size: 15.5px; font-weight: 600; line-height: 1.3; } .ds-lock__body { display: -webkit-box; overflow: hidden; font-size: 15.5px; line-height: 1.35; -webkit-box-orient: vertical; -webkit-line-clamp: 4; } .ds-lock__caption { margin-top: 12px; color: var(--on-masthead-2, rgb(255 255 255 / 0.76)); font-size: 14px; line-height: 1.4; }"
+    },
+    {
+      "name": "Not sent yet chips",
+      "kind": "chip",
+      "refersTo": "announcement-chip",
+      "description": "Marker capsules for announcements still being written or waiting; the one open on the desk is outlined.",
+      "html": "<nav class=\"ds-unsent\" aria-label=\"Not sent yet\"><span class=\"ds-unsent__label\">Not sent yet</span><a class=\"ds-unsent__chip\" href=\"#\" aria-current=\"page\"><span class=\"ds-unsent__title\">Carols night</span><span class=\"ds-unsent__state\">Being written</span></a><a class=\"ds-unsent__chip\" href=\"#\"><span class=\"ds-unsent__title\">Advent offering</span><span class=\"ds-unsent__state\">Waiting to send</span></a></nav>",
+      "css": ".ds-unsent { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-unsent__label { margin-right: 4px; color: var(--ink-2, #545e70); font-size: 14px; font-weight: 600; } .ds-unsent__chip { display: inline-flex; align-items: baseline; gap: 8px; min-height: 34px; padding: 7px 12px; border-radius: 999px; background: color-mix(in srgb, var(--marker, #e7ae74) 32%, var(--surface, #fff)); color: var(--marker-ink, #8a5422); font-size: 14px; text-decoration: none; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-unsent__chip:active { transform: scale(0.98); } .ds-unsent__chip[aria-current=\"page\"] { outline: 2px solid var(--marker, #e7ae74); outline-offset: 2px; } .ds-unsent__chip:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-unsent__title { max-width: 28ch; overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; } .ds-unsent__state { font-size: 12px; opacity: 0.85; }"
+    },
+    {
+      "name": "Copy field",
+      "kind": "input",
+      "refersTo": "copy-field-input",
+      "description": "A labelled read-only value with a quiet Copy button that turns to Copied, and a polite status line.",
+      "html": "<div class=\"ds-copy\"><label class=\"ds-copy__label\" for=\"ds-copy-1\">Sign-in code</label><div class=\"ds-copy__row\"><input id=\"ds-copy-1\" class=\"ds-copy__input\" readonly value=\"4827 1953\"><button class=\"ds-copy__btn\" type=\"button\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\"/><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"/></svg>Copy</button></div><p class=\"ds-copy__hint\" role=\"status\">Give it to the reviewer with the email address.</p></div>",
+      "css": ".ds-copy { display: grid; gap: 6px; max-width: 420px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-copy__label { color: var(--ink-2, #545e70); font-size: 14.5px; font-weight: 600; } .ds-copy__row { display: flex; align-items: center; gap: 8px; } .ds-copy__input { flex: 1; min-width: 0; height: 40px; padding: 0 12px; border: 0; border-radius: 12px; background: var(--fill-on-surface, #f4efe7); color: var(--ink, #18233a); font: inherit; font-size: 15.5px; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; } .ds-copy__input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-copy__btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--fill-on-surface, #f4efe7); color: var(--ink, #18233a); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-copy__btn:active { transform: scale(0.96); } .ds-copy__btn:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-copy__hint { min-height: 1.35em; margin: 0; color: var(--ink-2, #545e70); font-size: 14px; }"
     }
   ],
   "narrative": {
@@ -1221,12 +1259,12 @@
       },
       {
         "name": "The One Column Rule",
-        "body": "No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the office week's rail and two columns, split views and the workbench, and still no grid of tool tiles.",
+        "body": "No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench and the announcements desk's writing and proof columns, and still no grid of tool tiles.",
         "section": "layout"
       },
       {
         "name": "The Flat Page Rule",
-        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow.",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
         "section": "elevation"
       },
       {
@@ -1236,28 +1274,28 @@
       }
     ],
     "dos": [
-      "Do open every tab root on a masthead with the title in display type, a beige note line and the mark at 7% opacity bleeding off the right edge.",
-      "Do add sticky section tabs with the sliding orange underline to any long page divided into named sections, and keep every tab label visible at 390pt width.",
-      "Do put the notifications bell in the top bar of every tab root.",
-      "Do build content as hairline-divided rows on the white page, and use sand (callouts, sermon head, player, fields) for anything the bulletin would shade.",
-      "Do size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.",
-      "Do read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
-      "Do keep touch targets at 44px or more and give presses a scale and a haptic.",
-      "Do mark a selected row with Selected Fill, a tonal step, and nothing else.",
-      "Do open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.",
-      "Do offset admin breakpoints by the 248px sidebar."
+      "**Do** open every tab root on a masthead with the title in display type, a beige note line and the mark at 7% opacity bleeding off the right edge.",
+      "**Do** add sticky section tabs with the sliding orange underline to any long page divided into named sections, and keep every tab label visible at 390pt width.",
+      "**Do** put the notifications bell in the top bar of every tab root.",
+      "**Do** build content as hairline-divided rows on the white page, and use sand (callouts, sermon head, player, fields) for anything the bulletin would shade.",
+      "**Do** size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.",
+      "**Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
+      "**Do** keep touch targets at 44px or more and give presses a scale and a haptic.",
+      "**Do** mark a selected row with Selected Fill, a tonal step, and nothing else.",
+      "**Do** open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.",
+      "**Do** offset admin breakpoints by the 248px sidebar."
     ],
     "donts": [
-      "Don't lay tab roots out as a grid of tiles or a feed of identical cards.",
-      "Don't float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.",
-      "Don't use orange as a button fill or decoration; it marks position and newness only.",
-      "Don't add shadows to rows, callouts or the player; only boxed lists and picture cards lift.",
-      "Don't use DM Serif Text anywhere but the yearly palette's masthead title.",
-      "Don't redraw or restyle the church mark beyond recolouring the supplied artwork.",
-      "Don't set font sizes in px.",
-      "Don't put a phone masthead in the admin panel, or open it on a grid of tool tiles.",
-      "Don't box the split view's detail as a card; it is a hairline-ruled column.",
-      "Don't make the admin work area a size container."
+      "**Don't** lay tab roots out as a grid of tiles or a feed of identical cards.",
+      "**Don't** float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.",
+      "**Don't** use orange as a button fill or decoration; it marks position and newness only.",
+      "**Don't** add shadows to rows, callouts or the player; only boxed lists and picture cards lift.",
+      "**Don't** use DM Serif Text anywhere but the yearly palette's masthead title.",
+      "**Don't** redraw or restyle the church mark beyond recolouring the supplied artwork.",
+      "**Don't** set font sizes in px.",
+      "**Don't** put a phone masthead in the admin panel, or open it on a grid of tool tiles.",
+      "**Don't** box the split view's detail as a card; it is a hairline-ruled column.",
+      "**Don't** make the admin work area a size container."
     ]
   }
 }

@@ -204,7 +204,7 @@ within a second or two:
   working on different rows of one draft don't disturb each other.
 - **The row you're editing** keeps what you've typed. If their save changed that same row, it says
   *Someone else changed this while you were editing it. What you type next saves over their change*,
-  with *Show their version* (drops your unsaved typing for that row and shows theirs) and *Keep mine*.
+  with *Keep mine* (saves yours now, over theirs) and *Use theirs* (drops your unsaved typing for that row and shows theirs). If the draft is published or deleted while you're in it, the notice says which, and who published it.
 - **What everyone sees** (Live) is refreshed when you close the row you're editing, so the form doesn't
   shift under you; a field changed for everyone then shows as usual, to settle before publishing.
 - **A draft published or deleted by someone else** closes, with a note saying so.

@@ -29,8 +29,9 @@ else
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? TitleExtra { get; set; }
     [Parameter] public bool Reading { get; set; }
+    [Parameter] public bool? Unread { get; set; }
 
-    private string? ReadingClass => Reading ? "row--reading" : null;
+    private string? ReadingClass => string.Join(" ", new[] { Reading ? "row--reading" : null, Unread switch { true => "row--unread", false => "row--read", _ => null } }.OfType<string>());
 
     private bool Navigates => !Disabled && Href is not null;
 
@@ -53,6 +54,10 @@ else
         }
         <span class="row__body">
             <span class="row__title">
+                @if (Unread is true)
+                {
+                    <span class="row__unread" role="img" aria-label="Unread"></span>
+                }
                 @Title
                 @if (TitleExtra is not null)
                 {

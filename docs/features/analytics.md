@@ -287,7 +287,7 @@ Platform, because every feature records counts and features can't reference each
 | Permission | Plain words | Held by |
 |---|---|---|
 | `analytics.view` | "See how the app is used" | **Insights viewer**, a new system role, given by Access managers (and the Owner) to whoever should see it: the pastor, an elder, the office |
-| `analytics.health.view` | "See app errors and get error emails" | The Owner (through `*`); not in Insights viewer |
+| `analytics.health.view` | "See app errors and get error emails" | The Owner (through `*`) and the *Developer* system role (owner, 2026-11-03: errors are for whoever builds the app); not in Insights viewer |
 
 Nobody holds `analytics.view` by default, not even the Staff role. Ministry leaders don't get a
 per-ministry view. Revisit if staff ask; the counts already carry the subject, so it would be a
@@ -395,7 +395,7 @@ week" appears once two features report.
   600 a minute per IP address. A rejected report stays in the outbox. Revisit after a real Sunday.
 - **Reports are sent** at the first open of a new day and when the app goes to the background, at most
   once an hour; error reports go three seconds after the first error, grouped.
-- **Which environment:** each environment reports to its own backend; App health names it
+- **Which environment:** each environment reports to its own backend, so each admin panel's App health shows only its own
   ([environments.md](../architecture/environments.md)).
 - **New-error emails** go to everyone holding `analytics.health.view` (through `IPermissionHolders` and
   `IAccountEmails` in Platform.Api, implemented by Access and Accounts), once per new kind, at most ten a

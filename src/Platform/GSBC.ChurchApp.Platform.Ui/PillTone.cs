@@ -5,4 +5,5 @@ public enum PillTone
     Marker,
     Accent,
     Masthead,
+    Quiet,
 }

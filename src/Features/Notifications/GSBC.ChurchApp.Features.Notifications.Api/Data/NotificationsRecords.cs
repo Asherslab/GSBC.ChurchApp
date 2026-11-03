@@ -12,7 +12,11 @@ public sealed class NotificationRecord
     public bool Urgent { get; set; }
     public string? ScopeId { get; set; }
     public bool Test { get; set; }
+    public bool Waits { get; set; }
+    public bool InAdminPanel { get; set; }
+    public string? Action { get; set; }
     public DateTime RaisedAt { get; set; }
+    public DateTime? SettledAt { get; set; }
 }
 
 public sealed class InboxEntry
@@ -90,6 +94,7 @@ public sealed class AnnouncementRecord
     public DateTime UpdatedAt { get; set; }
     public int ReachedPeople { get; set; }
     public int ReachedPhones { get; set; }
+    public Guid? NotificationId { get; set; }
 }
 
 public enum AnnouncementState

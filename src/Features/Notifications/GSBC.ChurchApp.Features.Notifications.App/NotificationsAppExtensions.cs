@@ -10,7 +10,7 @@ public static class NotificationsAppExtensions
     public static IServiceCollection AddNotificationsApp(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Notifications", typeof(NotificationsAppExtensions).Assembly,
-            [new NavEntry("Notifications", "notifications/settings", "bell")],
+            [new NavEntry("Notification settings", "notifications/settings", "bell")],
             [NotificationsFeeds.Public, NotificationsFeeds.Kinds],
             [NotificationsFeeds.Inbox, NotificationsFeeds.Preferences]));
         return services.AddNotificationsOnPhone();

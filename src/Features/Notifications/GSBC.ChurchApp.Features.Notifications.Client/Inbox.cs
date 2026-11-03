@@ -40,6 +40,8 @@ public sealed class Inbox : IInboxCount, IDisposable
 
     public int Unread { get; private set; }
 
+    public int Waiting { get; private set; }
+
     public string Href => Route;
 
     public event Action? Changed;
@@ -60,7 +62,7 @@ public sealed class Inbox : IInboxCount, IDisposable
                 .ToList();
         }
 
-        await CountAsync(entries.Count(entry => entry.Unread));
+        await CountAsync(entries.Count(entry => entry.Unread), entries.Count(entry => entry.Item.Waiting));
         return entries;
     }
 
@@ -81,7 +83,7 @@ public sealed class Inbox : IInboxCount, IDisposable
             await _preferences.SetAsync(ReadOnThisPhone, string.Join(',', _readHere.TakeLast(MostShown * 2)));
         }
 
-        await CountAsync(Math.Max(0, Unread - unread.Count));
+        await CountAsync(Math.Max(0, Unread - unread.Count), Waiting);
     }
 
     public Task RefreshCountAsync() => LoadAsync();
@@ -101,10 +103,11 @@ public sealed class Inbox : IInboxCount, IDisposable
             _readHere.UnionWith(stored.Split(','));
     }
 
-    private async Task CountAsync(int unread)
+    private async Task CountAsync(int unread, int waiting)
     {
-        bool changed = unread != Unread;
+        bool changed = unread != Unread || waiting != Waiting;
         Unread = unread;
+        Waiting = waiting;
         await _bridge.SetBadgeAsync(unread);
         if (changed)
             Changed?.Invoke();

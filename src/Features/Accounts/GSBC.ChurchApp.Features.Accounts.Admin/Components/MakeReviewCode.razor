@@ -4,12 +4,9 @@
 <h2 class="panel-title">Make a code</h2>
 @if (_made is not null)
 {
-    <p class="panel-lead">Copy it now: it's shown only this once. Put it in App Store Connect's password field.</p>
-    <label class="link-box">
-        <span class="visually-hidden">Sign-in code</span>
-        <input readonly value="@_made.Code" onfocus="this.select()" />
-    </label>
-    <p class="panel-hint">For @_email. Works until <DateLine At="_made.ExpiresAt" />, as many times as needed.</p>
+    <p class="panel-lead">Copy it now: it's shown only this once. Put it in App Store Connect's password field, with @_email as the user name.</p>
+    <CopyField Label="Sign-in code" Value="@_made.Code" />
+    <p class="panel-hint">Works until <DateLine At="_made.ExpiresAt" />, as many times as needed.</p>
     <div class="panel-actions">
         <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Done</Button>
     </div>
@@ -17,6 +14,9 @@
 else if (DemoAccounts.Count == 0)
 {
     <p class="panel-lead">Make a demo account first. Codes only ever sign in to a demo account.</p>
+    <div class="panel-actions">
+        <Button Icon="user" OnClick="OnMakeDemoAccount">Make a demo account</Button>
+    </div>
 }
 else
 {
@@ -45,6 +45,7 @@ else
     [Parameter, EditorRequired] public required List<DemoAccountInfo> DemoAccounts { get; set; }
     [Parameter] public EventCallback OnMade { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public EventCallback OnMakeDemoAccount { get; set; }
 
     private IReadOnlyList<FieldOption> Choices => DemoAccounts.Select(account => new FieldOption(account.UserId, $"{account.DisplayName} ({account.Email})")).ToList();
 

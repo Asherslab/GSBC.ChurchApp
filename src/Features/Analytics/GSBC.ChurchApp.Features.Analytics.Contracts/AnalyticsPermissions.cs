@@ -7,6 +7,7 @@ public static class AnalyticsPermissions
     public const string ViewNode = "analytics.view";
     public const string HealthViewNode = "analytics.health.view";
     public const string InsightsViewerRole = "insights-viewer";
+    public const string DeveloperRole = "developer";
 
     public static readonly Permission View =
         new(ViewNode, ScopeKind.Global, "See how the app is used: totals of phones, plays and taps, never anything about a person");

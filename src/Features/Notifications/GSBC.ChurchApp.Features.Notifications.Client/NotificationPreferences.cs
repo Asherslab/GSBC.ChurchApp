@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
+using GSBC.ChurchApp.Platform.Permissions;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Notifications.Client;
@@ -26,7 +27,7 @@ public sealed class NotificationPreferences(
     {
         List<KindInfo> kinds = (await feeds.ReadPageAsync(new FeedPageQuery(NotificationsFeeds.Kinds, Limit: MostKinds)))
             .Select(record => Decode<KindInfo>(record.Payload))
-            .Where(kind => kind.PerScope is null)
+            .Where(kind => kind.PerScope is null && MayReceive(kind))
             .ToList();
         Dictionary<string, bool> chosen = access.SignedIn
             ? (await feeds.ReadPageAsync(new FeedPageQuery(NotificationsFeeds.Preferences, Limit: MostKinds * 4)))
@@ -59,6 +60,10 @@ public sealed class NotificationPreferences(
             }
         }
     }
+
+    private bool MayReceive(KindInfo kind) =>
+        kind.ForNode is not { } node
+        || (ScopeKind.TryParse(kind.ForScope ?? "", out ScopeKind scope) && access.CanSomewhere(new Permission(node, scope, "")));
 
     private async Task<Dictionary<string, bool>> OnPhoneAsync(List<KindInfo> kinds)
     {

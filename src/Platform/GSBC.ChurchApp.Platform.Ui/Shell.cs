@@ -55,6 +55,8 @@ public sealed class Shell(IJSRuntime js) : IDisposable
 
     public ValueTask OpenExternalAsync(string url) => js.InvokeVoidAsync("gsbcShell.openExternal", url);
 
+    public ValueTask<bool> CopyAsync(string text) => js.InvokeAsync<bool>("gsbcShell.copy", text);
+
     internal ValueTask<IJSObjectReference> PullToRefreshAsync(ElementReference host, DotNetObjectReference<PullToRefresh> receiver) =>
         js.InvokeAsync<IJSObjectReference>("gsbcShell.pullToRefresh", host, receiver);
 }

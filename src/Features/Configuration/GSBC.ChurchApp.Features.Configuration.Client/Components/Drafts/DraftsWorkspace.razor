@@ -374,10 +374,10 @@ else
     {
         if (_changedWhileEditing)
         {
-            <Notice Tone="NoticeTone.Warning" Text="Someone else changed this while you were editing it. What you type next saves over their change.">
+            <Notice Tone="NoticeTone.Warning" Text="Someone else changed this while you were editing it. Keep yours, and it saves over their change; or use theirs, and yours is dropped.">
                 <span class="ui-actions">
-                    <Button Small="true" OnClick="ShowTheirs">Show their version</Button>
-                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _changedWhileEditing = false">Keep mine</Button>
+                    <Button Small="true" OnClick="KeepMineAsync">Keep mine</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="ShowTheirs">Use theirs</Button>
                 </span>
             </Notice>
         }
@@ -504,7 +504,7 @@ else
         Draft? latest = _list!.Drafts.FirstOrDefault(draft => draft.Id == _session!.Draft.Id);
         if (latest is null)
         {
-            _message = $"\"{_session!.Draft.Name}\" isn't there any more: someone published or deleted it.";
+            _message = GoneMessage(_session!.Draft.Name, _session.HasUnsaved);
             _session = null;
             Deselect();
             Navigation.NavigateTo(BasePath);
@@ -528,6 +528,19 @@ else
         using MemoryStream stream = new();
         ConfigurationContractsModel.Instance.Serialize(stream, patch);
         return stream.ToArray();
+    }
+
+    private string GoneMessage(string name, bool hadUnsaved)
+    {
+        PublishedDraft? published = _list!.Published.FirstOrDefault(entry => entry.Name == name);
+        string what = published is null ? $"“{name}” was deleted by someone else." : $"{published.By} published “{name}”, so it's live for everyone now.";
+        return hadUnsaved ? $"{what} Your last changes in it weren't saved." : what;
+    }
+
+    private async Task KeepMineAsync()
+    {
+        _changedWhileEditing = false;
+        await FormChangedAsync();
     }
 
     private void ShowTheirs()

@@ -6,6 +6,13 @@ public sealed class GrantSet(IReadOnlyList<Grant> grants)
 
     public IReadOnlyList<Grant> Grants { get; } = grants;
 
+    public bool IsAllowedSomewhere(Permission permission) =>
+        IsAllowed(permission) || Grants
+            .Where(grant => !grant.Scope.IsGlobal && grant.Scope.Kind == permission.ScopeKind)
+            .Select(grant => grant.Scope.ObjectId)
+            .Distinct()
+            .Any(objectId => IsAllowed(permission, objectId));
+
     public bool IsAllowed(Permission permission, string? objectId = null)
     {
         int bestSpecificity = -1;

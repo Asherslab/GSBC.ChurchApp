@@ -11,7 +11,6 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="HealthOverview" Load="LoadAsync" FailedTitle="Can't load app health right now">
-    @{ _environment = context.Value.Environment; }
     <SplitView Detail="@Detail(context.Value)" DetailLabel="Error">
         <Section First="true" Title="Errors" Lead="Grouped by kind: the same error from many phones is one line. Nothing in them identifies a person.">
             <DataTable TItem="ErrorKindSummary" Label="Errors" Items="context.Value.Kinds" Columns="KindColumns" Key="kind => kind.Id.ToString()"
@@ -37,11 +36,10 @@
 
     private LiveData<HealthOverview>? _live;
     private int _days = 7;
-    private string? _environment;
 
     [Parameter] public Guid? Id { get; set; }
 
-    private string Lead => $"Errors from the app, the admin panel and the server{(_environment is null ? "" : $" on {_environment}")}, newest first. A kind of error is kept until it hasn't happened for 30 days.";
+    private string Lead => $"Errors from the app, the admin panel and the server, for whoever builds the app. A kind of error is kept until it hasn't happened for 30 days.";
 
     private Task<HealthOverview> LoadAsync() => Health.GetOverviewAsync(_days).AsTask();
 
@@ -62,19 +60,19 @@
 
     private IReadOnlyList<TableColumn<ErrorKindSummary>> KindColumns =>
     [
-        new("What", kind => @<span class="role-name"><span class="cell-strong">@HealthWords.ShortType(kind.ExceptionType)</span>@if (kind.NativeCrash) {<Pill Tone="PillTone.Marker">Crash</Pill>}@if (kind.OnlyDevelopmentBuilds) {<Pill Tone="PillTone.Accent">Dev builds</Pill>}</span>, kind => HealthWords.ShortType(kind.ExceptionType)),
+        new("What", kind => @<span class="role-name"><span class="cell-strong">@HealthWords.ShortType(kind.ExceptionType)</span>@if (kind.NativeCrash) {<Pill Tone="PillTone.Quiet" Icon="alert">Crash</Pill>}@if (kind.OnlyDevelopmentBuilds) {<Pill Tone="PillTone.Accent">Dev builds</Pill>}</span>, kind => HealthWords.ShortType(kind.ExceptionType)),
         new("Where", kind => @<span class="quiet health-where">@HealthWords.ShortFrame(kind.Where)</span>, null, "optional"),
         new("From", kind => @<span class="quiet">@HealthWords.Origin(kind.Origin)</span>, kind => HealthWords.Origin(kind.Origin)),
-        new("Times", kind => @<span>@kind.Count</span>, kind => kind.Count, "num"),
+        new($"Times in {_days} days", kind => @<span>@kind.Count</span>, kind => kind.Count, "num"),
         new("Last seen", kind => @<span class="quiet">@When(kind.LastSeen)</span>, kind => kind.LastSeen, "num"),
     ];
 
-    private static IReadOnlyList<TableColumn<FailedCallSummary>> CallColumns =>
+    private IReadOnlyList<TableColumn<FailedCallSummary>> CallColumns =>
     [
         new("Call", call => @<span class="cell-strong health-where">@HealthWords.Method(call.Method)</span>, call => call.Method),
         new("Result", call => @<span class="quiet">@HealthWords.Status(call.Status)</span>, call => HealthWords.Status(call.Status)),
         new("Seen by", call => @<span class="quiet">@HealthWords.Origin(call.Origin)</span>, call => HealthWords.Origin(call.Origin), "optional"),
-        new("Times", call => @<span>@call.Count</span>, call => call.Count, "num"),
+        new($"Times in {_days} days", call => @<span>@call.Count</span>, call => call.Count, "num"),
     ];
 
     private static string CallKey(FailedCallSummary call) => $"{call.Origin}|{call.Method}|{call.Status}";

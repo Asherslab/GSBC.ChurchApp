@@ -25,10 +25,7 @@
         <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
         @if (_link is not null)
         {
-            <label class="link-box">
-                <span class="visually-hidden">Recovery link</span>
-                <input readonly value="@_link.Code" onfocus="this.select()" />
-            </label>
+            <CopyField Label="Recovery link" Value="@_link.Code" />
             <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
         }
         <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>

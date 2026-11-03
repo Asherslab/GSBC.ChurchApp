@@ -1,6 +1,29 @@
 @page "/notifications"
+@implements IDisposable
+@inject Inbox Inbox
 
-<Page Title="Notifications" BackHref="" BackLabel="Back">
-    <Masthead Title="Notifications" />
-    <InboxView />
+<Page Title="Notifications" BackHref="">
+    <Actions>
+        <a class="icon-btn" href="notifications/settings" aria-label="Notification settings"><Icon Name="sliders" /></a>
+    </Actions>
+    <ChildContent>
+        <Masthead Title="Notifications" Note="@Note" />
+        <InboxView />
+    </ChildContent>
 </Page>
+
+@code {
+    private string Note => (Inbox.Waiting, Inbox.Unread) switch
+    {
+        (> 0, > 0) => $"{Inbox.Waiting} waiting for you · {Inbox.Unread} new",
+        (> 0, _) => $"{Inbox.Waiting} waiting for you",
+        (_, > 0) => $"{Inbox.Unread} new",
+        _ => "From the church and your groups",
+    };
+
+    protected override void OnInitialized() => Inbox.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Inbox.Changed -= OnChanged;
+}

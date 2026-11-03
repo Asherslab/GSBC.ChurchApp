@@ -12,4 +12,4 @@
 .insights-groups__lead { color: var(--ink); font-weight: 600; }
 .insights-quiet { margin: 0; color: var(--ink-3); font-size: var(--text-caption); }
 .insights-top { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px 32px; }
-.insights-devices summary { margin-bottom: 14px; color: var(--ink); font-size: var(--text-row); cursor: pointer; }
+.insights-devices summary { margin-bottom: 14px; padding: 10px 0; color: var(--ink); font-size: var(--text-row); cursor: pointer; }

@@ -11,6 +11,10 @@
                 <Icon Name="@option.Icon" Size="IconSize.Small" />
             }
             @option.Label
+            @if (option.Count is > 0)
+            {
+                <span class="segmented__count">@option.Count</span>
+            }
         </button>
     }
 </div>

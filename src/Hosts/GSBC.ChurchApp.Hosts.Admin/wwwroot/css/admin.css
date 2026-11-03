@@ -121,48 +121,6 @@ a { color: var(--accent); }
 
 .admin-gate { display: grid; max-width: 1440px; padding: 48px 0; border-radius: var(--radius); background: var(--sand); }
 
-.office-rail { max-width: 1440px; margin-bottom: 36px; }
-.office-rail__grid {
-    display: grid;
-    grid-template-columns: repeat(7, minmax(0, 1fr));
-    grid-template-rows: 3.8rem repeat(var(--rows), minmax(44px, auto)) minmax(16px, 1fr);
-    column-gap: 8px;
-    min-height: 196px;
-    padding: 10px;
-    border-radius: var(--radius);
-    background: var(--sand);
-}
-.office-rail__day { grid-row: 1 / -1; display: grid; align-content: start; gap: 2px; padding: 10px 12px 12px; border-radius: var(--radius-tile); background: var(--page); }
-.office-rail__day--today { box-shadow: inset 0 0 0 2px var(--primary); }
-.office-rail__weekday { color: var(--ink-3); font-size: var(--text-micro); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; }
-.office-rail__day--today .office-rail__weekday { color: var(--marker-ink); }
-.office-rail__date { font-size: var(--text-title-lg); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.1; }
-.office-rail__quiet { z-index: 1; grid-column: 1 / -1; grid-row: 2; align-self: center; margin: 0; padding: 0 12px; color: var(--ink-3); font-size: var(--text-caption); text-align: center; }
-
-.office-rail__span {
-    z-index: 1;
-    display: grid;
-    align-self: start;
-    min-width: 0;
-    margin: 0 6px 6px;
-    padding: 6px 10px;
-    border-radius: var(--radius-inner);
-    font-size: var(--text-caption);
-    line-height: 1.3;
-    text-decoration: none;
-    transition: transform 160ms var(--ease-out);
-}
-.office-rail__span:active { transform: scale(0.98); }
-.office-rail__span-title { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-.office-rail__span-when { font-size: var(--text-pill); opacity: 0.8; font-variant-numeric: tabular-nums; }
-.office-rail__span--everyone { background: var(--primary); color: var(--on-primary); }
-.office-rail__span--layer { background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent); }
-.office-rail__span--draft { background: color-mix(in srgb, var(--marker) 32%, var(--surface)); color: var(--marker-ink); }
-
-.office-rail__legend { display: flex; flex-wrap: wrap; gap: 6px 20px; margin: 10px 4px 0; padding: 0; list-style: none; color: var(--ink-3); font-size: var(--text-caption); }
-.office-rail__legend li { display: inline-flex; align-items: center; gap: 8px; }
-.office-rail__swatch { width: 14px; height: 10px; border-radius: 3px; }
-
 .office-columns { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 24px 48px; max-width: 1440px; }
 
 .office-tasks, .office-areas { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
@@ -193,8 +151,6 @@ a { color: var(--accent); }
 .facts dt { color: var(--ink-3); font-weight: 600; }
 .facts dd { margin: 0; color: var(--ink); }
 
-.link-box input { width: 100%; height: 40px; padding: 0 12px; border: 0; border-radius: var(--radius-field); background: var(--fill-on-surface); color: var(--ink); font: inherit; font-size: var(--text-caption); }
-.link-box input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent); }
 
 .activity { display: grid; margin: 0; padding: 0; list-style: none; font-size: var(--text-caption); }
 .activity li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line); }
@@ -286,7 +242,6 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 
 @media (max-width: 1228px) {
     .office-columns { grid-template-columns: minmax(0, 1fr); }
-    .office-rail__grid { grid-template-columns: repeat(7, minmax(84px, 1fr)); overflow-x: auto; }
 }
 
 @media (max-width: 900px) {
@@ -393,4 +348,5 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 
 @media (prefers-reduced-motion: reduce) {
     .admin-boot, .admin-boot__mark { animation: none; }
+    *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }
 }

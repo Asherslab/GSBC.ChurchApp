@@ -20,6 +20,9 @@ public sealed class InboxItem
     [ProtoMember(10)] public DateTime? ReadAt { get; set; }
     [ProtoMember(11)] public string? ScopeId { get; set; }
     [ProtoMember(12)] public bool Test { get; set; }
+    [ProtoMember(13)] public bool Waiting { get; set; }
+    [ProtoMember(14)] public string? Action { get; set; }
+    [ProtoMember(15)] public bool InAdminPanel { get; set; }
 }
 
 [ProtoContract]
@@ -31,6 +34,8 @@ public sealed class KindInfo
     [ProtoMember(4)] public bool DefaultPush { get; set; }
     [ProtoMember(5)] public bool Mandatory { get; set; }
     [ProtoMember(6)] public string? PerScope { get; set; }
+    [ProtoMember(7)] public string? ForNode { get; set; }
+    [ProtoMember(8)] public string? ForScope { get; set; }
 }
 
 [ProtoContract]
@@ -82,6 +87,7 @@ public sealed class Announcement
     [ProtoMember(11)] public DateTime UpdatedAt { get; set; }
     [ProtoMember(12)] public int ReachedPeople { get; set; }
     [ProtoMember(13)] public int ReachedPhones { get; set; }
+    [ProtoMember(14)] public int ReadBy { get; set; }
 }
 
 [ProtoContract]

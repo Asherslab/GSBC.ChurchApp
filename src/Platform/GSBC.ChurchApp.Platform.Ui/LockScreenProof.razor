@@ -1,0 +1,33 @@
+<figure class="lock-proof" aria-label="@Label">
+    <div class="lock-proof__screen" aria-hidden="true">
+        <span class="lock-proof__date">@Date</span>
+        <span class="lock-proof__time">9:41</span>
+    </div>
+    <div class="lock-proof__note">
+        <span class="lock-proof__app">
+            <span class="lock-proof__icon"><BrandMark Decorative="true" /></span>
+            <span class="lock-proof__name">@AppName</span>
+            @if (TimeSensitive)
+            {
+                <span class="lock-proof__flag">Time sensitive</span>
+            }
+            <span class="lock-proof__when">now</span>
+        </span>
+        <span class="lock-proof__title @(Title.Length == 0 ? "lock-proof__empty" : "")">@(Title.Length > 0 ? Title : "The title goes here")</span>
+        <span class="lock-proof__body @(Body.Length == 0 ? "lock-proof__empty" : "")">@(Body.Length > 0 ? Body : "Then the first few lines of the message.")</span>
+    </div>
+    @if (ChildContent is not null)
+    {
+        <figcaption class="lock-proof__caption">@ChildContent</figcaption>
+    }
+</figure>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Body { get; set; }
+    [Parameter] public string AppName { get; set; } = "Good Shepherd";
+    [Parameter] public string Date { get; set; } = "Thursday 5 November";
+    [Parameter] public bool TimeSensitive { get; set; }
+    [Parameter] public string Label { get; set; } = "How it looks on a phone's lock screen";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

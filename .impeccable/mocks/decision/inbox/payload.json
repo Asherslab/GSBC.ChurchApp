@@ -1,0 +1,46 @@
+{
+  "title": "The notifications inbox: choose its shape",
+  "question": "On the phone, from the bell. You chose: things waiting for you first, then what the church sent. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "tabs",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Waiting and Everything",
+      "thesis": "A segmented switch under the masthead: Waiting opens first when anything waits, Everything holds the rest.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["segmented control", "warm-tile rows", "text links"],
+      "viewport": "Masthead with '2 waiting for you · 3 new', the Waiting | Everything switch with an orange count, rows with a deep-aqua 'Open the draft' link.",
+      "risk": "Most members never have anything waiting, so for them the switch is a control with nothing behind one side; it should hide when Waiting is empty.",
+      "htmlFrame": "390x844",
+      "html": ".impeccable/mocks/decision/inbox/tabs.html"
+    },
+    {
+      "id": "noticeboard",
+      "kind": "dealt",
+      "label": "The noticeboard",
+      "thesis": "Each notice shows its whole message, as on the church noticeboard; anything waiting is a pinned sand card with its action.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["sand callout", "reading rows", "full message text"],
+      "viewport": "A pinned 'Waiting for you' callout with a button, then notices with title, time and the full message in reading type.",
+      "risk": "Long messages make a long page; a busy week of notices needs more scrolling than a list.",
+      "htmlFrame": "390x844",
+      "html": ".impeccable/mocks/decision/inbox/noticeboard.html"
+    },
+    {
+      "id": "sections",
+      "kind": "dealt",
+      "label": "Bulletin sections",
+      "thesis": "Two bulletin sections: Waiting for you, then From the church by day (Today, Earlier), one line each.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["section heads", "day labels", "hairline rows"],
+      "viewport": "Section 'Waiting for you' with warm tiles; section 'From the church' with Mark all read, grouped Today and Earlier, unread dots.",
+      "risk": "Messages are cut to one line, so the full text means a tap into what it opens.",
+      "htmlFrame": "390x844",
+      "html": ".impeccable/mocks/decision/inbox/sections.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

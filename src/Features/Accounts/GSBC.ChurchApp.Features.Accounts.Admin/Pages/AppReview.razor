@@ -3,8 +3,8 @@
 
 <TitleBand Title="App review" Lead="Apple's reviewers can't make a passkey, so they sign in to a demo account with a sign-in code. Each code works for everyone who has it until it expires or you turn it off.">
     <Actions>
-        <Button Variant="ButtonVariant.Quiet" Icon="user" OnClick="() => Open(Panel.MakeDemoAccount)">Make a demo account</Button>
-        <Button Icon="plus" OnClick="() => Open(Panel.MakeCode)">Make a code</Button>
+        <Button Variant="@(HasDemoAccount ? ButtonVariant.Quiet : ButtonVariant.Primary)" Icon="user" OnClick="() => Open(Panel.MakeDemoAccount)">Make a demo account</Button>
+        <Button Variant="@(HasDemoAccount ? ButtonVariant.Primary : ButtonVariant.Quiet)" Icon="key" OnClick="() => Open(Panel.MakeCode)">Make a code</Button>
     </Actions>
 </TitleBand>
 
@@ -18,7 +18,16 @@
                    Selected="_selected" SelectedChanged="Select" SortColumn="4" SortDescending="true">
             <Empty>
                 <EmptyState Icon="key" Title="@(context.Value.DemoAccounts.Count == 0 ? "No demo account yet" : "No sign-in codes yet")"
-                            Body="@(context.Value.DemoAccounts.Count == 0 ? "Make a demo account first: a name and an email of its own, such as review@ your church's domain." : "Make a code before you send a build to Apple for review.")" />
+                            Body="@(context.Value.DemoAccounts.Count == 0 ? "Make a demo account first: a name and an email of its own, such as review@ your church's domain." : "Make a code before you send a build to Apple for review.")">
+                    @if (context.Value.DemoAccounts.Count == 0)
+                    {
+                        <Button Icon="user" OnClick="() => Open(Panel.MakeDemoAccount)">Make a demo account</Button>
+                    }
+                    else
+                    {
+                        <Button Icon="key" OnClick="() => Open(Panel.MakeCode)">Make a code</Button>
+                    }
+                </EmptyState>
             </Empty>
         </DataTable>
     </LiveData>
@@ -34,8 +43,8 @@
 
     private RenderFragment? Detail => _panel switch
     {
-        Panel.MakeCode when _access is not null => @<MakeReviewCode DemoAccounts="_access.DemoAccounts" OnMade="ReloadAsync" OnCancel="Close" />,
-        Panel.MakeDemoAccount => @<MakeDemoAccount OnMade="ReloadAsync" OnCancel="Close" />,
+        Panel.MakeCode when _access is not null => @<MakeReviewCode DemoAccounts="_access.DemoAccounts" OnMade="ReloadAsync" OnCancel="Close" OnMakeDemoAccount="() => Open(Panel.MakeDemoAccount)" />,
+        Panel.MakeDemoAccount => @<MakeDemoAccount OnMade="ReloadAsync" OnCancel="Close" OnMakeCode="() => Open(Panel.MakeCode)" />,
         Panel.Code when _selected is not null => @<ReviewCodeDetail @key="_selected.Id" Code="_selected" Account="AccountOf(_selected)" OnChanged="ReloadAsync" />,
         _ => null,
     };
@@ -63,6 +72,8 @@
         new("Made", item => @<DateLine At="item.CreatedAt" Style="DateLineStyle.Short" />, item => item.CreatedAt, "num optional"),
         new("Expires", item => @<DateLine At="item.ExpiresAt" Style="DateLineStyle.Short" />, item => item.ExpiresAt, "num optional"),
     ];
+
+    private bool HasDemoAccount => _access is { DemoAccounts.Count: > 0 };
 
     private DemoAccountInfo? AccountOf(ReviewCodeInfo code) => _access?.DemoAccounts.FirstOrDefault(account => account.UserId == code.UserId);
 

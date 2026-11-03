@@ -28,7 +28,7 @@
         break;
     default:
         <nav class="module-nav" aria-label="Main">
-            @foreach (IGrouping<string?, NavEntry> group in Permitted.GroupBy(entry => entry.Group))
+            @foreach (IGrouping<string?, NavEntry> group in Permitted.GroupBy(entry => entry.Group).OrderBy(group => group.Key == NavGroups.You))
             {
                 <div class="module-nav__group">
                     @if (group.Key is not null)

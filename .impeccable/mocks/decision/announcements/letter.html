@@ -1,0 +1,52 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 16px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+.side{background:#2a3d5e;color:rgba(255,255,255,.76);padding:22px 14px}
+.brand{display:flex;gap:10px;align-items:center;color:#fff;font-weight:700;font-size:17px;padding:0 10px 22px}
+.dot{width:30px;height:30px;border-radius:50%;border:3px solid #d5c9b7}
+.grp{color:#d5c9b7;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:14px 10px 6px}
+.lnk{height:38px;display:flex;align-items:center;padding:0 10px;border-radius:9px;font-weight:600;font-size:14.5px;position:relative}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff}.lnk.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;background:#e7ae74;border-radius:0 3px 3px 0}
+.work{padding:28px 40px}
+.back{color:#00776d;font-weight:600;font-size:14.5px}
+.tb{display:flex;justify-content:space-between;align-items:end;margin-top:6px}.tb h1{font-size:27px;letter-spacing:-.02em}.tb p{color:#545e70;font-size:14px}
+.b{height:44px;border-radius:22px;padding:0 18px;display:inline-flex;align-items:center;font-weight:600;font-size:14.5px}
+.q{background:#f4efe7}.p{background:#2a3d5e;color:#fff}
+.grid{display:grid;grid-template-columns:minmax(0,760px) 300px;gap:48px;margin-top:24px}
+.env{display:grid;grid-template-columns:repeat(4,1fr);border-top:1px solid rgba(42,61,94,.12);border-bottom:1px solid rgba(42,61,94,.12)}
+.e{padding:12px 14px 12px 0}.e+.e{padding-left:14px;border-left:1px solid rgba(42,61,94,.12)}
+.e small{display:block;font-size:13px;font-weight:600;color:#6b7384}.e b{font-weight:600;font-size:15px}.e span{display:block;color:#00776d;font-size:13px;font-weight:600}
+.sheet{margin-top:22px;background:#f4efe7;border-radius:14px;padding:30px 34px;min-height:360px}
+.sheet .t{font-size:27px;font-weight:700;letter-spacing:-.02em;padding-bottom:14px;border-bottom:1px solid rgba(42,61,94,.12)}
+.sheet .m{margin-top:16px;font-size:17px;line-height:1.62;color:#18233a;max-width:60ch}
+.sheet .hint{margin-top:18px;color:#6b7384;font-size:13px}
+.act{display:flex;gap:10px;margin-top:22px;justify-content:flex-end}
+.pl{font-size:13px;font-weight:600;color:#6b7384;margin-bottom:8px}
+.lock{background:#2a3d5e;border-radius:22px;padding:14px;color:#fff;font-size:14px}
+.lock .app{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.76);margin-bottom:4px}
+.facts{margin-top:22px;font-size:14px;color:#545e70}.facts p{padding:10px 0;border-top:1px solid rgba(42,61,94,.12)}
+</style></head><body>
+<nav class="side"><div class="brand"><span class="dot"></span>Good Shepherd</div>
+<div class="lnk">Home</div><div class="grp">Content</div><div class="lnk">Drafts</div><div class="lnk">Media</div><div class="lnk on">Announcements</div>
+<div class="grp">People</div><div class="lnk">People</div><div class="lnk">Roles</div></nav>
+<main class="work">
+<span class="back">‹ All announcements</span>
+<div class="tb"><div><h1>New announcement</h1><p>Being written · saved a moment ago</p></div></div>
+<div class="grid"><div>
+<div class="env">
+<div class="e"><small>To</small><b>Everyone with the app</b><span>About 240 phones</span></div>
+<div class="e"><small>When</small><b>As soon as it's sent</b><span>Schedule instead</span></div>
+<div class="e"><small>Opens</small><b>This week</b><span>Change</span></div>
+<div class="e"><small>Urgent</small><b>No</b><span>Waits for 7am overnight</span></div>
+</div>
+<div class="sheet"><p class="t">No evening service this Sunday</p>
+<p class="m">With the combined baptism service at 10:30, there's no 6pm service on 8 November. Join us in the morning, and stay for lunch in the hall.</p>
+<p class="hint">A sentence or two. Phones show the first four lines; the rest is in the app.</p></div>
+<div class="act"><span class="b q">Send to my phone</span><span class="b p">Send to 240 phones</span></div>
+</div>
+<div><p class="pl">On a lock screen</p><div class="lock"><div class="app"><span>GOOD SHEPHERD</span><span>now</span></div><b>No evening service this Sunday</b><br>With the combined baptism service at 10:30, there's no 6pm service on 8 November…</div>
+<div class="facts"><p>Sent to your own phone first, marked Test, so you see it before anyone else.</p><p>The last one went out Thu 29 Oct to 212 phones.</p></div></div>
+</div></main></body></html>

@@ -23,38 +23,8 @@ else
     <TitleBand Title="This week" Lead="@($"{Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)} · dates are church time")" />
 
     <LiveData TValue="OfficeWeek" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't load this week right now">
-        <section class="office-rail" aria-labelledby="office-rail-title">
-            <h2 class="visually-hidden" id="office-rail-title">The next seven days</h2>
-            <div class="office-rail__grid" style="--rows: @(Math.Max(context.Value.Spans.Count, 1))">
-                @for (int day = 0; day < Days; day++)
-                {
-                    DateTime date = Today.AddDays(day);
-                    <div class="office-rail__day @(day == 0 ? "office-rail__day--today" : "")" style="grid-column: @(day + 1)" aria-current="@(day == 0 ? "date" : null)">
-                        <span class="office-rail__weekday">@(day == 0 ? "Today" : date.ToString("ddd", CultureInfo.InvariantCulture))</span>
-                        <span class="office-rail__date">@date.Day</span>
-                    </div>
-                }
-                @if (context.Value.Spans.Count == 0)
-                {
-                    <p class="office-rail__quiet">Nothing dated this week. Event layers and tiles with dates appear here.</p>
-                }
-                @foreach ((OfficeSpan span, int row) in context.Value.Spans.OrderBy(span => span.StartsAt).Select((span, index) => (span, index)))
-                {
-                    <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant()" href="@span.Href" style="grid-column: @Column(span.StartsAt) / @(Column(LastMoment(span)) + 1); grid-row: @(row + 2)" title="@SpanTitle(span)">
-                        <span class="office-rail__span-title">@span.Title</span>
-                        <span class="office-rail__span-when">@Range(span)</span>
-                    </a>
-                }
-            </div>
-            @if (context.Value.Spans.Count > 0)
-            {
-                <ul class="office-rail__legend" aria-label="What the colours mean">
-                    <li><span class="office-rail__swatch office-rail__span--everyone"></span>What everyone sees</li>
-                    <li><span class="office-rail__swatch office-rail__span--layer"></span>Event layer</li>
-                    <li><span class="office-rail__swatch office-rail__span--draft"></span>Waiting in a draft</li>
-                </ul>
-            }
-        </section>
+        <DayRail First="Today" Today="Today" Days="Days" Spans="context.Value.Spans" Heading="The next seven days"
+                 Quiet="Nothing dated this week. Event layers and tiles with dates appear here." Legend="Legend" />
 
         <div class="office-columns">
             <Section Title="Needs you">
@@ -104,6 +74,9 @@ else
 @code {
     private const int Days = 7;
 
+    private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend =
+        [(OfficeSpanKind.Everyone, "What everyone sees"), (OfficeSpanKind.Layer, "Event layer"), (OfficeSpanKind.Draft, "Not out yet: a draft or a scheduled announcement")];
+
     private DateTime Today => ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date;
 
     private DateTime From => ChurchTime.ToUtc(Today);
@@ -118,27 +91,6 @@ else
         OfficeWeek[] weeks = await Task.WhenAll(Sources.Select(source => source.LoadAsync(From, From.AddDays(Days))));
         return new OfficeWeek(weeks.SelectMany(week => week.Tasks).ToList(), weeks.SelectMany(week => week.Spans).ToList());
     }
-
-    private int Column(DateTime utc) => Math.Clamp((int)Math.Floor((utc - From).TotalDays) + 1, 1, Days);
-
-    private string Range(OfficeSpan span)
-    {
-        bool startsBefore = span.StartsAt <= From;
-        bool endsAfter = span.EndsAt >= From.AddDays(Days);
-        return (startsBefore, endsAfter) switch
-        {
-            (true, true) => "All week",
-            (true, false) => $"Until {Short(LastMoment(span))}",
-            (false, true) => $"From {Short(span.StartsAt)}",
-            _ => Column(span.StartsAt) == Column(LastMoment(span)) ? Short(span.StartsAt) : $"{Short(span.StartsAt)} to {Short(LastMoment(span))}",
-        };
-    }
-
-    private static DateTime LastMoment(OfficeSpan span) => span.EndsAt.AddTicks(-1);
-
-    private string SpanTitle(OfficeSpan span) => $"{span.Title}: {Range(span)}";
-
-    private static string Short(DateTime utc) => ChurchTime.ToChurch(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToString("ddd d", CultureInfo.InvariantCulture);
 
     protected override void OnInitialized() => Access.Changed += OnAccessChanged;
 

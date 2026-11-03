@@ -1,0 +1,107 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Client.Modules
+@using GSBC.ChurchApp.Platform.Common
+
+<section class="office-rail @(Days > WeekLength ? "office-rail--fortnight" : "")" aria-labelledby="@_headingId">
+    <h2 class="visually-hidden" id="@_headingId">@Heading</h2>
+    @{ IReadOnlyList<Placed> placed = Layout(); }
+    <div class="office-rail__grid" style="--days: @Days; --rows: @(Math.Max(placed.Count == 0 ? 1 : placed.Max(item => item.Row), 1))">
+        @for (int day = 0; day < Days; day++)
+        {
+            DateTime date = First.AddDays(day);
+            <div class="office-rail__day @DayClass(date)" style="grid-column: @(day + 1)" aria-current="@(date == Today ? "date" : null)">
+                <span class="office-rail__weekday">@(date == Today ? "Today" : date.ToString("ddd", CultureInfo.InvariantCulture))</span>
+                <span class="office-rail__date">@date.Day</span>
+            </div>
+        }
+        @if (Spans.Count == 0)
+        {
+            <p class="office-rail__quiet">@Quiet</p>
+        }
+        @foreach ((OfficeSpan span, int row, int first, int last) in placed)
+        {
+            <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant() @(IsMoment(span) ? "office-rail__span--moment" : "")" href="@span.Href"
+               aria-current="@(span.Href is not null && span.Href == Selected ? "page" : null)" style="grid-column: @first / @(last + 1); grid-row: @(row + 1)" title="@SpanTitle(span)">
+                <span class="office-rail__span-title">@span.Title</span>
+                <span class="office-rail__span-when">@Range(span)</span>
+            </a>
+        }
+    </div>
+    @if (Spans.Count > 0 && Legend.Count > 0)
+    {
+        <ul class="office-rail__legend" aria-label="What the colours mean">
+            @foreach ((OfficeSpanKind kind, string label) in Legend.Where(entry => Spans.Any(span => span.Kind == entry.Kind)))
+            {
+                <li><span class="office-rail__swatch office-rail__span--@kind.ToString().ToLowerInvariant()"></span>@label</li>
+            }
+        </ul>
+    }
+</section>
+
+@code {
+    private const int WeekLength = 7;
+    private static int _rails;
+    private readonly string _headingId = $"day-rail-{Interlocked.Increment(ref _rails)}";
+
+    [Parameter, EditorRequired] public required DateTime First { get; set; }
+    [Parameter, EditorRequired] public required DateTime Today { get; set; }
+    [Parameter] public int Days { get; set; } = WeekLength;
+    [Parameter, EditorRequired] public required IReadOnlyList<OfficeSpan> Spans { get; set; }
+    [Parameter, EditorRequired] public required string Heading { get; set; }
+    [Parameter, EditorRequired] public required string Quiet { get; set; }
+    [Parameter] public IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend { get; set; } = [];
+    [Parameter] public string? Selected { get; set; }
+
+    private DateTime From => ChurchTime.ToUtc(First);
+
+    private string DayClass(DateTime date) => date == Today ? "office-rail__day--today" : date < Today ? "office-rail__day--past" : "";
+
+    private const int MomentReach = 3;
+
+    private sealed record Placed(OfficeSpan Span, int Row, int First, int Last);
+
+    private static bool IsMoment(OfficeSpan span) => span.EndsAt == span.StartsAt;
+
+    private IReadOnlyList<Placed> Layout()
+    {
+        List<List<Placed>> rows = [];
+        foreach (OfficeSpan span in Spans.OrderBy(span => span.StartsAt))
+        {
+            int first = Column(span.StartsAt);
+            int last = IsMoment(span) ? Math.Min(first + MomentReach - 1, Days) : Column(LastMoment(span));
+            List<Placed>? row = rows.FirstOrDefault(placed => placed.All(other => other.Last < first || other.First > last));
+            if (row is null)
+            {
+                row = [];
+                rows.Add(row);
+            }
+            row.Add(new Placed(span, rows.IndexOf(row) + 1, first, last));
+        }
+        return rows.SelectMany(row => row).ToList();
+    }
+
+    private int Column(DateTime utc) => Math.Clamp((int)Math.Floor((utc - From).TotalDays) + 1, 1, Days);
+
+    private string Range(OfficeSpan span)
+    {
+        bool startsBefore = span.StartsAt <= From;
+        bool endsAfter = span.EndsAt >= From.AddDays(Days);
+        string whole = Days > WeekLength ? "The whole fortnight" : "All week";
+        return (startsBefore, endsAfter) switch
+        {
+            (true, true) => whole,
+            (true, false) => $"Until {Short(LastMoment(span))}",
+            (false, true) => $"From {Short(span.StartsAt)}",
+            _ when span.EndsAt == span.StartsAt => ChurchDates.Time(ChurchTime.ToChurch(DateTime.SpecifyKind(span.StartsAt, DateTimeKind.Utc))),
+            _ => Column(span.StartsAt) == Column(LastMoment(span)) ? Short(span.StartsAt) : $"{Short(span.StartsAt)} to {Short(LastMoment(span))}",
+        };
+    }
+
+    private static DateTime LastMoment(OfficeSpan span) => span.EndsAt > span.StartsAt ? span.EndsAt.AddTicks(-1) : span.EndsAt;
+
+    private string SpanTitle(OfficeSpan span) => IsMoment(span) ? $"{span.Title}: {Moment(span.StartsAt)}" : $"{span.Title}: {Range(span)}";
+
+    private static string Short(DateTime utc) => ChurchTime.ToChurch(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToString("ddd d", CultureInfo.InvariantCulture);
+
+    private static string Moment(DateTime utc) => $"{Short(utc)}, {ChurchDates.Time(ChurchTime.ToChurch(DateTime.SpecifyKind(utc, DateTimeKind.Utc)))}";
+}

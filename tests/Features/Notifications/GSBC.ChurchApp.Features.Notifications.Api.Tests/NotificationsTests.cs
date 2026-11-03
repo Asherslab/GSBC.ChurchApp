@@ -28,6 +28,7 @@ public sealed class NotificationsTests : IAsyncLifetime
     private static readonly NotificationKind NewPasskey = new("accounts.passkey.added", "A passkey was added to your account", "Your account",
         Mandatory: true);
     private static readonly NotificationKind ChatMessage = new("ministries.chat", "New messages in your chats", "Ministries", PerScope: ScopeKind.Ministry);
+    private static readonly NotificationKind RosterSwap = new("ministries.roster.swap", "Someone asks you to swap a roster", "Ministries", Waits: true);
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
     private readonly Clock _clock = new(ChurchTime.ToUtc(new DateTime(2026, 11, 8, 10, 0, 0)));
@@ -43,7 +44,7 @@ public sealed class NotificationsTests : IAsyncLifetime
                 .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
                 .Build())
             .AddSingleton<TimeProvider>(_clock)
-            .AddSingleton(new NotificationKindCatalog([new NotificationKindSet([Notice, NewPasskey, ChatMessage, .. AnnouncementNotifications.All])]))
+            .AddSingleton(new NotificationKindCatalog([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, .. AnnouncementNotifications.All])]))
             .AddSingleton<PushSignal>()
             .AddSingleton<IPermissionHolders>(_holders)
             .AddSingleton<IPeopleIndex>(_holders)
@@ -199,6 +200,30 @@ public sealed class NotificationsTests : IAsyncLifetime
         InboxItem item = NotificationsContractsModel.Instance.Deserialize<InboxItem>(new MemoryStream(latest.Payload));
         Assert.Equal((2L, person.ToString()), (latest.Version, latest.ScopeId));
         Assert.NotNull(item.ReadAt);
+    }
+
+    [Fact]
+    public async Task SomethingWaitingLeavesWaitingOnceItIsDoneWherever()
+    {
+        Guid person = Guid.CreateVersion7();
+        await RaiseAsync(new Notification(RosterSwap, NotificationAudience.Person(person), "Can you swap Sunday?", "", Link: "/ministries/music/roster",
+            Subject: "roster/9", Action: "See the roster"));
+        Assert.True((await LatestInboxItemAsync()).Waiting);
+
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<NotificationRaiser>().SettleAsync("roster/9", Cancel);
+
+        InboxItem settled = await LatestInboxItemAsync();
+        Assert.False(settled.Waiting);
+        Assert.Equal("See the roster", settled.Action);
+    }
+
+    private async Task<InboxItem> LatestInboxItemAsync()
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        FeedChangeRecord latest = await scope.ServiceProvider.GetRequiredService<NotificationsDbContext>().FeedChanges
+            .Where(change => change.Feed == NotificationsFeeds.Inbox).OrderByDescending(change => change.Cursor).FirstAsync(Cancel);
+        return NotificationsContractsModel.Instance.Deserialize<InboxItem>(new MemoryStream(latest.Payload));
     }
 
     private async Task RaiseAsync(Notification notification)

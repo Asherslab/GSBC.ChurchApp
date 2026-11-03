@@ -6,10 +6,15 @@
 @inject IAccess Access
 @inject PushRegistration Push
 @inject NotificationPreferences Preferences
+@inject Shell Shell
 
 @if (Push.Permission == PushRegistration.Denied)
 {
-    <Notice Tone="NoticeTone.Warning" Text="Notifications are off for this app in your iPhone's Settings. Turn them on there to hear from the church." />
+    <Section First="true">
+        <Notice Tone="NoticeTone.Warning" Text="Notifications are off for this app in your iPhone's Settings. Open Settings, tap Notifications, and turn on Allow Notifications.">
+            <span class="ui-actions"><Button Small="true" Icon="external-link" OnClick="OpenSettingsAsync">Open Settings</Button></span>
+        </Notice>
+    </Section>
 }
 else if (Push.Permission != PushRegistration.Granted)
 {
@@ -40,6 +45,7 @@ else if (Push.Permission != PushRegistration.Granted)
 </LiveData>
 
 @code {
+    private const string AppSettings = "app-settings:";
     private bool _turningOn;
 
     protected override void OnInitialized() => Push.Changed += OnChanged;
@@ -50,6 +56,8 @@ else if (Push.Permission != PushRegistration.Granted)
         await Push.TurnOnAsync();
         _turningOn = false;
     }
+
+    private Task OpenSettingsAsync() => Shell.OpenExternalAsync(AppSettings).AsTask();
 
     private void OnChanged() => InvokeAsync(StateHasChanged);
 

@@ -60,6 +60,10 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("link");
 
+                    b.Property<Guid?>("NotificationId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("notification_id");
+
                     b.Property<int>("ReachedPeople")
                         .HasColumnType("integer")
                         .HasColumnName("reached_people");
@@ -274,6 +278,10 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("Action")
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
                     b.Property<string>("Area")
                         .IsRequired()
                         .HasColumnType("text")
@@ -283,6 +291,10 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("body");
+
+                    b.Property<bool>("InAdminPanel")
+                        .HasColumnType("boolean")
+                        .HasColumnName("in_admin_panel");
 
                     b.Property<string>("Kind")
                         .IsRequired()
@@ -301,6 +313,10 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("scope_id");
 
+                    b.Property<DateTime?>("SettledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("settled_at");
+
                     b.Property<string>("Subject")
                         .HasColumnType("text")
                         .HasColumnName("subject");
@@ -317,6 +333,10 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                     b.Property<bool>("Urgent")
                         .HasColumnType("boolean")
                         .HasColumnName("urgent");
+
+                    b.Property<bool>("Waits")
+                        .HasColumnType("boolean")
+                        .HasColumnName("waits");
 
                     b.HasKey("Id")
                         .HasName("pk_notifications");

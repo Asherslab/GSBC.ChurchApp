@@ -36,7 +36,7 @@
                     TItem item = _rows[row];
                     string key = Key(item);
                     bool selected = IsSelected(item);
-                    <tr @key="key" class="data-table__row @(selected ? "data-table__row--selected" : "") @(RowClass?.Invoke(item))" tabindex="@(selected || (_selectedIndex < 0 && row == 0) ? 0 : -1)"
+                    <tr @key="key" class="data-table__row @(selected ? "data-table__row--selected" : "") @(RowClass?.Invoke(item))" tabindex="@(!SelectedChanged.HasDelegate ? null : selected || (_selectedIndex < 0 && row == 0) ? 0 : -1)"
                         aria-selected="@(SelectedChanged.HasDelegate ? selected.ToString().ToLowerInvariant() : null)" @ref="_rowElements[key]" @onclick="() => SelectAsync(row)">
                         @foreach (TableColumn<TItem> definition in Columns)
                         {
