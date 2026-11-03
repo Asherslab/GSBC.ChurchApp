@@ -191,7 +191,6 @@ Then cut the first TestFlight build.
 
 - Delete the `dev.baptist.com.au` DNS record (DNS → Records) once dev works on `dev-app`, and its two
   entries in `~/.cloudflared/config.yml` (the old file is kept beside it).
-- Retire the POC preview at `app.baptist.com.au`: in `gsbc.argo` delete
-  `clusters/mini/app-definitions/church-app-pwa.yaml` and `clusters/mini/app/church-app-pwa/` (the
-  operator removes the DNS record), delete `.github/workflows/app-poc-pwa.yml` from this repo's `main`,
-  and delete the `gsbc-churchapp-pwa` package on GitHub. `app.baptist.com.au` is then free for production.
+- The POC preview at `app.baptist.com.au` was retired on 2026-11-03 (its `gsbc.argo` manifests and
+  workflow removed). Its `gsbc-churchapp-pwa` package can be deleted on GitHub (Packages → the package →
+  Package settings → Delete). `app.baptist.com.au` is free for production.

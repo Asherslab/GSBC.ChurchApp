@@ -88,7 +88,7 @@ to set up (media.md lists them).
 | Admin panel `index.html`, client routes and unfingerprinted files (`blazor.webassembly.js`, `dotnet.js`, the stylesheets) | No (`no-cache`, revalidated) | They name the fingerprinted files |
 | The app itself | Not served from the web | It ships in the store build |
 
-The admin panel will be at `app.baptist.com.au`, which serves the frozen POC's web build until then.
+The admin panel is at `<env>-app.baptist.com.au`, and in production at `app.baptist.com.au` ([environments.md](environments.md)).
 
 ### Cloudflare overrides our headers
 

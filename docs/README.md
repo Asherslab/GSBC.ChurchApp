@@ -63,8 +63,8 @@ our headers, Web Analytics off, app hosts purged), and media goes through R2; se
 - Production config through `gsbc.argo`: the token signing key, `Accounts:Passkeys` for
   `baptist.com.au`, and the email secret with the production mailer certificate
   ([email.md](architecture/email.md), *Going to production*).
-- Check the admin panel on `app.baptist.com.au` with `tools/dev-proxy/check-caching.sh` once it
-  replaces the POC there.
+- Check the admin panel on `app.baptist.com.au` with `tools/dev-proxy/check-caching.sh` once
+  production serves it there (the POC preview was retired 2026-11-03).
 
 **Tested by the owner, 2026-11-02:** the owner side of Access (creating a role and giving it to a user)
 and inviting, with a real email through the shared mailbox.
