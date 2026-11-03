@@ -19,13 +19,15 @@ done
 team_file="$shell/.team"
 [ -s "$team_file" ] || { echo "Put your Apple team id in $team_file (Xcode → Settings → Accounts). It is gitignored."; exit 1; }
 
+environment="$shell/ios/environments/Dev.xcconfig"
+setting() { sed -n "s/^$1 = //p" "$environment"; }
 gateway="${GSBC_GATEWAY:-http://$(scutil --get LocalHostName).local:5300}"
 case "$gateway" in http://*|https://*) ;; *) gateway="http://$gateway" ;; esac
 gateway_scheme="${gateway%%://*}"
 gateway_host="${gateway#*://}"
-associated_domain=baptist.com.au
+associated_domain="$(setting GSBC_ASSOCIATED_DOMAIN)"
 [ "$gateway_scheme" = https ] && associated_domain="${gateway_host%%[:/]*}"
-bundle_id="$(python3 -I -c 'import json,sys; print(json.load(open(sys.argv[1]))["appId"])' "$shell/capacitor.config.json")"
+bundle_id="$(setting PRODUCT_BUNDLE_IDENTIFIER)"
 
 find_device() {
   local listing; listing="$(mktemp)"
@@ -64,11 +66,11 @@ fi
 curl -s -o /dev/null --max-time 5 "$gateway/" \
   || echo "Note: nothing answers at $gateway yet. Start the backend: dotnet run --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost"
 
-cat > "$shell/ios/dev.xcconfig" <<XC
+rm -f "$shell/ios/dev.xcconfig"
+cat > "$shell/ios/local.xcconfig" <<XC
 DEVELOPMENT_TEAM = $(tr -d '[:space:]' < "$team_file")
 GSBC_GATEWAY_SCHEME = $gateway_scheme
 GSBC_GATEWAY = $gateway_host
-GSBC_DEVELOPMENT_BUILD = YES
 GSBC_ASSOCIATED_DOMAIN = $associated_domain
 XC
 

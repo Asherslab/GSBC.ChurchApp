@@ -27,14 +27,14 @@ Dev builds talk to the backend on your Mac over Wi-Fi; no TestFlight needed.
    this Mac (cable once, then it works over Wi-Fi). Keep the phone unlocked while it installs.
 2. Start the backend: `dotnet run --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost` (or the AppHost
    run configuration in Rider).
-3. Deploy: **iPhone (dev)** in Rider (through `https://dev.baptist.com.au`, see
+3. Deploy: **iPhone (dev)** in Rider (through `https://dev-app.baptist.com.au`, see
    [tools/dev-proxy](tools/dev-proxy/README.md)), **iPhone (dev, Wi-Fi only)** straight to the laptop,
    or `tools/ios/deploy.sh` from a terminal. About 40 seconds.
 
 | Command | Builds |
 |---|---|
 | `tools/ios/deploy.sh` | Debug (interpreted, fastest) to the paired iPhone, straight to this Mac |
-| `GSBC_GATEWAY=https://dev.baptist.com.au tools/ios/deploy.sh` | the same, through Cloudflare (what Rider's configurations use) |
+| `GSBC_GATEWAY=https://dev-app.baptist.com.au tools/ios/deploy.sh` | the same, through Cloudflare (what Rider's configurations use) |
 | `tools/ios/deploy.sh --release` | AOT, as shipped (about a minute) |
 | `tools/ios/deploy.sh --simulator` | either of the above, to the iOS Simulator |
 
@@ -55,7 +55,7 @@ tools/dev/feed.sh list
 Builds from `deploy.sh` (Debug or AOT) are marked as dev builds: they get the development feed and buttons
 there to queue a send that succeeds and one that fails, for the outbox. Store builds never do.
 
-Accounts: sign up or sign in at https://dev.baptist.com.au/account (the admin panel) with a real
+Accounts: sign up or sign in at https://dev-app.baptist.com.au/account (the admin panel) with a real
 passkey. To make yourself the first owner (once per environment): `tools/access/make-owner.sh <your email>`;
 the admin panel then shows People, Roles and Who holds what. In development, emails such as confirmation codes and recovery links go to the API's log in
 the Aspire dashboard instead of being sent.

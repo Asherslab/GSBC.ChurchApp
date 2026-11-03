@@ -10,6 +10,8 @@ namespace GSBC.ChurchApp.Platform.Api.Tiers;
 
 public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access) : Interceptor
 {
+    private const string KubernetesHealthProbe = "/grpc.health.v1.Health/";
+
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
         TRequest request, ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
     {
@@ -43,6 +45,9 @@ public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access
 
     private async Task AuthoriseAsync(object? request, ServerCallContext context)
     {
+        if (context.Method.StartsWith(KubernetesHealthProbe, StringComparison.Ordinal))
+            return;
+
         HttpContext http = context.GetHttpContext();
         Type? implementation = http.GetEndpoint()?.Metadata.GetMetadata<GrpcMethodMetadata>()?.ServiceType;
         TierAttribute[] tiers = implementation is null ? [] : catalog.TiersOf(implementation, context.Method);

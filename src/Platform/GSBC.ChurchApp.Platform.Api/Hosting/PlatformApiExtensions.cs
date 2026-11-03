@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using ProtoBuf.Grpc.Server;
 
@@ -21,6 +22,7 @@ namespace GSBC.ChurchApp.Platform.Api.Hosting;
 public static class PlatformApiExtensions
 {
     public const string ReadinessService = "ready";
+    private const string LivenessTag = "live";
     public const int DefaultWebPort = 8080;
     public const int DefaultGrpcPort = 8081;
 
@@ -74,9 +76,10 @@ public static class PlatformApiExtensions
         services
             .AddGrpcHealthChecks(options =>
             {
-                options.Services.Map("", _ => false);
+                options.Services.Map("", result => result.Tags.Contains(LivenessTag));
                 options.Services.Map(ReadinessService, result => result.Tags.Contains(ReadinessService));
             })
+            .AddCheck(LivenessTag, () => HealthCheckResult.Healthy(), tags: [LivenessTag])
             .AddDbContextCheck<SyncDbContext>(tags: [ReadinessService]);
 
         return builder;

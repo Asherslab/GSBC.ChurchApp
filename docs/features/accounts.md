@@ -76,7 +76,7 @@ far) put it in `Data`, shared by `Api` and `Gateway`.
 ## Build order
 
 1. Data, the gRPC services, and the browser ceremonies on the gateway; tested locally (`localhost`
-   is a valid passkey domain in the browser), then through `dev.baptist.com.au`.
+   is a valid passkey domain in the browser), then through `dev-app.baptist.com.au`.
 2. The admin panel's sign-in and account screens; the token transform; the API's token check.
 3. The app's account screens, read-only signed out.
 4. After the enrolment: Associated Domains, native passkeys in the app, the Keychain session (built
@@ -88,7 +88,7 @@ far) put it in `Data`, shared by `Api` and `Gateway`.
 recovery by email link, invitation links, seeing and ending sessions, signing out everywhere, the
 session-to-token swap, and the API checking tokens. Tested by `Features.Accounts.Gateway.Tests`
 (real ceremonies, software authenticator, Postgres) and checked end to end through
-`dev.baptist.com.au`. Try it at https://dev.baptist.com.au/account with a real passkey; in
+`dev-app.baptist.com.au`. Try it at https://dev-app.baptist.com.au/account with a real passkey; in
 development the emails (confirmation codes, links) appear in the API's log in the Aspire dashboard.
 
 **Waiting on something else:**

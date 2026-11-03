@@ -12,7 +12,7 @@ final class PasskeyCeremonyTests: XCTestCase {
 
     func testSigningInKeepsTheSessionInTheVaultAndHandsBackOnlyTheOutcome() async throws {
         StubGateway.replies = [
-            "/accounts/passkeys/request-options": (200, #"{"challenge":"AAAA","rpId":"dev.baptist.com.au"}"#),
+            "/accounts/passkeys/request-options": (200, #"{"challenge":"AAAA","rpId":"dev-app.baptist.com.au"}"#),
             "/accounts/passkeys/sign-in": (200, #"{"signedIn":true,"session":"\#(Self.secret)"}"#),
         ]
         let vault = MemoryVault()
@@ -23,7 +23,7 @@ final class PasskeyCeremonyTests: XCTestCase {
         XCTAssertEqual(vault.read(), Self.secret)
         XCTAssertFalse(String(describing: outcome).contains(Self.secret))
         let signIn = try XCTUnwrap(StubGateway.requests.last)
-        XCTAssertEqual(signIn.value(forHTTPHeaderField: "Origin"), "https://dev.baptist.com.au")
+        XCTAssertEqual(signIn.value(forHTTPHeaderField: "Origin"), "https://dev-app.baptist.com.au")
         let body = try XCTUnwrap(JSONSerialization.jsonObject(with: signIn.body) as? [String: Any])
         XCTAssertEqual(body["app"] as? Bool, true)
     }
@@ -59,7 +59,7 @@ final class PasskeyCeremonyTests: XCTestCase {
     private func ceremonies(_ vault: MemoryVault) -> PasskeyCeremonies {
         let configuration = URLSessionConfiguration.ephemeral
         configuration.protocolClasses = [StubGateway.self]
-        return PasskeyCeremonies(gateway: URL(string: "https://dev.baptist.com.au")!, vault: vault,
+        return PasskeyCeremonies(gateway: URL(string: "https://dev-app.baptist.com.au")!, vault: vault,
                                  authenticator: AlwaysApproves(), deviceName: "iPhone", configuration: configuration)
     }
 }

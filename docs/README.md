@@ -28,7 +28,7 @@ keeping it local for now (2026-11-02): don't push without asking.
 **Working end to end:** signing in on the phone with a passkey (2026-11-03, proven on the owner's
 iPhone; [identity.md](architecture/identity.md)), the skeleton and its rules, the native data layer on iOS (store, live sync,
 outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone configurations,
-`dev.baptist.com.au` through a Cloudflare tunnel started by the AppHost), Accounts in the browser
+`dev-app.baptist.com.au` through a Cloudflare tunnel started by the AppHost), Accounts in the browser
 (passkeys, sessions, recovery, invitations, staff tools), and Access (roles, assignments, the
 evaluator behind every `[Requires]`, admin screens).
 
@@ -78,7 +78,7 @@ The staff-friendly permissions are designed and built (2026-11-02, [access.md](f
 **Working on this repo:** start the backend from Rider's AppHost configuration (stop a running one
 first: its ports are fixed); build with Homebrew's `dotnet` (`global.json`); every new project goes in
 the project map and the picture (`ProjectMapRules` enforces it); check anything web-facing through
-`dev.baptist.com.au`, not localhost (`tools/dev-proxy/check-caching.sh`). The repo is public: no keys,
+`dev-app.baptist.com.au`, not localhost (`tools/dev-proxy/check-caching.sh`). The repo is public: no keys,
 personal data, or names of the owner's employer or its projects.
 
 ## Build order

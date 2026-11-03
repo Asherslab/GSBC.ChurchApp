@@ -1,4 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <ContainerRepository>asherslab/gsbc-churchapp-gateway</ContainerRepository>
+  </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Yarp.ReverseProxy" />
     <PackageReference Include="Grpc.AspNetCore.HealthChecks" />

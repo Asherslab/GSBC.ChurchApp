@@ -11,7 +11,7 @@ different kind of account. Reading public content still needs no account (SPEC Â
 - **Relying party: `baptist.com.au`** (decided 2026-11-01). It covers the admin panel, the app and
   any future site on any subdomain. It is permanent: a passkey can never move to another domain.
   The RP ID and the allowed origins are configuration, never read from a request header.
-- **Dev has its own relying party: `dev.baptist.com.au`** (decided 2026-11-01), reached through the dev
+- **Dev has its own relying party: `dev-app.baptist.com.au`** (decided 2026-11-01), reached through the dev
   proxy ([tools/dev-proxy](../../tools/dev-proxy/README.md)). Test passkeys never sit beside real ones
   in people's keychains. On a dev Mac with no tunnel, the browser accepts `localhost` as the RP.
 - **Bundle id: `au.com.baptist.app`** (owner, 2026-11-03), so the app id in the association files is
@@ -34,10 +34,10 @@ puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
 
 - **Associated Domains** (`App.entitlements`): `webcredentials:` and `applinks:` on
   `$(GSBC_ASSOCIATED_DOMAIN)`, which is `baptist.com.au` for release builds and the gateway's host for
-  development builds (`deploy.sh` sets it: `dev.baptist.com.au`).
+  development builds (`deploy.sh` sets it: `dev-app.baptist.com.au`).
 - **Dev's association file** is written by the dev gateway at start-up from `Apple:TeamId` (into the
   gitignored `generated/`) and served as a static file at
-  `dev.baptist.com.au/.well-known/apple-app-site-association`: the same bytes on every request,
+  `dev-app.baptist.com.au/.well-known/apple-app-site-association`: the same bytes on every request,
   `application/json`, no redirect, `no-store` in development. Apple's CDN fetches it through
   Cloudflare (checked 2026-11-03). `AppAssociation.Json` writes it; a gateway test checks it names
   the configured team and bundle.
@@ -120,7 +120,7 @@ the native `PasskeyCeremonyTests` hold this).
 - App sessions last 90 days from last use.
 - *Link this phone*, the development-only stopgap, was removed (owner, 2026-11-03).
 
-**Proven on the owner's iPhone, with the owner, 2026-11-03** (through `dev.baptist.com.au`): signing in
+**Proven on the owner's iPhone, with the owner, 2026-11-03** (through `dev-app.baptist.com.au`): signing in
 with a passkey made earlier in Safari, the session surviving the app being completely closed, a Hub
 role given in the admin panel showing More â†’ Drafts on the phone live, previewing a draft while
 signed in, signing out clearing drafts and staff tools, and an invitation link opening the app and

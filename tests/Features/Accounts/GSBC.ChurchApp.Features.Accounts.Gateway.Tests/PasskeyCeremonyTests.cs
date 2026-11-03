@@ -23,6 +23,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
 {
     private const string Origin = "https://localhost";
     private const string TeamId = "ABCDE12345";
+    private const string UatBundleId = "au.com.baptist.app.uat";
 
     private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
     private readonly ECDsa _tokenKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -41,6 +42,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
             ["Accounts:Passkeys:AllowedOrigins:0"] = Origin,
             [AccountTokens.SigningKeySetting] = _tokenKey.ExportPkcs8PrivateKeyPem(),
             [$"{AppAssociation.Section}:TeamId"] = TeamId,
+            [$"{AppAssociation.Section}:BundleId"] = UatBundleId,
         });
         builder.Services.AddAccountsGateway(builder.Configuration);
 
@@ -138,7 +140,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
         using JsonDocument association = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        string app = $"{TeamId}.{AppAssociation.DefaultBundleId}";
+        string app = $"{TeamId}.{UatBundleId}";
         Assert.Equal(app, association.RootElement.GetProperty("webcredentials").GetProperty("apps")[0].GetString());
         Assert.Equal(app, association.RootElement.GetProperty("applinks").GetProperty("details")[0].GetProperty("appIDs")[0].GetString());
     }

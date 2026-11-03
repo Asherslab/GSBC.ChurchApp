@@ -96,7 +96,7 @@ Learned the hard way (2026-11-01): Cloudflare's zone defaults replace a shorter 
 its own **4-hour browser cache** (`max-age=14400`, even on 404s) and cache `.js`/`.css` at the edge. A
 file fixed on the server can stay broken in a browser for hours. So:
 
-- **Dev** (`dev.baptist.com.au`) sends `Cache-Control: no-store` on every response, which Cloudflare
+- **Dev** (`dev-app.baptist.com.au`) sends `Cache-Control: no-store` on every response, which Cloudflare
   respects. `no-store` doesn't evict what the edge already holds, so after changing what's cached,
   purge the host (Caching → Configuration → Custom Purge → Hostname).
 - **Production** relies on fingerprinted names (`immutable`, safe to cache forever) and `index.html`

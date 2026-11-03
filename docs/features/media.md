@@ -175,7 +175,7 @@ SeaweedFS (MinIO no longer publishes images) unless `Storage:Blobs` is set in th
 secrets, in which case it passes those to the API instead.
 
 Signed links go to browsers and phones, so they carry `PublicServiceUrl`, while the API reaches the
-store at `ServiceUrl`. In development the admin panel is on `https://dev.baptist.com.au`, and a browser
+store at `ServiceUrl`. In development the admin panel is on `https://dev-app.baptist.com.au`, and a browser
 refuses an upload from that page to `http://localhost` (mixed content), and a phone can't reach
 localhost at all. So the dev tunnel also serves `dev-media.baptist.com.au` → SeaweedFS
 ([tools/dev-proxy](../../tools/dev-proxy/README.md)), and the AppHost signs links for it whenever
@@ -192,7 +192,7 @@ free certificate covers one level of subdomain only.
    header if present*. Recommended, not strictly needed: our extensions (jpg, png, webp, gif, pdf)
    are cached by default, but the rule keeps it true for any type added later.
 4. **CORS on the private bucket**, for uploads: methods `PUT`; header `content-type`; origins
-   `https://app.baptist.com.au`, `https://dev.baptist.com.au`, `capacitor://localhost` (the iOS
+   `https://app.baptist.com.au`, `https://dev-app.baptist.com.au`, `capacitor://localhost` (the iOS
    app) and `http://localhost:5300` (the local admin panel). The public bucket needs none.
 5. **A lifecycle rule on the private bucket:** delete objects with prefix `uploads/` after 1 day.
 6. **An R2 API token**, *Object Read & Write*, limited to the two buckets. Its access key id and

@@ -95,7 +95,7 @@ yet tried in a browser against the running backend.
 scopes and end dates, the cached evaluator behind every `[Requires]`, the escalation and last-owner
 guards, grants loaded into the admin panel's `IAccess` (navigation and `<Can>`), the Roles and
 Who-holds-what pages, and the bootstrap script. Tested by `Features.Access.Api.Tests` (Postgres)
-and checked end to end through `dev.baptist.com.au`: a new member holds nothing and every staff
+and checked end to end through `dev-app.baptist.com.au`: a new member holds nothing and every staff
 method refuses them.
 
 ## Usability comes first (owner, 2026-11-01)

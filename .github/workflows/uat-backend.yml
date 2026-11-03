@@ -1,0 +1,130 @@
+name: UAT backend
+
+on:
+  workflow_run:
+    workflows: [ "CI" ]
+    types: [ completed ]
+    branches: [ "main" ]
+  workflow_dispatch:
+
+concurrency:
+  group: uat-backend
+  cancel-in-progress: false
+
+env:
+  SITE: https://uat-app.baptist.com.au
+  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+jobs:
+  images:
+    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - run: dotnet workload install wasm-tools
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push the API, gateway and migrator (linux/arm64)
+        run: tools/containers/publish.sh "sha-$SHA;uat" ghcr.io
+
+  deploy:
+    needs: images
+    runs-on: ubuntu-latest
+    outputs:
+      deployed: ${{ steps.token.outputs.present }}
+    steps:
+      - name: Check for ARGO_REPO_TOKEN
+        id: token
+        env:
+          ARGO_REPO_TOKEN: ${{ secrets.ARGO_REPO_TOKEN }}
+        run: |
+          if [[ -n "$ARGO_REPO_TOKEN" ]]; then echo "present=true" >> "$GITHUB_OUTPUT"
+          else echo "::warning::ARGO_REPO_TOKEN is not set; the images were built but not deployed"; fi
+
+      - name: Checkout gsbc.argo
+        if: steps.token.outputs.present == 'true'
+        uses: actions/checkout@v4
+        with:
+          repository: asherslab/gsbc.argo
+          path: argo
+          token: ${{ secrets.ARGO_REPO_TOKEN }}
+
+      - name: Pin the new images
+        if: steps.token.outputs.present == 'true'
+        working-directory: argo/clusters/mini/app/church-app-uat
+        run: |
+          sed -i "s/newTag: .* #image/newTag: sha-$SHA #image/" kustomization.yaml
+          pinned="$(grep -c "newTag: sha-$SHA #image" kustomization.yaml || true)"
+          [[ "$pinned" == 3 ]] || { echo "::error::expected three '#image' lines in kustomization.yaml, found $pinned"; exit 1; }
+
+      - name: Commit and push (if changed)
+        if: steps.token.outputs.present == 'true'
+        working-directory: argo
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+            git add clusters/mini/app/church-app-uat/kustomization.yaml
+            git commit -m "update church-app-uat images to sha-$SHA"
+            git push
+          else
+            echo "no changes"
+          fi
+
+  check:
+    needs: deploy
+    if: needs.deploy.outputs.deployed == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ env.SHA }}
+
+      - name: Install grpcurl
+        run: |
+          curl -sSL https://github.com/fullstorydev/grpcurl/releases/download/v1.9.3/grpcurl_1.9.3_linux_x86_64.tar.gz | tar -xz -C /usr/local/bin grpcurl
+          mkdir -p proto && curl -sSL -o proto/health.proto https://raw.githubusercontent.com/grpc/grpc/v1.66.0/src/proto/grpc/health/v1/health.proto
+
+      - name: Wait for the gateway to answer gRPC health through Cloudflare
+        run: |
+          for attempt in $(seq 1 40); do
+            if grpcurl -max-time 10 -import-path proto -proto health.proto uat-app.baptist.com.au:443 grpc.health.v1.Health/Check | grep -q SERVING; then
+              echo "SERVING (attempt $attempt)"; exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::uat-app.baptist.com.au did not answer native gRPC health with SERVING"; exit 1
+
+      - name: The API answers through the gateway (gRPC-Web)
+        run: |
+          printf '\x00\x00\x00\x00\x00' | curl -sS -D headers.txt -o body.bin --data-binary @- \
+            -H 'content-type: application/grpc-web+proto' -H 'x-grpc-web: 1' "$SITE/gsbc.accounts.Session/GetCurrent"
+          cat headers.txt
+          cat headers.txt body.bin | grep -aqiE 'grpc-status: ?0' \
+            || { echo "::error::Session/GetCurrent did not return grpc-status 0 through the gateway"; exit 1; }
+
+      - name: Caching as Cloudflare serves it
+        run: tools/dev-proxy/check-caching.sh "$SITE"
+
+      - name: The association file names the UAT app
+        run: |
+          headers="$(curl -sS -D - -o association.json "$SITE/.well-known/apple-app-site-association")"
+          echo "$headers"
+          printf '%s' "$headers" | grep -qE '^HTTP/[0-9.]+ 200' || { echo "::error::association file is not a 200 (redirects are not allowed)"; exit 1; }
+          printf '%s' "$headers" | grep -qi '^content-type: application/json' || { echo "::error::association file is not application/json"; exit 1; }
+          grep -q '\.au\.com\.baptist\.app\.uat"' association.json || { echo "::error::association file does not name au.com.baptist.app.uat"; cat association.json; exit 1; }

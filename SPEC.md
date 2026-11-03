@@ -658,7 +658,7 @@ Decided, for the record:
 - **How media travels:** content-addressed objects in Cloudflare R2, public ones fetched directly from
   a custom domain, private ones and uploads through short-lived signed URLs from gRPC methods
   (2026-11-02); see [offline-and-caching.md](docs/architecture/offline-and-caching.md).
-- **Dev environment:** a Cloudflare tunnel from the Mac mini to a dev Mac, at `dev.baptist.com.au`,
+- **Dev environment:** a Cloudflare tunnel from the Mac mini to a dev Mac, at `dev-app.baptist.com.au`,
   which is also dev's passkey domain (2026-11-01); see [tools/dev-proxy](tools/dev-proxy/README.md).
 
 ## 13. Milestones
