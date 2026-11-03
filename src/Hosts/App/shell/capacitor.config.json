@@ -5,6 +5,7 @@
   "backgroundColor": "#2a3d5e",
   "ios": {
     "contentInset": "never",
-    "scrollEnabled": false
+    "scrollEnabled": false,
+    "handleApplicationNotifications": false
   }
 }

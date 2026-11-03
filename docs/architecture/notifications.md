@@ -265,6 +265,11 @@ person, and 60 days for the public feed.
   payload's `link` and id, and the plugin raises `notificationOpened` to Blazor; on a cold start the
   link waits until Blazor asks for it. Blazor navigates to the route (`NavigationManager`), as an
   in-app link does, and the inbox marks it read.
+- **Capacitor must not take the delegate.** By default Capacitor's bridge makes its own
+  `NotificationRouter` the notification center's delegate when it starts, which is after the app
+  delegate set ours, so taps (and foreground banners) went to a router with no handler and every tap
+  opened the app where it was. `ios.handleApplicationNotifications: false` in `capacitor.config.json`
+  keeps `DataLayerPush` as the delegate (fixed 2026-11-03, from UAT).
 - A push received while the app is open shows as a banner in the app (Platform.Ui, generic), not the
   system banner, and the bell's badge updates.
 - In the admin panel there's no push; its pages already update live.
