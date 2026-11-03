@@ -1,0 +1,58 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff}
+header{background:#2a3d5e;color:#fff;padding:0 40px;height:112px;display:flex;flex-direction:column;justify-content:space-between;position:relative;overflow:hidden}
+header .ring{position:absolute;right:-60px;top:-70px;width:260px;height:260px;border-radius:50%;border:40px solid rgb(255 255 255/.07)}
+.top{display:flex;justify-content:space-between;align-items:center;padding-top:18px}
+.brand{display:flex;gap:10px;align-items:center;font-weight:700;font-size:18px}
+.mark{width:30px;height:30px;border-radius:50%;border:5px solid #d5c9b7;border-right-color:transparent}
+.who{font-size:13px;color:rgb(255 255 255/.76)}
+nav{display:flex;gap:30px}
+nav a{color:rgb(255 255 255/.7);font-weight:600;font-size:15px;padding:12px 0;text-decoration:none;position:relative}
+nav a.on{color:#fff}
+nav a.on:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;border-radius:2px;background:#e7ae74}
+.body{display:grid;grid-template-columns:240px 1fr;height:788px}
+.sub{background:#f4efe7;padding:24px 14px;border-right:1px solid rgb(42 61 94/.12)}
+.sub a{display:flex;justify-content:space-between;height:40px;align-items:center;padding:0 12px;border-radius:12px;font-weight:600;font-size:14px;color:#545e70;text-decoration:none}
+.sub a.on{background:#fff;color:#18233a}
+.count{font-size:11px;font-weight:700;background:#e7ae74;color:#2a1a08;border-radius:9px;padding:1px 7px}
+main{padding:28px 40px}
+h1{font-size:26px;letter-spacing:-.02em}
+.lead{color:#545e70;font-size:14px;margin:4px 0 22px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font:600 12px Montserrat;color:#6b7384;padding:10px 12px;border-bottom:1px solid rgb(42 61 94/.12)}
+td{padding:14px 12px;border-bottom:1px solid rgb(42 61 94/.12);font-size:14px}
+td.t{font-weight:600}
+.pill{font-size:11px;font-weight:700;border-radius:9px;padding:3px 9px;background:rgb(231 174 116/.3);color:#8a5422}
+.pill.a{background:rgb(0 119 109/.16);color:#00776d}
+.btn{height:34px;padding:0 14px;border-radius:17px;background:#2a3d5e;color:#fff;font:600 13px Montserrat;display:inline-flex;align-items:center}
+.btn.q{background:#f4efe7;color:#18233a}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:34px}
+.stat{background:#f4efe7;border-radius:14px;padding:16px 18px}
+.stat b{display:block;font-size:24px}.stat span{font-size:13px;color:#545e70}
+</style></head><body>
+<header><span class="ring"></span>
+ <div class="top"><div class="brand"><span class="mark"></span>Good Shepherd admin</div><div class="who">Office · Account</div></div>
+ <nav><a class="on">Home</a><a>Content</a><a>People</a><a>Account</a></nav>
+</header>
+<div class="body">
+ <div class="sub"><a class="on">Needs you <span class="count">3</span></a><a>Recently changed</a><a>Help for staff</a></div>
+ <main>
+  <h1>Needs you</h1><p class="lead">Three things are waiting on you or someone you asked.</p>
+  <table>
+   <tr><th>What</th><th>Area</th><th>State</th><th>Since</th><th></th></tr>
+   <tr><td class="t">Christmas home screen</td><td>Drafts</td><td><span class="pill">Waiting to publish</span></td><td>2 days</td><td><a class="btn">Open</a></td></tr>
+   <tr><td class="t">New colours for Advent</td><td>Drafts</td><td><span class="pill">Changed for everyone</span></td><td>Yesterday</td><td><a class="btn q">Review</a></td></tr>
+   <tr><td class="t">Youth leader invitation</td><td>People</td><td><span class="pill a">Not accepted</span></td><td>6 days</td><td><a class="btn q">Send again</a></td></tr>
+  </table>
+  <div class="stats">
+   <div class="stat"><b>2</b><span>open drafts</span></div>
+   <div class="stat"><b>214</b><span>pictures in Media</span></div>
+   <div class="stat"><b>9</b><span>staff with roles</span></div>
+  </div>
+ </main>
+</div>
+</body></html>

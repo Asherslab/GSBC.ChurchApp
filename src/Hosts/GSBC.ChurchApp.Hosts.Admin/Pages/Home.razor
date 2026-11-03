@@ -1,3 +1,143 @@
 @page "/"
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Client.Modules
+@using GSBC.ChurchApp.Platform.Common
+@implements IDisposable
+@inject IEnumerable<IOfficeWeekSource> Sources
+@inject ClientModules Modules
+@inject IAccess Access
+@inject TimeProvider Clock
 
-<h1>Good Shepherd admin</h1>
+@if (!Access.SignedIn)
+{
+    <TitleBand Title="Good Shepherd admin" BrowserTitle="Welcome" Lead="Where staff change what the church app shows: its home screen, colours, pictures, and who can do what." />
+    <div class="office-signed-out">
+        <EmptyState Icon="key" Title="Sign in to start" Body="Use the passkey on this computer or your phone. If you haven't got an account yet, ask the office for an invitation.">
+            <Button Href="account" Icon="user">Sign in</Button>
+        </EmptyState>
+    </div>
+}
+else
+{
+    <TitleBand Title="This week" Lead="@($"{Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)} · dates are church time")" />
+
+    <LiveData TValue="OfficeWeek" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't load this week right now">
+        <section class="office-rail" aria-labelledby="office-rail-title">
+            <h2 class="visually-hidden" id="office-rail-title">The next seven days</h2>
+            <div class="office-rail__grid">
+                @for (int day = 0; day < Days; day++)
+                {
+                    DateTime date = Today.AddDays(day);
+                    <div class="office-rail__day @(day == 0 ? "office-rail__day--today" : "")" style="grid-column: @(day + 1)" aria-current="@(day == 0 ? "date" : null)">
+                        <span class="office-rail__weekday">@(day == 0 ? "Today" : date.ToString("ddd", CultureInfo.InvariantCulture))</span>
+                        <span class="office-rail__date">@date.Day</span>
+                    </div>
+                }
+                @if (context.Value.Spans.Count == 0)
+                {
+                    <p class="office-rail__quiet">Nothing dated this week. Event layers and tiles with dates appear here.</p>
+                }
+                @foreach (OfficeSpan span in context.Value.Spans.OrderBy(span => span.StartsAt))
+                {
+                    <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant()" href="@span.Href" style="grid-column: @Column(span.StartsAt) / @(Column(span.EndsAt) + 1)" title="@SpanTitle(span)">
+                        <span class="office-rail__span-title">@span.Title</span>
+                        <span class="office-rail__span-when">@Range(span)</span>
+                    </a>
+                }
+            </div>
+            <ul class="office-rail__legend" aria-label="What the colours mean">
+                <li><span class="office-rail__swatch office-rail__span--everyone"></span>What everyone sees</li>
+                <li><span class="office-rail__swatch office-rail__span--layer"></span>Event layer</li>
+                <li><span class="office-rail__swatch office-rail__span--draft"></span>Waiting in a draft</li>
+            </ul>
+        </section>
+
+        <div class="office-columns">
+            <Section Title="Needs you">
+                @if (context.Value.Tasks.Count == 0)
+                {
+                    <p class="office-done"><Icon Name="check" Size="IconSize.Small" /> Nothing is waiting on you.</p>
+                }
+                else
+                {
+                    <ul class="office-tasks">
+                        @foreach (OfficeTask task in context.Value.Tasks.OrderBy(task => task.Since))
+                        {
+                            <li class="office-task">
+                                <span class="office-task__tile" aria-hidden="true"><Icon Name="pencil" Size="IconSize.Small" /></span>
+                                <span class="office-task__text">
+                                    <a class="office-task__title" href="@task.Href">@task.Title</a>
+                                    <span class="office-task__detail">@task.Detail · <DateLine At="task.Since" Style="DateLineStyle.Relative" /></span>
+                                </span>
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Href="@task.Href">@task.Action</Button>
+                            </li>
+                        }
+                    </ul>
+                }
+            </Section>
+
+            <Section Title="Your areas">
+                <ul class="office-areas">
+                    @foreach (NavEntry entry in Areas)
+                    {
+                        <li>
+                            <a class="office-area" href="@entry.Href">
+                                <span class="office-area__tile" aria-hidden="true"><Icon Name="@entry.Icon" Size="IconSize.Small" /></span>
+                                <span class="office-area__text">
+                                    <span class="office-area__title">@entry.Title</span>
+                                    <span class="office-area__summary">@entry.Summary</span>
+                                </span>
+                                <Icon Name="chevron-right" Size="IconSize.Small" Class="office-area__chevron" />
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </Section>
+        </div>
+    </LiveData>
+}
+
+@code {
+    private const int Days = 7;
+
+    private DateTime Today => ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date;
+
+    private DateTime From => ChurchTime.ToUtc(Today);
+
+    private IReadOnlyCollection<string> Feeds => Sources.SelectMany(source => source.Feeds).ToHashSet();
+
+    private IEnumerable<NavEntry> Areas =>
+        Modules.Navigation.Where(entry => entry.Summary is not null && (entry.Requires is null || Access.Can(entry.Requires)));
+
+    private async Task<OfficeWeek> LoadAsync()
+    {
+        OfficeWeek[] weeks = await Task.WhenAll(Sources.Select(source => source.LoadAsync(From, From.AddDays(Days))));
+        return new OfficeWeek(weeks.SelectMany(week => week.Tasks).ToList(), weeks.SelectMany(week => week.Spans).ToList());
+    }
+
+    private int Column(DateTime utc) => Math.Clamp((int)Math.Floor((utc - From).TotalDays) + 1, 1, Days);
+
+    private string Range(OfficeSpan span)
+    {
+        bool startsBefore = span.StartsAt <= From;
+        bool endsAfter = span.EndsAt >= From.AddDays(Days);
+        return (startsBefore, endsAfter) switch
+        {
+            (true, true) => "All week",
+            (true, false) => $"Until {Short(span.EndsAt)}",
+            (false, true) => $"From {Short(span.StartsAt)}",
+            _ => $"{Short(span.StartsAt)} to {Short(span.EndsAt)}",
+        };
+    }
+
+    private string SpanTitle(OfficeSpan span) => $"{span.Title}: {Range(span)}";
+
+    private static string Short(DateTime utc) => ChurchTime.ToChurch(DateTime.SpecifyKind(utc, DateTimeKind.Utc)).ToString("ddd d", CultureInfo.InvariantCulture);
+
+    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
+
+    private void OnAccessChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Access.Changed -= OnAccessChanged;
+}

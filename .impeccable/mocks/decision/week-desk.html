@@ -1,0 +1,73 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+aside{background:#2a3d5e;color:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 10px;font-weight:700;font-size:16px}
+.mark{width:30px;height:30px;border-radius:50%;border:5px solid #d5c9b7;border-right-color:transparent}
+.group h6{font:600 11px Montserrat;letter-spacing:.06em;text-transform:uppercase;color:#d5c9b7;padding:0 10px 6px}
+.group a{display:flex;justify-content:space-between;align-items:center;height:38px;padding:0 10px;border-radius:9px;color:rgb(255 255 255/.8);text-decoration:none;font-weight:600;font-size:14px;position:relative}
+.group a.on{background:rgb(255 255 255/.12);color:#fff}
+.group a.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:2px;background:#e7ae74}
+.count{font-size:11px;font-weight:700;background:#e7ae74;color:#2a1a08;border-radius:9px;padding:1px 7px}
+.me{margin-top:auto;padding:12px 10px;border-top:1px solid rgb(255 255 255/.12);font-size:13px;color:rgb(255 255 255/.76)}
+main{padding:28px 40px;overflow:hidden}
+.band{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:20px}
+.band h1{font-size:28px;letter-spacing:-.02em}
+.band p{color:#545e70;font-size:14px}
+.rail{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;background:#f4efe7;border-radius:14px;padding:10px;margin-bottom:28px}
+.day{background:#fff;border-radius:10px;padding:10px 12px;min-height:132px;display:flex;flex-direction:column;gap:6px}
+.day.today{outline:2px solid #2a3d5e}
+.day b{font-size:11px;letter-spacing:.04em;color:#6b7384;text-transform:uppercase}
+.day strong{font-size:22px;font-variant-numeric:tabular-nums}
+.ev{font-size:12px;font-weight:600;border-radius:7px;padding:4px 7px;background:rgb(0 119 109/.12);color:#00776d}
+.ev.pub{background:#2a3d5e;color:#fff}
+.ev.mark2{background:rgb(231 174 116/.3);color:#8a5422}
+.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:40px}
+h2{font-size:18px;margin-bottom:10px;letter-spacing:-.015em}
+.row{display:flex;align-items:center;gap:14px;min-height:60px;border-top:1px solid rgb(42 61 94/.12)}
+.row:last-child{border-bottom:1px solid rgb(42 61 94/.12)}
+.tile{width:34px;height:34px;border-radius:10px;background:#f4efe7;flex:none}
+.tile.w{background:rgb(231 174 116/.3)}
+.row div{flex:1}.row span{display:block;font-size:13px;color:#545e70}
+.row .t{font-weight:600;font-size:15px}
+.btn{height:36px;padding:0 16px;border-radius:18px;background:#2a3d5e;color:#fff;font:600 13px Montserrat;display:inline-flex;align-items:center}
+.btn.q{background:#f4efe7;color:#18233a}
+.area{display:flex;gap:12px;align-items:center;padding:14px 0;border-top:1px solid rgb(42 61 94/.12)}
+.area .t{font-weight:600}.area span{font-size:13px;color:#545e70;display:block}
+</style></head><body>
+<aside>
+ <div class="brand"><span class="mark"></span>Good Shepherd</div>
+ <div class="group"><a class="on" href="#">Home</a></div>
+ <div class="group"><h6>Content</h6><a href="#">Drafts <span class="count">2</span></a><a href="#">Media</a><a href="#">Fonts</a></div>
+ <div class="group"><h6>People</h6><a href="#">People <span class="count">1</span></a><a href="#">Roles</a><a href="#">Who can do what</a></div>
+ <div class="me">Signed in · Office<br>Account</div>
+</aside>
+<main>
+ <div class="band"><div><h1>This week</h1><p>Tuesday 3 November · everything goes out on church time</p></div><a class="btn">New draft</a></div>
+ <div class="rail">
+  <div class="day today"><b>Tue</b><strong>3</strong><span class="ev mark2">Invitation ends</span></div>
+  <div class="day"><b>Wed</b><strong>4</strong></div>
+  <div class="day"><b>Thu</b><strong>5</strong></div>
+  <div class="day"><b>Fri</b><strong>6</strong><span class="ev pub">Publishes: Christmas tiles</span></div>
+  <div class="day"><b>Sat</b><strong>7</strong></div>
+  <div class="day"><b>Sun</b><strong>8</strong><span class="ev">Event layer: Mission Sunday</span></div>
+  <div class="day"><b>Mon</b><strong>9</strong></div>
+ </div>
+ <div class="cols">
+  <section><h2>Needs you</h2>
+   <div class="row"><span class="tile w"></span><div><p class="t">Christmas home screen</p><span>Waiting to publish · shared with the pastor 2 days ago</span></div><a class="btn">Open</a></div>
+   <div class="row"><span class="tile w"></span><div><p class="t">New colours for Advent</p><span>Changed for everyone since you edited it</span></div><a class="btn q">Review</a></div>
+   <div class="row"><span class="tile"></span><div><p class="t">Invitation not accepted</p><span>Youth leader · sent 6 days ago, ends today</span></div><a class="btn q">Send again</a></div>
+  </section>
+  <section><h2>Your areas</h2>
+   <div class="area"><span class="tile"></span><div><p class="t">Drafts</p><span>Change the app's home screen, colours and fonts</span></div></div>
+   <div class="area"><span class="tile"></span><div><p class="t">Media</p><span>Pictures for tiles and events</span></div></div>
+   <div class="area"><span class="tile"></span><div><p class="t">People</p><span>Invite staff, recovery links</span></div></div>
+   <div class="area"><span class="tile"></span><div><p class="t">Roles</p><span>Who can see and change what</span></div></div>
+  </section>
+ </div>
+</main>
+</body></html>

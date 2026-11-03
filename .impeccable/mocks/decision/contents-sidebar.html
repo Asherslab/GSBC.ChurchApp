@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:264px 1fr}
+aside{background:#f4efe7;border-right:1px solid rgb(42 61 94/.12);padding:26px 16px;display:flex;flex-direction:column;gap:24px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 10px;font-weight:700;font-size:16px;color:#2a3d5e}
+.mark{width:32px;height:32px;border-radius:50%;border:5px solid #2a3d5e;border-right-color:transparent}
+h6{font:700 11px Montserrat;letter-spacing:.06em;text-transform:uppercase;color:#6b7384;padding:0 10px 6px}
+.item{display:flex;justify-content:space-between;align-items:center;height:40px;padding:0 10px 0 16px;color:#545e70;font-weight:600;font-size:14px;border-radius:10px;position:relative}
+.item.on{color:#18233a;background:#fff}
+.item.on:before{content:"";position:absolute;left:4px;top:10px;bottom:10px;width:3px;border-radius:2px;background:#e7ae74}
+.n{font-size:12px;color:#6b7384;font-variant-numeric:tabular-nums}
+.n.hot{background:#e7ae74;color:#2a1a08;border-radius:9px;padding:1px 7px;font-weight:700;font-size:11px}
+.me{margin-top:auto;display:flex;gap:10px;align-items:center;padding:12px 10px;border-top:1px solid rgb(42 61 94/.12);font-size:13px}
+.av{width:30px;height:30px;border-radius:50%;background:#2a3d5e}
+main{padding:30px 44px}
+.head{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+h1{font-size:28px;letter-spacing:-.02em}
+.lead{color:#545e70;margin-bottom:22px}
+.tools{display:flex;gap:10px;margin-bottom:12px}
+.chip{height:34px;padding:0 14px;border-radius:17px;background:#f4efe7;font:600 13px Montserrat;display:inline-flex;align-items:center;color:#545e70}
+.chip.on{background:#2a3d5e;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font:600 12px Montserrat;color:#6b7384;padding:10px 12px;border-bottom:1px solid rgb(42 61 94/.12)}
+td{padding:15px 12px;border-bottom:1px solid rgb(42 61 94/.12);font-size:14px}
+tr.sel td{background:#f4efe7}
+td.t{font-weight:600}
+.dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:#e7ae74;margin-right:8px}
+.btn{height:34px;padding:0 14px;border-radius:17px;background:#2a3d5e;color:#fff;font:600 13px Montserrat;display:inline-flex;align-items:center}
+.btn.q{background:#f4efe7;color:#18233a}
+.foot{margin-top:28px;display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid rgb(42 61 94/.12)}
+.foot div{padding:16px 0;font-size:13px;color:#545e70}.foot b{display:block;color:#18233a;font-size:15px}
+</style></head><body>
+<aside>
+ <div class="brand"><span class="mark"></span>Good Shepherd admin</div>
+ <div><h6>Today</h6><div class="item on">Needs you <span class="n hot">3</span></div></div>
+ <div><h6>Content</h6><div class="item">Drafts <span class="n">2 open</span></div><div class="item">Media <span class="n">214</span></div><div class="item">Fonts <span class="n">4</span></div></div>
+ <div><h6>People</h6><div class="item">People <span class="n">38</span></div><div class="item">Roles <span class="n">7</span></div><div class="item">Who can do what</div></div>
+ <div class="me"><span class="av"></span><div>Office<br><span class="n">Account</span></div></div>
+</aside>
+<main>
+ <div class="head"><h1>Needs you</h1><a class="btn">New draft</a></div>
+ <p class="lead">Things waiting on you, oldest first.</p>
+ <div class="tools"><span class="chip on">All 3</span><span class="chip">Drafts 2</span><span class="chip">People 1</span></div>
+ <table>
+  <tr><th>What</th><th>Why it's here</th><th>Area</th><th>Since ▾</th><th></th></tr>
+  <tr class="sel"><td class="t"><span class="dot"></span>Youth leader invitation</td><td>Not accepted, ends today</td><td>People</td><td>6 days</td><td><a class="btn q">Send again</a></td></tr>
+  <tr><td class="t"><span class="dot"></span>Christmas home screen</td><td>Waiting to publish</td><td>Drafts</td><td>2 days</td><td><a class="btn">Open</a></td></tr>
+  <tr><td class="t">New colours for Advent</td><td>Changed for everyone since you edited it</td><td>Drafts</td><td>Yesterday</td><td><a class="btn q">Review</a></td></tr>
+ </table>
+ <div class="foot"><div><b>Home screen</b>What everyone sees</div><div><b>Colours</b>Brand palette</div><div><b>Event layer</b>None on</div><div><b>Last published</b>Friday</div></div>
+</main>
+</body></html>

@@ -1,6 +1,29 @@
 @inherits LayoutComponentBase
 
-<ModuleNav />
-<main>
-    @Body
-</main>
+<div class="admin-shell">
+    <aside class="admin-sidebar">
+        <a class="admin-brand" href="">
+            <BrandMark Decorative="true" />
+            <span>Good Shepherd</span>
+        </a>
+        <ModuleNav />
+    </aside>
+    <main class="admin-main">
+        <ErrorBoundary @ref="_boundary">
+            <ChildContent>@Body</ChildContent>
+            <ErrorContent>
+                <EmptyState Icon="alert" Title="This page stopped working" Body="Nothing you saved is lost. Try the page again; if it keeps happening, tell whoever looks after the app.">
+                    <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="Recover">Try again</Button>
+                </EmptyState>
+            </ErrorContent>
+        </ErrorBoundary>
+    </main>
+</div>
+
+@code {
+    private ErrorBoundary? _boundary;
+
+    protected override void OnParametersSet() => _boundary?.Recover();
+
+    private void Recover() => _boundary?.Recover();
+}

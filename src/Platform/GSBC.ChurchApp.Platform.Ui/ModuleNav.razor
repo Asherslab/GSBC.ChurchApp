@@ -27,10 +27,22 @@
         </ListGroup>
         break;
     default:
-        <nav class="module-nav">
-            @foreach (NavEntry entry in Permitted)
+        <nav class="module-nav" aria-label="Main">
+            @foreach (IGrouping<string?, NavEntry> group in Permitted.GroupBy(entry => entry.Group))
             {
-                <NavLink href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">@entry.Title</NavLink>
+                <div class="module-nav__group">
+                    @if (group.Key is not null)
+                    {
+                        <span class="module-nav__label">@group.Key</span>
+                    }
+                    @foreach (NavEntry entry in group)
+                    {
+                        <NavLink class="module-nav__link" href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">
+                            <Icon Name="@entry.Icon" Size="IconSize.Small" />
+                            <span>@entry.Title</span>
+                        </NavLink>
+                    }
+                </div>
             }
         </nav>
         break;
