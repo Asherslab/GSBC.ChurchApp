@@ -1,12 +1,12 @@
 ---
-title: Sign in with Face ID
+title: Sign in without a password
 audience: everyone
 highlight: true
 icon: key
 link: account
 area: Account
 ---
-Sign in with Face ID or Touch ID. There's no password to remember.
+Use your face, your fingerprint or your phone's passcode to sign in, and stay signed in.
 
 ## For staff
 Changed: Signing in on the phone uses a passkey, the same one the admin panel uses, and you stay signed in after the app is completely closed.

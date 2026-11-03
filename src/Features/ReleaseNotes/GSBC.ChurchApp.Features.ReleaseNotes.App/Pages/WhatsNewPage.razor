@@ -15,20 +15,18 @@
     @foreach ((IGrouping<string?, ReleaseNote> version, int index) in WhatsNew.Notes.GroupBy(note => note.Version).Select((group, index) => (group, index)))
     {
         <Section Title="@ReleaseNoteLabels.Heading(version.Key, WhatsNew.ForStaff, Bridge.AppVersion)" First="index == 0">
-            <ol class="notes">
+            <ListGroup>
                 @foreach (ReleaseNote note in version)
                 {
-                    <li class="note">
-                        <span class="row__icon @(note.Highlight ? "row__icon--warm" : "")"><Icon Name="@(note.Icon ?? "sparkles")" Size="IconSize.Small" /></span>
-                        <div class="note__body">
-                            <h3 class="note__title">
-                                @note.Title
-                                @if (WhatsNew.ForStaff && note.StaffOnly)
-                                {
-                                    <Pill Tone="PillTone.Accent">Staff only</Pill>
-                                }
-                            </h3>
-                            <p class="note__summary">@note.Summary</p>
+                    <ListRow Reading="true" Title="@note.Title" Subtitle="@note.Summary" Icon="@(note.Icon ?? "sparkles")"
+                             IconTone="@(note.Highlight ? RowTone.Warm : RowTone.Primary)">
+                        <TitleExtra>
+                            @if (WhatsNew.ForStaff && note.StaffOnly)
+                            {
+                                <Pill Tone="PillTone.Accent">Staff only</Pill>
+                            }
+                        </TitleExtra>
+                        <Below>
                             @if (WhatsNew.ForStaff && (note.Changed ?? note.Where ?? note.Try) is not null)
                             {
                                 <FactList>
@@ -39,12 +37,12 @@
                             }
                             @if (note.Link is { } link)
                             {
-                                <a class="section__link note__link" href="@link">Show me<Icon Name="chevron-right" Size="IconSize.Small" /></a>
+                                <TextLink Href="@link">Show me</TextLink>
                             }
-                        </div>
-                    </li>
+                        </Below>
+                    </ListRow>
                 }
-            </ol>
+            </ListGroup>
         </Section>
     }
 

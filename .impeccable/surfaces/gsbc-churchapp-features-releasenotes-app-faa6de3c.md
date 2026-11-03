@@ -30,10 +30,10 @@ Next/Done (quiet). Swipe pages too. The page: masthead "What's new" with "Versio
 for staff; one section per version, newest first; each note an entry (row icon, title, line, staff facts
 indented, a Show me link); highlights carry the warm icon tile.
 
-STORY: I update the app on Sunday, open it, and a sheet rises: "Sign in with Face ID. New in 1.1." I tap Show
+STORY: I update the app on Sunday, open it, and a sheet rises: "Sign in without a password. New in 1.1." I tap Show
 me and land on Account. Later I find every change under More → What's new.
 
-FIRST VIEWPORT: the sheet over Home: cover band with key icon and "Sign in with Face ID", "New in this test
+FIRST VIEWPORT: the sheet over Home: cover band with key icon and "Sign in without a password", "New in this test
 build"; the line; Where to find it / What to try; Show me; Done.
 
 FORM: extension of the existing shell; the owner answered the interview (Show me, icon now picture optional,

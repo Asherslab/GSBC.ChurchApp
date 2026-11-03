@@ -5,10 +5,3 @@
 .highlight__image { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius); background: var(--sand-strong); }
 .highlight__summary { margin: 4px 0 0; max-width: 65ch; font-size: var(--text-lead); line-height: 1.55; color: var(--ink); text-wrap: pretty; }
 
-.notes { margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.note { display: grid; grid-template-columns: 34px 1fr; column-gap: 12px; padding: 16px 0; border-bottom: 1px solid var(--line); }
-.note__body { min-width: 0; }
-.note__title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; margin: 6px 0 0; font-size: var(--text-row); font-weight: 600; line-height: 1.3; color: var(--ink); }
-.note__summary { margin: 4px 0 0; max-width: 65ch; font-size: var(--text-body); line-height: 1.45; color: var(--ink-2); }
-.note .facts { margin-top: 12px; }
-.note__link { margin: 4px 0 -10px; }

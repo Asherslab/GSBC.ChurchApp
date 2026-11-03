@@ -2,15 +2,15 @@
 
 @if (Href is not null && !External && !Disabled)
 {
-    <a class="row @Class" href="@Href" @onclick="TapAsync">@Body</a>
+    <a class="row @ReadingClass @Class" href="@Href" @onclick="TapAsync">@Body</a>
 }
 else if (Disabled || (Href is null && !OnClick.HasDelegate))
 {
-    <div class="row @(Disabled ? "row--disabled" : "") @Class" aria-disabled="@(Disabled ? "true" : null)">@Body</div>
+    <div class="row @(Disabled ? "row--disabled" : "") @ReadingClass @Class" aria-disabled="@(Disabled ? "true" : null)">@Body</div>
 }
 else
 {
-    <button type="button" class="row @Class" @onclick="ActivateAsync">@Body</button>
+    <button type="button" class="row @ReadingClass @Class" @onclick="ActivateAsync">@Body</button>
 }
 
 @code {
@@ -27,6 +27,10 @@ else
     [Parameter] public bool Disabled { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? TitleExtra { get; set; }
+    [Parameter] public bool Reading { get; set; }
+
+    private string? ReadingClass => Reading ? "row--reading" : null;
 
     private bool Navigates => !Disabled && Href is not null;
 
@@ -48,7 +52,13 @@ else
             <span class="row__icon @ToneClass"><GSBC.ChurchApp.Platform.Ui.Icon Name="@Icon" Size="IconSize.Small" /></span>
         }
         <span class="row__body">
-            <span class="row__title">@Title</span>
+            <span class="row__title">
+                @Title
+                @if (TitleExtra is not null)
+                {
+                    <span class="row__title-extra">@TitleExtra</span>
+                }
+            </span>
             @if (Subtitle is not null)
             {
                 <span class="row__subtitle">@Subtitle</span>

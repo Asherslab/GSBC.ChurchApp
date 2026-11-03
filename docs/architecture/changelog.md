@@ -16,7 +16,7 @@ parallel branches never conflict:
 
 ```markdown
 ---
-title: Sign in with Face ID
+title: Sign in without a password
 audience: everyone          # or staff: never in the production notes
 highlight: true             # shown in What's new after the update
 icon: key                   # an icon from Platform.Ui's IconPaths
@@ -24,7 +24,7 @@ link: account               # the screen "Show me" opens
 image: passkeys.webp        # a 16:9 picture in changelog/images/
 area: Account
 ---
-Sign in with Face ID or Touch ID. There's no password to remember.
+Use your face, your fingerprint or your phone's passcode to sign in, and stay signed in.
 
 ## For staff
 Changed: Signing in on the phone uses a passkey…

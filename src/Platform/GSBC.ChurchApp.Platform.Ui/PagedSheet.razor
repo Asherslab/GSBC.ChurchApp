@@ -2,10 +2,10 @@
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Label="@Label">
     <Cover>
-        <div class="paged__cover" @key="_page">@Cover(_page)</div>
+        <div class="paged__cover @_direction" @key="_page" @ontouchstart="TouchStart" @ontouchend="TouchEndAsync">@Cover(_page)</div>
     </Cover>
     <ChildContent>
-        <div class="paged__page" @key="_page" @ontouchstart="TouchStart" @ontouchend="TouchEndAsync">@Page(_page)</div>
+        <div class="paged__page @_direction" @key="_page" @ontouchstart="TouchStart" @ontouchend="TouchEndAsync">@Page(_page)</div>
         @if (Count > 1)
         {
             <div class="paged__dots">
@@ -29,6 +29,7 @@
 @code {
     private const double SwipeDistance = 48;
     private int _page;
+    private string? _direction;
     private double? _touchX;
 
     [Parameter] public bool Open { get; set; }
@@ -47,7 +48,7 @@
     protected override void OnParametersSet()
     {
         if (!Open)
-            _page = 0;
+            (_page, _direction) = (0, null);
         _page = Math.Clamp(_page, 0, Math.Max(Count - 1, 0));
     }
 
@@ -55,6 +56,7 @@
     {
         if (page == _page || page < 0 || page >= Count)
             return;
+        _direction = page > _page ? "paged--forward" : "paged--back";
         _page = page;
         await Shell.HapticAsync();
     }

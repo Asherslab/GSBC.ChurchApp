@@ -5,7 +5,7 @@ One file per change people would notice, written with the change. The design is 
 
 ```markdown
 ---
-title: Sign in with Face ID          # a few words
+title: Sign in without a password          # a few words
 audience: everyone                   # everyone, or staff for staff-only changes (admin screens, tools)
 highlight: true                      # optional: shown once after the update, in What's new
 icon: key                            # optional: an icon name from Platform.Ui's IconPaths
@@ -13,7 +13,7 @@ link: account                        # optional: the app screen "Show me" opens
 image: passkeys.webp                 # optional: a 16:9 picture in changelog/images/
 area: Account                        # optional: where in the app, shown beside the note
 ---
-Sign in with Face ID or Touch ID. There's no password to remember.
+Use your face, your fingerprint or your phone's passcode to sign in, and stay signed in.
 
 ## For staff
 Changed: What changed, in plain words.
