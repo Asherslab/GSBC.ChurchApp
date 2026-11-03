@@ -27,6 +27,7 @@ public sealed class PushRegistration(NativeBridge bridge, ChannelBase channel, S
             return;
         _signedIn = bridge.SignedIn;
         session.Changed += OnSessionChanged;
+        bridge.AppStateChanged += OnAppStateChanged;
         Permission = await bridge.PushPermissionAsync();
         if (Permission == Granted)
             _ = RegisterAsync();
@@ -56,6 +57,24 @@ public sealed class PushRegistration(NativeBridge bridge, ChannelBase channel, S
         catch (RpcException)
         {
         }
+    }
+
+    private void OnAppStateChanged(bool active)
+    {
+        if (active)
+            _ = RefreshPermissionAsync();
+    }
+
+    private async Task RefreshPermissionAsync()
+    {
+        string permission = await bridge.PushPermissionAsync();
+        if (permission == Permission)
+            return;
+        bool grantedNow = permission == Granted;
+        Permission = permission;
+        Changed?.Invoke();
+        if (grantedNow)
+            await RegisterAsync();
     }
 
     private async Task OnSessionChanged()
