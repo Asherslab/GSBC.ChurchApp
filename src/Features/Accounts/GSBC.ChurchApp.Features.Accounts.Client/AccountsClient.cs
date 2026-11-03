@@ -67,6 +67,16 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal, ID
 
     public ValueTask<CodeReply> IssueRecoveryCodeAsync(string userId) => _accounts.IssueRecoveryCodeAsync(new IssueRecoveryCodeRequest { UserId = userId });
 
+    public ValueTask<ReviewAccess> GetReviewAccessAsync() => _accounts.GetReviewAccessAsync(new Nothing());
+
+    public ValueTask<Done> CreateDemoAccountAsync(string name, string email) =>
+        _accounts.CreateDemoAccountAsync(new CreateDemoAccountRequest { DisplayName = name, Email = email });
+
+    public ValueTask<CodeReply> CreateReviewCodeAsync(string userId, string label, int days) =>
+        _accounts.CreateReviewCodeAsync(new CreateReviewCodeRequest { UserId = userId, Label = label, Days = days });
+
+    public ValueTask<Done> TurnOffReviewCodeAsync(string id) => _accounts.TurnOffReviewCodeAsync(new TurnOffReviewCodeRequest { Id = id });
+
     public ValueTask<Done> SetDisabledAsync(string userId, bool disabled) =>
         _accounts.SetDisabledAsync(new SetDisabledRequest { UserId = userId, Disabled = disabled });
 

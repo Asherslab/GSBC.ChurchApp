@@ -139,6 +139,45 @@ the previous tag, once Apple has processed it ([changelog.md](changelog.md)). **
 least every couple of months even when nothing changed, and before showing staff anything new. Only
 UAT's backend has to be up; the build carries everything else.
 
+## Sign-in for Apple's reviewers
+
+Apple reviews a build before external TestFlight testers get it and before it goes on the App Store, and
+its reviewers can't make a passkey on a church account. They sign in to a **demo account** with a
+**sign-in code** instead ([identity.md](identity.md), *Review sign-in codes*). Codes belong to one
+environment: make them in UAT's admin panel (`uat-app.baptist.com.au`) for TestFlight, and in
+production's for the App Store.
+
+**Once per environment:** admin panel → **App review** → **Make a demo account**: name `App Review`, an
+email of its own that no one uses, such as `review@baptist.com.au` (nothing is ever sent to it). It
+needs the Account manager role, which the Owner holds.
+
+**For each review:** **App review** → **Make a code**: what it's for (`TestFlight 1.0 (12)`), 30 days →
+copy the code (`ABCD-EFGH-JKMN`); it's shown only once. Then, in App Store Connect:
+
+- **External TestFlight:** **Apps** → **GSBC UAT** → **TestFlight** → **Test Information** → **Beta App
+  Review Information**.
+- **The App Store:** **Apps** → the app → the version being submitted → **App Review Information**.
+
+Fill in both the same way:
+
+| Field | What goes in it |
+|---|---|
+| **Sign-in required** | Ticked |
+| **User name** | The demo account's email, `review@baptist.com.au` |
+| **Password** | The code, `ABCD-EFGH-JKMN` |
+| **Notes** | The text below |
+
+> This app signs in with passkeys, so there are no passwords. For review there's a demo account
+> that signs in with a code. Open **More → Account**, tap **Have a sign-in code?**, and enter the user
+> name above as the email and the password above as the sign-in code. The demo account has no personal
+> data and no staff tools. Everything public in the app works without signing in.
+
+The code works as often as needed until it expires, so several reviewers can share it. Once Apple has
+approved the build, turn the code off (**App review** → the code → **Turn the code off**); anyone
+signed in with it is signed out. Every use is in the demo account's activity (**People** → the demo
+account). Five wrong codes for the account in 15 minutes lock it for 15 minutes, so if a reviewer reports
+that the code didn't work, check the code in App Store Connect before making a new one.
+
 ## Setting it up (owner, in this order)
 
 **1. Apple developer portal** (developer.apple.com → Account → Certificates, IDs & Profiles):

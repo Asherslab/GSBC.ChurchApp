@@ -19,8 +19,9 @@ public struct GrpcError: Error {
 
 public struct GrpcWebTransport: Sendable {
     public init(gateway: URL, sessionSecret: @escaping @Sendable () -> String? = { nil },
-                onSessionEnded: @escaping @Sendable () -> Void = {}) {
+                onSessionEnded: @escaping @Sendable () -> Void = {}, session: URLSession = .shared) {
         self.gateway = gateway
+        self.session = session
         self.sessionSecret = sessionSecret
         self.onSessionEnded = onSessionEnded
     }
@@ -37,13 +38,14 @@ public struct GrpcWebTransport: Sendable {
     private static let streamIdleTimeout: TimeInterval = 90
 
     public let gateway: URL
+    private let session: URLSession
     private let sessionSecret: @Sendable () -> String?
     private let onSessionEnded: @Sendable () -> Void
     public static let sessionHeader = "X-Gsbc-Session"
     public static let sessionEndedHeader = "X-Gsbc-Session-Ended"
 
     public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
-        let (data, response) = try await URLSession.shared.data(for: try request(method, message, headers))
+        let (data, response) = try await session.data(for: try request(method, message, headers))
         noticeEndedSession(response)
         let http = try Self.successful(response)
 
@@ -67,7 +69,7 @@ public struct GrpcWebTransport: Sendable {
                 do {
                     var request = try request(method, message, [:])
                     request.timeoutInterval = Self.streamIdleTimeout
-                    let (bytes, response) = try await URLSession.shared.bytes(for: request)
+                    let (bytes, response) = try await session.bytes(for: request)
                     noticeEndedSession(response)
                     let http = try Self.successful(response)
 

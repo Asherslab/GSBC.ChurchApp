@@ -37,6 +37,7 @@ window.gsbcNative = (() => {
     clearPrivateMedia: () => dataLayer().clearPrivateMedia(),
     signIn: () => dataLayer().signIn().then(outcome),
     registerPasskey: (ticket) => dataLayer().registerPasskey({ ticket }).then(outcome),
+    signInWithCode: (email, code) => dataLayer().signInWithCode({ email, code }).then(outcome),
     signOut: () => dataLayer().signOut(),
     listenSession: (receiver) => {
       dataLayer().addListener('sessionChanged', (event) => receiver.invokeMethodAsync('OnSessionChanged', !!event.signedIn));

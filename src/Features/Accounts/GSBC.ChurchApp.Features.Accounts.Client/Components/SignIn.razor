@@ -1,5 +1,6 @@
 @inject AccountsClient Accounts
 @inject IPasskeyCeremonies Passkeys
+@inject ISignInCodes Codes
 
 @if (_supported is false)
 {
@@ -17,6 +18,25 @@ else if (_mode == Mode.SignIn)
             <ListRow Title="Create an account" Subtitle="With your name, your email and a passkey" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Switch(Mode.SignUp)" />
             <ListRow Title="Lost your passkey?" Subtitle="Get a link by email to add a new one" Icon="lock" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.Recover)" />
         </ListGroup>
+        @if (Codes.IsAvailable)
+        {
+            <div class="ui-after">
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Switch(Mode.Code)">Have a sign-in code?</Button>
+            </div>
+        }
+    </Section>
+}
+else if (_mode == Mode.Code)
+{
+    <Section First="true" Title="Sign in with a code" Lead="For app reviewers. Use the email and sign-in code the church gave you.">
+        <TextField Label="Email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="username" />
+        <div class="ui-after">
+            <TextField Label="Sign-in code" Value="@_code" ValueChanged="value => _code = value" AutoComplete="one-time-code" Placeholder="ABCD-EFGH-JKMN" />
+        </div>
+        <div class="ui-actions ui-after">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
+            <Button Busy="_busy" Disabled="@(_email.Trim().Length == 0 || _code.Trim().Length == 0)" OnClick="SignInWithCodeAsync">Sign in</Button>
+        </div>
     </Section>
 }
 else if (_mode == Mode.SignUp)
@@ -51,7 +71,7 @@ else
 }
 
 @code {
-    private enum Mode { SignIn, SignUp, Recover }
+    private enum Mode { SignIn, SignUp, Recover, Code }
 
     private Mode _mode = Mode.SignIn;
     private bool? _supported;
@@ -60,6 +80,7 @@ else
     private NoticeTone _messageTone = NoticeTone.Warning;
     private string _name = "";
     private string _email = "";
+    private string _code = "";
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -83,6 +104,8 @@ else
     }
 
     private Task SignInAsync() => RunAsync(async () => await FinishAsync(await Passkeys.SignInAsync()));
+
+    private Task SignInWithCodeAsync() => RunAsync(async () => await FinishAsync(await Codes.SignInAsync(_email, _code)));
 
     private Task SignUpAsync() => RunAsync(async () =>
     {

@@ -97,6 +97,7 @@
     <Project Path="tests/Features/Access/GSBC.ChurchApp.Features.Access.Api.Tests/GSBC.ChurchApp.Features.Access.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Accounts/">
+    <Project Path="tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api.Tests/GSBC.ChurchApp.Features.Accounts.Api.Tests.csproj" />
     <Project Path="tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway.Tests/GSBC.ChurchApp.Features.Accounts.Gateway.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Configuration/">

@@ -14,6 +14,9 @@ public interface IAccountsService
     ValueTask<TicketReply> RedeemAsync(RedeemRequest request, CallContext context = default);
 
     [Public]
+    ValueTask<CodeSession> SignInWithCodeAsync(SignInWithCodeRequest request, CallContext context = default);
+
+    [Public]
     ValueTask<Done> RequestRecoveryAsync(RequestRecoveryRequest request, CallContext context = default);
 
     [SignedIn]
@@ -60,4 +63,16 @@ public interface IAccountsService
 
     [Requires(AccountsPermissions.ManageNode)]
     ValueTask<CodeReply> IssueRecoveryCodeAsync(IssueRecoveryCodeRequest request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ReviewAccessNode)]
+    ValueTask<ReviewAccess> GetReviewAccessAsync(Nothing request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ReviewAccessNode)]
+    ValueTask<Done> CreateDemoAccountAsync(CreateDemoAccountRequest request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ReviewAccessNode)]
+    ValueTask<CodeReply> CreateReviewCodeAsync(CreateReviewCodeRequest request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ReviewAccessNode)]
+    ValueTask<Done> TurnOffReviewCodeAsync(TurnOffReviewCodeRequest request, CallContext context = default);
 }

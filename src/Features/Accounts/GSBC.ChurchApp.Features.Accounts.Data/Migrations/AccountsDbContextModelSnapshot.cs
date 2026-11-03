@@ -51,6 +51,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("last_seen_at");
 
+                    b.Property<Guid?>("ReviewCodeId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("review_code_id");
+
                     b.Property<string>("SecretHash")
                         .HasColumnType("text")
                         .HasColumnName("secret_hash");
@@ -66,6 +70,9 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_sessions");
+
+                    b.HasIndex("ReviewCodeId")
+                        .HasDatabaseName("ix_sessions_review_code_id");
 
                     b.HasIndex("SecretHash")
                         .IsUnique()
@@ -209,6 +216,9 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_audit");
 
+                    b.HasIndex("Action", "At")
+                        .HasDatabaseName("ix_audit_action_at");
+
                     b.HasIndex("UserId", "At")
                         .HasDatabaseName("ix_audit_user_id_at");
 
@@ -253,6 +263,65 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasDatabaseName("ix_codes_user_id_purpose");
 
                     b.ToTable("codes", "accounts");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.ReviewCode", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expires_at");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("hash");
+
+                    b.Property<string>("Label")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("label");
+
+                    b.Property<DateTime?>("LastUsedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_used_at");
+
+                    b.Property<DateTime?>("TurnedOffAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("turned_off_at");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.Property<int>("Uses")
+                        .HasColumnType("integer")
+                        .HasColumnName("uses");
+
+                    b.HasKey("Id")
+                        .HasName("pk_review_codes");
+
+                    b.HasIndex("Hash")
+                        .IsUnique()
+                        .HasDatabaseName("ix_review_codes_hash");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_review_codes_user_id");
+
+                    b.ToTable("review_codes", "accounts");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
@@ -358,6 +427,25 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasName("pk_user_tokens");
 
                     b.ToTable("user_tokens", "accounts");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.AccountSession", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Accounts.Data.ReviewCode", null)
+                        .WithMany()
+                        .HasForeignKey("ReviewCodeId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .HasConstraintName("fk_sessions_review_codes_review_code_id");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Accounts.Data.ReviewCode", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Accounts.Data.AccountUser", null)
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_review_codes_users_user_id");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>

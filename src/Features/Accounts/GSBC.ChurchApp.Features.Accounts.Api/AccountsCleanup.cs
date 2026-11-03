@@ -22,7 +22,8 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
             try
             {
                 await using AsyncServiceScope scope = scopes.CreateAsyncScope();
-                await CleanAsync(scope.ServiceProvider.GetRequiredService<AccountsDbContext>(), time.GetUtcNow().UtcDateTime, stoppingToken);
+                IReadOnlyList<Guid> demoAccounts = await scope.ServiceProvider.GetRequiredService<DemoAccounts>().AllAsync(stoppingToken);
+                await CleanAsync(scope.ServiceProvider.GetRequiredService<AccountsDbContext>(), time.GetUtcNow().UtcDateTime, demoAccounts, stoppingToken);
             }
             catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
             {
@@ -32,7 +33,7 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
-    public static async Task CleanAsync(AccountsDbContext db, DateTime now, CancellationToken cancellationToken)
+    public static async Task CleanAsync(AccountsDbContext db, DateTime now, IReadOnlyList<Guid> demoAccounts, CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({AdvisoryLockKey})", cancellationToken);
@@ -40,6 +41,7 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
         DateTime abandoned = now - AbandonedAfter;
         await db.Users
             .Where(user => user.CreatedAt < abandoned
+                && !demoAccounts.Contains(user.Id)
                 && !db.Set<IdentityUserPasskey<Guid>>().Any(passkey => passkey.UserId == user.Id)
                 && !db.Codes.Any(code => code.UserId == user.Id && code.UsedAt == null && code.ExpiresAt > now
                     && (code.Purpose == CodePurpose.Invitation || code.Purpose == CodePurpose.RegisterPasskey)))
@@ -47,6 +49,8 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
 
         await db.Codes.Where(code => code.ExpiresAt < now - CodesKeptFor).ExecuteDeleteAsync(cancellationToken);
         await db.Sessions.Where(session => session.ExpiresAt < now).ExecuteDeleteAsync(cancellationToken);
+        await db.Sessions.Where(session => db.ReviewCodes.Any(code => code.Id == session.ReviewCodeId && (code.TurnedOffAt != null || code.ExpiresAt < now)))
+            .ExecuteDeleteAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
     }

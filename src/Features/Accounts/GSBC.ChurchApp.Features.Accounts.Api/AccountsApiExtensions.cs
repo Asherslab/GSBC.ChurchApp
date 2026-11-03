@@ -22,6 +22,8 @@ public static class AccountsApiExtensions
             .AddEntityFrameworkStores<AccountsDbContext>();
         services.AddSystemRole(new SystemRole("account-manager", "Account manager",
             "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global, ["accounts.*"]));
+        services.AddSystemRole(DemoAccounts.Role);
+        services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>();
         services.AddHostedService<AccountsCleanup>();
         return services.AddPermissions(AccountsPermissions.All);
     }

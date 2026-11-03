@@ -23,11 +23,12 @@ internal sealed class AccountsService(
     AccountsAudit audit,
     IEmailSender email,
     IOptions<AccountsOptions> options,
-    IAccessEvaluator access,
-    PermissionCatalog catalog,
+    DemoAccounts demo,
+    ReviewSignIns reviews,
     TimeProvider time) : IAccountsService
 {
     private const int MaximumNameLength = 80;
+    private const string DemoAccountsUseCodes = "This is a demo account for app reviewers. It signs in with a sign-in code, never a passkey.";
     private static readonly CodePurpose[] RedeemablePurposes = [CodePurpose.Invitation, CodePurpose.Recovery];
 
     [EnableRateLimiting(RateLimits.PublicWrites)]
@@ -59,6 +60,8 @@ internal sealed class AccountsService(
             ?? throw new RpcException(new Status(StatusCode.NotFound, "That account no longer exists."));
         if (user.Disabled)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "This account is disabled."));
+        if (await demo.IsDemoAsync(user.Id, cancellationToken))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, DemoAccountsUseCodes));
         if (code.Purpose == CodePurpose.Invitation)
             user.EmailConfirmed = true;
 
@@ -69,6 +72,10 @@ internal sealed class AccountsService(
     }
 
     [EnableRateLimiting(RateLimits.PublicWrites)]
+    public async ValueTask<CodeSession> SignInWithCodeAsync(SignInWithCodeRequest request, CallContext context = default) =>
+        new() { Session = await reviews.SignInAsync(request.Email, request.Code, request.Device, Address(context), context.CancellationToken) };
+
+    [EnableRateLimiting(RateLimits.PublicWrites)]
     public async ValueTask<Done> RequestRecoveryAsync(RequestRecoveryRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
@@ -76,7 +83,8 @@ internal sealed class AccountsService(
             ? await users.FindByEmailAsync(address.Address)
             : null;
 
-        if (user is { EmailConfirmed: true, Disabled: false, Email: not null } && !await HoldsSensitivePermissionAsync(user.Id, cancellationToken))
+        if (user is { EmailConfirmed: true, Disabled: false, Email: not null } 
+            && !await demo.HoldsSensitivePermissionAsync(user.Id, cancellationToken) && !await demo.IsDemoAsync(user.Id, cancellationToken))
         {
             string link = Link(codes.IssueToken(user.Id, CodePurpose.Recovery, OneTimeCodes.RecoveryLifetime));
             audit.Record(AuditActions.RecoveryRequested, user.Id, remoteAddress: Address(context));
@@ -96,6 +104,7 @@ internal sealed class AccountsService(
             DisplayName = user.DisplayName,
             Email = user.Email ?? "",
             EmailConfirmed = user.EmailConfirmed,
+            DemoAccount = await demo.IsDemoAsync(user.Id, context.CancellationToken),
         };
     }
 
@@ -229,6 +238,8 @@ internal sealed class AccountsService(
     {
         AccountUser user = (Guid.TryParse(request.UserId, out Guid id) ? await users.FindByIdAsync(id.ToString()) : null)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+        if (await demo.IsDemoAsync(user.Id, context.CancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, DemoAccountsUseCodes));
 
         string code = codes.IssueToken(user.Id, CodePurpose.Recovery, OneTimeCodes.RecoveryLifetime);
         audit.Record(AuditActions.RecoveryIssued, user.Id, Caller(context).UserId);
@@ -291,6 +302,33 @@ internal sealed class AccountsService(
         };
     }
 
+    public async ValueTask<ReviewAccess> GetReviewAccessAsync(Nothing request, CallContext context = default) =>
+        await reviews.OverviewAsync(context.CancellationToken);
+
+    public async ValueTask<Done> CreateDemoAccountAsync(CreateDemoAccountRequest request, CallContext context = default)
+    {
+        string name = ValidName(request.DisplayName);
+        string address = ValidEmail(request.Email);
+        CancellationToken cancellationToken = context.CancellationToken;
+        if (await users.FindByEmailAsync(address) is not null)
+            throw new RpcException(new Status(StatusCode.AlreadyExists, "An account already uses this email. Give the demo account an address of its own."));
+
+        AccountUser user = await FindAbandonedOrCreateAsync(name, address, cancellationToken);
+        audit.Record(AuditActions.DemoAccountCreated, user.Id, Caller(context).UserId);
+        await db.SaveChangesAsync(cancellationToken);
+        await demo.MakeAsync(user.Id, cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<CodeReply> CreateReviewCodeAsync(CreateReviewCodeRequest request, CallContext context = default) =>
+        await reviews.CreateCodeAsync(Caller(context).UserId, request.UserId, request.Label, request.Days, context.CancellationToken);
+
+    public async ValueTask<Done> TurnOffReviewCodeAsync(TurnOffReviewCodeRequest request, CallContext context = default)
+    {
+        await reviews.TurnOffAsync(Caller(context).UserId, request.Id, context.CancellationToken);
+        return new Done();
+    }
+
     private async Task<PeopleList> PeopleAsync(List<AccountUser> found, CancellationToken cancellationToken)
     {
         List<Guid> ids = found.Select(user => user.Id).ToList();
@@ -313,19 +351,12 @@ internal sealed class AccountsService(
         };
     }
 
-    private async Task<bool> HoldsSensitivePermissionAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
-        List<string> sensitive = catalog.ByNode.Values.Where(permission => permission.IsSensitive).Select(permission => permission.Node).ToList();
-        return grants.Grants.Any(grant => !grant.Pattern.IsDeny && sensitive.Any(grant.Pattern.Matches));
-    }
-
     private async Task<AccountUser> FindAbandonedOrCreateAsync(string name, string address, CancellationToken cancellationToken)
     {
         AccountUser? existing = await users.FindByEmailAsync(address);
         if (existing is not null)
         {
-            if ((await users.GetPasskeysAsync(existing)).Count > 0)
+            if ((await users.GetPasskeysAsync(existing)).Count > 0 || await demo.IsDemoAsync(existing.Id, cancellationToken))
                 throw new RpcException(new Status(StatusCode.AlreadyExists, "An account already uses this email. Sign in, or recover it."));
             existing.DisplayName = name;
             return existing;

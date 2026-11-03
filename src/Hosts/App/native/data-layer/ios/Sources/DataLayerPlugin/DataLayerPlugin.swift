@@ -24,6 +24,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "registerPasskey", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "signInWithCode", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preference", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise)
@@ -85,6 +86,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
             call.reject("unary needs a method and a base64 request")
             return
         }
+        guard method != CodeSignIn.method else {
+            call.reject("Sign in with a code through signInWithCode, so the session stays on this phone.")
+            return
+        }
         guard let transport else {
             resolve(call, GrpcResult(status: GrpcWebTransport.unavailable, message: "This build has no gateway configured.", body: Data()))
             return
@@ -141,6 +146,19 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     @objc func registerPasskey(_ call: CAPPluginCall) {
         let ticket = call.getString("ticket")
         ceremony(call) { await $0.register(ticket: ticket) }
+    }
+
+    @objc func signInWithCode(_ call: CAPPluginCall) {
+        guard let transport else { return resolve(call, .failed("This build has no gateway configured.")) }
+        let email = call.getString("email") ?? ""
+        let code = call.getString("code") ?? ""
+        let wasSignedIn = runtime.signedIn
+        Task {
+            let outcome = await CodeSignIn(transport: transport, vault: DataLayerRuntime.vault, deviceName: UIDevice.current.model)
+                .signIn(email: email, code: code)
+            if outcome.ok && !wasSignedIn { await runtime.sessionStarted() }
+            resolve(call, outcome)
+        }
     }
 
     @objc func signOut(_ call: CAPPluginCall) {

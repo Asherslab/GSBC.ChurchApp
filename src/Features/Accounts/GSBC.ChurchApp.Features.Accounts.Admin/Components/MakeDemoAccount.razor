@@ -1,0 +1,47 @@
+@using Grpc.Core
+@inject AccountsClient Accounts
+
+<h2 class="panel-title">Make a demo account</h2>
+<p class="panel-lead">An account with no real data for Apple's reviewers. Give it an email of its own, such as review@@ your church's domain. Nothing is sent to it. It can only sign in with a sign-in code and never gets a passkey.</p>
+<form class="panel-form" @onsubmit="MakeAsync">
+    <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" Hint="Shown in the app while signed in, such as App Review" />
+    <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" Hint="Goes in App Store Connect's user name field" />
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    <Notice Text="@_made" />
+    <div class="panel-actions">
+        <Button Type="submit" Icon="plus" Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)">Make the demo account</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
+    </div>
+</form>
+
+@code {
+    private string _name = "App Review";
+    private string _email = "";
+    private string? _problem;
+    private string? _made;
+    private bool _busy;
+
+    [Parameter] public EventCallback OnMade { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private async Task MakeAsync()
+    {
+        _busy = true;
+        _problem = _made = null;
+        try
+        {
+            await Accounts.CreateDemoAccountAsync(_name.Trim(), _email.Trim());
+            _made = $"{_email.Trim()} is ready. Make a code for it next.";
+            _email = "";
+            await OnMade.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

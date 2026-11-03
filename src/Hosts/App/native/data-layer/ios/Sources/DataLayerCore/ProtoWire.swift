@@ -1,7 +1,9 @@
 import Foundation
 
 public struct ProtoWriter {
-    private(set) var data = Data()
+    public private(set) var data = Data()
+
+    public init() {}
 
     public mutating func string(_ field: Int, _ value: String) {
         bytes(field, Data(value.utf8))

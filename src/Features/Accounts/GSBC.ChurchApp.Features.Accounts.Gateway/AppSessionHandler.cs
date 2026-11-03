@@ -27,6 +27,7 @@ internal sealed class AppSessionHandler(
         AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
         var found = await db.Sessions
             .Where(session => session.SecretHash == hash && session.Client == SessionClient.App && session.ExpiresAt > now)
+            .Where(ReviewCodes.SessionIsCurrent(db, now))
             .Join(db.Users, session => session.UserId, user => user.Id, (session, user) => new { Session = session, user.DisplayName, user.Disabled })
             .SingleOrDefaultAsync(Context.RequestAborted);
         if (found is null || found.Disabled)

@@ -90,6 +90,13 @@ What to Test call and the tag push first run with the first TestFlight build.
 
 **Admin panel (2026-11-03, branch `feature/admin-design`):** redesigned for a computer (build order 7); checked on `dev-app.baptist.com.au` at 1280, 1440 and 1920, light and dark.
 
+**Review sign-in codes (2026-11-03, branch `feature/review-code`):** Apple's reviewers sign in to a
+demo account (the App reviewer role) with a sign-in code made on the admin panel's App review page,
+through the gRPC `Accounts.SignInWithCode`; no passwords and no new API path
+([identity.md](architecture/identity.md), *Review sign-in codes*). Tested against Postgres and natively;
+what goes in App Store Connect is in [environments.md](architecture/environments.md), *Sign-in for Apple's
+reviewers*.
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),
