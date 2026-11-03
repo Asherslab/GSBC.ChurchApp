@@ -255,6 +255,76 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                     b.ToTable("codes", "accounts");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.FeedChangeRecord", b =>
+                {
+                    b.Property<long>("Cursor")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("cursor");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityAlwaysColumn(b.Property<long>("Cursor"));
+
+                    b.Property<DateTime>("CommittedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("committed_at")
+                        .HasDefaultValueSql("now()");
+
+                    b.Property<bool>("Deleted")
+                        .HasColumnType("boolean")
+                        .HasColumnName("deleted");
+
+                    b.Property<DateTime?>("EndsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("ends_at");
+
+                    b.Property<string>("Feed")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("feed");
+
+                    b.Property<string>("GroupKey")
+                        .HasColumnType("text")
+                        .HasColumnName("group_key");
+
+                    b.Property<byte[]>("Payload")
+                        .IsRequired()
+                        .HasColumnType("bytea")
+                        .HasColumnName("payload");
+
+                    b.Property<string>("RecordId")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("record_id");
+
+                    b.Property<string>("ScopeId")
+                        .HasColumnType("text")
+                        .HasColumnName("scope_id");
+
+                    b.Property<string>("SortKey")
+                        .HasColumnType("text")
+                        .HasColumnName("sort_key");
+
+                    b.Property<DateTime?>("StartsAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("starts_at");
+
+                    b.Property<long>("Version")
+                        .HasColumnType("bigint")
+                        .HasColumnName("version");
+
+                    b.HasKey("Cursor")
+                        .HasName("pk_feed_changes");
+
+                    b.HasIndex("Feed", "Cursor")
+                        .HasDatabaseName("ix_feed_changes_feed_cursor");
+
+                    b.ToTable("feed_changes", "sync", t =>
+                        {
+                            t.ExcludeFromMigrations();
+                        });
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
                     b.Property<int>("Id")

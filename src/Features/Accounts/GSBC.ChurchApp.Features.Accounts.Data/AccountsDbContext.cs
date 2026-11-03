@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
@@ -12,11 +13,13 @@ public sealed class AccountsDbContext(DbContextOptions<AccountsDbContext> option
     public DbSet<AccountSession> Sessions => Set<AccountSession>();
     public DbSet<OneTimeCode> Codes => Set<OneTimeCode>();
     public DbSet<AuditEntry> Audit => Set<AuditEntry>();
+    public DbSet<FeedChangeRecord> FeedChanges => Set<FeedChangeRecord>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
         modelBuilder.HasDefaultSchema(Schema);
+        FeedChangeTable.Map(modelBuilder);
         modelBuilder.Entity<AccountUser>().ToTable("users");
         modelBuilder.Entity<IdentityUserClaim<Guid>>().ToTable("user_claims");
         modelBuilder.Entity<IdentityUserLogin<Guid>>().ToTable("user_logins");

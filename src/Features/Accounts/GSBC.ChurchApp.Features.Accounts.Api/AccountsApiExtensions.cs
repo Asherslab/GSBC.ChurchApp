@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
+using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
@@ -23,6 +24,8 @@ public static class AccountsApiExtensions
         services.AddSystemRole(new SystemRole("account-manager", "Account manager",
             "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global, ["accounts.*"]));
         services.AddHostedService<AccountsCleanup>();
+        services.AddScoped<ISignedInSessions, AccountSessionCheck>();
+        services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
         return services.AddPermissions(AccountsPermissions.All);
     }
 

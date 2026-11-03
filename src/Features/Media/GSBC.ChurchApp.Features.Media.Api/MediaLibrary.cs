@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Media;
+using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
@@ -97,6 +98,7 @@ internal sealed class MediaLibrary(
             UploadedAt = Now,
         };
         db.Items.Add(item);
+        Mark(item.Id);
         await DiscardAsync(pending, cancellationToken);
         return MediaRefs.Of(item, blobs);
     }
@@ -130,6 +132,7 @@ internal sealed class MediaLibrary(
             UploadedAt = Now,
         };
         db.Items.Add(item);
+        Mark(item.Id);
         await db.SaveChangesAsync(cancellationToken);
         return MediaRefs.Of(item, blobs);
     }
@@ -185,6 +188,7 @@ internal sealed class MediaLibrary(
             throw InUse(uses);
 
         db.Items.Remove(item);
+        Mark(item.Id, deleted: true);
         try
         {
             await db.SaveChangesAsync(cancellationToken);
@@ -216,6 +220,8 @@ internal sealed class MediaLibrary(
         await db.SaveChangesAsync(cancellationToken);
         await blobs.DeleteAsync(BlobBucket.Private, pending.StagingKey, cancellationToken);
     }
+
+    private void Mark(Guid mediaId, bool deleted = false) => db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, mediaId.ToString(), Now, deleted));
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 

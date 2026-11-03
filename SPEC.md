@@ -218,8 +218,9 @@ features get it for free.
 - **Heartbeats.** The server sends a small heartbeat message every ~30 seconds, so proxies with idle
   timeouts (Cloudflare, Traefik, YARP) don't cut a quiet stream. HTTP/2 PINGs alone aren't relied
   on, because not every hop counts them as activity.
-- **Browsers get the same stream.** The admin panel watches over gRPC-Web, with no native store, so it
-  keeps state in memory. New prayer requests appear in the pastoral inbox live, and two staff editing
+- **Browsers get the same stream.** The admin panel watches over gRPC-Web, with no native store; a
+  change tells the open page to reload through its own gRPC methods (built 2026-11-03,
+  [offline-and-caching.md](docs/architecture/offline-and-caching.md), *The admin panel*). New prayer requests appear in the pastoral inbox live, and two staff editing
   see each other's saves. A future website would do the same with public feeds only.
 - **Tiers apply per feed.** `Watch` streams public feeds to anyone. Staff-only feeds, such as the
   prayer inbox, are only included when the call carries a staff token (§6).

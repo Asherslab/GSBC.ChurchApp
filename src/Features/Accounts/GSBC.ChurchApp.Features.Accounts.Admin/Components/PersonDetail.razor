@@ -42,7 +42,7 @@
 
     <section class="panel-section" aria-labelledby="activity-@Person.Id">
         <h3 class="panel-subtitle" id="activity-@Person.Id">Recent activity</h3>
-        <LiveData TValue="List<AuditInfo>" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
+        <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
             @if (context.Value.Count == 0)
             {
                 <p class="panel-hint">Nothing yet.</p>

@@ -43,6 +43,7 @@ public static class PlatformApiExtensions
         });
         services.AddSingleton<TierCatalog>();
         services.TryAddScoped<IAccessEvaluator, NoGrantsAccessEvaluator>();
+        services.TryAddScoped<ISignedInSessions, UncheckedSessions>();
         services.TryAddSingleton<IScopeHierarchy, FlatScopeHierarchy>();
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<FeedRegistry>();

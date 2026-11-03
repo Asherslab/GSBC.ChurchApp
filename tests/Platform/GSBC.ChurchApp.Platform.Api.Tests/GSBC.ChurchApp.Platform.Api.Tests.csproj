@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
+    <ProjectReference Include="..\..\..\src\Platform\GSBC.ChurchApp.Platform.Client\GSBC.ChurchApp.Platform.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

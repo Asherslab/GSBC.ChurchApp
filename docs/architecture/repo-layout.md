@@ -143,7 +143,7 @@ flowchart LR
     AccountsApi --> AccountsContracts & AccountsData & PlatformApi
     AccountsGateway --> AccountsData
     AccountsContracts --> PlatformContracts
-    AccountsData --> PlatformData
+    AccountsData --> PlatformData & AccountsContracts
 
     AccessAdmin --> AccessClient
     AccessClient --> AccessContracts & PlatformClient & PlatformUi
@@ -170,7 +170,7 @@ flowchart LR
     ArchitectureTests --> HostsApi & HostsGateway & PlatformUi
     PermissionsTests --> PlatformPermissions
     ContractsTests --> PlatformContracts
-    ApiTests --> PlatformApi
+    ApiTests --> PlatformApi & PlatformClient
     GatewayTests --> AccountsGateway
     AccessTests --> AccessApi
     ConfigurationTests --> ConfigurationApi
@@ -239,7 +239,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores; images in settings are the library's; unsafe rich text is never stored | No |
 | `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience, a saved `MediaRef` is the library's, dimensions come from the bytes, files in use can't be deleted | No |
-| `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
+| `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 

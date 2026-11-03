@@ -1,7 +1,7 @@
 @inject AccountsClient Accounts
 @inject IPasskeyCeremonies Passkeys
 
-<LiveData @ref="_live" TValue="AccountView" Load="LoadAsync" FailedTitle="Can't reach the church's server">
+<LiveData @ref="_live" TValue="AccountView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't reach the church's server">
     <Section First="true" Title="You">
         <TextField Label="Name" Value="@(_name ?? context.Value.Profile.DisplayName)" ValueChanged="value => _name = value" AutoComplete="name" />
         <div class="ui-actions ui-after">

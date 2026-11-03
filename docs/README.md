@@ -90,6 +90,12 @@ What to Test call and the tag push first run with the first TestFlight build.
 
 **Admin panel (2026-11-03, branch `feature/admin-design`):** redesigned for a computer (build order 7); checked on `dev-app.baptist.com.au` at 1280, 1440 and 1920, light and dark.
 
+**The admin panel is live (2026-11-03, branch `feature/admin-live`):** pages update within a second or
+two when anyone changes what they show (drafts, publishing, media, roles, people, your own access), over
+the same `Sync.Watch` stream as the phone, and an open stream ends when its sign-in does
+([offline-and-caching.md](architecture/offline-and-caching.md), *The admin panel*; two people in one
+draft: [drafts.md](architecture/drafts.md), *Live in the admin panel*).
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),

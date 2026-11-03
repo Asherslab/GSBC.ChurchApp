@@ -14,4 +14,7 @@ public sealed class FeedChangeRecord
     public string? GroupKey { get; set; }
     public string? ScopeId { get; set; }
     public DateTime CommittedAt { get; set; }
+
+    public static FeedChangeRecord Marker(string feed, string recordId, DateTime at, bool deleted = false) =>
+        new() { Feed = feed, RecordId = recordId, Version = at.Ticks, Deleted = deleted };
 }

@@ -7,6 +7,7 @@ public sealed class FeedCursor
 {
     [ProtoMember(1)] public string Feed { get; set; } = "";
     [ProtoMember(2)] public long Cursor { get; set; }
+    [ProtoMember(3)] public bool Latest { get; set; }
 }
 
 [ProtoContract]

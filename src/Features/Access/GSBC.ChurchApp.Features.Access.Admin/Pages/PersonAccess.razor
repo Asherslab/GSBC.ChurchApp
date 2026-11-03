@@ -6,7 +6,7 @@
     <Aside>
         <h2 class="workbench__heading">Find someone</h2>
         <SearchField Label="Find someone" Placeholder="Name or email" Value="@_query" ValueChanged="SearchAsync" />
-        <LiveData @ref="_live" TValue="IReadOnlyList<PersonSummary>" Load="LoadAsync" FailedTitle="Can't find people right now">
+        <LiveData @ref="_live" TValue="IReadOnlyList<PersonSummary>" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't find people right now">
             <DataTable TItem="PersonSummary" Label="People" Items="context.Value" Columns="Columns" Key="person => person.Id" Selected="Chosen(context.Value)" SelectedChanged="Choose" Class="data-table--list">
                 <Empty>
                     <p class="panel-hint">No one matches “@_query”.</p>

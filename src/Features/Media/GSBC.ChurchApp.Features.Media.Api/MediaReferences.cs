@@ -1,7 +1,9 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Api.Data;
+using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
+using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
@@ -9,7 +11,7 @@ using Npgsql;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
 
-internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs) : IMediaReferences
+internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs, TimeProvider time) : IMediaReferences
 {
     public async Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken)
     {
@@ -27,8 +29,12 @@ internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs) : IMe
         HashSet<Guid> ids = [.. verified.Select(media => Guid.Parse(media.Id))];
 
         await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        HashSet<Guid> usedBefore = [.. await db.Uses.Where(use => use.Owner == owner).Select(use => use.MediaId).ToListAsync(cancellationToken)];
         await db.Uses.Where(use => use.Owner == owner).ExecuteDeleteAsync(cancellationToken);
         db.Uses.AddRange(ids.Select(id => new MediaUse { MediaId = id, Owner = owner }));
+        usedBefore.SymmetricExceptWith(ids);
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        db.FeedChanges.AddRange(usedBefore.Select(id => FeedChangeRecord.Marker(MediaFeeds.Library, id.ToString(), now)));
         try
         {
             await db.SaveChangesAsync(cancellationToken);

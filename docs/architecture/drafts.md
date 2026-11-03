@@ -192,6 +192,21 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   (hideable until the app next comes to the foreground), More → Drafts, and Home listing the Hub's
   link tiles. The phone previews from the signed-in account.
 
+### Live in the admin panel (2026-11-03)
+
+The drafts page follows `config.drafts` and `config.placements` through the admin panel's live stream
+([offline-and-caching.md](offline-and-caching.md), *The admin panel*), so someone else's save shows
+within a second or two:
+
+- **The draft you have open** takes in their changes as they save. Saves are per row, so two people
+  working on different rows of one draft don't disturb each other.
+- **The row you're editing** keeps what you've typed. If their save changed that same row, it says
+  *Someone else changed this while you were editing it. What you type next saves over their change*,
+  with *Show their version* (drops your unsaved typing for that row and shows theirs) and *Keep mine*.
+- **What everyone sees** (Live) is refreshed when you close the row you're editing, so the form doesn't
+  shift under you; a field changed for everyone then shows as usual, to settle before publishing.
+- **A draft published or deleted by someone else** closes, with a note saying so.
+
 **Decided while building (no owner question needed):**
 
 - A draft is changed by its author or by someone who sees every draft; people it's shared with only
@@ -210,8 +225,6 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
 
 ## Open
 
-- **The admin panel isn't live yet:** it has no feed store, so it refreshes on its own saves,
-  reconnects and access changes, not when someone else edits the same draft.
 - **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.
