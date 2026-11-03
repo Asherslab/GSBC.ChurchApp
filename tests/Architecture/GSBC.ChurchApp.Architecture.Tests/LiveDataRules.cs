@@ -6,7 +6,6 @@ public sealed partial class LiveDataRules
 {
     private static readonly string[] NotYetMigrated =
     [
-        "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaLibrary.razor",
     ];
 
     [Fact]
