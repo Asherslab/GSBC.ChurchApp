@@ -1,0 +1,44 @@
+{
+  "title": "Announcements: choose the page's shape",
+  "question": "The admin panel's look is settled; this is how the Announcements page is put together. You said the office sends a few a month and writing it well should be easiest. Lock one, steer it, or ask for another hand. (The inbox on the phone comes next on this page.)",
+  "options": [
+    {
+      "id": "fortnight",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The fortnight ahead",
+      "thesis": "A rail of the next fourteen days shows what's going out; the writing desk sits under it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#009c8f", "#ffffff"],
+      "materials": ["office-week rail", "lock-screen proof"],
+      "viewport": "Title band, a sand rail of 14 day columns with scheduled and sent capsules, then the writing column beside its lock-screen proof.",
+      "risk": "With a few a month the rail is mostly empty days, and it pushes the writing below the fold on a laptop.",
+      "html": ".impeccable/mocks/decision/announcements/fortnight.html"
+    },
+    {
+      "id": "proof",
+      "kind": "dealt",
+      "label": "Written beside its proof",
+      "thesis": "Write in the middle, see it on a real phone on the right, and tick off who and when underneath.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["workbench", "true-size phone frame", "before-it-goes checklist"],
+      "viewport": "A narrow sand list (Waiting, Scheduled, Sent), a wide writing column, and a phone showing the lock screen and the inbox row as you type.",
+      "risk": "Three panes on a 1280 laptop leave the writing column narrow unless the list folds away.",
+      "html": ".impeccable/mocks/decision/announcements/proof.html"
+    },
+    {
+      "id": "letter",
+      "kind": "dealt",
+      "label": "A letter and its envelope",
+      "thesis": "Writing gets the whole desk: the envelope (to, when, opens, urgent) sits above the letter.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["envelope strip", "sand letter sheet", "data table index"],
+      "viewport": "An envelope strip of four plain choices above a big title and message on a sand sheet; a small lock-screen card in the margin. The list is its own page.",
+      "risk": "The list and the writing are two pages, so checking an earlier announcement means leaving the one you're writing.",
+      "html": ".impeccable/mocks/decision/announcements/letter.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" },
+  "followup": true
+}

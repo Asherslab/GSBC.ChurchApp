@@ -1,0 +1,71 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 16px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 300px 1fr}
+.side{background:#2a3d5e;color:rgba(255,255,255,.76);padding:22px 14px}
+.brand{display:flex;gap:10px;align-items:center;color:#fff;font-weight:700;font-size:17px;padding:0 10px 22px}
+.dot{width:30px;height:30px;border-radius:50%;border:3px solid #d5c9b7}
+.grp{color:#d5c9b7;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:14px 10px 6px}
+.lnk{height:38px;display:flex;align-items:center;padding:0 10px;border-radius:9px;font-weight:600;font-size:14.5px;position:relative}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff}.lnk.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;background:#e7ae74;border-radius:0 3px 3px 0}
+.list{background:#f4efe7;border-right:1px solid rgba(42,61,94,.12);padding:28px 16px}
+.list h2{font-size:20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}
+.new{background:#2a3d5e;color:#fff;font-size:13px;font-weight:600;border-radius:22px;padding:8px 14px}
+.lh{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7384;margin:18px 4px 6px}
+.it{padding:10px 12px;border-radius:12px;font-size:14px}.it b{display:block;font-weight:600}.it span{color:#545e70;font-size:13px}
+.it.sel{background:#fff}
+.main{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:40px;padding:28px 40px}
+.tb h1{font-size:27px;letter-spacing:-.02em}.tb p{color:#545e70;font-size:14px;margin-top:4px}
+.f{margin-top:22px}.f label{display:block;font-size:14.5px;font-weight:600;color:#545e70;margin-bottom:6px}
+.in{background:#f4efe7;border-radius:12px;padding:13px 14px}
+.title{font-size:22px;font-weight:700;letter-spacing:-.02em}
+.msg{min-height:150px;font-size:16px;line-height:1.6}
+.cnt{font-size:13px;color:#6b7384;text-align:right;margin-top:4px}
+.check{margin-top:26px;border-top:1px solid rgba(42,61,94,.12)}
+.ck{display:grid;grid-template-columns:120px 1fr auto;gap:16px;align-items:center;padding:14px 0;border-bottom:1px solid rgba(42,61,94,.12);font-size:15px}
+.ck dt{color:#6b7384;font-size:14px;font-weight:600}.ck small{display:block;color:#545e70;font-size:13px}
+.chg{color:#00776d;font-weight:600;font-size:14px}
+.act{display:flex;gap:10px;margin-top:22px}
+.b{height:44px;border-radius:22px;padding:0 18px;display:inline-flex;align-items:center;font-weight:600;font-size:14.5px}
+.q{background:#f4efe7}.p{background:#2a3d5e;color:#fff}
+.phone{width:300px;height:620px;border-radius:46px;border:9px solid #000;background:linear-gradient(#5b6f8f,#2a3d5e);padding:60px 12px 0;position:relative;margin-top:30px}
+.time{color:#fff;text-align:center;font-size:58px;font-weight:300;letter-spacing:-.02em}
+.date{color:#fff;text-align:center;font-size:15px;margin-bottom:150px}
+.note{background:rgba(255,255,255,.82);border-radius:20px;padding:12px 14px;font-size:14px}
+.note .app{display:flex;justify-content:space-between;font-size:12px;color:#545e70;margin-bottom:4px}
+.note b{display:block}
+.pl{font-size:13px;font-weight:600;color:#6b7384}
+.row{margin-top:18px;border-top:1px solid rgba(42,61,94,.12);padding-top:12px;font-size:14px}
+.row b{display:flex;gap:8px;align-items:center}.row b:before{content:"";width:9px;height:9px;border-radius:50%;background:#e7ae74}
+</style></head><body>
+<nav class="side"><div class="brand"><span class="dot"></span>Good Shepherd</div>
+<div class="lnk">Home</div><div class="grp">Content</div><div class="lnk">Drafts</div><div class="lnk">Media</div><div class="lnk on">Announcements</div>
+<div class="grp">People</div><div class="lnk">People</div><div class="lnk">Roles</div></nav>
+<aside class="list"><h2>Announcements <span class="new">+ New</span></h2>
+<p class="lh">Being written</p>
+<div class="it sel"><b>No evening service this Sunday</b><span>Edited 10 min ago</span></div>
+<p class="lh">Scheduled</p>
+<div class="it"><b>Carols in the car park</b><span>Fri 18 Dec, 7am</span></div>
+<p class="lh">Sent</p>
+<div class="it"><b>Working bee this Saturday</b><span>Thu 29 Oct · 212 phones</span></div>
+<div class="it"><b>New Life Groups start</b><span>Mon 12 Oct · 198 phones</span></div>
+</aside>
+<main class="main"><div>
+<div class="tb"><h1>No evening service this Sunday</h1><p>Being written. Send it to your own phone to check it, then send it.</p></div>
+<div class="f"><label>Title</label><div class="in title">No evening service this Sunday</div></div>
+<div class="f"><label>Message</label><div class="in msg">With the combined baptism service at 10:30, there's no 6pm service on 8 November. Join us in the morning, and stay for lunch in the hall.</div><p class="cnt">Phones show the first 4 lines</p></div>
+<dl class="check">
+<div class="ck"><dt>Who</dt><div>Everyone with the app<small>About 240 phones with notifications on</small></div><span class="chg">Change</span></div>
+<div class="ck"><dt>When</dt><div>As soon as you send it</div><span class="chg">Schedule</span></div>
+<div class="ck"><dt>Opens</dt><div>This week<small>A page in the app</small></div><span class="chg">Change</span></div>
+<div class="ck"><dt>Urgent</dt><div>No<small>Waits for 7am if sent overnight</small></div><span class="chg">Change</span></div>
+</dl>
+<div class="act"><span class="b q">Send to my phone</span><span class="b p">Send to 240 phones</span></div>
+</div>
+<div><p class="pl">On a phone</p><div class="phone"><p class="time">9:41</p><p class="date">Thursday 5 November</p>
+<div class="note"><div class="app"><span>GOOD SHEPHERD</span><span>now</span></div><b>No evening service this Sunday</b>With the combined baptism service at 10:30, there's no 6pm service on 8 November. Join us…</div></div>
+<div class="row"><b>No evening service this Sunday</b><span style="color:#545e70">In the app's notifications, until it's read</span></div>
+</div></main>
+</body></html>

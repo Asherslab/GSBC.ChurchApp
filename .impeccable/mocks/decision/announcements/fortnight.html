@@ -1,0 +1,55 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 16px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+.side{background:#2a3d5e;color:rgba(255,255,255,.76);padding:22px 14px}
+.brand{display:flex;gap:10px;align-items:center;color:#fff;font-weight:700;font-size:17px;padding:0 10px 22px}
+.dot{width:30px;height:30px;border-radius:50%;border:3px solid #d5c9b7}
+.grp{color:#d5c9b7;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:14px 10px 6px}
+.lnk{height:38px;display:flex;align-items:center;padding:0 10px;border-radius:9px;font-weight:600;font-size:14.5px;position:relative}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff}.lnk.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;background:#e7ae74;border-radius:0 3px 3px 0}
+.work{padding:28px 40px}
+.tb{display:flex;justify-content:space-between;align-items:end}.tb h1{font-size:27px;letter-spacing:-.02em}.tb p{color:#545e70;font-size:14px}
+.b{height:44px;border-radius:22px;padding:0 18px;display:inline-flex;align-items:center;font-weight:600;font-size:14.5px}
+.q{background:#f4efe7}.p{background:#2a3d5e;color:#fff}
+.rail{margin-top:22px;background:#f4efe7;border-radius:14px;padding:10px;display:grid;grid-template-columns:repeat(14,1fr);gap:6px;position:relative;height:150px}
+.d{background:#fff;border-radius:10px;padding:8px 8px}.d small{display:block;font-size:11px;font-weight:600;color:#6b7384;text-transform:uppercase;letter-spacing:.04em}.d b{font-size:20px}
+.d.today{box-shadow:inset 0 0 0 2px #2a3d5e}.d.today small{color:#8a5422}
+.cap{position:absolute;border-radius:9px;padding:5px 10px;font-size:13px;font-weight:600;white-space:nowrap}
+.sent{background:#2a3d5e;color:#fff}.sched{background:rgba(231,174,116,.32);color:#8a5422}
+.desk{display:grid;grid-template-columns:minmax(0,1fr) 320px;gap:40px;margin-top:28px}
+.f{margin-top:16px}.f label{display:block;font-size:14.5px;font-weight:600;color:#545e70;margin-bottom:6px}
+.in{background:#f4efe7;border-radius:12px;padding:13px 14px}
+.title{font-size:20px;font-weight:700}
+.msg{min-height:110px;line-height:1.6}
+.opts{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:16px}
+.act{display:flex;gap:10px;margin-top:20px}
+.lock{background:#2a3d5e;border-radius:22px;padding:14px;color:#fff;font-size:14px}
+.lock .app{display:flex;justify-content:space-between;font-size:12px;color:rgba(255,255,255,.76);margin-bottom:4px}
+.pl{font-size:13px;font-weight:600;color:#6b7384;margin-bottom:8px}
+h2{font-size:20px;margin-top:4px}
+</style></head><body>
+<nav class="side"><div class="brand"><span class="dot"></span>Good Shepherd</div>
+<div class="lnk">Home</div><div class="grp">Content</div><div class="lnk">Drafts</div><div class="lnk">Media</div><div class="lnk on">Announcements</div>
+<div class="grp">People</div><div class="lnk">People</div><div class="lnk">Roles</div></nav>
+<main class="work">
+<div class="tb"><div><h1>Announcements</h1><p>What goes out in the next fortnight, and what you're writing.</p></div><span class="b p">+ New announcement</span></div>
+<div class="rail">
+<div class="d today"><small>Today</small><b>5</b></div><div class="d"><small>Fri</small><b>6</b></div><div class="d"><small>Sat</small><b>7</b></div><div class="d"><small>Sun</small><b>8</b></div><div class="d"><small>Mon</small><b>9</b></div><div class="d"><small>Tue</small><b>10</b></div><div class="d"><small>Wed</small><b>11</b></div>
+<div class="d"><small>Thu</small><b>12</b></div><div class="d"><small>Fri</small><b>13</b></div><div class="d"><small>Sat</small><b>14</b></div><div class="d"><small>Sun</small><b>15</b></div><div class="d"><small>Mon</small><b>16</b></div><div class="d"><small>Tue</small><b>17</b></div><div class="d"><small>Wed</small><b>18</b></div>
+<span class="cap sent" style="left:12px;top:72px">Working bee · sent, 212 phones</span>
+<span class="cap sched" style="left:400px;top:106px">Remembrance Sunday · Sat 7am</span>
+<span class="cap sched" style="left:1000px;top:72px">Carols rehearsal · Tue 7am</span>
+</div>
+<div class="desk"><div>
+<h2>No evening service this Sunday</h2>
+<div class="f"><label>Title</label><div class="in title">No evening service this Sunday</div></div>
+<div class="f"><label>Message</label><div class="in msg">With the combined baptism service at 10:30, there's no 6pm service on 8 November. Join us in the morning.</div></div>
+<div class="opts"><div class="f"><label>Who it's for</label><div class="in">Everyone with the app</div></div>
+<div class="f"><label>When</label><div class="in">Now</div></div><div class="f"><label>Opens</label><div class="in">This week</div></div></div>
+<div class="act"><span class="b q">Send to my phone</span><span class="b p">Send now</span></div>
+</div>
+<div><p class="pl">On a lock screen</p><div class="lock"><div class="app"><span>GOOD SHEPHERD</span><span>now</span></div><b>No evening service this Sunday</b><br>With the combined baptism service at 10:30, there's no 6pm service on 8 November…</div></div>
+</div></main></body></html>
