@@ -1,7 +1,9 @@
 # Analytics
 
-Status: proposal, 2026-11-02. Nothing is built. The owner's decisions from this session are marked
-*(owner, 2026-11-02)*. Everything else is the recommendation, to be confirmed when it's built.
+Status: **phase 1 built, 2026-11-03** (branch `feature/analytics`): error reporting from the app, the admin
+panel, the server and iOS native crashes; App health; usage counts and Insights; the Settings switch.
+What was built, and where it differs from the proposal below, is in [As built](#as-built-2026-11-03). The
+owner's decisions are marked *(owner, 2026-11-02)* and *(owner, 2026-11-03)*.
 
 The owner's brief: app usage numbers that church staff, who aren't technical, find friendly and
 useful. Error reporting is covered too, because it uses the same plumbing.
@@ -365,6 +367,70 @@ week" appears once two features report.
 - "Same week last year" once there's a year.
 - If asked: the weekly email, a per-ministry view for leaders, Metabase for the owner.
 
+## As built (2026-11-03)
+
+### Decided when building *(owner, 2026-11-03)*
+
+1. **Error reports never carry the exception's message**, in any environment: the type, our method
+   names (no paths, arguments or build-specific numbers) and the route template only.
+2. **Failed gRPC calls are counted on both sides.** The API's own interceptor (in front of the tier
+   check) counts every failed call by method and status per day; the phone and the admin panel also
+   report failures the server can't see (the gateway, the tunnel, dropped trailers) and the ones
+   `LiveData` swallows. Phones don't report Unauthenticated, Permission denied or Cancelled (the server
+   counts the first two), nor network failures while offline.
+3. **iOS native crashes now, through MetricKit**, not in phase 3. The plugin collects MetricKit's crash
+   diagnostics on the next launch and C# reports them like any other error. Their frames are a binary
+   and an offset; Xcode's Organizer has the same crashes symbolicated.
+4. **The admin panel reports its unhandled errors too**, straight to `Diagnostics.Report` (a browser has
+   no outbox). It still sends no usage counts.
+
+### The recommendations, as settled
+
+- **The quiet outbox entry is a flag** on the native outbox (`quiet`), not a second queue
+  ([offline-and-caching.md](../architecture/offline-and-caching.md)).
+- **The phone's counters live in the native preferences** (`ILocalPreferences`, UserDefaults on iOS), as
+  one small JSON document: what's waiting to be sent, and the phone's memory of when it last opened
+  (`OpeningMemory`).
+- **Tier `[Public]`** for both report methods, with their own rate-limit policy, `RateLimits.Reports`:
+  600 a minute per IP address. A rejected report stays in the outbox. Revisit after a real Sunday.
+- **Reports are sent** at the first open of a new day and when the app goes to the background, at most
+  once an hour; error reports go three seconds after the first error, grouped.
+- **Which environment:** each environment reports to its own backend; App health names it
+  ([environments.md](../architecture/environments.md)).
+- **New-error emails** go to everyone holding `analytics.health.view` (through `IPermissionHolders` and
+  `IAccountEmails` in Platform.Api, implemented by Access and Accounts), once per new kind, at most ten a
+  day. A kind that comes back after being pruned is new again.
+
+### What's built
+
+| Part | Where |
+|---|---|
+| `Diagnostics.Report`, `Analytics.Report` (`[Public]`), `Health.GetOverview`, `Health.GetErrorKind` (`analytics.health.view`), `Insights.GetSummary` (`analytics.view`) | Analytics.Contracts, Analytics.Api |
+| Schema `analytics`: `error_kinds`, `error_reports`, `failed_calls`, `daily_counts`, `monthly_counts`, `reports_seen`; pruning and the 25-month fold every six hours, one replica | Analytics.Api |
+| `IClientDiagnostics` and `CurrentPage` (the route template); every feature's calls go through `ObservedChannel` | Platform.Client |
+| `Measure`, `AddMeasures`, `MeasureCatalog`, `ISubjectNames`, `IUsage` | Platform.Contracts, Platform.Api, Platform.Client |
+| The error reporter (a logger provider for unhandled render errors, unhandled and unobserved exceptions, failed calls, native crashes) and the usage counter | Analytics.Client |
+| App health (admin) and Insights (admin, and the app under More for holders) | Analytics.Admin, Analytics.App |
+| "Help improve the app" under More: the switch and the privacy notice | Analytics.App |
+| `StatTile`, `TrendLine` (plain SVG, two series at most: this year in the accent, last year in the de-emphasis gray, with a crosshair, a legend and a table view), `RankedList` | Platform.Ui |
+| Quiet outbox entries, MetricKit crash collection | the native data layer (iOS) |
+
+Measures declared so far: `app.active.day`, `app.active.week`, `app.active.month`, `app.installed`,
+`app.returning` (Analytics) and `hub.tile.tapped` (Hub, named through Configuration's `ISubjectNames`).
+
+### Not yet
+
+- **"On a team"**: needs Ministries and the private grants feed on the phone. Phones are "not signed in"
+  or "signed in" until then.
+- **Sermon plays** as a headline number (the third tile is "phones this month" until Sermons exists),
+  notices and pushes ("Seen on N phones"), events, ministries, Give: each feature declares its measures
+  when it's built.
+- **Android**: the Kotlin layer is stubbed, so Android phones report nothing yet.
+- **Same week last year** draws by itself once there's a year of data.
+- **`[AppInstall]`** on the report methods once App Attest works.
+- **The privacy notice and store labels** as text for the website and the store listings (the in-app
+  notice is under More → Help improve the app).
+
 ## Decided (owner, 2026-11-02)
 
 1. All four question groups in the first version: use and growth, sermons, notices seen, what people tap.
@@ -379,10 +445,6 @@ week" appears once two features report.
 
 ## Open
 
-- **The quiet outbox entry:** a flag on the entry, or a separate small queue in the native layer.
-  Decide when building; a flag is the smaller change.
-- **Where the phone's counters live:** Capacitor Preferences (no native change) or a table in the
-  native store. Preferences is enough for a few hundred numbers.
-- **The analytics rate-limit policy's numbers,** sized on a real Sunday.
+- **The rate-limit policy's numbers** (600 a minute per address for now), sized on a real Sunday.
 - **Check at submission:** the stores' privacy-label wording, and the OAIC's Children's Online Privacy
   Code once registered.

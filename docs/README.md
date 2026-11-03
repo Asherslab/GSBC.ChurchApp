@@ -34,6 +34,13 @@ outbox, background refresh), the dev loop (`tools/ios/deploy.sh`, Rider's iPhone
 (passkeys, sessions, recovery, invitations, staff tools), and Access (roles, assignments, the
 evaluator behind every `[Requires]`, admin screens).
 
+**Analytics and error reporting (2026-11-03, branch `feature/analytics`):** errors from phones (Blazor and
+iOS native crashes), the admin panel and the server reach App health in the admin panel, with an email per
+new kind; failed calls are counted by the server and the phones; usage totals (phones per day, week and
+month, new phones, Hub tile taps) reach Insights for the Insights viewer role. Everything travels as quiet
+outbox entries over gRPC; "Help improve the app" under More turns it off
+([analytics.md](features/analytics.md)).
+
 **Waiting on the owner:**
 
 - ~~The Apple enrolment~~: done 2026-11-03. The church is enrolled as an organisation (the church

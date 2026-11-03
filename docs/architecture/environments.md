@@ -19,6 +19,12 @@ Three apps that sit side by side on one phone, each with its own backend, passke
 | `GSBC_DEVELOPMENT_BUILD` | `YES`: the development feed and tools | `NO` | `NO` |
 | Caching | `no-store` on everything | Production's | Production's |
 
+**Which environment a report came from:** each environment's app reports errors and usage to its own
+backend, so App health and Insights in UAT's admin panel only ever show UAT's phones, and dev's only dev's.
+App health names its environment (the host of `Accounts:SiteUrl`) in its lead and in the new-error email,
+and marks errors that only came from development builds ("Dev builds"), which covers a dev build pointed at
+UAT's gateway ([analytics.md](../features/analytics.md)).
+
 A passkey can never change domain, so each environment's accounts are its own: a UAT account doesn't
 exist in dev, and dev's passkeys from before the rename (on `dev.baptist.com.au`) don't work on
 `dev-app.baptist.com.au`. Recover the account by email and add a passkey. An account holding a sensitive
