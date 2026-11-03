@@ -111,6 +111,15 @@ Never keep a feature's own list of user ids, a "shared with" column, an `IsAdmin
 bypasses `IAccess`. When the permission system can't express what's needed (a new kind of scope, a
 role given for one object), extend the permission system; don't work around it (owner, 2026-11-02).
 
+# Working in a git worktree
+
+Each checkout's AppHost gets its own Postgres volume, so a new worktree starts with an empty
+database. **Before a worktree's first AppHost run, copy the main checkout's database into it:** stop
+any running AppHost, then run `tools/dev/copy-main-db.sh` from the worktree. The main database is
+mounted read-only and isn't changed; the owner's accounts, roles and passkeys come across, and media
+is already shared. Start empty only for an explicit reason (testing first-run set-up, a migration
+from scratch), and say so.
+
 # Comments: almost none
 
 **Don't write comments unless the code genuinely can't be understood without one.** Make the code say
