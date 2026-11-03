@@ -136,7 +136,10 @@ sheet over Home, while iOS's permission is undecided, with Turn on notifications
 per-kind choices in the same sheet; it comes before What's new, which waits for the next open
 (`IOpeningSheet`, [notifications.md](architecture/notifications.md), *The first-open sheet*). Insights counts
 phones with notifications on, turned off or not chosen yet, once a week and anonymously (a measure's
-`States`, [analytics.md](features/analytics.md)). Shared: `SheetHeading` in Platform.Ui (What's new uses it too).
+`States`, [analytics.md](features/analytics.md)). Shared: `SheetHeading` in Platform.Ui (What's new uses it too). Fixed from UAT on the same branch: the "notifications are off" notice clears on return from Settings
+(the permission is re-read when the app becomes active), a tapped notification opens its link (Capacitor had
+taken the notification delegate; `ios.handleApplicationNotifications: false`), and a moment on the day rail
+stays in its own day.
 
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
