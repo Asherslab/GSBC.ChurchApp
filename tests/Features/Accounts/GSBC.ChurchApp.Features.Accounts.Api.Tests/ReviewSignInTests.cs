@@ -38,11 +38,13 @@ public sealed class ReviewSignInTests : IAsyncLifetime
             .AddScoped<DemoAccounts>()
             .AddScoped<ReviewSignIns>()
             .AddAccountsData()
+            .AddSyncData()
             .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
             .AddEntityFrameworkStores<AccountsDbContext>();
         _services = services.BuildServiceProvider();
 
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<AccountsDbContext>().Database.MigrateAsync();
         _staff = await NewAccountAsync("staff@example.com");
     }
