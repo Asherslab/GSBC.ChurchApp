@@ -12,6 +12,12 @@ public sealed class AttestationChallenge
 }
 
 [ProtoContract]
+public sealed class ProofMethods
+{
+    [ProtoMember(1)] public List<string> Paths { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class AttestRequest
 {
     [ProtoMember(1)] public string KeyId { get; set; } = "";

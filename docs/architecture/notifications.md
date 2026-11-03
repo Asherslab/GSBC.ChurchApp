@@ -185,6 +185,25 @@ Built here because decision 3 puts following and tokens behind it, and prayer re
   today "not available yet") checks the signature and that the counter grew, then passes the install
   id to the method. The native Transport attaches both to every call to an `[AppInstall]` method;
   the outbox signs when it sends, not when it queues.
+- **Signing rule (2026-11-04):** the counter must grow strictly, so two signed calls that overlap can
+  reach the server out of order and the earlier one is refused (UAT saw this on `RegisterDevice`). So
+  the phone:
+  - **signs only `[AppInstall]` methods**, and learns which they are from the server:
+    `Installs.ListProofMethods` (`[Public]`) returns every served `[AppInstall]` path, worked out from
+    the tier attributes (`InstallProofMethods`). Nothing is listed by hand, so a new `[AppInstall]`
+    method is signed without extra steps (`TierRules` guards it). The Transport asks once per launch,
+    when the phone is attested and first makes a call;
+  - **sends signed calls one at a time**: the assertion is made and the reply received before the next
+    signed call starts, so counters arrive in order. Unsigned calls still go in parallel;
+  - **copes with a backend updated while the app runs**: a refusal for a missing proof carries the
+    trailer `gsbc-install-proof: required`; the Transport then fetches the list again and, if the
+    method is now on it, retries once signed. A server too old to have `ListProofMethods`
+    (`Unimplemented`) makes the phone sign every call, as before;
+  - **registers for push one at a time**: `PushRegistration` runs one registration and, if asked
+    again meanwhile, one more after it.
+
+  The server's strict counter check stays (`InstallVerifierTests`: a replay, or an earlier assertion
+  after a later one, is refused); `InstallProofOrderTests` (Swift) prove the phone's side.
 - **Where App Attest can't run** (the iOS Simulator, Android until Play Integrity): such a phone
   reads everything, and Follow says "This phone can't follow groups" (SPEC §6: no fallback). There's
   no development bypass; App Attest is tested on a real iPhone, and the verifier by
@@ -192,7 +211,7 @@ Built here because decision 3 puts following and tokens behind it, and prayer re
 - **Built (2026-11-03):** `AppAttest` and `InstallsService` in Accounts.Api (table
   `accounts.installs`, migration `AppInstalls`), `InstallProofMiddleware`, `IInstallVerifier` and
   `CallingInstall` in Platform.Api, and on the phone `InstallAttestation` (the native layer attests
-  once, on the first App write, and signs every later unary call except Sync's and the two attestation calls).
+  once, on the first App write, and signs the `[AppInstall]` calls, one at a time; see *Signing rule*).
   The app id is `Apple:TeamId` + `Apple:BundleId`, as for the gateway's association file.
 
 ## Channels
@@ -432,7 +451,8 @@ The key never goes in the repo or in chat. One key serves every app and both APN
 **Built, and tested against Postgres; not yet run on a phone** (the backend was in use by another
 station, and push waits for the owner's APNs key):
 
-- **App Attest** (`[AppInstall]`): see *Phones* above. `AppAttestTests`.
+- **App Attest** (`[AppInstall]`): see *Phones* above. `AppAttestTests`, `InstallVerifierTests`,
+  `InstallProofOrderTests`.
 - **Access:** phone holders, `IPermissionHolders`, `IPhoneRoles.MoveToPersonAsync`, called by
   `Installs.Claim` after signing in. `AccessEvaluatorTests`.
 - **Platform:** `NotificationKind` (Contracts), `INotifications`, `NotificationAudience`,

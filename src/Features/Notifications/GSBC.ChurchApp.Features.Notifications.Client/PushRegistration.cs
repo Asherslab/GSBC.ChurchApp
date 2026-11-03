@@ -16,6 +16,8 @@ public sealed class PushRegistration(NativeBridge bridge, ChannelBase channel, S
 
     private readonly INotificationsService _notifications = channel.CreateGrpcService<INotificationsService>();
     private bool _signedIn;
+    private Task _registering = Task.CompletedTask;
+    private bool _registerAgain;
 
     public string Permission { get; private set; } = "unavailable";
 
@@ -40,7 +42,27 @@ public sealed class PushRegistration(NativeBridge bridge, ChannelBase channel, S
         return Permission;
     }
 
-    private async Task RegisterAsync()
+    private Task RegisterAsync()
+    {
+        if (!_registering.IsCompleted)
+        {
+            _registerAgain = true;
+            return _registering;
+        }
+        return _registering = RegisterUntilSettledAsync();
+    }
+
+    private async Task RegisterUntilSettledAsync()
+    {
+        do
+        {
+            _registerAgain = false;
+            await RegisterOnceAsync();
+        }
+        while (_registerAgain);
+    }
+
+    private async Task RegisterOnceAsync()
     {
         try
         {

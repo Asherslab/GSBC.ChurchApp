@@ -127,6 +127,12 @@ and quiet hours, the silent push for sync, announcements in the admin panel, and
 Tested against Postgres; waiting on the owner's APNs key and App Attest/Push capabilities before it runs on a
 phone (notifications.md, *What the owner sets up*).
 
+**Install proofs in order (2026-11-04, branch `feature/install-proof-order`):** the phone signs only
+`[AppInstall]` calls (the list comes from the server, `Installs.ListProofMethods`), sends them one at a
+time, and retries signed if a backend updated mid-session starts asking for proof; push registration
+is single-flight. Fixes UAT's refused `RegisterDevice` calls ([notifications.md](architecture/notifications.md),
+*Signing rule*).
+
 **Design review of this round (2026-11-03, branch `feature/design-review`):** an impeccable critique of
 every screen the five merges added (23/40, snapshot in `.impeccable/critique/`). The inbox and
 Announcements were reshaped with the owner on the decision page: the inbox opens on *Waiting* (things

@@ -4,20 +4,28 @@ public struct GrpcResult {
     public let status: Int
     public let message: String
     public let body: Data
+    let asksForProof: Bool
 
     public init(status: Int, message: String, body: Data) {
+        self.init(status: status, message: message, body: body, asksForProof: false)
+    }
+
+    init(status: Int, message: String, body: Data, asksForProof: Bool) {
         self.status = status
         self.message = message
         self.body = body
+        self.asksForProof = asksForProof
     }
 }
 
 public struct GrpcError: Error {
     public let status: Int
     public let message: String
+    var asksForProof = false
 }
 
 public protocol RequestSigner: Sendable {
+    func canSign() async -> Bool
     func headers(method: String, body: Data) async -> [String: String]
 }
 
@@ -28,7 +36,7 @@ public struct GrpcWebTransport: Sendable {
         self.session = session
         self.sessionSecret = sessionSecret
         self.onSessionEnded = onSessionEnded
-        self.signer = signer
+        self.proofs = signer.map(InstallProofs.init)
     }
 
     public static let ok = 0
@@ -46,17 +54,50 @@ public struct GrpcWebTransport: Sendable {
     private let session: URLSession
     private let sessionSecret: @Sendable () -> String?
     private let onSessionEnded: @Sendable () -> Void
-    private let signer: RequestSigner?
-    private static let unsignedPrefixes = ["/gsbc.sync.Sync/", InstallMessages.beginMethod, InstallMessages.attestMethod]
+    private let proofs: InstallProofs?
+    static let proofRequiredHeader = "gsbc-install-proof"
     public static let sessionHeader = "X-Gsbc-Session"
     public static let sessionEndedHeader = "X-Gsbc-Session-Ended"
 
     public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
         let framed = Self.frame(message)
-        var headers = headers
-        if let signer, !Self.unsignedPrefixes.contains(where: method.hasPrefix) {
-            headers.merge(await signer.headers(method: method, body: framed)) { mine, _ in mine }
+        guard let proofs, await proofs.signer.canSign() else { return try await send(method, framed, headers) }
+        if await proofs.require(method, refreshing: false, list: { await listProofMethods() }) {
+            return try await signed(method, framed, headers, proofs)
         }
+        let unsigned: Result<GrpcResult, Error>
+        do {
+            let result = try await send(method, framed, headers)
+            guard result.asksForProof else { return result }
+            unsigned = .success(result)
+        } catch let error as GrpcError where error.asksForProof {
+            unsigned = .failure(error)
+        }
+        guard await proofs.require(method, refreshing: true, list: { await listProofMethods() }) else { return try unsigned.get() }
+        return try await signed(method, framed, headers, proofs)
+    }
+
+    private func signed(_ method: String, _ framed: Data, _ headers: [String: String], _ proofs: InstallProofs) async throws -> GrpcResult {
+        try await proofs.inTurn {
+            let proof = await proofs.signer.headers(method: method, body: framed)
+            return try await send(method, framed, headers.merging(proof) { mine, _ in mine })
+        }
+    }
+
+    private func listProofMethods() async -> InstallProofs.Methods? {
+        do {
+            let result = try await send(InstallMessages.listProofMethodsMethod, Self.frame(Data()), [:])
+            if result.status == Self.unimplemented { return .all }
+            guard result.status == Self.ok else { return nil }
+            return .only(try InstallMessages.proofMethods(from: result.body))
+        } catch let error as GrpcError where error.status == Self.unimplemented {
+            return .all
+        } catch {
+            return nil
+        }
+    }
+
+    private func send(_ method: String, _ framed: Data, _ headers: [String: String]) async throws -> GrpcResult {
         let (data, response) = try await session.data(for: try request(method, framed, headers))
         noticeEndedSession(response)
         let http = try Self.successful(response)
@@ -72,7 +113,7 @@ public struct GrpcWebTransport: Sendable {
             }
         }
         let (status, message) = Self.status(trailers)
-        return GrpcResult(status: status, message: message, body: body)
+        return GrpcResult(status: status, message: message, body: body, asksForProof: trailers[Self.proofRequiredHeader] != nil)
     }
 
     public func serverStream(method: String, message: Data) -> AsyncThrowingStream<Data, Error> {
@@ -134,8 +175,9 @@ public struct GrpcWebTransport: Sendable {
             throw GrpcError(status: code == httpNotFound ? unimplemented : unavailable,
                             message: "HTTP \(code) from \(response.url?.host ?? "the gateway")")
         }
-        let (status, message) = status(grpcHeaders(http), missing: ok)
-        if status != ok { throw GrpcError(status: status, message: message) }
+        let headers = grpcHeaders(http)
+        let (status, message) = status(headers, missing: ok)
+        if status != ok { throw GrpcError(status: status, message: message, asksForProof: headers[proofRequiredHeader] != nil) }
         return http
     }
 
@@ -165,7 +207,8 @@ public struct GrpcWebTransport: Sendable {
     private static func grpcHeaders(_ response: HTTPURLResponse) -> [String: String] {
         var result: [String: String] = [:]
         for (key, value) in response.allHeaderFields {
-            if let key = key as? String, let value = value as? String, key.lowercased().hasPrefix("grpc-") {
+            if let key = key as? String, let value = value as? String,
+               key.lowercased().hasPrefix("grpc-") || key.lowercased() == proofRequiredHeader {
                 result[key.lowercased()] = value
             }
         }

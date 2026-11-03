@@ -3,6 +3,17 @@ import Foundation
 public enum InstallMessages {
     public static let beginMethod = "/gsbc.accounts.Installs/BeginAttestation"
     public static let attestMethod = "/gsbc.accounts.Installs/Attest"
+    static let listProofMethodsMethod = "/gsbc.accounts.Installs/ListProofMethods"
+
+    static func proofMethods(from reply: Data) throws -> Set<String> {
+        var paths = Set<String>()
+        var reader = ProtoReader(reply)
+        while !reader.isAtEnd {
+            let (field, wireType) = try reader.nextField()
+            if field == 1 && wireType == 2 { paths.insert(try reader.string()) } else { try reader.skip(wireType: wireType) }
+        }
+        return paths
+    }
 
     public static func challenge(from reply: Data) throws -> Data {
         var reader = ProtoReader(reply)

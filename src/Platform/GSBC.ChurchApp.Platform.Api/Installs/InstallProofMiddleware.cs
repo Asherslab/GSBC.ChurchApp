@@ -9,6 +9,7 @@ public sealed class InstallProofMiddleware(RequestDelegate next)
 {
     public const string KeyHeader = "gsbc-install";
     public const string AssertionHeader = "gsbc-assertion";
+    public const string ProofRequiredTrailer = "gsbc-install-proof";
     private const int MaxSignedBody = 256 * 1024;
     private static readonly object ProofKey = new();
 
