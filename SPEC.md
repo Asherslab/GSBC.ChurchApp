@@ -652,7 +652,7 @@ Decided, for the record:
 - **Sermons:** hosted in Tithe.ly, probably consumed through its RSS feed. The detail is settled when
   that feature is built.
 - **Android without Google Play:** read-only, no fallback (§6).
-- **Bundle id:** `au.com.baptist.churchapp` (2026-11-01).
+- **Bundle id:** `au.com.baptist.app` (2026-11-03; it replaced `au.com.baptist.churchapp`, see identity.md).
 - **Sign-in:** everyone from v1, members included (2026-11-01); see
   [identity.md](docs/architecture/identity.md).
 - **How media travels:** content-addressed objects in Cloudflare R2, public ones fetched directly from

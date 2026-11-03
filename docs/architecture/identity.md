@@ -14,8 +14,11 @@ different kind of account. Reading public content still needs no account (SPEC Â
 - **Dev has its own relying party: `dev.baptist.com.au`** (decided 2026-11-01), reached through the dev
   proxy ([tools/dev-proxy](../../tools/dev-proxy/README.md)). Test passkeys never sit beside real ones
   in people's keychains. On a dev Mac with no tunnel, the browser accepts `localhost` as the RP.
-- **Bundle id: `au.com.baptist.churchapp`** (decided 2026-11-01), so the app id in the association
-  files is `<team id>.au.com.baptist.churchapp`.
+- **Bundle id: `au.com.baptist.app`** (owner, 2026-11-03), so the app id in the association files is
+  `<team id>.au.com.baptist.app`. It replaced `au.com.baptist.churchapp` (decided 2026-11-01), which
+  is stuck on the owner's expired personal developer team: Xcode registered it there while that
+  membership was paid, and an expired team can't remove an App ID, so the church's team can't
+  register it.
 - **The ceremonies are the approved non-gRPC paths** in AGENTS.md: begin/complete for sign-in and for
   registering a passkey, at the gateway, called by the browser's WebAuthn API and by the app's
   native layer (the platform passkey APIs produce the same JSON).
@@ -44,8 +47,8 @@ puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
 
 - `https://baptist.com.au/.well-known/apple-app-site-association` for production, at the apex in
   front of the website (a Cloudflare rule or Worker), with the same content as dev's but for
-  `baptist.com.au`: `{"applinks":{"details":[{"appIDs":["YNT9A4LGVA.au.com.baptist.churchapp"],
-  "components":[{"/":"/welcome"},{"/":"/welcome/*"}]}]},"webcredentials":{"apps":["YNT9A4LGVA.au.com.baptist.churchapp"]}}`,
+  `baptist.com.au`: `{"applinks":{"details":[{"appIDs":["YNT9A4LGVA.au.com.baptist.app"],
+  "components":[{"/":"/welcome"},{"/":"/welcome/*"}]}]},"webcredentials":{"apps":["YNT9A4LGVA.au.com.baptist.app"]}}`,
   as `application/json`, with no redirect. Production's `Accounts:Passkeys:AllowedOrigins` must include
   `https://baptist.com.au`, the origin the phone's passkeys report.
 - Android's `assetlinks.json` at the same apex, when Android is built.

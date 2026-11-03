@@ -5,7 +5,7 @@ public enum DataLayerBackground {
     private static let interval: TimeInterval = 15 * 60
 
     private static var refreshIdentifier: String {
-        "\(Bundle.main.bundleIdentifier ?? "au.com.baptist.churchapp").refresh"
+        "\(Bundle.main.bundleIdentifier ?? "au.com.baptist.app").refresh"
     }
 
     public static func register() {

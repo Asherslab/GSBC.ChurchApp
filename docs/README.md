@@ -37,7 +37,7 @@ evaluator behind every `[Requires]`, admin screens).
   is the seller), team `YNT9A4LGVA`. Passkeys in the app are built on it. Next on the owner's side:
   - an **APNs key** for silent push: a secret, so it goes in user secrets or the cluster secret,
     never in chat or the repo;
-  - the **App Store Connect record** for TestFlight (bundle `au.com.baptist.churchapp`);
+  - the **App Store Connect record** for TestFlight (bundle `au.com.baptist.app`);
   - the **production association file** at the `baptist.com.au` apex through Cloudflare
     ([identity.md](architecture/identity.md), *Apple*).
 - For media, now built: two R2 buckets, the public one's custom domain, a cache rule, CORS and a

@@ -39,7 +39,7 @@ public enum FeedOrder: String {
 public final class FeedStore: Sendable {
     private static let reclaimAtFreePages = 64
 
-    private static let log = Logger(subsystem: "au.com.baptist.churchapp", category: "FeedStore")
+    private static let log = Logger(subsystem: "au.com.baptist.app", category: "FeedStore")
 
     public let database: DatabaseQueue
     public let fileURL: URL

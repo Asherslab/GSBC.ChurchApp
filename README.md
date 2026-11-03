@@ -63,7 +63,7 @@ the Aspire dashboard instead of being sent.
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to
 the gateway, never from the WebView, so there's no CORS. iOS allows plain HTTP to local-network
 addresses only (`NSAllowsLocalNetworking`), and asks for local-network permission the first time.
-Debug logs from the plugin show with `xcrun simctl launch --console-pty booted au.com.baptist.churchapp`
+Debug logs from the plugin show with `xcrun simctl launch --console-pty booted au.com.baptist.app`
 on the simulator, or in Xcode's console on a phone.
 
 Migrations: `dotnet ef migrations add <Name> -p <feature>.Api -s <feature>.Api -c <Context>` (the tool

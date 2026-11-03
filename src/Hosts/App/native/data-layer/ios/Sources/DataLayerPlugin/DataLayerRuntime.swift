@@ -57,7 +57,7 @@ final class DataLayerRuntime: @unchecked Sendable {
             guard online, !self.wasOnline else { return }
             Task { await self.engine?.reconnectNow() }
         }
-        network.start(queue: DispatchQueue(label: "au.com.baptist.churchapp.datalayer.network"))
+        network.start(queue: DispatchQueue(label: "au.com.baptist.app.datalayer.network"))
     }
 
     func startSync(feeds: [String], privateFeeds: [String]) async throws {

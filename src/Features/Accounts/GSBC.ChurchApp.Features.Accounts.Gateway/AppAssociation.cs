@@ -15,7 +15,7 @@ public static partial class AppAssociation
 {
     public const string Section = "Apple";
     public const string RequestPath = "/.well-known/apple-app-site-association";
-    public const string DefaultBundleId = "au.com.baptist.churchapp";
+    public const string DefaultBundleId = "au.com.baptist.app";
     private const string GeneratedDirectory = "generated";
     private static readonly string[] LinksIntoTheApp = ["/welcome", "/welcome/*"];
 

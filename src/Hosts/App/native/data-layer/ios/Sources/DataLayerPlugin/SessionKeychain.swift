@@ -3,7 +3,7 @@ import Foundation
 import Security
 
 struct SessionKeychain: SessionVault {
-    private static let service = "au.com.baptist.churchapp.session"
+    private static let service = "au.com.baptist.app.session"
     private static let account = "app-session"
 
     func read() -> String? {
