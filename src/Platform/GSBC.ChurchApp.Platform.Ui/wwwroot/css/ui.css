@@ -96,7 +96,8 @@
   font-variant-numeric: tabular-nums;
 }
 .row__unread { display: inline-block; width: 9px; height: 9px; margin-right: 8px; border-radius: var(--radius-full); background: var(--marker); vertical-align: 0.08em; }
-.row--unread .row__title { font-weight: 700; }
+.row--unread .row__title { position: relative; padding-left: 17px; font-weight: 700; }
+.row--unread .row__unread { position: absolute; top: 0.42em; left: 0; margin: 0; }
 .row--read .row__title { font-weight: 500; }
 
 .masthead {
@@ -246,6 +247,7 @@ button.row:active, a.row:active { background: var(--line); }
 .sheet__actions { display: grid; gap: 10px; margin-top: 22px; }
 @media (min-width: 720px) {
   .sheet { left: 50%; right: auto; bottom: 50%; width: min(560px, 100% - 48px); border-radius: var(--radius-sheet); transform: translate(-50%, 50%); animation-name: fade; }
+  .sheet:not(.sheet--cover) > .sheet__grabber { visibility: hidden; height: 0; margin-bottom: 8px; }
 }
 @keyframes sheet-up { from { transform: translateY(100%); } }
 .sheet--cover { padding-top: 0; }
@@ -765,15 +767,10 @@ button.row:active, a.row:active { background: var(--line); }
 .office-rail__swatch { width: 14px; height: 10px; border-radius: 3px; }
 
 
-.office-rail__span--moment { justify-self: start; max-width: 100%; padding: 4px 8px 4px 0; background: none; color: var(--ink); }
-.office-rail__span--moment .office-rail__span-when { color: var(--ink-2); opacity: 1; padding-left: 16px; }
-.office-rail__dot { display: inline-block; width: 9px; height: 9px; margin-right: 7px; border-radius: var(--radius-full); vertical-align: 0.05em; }
-.office-rail__span--everyone .office-rail__dot { background: var(--primary); }
-.office-rail__span--layer .office-rail__dot { background: var(--accent); }
-.office-rail__span--draft .office-rail__dot { background: var(--marker); }
+.office-rail__span--moment .office-rail__span-title { display: -webkit-box; white-space: normal; overflow-wrap: break-word; hyphens: auto; -webkit-box-orient: vertical; -webkit-line-clamp: 3; }
 .office-rail--fortnight .office-rail__grid { grid-template-columns: repeat(var(--days), minmax(56px, 1fr)); column-gap: 6px; min-height: 0; overflow-x: auto; }
 .office-rail--fortnight .office-rail__day { padding: 8px 8px 10px; }
-.office-rail--fortnight .office-rail__span { margin: 0 4px 6px; }
+.office-rail--fortnight .office-rail__span { margin: 0 4px 6px; padding: 5px 7px; font-size: var(--text-pill); }
 
 @media (max-width: 1228px) {
     .office-rail:not(.office-rail--fortnight) .office-rail__grid { grid-template-columns: repeat(var(--days, 7), minmax(84px, 1fr)); overflow-x: auto; }

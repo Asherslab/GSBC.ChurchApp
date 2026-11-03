@@ -21,13 +21,7 @@
         {
             <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant() @(IsMoment(span) ? "office-rail__span--moment" : "")" href="@span.Href"
                aria-current="@(span.Href is not null && span.Href == Selected ? "page" : null)" style="grid-column: @Columns(span); grid-row: @(row + 2)" title="@SpanTitle(span)">
-                <span class="office-rail__span-title">
-                    @if (IsMoment(span))
-                    {
-                        <span class="office-rail__dot" aria-hidden="true"></span>
-                    }
-                    @span.Title
-                </span>
+                <span class="office-rail__span-title">@span.Title</span>
                 <span class="office-rail__span-when">@Range(span)</span>
             </a>
         }
@@ -61,13 +55,9 @@
 
     private string DayClass(DateTime date) => date == Today ? "office-rail__day--today" : date < Today ? "office-rail__day--past" : "";
 
-    private const int MomentColumns = 3;
-
     private static bool IsMoment(OfficeSpan span) => span.EndsAt == span.StartsAt;
 
-    private string Columns(OfficeSpan span) => IsMoment(span)
-        ? $"{Column(span.StartsAt)} / {Math.Min(Column(span.StartsAt) + MomentColumns, Days + 1)}"
-        : $"{Column(span.StartsAt)} / {Column(LastMoment(span)) + 1}";
+    private string Columns(OfficeSpan span) => $"{Column(span.StartsAt)} / {Column(LastMoment(span)) + 1}";
 
     private int Column(DateTime utc) => Math.Clamp((int)Math.Floor((utc - From).TotalDays) + 1, 1, Days);
 

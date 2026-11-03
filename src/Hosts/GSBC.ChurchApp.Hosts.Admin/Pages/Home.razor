@@ -75,7 +75,7 @@ else
     private const int Days = 7;
 
     private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend =
-        [(OfficeSpanKind.Everyone, "What everyone sees"), (OfficeSpanKind.Layer, "Event layer"), (OfficeSpanKind.Draft, "Waiting in a draft")];
+        [(OfficeSpanKind.Everyone, "What everyone sees"), (OfficeSpanKind.Layer, "Event layer"), (OfficeSpanKind.Draft, "Not out yet: a draft or a scheduled announcement")];
 
     private DateTime Today => ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date;
 

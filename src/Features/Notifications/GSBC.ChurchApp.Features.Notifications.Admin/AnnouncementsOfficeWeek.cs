@@ -25,7 +25,7 @@ internal sealed class AnnouncementsOfficeWeek(AnnouncementsClient announcements,
             : [];
         List<OfficeSpan> spans = all
             .Where(announcement => announcement.State == Scheduled && announcement.SendAt is { } at && at >= from && at < until)
-            .Select(announcement => new OfficeSpan(announcement.Title, announcement.SendAt!.Value, announcement.SendAt.Value, Href(announcement), OfficeSpanKind.Everyone))
+            .Select(announcement => new OfficeSpan(announcement.Title, announcement.SendAt!.Value, announcement.SendAt.Value, Href(announcement), OfficeSpanKind.Draft))
             .ToList();
         return new OfficeWeek(tasks, spans);
     }

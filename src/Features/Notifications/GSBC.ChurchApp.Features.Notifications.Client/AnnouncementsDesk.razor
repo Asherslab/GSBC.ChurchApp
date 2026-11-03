@@ -16,7 +16,7 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="IReadOnlyList<Announcement>" Load="LoadAsync" Feeds="[NotificationsFeeds.Announcements]" FailedTitle="Can't load announcements right now">
-    <DayRail First="FirstDay" Today="Today" Days="FortnightDays" Spans="Spans(context.Value)" Heading="This week and next" Selected="@SelectedHref"
+    <DayRail First="FirstDay" Today="Today" Days="FortnightDays" Spans="Spans(context.Value)" Heading="This week and next" Selected="@ThisOneHref"
              Quiet="Nothing sent or scheduled this week or next." Legend="Legend" />
 
     @if (context.Value.Where(announcement => announcement.State is Drafting or WaitingToSend).ToList() is { Count: > 0 } unsent)
@@ -160,8 +160,13 @@
 
             <aside class="announcement-desk__proof" aria-label="How it looks">
                 <LockScreenProof Title="@_editing.Title" Body="@_editing.Body" TimeSensitive="_editing.Urgent" Date="@Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)">
-                    Tapping it opens @OpensWords, and it stays in everyone's notifications in the app.
+                    Tapping it opens @OpensWords.
                 </LockScreenProof>
+                <p class="announcement-desk__label">In the app's notifications</p>
+                <ListGroup>
+                    <ListRow Title="@(_editing.Title.Length > 0 ? _editing.Title : "The title goes here")" Subtitle="@(_editing.Body.Length > 0 ? _editing.Body : null)"
+                             Icon="@(_editing.Urgent ? "alert" : "bell")" IconTone="RowTone.Quiet" Unread="true" Trailing="now" Reading="true" />
+                </ListGroup>
             </aside>
         </div>
     }
@@ -256,13 +261,17 @@
 
     private string DeskTitle => _editing.Id.Length == 0 ? "New announcement" : _all.FirstOrDefault(a => a.Id == _editing.Id)?.Title is { Length: > 0 } saved ? saved : "Untitled announcement";
 
-    private string ReachLine => _reach is null ? "" : $"About {Count(_reach.Phones, "phone")} with notifications on, and {Count(_reach.People, "person", "people")} signed in";
+    private string ReachLine => _reach is null ? "" : $"{PhonesLine(_reach.Phones)} · {Count(_reach.People, "person", "people")} signed in";
 
-    private string ReachSummary => $"{Audiences.First(option => option.Value == (_editing.Audience?.Kind ?? Everyone)).Label}{(_reach is null ? "" : $", about {Count(_reach.Phones, "phone")}")}";
+    private string ReachSummary => $"{Audiences.First(option => option.Value == (_editing.Audience?.Kind ?? Everyone)).Label}{(_reach is null ? "" : $": {PhonesLine(_reach.Phones).ToLowerInvariant()}")}";
+
+    private static string PhonesLine(int phones) => phones == 0
+        ? "No phones have notifications turned on yet"
+        : $"{Count(phones, "phone")} with notifications on";
 
     private string SendLabel => _later ? "Schedule it" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")}" : "Send it";
 
-    private string ConfirmTitle => _later ? "Schedule this announcement?" : _reach is { Phones: > 0 } reach ? $"Send to about {Count(reach.Phones, "phone")} now?" : "Send it now?";
+    private string ConfirmTitle => _later ? "Schedule this announcement?" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")} now?" : "Send it now?";
 
     private string ConfirmLead => _later
         ? "You can still cancel it until it goes."
@@ -493,8 +502,17 @@
             .Where(entry => entry.at is { } at && at >= from && at < until)
             .Select(entry => new OfficeSpan(entry.announcement.Title, entry.at!.Value, entry.at.Value, $"announcements/{entry.announcement.Id}",
                 entry.announcement.State == Sent ? OfficeSpanKind.Everyone : OfficeSpanKind.Draft))
+            .Concat(ThisOne(from, until))
             .ToList();
     }
+
+    private IEnumerable<OfficeSpan> ThisOne(DateTime from, DateTime until)
+    {
+        if (Editable && MaySend && _later && LaterAt is { } at && at >= from && at < until)
+            yield return new OfficeSpan(_editing.Title.Length > 0 ? _editing.Title : "This one", at, at, ThisOneHref, OfficeSpanKind.Draft);
+    }
+
+    private string ThisOneHref => SelectedHref ?? "announcements/new";
 
     private string SentLine(Announcement announcement) => announcement.State switch
     {
