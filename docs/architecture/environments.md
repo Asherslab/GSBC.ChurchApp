@@ -61,6 +61,10 @@ packages only know Debug and Release.
    is a 200 `application/json` naming the UAT app. It checks that UAT is healthy after the push; it can't
    tell which commit is serving.
 
+**A push that only changes docs builds nothing:** CI skips it (Markdown, `docs/`, `.impeccable/`,
+`spikes/`, `.run/`), so UAT isn't redeployed either. `repo-layout.md` and `architecture.svg` still run CI,
+because `ProjectMapRules` reads them.
+
 **The app goes to TestFlight only when someone presses the button** (below).
 
 **Backend changes stay additive,** because TestFlight builds stay installed for up to 90 days while UAT's
