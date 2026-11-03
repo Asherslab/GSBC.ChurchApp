@@ -17,6 +17,7 @@ public static class AccessApiExtensions
     {
         services.AddAccessData();
         services.AddSingleton<GrantCache>();
+        services.AddHttpContextAccessor().AddSingleton<ToolCallers>();
         services.AddScoped<IAccessEvaluator, AccessEvaluator>();
         services.AddScoped<GrantsFeed>();
         services.AddScoped<AccessChanges>();

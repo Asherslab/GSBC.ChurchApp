@@ -19,9 +19,11 @@ built.
 - **System roles** are declared in code by features and reconciled into the database at start-up;
   they can be assigned but not edited. Configuration declares **Draft reviewer** (at a draft: preview
   it; given and taken away by Configuration when a draft is shared) and **App editor** (`config.*`:
-  arrange and publish the app, see every draft). Access declares **Owner** (`*`), **Account manager**
-  (`accounts.*`) and **Access manager** (`access.*`). Analytics declares **Insights viewer**
-  (`analytics.view`; nobody holds it by default). Ministries will declare its own.
+  arrange and publish the app, see every draft). Access declares **Owner** (`*`) and **Access manager** (`access.*`);
+  Accounts declares **Account manager** (`accounts.view`, `.manage`, `.review.manage`). Analytics declares
+  **Insights viewer** (`analytics.view`; nobody holds it by default) and **Developer**
+  (`analytics.health.view`). Ministries will declare its own. A feature may add its own nodes to a role
+  another feature declares (`AddToSystemRole`): Accounts adds `accounts.tools.connect` to Developer.
 - **Custom roles** are made in the admin panel by copying a role: a name, a description, the scope
   kind they're assigned at, the abilities ticked, whether they apply to child ministries, and who can
   give them. The developer tool can also set raw patterns (`ministries.news.*`,
@@ -61,6 +63,12 @@ can grant Owner to itself.
 Permission nodes can be marked sensitive (`accounts.manage`, `access.*`). People who hold any of them
 can't recover their account by email; a staff member issues them a recovery code instead
 ([identity.md](../architecture/identity.md)).
+
+**A connected tool never uses a sensitive permission,** even when its account holds it
+([identity.md](../architecture/identity.md), *Connected tools*). The API token says the session is a tool,
+and the evaluator adds a deny for every sensitive node to the grants it hands out for that caller in that
+request, so `[Requires]`, sync audiences and every feature reading `GrantsForAsync` refuse alike.
+`AssignmentRules` also refuses a tool outright, since an assigner role isn't a permission.
 
 ## Admin screens
 

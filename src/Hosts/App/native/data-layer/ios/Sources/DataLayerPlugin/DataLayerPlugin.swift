@@ -38,6 +38,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
 
     private static let preferences = UserDefaults.standard
     private static let preferencePrefix = "gsbc.preference."
+    private static let connectToolMethod = "/gsbc.accounts.Accounts/ConnectTool"
 
     private let runtime = DataLayerRuntime.shared
     private var transport: GrpcWebTransport? { runtime.transport }
@@ -103,6 +104,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         guard method != CodeSignIn.method else {
             call.reject("Sign in with a code through signInWithCode, so the session stays on this phone.")
+            return
+        }
+        guard method != Self.connectToolMethod else {
+            call.reject("Connect a tool in the admin panel on a computer.")
             return
         }
         guard let transport else {

@@ -26,7 +26,7 @@ internal sealed class AppSessionHandler(
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
         var found = await db.Sessions
-            .Where(session => session.SecretHash == hash && session.Client == SessionClient.App && session.ExpiresAt > now)
+            .Where(session => session.SecretHash == hash && session.Client != SessionClient.Browser && session.ExpiresAt > now)
             .Where(ReviewCodes.SessionIsCurrent(db, now))
             .Join(db.Users, session => session.UserId, user => user.Id, (session, user) => new { Session = session, user.DisplayName, user.Disabled })
             .SingleOrDefaultAsync(Context.RequestAborted);
@@ -36,7 +36,7 @@ internal sealed class AppSessionHandler(
         if (now - found.Session.LastSeenAt > LastSeenResolution)
         {
             found.Session.LastSeenAt = now;
-            found.Session.ExpiresAt = now + AppSessions.Lifetime;
+            found.Session.ExpiresAt = now + AppSessions.LifetimeOf(found.Session.Client);
             await db.SaveChangesAsync(Context.RequestAborted);
         }
 
@@ -47,6 +47,8 @@ internal sealed class AppSessionHandler(
                 new Claim(AccountClaims.Name, found.DisplayName),
             ],
             SchemeName);
+        if (found.Session.Client == SessionClient.Tool)
+            identity.AddClaim(new Claim(AccountClaims.Tool, bool.TrueString));
         return AuthenticateResult.Success(new AuthenticationTicket(new ClaimsPrincipal(identity), SchemeName));
     }
 }

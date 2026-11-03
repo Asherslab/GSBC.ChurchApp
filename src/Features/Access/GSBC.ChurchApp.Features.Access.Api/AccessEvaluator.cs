@@ -7,18 +7,27 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AccessEvaluator(
-    AccessDbContext db, GrantCache cache, PermissionCatalog catalog, IScopeHierarchy hierarchy, TimeProvider time) : IAccessEvaluator
+    AccessDbContext db, GrantCache cache, PermissionCatalog catalog, IScopeHierarchy hierarchy, ToolCallers tools, TimeProvider time)
+    : IAccessEvaluator
 {
     public async ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken)
     {
         if (Caller.UserId(user) is not { } userId || !catalog.ByNode.TryGetValue(node, out Permission? permission))
             return false;
 
-        GrantSet grants = await GrantsForAsync(userId, cancellationToken);
+        GrantSet grants = await CompiledAsync(userId, cancellationToken);
+        if (Caller.IsTool(user))
+            grants = grants.Refusing(catalog.Sensitive);
         return grants.IsAllowed(permission, string.IsNullOrEmpty(scopeId) ? null : scopeId);
     }
 
     public async ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken)
+    {
+        GrantSet grants = await CompiledAsync(userId, cancellationToken);
+        return tools.ActsThroughATool(userId) ? grants.Refusing(catalog.Sensitive) : grants;
+    }
+
+    private async ValueTask<GrantSet> CompiledAsync(Guid userId, CancellationToken cancellationToken)
     {
         if (cache.TryGet(userId, out GrantSet cached))
             return cached;

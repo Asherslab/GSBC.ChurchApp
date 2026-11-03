@@ -43,6 +43,9 @@ public interface IAccountsService
     [SignedIn]
     ValueTask<Done> EndSessionAsync(EndSessionRequest request, CallContext context = default);
 
+    [Requires(AccountsPermissions.ConnectToolNode)]
+    ValueTask<ToolConnection> ConnectToolAsync(ConnectToolRequest request, CallContext context = default);
+
     [SignedIn]
     ValueTask<Done> SignOutEverywhereAsync(Nothing request, CallContext context = default);
 

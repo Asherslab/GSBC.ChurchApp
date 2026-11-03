@@ -7,8 +7,10 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AssignmentRules(
-    AccessDbContext db, IAccessEvaluator evaluator, PermissionCatalog catalog, IScopeHierarchy hierarchy, TimeProvider time)
+    AccessDbContext db, IAccessEvaluator evaluator, PermissionCatalog catalog, IScopeHierarchy hierarchy, ToolCallers tools, TimeProvider time)
 {
+    private const string ToolsCannotChangeRoles = "A tool can't give or take away roles. Do it in the admin panel.";
+
     public static string? ScopeProblem(ScopeKind kind, string? objectId) =>
         (kind == ScopeKind.Global, objectId is null) switch
         {
@@ -19,6 +21,9 @@ internal sealed class AssignmentRules(
 
     public async Task<string?> RefusalAsync(Guid actorId, RoleRecord role, string? objectId, CancellationToken cancellationToken)
     {
+        if (tools.ActsThroughATool(actorId))
+            return ToolsCannotChangeRoles;
+
         ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
         GrantSet actor = await evaluator.GrantsForAsync(actorId, cancellationToken);
         if (!actor.IsAllowed(AccessPermissions.EditAssignments, objectId) && !await HoldsAssignerRoleAsync(actorId, role, kind, objectId, cancellationToken))

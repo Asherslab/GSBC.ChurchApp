@@ -125,4 +125,7 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddSystemRole(this IServiceCollection services, SystemRole role) =>
         services.AddSingleton(role);
+
+    public static IServiceCollection AddToSystemRole(this IServiceCollection services, string roleKey, params IReadOnlyList<string> patterns) =>
+        services.AddSingleton(new SystemRolePatterns(roleKey, patterns));
 }

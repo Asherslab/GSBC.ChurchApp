@@ -35,6 +35,8 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal, ID
 
     public ValueTask<SessionList> ListSessionsAsync() => _accounts.ListSessionsAsync(new Nothing());
 
+    public ValueTask<ToolConnection> ConnectToolAsync(string name) => _accounts.ConnectToolAsync(new ConnectToolRequest { Name = name });
+
     public ValueTask<Done> EndSessionAsync(string id) => _accounts.EndSessionAsync(new EndSessionRequest { Id = id });
 
     public Task SignOutAsync() => ForgettingThisDeviceAsync(async () =>

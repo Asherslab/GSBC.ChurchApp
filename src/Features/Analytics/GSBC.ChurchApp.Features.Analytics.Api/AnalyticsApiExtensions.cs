@@ -30,7 +30,7 @@ public static class AnalyticsApiExtensions
             "See how the app is used: how many phones open it, what's popular, whether notices were seen. Totals only, never anything about a person",
             ScopeKind.Global, [AnalyticsPermissions.ViewNode]));
         services.AddSystemRole(new SystemRole(AnalyticsPermissions.DeveloperRole, "Developer",
-            "See the app's errors and failed calls, with their technical detail, and get an email when a new kind of error appears. For whoever builds the app",
+            "See the app's errors and failed calls, with their technical detail, get an email when a new kind of error appears, and connect a tool such as Claude to read them. For whoever builds the app",
             ScopeKind.Global, [AnalyticsPermissions.HealthViewNode]));
         return services;
     }

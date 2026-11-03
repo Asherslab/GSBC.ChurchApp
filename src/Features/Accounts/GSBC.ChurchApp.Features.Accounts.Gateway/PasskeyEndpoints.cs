@@ -16,6 +16,7 @@ public static class PasskeyEndpoints
     public const string Prefix = "/accounts/passkeys";
     private const int MaximumPasskeyNameLength = 60;
     private const string CodeSessionsCannotAddPasskeys = "This account signs in with a sign-in code, so it can't have a passkey.";
+    private const string ToolsCannotAddPasskeys = "A connected tool can't add a passkey. Add one in the admin panel.";
     private static readonly CodePurpose[] Ticket = [CodePurpose.RegisterPasskey];
 
     public sealed record CreationOptionsRequest(string? Ticket);
@@ -43,8 +44,8 @@ public static class PasskeyEndpoints
         CreationOptionsRequest request, HttpContext http, SignInManager<AccountUser> signIn, UserManager<AccountUser> users,
         OneTimeCodes codes, AccountsDbContext db, CancellationToken cancellationToken)
     {
-        if (request.Ticket is not { Length: > 0 } && await IsCodeSessionAsync(http, db, cancellationToken))
-            return Results.Problem(CodeSessionsCannotAddPasskeys, statusCode: StatusCodes.Status403Forbidden);
+        if (request.Ticket is not { Length: > 0 } && await WhyThisSessionCannotAddPasskeysAsync(http, db, cancellationToken) is { } refusal)
+            return Results.Problem(refusal, statusCode: StatusCodes.Status403Forbidden);
 
         AccountUser? user = request.Ticket is { Length: > 0 } ticket
             ? await UserForTicketAsync(ticket, users, codes, cancellationToken)
@@ -89,9 +90,9 @@ public static class PasskeyEndpoints
         {
             return Results.Problem("Sign in first.", statusCode: StatusCodes.Status401Unauthorized);
         }
-        else if (await IsCodeSessionAsync(http, db, cancellationToken))
+        else if (await WhyThisSessionCannotAddPasskeysAsync(http, db, cancellationToken) is { } refusal)
         {
-            return Results.Problem(CodeSessionsCannotAddPasskeys, statusCode: StatusCodes.Status403Forbidden);
+            return Results.Problem(refusal, statusCode: StatusCodes.Status403Forbidden);
         }
 
         UserPasskeyInfo passkey = attestation.Passkey;
@@ -160,9 +161,14 @@ public static class PasskeyEndpoints
     private static IResult CeremonyExpired() =>
         Results.Problem("That took too long. Start again.", statusCode: StatusCodes.Status401Unauthorized);
 
-    private static async Task<bool> IsCodeSessionAsync(HttpContext http, AccountsDbContext db, CancellationToken cancellationToken) =>
-        Guid.TryParse(http.User.FindFirstValue(AccountClaims.SessionId), out Guid sessionId)
-        && await db.Sessions.AnyAsync(session => session.Id == sessionId && session.ReviewCodeId != null, cancellationToken);
+    private static async Task<string?> WhyThisSessionCannotAddPasskeysAsync(HttpContext http, AccountsDbContext db, CancellationToken cancellationToken)
+    {
+        if (http.User.HasClaim(AccountClaims.Tool, bool.TrueString))
+            return ToolsCannotAddPasskeys;
+        bool fromACode = Guid.TryParse(http.User.FindFirstValue(AccountClaims.SessionId), out Guid sessionId)
+            && await db.Sessions.AnyAsync(session => session.Id == sessionId && session.ReviewCodeId != null, cancellationToken);
+        return fromACode ? CodeSessionsCannotAddPasskeys : null;
+    }
 
     private static async Task<AccountUser?> UserForTicketAsync(
         string ticket, UserManager<AccountUser> users, OneTimeCodes codes, CancellationToken cancellationToken) =>

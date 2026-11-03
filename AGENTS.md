@@ -146,6 +146,14 @@ the code does, narrate changes, or label sections. XML doc comments count too.
 reports every comment an edit adds. Delete each one, or, if it really must stay, say in your reply
 which one and why. Removing an existing comment that the code makes redundant is always welcome.
 
+# Looking at errors
+
+When an error report comes up (an email from App health, a failure in dev or UAT), read it yourself with
+`tools/health/errors.sh --env dev|uat` (list) and `tools/health/errors.sh --env <env> <id>` (one in full)
+before asking the owner for details. It needs the owner to have connected a tool once
+(`tools/health/connect.sh <env>`); if it says no tool is connected, ask them to. See
+[analytics.md](docs/features/analytics.md), *Reading App health from the terminal*.
+
 # When to stop and ask
 
 Besides the hard rule above:

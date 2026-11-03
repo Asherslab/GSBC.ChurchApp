@@ -242,3 +242,15 @@ public sealed class TurnOffReviewCodeRequest
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
 }
+
+[ProtoContract]
+public sealed class ConnectToolRequest
+{
+    [ProtoMember(1)] public string Name { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class ToolConnection
+{
+    [ProtoMember(1)] public string Session { get; set; } = "";
+}
