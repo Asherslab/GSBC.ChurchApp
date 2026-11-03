@@ -18,7 +18,7 @@ public static class PlaceWords
     public static string Unavailable(DestinationState state) => state switch
     {
         DestinationState.NotForYou => "You can't open this place, so it can't be shown here.",
-        DestinationState.Gone => "This has been taken down, or it was removed.",
+        DestinationState.Gone => "It has finished, or the church has taken it down.",
         _ => "That isn't a place in the app any more.",
     };
 }

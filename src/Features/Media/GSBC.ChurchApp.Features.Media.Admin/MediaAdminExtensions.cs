@@ -13,6 +13,6 @@ public static class MediaAdminExtensions
         modules.Add(new ClientModule("Media", typeof(MediaAdminExtensions).Assembly,
             [new NavEntry("Media", "media", "image", MediaPermissions.View, Group: NavGroups.Content, Summary: "Pictures for the app's tiles and pages")]));
         return services.AddMediaClient()
-            .AddPlaceAction(new PlaceAction("Open in Media", "image", place => place.Kind == MediaDestinations.File.Key ? "media" : null, MediaPermissions.View));
+            .AddPlaceAction(new PlaceAction("Open in Media", "image", place => place.Kind == MediaDestinations.File.Key ? "media" : null, MediaPermissions.View, Leads: true));
     }
 }

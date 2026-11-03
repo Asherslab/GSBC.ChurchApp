@@ -4,7 +4,7 @@
 
 <div class="place-directory">
     <div class="place-directory__tools">
-        <SearchField Label="Search every place" Placeholder="Search pages, events and files" Value="@_text" ValueChanged="SearchAsync" Class="place-directory__search" />
+        <SearchField Label="Search every place" Placeholder="Search every place" Value="@_text" ValueChanged="SearchAsync" Class="place-directory__search" />
         <FilterChips TValue="string" Label="Area" Options="Areas" Value="@_area" ValueChanged="ChooseAreaAsync" />
     </div>
     @if (Hint is not null)

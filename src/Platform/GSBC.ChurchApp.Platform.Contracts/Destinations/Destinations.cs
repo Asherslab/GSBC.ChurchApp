@@ -2,9 +2,9 @@ using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 namespace GSBC.ChurchApp.Platform.Contracts.Destinations;
 
-public sealed record DestinationArea(string Key, string Title, string Icon, int Order);
+public sealed record DestinationArea(string Key, string Title, string Icon, int Order, string? Browsing = null);
 
-public sealed record DestinationPage(string Path, string Title, string Icon, DestinationArea Area, string Where, Audience Audience)
+public sealed record DestinationPage(string Path, string Title, string Icon, DestinationArea Area, string Where, Audience Audience, int Rank = 100)
 {
     public string Route => DestinationPaths.Trim(Path);
 }

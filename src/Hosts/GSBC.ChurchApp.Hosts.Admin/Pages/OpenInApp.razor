@@ -3,6 +3,7 @@
 @using GSBC.ChurchApp.Platform.Client.Access
 @using GSBC.ChurchApp.Platform.Client.Destinations
 @using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Ui.Destinations
 @inject DestinationsClient Destinations
 @inject IAccess Access
 
@@ -23,13 +24,19 @@
                         <span class="open-card__where">@place.Where</span>
                     </span>
                 </div>
+                <p class="open-card__body">This link opens in the Good Shepherd app. On a phone with the app, tapping the link opens it there straight away.</p>
+                <p class="open-card__body">Haven't got the app yet? Ask at the church office how to get it, then tap the link again.</p>
+            }
+            else if (context.Value.State == DestinationState.NotForYou)
+            {
+                <h1 class="open-card__title" tabindex="-1">A place in the church app</h1>
+                <p class="open-card__body">This link opens in the Good Shepherd app, for people the church has given access. Open it on your phone with the app, signed in.</p>
             }
             else
             {
-                <h1 class="open-card__title" tabindex="-1">A place in the church app</h1>
+                <h1 class="open-card__title" tabindex="-1">This isn't in the app any more</h1>
+                <p class="open-card__body">@PlaceWords.Unavailable(context.Value.State) If someone sent you this link, ask them for a new one.</p>
             }
-            <p class="open-card__body">This link opens in the Good Shepherd app. On a phone with the app, tapping the link opens it there straight away.</p>
-            <p class="open-card__body">Haven't got the app yet? Ask at the church office how to get it, then tap the link again.</p>
             @if (Access.SignedIn)
             {
                 <Button Variant="ButtonVariant.Quiet" Icon="map-pin" Href="@($"places?at={Uri.EscapeDataString(PlacePath)}")">See it in Places in the app</Button>

@@ -18,13 +18,18 @@
                 <p class="place-explorer__where">@place.Where</p>
                 <p class="place-explorer__who"><Icon Name="users" Size="IconSize.Small" />@WhoLine(place)</p>
                 <div class="place-explorer__actions">
-                    @foreach ((PlaceAction action, string href) in ActionsFor(place))
+                    @foreach ((PlaceAction action, string href) in ActionsFor(place).Where(pair => pair.Action.Leads))
                     {
-                        <Button Variant="@(action.Leads ? ButtonVariant.Primary : ButtonVariant.Quiet)" Small="true" Icon="@action.Icon" Href="@href">@action.Label</Button>
+                        <Button Small="true" Icon="@action.Icon" Href="@href">@action.Label</Button>
+                    }
+                    <CopyField ButtonOnly="true" Label="Copy link" Value="@Link(place)" />
+                    @foreach ((PlaceAction action, string href) in ActionsFor(place).Where(pair => !pair.Action.Leads))
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@action.Icon" Href="@href">@action.Label</Button>
                     }
                 </div>
-                <CopyField Label="Link to share" Value="@DestinationPaths.Shareable(new Uri(Navigation.BaseUri), place.Path)"
-                           Hint="On a phone with the app, it opens there. Anyone else is shown how to get the app." />
+                <p class="place-explorer__link">@ShortLink(place)</p>
+                <p class="place-explorer__note">@Note(place)</p>
             }
             else
             {
@@ -37,6 +42,14 @@
 @code {
     [Parameter, EditorRequired] public required string At { get; set; }
     [Parameter] public EventCallback<string> AtChanged { get; set; }
+
+    private string Link(Destination place) => DestinationPaths.Shareable(new Uri(Navigation.BaseUri), place.Path);
+
+    private string ShortLink(Destination place) => Link(place) is var link && new Uri(link) is var uri ? $"{uri.Host}{uri.AbsolutePath}" : link;
+
+    private string Note(Destination place) => Destinations.Catalog.KindByKey(place.Kind)?.OpensOutside == true
+        ? "On a phone with the app, the link opens this in the phone's browser. Anyone else is shown how to get the app."
+        : "On a phone with the app, the link opens it there. Anyone else is shown how to get the app.";
 
     private static string WhoLine(Destination place) => place.WhoCanOpen == "Everyone" ? "Everyone can open it" : $"{place.WhoCanOpen} can open it";
 

@@ -36,7 +36,7 @@ public sealed class DestinationDirectory(
         foreach (DestinationArea area in catalog.Areas.Where(area => request.Area is null || area.Key == request.Area))
         {
             List<Destination> found = [];
-            foreach (DestinationPage page in catalog.Pages.Where(page => page.Area == area && Matches(text, page.Title, page.Where)))
+            foreach (DestinationPage page in catalog.Pages.Where(page => page.Area == area && Matches(text, page.Title, page.Where)).OrderBy(page => page.Rank))
                 found.Add(Describe(page, DestinationState.Available));
             foreach (IDestinationSource source in sources.Where(source => source.Kind.Area == area))
                 foreach (FoundPlace place in await source.SearchAsync(text, take + 1, cancellationToken))
@@ -50,7 +50,7 @@ public sealed class DestinationDirectory(
             if (openable.Count > 0 || request.Area is not null)
                 results.Groups.Add(new DestinationGroup
                 {
-                    Area = area.Key, Title = area.Title, Icon = area.Icon, Destinations = openable.Take(take).ToList(), HasMore = openable.Count > take,
+                    Area = area.Key, Title = text.Length == 0 && area.Browsing is { } browsing ? $"{area.Title} · {browsing}" : area.Title, Icon = area.Icon, Destinations = openable.Take(take).ToList(), HasMore = openable.Count > take,
                 });
         }
         return results;

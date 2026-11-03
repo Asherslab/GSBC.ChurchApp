@@ -36,7 +36,10 @@ Client, as it does for permissions, surfaces and notification kinds. Features ne
 
 - **`Search`** `[SignedIn]`: text and an optional area. Returns places grouped by area: pages matching the
   text, and each kind's own `IDestinationSource.SearchAsync` (newest files first; upcoming events first when
-  Events is built). Empty text is the browse list: the first few of each area, then "Show all" per area.
+  Events is built). Empty text is the browse list: pages by their `Rank` (Home, Notifications, What's new
+  and More first), then the first few of each area under its browsing title ("Files · recently added"),
+  with "Show all" per area. The area chips carry no counts: a true count would need every item checked
+  against the caller's access, and a cheaper one would reveal how many private things exist.
 - **`Describe`** `[Public]`: one path → its name, where, icon, who can open it, its date, and a state:
   *Available*, *NotForYou*, *Gone* or *Unknown*. For a kind that opens outside, an available answer carries
   the URL to open (a private file's is a five-minute signed link).
@@ -59,7 +62,7 @@ which shows the shared not-found state when the item is gone.
 
 - **Places in the app** (`/places`, the sidebar's *The app* group; any signed-in staff member): the directory
   (search, area chips, rows grouped by area) beside a phone showing the chosen place, who can open it, its
-  actions and its link to copy. The page was chosen by the owner on the decision page (2026-11-03, after a
+  actions (the place's own change action first, then Copy link) and its link written out under them. The page was chosen by the owner on the decision page (2026-11-03, after a
   steer toward "a good overview for exploring and modifying specific things").
 - **The phone** draws the place live where its feature registers a `PlacePreview` (Configuration draws Home
   through `HomeScreen`, as published); otherwise a summary in the app's own style.

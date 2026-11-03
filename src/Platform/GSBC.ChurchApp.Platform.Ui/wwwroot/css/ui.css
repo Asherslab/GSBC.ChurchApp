@@ -816,21 +816,23 @@ button.row:active, a.row:active { background: var(--line); }
 .place-directory__more { display: inline-flex; align-items: center; gap: 2px; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
 .place-directory__more:hover { text-decoration: underline; text-underline-offset: 3px; }
 
-.place-explorer { display: grid; grid-template-columns: minmax(0, 1fr) 400px; gap: 40px; align-items: start; }
-.place-explorer__aside { position: sticky; top: 24px; display: grid; gap: 6px; min-width: 0; }
-.place-explorer__phone { display: flex; justify-content: center; height: clamp(340px, calc(100vh - 400px), 560px); margin-bottom: 10px; }
+.place-explorer { display: grid; grid-template-columns: minmax(0, 1fr) 440px; gap: 40px; align-items: start; max-width: 1320px; }
+.place-explorer__aside { position: sticky; top: 24px; display: grid; gap: 6px; justify-items: center; min-width: 0; text-align: center; }
+.place-explorer__phone { display: flex; justify-content: center; width: 100%; height: clamp(380px, calc(100vh - 340px), 560px); margin-bottom: 10px; }
 .place-explorer__title { margin: 0; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; text-wrap: balance; }
 .place-explorer__where { margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
 .place-explorer__who { display: flex; align-items: center; gap: 6px; margin: 4px 0 0; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
-.place-explorer__actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0 14px; }
+.place-explorer__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 4px; }
 .place-explorer__actions:empty { display: none; }
 @media (max-width: 1100px) {
   .place-explorer { grid-template-columns: minmax(0, 1fr); }
   .place-explorer__aside { position: static; max-width: 420px; padding-top: 24px; border-top: 1px solid var(--line); }
 }
 
+.place-explorer__link { margin: 0; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.place-explorer__note { max-width: 40ch; margin: 0; color: var(--ink-3); font-size: var(--text-caption); }
 .place-phone { min-height: 100%; }
-.place-phone__note { max-width: 32ch; margin: 14px 0 0; color: var(--ink-3); font-size: var(--text-caption); }
+.row--selected .row__icon:not(.row__icon--accent) { background: var(--segment-on); }
 
 .place-field { display: grid; gap: 6px; justify-items: start; }
 .place-field__chosen { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 56px; padding: 8px 8px 8px 12px; border-radius: var(--radius-field); background: var(--fill-on-surface); }
