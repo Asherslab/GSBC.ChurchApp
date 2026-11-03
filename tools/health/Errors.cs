@@ -130,7 +130,7 @@ static void PrintOverview(string environment, int days, HealthOverview overview)
 {
     Console.WriteLine($"App health on {environment} ({overview.Environment}), the last {Math.Clamp(days, 1, 30)} days");
     Console.WriteLine();
-    Console.WriteLine(overview.Kinds.Count == 0 ? "No errors." : $"Errors ({overview.Kinds.Count} kinds, most recent first)");
+    Console.WriteLine(overview.Kinds.Count == 0 ? "No errors." : $"Errors ({overview.Kinds.Count} {(overview.Kinds.Count == 1 ? "kind" : "kinds")}, most recent first)");
     foreach (ErrorKindSummary kind in overview.Kinds.OrderByDescending(kind => kind.LastSeen))
     {
         Console.WriteLine($"  {kind.Id.ToString()[..8]}  {kind.Count,5}×  {Origin(kind)}  {kind.ExceptionType}");

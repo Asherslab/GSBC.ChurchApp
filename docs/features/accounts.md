@@ -14,6 +14,7 @@ built. Permissions (who may do what) are the Access feature, next.
 | Staff with `accounts.manage` | Invite someone by email; give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account |
 | Staff with `accounts.review.manage` | Make a demo account and sign-in codes for Apple's reviewers; turn a code off ([identity.md](../architecture/identity.md), *Review sign-in codes*) |
 | Apple's reviewers | Sign in to a demo account with its email and a sign-in code, in the app |
+| Staff with `accounts.tools.connect` (Developer, Owner) | Connect a tool, such as Claude on a computer, to their own account ([identity.md](../architecture/identity.md), *Connected tools*) |
 
 ## Flows
 
@@ -58,7 +59,10 @@ Recovering never removes existing passkeys; the person removes lost ones afterwa
 - **The gateway swaps either for an API token** on every proxied call: a JWT signed by the gateway
   (ES256), 5 minutes, carrying user id and session id only. The API checks issuer, audience, signature
   and expiry, and the session is checked again live for anything sensitive.
-- Sessions last 90 days from last use in the app and 14 days in the browser, then need a passkey again.
+- Sessions last 90 days from last use in the app, 30 days for a connected tool and 14 days in the browser,
+  then need a passkey again.
+- **A connected tool** is a session with client `Tool` and a secret, sent as the app's header; its API
+  token carries `tool`, and Access refuses it anything sensitive.
 
 ## Where it lives
 

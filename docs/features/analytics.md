@@ -431,6 +431,31 @@ Measures declared so far: `app.active.day`, `app.active.week`, `app.active.month
 - **The privacy notice and store labels** as text for the website and the store listings (the in-app
   notice is under More → Help improve the app).
 
+### Reading App health from the terminal (built 2026-11-03)
+
+The owner asked for it (2026-11-03): an error reaches the owner by email, and Claude should be able to
+look at it without the admin panel. `tools/health/errors.sh` reads the same two Health methods the App
+health screen calls, through the gateway with gRPC-Web, as a **connected tool** of the person's own account.
+
+```bash
+tools/health/connect.sh dev            # once: paste the session secret from the admin panel (not echoed)
+tools/health/errors.sh --env dev       # error kinds and failed calls, the last 7 days (--days 30 at most)
+tools/health/errors.sh --env dev 0195f0aa   # one error in full: type, where, frames, routes, platforms, builds, by day
+```
+
+- **Connecting a tool:** the admin panel's Account page → *Connect a tool* (people holding
+  `accounts.tools.connect`: the Developer role and Owner). It shows a session secret once, with a copy button.
+  The tool is listed under *Where you're signed in* and is signed out like any device.
+- **The secret lives only in the login Keychain**, as `gsbc-tool-<env>`. `connect.sh` reads it with
+  `read -s` and hands it to `security` on stdin; `Errors.cs` asks `security` for it. It's never in the repo,
+  a file, the chat or a command line.
+- **What a tool may do:** what its account may, except anything sensitive, which Access refuses
+  ([identity.md](../architecture/identity.md), *Connected tools*). App health isn't sensitive, so it works.
+- **Environments:** `dev` and `uat` (`https://uat-app.baptist.com.au`, once this is deployed there).
+  Production gets a line in the list at the top of `Errors.cs` once it has a host.
+- An ended or expired session (30 days unused) says so and says how to connect again; an account without
+  `analytics.health.view` is told it needs the Developer role.
+
 ## Decided (owner, 2026-11-02)
 
 1. All four question groups in the first version: use and growth, sermons, notices seen, what people tap.

@@ -67,11 +67,31 @@ The gateway owns sessions, stored server-side, so any one can be ended at once.
 |---|---|---|
 | Admin panel (browser) | A cookie: HttpOnly, Secure, SameSite=Strict | The cookie |
 | App (native layer) | A session secret in the iOS Keychain, never in the WebView | A header on each gRPC call |
+| A connected tool (a terminal on a computer) | A session secret in the macOS Keychain | The same header |
 
 On every proxied call the gateway swaps either one for a signed API token that lives for minutes
 (SPEC §6). The API never sees a cookie or a session secret. Removing a person, a passkey or a
 session, or "sign out everywhere", ends the gateway session immediately; a token already issued
 expires within minutes, and permissions are checked live anyway.
+
+## Connected tools (built 2026-11-03)
+
+A developer can connect a tool, such as Claude on their computer, to their own account, so it can read
+App health from a terminal (owner, 2026-11-03; [analytics.md](../features/analytics.md), *Reading App
+health from the terminal*). It's a third kind of session, not an API key (decided with the owner,
+2026-11-03):
+
+- **Who:** people holding `accounts.tools.connect` (sensitive): the Developer role (Accounts adds it to
+  Analytics' role with `AddToSystemRole`) and Owner. Account managers hold `accounts.view`, `.manage` and
+  `.review.manage` by name, so not this.
+- **Connecting** is `Accounts.ConnectTool(name)` in the admin panel's Account page; the secret is shown once.
+  The phone's native layer refuses the method, so the WebView never receives one.
+- **It acts as its account but never with anything sensitive.** The gateway marks the API token
+  (`tool: True`), and Access adds a deny for every sensitive permission to a tool's grants, wherever they're
+  read: `[Requires]`, sync audiences, drafts, role editing. A tool can't give or take away roles (even
+  through an assigner role) and can't add a passkey, so a leaked secret can't become a full sign-in.
+- **It ends** after **30 days unused** (each use moves it on), when it's signed out under *Where you're
+  signed in*, or with *sign out everywhere*. Connecting one is audited.
 
 ## Robust, not just working
 
@@ -110,7 +130,7 @@ is in [environments.md](environments.md), *Sign-in for Apple's reviewers*.
 - **A demo account is an ordinary account holding the App reviewer system role** (`app-reviewer`,
   declared by Accounts, granting nothing). There's no flag on the account: Access says who is a demo
   account, as for everything else. Staff with `accounts.review.manage` (sensitive; Account managers hold
-  it through `accounts.*`) make one in the admin panel, and Accounts gives it the role as a feature.
+  it) make one in the admin panel, and Accounts gives it the role as a feature.
 - **A code only ever reaches a demo account:** it must hold the role, have no passkey (a passkey means
   a real person) and hold nothing sensitive (so giving it Owner by mistake stops its codes rather than
   exposing Owner). The checks run on every sign-in, not only when the code is made.

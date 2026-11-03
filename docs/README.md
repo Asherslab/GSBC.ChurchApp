@@ -42,6 +42,12 @@ month, new phones, Hub tile taps) reach Insights for the Insights viewer role. E
 outbox entries over gRPC; "Help improve the app" under More turns it off
 ([analytics.md](features/analytics.md)).
 
+**App health from the terminal (2026-11-03, branch `feature/health-from-terminal`):** a developer connects a
+tool (such as Claude) on the admin panel's Account page, a session of its own that Access refuses anything
+sensitive and that ends after 30 days unused; `tools/health/errors.sh --env dev|uat` then lists and shows
+error reports with the secret from the macOS Keychain. Proven on dev with a test account
+([analytics.md](features/analytics.md), *Reading App health from the terminal*).
+
 **Waiting on the owner:**
 
 - ~~The Apple enrolment~~: done 2026-11-03. The church is enrolled as an organisation (the church
