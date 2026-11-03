@@ -785,7 +785,7 @@ button.row:active, a.row:active { background: var(--line); }
 .lock-proof__time { font-size: 3.2rem; font-weight: 700; letter-spacing: -0.03em; line-height: 1; font-variant-numeric: tabular-nums; }
 .lock-proof__note { display: grid; gap: 2px; padding: 10px 12px 12px; border-radius: var(--radius-sheet); background: var(--surface); color: var(--ink); }
 .lock-proof__app { display: flex; align-items: center; gap: 8px; margin-bottom: 2px; color: var(--ink-2); font-size: var(--text-pill); font-weight: 600; letter-spacing: 0.02em; text-transform: uppercase; }
-.lock-proof__icon { display: grid; flex: none; place-items: center; width: 20px; height: 20px; border-radius: 5px; background: var(--masthead); color: var(--on-masthead); }
+.lock-proof__icon { display: grid; flex: none; place-items: center; width: 20px; height: 20px; border-radius: 28%; background: var(--masthead); color: var(--on-masthead); }
 .lock-proof__icon .brand-mark { width: 14px; height: 14px; }
 .lock-proof__name { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
 .lock-proof__flag { color: var(--marker-ink); }
