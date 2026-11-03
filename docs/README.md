@@ -50,8 +50,9 @@ evaluator behind every `[Requires]`, admin screens).
 **Environments (2026-11-03, branch `feature/uat`):** three apps side by side (GSBC Dev, GSBC UAT,
 Good Shepherd), dev renamed to `dev-app.baptist.com.au`, and UAT's backend on the mini cluster following
 `main` (`uat-backend.yml`, `gsbc.argo` branch `church-app-uat`, not pushed), with TestFlight uploads from
-a button (`testflight-uat.yml`). Written and tested locally; nothing is deployed until the owner's
-set-up is done ([environments.md](architecture/environments.md)).
+a button (`testflight-uat.yml`). GSBC Dev on `dev-app` proven on the owner's iPhone (2026-11-03); the
+UAT images, caching and health checks tested locally; nothing is on the cluster until the owner's set-up
+is done ([environments.md](architecture/environments.md)).
 
 **Done by the owner, 2026-11-02:** the Cloudflare zone is set and checked (Browser Cache TTL respects
 our headers, Web Analytics off, app hosts purged), and media goes through R2; see

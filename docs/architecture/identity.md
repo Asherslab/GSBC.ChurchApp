@@ -16,7 +16,8 @@ different kind of account. Reading public content still needs no account (SPEC Â
   test passkeys never sit beside real ones in people's keychains. Dev is reached through the dev proxy
   ([tools/dev-proxy](../../tools/dev-proxy/README.md)); on a dev Mac with no tunnel, the browser accepts
   `localhost` as the RP. Passkeys made on `dev.baptist.com.au` don't work after the rename: recover the
-  account by email on `dev-app` and add one. See [environments.md](environments.md).
+  account on `dev-app` and add one (proven on the owner's iPhone, 2026-11-03). See
+  [environments.md](environments.md).
 - **Bundle ids** (owner, 2026-11-03): `au.com.baptist.app.dev` for dev builds and `au.com.baptist.app.uat`
   for TestFlight's UAT app, beside production's below; each environment's association file names its own.
 - **Production's bundle id: `au.com.baptist.app`** (owner, 2026-11-03), so the app id in the association files is

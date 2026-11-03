@@ -21,7 +21,15 @@ Three apps that sit side by side on one phone, each with its own backend, passke
 
 A passkey can never change domain, so each environment's accounts are its own: a UAT account doesn't
 exist in dev, and dev's passkeys from before the rename (on `dev.baptist.com.au`) don't work on
-`dev-app.baptist.com.au`. Sign in there once by recovering the account by email, then add a passkey.
+`dev-app.baptist.com.au`. Recover the account by email and add a passkey. An account holding a sensitive
+permission (an Owner) can't recover by email; a staff member issues it a recovery link instead (People).
+For the only Owner, that was done on 2026-11-03 by running dev's gateway on the old relying party for a
+few minutes, signing in at `dev.baptist.com.au` with the old passkey, issuing a link to yourself, then
+switching back and opening the link on the phone.
+
+**Proven on the owner's iPhone, 2026-11-03:** GSBC Dev (`au.com.baptist.app.dev`) through
+`dev-app.baptist.com.au`: the recovery link opened the app, the passkey was created there, and the
+session survived the app being completely closed.
 
 ## The app's environments
 
