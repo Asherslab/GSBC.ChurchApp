@@ -68,6 +68,7 @@
     protected override async Task OnInitializedAsync()
     {
         Access.Changed += OnAccessChanged;
+        Navigation.LocationChanged += OnLocationChanged;
         await CountAsync();
     }
 
@@ -97,5 +98,11 @@
         StateHasChanged();
     });
 
-    public void Dispose() => Access.Changed -= OnAccessChanged;
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => OnAccessChanged();
+
+    public void Dispose()
+    {
+        Access.Changed -= OnAccessChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
 }
