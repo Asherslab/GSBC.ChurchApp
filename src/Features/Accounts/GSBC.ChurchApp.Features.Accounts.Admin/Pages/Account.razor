@@ -2,24 +2,29 @@
 @implements IDisposable
 @inject AccountsClient Accounts
 
-<h1>Account</h1>
-
 @if (_session is null)
 {
-    <p>Checking…</p>
+    <TitleBand Title="Account" />
+    <Skeleton Count="3" />
 }
 else if (_session.SignedIn)
 {
-    <p>Signed in as @_session.DisplayName.</p>
-    <AccountDetails />
+    <TitleBand Title="Account" Lead="@SignedInLead" />
+    <div class="account-column">
+        <AccountDetails />
+    </div>
 }
 else
 {
-    <SignIn />
+    <SignInStage>
+        <SignIn />
+    </SignInStage>
 }
 
 @code {
     private CurrentSession? _session;
+
+    private string SignedInLead => $"Signed in as {_session?.DisplayName}. Your name, your passkeys, and the devices you use.";
 
     protected override async Task OnInitializedAsync()
     {

@@ -1,0 +1,16 @@
+<PageTitle>@Title · Good Shepherd admin</PageTitle>
+<h1 class="visually-hidden" tabindex="-1">@Title</h1>
+<div class="sign-in-stage">
+    <div class="sign-in-card">
+        <div class="sign-in-card__brand">
+            <BrandMark Decorative="true" />
+            <span>Good Shepherd admin</span>
+        </div>
+        @ChildContent
+    </div>
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "Sign in";
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}
