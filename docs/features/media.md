@@ -160,15 +160,15 @@ settings opens the library in pick mode, uploading included.
 
 `Storage:Blobs` (Platform.Storage), the same keys in every environment:
 
-| Key | Production (R2) | Development |
-|---|---|---|
-| `ServiceUrl` | `https://<account-id>.r2.cloudflarestorage.com` | Set by the AppHost: SeaweedFS on `http://localhost:5310` |
-| `PublicServiceUrl` | Not set: signed links use `ServiceUrl` | `https://dev-media.baptist.com.au` when the dev tunnel serves it, else `ServiceUrl` |
-| `Region` | `auto` (the default) | `auto` |
-| `AccessKeyId`, `SecretAccessKey` | The R2 API token's (cluster secret) | Random per AppHost run |
-| `PublicBucket`, `PrivateBucket` | The two bucket names | `gsbc-media`, `gsbc-private` |
-| `PublicBaseUrl` | `https://media.baptist.com.au` | `<PublicServiceUrl>/gsbc-media` |
-| `CreateBuckets` | Never set | `true`: the API creates the buckets |
+| Key | Production (R2) | UAT (R2) | Development |
+|---|---|---|---|
+| `ServiceUrl` | `https://<account-id>.r2.cloudflarestorage.com` | The same | Set by the AppHost: SeaweedFS on `http://localhost:5310` |
+| `PublicServiceUrl` | Not set: signed links use `ServiceUrl` | Not set | `https://dev-media.baptist.com.au` when the dev tunnel serves it, else `ServiceUrl` |
+| `Region` | `auto` (the default) | `auto` | `auto` |
+| `AccessKeyId`, `SecretAccessKey` | The R2 API token's (cluster secret) | UAT's own token (`storage-secret`) | Random per AppHost run |
+| `PublicBucket`, `PrivateBucket` | The two bucket names | `gsbc-uat-media`, `gsbc-uat-private` | `gsbc-media`, `gsbc-private` |
+| `PublicBaseUrl` | `https://media.baptist.com.au` | `https://uat-media.baptist.com.au` | `<PublicServiceUrl>/gsbc-media` |
+| `CreateBuckets` | Never set | Never set | `true`: the API creates the buckets |
 
 As environment variables: `Storage__Blobs__ServiceUrl` and so on. In development the AppHost runs
 SeaweedFS (MinIO no longer publishes images) unless `Storage:Blobs` is set in the AppHost's user
@@ -184,6 +184,9 @@ free certificate covers one level of subdomain only.
 
 ## What the owner sets up in Cloudflare (not done yet)
 
+For production. UAT has its own two buckets on `uat-media.baptist.com.au`, set up the same way; the
+clicks are in [environments.md](../architecture/environments.md), *Setting it up*.
+
 1. **Two R2 buckets**, for example `gsbc-media` (public) and `gsbc-private`. Leave the `r2.dev`
    public URL off on both.
 2. **A custom domain on the public bucket:** `media.baptist.com.au` (bucket → Settings → Custom
@@ -192,8 +195,9 @@ free certificate covers one level of subdomain only.
    header if present*. Recommended, not strictly needed: our extensions (jpg, png, webp, gif, pdf)
    are cached by default, but the rule keeps it true for any type added later.
 4. **CORS on the private bucket**, for uploads: methods `PUT`; header `content-type`; origins
-   `https://app.baptist.com.au`, `https://dev-app.baptist.com.au`, `capacitor://localhost` (the iOS
-   app) and `http://localhost:5300` (the local admin panel). The public bucket needs none.
+   `https://app.baptist.com.au`, `capacitor://localhost` (the iOS app) and `http://localhost:5300` (the
+   local admin panel). **And on the public bucket**, for fonts (above): `GET` and `HEAD` from
+   `https://app.baptist.com.au`.
 5. **A lifecycle rule on the private bucket:** delete objects with prefix `uploads/` after 1 day.
 6. **An R2 API token**, *Object Read & Write*, limited to the two buckets. Its access key id and
    secret go into the cluster secret as `Storage__Blobs__AccessKeyId` and

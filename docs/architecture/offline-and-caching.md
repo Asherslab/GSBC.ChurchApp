@@ -84,8 +84,8 @@ to set up (media.md lists them).
 | gRPC (all data) | Never: they're POSTs | Sync is the cache |
 | Public media | Forever | Content-addressed |
 | Private media | Never: short-lived signed links | Content-addressed, and the phone checks the hash |
-| Admin panel `.wasm`/`.dll`/JS/CSS | Forever | .NET 10 fingerprints file names |
-| Admin panel `index.html` and unfingerprinted files | No (`no-cache`) | `index.html` names the fingerprinted files |
+| Admin panel `.wasm`/`.dll` and other fingerprinted files | Forever | .NET 10 fingerprints file names |
+| Admin panel `index.html`, client routes and unfingerprinted files (`blazor.webassembly.js`, `dotnet.js`, the stylesheets) | No (`no-cache`, revalidated) | They name the fingerprinted files |
 | The app itself | Not served from the web | It ships in the store build |
 
 The admin panel will be at `app.baptist.com.au`, which serves the frozen POC's web build until then.
@@ -99,8 +99,10 @@ file fixed on the server can stay broken in a browser for hours. So:
 - **Dev** (`dev-app.baptist.com.au`) sends `Cache-Control: no-store` on every response, which Cloudflare
   respects. `no-store` doesn't evict what the edge already holds, so after changing what's cached,
   purge the host (Caching → Configuration → Custom Purge → Hostname).
-- **Production** relies on fingerprinted names (`immutable`, safe to cache forever) and `index.html`
-  never cached.
+- **UAT and production** rely on fingerprinted names (`immutable`, safe to cache forever) and send
+  `no-cache` on everything else, `index.html` included. The admin page links its scripts and styles
+  unfingerprinted, because a hosted publish leaves `#[.{fingerprint}]` placeholders unrewritten
+  ([environments.md](environments.md), *Caching*).
 
 How the `baptist.com.au` zone is set (owner, 2026-11-02, checked through the public hostnames):
 

@@ -11,10 +11,15 @@ different kind of account. Reading public content still needs no account (SPEC Â
 - **Relying party: `baptist.com.au`** (decided 2026-11-01). It covers the admin panel, the app and
   any future site on any subdomain. It is permanent: a passkey can never move to another domain.
   The RP ID and the allowed origins are configuration, never read from a request header.
-- **Dev has its own relying party: `dev-app.baptist.com.au`** (decided 2026-11-01), reached through the dev
-  proxy ([tools/dev-proxy](../../tools/dev-proxy/README.md)). Test passkeys never sit beside real ones
-  in people's keychains. On a dev Mac with no tunnel, the browser accepts `localhost` as the RP.
-- **Bundle id: `au.com.baptist.app`** (owner, 2026-11-03), so the app id in the association files is
+- **Dev and UAT have their own relying parties,** each its app host: `dev-app.baptist.com.au` (decided
+  2026-11-01 as `dev.baptist.com.au`, renamed 2026-11-03) and `uat-app.baptist.com.au` (2026-11-03), so
+  test passkeys never sit beside real ones in people's keychains. Dev is reached through the dev proxy
+  ([tools/dev-proxy](../../tools/dev-proxy/README.md)); on a dev Mac with no tunnel, the browser accepts
+  `localhost` as the RP. Passkeys made on `dev.baptist.com.au` don't work after the rename: recover the
+  account by email on `dev-app` and add one. See [environments.md](environments.md).
+- **Bundle ids** (owner, 2026-11-03): `au.com.baptist.app.dev` for dev builds and `au.com.baptist.app.uat`
+  for TestFlight's UAT app, beside production's below; each environment's association file names its own.
+- **Production's bundle id: `au.com.baptist.app`** (owner, 2026-11-03), so the app id in the association files is
   `<team id>.au.com.baptist.app`. It replaced `au.com.baptist.churchapp` (decided 2026-11-01), which
   is stuck on the owner's expired personal developer team: Xcode registered it there while that
   membership was paid, and an expired team can't remove an App ID, so the church's team can't
@@ -33,14 +38,14 @@ tracked files: it lives in the gitignored `src/Hosts/App/shell/.team`, which `to
 puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
 
 - **Associated Domains** (`App.entitlements`): `webcredentials:` and `applinks:` on
-  `$(GSBC_ASSOCIATED_DOMAIN)`, which is `baptist.com.au` for release builds and the gateway's host for
-  development builds (`deploy.sh` sets it: `dev-app.baptist.com.au`).
-- **Dev's association file** is written by the dev gateway at start-up from `Apple:TeamId` (into the
-  gitignored `generated/`) and served as a static file at
-  `dev-app.baptist.com.au/.well-known/apple-app-site-association`: the same bytes on every request,
-  `application/json`, no redirect, `no-store` in development. Apple's CDN fetches it through
-  Cloudflare (checked 2026-11-03). `AppAssociation.Json` writes it; a gateway test checks it names
-  the configured team and bundle.
+  `$(GSBC_ASSOCIATED_DOMAIN)`, set per environment in `ios/environments/*.xcconfig`: `dev-app.baptist.com.au`,
+  `uat-app.baptist.com.au`, and `baptist.com.au` for release builds.
+- **Each gateway's association file** is written at start-up from `Apple:TeamId` and `Apple:BundleId`
+  (`au.com.baptist.app.dev` in development, `.uat` in UAT's `config.yaml`, production's by default) into
+  a temporary folder, and served as a static file at `/.well-known/apple-app-site-association`: the same
+  bytes on every request, `application/json`, no redirect (`no-store` in development, `no-cache` elsewhere).
+  Apple's CDN fetches it through Cloudflare (checked 2026-11-03). `AppAssociation.Json` writes it; a
+  gateway test checks it names the configured team and bundle.
 - **Applinks:** `/welcome` (invitations and recovery links) opens the app.
 
 **Needs setting up outside this repo (owner):**

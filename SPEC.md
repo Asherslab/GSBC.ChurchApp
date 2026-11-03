@@ -652,14 +652,20 @@ Decided, for the record:
 - **Sermons:** hosted in Tithe.ly, probably consumed through its RSS feed. The detail is settled when
   that feature is built.
 - **Android without Google Play:** read-only, no fallback (§6).
-- **Bundle id:** `au.com.baptist.app` (2026-11-03; it replaced `au.com.baptist.churchapp`, see identity.md).
+- **Bundle id:** `au.com.baptist.app` (2026-11-03; it replaced `au.com.baptist.churchapp`, see identity.md),
+  with `.dev` and `.uat` beside it for dev builds and TestFlight's UAT app.
+- **Environments:** dev, UAT and production, each with its own app, `<env>-app.baptist.com.au` and
+  `<env>-media.baptist.com.au` hosts, passkeys and backend; UAT's backend follows `main` on the mini
+  cluster and TestFlight builds are cut by hand (2026-11-03); see
+  [environments.md](docs/architecture/environments.md).
 - **Sign-in:** everyone from v1, members included (2026-11-01); see
   [identity.md](docs/architecture/identity.md).
 - **How media travels:** content-addressed objects in Cloudflare R2, public ones fetched directly from
   a custom domain, private ones and uploads through short-lived signed URLs from gRPC methods
   (2026-11-02); see [offline-and-caching.md](docs/architecture/offline-and-caching.md).
-- **Dev environment:** a Cloudflare tunnel from the Mac mini to a dev Mac, at `dev-app.baptist.com.au`,
-  which is also dev's passkey domain (2026-11-01); see [tools/dev-proxy](tools/dev-proxy/README.md).
+- **Dev environment:** a Cloudflare tunnel to a dev Mac, at `dev-app.baptist.com.au` (`dev.baptist.com.au`
+  until 2026-11-03), which is also dev's passkey domain (2026-11-01); see
+  [tools/dev-proxy](tools/dev-proxy/README.md).
 
 ## 13. Milestones
 

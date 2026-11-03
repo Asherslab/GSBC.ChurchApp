@@ -5,6 +5,10 @@ HTTPS, from anywhere. `cloudflared` on the Mac mini holds a tunnel to Cloudflare
 `dev-app.baptist.com.au` to the dev Mac's gateway on the local network. Nothing here is a secret except
 the tunnel's credentials file, which stays on the Mac mini.
 
+Dev was `dev.baptist.com.au` until 2026-11-03. While the old DNS record exists, the tunnel serves both
+names; delete the record and its `config.yml` entry once dev works on `dev-app`. UAT and production are on
+the cluster, not here ([environments.md](../../docs/architecture/environments.md)).
+
 Why this shape: passkeys need HTTPS on a real domain, and the phone's sync must be proven through
 Cloudflare (SPEC §5, open point 5). gRPC-Web is ordinary HTTP, so the tunnel needs no gRPC settings;
 `Watch` sends a heartbeat every 30 seconds, inside Cloudflare's 100-second idle limit.

@@ -59,6 +59,13 @@ Done once by a tenant admin, following GSBC.Accounting's `expenses@` setup:
    Test-ServicePrincipalAuthorization -Identity <client id> -Resource <any other mailbox>    # InScope False
    ```
 
+## UAT
+
+UAT sends real email too, with the mailer's **development** certificate, so either environment can be
+revoked alone: `email-secret` in the `church-app-uat` namespace, the same four keys
+(`gsbc.argo`'s `clusters/mini/README.md`). It's optional, as below. Links in UAT's emails go to
+`https://uat-app.baptist.com.au` (`Accounts:SiteUrl`).
+
 ## Going to production (later)
 
 Not done yet: the API isn't on the cluster. When it goes there through `gsbc.argo`:

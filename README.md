@@ -21,7 +21,9 @@ tools/aot-warnings/check.sh                                     # AOT publish of
 
 ## Testing on a phone
 
-Dev builds talk to the backend on your Mac over Wi-Fi; no TestFlight needed.
+Dev builds (**GSBC Dev**, `au.com.baptist.app.dev`) talk to the backend on your Mac; no TestFlight needed.
+They install beside TestFlight's **GSBC UAT** and the store app: see
+[environments.md](docs/architecture/environments.md), which also covers UAT and cutting a TestFlight build.
 
 1. Once: put your Apple team id in `src/Hosts/App/shell/.team` (gitignored), and pair the phone with
    this Mac (cable once, then it works over Wi-Fi). Keep the phone unlocked while it installs.
@@ -33,13 +35,13 @@ Dev builds talk to the backend on your Mac over Wi-Fi; no TestFlight needed.
 
 | Command | Builds |
 |---|---|
-| `tools/ios/deploy.sh` | Debug (interpreted, fastest) to the paired iPhone, straight to this Mac |
+| `tools/ios/deploy.sh` | Dev (interpreted, fastest) to the paired iPhone, straight to this Mac |
 | `GSBC_GATEWAY=https://dev-app.baptist.com.au tools/ios/deploy.sh` | the same, through Cloudflare (what Rider's configurations use) |
 | `tools/ios/deploy.sh --release` | AOT, as shipped (about a minute) |
 | `tools/ios/deploy.sh --simulator` | either of the above, to the iOS Simulator |
 
 The script finds the phone, writes your team and this Mac's address (`<LocalHostName>.local:5300`) into
-`ios/dev.xcconfig` (gitignored, so nothing machine-specific is committed), then builds, installs and
+`ios/local.xcconfig` (gitignored, so nothing machine-specific is committed), then builds, installs and
 launches. Home shows whether the app reached the server. Override with `GSBC_GATEWAY=host:port` or
 `GSBC_DEVICE=<udid>`.
 
@@ -63,7 +65,7 @@ the Aspire dashboard instead of being sent.
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to
 the gateway, never from the WebView, so there's no CORS. iOS allows plain HTTP to local-network
 addresses only (`NSAllowsLocalNetworking`), and asks for local-network permission the first time.
-Debug logs from the plugin show with `xcrun simctl launch --console-pty booted au.com.baptist.app`
+Debug logs from the plugin show with `xcrun simctl launch --console-pty booted au.com.baptist.app.dev`
 on the simulator, or in Xcode's console on a phone.
 
 Migrations: `dotnet ef migrations add <Name> -p <feature>.Api -s <feature>.Api -c <Context>` (the tool

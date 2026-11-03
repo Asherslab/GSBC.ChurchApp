@@ -12,6 +12,7 @@
 | [offline-and-caching.md](architecture/offline-and-caching.md) | Sync as the only data path; media that never goes stale; Cloudflare |
 | [email.md](architecture/email.md) | Account email through a Microsoft 365 shared mailbox and Graph; the queue |
 | [storage.md](architecture/storage.md) | Postgres schemas per feature, R2 over the S3 API, Dropbox |
+| [environments.md](architecture/environments.md) | Dev, UAT and production: apps, hosts, what deploys when, TestFlight, the owner's set-up |
 | [data-driven.md](architecture/data-driven.md) | What staff can reshape without a release, and how |
 | [drafts.md](architecture/drafts.md) | Drafts, the event layer and previewing on your own phone, before anything reaches everyone |
 | [rich-text.md](architecture/rich-text.md) | The one formatted-text format: a Markdown subset, checked on save, one renderer and editor |
@@ -38,12 +39,19 @@ evaluator behind every `[Requires]`, admin screens).
   is the seller), team `YNT9A4LGVA`. Passkeys in the app are built on it. Next on the owner's side:
   - an **APNs key** for silent push: a secret, so it goes in user secrets or the cluster secret,
     never in chat or the repo;
-  - the **App Store Connect record** for TestFlight (bundle `au.com.baptist.app`);
+  - the **UAT app's App Store Connect record** for TestFlight (bundle `au.com.baptist.app.uat`) and the
+    rest of UAT's set-up, in order, in [environments.md](architecture/environments.md), *Setting it up*;
   - the **production association file** at the `baptist.com.au` apex through Cloudflare
     ([identity.md](architecture/identity.md), *Apple*).
 - For media, now built: two R2 buckets, the public one's custom domain, a cache rule, CORS and a
   lifecycle rule on the private one, and an API token in the cluster secret
   ([media.md](features/media.md), *What the owner sets up*).
+
+**Environments (2026-11-03, branch `feature/uat`):** three apps side by side (GSBC Dev, GSBC UAT,
+Good Shepherd), dev renamed to `dev-app.baptist.com.au`, and UAT's backend on the mini cluster following
+`main` (`uat-backend.yml`, `gsbc.argo` branch `church-app-uat`, not pushed), with TestFlight uploads from
+a button (`testflight-uat.yml`). Written and tested locally; nothing is deployed until the owner's
+set-up is done ([environments.md](architecture/environments.md)).
 
 **Done by the owner, 2026-11-02:** the Cloudflare zone is set and checked (Browser Cache TTL respects
 our headers, Web Analytics off, app hosts purged), and media goes through R2; see

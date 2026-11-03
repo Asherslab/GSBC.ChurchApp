@@ -9,8 +9,12 @@
 - **Platform tables** live in `sync` (the feed change log and cursors) and in the platform's own
   schemas.
 - **Hosts.Migrator applies every feature's migrations** in a fixed order, then exits, before the API
-  starts (SPEC §10).
-- **Backups** use the owner's existing Postgres backup setup.
+  starts (SPEC §10): in the AppHost, and as an Argo Sync hook on the cluster
+  ([environments.md](environments.md)).
+- **Each environment has its own database:** the AppHost's container in dev, a Postgres StatefulSet in
+  UAT's namespace.
+- **Backups** use the owner's existing Postgres backup setup (Databasus on the mini, which UAT's database
+  is added to).
 - **Every change to a synced record** writes its feed change row and a `NOTIFY` in the same
   transaction (SPEC §5). Platform.Data provides this so a feature can't forget it.
 
@@ -29,7 +33,8 @@
   meaning. Uploads go straight to the bucket through presigned URLs; see
   [media.md](../features/media.md).
 - **Configuration** is `Storage:Blobs` (service URL, keys, both bucket names, the public base URL), the
-  same in every environment. Development runs SeaweedFS from the AppHost; production points at R2.
+  same in every environment. Development runs SeaweedFS from the AppHost; UAT (`gsbc-uat-media`,
+  `gsbc-uat-private`) and production point at R2.
 
 ## Dropbox
 
