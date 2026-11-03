@@ -134,7 +134,9 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
      `IOfficeWeekSource`), sign-in, not-found and error states, and People, Roles, Who can do what and
      Media as sortable, filterable tables with the chosen row beside them (`DataTable`, `SplitView`,
      `SearchField`, `FilterChips` in Platform.Ui). Every admin page loads through `LiveData`. Open:
-     invitations not yet accepted can't be listed (no gRPC method yet), so Needs you shows drafts only.
+     invitations not yet accepted can't be listed (no gRPC method yet), so Needs you shows drafts only;
+     a role given for one draft reads "For one draft" because nothing names draft scopes yet
+     (`IScopeNames`).
 8. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

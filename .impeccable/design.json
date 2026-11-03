@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-02T14:03:50+00:00",
+  "generatedAt": "2026-11-03T07:10:00+00:00",
   "title": "Design System: GSBC Church App",
   "extensions": {
     "colorMeta": {
@@ -754,6 +754,18 @@
           "#ededed"
         ],
         "roleHint": "Phone frame bezel ring and cutout only; device hardware, never a UI colour."
+      },
+      "on-masthead-2": {
+        "role": "primary",
+        "displayName": "Masthead Text 2",
+        "canonical": "rgb(255 255 255 / 0.76)",
+        "roleHint": "Resting links in the admin sidebar, on navy."
+      },
+      "masthead-chip": {
+        "role": "primary",
+        "displayName": "Masthead Tint",
+        "canonical": "rgb(255 255 255 / 0.12)",
+        "roleHint": "Ghost-on-masthead fills, the admin sidebar current link and hover (at 60%), the rule above the sidebar foot group. 10% in dark."
       }
     },
     "typographyMeta": {
@@ -799,7 +811,15 @@
       },
       "micro": {
         "displayName": "Micro",
-        "purpose": "Tab-bar labels, unread badge, day-rail weekdays."
+        "purpose": "Tab-bar labels, unread badge, day-rail weekdays; uppercase admin sidebar group labels and office-week weekdays."
+      },
+      "pill": {
+        "displayName": "Pill",
+        "purpose": "Pills, admin sidebar count capsules, office-week capsule dates."
+      },
+      "code": {
+        "displayName": "Code",
+        "purpose": "Permission nodes and patterns in the admin developer roles tool only."
       }
     },
     "shadows": [
@@ -884,9 +904,65 @@
         "name": "reduced-motion",
         "value": "all animations and transitions 1ms",
         "purpose": "prefers-reduced-motion: reduce."
+      },
+      {
+        "name": "sidebar-marker",
+        "value": "240ms transform scaleY 0 to 1, ease-out",
+        "purpose": "Admin sidebar current-page bar (scaleX as an underline at 900px and under)."
+      },
+      {
+        "name": "admin-hover",
+        "value": "160ms background-color and color, ease-out (120ms for table rows)",
+        "purpose": "Admin sidebar links, filter chips, area rows, table rows."
+      },
+      {
+        "name": "sort-arrow",
+        "value": "160ms opacity, ease-out",
+        "purpose": "Data-table sort arrow appearing on hover."
       }
     ],
-    "breakpoints": [],
+    "breakpoints": [
+      {
+        "name": "admin-narrow",
+        "value": "900px",
+        "purpose": "Admin sidebar becomes a top strip; marker becomes an underline."
+      },
+      {
+        "name": "admin-office-stack",
+        "value": "1228px",
+        "purpose": "Office week columns stack; rail scrolls sideways (980px work area + 248px sidebar)."
+      },
+      {
+        "name": "admin-access-stack",
+        "value": "1328px",
+        "purpose": "Access page stacks its role column above the place."
+      },
+      {
+        "name": "admin-workbench-two-pane",
+        "value": "1428px",
+        "purpose": "Workbench detail drops under the work area."
+      },
+      {
+        "name": "admin-workbench-narrow-panes",
+        "value": "1648px",
+        "purpose": "Workbench outer panes narrow."
+      },
+      {
+        "name": "split-view-stack",
+        "value": "1200px",
+        "purpose": "Split-view detail drops beneath the list (shared component, window width)."
+      },
+      {
+        "name": "split-view-compact",
+        "value": "1201px to 1440px",
+        "purpose": "Admin split-view detail narrows to 300 to 360px."
+      },
+      {
+        "name": "table-optional-columns",
+        "value": "760px (list container)",
+        "purpose": "Optional table columns hide when the split-view list is narrower."
+      }
+    ],
     "themes": {
       "selector": "html[data-scheme=light|dark] and html[data-theme=brand|year]",
       "default": "light scheme, brand palette; Appearance setting defaults to Automatic (follows the system)",
@@ -1005,11 +1081,67 @@
       "description": "Orange marker strip docked above the tab bar while a preview is on, with Hide and a dark capsule Exit.",
       "html": "<div class=\"ds-preview-banner\" role=\"status\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0\"/><circle cx=\"12\" cy=\"12\" r=\"3\"/></svg><span class=\"ds-pb-text\"><b>Previewing Christmas 2026</b><small>On this phone only</small></span><button class=\"ds-pb-hide\">Hide</button><button class=\"ds-pb-exit\">Exit</button></div>",
       "css": ".ds-preview-banner { display: flex; align-items: center; gap: 8px; min-height: 44px; padding: 6px 8px 6px 20px; background: var(--marker); color: var(--on-marker); font-family: var(--font); font-size: var(--text-caption); box-shadow: 0 -0.5px 0 var(--line); } .ds-pb-text { flex: 1; display: grid; line-height: 1.3; } .ds-pb-hide { min-height: 36px; padding: 0 10px; border: 0; background: none; color: inherit; font: inherit; font-weight: 600; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; } .ds-pb-exit { min-height: 36px; padding: 0 16px; border: 0; border-radius: 999px; background: var(--on-marker); color: var(--marker); font: inherit; font-weight: 700; cursor: pointer; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-pb-exit:active { transform: scale(0.96); } .ds-preview-banner button:focus-visible { outline: 2px solid var(--on-marker); outline-offset: 2px; }"
+    },
+    {
+      "name": "Admin sidebar",
+      "kind": "nav",
+      "refersTo": "admin-sidebar",
+      "description": "Navy sidebar: beige group labels, orange marker bar on the current link, orange count capsules.",
+      "html": "<nav class=\"ds-side\"><span class=\"ds-side__label\">Content</span><a class=\"ds-side__link ds-side__link--on\" href=\"#\">Drafts<span class=\"ds-side__count\">2</span></a><a class=\"ds-side__link\" href=\"#\">Media</a><span class=\"ds-side__label\">People</span><a class=\"ds-side__link\" href=\"#\">People</a><a class=\"ds-side__link\" href=\"#\">Roles</a></nav>",
+      "css": ".ds-side { display: grid; gap: 2px; width: 248px; padding: 22px 14px 16px; background: var(--masthead, #2a3d5e); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-side__label { padding: 12px 10px 6px; color: var(--masthead-note, #d5c9b7); font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; } .ds-side__link { position: relative; display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 0 10px; border-radius: 9px; color: rgb(255 255 255 / 0.76); font-size: 14.5px; font-weight: 600; text-decoration: none; transition: background-color 160ms cubic-bezier(0.22, 1, 0.36, 1), color 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-side__link:hover { background: rgb(255 255 255 / 0.072); color: #fff; } .ds-side__link--on { background: rgb(255 255 255 / 0.12); color: #fff; } .ds-side__link::before { content: \"\"; position: absolute; left: -14px; top: 9px; bottom: 9px; width: 3px; border-radius: 0 3px 3px 0; background: var(--marker, #e7ae74); transform: scaleY(0); transition: transform 240ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-side__link--on::before { transform: scaleY(1); } .ds-side__link:focus-visible { outline: 2px solid var(--marker, #e7ae74); outline-offset: 2px; } .ds-side__count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: auto; padding: 0 6px; border-radius: 999px; background: var(--marker, #e7ae74); color: var(--on-marker, #2a1a08); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Title band",
+      "kind": "custom",
+      "refersTo": "title-band-title",
+      "description": "Admin page head: headline title, caption lead, actions at the end.",
+      "html": "<header class=\"ds-band\"><div><h1>People</h1><p>Everyone with an account. Invite staff or turn an account off.</p></div><button>Invite someone</button></header>",
+      "css": ".ds-band { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-band h1 { margin: 0; color: var(--ink, #18233a); font-size: 27px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; } .ds-band p { margin: 4px 0 0; max-width: 72ch; color: var(--ink-2, #545e70); font-size: 14px; } .ds-band button { min-height: 44px; padding: 0 18px; border: 0; border-radius: 22px; background: var(--primary, #2a3d5e); color: #fff; font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; } .ds-band button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Office week rail",
+      "kind": "custom",
+      "refersTo": "office-rail",
+      "description": "Sand track of white day columns; today outlined in primary; dated capsules in three kinds.",
+      "html": "<div class=\"ds-rail\"><div class=\"ds-rail__day ds-rail__day--today\" style=\"grid-column:1\"><span>Today</span><b>3</b></div><div class=\"ds-rail__day\" style=\"grid-column:2\"><span>Wed</span><b>4</b></div><div class=\"ds-rail__day\" style=\"grid-column:3\"><span>Thu</span><b>5</b></div><div class=\"ds-rail__day\" style=\"grid-column:4\"><span>Fri</span><b>6</b></div><div class=\"ds-rail__day\" style=\"grid-column:5\"><span>Sat</span><b>7</b></div><div class=\"ds-rail__day\" style=\"grid-column:6\"><span>Sun</span><b>8</b></div><div class=\"ds-rail__day\" style=\"grid-column:7\"><span>Mon</span><b>9</b></div><a class=\"ds-rail__span ds-rail__span--everyone\" style=\"grid-column:1/8;grid-row:2\" href=\"#\"><b>Home screen</b><small>All week</small></a><a class=\"ds-rail__span ds-rail__span--layer\" style=\"grid-column:6/7;grid-row:3\" href=\"#\"><b>Carols night</b><small>Sun 8</small></a><a class=\"ds-rail__span ds-rail__span--draft\" style=\"grid-column:4/8;grid-row:4\" href=\"#\"><b>Advent tiles</b><small>From Fri 6</small></a></div>",
+      "css": ".ds-rail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); grid-template-rows: 3.8em repeat(3, minmax(44px, auto)) minmax(16px, 1fr); column-gap: 8px; padding: 10px; border-radius: 14px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-rail__day { grid-row: 1 / -1; display: grid; align-content: start; gap: 2px; padding: 10px 12px 12px; border-radius: 10px; background: var(--page, #fff); } .ds-rail__day span { color: var(--ink-3, #6b7384); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; } .ds-rail__day b { color: var(--ink, #18233a); font-size: 22px; font-variant-numeric: tabular-nums; line-height: 1.1; } .ds-rail__day--today { box-shadow: inset 0 0 0 2px var(--primary, #2a3d5e); } .ds-rail__day--today span { color: var(--marker-ink, #8a5422); } .ds-rail__span { z-index: 1; display: grid; align-self: start; min-width: 0; margin: 0 6px 6px; padding: 6px 10px; border-radius: 9px; font-size: 14px; line-height: 1.3; text-decoration: none; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-rail__span:active { transform: scale(0.98); } .ds-rail__span:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-rail__span b { overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; } .ds-rail__span small { font-size: 12px; opacity: 0.8; font-variant-numeric: tabular-nums; } .ds-rail__span--everyone { background: var(--primary, #2a3d5e); color: #fff; } .ds-rail__span--layer { background: color-mix(in srgb, var(--accent, #00776d) 16%, #fff); color: var(--accent, #00776d); } .ds-rail__span--draft { background: color-mix(in srgb, var(--marker, #e7ae74) 32%, #fff); color: var(--marker-ink, #8a5422); }"
+    },
+    {
+      "name": "Data table",
+      "kind": "custom",
+      "refersTo": "table-row-selected",
+      "description": "Hairline rows, sortable headers with a hover arrow (orange ink when sorted), selected row in selected-fill, inset accent focus.",
+      "html": "<table class=\"ds-table\"><thead><tr><th><button>Name <span class=\"ds-table__arrow ds-table__arrow--on\">&#8593;</span></button></th><th><button>Email <span class=\"ds-table__arrow\">&#8593;</span></button></th><th class=\"num\">Joined</th></tr></thead><tbody><tr tabindex=\"0\"><td><b>A. Member</b></td><td class=\"quiet\">member@example.org</td><td class=\"num\">2 Nov</td></tr><tr class=\"sel\" tabindex=\"-1\"><td><b>B. Staff</b></td><td class=\"quiet\">staff@example.org</td><td class=\"num\">28 Oct</td></tr><tr tabindex=\"-1\"><td><b>C. Leader</b></td><td class=\"quiet\">leader@example.org</td><td class=\"num\">14 Oct</td></tr></tbody></table>",
+      "css": ".ds-table { width: 100%; border-collapse: collapse; color: var(--ink, #18233a); font-size: 15.5px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-table th { padding: 8px 12px; border-bottom: 1px solid var(--line, rgb(42 61 94 / 0.12)); color: var(--ink-3, #6b7384); font-size: 14px; font-weight: 600; text-align: left; } .ds-table th button { display: inline-flex; gap: 4px; margin: -6px -8px; padding: 6px 8px; border: 0; border-radius: 9px; background: none; color: inherit; font: inherit; cursor: pointer; } .ds-table th button:hover { color: var(--ink, #18233a); } .ds-table__arrow { opacity: 0; transition: opacity 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-table th button:hover .ds-table__arrow, .ds-table__arrow--on { opacity: 1; } .ds-table__arrow--on { color: var(--marker-ink, #8a5422); } .ds-table td { padding: 12px; border-bottom: 1px solid var(--line, rgb(42 61 94 / 0.12)); } .ds-table b { font-weight: 600; } .ds-table .quiet { color: var(--ink-2, #545e70); font-size: 14px; } .ds-table .num { text-align: right; font-variant-numeric: tabular-nums; } .ds-table tbody tr { cursor: pointer; transition: background-color 120ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-table tbody tr:hover { background: color-mix(in srgb, var(--selected-fill, #f4efe7) 55%, transparent); } .ds-table tbody tr.sel { background: var(--selected-fill, #f4efe7); } .ds-table tbody tr:focus { outline: none; } .ds-table tbody tr:focus-visible { box-shadow: inset 0 0 0 2px var(--accent, #00776d); }"
+    },
+    {
+      "name": "Search field",
+      "kind": "input",
+      "refersTo": "search-field",
+      "description": "Fill-on-surface field with a search icon, ink-2 placeholder, inset accent ring on focus.",
+      "html": "<label class=\"ds-search\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><circle cx=\"11\" cy=\"11\" r=\"8\"/><path d=\"m21 21-4.3-4.3\"/></svg><input type=\"search\" placeholder=\"Find someone by name or email\" aria-label=\"Find someone\"></label>",
+      "css": ".ds-search { display: flex; align-items: center; gap: 8px; max-width: 420px; min-height: 40px; padding: 0 12px; border-radius: 12px; background: var(--fill-on-surface, #f4efe7); color: var(--ink-3, #6b7384); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-search:focus-within { box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-search input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; color: var(--ink, #18233a); font: inherit; font-size: 15.5px; caret-color: var(--accent, #00776d); } .ds-search input:focus { outline: none; } .ds-search input::placeholder { color: var(--ink-2, #545e70); }"
+    },
+    {
+      "name": "Admin filter chips",
+      "kind": "chip",
+      "refersTo": "filter-chip",
+      "description": "34px sand capsules with optional counts; the chosen one turns primary.",
+      "html": "<div class=\"ds-fchips\"><button aria-pressed=\"true\">Everyone <span>24</span></button><button aria-pressed=\"false\">No passkey yet <span>3</span></button><button aria-pressed=\"false\">Turned off</button></div>",
+      "css": ".ds-fchips { display: flex; flex-wrap: wrap; gap: 6px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-fchips button { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 0; border-radius: 999px; background: var(--sand, #f4efe7); color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 160ms cubic-bezier(0.22, 1, 0.36, 1), color 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-fchips button:hover { color: var(--ink, #18233a); } .ds-fchips button[aria-pressed=\"true\"] { background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); } .ds-fchips button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-fchips span { font-variant-numeric: tabular-nums; opacity: 0.75; }"
+    },
+    {
+      "name": "Split view detail",
+      "kind": "card",
+      "refersTo": "table-cell",
+      "description": "The detail beside a table: a hairline-ruled column, not a card.",
+      "html": "<div class=\"ds-split\"><div class=\"ds-split__list\">Table</div><aside class=\"ds-split__panel\"><h2>B. Staff</h2><p>Joined 28 October</p></aside></div>",
+      "css": ".ds-split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, 320px); gap: 32px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-split__list { color: var(--ink-3, #6b7384); } .ds-split__panel { padding: 4px 0 24px 28px; border-left: 1px solid var(--line, rgb(42 61 94 / 0.12)); } .ds-split__panel h2 { margin: 0 0 4px; color: var(--ink, #18233a); font-size: 20px; font-weight: 700; letter-spacing: -0.015em; } .ds-split__panel p { margin: 0; color: var(--ink-2, #545e70); font-size: 14px; }"
     }
   ],
   "narrative": {
     "northStar": "The Sunday Bulletin",
-    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app tile grid and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series).\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is built as a full alternate so staff can compare it with the brand palette; which one ships is not decided.",
+    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app tile grid and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series).\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose it in Configuration's Colours area, optionally for a run of dates, and anyone who may make that choice can preview the other palette on their own phone first.\n\nThe admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting.",
     "keyCharacteristics": [
       "Navy masthead on every tab root, with the mark's ring echo at 7% opacity.",
       "Sticky section tabs with a sliding orange underline on sectioned pages.",
@@ -1017,7 +1149,8 @@
       "White page, sand callouts, hairline-divided rows; shadows only on the few boxed lists and picture cards.",
       "Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.",
       "rem type tied to the iOS body text size, so Dynamic Type scales the whole app.",
-      "Five-tab bar (Sunday, Week, Listen, Prayer, More) and a notifications bell with an orange unread badge on every tab root."
+      "In the admin panel, a 248px navy sidebar with beige group labels, an orange marker bar on the current page and orange count capsules, over a white work area that opens with a title band.",
+      "A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox."
     ],
     "rules": [
       {
@@ -1042,7 +1175,7 @@
       },
       {
         "name": "The One Family Rule",
-        "body": "Montserrat is the only face on the page. The serif belongs to the yearly palette's masthead title and nowhere else.",
+        "body": "Montserrat is the only face on the page. The serif belongs to the yearly palette's masthead title and nowhere else; the monospace belongs to raw permission nodes in the developer roles tool and nowhere else.",
         "section": "typography"
       },
       {
@@ -1051,18 +1184,23 @@
         "section": "typography"
       },
       {
+        "name": "The Sidebar Offset Rule",
+        "body": "Admin breakpoints are window media queries offset by the sidebar's 248px. Never make the work area a size container: it becomes the containing block for fixed elements and traps sheets and overlays inside it. A component may still use a container on its own inner list (as the split view does).",
+        "section": "layout"
+      },
+      {
         "name": "The Masthead First Rule",
-        "body": "Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar).",
+        "body": "Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar). The admin panel has no masthead: its navy is the sidebar, and every page opens on a title band.",
         "section": "layout"
       },
       {
         "name": "The One Column Rule",
-        "body": "No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail.",
+        "body": "No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the office week's rail and two columns, split views and the workbench, and still no grid of tool tiles.",
         "section": "layout"
       },
       {
         "name": "The Flat Page Rule",
-        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow.",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow.",
         "section": "elevation"
       },
       {
@@ -1072,23 +1210,28 @@
       }
     ],
     "dos": [
-      "**Do** open every tab root on a masthead with the title in display type, a beige note line and the mark at 7% opacity bleeding off the right edge.",
-      "**Do** add sticky section tabs with the sliding orange underline to any long page divided into named sections, and keep every tab label visible at 390pt width.",
-      "**Do** put the notifications bell in the top bar of every tab root.",
-      "**Do** build content as hairline-divided rows on the white page, and use sand (callouts, sermon head, player, fields) for anything the bulletin would shade.",
-      "**Do** size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.",
-      "**Do** read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
-      "**Do** keep touch targets at 44px or more and give presses a scale and a haptic.",
-      "**Do** mark a selected row with Selected Fill, a tonal step, and nothing else."
+      "Do open every tab root on a masthead with the title in display type, a beige note line and the mark at 7% opacity bleeding off the right edge.",
+      "Do add sticky section tabs with the sliding orange underline to any long page divided into named sections, and keep every tab label visible at 390pt width.",
+      "Do put the notifications bell in the top bar of every tab root.",
+      "Do build content as hairline-divided rows on the white page, and use sand (callouts, sermon head, player, fields) for anything the bulletin would shade.",
+      "Do size type in rem off the iOS body root and keep Montserrat at 400, 600 and 700.",
+      "Do read colours through the semantic roles so light, dark and the yearly palette all work without component overrides.",
+      "Do keep touch targets at 44px or more and give presses a scale and a haptic.",
+      "Do mark a selected row with Selected Fill, a tonal step, and nothing else.",
+      "Do open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.",
+      "Do offset admin breakpoints by the 248px sidebar."
     ],
     "donts": [
-      "**Don't** lay tab roots out as a grid of tiles or a feed of identical cards.",
-      "**Don't** float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.",
-      "**Don't** use orange as a button fill or decoration; it marks position and newness only.",
-      "**Don't** add shadows to rows, callouts or the player; only boxed lists and picture cards lift.",
-      "**Don't** use DM Serif Text anywhere but the yearly palette's masthead title.",
-      "**Don't** redraw or restyle the church mark beyond recolouring the supplied artwork.",
-      "**Don't** set font sizes in px."
+      "Don't lay tab roots out as a grid of tiles or a feed of identical cards.",
+      "Don't float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.",
+      "Don't use orange as a button fill or decoration; it marks position and newness only.",
+      "Don't add shadows to rows, callouts or the player; only boxed lists and picture cards lift.",
+      "Don't use DM Serif Text anywhere but the yearly palette's masthead title.",
+      "Don't redraw or restyle the church mark beyond recolouring the supplied artwork.",
+      "Don't set font sizes in px.",
+      "Don't put a phone masthead in the admin panel, or open it on a grid of tool tiles.",
+      "Don't box the split view's detail as a card; it is a hairline-ruled column.",
+      "Don't make the admin work area a size container."
     ]
   }
 }
