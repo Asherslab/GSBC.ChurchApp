@@ -1,8 +1,16 @@
+@inject GSBC.ChurchApp.Platform.Client.Analytics.IUsage Usage
+
 <ListRow Title="@Entry.Values.Get(HubSurfaces.LinkTile.Title)" Subtitle="@NullIfEmpty(Entry.Values.Get(HubSurfaces.LinkTile.Subtitle))"
-         Icon="link" IconTone="RowTone.Accent" Href="@Entry.Values.Get(HubSurfaces.LinkTile.Link)" External="true" />
+         Icon="link" IconTone="RowTone.Accent" Href="@Entry.Values.Get(HubSurfaces.LinkTile.Link)" External="true" OnClick="Tapped" />
 
 @code {
     [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private void Tapped()
+    {
+        if (Entry.Placement is { } placement)
+            Usage.Count(HubSurfaces.TileTapped, placement.Id);
+    }
 
     private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
 }

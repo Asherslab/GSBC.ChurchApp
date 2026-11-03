@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Analytics.Api;
 
-internal sealed class DiagnosticsInbox(AnalyticsDbContext db, NewErrorKinds newKinds, TimeProvider time)
+internal sealed class DiagnosticsInbox(AnalyticsDbContext db, NewErrorKinds newKinds, ReportsSeen seen, TimeProvider time)
 {
     private const int FingerprintFrames = 5;
     private const int MaximumCountPerLine = 1_000;
@@ -25,7 +25,7 @@ internal sealed class DiagnosticsInbox(AnalyticsDbContext db, NewErrorKinds newK
             return;
 
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
-        if (requestId is not null && !await FirstTimeSeenAsync(requestId, cancellationToken))
+        if (requestId is not null && !await seen.FirstTimeAsync(requestId, cancellationToken))
             return;
 
         DateOnly today = ChurchTime.Today(time);
@@ -106,12 +106,6 @@ internal sealed class DiagnosticsInbox(AnalyticsDbContext db, NewErrorKinds newK
             VALUES ({day}, {(int)origin}, {method}, {status}, {appVersion}, {(long)count})
             ON CONFLICT (day, origin, method, status, app_version) DO UPDATE SET count = analytics.failed_calls.count + EXCLUDED.count
             """, cancellationToken);
-
-    private async Task<bool> FirstTimeSeenAsync(string requestId, CancellationToken cancellationToken) =>
-        await db.Database.ExecuteSqlAsync($"""
-            INSERT INTO analytics.reports_seen (request_id, seen_at) VALUES ({Clip(requestId, 64)}, {time.GetUtcNow().UtcDateTime})
-            ON CONFLICT (request_id) DO NOTHING
-            """, cancellationToken) == 1;
 
     internal static string Fingerprint(ErrorSighting sighting)
     {

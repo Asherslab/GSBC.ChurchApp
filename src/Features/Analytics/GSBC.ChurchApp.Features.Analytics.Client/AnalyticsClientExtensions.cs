@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Analytics.Contracts;
+using GSBC.ChurchApp.Platform.Client.Analytics;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,15 @@ public static class AnalyticsClientExtensions
         services.AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<ErrorReporter>());
         services.AddSingleton<ILoggerProvider, ErrorLoggerProvider>();
         services.AddSingleton<HealthClient>();
+        services.AddSingleton<InsightsClient>();
+        return services;
+    }
+
+    public static IServiceCollection AddUsageCounting(this IServiceCollection services)
+    {
+        services.AddSingleton<UsageCounter>();
+        services.AddSingleton<IUsage>(provider => provider.GetRequiredService<UsageCounter>());
+        services.AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<UsageCounter>());
         return services;
     }
 }

@@ -11,6 +11,8 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
     public DbSet<ErrorReportRecord> ErrorReports => Set<ErrorReportRecord>();
     public DbSet<FailedCallRecord> FailedCalls => Set<FailedCallRecord>();
     public DbSet<SeenReportRecord> SeenReports => Set<SeenReportRecord>();
+    public DbSet<DailyCountRecord> DailyCounts => Set<DailyCountRecord>();
+    public DbSet<MonthlyCountRecord> MonthlyCounts => Set<MonthlyCountRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -37,6 +39,17 @@ public sealed class AnalyticsDbContext(DbContextOptions<AnalyticsDbContext> opti
         {
             entity.ToTable("failed_calls");
             entity.HasKey(call => new { call.Day, call.Origin, call.Method, call.Status, call.AppVersion });
+        });
+        modelBuilder.Entity<DailyCountRecord>(entity =>
+        {
+            entity.ToTable("daily_counts");
+            entity.HasKey(count => new { count.Day, count.Measure, count.Subject, count.Group, count.Platform, count.AppVersion });
+            entity.HasIndex(count => new { count.Measure, count.Day });
+        });
+        modelBuilder.Entity<MonthlyCountRecord>(entity =>
+        {
+            entity.ToTable("monthly_counts");
+            entity.HasKey(count => new { count.Month, count.Measure, count.Subject, count.Group, count.Platform, count.AppVersion });
         });
         modelBuilder.Entity<SeenReportRecord>(entity =>
         {

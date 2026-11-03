@@ -17,6 +17,24 @@ namespace GSBC.ChurchApp.Features.Analytics.Api.Data.Migrations
                 name: "analytics");
 
             migrationBuilder.CreateTable(
+                name: "daily_counts",
+                schema: "analytics",
+                columns: table => new
+                {
+                    day = table.Column<DateOnly>(type: "date", nullable: false),
+                    measure = table.Column<string>(type: "text", nullable: false),
+                    subject = table.Column<string>(type: "text", nullable: false),
+                    group = table.Column<int>(type: "integer", nullable: false),
+                    platform = table.Column<int>(type: "integer", nullable: false),
+                    app_version = table.Column<string>(type: "text", nullable: false),
+                    count = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_daily_counts", x => new { x.day, x.measure, x.subject, x.group, x.platform, x.app_version });
+                });
+
+            migrationBuilder.CreateTable(
                 name: "error_kinds",
                 schema: "analytics",
                 columns: table => new
@@ -53,6 +71,24 @@ namespace GSBC.ChurchApp.Features.Analytics.Api.Data.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("pk_failed_calls", x => new { x.day, x.origin, x.method, x.status, x.app_version });
+                });
+
+            migrationBuilder.CreateTable(
+                name: "monthly_counts",
+                schema: "analytics",
+                columns: table => new
+                {
+                    month = table.Column<DateOnly>(type: "date", nullable: false),
+                    measure = table.Column<string>(type: "text", nullable: false),
+                    subject = table.Column<string>(type: "text", nullable: false),
+                    group = table.Column<int>(type: "integer", nullable: false),
+                    platform = table.Column<int>(type: "integer", nullable: false),
+                    app_version = table.Column<string>(type: "text", nullable: false),
+                    count = table.Column<long>(type: "bigint", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("pk_monthly_counts", x => new { x.month, x.measure, x.subject, x.group, x.platform, x.app_version });
                 });
 
             migrationBuilder.CreateTable(
@@ -99,6 +135,12 @@ namespace GSBC.ChurchApp.Features.Analytics.Api.Data.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "ix_daily_counts_measure_day",
+                schema: "analytics",
+                table: "daily_counts",
+                columns: new[] { "measure", "day" });
+
+            migrationBuilder.CreateIndex(
                 name: "ix_error_kinds_fingerprint",
                 schema: "analytics",
                 table: "error_kinds",
@@ -134,11 +176,19 @@ namespace GSBC.ChurchApp.Features.Analytics.Api.Data.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "daily_counts",
+                schema: "analytics");
+
+            migrationBuilder.DropTable(
                 name: "error_reports",
                 schema: "analytics");
 
             migrationBuilder.DropTable(
                 name: "failed_calls",
+                schema: "analytics");
+
+            migrationBuilder.DropTable(
+                name: "monthly_counts",
                 schema: "analytics");
 
             migrationBuilder.DropTable(

@@ -42,6 +42,28 @@ public sealed class FailedCallRecord
     public long Count { get; set; }
 }
 
+public sealed class DailyCountRecord
+{
+    public DateOnly Day { get; set; }
+    public required string Measure { get; set; }
+    public string Subject { get; set; } = "";
+    public UsageGroup Group { get; set; }
+    public DevicePlatform Platform { get; set; }
+    public string AppVersion { get; set; } = "";
+    public long Count { get; set; }
+}
+
+public sealed class MonthlyCountRecord
+{
+    public DateOnly Month { get; set; }
+    public required string Measure { get; set; }
+    public string Subject { get; set; } = "";
+    public UsageGroup Group { get; set; }
+    public DevicePlatform Platform { get; set; }
+    public string AppVersion { get; set; } = "";
+    public long Count { get; set; }
+}
+
 public sealed class SeenReportRecord
 {
     public required string RequestId { get; set; }

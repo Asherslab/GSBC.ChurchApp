@@ -17,12 +17,15 @@ public static class AnalyticsApiExtensions
         services.AddAnalyticsData();
         services.AddSingleton<AnalyticsEnvironment>();
         services.AddScoped<NewErrorKinds>();
+        services.AddScoped<ReportsSeen>();
         services.AddScoped<DiagnosticsInbox>();
+        services.AddScoped<UsageInbox>();
         services.AddScoped<AnalyticsRetention>();
         services.AddHostedService<AnalyticsRetentionService>();
         services.AddSingleton<ServerErrorInterceptor>();
         services.Configure<GrpcServiceOptions>(ObserveBeforeTiers);
         services.AddPermissions(AnalyticsPermissions.All);
+        services.AddMeasures(AnalyticsMeasures.All);
         services.AddSystemRole(new SystemRole(AnalyticsPermissions.InsightsViewerRole, "Insights viewer",
             "See how the app is used: how many phones open it, what's popular, whether notices were seen. Totals only, never anything about a person",
             ScopeKind.Global, [AnalyticsPermissions.ViewNode]));
@@ -41,6 +44,8 @@ public static class AnalyticsApiExtensions
     {
         endpoints.MapGrpcService<DiagnosticsService>();
         endpoints.MapGrpcService<HealthService>();
+        endpoints.MapGrpcService<AnalyticsService>();
+        endpoints.MapGrpcService<InsightsService>();
         return endpoints;
     }
 }

@@ -15,6 +15,8 @@ public static class ChurchTime
 
     public static DateOnly Today(TimeProvider time) => DayOf(time.GetUtcNow().UtcDateTime);
 
+    public static DateOnly WeekStart(DateOnly day) => day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
+
     public static DateTime ToUtc(DateTime churchLocal) =>
         TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(churchLocal, DateTimeKind.Unspecified), Zone);
 }

@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
@@ -24,6 +25,8 @@ public static class ConfigurationApiExtensions
         services.AddSystemRole(new SystemRole("app-editor", "App editor",
             "Arranges the app's Home screen and colours, sees every draft, and publishes", ScopeKind.Global, ["config.*"]));
         services.AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
+        services.AddMeasures(HubSurfaces.TileTapped);
+        services.AddScoped<ISubjectNames, HubTileNames>();
         services.AddFeed(new FeedDefinition(ConfigurationFeeds.Placements, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(ConfigurationFeeds.Drafts, FeedAudience.Holding(ConfigurationPermissions.PreviewDraft)));
         return services;

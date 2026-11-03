@@ -10,7 +10,7 @@ public static class AnalyticsAppExtensions
     public static IServiceCollection AddAnalyticsApp(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Analytics", typeof(AnalyticsAppExtensions).Assembly,
-            [new NavEntry("Help improve the app", "help-improve", "heart")]));
-        return services.AddAnalyticsClient(ReportOrigin.App);
+            [new NavEntry("Insights", "insights", "sparkles", AnalyticsPermissions.View), new NavEntry("Help improve the app", "help-improve", "heart")]));
+        return services.AddAnalyticsClient(ReportOrigin.App).AddUsageCounting();
     }
 }

@@ -19,4 +19,13 @@ namespace GSBC.ChurchApp.Features.Analytics.Contracts;
 [ProtoSerializable(typeof(ErrorKindDetail))]
 [ProtoSerializable(typeof(CountByLabel))]
 [ProtoSerializable(typeof(CountByDay))]
+[ProtoSerializable(typeof(UsageReport))]
+[ProtoSerializable(typeof(UsageCount))]
+[ProtoSerializable(typeof(Tally))]
+[ProtoSerializable(typeof(InsightsQuery))]
+[ProtoSerializable(typeof(InsightsSummary))]
+[ProtoSerializable(typeof(GroupTally))]
+[ProtoSerializable(typeof(WeekPoint))]
+[ProtoSerializable(typeof(TopList))]
+[ProtoSerializable(typeof(LabelTally))]
 public partial class AnalyticsContractsModel : TypeModel;

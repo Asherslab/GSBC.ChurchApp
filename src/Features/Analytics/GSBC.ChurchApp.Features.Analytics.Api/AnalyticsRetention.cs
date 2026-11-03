@@ -8,6 +8,7 @@ internal sealed class AnalyticsRetention(AnalyticsDbContext db, TimeProvider tim
 {
     public static readonly TimeSpan ErrorsKeptFor = TimeSpan.FromDays(30);
     public static readonly TimeSpan RequestIdsKeptFor = TimeSpan.FromDays(7);
+    public const int DailyCountsKeptForMonths = 25;
     private const long AdvisoryLockKey = 0x6773_6263_616e_6c79;
 
     public async Task<bool> PruneAsync(CancellationToken cancellationToken)
@@ -28,6 +29,17 @@ internal sealed class AnalyticsRetention(AnalyticsDbContext db, TimeProvider tim
         await db.ErrorKinds.Where(kind => kind.LastSeen < errorsBefore).ExecuteDeleteAsync(cancellationToken);
         await db.FailedCalls.Where(call => call.Day < daysBefore).ExecuteDeleteAsync(cancellationToken);
         await db.SeenReports.Where(seen => seen.SeenAt < now - RequestIdsKeptFor).ExecuteDeleteAsync(cancellationToken);
+
+        DateOnly today = ChurchTime.Today(time);
+        DateOnly foldBefore = new DateOnly(today.Year, today.Month, 1).AddMonths(-DailyCountsKeptForMonths);
+        await db.Database.ExecuteSqlAsync($"""
+            INSERT INTO analytics.monthly_counts (month, measure, subject, "group", platform, app_version, count)
+            SELECT date_trunc('month', day)::date, measure, subject, "group", platform, app_version, SUM(count)
+            FROM analytics.daily_counts WHERE day < {foldBefore}
+            GROUP BY 1, measure, subject, "group", platform, app_version
+            ON CONFLICT (month, measure, subject, "group", platform, app_version) DO UPDATE SET count = analytics.monthly_counts.count + EXCLUDED.count
+            """, cancellationToken);
+        await db.DailyCounts.Where(count => count.Day < foldBefore).ExecuteDeleteAsync(cancellationToken);
 
         await transaction.CommitAsync(cancellationToken);
         return true;

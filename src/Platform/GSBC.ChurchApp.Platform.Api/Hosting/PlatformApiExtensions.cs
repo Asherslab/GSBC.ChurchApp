@@ -1,9 +1,11 @@
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Api.Tiers;
+using GSBC.ChurchApp.Platform.Contracts.Analytics;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -47,6 +49,7 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IPermissionHolders, NoPermissionHolders>();
         services.TryAddScoped<IAccountEmails, NoAccountEmails>();
         services.AddSingleton<PermissionCatalog>();
+        services.AddSingleton<MeasureCatalog>();
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<FeedChangeBroadcaster>();
         services.AddSingleton(provider =>
@@ -96,6 +99,9 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddPermissions(this IServiceCollection services, params IReadOnlyList<Permission> permissions) =>
         services.AddSingleton(new PermissionSet(permissions));
+
+    public static IServiceCollection AddMeasures(this IServiceCollection services, params IReadOnlyList<Measure> measures) =>
+        services.AddSingleton(new MeasureSet(measures));
 
     public static IServiceCollection AddFeed(this IServiceCollection services, FeedDefinition feed) =>
         services.AddSingleton(feed);

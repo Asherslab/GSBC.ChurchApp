@@ -24,6 +24,45 @@ namespace GSBC.ChurchApp.Features.Analytics.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Analytics.Api.Data.DailyCountRecord", b =>
+                {
+                    b.Property<DateOnly>("Day")
+                        .HasColumnType("date")
+                        .HasColumnName("day");
+
+                    b.Property<string>("Measure")
+                        .HasColumnType("text")
+                        .HasColumnName("measure");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("text")
+                        .HasColumnName("subject");
+
+                    b.Property<int>("Group")
+                        .HasColumnType("integer")
+                        .HasColumnName("group");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("integer")
+                        .HasColumnName("platform");
+
+                    b.Property<string>("AppVersion")
+                        .HasColumnType("text")
+                        .HasColumnName("app_version");
+
+                    b.Property<long>("Count")
+                        .HasColumnType("bigint")
+                        .HasColumnName("count");
+
+                    b.HasKey("Day", "Measure", "Subject", "Group", "Platform", "AppVersion")
+                        .HasName("pk_daily_counts");
+
+                    b.HasIndex("Measure", "Day")
+                        .HasDatabaseName("ix_daily_counts_measure_day");
+
+                    b.ToTable("daily_counts", "analytics");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Analytics.Api.Data.ErrorKindRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -182,6 +221,42 @@ namespace GSBC.ChurchApp.Features.Analytics.Api.Data.Migrations
                         .HasName("pk_failed_calls");
 
                     b.ToTable("failed_calls", "analytics");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Analytics.Api.Data.MonthlyCountRecord", b =>
+                {
+                    b.Property<DateOnly>("Month")
+                        .HasColumnType("date")
+                        .HasColumnName("month");
+
+                    b.Property<string>("Measure")
+                        .HasColumnType("text")
+                        .HasColumnName("measure");
+
+                    b.Property<string>("Subject")
+                        .HasColumnType("text")
+                        .HasColumnName("subject");
+
+                    b.Property<int>("Group")
+                        .HasColumnType("integer")
+                        .HasColumnName("group");
+
+                    b.Property<int>("Platform")
+                        .HasColumnType("integer")
+                        .HasColumnName("platform");
+
+                    b.Property<string>("AppVersion")
+                        .HasColumnType("text")
+                        .HasColumnName("app_version");
+
+                    b.Property<long>("Count")
+                        .HasColumnType("bigint")
+                        .HasColumnName("count");
+
+                    b.HasKey("Month", "Measure", "Subject", "Group", "Platform", "AppVersion")
+                        .HasName("pk_monthly_counts");
+
+                    b.ToTable("monthly_counts", "analytics");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Analytics.Api.Data.SeenReportRecord", b =>

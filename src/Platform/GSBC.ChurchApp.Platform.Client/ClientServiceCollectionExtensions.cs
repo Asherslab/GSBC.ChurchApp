@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Client.Access;
+using GSBC.ChurchApp.Platform.Client.Analytics;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Client.Media;
@@ -21,6 +22,7 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<IMediaFiles, WebMediaFiles>();
         services.TryAddSingleton<IDeviceSession, CookieSession>();
         services.AddSingleton<CurrentPage>();
+        services.TryAddSingleton<IUsage, NoUsage>();
         return services;
     }
 }
