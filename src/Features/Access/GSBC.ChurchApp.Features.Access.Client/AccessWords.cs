@@ -11,7 +11,10 @@ public static class AccessWords
     public static string PlaceOf(string objectId, string? name, string scopeKind, bool includesTeams) =>
         name is null || name == objectId
             ? includesTeams ? $"For one {scopeKind}, and its teams" : $"For one {scopeKind}"
-            : Place(name, includesTeams);
+            : scopeKind == ScopeKind.Draft.Name ? $"For {Named(scopeKind, name)}" : Place(name, includesTeams);
+
+    public static string Named(string scopeKind, string name) =>
+        scopeKind == ScopeKind.Draft.Name ? $"the draft “{name}”" : name;
 
     public static string GivenWhere(RoleInfo role) =>
         role.ScopeKind == ScopeKind.Global.Name ? "Everywhere"
