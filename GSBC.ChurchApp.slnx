@@ -65,7 +65,10 @@
     <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Contracts/GSBC.ChurchApp.Features.Media.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Features/Notifications/">
+    <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Admin/GSBC.ChurchApp.Features.Notifications.Admin.csproj" />
     <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api/GSBC.ChurchApp.Features.Notifications.Api.csproj" />
+    <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.App/GSBC.ChurchApp.Features.Notifications.App.csproj" />
+    <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/GSBC.ChurchApp.Features.Notifications.Client.csproj" />
     <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Contracts/GSBC.ChurchApp.Features.Notifications.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Features/ReleaseNotes/">

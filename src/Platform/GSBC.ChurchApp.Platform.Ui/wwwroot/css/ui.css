@@ -78,6 +78,32 @@
 }
 .icon-btn:active { background: var(--masthead-chip); transform: scale(0.94); }
 .icon-btn--back { width: auto; padding: 0 10px 0 4px; display: inline-flex; align-items: center; font-size: var(--text-body); font-weight: 600; }
+.badge-count {
+  position: absolute;
+  top: 4px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--marker);
+  color: var(--on-marker);
+  box-shadow: 0 0 0 2px var(--masthead);
+  font-size: var(--text-micro);
+  font-weight: 700;
+  line-height: 18px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.unread-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-left: 6px;
+  border-radius: var(--radius-full);
+  background: var(--marker);
+  vertical-align: middle;
+}
 
 .masthead {
   position: relative;

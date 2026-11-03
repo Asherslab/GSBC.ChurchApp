@@ -5,7 +5,7 @@ push that makes the phone sync. The owner (2026-11-03): "We should make a proper
 for this. There will be a lot of places they could come from." Backbone, like drafts: designed and
 decided before anything raises one.
 
-**Status: approved by the owner, 2026-11-03,** with one change (decision 9). Being built.
+**Status: approved by the owner, 2026-11-03,** with one change (decision 9). Built the same day; see *Status* at the end.
 
 ## Decisions (owner, 2026-11-03)
 
@@ -183,7 +183,7 @@ Built here because decision 3 puts following and tokens behind it, and prayer re
 - **Built (2026-11-03):** `AppAttest` and `InstallsService` in Accounts.Api (table
   `accounts.installs`, migration `AppInstalls`), `InstallProofMiddleware`, `IInstallVerifier` and
   `CallingInstall` in Platform.Api, and on the phone `InstallAttestation` (the native layer attests
-  once, on the first App write, and signs every later unary call except Sync's and Installs').
+  once, on the first App write, and signs every later unary call except Sync's and the two attestation calls).
   The app id is `Apple:TeamId` + `Apple:BundleId`, as for the gateway's association file.
 
 ## Channels
@@ -343,8 +343,16 @@ person, and 60 days for the public feed.
    then restart the AppHost.
 3. **UAT:** the GitHub `uat` environment and the cluster secret `apns-secret` in `church-app-uat`,
    with `Notifications__Apns__KeyId`, `__TeamId` and `__Key` (the `.p8`'s contents), given to the API
-   as `envFrom` with `optional: true`.
-4. **Production:** the same secret in production's namespace, when the API goes there.
+   as `envFrom` with `optional: true`. The UAT API also needs `Apple__TeamId=YNT9A4LGVA` and
+   `Apple__BundleId=au.com.baptist.app.uat` (not secrets: plain environment values in `gsbc.argo`),
+   so App Attest accepts the UAT app; without them every App write is refused. Development gets the
+   team id from the AppHost and the bundle id from the API's `appsettings.Development.json`.
+4. **Production:** the same secret in production's namespace, when the API goes there, with
+   `Apple__TeamId` and `Apple__BundleId=au.com.baptist.app`.
+5. **Then, on the owner's iPhone:** `tools/ios/deploy.sh` (Xcode's automatic signing picks up the
+   new capabilities), completely close the app and open it, More → Notifications → *Turn on
+   notifications*, and from the admin panel send an announcement to yourself with *Send to my
+   phone*.
 
 The key never goes in the repo or in chat. One key serves every app and both APNs environments.
 
@@ -360,9 +368,57 @@ The key never goes in the repo or in chat. One key serves every app and both APN
 8. Announcements in the admin panel.
 9. The drafts source, end to end on the owner's iPhone.
 
+## Status (2026-11-03)
+
+**Built, and tested against Postgres; not yet run on a phone** (the backend was in use by another
+station, and push waits for the owner's APNs key):
+
+- **App Attest** (`[AppInstall]`): see *Phones* above. `AppAttestTests`.
+- **Access:** phone holders, `IPermissionHolders`, `IPhoneRoles.MoveToPersonAsync`, called by
+  `Installs.Claim` after signing in. `AccessEvaluatorTests`.
+- **Platform:** `NotificationKind` (Contracts), `INotifications`, `NotificationAudience`,
+  `AddNotificationKinds`, `IPeopleIndex` (Api; Accounts implements it), `IInboxCount` (Client) and
+  the bell (`InboxBell`, shown by `Page` on every tab root, with DESIGN.md's orange badge).
+- **Notifications feature:** schema `notifications` (migration `InitialNotifications`): the raiser,
+  the four feeds, preferences, pacing, quiet hours, deliveries leased with `SKIP LOCKED` so two API
+  replicas never send twice, `ApnsTransport` (ES256 token, HTTP/2, sandbox or production per
+  device), dead tokens dropped, `SyncNudger`, announcements and their scheduler, the *Announcer*
+  role. `NotificationsTests`.
+- **Drafts:** *Ask to publish* tells holders of the publish permission of the draft's first area
+  (alphabetically: everyone who can publish it holds that one), linking `/drafts/{id}`; *Share*
+  tells the person, linking `/previews?draft={id}`, which starts previewing it.
+  `DraftEditorTests`.
+- **Phone:** `DataLayerPush` (the notification delegate: a tap hands its `link` to Blazor through
+  the existing `linkOpened` path, waiting for Blazor on a cold start; a silent push runs one Sync
+  pull within iOS's budget), `registerPush`, `pushPermission`, `setBadge`, `proveInstall`; the
+  Push Notifications (`aps-environment`) and App Attest entitlements per configuration
+  (`development` for Dev, `production` for UAT and Release, from the xcconfigs) and the
+  `remote-notification` background mode. The inbox (the bell, `/notifications`), More →
+  Notifications, and push registration (asked from More → Notifications, and on signing in).
+- **Admin panel:** Announcements (`/announcements`), for holders of
+  `notifications.announcements.write`.
+
+**Decided while building (no owner question needed):**
+
+- A push that arrives while the app is open shows as the system banner, not an in-app one; the
+  bell's count updates through sync.
+- *Who it's for* in the composer offers *Everyone with the app* and *Everyone signed in* for now;
+  *People who can …*, *A ministry* and *One person* are in the service and come to the screen with
+  Ministries and a people picker.
+- A signed-out phone's inbox shows church-wide notifications until Ministries gives phones
+  something to follow; the follows it keeps then add their ministries' rows.
+- Silent pushes go to every device at most once per 15 minutes on any feed change outside
+  Notifications' own; nothing tracks which devices hold a `Watch` stream yet.
+- Inbox feed rows aren't pruned yet (`FeedRetention` has no window for them); to do with the first
+  busy source.
+
 ## Open
 
 - Analytics' "seen on / opened on" per push: with the analytics station.
 - FCM and Play Integrity: when Android is built.
 - Whether a ministry's leaders may send an announcement to their own followers (likely: the same
   composer at a ministry scope, `notifications.announcements.send` at that ministry).
+- Security kinds ("a new passkey was added") and their email: with the next Accounts change.
+- *Waiting to send* on the admin home's *Needs you* (`IOfficeWeekSource`).
+- The impeccable pass on the inbox and the Announcements page: both are built from Platform.Ui's
+  existing parts and DESIGN.md, without a decision page yet.

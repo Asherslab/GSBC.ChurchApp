@@ -45,14 +45,14 @@ public struct GrpcWebTransport: Sendable {
     private let sessionSecret: @Sendable () -> String?
     private let onSessionEnded: @Sendable () -> Void
     private let signer: RequestSigner?
-    private static let unsignedServices = ["/gsbc.platform.Sync/", "/gsbc.accounts.Installs/"]
+    private static let unsignedPrefixes = ["/gsbc.sync.Sync/", InstallMessages.beginMethod, InstallMessages.attestMethod]
     public static let sessionHeader = "X-Gsbc-Session"
     public static let sessionEndedHeader = "X-Gsbc-Session-Ended"
 
     public func unary(method: String, message: Data, headers: [String: String] = [:]) async throws -> GrpcResult {
         let framed = Self.frame(message)
         var headers = headers
-        if let signer, !Self.unsignedServices.contains(where: method.hasPrefix) {
+        if let signer, !Self.unsignedPrefixes.contains(where: method.hasPrefix) {
             headers.merge(await signer.headers(method: method, body: framed)) { mine, _ in mine }
         }
         let (data, response) = try await URLSession.shared.data(for: try request(method, framed, headers))

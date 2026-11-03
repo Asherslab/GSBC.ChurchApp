@@ -27,7 +27,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preference", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "proveInstall", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "proveInstall", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "pushPermission", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "registerPush", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setBadge", returnType: CAPPluginReturnPromise)
     ]
 
     private static let preferences = UserDefaults.standard
@@ -51,6 +54,9 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         }
         runtime.sessionChanged = { [weak self] in
             self?.notifyListeners("sessionChanged", data: ["signedIn": self?.runtime.signedIn ?? false])
+        }
+        DataLayerPush.shared.onLinkOpened = { [weak self] path in
+            self?.notifyListeners("linkOpened", data: ["path": path], retainUntilConsumed: true)
         }
         NotificationCenter.default.addObserver(self, selector: #selector(linkOpened(_:)),
                                                name: .capacitorSceneOpenUniversalLink, object: nil)
@@ -157,6 +163,28 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
             let proven = await DataLayerRuntime.installs.ensureAttested(using: transport)
             call.resolve(["proven": proven, "supported": DataLayerRuntime.installs.isSupported])
         }
+    }
+
+    @objc func pushPermission(_ call: CAPPluginCall) {
+        Task { call.resolve(["permission": await DataLayerPush.shared.permission()]) }
+    }
+
+    @objc func registerPush(_ call: CAPPluginCall) {
+        Task {
+            var result: [String: Any] = ["permission": await DataLayerPush.shared.permission()]
+            if let token = await DataLayerPush.shared.requestToken() {
+                result["token"] = token
+                result["environment"] = DataLayerPush.shared.environment
+                result["appId"] = Bundle.main.bundleIdentifier ?? ""
+            }
+            result["permission"] = await DataLayerPush.shared.permission()
+            call.resolve(result)
+        }
+    }
+
+    @objc func setBadge(_ call: CAPPluginCall) {
+        DataLayerPush.shared.setBadge(call.getInt("count") ?? 0)
+        call.resolve()
     }
 
     @objc func status(_ call: CAPPluginCall) {

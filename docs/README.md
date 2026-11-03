@@ -91,6 +91,13 @@ What to Test call and the tag push first run with the first TestFlight build.
 
 **Admin panel (2026-11-03, branch `feature/admin-design`):** redesigned for a computer (build order 7); checked on `dev-app.baptist.com.au` at 1280, 1440 and 1920, light and dark.
 
+**Notifications and push (2026-11-03, branch `feature/notifications`):** the design is approved
+([notifications.md](architecture/notifications.md)) and built: App Attest (the `[AppInstall]` tier), phones as
+holders in Access, notification kinds any feature raises, the inbox and the bell, preferences, APNs with pacing
+and quiet hours, the silent push for sync, announcements in the admin panel, and drafts as the first source.
+Tested against Postgres; waiting on the owner's APNs key and App Attest/Push capabilities before it runs on a
+phone (notifications.md, *What the owner sets up*).
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),

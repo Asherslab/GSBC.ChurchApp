@@ -103,6 +103,9 @@ flowchart LR
     end
 
     subgraph Notifications["Features / Notifications"]
+        NotificationsApp["Features.Notifications.App"]
+        NotificationsAdmin["Features.Notifications.Admin"]
+        NotificationsClient["Features.Notifications.Client"]
         NotificationsApi["Features.Notifications.Api"]
         NotificationsContracts["Features.Notifications.Contracts"]
     end
@@ -139,8 +142,8 @@ flowchart LR
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & NotificationsApp & ReleaseNotesApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & NotificationsAdmin
     HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & NotificationsApi & PlatformApi
     HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & NotificationsApi
 
@@ -166,6 +169,9 @@ flowchart LR
     MediaClient --> MediaContracts & PlatformClient & PlatformUi
     MediaApi --> MediaContracts & PlatformApi & PlatformStorage
     MediaContracts --> PlatformContracts
+    NotificationsApp --> NotificationsClient
+    NotificationsAdmin --> NotificationsClient
+    NotificationsClient --> NotificationsContracts & PlatformClient & PlatformUi & PlatformCommon
     NotificationsApi --> NotificationsContracts & PlatformApi & PlatformCommon
     NotificationsContracts --> PlatformContracts
 
@@ -238,6 +244,9 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Media.Admin` | The Media library page | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Contracts` | The `Notifications` and `Announcements` services, the inbox, kinds and preferences feeds, the announcement kinds and the `notifications.announcements.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Api` | `INotifications`: audiences through Access, the inbox feeds, preferences, pacing, quiet hours; push through APNs with retries and dead tokens dropped; the silent push for sync; announcements and their schedule (schema `notifications`) | No |
+| `GSBC.ChurchApp.Features.Notifications.Client` | The inbox (`Inbox`, also the bell's `IInboxCount`), push registration, preferences, and the shared `InboxView`, `NotificationSettings` and `AnnouncementsWorkbench` components | Yes |
+| `GSBC.ChurchApp.Features.Notifications.App` | The phone's Notifications list (from the bell) and More → Notifications | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |

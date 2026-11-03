@@ -1,0 +1,223 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Common
+@inject AnnouncementsClient Announcements
+@inject IAccess Access
+@inject NavigationManager Navigation
+
+<Workbench AsideLabel="Announcements" Showing="@(Id is null ? WorkbenchPane.Aside : WorkbenchPane.Main)">
+    <Aside>
+        <div class="workbench__heading-row">
+            <h2 class="workbench__heading">Announcements</h2>
+            <Button Small="true" Icon="plus" OnClick="StartNew">New</Button>
+        </div>
+        <LiveData @ref="_live" TValue="IReadOnlyList<Announcement>" Load="Announcements.ListAsync" FailedTitle="Can't load announcements right now">
+            <DataTable TItem="Announcement" Label="Announcements" Items="context.Value" Columns="Columns" Key="announcement => announcement.Id"
+                       Selected="context.Value.FirstOrDefault(announcement => announcement.Id == Id)" SelectedChanged="Choose" Class="data-table--list">
+                <Empty>
+                    <p class="panel-hint">Nothing yet. Write the first one with New.</p>
+                </Empty>
+            </DataTable>
+        </LiveData>
+    </Aside>
+    <ChildContent>
+        <TitleBand Title="@(_editing.Title.Length > 0 ? _editing.Title : "New announcement")" Lead="@StateLine(_editing)" />
+        @if (_problem is not null)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+        <div class="announcement">
+            <div class="announcement__form">
+                <TextField Label="Title" Value="@_editing.Title" ValueChanged="value => Edit(a => a.Title = value)" MaxLength="80" Required="true" Disabled="Locked"
+                           Hint="What the lock screen shows in bold" />
+                <TextField Label="Message" Value="@_editing.Body" ValueChanged="value => Edit(a => a.Body = value)" Multiline="true" MaxLength="600" Disabled="Locked"
+                           Hint="A sentence or two. Phones show only the start." />
+                <TextField Label="Opens" Value="@(_editing.Link ?? "")" ValueChanged="value => Edit(a => a.Link = value)" Disabled="Locked"
+                           Placeholder="/events or https://…" Hint="Optional: a page in the app, or a web address. Without it, it opens the notifications list." />
+                <SelectField Label="Who it's for" Options="Audiences" Value="@(_editing.Audience?.Kind ?? Everyone)" ValueChanged="ChooseAudienceAsync" Disabled="Locked"
+                             Hint="@ReachLine" />
+                <ToggleRow Title="Urgent" Description="Goes straight away, even overnight, and breaks through Focus. For a cancelled service or a change of venue." Checked="_editing.Urgent"
+                           CheckedChanged="value => Edit(a => a.Urgent = value)" Disabled="Locked" />
+                @if (MaySend && !Locked)
+                {
+                    <TextField Label="Send at" Type="datetime-local" Value="@_sendAt" ValueChanged="value => _sendAt = value" Hint="Leave empty to send now. Brisbane time." />
+                }
+                <div class="announcement__actions">
+                    @if (!Locked)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="SaveAsync">Save</Button>
+                        <Button Variant="ButtonVariant.Quiet" Icon="smartphone" Busy="_busy" OnClick="SendToMeAsync">Send to my phone</Button>
+                        @if (MaySend)
+                        {
+                            <Button Icon="send" Busy="_busy" OnClick="SendAsync">@(_sendAt.Length > 0 ? "Schedule" : "Send now")</Button>
+                        }
+                        else
+                        {
+                            <Button Icon="send" Busy="_busy" Disabled="@(_editing.State == "WaitingToSend")" OnClick="AskAsync">Ask to send</Button>
+                        }
+                    }
+                    @if (_editing.State == "Scheduled" && MaySend)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="CancelAsync">Cancel the schedule</Button>
+                    }
+                    @if (_editing.Id.Length > 0 && _editing.State != "Sent")
+                    {
+                        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete</Button>
+                    }
+                </div>
+            </div>
+            <aside class="announcement__preview" aria-label="How it looks on a lock screen">
+                <p class="announcement__preview-label">On a lock screen</p>
+                <div class="lock-notification">
+                    <div class="lock-notification__app"><BrandMark /> Good Shepherd <span>now</span></div>
+                    <p class="lock-notification__title">@(_editing.Title.Length > 0 ? _editing.Title : "Title")</p>
+                    <p class="lock-notification__body">@(_editing.Body.Length > 0 ? _editing.Body : "Your message")</p>
+                </div>
+            </aside>
+        </div>
+    </ChildContent>
+</Workbench>
+
+@code {
+    private const string Everyone = "everyone";
+    private const string SignedIn = "signed-in";
+    private const string LocalFormat = "yyyy-MM-ddTHH:mm";
+
+    private static readonly IReadOnlyList<FieldOption> Audiences =
+    [
+        new(Everyone, "Everyone with the app"),
+        new(SignedIn, "Everyone signed in"),
+    ];
+
+    private static readonly IReadOnlyList<TableColumn<Announcement>> Columns =
+    [
+        new("Announcement", announcement => @<span>@announcement.Title</span>, announcement => announcement.Title),
+        new("Where it's at", announcement => @<span>@StateLabel(announcement)</span>, announcement => announcement.State),
+        new("When", announcement => @<span>@WhenLabel(announcement)</span>, announcement => announcement.SentAt ?? announcement.SendAt ?? announcement.UpdatedAt),
+    ];
+
+    [Parameter] public string? Id { get; set; }
+
+    private LiveData<IReadOnlyList<Announcement>>? _live;
+    private Announcement _editing = Fresh();
+    private string _sendAt = "";
+    private string? _problem;
+    private Reach? _reach;
+    private bool _busy;
+
+    private bool MaySend => Access.Can(NotificationsPermissions.Send);
+
+    private bool Locked => _editing.State is "Sent" or "Scheduled";
+
+    private string ReachLine => _reach is null ? "" : $"About {_reach.People} people · {_reach.Phones} phones with notifications on";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        _problem = null;
+        if (Id is null)
+        {
+            _editing = Fresh();
+        }
+        else if ((await Announcements.ListAsync()).FirstOrDefault(announcement => announcement.Id == Id) is { } found)
+        {
+            _editing = found;
+            _sendAt = found.SendAt is { } at ? ChurchTime.ToChurch(at).ToString(LocalFormat, CultureInfo.InvariantCulture) : "";
+        }
+        await ReachAsync();
+    }
+
+    private static Announcement Fresh() => new() { Audience = new AudienceMessage { Kind = Everyone }, State = "Draft" };
+
+    private void StartNew() => Navigation.NavigateTo("announcements/new");
+
+    private void Choose(Announcement announcement) => Navigation.NavigateTo($"announcements/{announcement.Id}");
+
+    private void Edit(Action<Announcement> change) => change(_editing);
+
+    private async Task ChooseAudienceAsync(string kind)
+    {
+        _editing.Audience = new AudienceMessage { Kind = kind };
+        await ReachAsync();
+    }
+
+    private async Task ReachAsync()
+    {
+        try
+        {
+            _reach = await Announcements.ReachAsync(_editing.Audience ?? new AudienceMessage { Kind = Everyone });
+        }
+        catch (RpcException)
+        {
+            _reach = null;
+        }
+    }
+
+    private Task SaveAsync() => RunAsync(async () => await SavedAsync());
+
+    private Task SendToMeAsync() => RunAsync(async () => await Announcements.SendToMeAsync((await SavedAsync()).Id));
+
+    private Task AskAsync() => RunAsync(async () => _editing = await Announcements.AskToSendAsync((await SavedAsync()).Id));
+
+    private Task SendAsync() => RunAsync(async () =>
+    {
+        DateTime? at = DateTime.TryParseExact(_sendAt, LocalFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local) ? ChurchTime.ToUtc(local) : null;
+        _editing = await Announcements.SendAsync((await SavedAsync()).Id, at);
+    });
+
+    private Task CancelAsync() => RunAsync(async () => _editing = await Announcements.CancelAsync(_editing.Id));
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Announcements.DeleteAsync(_editing.Id);
+        Navigation.NavigateTo("announcements");
+    });
+
+    private async Task<Announcement> SavedAsync()
+    {
+        bool isNew = _editing.Id.Length == 0;
+        _editing = await Announcements.SaveAsync(_editing);
+        if (isNew)
+            Navigation.NavigateTo($"announcements/{_editing.Id}", replace: true);
+        return _editing;
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await action();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string StateLine(Announcement announcement) => announcement.State switch
+    {
+        "Sent" => $"Sent {WhenLabel(announcement)} to about {announcement.ReachedPeople} people and {announcement.ReachedPhones} phones.",
+        "Scheduled" => $"Goes out {WhenLabel(announcement)}.",
+        "WaitingToSend" => "Waiting for someone who sends announcements.",
+        _ => "Write it, send it to your own phone to see it, then send it or ask for it to be sent.",
+    };
+
+    private static string StateLabel(Announcement announcement) => announcement.State switch
+    {
+        "Sent" => "Sent",
+        "Scheduled" => "Scheduled",
+        "WaitingToSend" => "Waiting to send",
+        _ => "Being written",
+    };
+
+    private static string WhenLabel(Announcement announcement) =>
+        ChurchTime.ToChurch(announcement.SentAt ?? announcement.SendAt ?? announcement.UpdatedAt)
+            .ToString("ddd d MMM, h:mmtt", CultureInfo.InvariantCulture).Replace(":00", "");
+}

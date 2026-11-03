@@ -38,6 +38,12 @@ window.gsbcNative = (() => {
     signIn: () => dataLayer().signIn().then(outcome),
     registerPasskey: (ticket) => dataLayer().registerPasskey({ ticket }).then(outcome),
     signOut: () => dataLayer().signOut(),
+    proveInstall: () => dataLayer().proveInstall().then((result) => !!result.proven),
+    pushPermission: () => (isNative() ? dataLayer().pushPermission().then((result) => result.permission) : 'unavailable'),
+    registerPush: () => dataLayer().registerPush().then((result) => ({
+      permission: result.permission, token: result.token || null, environment: result.environment || null, appId: result.appId || null,
+    })),
+    setBadge: (count) => (isNative() ? dataLayer().setBadge({ count }) : null),
     listenSession: (receiver) => {
       dataLayer().addListener('sessionChanged', (event) => receiver.invokeMethodAsync('OnSessionChanged', !!event.signedIn));
     },

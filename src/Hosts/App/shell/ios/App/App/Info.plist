@@ -13,6 +13,8 @@
 		<string>fetch</string>
 		<string>remote-notification</string>
 	</array>
+	<key>GsbcApsEnvironment</key>
+	<string>$(GSBC_APS_ENVIRONMENT)</string>
 	<key>GsbcGateway</key>
 	<string>$(GSBC_GATEWAY)</string>
 	<key>GsbcDevelopmentBuild</key>
