@@ -1,10 +1,18 @@
 name: UAT backend
 
 on:
-  workflow_run:
-    workflows: [ "CI" ]
-    types: [ completed ]
+  push:
     branches: [ "main" ]
+    paths:
+      - "**"
+      - "!**/*.md"
+      - "!docs/**"
+      - "!.impeccable/**"
+      - "!spikes/**"
+      - "!.run/**"
+      - "docs/architecture/repo-layout.md"
+      - "docs/architecture/architecture.svg"
+      - "changelog/**"
   workflow_dispatch:
 
 concurrency:
@@ -13,11 +21,29 @@ concurrency:
 
 env:
   SITE: https://uat-app.baptist.com.au
-  SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+  SHA: ${{ github.sha }}
 
 jobs:
+  ci:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+    steps:
+      - name: Wait for CI to pass on this commit, while the images build
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for attempt in $(seq 1 30); do
+            id="$(gh run list --workflow CI --commit "$SHA" --event push --json databaseId --jq '.[0].databaseId')"
+            [[ -n "$id" ]] && break
+            sleep 10
+          done
+          [[ -n "$id" ]] || { echo "::error::no CI run started for $SHA"; exit 1; }
+          gh run watch "$id" --exit-status --interval 20 > /dev/null || { echo "::error::CI failed on $SHA, so nothing is deployed"; exit 1; }
+
   images:
-    if: github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -33,6 +59,12 @@ jobs:
         with:
           global-json-file: global.json
 
+      - uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('global.json', 'Directory.Packages.props', '**/*.csproj') }}
+          restore-keys: nuget-${{ runner.os }}-
+
       - run: dotnet workload install wasm-tools
 
       - uses: docker/login-action@v3
@@ -42,15 +74,19 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push the API, gateway and migrator (linux/arm64)
-        run: tools/containers/publish.sh "sha-$SHA;uat" ghcr.io
+        run: tools/containers/publish.sh "sha-$SHA" ghcr.io
 
       - name: Note this build's fingerprinted runtime, to tell when it is live
         id: build
         run: echo "runtime=$(basename src/Hosts/GSBC.ChurchApp.Hosts.Gateway/bin/Release/net10.0/publish/wwwroot/_framework/dotnet.native.*.wasm)" >> "$GITHUB_OUTPUT"
 
   deploy:
-    needs: images
+    needs: [ ci, images ]
+    if: always() && needs.images.result == 'success' && (needs.ci.result == 'success' || github.event_name == 'workflow_dispatch')
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
     outputs:
       deployed: ${{ steps.token.outputs.present }}
     steps:
@@ -61,6 +97,18 @@ jobs:
         run: |
           if [[ -n "$ARGO_REPO_TOKEN" ]]; then echo "present=true" >> "$GITHUB_OUTPUT"
           else echo "::warning::ARGO_REPO_TOKEN is not set; the images were built but not deployed"; fi
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Move the uat tag to these images, now that CI has passed
+        run: |
+          for image in api gateway migrator; do
+            docker buildx imagetools create -t "ghcr.io/asherslab/gsbc-churchapp-$image:uat" "ghcr.io/asherslab/gsbc-churchapp-$image:sha-$SHA"
+          done
 
       - name: Checkout gsbc.argo
         if: steps.token.outputs.present == 'true'

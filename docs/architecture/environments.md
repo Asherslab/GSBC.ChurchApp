@@ -55,12 +55,13 @@ packages only know Debug and Release.
 
 ## What deploys when
 
-**UAT's backend follows `main` by itself.** On every push to `main`, after CI passes,
-`.github/workflows/uat-backend.yml`:
+**UAT's backend follows `main` by itself.** On every push to `main`, `.github/workflows/uat-backend.yml`
+builds the images while CI runs, and deploys only once CI has passed on that commit (its `ci` job waits
+for it; nothing is deployed if CI fails):
 
 1. builds the API, gateway and migrator as linux/arm64 images with `dotnet publish /t:PublishContainer`
    (`tools/containers/publish.sh`, no Dockerfiles) and pushes them to `ghcr.io/asherslab/gsbc-churchapp-{api,gateway,migrator}`
-   as `sha-<commit>` and `uat`;
+   as `sha-<commit>`; after CI passes it moves the `uat` tag to them;
 2. rewrites the three `#image` lines in `gsbc.argo`'s `clusters/mini/app/church-app-uat/kustomization.yaml`
    and pushes, as the other apps do; Argo CD rolls it out;
 3. checks `https://uat-app.baptist.com.au` through Cloudflare: native gRPC health answers `SERVING`, the
