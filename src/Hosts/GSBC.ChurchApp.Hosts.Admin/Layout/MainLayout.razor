@@ -1,4 +1,10 @@
 @inherits LayoutComponentBase
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Client.Modules
+@implements IDisposable
+@inject IAccess Access
+@inject ClientModules Modules
+@inject NavigationManager Navigation
 
 <div class="admin-shell">
     <aside class="admin-sidebar">
@@ -9,21 +15,57 @@
         <ModuleNav />
     </aside>
     <main class="admin-main">
-        <ErrorBoundary @ref="_boundary">
-            <ChildContent>@Body</ChildContent>
-            <ErrorContent>
-                <EmptyState Icon="alert" Title="This page stopped working" Body="Nothing you saved is lost. Try the page again; if it keeps happening, tell whoever looks after the app.">
-                    <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="Recover">Try again</Button>
+        @if (Area is { } area && !Access.SignedIn)
+        {
+            <TitleBand Title="@area.Title" />
+            <div class="admin-gate">
+                <EmptyState Icon="key" Title="Sign in to see this" Body="Use the passkey on this computer or your phone.">
+                    <Button Href="account" Icon="user">Sign in</Button>
                 </EmptyState>
-            </ErrorContent>
-        </ErrorBoundary>
+            </div>
+        }
+        else if (Area is { Requires: { } permission } locked && !Access.Can(permission))
+        {
+            <TitleBand Title="@locked.Title" />
+            <div class="admin-gate">
+                <EmptyState Icon="lock" Title="This isn't part of your role" Body="Ask whoever looks after roles at the church if you need it." />
+            </div>
+        }
+        else
+        {
+            <ErrorBoundary @ref="_boundary">
+                <ChildContent>@Body</ChildContent>
+                <ErrorContent>
+                    <EmptyState Icon="alert" Title="This page stopped working" Body="Nothing you saved is lost. Try the page again; if it keeps happening, tell whoever looks after the app.">
+                        <Button Variant="ButtonVariant.Quiet" Icon="refresh" OnClick="Recover">Try again</Button>
+                    </EmptyState>
+                </ErrorContent>
+            </ErrorBoundary>
+        }
     </main>
 </div>
 
 @code {
     private ErrorBoundary? _boundary;
 
+    private NavEntry? Area
+    {
+        get
+        {
+            string path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+            return Modules.Navigation
+                .Where(entry => entry.Requires is not null && entry.Href.Length > 0 && (path == entry.Href || path.StartsWith(entry.Href + "/", StringComparison.Ordinal)))
+                .MaxBy(entry => entry.Href.Length);
+        }
+    }
+
+    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
+
     protected override void OnParametersSet() => _boundary?.Recover();
 
     private void Recover() => _boundary?.Recover();
+
+    private void OnAccessChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Access.Changed -= OnAccessChanged;
 }

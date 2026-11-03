@@ -12,7 +12,7 @@
 @if (!Access.SignedIn)
 {
     <TitleBand Title="Good Shepherd admin" BrowserTitle="Welcome" Lead="Where staff change what the church app shows: its home screen, colours, pictures, and who can do what." />
-    <div class="office-signed-out">
+    <div class="admin-gate">
         <EmptyState Icon="key" Title="Sign in to start" Body="Use the passkey on this computer or your phone. If you haven't got an account yet, ask the office for an invitation.">
             <Button Href="account" Icon="user">Sign in</Button>
         </EmptyState>
@@ -46,11 +46,14 @@ else
                     </a>
                 }
             </div>
-            <ul class="office-rail__legend" aria-label="What the colours mean">
-                <li><span class="office-rail__swatch office-rail__span--everyone"></span>What everyone sees</li>
-                <li><span class="office-rail__swatch office-rail__span--layer"></span>Event layer</li>
-                <li><span class="office-rail__swatch office-rail__span--draft"></span>Waiting in a draft</li>
-            </ul>
+            @if (context.Value.Spans.Count > 0)
+            {
+                <ul class="office-rail__legend" aria-label="What the colours mean">
+                    <li><span class="office-rail__swatch office-rail__span--everyone"></span>What everyone sees</li>
+                    <li><span class="office-rail__swatch office-rail__span--layer"></span>Event layer</li>
+                    <li><span class="office-rail__swatch office-rail__span--draft"></span>Waiting in a draft</li>
+                </ul>
+            }
         </section>
 
         <div class="office-columns">

@@ -1,0 +1,37 @@
+@implements IDisposable
+
+<label class="search-field @Class">
+    <Icon Name="search" Size="IconSize.Small" />
+    <span class="visually-hidden">@Label</span>
+    <input type="search" class="search-field__input" placeholder="@Placeholder" value="@Value" @oninput="TypeAsync" />
+</label>
+
+@code {
+    private CancellationTokenSource? _typing;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public int SettleMilliseconds { get; set; } = 250;
+    [Parameter] public string? Class { get; set; }
+
+    private async Task TypeAsync(ChangeEventArgs change)
+    {
+        string value = change.Value?.ToString() ?? "";
+        _typing?.Cancel();
+        _typing = new CancellationTokenSource();
+        try
+        {
+            await Task.Delay(SettleMilliseconds, _typing.Token);
+        }
+        catch (TaskCanceledException)
+        {
+            return;
+        }
+
+        await ValueChanged.InvokeAsync(value);
+    }
+
+    public void Dispose() => _typing?.Cancel();
+}
