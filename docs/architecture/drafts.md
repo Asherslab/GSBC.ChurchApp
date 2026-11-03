@@ -148,9 +148,11 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   stays marked until someone settles it.
 - **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. Until
   Home is built the preview draws an area's surfaces generically.
-- **The phone** gets the same drafts component in one column (More → Drafts), More → Previews (*What
+- **The phone** gets More → Previews (*What
   everyone sees* or a draft; *Show it as* Me, A visitor, A member; *On a date*), and the banner, docked to
   the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
+- **Drafts are made and edited in the admin panel only;** the app has no Drafts screen (owner,
+  2026-11-03: admin work stays in the admin panel).
 - **Home screen and Colours** in the admin panel become read-only views of what everyone sees; *Change it*
   starts a draft, or carries on your open one.
 
@@ -189,7 +191,7 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
   draft.
 - **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
-  (hideable until the app next comes to the foreground), More → Drafts, and Home listing the Hub's
+  (hideable until the app next comes to the foreground), and Home listing the Hub's
   link tiles. The phone previews from the signed-in account.
 
 **Decided while building (no owner question needed):**
