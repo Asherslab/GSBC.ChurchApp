@@ -50,13 +50,20 @@ internal sealed partial class UsageInbox(AnalyticsDbContext db, MeasureCatalog m
             || line.Day < today.DayNumber - OldestDayAccepted || line.Day > today.DayNumber + 1 || line.Count <= 0)
             return null;
 
-        string subject = measure.SubjectKind is null ? "" : line.Subject.Trim();
-        if (measure.SubjectKind is not null && (subject.Length is 0 or > MaximumSubjectLength || !SafeSubject().IsMatch(subject)))
+        string? subject = SubjectOf(measure, line.Subject.Trim());
+        if (subject is null)
             return null;
 
         UsageGroup group = measure.SplitByGroup && Enum.IsDefined(line.Group) ? line.Group : UsageGroup.Everyone;
         return new CleanLine(DateOnly.FromDayNumber(line.Day), measure, subject, group, line.Count);
     }
+
+    private static string? SubjectOf(Measure measure, string subject) => measure switch
+    {
+        { States: { } states } => states.Any(state => state.Key == subject) ? subject : null,
+        { SubjectKind: null } => "",
+        _ => subject.Length is > 0 and <= MaximumSubjectLength && SafeSubject().IsMatch(subject) ? subject : null,
+    };
 
     private static int Cap(Measure measure, int count) => measure.OncePerPhone ? 1 : Math.Min(count, MaximumCountPerLine);
 

@@ -11,6 +11,7 @@ public sealed class PushRegistration(NativeBridge bridge, ChannelBase channel, S
 {
     public const string Granted = "granted";
     public const string Denied = "denied";
+    public const string Undecided = "ask";
     private const string ClaimMethod = "/gsbc.accounts.Installs/Claim";
 
     private readonly INotificationsService _notifications = channel.CreateGrpcService<INotificationsService>();

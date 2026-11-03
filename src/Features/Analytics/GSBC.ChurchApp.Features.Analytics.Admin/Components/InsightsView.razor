@@ -48,6 +48,19 @@
         }
     </Section>
 
+    @if (summary.States.Count > 0)
+    {
+        <Section Title="How phones are set up" Lead="Each phone that used the app this week counts once.">
+            <div class="insights-top">
+                @foreach (TopList list in summary.States)
+                {
+                    <RankedList Title="@list.Label" Explanation="@list.Counts"
+                                Items="@list.Entries.Select(entry => new RankedItem(entry.Label, InsightsWords.Number(entry.Count))).ToList()" />
+                }
+            </div>
+        </Section>
+    }
+
     <Section Title="Phones and app versions">
         <details class="insights-devices">
             <summary>@InsightsWords.Number(summary.OnLatestVersion) of this week's phones are on the latest version@(summary.LatestVersion.Length > 0 ? $", {summary.LatestVersion}" : "")</summary>

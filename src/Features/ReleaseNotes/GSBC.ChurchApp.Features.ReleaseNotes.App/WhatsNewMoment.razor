@@ -8,18 +8,14 @@
 {
     <PagedSheet Open="true" OpenChanged="Closed" Count="highlights.Count" ItemName="Highlight" Label="What's new">
         <Cover Context="page">
-            <div class="highlight__head">
-                <span class="highlight__icon"><Icon Name="@(highlights[page].Icon ?? "sparkles")" /></span>
-                <h2 class="highlight__title">@highlights[page].Title</h2>
-            </div>
-            <p class="highlight__note">@ReleaseNoteLabels.NewIn(highlights[page], WhatsNew.ForStaff, Bridge.AppVersion)</p>
+            <SheetHeading Icon="@(highlights[page].Icon ?? "sparkles")" Title="@highlights[page].Title" Note="@ReleaseNoteLabels.NewIn(highlights[page], WhatsNew.ForStaff, Bridge.AppVersion)" />
         </Cover>
         <Page Context="page">
             @if (highlights[page].ImageUrl is { } image)
             {
                 <img class="highlight__image" src="@image" alt="" />
             }
-            <p class="highlight__summary">@highlights[page].Summary</p>
+            <p class="sheet__summary">@highlights[page].Summary</p>
             @if (highlights[page].Where is not null)
             {
                 <FactList>
@@ -37,17 +33,7 @@
 }
 
 @code {
-    private static readonly TimeSpan SettleFirst = TimeSpan.FromMilliseconds(600);
-
     protected override void OnInitialized() => WhatsNew.Changed += OnChanged;
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (!firstRender)
-            return;
-        await Task.Delay(SettleFirst);
-        await WhatsNew.PresentUnseenAsync();
-    }
 
     private void Closed(bool open) => WhatsNew.Dismiss();
 

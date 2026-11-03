@@ -107,7 +107,32 @@ public sealed class UsageTests : IAsyncLifetime
         Assert.All(monthly, count => Assert.Equal(new DateOnly(opened.Year, opened.Month, 1), count.Month));
     }
 
+    [Fact]
+    public async Task APhoneSaysHowItIsSetUpOnceAWeekAndOnlyInDeclaredWords()
+    {
+        StateMemory phone = new();
+        DateOnly monday = new(2026, 11, 2);
+        Measure notifications = AnalyticsHost.Measures.Notifications;
+        Assert.True(phone.TakeIfDue(notifications, monday));
+        Assert.False(phone.TakeIfDue(notifications, monday));
+        Assert.True(phone.TakeIfDue(notifications, monday.AddDays(7)));
+
+        for (int on = 0; on < 6; on++)
+            await StateAsync("on");
+        await StateAsync("off");
+        await StateAsync("sam@example.org");
+
+        TopList state = Assert.Single((await SummaryAsync()).States);
+        Assert.Equal("Notifications", state.Label);
+        Assert.Equal(["On", "Turned off"], state.Entries.Select(entry => entry.Label));
+        Assert.Equal(6, state.Entries[0].Count!.Value);
+        Assert.True(state.Entries[1].Count!.FewerThanFive);
+    }
+
     public ValueTask DisposeAsync() => _host.DisposeAsync();
+
+    private Task StateAsync(string state) =>
+        AcceptAsync(Report(new UsageCount { Day = _host.Today.DayNumber, Measure = AnalyticsHost.Measures.Notifications.Key, Subject = state, Count = 1 }), Guid.NewGuid().ToString());
 
     private static IReadOnlyList<Measure> Open(OpeningMemory phone, DateOnly day) => phone.Open(day, ChurchTime.WeekStart(day));
 

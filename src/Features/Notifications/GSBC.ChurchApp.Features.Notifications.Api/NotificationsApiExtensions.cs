@@ -38,6 +38,7 @@ public static class NotificationsApiExtensions
         services.AddHostedService<AnnouncementScheduler>();
 
         services.AddNotificationKinds(AnnouncementNotifications.All);
+        services.AddMeasures(NotificationsMeasures.All);
         services.AddPermissions(NotificationsPermissions.All);
         services.AddSystemRole(new SystemRole(NotificationsPermissions.AnnouncerRole, "Announcer",
             "Writes and sends announcements to the church", ScopeKind.Global, ["notifications.announcements.*"]));

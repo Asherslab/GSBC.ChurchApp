@@ -285,15 +285,44 @@ person, and 60 days for the public feed.
 
 - **More → Notification settings** on the phone (also from the inbox's top bar): each area's kinds with a push switch, per ministry where
   the kind is per ministry ("Music: notices" beside Follow), mandatory ones shown on and locked with
-  "Always on: it's about your account's safety". The iOS permission prompt is asked the first time
-  something would push (following a group, signing in), not at launch, and if it's been refused the
-  screen says so and opens Settings.
+  "Always on: it's about your account's safety". If iOS's permission has been refused the screen
+  says so and opens Settings.
+- **Asked on the first open** (owner, 2026-11-03: "notifications [are] a core functionality of the
+  app"). See *The first-open sheet* below. Signing in also registers a phone that already allowed them.
 - **Defaults** are each kind's `defaultPush`; a row exists only once someone chooses
   (as Configuration does with placements).
 - **Stored per person** (`notifications.preferences`, synced through an own-records feed), or per
   phone when signed out (sent with the device registration). Signing in keeps the person's; the
   phone's are dropped, like its follows moving over.
 - The inbox always gets everything addressed to you; preferences only stop the push.
+
+## The first-open sheet
+
+`NotificationsWelcomeMoment` (Notifications.App) is a covered sheet over Home: a bell tile beside
+"Hear from the church", one line about what the church sends, **Turn on notifications** (which raises
+iOS's prompt) and **Not now**. Once iOS's answer is Allow, the same sheet becomes "Choose what buzzes your
+phone" with the settings' own list (`NotificationSettings`, reused) and **Done**. Decided with the owner,
+2026-11-03:
+
+- **When:** once, while iOS's permission is still undecided (`notDetermined`, `ask` to the bridge). That
+  covers a fresh install and a phone that updated without ever deciding. **Not now** is remembered on
+  the phone (`notifications.welcome.answered` in local preferences), and once iOS's prompt has been
+  answered, here or anywhere else, the permission is decided; either way it never shows again. (Closing
+  the app while iOS's prompt is up leaves both undecided, so it asks on the next open.) **Not now** doesn't use up iOS's
+  one-time prompt: More → Notification settings still offers it.
+- **Declining in iOS's prompt closes the sheet** quietly; the settings screen explains how to turn them
+  on later.
+- **Before What's new:** at most one sheet per open. Features offer an opening sheet through
+  Platform.Client's `IOpeningSheet`; the app's layout asks `OpeningSheets` after the first render and
+  the first that shows wins, in the order the host registers them (Notifications before Release notes in
+  the App host's `Program.cs`). What's new doesn't mark anything seen when it isn't asked, so on an
+  update its highlights show on the next open. On a fresh install What's new shows nothing anyway.
+- **Never in a browser build** (no native layer: the permission is `unavailable`). Everyone sees it,
+  signed in or not.
+- **Counted, anonymously:** the measure `notifications.push` counts each phone once a week, the first
+  time it's closed that week, as *On*, *Turned off* or *Not chosen yet* (by then the sheet has been
+  answered). Insights shows it under *How phones are set up*; the rules are Analytics'
+  ([analytics.md](../features/analytics.md), *Settings measured once a week*).
 
 ## Staff announcements (decision 5)
 

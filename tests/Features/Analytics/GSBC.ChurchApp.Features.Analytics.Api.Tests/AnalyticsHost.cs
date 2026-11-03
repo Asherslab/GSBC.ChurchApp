@@ -43,7 +43,7 @@ internal sealed class AnalyticsHost : IAsyncDisposable
             .AddSingleton<IPermissionHolders>(new Holders([Owner]))
             .AddSingleton<IAccountEmails>(new Emails(new Dictionary<Guid, string> { [Owner] = "owner@example.org" }))
             .AddSingleton<IEmailSender>(Email)
-            .AddSingleton(new MeasureCatalog([new MeasureSet([.. AnalyticsMeasures.All, Measures.TileTapped])]))
+            .AddSingleton(new MeasureCatalog([new MeasureSet([.. AnalyticsMeasures.All, Measures.TileTapped, Measures.Notifications])]))
             .AddAnalyticsData()
             .AddSingleton<AnalyticsEnvironment>()
             .AddScoped<NewErrorKinds>()
@@ -85,6 +85,10 @@ internal sealed class AnalyticsHost : IAsyncDisposable
     {
         public static readonly Platform.Contracts.Analytics.Measure TileTapped =
             new("hub.tile.tapped", "Home screen tiles tapped", "Taps on each tile", Platform.Contracts.Analytics.SubjectKinds.HubTile, SplitByGroup: true);
+
+        public static readonly Platform.Contracts.Analytics.Measure Notifications =
+            new("notifications.push", "Notifications", "Phones by whether notifications are on", OncePerPhone: true,
+                States: [new("on", "On"), new("off", "Turned off")]);
     }
 
     internal sealed class MovableClock(DateTimeOffset now) : TimeProvider

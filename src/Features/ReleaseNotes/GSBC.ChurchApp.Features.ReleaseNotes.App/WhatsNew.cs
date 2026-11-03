@@ -1,8 +1,9 @@
+using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 
 namespace GSBC.ChurchApp.Features.ReleaseNotes.App;
 
-public sealed class WhatsNew(ILocalPreferences preferences, IReadOnlyList<ReleaseNote> notes)
+public sealed class WhatsNew(ILocalPreferences preferences, IReadOnlyList<ReleaseNote> notes) : IOpeningSheet
 {
     internal const string SeenKey = "release-notes.seen";
 
@@ -14,7 +15,7 @@ public sealed class WhatsNew(ILocalPreferences preferences, IReadOnlyList<Releas
 
     public event Action? Changed;
 
-    public async Task PresentUnseenAsync()
+    public async Task<bool> OfferAsync()
     {
         try
         {
@@ -24,6 +25,7 @@ public sealed class WhatsNew(ILocalPreferences preferences, IReadOnlyList<Releas
         {
             Show([]);
         }
+        return Showing.Count > 0;
     }
 
     public void ShowLatestAgain() =>

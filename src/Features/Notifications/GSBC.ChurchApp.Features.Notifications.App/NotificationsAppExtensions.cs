@@ -13,6 +13,9 @@ public static class NotificationsAppExtensions
             [new NavEntry("Notification settings", "notifications/settings", "bell")],
             [NotificationsFeeds.Public, NotificationsFeeds.Kinds],
             [NotificationsFeeds.Inbox, NotificationsFeeds.Preferences]));
-        return services.AddNotificationsOnPhone();
+        return services
+            .AddNotificationsOnPhone()
+            .AddSingleton<NotificationsWelcome>()
+            .AddSingleton<IOpeningSheet>(provider => provider.GetRequiredService<NotificationsWelcome>());
     }
 }
