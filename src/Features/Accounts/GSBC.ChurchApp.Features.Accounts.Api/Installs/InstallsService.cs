@@ -9,7 +9,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Installs;
 
-internal sealed class InstallsService(AccountsDbContext db, AppAttest appAttest, IPhoneRoles phoneRoles, TimeProvider time) : IInstallsService
+internal sealed class InstallsService(AccountsDbContext db, AppAttest appAttest, IPhoneRoles phoneRoles, InstallProofMethods proofMethods, TimeProvider time) : IInstallsService
 {
     private const int ChallengeLength = 32;
     private static readonly TimeSpan ChallengeLifetime = TimeSpan.FromMinutes(5);
@@ -52,6 +52,9 @@ internal sealed class InstallsService(AccountsDbContext db, AppAttest appAttest,
         }
         return new Done();
     }
+
+    public ValueTask<ProofMethods> ListProofMethodsAsync(Nothing request, CallContext context = default) =>
+        ValueTask.FromResult(new ProofMethods { Paths = [.. proofMethods.Paths] });
 
     public async ValueTask<Done> ClaimAsync(Nothing request, CallContext context = default)
     {

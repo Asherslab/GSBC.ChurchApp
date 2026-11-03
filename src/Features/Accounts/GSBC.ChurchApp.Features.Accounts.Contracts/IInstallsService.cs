@@ -13,6 +13,9 @@ public interface IInstallsService
     [Public]
     ValueTask<Done> AttestAsync(AttestRequest request, CallContext context = default);
 
+    [Public]
+    ValueTask<ProofMethods> ListProofMethodsAsync(Nothing request, CallContext context = default);
+
     [AppInstall]
     ValueTask<Done> ClaimAsync(Nothing request, CallContext context = default);
 }

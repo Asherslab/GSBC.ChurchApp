@@ -12,6 +12,7 @@ namespace GSBC.ChurchApp.Platform.Api.Tiers;
 public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access, IInstallVerifier installs) : Interceptor
 {
     private const string KubernetesHealthProbe = "/grpc.health.v1.Health/";
+    private static readonly Status NotProved = new(StatusCode.Unauthenticated, "This phone hasn't proved it's the app.");
 
     public override async Task<TResponse> UnaryServerHandler<TRequest, TResponse>(
         TRequest request, ServerCallContext context, UnaryServerMethod<TRequest, TResponse> continuation)
@@ -83,9 +84,8 @@ public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access
     private async Task ProveInstallAsync(HttpContext http, CancellationToken cancellationToken)
     {
         InstallProof proof = InstallProofMiddleware.ProofOf(http)
-            ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "This phone hasn't proved it's the app."));
-        Guid installId = await installs.VerifyAsync(proof, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "This phone hasn't proved it's the app."));
+            ?? throw new RpcException(NotProved, new Metadata { { InstallProofMiddleware.ProofRequiredTrailer, "required" } });
+        Guid installId = await installs.VerifyAsync(proof, cancellationToken) ?? throw new RpcException(NotProved);
         CallingInstall.Set(http, installId);
     }
 }

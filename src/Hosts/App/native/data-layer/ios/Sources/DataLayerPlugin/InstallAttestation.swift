@@ -14,6 +14,8 @@ actor InstallAttestation: RequestSigner {
 
     nonisolated var isSupported: Bool { DCAppAttestService.shared.isSupported }
 
+    func canSign() async -> Bool { attestedKeyId() != nil }
+
     func headers(method: String, body: Data) async -> [String: String] {
         guard let keyId = attestedKeyId() else { return [:] }
         let clientDataHash = Data(SHA256.hash(data: InstallMessages.clientData(method: method, body: body)))

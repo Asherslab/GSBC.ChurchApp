@@ -49,6 +49,7 @@ public static class PlatformApiExtensions
             options.IgnoreUnknownServices = true;
         });
         services.AddSingleton<TierCatalog>();
+        services.AddSingleton<InstallProofMethods>();
         services.TryAddScoped<IAccessEvaluator, NoGrantsAccessEvaluator>();
         services.TryAddScoped<ISignedInSessions, UncheckedSessions>();
         services.TryAddSingleton<IScopeHierarchy, FlatScopeHierarchy>();

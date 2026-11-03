@@ -15,7 +15,7 @@ public sealed class AppAttestTests : IDisposable
 
     private readonly ECDsa _rootKey = ECDsa.Create(ECCurve.NamedCurves.nistP384);
     private readonly ECDsa _intermediateKey = ECDsa.Create(ECCurve.NamedCurves.nistP384);
-    private readonly ECDsa _deviceKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+    private readonly TestDevice _device = new(AppId);
     private readonly X509Certificate2 _root;
     private readonly X509Certificate2 _intermediate;
     private readonly byte[] _challenge = RandomNumberGenerator.GetBytes(32);
@@ -26,12 +26,10 @@ public sealed class AppAttestTests : IDisposable
         _intermediate = Authority("CN=Test App Attestation CA", _intermediateKey, _root, _rootKey);
     }
 
-    private string KeyId => Convert.ToBase64String(SHA256.HashData(Point(_deviceKey)));
-
     [Fact]
     public void AGenuineAttestationGivesTheKeyAndItsEnvironment()
     {
-        AttestedKey? key = Verifier().VerifyAttestation(KeyId, _challenge, Attestation(_challenge, AppId), Now);
+        AttestedKey? key = Verifier().VerifyAttestation(_device.KeyId, _challenge, Attestation(_challenge, AppId), Now);
 
         Assert.NotNull(key);
         Assert.Equal(AppId, key.AppId);
@@ -43,18 +41,18 @@ public sealed class AppAttestTests : IDisposable
     {
         byte[] attestation = Attestation(_challenge, AppId);
 
-        Assert.Null(Verifier().VerifyAttestation(KeyId, RandomNumberGenerator.GetBytes(32), attestation, Now));
-        Assert.Null(Verifier().VerifyAttestation(KeyId, _challenge, Attestation(_challenge, "YNT9A4LGVA.someone.else"), Now));
+        Assert.Null(Verifier().VerifyAttestation(_device.KeyId, RandomNumberGenerator.GetBytes(32), attestation, Now));
+        Assert.Null(Verifier().VerifyAttestation(_device.KeyId, _challenge, Attestation(_challenge, "YNT9A4LGVA.someone.else"), Now));
         using ECDsa otherRootKey = ECDsa.Create(ECCurve.NamedCurves.nistP384);
-        Assert.Null(new AppAttest(Authority("CN=Other", otherRootKey, null, otherRootKey), [AppId]).VerifyAttestation(KeyId, _challenge, attestation, Now));
+        Assert.Null(new AppAttest(Authority("CN=Other", otherRootKey, null, otherRootKey), [AppId]).VerifyAttestation(_device.KeyId, _challenge, attestation, Now));
     }
 
     [Fact]
     public void AnAssertionIsAcceptedOnlyForItsRequestAndOnlyOnce()
     {
-        AttestedKey key = Verifier().VerifyAttestation(KeyId, _challenge, Attestation(_challenge, AppId), Now)!;
+        AttestedKey key = Verifier().VerifyAttestation(_device.KeyId, _challenge, Attestation(_challenge, AppId), Now)!;
         byte[] request = Encoding.UTF8.GetBytes("/gsbc.notifications.Devices/Register\nbody");
-        byte[] assertion = Assertion(request, counter: 1);
+        byte[] assertion = _device.Assertion(request, counter: 1);
 
         Assert.Equal(1, AppAttest.VerifyAssertion(key.PublicKey, AppId, 0, assertion, request));
         Assert.Null(AppAttest.VerifyAssertion(key.PublicKey, AppId, 1, assertion, request));
@@ -67,14 +65,14 @@ public sealed class AppAttestTests : IDisposable
         _intermediate.Dispose();
         _rootKey.Dispose();
         _intermediateKey.Dispose();
-        _deviceKey.Dispose();
+        _device.Dispose();
     }
 
     private AppAttest Verifier() => new(_root, [AppId]);
 
     private byte[] Attestation(byte[] challenge, string appId)
     {
-        byte[] keyId = SHA256.HashData(Point(_deviceKey));
+        byte[] keyId = SHA256.HashData(_device.Point);
         byte[] authData =
         [
             .. SHA256.HashData(Encoding.UTF8.GetBytes(appId)), 0x40, 0, 0, 0, 0,
@@ -82,7 +80,7 @@ public sealed class AppAttestTests : IDisposable
         ];
         byte[] nonce = SHA256.HashData([.. authData, .. SHA256.HashData(challenge)]);
 
-        CertificateRequest request = new("CN=device", _deviceKey, HashAlgorithmName.SHA256);
+        CertificateRequest request = new("CN=device", _device.Key, HashAlgorithmName.SHA256);
         request.CertificateExtensions.Add(new X509Extension("1.2.840.113635.100.8.2", NonceExtension(nonce), critical: false));
         using X509Certificate2 leaf = request.Create(_intermediate.SubjectName, X509SignatureGenerator.CreateForECDsa(_intermediateKey),
             Now.AddMinutes(-5), Now.AddDays(1), RandomNumberGenerator.GetBytes(8));
@@ -107,24 +105,6 @@ public sealed class AppAttestTests : IDisposable
         return writer.Encode();
     }
 
-    private byte[] Assertion(byte[] clientData, uint counter)
-    {
-        byte[] authenticatorData =
-        [
-            .. SHA256.HashData(Encoding.UTF8.GetBytes(AppId)), 0x40,
-            (byte)(counter >> 24), (byte)(counter >> 16), (byte)(counter >> 8), (byte)counter,
-        ];
-        byte[] nonce = SHA256.HashData([.. authenticatorData, .. SHA256.HashData(clientData)]);
-        CborWriter writer = new();
-        writer.WriteStartMap(2);
-        writer.WriteTextString("signature");
-        writer.WriteByteString(_deviceKey.SignData(nonce, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence));
-        writer.WriteTextString("authenticatorData");
-        writer.WriteByteString(authenticatorData);
-        writer.WriteEndMap();
-        return writer.Encode();
-    }
-
     private static byte[] NonceExtension(byte[] nonce)
     {
         AsnWriter writer = new(AsnEncodingRules.DER);
@@ -142,11 +122,5 @@ public sealed class AppAttestTests : IDisposable
         return issuer is null
             ? request.CreateSelfSigned(Now.AddYears(-1), Now.AddYears(10))
             : request.Create(issuer.SubjectName, X509SignatureGenerator.CreateForECDsa(issuerKey), Now.AddYears(-1), Now.AddYears(5), RandomNumberGenerator.GetBytes(8));
-    }
-
-    private static byte[] Point(ECDsa key)
-    {
-        ECParameters parameters = key.ExportParameters(false);
-        return [0x04, .. parameters.Q.X!, .. parameters.Q.Y!];
     }
 }
