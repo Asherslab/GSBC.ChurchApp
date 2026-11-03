@@ -8,6 +8,7 @@ colors:
   aqua-deep: "#00776d"
   orange: "#e7ae74"
   orange-ink: "#8a5422"
+  on-marker: "#2a1a08"
   beige: "#d5c9b7"
   white: "#ffffff"
   sand: "#f4efe7"
@@ -134,7 +135,10 @@ spacing:
   xs: "6px"
   sm: "10px"
   md: "14px"
+  tile-gap: "12px"
   gutter: "20px"
+  tile-row-min: "88px"
+  tile-row-max: "132px"
   lg: "22px"
   section: "30px"
   touch: "44px"
@@ -493,6 +497,45 @@ components:
   open-card-title:
     textColor: "{colors.ink}"
     typography: "{typography.title-lg}"
+  masthead-home:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+    typography: "{typography.display}"
+    padding: "40px 20px 18px"
+  hub-tile:
+    backgroundColor: "{colors.sand}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "14px 14px 16px 16px"
+  hub-tile-raised:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+  hub-tile-masthead:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+  hub-tile-marker:
+    backgroundColor: "{colors.orange}"
+    textColor: "{colors.on-marker}"
+  hub-arrange-size:
+    backgroundColor: "{colors.orange}"
+    textColor: "{colors.on-marker}"
+    rounded: "{rounded.full}"
+    padding: "2px 8px"
+    typography: "{typography.pill}"
+  hub-arrange-grip:
+    backgroundColor: "{colors.orange}"
+    rounded: "{rounded.inner}"
+    size: "18px"
+  hub-swatch:
+    rounded: "{rounded.field}"
+    height: "44px"
+  layout-picker-choice:
+    backgroundColor: "{colors.fill-on-surface}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
+    padding: "10px 12px"
+  layout-picker-choice-on:
+    backgroundColor: "{colors.white}"
 ---
 
 # Design System: GSBC Church App
@@ -503,7 +546,7 @@ components:
 
 The app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.
 
-Density is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app tile grid and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series).
+Density is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app template, a uniform grid of identical icon squares, and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series). Home is the one tab root laid out as tiles (the Hub, chosen 2026-10-27): a grid the church arranges, where tiles differ in size, tone and content shape, so it reads as the bulletin's front page rather than an app launcher.
 
 Light is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose it in Configuration's Colours area, optionally for a run of dates, and anyone who may make that choice can preview the other palette on their own phone first.
 
@@ -517,6 +560,7 @@ The admin panel is the same bulletin carried to the church office's desk. A pers
 - Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.
 - rem type tied to the iOS body text size, so Dynamic Type scales the whole app.
 - In the admin panel, a 248px navy sidebar with beige group labels, an orange marker bar on the current page and orange count capsules, over a white work area that opens with a title band.
+- Home as the Hub: a 2 to 4 column grid of 14px-radius tiles in theme tones, each tile one of six shapes, sized by the church in columns and rows, under a compact masthead.
 - A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox.
 
 ## Colors
@@ -537,6 +581,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 ### Tertiary
 - **Bulletin Orange** (orange): the marker. The sliding section-tab underline, outline bullets, unread dots, the unread badge on the bell, audio progress and the player's scrubber, today's event dot on the day rail, and text selection. In the admin panel: the sidebar's current-page bar and its count capsules, a sorted column's arrow (in orange ink), draft and scheduled capsules on the office rail, the "Not sent yet" chips, and the 2px outline on the chosen capsule or chip.
 - **Orange Ink** (orange-ink): orange darkened for text, used in pills ("Later release"), warm row icons, count capsules in tabs and segments, and "Time sensitive" on the lock-screen proof.
+- **On Marker** (on-marker): the near-black text on a solid orange fill (the preview banner, the canvas's size and change capsules, a Marker-toned Home tile).
 - **Brand Beige** (beige): the masthead note line, the day rail's event dots, and the admin sidebar's group labels and mark; beige reads as text only on navy.
 
 ### Neutral
@@ -566,7 +611,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 ### Named Rules
 **The Roles Not Hexes Rule.** Components use the semantic roles (masthead, primary, accent, live, marker, sand, ink, line) and never a palette hex, because every role is redefined by the scheme and the yearly theme. The only literal colours in components are the palette-picker swatches, the black video hero, and white on the play overlay.
 
-**The Marker Rule.** Orange means "here" or "new": the active section, the unread item, how far you've listened. It is never a button fill and never decoration.
+**The Marker Rule.** Orange means "here" or "new": the active section, the unread item, how far you've listened, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Marker or Marker soft tone, which staff choose for a tile they want to stand out; no tile ships in solid Marker by default.
 
 **The Aqua Acts Rule.** Aqua is for live state, for things you can act on (links, passages, the active tab), and for one short line of metadata at most (a series or recurrence line, a "Streamed on YouTube" tag). Navy is for the primary action itself. Don't use aqua for headings or running text.
 
@@ -611,6 +656,9 @@ Rows are at least 56px tall, interactive targets at least 44px. The tab bar is a
 
 The Week tab replaces section tabs with a seven-column day rail inside the masthead; Prayer, More and the settings pages are short enough to need neither.
 
+### Home
+Home is the Hub: a compact masthead, then one grid of tiles on the 20px gutter, 22px below the masthead. The grid has 2 to 4 equal columns (staff's choice, 2 by default) with a 12px gap; tiles pack in order, each taking the first place its width and height fit. A row's height follows the column width and stays near square: one column's width, held between 88px and 132px. A tile spans 1 to 4 columns and 1 to 4 rows, and its height is its rows plus the gaps between them; a tile as wide as the grid and one row tall sizes to its content instead (an agenda line). A tile narrower than 112px drops its lines and its go arrow, sets its title at label size and tightens to 12px of padding.
+
 ### Admin panel
 A two-column shell: a 248px navy sidebar, sticky at the full window height and scrolling on its own, beside a work area padded 28px top, 40px at the sides and 64px at the foot. Each page opens on a title band (headline title, an optional caption lead up to 72ch, actions at the end, bottom-aligned and wrapping), then its content, capped at 1440px. Full-bleed views (the workbench, the preview window, the sign-in stage) cancel the work area's padding and run edge to edge.
 
@@ -626,7 +674,7 @@ A two-column shell: a 248px navy sidebar, sticky at the full window height and s
 
 **The Masthead First Rule.** Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar). The admin panel has no masthead: its navy is the sidebar, and every page opens on a title band.
 
-**The One Column Rule.** No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns and the Places explorer's directory and phone, and still no grid of tool tiles.
+**The One Column Rule.** No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns and the Places explorer's directory and phone, and still no grid of tool tiles.
 
 ## Elevation & Depth
 
@@ -638,15 +686,16 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 - **Knob** (`0 2px 6px rgb(0 0 0 / 0.2)`): the switch thumb.
 - **Play overlay** (`0 10px 30px rgb(0 0 0 / 0.35)`): the round play button over a video hero.
 - **Badge ring** (`0 0 0 2px` masthead colour): separates the unread badge from the bell.
+- **Drag lift** (`filter: drop-shadow(0 14px 22px` ink at 28%`)`): a Home tile while it is being moved or resized on the admin canvas, nowhere else.
 
 ### Named Rules
-**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
+**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Raised tone may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
 
 **The Tonal Selection Rule.** A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border. A sand leading tile on a selected row takes the page colour (white in light, night in dark) so it still reads as a tile; an accent tile keeps its tint.
 
 ## Shapes
 
-Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles.
+Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles. Home tiles take the 14px radius and clip what they hold (a picture, the bleeding mark); their icons sit in the 34px, 10px-radius row tile.
 
 The admin panel uses the same scale: sidebar links, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields, the search field and the chosen-place token at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. The upload drop zone is the one dashed border: 1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus.
 
@@ -833,6 +882,30 @@ end), **poster** (tall: icon top, a larger title, a go line; the mark bleeds off
 Recorded on the decision pages but not built: This week as a day strip, the sermon series card, Outreach's map
 card (needs real routes). The pages are in `.impeccable/mocks/decision/hub-variants/<kind>/`.
 
+### Home masthead
+Home's masthead is the compact one: the safe area plus 40px above (not 56px), 18px below, the title "Good Shepherd" kept on one line at the display size or 10.5% of the screen width, whichever is smaller, and under it one line, 8px down, holding today's date as the beige note beside the sync indicator on the masthead. Home has no section tabs.
+
+### Hub tiles
+- **Tones:** eight theme role pairs, never a hex, so every tone follows the scheme and the yearly palette: **Shaded** (sand with ink, the default), **Raised** (the surface with ink, lifted), **Masthead** (masthead with on-masthead text and the beige note for lines), **Main buttons** (primary with on-primary), **Live, soft** (live at 13% on the page, ink, deep-aqua go line), **Live** (live with on-live), **Marker, soft** (marker at 24% on the page, ink, marker-ink go line) and **Marker** (marker with on-marker). On the four solid tones the secondary line is the text colour at 82 to 84% over the ground, and icons and agenda rules switch to the text colour at 14 to 18%.
+- **Frame:** 14px radius, 14 by 14 by 16 by 16px padding (16px all round on poster and row), the title at lead size and 700 (-0.01em, balanced), up to two caption lines in the secondary ink, then a 600 label-size go line with a chevron in the tone's go colour. A tile can carry a live dot or a 9px orange unread dot beside its title.
+- **Icon:** the 34px row tile on the text colour at 7% (14% on solid tones); its colour goes with the tile, or staff pick main, links and live, marker, quiet, or an uploaded drawing's own colours.
+- **Mark:** a solid-toned poster two or more rows tall carries the church mark at 7%, 168px, bleeding off its bottom-right corner, like the masthead.
+- **Picture:** above the words at 16:9 (at least 96px), beside them as a square up to 132px or 40% of the tile, or behind them under a gradient to masthead-deep at 86% with on-masthead text. With no picture, a sermon cover is the masthead with the mark at 20%.
+- **Press and focus:** the whole tile is one target; it scales to 0.97 over 160ms on press, and focus is the 2px deep-aqua outline at 2px offset. A tile's own action (the 48px primary play disc) sits 16px from its bottom-right corner above the target.
+- **Agenda inside a tile:** hairline-ruled entries, a 5.4rem tabular time column at row size and 700 in primary (the text colour on solid tones), the day under it in caption.
+
+### Hub canvas (signature)
+Home arranged on the desk, inside the drafts workbench: the work area is the phone, and the settings panel beside it edits the chosen tile.
+- **Toolbar:** one wrapping row: Columns as a segmented control, "Show it as" (whose Home it is) as a 38px sand select at the field radius, a date field in the same style, and Add a tile as the primary action at the end. Hidden tiles stay behind a 36px sand capsule toggle in ink-2, then list as rows.
+- **Stage:** the phone frame, sticky 12px from the top and never scaled below 0.72, over a centred ink-3 caption saying how to move and resize with the mouse and the keyboard.
+- **On a tile:** hovering draws an inset 2px marker ring at 60%; the chosen tile is outlined by a 2px marker ring, carries its size as a marker capsule ("2 × 1", pill type at 700, tabular, on-marker) and a corner grip, an 18px marker square at the inner radius ringed 3px in the page colour, set 8px out from its bottom-right corner. What changed in the draft shows as marker capsules in pill type, 6px in from the top-right corner, beside the size. While a tile moves it takes the drag lift, the place it would land is ringed 2px in deep aqua, and while it is resized the other tiles fade to 55%.
+- **Settings panel:** the tile's name in title type over a caption, then fieldsets with legends at label size and 700: size on the grid (36px round steppers with a tabular value), layout at this size, colour from the theme, icon, words, picture, opens, and who sees it and when, with the actions under a hairline.
+- **Colour swatches:** four to a row, 44px tall at the field radius, each drawn in its own tone with a hairline inset; the chosen one has a 2px marker outline at a 2px offset.
+- **Layout picker:** the kind's layouts stacked 6px apart, each a fill-on-surface box at the field radius (10 by 12px padding) with the name at row size over a caption saying what it draws; the chosen one turns the page colour with an inset 2px marker ring, and a layout that doesn't suit the tile's size is disabled at 55%.
+- **Light and dark proof:** a Light and Dark segmented control over the chosen tile drawn alone (up to two rows, 120px rows) in a page-coloured box with a hairline inset at the field radius, in the scheme chosen whatever the panel's own; under it one tabular caption in ink-3 reads the text's contrast in both ("Text on it reads at 7.1 : 1 in light and 6.4 : 1 in dark. 4.5 : 1 or more is easy to read.").
+- **Icon picker:** 38px cells in an auto-filling grid, 6px apart, at the tile radius on fill-on-surface in ink-2; the chosen icon is primary with on-primary.
+- **Add a tile:** a sheet of kinds grouped under label-size 700 heads in ink-2 (Your library, Your own, From the app), each a fill-on-surface card at the 14px radius (14px padding) in an auto-filling grid of at least 17rem: its row tile (warm for the church's own and saved templates, accent for the app's), the name at row size, a caption line, its starting size in tabular ink-3; hover steps to strong sand.
+
 ### Motion
 One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. In the admin panel the sidebar's marker bar scales in over 240ms, hovers and fills ease over 160ms (120ms for table rows), and sort arrows fade over 160ms. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. Reduced motion collapses every animation and transition to 1ms and drops the drag, in the app and the admin panel alike.
 
@@ -893,6 +966,8 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Phone preview | `PhoneFrame`, `PhoneDevice` | A true-size device with status bar, cutout and tab bar, scaled to fit its space; an optional palette |
 | Lock-screen proof | `LockScreenProof` | Title, body, `TimeSensitive`, the date line, and a caption slot |
 | Home and surfaces | `HomeScreen`, `SurfaceViews` | The one way Home and the admin preview draw surfaces |
+| Hub grid and tiles | `HubTiles`, `HubTile`, `HubIcon`, `HubTileViews` | The grid packs tiles by `HubGrid` (2 to 4 columns, up to 4 rows); `HubTile` draws a `TileShape` in a `TileTones` tone; each kind's view picks its `TileVariant` |
+| Hub canvas | `HubCanvas`, `TileSettings`, `AddTileSheet`, `HubLibrary` (Configuration Client) | Arranging, sizing and recolouring tiles in a draft; the settings panel with swatches, the layout picker and the light and dark proof |
 | Places in the app | `PlaceDirectory`, `PlaceExplorer`, `PlacePhone`, `PlaceField` | Search, area chips and grouped rows; the directory beside the phone column with `PlaceAction`s (one `Leads`); a `PlacePreview` a feature registers, else the masthead summary; the picker field in a wide sheet. A holder with `data-fit-height` fits the phone frame to its height |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
 
@@ -912,9 +987,11 @@ A development build has More → Design gallery, which shows every block in the 
 - **Do** open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.
 - **Do** offset admin breakpoints by the 248px sidebar.
 - **Do** let staff choose what something opens with the place field and its directory, never by typing an address.
+- **Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.
+- **Do** mark the chosen tile on the Hub canvas with the 2px marker ring, its size capsule and the corner grip, and show both schemes' contrast before a tone is kept.
 
 ### Don't:
-- **Don't** lay tab roots out as a grid of tiles or a feed of identical cards.
+- **Don't** lay a tab root other than Home out as a grid of tiles, and don't let the Hub become a uniform grid of identical icon squares or a feed of identical cards.
 - **Don't** float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.
 - **Don't** use orange as a button fill or decoration; it marks position and newness only.
 - **Don't** add shadows to rows, callouts or the player; only boxed lists and picture cards lift.
