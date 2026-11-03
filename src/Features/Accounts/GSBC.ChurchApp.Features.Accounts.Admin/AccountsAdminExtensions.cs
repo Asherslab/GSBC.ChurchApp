@@ -10,7 +10,7 @@ public static class AccountsAdminExtensions
     public static IServiceCollection AddAccountsAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Accounts", typeof(AccountsAdminExtensions).Assembly,
-            [new NavEntry("People", "people", "users", AccountsPermissions.View, Group: NavGroups.People, Summary: "Invite staff, send a recovery link, turn an account off"), new NavEntry("Account", "account", "user", Group: NavGroups.You)]));
+            [new NavEntry("People", "people", "users", AccountsPermissions.View, Group: NavGroups.People, Summary: "Invite staff, send a recovery link, turn an account off"), new NavEntry("App review", "app-review", "key", AccountsPermissions.ReviewAccess, Group: NavGroups.People, Summary: "Sign-in codes for Apple's app reviewers"), new NavEntry("Account", "account", "user", Group: NavGroups.You)]));
         return services.AddAccountsClient();
     }
 }

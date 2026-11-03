@@ -42,6 +42,8 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public ValueTask<string?> RegisterPasskeyAsync(string? ticket) => js.InvokeAsync<string?>("gsbcNative.registerPasskey", ticket);
 
+    public ValueTask<string?> SignInWithCodeAsync(string email, string code) => js.InvokeAsync<string?>("gsbcNative.signInWithCode", email, code);
+
     public ValueTask ForgetSessionAsync() => IsNative ? js.InvokeVoidAsync("gsbcNative.signOut") : ValueTask.CompletedTask;
 
     public ValueTask<NativeUnaryResult> UnaryAsync(string method, byte[] request, CancellationToken cancellationToken) =>
