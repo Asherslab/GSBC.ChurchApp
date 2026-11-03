@@ -164,6 +164,13 @@ or not for you ([destinations.md](architecture/destinations.md)). Files are the 
 plug in with an `IDestinationSource`. Checked on `dev-app.baptist.com.au`; the universal link on a phone
 waits for the next install of GSBC Dev.
 
+**Admin leftovers (2026-11-04, branch `feature/admin-leftovers`):** Announcements say when quiet hours
+hold a send and what Urgent does ([notifications.md](architecture/notifications.md)); People lists
+invitations not yet accepted, with Send it again and Withdraw, and Needs you shows ones waiting two days
+or expired ([accounts.md](features/accounts.md)); Roles and Who can do what name a draft scope ("For the
+draft “Christmas Home”") through per-feature `IScopeNamer`s ([access.md](features/access.md)). Checked on
+`dev-app.baptist.com.au` with a test account.
+
 **Next, in order:** features page by page from the build order below, starting with Home (Hub) on
 Configuration's surfaces.
 The staff-friendly permissions are designed and built (2026-11-02, [access.md](features/access.md),
@@ -216,10 +223,9 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
      page for this week (dated changes on a seven-day rail and what needs you, from features'
      `IOfficeWeekSource`), sign-in, not-found and error states, and People, Roles, Who can do what and
      Media as sortable, filterable tables with the chosen row beside them (`DataTable`, `SplitView`,
-     `SearchField`, `FilterChips` in Platform.Ui). Every admin page loads through `LiveData`. Open:
-     invitations not yet accepted can't be listed (no gRPC method yet), so Needs you shows drafts only;
-     a role given for one draft reads "For one draft" because nothing names draft scopes yet
-     (`IScopeNames`).
+     `SearchField`, `FilterChips` in Platform.Ui). Every admin page loads through `LiveData`. Since
+     2026-11-04 (branch `feature/admin-leftovers`) invitations not yet accepted are listed and reach
+     Needs you, and a role given for one draft names it.
 8. **Features, page by page:** Home (Hub), Sermons, Events, Life Groups, Ministries, Site map, Prayer,
    Push, Give (link out), About. Each starts from its doc and the matching screens in
    `spikes/app-poc`.

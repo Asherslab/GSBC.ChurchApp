@@ -87,7 +87,10 @@ request, so `[Requires]`, sync audiences and every feature reading `GrantsForAsy
 
 The two features meet through a small `IPeopleDirectory` in Platform.Client, implemented by Accounts,
 so Access can show names without referencing Accounts. Place names come from `IScopeNames`
-(Platform.Client), which Ministries will implement; until then a place shows its id. The screens use
+(Platform.Client), which asks each feature's `IScopeNamer` for its own scope kind and reloads the
+screens on the namers' feeds. Configuration names drafts ("For the draft “Christmas Home”", from the
+drafts the viewer may see; 2026-11-04); Ministries will name ministries. An unnamed place reads
+"For one ministry". The screens use
 the shared `GroupedList` and `Notice` from Platform.Ui.
 
 ## Status (2026-11-02)
@@ -261,8 +264,8 @@ and tested; Ministries only has to call them):
   sensitive): a Ministries method that, for someone who may give Member there, finds people by name
   and returns names with a masked email to tell two Sams apart. It needs an in-process people lookup
   from Accounts, the server-side twin of `IPeopleDirectory`.
-- **Ministry names** for "In Children's Ministry": Ministries implements `IScopeNames` in
-  Platform.Client; until then the place shows the ministry's id.
+- **Ministry names** for "In Children's Ministry": Ministries registers an `IScopeNamer` for
+  `ScopeKind.Ministry` in Platform.Client, as Configuration's `DraftScopeNames` does for drafts.
 
 ## Open
 

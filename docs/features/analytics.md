@@ -271,7 +271,7 @@ Platform, because every feature records counts and features can't reference each
 - **`IUsage`** in Platform.Client records counts. The Analytics feature implements the counters and
   the reporting, and the app works without it (a host that leaves Analytics out gets a no-op).
 - **Subject names** ("Job 33: The breath of the Almighty" rather than an id) come through a small
-  interface each feature implements, as `IScopeNames` does for places.
+  interface each feature implements, as `IScopeNamer` does for places.
 - **Services:** `Analytics.Report` and `Diagnostics.Report` (`[Public]`, later `[AppInstall]`);
   `Insights.GetSummary`, `Insights.GetTop`, `Insights.GetSeen` (`[Requires("analytics.view")]`);
   `Health.ListErrorKinds`, `Health.GetErrorKind` (`[Requires("analytics.health.view")]`). All gRPC, so

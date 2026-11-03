@@ -276,7 +276,8 @@ person, and 60 days for the public feed.
     per-group daily limit on posting (life-groups.md).
   - A kind that doesn't say is `EveryOne`; the limit is opt-in, not a default.
 - **Quiet hours** (decision 7): a non-urgent push due between 21:00 and 07:00 church time
-  (`ChurchTime`) waits until 07:00, collapsed with anything else waiting for that person.
+  (`ChurchTime`) waits until 07:00, collapsed with anything else waiting for that person. The rule is
+  `QuietHours` in Notifications.Contracts, so the server and the Announcements desk use the same one.
 
 ### Opening what was tapped (decision 8)
 
@@ -372,7 +373,9 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
   day and a time in church words, what it opens, urgent), beside a lock-screen proof
   (`LockScreenProof`). It saves as you type (`SaveStatus`, as Drafts does). *Send* opens a confirm
   sheet with the proof, the reach and the time, and warns at 0 phones; afterwards it says
-  "Sent to about 240 phones at 9:14am". A sent one shows how many people have read it (signed-in
+  "Sent to about 240 phones at 9:14am". When quiet hours will hold a non-urgent one, the When note, the
+  confirm sheet (which then carries the Urgent switch) and the sent or scheduled line say when phones
+  get it: "Phones get this at 7am (quiet hours). Turn on Urgent to send it now." (2026-11-04). A sent one shows how many people have read it (signed-in
   readers; phones not signed in aren't counted). Older sent ones are in a *Sent earlier* table.
   Scheduled ones show on Home's week, waiting-to-send under *Needs you* and as the sidebar count
   (`AnnouncementsOfficeWeek`). The list follows the `notifications.announcements` marker feed (for
