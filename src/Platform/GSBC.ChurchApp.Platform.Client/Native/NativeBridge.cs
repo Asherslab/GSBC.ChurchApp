@@ -18,6 +18,14 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public string? AppBuild { get; private set; }
 
+    public string? Platform { get; private set; }
+
+    public int OsMajor { get; private set; }
+
+    public event Action<bool>? AppStateChanged;
+
+    public event Action? CrashesArrived;
+
     public async Task InitialiseAsync()
     {
         IsNative = await js.InvokeAsync<bool>("gsbcNative.isNative");
@@ -27,8 +35,11 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
         IsDevelopmentBuild = await js.InvokeAsync<bool>("gsbcNative.isDevelopmentBuild");
         SignedIn = await js.InvokeAsync<bool>("gsbcNative.isSignedIn");
         (AppVersion, AppBuild) = await js.InvokeAsync<NativeAppVersion>("gsbcNative.appVersion");
+        (Platform, OsMajor) = await js.InvokeAsync<NativeDevice>("gsbcNative.device");
         _receiver = DotNetObjectReference.Create(this);
         await js.InvokeVoidAsync("gsbcNative.listenSession", _receiver);
+        await js.InvokeVoidAsync("gsbcNative.listenAppState", _receiver);
+        await js.InvokeVoidAsync("gsbcNative.listenCrashes", _receiver);
     }
 
     public async Task OpenLinksWithAsync(Action<string> open)
@@ -44,6 +55,8 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public ValueTask ForgetSessionAsync() => IsNative ? js.InvokeVoidAsync("gsbcNative.signOut") : ValueTask.CompletedTask;
 
+    public ValueTask<string> TakeCrashesAsync() => js.InvokeAsync<string>("gsbcNative.takeCrashes");
+
     public ValueTask<NativeUnaryResult> UnaryAsync(string method, byte[] request, CancellationToken cancellationToken) =>
         js.InvokeAsync<NativeUnaryResult>("gsbcNative.unary", cancellationToken, method, Convert.ToBase64String(request));
 
@@ -57,9 +70,17 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
     [JSInvokable]
     public void OnLinkOpened(string path) => _openLink?.Invoke(path);
 
+    [JSInvokable]
+    public void OnAppStateChanged(bool active) => AppStateChanged?.Invoke(active);
+
+    [JSInvokable]
+    public void OnCrashesArrived() => CrashesArrived?.Invoke();
+
     public void Dispose() => _receiver?.Dispose();
 }
 
 public sealed record NativeAppVersion(string? Version, string? Build);
+
+public sealed record NativeDevice(string? Platform, int OsMajor);
 
 public sealed record NativeUnaryResult(int Status, string? Message, string? Response);

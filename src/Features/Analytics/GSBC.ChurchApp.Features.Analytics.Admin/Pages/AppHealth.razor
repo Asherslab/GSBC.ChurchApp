@@ -1,0 +1,83 @@
+@page "/health"
+@page "/health/{Id:guid}"
+@inject HealthClient Health
+@inject NavigationManager Navigation
+@inject TimeProvider Time
+
+<TitleBand Title="App health" Lead="@Lead">
+    <Actions>
+        <Segmented TValue="int" Label="How far back" Options="Windows" Value="_days" ValueChanged="ChangeWindowAsync" />
+    </Actions>
+</TitleBand>
+
+<LiveData @ref="_live" TValue="HealthOverview" Load="LoadAsync" FailedTitle="Can't load app health right now">
+    @{ _environment = context.Value.Environment; }
+    <SplitView Detail="@Detail(context.Value)" DetailLabel="Error">
+        <Section First="true" Title="Errors" Lead="Grouped by kind: the same error from many phones is one line. Nothing in them identifies a person.">
+            <DataTable TItem="ErrorKindSummary" Label="Errors" Items="context.Value.Kinds" Columns="KindColumns" Key="kind => kind.Id.ToString()"
+                       Selected="Chosen(context.Value)" SelectedChanged="Choose" SortColumn="4" SortDescending="true">
+                <Empty>
+                    <EmptyState Icon="shield-check" Title="No errors" Body="@($"Nothing has gone wrong in the last {_days} days.")" />
+                </Empty>
+            </DataTable>
+        </Section>
+        <Section Title="Failed calls" Lead="Calls to the server that didn't succeed, counted by the server and by the phones. Some are expected, such as an ended session.">
+            <DataTable TItem="FailedCallSummary" Label="Failed calls" Items="context.Value.FailedCalls" Columns="CallColumns"
+                       Key="CallKey" SortColumn="3" SortDescending="true">
+                <Empty>
+                    <EmptyState Icon="check" Title="No failed calls" Body="@($"Every call in the last {_days} days succeeded.")" />
+                </Empty>
+            </DataTable>
+        </Section>
+    </SplitView>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<int>> Windows = [new(7, "7 days"), new(30, "30 days")];
+
+    private LiveData<HealthOverview>? _live;
+    private int _days = 7;
+    private string? _environment;
+
+    [Parameter] public Guid? Id { get; set; }
+
+    private string Lead => $"Errors from the app, the admin panel and the server{(_environment is null ? "" : $" on {_environment}")}, newest first. A kind of error is kept until it hasn't happened for 30 days.";
+
+    private Task<HealthOverview> LoadAsync() => Health.GetOverviewAsync(_days).AsTask();
+
+    private async Task ChangeWindowAsync(int days)
+    {
+        _days = days;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private ErrorKindSummary? Chosen(HealthOverview overview) => overview.Kinds.FirstOrDefault(kind => kind.Id == Id);
+
+    private RenderFragment? Detail(HealthOverview overview) => Id is { } id
+        ? @<ErrorKindPanel @key="id" Id="id" />
+        : null;
+
+    private void Choose(ErrorKindSummary kind) => Navigation.NavigateTo($"health/{kind.Id}", new NavigationOptions { ReplaceHistoryEntry = true });
+
+    private IReadOnlyList<TableColumn<ErrorKindSummary>> KindColumns =>
+    [
+        new("What", kind => @<span class="role-name"><span class="cell-strong">@HealthWords.ShortType(kind.ExceptionType)</span>@if (kind.NativeCrash) {<Pill Tone="PillTone.Marker">Crash</Pill>}@if (kind.OnlyDevelopmentBuilds) {<Pill Tone="PillTone.Accent">Dev builds</Pill>}</span>, kind => HealthWords.ShortType(kind.ExceptionType)),
+        new("Where", kind => @<span class="quiet health-where">@HealthWords.ShortFrame(kind.Where)</span>, null, "optional"),
+        new("From", kind => @<span class="quiet">@HealthWords.Origin(kind.Origin)</span>, kind => HealthWords.Origin(kind.Origin)),
+        new("Times", kind => @<span>@kind.Count</span>, kind => kind.Count, "num"),
+        new("Last seen", kind => @<span class="quiet">@When(kind.LastSeen)</span>, kind => kind.LastSeen, "num"),
+    ];
+
+    private static IReadOnlyList<TableColumn<FailedCallSummary>> CallColumns =>
+    [
+        new("Call", call => @<span class="cell-strong health-where">@HealthWords.Method(call.Method)</span>, call => call.Method),
+        new("Result", call => @<span class="quiet">@HealthWords.Status(call.Status)</span>, call => HealthWords.Status(call.Status)),
+        new("Seen by", call => @<span class="quiet">@HealthWords.Origin(call.Origin)</span>, call => HealthWords.Origin(call.Origin), "optional"),
+        new("Times", call => @<span>@call.Count</span>, call => call.Count, "num"),
+    ];
+
+    private static string CallKey(FailedCallSummary call) => $"{call.Origin}|{call.Method}|{call.Status}";
+
+    private string When(DateTime utc) => ChurchDates.Describe(utc, DateLineStyle.Relative, withTime: true, Time.GetUtcNow().UtcDateTime);
+}

@@ -95,11 +95,21 @@ flowchart LR
         ConfigurationClient["Features.Configuration.Client"]
         ConfigurationApi["Features.Configuration.Api"]
         ConfigurationContracts["Features.Configuration.Contracts"]
+    end
+
     subgraph Media["Features / Media"]
         MediaAdmin["Features.Media.Admin"]
         MediaClient["Features.Media.Client"]
         MediaApi["Features.Media.Api"]
         MediaContracts["Features.Media.Contracts"]
+    end
+
+    subgraph Analytics["Features / Analytics"]
+        AnalyticsApp["Features.Analytics.App"]
+        AnalyticsAdmin["Features.Analytics.Admin"]
+        AnalyticsClient["Features.Analytics.Client"]
+        AnalyticsApi["Features.Analytics.Api"]
+        AnalyticsContracts["Features.Analytics.Contracts"]
     end
 
     subgraph ReleaseNotes["Features / ReleaseNotes"]
@@ -127,15 +137,16 @@ flowchart LR
         AccessTests["Features.Access.Api.Tests"]
         ConfigurationTests["Features.Configuration.Api.Tests"]
         MediaTests["Features.Media.Api.Tests"]
+        AnalyticsTests["Features.Analytics.Api.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -160,6 +171,12 @@ flowchart LR
     MediaApi --> MediaContracts & PlatformApi & PlatformStorage
     MediaContracts --> PlatformContracts
 
+    AnalyticsApp --> AnalyticsClient
+    AnalyticsAdmin --> AnalyticsClient
+    AnalyticsClient --> AnalyticsContracts & PlatformClient & PlatformUi & PlatformCommon
+    AnalyticsApi --> AnalyticsContracts & PlatformApi & PlatformCommon
+    AnalyticsContracts --> PlatformContracts
+
     ReleaseNotesApp --> PlatformUi & ReleaseNotesGenerator
 
     PlatformUi --> PlatformClient & PlatformCommon
@@ -175,6 +192,7 @@ flowchart LR
     AccessTests --> AccessApi
     ConfigurationTests --> ConfigurationApi
     MediaTests --> MediaApi
+    AnalyticsTests --> AnalyticsApi
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -200,9 +218,9 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), and rich text (`RichText`, its parser and save rules) | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), and media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration) | Yes |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), and media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration) | Yes |
 | `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor` and `MediaChooser` | Yes |
-| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, and `IMediaReferences` (the check features call on every `MediaRef` they save) | No |
+| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, `IPermissionHolders` and `IAccountEmails` (who holds a node, and their addresses), and `IMediaReferences` (the check features call on every `MediaRef` they save) | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2 in production, SeaweedFS in development): public and private buckets, signed links, copies with cache headers, content-addressed keys | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
@@ -225,6 +243,11 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Media.Api` | Uploads through signed R2 links, checked and named by their SHA-256, with dimensions read from the bytes; signed links to private media for whoever holds its audience; `IMediaReferences` and which records use which file; deleting unused files (schema `media`) | No |
 | `GSBC.ChurchApp.Features.Media.Client` | Media's gRPC proxies, uploading, private links behind `IPrivateMediaLinks`, and the shared `MediaUpload` and `MediaLibrary` components (`MediaLibrary` is also the `MediaPicker`) | Yes |
 | `GSBC.ChurchApp.Features.Media.Admin` | The Media library page | Yes |
+| `GSBC.ChurchApp.Features.Analytics.Contracts` | The `Diagnostics` and `Health` services, their messages, `StackSummary` (an exception's type and our method names, with no paths or messages) and the `analytics.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Analytics.Api` | Error reports grouped into kinds, failed calls from the server's own interceptor and from the phones, an email to `analytics.health.view` holders when a new kind appears, the Insights viewer role, and pruning (schema `analytics`) | No |
+| `GSBC.ChurchApp.Features.Analytics.Client` | The error reporter behind `IClientDiagnostics` (unhandled exceptions, failed calls, native crashes, sent through the quiet outbox on the phone), the "Help improve the app" consent, and Analytics' gRPC proxies | Yes |
+| `GSBC.ChurchApp.Features.Analytics.App` | The phone's "Help improve the app" page: the switch and the privacy notice | Yes |
+| `GSBC.ChurchApp.Features.Analytics.Admin` | The App health page | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
@@ -239,6 +262,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores; images in settings are the library's; unsafe rich text is never stored | No |
 | `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience, a saved `MediaRef` is the library's, dimensions come from the bytes, files in use can't be deleted | No |
+| `GSBC.ChurchApp.Features.Analytics.Api.Tests` | Against Postgres: one kind per error however many phones report it, a resent report counts once, the owner hears once per new kind, only the app and admin panel may report and only about recent days, failed calls add up, errors go after 30 days; stack summaries keep no paths or build numbers | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |

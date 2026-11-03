@@ -1,0 +1,8 @@
+.health-where { overflow-wrap: anywhere; }
+.health-title { overflow-wrap: anywhere; }
+.health-code { font-family: ui-monospace, "SF Mono", Menlo, monospace; overflow-wrap: anywhere; }
+.health-frames { display: grid; gap: 6px; margin: 8px 0 0; padding: 0 0 0 20px; font-size: var(--text-caption); }
+.health-frames code { overflow-wrap: anywhere; }
+
+.privacy-copy { display: grid; gap: 12px; max-width: 65ch; }
+.privacy-copy p { margin: 0; color: var(--ink); font-size: var(--text-body); line-height: 1.5; }

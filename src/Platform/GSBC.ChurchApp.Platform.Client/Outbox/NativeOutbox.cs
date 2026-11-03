@@ -26,8 +26,20 @@ public sealed class NativeOutbox(NativeBridge bridge, IJSRuntime js) : IOutbox, 
 
     public async ValueTask<string> EnqueueAsync(string method, byte[] request) =>
         IsAvailable
-            ? await js.InvokeAsync<string>("gsbcNative.enqueue", method, Convert.ToBase64String(request))
+            ? await js.InvokeAsync<string>("gsbcNative.enqueue", method, Convert.ToBase64String(request), false)
             : throw new InvalidOperationException("Queued writes need the phone app's data layer.");
+
+    public async ValueTask EnqueueQuietlyAsync(string method, byte[] request)
+    {
+        if (IsAvailable)
+            await js.InvokeAsync<string>("gsbcNative.enqueue", method, Convert.ToBase64String(request), true);
+    }
+
+    public async ValueTask DiscardQuietAsync()
+    {
+        if (IsAvailable)
+            await js.InvokeVoidAsync("gsbcNative.discardQuietOutbox");
+    }
 
     public ValueTask<string> EnqueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request, TypeModel model)
     {

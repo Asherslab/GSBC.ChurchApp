@@ -12,6 +12,7 @@ window.gsbcNative = (() => {
     status: () => dataLayer().status().then((result) => result.state),
     isDevelopmentBuild: () => isNative() && dataLayer().status().then((result) => !!result.developmentBuild),
     isSignedIn: () => isNative() && dataLayer().status().then((result) => !!result.signedIn),
+    device: () => (isNative() ? dataLayer().status().then((result) => ({ platform: result.platform || null, osMajor: result.osMajor || 0 })) : { platform: null, osMajor: 0 }),
     appVersion: () => (isNative() ? dataLayer().status().then((result) => ({ version: result.version || null, build: result.build || null })) : { version: null, build: null }),
     preference: (key) => {
       if (isNative()) return dataLayer().preference({ key }).then((result) => result.value ?? null);
@@ -25,7 +26,9 @@ window.gsbcNative = (() => {
     readPage: (feed, order, descending, limit, offset, groupKey) =>
       dataLayer().readPage({ feed, order, descending, limit, offset, groupKey }).then((result) => result.json),
     storeInfo: () => dataLayer().storeInfo().then((result) => result.json),
-    enqueue: (method, request) => dataLayer().enqueue({ method, request }).then((result) => result.id),
+    enqueue: (method, request, quiet) => dataLayer().enqueue({ method, request, quiet }).then((result) => result.id),
+    discardQuietOutbox: () => dataLayer().discardQuietOutbox(),
+    takeCrashes: () => (isNative() ? dataLayer().takeCrashes().then((result) => result.json) : '[]'),
     outbox: () => dataLayer().outbox().then((result) => result.json),
     retryOutbox: (id) => dataLayer().retryOutbox({ id }),
     discardOutbox: (id) => dataLayer().discardOutbox({ id }),
@@ -43,6 +46,12 @@ window.gsbcNative = (() => {
     },
     listenLinks: (receiver) => {
       dataLayer().addListener('linkOpened', (event) => receiver.invokeMethodAsync('OnLinkOpened', event.path));
+    },
+    listenCrashes: (receiver) => {
+      dataLayer().addListener('crashesArrived', () => receiver.invokeMethodAsync('OnCrashesArrived'));
+    },
+    listenAppState: (receiver) => {
+      dataLayer().addListener('appStateChanged', (event) => receiver.invokeMethodAsync('OnAppStateChanged', !!event.active));
     },
     listenOutbox: (receiver) => {
       dataLayer().addListener('outboxChanged', () => receiver.invokeMethodAsync('OnOutboxChanged'));
