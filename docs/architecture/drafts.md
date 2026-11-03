@@ -153,6 +153,9 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
 - **Drafts are made and edited in the admin panel only;** the app has no Drafts screen (owner,
   2026-11-03: admin work stays in the admin panel).
+- **Home screen in a draft is a phone canvas** (2026-11-04): the draft's Home drawn at true width, where
+  tiles are moved, resized and chosen, with the chosen tile's settings beside it
+  ([home.md](../features/home.md), *The admin canvas*).
 - **Home screen and Colours** in the admin panel become read-only views of what everyone sees; *Change it*
   starts a draft, or carries on your open one.
 

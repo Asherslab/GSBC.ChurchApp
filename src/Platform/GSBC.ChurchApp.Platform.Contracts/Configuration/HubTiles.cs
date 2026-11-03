@@ -163,7 +163,8 @@ public sealed record TileDefaults(
     string TextLabel = "Words under it",
     string TitleHelp = "",
     string TextHelp = "",
-    bool TitleRequired = false);
+    bool TitleRequired = false,
+    bool ShowsText = true);
 
 public sealed record TileSettings(
     NumberSetting Columns,

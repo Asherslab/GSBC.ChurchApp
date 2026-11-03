@@ -33,8 +33,10 @@ public static class HubSurfaces
 }
 ```
 
-Besides text, number, yes/no, choice, colour, date and audience, two kinds hold content
-(2026-11-02):
+Besides text, number, yes/no, choice, colour, date and audience, Home added (2026-11-04) a link
+(`LinkSetting`: a place in the app or an https page), an icon (`IconSetting`: built in or
+`custom:<id>`), a focal point (`FocusSetting`) and a cleaned SVG drawing (`SvgIconSetting`, which the
+server normalises on every save through `INormalises`). Two kinds hold content (2026-11-02):
 
 - **`MediaSetting`**: an image (or, with `imagesOnly: false`, any file) from the media library, stored
   as its `MediaRef` in JSON. Settings are public, so it must be a public file.
@@ -86,11 +88,12 @@ form (one input per field kind), audience and dates, and "needs app version X" w
 the page `drafts` (`drafts?area={key}` opens on an area) in both the app and the admin panel. Other
 features link to it by route rather than embedding it, since they can't reference Configuration.
 
-## The first consumer
+## The first consumer: Home
 
-The Hub's **link tile** (`hub.link`): repeatable, with a title, subtitle, link, colour token, a
-"wide" switch and an optional picture. Home will render it for tiles no feature provides, such as the Bible link or a one-off
-campaign. Home itself isn't built yet; when it is, it reads `ISurfaceLayout.ForAreaAsync(HubSurfaces.Area)`.
+The Hub area holds Home's tiles, its grid and uploaded icons: plain tiles, feature tiles that features
+declare (`HubTileKind`, registered with `AddHubTile<TView>`), `hub.grid` and `hub.icon`. Home draws them
+through `HomeScreen` and the tile views, and the drafts workbench arranges them on a phone canvas. All of
+it is in [home.md](home.md). The older link tile (`hub.link`) still draws but isn't offered for new tiles.
 
 ## The second consumer
 
@@ -116,9 +119,7 @@ through the AppHost and on the owner's iPhone.
 
 **Open:**
 
-- **Home renders it properly.** Home lists the Hub's link tiles through `HomeScreen` and
-  `SurfaceViews` (Platform.Ui), which the admin preview shares; build Home on those
-  ([drafts.md](../architecture/drafts.md), *Decided while building*).
+- ~~Home renders it properly~~: built 2026-11-04 ([home.md](home.md)).
 - **The phone holds no grants yet:** Access.Client isn't in the app, so "signed in" and
   permission audiences are hidden there, and the Arrange entry doesn't show, until Access joins the app
   (with its private grants feed, [access.md](access.md)).
@@ -131,6 +132,6 @@ through the AppHost and on the owner's iPhone.
 - **Feed writes by hand:** the editor adds its `sync.feed_changes` rows itself, in the same
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible
   to forget; do it when a second feature writes a feed.
-- A role audience ([data-driven.md](../architecture/data-driven.md)).
+- ~~A role audience~~: built 2026-11-04 through Access's membership grants ([home.md](home.md), *Who sees it*).
 - The media and rich-text field kinds and the theme surface need the API restarted with these changes
   before staff can save them (an unknown surface is refused).

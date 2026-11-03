@@ -107,7 +107,7 @@
 .hub-arrange__size { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: var(--radius-full); background: var(--primary); color: var(--on-primary); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
 .hub-arrange__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page); border-radius: var(--radius-inner); background: var(--marker); cursor: nwse-resize; }
 .hub-canvas--moving .hub-arrange { cursor: grabbing; }
-.hub-cell--lifted { z-index: 5; filter: drop-shadow(0 14px 22px rgb(24 35 58 / 0.28)); }
+.hub-cell--lifted { z-index: 5; filter: drop-shadow(0 14px 22px color-mix(in srgb, var(--ink) 28%, transparent)); }
 .hub-cell--target .hub-arrange { box-shadow: 0 0 0 2px var(--accent); }
 .hub-canvas--sizing .hub-cell:not(.hub-cell--lifted) { opacity: 0.55; }
 

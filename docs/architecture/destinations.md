@@ -30,6 +30,11 @@ Client, as it does for permissions, surfaces and notification kinds. Features ne
   `/x?y`, `/open/x`, or `https://<app host>/open/x`. Two features claiming the same path fail at start-up.
 - `DestinationRules` (Architecture tests) fails when a declared page isn't a route in the app.
 
+**Places that aren't built yet** (2026-11-04): Home's feature tiles open `/sermons`, `/sunday`, `/week`,
+`/prayer`, `/outreach`, `/life-groups` and `/ministries`, declared in `ComingSoonDestinations`
+(Configuration) and drawn by the app's *coming soon* page. A feature built later removes its path there
+and declares its own ([home.md](../features/home.md)).
+
 ## Finding places: one gRPC service
 
 `gsbc.destinations.Destinations` (Platform.Api, `DestinationsService` over `DestinationDirectory`):

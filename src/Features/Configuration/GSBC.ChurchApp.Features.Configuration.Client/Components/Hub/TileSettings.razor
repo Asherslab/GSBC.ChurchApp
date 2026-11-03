@@ -29,7 +29,7 @@
     <fieldset class="tile-settings__group">
         <legend>Size on the grid</legend>
         <div class="tile-settings__steps">
-            @Stepper("Width", Look.Columns, Columns, 1, HubGrid.MostColumns, value => SetAsync(Kind.Tile.Columns, value), "column")
+            @Stepper("Width", Look.Columns, Math.Min(Look.Columns, Columns), 1, HubGrid.MostColumns, value => SetAsync(Kind.Tile.Columns, value), "column")
             @Stepper("Height", Look.Rows, Look.Rows, 1, HubGrid.MostRows, value => SetAsync(Kind.Tile.Rows, value), "row")
         </div>
         @if (Look.Columns > Columns)
@@ -82,8 +82,11 @@
         <legend>Words</legend>
         <TextField Label="@Kind.Tile.Title.Label" Value="@Draft.Values[Kind.Tile.Title.Key]" ValueChanged="value => SetAsync(Kind.Tile.Title.Key, value)"
                    MaxLength="Kind.Tile.Title.MaxLength" Hint="@NullIfEmpty(Kind.Tile.Title.Help)" Problem="@Kind.Tile.Title.ProblemWith(Draft.Values[Kind.Tile.Title.Key])" />
-        <TextField Label="@Kind.Tile.Text.Label" Value="@Draft.Values[Kind.Tile.Text.Key]" ValueChanged="value => SetAsync(Kind.Tile.Text.Key, value)"
-                   MaxLength="Kind.Tile.Text.MaxLength" Hint="@NullIfEmpty(Kind.Tile.Text.Help)" />
+        @if (Kind.Defaults.ShowsText)
+        {
+            <TextField Label="@Kind.Tile.Text.Label" Value="@Draft.Values[Kind.Tile.Text.Key]" ValueChanged="value => SetAsync(Kind.Tile.Text.Key, value)"
+                       MaxLength="Kind.Tile.Text.MaxLength" Hint="@NullIfEmpty(Kind.Tile.Text.Help)" />
+        }
         @foreach (Setting setting in Kind.Surface.Settings.Except(Kind.Tile.All))
         {
             <SettingInput Setting="setting" Value="@Draft.Values[setting.Key]" ValueChanged="value => SetAsync(setting.Key, value)" />

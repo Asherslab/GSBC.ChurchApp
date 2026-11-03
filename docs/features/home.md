@@ -1,0 +1,150 @@
+# Home: the Hub the church arranges
+
+The app's Home is a grid of tiles that staff arrange in the admin panel, in a draft, without a release.
+Asked for by the owner on 2026-11-04 ("each tile on the hub configurable/addable … size/columns/rows,
+what it says, images, links … colours based on the theme … icons uploaded as custom SVGs"). It is built
+on Configuration's surfaces and the drafts system ([configuration.md](configuration.md),
+[drafts.md](../architecture/drafts.md)); there is no parallel store.
+
+## What people can do
+
+| Who | Can |
+|---|---|
+| Everyone (the phone) | See Home as arranged: tiles of different sizes in the theme's colours, each opening its place; offline and live |
+| `config.hub.edit` | In a draft: add, move, resize and recolour tiles on a phone canvas, set their words, picture, icon, link, audience and dates, upload SVG icons, set the grid's columns |
+| `config.hub.publish` | Publish the draft, or turn it on for an event |
+
+## Tiles
+
+Every tile is a repeatable surface in the Hub area (`home.hub`), declared as a `HubTileKind`
+(Platform.Contracts, `HubTiles.cs`). All kinds share one set of settings (`TileSettings`): width and
+height in grid cells, a colour (a theme tone), an icon, its icon colour, a title, a line under it, a
+picture with the part to keep in view, and what it opens. A kind can add settings of its own (This
+week has *How many to show*).
+
+- **Plain tile** (`hub.tile`, Platform.Contracts): staff write everything.
+- **Feature tiles:** the feature fills the content and staff set the look and the words around it.
+  - **Notifications** (`hub.notifications`, owned by Notifications): real. "3 unread" with the newest
+    title and the unread dot, or the staff's words when nothing is unread.
+  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Latest
+    sermon (cover and play), Sunday bulletin (date, the year's theme and verse), This week (the next
+    gatherings from the church's weekly rhythm), Prayer, Outreach day, Life Groups and Ministries show
+    sample content; Give, Bible and Visit us are words and a link. When Sermons (and so on) is built,
+    it takes its kind and view into its own feature and replaces the sample.
+- The old **link tile** (`hub.link`) still draws, as a tile, for placements made before; it isn't offered
+  for new tiles.
+
+A kind's view is registered with `AddHubTile<TView>(kind)` (Platform.Ui), which also registers the
+surface, so a tile kind without a view can't exist. Views draw through the shared `HubTile` frame.
+
+### How a tile is drawn
+
+`HubTile` picks the shape from the size, so staff never choose a layout:
+
+- one cell: icon at the top, words at the foot (*square*);
+- wider than one cell, one row: words with the icon at the end (*row*);
+- two rows or more: a poster, with the bulletin's faint mark on dark tones;
+- with a picture (or a feature's cover) and more than one cell: the picture fills the top.
+
+Small cells (a 4-column grid on a narrow phone) drop the line under the title (container query).
+
+### Colours: theme tones, never a hex
+
+A tile's colour is a **tone**, a pair of theme roles (`TileTones`): Shaded (sand on ink), Raised
+(surface with lift), Masthead, Main buttons, Live soft, Live, Marker soft, Marker. The text colour is the
+role the theme pairs with the background (`on-masthead`, `on-primary`, …), which the theme already
+keeps readable, so staff can't make unreadable text. The settings panel shows the tile in light and
+dark and reads the contrast off the render. Icon colours are *Goes with the tile*, Main colour, Links
+and live, Marker, Quiet, or (for uploaded icons) *Its own colours*.
+
+### Uploaded SVG icons
+
+- Staff upload an SVG from a tile's Icon choices. It's read in the browser, cleaned, shown on a sand
+  and a navy tile in light and dark, named, and only then added: an **icon** placement
+  (`hub.icon`, in the Hub area) whose setting holds the cleaned drawing. Tiles refer to it as
+  `custom:<placement id>`. It travels in the public placements feed, so it draws offline at once.
+- **Cleaning** (`SvgIcons.Sanitise`, Platform.Contracts) is an allowlist: shapes, groups, gradients,
+  clip paths and masks; paint, stroke and geometry attributes; `url(#id)` references only. Everything
+  else is dropped: scripts, event attributes, `style`, `foreignObject`, `image`, `use`, `a`, animation,
+  external references, DTDs and entities. The result is stored normalised (a `viewBox`, no size). The
+  server cleans it again on every save (`INormalises`), and the phone cleans before drawing.
+- **Following the theme:** by default every paint becomes `currentColor` (`SvgIcons.Monochrome`), so
+  the icon takes the tile's icon colour; `none` stays, so outlines stay outlines.
+- Why not a Media file: an `<img>` can't take `currentColor`, so the drawing has to be inline, and
+  keeping it in the setting means no second fetch and no offline gap.
+
+### The grid
+
+- `hub.grid` (one per Home) holds the column count: 2 to 4, 2 by default.
+- `HubGrid.Pack` places tiles in order and fills gaps (dense packing, as CSS `grid-auto-flow: dense`
+  would), and the phone draws each tile at its packed cell, so the canvas and every phone agree.
+- **A tile wider than the grid fills the width.** Heights beyond 4 rows are held to 4.
+- A cell is roughly square: its height is the column width, between 88 and 132 points. A tile one row
+  tall that fills the width is as tall as its content (a list row, like This week's entries).
+
+### Who sees it
+
+Everyone, people signed in, or **people in a role**. A role audience is checked through Access: Access
+gives everyone who holds a role (or a role that includes it) a membership grant,
+`roles.held.<role id>` (`RoleMembership`, Platform.Permissions), compiled with their other grants and
+sent to their phone in the grants feed; the phone asks `IAccess` as for any permission. Dates are
+church days, as for every placement.
+
+## The admin canvas
+
+Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the list editor):
+
+- **Toolbar:** Columns (2, 3, 4), Add a tile, **Show it as** (every tile, a visitor, someone signed in,
+  someone in a role a tile is for) and **On** a date.
+- **The phone:** Home drawn by the app's own `HomeScreen` at true width (never smaller than 74%).
+  Click a tile to choose it: an orange outline, its size, and a corner grip. Drag a tile to move it
+  (dropping on another tile takes its place; the phone's screen scrolls near its edges); drag the grip
+  to resize. Keyboard: Tab to a tile, arrows move it, Shift with arrows resizes it; each move is
+  announced.
+- **Not on the phone now:** tiles hidden, outside their dates or for another audience, and tiles taken
+  out in this draft (*Put back*).
+- **Settings:** the chosen tile's proof in light or dark with both contrast readings, size steppers,
+  colour swatches, icon picker and upload, words, picture and the part to keep in view, Opens (a place
+  through the place picker, or a web page), who sees it, its dates and Shown. With nothing chosen: the
+  icons uploaded so far.
+- **Add a tile:** your own (Plain tile) or from the app, each with its size and, where it applies,
+  *Sample until … is built*.
+
+Everything saves into the draft a second after a change, and phones previewing it follow.
+
+Decided on the decision page (`.impeccable/mocks/decision/hub/`), by the build while the owner slept:
+the phone is the canvas (the owner's brief named it), with a list for what the canvas can't show and
+*Show it as* taken from the other two sketches. Direction contracts:
+`.impeccable/surfaces/tures-configuration-client-components-hub-32ff780a.md` (canvas) and
+`.impeccable/surfaces/src-platform-gsbc-churchapp-platform-ui-surfaces.md` (Home).
+
+## Places that aren't built yet
+
+Feature tiles open their place: `/sermons`, `/sunday`, `/week`, `/prayer`, `/outreach`, `/life-groups`
+and `/ministries` are declared in `ComingSoonDestinations` (Configuration) and drawn by the app's
+*coming soon* page. A feature that's built removes its path there and declares its own; two features
+declaring one path fail at start-up, so it can't be forgotten.
+
+## Decided while building (2026-11-04, owner asleep)
+
+- **Tile kinds are surfaces;** the feature that will own a kind declares it. Waiting kinds live in
+  Configuration, which no feature references.
+- **Shapes are automatic** from size and picture, not a staff choice.
+- **Row height is a near-square cell (88 to 132 points),** and a full-width one-row tile fits its content.
+- **SVG icons live in settings, not Media** (see above). Upload size: 200 KB in, 40 KB once cleaned.
+- **A role audience is "holds the role anywhere".** Owner (`*`) holds every role's membership, so the
+  owner sees every role's tiles.
+- **The role list** for the audience picker comes from a new `[SignedIn]` `Access.ListRoleNames`
+  (names and descriptions only).
+- **The light and dark proof** uses the built-in palette in use; a custom theme's colours show on the
+  phone canvas but not in the proof.
+- **The old link tile** isn't offered; existing ones still draw.
+
+## Open
+
+- A custom theme in the light/dark proof.
+- Outreach's live state ("Outreach is on till 3pm") waits for Outreach.
+- Narrow admin windows (under about 1430 px) put the settings under the phone; choosing a tile scrolls
+  them into view. A side-by-side layout there would need the drafts column to fold away.
+- Tests: `HubGridTests`, `SvgIconTests` (Platform.Contracts.Tests), `HubTileTests`
+  (Configuration.Api.Tests), the role membership test in `AccessEvaluatorTests`, `PreviewRules`.

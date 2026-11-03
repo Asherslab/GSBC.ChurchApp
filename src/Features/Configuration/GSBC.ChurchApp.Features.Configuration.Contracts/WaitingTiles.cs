@@ -7,13 +7,13 @@ public static class WaitingTiles
     public static readonly HubTileKind Sermon = new("hub.sermon", "Latest sermon",
         "The newest sermon with its picture and a play button", "Sermons",
         new TileDefaults("Sermons", Columns: 2, Rows: 2, Tone: TileTones.Raised, Link: ComingSoonDestinations.Sermons.Path,
-            TitleLabel: "Title before a sermon is out", TitleHelp: "The sermon's own title shows once there is one"),
+            TitleLabel: "Title before a sermon is out", TitleHelp: "The sermon's own title shows once there is one", ShowsText: false),
         sample: true);
 
     public static readonly HubTileKind Bulletin = new("hub.bulletin", "Sunday bulletin",
         "This Sunday's date, theme and verse, opening the bulletin", "the bulletin",
         new TileDefaults("Read the bulletin", Rows: 2, Tone: TileTones.Masthead, Icon: "bulletin", Link: ComingSoonDestinations.Sunday.Path,
-            TitleLabel: "Words to open it"),
+            TitleLabel: "Words to open it", ShowsText: false),
         sample: true);
 
     public static readonly NumberSetting WeekEntries = new("entries", "How many to show", 2, 1, 4);
