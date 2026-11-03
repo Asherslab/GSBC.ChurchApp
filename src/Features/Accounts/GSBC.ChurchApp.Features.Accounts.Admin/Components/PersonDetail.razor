@@ -8,12 +8,22 @@
 <dl class="facts">
     <dt>Account</dt>
     <dd><PersonState Person="Person" Invitation="Invitation" /></dd>
-    <dt>Joined</dt>
-    <dd><DateLine At="Person.CreatedAt" /></dd>
-    <dt>Passkey</dt>
-    <dd>@(Person.HasPasskey ? "Has one" : "Not made yet")</dd>
-    <dt>Email</dt>
-    <dd>@(Person.EmailConfirmed ? "Confirmed" : "Not confirmed yet")</dd>
+    @if (Invitation is null)
+    {
+        <dt>Joined</dt>
+        <dd><DateLine At="Person.CreatedAt" /></dd>
+        <dt>Passkey</dt>
+        <dd>@(Person.HasPasskey ? "Has one" : "Not made yet")</dd>
+        <dt>Email</dt>
+        <dd>@(Person.EmailConfirmed ? "Confirmed" : "Not confirmed yet")</dd>
+    }
+    else
+    {
+        <dt>Invited by</dt>
+        <dd>@(Invitation.InvitedBy ?? "Not recorded")</dd>
+        <dt>Invited</dt>
+        <dd><DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Short" WithTime="true" /></dd>
+    }
 </dl>
 
 <div class="panel-actions">
@@ -25,7 +35,7 @@
     <section class="panel-section" aria-labelledby="invitation-@Person.Id">
         <h3 class="panel-subtitle" id="invitation-@Person.Id">@(InvitationExpired ? "Their invitation has expired" : "Invited, not accepted yet")</h3>
         <p class="panel-lead">
-            @(Invitation.InvitedBy is { } inviter ? $"{inviter} invited them" : "They were invited") <DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Relative" />.
+            They haven't set up their sign-in yet.
             @if (InvitationExpired)
             {
                 <text>The link stopped working <DateLine At="Invitation.ExpiresAt" Style="DateLineStyle.Relative" />.</text>
@@ -50,22 +60,25 @@
 }
 
 <Can Permission="AccountsPermissions.Manage">
-    <section class="panel-section" aria-labelledby="recovery-@Person.Id">
-        <h3 class="panel-subtitle" id="recovery-@Person.Id">Lost their passkey?</h3>
-        <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
-        @if (_link is not null)
-        {
-            <CopyField Label="Recovery link" Value="@_link.Code" />
-            <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
-        }
-        <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
-    </section>
+    @if (Invitation is null)
+    {
+        <section class="panel-section" aria-labelledby="recovery-@Person.Id">
+            <h3 class="panel-subtitle" id="recovery-@Person.Id">Lost their passkey?</h3>
+            <p class="panel-lead">Make a recovery link and give it to them yourself. It works once, for a short time.</p>
+            @if (_link is not null)
+            {
+                <CopyField Label="Recovery link" Value="@_link.Code" />
+                <p class="panel-hint">Works until <DateLine At="_link.ExpiresAt" Style="DateLineStyle.TimeOnly" />. Making another one stops this one.</p>
+            }
+            <Button Variant="ButtonVariant.Quiet" Icon="link" Busy="_busy" OnClick="IssueAsync">@(_link is null ? "Make a recovery link" : "Make a new link")</Button>
+        </section>
 
-    <section class="panel-section" aria-labelledby="switch-@Person.Id">
-        <h3 class="panel-subtitle" id="switch-@Person.Id">@(Person.Disabled ? "Turned off" : "Turn the account off")</h3>
-        <p class="panel-lead">@(Person.Disabled ? "They can't sign in. Turning it back on lets them use their passkey again." : "They're signed out everywhere and can't sign in until it's turned back on. Nothing they made is deleted.")</p>
-        <Button Variant="@(Person.Disabled ? ButtonVariant.Quiet : ButtonVariant.Danger)" Busy="_busy" OnClick="ToggleAsync">@(Person.Disabled ? "Turn it back on" : "Turn the account off")</Button>
-    </section>
+        <section class="panel-section" aria-labelledby="switch-@Person.Id">
+            <h3 class="panel-subtitle" id="switch-@Person.Id">@(Person.Disabled ? "Turned off" : "Turn the account off")</h3>
+            <p class="panel-lead">@(Person.Disabled ? "They can't sign in. Turning it back on lets them use their passkey again." : "They're signed out everywhere and can't sign in until it's turned back on. Nothing they made is deleted.")</p>
+            <Button Variant="@(Person.Disabled ? ButtonVariant.Quiet : ButtonVariant.Danger)" Busy="_busy" OnClick="ToggleAsync">@(Person.Disabled ? "Turn it back on" : "Turn the account off")</Button>
+        </section>
+    }
 
     <section class="panel-section" aria-labelledby="activity-@Person.Id">
         <h3 class="panel-subtitle" id="activity-@Person.Id">Recent activity</h3>

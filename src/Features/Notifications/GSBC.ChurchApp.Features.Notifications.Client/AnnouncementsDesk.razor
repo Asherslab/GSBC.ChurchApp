@@ -192,7 +192,7 @@
         }
         @if (InQuietHours)
         {
-            <ToggleRow Title="Urgent" Description="@UrgentDescription" Checked="_editing.Urgent" CheckedChanged="value => Change(a => a.Urgent = value)" />
+            <ToggleRow Title="Urgent" Description="Phones buzz straight away and it breaks through Focus." Checked="_editing.Urgent" CheckedChanged="value => Change(a => a.Urgent = value)" />
         }
         <LockScreenProof Title="@_editing.Title" Body="@_editing.Body" TimeSensitive="_editing.Urgent" Date="@Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)" />
         <dl class="announcement-confirm">
@@ -206,7 +206,7 @@
     </ChildContent>
     <Actions>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Back to writing</Button>
-        <Button Icon="send" Busy="_busy" OnClick="SendAsync">@(_later ? "Schedule it" : "Send it now")</Button>
+        <Button Icon="send" Busy="_busy" OnClick="SendAsync">@(_later ? "Schedule it" : QuietUntil is null ? "Send it now" : "Send it")</Button>
     </Actions>
 </Sheet>
 
@@ -280,11 +280,15 @@
 
     private string SendLabel => _later ? "Schedule it" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")}" : "Send it";
 
-    private string ConfirmTitle => _later ? "Schedule this announcement?" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")} now?" : "Send it now?";
+    private string ConfirmTitle => _later ? "Schedule this announcement?" : _reach is { Phones: > 0 } reach ? $"Send to {Count(reach.Phones, "phone")}{Now}?" : $"Send it{Now}?";
+
+    private string Now => QuietUntil is null ? " now" : "";
 
     private string ConfirmLead => _later
         ? "You can still cancel it until it goes."
-        : "It goes straight to people's phones and into the app's notifications. It can't be taken back.";
+        : QuietUntil is null
+            ? "It goes straight to people's phones and into the app's notifications. It can't be taken back."
+            : "It goes into the app's notifications straight away and can't be taken back.";
 
     private DateTime? LaterAt =>
         DateTime.TryParseExact($"{_day} {_time}", $"{DayFormat} {TimeFormat}", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local) && local > ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime)
