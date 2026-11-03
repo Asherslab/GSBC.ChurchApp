@@ -798,8 +798,9 @@ else
         await SaveNowAsync();
         if (_session is null || _session.HasUnsaved)
             return;
-        await Drafts.PublishAsync(_session.Draft.Id);
-        _message = $"Published \"{_session.Draft.Name}\". Phones show it within a few seconds.";
+        Draft publishing = _session.Draft;
+        await Drafts.PublishAsync(publishing.Id);
+        _message = $"Published \"{publishing.Name}\". Phones show it within a few seconds.";
         _session = null;
         _list = await LoadListAsync();
         Navigation.NavigateTo(BasePath);
@@ -845,8 +846,9 @@ else
             _confirmDelete = true;
             return;
         }
-        await Drafts.DeleteAsync(_session!.Draft.Id);
-        _message = $"Deleted \"{_session.Draft.Name}\".";
+        Draft deleting = _session!.Draft;
+        await Drafts.DeleteAsync(deleting.Id);
+        _message = $"Deleted \"{deleting.Name}\".";
         _more = false;
         _session = null;
         _list = await LoadListAsync();
