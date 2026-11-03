@@ -56,8 +56,6 @@
 
     private string DayClass(DateTime date) => date == Today ? "office-rail__day--today" : date < Today ? "office-rail__day--past" : "";
 
-    private const int MomentReach = 3;
-
     private sealed record Placed(OfficeSpan Span, int Row, int First, int Last);
 
     private static bool IsMoment(OfficeSpan span) => span.EndsAt == span.StartsAt;
@@ -68,7 +66,7 @@
         foreach (OfficeSpan span in Spans.OrderBy(span => span.StartsAt))
         {
             int first = Column(span.StartsAt);
-            int last = IsMoment(span) ? Math.Min(first + MomentReach - 1, Days) : Column(LastMoment(span));
+            int last = Column(LastMoment(span));
             List<Placed>? row = rows.FirstOrDefault(placed => placed.All(other => other.Last < first || other.First > last));
             if (row is null)
             {
