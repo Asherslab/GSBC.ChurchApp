@@ -51,7 +51,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
                 .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
                 .Build())
             .AddSingleton(TimeProvider.System)
-            .AddSingleton(new SurfaceCatalog([HubSurfaces.All, AppearanceSurfaces.All, MinistrySurfaces]))
+            .AddSingleton(new SurfaceCatalog([HubSurfaces.All, AppearanceSurfaces.All, MinistrySurfaces, WaitingTiles.Surfaces]))
             .AddSingleton(Permissions)
             .AddSingleton<IAccessEvaluator>(Access)
             .AddSingleton<IRoleAssignments>(Access)
