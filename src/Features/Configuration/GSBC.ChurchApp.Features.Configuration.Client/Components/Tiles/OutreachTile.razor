@@ -1,0 +1,19 @@
+@if (Variant.Key == WaitingTiles.Layouts.JustALink)
+{
+    <HubTile Look="Look" Layout="@(Span.Columns > 1 && Span.Rows == 1 ? TileShape.Row : TileShape.Square)" Title="@Look.Title" PlacementId="@Entry.Placement?.Id" />
+}
+else
+{
+    <HubTile Look="Look" Title="@Look.Title" Lines="@(Span is { Columns: 1, Rows: 1 } ? [] : [Look.Text])" Go="@(Span.Rows > 1 ? "Find a route" : null)" PlacementId="@Entry.Placement?.Id" />
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(WaitingTiles.Outreach, Entry.Values);
+
+    private TileVariant Variant => WaitingTiles.Outreach.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+}

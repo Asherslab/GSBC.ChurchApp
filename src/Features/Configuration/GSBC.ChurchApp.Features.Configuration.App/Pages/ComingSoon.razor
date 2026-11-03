@@ -1,0 +1,23 @@
+@page "/sermons"
+@page "/sunday"
+@page "/week"
+@page "/prayer"
+@page "/outreach"
+@page "/life-groups"
+@page "/ministries"
+@inject NavigationManager Navigation
+
+<Page Title="@Place.Title" BackHref="" BackLabel="Home">
+    <Masthead Title="@Place.Title" Note="Coming soon" />
+    <Section First="true">
+        <EmptyState Icon="@Place.Icon" Title="@($"{Place.Title} is coming")" Body="This part of the app is still being built. When it's ready, this is where it opens.">
+            <Button Variant="ButtonVariant.Quiet" Icon="home" Href="">Back to Home</Button>
+        </EmptyState>
+    </Section>
+</Page>
+
+@code {
+    private GSBC.ChurchApp.Platform.Contracts.Destinations.DestinationPage Place =>
+        ComingSoonDestinations.Pages.FirstOrDefault(page => page.Route == Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/'))
+        ?? ComingSoonDestinations.Sermons;
+}

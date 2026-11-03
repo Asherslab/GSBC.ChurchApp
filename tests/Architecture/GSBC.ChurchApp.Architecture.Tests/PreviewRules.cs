@@ -25,7 +25,7 @@ public sealed class PreviewRules
         SurfaceViews views = new ServiceCollection().AddPlatformUi().BuildServiceProvider().GetRequiredService<SurfaceViews>();
 
         List<string> missing = HubSurfaces.All.Surfaces
-            .Where(surface => views.For(new ArrangedSurface(surface, null)) is null)
+            .Where(surface => !HubSurfaces.IsArrangement(surface) && views.For(new ArrangedSurface(surface, null)) is null)
             .Select(surface => surface.Key)
             .ToList();
 

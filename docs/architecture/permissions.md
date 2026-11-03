@@ -54,6 +54,11 @@ Group round) and a source:
 - **derived:** a feature made it from something else (joining a ministry's team makes you its member),
   and that feature owns it. Elvanto team membership can feed this later.
 
+**Holding a role** (2026-11-04). Compiling someone's grants also gives them a global
+`roles.held.<role id>` grant for each role they hold and each role it includes (`RoleMembership`), so
+"people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't
+in the catalog, so it never shows as an ability; `*` matches it, so the owner is in every role's audience.
+
 ## Checking, on the server
 
 - **Tokens carry who, not what.** The API token holds the user id and session id. Permissions are

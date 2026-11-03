@@ -1,0 +1,69 @@
+@inject IEnumerable<HubTileKind> Kinds
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a tile" Lead="A link tile says whatever you write. A tile from the app is filled by that part of the app, and you choose its look and words. Tiles you saved add as new copies you can change." Wide="true">
+    <ChildContent>
+        @if (Saved.Count > 0)
+        {
+            <h4 class="add-tile__group">Your library</h4>
+            <div class="add-tile__kinds">
+                @foreach (ArrangedSurface saved in Saved)
+                {
+                    HubTileKind? kind = Kinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind));
+                    @if (kind is not null)
+                    {
+                        IReadOnlyDictionary<string, string> values = saved.Values.Get(HubSurfaces.Saved.Tile);
+                        <button type="button" class="add-tile__kind" @onclick="() => OnSaved.InvokeAsync(saved)">
+                            <span class="row__icon row__icon--warm"><Icon Name="@(values.GetValueOrDefault(HubTileKeys.Icon) is { Length: > 0 } icon && !IconSetting.IsCustom(icon, out _) ? icon : kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : "layout")" Size="IconSize.Small" /></span>
+                            <span class="add-tile__words">
+                                <strong>@saved.Values.Get(HubSurfaces.Saved.Name)</strong>
+                                <span>@kind.Surface.Title, as you saved it</span>
+                            </span>
+                            <span class="add-tile__size">@values.GetValueOrDefault(HubTileKeys.Columns, kind.Defaults.Columns.ToString()) × @values.GetValueOrDefault(HubTileKeys.Rows, kind.Defaults.Rows.ToString())</span>
+                        </button>
+                    }
+                }
+            </div>
+        }
+        <h4 class="add-tile__group">Your own</h4>
+        <div class="add-tile__kinds">
+            @foreach (HubTileKind kind in Kinds.Where(kind => kind.IsPlain && kind.Offered))
+            {
+                @Choice(kind)
+            }
+        </div>
+        <h4 class="add-tile__group">From the app</h4>
+        <div class="add-tile__kinds">
+            @foreach (HubTileKind kind in Kinds.Where(kind => !kind.IsPlain && kind.Offered).OrderBy(kind => kind.Sample).ThenBy(kind => kind.Surface.Title, StringComparer.Ordinal))
+            {
+                @Choice(kind)
+            }
+        </div>
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => OpenChanged.InvokeAsync(false)">Cancel</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public EventCallback<HubTileKind> OnChosen { get; set; }
+    [Parameter] public IReadOnlyList<ArrangedSurface> Saved { get; set; } = [];
+    [Parameter] public EventCallback<ArrangedSurface> OnSaved { get; set; }
+
+    private RenderFragment Choice(HubTileKind kind) => __builder =>
+    {
+        <button type="button" class="add-tile__kind" @onclick="() => OnChosen.InvokeAsync(kind)">
+            <span class="row__icon @(kind.IsPlain ? "row__icon--warm" : "row__icon--accent")"><Icon Name="@(kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : "layout")" Size="IconSize.Small" /></span>
+            <span class="add-tile__words">
+                <strong>@kind.Surface.Title</strong>
+                <span>@kind.Surface.Description</span>
+                @if (kind.Sample)
+                {
+                    <Pill>Sample until @kind.From is built</Pill>
+                }
+            </span>
+            <span class="add-tile__size">@kind.Defaults.Columns × @kind.Defaults.Rows</span>
+        </button>
+    };
+}

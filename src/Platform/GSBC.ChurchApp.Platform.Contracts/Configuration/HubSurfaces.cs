@@ -43,5 +43,47 @@ public static class HubSurfaces
             [Title, Subtitle, Link, Colour, Wide, Image], defaultOrder: 1000, repeatable: true);
     }
 
-    public static SurfaceSet All => new([LinkTile.Surface]);
+    public static class Grid
+    {
+        public static readonly NumberSetting Columns = new("columns", "Columns", HubGrid.FewestColumns, HubGrid.FewestColumns, HubGrid.MostColumns,
+            help: "How many columns of tiles Home has on a phone");
+
+        public static readonly Surface Surface = new("hub.grid", Area, "The grid", "How many columns Home's tiles are laid out in",
+            [Columns], defaultOrder: -1000);
+
+        public static int ColumnsIn(IEnumerable<ArrangedSurface> shown) =>
+            shown.FirstOrDefault(entry => entry.Surface.Key == Surface.Key)?.Values.Get(Columns) ?? HubGrid.FewestColumns;
+    }
+
+    public static class Icon
+    {
+        public static readonly TextSetting Name = new("name", "Name", "New icon", required: true, maxLength: 40);
+        public static readonly SvgIconSetting Drawing = new("svg", "Drawing");
+
+        public static readonly Surface Surface = new("hub.icon", Area, "Icon", "A drawing staff uploaded, to use on tiles",
+            [Name, Drawing], defaultOrder: 5000, repeatable: true);
+
+        public static IReadOnlyDictionary<string, string> In(IEnumerable<ArrangedSurface> shown) =>
+            shown.Where(entry => entry.Surface.Key == Surface.Key && entry.Placement is not null)
+                .ToDictionary(entry => IconSetting.Custom(entry.Placement!.Id), entry => entry.Values.Get(Drawing));
+    }
+
+    public static class Saved
+    {
+        public static readonly TextSetting Name = new("name", "Name", "A saved tile", required: true, maxLength: 60);
+        public static readonly KindSetting Kind = new("kind", "Kind of tile");
+        public static readonly TemplateSetting Tile = new("tile", "The tile");
+
+        public static readonly Surface Surface = new("hub.saved", Area, "Saved tile", "A tile kept in the library to add again",
+            [Name, Kind, Tile], defaultOrder: 6000, repeatable: true);
+    }
+
+    public static readonly HubTileKind PlainTile = new("hub.tile", "Link tile",
+        "Your own words, icon, picture and link: Give, the Bible, Visit us, a campaign, a page on the website", "",
+        new TileDefaults("A new tile", Icon: "sparkles", TitleRequired: true));
+
+    public static bool IsArrangement(Surface surface) =>
+        surface.Key == Grid.Surface.Key || surface.Key == Icon.Surface.Key || surface.Key == Saved.Surface.Key;
+
+    public static SurfaceSet All => new([LinkTile.Surface, Grid.Surface, Icon.Surface, Saved.Surface, PlainTile.Surface]);
 }

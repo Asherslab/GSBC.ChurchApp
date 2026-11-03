@@ -41,6 +41,20 @@ public sealed class PermissionInfo
 }
 
 [ProtoContract]
+public sealed class RoleName
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public string Description { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class RoleNameList
+{
+    [ProtoMember(1)] public List<RoleName> Roles { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class RoleList
 {
     [ProtoMember(1)] public List<RoleInfo> Roles { get; set; } = [];

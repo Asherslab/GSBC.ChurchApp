@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Platform.Client.Analytics;
 using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Notifications;
+using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Notifications.Client;
@@ -17,8 +18,10 @@ public static class NotificationsClientExtensions
             .AddSingleton<NotificationPreferences>()
             .AddSingleton<PushRegistration>()
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<PushRegistration>())
-            .AddSingleton<IWeeklyState, PushSetting>();
+            .AddSingleton<IWeeklyState, PushSetting>()
+            .AddHubTile<InboxTile>(NotificationsTiles.Inbox);
 
     public static IServiceCollection AddAnnouncements(this IServiceCollection services) =>
-        services.AddDestinations(NotificationsDestinations.All).AddSingleton(provider => new AnnouncementsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
+        services.AddDestinations(NotificationsDestinations.All).AddHubTile<InboxTile>(NotificationsTiles.Inbox)
+            .AddSingleton(provider => new AnnouncementsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
 }

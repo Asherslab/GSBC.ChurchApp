@@ -1,0 +1,48 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject IServiceProvider Services
+
+@if (Services.GetService(typeof(Inbox)) is Inbox inbox)
+{
+    <LiveData TValue="IReadOnlyList<InboxEntry>" Load="inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+        <ChildContent>@Drawn(context.Value)</ChildContent>
+        <Loading>@Drawn([])</Loading>
+        <Failed>@Drawn([])</Failed>
+    </LiveData>
+}
+else
+{
+    @Drawn([])
+}
+
+@code {
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(NotificationsTiles.Inbox, Entry.Values);
+
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+
+    private RenderFragment Drawn(IReadOnlyList<InboxEntry> entries)
+    {
+        TileLook look = Look;
+        TileSpan span = new(Math.Min(look.Columns, Hub.Columns), look.Rows);
+        List<InboxEntry> unread = entries.Where(entry => entry.Unread).ToList();
+        string variant = NotificationsTiles.Inbox.VariantFor(look, Hub.Columns).Key;
+        string count = $"{unread.Count} unread";
+        if (unread.Count == 0)
+            return @<HubTile Look="look" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />;
+        return variant switch
+        {
+            NotificationsTiles.Newest => @<HubTile Look="@(look with { Icon = "" })" Title="@unread[0].Item.Title" Lines="[count, unread[0].Item.Body]" Unread="true" Class="hub-tile--newest" PlacementId="@Entry.Placement?.Id" />,
+            NotificationsTiles.Dots => @<HubTile Look="@(look with { Icon = "" })" Layout="TileShape.Square" Title="@count" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
+                <span class="hub-dots">
+                    @foreach (InboxEntry entry in unread.Take(span.Rows > 1 ? span.Rows * 2 : 2))
+                    {
+                        <span class="hub-dots__item"><i class="hub-tile__dot" aria-hidden="true"></i>@entry.Item.Title</span>
+                    }
+                </span>
+            </HubTile>,
+            _ => @<HubTile Look="@(look with { IconTone = "warm" })" Title="@count" Lines="[unread[0].Item.Title]" Unread="true" PlacementId="@Entry.Placement?.Id" />,
+        };
+    }
+}

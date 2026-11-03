@@ -19,14 +19,14 @@ public static class ConfigurationApiExtensions
         services.AddConfigurationData();
         services.AddScoped<PlacementEditor>();
         services.AddScoped<DraftEditor>();
-        services.AddDestinations(ConfigurationDestinations.All);
+        services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All);
         services.AddPermissions(HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, ConfigurationPermissions.PreviewDraft);
         services.AddSystemRole(new SystemRole(ConfigurationPermissions.DraftReviewerRole, "Draft reviewer",
             "Sees a draft on their phone before it's published", ScopeKind.Draft, [ConfigurationPermissions.PreviewDraft.Node], AssignableBy: []));
         services.AddSystemRole(new SystemRole("app-editor", "App editor",
             "Arranges the app's Home screen and colours, sees every draft, and publishes", ScopeKind.Global, ["config.*"]));
         services.AddNotificationKinds(DraftNotifications.All);
-        services.AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All);
+        services.AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All).AddSurfaces(WaitingTiles.Surfaces);
         services.AddMeasures(HubSurfaces.TileTapped);
         services.AddScoped<ISubjectNames, HubTileNames>();
         services.AddFeed(new FeedDefinition(ConfigurationFeeds.Placements, FeedAudience.Public));

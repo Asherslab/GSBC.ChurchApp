@@ -1,0 +1,26 @@
+@if (IconSetting.IsCustom(Look.Icon, out _))
+{
+    @if (Hub.Icons.GetValueOrDefault(Look.Icon) is { } drawing)
+    {
+        <span class="row__icon hub-icon @ToneClass"><SvgIcon Drawing="@drawing" OwnColours="@(Look.IconTone == IconTones.Own)" /></span>
+    }
+}
+else if (Look.Icon.Length > 0)
+{
+    <span class="row__icon hub-icon @ToneClass"><Icon Name="@Look.Icon" Size="IconSize.Small" /></span>
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+
+    [Parameter, EditorRequired] public required TileLook Look { get; set; }
+
+    private string ToneClass => Look.IconTone switch
+    {
+        "primary" => "hub-icon--primary",
+        "accent" => "row__icon--accent",
+        "warm" => "row__icon--warm",
+        "quiet" => "row__icon--quiet",
+        _ => Look.Tone.Dark ? "hub-icon--on-dark" : Look.Tone == TileTones.LiveSoft ? "row__icon--accent" : Look.Tone == TileTones.MarkerSoft ? "row__icon--warm" : "",
+    };
+}

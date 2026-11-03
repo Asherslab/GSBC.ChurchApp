@@ -74,7 +74,7 @@ public sealed record SurfaceSet(IReadOnlyList<Surface> Surfaces);
 public sealed class SurfaceCatalog(IEnumerable<SurfaceSet> sets)
 {
     public IReadOnlyDictionary<string, Surface> ByKey { get; } =
-        sets.SelectMany(set => set.Surfaces).ToDictionary(surface => surface.Key);
+        sets.SelectMany(set => set.Surfaces).Distinct().ToDictionary(surface => surface.Key);
 
     public IReadOnlyDictionary<string, SurfaceArea> Areas =>
         ByKey.Values.Select(surface => surface.Area).DistinctBy(area => area.Key).ToDictionary(area => area.Key);

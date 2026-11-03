@@ -1,15 +1,42 @@
-<SelectField Label="@Label" Options="Options" Value="@Value" ValueChanged="ValueChanged" />
+@inject IServiceProvider Services
+
+<SelectField Label="@Label" Options="Options" Value="@Value" ValueChanged="ValueChanged" Hint="@Hint" />
 
 @code {
+    private static IReadOnlyList<RoleSummary>? _roles;
+
     [Parameter] public string Label { get; set; } = "Who sees it";
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private string? Hint => Audience.TryParse(Value, out Audience? current) && current.RoleId is not null
+        ? "Anyone who holds this role, wherever it was given. Roles are given under Access."
+        : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_roles is null && Services.GetService(typeof(IRoleDirectory)) is IRoleDirectory directory)
+        {
+            try
+            {
+                _roles = await directory.ListAsync();
+            }
+            catch (RpcException)
+            {
+                _roles = [];
+            }
+        }
+    }
 
     private IReadOnlyList<FieldOption> Options =>
     [
         new(Audience.Everyone.Text, "Everyone"),
         new(Audience.SignedIn.Text, "People who are signed in"),
-        .. Audience.TryParse(Value, out Audience? current) && current.Node is not null
+        .. (_roles ?? []).Select(role => new FieldOption(Audience.HoldingRole(role.Id).Text, $"People who are {role.Name}")),
+        .. Audience.TryParse(Value, out Audience? current) && current is { RoleId: { } role } && (_roles ?? []).All(known => known.Id != role)
+            ? [new FieldOption(Value, "People in a role that's since been removed")]
+            : Array.Empty<FieldOption>(),
+        .. Audience.TryParse(Value, out Audience? held) && held is { Node: not null, RoleId: null }
             ? [new FieldOption(Value, "Only people with a particular permission")]
             : Array.Empty<FieldOption>(),
     ];

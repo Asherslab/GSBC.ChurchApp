@@ -766,6 +766,21 @@
         "displayName": "Masthead Tint",
         "canonical": "rgb(255 255 255 / 0.12)",
         "roleHint": "Ghost-on-masthead fills, the admin sidebar current link and hover (at 60%), the rule above the sidebar foot group. 10% in dark."
+      },
+      "on-marker": {
+        "role": "tertiary",
+        "displayName": "On Marker",
+        "canonical": "#2a1a08",
+        "tonalRamp": [
+          "#1a0f03",
+          "#2a1a08",
+          "#4a3216",
+          "#6e4e2b",
+          "#957047",
+          "#bc9670",
+          "#dfc0a0",
+          "#f6e8da"
+        ]
       }
     },
     "typographyMeta": {
@@ -862,6 +877,11 @@
         "name": "device-frame",
         "value": "0 0 0 9px var(--device-bezel), var(--lift)",
         "purpose": "The phone frame: a 9px bezel ring drawn as a spread, then the lift."
+      },
+      {
+        "name": "drag-lift",
+        "value": "filter: drop-shadow(0 14px 22px color-mix(in srgb, var(--ink) 28%, transparent))",
+        "purpose": "A Home tile while it is moved or resized on the admin Hub canvas, nowhere else."
       }
     ],
     "motion": [
@@ -999,6 +1019,31 @@
       "packing": "each capsule takes the highest band where it doesn't touch another",
       "moment": "a span whose end equals its start reserves its day and the next two (clipped at the rail's end), shows a two-line title and the time alone",
       "selected": "outline: 2px solid var(--marker); outline-offset: 2px"
+    },
+    "hubGrid": {
+      "columns": "2 to 4 (2 by default)",
+      "gap": "12px",
+      "row": "min(132px, max(88px, one column's width))",
+      "tileSpan": "1 to 4 columns by 1 to 4 rows",
+      "narrowTile": "at 112px or less: no lines, title at label size, 12px padding",
+      "tones": [
+        "sand",
+        "raised",
+        "masthead",
+        "primary",
+        "live-soft",
+        "live",
+        "marker-soft",
+        "marker"
+      ],
+      "shapes": [
+        "square",
+        "row",
+        "poster",
+        "picture",
+        "behind",
+        "beside"
+      ]
     }
   },
   "components": [
@@ -1225,11 +1270,35 @@
       "description": "The phone column's actions: the place's own change action as primary, the Copy link capsule, then quiet actions; the link and a note as captions.",
       "html": "<div class=\"ds-pa\"><h2 class=\"ds-pa__title\">Home</h2><p class=\"ds-pa__where\">The first tab</p><div class=\"ds-pa__actions\"><a class=\"ds-pa__btn ds-pa__btn--primary\" href=\"#\">Change it in a draft</a><button class=\"ds-pa__btn\" type=\"button\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71\"/><path d=\"M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71\"/></svg>Copy link</button><a class=\"ds-pa__btn\" href=\"#\">Announce it</a></div><p class=\"ds-pa__link\">app.example.org/open</p><p class=\"ds-pa__note\">On a phone with the app, the link opens it there. Anyone else is shown how to get the app.</p></div>",
       "css": ".ds-pa { display: grid; gap: 6px; justify-items: center; max-width: 440px; text-align: center; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-pa__title { margin: 0; color: var(--ink, #18233a); font-size: 20px; font-weight: 700; letter-spacing: -0.015em; } .ds-pa__where, .ds-pa__link { margin: 0; color: var(--ink-2, #545e70); font-size: 14px; } .ds-pa__link { font-variant-numeric: tabular-nums; overflow-wrap: anywhere; } .ds-pa__note { max-width: 40ch; margin: 0; color: var(--ink-3, #6b7384); font-size: 14px; } .ds-pa__actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin: 10px 0 4px; } .ds-pa__btn { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1); background: var(--sand, #f4efe7); color: var(--ink, #18233a); text-decoration: none; } .ds-pa__btn--primary { background: var(--primary, #2a3d5e); color: var(--on-primary, #ffffff); } .ds-pa__btn:active { transform: scale(0.96); } .ds-pa__btn:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Hub tiles",
+      "kind": "card",
+      "refersTo": "hub-tile",
+      "description": "Home tiles in theme tones: a shaded square, a masthead poster with the bleeding mark, and a marker-soft row.",
+      "html": "<div class=\"ds-hub\"><a class=\"ds-tile\" href=\"#\"><span class=\"ds-tile__icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"M12 22s-8-4.5-8-11.8A8 8 0 0 1 12 2a8 8 0 0 1 8 8.2c0 7.3-8 11.8-8 11.8z\"/></svg></span><span class=\"ds-tile__words\"><b>Give</b><small>Online or in person</small></span></a><a class=\"ds-tile ds-tile--masthead ds-tile--poster\" href=\"#\"><span class=\"ds-tile__words\"><b>Sunday 8 Nov</b><small>Read the bulletin</small><span class=\"ds-tile__go\">Open ›</span></span></a><a class=\"ds-tile ds-tile--marker-soft ds-tile--row\" href=\"#\"><span class=\"ds-tile__words\"><b>Got an hour?</b><small>Walk from your door: a loop of letterbox drops</small></span><span class=\"ds-tile__icon\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m9 18 6-6-6-6\"/></svg></span></a></div>",
+      "css": ".ds-hub { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 120px; gap: 12px; max-width: 360px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-tile { --bg: var(--sand, #f4efe7); --ink: var(--ink, #18233a); --ink2: var(--ink-2, #545e70); position: relative; display: flex; flex-direction: column; padding: 14px 14px 16px 16px; border-radius: 14px; background: var(--bg); color: var(--ink); text-decoration: none; overflow: hidden; transition: transform 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-tile:active { transform: scale(0.97); } .ds-tile:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-tile__icon { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: color-mix(in srgb, currentColor 7%, transparent); color: var(--primary, #2a3d5e); } .ds-tile__words { display: flex; flex-direction: column; margin-top: auto; } .ds-tile b { font-size: 18px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.25; } .ds-tile small { margin-top: 3px; font-size: 14px; line-height: 1.35; color: var(--ink2); } .ds-tile__go { margin-top: 14px; font-size: 14.5px; font-weight: 600; } .ds-tile--masthead { --bg: var(--masthead, #2a3d5e); --ink: #ffffff; --ink2: var(--beige, #d5c9b7); grid-row: span 2; padding: 16px; } .ds-tile--poster b { font-size: 22px; letter-spacing: -0.02em; line-height: 1.1; } .ds-tile--marker-soft { --bg: color-mix(in srgb, var(--marker, #e7ae74) 24%, var(--page, #ffffff)); } .ds-tile--row { flex-direction: row; align-items: center; gap: 14px; padding: 16px; } .ds-tile--row .ds-tile__words { flex: 1; margin-top: 0; } .ds-tile--row .ds-tile__icon { color: var(--marker-ink, #8a5422); }"
+    },
+    {
+      "name": "Hub canvas: chosen tile",
+      "kind": "custom",
+      "refersTo": "hub-arrange-size",
+      "description": "The tile chosen on the admin canvas: a 2px marker ring, a change capsule and the size capsule at the top-right, and the corner grip.",
+      "html": "<div class=\"ds-arr\"><div class=\"ds-arr__tile\">Life Groups<span class=\"ds-arr__tags\"><span class=\"ds-arr__cap\">Changed</span><span class=\"ds-arr__cap\">2 × 1</span></span><span class=\"ds-arr__grip\"></span></div></div>",
+      "css": ".ds-arr { padding: 16px; background: var(--page, #ffffff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-arr__tile { position: relative; display: flex; align-items: flex-end; width: 260px; height: 110px; padding: 16px; border-radius: 14px; background: var(--sand, #f4efe7); color: var(--ink, #18233a); font-weight: 700; box-shadow: 0 0 0 2px var(--marker, #e7ae74); cursor: grab; } .ds-arr__tile:hover { box-shadow: 0 0 0 2px var(--marker, #e7ae74); } .ds-arr__tags { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; } .ds-arr__cap { padding: 2px 8px; border-radius: 999px; background: var(--marker, #e7ae74); color: var(--on-marker, #2a1a08); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-arr__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page, #ffffff); border-radius: 9px; background: var(--marker, #e7ae74); cursor: nwse-resize; }"
+    },
+    {
+      "name": "Layout picker and colour swatches",
+      "kind": "custom",
+      "refersTo": "layout-picker-choice",
+      "description": "The tile settings' layout choices (chosen one ringed in the marker) over the theme-tone swatches.",
+      "html": "<div class=\"ds-lp\"><button class=\"ds-lp__choice ds-lp__choice--on\" type=\"button\"><strong>Picture behind</strong><span>The picture fills the tile, the words over it</span></button><button class=\"ds-lp__choice\" type=\"button\"><strong>Words and icon</strong><span>No picture</span></button><button class=\"ds-lp__choice\" type=\"button\" disabled><strong>Picture beside</strong><span>Needs two columns</span></button><div class=\"ds-sw\"><button class=\"ds-sw__s ds-sw__s--on\" style=\"background:var(--sand,#f4efe7)\">Aa</button><button class=\"ds-sw__s\" style=\"background:var(--masthead,#2a3d5e);color:#fff\">Aa</button><button class=\"ds-sw__s\" style=\"background:color-mix(in srgb,var(--live,#009c8f) 13%,#fff)\">Aa</button><button class=\"ds-sw__s\" style=\"background:var(--marker,#e7ae74);color:var(--on-marker,#2a1a08)\">Aa</button></div></div>",
+      "css": ".ds-lp { display: grid; gap: 6px; max-width: 320px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-lp__choice { display: grid; gap: 2px; padding: 10px 12px; border: 0; border-radius: 12px; background: var(--fill-on-surface, #f4efe7); color: var(--ink, #18233a); font: inherit; text-align: left; cursor: pointer; } .ds-lp__choice strong { font-size: 15.5px; } .ds-lp__choice span { font-size: 14px; line-height: 1.4; color: var(--ink-2, #545e70); } .ds-lp__choice--on { background: var(--page, #ffffff); box-shadow: inset 0 0 0 2px var(--marker, #e7ae74); } .ds-lp__choice:disabled { opacity: 0.55; cursor: default; } .ds-lp__choice:focus-visible, .ds-sw__s:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-sw { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-top: 10px; } .ds-sw__s { height: 44px; border: 0; border-radius: 12px; box-shadow: inset 0 0 0 1px var(--line, rgb(42 61 94 / 0.12)); font: inherit; font-weight: 700; cursor: pointer; } .ds-sw__s--on { outline: 2px solid var(--marker, #e7ae74); outline-offset: 2px; }"
     }
   ],
   "narrative": {
     "northStar": "The Sunday Bulletin",
-    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app tile grid and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series).\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose it in Configuration's Colours area, optionally for a run of dates, and anyone who may make that choice can preview the other palette on their own phone first.\n\nThe admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting.",
+    "overview": "**Creative North Star: \"The Sunday Bulletin\"**\n\nThe app reads like the church's own printed bulletin brought onto a phone. Every top-level tab opens on a navy masthead carrying a large title, a short line of context in beige, and the faint ring of the church's mark bleeding off the right edge; below it the page turns white and continues as a single readable column, with sand-coloured callouts where the bulletin would use a shaded box. On the long, sectioned pages (Sunday and Listen) a sticky row of section tabs sits under the masthead with an orange underline that slides to the section in view, so the page navigates like a folded bulletin rather than a dashboard.\n\nDensity is calm and generous: one column, a 20px gutter, list rows with hairline dividers instead of card stacks, and type sized off the iOS body text setting so the congregation's own Dynamic Type choice carries through. The system rejects the generic church-app template, a uniform grid of identical icon squares, and the feed of identical cards; content sits on the page, and cards appear only where a picture leads (an event, a sermon series). Home is the one tab root laid out as tiles (the Hub, chosen 2026-10-27): a grid the church arranges, where tiles differ in size, tone and content shape, so it reads as the bulletin's front page rather than an app launcher.\n\nLight is the default scheme. An app-wide dark scheme (night navy ground, raised navy surfaces, bright aqua, orange progress) is chosen in Appearance or follows the system. A second palette, the 2026 yearly theme (the website's greens and a serif masthead), is a full alternate. Which one everyone sees is data, not a release: staff choose it in Configuration's Colours area, optionally for a run of dates, and anyone who may make that choice can preview the other palette on their own phone first.\n\nThe admin panel is the same bulletin carried to the church office's desk. A persistent navy sidebar takes the masthead's place, the work area stays white, and a compact title band replaces the phone masthead. It opens on the office week: the next seven days as a sand rail of white day columns carrying what is dated, then what needs you and the areas you look after. Areas are worked as hairline tables with the chosen record's detail ruled off beside them. The panel follows the computer's light or dark setting.",
     "keyCharacteristics": [
       "Navy masthead on every tab root, with the mark's ring echo at 7% opacity.",
       "Sticky section tabs with a sliding orange underline on sectioned pages.",
@@ -1238,6 +1307,7 @@
       "Montserrat throughout at 400, 600 and 700; DM Serif Text only for yearly-theme mastheads.",
       "rem type tied to the iOS body text size, so Dynamic Type scales the whole app.",
       "In the admin panel, a 248px navy sidebar with beige group labels, an orange marker bar on the current page and orange count capsules, over a white work area that opens with a title band.",
+      "Home as the Hub: a 2 to 4 column grid of 14px-radius tiles in theme tones, each tile one of six shapes, sized by the church in columns and rows, under a compact masthead.",
       "A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox."
     ],
     "rules": [
@@ -1248,7 +1318,7 @@
       },
       {
         "name": "The Marker Rule",
-        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened. It is never a button fill and never decoration.",
+        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Marker or Marker soft tone, which staff choose for a tile they want to stand out; no tile ships in solid Marker by default.",
         "section": "colors"
       },
       {
@@ -1283,12 +1353,12 @@
       },
       {
         "name": "The One Column Rule",
-        "body": "No grids of tiles on a tab root. The only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns and the Places explorer's directory and phone, and still no grid of tool tiles.",
+        "body": "No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns and the Places explorer's directory and phone, and still no grid of tool tiles.",
         "section": "layout"
       },
       {
         "name": "The Flat Page Rule",
-        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list or a picture card may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Raised tone may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
         "section": "elevation"
       },
       {
@@ -1308,10 +1378,12 @@
       "**Do** mark a selected row with Selected Fill, a tonal step, and nothing else.",
       "**Do** open every admin page on a title band, and work an area as a data table with its detail in a split view beside it.",
       "**Do** offset admin breakpoints by the 248px sidebar.",
-      "**Do** let staff choose what something opens with the place field and its directory, never by typing an address."
+      "**Do** let staff choose what something opens with the place field and its directory, never by typing an address.",
+      "**Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.",
+      "**Do** mark the chosen tile on the Hub canvas with the 2px marker ring, its size capsule and the corner grip, and show both schemes' contrast before a tone is kept."
     ],
     "donts": [
-      "**Don't** lay tab roots out as a grid of tiles or a feed of identical cards.",
+      "**Don't** lay a tab root other than Home out as a grid of tiles, and don't let the Hub become a uniform grid of identical icon squares or a feed of identical cards.",
       "**Don't** float buttons over the reading column; actions belong in the top bar, in a section, or in a sheet.",
       "**Don't** use orange as a button fill or decoration; it marks position and newness only.",
       "**Don't** add shadows to rows, callouts or the player; only boxed lists and picture cards lift.",

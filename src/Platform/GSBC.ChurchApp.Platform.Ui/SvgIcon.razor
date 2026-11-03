@@ -1,0 +1,13 @@
+@using System.Collections.Concurrent
+<span class="svg-icon @Class" aria-hidden="true">@((MarkupString)Markup)</span>
+
+@code {
+    private static readonly ConcurrentDictionary<(string, bool), string> Cleaned = new();
+
+    [Parameter, EditorRequired] public required string Drawing { get; set; }
+    [Parameter] public bool OwnColours { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Markup => Cleaned.GetOrAdd((Drawing, OwnColours), key =>
+        SvgIcons.Sanitise(key.Item1) is { } clean ? key.Item2 ? clean : SvgIcons.Monochrome(clean) : "");
+}

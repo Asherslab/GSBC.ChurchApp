@@ -1,0 +1,77 @@
+{
+  "title": "Outreach day: what the tile becomes at each size",
+  "question": "Each size gets a designed layout instead of being refused. Which layouts should Outreach day offer? Good alternatives stay selectable in the tile's settings; you pick defaults per size.",
+  "seed": "seed:c84ea532fc8bfe11",
+  "options": [
+    {
+      "id": "map",
+      "kind": "assigned",
+      "label": "Map card",
+      "lineage": "a tile drawn for its size",
+      "thesis": "A map of the routes behind the words; shown once Outreach draws real routes.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Outreach day at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/outreach/map.html",
+      "htmlFrame": "1440x900",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "link",
+      "kind": "dealt",
+      "label": "Just a link",
+      "lineage": "a tile drawn for its size",
+      "thesis": "Icon and title only: a doorway to Outreach for a busy Home.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Outreach day at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/outreach/link.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "poster",
+      "kind": "dealt",
+      "label": "Invitation",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The invitation and how to join; a row at one row tall, a poster with a go line when taller.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Outreach day at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/outreach/poster.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

@@ -129,6 +129,23 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task HoldingARoleAnywherePutsSomeoneInThatRolesAudienceAndInTheAudienceOfRolesItIncludes()
+    {
+        Guid member = await AddRoleAsync("Member", ScopeKind.Ministry, ["ministries.news.read"]);
+        Guid leader = await AddRoleAsync("Leader", ScopeKind.Ministry, ["ministries.news.post"], includes: [member]);
+        Guid other = await AddRoleAsync("Welcomer", ScopeKind.Global, []);
+        Guid person = Guid.CreateVersion7();
+        await AssignAsync(person, leader, scopeObjectId: Music);
+
+        GrantSet grants = await GrantsAsync(person);
+
+        Assert.True(grants.IsAllowed(RoleMembership.Of(leader)));
+        Assert.True(grants.IsAllowed(RoleMembership.Of(member)));
+        Assert.False(grants.IsAllowed(RoleMembership.Of(other)));
+        Assert.False((await GrantsAsync(Guid.CreateVersion7())).IsAllowed(RoleMembership.Of(leader)));
+    }
+
+    [Fact]
     public async Task AFeatureCanAddItsPermissionsToARoleAnotherFeatureDeclares()
     {
         Guid person = Guid.CreateVersion7();

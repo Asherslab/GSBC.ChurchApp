@@ -1,0 +1,77 @@
+{
+  "title": "This week: what the tile becomes at each size",
+  "question": "Each size gets a designed layout instead of being refused. Which layouts should This week offer? Good alternatives stay selectable in the tile's settings; you pick defaults per size.",
+  "seed": "seed:a74ba92973584516",
+  "options": [
+    {
+      "id": "link",
+      "kind": "assigned",
+      "label": "Just a link",
+      "lineage": "a tile drawn for its size",
+      "thesis": "A plain doorway to the calendar with a count: the quietest form, for a Home that is already busy.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "This week at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/week/link.html",
+      "htmlFrame": "1440x900",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "agenda",
+      "kind": "dealt",
+      "label": "Agenda",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The list grows with the tile: one next thing at 1 \u00d7 1, two or three at 2 \u00d7 1, the whole week when tall.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "This week at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/week/agenda.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "days",
+      "kind": "dealt",
+      "label": "Day strip",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The seven days as a strip with a dot on each day that has something on, and the next thing under it.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "This week at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/week/days.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}

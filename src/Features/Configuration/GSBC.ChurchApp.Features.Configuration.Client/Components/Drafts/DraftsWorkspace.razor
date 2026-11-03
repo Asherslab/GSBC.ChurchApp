@@ -6,6 +6,8 @@
 @inject IPeopleDirectory People
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject IEnumerable<HubTileKind> TileKinds
+@inject IServiceProvider Services
 
 <RefreshOn Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" Changed="RefreshAsync" />
 
@@ -19,7 +21,7 @@ else if (_list is null)
 }
 else
 {
-    <Workbench Narrow="Narrow" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
+    <Workbench Narrow="Narrow" Class="@(!Narrow && _session is not null && IsHub && _view == View.Drafts ? "workbench--canvas" : null)" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
         <Aside>
             <div class="drafts-column">
                 <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
@@ -51,6 +53,7 @@ else
 
     @if (_session is not null)
     {
+        <AddTileSheet Open="_addingTile" OpenChanged="open => _addingTile = open" OnChosen="AddTile" Saved="SavedTiles" OnSaved="AddSaved" />
         <ShareSheet Draft="_session.Draft" Open="_sharing" OpenChanged="open => _sharing = open" Names="_names" OnShare="ShareAsync" OnUnshare="UnshareAsync" />
         <EventLayerSheet Draft="_session.Draft" Open="_turningOn" OpenChanged="open => _turningOn = open" Busy="_busy" Problem="@_problem"
                          Replacing="@(Layer is { } layer && layer.Id != _session.Draft.Id ? layer.Name : null)" OnTurnOn="TurnOnAsync" />
@@ -127,6 +130,9 @@ else
     [Parameter] public string BasePath { get; set; } = "drafts";
 
     private ThemeScheme _themeScheme;
+    private bool _addingTile;
+    private string? _savedNote;
+    private IReadOnlyDictionary<Guid, string> _roleNames = new Dictionary<Guid, string>();
     private DraftList? _list;
     private string? _loadProblem;
     private Dictionary<string, string> _names = [];
@@ -158,7 +164,10 @@ else
     protected override async Task OnParametersSetAsync()
     {
         if (_list is null)
+        {
             await RefreshAsync();
+            await LoadRoleNamesAsync();
+        }
         if (_list is not null && DraftId != _opened)
             await OpenDraftAsync(DraftId);
     }
@@ -184,6 +193,10 @@ else
             @if (Narrow)
             {
                 <button type="button" class="draft-pane__back" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> Drafts</button>
+            }
+            else if (IsHub)
+            {
+                <button type="button" class="draft-pane__back draft-pane__back--folded" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> All drafts</button>
             }
             <header class="draft-pane__head">
                 <div class="draft-pane__title">
@@ -253,6 +266,13 @@ else
                         <PlacementForm Draft="_form!" Changed="FormChangedAsync" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
                         <div class="ui-actions">@FormActions</div>
                     </div>
+                }
+                else if (!Narrow && IsHub)
+                {
+                    <HubCanvas Hub="@session.Arranged(area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)" SelectedKey="@_selectedKey"
+                               Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()"
+                               RoleNames="_roleNames" OnChoose="Select" OnMove="MoveTileAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
+                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" />
                 }
                 else
                 {
@@ -335,12 +355,55 @@ else
                 </div>
                 <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Theme="theme" Scheme="_themeScheme" />
             }
+            else if (_session is not null && IsHub)
+            {
+                @HubDetail
+            }
             else
             {
                 @SettingsOrPreview
             }
         </div>
     };
+
+    private RenderFragment HubDetail => __builder =>
+    {
+        DraftSession session = _session!;
+        if (_form is not null && TileKind is { } kind)
+        {
+            @ChangedWhileEditing
+            <TileSettings Draft="_form" Kind="kind" Columns="@HubSurfaces.Grid.ColumnsIn(session.Arranged(HubSurfaces.Area, null))" Changed="FormChangedAsync"
+                          Palette="@HubPalette" Icons="CustomIcons" AddIcon="AddIcon" Notices="@SettleNotice" />
+            <div class="ui-actions tile-settings__actions">@FormActions</div>
+        }
+        else if (_form is not null)
+        {
+            <div class="detail-pane__head">
+                <h3>@FormTitle</h3>
+                <span>@_form.Surface.Description</span>
+            </div>
+            @ChangedWhileEditing
+            <PlacementForm Draft="_form" Changed="FormChangedAsync" />
+            <div class="ui-actions">@FormActions</div>
+        }
+        else
+        {
+            <HubLibrary Icons="CustomIconEntries" Saved="SavedTiles" OnChoose="Select" />
+        }
+    };
+
+    private RenderFragment? SettleNotice => _formId is not null && _session?.ChangedFor(_formId) is { } changed && _form is not null
+        ? __builder =>
+        {
+            <div class="changed-for-everyone">
+                <span><b>Changed for everyone since you edited it:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, _form.Surface))).</span>
+                <span class="ui-actions">
+                    <Button Small="true" OnClick="() => SettleIdAsync(_formId, keepMine: true)">Keep mine</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleIdAsync(_formId, keepMine: false)">Use everyone's</Button>
+                </span>
+            </div>
+        }
+        : null;
 
     private RenderFragment SettingsOrPreview => __builder =>
     {
@@ -391,12 +454,160 @@ else
             {
                 <Button Variant="ButtonVariant.Quiet" Small="@(!Narrow)" Block="Narrow" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo this change</Button>
             }
+            if (IsHub && TileKind is not null && !Narrow)
+            {
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="CopyTile">Make a copy</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="SaveTile">@(_savedNote ?? "Save to the library")</Button>
+            }
             if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
             {
                 <Button Variant="ButtonVariant.Danger" Small="@(!Narrow)" Block="Narrow" OnClick="RemoveSelectedAsync">@(_form.Surface.Repeatable ? "Take it out" : "Back to how the app starts")</Button>
             }
         }
     };
+
+    private bool IsHub => _area.Area == HubSurfaces.Area.Key && _area.ScopeId is null;
+
+    private HubTileKind? TileKind => _form is null ? null : TileKinds.FirstOrDefault(kind => kind.Surface == _form.Surface);
+
+    private string HubPalette => _session is null ? AppearanceSurfaces.Brand
+        : AppearanceSurfaces.ChosenFrom(_session.Arranged(AppearanceSurfaces.Area, null).Where(entry => entry.IsShownTo(Viewer.Anonymous, DateTime.UtcNow))).Palette;
+
+    private IReadOnlyList<ArrangedSurface> CustomIconEntries => _session is null
+        ? []
+        : _session.Arranged(HubSurfaces.Area, null).Where(entry => entry.Surface == HubSurfaces.Icon.Surface && entry.Placement is not null).ToList();
+
+    private IReadOnlyDictionary<string, CustomIcon> CustomIcons => CustomIconEntries.ToDictionary(
+        entry => IconSetting.Custom(entry.Placement!.Id),
+        entry => new CustomIcon(entry.Values.Get(HubSurfaces.Icon.Name), entry.Values.Get(HubSurfaces.Icon.Drawing)));
+
+    private IReadOnlyList<ArrangedSurface> HubTilesNow => _session is null
+        ? []
+        : _session.Arranged(HubSurfaces.Area, null).Where(entry => TileKinds.Any(kind => kind.Surface == entry.Surface) || entry.Surface == HubSurfaces.LinkTile.Surface).ToList();
+
+    private static IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => session.Patches
+        .Where(patch => patch.Kind != PatchKind.Remove && patch.Touches(HubSurfaces.Area.Key, null))
+        .ToDictionary(patch => patch.PlacementId, patch => patch.Kind == PatchKind.Add ? "Added" : "Changed");
+
+    private IReadOnlyList<ArrangedSurface> SavedTiles => _session is null
+        ? []
+        : _session.Arranged(HubSurfaces.Area, null).Where(entry => entry.Surface == HubSurfaces.Saved.Surface && entry.Placement is not null).ToList();
+
+    private void SaveTile()
+    {
+        if (_form is null || TileKind is not { } kind)
+            return;
+        PlacementDraft saved = PlacementDraft.New(HubSurfaces.Saved.Surface, HubSurfaces.Saved.Surface.DefaultOrder);
+        string title = _form.Values.GetValueOrDefault(HubTileKeys.Title, "");
+        saved.Values[HubSurfaces.Saved.Name.Key] = title.Length > 0 ? title : kind.Surface.Title;
+        saved.Values[HubSurfaces.Saved.Kind.Key] = kind.Surface.Key;
+        saved.Values[HubSurfaces.Saved.Tile.Key] = HubSurfaces.Saved.Tile.Format(_form.Values);
+        _session!.Set(new AreaKey(HubSurfaces.Area.Key, null), saved.ToStored(Guid.CreateVersion7().ToString()));
+        _savedNote = "Saved to the library";
+        SaveSoon();
+    }
+
+    private void CopyTile()
+    {
+        if (_form is null || TileKind is not { } kind)
+            return;
+        AddFrom(kind, _form.Values, _form.Order + 5);
+    }
+
+    private void AddSaved(ArrangedSurface saved)
+    {
+        _addingTile = false;
+        if (TileKinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind)) is not { } kind)
+            return;
+        IReadOnlyList<ArrangedSurface> tiles = HubTilesNow;
+        AddFrom(kind, saved.Values.Get(HubSurfaces.Saved.Tile), tiles.Count == 0 ? 0 : tiles.Max(entry => entry.Order) + 10);
+    }
+
+    private void AddFrom(HubTileKind kind, IReadOnlyDictionary<string, string> values, int order)
+    {
+        PlacementDraft added = PlacementDraft.New(kind.Surface, order);
+        foreach (Setting setting in kind.Surface.Settings.Where(setting => values.ContainsKey(setting.Key)))
+            added.Values[setting.Key] = values[setting.Key];
+        string id = Guid.CreateVersion7().ToString();
+        _session!.Set(_area, added.ToStored(id));
+        SaveSoon();
+        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(entry => entry.Placement?.Id == id) is { } entry)
+            Select(entry);
+    }
+
+    private void AddTile(HubTileKind kind)
+    {
+        _addingTile = false;
+        IReadOnlyList<ArrangedSurface> tiles = HubTilesNow;
+        PlacementDraft added = PlacementDraft.New(kind.Surface, tiles.Count == 0 ? 0 : tiles.Max(entry => entry.Order) + 10);
+        string id = Guid.CreateVersion7().ToString();
+        _session!.Set(_area, added.ToStored(id));
+        SaveSoon();
+        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(entry => entry.Placement?.Id == id) is { } entry)
+            Select(entry);
+    }
+
+    private string AddIcon(string name, string drawing)
+    {
+        PlacementDraft icon = PlacementDraft.New(HubSurfaces.Icon.Surface, HubSurfaces.Icon.Surface.DefaultOrder);
+        icon.Values[HubSurfaces.Icon.Name.Key] = name.Length > HubSurfaces.Icon.Name.MaxLength ? name[..HubSurfaces.Icon.Name.MaxLength] : name;
+        icon.Values[HubSurfaces.Icon.Drawing.Key] = drawing;
+        string id = Guid.CreateVersion7().ToString();
+        _session!.Set(new AreaKey(HubSurfaces.Area.Key, null), icon.ToStored(id));
+        SaveSoon();
+        return IconSetting.Custom(id);
+    }
+
+    private Task MoveTileAsync((ArrangedSurface Tile, int To) move)
+    {
+        List<ArrangedSurface> tiles = [.. HubTilesNow];
+        int from = tiles.FindIndex(entry => KeyOf(entry) == KeyOf(move.Tile));
+        if (from < 0 || move.To < 0 || move.To >= tiles.Count || from == move.To)
+            return Task.CompletedTask;
+        ArrangedSurface moving = tiles[from];
+        tiles.RemoveAt(from);
+        tiles.Insert(move.To, moving);
+        for (int index = 0; index < tiles.Count; index++)
+        {
+            ArrangedSurface entry = tiles[index];
+            int order = index * 10;
+            if (entry.Order == order)
+                continue;
+            if (_form is not null && KeyOf(entry) == _formId)
+            {
+                _form.Order = order;
+                _session!.Set(_area, _form.ToStored(_formId!));
+                continue;
+            }
+            PlacementDraft moved = PlacementDraft.Of(entry);
+            moved.Order = order;
+            _session!.Set(_area, moved.ToStored(entry.Placement?.Id ?? Guid.CreateVersion7().ToString()));
+        }
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private Task ResizeTileAsync((ArrangedSurface Tile, int Columns, int Rows) resize)
+    {
+        if (resize.Tile.Placement is null)
+            return Task.CompletedTask;
+        if (KeyOf(resize.Tile) != _formId)
+            Select(resize.Tile);
+        _form!.Values[HubTileKeys.Columns] = resize.Columns.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        _form.Values[HubTileKeys.Rows] = resize.Rows.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return FormChangedAsync();
+    }
+
+    private Task SetColumnsAsync(int columns)
+    {
+        AreaKey hub = new(HubSurfaces.Area.Key, null);
+        ArrangedSurface grid = _session!.Arranged(HubSurfaces.Area, null).First(entry => entry.Surface == HubSurfaces.Grid.Surface);
+        PlacementDraft changed = PlacementDraft.Of(grid);
+        changed.Values[HubSurfaces.Grid.Columns.Key] = HubSurfaces.Grid.Columns.Format(columns);
+        _session.Set(hub, changed.ToStored(grid.Placement?.Id ?? Guid.CreateVersion7().ToString()));
+        SaveSoon();
+        return Task.CompletedTask;
+    }
 
     private ThemeSpec? EditingTheme => _form?.Surface == AppearanceSurfaces.CustomTheme.Surface
         ? AppearanceSurfaces.CustomTheme.SpecOf(new SettingValues(_form.Values))
@@ -441,6 +652,19 @@ else
         return surface is { Repeatable: true } && surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title
             ? patch.Base?.Values.GetValueOrDefault(title.Key) ?? surface.Title
             : surface?.Title ?? patch.Surface;
+    }
+
+    private async Task LoadRoleNamesAsync()
+    {
+        if (Services.GetService(typeof(IRoleDirectory)) is not IRoleDirectory roles)
+            return;
+        try
+        {
+            _roleNames = (await roles.ListAsync()).ToDictionary(role => role.Id, role => role.Name);
+        }
+        catch (RpcException)
+        {
+        }
     }
 
     private async Task<DraftList> LoadListAsync()
@@ -636,6 +860,7 @@ else
 
     private void Select(ArrangedSurface entry)
     {
+        _savedNote = null;
         _changedWhileEditing = false;
         _form = PlacementDraft.Of(entry);
         _formId = entry.Placement?.Id ?? Guid.CreateVersion7().ToString();

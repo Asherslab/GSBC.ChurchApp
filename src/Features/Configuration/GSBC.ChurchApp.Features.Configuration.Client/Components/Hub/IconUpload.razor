@@ -1,0 +1,84 @@
+@inject IJSRuntime JS
+
+@if (_drawing is null)
+{
+    <label class="icon-upload">
+        <Icon Name="plus" Size="IconSize.Small" />
+        <span>Upload an SVG icon</span>
+        <input @ref="_input" type="file" accept=".svg,image/svg+xml" class="visually-hidden" @onchange="ReadAsync" />
+    </label>
+    @if (_problem is not null)
+    {
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    }
+}
+else
+{
+    <div class="icon-upload__check">
+        <span class="tile-settings__note">Cleaned and ready. This is how it looks in the theme's colours, in light and dark:</span>
+        <div class="icon-upload__proofs">
+            @foreach (string scheme in new[] { "light", "dark" })
+            {
+                foreach (TileTone tone in new[] { TileTones.Sand, TileTones.Masthead })
+                {
+                    <span class="icon-upload__proof hub-tile hub-tone--@tone.Value @(tone.Dark ? "hub-tile--dark" : "")" data-preview-scheme="@scheme">
+                        <span class="row__icon hub-icon @(tone.Dark ? "hub-icon--on-dark" : "hub-icon--primary")"><SvgIcon Drawing="@_drawing" /></span>
+                    </span>
+                }
+            }
+        </div>
+        <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="40" />
+        <div class="ui-actions">
+            <Button Small="true" Disabled="@string.IsNullOrWhiteSpace(_name)" OnClick="AddAsync">Use this icon</Button>
+            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="Cancel">Cancel</Button>
+        </div>
+    </div>
+}
+
+@code {
+    private const int MostBytes = SvgIcons.MostCharactersIn;
+    private ElementReference _input;
+    private string? _drawing;
+    private string _name = "";
+    private string? _problem;
+
+    [Parameter] public EventCallback<(string Name, string Drawing)> OnAdd { get; set; }
+
+    private sealed record Picked(string Name, string Text, bool TooBig);
+
+    private async Task ReadAsync()
+    {
+        _problem = null;
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Configuration.Client/js/hub-canvas.js");
+        Picked? picked = await module.InvokeAsync<Picked?>("readText", _input, MostBytes);
+        if (picked is null)
+            return;
+        if (picked.TooBig)
+        {
+            _problem = $"That file is over {MostBytes / 1000} KB. Icons are small drawings; export it again as a simple SVG.";
+            return;
+        }
+        _drawing = SvgIcons.Sanitise(picked.Text);
+        if (_drawing is null)
+        {
+            _problem = "That file isn't an SVG drawing the app can show. It needs shapes (paths, circles, rectangles) and a size or viewBox.";
+            return;
+        }
+        _name = Path.GetFileNameWithoutExtension(picked.Name).Replace('-', ' ').Replace('_', ' ');
+    }
+
+    private async Task AddAsync()
+    {
+        if (_drawing is null)
+            return;
+        await OnAdd.InvokeAsync((_name.Trim(), _drawing));
+        Cancel();
+    }
+
+    private void Cancel()
+    {
+        _drawing = null;
+        _name = "";
+        _problem = null;
+    }
+}

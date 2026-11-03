@@ -11,6 +11,8 @@ namespace GSBC.ChurchApp.Features.Access.Contracts;
 [ProtoSerializable(typeof(GrantList))]
 [ProtoSerializable(typeof(Catalog))]
 [ProtoSerializable(typeof(RoleList))]
+[ProtoSerializable(typeof(RoleNameList))]
+[ProtoSerializable(typeof(RoleName))]
 [ProtoSerializable(typeof(RoleInfo))]
 [ProtoSerializable(typeof(RoleReference))]
 [ProtoSerializable(typeof(AssignmentQuery))]

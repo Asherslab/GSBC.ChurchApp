@@ -45,6 +45,10 @@ internal static class RoleGrants
             ? [objectId, .. await hierarchy.ChildrenOfAsync(kind, objectId, cancellationToken)]
             : [objectId];
 
+    public static IEnumerable<Grant> MembershipOf(RoleRecord role) =>
+        role.Includes.Select(include => include.IncludedRoleId).Prepend(role.Id)
+            .Select(roleId => new Grant(PermissionPattern.Parse(RoleMembership.NodeOf(roleId)), Scope.Global));
+
     public static async Task<GrantSet> CompileAsync(
         IEnumerable<(Guid RoleId, string? ObjectId)> assignments, IReadOnlyDictionary<Guid, RoleRecord> roles, IScopeHierarchy hierarchy,
         CancellationToken cancellationToken)
@@ -54,6 +58,7 @@ internal static class RoleGrants
         {
             if (!roles.TryGetValue(roleId, out RoleRecord? role) || !ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind))
                 continue;
+            grants.AddRange(MembershipOf(role));
             List<string> patterns = PatternsOf(role, roles);
             foreach (string? scope in await ScopesAsync(role, kind, objectId, hierarchy, cancellationToken))
                 grants.AddRange(At(patterns, kind, scope));

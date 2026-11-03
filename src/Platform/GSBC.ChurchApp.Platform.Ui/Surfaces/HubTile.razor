@@ -1,0 +1,139 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@inject IServiceProvider Services
+
+<div class="hub-tile hub-tile--@Shape.ToString().ToLowerInvariant() hub-tone--@Look.Tone.Value @(Look.Tone.Dark ? "hub-tile--dark" : "") @Class">
+    @if (Hub.Live && Target is not null)
+    {
+        <button type="button" class="hub-tile__hit" aria-label="@Spoken" @onclick="OpenAsync"></button>
+    }
+    @if (Shape is TileShape.Picture or TileShape.Behind or TileShape.Beside)
+    {
+        <span class="hub-tile__picture">
+            @if (Look.Image is { } image)
+            {
+                <MediaImage Media="image" Class="hub-tile__image" Style="@($"object-position: {Look.Focus.Css}")" />
+            }
+            else
+            {
+                @Cover
+            }
+        </span>
+    }
+    <span class="hub-tile__body">
+        @if (Shape is TileShape.Square or TileShape.Poster && HasIcon)
+        {
+            <span class="hub-tile__top">
+                <HubIcon Look="Look" />
+                @if (Shape == TileShape.Square && Target is not null)
+                {
+                    <Icon Name="@(OpensOutside ? "external-link" : "chevron-right")" Size="IconSize.Small" Class="hub-tile__go-icon" />
+                }
+            </span>
+        }
+        <span class="hub-tile__words">
+            @if (GoBeside && Go is { Length: > 0 })
+            {
+                <span class="hub-tile__head">
+                    <strong class="hub-tile__title">
+                @if (Live)
+                {
+                    <span class="live-dot" aria-hidden="true"></span>
+                }
+                @if (Unread)
+                {
+                    <i class="hub-tile__dot" aria-hidden="true"></i>
+                }
+                @Title
+            </strong>
+                    <span class="hub-tile__go hub-tile__go--beside">@Go<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+                </span>
+            }
+            else
+            {
+                <strong class="hub-tile__title">
+                @if (Live)
+                {
+                    <span class="live-dot" aria-hidden="true"></span>
+                }
+                @if (Unread)
+                {
+                    <i class="hub-tile__dot" aria-hidden="true"></i>
+                }
+                @Title
+            </strong>
+            }
+            @foreach (string line in Lines.Where(line => line.Length > 0))
+            {
+                <span class="hub-tile__line">@line</span>
+            }
+            @ChildContent
+            @if (Go is { Length: > 0 } && Shape != TileShape.Square && !GoBeside)
+            {
+                <span class="hub-tile__go">@Go<Icon Name="chevron-right" Size="IconSize.Small" /></span>
+            }
+        </span>
+        @if (Shape is TileShape.Row or TileShape.Picture or TileShape.Beside && HasIcon && Action is null)
+        {
+            <HubIcon Look="Look" />
+        }
+    </span>
+    @if (Action is not null)
+    {
+        <span class="hub-tile__action">@Action</span>
+    }
+    @if (Look.Tone.Dark && Look.Rows > 1 && Shape == TileShape.Poster)
+    {
+        <BrandMark Class="hub-tile__mark" Decorative="true" />
+    }
+</div>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+
+    [Parameter, EditorRequired] public required TileLook Look { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public IReadOnlyList<string> Lines { get; set; } = [];
+    [Parameter] public string? Go { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public bool Live { get; set; }
+    [Parameter] public bool Unread { get; set; }
+    [Parameter] public string? PlacementId { get; set; }
+    [Parameter] public RenderFragment? Cover { get; set; }
+    [Parameter] public RenderFragment? Action { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public TileShape? Layout { get; set; }
+    [Parameter] public bool GoBeside { get; set; }
+
+    private string? Target => Href ?? (Look.Link.Length > 0 ? Look.Link : null);
+
+    private bool OpensOutside => Target is { } target && LinkTargets.KindOf(target) != LinkKind.InApp;
+
+    private bool HasIcon => Look.Icon.Length > 0;
+
+    private int Width => Math.Min(Look.Columns, Hub.Columns);
+
+    private bool HasPicture => Look.Image is not null || Cover is not null;
+
+    private TileShape Shape => Layout switch
+    {
+        TileShape.Picture or TileShape.Behind or TileShape.Beside when !HasPicture => Plain,
+        TileShape.Beside when Width < 2 => Plain,
+        { } chosen => chosen,
+        _ => HasPicture && (Look.Rows > 1 || Width > 1) ? TileShape.Picture : Plain,
+    };
+
+    private TileShape Plain => Look.Rows > 1 ? TileShape.Poster : Width > 1 ? TileShape.Row : TileShape.Square;
+
+    private string Spoken => string.Join(". ", Lines.Where(line => line.Length > 0).Prepend(Title));
+
+    private async Task OpenAsync()
+    {
+        if (Target is not { } target)
+            return;
+        if (PlacementId is { } placement)
+            (Services.GetService(typeof(Client.Analytics.IUsage)) as Client.Analytics.IUsage)?.Count(HubSurfaces.TileTapped, placement);
+        if (Services.GetService(typeof(Destinations.LinkOpener)) is Destinations.LinkOpener opener)
+            await opener.OpenAsync(target);
+    }
+}

@@ -1,0 +1,23 @@
+@inject IEnumerable<HubTileKind> Kinds
+
+@if (Kind is { } kind)
+{
+    TileLook look = TileLook.Of(kind, Entry.Values);
+    TileVariant variant = kind.VariantFor(look, Hub.Columns);
+    <HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="ShapeOf(variant)" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private HubTileKind? Kind => Kinds.FirstOrDefault(kind => kind.Surface.Key == Entry.Surface.Key);
+
+    public static TileShape? ShapeOf(TileVariant variant) => variant.Key switch
+    {
+        TileVariants.PictureAbove => TileShape.Picture,
+        TileVariants.PictureBehind => TileShape.Behind,
+        TileVariants.PictureBeside => TileShape.Beside,
+        _ => null,
+    };
+}

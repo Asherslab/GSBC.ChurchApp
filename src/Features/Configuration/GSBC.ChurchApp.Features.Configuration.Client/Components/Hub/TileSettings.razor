@@ -1,0 +1,305 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Destinations
+@inject IJSRuntime JS
+@inject SurfaceViews Views
+
+<div class="tile-settings">
+    <header class="tile-settings__head">
+        <h3>@Heading</h3>
+        <span>@FromWords</span>
+    </header>
+    @Notices
+
+    <div class="tile-settings__proof">
+        <Segmented TValue="string" Label="Show this tile in" Options="SchemeChoices" Value="@_proofScheme" ValueChanged="scheme => _proofScheme = scheme" />
+        @foreach (string scheme in Schemes)
+        {
+            <div class="tile-settings__sample" hidden="@(scheme != _proofScheme)" data-preview-scheme="@scheme" data-palette="@Palette">
+                <CascadingValue Value="Proof">
+                    <div class="hub-cell" style="--tile-rows: @Math.Min(Look.Rows, 2)" data-proof="@scheme">
+                        @Views.For(ProofEntry)
+                    </div>
+                </CascadingValue>
+            </div>
+        }
+        <span class="tile-settings__ratio">Text on it reads at @Ratio("light") in light and @Ratio("dark") in dark. 4.5 : 1 or more is easy to read.</span>
+    </div>
+
+    <fieldset class="tile-settings__group">
+        <legend>Size on the grid</legend>
+        <div class="tile-settings__steps">
+            @Stepper("Width", Look.Columns, Math.Min(Look.Columns, Columns), 1, HubGrid.MostColumns, value => SetAsync(Kind.Tile.Columns, value), "column")
+            @Stepper("Height", Look.Rows, Look.Rows, 1, HubGrid.MostRows, value => SetAsync(Kind.Tile.Rows, value), "row")
+        </div>
+        @if (Look.Columns > Columns)
+        {
+            <p class="tile-settings__note">Home has @Columns columns, so this tile fills the width.</p>
+        }
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Layout at this size</legend>
+        <div class="layout-picker" role="radiogroup" aria-label="Layout at this size">
+            @LayoutChoice(TileVariant.Automatic, $"Automatic: {Kind.DefaultFor(Span, Look.Image is not null).Label}", "Changes with the tile's size", true)
+            @foreach (TileVariant variant in Kind.Variants)
+            {
+                @LayoutChoice(variant.Key, variant.Label, variant.Suits(Span) ? variant.Description : "Needs a wider tile", variant.Suits(Span))
+            }
+        </div>
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Colour, from the theme</legend>
+        <div class="hub-swatches" role="radiogroup" aria-label="Colour">
+            @foreach (TileTone tone in TileTones.All)
+            {
+                <button type="button" role="radio" aria-checked="@(tone == Look.Tone ? "true" : "false")" class="hub-swatch hub-tone--@tone.Value @(tone == Look.Tone ? "hub-swatch--on" : "")"
+                        title="@tone.Label" @onclick="() => SetAsync(Kind.Tile.Tone, tone.Value)">
+                    <span>Aa</span>
+                </button>
+            }
+        </div>
+        <span class="tile-settings__note">@Look.Tone.Label. Text always takes the colour the theme pairs with it.</span>
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Icon</legend>
+        <div class="icon-picker" role="radiogroup" aria-label="Icon">
+            <button type="button" role="radio" aria-checked="@(Look.Icon.Length == 0 ? "true" : "false")" class="icon-picker__choice @(Look.Icon.Length == 0 ? "icon-picker__choice--on" : "")" title="No icon" @onclick="() => SetAsync(Kind.Tile.Icon, string.Empty)">
+                <Icon Name="x" Size="IconSize.Small" />
+            </button>
+            @foreach (string name in BuiltInIcons)
+            {
+                <button type="button" role="radio" aria-checked="@(Look.Icon == name ? "true" : "false")" class="icon-picker__choice @(Look.Icon == name ? "icon-picker__choice--on" : "")" title="@name" @onclick="() => SetAsync(Kind.Tile.Icon, name)">
+                    <Icon Name="@name" Size="IconSize.Small" />
+                </button>
+            }
+            @foreach ((string key, CustomIcon icon) in Icons)
+            {
+                <button type="button" role="radio" aria-checked="@(Look.Icon == key ? "true" : "false")" class="icon-picker__choice @(Look.Icon == key ? "icon-picker__choice--on" : "")" title="@icon.Name" @onclick="() => SetAsync(Kind.Tile.Icon, key)">
+                    <SvgIcon Drawing="@icon.Drawing" />
+                </button>
+            }
+        </div>
+        <IconUpload OnAdd="AddIconAsync" />
+        @if (Look.Icon.Length > 0)
+        {
+            <SelectField Label="Icon colour" Options="IconColours" Value="@Look.IconTone" ValueChanged="value => SetAsync(Kind.Tile.IconTone, value)" />
+        }
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Words</legend>
+        <TextField Label="@Kind.Tile.Title.Label" Value="@Draft.Values[Kind.Tile.Title.Key]" ValueChanged="value => SetAsync(Kind.Tile.Title.Key, value)"
+                   MaxLength="Kind.Tile.Title.MaxLength" Hint="@NullIfEmpty(Kind.Tile.Title.Help)" Problem="@Kind.Tile.Title.ProblemWith(Draft.Values[Kind.Tile.Title.Key])" />
+        @if (Kind.Defaults.ShowsText)
+        {
+            <TextField Label="@Kind.Tile.Text.Label" Value="@Draft.Values[Kind.Tile.Text.Key]" ValueChanged="value => SetAsync(Kind.Tile.Text.Key, value)"
+                       MaxLength="Kind.Tile.Text.MaxLength" Hint="@NullIfEmpty(Kind.Tile.Text.Help)" />
+        }
+        @foreach (Setting setting in Kind.Surface.Settings.Except(Kind.Tile.All))
+        {
+            <SettingInput Setting="setting" Value="@Draft.Values[setting.Key]" ValueChanged="value => SetAsync(setting.Key, value)" />
+        }
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Picture</legend>
+        <SettingInput Setting="Kind.Tile.Image" Value="@Draft.Values[Kind.Tile.Image.Key]" ValueChanged="value => SetAsync(Kind.Tile.Image.Key, value)" />
+        @if (Look.Image is not null)
+        {
+            <span class="tile-settings__note">Keep this part in view when the picture is cropped:</span>
+            <div class="focus-picker" role="radiogroup" aria-label="Part of the picture to keep in view">
+                @foreach (FocalPoint point in FocalPoints)
+                {
+                    <button type="button" role="radio" aria-checked="@(point == Look.Focus ? "true" : "false")" class="focus-picker__point @(point == Look.Focus ? "focus-picker__point--on" : "")"
+                            aria-label="@FocusWords(point)" @onclick="() => SetAsync(Kind.Tile.Focus.Key, Kind.Tile.Focus.Format(point))"></button>
+                }
+            </div>
+        }
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Opens</legend>
+        <Segmented TValue="bool" Label="Opens" Options="LinkKinds" Value="OpensWeb" ValueChanged="UseWebAsync" />
+        @if (OpensWeb)
+        {
+            <TextField Label="Web page" Type="url" Placeholder="https://" Value="@Look.Link" ValueChanged="value => SetAsync(Kind.Tile.Link.Key, value)" Problem="@Kind.Tile.Link.ProblemWith(Look.Link)" />
+        }
+        else
+        {
+            <PlaceField Value="@NullIfEmpty(Look.Link)" ValueChanged="value => SetAsync(Kind.Tile.Link.Key, value ?? string.Empty)" OpenableBy="@Draft.Audience" ChooseLabel="Choose where it opens" SheetTitle="Choose where this tile opens" />
+        }
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Who sees it, and when</legend>
+        <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
+        <div class="ui-pair">
+            <TextField Label="First day shown" Type="date" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+            <TextField Label="Last day shown" Type="date" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+        </div>
+        <ToggleRow Title="Shown" Description="Turn off to hide it without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
+    </fieldset>
+
+    @foreach (string problem in Draft.Problems)
+    {
+        <Notice Tone="NoticeTone.Warning" Text="@problem" />
+    }
+</div>
+
+@code {
+    private static readonly string[] Schemes = ["light", "dark"];
+    private static readonly IReadOnlyList<SegmentOption<string>> SchemeChoices = [new("light", "Light", "sun"), new("dark", "Dark", "moon")];
+    private string _proofScheme = "light";
+    private Dictionary<string, double> _contrast = [];
+    private string _measuredFor = "";
+    private bool? _web;
+
+    [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
+    [Parameter, EditorRequired] public required HubTileKind Kind { get; set; }
+    [Parameter, EditorRequired] public required int Columns { get; set; }
+    [Parameter] public string? Palette { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, CustomIcon> Icons { get; set; } = new Dictionary<string, CustomIcon>();
+    [Parameter] public RenderFragment? Notices { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public Func<string, string, string>? AddIcon { get; set; }
+
+    public static readonly IReadOnlyList<string> BuiltInIcons =
+    [
+        "sparkles", "bulletin", "sermons", "play", "headphones", "calendar", "calendar-plus", "clock", "bell", "megaphone",
+        "prayer", "heart", "book-open", "scroll-text", "notebook-pen", "users", "user", "smile", "music", "mic", "video",
+        "radio", "coffee", "home", "door-open", "map-pin", "map", "footprints", "flag", "globe", "phone", "mail",
+        "message-square", "camera", "image", "file", "link", "store", "zap", "shield-check",
+    ];
+
+    private static readonly IReadOnlyList<FocalPoint> FocalPoints =
+        [new(0, 0), new(50, 0), new(100, 0), new(0, 50), new(50, 50), new(100, 50), new(0, 100), new(50, 100), new(100, 100)];
+
+    private static readonly IReadOnlyList<SegmentOption<bool>> LinkKinds = [new(false, "In the app", "smartphone"), new(true, "A web page", "globe")];
+
+    private TileLook Look => TileLook.Of(Kind, new SettingValues(Draft.Values));
+
+    private HubContext Proof => new(false, 2, Icons.ToDictionary(pair => pair.Key, pair => pair.Value.Drawing));
+
+    private string Heading => Kind.IsPlain ? Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title : Kind.Surface.Title;
+
+    private string Ratio(string scheme) =>
+        _contrast.GetValueOrDefault(scheme) is > 0 and var ratio ? $"{ratio.ToString("0.0", CultureInfo.InvariantCulture)} : 1" : "…";
+
+    private ArrangedSurface ProofEntry
+    {
+        get
+        {
+            StoredPlacement stored = Draft.ToStored(Draft.Id ?? Guid.Empty.ToString());
+            Dictionary<string, string> values = new(stored.Values)
+            {
+                [HubTileKeys.Columns] = Math.Min(Look.Columns, 2).ToString(CultureInfo.InvariantCulture),
+                [HubTileKeys.Rows] = Math.Min(Look.Rows, 2).ToString(CultureInfo.InvariantCulture),
+            };
+            return new ArrangedSurface(Kind.Surface, stored with { Values = values });
+        }
+    }
+
+
+    private string FromWords => Kind.IsPlain
+        ? "Your own tile: everything on it is yours to write"
+        : Kind.Sample ? $"Filled by {Kind.From}. Shows sample content until {Kind.From} is built" : $"Filled by {Kind.From}";
+
+    private bool OpensWeb => _web ?? LinkTargets.KindOf(Look.Link) == LinkKind.Web;
+
+    private IReadOnlyList<FieldOption> IconColours => IconTones.Choices
+        .Where(choice => choice.Value != IconTones.Own || IconSetting.IsCustom(Look.Icon, out _))
+        .Select(choice => new FieldOption(choice.Value, choice.Label))
+        .ToList();
+
+    protected override void OnParametersSet()
+    {
+        if (Draft.Id != _draftId)
+        {
+            _draftId = Draft.Id;
+            _web = null;
+        }
+    }
+
+    private string? _draftId;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        string measuring = $"{Look.Tone.Value}/{Palette}";
+        if (measuring == _measuredFor)
+            return;
+        _measuredFor = measuring;
+        try
+        {
+            await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Configuration.Client/js/hub-canvas.js");
+            Dictionary<string, double> measured = [];
+            foreach (string scheme in Schemes)
+                measured[scheme] = await module.InvokeAsync<double>("contrastOf", $"[data-proof=\"{scheme}\"] .hub-tile");
+            _contrast = measured;
+            StateHasChanged();
+        }
+        catch (JSException)
+        {
+        }
+    }
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Columns), Look.Rows);
+
+    private RenderFragment LayoutChoice(string key, string label, string description, bool suits) => __builder =>
+    {
+        bool chosen = Look.Layout == key || (key == TileVariant.Automatic && Kind.Variants.All(variant => variant.Key != Look.Layout));
+        <button type="button" role="radio" aria-checked="@(chosen ? "true" : "false")" disabled="@(!suits)"
+                class="layout-picker__choice @(chosen ? "layout-picker__choice--on" : "")" @onclick="() => SetAsync(Kind.Tile.Layout.Key, key)">
+            <strong>@label</strong>
+            <span>@description</span>
+        </button>
+    };
+
+    private RenderFragment Stepper(string label, int value, int shown, int least, int most, Func<int, Task> set, string unit) => __builder =>
+    {
+        <div class="stepper" role="group" aria-label="@label">
+            <span class="stepper__label">@label</span>
+            <button type="button" class="stepper__button" disabled="@(value <= least)" aria-label="@($"{label}: less")" @onclick="() => set(value - 1)"><Icon Name="minus" Size="IconSize.Small" /></button>
+            <span class="stepper__value">@shown @(shown == 1 ? unit : unit + "s")</span>
+            <button type="button" class="stepper__button" disabled="@(value >= most)" aria-label="@($"{label}: more")" @onclick="() => set(value + 1)"><Icon Name="plus" Size="IconSize.Small" /></button>
+        </div>
+    };
+
+    private Task SetAsync(NumberSetting setting, int value) => SetAsync(setting.Key, setting.Format(Math.Clamp(value, setting.Minimum, setting.Maximum)));
+
+    private Task SetAsync(ColourSetting setting, string value) => SetAsync(setting.Key, value);
+
+    private Task SetAsync(IconSetting setting, string value) => SetAsync(setting.Key, value);
+
+    private Task SetAsync(ChoiceSetting setting, string value) => SetAsync(setting.Key, value);
+
+    private Task SetAsync(string key, string value) => ChangeAsync(() => Draft.Values[key] = value);
+
+    private Task UseWebAsync(bool web)
+    {
+        _web = web;
+        return LinkTargets.KindOf(Look.Link) == (web ? LinkKind.InApp : LinkKind.Web) ? SetAsync(Kind.Tile.Link.Key, string.Empty) : Task.CompletedTask;
+    }
+
+    private Task AddIconAsync((string Name, string Drawing) icon) =>
+        AddIcon is null ? Task.CompletedTask : SetAsync(Kind.Tile.Icon, AddIcon(icon.Name, icon.Drawing));
+
+    private Task ChangeAsync(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private static readonly string[] FocusNames = ["Top left", "Top", "Top right", "Left", "Centre", "Right", "Bottom left", "Bottom", "Bottom right"];
+
+    private static string FocusWords(FocalPoint point) => FocusNames[FocalPoints.ToList().IndexOf(point)];
+
+    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
+
+    private static string Iso(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
+}

@@ -1,0 +1,52 @@
+@inject TimeProvider Clock
+
+@if (Variant.Key == WaitingTiles.Layouts.JustALink)
+{
+    <HubTile Look="@(Look.Icon.Length == 0 ? Look with { Icon = "calendar" } : Look)" Title="@Look.Title" Lines="CountLines" PlacementId="@Entry.Placement?.Id" />
+}
+else if (Span is { Columns: 1, Rows: 1 } && Coming.FirstOrDefault() is { } next)
+{
+    <HubTile Look="@(Look with { Icon = "" })" Title="@next.What" Lines="NextLines(next)" PlacementId="@Entry.Placement?.Id" />
+}
+else
+{
+    <HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" GoBeside="true" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
+        <span class="hub-list">
+            @foreach (WaitingWeek.Gathering gathering in Coming.Take(Fits))
+            {
+                DateTime at = ChurchTime.ToChurch(gathering.StartsAt);
+                <span class="hub-list__entry">
+                    <span class="hub-list__when">@ChurchDates.Time(at)<small>@ChurchDates.Relative(at.Date, Today)</small></span>
+                    <span class="hub-list__what">@gathering.What</span>
+                </span>
+            }
+        </span>
+    </HubTile>
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private TileLook Look => TileLook.Of(WaitingTiles.Week, Entry.Values);
+
+    private TileVariant Variant => WaitingTiles.Week.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
+    private IReadOnlyList<WaitingWeek.Gathering> Coming => WaitingWeek.Next(Clock, Entry.Values.Get(WaitingTiles.WeekEntries));
+
+    private int Fits => Span.Rows == 1 ? Span.Columns > 1 ? 3 : 1 : Span.Rows * (Span.Columns > 1 ? 3 : 2);
+
+    private DateTime Today => ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date;
+
+    private string When(WaitingWeek.Gathering gathering)
+    {
+        DateTime at = ChurchTime.ToChurch(gathering.StartsAt);
+        return $"{ChurchDates.Relative(at.Date, Today)} {ChurchDates.Time(at)}";
+    }
+
+    private IReadOnlyList<string> CountLines => [$"{Coming.Count} on at church"];
+
+    private IReadOnlyList<string> NextLines(WaitingWeek.Gathering next) => [$"Next · {When(next)}"];
+}

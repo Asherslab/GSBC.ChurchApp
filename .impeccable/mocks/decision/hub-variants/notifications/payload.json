@@ -1,0 +1,77 @@
+{
+  "title": "Notifications: what the tile becomes at each size",
+  "question": "Each size gets a designed layout instead of being refused. Which layouts should Notifications offer? Good alternatives stay selectable in the tile's settings; you pick defaults per size.",
+  "seed": "seed:d54502b47af7d86e",
+  "options": [
+    {
+      "id": "newest",
+      "kind": "assigned",
+      "label": "Newest in full",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The newest notice with its first lines, the count above it: reads like a noticeboard pinned to Home.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Notifications at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/notifications/newest.html",
+      "htmlFrame": "1440x900",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "dots",
+      "kind": "dealt",
+      "label": "Unread dots",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The three newest titles with an unread dot each; tall tiles show more.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Notifications at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/notifications/dots.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "count",
+      "kind": "dealt",
+      "label": "Count and newest",
+      "lineage": "a tile drawn for its size",
+      "thesis": "The bell, \"3 unread\" and the newest title: the earlier Hub's tile; all caught up when nothing waits.",
+      "palette": [
+        "#2a3d5e",
+        "#ffffff",
+        "#f4efe7",
+        "#e7ae74",
+        "#00776d"
+      ],
+      "materials": [
+        "Montserrat",
+        "theme tones",
+        "tile grid"
+      ],
+      "viewport": "Notifications at 1 \u00d7 1, 2 \u00d7 1, 1 \u00d7 2 and 2 \u00d7 2 on a 2-column Home.",
+      "risk": "Judged at phone size; check the 1 \u00d7 1 reads at arm's length.",
+      "html": ".impeccable/mocks/decision/hub-variants/notifications/count.html",
+      "htmlFrame": "1440x900"
+    }
+  ]
+}
