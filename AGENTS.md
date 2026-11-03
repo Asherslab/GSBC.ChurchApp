@@ -120,6 +120,13 @@ mounted read-only and isn't changed; the owner's accounts, roles and passkeys co
 is already shared. Start empty only for an explicit reason (testing first-run set-up, a migration
 from scratch), and say so.
 
+# Release notes: part of every change people would notice
+
+A change someone would notice in the app or the admin panel adds one file to `changelog/unreleased/`
+in the same commit: a short line for everyone, and a `## For staff` part saying what changed, where to
+find it and what to try ([changelog.md](docs/architecture/changelog.md)). Staff-only changes use
+`audience: staff`; a big new thing sets `highlight: true`. Refactors, tests and docs get no note.
+
 # Comments: almost none
 
 **Don't write comments unless the code genuinely can't be understood without one.** Make the code say

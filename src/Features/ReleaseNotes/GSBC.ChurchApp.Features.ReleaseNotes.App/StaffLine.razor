@@ -1,9 +1,0 @@
-@if (!string.IsNullOrWhiteSpace(Text))
-{
-    <span class="row__subtitle"><strong>@Label:</strong> @Text</span>
-}
-
-@code {
-    [Parameter, EditorRequired] public required string Label { get; set; }
-    [Parameter] public string? Text { get; set; }
-}

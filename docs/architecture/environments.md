@@ -129,10 +129,13 @@ party, origins, site URL, bundle id) are in `config.yaml` there.
 3. It publishes the app (Release, AOT) and checks the warning baseline, syncs the shell, archives the
    `UAT` configuration with automatic signing through the API key, and uploads it. About 20 minutes.
 4. App Store Connect → **GSBC UAT** → **TestFlight**: Apple processes the build (often 5 to 30 minutes),
-   then the internal group gets it.
+   then the internal group gets it, with What to Test already filled in (the job waits for processing; its
+   summary has the same text if you ever need to paste it by hand).
 
-The build number is the workflow's run number; the version is `MARKETING_VERSION` in the Xcode project
-(1.0). **A TestFlight build expires 90 days after upload** and then won't open, so cut a fresh one at
+The build number is the workflow's run number; the version is `MARKETING_VERSION` in
+`ios/environments/Version.xcconfig` (1.0), which all three configurations include. The workflow also tags
+the uploaded commit `testflight/uat/<build>` and sets the build's What to Test from the release notes since
+the previous tag, once Apple has processed it ([changelog.md](changelog.md)). **A TestFlight build expires 90 days after upload** and then won't open, so cut a fresh one at
 least every couple of months even when nothing changed, and before showing staff anything new. Only
 UAT's backend has to be up; the build carries everything else.
 
