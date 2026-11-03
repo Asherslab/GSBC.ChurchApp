@@ -2,10 +2,12 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Api.Tiers;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
@@ -46,6 +48,8 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IAccessEvaluator, NoGrantsAccessEvaluator>();
         services.TryAddSingleton<IScopeHierarchy, FlatScopeHierarchy>();
         services.TryAddScoped<IInstallVerifier, NoInstallVerifier>();
+        services.TryAddScoped<INotifications, NoNotifications>();
+        services.TryAddScoped<IPeopleIndex, NoPeople>();
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<FeedChangeBroadcaster>();
@@ -106,6 +110,9 @@ public static class PlatformApiExtensions
         services.TryAddSingleton<SurfaceCatalog>();
         return services.AddSingleton(surfaces);
     }
+
+    public static IServiceCollection AddNotificationKinds(this IServiceCollection services, params IReadOnlyList<NotificationKind> kinds) =>
+        services.AddSingleton(new NotificationKindSet(kinds));
 
     public static IServiceCollection AddSystemRole(this IServiceCollection services, SystemRole role) =>
         services.AddSingleton(role);

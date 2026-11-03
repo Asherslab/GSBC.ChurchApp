@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Api.Notifications;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
@@ -59,6 +60,11 @@ public sealed class DraftEditorTests : ConfigurationHost
 
         Draft asked = await Drafts(drafts => drafts.AskToPublishAsync(editor, new DraftQuery { DraftId = draft.Id }, Cancel));
         Assert.Equal(DraftStatus.WaitingToPublish, asked.Status);
+
+        Notification waiting = Assert.Single(Raised.All);
+        Assert.Equal(DraftNotifications.WaitingToPublish, waiting.Kind);
+        Assert.Equal(NotificationAudience.Holding(AppearanceSurfaces.Publish, null), waiting.Audience);
+        Assert.Equal($"/drafts/{draft.Id}", waiting.Link);
     }
 
     [Fact]
@@ -93,6 +99,9 @@ public sealed class DraftEditorTests : ConfigurationHost
         Draft draft = await NewDraftAsync(author);
         await SaveAsync(author, draft, LinkTile("Christmas"));
         await Drafts(editor => editor.ShareAsync(author, new ShareRequest { DraftId = draft.Id, UserId = FakeAccess.IdOf(pastor).ToString() }, sharing: true, Cancel));
+        Notification shared = Assert.Single(Raised.All);
+        Assert.Equal((DraftNotifications.SharedWithYou, NotificationAudience.Person(FakeAccess.IdOf(pastor)), $"/previews?draft={draft.Id}"),
+            (shared.Kind, shared.Audience, shared.Link));
 
         FeedBatch pastorsPhone = Assert.Single((await PullAsync(pastor, ConfigurationFeeds.Drafts, 0)).Feeds);
         Assert.Equal([draft.Id], pastorsPhone.Changes.Select(change => change.Id));

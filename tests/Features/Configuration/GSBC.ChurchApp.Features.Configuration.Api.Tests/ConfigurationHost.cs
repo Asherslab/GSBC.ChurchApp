@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Media;
@@ -40,6 +41,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
     protected FakeAccess Access { get; } = new(Permissions);
     protected Library Media { get; } = new();
+    protected RaisedNotifications Raised { get; } = new();
 
     public async ValueTask InitializeAsync()
     {
@@ -54,6 +56,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
             .AddSingleton<IAccessEvaluator>(Access)
             .AddSingleton<IRoleAssignments>(Access)
             .AddSingleton<IMediaReferences>(Media)
+            .AddSingleton<INotifications>(Raised)
             .AddSingleton(new FeedRegistry([
                 new FeedDefinition(ConfigurationFeeds.Placements, FeedAudience.Public),
                 new FeedDefinition(ConfigurationFeeds.Drafts, FeedAudience.Holding(ConfigurationPermissions.PreviewDraft))]))
@@ -193,6 +196,17 @@ public abstract class ConfigurationHost : IAsyncLifetime
         public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
         {
             _uses[owner] = verified.Select(media => media.Id).ToList();
+            return Task.CompletedTask;
+        }
+    }
+
+    protected sealed class RaisedNotifications : INotifications
+    {
+        public List<Notification> All { get; } = [];
+
+        public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
+        {
+            All.Add(notification);
             return Task.CompletedTask;
         }
     }

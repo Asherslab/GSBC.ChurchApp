@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
@@ -16,7 +17,7 @@ namespace GSBC.ChurchApp.Features.Configuration.Api;
 
 internal sealed class DraftEditor(
     ConfigurationDbContext db, PlacementEditor placements, SurfaceCatalog surfaces, IAccessEvaluator access, IRoleAssignments roles,
-    IMediaReferences media, TimeProvider time)
+    IMediaReferences media, INotifications notifications, TimeProvider time)
 {
     private const int RecentlyPublished = 10;
 
@@ -207,6 +208,17 @@ internal sealed class DraftEditor(
         draft.AskedAt = Now;
         Touch(draft);
         await SaveAsync(draft, cancellationToken, changes);
+        DraftChangeRecord first = changes.OrderBy(change => change.Area, StringComparer.Ordinal).First();
+        if (surfaces.Areas.TryGetValue(first.Area, out SurfaceArea? area))
+        {
+            await notifications.RaiseAsync(new Notification(
+                DraftNotifications.WaitingToPublish,
+                NotificationAudience.Holding(area.PublishPermission, first.ScopeId),
+                $"“{draft.Name}” is waiting to publish",
+                $"{NameOf(caller)} asked for it to be published.",
+                Link: $"/drafts/{draft.Id}",
+                Subject: $"draft/{draft.Id}"), cancellationToken);
+        }
         return await ToMessageAsync(draft, changes, caller, cancellationToken);
     }
 
@@ -334,7 +346,16 @@ internal sealed class DraftEditor(
             throw Invalid("They wrote this draft, so they always see it.");
 
         if (sharing)
+        {
             await roles.GiveAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), null, cancellationToken);
+            await notifications.RaiseAsync(new Notification(
+                DraftNotifications.SharedWithYou,
+                NotificationAudience.Person(person),
+                $"{NameOf(caller)} shared “{draft.Name}” with you",
+                "See it on your phone before anyone else does.",
+                Link: $"/previews?draft={draft.Id}",
+                Subject: $"draft/{draft.Id}"), cancellationToken);
+        }
         else
             await roles.TakeAwayAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken);
 
@@ -660,4 +681,7 @@ internal sealed class DraftEditor(
     private static DateTime? AsUtc(DateTime? value) => value is { } utc ? DateTime.SpecifyKind(utc, DateTimeKind.Utc) : null;
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
+
+    private static string NameOf(ClaimsPrincipal caller) =>
+        caller.FindFirstValue("name") is { Length: > 0 } name ? name : "Someone";
 }

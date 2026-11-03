@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Api.Installs;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Installs;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -27,6 +28,7 @@ public static class AccountsApiExtensions
         services.AddHostedService<AccountsCleanup>();
         services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));
         services.AddScoped<IInstallVerifier, InstallVerifier>();
+        services.AddScoped<IPeopleIndex, AccountsPeopleIndex>();
         return services.AddPermissions(AccountsPermissions.All);
     }
 

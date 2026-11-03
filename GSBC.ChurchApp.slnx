@@ -64,6 +64,10 @@
     <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Client/GSBC.ChurchApp.Features.Media.Client.csproj" />
     <Project Path="src/Features/Media/GSBC.ChurchApp.Features.Media.Contracts/GSBC.ChurchApp.Features.Media.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Notifications/">
+    <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api/GSBC.ChurchApp.Features.Notifications.Api.csproj" />
+    <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Contracts/GSBC.ChurchApp.Features.Notifications.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Features/ReleaseNotes/">
     <Project Path="src/Features/ReleaseNotes/GSBC.ChurchApp.Features.ReleaseNotes.App/GSBC.ChurchApp.Features.ReleaseNotes.App.csproj" />
     <Project Path="src/Features/ReleaseNotes/GSBC.ChurchApp.Features.ReleaseNotes.Generator/GSBC.ChurchApp.Features.ReleaseNotes.Generator.csproj" />
@@ -105,6 +109,9 @@
   </Folder>
   <Folder Name="/tests/Features/Media/">
     <Project Path="tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/GSBC.ChurchApp.Features.Media.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Notifications/">
+    <Project Path="tests/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api.Tests/GSBC.ChurchApp.Features.Notifications.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/ReleaseNotes/">
     <Project Path="tests/Features/ReleaseNotes/GSBC.ChurchApp.Features.ReleaseNotes.App.Tests/GSBC.ChurchApp.Features.ReleaseNotes.App.Tests.csproj" />

@@ -102,6 +102,11 @@ flowchart LR
         MediaContracts["Features.Media.Contracts"]
     end
 
+    subgraph Notifications["Features / Notifications"]
+        NotificationsApi["Features.Notifications.Api"]
+        NotificationsContracts["Features.Notifications.Contracts"]
+    end
+
     subgraph ReleaseNotes["Features / ReleaseNotes"]
         ReleaseNotesApp["Features.ReleaseNotes.App"]
         ReleaseNotesGenerator["Features.ReleaseNotes.Generator"]
@@ -128,6 +133,7 @@ flowchart LR
         AccessTests["Features.Access.Api.Tests"]
         ConfigurationTests["Features.Configuration.Api.Tests"]
         MediaTests["Features.Media.Api.Tests"]
+        NotificationsTests["Features.Notifications.Api.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
     end
 
@@ -135,8 +141,8 @@ flowchart LR
     HostsGateway --> HostsAdmin & AccountsGateway
     HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & NotificationsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & NotificationsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -160,6 +166,8 @@ flowchart LR
     MediaClient --> MediaContracts & PlatformClient & PlatformUi
     MediaApi --> MediaContracts & PlatformApi & PlatformStorage
     MediaContracts --> PlatformContracts
+    NotificationsApi --> NotificationsContracts & PlatformApi & PlatformCommon
+    NotificationsContracts --> PlatformContracts
 
     ReleaseNotesApp --> PlatformUi & ReleaseNotesGenerator
 
@@ -177,6 +185,7 @@ flowchart LR
     AccessTests --> AccessApi
     ConfigurationTests --> ConfigurationApi
     MediaTests --> MediaApi
+    NotificationsTests --> NotificationsApi
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -227,6 +236,8 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Media.Api` | Uploads through signed R2 links, checked and named by their SHA-256, with dimensions read from the bytes; signed links to private media for whoever holds its audience; `IMediaReferences` and which records use which file; deleting unused files (schema `media`) | No |
 | `GSBC.ChurchApp.Features.Media.Client` | Media's gRPC proxies, uploading, private links behind `IPrivateMediaLinks`, and the shared `MediaUpload` and `MediaLibrary` components (`MediaLibrary` is also the `MediaPicker`) | Yes |
 | `GSBC.ChurchApp.Features.Media.Admin` | The Media library page | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Contracts` | The `Notifications` and `Announcements` services, the inbox, kinds and preferences feeds, the announcement kinds and the `notifications.announcements.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Api` | `INotifications`: audiences through Access, the inbox feeds, preferences, pacing, quiet hours; push through APNs with retries and dead tokens dropped; the silent push for sync; announcements and their schedule (schema `notifications`) | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
@@ -242,6 +253,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Api.Tests` | Against Postgres: scopes, includes, denies and expiry decide access; nobody can hand out permissions they don't hold | No |
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores; images in settings are the library's; unsafe rich text is never stored | No |
 | `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience, a saved `MediaRef` is the library's, dimensions come from the bytes, files in use can't be deleted | No |
+| `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |

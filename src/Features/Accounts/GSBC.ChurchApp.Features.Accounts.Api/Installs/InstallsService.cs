@@ -2,12 +2,14 @@ using System.Security.Cryptography;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Data;
+using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Installs;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Installs;
 
-internal sealed class InstallsService(AccountsDbContext db, AppAttest appAttest, TimeProvider time) : IInstallsService
+internal sealed class InstallsService(AccountsDbContext db, AppAttest appAttest, IPhoneRoles phoneRoles, TimeProvider time) : IInstallsService
 {
     private const int ChallengeLength = 32;
     private static readonly TimeSpan ChallengeLifetime = TimeSpan.FromMinutes(5);
@@ -48,6 +50,14 @@ internal sealed class InstallsService(AccountsDbContext db, AppAttest appAttest,
             });
             await db.SaveChangesAsync(context.CancellationToken);
         }
+        return new Done();
+    }
+
+    public async ValueTask<Done> ClaimAsync(Nothing request, CallContext context = default)
+    {
+        Guid userId = Caller.UserId(context.ServerCallContext!.GetHttpContext().User)
+            ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
+        await phoneRoles.MoveToPersonAsync(CallingInstall.Of(context), userId, context.CancellationToken);
         return new Done();
     }
 }

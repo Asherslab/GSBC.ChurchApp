@@ -41,6 +41,9 @@ else
 foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
     api.WithEnvironment($"Email__Graph__{setting.Key}", setting.Value);
 
+foreach (IConfigurationSection setting in builder.Configuration.GetSection("Notifications:Apns").GetChildren())
+    api.WithEnvironment($"Notifications__Apns__{setting.Key}", setting.Value);
+
 IResourceBuilder<ProjectResource> gateway = builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
