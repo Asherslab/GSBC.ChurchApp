@@ -5,6 +5,8 @@
 @inject IAccess Access
 @inject ClientModules Modules
 @inject NavigationManager Navigation
+@inject IEnumerable<IOfficeWeekSource> Sources
+@inject TimeProvider Clock
 
 <div class="admin-shell">
     <aside class="admin-sidebar">
@@ -12,7 +14,8 @@
             <BrandMark Decorative="true" />
             <span>Good Shepherd</span>
         </a>
-        <ModuleNav />
+        <ModuleNav Counts="_waiting" />
+        <RefreshOn Feeds="Feeds" Changed="CountAsync" />
     </aside>
     <main class="admin-main">
         @if (Area is { } area && !Access.SignedIn)
@@ -47,6 +50,9 @@
 
 @code {
     private ErrorBoundary? _boundary;
+    private IReadOnlyDictionary<string, int>? _waiting;
+
+    private IReadOnlyCollection<string> Feeds => Sources.SelectMany(source => source.Feeds).ToHashSet();
 
     private NavEntry? Area
     {
@@ -59,13 +65,37 @@
         }
     }
 
-    protected override void OnInitialized() => Access.Changed += OnAccessChanged;
+    protected override async Task OnInitializedAsync()
+    {
+        Access.Changed += OnAccessChanged;
+        await CountAsync();
+    }
+
+    private async Task CountAsync()
+    {
+        try
+        {
+            DateTime now = Clock.GetUtcNow().UtcDateTime;
+            OfficeWeek[] weeks = await Task.WhenAll(Sources.Select(source => source.LoadAsync(now, now.AddDays(7))));
+            List<OfficeTask> tasks = weeks.SelectMany(week => week.Tasks).ToList();
+            _waiting = Modules.Navigation.Where(entry => entry.Href.Length > 0)
+                .ToDictionary(entry => entry.Href, entry => tasks.Count(task => task.Href == entry.Href || task.Href.StartsWith(entry.Href + "/", StringComparison.Ordinal)));
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _waiting = null;
+        }
+    }
 
     protected override void OnParametersSet() => _boundary?.Recover();
 
     private void Recover() => _boundary?.Recover();
 
-    private void OnAccessChanged() => InvokeAsync(StateHasChanged);
+    private void OnAccessChanged() => InvokeAsync(async () =>
+    {
+        await CountAsync();
+        StateHasChanged();
+    });
 
     public void Dispose() => Access.Changed -= OnAccessChanged;
 }

@@ -25,7 +25,7 @@ else
     <LiveData TValue="OfficeWeek" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't load this week right now">
         <section class="office-rail" aria-labelledby="office-rail-title">
             <h2 class="visually-hidden" id="office-rail-title">The next seven days</h2>
-            <div class="office-rail__grid">
+            <div class="office-rail__grid" style="--rows: @(Math.Max(context.Value.Spans.Count, 1))">
                 @for (int day = 0; day < Days; day++)
                 {
                     DateTime date = Today.AddDays(day);
@@ -38,9 +38,9 @@ else
                 {
                     <p class="office-rail__quiet">Nothing dated this week. Event layers and tiles with dates appear here.</p>
                 }
-                @foreach (OfficeSpan span in context.Value.Spans.OrderBy(span => span.StartsAt))
+                @foreach ((OfficeSpan span, int row) in context.Value.Spans.OrderBy(span => span.StartsAt).Select((span, index) => (span, index)))
                 {
-                    <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant()" href="@span.Href" style="grid-column: @Column(span.StartsAt) / @(Column(span.EndsAt) + 1)" title="@SpanTitle(span)">
+                    <a class="office-rail__span office-rail__span--@span.Kind.ToString().ToLowerInvariant()" href="@span.Href" style="grid-column: @Column(span.StartsAt) / @(Column(LastMoment(span)) + 1); grid-row: @(row + 2)" title="@SpanTitle(span)">
                         <span class="office-rail__span-title">@span.Title</span>
                         <span class="office-rail__span-when">@Range(span)</span>
                     </a>
@@ -128,11 +128,13 @@ else
         return (startsBefore, endsAfter) switch
         {
             (true, true) => "All week",
-            (true, false) => $"Until {Short(span.EndsAt)}",
+            (true, false) => $"Until {Short(LastMoment(span))}",
             (false, true) => $"From {Short(span.StartsAt)}",
-            _ => $"{Short(span.StartsAt)} to {Short(span.EndsAt)}",
+            _ => Column(span.StartsAt) == Column(LastMoment(span)) ? Short(span.StartsAt) : $"{Short(span.StartsAt)} to {Short(LastMoment(span))}",
         };
     }
+
+    private static DateTime LastMoment(OfficeSpan span) => span.EndsAt.AddTicks(-1);
 
     private string SpanTitle(OfficeSpan span) => $"{span.Title}: {Range(span)}";
 

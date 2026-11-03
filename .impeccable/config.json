@@ -34,6 +34,15 @@
         ],
         "createdAt": "2026-11-02T12:56:44.584Z",
         "reason": "Claude: frozen decision-round sketch (owner chose from it 2026-11-02); not shipped UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/week-desk.html"
+        ],
+        "createdAt": "2026-11-03T06:11:31.639Z",
+        "reason": "model: decision-round HTML sketch, a fixed skeleton thumbnail the owner already locked; it never ships"
       }
     ]
   }

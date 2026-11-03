@@ -4,7 +4,7 @@
 
 <Workbench AsideLabel="People" Showing="@(UserId is null ? WorkbenchPane.Aside : WorkbenchPane.Main)">
     <Aside>
-        <h2 class="workbench__heading">People</h2>
+        <h2 class="workbench__heading">Find someone</h2>
         <SearchField Label="Find someone" Placeholder="Name or email" Value="@_query" ValueChanged="SearchAsync" />
         <LiveData @ref="_live" TValue="IReadOnlyList<PersonSummary>" Load="LoadAsync" FailedTitle="Can't find people right now">
             <DataTable TItem="PersonSummary" Label="People" Items="context.Value" Columns="Columns" Key="person => person.Id" Selected="Chosen(context.Value)" SelectedChanged="Choose" Class="data-table--list">
@@ -15,9 +15,9 @@
         </LiveData>
     </Aside>
     <ChildContent>
+        <TitleBand Title="Who can do what" Lead="Choose someone to see what they can do and why, take a role away, or give them one." />
         @if (UserId is null)
         {
-            <TitleBand Title="Who can do what" Lead="Choose someone to see what they can do and why, take a role away, or give them one." />
             <div class="admin-gate">
                 <EmptyState Icon="key" Title="Choose someone on the left" Body="Their roles and everything those roles let them do will show here." />
             </div>

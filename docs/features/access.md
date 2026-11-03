@@ -63,12 +63,14 @@ can't recover their account by email; a staff member issues them a recovery code
 
 ## Admin screens
 
-- **Roles** (`/access/roles`): every role as a card (what it's for, where it's given, who gives it,
-  how many hold it). A role's page (`/access/roles/{id}`) lists what it lets people do, by area, and
-  who has it; Access managers can **Make a copy** (`/access/roles/new?from={id}`), and change or
-  delete a custom role (`/access/roles/{id}/edit`), each after **Check what changes**.
-- **Who can do what** (`/access/people`): find someone, see "What can they do?" by place with the
-  reason, their roles with Take away, and Give a role with "They will be able to: …" before the button.
+- **Roles** (`/access/roles`): every role in a table you can search, filter (built in, made here) and
+  sort (what it's for, where it's given, who gives it, how many hold it). Choosing one
+  (`/access/roles/{id}`) shows it beside the table: what it lets people do, by area, and who has it;
+  Access managers can **Make a copy** (`/access/roles/new?from={id}`), and change or delete a custom
+  role (`/access/roles/{id}/edit`), each after **Check what changes**, which sits beside the editor.
+- **Who can do what** (`/access/people`): people on the left; the chosen person (`?user=`) shows their
+  roles with Take away and Give a role ("They will be able to: …" before the button), then "What can
+  they do?" by place with the reason.
 - **Roles: developer tool** (`/access/roles/advanced`, not in the navigation): the raw pattern editor
   and the catalogue with nodes.
 - **People** (Accounts): find someone, invite someone, give a recovery code, disable an account, see the

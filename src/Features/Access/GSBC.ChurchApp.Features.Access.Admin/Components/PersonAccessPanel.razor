@@ -3,11 +3,14 @@
 @inject IScopeNames ScopeNames
 
 <LiveData @ref="_live" TValue="PersonView" Load="LoadAsync" FailedTitle="Can't load what they can do">
-    <TitleBand Title="@context.Value.Person.Name" BrowserTitle="Who can do what" Lead="@context.Value.Person.Email" />
+    <header class="person-head">
+        <h2 class="person-head__name">@context.Value.Person.Name</h2>
+        <p class="person-head__email">@context.Value.Person.Email</p>
+    </header>
 
     <div class="access-columns">
         <section class="editor-section" aria-labelledby="can-do">
-            <h2 class="section__title" id="can-do">What can @FirstName(context.Value.Person) do?</h2>
+            <h3 class="section__title" id="can-do">What can @FirstName(context.Value.Person) do?</h3>
             @if (context.Value.Abilities.Places.Count == 0)
             {
                 <p class="panel-hint">@AccessWords.Nothing</p>
@@ -23,7 +26,7 @@
         </section>
 
         <aside class="split-view__panel access-roles" aria-labelledby="their-roles">
-            <h2 class="panel-title" id="their-roles">Their roles</h2>
+            <h3 class="panel-title" id="their-roles">Their roles</h3>
             @if (context.Value.Assignments.Count == 0)
             {
                 <p class="panel-hint">None yet.</p>
@@ -44,10 +47,9 @@
                 </ul>
             }
 
-            <section class="panel-section" aria-labelledby="give-role">
-                <h3 class="panel-subtitle" id="give-role">Give a role</h3>
+            <section class="panel-section" aria-label="Give a role">
                 <div class="panel-form">
-                    <SelectField Label="Role" Options="RoleOptions(context.Value)" @bind-Value="_roleId" />
+                    <SelectField Label="Give a role" Options="RoleOptions(context.Value)" @bind-Value="_roleId" />
                     @if (context.Value.Roles.FirstOrDefault(role => role.Id == _roleId) is { } chosen)
                     {
                         @if (chosen.ScopeKind != ScopeKind.Global.Name)

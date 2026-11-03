@@ -7,9 +7,6 @@
             <Toolbar>
                 <SearchField Label="Find a file" Placeholder="Find by file name or description" @bind-Value="_query" />
                 <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
-                <Can Permission="MediaPermissions.Upload">
-                    <span class="data-table__toolbar-end"><Button Icon="plus" Small="true" OnClick="StartUpload">Upload</Button></span>
-                </Can>
             </Toolbar>
             <Empty>
                 <EmptyState Icon="image" Title="@(_query.Length > 0 || _filter != MediaFilter.All ? "Nothing matches" : "No pictures yet")" Body="@(_query.Length > 0 || _filter != MediaFilter.All ? "Try another word, or show everything." : "Upload a picture to use it on the app's tiles and pages.")" />
@@ -161,10 +158,11 @@
         _selected = item;
     }
 
-    private void StartUpload()
+    public void StartUpload()
     {
         _selected = null;
         _uploading = true;
+        StateHasChanged();
     }
 
     private async Task MoreAsync()
