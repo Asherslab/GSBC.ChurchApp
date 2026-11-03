@@ -1,0 +1,223 @@
+@using System.Globalization
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject TimeProvider Clock
+@inject SurfaceViews Views
+
+<div class="hub-canvas" @ref="_canvas">
+    <div class="hub-canvas__bar">
+        <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
+        <SelectField Label="Show it as" Options="ViewerChoices" Value="@_viewer" ValueChanged="viewer => _viewer = viewer" />
+        <TextField Label="On" Type="date" Value="@Iso(_on)" ValueChanged="value => _on = FromIso(value)" />
+        <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
+    </div>
+
+    <div class="hub-canvas__stage" data-fit-height>
+        <PhoneFrame Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
+            <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
+        </PhoneFrame>
+    </div>
+    <p class="hub-canvas__keys">Drag a tile to move it, or its corner to resize it. With the keyboard: Tab to a tile, then arrows move it and Shift with arrows resizes it.</p>
+    <p class="visually-hidden" aria-live="polite">@_announced</p>
+
+    @if (NotShown.Count > 0 || Removed.Count > 0)
+    {
+        <section class="hub-canvas__hidden" aria-labelledby="hub-hidden">
+            <h3 id="hub-hidden">Not on the phone @(_viewer == EveryTile ? "now" : $"for {ViewerWords}")</h3>
+            <ListGroup>
+                @foreach ((ArrangedSurface entry, string why) in NotShown)
+                {
+                    <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@why" Icon="eye-off" IconTone="RowTone.Quiet"
+                             Class="@(HubTiles.KeyOf(entry) == SelectedKey ? "row--selected" : null)" OnClick="() => OnChoose.InvokeAsync(entry)" />
+                }
+                @foreach (PlacementPatch removed in Removed)
+                {
+                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(HubTileKeys.Title) ?? "A tile")" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                        <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        </section>
+    }
+</div>
+
+@code {
+    private const string EveryTile = "every";
+    private const string Visitor = "visitor";
+    private const string SignedIn = "signed-in";
+
+    private ElementReference _canvas;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _attached;
+    private DotNetObjectReference<HubCanvas>? _self;
+    private string _viewer = EveryTile;
+    private DateOnly? _on;
+    private string _announced = "";
+
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
+    [Parameter] public IReadOnlyList<PlacementPatch> Removed { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
+    [Parameter] public string? SelectedKey { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
+    [Parameter] public EventCallback<(ArrangedSurface Tile, int To)> OnMove { get; set; }
+    [Parameter] public EventCallback<(ArrangedSurface Tile, int Columns, int Rows)> OnResize { get; set; }
+    [Parameter] public EventCallback<int> OnColumns { get; set; }
+    [Parameter] public EventCallback OnAdd { get; set; }
+    [Parameter] public EventCallback<string> OnPutBack { get; set; }
+
+    private static readonly IReadOnlyList<SegmentOption<int>> ColumnChoices =
+        Enumerable.Range(HubGrid.FewestColumns, HubGrid.MostColumns - HubGrid.FewestColumns + 1).Select(count => new SegmentOption<int>(count, count.ToString(CultureInfo.InvariantCulture))).ToList();
+
+    private int Columns => HubSurfaces.Grid.ColumnsIn(Hub);
+
+    private DateTime At => _on is { } day ? ChurchTime.ToUtc(day.ToDateTime(new TimeOnly(9, 0))) : Clock.GetUtcNow().UtcDateTime;
+
+    private IReadOnlyList<ArrangedSurface> Tiles => HubTiles.TilesIn(Hub, Views);
+
+    private AppearanceSurfaces.ChosenTheme Palette =>
+        AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, At)));
+
+    private IReadOnlyList<FieldOption> ViewerChoices =>
+    [
+        new(EveryTile, "Every tile, whoever it's for"),
+        new(Visitor, "A visitor, not signed in"),
+        new(SignedIn, "Someone signed in"),
+        .. RolesInUse.Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
+    ];
+
+    private IEnumerable<Guid> RolesInUse => Tiles.Select(entry => entry.Audience.RoleId).OfType<Guid>().Distinct();
+
+    private string ViewerWords => _viewer switch
+    {
+        EveryTile => "everyone",
+        Visitor => "a visitor",
+        SignedIn => "someone signed in",
+        _ => Guid.TryParse(_viewer, out Guid role) ? $"someone who's {RoleNames.GetValueOrDefault(role, "in that role")}" : "everyone",
+    };
+
+    private bool ShownNow(ArrangedSurface entry) => _viewer == EveryTile
+        ? !entry.Hidden && InDates(entry)
+        : entry.IsShownTo(ViewerFor(_viewer), At);
+
+    private static Viewer ViewerFor(string viewer) => viewer switch
+    {
+        Visitor => Viewer.Anonymous,
+        SignedIn => new Viewer(true, _ => false),
+        _ when Guid.TryParse(viewer, out Guid role) => new Viewer(true, node => node == RoleMembership.NodeOf(role)),
+        _ => Viewer.Anonymous,
+    };
+
+    private bool InDates(ArrangedSurface entry) => (entry.StartsAt is null || At >= entry.StartsAt) && (entry.EndsAt is null || At < entry.EndsAt);
+
+    private List<ArrangedSurface> Shown => Hub.Where(entry => HubSurfaces.IsArrangement(entry.Surface) || ShownNow(entry)).ToList();
+
+    private List<(ArrangedSurface Entry, string Why)> NotShown => Tiles.Where(entry => !ShownNow(entry)).Select(entry => (entry, WhyHidden(entry))).ToList();
+
+    private string WhyHidden(ArrangedSurface entry)
+    {
+        if (entry.Hidden)
+            return "Switched off";
+        if (entry.StartsAt is { } starts && At < starts)
+            return $"Shows from {DraftWords.Day(starts)}";
+        if (entry.EndsAt is { } ends && At >= ends)
+            return $"Ended {DraftWords.Day(ends.AddTicks(-1))}";
+        return entry.Audience.RoleId is { } role ? $"Only for {RoleNames.GetValueOrDefault(role, "people in a role")}" : "Only for people who are signed in";
+    }
+
+    private RenderFragment<HubCell> Overlay => cell => __builder =>
+    {
+        bool selected = HubTiles.KeyOf(cell.Entry) == SelectedKey;
+        <div class="hub-arrange @(selected ? "hub-arrange--selected" : "")" data-arrange tabindex="0" role="button" aria-pressed="@(selected ? "true" : "false")"
+             aria-label="@($"{DraftWords.NameOf(cell.Entry)}, {cell.Place.Columns} by {cell.Place.Rows}, tile {cell.Index + 1} of {Tiles.Count(ShownNow)}")">
+            @if (selected)
+            {
+                <span class="hub-arrange__size" data-size>@cell.Place.Columns × @cell.Place.Rows</span>
+                <span class="hub-arrange__grip" data-grip aria-hidden="true"></span>
+            }
+        </div>
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _self = DotNetObjectReference.Create(this);
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Configuration.Client/js/hub-canvas.js");
+        _attached = await _module.InvokeAsync<IJSObjectReference>("attach", _canvas, _self);
+    }
+
+    private ArrangedSurface? Find(string key) => Tiles.FirstOrDefault(entry => HubTiles.KeyOf(entry) == key);
+
+    private List<ArrangedSurface> Visible => Tiles.Where(ShownNow).ToList();
+
+    [JSInvokable]
+    public Task Chosen(string key) => Find(key) is { } entry ? InvokeAsync(() => OnChoose.InvokeAsync(entry)) : Task.CompletedTask;
+
+    [JSInvokable]
+    public async Task Moved(string key, int toVisibleIndex)
+    {
+        List<ArrangedSurface> visible = Visible;
+        if (Find(key) is not { } entry || toVisibleIndex < 0 || toVisibleIndex >= visible.Count)
+            return;
+        int to = Tiles.ToList().IndexOf(visible[toVisibleIndex]);
+        await InvokeAsync(() => OnMove.InvokeAsync((entry, to)));
+        Announce($"Moved {DraftWords.NameOf(entry)} to place {toVisibleIndex + 1} of {visible.Count}.");
+    }
+
+    [JSInvokable]
+    public async Task Resized(string key, int columns, int rows)
+    {
+        if (Find(key) is not { } entry)
+            return;
+        await InvokeAsync(() => OnResize.InvokeAsync((entry, columns, rows)));
+        Announce($"{DraftWords.NameOf(entry)} is now {columns} {(columns == 1 ? "column" : "columns")} wide and {rows} {(rows == 1 ? "row" : "rows")} tall.");
+    }
+
+    [JSInvokable]
+    public async Task Nudged(string key, int across, int down, bool resizing)
+    {
+        if (Find(key) is not { } entry)
+            return;
+        TileSpan span = HubTiles.SpanOf(entry);
+        if (resizing)
+        {
+            await Resized(key, Math.Clamp(Math.Min(span.Columns, Columns) + across, 1, Columns), Math.Clamp(span.Rows + down, 1, HubGrid.MostRows));
+            return;
+        }
+        List<ArrangedSurface> visible = Visible;
+        int from = visible.IndexOf(entry);
+        int to = from + (across != 0 ? across : down);
+        if (from >= 0 && to >= 0 && to < visible.Count)
+            await Moved(key, to);
+    }
+
+    private void Announce(string words)
+    {
+        _announced = words;
+        StateHasChanged();
+    }
+
+    private static string Iso(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_attached is not null)
+            {
+                await _attached.InvokeVoidAsync("dispose");
+                await _attached.DisposeAsync();
+            }
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _self?.Dispose();
+    }
+}

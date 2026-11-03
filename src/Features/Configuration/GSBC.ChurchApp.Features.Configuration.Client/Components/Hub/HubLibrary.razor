@@ -1,0 +1,30 @@
+<div class="tile-settings">
+    <header class="tile-settings__head">
+        <h3>Home's tiles</h3>
+        <span>Click a tile on the phone to change it, or add one. Changes save by themselves; phones previewing this draft follow along.</span>
+    </header>
+
+    <section class="tile-settings__group" aria-labelledby="hub-icons">
+        <h4 class="tile-settings__legend" id="hub-icons">Icons you've uploaded</h4>
+        @if (Icons.Count == 0)
+        {
+            <p class="tile-settings__note">None yet. Upload an SVG from a tile's Icon choices; it's cleaned, drawn in the theme's colours, and kept here for any tile.</p>
+        }
+        else
+        {
+            <ListGroup>
+                @foreach (ArrangedSurface icon in Icons)
+                {
+                    <ListRow Title="@icon.Values.Get(HubSurfaces.Icon.Name)" Subtitle="Drawn in each tile's colours" OnClick="() => OnChoose.InvokeAsync(icon)">
+                        <Leading><span class="row__icon hub-icon--primary"><SvgIcon Drawing="@icon.Values.Get(HubSurfaces.Icon.Drawing)" /></span></Leading>
+                    </ListRow>
+                }
+            </ListGroup>
+        }
+    </section>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Icons { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
+}

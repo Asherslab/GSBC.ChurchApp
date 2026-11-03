@@ -3,7 +3,8 @@
 @font-face { font-family: "Montserrat"; font-weight: 700; font-display: swap; src: url("../fonts/montserrat-latin-700-normal.woff2") format("woff2"); }
 @font-face { font-family: "DM Serif Text"; font-weight: 400; font-display: swap; src: url("../fonts/dm-serif-text-latin-400-normal.woff2") format("woff2"); }
 
-:root {
+:root,
+[data-preview-scheme="light"] {
   --device-bezel: #000000;
   --selected-fill: var(--sand);
   --fill-on-surface: var(--sand);
@@ -100,7 +101,8 @@
   --masthead-tracking: -0.01em;
 }
 
-:root[data-scheme="dark"] {
+:root[data-scheme="dark"],
+[data-preview-scheme="dark"] {
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
   --page: #141d31;
@@ -130,7 +132,8 @@
 }
 
 :root[data-theme="year-2026"][data-scheme="dark"],
-:root[data-scheme="dark"] [data-palette="year-2026"] {
+:root[data-scheme="dark"] [data-palette="year-2026"],
+[data-palette="year-2026"][data-preview-scheme="dark"] {
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
   --page: #111a14;

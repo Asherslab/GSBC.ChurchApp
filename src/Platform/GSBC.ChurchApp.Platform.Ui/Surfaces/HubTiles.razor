@@ -5,7 +5,7 @@
         @for (int index = 0; index < Tiles.Count; index++)
         {
             HubCell cell = new(Tiles[index], Places[index], index);
-            <div class="hub-cell @(cell.Place.Columns == Context.Columns && cell.Place.Rows == 1 ? "hub-cell--line" : "")" data-tile="@KeyOf(cell.Entry)"
+            <div @key="KeyOf(cell.Entry)" class="hub-cell @(cell.Place.Columns == Context.Columns && cell.Place.Rows == 1 ? "hub-cell--line" : "")" data-tile="@KeyOf(cell.Entry)" data-columns="@cell.Place.Columns" data-rows="@cell.Place.Rows"
                  style="grid-column: @cell.Place.Column / span @cell.Place.Columns; grid-row: @cell.Place.Row / span @cell.Place.Rows; --tile-rows: @cell.Place.Rows">
                 <SurfaceView Entry="cell.Entry" />
                 @Overlay?.Invoke(cell)
