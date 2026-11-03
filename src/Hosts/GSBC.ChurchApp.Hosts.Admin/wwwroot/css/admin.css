@@ -237,6 +237,7 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .access-place { margin-top: 18px; }
 .access-roles { position: sticky; top: 24px; }
 .access-roles .holders { border-top: 0; }
+.access-roles .holders li:last-child { border-bottom: 0; }
 @media (max-width: 1328px) {
     .access-columns { grid-template-columns: minmax(0, 1fr); }
     .access-roles { position: static; order: -1; padding: 0 0 24px; border-left: 0; border-bottom: 1px solid var(--line); }

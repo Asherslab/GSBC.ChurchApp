@@ -5,7 +5,7 @@
         <DataTable TItem="MediaItemInfo" Label="Media" Items="Shown(context.Value)" Columns="Columns" Key="item => item.Media!.Id"
                    Selected="_selected" SelectedChanged="Select" SortColumn="3" SortDescending="true">
             <Toolbar>
-                <SearchField Label="Find a file" Placeholder="Find by file name or description" @bind-Value="_query" />
+                <SearchField Label="Find a file" Placeholder="Find a file" @bind-Value="_query" />
                 <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
             </Toolbar>
             <Empty>
