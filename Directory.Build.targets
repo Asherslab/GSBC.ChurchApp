@@ -6,11 +6,12 @@
     </AssemblyAttribute>
   </ItemGroup>
 
-  <!-- The router finds pages by reflection, so the trimmer must keep the host and every page module whole (SPEC §9 rule 1). -->
-  <Target Name="GsbcRootPageModules" BeforeTargets="PrepareForILLink" Condition="'$(GsbcIsAppHost)' == 'true'">
+  <!-- The router finds pages by reflection, so the trimmer must keep each host (the app, the admin panel) and its page modules whole (SPEC §9 rule 1). -->
+  <Target Name="GsbcRootPageModules" BeforeTargets="PrepareForILLink" Condition="'$(GsbcIsAppHost)' == 'true' or '$(GsbcIsAdminHost)' == 'true'">
     <ItemGroup>
       <TrimmerRootAssembly Include="$(AssemblyName)" />
-      <TrimmerRootAssembly Include="%(ProjectReference.Filename)" Condition="$([System.String]::Copy('%(ProjectReference.Filename)').EndsWith('.App'))" />
+      <TrimmerRootAssembly Include="%(ProjectReference.Filename)" Condition="'$(GsbcIsAppHost)' == 'true' and $([System.String]::Copy('%(ProjectReference.Filename)').EndsWith('.App'))" />
+      <TrimmerRootAssembly Include="%(ProjectReference.Filename)" Condition="'$(GsbcIsAdminHost)' == 'true' and $([System.String]::Copy('%(ProjectReference.Filename)').EndsWith('.Admin'))" />
     </ItemGroup>
   </Target>
 </Project>
