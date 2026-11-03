@@ -26,7 +26,8 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "registerPasskey", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "preference", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "proveInstall", returnType: CAPPluginReturnPromise)
     ]
 
     private static let preferences = UserDefaults.standard
@@ -147,6 +148,14 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         Task {
             await runtime.forgetSession()
             call.resolve()
+        }
+    }
+
+    @objc func proveInstall(_ call: CAPPluginCall) {
+        guard let transport else { return call.resolve(["proven": false, "supported": false]) }
+        Task {
+            let proven = await DataLayerRuntime.installs.ensureAttested(using: transport)
+            call.resolve(["proven": proven, "supported": DataLayerRuntime.installs.isSupported])
         }
     }
 

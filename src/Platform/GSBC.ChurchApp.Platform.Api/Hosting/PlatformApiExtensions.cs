@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
+using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
 using GSBC.ChurchApp.Platform.Api.Sync;
@@ -44,6 +45,7 @@ public static class PlatformApiExtensions
         services.AddSingleton<TierCatalog>();
         services.TryAddScoped<IAccessEvaluator, NoGrantsAccessEvaluator>();
         services.TryAddSingleton<IScopeHierarchy, FlatScopeHierarchy>();
+        services.TryAddScoped<IInstallVerifier, NoInstallVerifier>();
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<FeedChangeBroadcaster>();
@@ -87,6 +89,7 @@ public static class PlatformApiExtensions
 
     public static WebApplication MapPlatformApi(this WebApplication app)
     {
+        app.UseMiddleware<InstallProofMiddleware>();
         app.MapGrpcHealthChecksService();
         app.MapGrpcService<SyncService>();
         return app;

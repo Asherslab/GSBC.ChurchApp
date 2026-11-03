@@ -168,15 +168,19 @@ Built here because decision 3 puts following and tokens behind it, and prayer re
   `aaguid` matching the environment (development builds use `appattestdevelop`). All BCL: CBOR
   (`System.Formats.Cbor`), X.509 and ECDSA.
 - **Each App write** carries `gsbc-install: <key id>` and `gsbc-assertion`: an assertion over
-  `SHA256(method path ‖ request bytes ‖ gsbc-request-id)`. The tier interceptor (`[AppInstall]`,
+  `SHA256(method path ‖ "\n" ‖ the gRPC-Web request body)`. The tier interceptor (`[AppInstall]`,
   today "not available yet") checks the signature and that the counter grew, then passes the install
   id to the method. The native Transport attaches both to every call to an `[AppInstall]` method;
   the outbox signs when it sends, not when it queues.
 - **Where App Attest can't run** (the iOS Simulator, Android until Play Integrity): such a phone
-  reads everything, and Follow says "This phone can't follow groups" (SPEC §6: no fallback). The dev
-  backend can be told to accept the Simulator's unattested key (`Installs:AllowUnattestedDevelopment`,
-  only in Development, off by default) so the Simulator can test the flow; production and UAT
-  never read it.
+  reads everything, and Follow says "This phone can't follow groups" (SPEC §6: no fallback). There's
+  no development bypass; App Attest is tested on a real iPhone, and the verifier by
+  `AppAttestTests` with a stand-in root.
+- **Built (2026-11-03):** `AppAttest` and `InstallsService` in Accounts.Api (table
+  `accounts.installs`, migration `AppInstalls`), `InstallProofMiddleware`, `IInstallVerifier` and
+  `CallingInstall` in Platform.Api, and on the phone `InstallAttestation` (the native layer attests
+  once, on the first App write, and signs every later unary call except Sync's and Installs').
+  The app id is `Apple:TeamId` + `Apple:BundleId`, as for the gateway's association file.
 
 ## Channels
 

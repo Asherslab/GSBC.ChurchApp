@@ -1,5 +1,7 @@
 using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Features.Accounts.Api.Installs;
 using GSBC.ChurchApp.Features.Accounts.Data;
+using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -23,6 +25,8 @@ public static class AccountsApiExtensions
         services.AddSystemRole(new SystemRole("account-manager", "Account manager",
             "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global, ["accounts.*"]));
         services.AddHostedService<AccountsCleanup>();
+        services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));
+        services.AddScoped<IInstallVerifier, InstallVerifier>();
         return services.AddPermissions(AccountsPermissions.All);
     }
 
@@ -30,6 +34,15 @@ public static class AccountsApiExtensions
     {
         endpoints.MapGrpcService<SessionService>();
         endpoints.MapGrpcService<AccountsService>();
+        endpoints.MapGrpcService<InstallsService>();
         return endpoints;
+    }
+
+    private static string[] AppIds(IConfiguration configuration)
+    {
+        IConfigurationSection apple = configuration.GetSection("Apple");
+        return apple["TeamId"] is { Length: > 0 } teamId
+            ? [$"{teamId.Trim()}.{(apple["BundleId"] is { Length: > 0 } bundleId ? bundleId : "au.com.baptist.app")}"]
+            : [];
     }
 }

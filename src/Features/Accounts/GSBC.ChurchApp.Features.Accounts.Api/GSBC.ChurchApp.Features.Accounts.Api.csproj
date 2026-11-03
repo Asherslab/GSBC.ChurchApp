@@ -10,4 +10,7 @@
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Accounts.Data\GSBC.ChurchApp.Features.Accounts.Data.csproj" />
     <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Installs\AppleAppAttestationRootCA.pem" LogicalName="AppleAppAttestationRootCA.pem" />
+  </ItemGroup>
 </Project>

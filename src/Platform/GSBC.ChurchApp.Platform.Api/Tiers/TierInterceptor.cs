@@ -3,12 +3,13 @@ using Grpc.AspNetCore.Server;
 using Grpc.Core;
 using Grpc.Core.Interceptors;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using Microsoft.AspNetCore.Http;
 
 namespace GSBC.ChurchApp.Platform.Api.Tiers;
 
-public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access) : Interceptor
+public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access, IInstallVerifier installs) : Interceptor
 {
     private const string KubernetesHealthProbe = "/grpc.health.v1.Health/";
 
@@ -72,9 +73,19 @@ public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access
             case SignedInAttribute or RequiresAttribute:
                 throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
             case AppInstallAttribute:
-                throw new RpcException(new Status(StatusCode.FailedPrecondition, "App attestation is not available yet."));
+                await ProveInstallAsync(http, context.CancellationToken);
+                return;
             default:
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "Unknown tier."));
         }
+    }
+
+    private async Task ProveInstallAsync(HttpContext http, CancellationToken cancellationToken)
+    {
+        InstallProof proof = InstallProofMiddleware.ProofOf(http)
+            ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "This phone hasn't proved it's the app."));
+        Guid installId = await installs.VerifyAsync(proof, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "This phone hasn't proved it's the app."));
+        CallingInstall.Set(http, installId);
     }
 }

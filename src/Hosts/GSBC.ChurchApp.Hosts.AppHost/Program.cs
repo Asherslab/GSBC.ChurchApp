@@ -55,7 +55,10 @@ IResourceBuilder<ProjectResource> gateway = builder
 
 string teamFile = Path.Combine(builder.AppHostDirectory, "..", "App", "shell", ".team");
 if (File.Exists(teamFile) && File.ReadAllText(teamFile).Trim() is { Length: > 0 } teamId)
+{
     gateway.WithEnvironment("Apple__TeamId", teamId);
+    api.WithEnvironment("Apple__TeamId", teamId);
+}
 
 if (tunnel is not null)
 {

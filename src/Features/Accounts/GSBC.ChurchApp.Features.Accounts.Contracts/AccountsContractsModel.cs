@@ -30,4 +30,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 [ProtoSerializable(typeof(SetDisabledRequest))]
 [ProtoSerializable(typeof(AuditQuery))]
 [ProtoSerializable(typeof(AuditList))]
+[ProtoSerializable(typeof(BeginAttestationRequest))]
+[ProtoSerializable(typeof(AttestationChallenge))]
+[ProtoSerializable(typeof(AttestRequest))]
 public partial class AccountsContractsModel : TypeModel;
