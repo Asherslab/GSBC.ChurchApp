@@ -151,15 +151,24 @@ internal sealed class PlacementEditor(
 
     private PlacementState Validated(Surface surface, PlacementState state)
     {
+        state = Normalised(surface, state);
         List<string> problems = [.. surface.ProblemsWith(state.Values)];
         if (!Audience.TryParse(state.Audience, out Audience? audience))
             problems.Add($"'{state.Audience}' isn't an audience.");
-        else if (audience.Node is { } node && !permissions.ByNode.ContainsKey(node))
+        else if (audience is { Node: { } node, RoleId: null } && !permissions.ByNode.ContainsKey(node))
             problems.Add($"No permission '{node}' exists to choose an audience by.");
         if (state is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
             problems.Add($"'{surface.Title}' has to end after it starts.");
 
         return problems.Count == 0 ? state with { Audience = audience!.Text } : throw Invalid(string.Join(" ", problems));
+    }
+
+    private static PlacementState Normalised(Surface surface, PlacementState state)
+    {
+        SortedDictionary<string, string> values = new(state.Values);
+        foreach (Setting setting in surface.Settings.Where(setting => setting is INormalises && values.ContainsKey(setting.Key)))
+            values[setting.Key] = ((INormalises)setting).Normalise(values[setting.Key]);
+        return state with { Values = values };
     }
 
     public PlacementRecord Create(SurfaceArea area, string? scopeId, Surface surface, Guid id, List<PlacementRecord> existing)

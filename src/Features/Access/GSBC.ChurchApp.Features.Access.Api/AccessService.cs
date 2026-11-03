@@ -31,6 +31,14 @@ internal sealed class AccessService(
         ScopeKinds = ScopeKind.Known.Select(kind => kind.Name).ToList(),
     });
 
+    public async ValueTask<RoleNameList> ListRoleNamesAsync(Nothing request, CallContext context = default) => new()
+    {
+        Roles = await db.Roles.AsNoTracking()
+            .OrderBy(role => role.Name)
+            .Select(role => new RoleName { Id = role.Id.ToString(), Name = role.Name, Description = role.Description })
+            .ToListAsync(context.CancellationToken),
+    };
+
     public async ValueTask<RoleList> ListRolesAsync(Nothing request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;

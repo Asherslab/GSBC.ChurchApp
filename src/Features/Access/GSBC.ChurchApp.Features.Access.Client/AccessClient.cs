@@ -12,6 +12,8 @@ public sealed class AccessClient(ChannelBase channel)
 
     public ValueTask<Catalog> ListCatalogAsync() => _access.ListCatalogAsync(new Nothing());
 
+    public ValueTask<RoleNameList> ListRoleNamesAsync() => _access.ListRoleNamesAsync(new Nothing());
+
     public ValueTask<RoleList> ListRolesAsync() => _access.ListRolesAsync(new Nothing());
 
     public ValueTask<RoleInfo> SaveRoleAsync(RoleInfo role) => _access.SaveRoleAsync(role);

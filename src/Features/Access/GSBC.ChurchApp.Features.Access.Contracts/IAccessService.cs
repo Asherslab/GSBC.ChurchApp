@@ -16,6 +16,9 @@ public interface IAccessService
     [Requires(AccessPermissions.ViewNode)]
     ValueTask<RoleList> ListRolesAsync(Nothing request, CallContext context = default);
 
+    [SignedIn]
+    ValueTask<RoleNameList> ListRoleNamesAsync(Nothing request, CallContext context = default);
+
     [Requires(AccessPermissions.EditRolesNode)]
     ValueTask<RoleInfo> SaveRoleAsync(RoleInfo request, CallContext context = default);
 
