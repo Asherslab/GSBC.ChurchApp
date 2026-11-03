@@ -11,20 +11,19 @@
     </header>
     @Notices
 
-    <div class="tile-settings__proof" aria-label="This tile in light and dark">
+    <div class="tile-settings__proof">
+        <Segmented TValue="string" Label="Show this tile in" Options="SchemeChoices" Value="@_proofScheme" ValueChanged="scheme => _proofScheme = scheme" />
         @foreach (string scheme in Schemes)
         {
-            <div class="tile-settings__scheme">
-                <div class="tile-settings__sample" data-preview-scheme="@scheme" data-palette="@Palette" style="--hub-columns: @Math.Min(Look.Columns, 2)">
-                    <CascadingValue Value="Proof">
-                        <div class="hub-cell" style="--tile-rows: @Math.Min(Look.Rows, 2)" data-proof="@scheme">
-                            @Views.For(ProofEntry)
-                        </div>
-                    </CascadingValue>
-                </div>
-                <span class="tile-settings__ratio">@(scheme == "light" ? "Light" : "Dark") · text @(_contrast.GetValueOrDefault(scheme) is > 0 and var ratio ? $"{ratio.ToString("0.0", CultureInfo.InvariantCulture)} : 1" : "…")</span>
+            <div class="tile-settings__sample" hidden="@(scheme != _proofScheme)" data-preview-scheme="@scheme" data-palette="@Palette">
+                <CascadingValue Value="Proof">
+                    <div class="hub-cell" style="--tile-rows: @Math.Min(Look.Rows, 2)" data-proof="@scheme">
+                        @Views.For(ProofEntry)
+                    </div>
+                </CascadingValue>
             </div>
         }
+        <span class="tile-settings__ratio">Text on it reads at @Ratio("light") in light and @Ratio("dark") in dark. 4.5 : 1 or more is easy to read.</span>
     </div>
 
     <fieldset class="tile-settings__group">
@@ -138,6 +137,8 @@
 
 @code {
     private static readonly string[] Schemes = ["light", "dark"];
+    private static readonly IReadOnlyList<SegmentOption<string>> SchemeChoices = [new("light", "Light", "sun"), new("dark", "Dark", "moon")];
+    private string _proofScheme = "light";
     private Dictionary<string, double> _contrast = [];
     private string _measuredFor = "";
     private bool? _web;
@@ -169,6 +170,9 @@
     private HubContext Proof => new(false, 2, Icons.ToDictionary(pair => pair.Key, pair => pair.Value.Drawing));
 
     private string Heading => Kind.IsPlain ? Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title : Kind.Surface.Title;
+
+    private string Ratio(string scheme) =>
+        _contrast.GetValueOrDefault(scheme) is > 0 and var ratio ? $"{ratio.ToString("0.0", CultureInfo.InvariantCulture)} : 1" : "…";
 
     private ArrangedSurface ProofEntry
     {

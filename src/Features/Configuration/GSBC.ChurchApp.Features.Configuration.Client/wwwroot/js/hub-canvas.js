@@ -174,3 +174,10 @@ export function contrastOf(selector) {
   const element = document.querySelector(selector);
   return element ? contrast(element) : 0;
 }
+
+export function reveal(selector) {
+  const element = document.querySelector(selector);
+  if (!element) return;
+  const box = element.getBoundingClientRect();
+  if (box.top > innerHeight * 0.6) element.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}

@@ -105,7 +105,7 @@
 .hub-arrange--selected,
 .hub-arrange--selected:hover { box-shadow: 0 0 0 2px var(--marker); }
 .hub-arrange__size { position: absolute; top: 8px; right: 8px; padding: 2px 8px; border-radius: var(--radius-full); background: var(--primary); color: var(--on-primary); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
-.hub-arrange__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page); border-radius: 6px; background: var(--marker); cursor: nwse-resize; }
+.hub-arrange__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page); border-radius: var(--radius-inner); background: var(--marker); cursor: nwse-resize; }
 .hub-canvas--moving .hub-arrange { cursor: grabbing; }
 .hub-cell--lifted { z-index: 5; filter: drop-shadow(0 14px 22px rgb(24 35 58 / 0.28)); }
 .hub-cell--target .hub-arrange { box-shadow: 0 0 0 2px var(--accent); }
@@ -120,9 +120,10 @@
 .tile-settings__group legend,
 .tile-settings__legend { margin: 0 0 4px; padding: 0; font-size: var(--text-label); font-weight: 700; color: var(--ink); }
 .tile-settings__actions { padding-top: 14px; border-top: 1px solid var(--line); }
-.tile-settings__proof { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tile-settings__proof { display: grid; gap: 10px; }
+.tile-settings__sample[hidden] { display: none; }
 .tile-settings__scheme { display: grid; gap: 6px; min-width: 0; }
-.tile-settings__sample { --hub-gap: 10px; --hub-row: 92px; display: flex; padding: 10px; border-radius: var(--radius-field); background: var(--page); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
+.tile-settings__sample { --hub-gap: 12px; --hub-row: 120px; --hub-columns: 2; display: flex; padding: 10px; border-radius: var(--radius-field); background: var(--page); color: var(--ink); box-shadow: inset 0 0 0 1px var(--line); }
 .tile-settings__sample .hub-cell { flex: 1; }
 .tile-settings__ratio { font-size: var(--text-caption); color: var(--ink-3); font-variant-numeric: tabular-nums; }
 
@@ -151,7 +152,7 @@
 .icon-upload__proof { display: grid; flex: none; place-items: center; width: 58px; height: 58px; }
 
 .focus-picker { display: grid; grid-template-columns: repeat(3, 30px); gap: 4px; }
-.focus-picker__point { width: 30px; height: 30px; border: 0; border-radius: 8px; background: var(--fill-on-surface); cursor: pointer; }
+.focus-picker__point { width: 30px; height: 30px; border: 0; border-radius: var(--radius-inner); background: var(--fill-on-surface); cursor: pointer; }
 .focus-picker__point--on { background: var(--primary); }
 .focus-picker__point:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 

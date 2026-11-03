@@ -166,7 +166,14 @@
     private List<ArrangedSurface> Visible => Tiles.Where(ShownNow).ToList();
 
     [JSInvokable]
-    public Task Chosen(string key) => Find(key) is { } entry ? InvokeAsync(() => OnChoose.InvokeAsync(entry)) : Task.CompletedTask;
+    public async Task Chosen(string key)
+    {
+        if (Find(key) is not { } entry)
+            return;
+        await InvokeAsync(() => OnChoose.InvokeAsync(entry));
+        if (_module is not null)
+            await _module.InvokeVoidAsync("reveal", ".workbench__detail");
+    }
 
     [JSInvokable]
     public async Task Moved(string key, int toVisibleIndex)
