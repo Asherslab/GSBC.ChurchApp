@@ -1,8 +1,19 @@
 @if (Open)
 {
     <div class="sheet-backdrop" @onclick="CloseAsync"></div>
-    <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="@(Title is null ? null : _titleId)" tabindex="-1" @ref="_sheet" @onkeydown="KeyAsync">
-        <div class="sheet__grabber" aria-hidden="true"></div>
+    <div class="sheet @(Cover is null ? "" : "sheet--cover")" role="dialog" aria-modal="true" aria-labelledby="@(Title is null ? null : _titleId)" aria-label="@(Title is null ? Label : null)" tabindex="-1" @ref="_sheet" @onkeydown="KeyAsync">
+        @if (Cover is not null)
+        {
+            <div class="sheet__cover">
+                <div class="sheet__grabber" aria-hidden="true"></div>
+                <BrandMark Class="sheet__mark" Decorative="true" />
+                @Cover
+            </div>
+        }
+        else
+        {
+            <div class="sheet__grabber" aria-hidden="true"></div>
+        }
         @if (Title is not null)
         {
             <h2 class="sheet__title" id="@_titleId">@Title</h2>
@@ -29,6 +40,8 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public string? Lead { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public RenderFragment? Cover { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public RenderFragment? Actions { get; set; }
 

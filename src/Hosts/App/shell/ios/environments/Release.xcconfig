@@ -1,3 +1,4 @@
+#include "Version.xcconfig"
 CAPACITOR_DEBUG = false
 PRODUCT_BUNDLE_IDENTIFIER = au.com.baptist.app
 GSBC_APP_NAME = Good Shepherd

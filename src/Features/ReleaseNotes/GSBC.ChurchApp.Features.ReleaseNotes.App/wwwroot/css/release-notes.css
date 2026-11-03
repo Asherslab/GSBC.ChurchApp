@@ -1,0 +1,6 @@
+.highlight__head { display: flex; align-items: flex-start; gap: 14px; padding-right: 36px; }
+.highlight__icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: var(--radius-field); background: var(--masthead-chip); color: var(--on-masthead); }
+.highlight__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; align-self: center; }
+.highlight__note { margin: 10px 0 0 58px; font-size: var(--text-label); font-weight: 600; color: var(--masthead-note); }
+.highlight__image { display: block; width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: var(--radius); background: var(--sand-strong); }
+.highlight__summary { margin: 4px 0 0; max-width: 65ch; font-size: var(--text-lead); line-height: 1.55; color: var(--ink); text-wrap: pretty; }

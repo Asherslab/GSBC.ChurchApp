@@ -24,8 +24,13 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
         CAPPluginMethod(name: "registerPasskey", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise)
+        CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "preference", returnType: CAPPluginReturnPromise),
+        CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise)
     ]
+
+    private static let preferences = UserDefaults.standard
+    private static let preferencePrefix = "gsbc.preference."
 
     private let runtime = DataLayerRuntime.shared
     private var transport: GrpcWebTransport? { runtime.transport }
@@ -146,7 +151,26 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     }
 
     @objc func status(_ call: CAPPluginCall) {
-        call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild, "signedIn": runtime.signedIn])
+        let info = Bundle.main.infoDictionary
+        call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild, "signedIn": runtime.signedIn,
+                      "version": info?["CFBundleShortVersionString"] as? String ?? "", "build": info?["CFBundleVersion"] as? String ?? ""])
+    }
+
+    @objc func preference(_ call: CAPPluginCall) {
+        guard let key = call.getString("key") else { return call.reject("preference needs a key") }
+        var result: [String: Any] = [:]
+        result["value"] = Self.preferences.string(forKey: Self.preferencePrefix + key)
+        call.resolve(result)
+    }
+
+    @objc func setPreference(_ call: CAPPluginCall) {
+        guard let key = call.getString("key") else { return call.reject("setPreference needs a key") }
+        if let value = call.getString("value") {
+            Self.preferences.set(value, forKey: Self.preferencePrefix + key)
+        } else {
+            Self.preferences.removeObject(forKey: Self.preferencePrefix + key)
+        }
+        call.resolve()
     }
 
     private func ceremony(_ call: CAPPluginCall, _ run: @escaping (PasskeyCeremonies) async -> CeremonyOutcome) {

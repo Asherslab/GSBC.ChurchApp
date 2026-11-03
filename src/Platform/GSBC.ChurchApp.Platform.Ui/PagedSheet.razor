@@ -1,0 +1,78 @@
+@inject Shell Shell
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Label="@Label">
+    <Cover>
+        <div class="paged__cover" @key="_page">@Cover(_page)</div>
+    </Cover>
+    <ChildContent>
+        <div class="paged__page" @key="_page" @ontouchstart="TouchStart" @ontouchend="TouchEndAsync">@Page(_page)</div>
+        @if (Count > 1)
+        {
+            <div class="paged__dots">
+                @for (int index = 0; index < Count; index++)
+                {
+                    int page = index;
+                    <button type="button" class="paged__dot @(page == _page ? "is-current" : "")" aria-label="@ItemName @(page + 1) of @Count" aria-current="@(page == _page ? "step" : null)" @onclick="() => GoAsync(page)"></button>
+                }
+            </div>
+        }
+    </ChildContent>
+    <Actions>
+        @if (Action is not null)
+        {
+            @Action(_page)
+        }
+        <Button Variant="@(Action is null ? ButtonVariant.Primary : ButtonVariant.Quiet)" Block="true" OnClick="NextAsync">@(IsLast ? DoneLabel : NextLabel)</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const double SwipeDistance = 48;
+    private int _page;
+    private double? _touchX;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required int Count { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<int> Cover { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment<int> Page { get; set; }
+    [Parameter] public RenderFragment<int>? Action { get; set; }
+    [Parameter] public string Label { get; set; } = "What's new";
+    [Parameter] public string ItemName { get; set; } = "Page";
+    [Parameter] public string NextLabel { get; set; } = "Next";
+    [Parameter] public string DoneLabel { get; set; } = "Done";
+
+    private bool IsLast => _page >= Count - 1;
+
+    protected override void OnParametersSet()
+    {
+        if (!Open)
+            _page = 0;
+        _page = Math.Clamp(_page, 0, Math.Max(Count - 1, 0));
+    }
+
+    private async Task GoAsync(int page)
+    {
+        if (page == _page || page < 0 || page >= Count)
+            return;
+        _page = page;
+        await Shell.HapticAsync();
+    }
+
+    private Task NextAsync() => IsLast ? OpenChanged.InvokeAsync(false) : GoAsync(_page + 1);
+
+    private void TouchStart(TouchEventArgs touch) => _touchX = touch.ChangedTouches.FirstOrDefault()?.ClientX;
+
+    private Task TouchEndAsync(TouchEventArgs touch)
+    {
+        double? endX = touch.ChangedTouches.FirstOrDefault()?.ClientX;
+        double? moved = endX - _touchX;
+        _touchX = null;
+        return moved switch
+        {
+            < -SwipeDistance => GoAsync(_page + 1),
+            > SwipeDistance => GoAsync(_page - 1),
+            _ => Task.CompletedTask,
+        };
+    }
+}

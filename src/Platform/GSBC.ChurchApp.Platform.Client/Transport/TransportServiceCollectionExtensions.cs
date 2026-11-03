@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Client.Outbox;
+using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Client.Sessions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -24,6 +25,7 @@ public static class TransportServiceCollectionExtensions
             .AddSingleton<IOutbox>(provider => provider.GetRequiredService<NativeOutbox>())
             .AddSingleton<IMediaFiles, NativeMediaFiles>()
             .AddSingleton<IDeviceSession, NativeDeviceSession>()
+            .AddSingleton<ILocalPreferences, NativeLocalPreferences>()
             .AddSingleton(provider =>
             {
                 NativeBridge bridge = provider.GetRequiredService<NativeBridge>();

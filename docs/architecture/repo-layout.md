@@ -102,6 +102,11 @@ flowchart LR
         MediaContracts["Features.Media.Contracts"]
     end
 
+    subgraph ReleaseNotes["Features / ReleaseNotes"]
+        ReleaseNotesApp["Features.ReleaseNotes.App"]
+        ReleaseNotesGenerator["Features.ReleaseNotes.Generator"]
+    end
+
     subgraph Platform
         PlatformUi["Platform.Ui"]
         PlatformClient["Platform.Client"]
@@ -122,11 +127,12 @@ flowchart LR
         AccessTests["Features.Access.Api.Tests"]
         ConfigurationTests["Features.Configuration.Api.Tests"]
         MediaTests["Features.Media.Api.Tests"]
+        ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin
     HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & PlatformApi
     HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi
@@ -154,6 +160,8 @@ flowchart LR
     MediaApi --> MediaContracts & PlatformApi & PlatformStorage
     MediaContracts --> PlatformContracts
 
+    ReleaseNotesApp --> PlatformUi & ReleaseNotesGenerator
+
     PlatformUi --> PlatformClient & PlatformCommon
     PlatformClient --> PlatformContracts
     PlatformApi --> PlatformContracts & PlatformData
@@ -167,6 +175,7 @@ flowchart LR
     AccessTests --> AccessApi
     ConfigurationTests --> ConfigurationApi
     MediaTests --> MediaApi
+    ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
 At run time:
@@ -216,6 +225,8 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Media.Api` | Uploads through signed R2 links, checked and named by their SHA-256, with dimensions read from the bytes; signed links to private media for whoever holds its audience; `IMediaReferences` and which records use which file; deleting unused files (schema `media`) | No |
 | `GSBC.ChurchApp.Features.Media.Client` | Media's gRPC proxies, uploading, private links behind `IPrivateMediaLinks`, and the shared `MediaUpload` and `MediaLibrary` components (`MediaLibrary` is also the `MediaPicker`) | Yes |
 | `GSBC.ChurchApp.Features.Media.Admin` | The Media library page | Yes |
+| `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
+| `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
 | `GSBC.ChurchApp.Hosts.Admin` | The staff admin panel: Blazor WASM, not AOT, served by the gateway | No |
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |
@@ -229,6 +240,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Configuration.Api.Tests` | Against Postgres: only the area's permission at its scope arranges it; descriptors validate every value; saves reach the feed; stale saves are refused; rollback restores; images in settings are the library's; unsafe rich text is never stored | No |
 | `GSBC.ChurchApp.Features.Media.Api.Tests` | Against Postgres and an S3 store (in containers): a file's name is its content, files that aren't what they claim are refused, private media is only linked while you hold its audience, a saved `MediaRef` is the library's, dimensions come from the bytes, files in use can't be deleted | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; queued email waits out its backoff and then goes | No |
+| `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
@@ -250,6 +262,7 @@ A feature has only the parts it needs.
 | **Contracts** | Messages, `[Service]` interfaces, `[ProtoModel]`, its permission nodes and feed names | Platform.Contracts, Platform.Permissions | Everything |
 | **Data** (optional) | Its `DbContext` and migrations, when the gateway needs the same state as the API (only Accounts so far) | Platform.Data | Api, Gateway, Hosts.Migrator |
 | **Api** | Service implementations, its `DbContext` and migrations (or its Data part's), its feeds, its seeded roles | Its Contracts, Platform.Api, Platform.Data, Platform.Storage | Hosts.Api, Hosts.Migrator |
+| **Generator** (optional) | A source generator the feature's own projects run at build time (only ReleaseNotes so far) | Roslyn only | Nothing: it runs in the compiler |
 | **Gateway** (optional) | What the feature needs at the gateway: Accounts' passkey ceremonies and sessions | Its Contracts and Data | Hosts.Gateway |
 | **Client** | Its `[ProtoGrpc]`, typed calls, feed readers, and every component shown in more than one host | Its Contracts, Platform.Client, Platform.Ui | App, Admin |
 | **App** | Phone pages and navigation entries | Its Client | Hosts.App |

@@ -1,0 +1,64 @@
+@using GSBC.ChurchApp.Platform.Client.Native
+@implements IDisposable
+@inject WhatsNew WhatsNew
+@inject NativeBridge Bridge
+@inject NavigationManager Navigation
+
+@if (WhatsNew.Showing is { Count: > 0 } highlights)
+{
+    <PagedSheet Open="true" OpenChanged="Closed" Count="highlights.Count" ItemName="Highlight" Label="What's new">
+        <Cover Context="page">
+            <div class="highlight__head">
+                <span class="highlight__icon"><Icon Name="@(highlights[page].Icon ?? "sparkles")" /></span>
+                <h2 class="highlight__title">@highlights[page].Title</h2>
+            </div>
+            <p class="highlight__note">@ReleaseNoteLabels.NewIn(highlights[page], WhatsNew.ForStaff, Bridge.AppVersion)</p>
+        </Cover>
+        <Page Context="page">
+            @if (highlights[page].ImageUrl is { } image)
+            {
+                <img class="highlight__image" src="@image" alt="" />
+            }
+            <p class="highlight__summary">@highlights[page].Summary</p>
+            @if (highlights[page].Where is not null || highlights[page].Try is not null)
+            {
+                <FactList>
+                    <Fact Label="Where to find it" Text="@highlights[page].Where" Icon="map-pin" />
+                    <Fact Label="What to try" Text="@highlights[page].Try" Icon="check" />
+                </FactList>
+            }
+        </Page>
+        <Action Context="page">
+            @if (highlights[page].Link is { } link)
+            {
+                <Button Block="true" OnClick="() => ShowMe(link)">Show me</Button>
+            }
+        </Action>
+    </PagedSheet>
+}
+
+@code {
+    private static readonly TimeSpan SettleFirst = TimeSpan.FromMilliseconds(600);
+
+    protected override void OnInitialized() => WhatsNew.Changed += OnChanged;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        await Task.Delay(SettleFirst);
+        await WhatsNew.PresentUnseenAsync();
+    }
+
+    private void Closed(bool open) => WhatsNew.Dismiss();
+
+    private void ShowMe(string link)
+    {
+        WhatsNew.Dismiss();
+        Navigation.NavigateTo(link);
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => WhatsNew.Changed -= OnChanged;
+}
