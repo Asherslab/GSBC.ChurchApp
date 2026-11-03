@@ -20,11 +20,21 @@ internal sealed class AnnouncementsService(
     public const string Holding = "holding";
     public const string Person = "person";
 
-    public async ValueTask<AnnouncementList> ListAsync(AnnouncementQuery request, CallContext context = default) => new()
+    public async ValueTask<AnnouncementList> ListAsync(AnnouncementQuery request, CallContext context = default)
     {
-        Announcements = (await db.Announcements.AsNoTracking().OrderByDescending(announcement => announcement.UpdatedAt).Take(200).ToListAsync(context.CancellationToken))
-            .Select(Message).ToList(),
-    };
+        List<AnnouncementRecord> records = await db.Announcements.AsNoTracking()
+            .OrderByDescending(announcement => announcement.UpdatedAt).Take(200).ToListAsync(context.CancellationToken);
+        List<Guid> sent = records.Where(record => record.NotificationId is not null).Select(record => record.NotificationId!.Value).ToList();
+        Dictionary<Guid, int> readBy = await db.Inbox.AsNoTracking()
+            .Where(entry => sent.Contains(entry.NotificationId) && entry.ReadAt != null)
+            .GroupBy(entry => entry.NotificationId)
+            .Select(group => new { group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.Key, group => group.Count, context.CancellationToken);
+        return new AnnouncementList
+        {
+            Announcements = records.Select(record => Message(record, record.NotificationId is { } id ? readBy.GetValueOrDefault(id) : 0)).ToList(),
+        };
+    }
 
     public async ValueTask<Announcement> SaveAsync(Announcement request, CallContext context = default)
     {
@@ -72,6 +82,7 @@ internal sealed class AnnouncementsService(
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's been sent, so it stays in the history."));
         db.Announcements.Remove(record);
         await db.SaveChangesAsync(context.CancellationToken);
+        await raiser.SettleAsync(Subject(record), context.CancellationToken);
         return new Done();
     }
 
@@ -94,9 +105,9 @@ internal sealed class AnnouncementsService(
             AnnouncementNotifications.WaitingToSend,
             NotificationAudience.Holding(NotificationsPermissions.Send),
             $"“{record.Title}” is waiting to be sent",
-            "Check it and send it, or schedule it.",
+            "Check it in the admin panel, then send or schedule it.",
             Link: $"/announcements/{record.Id}",
-            Subject: $"announcement/{record.Id}"), context.CancellationToken);
+            Subject: Subject(record)), context.CancellationToken);
         return Message(record);
     }
 
@@ -119,6 +130,7 @@ internal sealed class AnnouncementsService(
             record.SendAt = sendAt;
             record.UpdatedAt = now;
             await db.SaveChangesAsync(context.CancellationToken);
+            await raiser.SettleAsync(Subject(record), context.CancellationToken);
             return Message(record);
         }
 
@@ -147,9 +159,12 @@ internal sealed class AnnouncementsService(
         record.UpdatedAt = record.SentAt.Value;
         record.ReachedPeople = people;
         record.ReachedPhones = phones;
+        record.NotificationId = await raiser.RaisedAsync(Notification(record, audience), cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-        await raiser.RaiseAsync(Notification(record, audience), cancellationToken);
+        await raiser.SettleAsync(Subject(record), cancellationToken);
     }
+
+    private static string Subject(AnnouncementRecord record) => $"announcement/{record.Id}";
 
     private static Notification Notification(AnnouncementRecord record, NotificationAudience audience) =>
         new(AnnouncementNotifications.Announcement, audience, record.Title, record.Body, Link: record.Link, Urgent: record.Urgent);
@@ -178,7 +193,9 @@ internal sealed class AnnouncementsService(
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 
-    private static Announcement Message(AnnouncementRecord record) => new()
+    private static Announcement Message(AnnouncementRecord record) => Message(record, readBy: 0);
+
+    private static Announcement Message(AnnouncementRecord record, int readBy) => new()
     {
         Id = record.Id.ToString(),
         Title = record.Title,
@@ -196,5 +213,6 @@ internal sealed class AnnouncementsService(
         UpdatedAt = record.UpdatedAt,
         ReachedPeople = record.ReachedPeople,
         ReachedPhones = record.ReachedPhones,
+        ReadBy = readBy,
     };
 }

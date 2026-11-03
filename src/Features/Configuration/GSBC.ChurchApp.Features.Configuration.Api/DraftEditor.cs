@@ -215,9 +215,10 @@ internal sealed class DraftEditor(
                 DraftNotifications.WaitingToPublish,
                 NotificationAudience.Holding(area.PublishPermission, first.ScopeId),
                 $"“{draft.Name}” is waiting to publish",
-                $"{NameOf(caller)} asked for it to be published.",
-                Link: $"/drafts/{draft.Id}",
-                Subject: $"draft/{draft.Id}"), cancellationToken);
+                $"{NameOf(caller)} asked for it to be published. Publish it from the admin panel.",
+                Link: $"/previews?draft={draft.Id}",
+                Subject: Subject(draft),
+                Action: "Preview it"), cancellationToken);
         }
         return await ToMessageAsync(draft, changes, caller, cancellationToken);
     }
@@ -354,7 +355,8 @@ internal sealed class DraftEditor(
                 $"{NameOf(caller)} shared “{draft.Name}” with you",
                 "See it on your phone before anyone else does.",
                 Link: $"/previews?draft={draft.Id}",
-                Subject: $"draft/{draft.Id}"), cancellationToken);
+                Subject: Subject(draft),
+                Action: "Preview it"), cancellationToken);
         }
         else
             await roles.TakeAwayAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken);
@@ -468,6 +470,8 @@ internal sealed class DraftEditor(
             await db.SaveChangesAsync(cancellationToken);
     }
 
+    private static string Subject(DraftRecord draft) => $"draft/{draft.Id}";
+
     private void Close(DraftRecord draft)
     {
         if (draft.LayerOn)
@@ -486,6 +490,7 @@ internal sealed class DraftEditor(
     private async Task AfterClosingAsync(DraftRecord draft, CancellationToken cancellationToken)
     {
         await media.UseAsync(MediaOwner(draft), [], cancellationToken);
+        await notifications.SettleAsync(Subject(draft), cancellationToken);
         foreach (RoleHolder holder in await roles.HoldersAsync(ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken))
             await roles.TakeAwayAsFeatureAsync(holder.UserId, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken);
     }

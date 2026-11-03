@@ -34,6 +34,14 @@ public sealed class GrantSetTests
     }
 
     [Fact]
+    public void AGrantAtOneObjectCountsAsSomewhere()
+    {
+        Assert.True(new GrantSet([AtMinistry("ministries.news.post", "42")]).IsAllowedSomewhere(PostNews));
+        Assert.False(new GrantSet([AtMinistry("ministries.news.post", "42"), AtMinistry("-ministries.news.post", "42")]).IsAllowedSomewhere(PostNews));
+        Assert.False(new GrantSet([AtMinistry("ministries.roster.edit", "42")]).IsAllowedSomewhere(PostNews));
+    }
+
+    [Fact]
     public void DenyWinsATie() =>
         Assert.False(new GrantSet([Global("ministries.news.post"), AtMinistry("-ministries.news.post", "42")]).IsAllowed(PostNews, "42"));
 }

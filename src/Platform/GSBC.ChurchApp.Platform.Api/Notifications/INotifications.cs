@@ -12,7 +12,8 @@ public sealed record Notification(
     string? Subject = null,
     bool Urgent = false,
     string? ScopeId = null,
-    bool Test = false);
+    bool Test = false,
+    string? Action = null);
 
 public abstract record NotificationAudience
 {
@@ -35,11 +36,15 @@ public abstract record NotificationAudience
 public interface INotifications
 {
     Task RaiseAsync(Notification notification, CancellationToken cancellationToken);
+
+    Task SettleAsync(string subject, CancellationToken cancellationToken);
 }
 
 internal sealed class NoNotifications : INotifications
 {
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public sealed record NotificationKindSet(IReadOnlyList<NotificationKind> Kinds);

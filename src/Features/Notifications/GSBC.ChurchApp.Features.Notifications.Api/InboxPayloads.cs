@@ -16,11 +16,11 @@ internal static class InboxPayloads
         Payload = Encode(Item(entry.Id.ToString(), notification, entry.ReadAt)),
     };
 
-    public static FeedChangeRecord PublicRow(NotificationRecord notification) => new()
+    public static FeedChangeRecord PublicRow(NotificationRecord notification, long version = 1) => new()
     {
         Feed = NotificationsFeeds.Public,
         RecordId = notification.Id.ToString(),
-        Version = 1,
+        Version = version,
         SortKey = SortKey(notification.RaisedAt),
         GroupKey = notification.ScopeId,
         Payload = Encode(Item(notification.Id.ToString(), notification, null)),
@@ -40,6 +40,9 @@ internal static class InboxPayloads
         ReadAt = readAt,
         ScopeId = notification.ScopeId,
         Test = notification.Test,
+        Waiting = notification.Waits && notification.SettledAt is null,
+        Action = notification.Action,
+        InAdminPanel = notification.InAdminPanel,
     };
 
     public static byte[] Encode<T>(T message)

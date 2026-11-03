@@ -43,6 +43,8 @@ internal sealed class KindsFeed(IServiceScopeFactory scopes, NotificationKindCat
                 DefaultPush = kind.DefaultPush,
                 Mandatory = kind.Mandatory,
                 PerScope = kind.PerScope?.Name,
+                ForNode = kind.For?.Node,
+                ForScope = kind.For?.ScopeKind.Name,
             });
             FeedChangeRecord? before = published.GetValueOrDefault(kind.Key);
             if (before is { Deleted: false } && before.Payload.AsSpan().SequenceEqual(payload))

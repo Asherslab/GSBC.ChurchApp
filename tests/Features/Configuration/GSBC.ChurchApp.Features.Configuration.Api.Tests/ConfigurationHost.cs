@@ -210,6 +210,14 @@ public abstract class ConfigurationHost : IAsyncLifetime
             All.Add(notification);
             return Task.CompletedTask;
         }
+
+        public List<string> Settled { get; } = [];
+
+        public Task SettleAsync(string subject, CancellationToken cancellationToken)
+        {
+            Settled.Add(subject);
+            return Task.CompletedTask;
+        }
     }
 
     protected sealed class FakeAccess(PermissionCatalog catalog) : IAccessEvaluator, IRoleAssignments

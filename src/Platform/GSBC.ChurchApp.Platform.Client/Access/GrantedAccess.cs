@@ -12,6 +12,8 @@ public sealed class GrantedAccess : IAccess
 
     public bool Can(Permission permission, string? objectId = null) => _grants.IsAllowed(permission, objectId);
 
+    public bool CanSomewhere(Permission permission) => _grants.IsAllowedSomewhere(permission);
+
     public void Replace(GrantSet grants, bool signedIn)
     {
         _grants = grants;

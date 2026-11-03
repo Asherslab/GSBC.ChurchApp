@@ -10,6 +10,9 @@ public sealed record NotificationKind(
     bool Mandatory = false,
     ScopeKind? PerScope = null,
     bool MayBeUrgent = false,
-    NotificationPacing? Pacing = null);
+    NotificationPacing? Pacing = null,
+    bool Waits = false,
+    Permission? For = null,
+    bool InAdminPanel = false);
 
 public sealed record NotificationPacing(int Pushes, TimeSpan Per);

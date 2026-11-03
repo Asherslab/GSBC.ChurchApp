@@ -9,4 +9,6 @@ public interface IAccess
     bool SignedIn { get; }
 
     bool Can(Permission permission, string? objectId = null);
+
+    bool CanSomewhere(Permission permission);
 }
