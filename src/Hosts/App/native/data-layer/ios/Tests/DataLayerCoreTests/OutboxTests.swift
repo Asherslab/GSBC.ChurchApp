@@ -15,8 +15,10 @@ final class OutboxTests: XCTestCase {
 
     func testQuietEntriesNeverShowAndVanishWhenTheyGiveUp() async throws {
         let store = try FeedStore(directory: directory)
-        let outbox = Outbox(database: store.database, transport: GrpcWebTransport(gateway: URL(string: "http://127.0.0.1:9")!),
-                            onChanged: {})
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [UnreachableGateway.self]
+        let transport = GrpcWebTransport(gateway: URL(string: "https://gateway.invalid")!, session: URLSession(configuration: configuration))
+        let outbox = Outbox(database: store.database, transport: transport, onChanged: {})
 
         _ = try await outbox.enqueue(method: "/gsbc.prayer.Prayer/Submit", request: Data())
         _ = try await outbox.enqueue(method: "/gsbc.analytics.Diagnostics/Report", request: Data(), quiet: true)
@@ -53,4 +55,15 @@ final class OutboxTests: XCTestCase {
             try await Task.sleep(nanoseconds: 50_000_000)
         }
     }
+}
+
+private final class UnreachableGateway: URLProtocol {
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+
+    override func startLoading() {
+        client?.urlProtocol(self, didFailWithError: URLError(.cannotConnectToHost))
+    }
+
+    override func stopLoading() {}
 }
