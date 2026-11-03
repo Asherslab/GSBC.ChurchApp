@@ -595,7 +595,7 @@ button.row:active, a.row:active { background: var(--line); }
 .split-view__detail { position: sticky; top: 24px; max-height: calc(100vh - 48px); overflow-y: auto; scrollbar-width: thin; }
 .split-view__panel { padding: 20px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--lift); }
 .split-view__panel :is(.field__input, .btn--quiet, .segmented) { background: var(--fill-on-surface); }
-@container (max-width: 960px) {
+@media (max-width: 1200px) {
   .split-view { grid-template-columns: minmax(0, 1fr); }
   .split-view__detail { position: static; max-height: none; }
 }
