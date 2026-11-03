@@ -151,9 +151,10 @@ UAT's backend has to be up; the build carries everything else.
   Primary Language English (Australia), Bundle ID `au.com.baptist.app.uat`, SKU `gsbc-uat`, User Access
   **Full Access** → Create.
 - **Users and Access** → **Integrations** → **App Store Connect API** → **Team Keys** → **+**: Name
-  `GSBC GitHub TestFlight`, Access **App Manager** → Generate. Download the `.p8` (only possible once) and
-  note the **Key ID** and the **Issuer ID** above the list. If the first export fails with a cloud signing
-  permission error, the key needs **Admin**: revoke it and make an Admin one.
+  `GSBC GitHub TestFlight`, Access **Admin** → Generate. Download the `.p8` (only possible once) and note
+  the **Key ID** and the **Issuer ID** above the list. It has to be Admin: the runner has no distribution
+  certificate, so the export asks Apple to sign in the cloud, and an App Manager key gets "Cloud signing
+  permission error" (found 2026-11-03). It lives only in the `uat` environment, behind your approval.
 - **Apps** → **GSBC UAT** → **TestFlight** → **Internal Testing** → **+**: group `Staff`, tick
   **Enable automatic distribution**, add testers (each must be a user in Users and Access first).
 
