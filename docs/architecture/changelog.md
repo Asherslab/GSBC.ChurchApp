@@ -81,7 +81,9 @@ The notes describe the code in the build, so they travel with it: there is no se
 ## In the app
 
 **What's new, once after an update.** `WhatsNewMoment` sits in the app's layout. A beat after the first
-render it asks `WhatsNew` for highlights the phone hasn't seen and, if there are any, raises a
+render the layout offers the open to each `IOpeningSheet` in turn (the notifications sheet first, while
+iOS's permission is undecided; [notifications.md](notifications.md), *The first-open sheet*). When it's
+What's new's turn, it asks `WhatsNew` for highlights the phone hasn't seen and, if there are any, raises a
 `PagedSheet`: a navy cover with the icon, the title and "New in 1.1" ("New in this test build" in UAT),
 then the line, the staff facts in UAT, page dots, **Show me** when the note links somewhere, and
 Next/Done. It pages by swipe or Next.
@@ -95,6 +97,8 @@ Next/Done. It pages by swipe or Next.
   feature shows nothing on phones that already had the app; the next build's highlights do show.)
 - Seen is recorded when the sheet is shown, not when it's dismissed, so it is shown once even if the app
   is closed with it open.
+- **One sheet per open:** when the notifications sheet takes an open, What's new isn't asked, so nothing
+  is marked seen and its highlights show on the next open.
 - **It never blocks the app:** any failure (no native layer, a storage error) shows nothing.
 - `WhatsNewTests` holds the rule: nothing on a fresh install, new highlights once after an update, then
   nothing.

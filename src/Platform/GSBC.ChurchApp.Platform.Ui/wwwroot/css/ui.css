@@ -263,6 +263,14 @@ button.row:active, a.row:active { background: var(--line); }
 .sheet__cover .sheet__grabber { background: var(--masthead-chip); margin-bottom: 22px; }
 .sheet__mark { position: absolute; right: -44px; top: -18px; width: 180px; opacity: 0.07; z-index: -1; pointer-events: none; }
 
+.sheet-heading { display: flex; align-items: flex-start; gap: 14px; padding-right: 36px; }
+.sheet-heading__icon { display: grid; place-items: center; flex: none; width: 44px; height: 44px; border-radius: var(--radius-field); background: var(--masthead-chip); color: var(--on-masthead); }
+.sheet-heading__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; align-self: center; }
+.sheet-heading__note { margin: 10px 0 0 58px; font-size: var(--text-label); font-weight: 600; color: var(--masthead-note); text-wrap: balance; }
+.sheet__summary { margin: 4px 0 0; max-width: 65ch; font-size: var(--text-lead); line-height: 1.55; color: var(--ink); text-wrap: pretty; }
+.sheet__step { display: grid; gap: var(--stack); }
+.sheet__next { animation: paged-in 260ms var(--ease-out) both; }
+.sheet .section { margin-top: 0; padding-inline: 0; }
 .paged__cover, .paged__page { touch-action: pan-y; }
 .paged__cover.paged--forward, .paged__page.paged--forward { animation: paged-in 260ms var(--ease-out) both; }
 .paged__cover.paged--back, .paged__page.paged--back { animation: paged-back 260ms var(--ease-out) both; }
@@ -690,6 +698,7 @@ button.row:active, a.row:active { background: var(--line); }
 .ranked-list__items { display: grid; margin: 4px 0 0; padding: 0; list-style: none; border-top: 1px solid var(--line); counter-reset: rank; }
 .ranked-list__item { display: flex; align-items: baseline; gap: 10px; min-height: 40px; padding: 9px 0; border-bottom: 1px solid var(--line); counter-increment: rank; font-size: var(--text-caption); }
 .ranked-list__item::before { content: counter(rank); min-width: 1.2em; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.ranked-list__items--plain .ranked-list__item::before { content: none; }
 .ranked-list__label { flex: 1; min-width: 0; color: var(--ink); overflow-wrap: anywhere; }
 .ranked-list__value { color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
 

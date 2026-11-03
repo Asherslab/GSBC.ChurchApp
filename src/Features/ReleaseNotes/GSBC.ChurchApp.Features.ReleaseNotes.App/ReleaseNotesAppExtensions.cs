@@ -10,6 +10,8 @@ public static class ReleaseNotesAppExtensions
     {
         modules.Add(new ClientModule("ReleaseNotes", typeof(ReleaseNotesAppExtensions).Assembly,
             [new NavEntry("What's new", "whats-new", "sparkles")]));
-        return services.AddSingleton(provider => new WhatsNew(provider.GetRequiredService<ILocalPreferences>(), BundledReleaseNotes.All));
+        return services
+            .AddSingleton(provider => new WhatsNew(provider.GetRequiredService<ILocalPreferences>(), BundledReleaseNotes.All))
+            .AddSingleton<IOpeningSheet>(provider => provider.GetRequiredService<WhatsNew>());
     }
 }

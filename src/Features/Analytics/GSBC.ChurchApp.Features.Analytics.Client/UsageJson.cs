@@ -6,6 +6,7 @@ namespace GSBC.ChurchApp.Features.Analytics.Client;
 internal sealed class UsageState
 {
     public OpeningMemory Opened { get; set; } = new();
+    public StateMemory States { get; set; } = new();
     public int WeekGroup { get; set; }
     public long LastReportAt { get; set; }
     public List<PendingCount> Pending { get; set; } = [];

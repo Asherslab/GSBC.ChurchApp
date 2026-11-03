@@ -1,0 +1,14 @@
+<div class="sheet-heading">
+    <span class="sheet-heading__icon"><Icon Name="@Icon" /></span>
+    <h2 class="sheet-heading__title">@Title</h2>
+</div>
+@if (Note is not null)
+{
+    <p class="sheet-heading__note">@Note</p>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Icon { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Note { get; set; }
+}

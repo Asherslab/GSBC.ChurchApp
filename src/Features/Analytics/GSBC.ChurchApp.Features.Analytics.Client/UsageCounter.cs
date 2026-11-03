@@ -10,7 +10,8 @@ using GSBC.ChurchApp.Platform.Contracts.Analytics;
 
 namespace GSBC.ChurchApp.Features.Analytics.Client;
 
-internal sealed class UsageCounter(NativeBridge bridge, IOutbox outbox, ILocalPreferences preferences, AnalyticsConsent consent, TimeProvider time)
+internal sealed class UsageCounter(
+    NativeBridge bridge, IOutbox outbox, ILocalPreferences preferences, AnalyticsConsent consent, IEnumerable<IWeeklyState> weeklyStates, TimeProvider time)
     : IUsage, IClientStartupTask, IDisposable
 {
     private const string PreferenceKey = "analytics.usage";
@@ -105,7 +106,31 @@ internal sealed class UsageCounter(NativeBridge bridge, IOutbox outbox, ILocalPr
         await SaveAsync();
     }
 
-    private void OnAppStateChanged(bool active) => _ = active ? OpenedAsync() : ReportIfDueAsync();
+    private void OnAppStateChanged(bool active) => _ = active ? OpenedAsync() : ClosedAsync();
+
+    private async Task ClosedAsync()
+    {
+        await NoteWeeklyStatesAsync();
+        await ReportIfDueAsync();
+    }
+
+    private async Task NoteWeeklyStatesAsync()
+    {
+        if (!consent.Enabled)
+            return;
+
+        DateOnly weekStart = ChurchTime.WeekStart(ChurchTime.Today(time));
+        bool noted = false;
+        foreach (IWeeklyState state in weeklyStates)
+        {
+            if (!_state.States.TakeIfDue(state.Measure, weekStart))
+                continue;
+            Add(Today, state.Measure, await state.CurrentAsync());
+            noted = true;
+        }
+        if (noted)
+            await SaveAsync();
+    }
 
     private async Task ReportIfDueAsync()
     {

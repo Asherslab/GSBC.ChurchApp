@@ -10,7 +10,7 @@
     }
     else
     {
-        <ol class="ranked-list__items">
+        <ol class="ranked-list__items @(Numbered ? "" : "ranked-list__items--plain")">
             @foreach (RankedItem item in Items)
             {
                 <li class="ranked-list__item"><span class="ranked-list__label">@item.Label</span><span class="ranked-list__value">@item.Value</span></li>
@@ -24,4 +24,5 @@
     [Parameter, EditorRequired] public required IReadOnlyList<RankedItem> Items { get; set; }
     [Parameter] public string? Explanation { get; set; }
     [Parameter] public string Empty { get; set; } = "Nothing yet.";
+    [Parameter] public bool Numbered { get; set; } = true;
 }

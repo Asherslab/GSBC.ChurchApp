@@ -55,6 +55,7 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
             Weeks = WeeksFrom(weekly, trendStart),
             WeeksLastYear = weekly.Any(count => count.Day < trendStart) ? WeeksFrom(weekly, lastYearStart) : [],
             Top = await TopAsync(weekStart, cancellationToken),
+            States = await StatesAsync(weekStart, cancellationToken),
             Platforms = thisWeek.GroupBy(count => count.Platform)
                 .Select(group => new LabelTally { Label = PlatformName(group.Key), Count = Tally.Of(group.Sum(count => count.Count)) })
                 .OrderByDescending(entry => entry.Count!.Value)
@@ -112,6 +113,32 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
             });
         }
         return lists;
+    }
+
+    private async Task<List<TopList>> StatesAsync(DateOnly weekStart, CancellationToken cancellationToken)
+    {
+        List<Measure> stated = measures.ByKey.Values.Where(measure => measure.States is not null).ToList();
+        List<string> keys = stated.Select(measure => measure.Key).ToList();
+        var totals = await db.DailyCounts
+            .Where(count => keys.Contains(count.Measure) && count.Day >= weekStart)
+            .GroupBy(count => new { count.Measure, count.Subject })
+            .Select(group => new { group.Key.Measure, group.Key.Subject, Count = group.Sum(count => count.Count) })
+            .ToListAsync(cancellationToken);
+
+        return stated
+            .Where(measure => totals.Any(total => total.Measure == measure.Key))
+            .Select(measure => new TopList
+            {
+                Measure = measure.Key,
+                Label = measure.Label,
+                Counts = measure.Counts,
+                Entries = measure.States!
+                    .Select(state => (state.Label, Count: totals.Where(total => total.Measure == measure.Key && total.Subject == state.Key).Sum(total => total.Count)))
+                    .Where(state => state.Count > 0)
+                    .Select(state => new LabelTally { Label = state.Label, Count = Tally.Of(state.Count) })
+                    .ToList(),
+            })
+            .ToList();
     }
 
     private static string? LatestOf(List<DailyCountRecord> counts) =>

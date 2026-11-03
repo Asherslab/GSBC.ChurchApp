@@ -36,6 +36,7 @@ public sealed class InsightsSummary
     [ProtoMember(15)] public Tally? OnLatestVersion { get; set; }
     [ProtoMember(16)] public string LatestVersion { get; set; } = "";
     [ProtoMember(17)] public Tally? ReturningThisWeek { get; set; }
+    [ProtoMember(18)] public List<TopList> States { get; set; } = [];
 }
 
 [ProtoContract]

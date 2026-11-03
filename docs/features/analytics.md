@@ -416,7 +416,19 @@ week" appears once two features report.
 | Quiet outbox entries, MetricKit crash collection | the native data layer (iOS) |
 
 Measures declared so far: `app.active.day`, `app.active.week`, `app.active.month`, `app.installed`,
-`app.returning` (Analytics) and `hub.tile.tapped` (Hub, named through Configuration's `ISubjectNames`).
+`app.returning` (Analytics) and `hub.tile.tapped` (Hub, named through Configuration's `ISubjectNames`) and
+`notifications.push` (Notifications, a setting measured once a week).
+
+### Settings measured once a week
+
+*(owner, 2026-11-03: "how many people have or don't have notifications enabled", within these rules)*
+A measure can declare `States`: the few fixed words a phone may say about how it's set up (for
+notifications: `on`, `off`, `undecided`). A feature implements `IWeeklyState` (Platform.Client) to say
+which applies; the usage counter asks it once a week, the first time the app is closed that week (so a
+first-open choice has been made), and remembers the week on the phone (`StateMemory`). The server keeps
+a line only when its word is one the measure declared, so nothing else can travel in it. Insights lists
+each such measure under *How phones are set up*, this week, with the small-number rule. It's a count of
+phones, like every other number: it can't say whose phone has them off.
 
 ### Not yet
 

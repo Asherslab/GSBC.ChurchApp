@@ -1,0 +1,74 @@
+@implements IDisposable
+@inject NotificationsWelcome Welcome
+
+@if (Welcome.Step != WelcomeStep.Closed)
+{
+    <Sheet Open="true" OpenChanged="ClosedAsync" Label="Notifications">
+        <Cover>
+            @if (Welcome.Step == WelcomeStep.Ask)
+            {
+                <SheetHeading Icon="bell" Title="Hear from the church" Note="Notifications" />
+            }
+            else
+            {
+                <div class="sheet__next">
+                    <SheetHeading Icon="bell" Title="Notifications are on" Note="Change these any time in More" />
+                </div>
+            }
+        </Cover>
+        <ChildContent>
+            @if (Welcome.Step == WelcomeStep.Ask)
+            {
+                <p class="sheet__summary">Get a notification when the church sends an announcement, or something is waiting for you. You choose what buzzes your phone.</p>
+            }
+            else
+            {
+                <div class="sheet__step sheet__next">
+                    <NotificationSettings />
+                </div>
+            }
+        </ChildContent>
+        <Actions>
+            @if (Welcome.Step == WelcomeStep.Ask)
+            {
+                <Button Block="true" Busy="_turningOn" OnClick="TurnOnAsync">Turn on notifications</Button>
+                <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_turningOn" OnClick="Welcome.NotNowAsync">Not now</Button>
+            }
+            else
+            {
+                <Button Block="true" OnClick="Welcome.Close">Done</Button>
+            }
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private bool _turningOn;
+
+    protected override void OnInitialized() => Welcome.Changed += OnChanged;
+
+    private async Task TurnOnAsync()
+    {
+        _turningOn = true;
+        try
+        {
+            await Welcome.TurnOnAsync();
+        }
+        finally
+        {
+            _turningOn = false;
+        }
+    }
+
+    private Task ClosedAsync(bool open)
+    {
+        if (Welcome.Step == WelcomeStep.Ask && !_turningOn)
+            return Welcome.NotNowAsync();
+        Welcome.Close();
+        return Task.CompletedTask;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Welcome.Changed -= OnChanged;
+}

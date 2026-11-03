@@ -7,6 +7,7 @@
 @inject IPreviewMode Preview
 @inject GSBC.ChurchApp.Platform.Client.Native.NativeBridge Bridge
 @inject NavigationManager Navigation
+@inject GSBC.ChurchApp.Platform.Client.Modules.OpeningSheets OpeningSheets
 
 <div class="shell">
     @Body
@@ -16,10 +17,12 @@
     }
     <ModuleNav Style="NavStyle.TabBar" />
 </div>
+<GSBC.ChurchApp.Features.Notifications.App.NotificationsWelcomeMoment />
 <GSBC.ChurchApp.Features.ReleaseNotes.App.WhatsNewMoment />
 <AppTheme />
 
 @code {
+    private static readonly TimeSpan SettleFirst = TimeSpan.FromMilliseconds(600);
     private bool _bannerHidden;
 
     protected override async Task OnInitializedAsync()
@@ -36,6 +39,8 @@
             await Shell.WatchReturnsAsync();
             await Shell.StartedAsync();
             await Bridge.OpenLinksWithAsync(path => Navigation.NavigateTo(path.TrimStart('/')));
+            await Task.Delay(SettleFirst);
+            await OpeningSheets.PresentFirstAsync();
         }
     }
 
