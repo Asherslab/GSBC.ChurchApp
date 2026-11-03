@@ -79,7 +79,8 @@ public sealed class FeedRetentionTests : IAsyncLifetime
             scope.ServiceProvider.GetRequiredService<SyncDbContext>(),
             new FeedRegistry([new FeedDefinition(Feed, FeedAudience.Public)]),
             new NothingAllowed(),
-            new FeedChangeBroadcaster());
+            new FeedChangeBroadcaster(),
+            new LiveFeedTests.Sessions());
 
         PullReply reply = await sync.PullAsync(new PullRequest { Cursors = [new FeedCursor { Feed = Feed, Cursor = cursor }] });
         return reply.Feeds.SingleOrDefault() ?? new FeedBatch { Feed = Feed, Cursor = cursor };

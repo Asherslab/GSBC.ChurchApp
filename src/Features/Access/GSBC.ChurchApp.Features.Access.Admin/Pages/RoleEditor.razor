@@ -6,7 +6,7 @@
 
 <Can Permission="AccessPermissions.EditRoles">
     <ChildContent>
-        <LiveData TValue="EditorData" Load="LoadAsync" FailedTitle="Can't load this role">
+        <LiveData TValue="EditorData" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load this role">
             <TitleBand Title="@Title" BrowserTitle="@(IsNew ? "New role" : "Change a role")" BackHref="@($"access/roles/{Id ?? From}")" BackText="Roles"
                        Lead="Tick what this role lets people do. Nothing changes for anyone until you save." />
             @if (_draft is null)

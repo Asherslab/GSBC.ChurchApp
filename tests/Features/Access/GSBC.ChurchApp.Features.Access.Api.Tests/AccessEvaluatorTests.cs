@@ -65,6 +65,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             .AddSingleton(new FeedRegistry([new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords)]))
             .AddSingleton<FeedChangeBroadcaster>()
             .AddScoped<SyncService>()
+            .AddSingleton<ISignedInSessions, AlwaysSignedIn>()
             .AddSyncData()
             .AddAccessData()
             .BuildServiceProvider();
@@ -355,5 +356,10 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     {
         await _services.DisposeAsync();
         await _postgres.DisposeAsync();
+    }
+
+    private sealed class AlwaysSignedIn : ISignedInSessions
+    {
+        public ValueTask<bool> IsCurrentAsync(string sessionId, CancellationToken cancellationToken) => ValueTask.FromResult(true);
     }
 }

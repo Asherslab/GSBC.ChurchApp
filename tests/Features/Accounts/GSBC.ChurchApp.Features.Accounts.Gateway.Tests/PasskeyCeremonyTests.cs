@@ -44,7 +44,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
             [$"{AppAssociation.Section}:TeamId"] = TeamId,
             [$"{AppAssociation.Section}:BundleId"] = UatBundleId,
         });
-        builder.Services.AddAccountsGateway(builder.Configuration);
+        builder.Services.AddAccountsGateway(builder.Configuration).AddSyncData();
 
         _app = builder.Build();
         _app.UseAppAssociation();
@@ -58,6 +58,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         await _app.StartAsync();
 
         await using AsyncServiceScope scope = _app.Services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<AccountsDbContext>().Database.MigrateAsync();
     }
 

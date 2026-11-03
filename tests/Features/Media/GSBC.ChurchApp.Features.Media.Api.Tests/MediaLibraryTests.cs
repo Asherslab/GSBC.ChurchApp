@@ -76,6 +76,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
             .AddSingleton<IAccessEvaluator>(_access)
             .AddBlobStore(configuration)
             .AddMediaData()
+            .AddSyncData()
             .AddScoped<MediaLibrary>()
             .AddScoped<IMediaReferences, MediaReferences>()
             .BuildServiceProvider();
@@ -85,6 +86,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         await s3.PutBucketAsync(PrivateBucket);
 
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<MediaDbContext>().Database.MigrateAsync();
     }
 

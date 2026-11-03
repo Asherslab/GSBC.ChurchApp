@@ -1,17 +1,25 @@
+using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Platform.Data;
+
 namespace GSBC.ChurchApp.Features.Accounts.Data;
 
 public sealed class AccountsAudit(AccountsDbContext db, TimeProvider time)
 {
-    public void Record(string action, Guid? userId, Guid? actorId = null, string? detail = null, string? remoteAddress = null) =>
+    public void Record(string action, Guid? userId, Guid? actorId = null, string? detail = null, string? remoteAddress = null)
+    {
+        DateTime now = time.GetUtcNow().UtcDateTime;
         db.Audit.Add(new AuditEntry
         {
-            At = time.GetUtcNow().UtcDateTime,
+            At = now,
             Action = action,
             UserId = userId,
             ActorId = actorId,
             Detail = detail,
             RemoteAddress = remoteAddress,
         });
+        if (userId is { } person)
+            db.FeedChanges.Add(FeedChangeRecord.Marker(AccountsFeeds.People, person.ToString(), now));
+    }
 }
 
 public static class AuditActions

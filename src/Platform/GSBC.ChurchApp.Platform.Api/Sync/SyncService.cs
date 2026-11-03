@@ -12,7 +12,7 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Platform.Api.Sync;
 
 public sealed class SyncService(
-    SyncDbContext db, FeedRegistry feeds, IAccessEvaluator access, FeedChangeBroadcaster broadcaster) : ISyncService
+    SyncDbContext db, FeedRegistry feeds, IAccessEvaluator access, FeedChangeBroadcaster broadcaster, ISignedInSessions sessions) : ISyncService
 {
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
@@ -21,7 +21,8 @@ public sealed class SyncService(
     public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
     {
         Dictionary<string, long> cursors = CursorsOf(request.Cursors);
-        return new PullReply { Feeds = await ReadAsync(cursors, cursors.Keys, UserOf(context), context.CancellationToken) };
+        HashSet<string> latest = await StartAtLatestAsync(request.Cursors, cursors, context.CancellationToken);
+        return new PullReply { Feeds = await ReadAsync(cursors, cursors.Keys, UserOf(context), context.CancellationToken, latest) };
     }
 
     public async IAsyncEnumerable<WatchEvent> WatchAsync(WatchRequest request, CallContext context = default)
@@ -30,12 +31,13 @@ public sealed class SyncService(
         ClaimsPrincipal user = UserOf(context);
         Dictionary<string, long> cursors = CursorsOf(request.Cursors);
         using FeedChangeBroadcaster.Subscription subscription = broadcaster.Subscribe();
+        HashSet<string> latest = await StartAtLatestAsync(request.Cursors, cursors, cancellationToken);
 
         IEnumerable<string> due = cursors.Keys;
         bool caughtUp = false;
         while (!cancellationToken.IsCancellationRequested)
         {
-            List<FeedBatch> batches = await ReadAsync(cursors, due, user, cancellationToken);
+            List<FeedBatch> batches = await ReadAsync(cursors, due, user, cancellationToken, caughtUp ? [] : latest);
             if (batches.Count > 0 || !caughtUp)
                 yield return new WatchEvent { Feeds = batches };
             caughtUp = true;
@@ -47,6 +49,7 @@ public sealed class SyncService(
             }
 
             ChangedFeeds? changed = await subscription.WaitAsync(HeartbeatInterval, cancellationToken);
+            await EnsureSessionCurrentAsync(user, cancellationToken);
             if (changed is null)
             {
                 yield return new WatchEvent { IsHeartbeat = true };
@@ -59,8 +62,31 @@ public sealed class SyncService(
         }
     }
 
+    private async Task<HashSet<string>> StartAtLatestAsync(List<FeedCursor> requested, Dictionary<string, long> cursors, CancellationToken cancellationToken)
+    {
+        HashSet<string> latest = requested.Where(cursor => cursor.Latest && feeds.ByName.ContainsKey(cursor.Feed)).Select(cursor => cursor.Feed).ToHashSet();
+        if (latest.Count == 0)
+            return latest;
+
+        Dictionary<string, long> heads = await db.FeedChanges.AsNoTracking()
+            .Where(change => latest.Contains(change.Feed))
+            .GroupBy(change => change.Feed)
+            .Select(group => new { Feed = group.Key, Cursor = group.Max(change => change.Cursor) })
+            .ToDictionaryAsync(head => head.Feed, head => head.Cursor, cancellationToken);
+        foreach (string feed in latest)
+            cursors[feed] = heads.GetValueOrDefault(feed);
+        return latest;
+    }
+
+    private async Task EnsureSessionCurrentAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        if (Caller.SessionId(user) is { } session && !await sessions.IsCurrentAsync(session, cancellationToken))
+            throw new RpcException(new Status(StatusCode.Unauthenticated, "That sign-in has ended."));
+    }
+
     private async Task<List<FeedBatch>> ReadAsync(
-        Dictionary<string, long> cursors, IEnumerable<string> due, ClaimsPrincipal user, CancellationToken cancellationToken)
+        Dictionary<string, long> cursors, IEnumerable<string> due, ClaimsPrincipal user, CancellationToken cancellationToken,
+        IReadOnlySet<string> announce)
     {
         List<FeedBatch> batches = [];
         Dictionary<string, long> horizons = await db.FeedHorizons.AsNoTracking()
@@ -87,7 +113,7 @@ public sealed class SyncService(
                 batch = await ReadBatchAsync(feed, cursors[name], user, cancellationToken);
             }
 
-            if (batch.Reset || batch.Cursor != cursors[name])
+            if (batch.Reset || batch.Cursor != cursors[name] || announce.Contains(name))
             {
                 cursors[name] = batch.Cursor;
                 batches.Add(batch);

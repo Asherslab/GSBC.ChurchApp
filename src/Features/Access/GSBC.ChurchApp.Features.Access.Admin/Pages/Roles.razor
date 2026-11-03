@@ -5,7 +5,7 @@
 
 <TitleBand Title="Roles" Lead="A role is a job someone does, such as Leader or Account manager. Choose one to see what it lets people do and who has it. To make a new role, copy the closest one." />
 
-<LiveData @ref="_live" TValue="RolesView" Load="LoadAsync" FailedTitle="Can't load roles right now">
+<LiveData @ref="_live" TValue="RolesView" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load roles right now">
     <SplitView Detail="@Detail(context.Value)" DetailLabel="@(Chosen(context.Value)?.Name ?? "Role")">
         <DataTable TItem="RoleInfo" Label="Roles" Items="Shown(context.Value.Roles)" Columns="Columns(context.Value.Roles)" Key="role => role.Id"
                    Selected="Chosen(context.Value)" SelectedChanged="Choose" SortColumn="0">

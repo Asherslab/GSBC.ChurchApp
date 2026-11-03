@@ -14,7 +14,7 @@ else if (_failure is not null)
     }
     else
     {
-        <EmptyState Icon="cloud-off" Title="@FailedTitle" Body="@(Signals.Online ? "Try again in a moment." : "It loads by itself when the phone is back online.")">
+        <EmptyState Icon="cloud-off" Title="@FailedTitle" Body="@(Signals.Online ? "Try again in a moment." : "It loads by itself once you're back online.")">
             <Button Variant="ButtonVariant.Quiet" Icon="refresh" Busy="_loading" OnClick="ReloadAsync">Try again</Button>
         </EmptyState>
     }
@@ -53,6 +53,8 @@ else
         Signals.Changed += OnChanged;
         await ReloadAsync();
     }
+
+    protected override void OnParametersSet() => Signals.Follow(Feeds);
 
     public async Task ReloadAsync()
     {

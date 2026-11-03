@@ -51,6 +51,10 @@ public sealed class NativeLocalFeeds(NativeBridge bridge, IJSRuntime js) : ILoca
             info?.Feeds.Select(feed => new StoredFeed(feed.Feed, feed.Rows, feed.Bytes, feed.Cursor)).ToList() ?? []);
     }
 
+    public void Follow(IEnumerable<string> feeds)
+    {
+    }
+
     public async ValueTask RefreshAsync()
     {
         if (IsAvailable)
