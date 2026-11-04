@@ -3,7 +3,7 @@
 
 @if (Library.Downloads.IsAvailable)
 {
-    <Section Title="Downloaded sermons" Lead="@Lead">
+    <Section First="true" Title="Downloaded sermons" Lead="@Lead">
         @if (_downloads.Count == 0)
         {
             <ListGroup><ListRow Title="None yet" Subtitle="Download a sermon from its page to listen without a connection." Icon="arrow-down" IconTone="RowTone.Quiet" /></ListGroup>
