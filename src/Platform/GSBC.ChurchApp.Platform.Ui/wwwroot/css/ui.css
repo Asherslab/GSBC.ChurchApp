@@ -533,9 +533,8 @@ button.row:active, a.row:active { background: var(--line); }
 .home-line .masthead__note { margin: 0; }
 .section--first:has(.hub-grid) { margin-top: 22px; }
 .hub-tile__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 28px; }
-.hub-tile__go--beside { margin-top: 0; flex: none; }
+.hub-tile__head .hub-tile__go--beside { margin-top: 0; flex: none; }
 .hub-tile--list .hub-tile__words { margin-top: 0; padding-top: 0; }
-.phone-frame .topbar { background: var(--masthead); }
 .phone-frame .section { padding: 0 var(--gutter); }
 :root { scrollbar-color: var(--sand-strong) var(--page); }
 .workbench__detail :is(.field__input, .btn--quiet, .segmented) { background: var(--fill-on-surface); }
@@ -687,6 +686,24 @@ button.row:active, a.row:active { background: var(--line); }
 .search-field__input:focus { outline: none; }
 .search-field__input::placeholder { color: var(--ink-2); }
 .filter-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip-picker { position: relative; display: grid; gap: 8px; }
+.chip-picker__chosen { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
+.chip-picker__chip { display: inline-flex; align-items: center; gap: 2px; min-height: 32px; padding: 0 2px 0 12px; border-radius: var(--radius-full); background: var(--primary); color: var(--on-primary); font-size: var(--text-caption); font-weight: 600; }
+.chip-picker__remove { display: grid; place-items: center; width: 28px; height: 28px; border: 0; border-radius: var(--radius-full); background: none; color: inherit; cursor: pointer; }
+.chip-picker__remove:hover { background: color-mix(in srgb, var(--on-primary) 16%, transparent); }
+.chip-picker__remove:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.chip-picker__search { display: flex; align-items: center; gap: 8px; min-height: var(--touch); padding: 0 12px; border-radius: var(--radius-field); background: var(--fill-on-surface, var(--sand)); color: var(--ink-3); }
+.chip-picker__search:focus-within { box-shadow: inset 0 0 0 2px var(--accent); }
+.chip-picker__input { flex: 1; min-width: 0; height: 40px; border: 0; background: none; color: var(--ink); font: inherit; font-size: var(--text-row); caret-color: var(--accent); }
+.chip-picker__input:focus { outline: none; }
+.chip-picker__input::placeholder { color: var(--ink-2); }
+.chip-picker__options { position: absolute; top: 100%; left: 0; right: 0; z-index: 30; display: grid; gap: 2px; max-height: 18rem; margin: 6px 0 0; padding: 6px; overflow-y: auto; border-radius: var(--radius-field); background: var(--surface); box-shadow: 0 0 0 1px var(--line), var(--lift); list-style: none; }
+.chip-picker__option { display: grid; gap: 1px; padding: 8px 10px; border-radius: var(--radius-inner); cursor: pointer; }
+.chip-picker__option strong { font-size: var(--text-row); font-weight: 600; }
+.chip-picker__option span { font-size: var(--text-caption); line-height: 1.4; color: var(--ink-2); }
+.chip-picker__option--active { background: var(--sand); }
+.chip-picker__none { padding: 8px 10px; font-size: var(--text-caption); color: var(--ink-2); }
+.audience-picker .segmented { justify-self: start; max-width: 100%; }
 .filter-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 0; border-radius: var(--radius-full); background: var(--sand); color: var(--ink-2); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out); }
 .filter-chip:hover { color: var(--ink); }
 .filter-chip--on, .filter-chip--on:hover { background: var(--primary); color: var(--on-primary); }

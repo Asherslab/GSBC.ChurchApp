@@ -4,10 +4,9 @@
 
 @if (Picker is { } picker)
 {
-    <div class="media-chooser">
+    <Sheet Open="true" OpenChanged="_ => OnCancel.InvokeAsync()" Wide="true" Title="@(ImagesOnly ? "Choose a picture" : "Choose a file")">
         @Render(picker)
-        <button type="button" class="link" @onclick="OnCancel">Cancel</button>
-    </div>
+    </Sheet>
 }
 
 @code {
@@ -22,6 +21,7 @@
         builder.OpenComponent(0, picker.Component);
         builder.AddComponentParameter(1, MediaPicker.ImagesOnlyParameter, ImagesOnly);
         builder.AddComponentParameter(2, MediaPicker.OnPickParameter, EventCallback.Factory.Create<MediaRef>(this, media => OnChosen.InvokeAsync(media)));
+        builder.AddComponentParameter(3, MediaPicker.OnCancelParameter, EventCallback.Factory.Create(this, () => OnCancel.InvokeAsync()));
         builder.CloseComponent();
     };
 

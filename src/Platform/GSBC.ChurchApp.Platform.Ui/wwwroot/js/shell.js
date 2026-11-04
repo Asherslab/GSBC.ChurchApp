@@ -20,7 +20,7 @@ window.gsbcShell = (() => {
 
   document.addEventListener('scroll', (event) => {
     const page = event.target;
-    if (!(page instanceof Element) || !page.classList.contains('page-scroll')) return;
+    if (!(page instanceof Element) || !page.matches('.page-scroll, .phone-frame__screen')) return;
     page.querySelector('.topbar')?.classList.toggle('is-stuck', page.scrollTop > Number(page.dataset.stuckAt ?? 44));
   }, { capture: true, passive: true });
 

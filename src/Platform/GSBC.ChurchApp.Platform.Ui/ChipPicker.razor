@@ -1,0 +1,114 @@
+@typeparam TItem
+
+<div class="chip-picker">
+    @if (Chosen.Count > 0)
+    {
+        <ul class="chip-picker__chosen" aria-label="@($"{Label}: chosen")">
+            @foreach (TItem item in Chosen)
+            {
+                <li class="chip-picker__chip">
+                    <span>@Text(item)</span>
+                    <button type="button" class="chip-picker__remove" aria-label="@($"Remove {Text(item)}")" @onclick="() => RemoveAsync(item)">
+                        <Icon Name="x" Size="IconSize.Small" />
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+    <div class="chip-picker__search">
+        <Icon Name="search" Size="IconSize.Small" />
+        <input type="text" class="chip-picker__input" role="combobox" aria-label="@Label" aria-expanded="@(Open ? "true" : "false")" aria-controls="@_listId"
+               aria-activedescendant="@(Open && Matches.Count > 0 ? OptionId(_active) : null)" aria-autocomplete="list" autocomplete="off"
+               placeholder="@Placeholder" value="@_query" @oninput="Type" @onkeydown="KeyAsync" @onfocus="() => _focused = true" @onblur="() => _focused = false" />
+    </div>
+    @if (Open)
+    {
+        <ul class="chip-picker__options" id="@_listId" role="listbox" aria-label="@Label">
+            @if (Matches.Count == 0)
+            {
+                <li class="chip-picker__none" role="presentation">@(_query.Length > 0 ? $"Nothing called “{_query}”" : Empty)</li>
+            }
+            @for (int index = 0; index < Matches.Count; index++)
+            {
+                TItem item = Matches[index];
+                int at = index;
+                <li id="@OptionId(at)" role="option" aria-selected="@(at == _active ? "true" : "false")" class="chip-picker__option @(at == _active ? "chip-picker__option--active" : "")"
+                    @onmousedown:preventDefault="true" @onmousedown="() => AddAsync(item)" @onmouseenter="() => _active = at">
+                    <strong>@Text(item)</strong>
+                    @if (Detail?.Invoke(item) is { Length: > 0 } detail)
+                    {
+                        <span>@detail</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    private readonly string _listId = $"chip-picker-{Guid.NewGuid():N}";
+    private string _query = "";
+    private int _active;
+    private bool _focused;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<TItem> Items { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, string> Text { get; set; }
+    [Parameter] public Func<TItem, string>? Detail { get; set; }
+    [Parameter] public IReadOnlyList<TItem> Chosen { get; set; } = [];
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> ChosenChanged { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string Empty { get; set; } = "Everything is chosen";
+    [Parameter] public int MostShown { get; set; } = 8;
+
+    private bool Open => _focused;
+
+    private List<TItem> Matches => Items
+        .Where(item => !Chosen.Contains(item))
+        .Where(item => _query.Length == 0 || Text(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase)
+            || (Detail?.Invoke(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase) ?? false))
+        .OrderBy(item => _query.Length > 0 && !Text(item).StartsWith(_query, StringComparison.CurrentCultureIgnoreCase))
+        .Take(MostShown)
+        .ToList();
+
+    private string OptionId(int index) => $"{_listId}-{index}";
+
+    private void Type(ChangeEventArgs change)
+    {
+        _query = change.Value?.ToString() ?? "";
+        _active = 0;
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs key)
+    {
+        int count = Matches.Count;
+        switch (key.Key)
+        {
+            case "ArrowDown" when count > 0:
+                _active = (_active + 1) % count;
+                break;
+            case "ArrowUp" when count > 0:
+                _active = (_active - 1 + count) % count;
+                break;
+            case "Enter" when count > 0:
+                await AddAsync(Matches[Math.Min(_active, count - 1)]);
+                break;
+            case "Backspace" when _query.Length == 0 && Chosen.Count > 0:
+                await RemoveAsync(Chosen[^1]);
+                break;
+            case "Escape":
+                _query = "";
+                break;
+        }
+    }
+
+    private async Task AddAsync(TItem item)
+    {
+        _query = "";
+        _active = 0;
+        await ChosenChanged.InvokeAsync([.. Chosen, item]);
+    }
+
+    private async Task RemoveAsync(TItem item) =>
+        await ChosenChanged.InvokeAsync(Chosen.Where(chosen => !EqualityComparer<TItem>.Default.Equals(chosen, item)).ToList());
+}

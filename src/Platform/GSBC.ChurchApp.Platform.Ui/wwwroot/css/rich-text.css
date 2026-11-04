@@ -111,14 +111,6 @@
     color: var(--ink-3);
 }
 
-.media-chooser {
-    display: grid;
-    gap: 8px;
-    width: 100%;
-    max-height: 60vh;
-    overflow: auto;
-}
-
 .media-setting {
     display: flex;
     flex-wrap: wrap;

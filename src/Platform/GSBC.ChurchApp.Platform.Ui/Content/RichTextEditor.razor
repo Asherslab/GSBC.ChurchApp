@@ -39,9 +39,7 @@
 
     @if (_choosingImage)
     {
-        <div class="rich-text-panel">
-            <MediaChooser ImagesOnly="true" OnChosen="InsertImageAsync" OnCancel="() => _choosingImage = false" />
-        </div>
+        <MediaChooser ImagesOnly="true" OnChosen="InsertImageAsync" OnCancel="() => _choosingImage = false" />
     }
 
     <textarea @ref="_textarea" value="@_markdown" @oninput="TypedAsync" rows="@Rows" aria-label="@Label" placeholder="@Placeholder"></textarea>

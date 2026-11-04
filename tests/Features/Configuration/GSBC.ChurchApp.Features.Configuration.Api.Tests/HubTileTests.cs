@@ -35,7 +35,7 @@ public sealed class HubTileTests : ConfigurationHost
         Assert.Equal((2, 2, TileTones.Primary, IconSetting.Custom(icon.PlacementId)), (look.Columns, look.Rows, look.Tone, look.Icon));
         Assert.Equal("Read the bulletin", look.Title);
         Assert.Equal(3, HubSurfaces.Grid.ColumnsIn(arranged));
-        Assert.Equal(leaders, tile.Audience.RoleId);
+        Assert.Equal([leaders], tile.Audience.RoleIds);
     }
 
     [Fact]

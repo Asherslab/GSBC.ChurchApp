@@ -1,0 +1,92 @@
+@using GSBC.ChurchApp.Platform.Client.People
+@using Grpc.Core
+@inject IServiceProvider Services
+
+<div class="field audience-picker">
+    <span class="field__label">@Label</span>
+    <Segmented TValue="Reach" Label="@Label" Options="Reaches" Value="Current" ValueChanged="ChooseAsync" />
+    @if (Current == Reach.Roles)
+    {
+        <ChipPicker TItem="RoleSummary" Label="Roles" Items="Roles" Chosen="ChosenRoles" ChosenChanged="RolesChangedAsync"
+                    Text="role => role.Name" Detail="role => role.Description" Placeholder="Find a role" Empty="Every role is chosen" />
+        <span class="field__hint">@RolesHint</span>
+    }
+    else if (Current == Reach.Permission)
+    {
+        <span class="field__hint">Only people with a particular permission. Choose another option to change it.</span>
+    }
+</div>
+
+@code {
+    private enum Reach { Everyone, SignedIn, Roles, Permission }
+
+    private static IReadOnlyList<RoleSummary>? _roles;
+    private bool _choosingRoles;
+
+    [Parameter] public string Label { get; set; } = "Who sees it";
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private static readonly IReadOnlyList<SegmentOption<Reach>> ThreeReaches =
+        [new(Reach.Everyone, "Everyone"), new(Reach.SignedIn, "Signed in"), new(Reach.Roles, "People in roles")];
+
+    private IReadOnlyList<SegmentOption<Reach>> Reaches => Parsed is { Node: not null }
+        ? [.. ThreeReaches, new(Reach.Permission, "By permission")]
+        : ThreeReaches;
+
+    private Audience? Parsed => Audience.TryParse(Value, out Audience? audience) ? audience : null;
+
+    private Reach Current => Parsed switch
+    {
+        { IsForRoles: true } => Reach.Roles,
+        { Node: not null } => Reach.Permission,
+        _ when _choosingRoles => Reach.Roles,
+        { } audience when audience == Audience.SignedIn => Reach.SignedIn,
+        _ => Reach.Everyone,
+    };
+
+    private IReadOnlyList<RoleSummary> Roles => _roles ?? [];
+
+    private IReadOnlyList<RoleSummary> ChosenRoles => (Parsed?.RoleIds ?? [])
+        .Select(id => Roles.FirstOrDefault(role => role.Id == id) ?? new RoleSummary(id, "A role that's since been removed", ""))
+        .ToList();
+
+    private string RolesHint => ChosenRoles.Count == 0
+        ? "Until a role is chosen, everyone signed in sees it."
+        : "Anyone who holds one of these roles, wherever it was given. Roles are given under Access.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (_roles is null && Services.GetService(typeof(IRoleDirectory)) is IRoleDirectory directory)
+        {
+            try
+            {
+                _roles = (await directory.ListAsync()).OrderBy(role => role.Name, StringComparer.CurrentCultureIgnoreCase).ToList();
+            }
+            catch (RpcException)
+            {
+                _roles = [];
+            }
+        }
+    }
+
+    private async Task ChooseAsync(Reach reach)
+    {
+        _choosingRoles = reach == Reach.Roles;
+        string value = reach switch
+        {
+            Reach.SignedIn => Audience.SignedIn.Text,
+            Reach.Roles => Parsed is { IsForRoles: true } ? Value : Audience.SignedIn.Text,
+            Reach.Permission => Value,
+            _ => Audience.Everyone.Text,
+        };
+        if (value != Value)
+            await ValueChanged.InvokeAsync(value);
+    }
+
+    private async Task RolesChangedAsync(IReadOnlyList<RoleSummary> roles)
+    {
+        _choosingRoles = true;
+        await ValueChanged.InvokeAsync(Audience.HoldingAnyRole(roles.Select(role => role.Id)).Text);
+    }
+}

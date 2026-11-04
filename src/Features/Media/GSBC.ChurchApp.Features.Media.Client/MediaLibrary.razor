@@ -34,11 +34,6 @@
     private bool _busy;
     private string? _error;
 
-    [Parameter] public EventCallback<MediaRef> OnPick { get; set; }
-    [Parameter] public bool ImagesOnly { get; set; }
-
-    private bool Picking => OnPick.HasDelegate;
-
     private static readonly IReadOnlyList<TableColumn<MediaItemInfo>> Columns =
     [
         new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="book-open" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
@@ -87,16 +82,12 @@
                   }
               </dl>
               <div class="panel-actions">
-                  @if (Picking)
-                  {
-                      <Button Icon="check" OnClick="() => OnPick.InvokeAsync(media)">Choose</Button>
-                  }
-                  else if (media.Url is not null && _selected.PrivateTo is null)
+                  @if (media.Url is not null && _selected.PrivateTo is null)
                   {
                       <a class="btn btn--quiet" href="@media.Url" target="_blank" rel="noopener"><Icon Name="external-link" Size="IconSize.Small" />Open</a>
                   }
               </div>
-              @if (!Picking && _selected.Uses == 0)
+              @if (_selected.Uses == 0)
               {
                   <Can Permission="MediaPermissions.Delete">
                       <section class="panel-section @(_confirming ? "panel-confirm" : "")" aria-label="Delete">
@@ -116,7 +107,7 @@
                       </section>
                   </Can>
               }
-              else if (!Picking)
+              else
               {
                   <p class="panel-hint">It can be deleted once nothing uses it.</p>
               }
@@ -131,7 +122,7 @@
         return page;
     }
 
-    private IEnumerable<MediaItemInfo> Shown(MediaList list) => list.Items.Where(item => (!ImagesOnly || item.Media!.IsImage) && Matches(item, _filter)
+    private IEnumerable<MediaItemInfo> Shown(MediaList list) => list.Items.Where(item => Matches(item, _filter)
         && (_query.Length == 0 || NameOf(item.Media!).Contains(_query, StringComparison.CurrentCultureIgnoreCase) || item.Media!.AltText.Contains(_query, StringComparison.CurrentCultureIgnoreCase)));
 
     private static bool Matches(MediaItemInfo item, MediaFilter filter) => filter switch
@@ -176,8 +167,6 @@
         _uploading = false;
         _selected = new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow };
         await ReloadAsync();
-        if (Picking && (!ImagesOnly || media.IsImage))
-            await OnPick.InvokeAsync(media);
     }
 
     private async Task DeleteAsync()

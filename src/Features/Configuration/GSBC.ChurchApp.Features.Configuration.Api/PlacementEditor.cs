@@ -155,7 +155,7 @@ internal sealed class PlacementEditor(
         List<string> problems = [.. surface.ProblemsWith(state.Values)];
         if (!Audience.TryParse(state.Audience, out Audience? audience))
             problems.Add($"'{state.Audience}' isn't an audience.");
-        else if (audience is { Node: { } node, RoleId: null } && !permissions.ByNode.ContainsKey(node))
+        else if (audience is { Node: { } node } && !permissions.ByNode.ContainsKey(node))
             problems.Add($"No permission '{node}' exists to choose an audience by.");
         if (state is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
             problems.Add($"'{surface.Title}' has to end after it starts.");

@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hub, morning round</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --navy: #2a3d5e; --sand: #f4efe7; --sand-2: #e9e1d4; --ink: #1d2433; --ink-2: #5b6474; --ink-3: #8a919c; --aqua: #00776d; --orange: #e7ae74; --line: #e4ddd2; --surface: #fff; --page: #fbf8f3; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 32px 24px 64px; background: var(--page); color: var(--ink); font: 15px/1.5 Montserrat, sans-serif; }
+h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
+h2 { margin: 40px 0 4px; font-size: 20px; }
+p.q { margin: 0 0 16px; color: var(--ink-2); max-width: 60rem; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.opt { padding: 16px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(29,36,51,.06), 0 8px 24px rgba(29,36,51,.06); }
+.opt--chosen { outline: 2px solid var(--orange); }
+.kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--ink-3); }
+.opt h3 { margin: 2px 0 6px; font-size: 16px; }
+.opt p { margin: 0 0 12px; font-size: 13px; color: var(--ink-2); }
+.chosen { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 99px; background: var(--orange); font-size: 11px; font-weight: 700; }
+.stage { position: relative; height: 260px; padding: 12px; border-radius: 12px; background: var(--sand); overflow: hidden; }
+.panel { position: absolute; right: 12px; top: 12px; bottom: 12px; width: 44%; padding: 10px; border-radius: 10px; background: #fff; display: grid; align-content: start; gap: 6px; font-size: 11px; }
+.field { height: 22px; border-radius: 6px; background: var(--sand); }
+.lbl { font-weight: 700; font-size: 11px; }
+.btn { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 99px; background: var(--sand-2); font-weight: 600; font-size: 11px; }
+.btn--p { background: var(--navy); color: #fff; }
+.thumbs { display: grid; grid-template-columns: repeat(var(--n, 4), 1fr); gap: 6px; }
+.thumbs i { aspect-ratio: 1; border-radius: 6px; background: linear-gradient(135deg, #b9c7b0, #6f8c75); }
+.thumbs i.on { outline: 2px solid var(--orange); outline-offset: 1px; }
+.scrim { position: absolute; inset: 0; background: rgba(29,36,51,.35); }
+.sheet { position: absolute; left: 10%; right: 10%; top: 16px; bottom: 16px; padding: 12px; border-radius: 12px; background: #fff; display: grid; grid-template-rows: auto auto 1fr auto; gap: 8px; }
+.foot { display: flex; justify-content: flex-end; gap: 6px; }
+.chip { display: inline-flex; gap: 4px; align-items: center; height: 20px; padding: 0 8px; border-radius: 99px; background: var(--navy); color: #fff; font-size: 10px; font-weight: 600; }
+.seg { display: flex; padding: 2px; border-radius: 99px; background: var(--sand); }
+.seg span { flex: 1; text-align: center; padding: 3px 0; border-radius: 99px; font-size: 10px; font-weight: 600; color: var(--ink-2); }
+.seg span.on { background: #fff; color: var(--ink); }
+.list { display: grid; gap: 2px; padding: 4px; border-radius: 8px; background: #fff; box-shadow: 0 6px 16px rgba(29,36,51,.15); }
+.list span { padding: 3px 6px; border-radius: 4px; font-size: 10px; }
+.list span.hl { background: var(--sand); }
+.check { display: flex; gap: 6px; align-items: center; font-size: 10px; }
+.check b { width: 10px; height: 10px; border-radius: 3px; background: var(--sand-2); }
+.check b.on { background: var(--navy); }
+.phone { position: absolute; left: 50%; top: 10px; width: 150px; margin-left: -75px; bottom: -20px; padding: 10px; border-radius: 22px; background: #fff; box-shadow: 0 0 0 5px #1d2433; display: grid; grid-template-columns: 1fr 1fr; grid-auto-rows: 44px; gap: 6px; }
+.t { border-radius: 8px; background: var(--sand-2); }
+.t.w { grid-column: span 2; }
+.t.n { background: var(--navy); }
+.t.lift { transform: translate(14px, -6px) scale(1.05); box-shadow: 0 12px 20px rgba(29,36,51,.3); outline: 2px solid var(--orange); position: relative; z-index: 2; }
+.t.slot { background: none; outline: 2px dashed var(--orange); outline-offset: -2px; }
+.t.ghost { outline: 2px solid var(--aqua); }
+.arrow { position: absolute; font-size: 10px; color: var(--ink-2); }
+.line { height: 3px; border-radius: 2px; background: var(--aqua); grid-column: span 2; align-self: center; }
+footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
+</style>
+</head>
+<body>
+<h1>Hub, morning round</h1>
+<p class="q">The owner's notes 4, 5 and 7 from trying the Hub (2026-11-04). The owner asked for good defaults to react to, so each question is decided here and marked; the alternatives stay listed.</p>
+
+<h2>4. Choosing a picture for a tile</h2>
+<p class="q">"Choose" under Picture embedded the whole Media table in a 380px column: two scrollbars, a cut-off column, wrapping chips, and the detail panel landing on top. It's the shared chooser (<code>MediaChooser</code> → Media's library), also used by the rich text editor and the list editor.</p>
+<div class="opts">
+  <div class="opt opt--chosen"><span class="chosen">Chosen</span><div class="kicker">A · SHEET</div><h3>A picture sheet over the workbench</h3>
+    <p>Choose opens a wide sheet: search and Upload at the top, a grid of thumbnails with names, one click selects (orange ring, a tick), Choose and Cancel at the foot, double-click chooses. The place picker already works this way, and the sheet suits every caller.</p>
+    <div class="stage"><div class="panel"><span class="lbl">Picture</span><span class="btn">Choose</span></div><div class="scrim"></div>
+      <div class="sheet"><span class="lbl">Choose a picture</span><div style="display:flex;gap:6px"><div class="field" style="flex:1"></div><span class="btn">Upload</span></div>
+      <div class="thumbs" style="--n:5"><i></i><i class="on"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><div class="foot"><span class="btn">Cancel</span><span class="btn btn--p">Choose</span></div></div></div>
+  </div>
+  <div class="opt"><div class="kicker">B · IN THE PANEL</div><h3>A small grid in the column</h3>
+    <p>Three thumbnails across, inside the settings panel, with search above. Stays in place, but 380px fits few pictures, and the rich text editor's caller has the same squeeze.</p>
+    <div class="stage"><div class="panel"><span class="lbl">Picture</span><div class="field"></div><div class="thumbs" style="--n:3"><i></i><i class="on"></i><i></i><i></i><i></i><i></i></div><div class="foot"><span class="btn">Cancel</span><span class="btn btn--p">Choose</span></div></div></div>
+  </div>
+  <div class="opt"><div class="kicker">C · RECENT, THEN ALL</div><h3>Recent strip, sheet for the rest</h3>
+    <p>Four recent pictures inline; "All pictures…" opens the sheet. Quicker for the common case, but two ways to do one thing.</p>
+    <div class="stage"><div class="panel"><span class="lbl">Picture</span><div class="thumbs" style="--n:4"><i></i><i></i><i></i><i></i></div><span class="btn">All pictures…</span></div></div>
+  </div>
+</div>
+
+<h2>7. Who sees a tile</h2>
+<p class="q">One select listing every role, one role only. It has to scale to many roles and allow several, and still be checked through Access (a role's membership grant).</p>
+<div class="opts">
+  <div class="opt opt--chosen"><span class="chosen">Chosen</span><div class="kicker">A · THREE CHOICES, THEN ROLES</div><h3>Everyone · Signed in · People in roles</h3>
+    <p>A segmented choice. "People in roles" shows chosen roles as removable chips and a search field that lists matching roles as you type (arrow keys, Enter). Built once in Platform.Ui so Announcements can use it later.</p>
+    <div class="stage"><div class="panel" style="width:70%"><span class="lbl">Who sees it</span><div class="seg"><span>Everyone</span><span>Signed in</span><span class="on">In roles</span></div>
+      <div style="display:flex;gap:4px;flex-wrap:wrap"><span class="chip">Youth leaders ×</span><span class="chip">Deacons ×</span></div><div class="field"></div><div class="list"><span class="hl">Life Group leaders</span><span>Lifeline team</span></div></div></div>
+  </div>
+  <div class="opt"><div class="kicker">B · CHECKLIST</div><h3>A filterable checklist</h3>
+    <p>Every role as a checkbox under a filter field. Clear, but long, and the chosen ones get lost among the rest.</p>
+    <div class="stage"><div class="panel" style="width:70%"><span class="lbl">Who sees it</span><div class="field"></div><div class="check"><b class="on"></b>Deacons</div><div class="check"><b></b>Life Group leaders</div><div class="check"><b></b>Lifeline team</div><div class="check"><b class="on"></b>Youth leaders</div><div class="check"><b></b>…</div></div></div>
+  </div>
+  <div class="opt"><div class="kicker">C · SHEET</div><h3>A roles sheet</h3>
+    <p>"Choose roles…" opens a sheet with search and checkboxes. Roomy, but a sheet for two clicks is heavy, and the picture picker already uses one.</p>
+    <div class="stage"><div class="panel" style="width:70%"><span class="lbl">Who sees it</span><span>Deacons, Youth leaders</span><span class="btn">Choose roles…</span></div></div>
+  </div>
+</div>
+
+<h2>5. Dragging a tile</h2>
+<p class="q">Dragging worked, but only an outline showed where it would land. Like the iPhone's home screen, the other tiles should move aside while dragging.</p>
+<div class="opts">
+  <div class="opt opt--chosen"><span class="chosen">Chosen</span><div class="kicker">A · LIVE REFLOW</div><h3>Neighbours make room as you drag</h3>
+    <p>The tile lifts (slightly larger, deeper shadow) and follows the pointer; the grid repacks with the tile in its new place, a dashed orange slot where it will land, and the others glide there in 200ms. Drop commits; Escape or dropping off the phone glides everything back. Reduced motion: tiles jump, no glide. Keys: arrows move it a place, and the others glide too.</p>
+    <div class="stage"><div class="phone"><div class="t w n"></div><div class="t slot"></div><div class="t lift"></div><div class="t"></div><div class="t"></div><div class="t w"></div></div></div>
+  </div>
+  <div class="opt"><div class="kicker">B · SWAP</div><h3>Swap with the tile under you</h3>
+    <p>The tile under the pointer is outlined; dropping swaps the two. Simple, but sizes differ, so a swap reshuffles the rest at the drop with no warning.</p>
+    <div class="stage"><div class="phone"><div class="t w n"></div><div class="t ghost"></div><div class="t lift"></div><div class="t"></div><div class="t w"></div></div></div>
+  </div>
+  <div class="opt"><div class="kicker">C · INSERTION LINE</div><h3>A line where it goes</h3>
+    <p>A line between tiles marks the insertion point; nothing moves until the drop. Precise in a list, but in a packed grid the result is hard to picture.</p>
+    <div class="stage"><div class="phone"><div class="t w n"></div><div class="line"></div><div class="t"></div><div class="t lift"></div><div class="t w"></div></div></div>
+  </div>
+</div>
+<footer>Decided by Claude for the owner to react to, 2026-11-04. Built: 4A, 7A, 5A.</footer>
+</body>
+</html>

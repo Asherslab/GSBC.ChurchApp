@@ -219,6 +219,22 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .media-upload__label { color: var(--ink); font-weight: 600; }
 .media-upload__hint { font-size: var(--text-caption); overflow-wrap: anywhere; }
 .media-upload__drop--busy { opacity: 0.6; cursor: progress; }
+.media-choice { display: grid; gap: 16px; }
+.media-choice__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.media-choice__tools .search-field { max-width: none; }
+.media-choice__grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px 12px; max-height: min(52vh, 560px); margin: 0 -6px; padding: 6px; overflow-y: auto; overscroll-behavior: contain; }
+.media-choice__item { display: grid; gap: 3px; align-content: start; min-width: 0; padding: 0; border: 0; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.media-choice__thumb { position: relative; display: grid; place-items: center; aspect-ratio: 4 / 3; overflow: hidden; margin-bottom: 5px; border-radius: var(--radius-field); background: var(--sand-strong); color: var(--ink-3); transition: box-shadow 140ms var(--ease-out); }
+.media-choice__image { width: 100%; height: 100%; object-fit: cover; }
+.media-choice__item:hover .media-choice__thumb { box-shadow: 0 0 0 2px color-mix(in srgb, var(--marker) 55%, transparent); }
+.media-choice__item--on .media-choice__thumb, .media-choice__item--on:hover .media-choice__thumb { box-shadow: 0 0 0 3px var(--marker); }
+.media-choice__item:focus-visible { outline: none; }
+.media-choice__item:focus-visible .media-choice__thumb { outline: 2px solid var(--accent); outline-offset: 4px; }
+.media-choice__tick { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 26px; height: 26px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); }
+.media-choice__name { overflow: hidden; font-size: var(--text-caption); font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
+.media-choice__used { font-size: var(--text-caption); color: var(--ink-3); }
+.media-choice__foot { display: flex; align-items: center; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.media-choice__chosen { flex: 1; min-width: 0; overflow: hidden; font-size: var(--text-caption); color: var(--ink-2); white-space: nowrap; text-overflow: ellipsis; }
 
 .account-column { max-width: 680px; }
 .sign-in-stage { display: grid; place-items: center; min-height: 100vh; margin: -28px -40px -64px; padding: 24px 16px; background: var(--sand); }

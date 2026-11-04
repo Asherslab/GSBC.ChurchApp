@@ -23,7 +23,10 @@
                 </CascadingValue>
             </div>
         }
-        <span class="tile-settings__ratio">Text on it reads at @Ratio("light") in light and @Ratio("dark") in dark. 4.5 : 1 or more is easy to read.</span>
+        @if (HardToRead is { } hard)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@hard" />
+        }
     </div>
 
     <fieldset class="tile-settings__group">
@@ -66,18 +69,18 @@
     <fieldset class="tile-settings__group">
         <legend>Icon</legend>
         <div class="icon-picker" role="radiogroup" aria-label="Icon">
-            <button type="button" role="radio" aria-checked="@(Look.Icon.Length == 0 ? "true" : "false")" class="icon-picker__choice @(Look.Icon.Length == 0 ? "icon-picker__choice--on" : "")" title="No icon" @onclick="() => SetAsync(Kind.Tile.Icon, string.Empty)">
+            <button type="button" role="radio" aria-checked="@(Look.Icon.Length == 0 ? "true" : "false")" class="icon-picker__choice @(Look.Icon.Length == 0 ? "icon-picker__choice--on" : "")" title="No icon" aria-label="No icon" @onclick="() => SetAsync(Kind.Tile.Icon, string.Empty)">
                 <Icon Name="x" Size="IconSize.Small" />
             </button>
             @foreach (string name in BuiltInIcons)
             {
-                <button type="button" role="radio" aria-checked="@(Look.Icon == name ? "true" : "false")" class="icon-picker__choice @(Look.Icon == name ? "icon-picker__choice--on" : "")" title="@name" @onclick="() => SetAsync(Kind.Tile.Icon, name)">
+                <button type="button" role="radio" aria-checked="@(Look.Icon == name ? "true" : "false")" class="icon-picker__choice @(Look.Icon == name ? "icon-picker__choice--on" : "")" title="@IconWords(name)" aria-label="@IconWords(name)" @onclick="() => SetAsync(Kind.Tile.Icon, name)">
                     <Icon Name="@name" Size="IconSize.Small" />
                 </button>
             }
             @foreach ((string key, CustomIcon icon) in Icons)
             {
-                <button type="button" role="radio" aria-checked="@(Look.Icon == key ? "true" : "false")" class="icon-picker__choice @(Look.Icon == key ? "icon-picker__choice--on" : "")" title="@icon.Name" @onclick="() => SetAsync(Kind.Tile.Icon, key)">
+                <button type="button" role="radio" aria-checked="@(Look.Icon == key ? "true" : "false")" class="icon-picker__choice @(Look.Icon == key ? "icon-picker__choice--on" : "")" title="@icon.Name" aria-label="@icon.Name" @onclick="() => SetAsync(Kind.Tile.Icon, key)">
                     <SvgIcon Drawing="@icon.Drawing" />
                 </button>
             }
@@ -185,8 +188,32 @@
 
     private string Heading => Kind.IsPlain ? Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title : Kind.Surface.Title;
 
-    private string Ratio(string scheme) =>
-        _contrast.GetValueOrDefault(scheme) is > 0 and var ratio ? $"{ratio.ToString("0.0", CultureInfo.InvariantCulture)} : 1" : "…";
+    private const double EasyToRead = 4.5;
+
+    private string? HardToRead
+    {
+        get
+        {
+            List<string> hard = Schemes.Where(scheme => _contrast.GetValueOrDefault(scheme) is > 0 and < EasyToRead).ToList();
+            return hard.Count switch
+            {
+                0 => null,
+                1 => $"Words on this colour are hard to read in {hard[0]} mode. Try another colour.",
+                _ => "Words on this colour are hard to read. Try another colour.",
+            };
+        }
+    }
+
+    private static string IconWords(string name) => name switch
+    {
+        "sparkles" => "Sparkles",
+        "scroll-text" => "Scroll",
+        "notebook-pen" => "Notebook",
+        "message-square" => "Message",
+        "shield-check" => "Shield",
+        "zap" => "Lightning",
+        _ => string.Concat(char.ToUpperInvariant(name[0]), name[1..].Replace('-', ' ')),
+    };
 
     private ArrangedSurface ProofEntry
     {

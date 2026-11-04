@@ -13,23 +13,33 @@ public sealed record Audience
     public static readonly Audience Everyone = new(EveryoneText, null);
     public static readonly Audience SignedIn = new(SignedInText, null);
 
-    private Audience(string text, string? node, Guid? roleId = null)
+    private Audience(string text, string? node, IReadOnlyList<Guid>? roleIds = null)
     {
         Text = text;
         Node = node;
-        RoleId = roleId;
+        RoleIds = roleIds ?? [];
     }
 
     public string Text { get; }
 
     public string? Node { get; }
 
-    public Guid? RoleId { get; }
+    public IReadOnlyList<Guid> RoleIds { get; }
+
+    public bool IsForRoles => RoleIds.Count > 0;
 
     public static Audience Holding(string node) =>
         PermissionNode.IsValid(node) ? new Audience(PermissionPrefix + node, node) : throw new ArgumentException($"'{node}' is not a permission node.", nameof(node));
 
-    public static Audience HoldingRole(Guid roleId) => new(RolePrefix + roleId.ToString("D"), RoleMembership.NodeOf(roleId), roleId);
+    public static Audience HoldingRole(Guid roleId) => HoldingAnyRole([roleId]);
+
+    public static Audience HoldingAnyRole(IEnumerable<Guid> roleIds)
+    {
+        List<Guid> roles = roleIds.Distinct().ToList();
+        return roles.Count == 0
+            ? SignedIn
+            : new Audience(RolePrefix + string.Join(',', roles.Select(role => role.ToString("D"))), null, roles);
+    }
 
     public static bool TryParse(string text, [NotNullWhen(true)] out Audience? audience)
     {
@@ -39,14 +49,32 @@ public sealed record Audience
             EveryoneText or "" => Everyone,
             SignedInText => SignedIn,
             _ when PermissionNode.IsValid(node) => new Audience(text, node),
-            _ when text.StartsWith(RolePrefix, StringComparison.Ordinal) && Guid.TryParse(text[RolePrefix.Length..], out Guid roleId) => HoldingRole(roleId),
+            _ when text.StartsWith(RolePrefix, StringComparison.Ordinal) && RolesIn(text[RolePrefix.Length..]) is { Count: > 0 } roles => HoldingAnyRole(roles),
             _ => null,
         };
         return audience is not null;
     }
 
+    private static List<Guid>? RolesIn(string list)
+    {
+        List<Guid> roles = [];
+        foreach (string part in list.Split(','))
+        {
+            if (!Guid.TryParse(part, out Guid role))
+                return null;
+            roles.Add(role);
+        }
+        return roles;
+    }
+
     public bool Includes(Viewer viewer) =>
-        this == Everyone || (viewer.SignedIn && (Node is null || viewer.Holds(Node)));
+        this == Everyone || (viewer.SignedIn && (IsForRoles
+            ? RoleIds.Any(role => viewer.Holds(RoleMembership.NodeOf(role)))
+            : Node is null || viewer.Holds(Node)));
+
+    public bool Equals(Audience? other) => other is not null && Text == other.Text;
+
+    public override int GetHashCode() => Text.GetHashCode(StringComparison.Ordinal);
 }
 
 public sealed record Viewer(bool SignedIn, Func<string, bool> Holds)

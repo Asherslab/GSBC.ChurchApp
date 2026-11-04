@@ -52,7 +52,6 @@
         ],
         "createdAt": "2026-11-03T05:06:43.460Z",
         "reason": "Claude: decision-round sketch for the What's new moment, not shipped UI"
-
       },
       {
         "rule": "cramped-padding",
@@ -62,6 +61,24 @@
         ],
         "createdAt": "2026-11-03T06:11:31.639Z",
         "reason": "model: decision-round HTML sketch, a fixed skeleton thumbnail the owner already locked; it never ships"
+      },
+      {
+        "rule": "low-contrast",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/hub-morning/index.html"
+        ],
+        "createdAt": "2026-11-04T01:01:47.202Z",
+        "reason": "Claude: miniature wireframe sketches on an internal decision page, not shipped UI"
+      },
+      {
+        "rule": "tiny-text",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/hub-morning/index.html"
+        ],
+        "createdAt": "2026-11-04T01:01:47.244Z",
+        "reason": "Claude: miniature wireframe sketches on an internal decision page, not shipped UI"
       }
     ]
   }

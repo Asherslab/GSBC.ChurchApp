@@ -5,8 +5,8 @@
         <style>@ThemeDerivation.Css(Theme, $"[data-palette=\"{PreviewPalette}\"]",
             $":root[data-scheme=\"dark\"] [data-palette=\"{PreviewPalette}\"]:not([data-preview-scheme=\"light\"]), [data-palette=\"{PreviewPalette}\"][data-preview-scheme=\"dark\"]", _fontSources)</style>
     }
-    <div class="phone-frame__screen">
-        <div class="topbar" aria-hidden="true"></div>
+    <div class="phone-frame__screen" data-stuck-at="@StuckAt">
+        <div class="topbar" aria-hidden="true"><span></span><span class="topbar__title">@Title</span><span></span></div>
         @ChildContent
     </div>
     <div class="phone-frame__status" aria-hidden="true">
@@ -62,5 +62,7 @@
     [Parameter] public PhoneDevice Device { get; set; } = PhoneDevice.IPhone15Pro;
     [Parameter] public IReadOnlyList<(string Title, string Icon)> Tabs { get; set; } = [("Home", "home"), ("More", "more")];
     [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public string? Title { get; set; }
+    [Parameter] public int StuckAt { get; set; } = 120;
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }
