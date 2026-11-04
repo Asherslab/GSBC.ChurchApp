@@ -39,7 +39,10 @@ public static class SermonsApiExtensions
         services.AddDestinationSource<SeriesDestinationSource>();
         services.AddDestinationSource<SpeakerDestinationSource>();
         services.AddSystemRole(new SystemRole(SermonsPermissions.EditorRole, "Sermons editor",
-            "Corrects sermons and looks after series and speakers", ScopeKind.Global, [SermonsPermissions.EditNode]));
+            "Corrects sermons, looks after series and speakers, and uploads sermons", ScopeKind.Global,
+            [SermonsPermissions.EditNode, SermonsPermissions.UploadNode]));
+        services.AddSystemRole(new SystemRole(SermonsPermissions.UploaderRole, "Sermon uploader",
+            "Uploads Sunday's sermons (the AV team)", ScopeKind.Global, [SermonsPermissions.UploadNode]));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Catalogue, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Series, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Speakers, FeedAudience.Public));

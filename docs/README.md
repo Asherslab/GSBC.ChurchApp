@@ -58,6 +58,14 @@ tiles, Notifications for real, and sample tiles for features not built yet, open
 places. The old Hub was rebuilt in dev through the admin panel and published
 ([home.md](features/home.md)).
 
+**Sermons (2026-11-05, branch `feature/sermons`):** a Sermons tab on the phone (the sermon you're part-way through,
+else the newest; series, speakers, search, offline), audio played natively in the background with the lock screen's
+controls, listening progress that is never forgotten (kept on the phone, merged into your account when you sign in, on
+every device), YouTube inline in the app, and the Home tile made real. Sermons come from the website's feed and series
+pages, or, at the flip of a switch on the admin panel's Sermons page, from uploads to R2 with our own podcast feed;
+staff check and correct new sermons there ([sermons.md](features/sermons.md)). Checked in the iOS Simulator and on
+`dev-app.baptist.com.au`; on the owner's iPhone for the background-audio and second-device checks.
+
 **Waiting on the owner:**
 
 - ~~The Apple enrolment~~: done 2026-11-03. The church is enrolled as an organisation (the church

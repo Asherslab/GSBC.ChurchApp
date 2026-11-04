@@ -41,6 +41,8 @@ public sealed class SermonRecord
 
     public string? PublishedHash { get; set; }
     public DateTime? AnnouncedAt { get; set; }
+    public DateTime? CheckedAt { get; set; }
+    public Guid? CheckedBy { get; set; }
 
     public string EffectiveTitle => Title ?? SourceTitle;
     public Guid? EffectiveSpeakerId => SpeakerId ?? SourceSpeakerId;

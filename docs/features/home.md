@@ -27,8 +27,10 @@ week has *How many to show*).
 - **Feature tiles,** only where the content is live from a feature (owner, 2026-11-04, note B):
   - **Notifications** (`hub.notifications`, owned by Notifications): real. "3 unread" with the newest
     title and the unread dot, or the staff's words when nothing is unread.
-  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Latest
-    sermon (cover and play), Sunday bulletin (date, the year's theme and verse), This week (the next
+  - **Latest sermon** (`hub.sermon`, owned by Sermons since 2026-11-05): real. The newest sermon (or, in the *Where
+    you're up to* layout, the one you're part-way through) with its picture and a play button that starts it in the
+    player; the admin canvas shows the real newest one through `Sermons.Latest` ([sermons.md](sermons.md)).
+  - **Waiting for their feature** (`WaitingTiles`, in Configuration until the feature exists): Sunday bulletin (date, the year's theme and verse), This week (the next
     gatherings from the church's weekly rhythm) and Outreach day (its live "outreach is on" state comes
     with Outreach) show sample content. When Sermons (and so on) is built, it takes its kind and view into
     its own feature and replaces the sample.
@@ -234,7 +236,7 @@ the phone is the canvas (the owner's brief named it), with a list for what the c
 
 ## Places that aren't built yet
 
-Feature tiles open their place: `/sermons`, `/sunday`, `/week`, `/prayer`, `/outreach`, `/life-groups`
+Feature tiles open their place: `/sunday`, `/week`, `/prayer`, `/outreach`, `/life-groups`
 and `/ministries` are declared in `ComingSoonDestinations` (Configuration) and drawn by the app's
 *coming soon* page. A feature that's built removes its path there and declares its own; two features
 declaring one path fail at start-up, so it can't be forgotten.

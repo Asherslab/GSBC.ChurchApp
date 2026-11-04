@@ -167,6 +167,14 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("audio_url");
 
+                    b.Property<DateTime?>("CheckedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("checked_at");
+
+                    b.Property<Guid?>("CheckedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("checked_by");
+
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("integer")
                         .HasColumnName("duration_seconds");

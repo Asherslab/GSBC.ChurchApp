@@ -2,7 +2,9 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Api.Website;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
+using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
+using Microsoft.AspNetCore.Http;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
@@ -24,6 +26,15 @@ internal sealed class SermonLibraryService(
         public const string NoSeries = "no-series";
         public const string Corrected = "corrected";
         public const string Hidden = "hidden";
+        public const string NeedsALook = "needs-a-look";
+    }
+
+    public static class Reasons
+    {
+        public const string JustUploaded = "Just uploaded";
+        public const string NoSeries = "No series";
+        public const string NewSpeaker = "New speaker";
+        public const string New = "New";
     }
 
     public static class Fields
@@ -56,22 +67,25 @@ internal sealed class SermonLibraryService(
             [Filters.NoSeries] = await NoSeries(matching).CountAsync(cancellationToken),
             [Filters.Corrected] = await Corrected(matching).CountAsync(cancellationToken),
             [Filters.Hidden] = await matching.CountAsync(sermon => sermon.Hidden, cancellationToken),
+            [Filters.NeedsALook] = await matching.CountAsync(sermon => !sermon.Hidden && sermon.CheckedAt == null, cancellationToken),
         };
         IQueryable<SermonRecord> filtered = request.Filter switch
         {
             Filters.NoSeries => NoSeries(matching),
             Filters.Corrected => Corrected(matching),
             Filters.Hidden => matching.Where(sermon => sermon.Hidden),
+            Filters.NeedsALook => matching.Where(sermon => !sermon.Hidden && sermon.CheckedAt == null),
             _ => matching.Where(sermon => !sermon.Hidden),
         };
 
         List<SermonRecord> page = await filtered.OrderByDescending(sermon => sermon.PreachedAt).ThenByDescending(sermon => sermon.AddedAt)
             .Skip(Math.Max(0, request.Skip)).Take(request.Take is > 0 and <= 200 ? request.Take : 50).ToListAsync(cancellationToken);
         Lookups lookups = await LookupsAsync(cancellationToken);
+        lookups = lookups with { SpeakerCounts = await SpeakerCountsAsync(cancellationToken) };
         return new SermonList
         {
             Sermons = page.Select(sermon => Detail(sermon, lookups)).ToList(),
-            Total = counts[request.Filter is Filters.NoSeries or Filters.Corrected or Filters.Hidden ? request.Filter : Filters.All],
+            Total = counts[request.Filter is Filters.NoSeries or Filters.Corrected or Filters.Hidden or Filters.NeedsALook ? request.Filter : Filters.All],
             Counts = counts,
         };
     }
@@ -119,6 +133,11 @@ internal sealed class SermonLibraryService(
 
         if (request.Hidden is { } hidden)
             sermon.Hidden = hidden;
+        if (request.Checked is { } isChecked)
+        {
+            sermon.CheckedAt = isChecked ? time.GetUtcNow().UtcDateTime : null;
+            sermon.CheckedBy = isChecked && context.ServerCallContext?.GetHttpContext().User is { } user ? Caller.UserId(user) : null;
+        }
 
         sermon.UpdatedAt = time.GetUtcNow().UtcDateTime;
         publisher.MarkAdmin(sermon.Id);
@@ -252,6 +271,8 @@ internal sealed class SermonLibraryService(
     private async Task<SourceStatus> StatusAsync(CancellationToken cancellationToken)
     {
         SourceState state = await SourceStates.GetAsync(db, cancellationToken);
+        int copied = await db.Sermons.CountAsync(sermon => sermon.AudioCopiedFrom != null, cancellationToken);
+        int waiting = state.Source == SermonSources.Uploads ? await AudioCopier.Waiting(db).CountAsync(cancellationToken) : 0;
         return new SourceStatus
         {
             Source = state.Source,
@@ -260,8 +281,8 @@ internal sealed class SermonLibraryService(
             SeriesCheckedAt = state.SeriesCheckedAt,
             Problem = state.Problem ?? state.SeriesProblem,
             Sermons = await db.Sermons.CountAsync(sermon => !sermon.Hidden, cancellationToken),
-            Copied = await db.Sermons.CountAsync(sermon => sermon.AudioCopiedFrom != null, cancellationToken),
-            ToCopy = state.Source == SermonSources.Uploads ? await AudioCopier.Waiting(db).CountAsync(cancellationToken) : 0,
+            Copied = copied,
+            ToCopy = copier.Limit is { } most ? Math.Clamp(most - copied, 0, waiting) : waiting,
             PodcastFeedUrl = state.Source == SermonSources.Uploads ? podcast.Url : null,
             CopyNote = copier.Limit is { } limit ? $"While developing, only the newest {limit} are copied." : null,
         };
@@ -308,7 +329,11 @@ internal sealed class SermonLibraryService(
         return verified.FirstOrDefault();
     }
 
-    private sealed record Lookups(Dictionary<Guid, SeriesRecord> Series, Dictionary<Guid, SpeakerRecord> Speakers);
+    private sealed record Lookups(Dictionary<Guid, SeriesRecord> Series, Dictionary<Guid, SpeakerRecord> Speakers, IReadOnlyDictionary<Guid, int>? SpeakerCounts = null);
+
+    private async Task<IReadOnlyDictionary<Guid, int>> SpeakerCountsAsync(CancellationToken cancellationToken) =>
+        (await db.Sermons.AsNoTracking().Where(sermon => !sermon.Hidden).Select(sermon => sermon.SpeakerId ?? sermon.SourceSpeakerId).ToListAsync(cancellationToken))
+            .Where(id => id is not null).GroupBy(id => id!.Value).ToDictionary(group => group.Key, group => group.Count());
 
     private async Task<Lookups> LookupsAsync(CancellationToken cancellationToken) => new(
         await db.Series.AsNoTracking().ToDictionaryAsync(series => series.Id, cancellationToken),
@@ -341,7 +366,21 @@ internal sealed class SermonLibraryService(
             SuggestedSeries = suggestion is null ? null
                 : lookups.Series.Values.FirstOrDefault(series => string.Equals(series.Name, suggestion, StringComparison.OrdinalIgnoreCase))?.Name ?? suggestion,
             AddedAt = sermon.AddedAt,
+            CheckedAt = sermon.CheckedAt,
+            NeedsALook = sermon.CheckedAt is null && !sermon.Hidden ? ReasonsFor(sermon, lookups) : [],
         };
+    }
+
+    private static List<string> ReasonsFor(SermonRecord sermon, Lookups lookups)
+    {
+        List<string> reasons = [];
+        if (sermon.Origin == SermonSources.Uploads)
+            reasons.Add(Reasons.JustUploaded);
+        if (sermon.EffectiveSeriesId is null && TitleParts.SuggestedSeries(sermon.EffectiveTitle) is not null)
+            reasons.Add(Reasons.NoSeries);
+        if (sermon.EffectiveSpeakerId is { } speaker && lookups.SpeakerCounts?.GetValueOrDefault(speaker) == 1)
+            reasons.Add(Reasons.NewSpeaker);
+        return reasons.Count > 0 ? reasons : [Reasons.New];
     }
 
     private static SeriesDetail SeriesDetail(SeriesRecord series, IReadOnlyList<SermonRecord> sermons) => new()

@@ -11,10 +11,13 @@ current as it's built.
 |---|---|
 | Everyone (the phone) | Browse the latest sermons, series and speakers; search; play audio in the background, with lock-screen, Control Center, AirPods and car controls; watch the video; pick up where they left off, offline too |
 | Everyone, signed in | The same, with their listening history on every phone they sign in on |
-| `sermons.edit` | In the admin panel: correct a sermon's title, speaker, series, service and video; hide one; manage series (name, artwork, description) and speakers (name, photo, other spellings); add a sermon by uploading its audio, when sermons come from uploads |
-| `sermons.source` | Choose where new sermons come from (the website, or uploads), see when the source last answered, and start copying the website's audio into our storage |
+| `sermons.upload` | In the admin panel: add a sermon by uploading its audio, when sermons come from uploads (the AV team's first pass) |
+| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one; manage series (name, picture, description) and speakers (name, other spellings, joining two) |
+| `sermons.source` | Choose where new sermons come from (the website, or uploads) |
 
-The **Sermons editor** system role holds `sermons.edit`. `sermons.source` is the Owner's until given.
+The **Sermons editor** system role holds `sermons.edit` and `sermons.upload`; the **Sermon uploader** role (the AV team)
+holds `sermons.upload`. `sermons.source` is the Owner's until given. The series and speaker lists and the source's
+status are `[SignedIn]`: they are public data already (the feeds), and an uploader needs them to fill in the form.
 
 ## Where sermons come from: two sources, one library
 
@@ -284,11 +287,53 @@ uploads checked on save.
 
 ## Decided while building
 
-- *(to be filled in as it's built)*
+- **The phone (owner, 2026-11-05):** the tab is *Sermons*, beside Home; it opens on the sermon you were part-way
+  through if you listened in the past week (`KeepGoing`), otherwise the newest; **audio first** (Listen leads, Watch
+  is beside it when there's a video). Layout: *Shelves*, chosen on the decision page over a dated timeline with series
+  bands and three segmented views (`.impeccable/mocks/decision/sermons/`; direction contract in
+  `.impeccable/surfaces/`).
+- **The admin panel (owner, 2026-11-05):** the AV team uploads (first pass), the office checks (second pass); an upload
+  is on phones at once (later, with audio tooling, it will wait for a check: a held state and a publish permission).
+  Layout: the *review queue* (Needs a look beside the sermon being checked, *Looks right · next*), chosen over an upload
+  workbench and a two-pass board (`.impeccable/mocks/decision/sermons-admin/`). The source switch is on the page.
+- **Needs a look** is a sermon nobody has checked: new from the website (with a reason when its title suggests a
+  series it isn't in, or its speaker is new) or just uploaded. Everything from the website's first read, and what was
+  there when the check was added, counts as checked, so staff don't start with 155.
+- **Titles in a series** drop the series' name where the series line already says it ("Anchored: Part 4 - Anchored In
+  Hope" shows as "Anchored In Hope" under "Anchored · Part 4"); elsewhere the full title shows.
+- **The website's summary** ("Sun AM - Watch at: …") isn't shown as a description; only an uploaded sermon's own words
+  are.
+- **The mini-player and player sheet are Platform.Ui's `NowPlaying`**, generic over `IAudioPlayer`, placed above the
+  tab bar in the app's layout; an `AudioItem` carries a link back to its sermon.
+- **The admin panel plays audio** with the browser's own audio element on the sermon being checked; it has no
+  mini-player.
+- **Uploading** goes from the browser's file straight to R2 (an XHR with progress), not through WebAssembly memory;
+  the browser reads an m4a's length, the server an mp3's.
+- **Copying the website's audio** in development copies only the newest 20 (about 1 GB into the local store).
+- **An architecture rule** (`NoTwoPagesInTheAppClaimTheSameRoute`) now fails when two app pages claim one route: the
+  coming-soon page still claiming `/sermons` stopped the app starting.
+
+## Status (2026-11-05)
+
+Built on branch `feature/sermons`:
+- the website's feed and series pages read hourly into the catalogue, corrections that survive, uploads to R2 with a
+  podcast feed and a one-off copy, places for a sermon, a series and a speaker (tests: `Sermons.Api.Tests`);
+- the phone: the Sermons tab, sermon, series, speaker, search and all-sermons pages, the Home tile, the native player
+  (iOS) with the playback journal (tests: `PlaybackJournalTests`), listening history merged and sent through the
+  outbox;
+- the admin panel: the review queue, Series and speakers, the source switch, uploads;
+- YouTube inline through the static embed page.
+
+Checked in the iOS Simulator (the tab, a sermon, the player sheet, playback, the video inline) and on
+`dev-app.baptist.com.au` (the admin pages); installed on the owner's iPhone for the real-phone checks (background audio
+with the screen locked, switching tabs, closing and reopening, a second device signed in, picture-in-picture).
 
 ## Open
 
+- The real-phone checks above, by the owner.
 - Downloads for offline (designed above).
+- The *New sermon* notification (above).
+- A held-for-review step for uploads, with audio tooling.
 - Sharing a sermon from the phone (needs the owner's yes as phone UI, destinations.md).
 - Notes and passages (SPEC §3): the feed has none; a field staff fill in can come with uploads.
 - Importing the website's archive.

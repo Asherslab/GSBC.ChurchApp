@@ -109,6 +109,8 @@ public sealed class SermonDetail
     [ProtoMember(5, IsRequired = true)] public SermonFields FromSource { get; set; } = new();
     [ProtoMember(6)] public string? SuggestedSeries { get; set; }
     [ProtoMember(7)] public DateTime AddedAt { get; set; }
+    [ProtoMember(8)] public DateTime? CheckedAt { get; set; }
+    [ProtoMember(9)] public List<string> NeedsALook { get; set; } = [];
 }
 
 [ProtoContract]
@@ -132,6 +134,7 @@ public sealed class SermonCorrection
     [ProtoMember(6)] public string? YouTube { get; set; }
     [ProtoMember(7)] public bool? Hidden { get; set; }
     [ProtoMember(8)] public List<string> UseSource { get; set; } = [];
+    [ProtoMember(9)] public bool? Checked { get; set; }
 }
 
 [ProtoContract]

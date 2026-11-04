@@ -1,0 +1,46 @@
+{
+  "title": "Sermons in the admin panel: how the page works",
+  "question": "AV uploads first, the office does a second pass; the source switch is on the page. Three ways to lay it out, in the admin panel's look. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "queue",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Review queue",
+      "lineage": "the office's in-tray",
+      "thesis": "A queue of sermons that need a look beside the one you're checking; Looks right moves to the next.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy sidebar", "sand source strip", "list beside the record"],
+      "viewport": "Title band with Upload a sermon; the source strip; Needs a look (3) on the left, the chosen sermon's fields and Looks right · next on the right.",
+      "risk": "Uploading is a button away rather than on the page; a big tidy-up of old series is slower one at a time.",
+      "html": ".impeccable/mocks/decision/sermons-admin/queue.html"
+    },
+    {
+      "id": "workbench",
+      "kind": "dealt",
+      "label": "Upload workbench",
+      "lineage": "the AV desk on Sunday afternoon",
+      "thesis": "The upload form owns the left; everything that came in is a table on the right with Needs a look and No series filters.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["dashed drop zone", "sand fields", "hairline table"],
+      "viewport": "Title band; the source strip; drop zone and form on the left; Recently added table with filters on the right.",
+      "risk": "In the website version the form is idle space; correcting happens in the table's detail.",
+      "html": ".impeccable/mocks/decision/sermons-admin/workbench.html"
+    },
+    {
+      "id": "board",
+      "kind": "dealt",
+      "label": "Two passes",
+      "lineage": "a pinboard of this week's work",
+      "thesis": "Three columns on a sand board: Just uploaded, Needs a look, Checked this week; cards move across once.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["sand board", "white cards", "status pills"],
+      "viewport": "Title band with Upload; the source strip; the three-column board; links to all sermons, series and speakers below.",
+      "risk": "A board needs a 'checked' state we'd record per sermon; the full library is a second page.",
+      "html": ".impeccable/mocks/decision/sermons-admin/board.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false }
+}

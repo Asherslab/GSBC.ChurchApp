@@ -1,0 +1,203 @@
+@using GSBC.ChurchApp.Platform.Common
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
+@inject IJSRuntime Js
+@inject TimeProvider Clock
+
+<div class="sermon-upload">
+    <h2>Upload a sermon</h2>
+    @if (Status.Source != SermonSources.Uploads)
+    {
+        <Notice Tone="NoticeTone.Info">Sermons come from the website at the moment. Switch <strong>Where new sermons come from</strong> to uploads to add them here.</Notice>
+        <div class="panel-actions"><Button Variant="ButtonVariant.Quiet" OnClick="Cancelled">Close</Button></div>
+    }
+    else
+    {
+        <label class="sermon-upload__drop @(_file is null ? "" : "has-file")">
+            <Icon Name="music" />
+            @if (_file is { } file)
+            {
+                <span class="sermon-upload__name">@file.Name</span>
+                <span class="sermon-upload__hint">@SermonText.Join($"{file.Size / 1024d / 1024d:0.#} MB", file.Duration > 0 ? SermonText.Length(file.Duration) : null, "choose another")</span>
+            }
+            else
+            {
+                <span class="sermon-upload__name">Choose the sermon's audio</span>
+                <span class="sermon-upload__hint">An mp3 or m4a, up to 300 MB</span>
+            }
+            <input @ref="_input" type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" class="visually-hidden" disabled="@_busy" @onchange="ChosenAsync" />
+        </label>
+
+        <div class="sermon-check__fields">
+            <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
+            <div class="sermon-check__field">
+                <SelectField Label="Speaker" Options="SpeakerOptions" @bind-Value="_speakerId" />
+                @if (_speakerId == NewOne)
+                {
+                    <TextField Label="Their name" @bind-Value="_newSpeaker" MaxLength="80" />
+                }
+            </div>
+            <div class="sermon-check__field"><TextField Label="Day" Type="date" @bind-Value="_day" /></div>
+            <div class="sermon-check__field">
+                <SelectField Label="Series" Options="SeriesOptions" @bind-Value="_seriesId" />
+                @if (_seriesId == NewOne)
+                {
+                    <TextField Label="The series' name" @bind-Value="_newSeries" MaxLength="80" />
+                }
+            </div>
+            <div class="sermon-check__field"><TextField Label="Service" Placeholder="Sunday morning" @bind-Value="_service" MaxLength="80" /></div>
+            <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Video" Placeholder="A YouTube link, if there is one" @bind-Value="_youTube" /></div>
+            <div class="sermon-check__field sermon-check__field--wide"><TextField Label="About this sermon" Multiline="true" Hint="Optional: a line or two shown under the sermon in the app." @bind-Value="_summary" MaxLength="600" /></div>
+            <div class="sermon-check__field sermon-check__field--wide">
+                <span class="field__label">Picture</span>
+                @if (_artwork is { } artwork)
+                {
+                    <div class="sermon-upload__art"><MediaCover Media="artwork" /><Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button></div>
+                }
+                else
+                {
+                    <Button Variant="ButtonVariant.Quiet" Icon="image" OnClick="() => _choosing = true">Choose a picture</Button>
+                    <span class="hint">Leave it to use the series' picture.</span>
+                }
+            </div>
+        </div>
+
+        @if (_progress is { } progress)
+        {
+            <div class="sermon-upload__progress"><ProgressTrack Fraction="progress" Label="Uploading" /><span>@(progress >= 1 ? "Adding it to the app…" : $"Uploading… {progress:P0}")</span></div>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        <div class="panel-actions">
+            <Button Icon="arrow-up" Busy="_busy" Disabled="!Ready" OnClick="UploadAsync">Add to the app</Button>
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Cancelled">Cancel</Button>
+        </div>
+        <p class="hint">It's on everyone's phone as soon as it's added. Staff can tidy the details afterwards.</p>
+        @if (_choosing)
+        {
+            <MediaChooser ImagesOnly="true" OnChosen="Chose" OnCancel="() => _choosing = false" />
+        }
+    }
+</div>
+
+@code {
+    private const string NewOne = "new";
+    private ElementReference _input;
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<UploadSermon>? _receiver;
+    private ChosenFile? _file;
+    private string _title = "", _speakerId = "", _newSpeaker = "", _seriesId = "", _newSeries = "", _service = "", _youTube = "", _summary = "", _day = "";
+    private MediaRef? _artwork;
+    private bool _busy, _choosing;
+    private double? _progress;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required SermonsAdminClient Sermons { get; set; }
+    [Parameter, EditorRequired] public required SourceStatus Status { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
+    [Parameter] public EventCallback<SermonDetail> Added { get; set; }
+    [Parameter] public EventCallback Cancelled { get; set; }
+
+    public sealed record ChosenFile(string Name, long Size, string Type, int Duration);
+
+    protected override void OnInitialized()
+    {
+        DateOnly today = ChurchTime.Today(Clock);
+        _day = today.AddDays(-(int)today.DayOfWeek).ToString("yyyy-MM-dd");
+        _service = "Sunday morning";
+    }
+
+    private bool Ready => _file is not null && _title.Trim().Length > 0 && _day.Length > 0
+        && (_speakerId.Length > 0 && _speakerId != NewOne || _newSpeaker.Trim().Length > 0);
+
+    private IReadOnlyList<FieldOption> SpeakerOptions =>
+        [new("", "Choose who preached"), .. Speakers.OrderByDescending(speaker => speaker.Count).Select(speaker => new FieldOption(speaker.Id, speaker.Name)), new(NewOne, "Someone new…")];
+
+    private IReadOnlyList<FieldOption> SeriesOptions =>
+        [new("", "Not in a series"), .. Series.Select(series => new FieldOption(series.Id, series.Name)), new(NewOne, "A new series…")];
+
+    private async Task<IJSObjectReference> ModuleAsync() =>
+        _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Sermons.Client/js/audio-upload.js");
+
+    private async Task ChosenAsync()
+    {
+        _problem = null;
+        _file = await (await ModuleAsync()).InvokeAsync<ChosenFile?>("describe", _input);
+        if (_file is { } file && _title.Length == 0)
+            _title = TitleFrom(file.Name);
+    }
+
+    private void Chose(MediaRef picture)
+    {
+        _artwork = picture;
+        _choosing = false;
+    }
+
+    private async Task UploadAsync()
+    {
+        if (_file is not { } file)
+            return;
+        _busy = true;
+        _problem = null;
+        _progress = 0;
+        try
+        {
+            AudioUploadTicket ticket = await Sermons.BeginUploadAsync(new AudioUploadRequest { FileName = file.Name, ContentType = file.Type, Bytes = file.Size });
+            _receiver ??= DotNetObjectReference.Create(this);
+            if (await (await ModuleAsync()).InvokeAsync<string?>("put", _input, ticket.Url, ticket.ContentType, _receiver) is { } failed)
+            {
+                _problem = failed;
+                return;
+            }
+            _progress = 1;
+            SermonDetail added = await Sermons.AddUploadAsync(new SermonUpload
+            {
+                AudioKey = ticket.Key,
+                Title = _title,
+                SpeakerId = _speakerId is NewOne or "" ? null : _speakerId,
+                NewSpeaker = _speakerId == NewOne ? _newSpeaker : null,
+                SeriesId = _seriesId is NewOne or "" ? null : _seriesId,
+                NewSeries = _seriesId == NewOne ? _newSeries : null,
+                Service = _service,
+                PreachedOn = DateTime.SpecifyKind(DateTime.Parse(_day, System.Globalization.CultureInfo.InvariantCulture), DateTimeKind.Unspecified),
+                YouTube = _youTube,
+                Artwork = _artwork,
+                Summary = _summary,
+                DurationSeconds = file.Duration,
+            });
+            await Added.InvokeAsync(added);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+            _progress = null;
+        }
+    }
+
+    [JSInvokable]
+    public void OnUploadProgress(double fraction)
+    {
+        _progress = Math.Min(0.99, fraction);
+        StateHasChanged();
+    }
+
+    private static string TitleFrom(string fileName)
+    {
+        string name = Path.GetFileNameWithoutExtension(fileName).Replace('_', ' ').Trim();
+        return name.Length > 9 && char.IsDigit(name[0]) && name[..8].All(char.IsDigit) ? name[8..].Trim() : name;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_module is not null)
+        {
+            try { await _module.DisposeAsync(); } catch (JSDisconnectedException) { }
+        }
+        _receiver?.Dispose();
+    }
+}

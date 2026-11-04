@@ -51,6 +51,7 @@ internal sealed class WebsiteReader(
         if (!state.HasReadOnce)
         {
             state.HasReadOnce = true;
+            await db.Sermons.Where(sermon => sermon.CheckedAt == null).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.CheckedAt, now), cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
     }

@@ -139,6 +139,34 @@ public sealed class WebsiteReadingTests : SermonsHost
             .AnyAsync(change => change.Feed == SermonsFeeds.Catalogue && change.Deleted, Cancel)));
     }
 
+    [Fact]
+    public async Task TheFirstReadIsTakenAsCheckedAndANewSermonNeedsALookUntilItLooksRight()
+    {
+        string trimmed = Sample("feed.rss");
+        trimmed = trimmed[..trimmed.IndexOf("    <item>\n      <title>Walking In The Light", StringComparison.Ordinal)]
+            + trimmed[trimmed.IndexOf("    <item>\n      <title>Safe Harbour: Part 4", StringComparison.Ordinal)..];
+        Website.ServeFeed(trimmed);
+        await ReadTheWebsiteAsync();
+        Assert.Equal(0, (await QueueAsync()).Total);
+
+        Website.FeedETag = "W/\"two\"";
+        ServeTheSampleSite();
+        Website.FeedETag = "W/\"two\"";
+        Website.ServeFeed(Sample("feed.rss"));
+        await ReadTheWebsiteAsync();
+
+        SermonList queue = await QueueAsync();
+        SermonDetail walking = Assert.Single(queue.Sermons);
+        Assert.Equal("Walking In The Light", walking.Sermon.Title);
+        Assert.Equal(["New speaker"], walking.NeedsALook);
+
+        await WithAsync(provider => provider.GetRequiredService<SermonLibraryService>().CorrectAsync(new SermonCorrection { Id = walking.Sermon.Id, Checked = true }).AsTask());
+        Assert.Equal(0, (await QueueAsync()).Total);
+    }
+
+    private Task<SermonList> QueueAsync() => WithAsync(provider =>
+        provider.GetRequiredService<SermonLibraryService>().ListAsync(new SermonQuery { Filter = SermonLibraryService.Filters.NeedsALook }).AsTask());
+
     private Task<SermonDetail> DetailAsync(string id) => WithAsync(async provider =>
         (await provider.GetRequiredService<SermonLibraryService>().ListAsync(new SermonQuery { Take = 200 })).Sermons.Single(detail => detail.Sermon.Id == id));
 

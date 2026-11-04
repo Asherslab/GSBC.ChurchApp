@@ -1,0 +1,175 @@
+@page "/sermons/series-and-speakers"
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject SermonsAdminClient Sermons
+
+<TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
+           Lead="Name a series, give it a picture and a line about it; tidy speakers' names and join two spellings of one person." />
+
+<LiveData @ref="_live" TValue="Lists" Feeds="ListFeeds" Load="LoadAsync" FailedTitle="Can't load series and speakers right now">
+    <div class="series-desk">
+        <section aria-label="Series">
+            <div class="series-desk__head">
+                <h2>Series</h2>
+                <Can Permission="SermonsPermissions.Edit">
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSeries">New series</Button>
+                </Can>
+            </div>
+            <div class="series-desk__list">
+                @foreach (SeriesDetail series in context.Value.Series)
+                {
+                    <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSeries(series)">
+                        <MediaCover Media="series.Artwork" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
+                        <span class="sermon-pick__words">
+                            <strong>@series.Name</strong>
+                            <span>@SermonText.Join(series.Count == 1 ? "1 sermon" : $"{series.Count} sermons", series.LastAt is { } last ? SermonText.Month(last) : null, series.FromWebsite ? "from the website" : null)</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        </section>
+        <section aria-label="Speakers">
+            <div class="series-desk__head"><h2>Speakers</h2></div>
+            <div class="series-desk__list">
+                @foreach (SpeakerDetail speaker in context.Value.Speakers)
+                {
+                    <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id ? "is-selected" : "")" @onclick="() => EditSpeaker(speaker)">
+                        <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="40" />
+                        <span class="sermon-pick__words">
+                            <strong>@speaker.Name</strong>
+                            <span>@SermonText.Join(speaker.Count == 1 ? "1 sermon" : $"{speaker.Count} sermons", speaker.Aliases.Count > 0 ? $"also “{string.Join("”, “", speaker.Aliases)}”" : null)</span>
+                        </span>
+                    </button>
+                }
+            </div>
+        </section>
+        <section class="series-desk__edit" aria-label="Edit">
+            @if (_series is { } editing)
+            {
+                <h2>@(editing.Id.Length == 0 ? "A new series" : editing.Name)</h2>
+                <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
+                <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
+                <span class="field__label">Picture</span>
+                <div class="sermon-upload__art">
+                    <MediaCover Media="_artwork ?? editing.Artwork" FallbackTitle="@_name" />
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(editing.FromWebsite ? "Use another picture" : "Choose a picture")</Button>
+                </div>
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <div class="panel-actions">
+                    <Button Busy="_busy" OnClick="SaveSeriesAsync">Save</Button>
+                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
+                </div>
+                @if (_choosing)
+                {
+                    <MediaChooser ImagesOnly="true" OnChosen="picture => { _artwork = picture; _choosing = false; }" OnCancel="() => _choosing = false" />
+                }
+            }
+            else if (_speaker is { } speaker)
+            {
+                <h2>@speaker.Name</h2>
+                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="As it shows in the app, for example “Ps Jo Ellery”." />
+                <TextField Label="Other spellings" @bind-Value="_aliases" Hint="Names the website uses for them too, separated by commas. Sermons under any of them are theirs." />
+                <SelectField Label="Or join them with" Options="MergeOptions(context.Value.Speakers, speaker)" @bind-Value="_mergeInto"
+                             Hint="When two names are one person: their sermons move across and this name becomes another spelling." />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <div class="panel-actions">
+                    <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(_mergeInto.Length > 0 ? "Join them" : "Save")</Button>
+                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
+                </div>
+            }
+            else
+            {
+                <EmptyState Icon="layers" Title="Choose a series or a speaker" Body="Changes show on everyone's phone as soon as they're saved." />
+            }
+        </section>
+    </div>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> ListFeeds = [SermonsFeeds.Admin, SermonsFeeds.Series, SermonsFeeds.Speakers];
+
+    private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers);
+
+    private LiveData<Lists>? _live;
+    private SeriesDetail? _series;
+    private SpeakerDetail? _speaker;
+    private string _name = "", _description = "", _aliases = "", _mergeInto = "";
+    private MediaRef? _artwork;
+    private bool _busy, _choosing;
+    private string? _problem;
+
+    private async Task<Lists> LoadAsync()
+    {
+        ValueTask<SpeakerList> speakers = Sermons.SpeakersAsync();
+        SeriesList series = await Sermons.SeriesAsync();
+        return new Lists(series.Series, (await speakers).Speakers);
+    }
+
+    private static IReadOnlyList<FieldOption> MergeOptions(IReadOnlyList<SpeakerDetail> speakers, SpeakerDetail speaker) =>
+        [new("", "Keep them apart"), .. speakers.Where(other => other.Id != speaker.Id).Select(other => new FieldOption(other.Id, other.Name))];
+
+    private void NewSeries() => EditSeries(new SeriesDetail());
+
+    private void EditSeries(SeriesDetail series)
+    {
+        Close();
+        _series = series;
+        _name = series.Name;
+        _description = series.Description;
+    }
+
+    private void EditSpeaker(SpeakerDetail speaker)
+    {
+        Close();
+        _speaker = speaker;
+        _name = speaker.Name;
+        _aliases = string.Join(", ", speaker.Aliases);
+    }
+
+    private void Close()
+    {
+        _series = null;
+        _speaker = null;
+        _artwork = null;
+        _mergeInto = "";
+        _problem = null;
+    }
+
+    private Task SaveSeriesAsync() => RunAsync(async () =>
+    {
+        SeriesDetail saved = await Sermons.SaveSeriesAsync(new SeriesDetail { Id = _series!.Id, Name = _name, Description = _description, Artwork = _artwork ?? (_series.FromWebsite ? null : _series.Artwork) });
+        _series = saved;
+    });
+
+    private Task SaveSpeakerAsync() => RunAsync(async () =>
+    {
+        SpeakerDetail saved = await Sermons.SaveSpeakerAsync(new SpeakerDetail
+        {
+            Id = _speaker!.Id,
+            Name = _name,
+            Photo = null,
+            Aliases = _aliases.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList(),
+            MergeInto = _mergeInto.Length > 0 ? _mergeInto : null,
+        });
+        EditSpeaker(saved);
+    });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
