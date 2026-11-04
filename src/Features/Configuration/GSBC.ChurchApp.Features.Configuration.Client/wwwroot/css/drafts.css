@@ -112,27 +112,14 @@
 .hub-arrange__size { white-space: nowrap; padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; pointer-events: none; }
 .hub-arrange__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page); border-radius: var(--radius-inner); background: var(--marker); cursor: nwse-resize; }
 .hub-canvas--moving .hub-arrange { cursor: grabbing; }
-.hub-cell--lifted { z-index: 30; scale: 1.04; opacity: 1; transition: scale 150ms var(--ease-out); }
-.hub-cell--lifted > .hub-tile { box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 16%, transparent), 0 20px 36px -10px color-mix(in srgb, var(--ink) 42%, transparent); }
+.hub-cell--lifted { z-index: 30; scale: 1.05; opacity: 1; will-change: transform; transition: scale 160ms var(--ease-out); }
+.hub-cell--lifted > .hub-tile,
+.hub-cell--settling > .hub-tile { box-shadow: 0 2px 6px color-mix(in srgb, var(--ink) 16%, transparent), 0 20px 36px -10px color-mix(in srgb, var(--ink) 42%, transparent); transition: box-shadow 220ms var(--ease-out); }
+.hub-cell--settling { z-index: 30; }
+.hub-cell--settling > .hub-tile { box-shadow: 0 0 0 color-mix(in srgb, var(--ink) 0%, transparent), 0 0 0 0 color-mix(in srgb, var(--ink) 0%, transparent); }
 .hub-canvas--sizing .hub-cell--lifted { scale: none; }
-.hub-slot { z-index: 0; border-radius: var(--radius); background: color-mix(in srgb, var(--marker) 12%, transparent); outline: 2px dashed var(--marker); outline-offset: -2px; pointer-events: none; }
 .hub-canvas--moving .hub-arrange:hover { box-shadow: none; }
-.hub-canvas .hub-grid { position: relative; }
-.hub-canvas .hub-grid::before {
-  --column: calc((100% - (var(--hub-columns) - 1) * var(--hub-gap)) / var(--hub-columns));
-  content: "";
-  position: absolute;
-  inset: -6px 0;
-  z-index: 0;
-  background-image: linear-gradient(to right, var(--guide) 0 1px, transparent 1px calc(100% - var(--hub-gap) - 1px), var(--guide) calc(100% - var(--hub-gap) - 1px) calc(100% - var(--hub-gap)), transparent 0);
-  background-size: calc(var(--column) + var(--hub-gap)) 100%;
-  background-repeat: repeat-x;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity 160ms var(--ease-out);
-  --guide: color-mix(in srgb, var(--ink) 18%, transparent);
-}
-.hub-canvas--moving .hub-grid::before { opacity: 1; }
+.hub-canvas--moving .hub-cell:not(.hub-cell--lifted) .hub-arrange--selected { box-shadow: none; }
 @media (prefers-reduced-motion: reduce) {
   .hub-cell--lifted { scale: none; transition: none; }
 }

@@ -85,12 +85,70 @@ public sealed class HubGridTests
     }
 
     [Fact]
-    public void HoldingASmallTileOverABigOneItCannotTakeMovesNothing()
+    public void HoldingASmallTileOverABigOneMakesTheBigOneGiveWayAndTheRowAboveFillsIn()
     {
         TileSpan[] home = [new(2, 2), new(1, 1), new(1, 2), new(1, 1), new(2, 1)];
+        const int sermon = 0;
+        const int prayer = 1;
+        const int bulletin = 2;
         const int give = 3;
 
-        Assert.Equal([0, 1, 2, 3, 4], HubGrid.Plan(2, home, give, column: 0, row: 1));
-        Assert.Equal([0, 1, 2, 3, 4], HubGrid.Plan(2, home, give, column: 1, row: 1));
+        IReadOnlyList<int> order = HubGrid.Plan(2, home, give, column: 0, row: 1);
+
+        Assert.Equal([prayer, bulletin, give, sermon, 4], order);
+        IReadOnlyList<TilePlace> after = HubGrid.Pack(2, order.Select(index => home[index]).ToList());
+        Assert.Equal(new TilePlace(1, 2, 1, 1), after[2]);
+        Assert.Equal(new TilePlace(1, 3, 2, 2), after[3]);
+    }
+
+    [Fact]
+    public void ABigTileMovedDownARowLetsTheRowAboveFillWithTheTilesItPassed()
+    {
+        TileSpan[] home = [new(2, 2), new(1, 1), new(1, 1), new(1, 1), new(1, 1)];
+
+        IReadOnlyList<int> order = HubGrid.Plan(2, home, dragged: 0, column: 0, row: 1);
+
+        IReadOnlyList<TilePlace> after = HubGrid.Pack(2, order.Select(index => home[index]).ToList());
+        Assert.Equal(new TilePlace(1, 2, 2, 2), after[order.ToList().IndexOf(0)]);
+        Assert.Equal(new TilePlace(1, 1, 1, 1), after[order.ToList().IndexOf(1)]);
+        Assert.Equal(new TilePlace(2, 1, 1, 1), after[order.ToList().IndexOf(2)]);
+    }
+
+    [Fact]
+    public void TakingATallTilesTopCellSlidesItAsideAndTheTileItDisplacedFallsIntoTheGapLeftBehind()
+    {
+        TileSpan[] home = [new(1, 1), new(1, 2), new(1, 1), new(2, 2)];
+        const int prayer = 0;
+        const int bulletin = 1;
+        const int give = 2;
+        const int sermon = 3;
+
+        IReadOnlyList<int> order = HubGrid.Plan(2, home, give, column: 1, row: 0);
+
+        Assert.Equal([bulletin, give, prayer, sermon], order);
+    }
+
+    [Fact]
+    public void ABigTileGivesWayDownwardsNeverLeapingAboveTheTileHeldOverIt()
+    {
+        TileSpan[] home = [new(1, 2), new(1, 1), new(1, 1), new(2, 2), new(2, 1), new(1, 1), new(1, 1), new(1, 1)];
+        const int give = 2;
+        const int sermon = 3;
+        const int unread = 5;
+
+        IReadOnlyList<int> order = HubGrid.Plan(2, home, give, column: 0, row: 2);
+
+        IReadOnlyList<TilePlace> after = HubGrid.Pack(2, order.Select(index => home[index]).ToList());
+        Assert.Equal(new TilePlace(1, 3, 1, 1), after[order.ToList().IndexOf(give)]);
+        Assert.Equal(new TilePlace(1, 4, 2, 2), after[order.ToList().IndexOf(sermon)]);
+        Assert.Equal(new TilePlace(2, 2, 1, 1), after[order.ToList().IndexOf(unread)]);
+    }
+
+    [Fact]
+    public void ATileThatCannotBePackedWhereItIsHeldStaysWhereItWas()
+    {
+        TileSpan[] home = [new(3, 1), new(1, 1)];
+
+        Assert.Equal([0, 1], HubGrid.Plan(3, home, dragged: 1, column: 2, row: 0));
     }
 }

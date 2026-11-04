@@ -31,18 +31,21 @@ public static class HubGrid
 
     public static IReadOnlyList<int> Plan(int columns, IReadOnlyList<TileSpan> tiles, int dragged, int column, int row)
     {
+        columns = Math.Clamp(columns, FewestColumns, MostColumns);
         List<int> current = [.. Enumerable.Range(0, tiles.Count)];
         IReadOnlyList<TilePlace> before = Pack(columns, tiles);
-        HashSet<int> under = [.. current.Where(index => index != dragged && Covers(before[index], column, row))];
+        TilePlace own = before[dragged];
+        TilePlace target = new(Math.Clamp(column, 0, columns - own.Columns) + 1, Math.Max(row, 0) + 1, own.Columns, own.Rows);
+        HashSet<int> under = [.. current.Where(index => index != dragged && Overlaps(before[index], target))];
         List<int> best = current;
-        (int, int, int, int) bestScore = Score(current);
+        (int, int, int, int, int) bestScore = Score(current);
         foreach (List<int> candidate in Candidates())
         {
-            (int, int, int, int) score = Score(candidate);
+            (int, int, int, int, int) score = Score(candidate);
             if (score.CompareTo(bestScore) < 0)
                 (best, bestScore) = (candidate, score);
         }
-        return bestScore.Item1 == 0 ? best : current;
+        return bestScore.Item1 <= Covering ? best : current;
 
         IEnumerable<List<int>> Candidates()
         {
@@ -55,15 +58,20 @@ public static class HubGrid
             List<int> others = current.Where(index => index != dragged).ToList();
             for (int at = 0; at <= others.Count; at++)
                 yield return [.. others.Take(at), dragged, .. others.Skip(at)];
+            yield return FlowedAround(columns, tiles, dragged, target, others, new HashSet<int>());
+            yield return FlowedAround(columns, tiles, dragged, target, [.. others.Where(under.Contains), .. others.Where(index => !under.Contains(index))], under);
         }
 
-        (int, int, int, int) Score(List<int> order)
+        (int, int, int, int, int) Score(List<int> order)
         {
             IReadOnlyList<TilePlace> places = Pack(columns, order.Select(index => tiles[index]).ToList());
-            TilePlace own = places[order.IndexOf(dragged)];
-            bool covers = Covers(own, column, row);
-            int distance = covers ? 0 : Math.Abs(own.Column - 1 - column) + Math.Abs(own.Row - 1 - row);
+            TilePlace landed = places[order.IndexOf(dragged)];
+            int landing = landed.Column == target.Column && landed.Row == target.Row ? Exact
+                : Covers(landed, target.Column - 1, target.Row - 1) ? Covering
+                : Elsewhere;
+            int distance = Math.Abs(landed.Column - target.Column) + Math.Abs(landed.Row - target.Row);
             int outside = 0;
+            int cascaded = 0;
             int moved = 0;
             for (int at = 0; at < order.Count; at++)
             {
@@ -73,17 +81,43 @@ public static class HubGrid
                 moved++;
                 if (!under.Contains(index))
                     outside++;
+                if (before[index].Row >= target.Row + target.Rows)
+                    cascaded++;
             }
-            return (covers ? 0 : 1, distance, outside, moved);
+            return (landing, distance, outside, cascaded, moved);
         }
     }
+
+    private const int Exact = 0;
+    private const int Covering = 1;
+    private const int Elsewhere = 2;
+
+    private static List<int> FlowedAround(int columns, IReadOnlyList<TileSpan> tiles, int dragged, TilePlace pinned, IEnumerable<int> others, IReadOnlySet<int> displaced)
+    {
+        List<bool[]> taken = [];
+        Take(taken, columns, pinned.Column - 1, pinned.Row - 1, pinned.Columns, pinned.Rows);
+        List<(int Row, int Column, int Index)> placed = [(pinned.Row, pinned.Column, dragged)];
+        foreach (int index in others)
+        {
+            int width = Math.Clamp(tiles[index].Columns, 1, columns);
+            int height = Math.Clamp(tiles[index].Rows, 1, MostRows);
+            (int column, int row) = FirstGap(taken, columns, width, height, displaced.Contains(index) ? pinned.Row - 1 : 0);
+            Take(taken, columns, column, row, width, height);
+            placed.Add((row + 1, column + 1, index));
+        }
+        return placed.OrderBy(place => place.Row).ThenBy(place => place.Column).Select(place => place.Index).ToList();
+    }
+
+    private static bool Overlaps(TilePlace place, TilePlace area) =>
+        place.Column < area.Column + area.Columns && area.Column < place.Column + place.Columns
+        && place.Row < area.Row + area.Rows && area.Row < place.Row + place.Rows;
 
     private static bool Covers(TilePlace place, int column, int row) =>
         column >= place.Column - 1 && column < place.Column - 1 + place.Columns && row >= place.Row - 1 && row < place.Row - 1 + place.Rows;
 
-    private static (int Column, int Row) FirstGap(List<bool[]> taken, int columns, int width, int height)
+    private static (int Column, int Row) FirstGap(List<bool[]> taken, int columns, int width, int height, int fromRow = 0)
     {
-        for (int row = 0; ; row++)
+        for (int row = fromRow; ; row++)
         {
             for (int column = 0; column + width <= columns; column++)
             {

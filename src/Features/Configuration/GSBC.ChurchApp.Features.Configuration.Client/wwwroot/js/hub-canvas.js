@@ -1,8 +1,12 @@
 const startAfter = 5;
-const glide = 200;
-const settle = 180;
+const glide = 220;
+const settle = 130;
 const leeway = 0.2;
 const mostRows = 4;
+const edgeZone = 72;
+const fastestScroll = 9;
+const glideCurve = 'cubic-bezier(0.2, 0.8, 0.2, 1)';
+const dropCurve = 'linear(0, 0.3 8%, 0.62 17%, 0.88 27%, 1.03 40%, 1.012 55%, 0.998 72%, 1)';
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -36,17 +40,18 @@ export function attach(canvas, receiver) {
   const cells = () => [...canvas.querySelectorAll('.hub-cell[data-tile]')];
   const byKey = (key) => canvas.querySelector(`.hub-cell[data-tile="${CSS.escape(key)}"]`);
   const screen = () => canvas.querySelector('.phone-frame__screen');
+  const tracks = (text) => text.split(' ').map(parseFloat).filter((value) => !Number.isNaN(value));
 
   const measure = (cell) => {
     const grid = cell.parentElement;
     const style = getComputedStyle(grid);
-    const columns = style.gridTemplateColumns.split(' ').length;
-    const track = parseFloat(style.gridTemplateColumns.split(' ')[0]);
+    const across = tracks(style.gridTemplateColumns);
+    const track = across[0];
     const gap = parseFloat(style.columnGap) || 0;
     const span = Number(cell.dataset.columns);
     const scale = cell.getBoundingClientRect().width / (span * track + (span - 1) * gap) || 1;
     const row = Math.min(132, Math.max(88, track));
-    return { columns, scale, columnStep: (track + gap) * scale, rowStep: (row + gap) * scale };
+    return { columns: across.length, scale, track, row, gap, columnStep: (track + gap) * scale, rowStep: (row + gap) * scale };
   };
 
   const boxes = (except) => new Map(cells().filter((cell) => cell !== except).map((cell) => [cell, cell.getBoundingClientRect()]));
@@ -61,7 +66,7 @@ export function attach(canvas, receiver) {
       cell.style.transition = 'none';
       cell.style.transform = `translate(${dx}px, ${dy}px)`;
       cell.getBoundingClientRect();
-      cell.style.transition = `transform ${glide}ms cubic-bezier(0.2, 0.8, 0.2, 1)`;
+      cell.style.transition = `transform ${glide}ms ${glideCurve}`;
       cell.style.transform = '';
     }
   };
@@ -79,20 +84,22 @@ export function attach(canvas, receiver) {
       const cell = byKey(key);
       if (cell) place(cell, spots[index]);
     });
-    if (gesture.slot) {
-      const own = spots[order.indexOf(gesture.key)];
-      gesture.slot.style.gridColumn = `${own.column} / span ${own.columns}`;
-      gesture.slot.style.gridRow = `${own.row} / span ${own.rows}`;
-    }
     flip(before, gesture.metrics.scale);
   };
 
-  const follow = (event) => {
+  const rest = () => {
     const cell = gesture.cell;
+    const transform = cell.style.transform;
     cell.style.transform = 'none';
-    const home = cell.getBoundingClientRect();
-    const { scale } = gesture.metrics;
-    cell.style.transform = `translate(${(event.clientX - gesture.grab.x - home.left) / scale}px, ${(event.clientY - gesture.grab.y - home.top) / scale}px)`;
+    const box = cell.getBoundingClientRect();
+    cell.style.transform = transform;
+    gesture.home = { left: box.left, top: box.top, width: box.width, height: box.height };
+  };
+
+  const follow = () => {
+    const { home, grab, last, metrics } = gesture;
+    if (!last) return;
+    gesture.cell.style.transform = `translate(${(last.x - grab.x - home.left) / metrics.scale}px, ${(last.y - grab.y - home.top) / metrics.scale}px)`;
   };
 
   const lift = (event) => {
@@ -106,29 +113,22 @@ export function attach(canvas, receiver) {
     gesture.spans = new Map(cells().map((found) => [found.dataset.tile, { columns: Number(found.dataset.columns), rows: Number(found.dataset.rows) }]));
     gesture.styles = new Map(cells().map((found) => [found, found.getAttribute('style')]));
     gesture.grab = { x: event.clientX - box.left, y: event.clientY - box.top };
+    gesture.last = { x: event.clientX, y: event.clientY };
     gesture.scroll = screen()?.scrollTop ?? 0;
     getSelection()?.removeAllRanges();
     canvas.classList.add(gesture.kind === 'move' ? 'hub-canvas--moving' : 'hub-canvas--sizing');
+    cell.classList.remove('hub-cell--settling');
     cell.classList.add('hub-cell--lifted');
-    if (gesture.kind === 'move') {
-      const slot = document.createElement('div');
-      slot.className = 'hub-slot';
-      slot.setAttribute('aria-hidden', 'true');
-      slot.style.gridColumn = cell.style.gridColumn;
-      slot.style.gridRow = cell.style.gridRow;
-      cell.parentElement.append(slot);
-      gesture.slot = slot;
-    }
+    cell.style.transition = '';
+    rest();
     document.addEventListener('keydown', escape, true);
     if (gesture.kind === 'move') {
-      const { x, y } = centre();
-      gesture.target = cellAt(x, y);
+      gesture.target = cellAt(anchor());
+      gesture.frame = requestAnimationFrame(creep);
     }
   };
 
-  const tracks = (text) => text.split(' ').map(parseFloat).filter((value) => !Number.isNaN(value));
-
-  const cellAt = (x, y) => {
+  const cellAt = ({ x, y }) => {
     const grid = gesture.cell.parentElement;
     const style = getComputedStyle(grid);
     const box = grid.getBoundingClientRect();
@@ -152,14 +152,27 @@ export function attach(canvas, receiver) {
     return { column: Math.min(column.index, across.length - 1), row: row.index, box: { left: column.from, top: row.from, width: column.size, height: row.size } };
   };
 
-  const centre = () => {
-    const box = gesture.cell.getBoundingClientRect();
-    return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+  const anchor = () => {
+    const { last, grab, metrics } = gesture;
+    return { x: last.x - grab.x + (metrics.track * metrics.scale) / 2, y: last.y - grab.y + (metrics.row * metrics.scale) / 2 };
+  };
+
+  const plan = async (asked, here) => {
+    const spans = asked.original.map((each) => asked.spans.get(each));
+    const indices = await receiver.invokeMethodAsync('Plan', asked.metrics.columns, spans.map((span) => span.columns), spans.map((span) => span.rows), asked.original.indexOf(asked.key), here.column, here.row);
+    if (gesture !== asked) return false;
+    asked.target = here;
+    const order = indices.map((index) => asked.original[index]);
+    if (order.join() === asked.order.join()) return false;
+    asked.order = order;
+    lay(order, asked.spans, asked.cell);
+    rest();
+    follow();
+    return true;
   };
 
   const retarget = () => {
-    const { x, y } = centre();
-    const here = cellAt(x, y);
+    const here = cellAt(anchor());
     const held = gesture.target;
     if (held && held.column === here.column && held.row === here.row) {
       clearTimeout(gesture.timer);
@@ -167,6 +180,7 @@ export function attach(canvas, receiver) {
       return;
     }
     if (held) {
+      const { x, y } = anchor();
       const margin = { x: held.box.width * leeway, y: held.box.height * leeway };
       const inside = x > held.box.left - margin.x && x < held.box.left + held.box.width + margin.x
         && y > held.box.top - margin.y && y < held.box.top + held.box.height + margin.y;
@@ -179,28 +193,39 @@ export function attach(canvas, receiver) {
     gesture.timer = setTimeout(async () => {
       if (!gesture || gesture.waiting !== wanted) return;
       gesture.waiting = null;
-      const now = cellAt(centre().x, centre().y);
+      const now = cellAt(anchor());
       if (`${now.column}:${now.row}` !== wanted) return;
-      gesture.target = now;
       const asked = gesture;
-      const spans = asked.order.map((each) => asked.spans.get(each));
-      const indices = await receiver.invokeMethodAsync('Plan', asked.metrics.columns, spans.map((span) => span.columns), spans.map((span) => span.rows), asked.order.indexOf(asked.key), now.column, now.row);
-      if (gesture !== asked) return;
-      const order = indices.map((index) => asked.order[index]);
-      if (order.join() === gesture.order.join()) return;
-      gesture.order = order;
-      lay(order, gesture.spans, gesture.cell);
-      if (gesture.last) follow(gesture.last);
-      gesture.target = cellAt(centre().x, centre().y);
+      await plan(asked, now);
+      if (gesture === asked) asked.target = cellAt(anchor());
     }, settle);
   };
 
-  const scrollNear = (event) => {
+  const creep = () => {
+    if (!gesture?.started || gesture.kind !== 'move') return;
+    gesture.frame = requestAnimationFrame(creep);
     const view = screen();
     if (!view) return;
     const edge = view.getBoundingClientRect();
-    const by = event.clientY < edge.top + 64 ? -16 : event.clientY > edge.bottom - 64 ? 16 : 0;
-    if (by !== 0) view.scrollTop += by;
+    const { scale } = gesture.metrics;
+    const tabs = canvas.querySelector('.phone-frame .tabbar')?.getBoundingClientRect();
+    const top = edge.top + (parseFloat(getComputedStyle(view).getPropertyValue('--sat')) || 0) * scale + 44 * scale;
+    const bottom = (tabs ? tabs.top : edge.bottom);
+    const zone = edgeZone * scale;
+    const y = gesture.last.y;
+    let push = 0;
+    if (y < top + zone) push = -Math.min(1, (top + zone - y) / zone);
+    else if (y > bottom - zone) push = Math.min(1, (y - (bottom - zone)) / zone);
+    if (push === 0) return;
+    const by = Math.sign(push) * fastestScroll * Math.abs(push) ** 1.6;
+    const was = view.scrollTop;
+    const grid = gesture.cell.parentElement.getBoundingClientRect();
+    const most = was + (grid.bottom + (parseFloat(getComputedStyle(view).paddingBottom) || 0) * scale - edge.bottom) / scale;
+    view.scrollTop = Math.max(0, Math.min(most, was + by));
+    if (view.scrollTop === was) return;
+    rest();
+    follow();
+    retarget();
   };
 
   const down = (event) => {
@@ -230,10 +255,9 @@ export function attach(canvas, receiver) {
       if (Math.hypot(dx, dy) < startAfter) return;
       lift(event);
     }
-    gesture.last = event;
+    gesture.last = { x: event.clientX, y: event.clientY };
     if (gesture.kind === 'move') {
-      scrollNear(event);
-      follow(event);
+      follow();
       retarget();
       return;
     }
@@ -254,46 +278,47 @@ export function attach(canvas, receiver) {
 
   const tidy = (done) => {
     clearTimeout(done.timer);
+    cancelAnimationFrame(done.frame);
     document.removeEventListener('keydown', escape, true);
     canvas.classList.remove('hub-canvas--moving', 'hub-canvas--sizing');
-    done.cell.classList.remove('hub-cell--lifted');
-    done.slot?.remove();
   };
 
-  const settleInto = (cell) => {
+  const settleInto = (cell, scaled) => {
+    cell.classList.remove('hub-cell--lifted');
     if (still()) {
       cell.style.transform = '';
       return;
     }
-    cell.style.transition = `transform ${glide}ms cubic-bezier(0.2, 0.8, 0.2, 1), scale ${glide}ms cubic-bezier(0.2, 0.8, 0.2, 1)`;
+    cell.classList.add('hub-cell--settling');
+    cell.style.transition = `transform ${glide}ms ${scaled ? dropCurve : glideCurve}, scale ${glide}ms ${glideCurve}`;
     cell.style.transform = '';
-  };
-
-  const restore = (done) => {
-    const before = boxes(done.cell);
-    for (const [cell, style] of done.styles) {
-      if (style === null) cell.removeAttribute('style');
-      else cell.setAttribute('style', style);
-    }
-    flip(before, done.metrics.scale);
+    setTimeout(() => cell.classList.remove('hub-cell--settling'), glide + 60);
   };
 
   const abandon = () => {
     const done = gesture;
     gesture = null;
     tidy(done);
-    if (!done.started) return;
+    if (!done.started) {
+      done.cell.classList.remove('hub-cell--lifted');
+      return;
+    }
+    const before = boxes(done.cell);
+    const box = done.cell.getBoundingClientRect();
     const view = screen();
     if (view) view.scrollTop = done.scroll;
-    const box = done.cell.getBoundingClientRect();
-    restore(done);
+    for (const [cell, style] of done.styles) {
+      if (style === null) cell.removeAttribute('style');
+      else cell.setAttribute('style', style);
+    }
+    flip(before, done.metrics.scale);
     if (!still()) {
       const home = done.cell.getBoundingClientRect();
       done.cell.style.transition = 'none';
       done.cell.style.transform = `translate(${(box.left - home.left) / done.metrics.scale}px, ${(box.top - home.top) / done.metrics.scale}px)`;
       done.cell.getBoundingClientRect();
     }
-    settleInto(done.cell);
+    settleInto(done.cell, false);
     const badge = done.cell.querySelector('[data-size]');
     if (badge && done.size) badge.textContent = `${done.size.columns} wide, ${done.size.rows} tall`;
   };
@@ -323,9 +348,15 @@ export function attach(canvas, receiver) {
       return;
     }
     const done = gesture;
+    if (done.kind === 'move' && done.waiting) {
+      clearTimeout(done.timer);
+      done.waiting = null;
+      await plan(done, cellAt(anchor()));
+      if (gesture !== done) return;
+    }
     gesture = null;
     tidy(done);
-    settleInto(done.cell);
+    settleInto(done.cell, done.kind === 'move');
     if (done.kind === 'move') {
       const to = done.order.indexOf(done.key);
       if (to === done.original.indexOf(done.key)) return;
@@ -435,16 +466,15 @@ export function show(canvas, key) {
     if (!cell || !screen) return;
     const box = cell.getBoundingClientRect();
     const view = screen.getBoundingClientRect();
-    const bottom = (tabs ? tabs.getBoundingClientRect().top : view.bottom) - 16;
     const scale = view.height / screen.clientHeight || 1;
-    const top = view.top + 116 * scale;
+    const bottom = (tabs ? tabs.getBoundingClientRect().top : view.bottom) - 12 * scale;
+    const top = view.top + ((parseFloat(getComputedStyle(screen).getPropertyValue('--sat')) || 0) + 44 + 12) * scale;
     const current = screen.scrollTop;
-    let next = box.bottom > bottom ? current + (box.bottom - bottom) / scale : current;
-    const topAfter = box.top - (next - current) * scale;
-    if (topAfter < top) next -= (top - topAfter) / scale;
+    let next = current;
+    if (box.bottom > bottom) next = current + (box.bottom - bottom) / scale;
+    if (box.top - (next - current) * scale < top) next -= (top - (box.top - (next - current) * scale)) / scale;
     next = Math.max(0, next);
-    if (next > 0 && next < 72) next = next < 36 ? 0 : 72;
-    if (Math.abs(next - screen.scrollTop) > 1) screen.scrollTo({ top: next, behavior: still() ? 'auto' : 'smooth' });
+    if (Math.abs(next - current) > 2) screen.scrollTo({ top: next, behavior: still() ? 'auto' : 'smooth' });
   });
 }
 
