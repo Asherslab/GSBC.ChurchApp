@@ -67,7 +67,8 @@
         .Where(item => !Chosen.Contains(item))
         .Where(item => _query.Length == 0 || Text(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase)
             || (Detail?.Invoke(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase) ?? false))
-        .OrderBy(item => _query.Length > 0 && !Text(item).StartsWith(_query, StringComparison.CurrentCultureIgnoreCase))
+        .OrderBy(item => _query.Length == 0 || Text(item).StartsWith(_query, StringComparison.CurrentCultureIgnoreCase) ? 0
+            : Text(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase) ? 1 : 2)
         .Take(MostShown)
         .ToList();
 
