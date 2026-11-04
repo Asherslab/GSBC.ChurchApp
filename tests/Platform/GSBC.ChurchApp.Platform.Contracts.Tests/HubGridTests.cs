@@ -83,4 +83,14 @@ public sealed class HubGridTests
 
         List<TileSpan> Spans(List<int> indices) => indices.Select(index => tiles[index]).ToList();
     }
+
+    [Fact]
+    public void HoldingASmallTileOverABigOneItCannotTakeMovesNothing()
+    {
+        TileSpan[] home = [new(2, 2), new(1, 1), new(1, 2), new(1, 1), new(2, 1)];
+        const int give = 3;
+
+        Assert.Equal([0, 1, 2, 3, 4], HubGrid.Plan(2, home, give, column: 0, row: 1));
+        Assert.Equal([0, 1, 2, 3, 4], HubGrid.Plan(2, home, give, column: 1, row: 1));
+    }
 }

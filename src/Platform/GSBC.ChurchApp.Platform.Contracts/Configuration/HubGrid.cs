@@ -42,7 +42,7 @@ public static class HubGrid
             if (score.CompareTo(bestScore) < 0)
                 (best, bestScore) = (candidate, score);
         }
-        return best;
+        return bestScore.Item1 == 0 ? best : current;
 
         IEnumerable<List<int>> Candidates()
         {
