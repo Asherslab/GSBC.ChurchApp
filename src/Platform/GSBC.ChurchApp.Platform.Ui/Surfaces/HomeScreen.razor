@@ -18,7 +18,6 @@
         <HubTiles Shown="Shown" Live="Live" Overlay="Overlay" />
     }
 </Section>
-@ChildContent
 
 @inject SurfaceViews Views
 
@@ -27,7 +26,6 @@
     [Parameter, EditorRequired] public required DateTime At { get; set; }
     [Parameter] public bool Live { get; set; }
     [Parameter] public RenderFragment<HubCell>? Overlay { get; set; }
-    [Parameter] public RenderFragment? ChildContent { get; set; }
 
     private bool HasTiles => HubTiles.TilesIn(Shown, Views).Count > 0;
 }

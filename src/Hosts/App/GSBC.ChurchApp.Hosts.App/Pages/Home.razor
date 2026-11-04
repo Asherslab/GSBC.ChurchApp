@@ -1,7 +1,4 @@
 @page "/"
-@using GSBC.ChurchApp.Features.Accounts.Client
-@using GSBC.ChurchApp.Features.Accounts.Contracts
-@inject AccountsClient Accounts
 @using GSBC.ChurchApp.Platform.Client.Configuration
 @using GSBC.ChurchApp.Platform.Contracts.Configuration
 @implements IDisposable
@@ -9,25 +6,7 @@
 @inject ISurfaceLayout Layout
 
 <Page Title="Good Shepherd" StuckAt="44">
-    <HomeScreen Shown="_tiles" At="Clock.GetUtcNow().UtcDateTime" Live="true">
-    <Section Title="Connection">
-        <ListGroup>
-            <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()">
-                <ChildContent>
-                    @if (context.Stale)
-                    {
-                        @Unreachable
-                    }
-                    else
-                    {
-                        <ListRow Title="Connected to the church's server" Subtitle="@(context.Value.SignedIn ? $"Signed in as {context.Value.DisplayName}" : "Not signed in")" Icon="check" IconTone="RowTone.Accent" />
-                    }
-                </ChildContent>
-                <Failed>@Unreachable</Failed>
-            </LiveData>
-        </ListGroup>
-    </Section>
-    </HomeScreen>
+    <HomeScreen Shown="_tiles" At="Clock.GetUtcNow().UtcDateTime" Live="true" />
 </Page>
 
 @code {
@@ -49,7 +28,4 @@
     });
 
     public void Dispose() => Layout.Changed -= OnLayoutChanged;
-
-    private static readonly RenderFragment Unreachable =
-        @<ListRow Title="Can't reach the church's server" Subtitle="The app keeps showing what's on this phone and reconnects by itself." Icon="alert" IconTone="RowTone.Warm" />;
 }

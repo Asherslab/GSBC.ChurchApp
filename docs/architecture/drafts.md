@@ -225,8 +225,9 @@ within a second or two:
 - **The phone preview can't drift from the app:** Home draws through `HomeScreen` and each surface
   through `SurfaceViews` (Platform.Ui), which the preview shares. `PreviewRules` (Architecture.Tests)
   fails if the app's Home stops using `HomeScreen` or a Hub surface has no view. When Home is built,
-  keep everything a draft can change inside `HomeScreen` and register a view for every new surface;
-  device-only parts (sync state, the Connection check) stay outside it.
+  keep everything a draft can change inside `HomeScreen` and register a view for every new surface.
+  Home is only `HomeScreen` now: the skeleton's Connection section is gone (owner, 2026-11-04, note 10),
+  and being offline shows in the masthead's `SyncIndicator`, which draws only when Home is live.
 
 ## Open
 
