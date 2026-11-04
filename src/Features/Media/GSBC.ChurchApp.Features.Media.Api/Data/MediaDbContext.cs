@@ -10,6 +10,7 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
     public DbSet<MediaItem> Items => Set<MediaItem>();
     public DbSet<PendingUpload> PendingUploads => Set<PendingUpload>();
     public DbSet<MediaUse> Uses => Set<MediaUse>();
+    public DbSet<MediaFolder> Folders => Set<MediaFolder>();
 
     protected override string Schema => SchemaName;
 
@@ -23,7 +24,19 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
             entity.HasKey(item => item.Id);
             entity.HasIndex(item => item.Key);
             entity.HasIndex(item => item.UploadedAt);
+            entity.HasIndex(item => item.FolderId);
+            entity.HasOne<MediaFolder>().WithMany().HasForeignKey(item => item.FolderId).OnDelete(DeleteBehavior.Restrict);
             entity.Ignore(item => item.IsPrivate);
+        });
+        modelBuilder.Entity<MediaFolder>(entity =>
+        {
+            entity.ToTable("folders");
+            entity.HasKey(folder => folder.Id);
+            entity.Property(folder => folder.Name).HasMaxLength(MediaFolders.MaximumNameLength);
+            entity.HasIndex(folder => folder.ParentId);
+            entity.HasIndex(folder => new { folder.SystemArea, folder.SystemScope }).IsUnique().AreNullsDistinct(false).HasFilter("system_area IS NOT NULL");
+            entity.HasOne<MediaFolder>().WithMany().HasForeignKey(folder => folder.ParentId).OnDelete(DeleteBehavior.Restrict);
+            entity.Ignore(folder => folder.IsSystem);
         });
         modelBuilder.Entity<PendingUpload>(entity =>
         {

@@ -9,6 +9,7 @@ namespace GSBC.ChurchApp.Features.Media.Client;
 public sealed class MediaClient(ChannelBase channel, HttpClient http)
 {
     private readonly IMediaService _media = channel.CreateGrpcService<IMediaService>();
+    private readonly IMediaFoldersService _folders = channel.CreateGrpcService<IMediaFoldersService>();
 
     public async Task<MediaRef> UploadAsync(BeginUploadRequest request, Stream content, CancellationToken cancellationToken = default)
     {
@@ -25,7 +26,19 @@ public sealed class MediaClient(ChannelBase channel, HttpClient http)
 
     public ValueTask<MediaLink> GetLinkAsync(string id) => _media.GetLinkAsync(new LinkRequest { Id = id });
 
-    public ValueTask<MediaList> ListAsync(int skip, int take) => _media.ListAsync(new MediaQuery { Skip = skip, Take = take });
+    public ValueTask<MediaList> ListAsync(MediaQuery query) => _media.ListAsync(query);
 
     public ValueTask<Done> DeleteAsync(string id) => _media.DeleteAsync(new DeleteMediaRequest { Id = id });
+
+    public async Task<FolderMap> FoldersAsync() => new(await _folders.ListAsync(new FolderQuery()));
+
+    public ValueTask<FolderInfo> CreateFolderAsync(string? parentId, string name) => _folders.CreateAsync(new CreateFolderRequest { ParentId = parentId, Name = name });
+
+    public ValueTask<Done> RenameFolderAsync(string id, string name) => _folders.RenameAsync(new RenameFolderRequest { Id = id, Name = name });
+
+    public ValueTask<Done> MoveAsync(IEnumerable<string> itemIds, IEnumerable<string> folderIds, string? into) =>
+        _folders.MoveAsync(new MoveRequest { ItemIds = [.. itemIds], FolderIds = [.. folderIds], Into = into });
+
+    public ValueTask<Done> DeleteFolderAsync(string id, bool moveContents, string? into) =>
+        _folders.DeleteAsync(new DeleteFolderRequest { Id = id, MoveContents = moveContents, MoveContentsInto = into });
 }

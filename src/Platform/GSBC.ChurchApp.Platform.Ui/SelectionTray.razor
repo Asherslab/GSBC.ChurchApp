@@ -1,0 +1,21 @@
+@if (Count > 0)
+{
+    <div class="selection-tray" role="region" aria-label="@Label">
+        <span class="selection-tray__count" aria-live="polite">@Summary</span>
+        <div class="selection-tray__actions">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => OnClear.InvokeAsync()">Clear</Button>
+            @ChildContent
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public int Count { get; set; }
+    [Parameter] public string One { get; set; } = "item";
+    [Parameter] public string Many { get; set; } = "items";
+    [Parameter] public EventCallback OnClear { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private string Summary => Count == 1 ? $"1 {One} chosen" : $"{Count} {Many} chosen";
+}

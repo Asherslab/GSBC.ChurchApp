@@ -12,7 +12,7 @@ using Npgsql;
 namespace GSBC.ChurchApp.Features.Media.Api;
 
 internal sealed class MediaLibrary(
-    MediaDbContext db, IBlobStore blobs, IAccessEvaluator access, PermissionCatalog catalog, TimeProvider time)
+    MediaDbContext db, MediaFolders folders, IBlobStore blobs, IAccessEvaluator access, PermissionCatalog catalog, TimeProvider time)
 {
     public static readonly TimeSpan UploadWindow = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan PrivateLinkLifetime = TimeSpan.FromMinutes(5);
@@ -32,6 +32,7 @@ internal sealed class MediaLibrary(
         if (MediaTypes.IsFont(request.ContentType) && request.PrivateTo is not null)
             throw Invalid("Fonts are public: anyone using the app downloads them.");
 
+        Guid? folderId = await folders.UploadFolderAsync(request.FolderId, cancellationToken);
         DateTime now = Now;
         await db.PendingUploads.Where(upload => upload.ExpiresAt < now - PendingKeptFor).ExecuteDeleteAsync(cancellationToken);
 
@@ -45,6 +46,7 @@ internal sealed class MediaLibrary(
             AudiencePermission = request.PrivateTo?.Permission,
             AudienceScopeId = NullIfEmpty(request.PrivateTo?.ScopeId),
             ExpiresAt = now + UploadWindow,
+            FolderId = folderId,
         };
         db.PendingUploads.Add(pending);
         await db.SaveChangesAsync(cancellationToken);
@@ -96,6 +98,7 @@ internal sealed class MediaLibrary(
             AudienceScopeId = pending.AudienceScopeId,
             UploadedBy = caller,
             UploadedAt = Now,
+            FolderId = pending.FolderId is { } folder && await db.Folders.AnyAsync(existing => existing.Id == folder, cancellationToken) ? folder : null,
         };
         db.Items.Add(item);
         Mark(item.Id);
@@ -153,10 +156,19 @@ internal sealed class MediaLibrary(
         return new MediaLink { Url = url.ToString(), ExpiresAt = expiresAt };
     }
 
-    public async Task<MediaList> ListAsync(MediaQuery query, CancellationToken cancellationToken)
+    public async Task<MediaList> ListAsync(ClaimsPrincipal user, MediaQuery query, CancellationToken cancellationToken)
     {
         int take = query.Take is > 0 and <= MaximumPage ? query.Take : MaximumPage;
-        List<Listed> items = await db.Items.AsNoTracking()
+        IQueryable<MediaItem> scope = await ScopeAsync(user, query, cancellationToken);
+        MediaCounts counts = new()
+        {
+            All = await scope.CountAsync(cancellationToken),
+            Pictures = await Filtered(scope, MediaFilter.Pictures).CountAsync(cancellationToken),
+            Documents = await Filtered(scope, MediaFilter.Documents).CountAsync(cancellationToken),
+            Unused = await Filtered(scope, MediaFilter.Unused).CountAsync(cancellationToken),
+        };
+
+        List<Listed> items = await Filtered(scope, query.Filter)
             .OrderByDescending(item => item.UploadedAt)
             .Skip(Math.Max(0, query.Skip))
             .Take(take + 1)
@@ -166,6 +178,7 @@ internal sealed class MediaLibrary(
         return new MediaList
         {
             HasMore = items.Count > take,
+            Counts = counts,
             Items = items.Take(take).Select(row => new MediaItemInfo
             {
                 Media = MediaRefs.Of(row.Item, blobs),
@@ -173,15 +186,51 @@ internal sealed class MediaLibrary(
                 UploadedAt = row.Item.UploadedAt,
                 UploadedBy = row.Item.UploadedBy.ToString(),
                 PrivateTo = row.Item.AudiencePermission is null ? null : new MediaAudience { Permission = row.Item.AudiencePermission, ScopeId = row.Item.AudienceScopeId },
+                FolderId = row.Item.FolderId?.ToString(),
             }).ToList(),
         };
     }
+
+    private async Task<IQueryable<MediaItem>> ScopeAsync(ClaimsPrincipal user, MediaQuery query, CancellationToken cancellationToken)
+    {
+        IQueryable<MediaItem> items = db.Items.AsNoTracking();
+        Guid[] hidden = [.. await folders.HiddenAsync(user, cancellationToken)];
+        string search = query.Search.Trim();
+        if (search.Length > 0)
+        {
+            string pattern = $"%{search.Replace("%", "", StringComparison.Ordinal).Replace("_", "", StringComparison.Ordinal)}%";
+            return items
+                .Where(item => item.FolderId == null || !hidden.Contains(item.FolderId.Value))
+                .Where(item => EF.Functions.ILike(item.FileName, pattern) || EF.Functions.ILike(item.AltText, pattern));
+        }
+
+        if (string.IsNullOrEmpty(query.FolderId))
+            return items.Where(item => item.FolderId == null);
+
+        Guid folderId = Guid.TryParse(query.FolderId, out Guid parsed) && await db.Folders.AnyAsync(folder => folder.Id == parsed, cancellationToken)
+            ? parsed
+            : throw new RpcException(new Status(StatusCode.NotFound, "That folder has been deleted."));
+        if (hidden.Contains(folderId))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Only people it was shared with can see what's in this folder."));
+        return items.Where(item => item.FolderId == folderId);
+    }
+
+    private IQueryable<MediaItem> Filtered(IQueryable<MediaItem> items, MediaFilter filter) => filter switch
+    {
+        MediaFilter.Pictures => items.Where(item => item.ContentType.StartsWith("image/")),
+        MediaFilter.Documents => items.Where(item => !item.ContentType.StartsWith("image/")),
+        MediaFilter.Unused => items.Where(item => !db.Uses.Any(use => use.MediaId == item.Id)),
+        _ => items,
+    };
 
     public async Task DeleteAsync(string id, CancellationToken cancellationToken)
     {
         Guid mediaId = ParseId(id);
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+
+        if (item.FolderId is { } folderId && await db.Folders.AnyAsync(folder => folder.Id == folderId && folder.SystemArea != null, cancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be deleted here."));
 
         int uses = await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken);
         if (uses > 0)

@@ -1,0 +1,45 @@
+{
+  "title": "Choose how the Media library is laid out",
+  "question": "Three ways to add folders to the Media page, all in the admin panel's look. Pick one to build, steer it, or ask for another three.",
+  "options": [
+    {
+      "id": "assigned",
+      "kind": "assigned",
+      "label": "Two shelves",
+      "kicker": "THE ROLL",
+      "lineage": "shared drives with a staff side and an app side",
+      "thesis": "Staff files and the app's files are two shelves you switch between; inside each, breadcrumbs and folder tiles above a picture grid.",
+      "palette": ["#2a3d5e", "#f4efe7", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["Montserrat", "folder tiles", "selection tray"],
+      "viewport": "Title band with search; a Library / Made by the app switch; breadcrumbs; a row of folder tiles; the picture grid; a tray docks at the foot when files are chosen, with Move to.",
+      "risk": "No tree: deep folders are only reachable one level at a time.",
+      "html": ".impeccable/mocks/decision/media-folders/assigned.html"
+    },
+    {
+      "id": "dealt-tree",
+      "kind": "dealt",
+      "label": "Folder tree beside the grid",
+      "lineage": "desktop file managers",
+      "thesis": "A sand folder tree on the left (staff folders, then a locked Made by the app section), the grid in the middle, the chosen file's detail on the right.",
+      "palette": ["#2a3d5e", "#f4efe7", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["Montserrat", "folder tree", "detail pane"],
+      "viewport": "Tree column 240px with drop targets; breadcrumb, search, filters and grid/list switch over the grid; detail pane with Move to and Used in.",
+      "risk": "Three columns beside the navy sidebar is dense under 1280px; the tree collapses there.",
+      "html": ".impeccable/mocks/decision/media-folders/dealt-tree.html"
+    },
+    {
+      "id": "dealt-outline",
+      "kind": "dealt",
+      "label": "Outline table",
+      "lineage": "list view with disclosure triangles",
+      "thesis": "One sortable table where folders open in place to show their files, indented, with the detail pane beside it, as the library works today.",
+      "palette": ["#2a3d5e", "#f4efe7", "#ffffff", "#00776d", "#e7ae74"],
+      "materials": ["Montserrat", "hairline rows", "disclosure rows"],
+      "viewport": "Toolbar with search and filters; folder rows with chevrons and counts, files indented under open folders; locked app folders at the foot; detail pane right.",
+      "risk": "Pictures are small rows, so finding one by eye is slower than a grid.",
+      "html": ".impeccable/mocks/decision/media-folders/dealt-outline.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true
+}

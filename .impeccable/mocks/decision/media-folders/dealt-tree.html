@@ -1,0 +1,71 @@
+<!doctype html><html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 14px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+aside.nav{background:#2a3d5e;color:#fff;padding:22px 14px;display:flex;flex-direction:column;gap:22px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 10px;font-weight:700;font-size:16px}
+.mark{width:30px;height:30px;border-radius:50%;border:5px solid #d5c9b7;border-right-color:transparent}
+.group h6{font:600 11px Montserrat;letter-spacing:.06em;text-transform:uppercase;color:#d5c9b7;padding:0 10px 6px}
+.group a{display:flex;align-items:center;height:38px;padding:0 10px;border-radius:9px;color:rgb(255 255 255/.8);text-decoration:none;font-weight:600;font-size:14px;position:relative}
+.group a.on{background:rgb(255 255 255/.12);color:#fff}
+.group a.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;border-radius:2px;background:#e7ae74}
+main{padding:24px 32px;overflow:hidden;display:flex;flex-direction:column;gap:16px}
+.band{display:flex;justify-content:space-between;align-items:flex-end}
+.band h1{font-size:26px;letter-spacing:-.02em}.band p{color:#545e70;font-size:13px}
+.btn{height:34px;padding:0 15px;border-radius:17px;background:#2a3d5e;color:#fff;font:600 13px Montserrat;display:inline-flex;align-items:center;gap:6px;border:0}
+.btn.q{background:#f4efe7;color:#18233a}
+.search{height:36px;border:1px solid rgb(42 61 94/.2);border-radius:18px;padding:0 14px;display:flex;align-items:center;color:#6b7384;font-size:13px;width:280px}
+.chips{display:flex;gap:6px}.chip{height:30px;padding:0 12px;border-radius:15px;background:#f4efe7;font-size:12px;font-weight:600;display:flex;align-items:center}.chip.on{background:#2a3d5e;color:#fff}
+.crumbs{display:flex;gap:8px;font-size:13px;color:#545e70;align-items:center}.crumbs b{color:#18233a}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.card{display:flex;flex-direction:column;gap:6px}
+.thumb{aspect-ratio:4/3;border-radius:10px;background:linear-gradient(135deg,#84a87d,#4a7355)}
+.thumb.b{background:linear-gradient(135deg,#2a3d5e,#009c8f)}.thumb.c{background:linear-gradient(135deg,#e7ae74,#d5c9b7)}.thumb.d{background:#f4efe7}
+.card.on .thumb{outline:3px solid #e7ae74;outline-offset:2px}
+.card .n{font-weight:600;font-size:13px}.card .u{font-size:12px;color:#6b7384}
+.pane{background:#f4efe7;border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:10px}
+.pane h2{font-size:17px}.pane dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;font-size:13px}.pane dt{color:#6b7384}
+.lock{display:inline-flex;width:14px;height:14px;border:2px solid currentColor;border-radius:3px;position:relative;top:2px}
+.lock:before{content:"";position:absolute;left:1px;top:-7px;width:8px;height:7px;border:2px solid currentColor;border-bottom:0;border-radius:5px 5px 0 0}
+.fold{width:18px;height:14px;border-radius:3px;background:#d5c9b7;display:inline-block;position:relative;top:2px}
+.sys{color:#545e70}
+main{display:grid;grid-template-columns:232px 1fr 300px;grid-template-rows:auto 1fr;gap:18px 22px}
+.band{grid-column:1/-1}
+.tree{background:#f4efe7;border-radius:14px;padding:12px 8px;display:flex;flex-direction:column;gap:2px;font-size:13px}
+.tree h6{font:600 11px Montserrat;letter-spacing:.06em;text-transform:uppercase;color:#6b7384;padding:8px 10px 4px}
+.tree a{display:flex;align-items:center;gap:8px;height:32px;padding:0 10px;border-radius:8px;color:#18233a;text-decoration:none;font-weight:600}
+.tree a.on{background:#fff;box-shadow:inset 3px 0 0 #e7ae74}.tree a.drop{outline:2px dashed #00776d;background:rgb(0 119 109/.08)}
+.tree a.l2{padding-left:30px}.tree a.l3{padding-left:50px}.tree a span.c{margin-left:auto;font-weight:400;color:#6b7384;font-size:12px}
+.tree .cap{font-size:12px;color:#6b7384;padding:0 10px 6px}
+.work{display:flex;flex-direction:column;gap:14px;min-width:0}
+.bar{display:flex;gap:10px;align-items:center;justify-content:space-between}
+</style></head><body><aside class="nav"><div class="brand"><span class="mark"></span>Good Shepherd</div><div class="group"><a href="#">Home</a></div><div class="group"><h6>Content</h6><a href="#">Drafts</a><a class="on" href="#">Media</a></div><div class="group"><h6>People</h6><a href="#">People</a><a href="#">Roles</a><a href="#">Who can do what</a></div></aside>
+<main>
+ <div class="band"><div><h1>Media</h1><p>Every picture and PDF, in folders you make. Moving a file never changes where it's used.</p></div><div style="display:flex;gap:10px"><a class="btn q">New folder</a><a class="btn">Upload</a></div></div>
+ <nav class="tree">
+  <a href="#">All files <span class="c">212</span></a>
+  <h6>Library</h6>
+  <a href="#"><span class="fold"></span>Home tiles <span class="c">31</span></a>
+  <a class="on" href="#"><span class="fold"></span>Sermons <span class="c">45</span></a>
+  <a class="l2 drop" href="#"><span class="fold"></span>2026 series <span class="c">24</span></a>
+  <a class="l2" href="#"><span class="fold"></span>Speakers <span class="c">9</span></a>
+  <a href="#"><span class="fold"></span>Events <span class="c">58</span></a>
+  <a href="#"><span class="fold"></span>Fonts <span class="c">6</span></a>
+  <h6><i class="lock"></i>&nbsp; Made by the app</h6>
+  <p class="cap">Files people share in the app. Kept in place by the app.</p>
+  <a class="sys" href="#"><i class="lock"></i>Chats <span class="c">88</span></a>
+  <a class="sys l2" href="#"><i class="lock"></i>Youth group <span class="c">40</span></a>
+  <a class="sys" href="#"><i class="lock"></i>Life Group notes <span class="c">17</span></a>
+ </nav>
+ <section class="work">
+  <div class="bar"><div class="crumbs">Library › <b>Sermons</b></div><span class="search">Find a file in every folder</span></div>
+  <div class="bar"><div class="chips"><span class="chip on">All</span><span class="chip">Pictures</span><span class="chip">PDFs and files</span><span class="chip">Not used</span></div><div class="chips"><span class="chip on">Grid</span><span class="chip">List</span></div></div>
+  <div class="grid">
+   <div class="card on"><div class="thumb"></div><span class="n">Almighty God banner</span><span class="u">Used in 3 places</span></div>
+   <div class="card"><div class="thumb b"></div><span class="n">Job 33 series art</span><span class="u">Used in 1 place</span></div>
+   <div class="card"><div class="thumb c"></div><span class="n">Advent week 1</span><span class="u">Not used</span></div>
+   <div class="card"><div class="thumb d"></div><span class="n">Sermon outline.pdf</span><span class="u">Used in 1 place</span></div>
+   <div class="card"><div class="thumb b"></div><span class="n">Easter 2026</span><span class="u">Not used</span></div>
+   <div class="card"><div class="thumb"></div><span class="n">Mission Sunday</span><span class="u">Used in 2 places</span></div>
+  </div>
+ </section>
+ <aside class="pane"><div class="thumb" style="border-radius:10px"></div><h2>Almighty God banner</h2><dl><dt>Folder</dt><dd>Sermons</dd><dt>Size</dt><dd>1600 × 900 · 412 KB</dd><dt>Used in</dt><dd>3 places</dd><dt>Uploaded</dt><dd>12 Oct</dd></dl><div style="display:flex;gap:8px"><a class="btn">Move to…</a><a class="btn q">Open</a></div></aside>
+</main></body></html>

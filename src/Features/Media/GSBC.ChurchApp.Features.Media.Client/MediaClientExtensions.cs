@@ -16,6 +16,7 @@ public static class MediaClientExtensions
             .AddDestinations(MediaDestinations.All)
             .AddSingleton(provider => new MediaClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
             .AddSingleton<IPrivateMediaLinks, PrivateMediaLinks>()
+            .AddSingleton<MediaFolderMemory>()
             .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<MediaClient>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))
             .AddSingleton(new MediaPicker(typeof(MediaChoice)))
             .AddSingleton<IClientStartupTask, PrivateMediaGuard>();

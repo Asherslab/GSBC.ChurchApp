@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
@@ -135,6 +136,9 @@ public static class PlatformApiExtensions
 
     public static IServiceCollection AddDestinationSource<TSource>(this IServiceCollection services) where TSource : class, IDestinationSource =>
         services.AddScoped<IDestinationSource, TSource>();
+
+    public static IServiceCollection AddMediaSystemArea(this IServiceCollection services, MediaSystemArea area) =>
+        services.AddSingleton(area);
 
     public static IServiceCollection AddSystemRole(this IServiceCollection services, SystemRole role) =>
         services.AddSingleton(role);

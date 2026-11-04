@@ -30,6 +30,7 @@
 
     [Parameter] public string Label { get; set; } = "Choose an image or PDF";
     [Parameter] public MediaAudience? PrivateTo { get; set; }
+    [Parameter] public string? FolderId { get; set; }
     [Parameter] public EventCallback<MediaRef> OnUploaded { get; set; }
 
     private void Choose(InputFileChangeEventArgs args)
@@ -57,6 +58,7 @@
                 Bytes = _file.Size,
                 AltText = _altText,
                 PrivateTo = PrivateTo,
+                FolderId = FolderId,
             }, content);
             _file = null;
             _altText = "";

@@ -59,6 +59,13 @@ Group round) and a source:
 "people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't
 in the catalog, so it never shows as an ability; `*` matches it, so the owner is in every role's audience.
 
+**Sensitive oversight nodes** (2026-11-04). Where a feature's records have their own audience (a
+chat's files are for that chat), a separate global node may let chosen staff see them all for
+oversight, held by no role but the Owner's by default: `media.system.view` sees inside every system
+folder in the media library ([media.md](../features/media.md), *System folders*). It is marked
+sensitive, and a system folder's own audience is still checked through `IAccessEvaluator` like any
+grant.
+
 ## Checking, on the server
 
 - **Tokens carry who, not what.** The API token holds the user id and session id. Permissions are

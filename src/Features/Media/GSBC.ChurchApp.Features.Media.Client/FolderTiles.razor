@@ -1,0 +1,68 @@
+@if (Folders.Count > 0)
+{
+    <ul class="folder-tiles @(Compact ? "folder-tiles--compact" : "")" aria-label="@Label" ondragstart="event.dataTransfer.setData('text/plain', 'gsbc-media'); event.dataTransfer.effectAllowed = 'move'">
+        @foreach (FolderInfo folder in Folders)
+        {
+            bool droppable = CanDrop?.Invoke(folder) == true;
+            bool draggable = CanDrag?.Invoke(folder) == true;
+            <li @key="folder.Id" class="folder-tile @(folder.IsSystem ? "folder-tile--system" : "") @(droppable && _over == folder.Id ? "folder-tile--drop" : "") @(Dragging?.Invoke(folder) == true ? "folder-tile--lifted" : "")"
+                draggable="@(draggable ? "true" : "false")" @ondragstart="() => OnDragStart.InvokeAsync(folder)" @ondragend="() => OnDragEnd.InvokeAsync()"
+                @ondragenter="() => _over = droppable ? folder.Id : null" @ondragleave="() => Leave(folder)"
+                @ondragover:preventDefault="droppable" @ondrop="() => DropAsync(folder)">
+                <button type="button" class="folder-tile__open" @onclick="() => OnOpen.InvokeAsync(folder)"
+                        aria-label="@(folder.CanOpen ? null : $"{folder.Name}, only people it was shared with can open it")">
+                    <span class="folder-tile__icon"><Icon Name="@(folder.IsSystem ? "lock" : "folder")" /></span>
+                    <span class="folder-tile__text">
+                        <span class="folder-tile__name">@folder.Name</span>
+                        <span class="folder-tile__meta">@Meta(folder)</span>
+                    </span>
+                </button>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private string? _over;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<FolderInfo> Folders { get; set; }
+    [Parameter] public string Label { get; set; } = "Folders";
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public EventCallback<FolderInfo> OnOpen { get; set; }
+    [Parameter] public Func<FolderInfo, int>? Subfolders { get; set; }
+    [Parameter] public Func<FolderInfo, bool>? CanDrag { get; set; }
+    [Parameter] public Func<FolderInfo, bool>? Dragging { get; set; }
+    [Parameter] public EventCallback<FolderInfo> OnDragStart { get; set; }
+    [Parameter] public EventCallback OnDragEnd { get; set; }
+    [Parameter] public Func<FolderInfo, bool>? CanDrop { get; set; }
+    [Parameter] public EventCallback<FolderInfo> OnDrop { get; set; }
+
+    private void Leave(FolderInfo folder)
+    {
+        if (_over == folder.Id)
+            _over = null;
+    }
+
+    private async Task DropAsync(FolderInfo folder)
+    {
+        _over = null;
+        if (CanDrop?.Invoke(folder) == true)
+            await OnDrop.InvokeAsync(folder);
+    }
+
+    private string Meta(FolderInfo folder)
+    {
+        if (!folder.CanOpen)
+            return "Shared with others";
+        int folders = Subfolders?.Invoke(folder) ?? 0;
+        string files = folder.Files == 1 ? "1 file" : $"{folder.Files} files";
+        string subfolders = folders == 1 ? "1 folder" : $"{folders} folders";
+        return (folder.Files, folders) switch
+        {
+            (0, 0) => "Empty",
+            (_, 0) => files,
+            (0, _) => subfolders,
+            _ => $"{files} · {subfolders}",
+        };
+    }
+}

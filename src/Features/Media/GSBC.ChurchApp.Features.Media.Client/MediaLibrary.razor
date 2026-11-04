@@ -1,56 +1,269 @@
 @inject MediaClient Media
+@inject IAccess Access
 
-<LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
-    <SplitView Detail="@Detail" DetailLabel="@(_uploading ? "Upload" : "Picture")">
-        <DataTable TItem="MediaItemInfo" Label="Media" Items="Shown(context.Value)" Columns="Columns" Key="item => item.Media!.Id"
-                   Selected="_selected" SelectedChanged="Select" SortColumn="3" SortDescending="true">
-            <Toolbar>
-                <SearchField Label="Find a file" Placeholder="Find a file" @bind-Value="_query" />
-                <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
-            </Toolbar>
-            <Empty>
-                <EmptyState Icon="image" Title="@(_query.Length > 0 || _filter != MediaFilter.All ? "Nothing matches" : "No pictures yet")" Body="@(_query.Length > 0 || _filter != MediaFilter.All ? "Try another word, or show everything." : "Upload a picture to use it on the app's tiles and pages.")" />
-            </Empty>
-        </DataTable>
-        @if (context.Value.HasMore)
-        {
-            <div class="media-more">
-                <Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button>
+<LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
+    @{ FolderMap map = tree.Value; }
+    <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
+        <div class="media-library__bar media-library__bar--top">
+            <Segmented TValue="Shelf" Label="Which files" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" />
+            @if (ShowsFiles(map))
+            {
+                <div class="media-library__tools">
+                    <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value.Counts)" Value="_filter" ValueChanged="FilterAsync" />
+                    <Segmented TValue="LibraryView" Label="Show as" Options="ViewOptions" @bind-Value="_view" />
+                </div>
+            }
+        </div>
+        <div class="media-library__head">
+            @if (Searching)
+            {
+                <div class="media-library__path">
+                    <p class="media-library__results">Results for “@_query” in every folder</p>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => OnClearSearch.InvokeAsync()">Clear search</Button>
+                </div>
+            }
+            else
+            {
+                <div class="media-library__path">
+                    <Breadcrumbs Label="Where you are" Trail="Trail(map)" OnOpen="crumb => OpenAsync(crumb.Key)" CanDrop="crumb => CanDropOn(map, crumb.Key)" OnDrop="crumb => DropAsync(crumb.Key)" />
+                    @if (map.Find(_folderId) is { IsSystem: false } here && CanOrganise)
+                    {
+                        <div class="media-library__folder-actions">
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => StartRename(here)">Rename…</Button>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder-input" OnClick="() => StartMoveFolder(here)">Move to…</Button>
+                            <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => StartDelete(here)">Delete folder…</Button>
+                        </div>
+                    }
+                </div>
+                @if (_shelf == Shelf.App)
+                {
+                    <p class="media-library__system-note">
+                        <Icon Name="lock" Size="IconSize.Small" />
+                        @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") They stay where the app put them: they can't be moved, renamed or deleted here.
+                    </p>
+                }
+            }
+        </div>
+        <SplitView Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
+            <div class="media-library @(_dragItems.Count + _dragFolders.Count > 0 ? "media-library--dragging" : "")">
+
+                @if (!Searching)
+                {
+                    <FolderTiles Folders="map.ChildrenOf(_folderId, _shelf == Shelf.App).ToList()" OnOpen="folder => OpenAsync(folder.Id)"
+                                 Subfolders="folder => map.ChildrenOf(folder.Id, folder.IsSystem).Count()" CanDrag="folder => CanOrganise && !folder.IsSystem" Dragging="folder => _dragFolders.Contains(folder.Id)"
+                                 OnDragStart="DragFolder" OnDragEnd="EndDrag" CanDrop="folder => CanDropOn(map, folder.Id)" OnDrop="folder => DropAsync(folder.Id)" />
+                }
+
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <Notice Text="@_moved" />
+
+                @if (ShowsFiles(map))
+                {
+                    @if (context.Value.Items.Count == 0 && OnlyFolders(map))
+                    {
+                        <p class="media-library__only-folders">No files here, only the folders above. Drag files onto this folder, or upload straight into it.</p>
+                    }
+                    else if (context.Value.Items.Count == 0)
+                    {
+                        <EmptyState Icon="@(_shelf == Shelf.App ? "lock" : "image")" Title="@EmptyTitle(map)" Body="@EmptyBody" />
+                    }
+                    else if (_view == LibraryView.Grid)
+                    {
+                        <ul class="media-grid @(_chosen.Count > 1 ? "media-grid--choosing" : "")" aria-label="Files" @onkeydown="KeyAsync"
+                            ondragstart="event.dataTransfer.setData('text/plain', 'gsbc-media'); event.dataTransfer.effectAllowed = 'move'">
+                            @foreach (MediaItemInfo item in context.Value.Items)
+                            {
+                                MediaRef media = item.Media!;
+                                bool on = _chosen.Contains(media.Id);
+                                <li @key="media.Id" class="media-card @(on ? "media-card--on" : "") @(_dragItems.Contains(media.Id) ? "media-card--lifted" : "")"
+                                    draggable="@(CanMoveFiles(map, item) ? "true" : "false")" @ondragstart="() => DragItem(item)" @ondragend="EndDrag">
+                                    <button type="button" class="media-card__open" aria-pressed="@(on ? "true" : "false")" @onclick="click => ChooseAsync(item, click)">
+                                        <span class="media-card__thumb">
+                                            @if (media.IsImage)
+                                            {
+                                                <MediaImage Media="media" Class="media-card__image" />
+                                            }
+                                            else
+                                            {
+                                                <Icon Name="file" Size="IconSize.Large" />
+                                            }
+                                        </span>
+                                        <span class="media-card__name">@NameOf(media)</span>
+                                        <span class="media-card__meta">@(Searching ? $"In {map.PathName(item.FolderId)}" : UsedIn(item.Uses))</span>
+                                    </button>
+                                    <button type="button" role="checkbox" aria-checked="@(on ? "true" : "false")" aria-label="Choose @NameOf(media)"
+                                            class="media-card__check" @onclick="() => Toggle(item)">
+                                        <Icon Name="check" Size="IconSize.Small" />
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <DataTable TItem="MediaItemInfo" Label="Files" Items="context.Value.Items" Columns="Columns(map)" Key="item => item.Media!.Id"
+                                   Selected="Single" SelectedChanged="item => ChooseOnly(item)" RowClass="item => _chosen.Contains(item.Media!.Id) ? MultiChosen : null" SortColumn="3" SortDescending="true" />
+                    }
+                    @if (context.Value.HasMore)
+                    {
+                        <div class="media-more">
+                            <Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button>
+                        </div>
+                    }
+                }
+                else if (!map.HasSystemFolders)
+                {
+                    <EmptyState Icon="lock" Title="Nothing made by the app yet" Body="When people share pictures or files in the app, such as in a group chat, they're kept here in folders the app makes." />
+                }
             </div>
-        }
-    </SplitView>
+        </SplitView>
+
+        <SelectionTray Label="Chosen files" Count="@(_chosen.Count > 1 ? _chosen.Count : 0)" One="file" Many="files" OnClear="ClearChosen">
+            @if (CanOrganise && _shelf == Shelf.Library)
+            {
+                <Button Icon="folder-input" OnClick="StartMoveChosen">Move to…</Button>
+            }
+        </SelectionTray>
+
+        <MoveToSheet Open="_sheet == FolderSheet.Move" Map="map" Title="@_moveTitle" Lead="Things that use them keep working: moving only changes where you find them here."
+                     Current="@_moveFrom" Suggested="@_moveFrom" Blocked="target => IsBlocked(map, target)" Busy="_busy" Problem="@_sheetProblem"
+                     OnMove="MoveAsync" OnCancel="CloseSheet" />
+
+        <Sheet Open="_sheet is FolderSheet.Create or FolderSheet.Rename" OpenChanged="_ => CloseSheet()" Title="@(_sheet == FolderSheet.Create ? "New folder" : "Rename folder")"
+               Lead="@(_sheet == FolderSheet.Create ? $"In {map.PathName(_folderId)}." : null)">
+            <ChildContent>
+                <form class="panel-form" @onsubmit="SaveNameAsync" @onsubmit:preventDefault="true">
+                    <TextField Label="Name" @bind-Value="_name" MaxLength="80" Problem="@_sheetProblem" />
+                </form>
+            </ChildContent>
+            <Actions>
+                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Cancel</Button>
+                <Button Icon="check" Busy="_busy" Disabled="@(_name.Trim().Length == 0)" OnClick="SaveNameAsync">@(_sheet == FolderSheet.Create ? "Make folder" : "Rename")</Button>
+            </Actions>
+        </Sheet>
+
+        <MoveToSheet Open="_sheet == FolderSheet.Delete" Map="map" Title="@($"Delete “{_sheetFolder?.Name}”?")" Action="Move them and delete"
+                     Lead="@($"It has {Contents(map, _sheetFolder)}. Nothing is deleted with it: choose where they go. Things that use them keep working.")"
+                     Current="@_sheetFolder?.Id" Suggested="@_sheetFolder?.ParentId" Blocked="target => target is not null && _sheetFolder is not null && map.IsWithin(target, _sheetFolder.Id)"
+                     Busy="_busy" Problem="@_sheetProblem" OnMove="target => DeleteFolderAsync(true, target)" OnCancel="CloseSheet" />
+
+        <Sheet Open="_sheet == FolderSheet.DeleteEmpty" OpenChanged="_ => CloseSheet()" Title="@($"Delete “{_sheetFolder?.Name}”?")" Lead="It's empty, so nothing else changes.">
+            <ChildContent><Notice Tone="NoticeTone.Warning" Text="@_sheetProblem" /></ChildContent>
+            <Actions>
+                <Button Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteFolderAsync(false, null)">Delete folder</Button>
+            </Actions>
+        </Sheet>
+    </LiveData>
 </LiveData>
 
 @code {
-    private const int PageSize = 50;
+    private const int PageSize = 60;
+    private const string MultiChosen = "data-table__row--selected";
 
+    private LiveData<FolderMap>? _treeLive;
     private LiveData<MediaList>? _live;
+    private FolderMap _map = FolderMap.Empty;
+    private MediaList _list = new();
+    private Shelf _shelf = Shelf.Library;
+    private string? _folderId;
     private int _wanted = PageSize;
     private string _query = "";
     private MediaFilter _filter = MediaFilter.All;
-    private MediaItemInfo? _selected;
+    private LibraryView _view = LibraryView.Grid;
+    private readonly List<string> _chosen = [];
+    private readonly Dictionary<string, MediaItemInfo> _known = [];
+    private string? _anchor;
     private bool _uploading;
     private bool _confirming;
     private bool _busy;
     private string? _error;
+    private string? _problem;
+    private string? _moved;
 
-    private static readonly IReadOnlyList<TableColumn<MediaItemInfo>> Columns =
+    private FolderSheet _sheet;
+    private FolderInfo? _sheetFolder;
+    private string _name = "";
+    private string? _sheetProblem;
+    private string _moveTitle = "";
+    private string? _moveFrom;
+    private List<string> _moveItems = [];
+    private List<string> _moveFolders = [];
+
+    private List<string> _dragItems = [];
+    private List<string> _dragFolders = [];
+
+    private static readonly IReadOnlyList<SegmentOption<Shelf>> ShelfOptions =
     [
-        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="book-open" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
-        new("Name", item => @<span class="media-name"><span class="cell-strong">@NameOf(item.Media!)</span>@if (item.Media!.AltText.Length > 0) {<span class="quiet">@item.Media.AltText</span>}</span>, item => NameOf(item.Media!)),
-        new("Used in", item => @<span>@(item.Uses == 0 ? "Not used" : item.Uses == 1 ? "1 place" : $"{item.Uses} places")</span>, item => item.Uses, "nowrap"),
-        new("Uploaded", item => @<DateLine At="item.UploadedAt" Style="DateLineStyle.Short" />, item => item.UploadedAt, "num"),
-        new("Size", item => @<span>@Size(item.Media!.Bytes)</span>, item => item.Media!.Bytes, "num optional"),
+        new(Shelf.Library, "Library", "image"),
+        new(Shelf.App, "Made by the app", "lock"),
     ];
 
-    private RenderFragment? Detail => _uploading
+    private static readonly IReadOnlyList<SegmentOption<LibraryView>> ViewOptions =
+    [
+        new(LibraryView.Grid, "Grid", "grid"),
+        new(LibraryView.List, "List", "list"),
+    ];
+
+    [Parameter] public string Query { get; set; } = "";
+    [Parameter] public EventCallback OnClearSearch { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Query.Trim() != _query)
+            await SearchAsync(Query);
+    }
+
+    private bool CanOrganise => Access.Can(MediaPermissions.Organise);
+
+    private bool Searching => _query.Length > 0;
+
+    private MediaItemInfo? Single => _chosen.Count == 1 ? _known.GetValueOrDefault(_chosen[0]) : null;
+
+    private bool ShowsFiles(FolderMap map) => Searching || _shelf == Shelf.Library || _folderId is not null;
+
+    private FolderInfo? SystemRoot(FolderMap map) => map.PathTo(_folderId).FirstOrDefault(folder => folder.IsSystem);
+
+    private IReadOnlyList<Crumb> Trail(FolderMap map) =>
+    [
+        _shelf == Shelf.Library ? new Crumb("Library", null, "image") : new Crumb("Made by the app", null, "lock"),
+        .. map.PathTo(_folderId).Select(folder => new Crumb(folder.Name, folder.Id, folder.IsSystem ? "lock" : "folder")),
+    ];
+
+    private async Task<FolderMap> LoadTreeAsync()
+    {
+        _map = await Media.FoldersAsync();
+        if (_folderId is not null && _map.Find(_folderId) is null)
+        {
+            _problem = "The folder you were in was deleted, so you're back at the top.";
+            _folderId = null;
+            await ReloadListAsync();
+        }
+        return _map;
+    }
+
+    private async Task<MediaList> LoadAsync()
+    {
+        if (!ShowsFiles(_map))
+            return new MediaList { Counts = new MediaCounts() };
+
+        MediaList page = await Media.ListAsync(new MediaQuery { FolderId = _folderId, Search = _query, Filter = _filter, Take = _wanted });
+        page.Items.RemoveAll(item => item.Media is null);
+        foreach (MediaItemInfo item in page.Items)
+            _known[item.Media!.Id] = item;
+        _chosen.RemoveAll(id => page.Items.All(item => item.Media!.Id != id));
+        _list = page;
+        return page;
+    }
+
+    private RenderFragment? Detail(FolderMap map) => _uploading
         ? @<text>
               <h2 class="panel-title">Upload</h2>
-              <p class="panel-lead">Pictures (JPEG, PNG, WebP) or a PDF.</p>
-              <MediaUpload OnUploaded="UploadedAsync" />
+              <p class="panel-lead">Pictures (JPEG, PNG, WebP) or a PDF. It goes into @(_shelf == Shelf.Library && _folderId is not null && !Searching ? map.PathName(_folderId) : "the Library").</p>
+              <MediaUpload FolderId="@(_shelf == Shelf.Library && !Searching ? _folderId : null)" OnUploaded="UploadedAsync" />
               <div class="panel-actions"><Button Variant="ButtonVariant.Quiet" OnClick="() => _uploading = false">Close</Button></div>
           </text>
-        : _selected?.Media is not { } media ? null : @<text>
+        : Single is not { Media: { } media } selected ? null : @<text>
               @if (media.IsImage)
               {
                   <MediaImage @key="media.Id" Media="media" Class="media-preview" />
@@ -61,33 +274,41 @@
                   <p class="panel-lead">@media.AltText</p>
               }
               <dl class="facts">
+                  <dt>Folder</dt>
+                  <dd>
+                      @if (map.Find(selected.FolderId) is { IsSystem: true })
+                      {
+                          <Icon Name="lock" Size="IconSize.Small" Class="media-detail__lock" />
+                      }
+                      <button type="button" class="media-detail__folder" @onclick="() => RevealAsync(selected)">@map.PathName(selected.FolderId)</button>
+                  </dd>
                   <dt>Uploaded</dt>
-                  <dd><DateLine At="_selected.UploadedAt" /></dd>
-                  @if (media.Width > 0)
-                  {
-                      <dt>Size</dt>
-                      <dd>@media.Width × @media.Height · @Size(media.Bytes)</dd>
-                  }
-                  else
-                  {
-                      <dt>Size</dt>
-                      <dd>@Size(media.Bytes)</dd>
-                  }
+                  <dd><DateLine At="selected.UploadedAt" /></dd>
+                  <dt>Size</dt>
+                  <dd>@(media.Width > 0 ? $"{media.Width} × {media.Height} · {Size(media.Bytes)}" : Size(media.Bytes))</dd>
                   <dt>Used in</dt>
-                  <dd>@(_selected.Uses == 0 ? "Nowhere yet" : _selected.Uses == 1 ? "1 place" : $"{_selected.Uses} places")</dd>
-                  @if (_selected.PrivateTo is { } audience)
+                  <dd>@UsedIn(selected.Uses)</dd>
+                  @if (selected.PrivateTo is { } audience)
                   {
                       <dt>Who sees it</dt>
                       <dd>Only people with @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</dd>
                   }
               </dl>
               <div class="panel-actions">
-                  @if (media.Url is not null && _selected.PrivateTo is null)
+                  @if (CanMoveFiles(map, selected))
+                  {
+                      <Button Icon="folder-input" OnClick="StartMoveChosen">Move to…</Button>
+                  }
+                  @if (media.Url is not null && selected.PrivateTo is null)
                   {
                       <a class="btn btn--quiet" href="@media.Url" target="_blank" rel="noopener"><Icon Name="external-link" Size="IconSize.Small" />Open</a>
                   }
               </div>
-              @if (_selected.Uses == 0)
+              @if (map.Find(selected.FolderId) is { IsSystem: true })
+              {
+                  <p class="panel-hint">The app keeps this file where it put it.</p>
+              }
+              else if (selected.Uses == 0)
               {
                   <Can Permission="MediaPermissions.Delete">
                       <section class="panel-section @(_confirming ? "panel-confirm" : "")" aria-label="Delete">
@@ -114,59 +335,330 @@
               <Notice Tone="NoticeTone.Warning" Text="@_error" />
           </text>;
 
-    private async Task<MediaList> LoadAsync()
-    {
-        MediaList page = await Media.ListAsync(0, _wanted);
-        page.Items.RemoveAll(item => item.Media is null);
-        _selected = _selected is null ? null : page.Items.FirstOrDefault(item => item.Media!.Id == _selected.Media!.Id);
-        return page;
-    }
-
-    private IEnumerable<MediaItemInfo> Shown(MediaList list) => list.Items.Where(item => Matches(item, _filter)
-        && (_query.Length == 0 || NameOf(item.Media!).Contains(_query, StringComparison.CurrentCultureIgnoreCase) || item.Media!.AltText.Contains(_query, StringComparison.CurrentCultureIgnoreCase)));
-
-    private static bool Matches(MediaItemInfo item, MediaFilter filter) => filter switch
-    {
-        MediaFilter.Pictures => item.Media!.IsImage,
-        MediaFilter.Documents => !item.Media!.IsImage,
-        MediaFilter.Unused => item.Uses == 0,
-        _ => true,
-    };
-
-    private static IReadOnlyList<FilterOption<MediaFilter>> Filters(MediaList list) =>
+    private IReadOnlyList<TableColumn<MediaItemInfo>> Columns(FolderMap map) =>
     [
-        new(MediaFilter.All, "All", list.Items.Count),
-        new(MediaFilter.Pictures, "Pictures", list.Items.Count(item => Matches(item, MediaFilter.Pictures))),
-        new(MediaFilter.Documents, "PDFs and files", list.Items.Count(item => Matches(item, MediaFilter.Documents))),
-        new(MediaFilter.Unused, "Not used", list.Items.Count(item => Matches(item, MediaFilter.Unused))),
+        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="file" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
+        new("Name", item => @<span class="media-name"><span class="cell-strong">@NameOf(item.Media!)</span>@if (item.Media!.AltText.Length > 0) {<span class="quiet">@item.Media.AltText</span>}</span>, item => NameOf(item.Media!)),
+        Searching
+            ? new("Folder", item => @<span>@map.PathName(item.FolderId)</span>, item => map.PathName(item.FolderId))
+            : new("Used in", item => @<span>@UsedIn(item.Uses)</span>, item => item.Uses, "nowrap"),
+        new("Uploaded", item => @<DateLine At="item.UploadedAt" Style="DateLineStyle.Short" />, item => item.UploadedAt, "num"),
+        new("Size", item => @<span>@Size(item.Media!.Bytes)</span>, item => item.Media!.Bytes, "num optional"),
     ];
 
-    private void Select(MediaItemInfo item)
+    private static IReadOnlyList<FilterOption<MediaFilter>> Filters(MediaCounts? counts) =>
+    [
+        new(MediaFilter.All, "All", counts?.All),
+        new(MediaFilter.Pictures, "Pictures", counts?.Pictures),
+        new(MediaFilter.Documents, "PDFs and files", counts?.Documents),
+        new(MediaFilter.Unused, "Not used", counts?.Unused),
+    ];
+
+    private string EmptyTitle(FolderMap map) => Searching || _filter != MediaFilter.All
+        ? "Nothing matches"
+        : map.Find(_folderId) is { CanOpen: false } ? "Only people it was shared with can see these" : _folderId is null ? "No pictures yet" : "This folder is empty";
+
+    private string EmptyBody => Searching || _filter != MediaFilter.All
+        ? "Try another word, or show everything."
+        : _shelf == Shelf.App
+            ? "Files appear here when people share them in the app."
+            : _folderId is null
+                ? "Upload a picture to use it on the app's tiles and pages."
+                : "Drag files onto this folder, or upload straight into it.";
+
+    private bool OnlyFolders(FolderMap map) =>
+        !Searching && _filter == MediaFilter.All && _folderId is not null && map.ChildrenOf(_folderId, _shelf == Shelf.App).Any();
+
+    private bool CanMoveFiles(FolderMap map, MediaItemInfo item) => CanOrganise && map.Find(item.FolderId) is not { IsSystem: true };
+
+    private bool CanDropOn(FolderMap map, string? target)
     {
-        _uploading = false;
-        _confirming = false;
-        _error = null;
-        _selected = item;
+        if (_dragItems.Count + _dragFolders.Count == 0 || !CanOrganise)
+            return false;
+        return !IsBlocked(map, target);
     }
 
-    public void StartUpload()
+    private bool IsBlocked(FolderMap map, string? target) =>
+        (target is not null && map.Find(target) is not { IsSystem: false })
+        || (_shelf == Shelf.App && target is null && _sheet != FolderSheet.Move)
+        || ActiveFolders.Any(folder => target == folder || (target is not null && map.IsWithin(target, folder)));
+
+    private List<string> ActiveFolders => _sheet == FolderSheet.Move ? _moveFolders : _dragFolders;
+
+    private async Task SwitchShelfAsync(Shelf shelf)
     {
-        _selected = null;
-        _uploading = true;
-        StateHasChanged();
+        _shelf = shelf;
+        await OpenFolderAsync(null);
+    }
+
+    private async Task OpenAsync(string? folderId)
+    {
+        if (_map.Find(folderId) is { CanOpen: false } locked)
+        {
+            _problem = $"Only people “{locked.Name}” was shared with can see what's in it.";
+            return;
+        }
+        await OpenFolderAsync(folderId);
+    }
+
+    private async Task OpenFolderAsync(string? folderId)
+    {
+        _folderId = folderId;
+        _problem = null;
+        _moved = null;
+        _wanted = PageSize;
+        ClearChosen();
+        await ReloadListAsync();
+    }
+
+    private async Task RevealAsync(MediaItemInfo item)
+    {
+        _shelf = _map.Find(item.FolderId) is { IsSystem: true } ? Shelf.App : Shelf.Library;
+        await OnClearSearch.InvokeAsync();
+        _query = "";
+        await OpenFolderAsync(item.FolderId);
+        _chosen.Add(item.Media!.Id);
+    }
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query.Trim();
+        _wanted = PageSize;
+        ClearChosen();
+        await ReloadListAsync();
+    }
+
+    private async Task FilterAsync(MediaFilter filter)
+    {
+        _filter = filter;
+        _wanted = PageSize;
+        await ReloadListAsync();
     }
 
     private async Task MoreAsync()
     {
         _wanted += PageSize;
-        await ReloadAsync();
+        await ReloadListAsync();
+    }
+
+    private Task ChooseAsync(MediaItemInfo item, MouseEventArgs click)
+    {
+        string id = item.Media!.Id;
+        if (click.ShiftKey && _anchor is not null)
+        {
+            List<string> order = _list.Items.Select(row => row.Media!.Id).ToList();
+            int from = order.IndexOf(_anchor);
+            int to = order.IndexOf(id);
+            if (from >= 0 && to >= 0)
+            {
+                foreach (string between in order.Skip(Math.Min(from, to)).Take(Math.Abs(to - from) + 1).Where(between => !_chosen.Contains(between)))
+                    _chosen.Add(between);
+                return Task.CompletedTask;
+            }
+        }
+        if (click.CtrlKey || click.MetaKey)
+            Toggle(item);
+        else
+            ChooseOnly(item);
+        return Task.CompletedTask;
+    }
+
+    private void ChooseOnly(MediaItemInfo item)
+    {
+        _chosen.Clear();
+        Toggle(item);
+    }
+
+    private void Toggle(MediaItemInfo item)
+    {
+        string id = item.Media!.Id;
+        if (!_chosen.Remove(id))
+            _chosen.Add(id);
+        _anchor = id;
+        _uploading = false;
+        _confirming = false;
+        _error = null;
+    }
+
+    private void ClearChosen()
+    {
+        _chosen.Clear();
+        _anchor = null;
+        _confirming = false;
+        _error = null;
+    }
+
+    private Task KeyAsync(KeyboardEventArgs key)
+    {
+        if (key.Key == "Escape")
+            ClearChosen();
+        return Task.CompletedTask;
+    }
+
+    private void DragItem(MediaItemInfo item)
+    {
+        _dragFolders = [];
+        _dragItems = _chosen.Contains(item.Media!.Id) ? [.. _chosen] : [item.Media!.Id];
+    }
+
+    private void DragFolder(FolderInfo folder)
+    {
+        _dragItems = [];
+        _dragFolders = [folder.Id];
+    }
+
+    private void EndDrag()
+    {
+        _dragItems = [];
+        _dragFolders = [];
+    }
+
+    private async Task DropAsync(string? target)
+    {
+        List<string> items = _dragItems;
+        List<string> folders = _dragFolders;
+        EndDrag();
+        if (items.Count + folders.Count == 0)
+            return;
+        _problem = null;
+        try
+        {
+            await Media.MoveAsync(items, folders, target);
+            _moved = Moved(items.Count, folders.Count, target);
+            ClearChosen();
+            await ReloadAllAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+    }
+
+    public void StartUpload()
+    {
+        ClearChosen();
+        _uploading = true;
+        StateHasChanged();
+    }
+
+    public void StartNewFolder()
+    {
+        if (_shelf == Shelf.App)
+        {
+            _shelf = Shelf.Library;
+            _folderId = null;
+            _ = ReloadListAsync();
+        }
+        OpenSheet(FolderSheet.Create, null, "");
+        StateHasChanged();
+    }
+
+    private void StartRename(FolderInfo folder) => OpenSheet(FolderSheet.Rename, folder, folder.Name);
+
+    private void StartMoveFolder(FolderInfo folder)
+    {
+        _moveItems = [];
+        _moveFolders = [folder.Id];
+        _moveFrom = folder.ParentId;
+        _moveTitle = $"Move “{folder.Name}”";
+        OpenSheet(FolderSheet.Move, folder, "");
+    }
+
+    private void StartMoveChosen()
+    {
+        _moveItems = [.. _chosen];
+        _moveFolders = [];
+        _moveFrom = Searching ? null : _folderId;
+        _moveTitle = _moveItems.Count == 1 ? $"Move “{NameOf(_known[_moveItems[0]].Media!)}”" : $"Move {_moveItems.Count} files";
+        OpenSheet(FolderSheet.Move, null, "");
+    }
+
+    private void StartDelete(FolderInfo folder) =>
+        OpenSheet(folder.Files == 0 && !_map.ChildrenOf(folder.Id, system: false).Any() ? FolderSheet.DeleteEmpty : FolderSheet.Delete, folder, "");
+
+    private void OpenSheet(FolderSheet sheet, FolderInfo? folder, string name)
+    {
+        _sheet = sheet;
+        _sheetFolder = folder;
+        _name = name;
+        _sheetProblem = null;
+    }
+
+    private void CloseSheet()
+    {
+        _sheet = FolderSheet.None;
+        _sheetProblem = null;
+        _busy = false;
+    }
+
+    private async Task SaveNameAsync()
+    {
+        if (_busy || _name.Trim().Length == 0)
+            return;
+        await RunSheetAsync(async () =>
+        {
+            if (_sheet == FolderSheet.Create)
+                await Media.CreateFolderAsync(_folderId, _name.Trim());
+            else
+                await Media.RenameFolderAsync(_sheetFolder!.Id, _name.Trim());
+        });
+    }
+
+    private Task MoveAsync(string? target) => RunSheetAsync(async () =>
+    {
+        await Media.MoveAsync(_moveItems, _moveFolders, target);
+        _moved = Moved(_moveItems.Count, _moveFolders.Count, target);
+        ClearChosen();
+    });
+
+    private string Moved(int files, int folders, string? target)
+    {
+        string what = (files, folders) switch
+        {
+            (1, 0) => "1 file",
+            (_, 0) => $"{files} files",
+            (0, 1) => "The folder",
+            (0, _) => $"{folders} folders",
+            _ => $"{files} files and {folders} folders",
+        };
+        return $"{what} moved to {_map.PathName(target)}. Everything that uses them still shows them.";
+    }
+
+    private Task DeleteFolderAsync(bool moveContents, string? target) => RunSheetAsync(async () =>
+    {
+        FolderInfo folder = _sheetFolder!;
+        await Media.DeleteFolderAsync(folder.Id, moveContents, target);
+        if (_folderId == folder.Id)
+            _folderId = folder.ParentId;
+    });
+
+    private async Task RunSheetAsync(Func<Task> change)
+    {
+        _busy = true;
+        _sheetProblem = null;
+        try
+        {
+            await change();
+            CloseSheet();
+            await ReloadAllAsync();
+        }
+        catch (RpcException exception)
+        {
+            _sheetProblem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private async Task UploadedAsync(MediaRef media)
     {
         _uploading = false;
-        _selected = new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow };
-        await ReloadAsync();
+        _known[media.Id] = new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow, FolderId = _shelf == Shelf.Library && !Searching ? _folderId : null };
+        _chosen.Clear();
+        _chosen.Add(media.Id);
+        await ReloadAllAsync();
     }
 
     private async Task DeleteAsync()
@@ -175,10 +667,9 @@
         _error = null;
         try
         {
-            await Media.DeleteAsync(_selected!.Media!.Id);
-            _selected = null;
-            _confirming = false;
-            await ReloadAsync();
+            await Media.DeleteAsync(_chosen[0]);
+            ClearChosen();
+            await ReloadAllAsync();
         }
         catch (RpcException exception)
         {
@@ -190,17 +681,54 @@
         }
     }
 
-    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+    private Task ReloadListAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private async Task ReloadAllAsync()
+    {
+        if (_treeLive is not null)
+            await _treeLive.ReloadAsync();
+        await ReloadListAsync();
+    }
+
+    private static string Contents(FolderMap map, FolderInfo? folder)
+    {
+        if (folder is null)
+            return "";
+        int folders = map.ChildrenOf(folder.Id, system: false).Count();
+        string files = folder.Files == 1 ? "1 file" : $"{folder.Files} files";
+        return folders == 0 ? files : folder.Files == 0 ? (folders == 1 ? "1 folder" : $"{folders} folders") : $"{files} and {(folders == 1 ? "1 folder" : $"{folders} folders")}";
+    }
+
+    private static string UsedIn(int uses) => uses switch
+    {
+        0 => "Not used yet",
+        1 => "Used in 1 place",
+        _ => $"Used in {uses} places",
+    };
 
     private static string NameOf(MediaRef media) => string.IsNullOrEmpty(media.FileName) ? media.Key : media.FileName;
 
     private static string Size(long bytes) => bytes < 1024 * 1024 ? $"{bytes / 1024d:0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
 
-    public enum MediaFilter
+    private enum Shelf
     {
-        All,
-        Pictures,
-        Documents,
-        Unused,
+        Library,
+        App,
+    }
+
+    private enum LibraryView
+    {
+        Grid,
+        List,
+    }
+
+    private enum FolderSheet
+    {
+        None,
+        Create,
+        Rename,
+        Move,
+        Delete,
+        DeleteEmpty,
     }
 }

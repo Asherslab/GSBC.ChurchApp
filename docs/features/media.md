@@ -10,17 +10,74 @@ signed links from gRPC; [offline-and-caching.md](../architecture/offline-and-cac
 | Who | Can |
 |---|---|
 | `media.upload` | Upload an image (JPEG, PNG, WebP, GIF) or a PDF, public or private to an audience they belong to |
-| `media.view` | See the media library: every uploaded file, newest first, and where each is used |
+| `media.view` | See the media library: every staff folder and the files in it, and where each file is used |
+| `media.organise` | Make, rename, move and delete folders, and move files between them (folders, below) |
+| `media.system.view` | See inside every system folder, such as the files people share in group chats (sensitive; only the Owner role by default) |
 | `media.delete` | Delete a file nothing uses any more |
 | `media.upload` | Bring a font in from Google Fonts (free to use in the app), for a theme |
 | `media.fonts.upload` | Upload a font file (.woff2, .woff, .ttf, .otf): only fonts the church is licensed to embed in an app |
 | Anyone signed in | Get a link to a private file, **if they hold its audience right now** |
 | Anyone | See public media: it's a plain URL on the media host |
 
-The **Media editor** system role holds `media.view`, `media.upload` and `media.delete`, not
-`media.fonts.upload`: a font file's licence is a separate judgement, given on its own (owner,
-2026-11-03). The library page is in the admin panel; the upload
+The **Media editor** system role holds `media.view`, `media.upload`, `media.delete` and
+`media.organise`. It doesn't hold `media.system.view` (owner, 2026-11-04), nor `media.fonts.upload`: a
+font file's licence is a separate judgement, given on its own (owner, 2026-11-03). The library page is in the admin panel; the upload
 and library components live in Media.Client, so a phone page is a page change, not a rewrite.
+
+## Folders (owner, 2026-11-04)
+
+The owner's request: "a folder structure or something similar will be needed... moving things around
+in folders should not unlink them from the various pieces they are used in." Decided with the owner:
+
+- **One folder per file**, like a computer's folders; moving takes it out of where it was.
+- **Staff folders are purely for organising.** They never change who sees a file (that stays the
+  file's own audience) or what the app shows. Anyone with `media.view` sees every staff folder.
+- **A folder is metadata, not part of the storage key.** `media.folders` holds the tree;
+  `media.items.folder_id` says where a file is. A file's id, key, bytes and `media.uses` never change
+  when it or a folder above it moves, so drafts, tiles, themes and rich text keep working
+  (`MovingFilesAndFoldersAroundNeverChangesAFilesIdentityOrWhereItIsUsed`).
+- **Folders nest, and are created, renamed, moved and deleted** (`gsbc.media.Folders`, gRPC, all
+  `media.organise` except `List`). Names are unique among siblings, ignoring case, up to 80
+  characters; a folder can't go inside itself.
+- **Deleting a folder never deletes files.** An empty folder is deleted after a confirmation; one with
+  files or folders in it asks where they go (its parent by default) and moves them first, in one
+  transaction (`DeletingAFolderNeverDeletesTheFilesInIt`).
+- **Moving:** drag files or folders onto a folder tile or a breadcrumb, or choose files (click, Ctrl
+  or ⌘-click, Shift-click, or the round tick on a picture) and press **Move to…** in the tray, which
+  lists every staff folder for keyboard users. `Media.Move` takes many files and folders at once.
+- **Uploads go into the open folder** (`BeginUploadRequest.FolderId`); search, from the title band,
+  covers every folder the viewer may see and shows each result's folder. The type filters and
+  "Not used" work inside a folder, counted by the server (`MediaList.Counts`).
+- **Live:** folder and file changes mark the `media.library` feed, so two admins see each other's
+  moves through `LiveData`.
+
+### System folders: made by the app
+
+Files people upload through the app (group chats, Life Group notes, later features) are kept in
+**system folders**, apart from what staff upload. Shown on their own shelf, **Made by the app**, with
+a lock and the area's caption ("Made by the app: files people share in group chats").
+
+- **Defined in code by the owning feature**: it registers a `MediaSystemArea` (key, name, caption,
+  audience permission) with `services.AddMediaSystemArea(...)` (Platform.Api), and after saving a
+  record that holds uploads it calls `IMediaSystemFolders.FileAsync(area, scopeId, scopeName, refs)`.
+  The area's folder and the scope's subfolder (`Chats / Youth group`) are made on demand, and the
+  subfolder is renamed when the scope's name changes.
+- **Staff can't rename, move or delete them, move files in or out, or delete the files in them** (`FailedPrecondition`): the app keeps them where it put them, and the feature that filed a file removes it.
+- **Who sees inside goes through Access** (owner, 2026-11-04): people holding the area's audience
+  permission at that scope (the same audience as the files, e.g. members of that chat), plus anyone
+  holding `media.system.view`, a sensitive permission only the Owner role has by default, for
+  oversight. Other staff see that the area exists ("Shared with others") but not its subfolders or
+  files, and search leaves those files out
+  (`SystemFoldersAreKeptByTheAppAndOnlyTheirAudienceOrOversightSeesInside`).
+- No feature files anything yet: the first is group chats. A feature's uploads still need
+  `media.upload` today; a phone upload path for members is part of that feature's work.
+
+### The picture sheet
+
+The sheet that chooses a picture (`MediaChoice`, for tiles, settings and rich text) browses the
+Library's folders with the same breadcrumbs and folder tiles, searches every folder, uploads into the
+open folder, and opens on the last folder used in that browser (`MediaFolderMemory`, `localStorage`).
+System folders aren't offered: their files are people's own uploads, usually private.
 
 ## Fonts (owner, 2026-11-03)
 
@@ -225,6 +282,9 @@ clicks are in [environments.md](../architecture/environments.md), *Setting it up
 - `PlacementEditorTests` (Configuration): images in settings are stored as the library's; forged and
   private ones are refused.
 - Tiers and permissions on every `Media` method: `TierRules` in Architecture.Tests.
+- Folders (`Features.Media.Api.Tests`): moving never changes a file's identity or uses; deleting a
+  folder never deletes files; system folders are locked and only their audience or
+  `media.system.view` sees inside.
 
 ## Open
 
