@@ -869,25 +869,38 @@ end), **poster** (tall: icon top, a larger title, a go line; the mark bleeds off
 `on-masthead`) and **beside** (a square picture at the start, needs two columns). The picture layouts all need a
 picture.
 
+**Picture layouts on every kind** (owner, 2026-11-04, note 22): each kind that brings its own catalogue also offers
+the three picture layouts (`TileVariants.Pictures`), so any tile can carry a picture "just in case". In a picture
+layout a kind's live content shrinks to a title and one line (This week: the next thing and when; Notifications: the
+count and the newest title; the bulletin: the theme with the date and verse) so it stays readable over the shade,
+plus its go line from two cells up. **Best for this size** keeps a kind's designed layout until a picture is
+chosen, then picks the picture layout for the size, as a Link tile does. A kind none of whose layouts show a
+picture hides the Picture field (`HubTileKind.UsesPicture`); today every kind uses one.
+
 | Kind | Layout | Suits | Draws | Default |
 |---|---|---|---|---|
 | Link tile (Give, Bible, Prayer, Life Groups, Ministries, Visit us, campaigns) | Words and icon | any | square / row / poster by size; no picture | without a picture |
 | | Picture behind | any, with a picture | behind | 1 × 1 with a picture |
 | | Picture above | 2 rows or more, with a picture | picture | two rows or more, with a picture |
 | | Picture beside | 2 columns or more, with a picture | beside | one row, wider, with a picture |
-| Latest sermon | Cover first | any | 1 × 1: cover and play only; one row: title beside the cover; taller: cover above the title, 2 × 2 adds the length | always |
+| Latest sermon | Cover first | any | 1 × 1: cover and play only; one row: title beside the cover; taller: cover above the title, 2 × 2 adds the length; the tile's picture replaces the cover | always |
 | | Where you're up to | any | play, title and how long (progress once Sermons plays), no cover | never |
+| | Picture behind | more than one cell, with a picture | behind: title, date and play over the shade | never |
 | Sunday bulletin | Poster | any | 1 × 1: "Sunday 8 Nov" and the open words; one row: theme with date · verse; taller: the bulletin cover | always |
 | | Theme first | any | the year's theme as the title at every size | never |
 | | Verse | more than one cell | the week's verse in large type, the reference small | never |
+| | Picture behind / above / beside | as for Link tiles | the theme, the date and verse, "Read the bulletin" from two cells | with a picture, as for Link tiles |
 | This week | Agenda | any | 1 × 1: the next thing ("Next · Wed 7pm"); one row: up to three; taller: as many as fit, up to *Most to show* | always |
 | | Just a link | any | icon, title and "4 on at church" | never |
+| | Picture behind / above / beside | as for Link tiles | the title, the next thing and when, "Calendar" from two cells | with a picture, as for Link tiles |
 | Notifications | Count and newest | any | bell, "3 unread", the newest title | 1 × 1 |
 | | Newest in full | any | the newest notice and its first lines, the count above | one row, wider |
 | | Unread dots | any | the newest titles each with an unread dot; taller shows more | two rows or more |
+| | Picture behind / above / beside | as for Link tiles | the count with an unread dot and the newest title (or the staff's words when nothing is unread) | with a picture, as for Link tiles |
 | | (nothing unread) | | the staff's words, any layout | |
 | Outreach day | Invitation | any | 1 × 1: icon and title; one row: a row with the line; taller: a poster with "Find a route" | always |
 | | Just a link | any | icon and title | never |
+| | Picture behind / above / beside | as for Link tiles | the invitation and its line, "Find a route" when taller | with a picture, as for Link tiles |
 
 In the editor a layout that doesn't suit the tile stays listed but greyed, and its caption says why instead of
 what it draws: "Needs a wider tile", "Needs a taller tile", "Needs a bigger tile", or "Needs a picture: choose

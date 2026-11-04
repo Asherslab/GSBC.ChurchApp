@@ -26,9 +26,11 @@ public static class WaitingTiles
         sample: true, variants:
         [
             new(Layouts.Cover, "Cover first", "Cover and play when small, the title beside the cover one row tall, under it when taller",
-                TileVariant.AnySize, (_, _) => true),
+                TileVariant.AnySize, (_, _) => true, ShowsPicture: true),
             new(Layouts.Listening, "Where you're up to", "The play button and how far you got lead; no cover",
                 TileVariant.AnySize, (_, _) => false),
+            new(TileVariants.PictureBehind, "Picture behind", "The picture fills the tile with the title, the date and play over a shade",
+                TileVariant.NotSmall, (_, _) => false, NeedsPicture: true),
         ]);
 
     public static readonly HubTileKind Bulletin = new("hub.bulletin", "Sunday bulletin",
@@ -43,6 +45,7 @@ public static class WaitingTiles
                 TileVariant.AnySize, (_, _) => false),
             new(Layouts.Verse, "Verse", "This week's verse in large type, the date small",
                 TileVariant.NotSmall, (_, _) => false),
+            .. TileVariants.Pictures,
         ]);
 
     public static readonly NumberSetting WeekEntries = new("entries", "How many to show", 2, 1, 4);
@@ -56,6 +59,7 @@ public static class WaitingTiles
             new(Layouts.Agenda, "Agenda", "The next thing when small, two or three one row tall, the whole week when taller",
                 TileVariant.AnySize, (_, _) => true),
             Link,
+            .. TileVariants.Pictures,
         ]);
 
     public static readonly HubTileKind Prayer = new("hub.prayer", "Prayer",
@@ -73,6 +77,7 @@ public static class WaitingTiles
             new(Layouts.Invitation, "Invitation", "The invitation and how to join; a row one row tall, a poster with a go line when taller",
                 TileVariant.AnySize, (_, _) => true),
             Link,
+            .. TileVariants.Pictures,
         ]);
 
     public static readonly HubTileKind LifeGroups = new("hub.life-groups", "Life Groups",

@@ -36,8 +36,14 @@ else
         List<InboxEntry> unread = entries.Where(entry => entry.Unread).ToList();
         if (unread.Count == 0 && !Hub.Live)
             unread = Examples;
-        string variant = NotificationsTiles.Inbox.VariantFor(look, Hub.Columns).Key;
+        TileVariant chosen = NotificationsTiles.Inbox.VariantFor(look, Hub.Columns);
+        string variant = chosen.Key;
         string count = $"{unread.Count} unread";
+        if (WordsTileView.ShapeOf(chosen) is { } shape)
+            return unread.Count == 0
+                ? @<HubTile Look="@(look with { Icon = "" })" Layout="shape" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />
+                : @<HubTile Look="@(look with { Icon = "" })" Layout="shape" Title="@count" Lines="[unread[0].Item.Title]" Unread="true" PlacementId="@Entry.Placement?.Id" />;
+        look = look with { Image = null };
         if (unread.Count == 0)
             return @<HubTile Look="look" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />;
         return variant switch

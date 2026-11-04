@@ -13,6 +13,7 @@ public static class NotificationsTiles
             new(Count, "Count and newest", "The bell, how many are unread and the newest title", TileVariant.AnySize, (span, _) => TileVariant.Small(span)),
             new(Newest, "Newest in full", "The count above the newest notice and its first lines", TileVariant.AnySize, (span, _) => TileVariant.OneRowWide(span)),
             new(Dots, "Unread dots", "The newest titles with an unread dot each; taller tiles show more", TileVariant.AnySize, (span, _) => TileVariant.Tall(span)),
+            .. TileVariants.Pictures,
         ]);
 
     public const string Count = "count";

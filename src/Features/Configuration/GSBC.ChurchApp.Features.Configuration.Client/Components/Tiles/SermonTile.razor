@@ -3,8 +3,11 @@
 
 @switch (Variant.Key)
 {
+    case TileVariants.PictureBehind:
+        <HubTile Look="Look" Layout="TileShape.Behind" Title="Sunday's sermon" Lines="AboveLines" PlacementId="@Entry.Placement?.Id" Cover="Cover" Action="Play" />
+        break;
     case WaitingTiles.Layouts.Listening:
-        <HubTile Look="@(Look with { Icon = "" })" Layout="@(Span.Rows > 1 ? TileShape.Poster : Span.Columns > 1 ? TileShape.Row : TileShape.Square)" Title="Sunday's sermon"
+        <HubTile Look="@(Look with { Icon = "", Image = null })" Layout="@(Span.Rows > 1 ? TileShape.Poster : Span.Columns > 1 ? TileShape.Row : TileShape.Square)" Title="Sunday's sermon"
                  Lines="ListeningLines" PlacementId="@Entry.Placement?.Id" Action="Play" />
         break;
     case var _ when Span is { Columns: 1, Rows: 1 }:

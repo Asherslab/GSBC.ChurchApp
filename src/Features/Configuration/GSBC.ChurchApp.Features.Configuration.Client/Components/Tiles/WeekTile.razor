@@ -1,16 +1,21 @@
 @inject TimeProvider Clock
 
-@if (Variant.Key == WaitingTiles.Layouts.JustALink)
+@if (WordsTileView.ShapeOf(Variant) is { } shape)
 {
-    <HubTile Look="@(Look.Icon.Length == 0 ? Look with { Icon = "calendar" } : Look)" Title="@Look.Title" Lines="CountLines" PlacementId="@Entry.Placement?.Id" />
+    <HubTile Look="@(Look with { Icon = "" })" Layout="shape" Title="@Look.Title" Lines="@(Coming.FirstOrDefault() is { } first ? [$"{first.What} · {When(first)}"] : CountLines)"
+             Go="@(Span is { Columns: 1, Rows: 1 } ? null : Look.Text)" PlacementId="@Entry.Placement?.Id" />
+}
+else if (Variant.Key == WaitingTiles.Layouts.JustALink)
+{
+    <HubTile Look="@(Look.Icon.Length == 0 ? Look with { Icon = "calendar", Image = null } : Look with { Image = null })" Title="@Look.Title" Lines="CountLines" PlacementId="@Entry.Placement?.Id" />
 }
 else if (Span is { Columns: 1, Rows: 1 } && Coming.FirstOrDefault() is { } next)
 {
-    <HubTile Look="@(Look with { Icon = "" })" Title="@next.What" Lines="NextLines(next)" PlacementId="@Entry.Placement?.Id" />
+    <HubTile Look="@(Look with { Icon = "", Image = null })" Title="@next.What" Lines="NextLines(next)" PlacementId="@Entry.Placement?.Id" />
 }
 else
 {
-    <HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" GoBeside="@(Span.Columns > 1)" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
+    <HubTile Look="@(Look with { Icon = "", Image = null })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" GoBeside="@(Span.Columns > 1)" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
         <span class="hub-list">
             @foreach (WaitingWeek.Gathering gathering in Coming.Take(Fits))
             {

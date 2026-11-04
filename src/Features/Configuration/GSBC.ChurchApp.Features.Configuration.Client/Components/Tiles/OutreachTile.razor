@@ -1,10 +1,10 @@
 @if (Variant.Key == WaitingTiles.Layouts.JustALink)
 {
-    <HubTile Look="Look" Layout="@(Span.Columns > 1 && Span.Rows == 1 ? TileShape.Row : TileShape.Square)" Title="@Look.Title" PlacementId="@Entry.Placement?.Id" />
+    <HubTile Look="@(Look with { Image = null })" Layout="@(Span.Columns > 1 && Span.Rows == 1 ? TileShape.Row : TileShape.Square)" Title="@Look.Title" PlacementId="@Entry.Placement?.Id" />
 }
 else
 {
-    <HubTile Look="Look" Title="@Look.Title" Lines="@(Span is { Columns: 1, Rows: 1 } ? [] : [Look.Text])" Go="@(Span.Rows > 1 ? "Find a route" : null)" PlacementId="@Entry.Placement?.Id" />
+    <HubTile Look="@(WordsTileView.ShapeOf(Variant) is null ? Look with { Image = null } : Look)" Layout="@WordsTileView.ShapeOf(Variant)" Title="@Look.Title" Lines="@(Span is { Columns: 1, Rows: 1 } ? [] : [Look.Text])" Go="@(Span.Rows > 1 ? "Find a route" : null)" PlacementId="@Entry.Placement?.Id" />
 }
 
 @code {

@@ -39,6 +39,21 @@ public sealed class TileVariantTests
     }
 
     [Fact]
+    public void AKindKeepsItsDesignedLayoutUntilAPictureIsChosenThenShowsThePicture()
+    {
+        HubTileKind agenda = new("hub.test", "Test", "", "the calendar", new TileDefaults("Test"), variants:
+        [
+            new("agenda", "Agenda", "", TileVariant.AnySize, (_, _) => true),
+            .. TileVariants.Pictures,
+        ]);
+
+        Assert.Equal("agenda", agenda.VariantFor(Look(2, 1, false, TileVariant.Automatic), 2).Key);
+        Assert.Equal(TileVariants.PictureBeside, agenda.VariantFor(Look(2, 1, true, TileVariant.Automatic), 2).Key);
+        Assert.Equal(TileVariants.PictureBehind, agenda.VariantFor(Look(1, 1, true, TileVariant.Automatic), 2).Key);
+        Assert.Equal("agenda", agenda.VariantFor(Look(2, 1, true, "agenda"), 2).Key);
+    }
+
+    [Fact]
     public void EveryKindsLayoutChoiceIsStoredAsAKnownLayoutOrAutomatic()
     {
         Assert.Null(Plain.Tile.Layout.ProblemWith(TileVariants.PictureBeside));

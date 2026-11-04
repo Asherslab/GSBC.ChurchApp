@@ -232,8 +232,11 @@ public sealed class HubTileKind
 
     public IReadOnlyList<TileVariant> VariantsFor(TileSpan span) => Variants.Where(variant => variant.Suits(span)).ToList();
 
+    public bool UsesPicture => Variants.Any(variant => variant.UsesPicture);
+
     public TileVariant DefaultFor(TileSpan span, bool hasPicture) =>
-        Variants.FirstOrDefault(variant => variant.Suits(span) && variant.IsDefault(span, hasPicture))
+        Variants.FirstOrDefault(variant => hasPicture && variant.UsesPicture && variant.Suits(span) && variant.IsDefault(span, hasPicture))
+        ?? Variants.FirstOrDefault(variant => variant.Suits(span) && variant.IsDefault(span, hasPicture))
         ?? Variants.First(variant => variant.Suits(span));
 
     public TileVariant VariantFor(TileLook look, int gridColumns)
@@ -266,8 +269,11 @@ public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon,
         values.Get(kind.Tile.Layout));
 }
 
-public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault, bool NeedsPicture = false)
+public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault,
+    bool NeedsPicture = false, bool ShowsPicture = false)
 {
+    public bool UsesPicture => NeedsPicture || ShowsPicture;
+
     public bool SuitsTile(TileSpan span, bool hasPicture) => Suits(span) && (hasPicture || !NeedsPicture);
 
     public const string Automatic = "auto";
@@ -292,16 +298,21 @@ public static class TileVariants
     public const string PictureBehind = "behind";
     public const string PictureBeside = "beside";
 
-    public static readonly IReadOnlyList<TileVariant> Words =
+    public static readonly IReadOnlyList<TileVariant> Pictures =
     [
-        new(WordsKey, "Words and icon", "The title, the line under it and the icon; a picture isn't shown",
-            TileVariant.AnySize, (_, picture) => !picture),
         new(PictureBehind, "Picture behind", "The picture fills the tile with the words over a shade",
             TileVariant.AnySize, (span, picture) => picture && TileVariant.Small(span), NeedsPicture: true),
         new(PictureAbove, "Picture above", "The picture fills the top and the words sit under it",
             TileVariant.Tall, (span, picture) => picture && span.Rows > 1, NeedsPicture: true),
         new(PictureBeside, "Picture beside", "A square picture at the start with the words beside it",
             TileVariant.Wide, (span, picture) => picture && TileVariant.OneRowWide(span), NeedsPicture: true),
+    ];
+
+    public static readonly IReadOnlyList<TileVariant> Words =
+    [
+        new(WordsKey, "Words and icon", "The title, the line under it and the icon; a picture isn't shown",
+            TileVariant.AnySize, (_, picture) => !picture),
+        .. Pictures,
     ];
 }
 

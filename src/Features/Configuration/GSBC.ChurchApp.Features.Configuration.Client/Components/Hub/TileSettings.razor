@@ -115,21 +115,24 @@
         }
     </fieldset>
 
-    <fieldset class="tile-settings__group">
-        <legend>Picture</legend>
-        <SettingInput Setting="Kind.Tile.Image" Value="@Draft.Values[Kind.Tile.Image.Key]" ValueChanged="value => SetAsync(Kind.Tile.Image.Key, value)" />
-        @if (Look.Image is not null)
-        {
-            <span class="tile-settings__note">Keep this part in view when the picture is cropped:</span>
-            <div class="focus-picker" role="radiogroup" aria-label="Part of the picture to keep in view">
-                @foreach (FocalPoint point in FocalPoints)
-                {
-                    <button type="button" role="radio" aria-checked="@(point == Look.Focus ? "true" : "false")" class="focus-picker__point @(point == Look.Focus ? "focus-picker__point--on" : "")"
-                            aria-label="@FocusWords(point)" @onclick="() => SetAsync(Kind.Tile.Focus.Key, Kind.Tile.Focus.Format(point))"></button>
-                }
-            </div>
-        }
-    </fieldset>
+    @if (Kind.UsesPicture)
+    {
+        <fieldset class="tile-settings__group">
+            <legend>Picture</legend>
+            <SettingInput Setting="Kind.Tile.Image" Value="@Draft.Values[Kind.Tile.Image.Key]" ValueChanged="value => SetAsync(Kind.Tile.Image.Key, value)" />
+            @if (Look.Image is not null)
+            {
+                <span class="tile-settings__note">Keep this part in view when the picture is cropped:</span>
+                <div class="focus-picker" role="radiogroup" aria-label="Part of the picture to keep in view">
+                    @foreach (FocalPoint point in FocalPoints)
+                    {
+                        <button type="button" role="radio" aria-checked="@(point == Look.Focus ? "true" : "false")" class="focus-picker__point @(point == Look.Focus ? "focus-picker__point--on" : "")"
+                                aria-label="@FocusWords(point)" @onclick="() => SetAsync(Kind.Tile.Focus.Key, Kind.Tile.Focus.Format(point))"></button>
+                    }
+                </div>
+            }
+        </fieldset>
+    }
 
     <fieldset class="tile-settings__group">
         <legend>Opens</legend>
