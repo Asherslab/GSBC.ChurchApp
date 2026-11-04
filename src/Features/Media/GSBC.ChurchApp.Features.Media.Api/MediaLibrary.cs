@@ -32,6 +32,7 @@ internal sealed class MediaLibrary(
         if (MediaTypes.IsFont(request.ContentType) && request.PrivateTo is not null)
             throw Invalid("Fonts are public: anyone using the app downloads them.");
 
+        Guid? folderId = await folders.UploadFolderAsync(request.FolderId, cancellationToken);
         DateTime now = Now;
         await db.PendingUploads.Where(upload => upload.ExpiresAt < now - PendingKeptFor).ExecuteDeleteAsync(cancellationToken);
 
@@ -45,6 +46,7 @@ internal sealed class MediaLibrary(
             AudiencePermission = request.PrivateTo?.Permission,
             AudienceScopeId = NullIfEmpty(request.PrivateTo?.ScopeId),
             ExpiresAt = now + UploadWindow,
+            FolderId = folderId,
         };
         db.PendingUploads.Add(pending);
         await db.SaveChangesAsync(cancellationToken);
@@ -96,6 +98,7 @@ internal sealed class MediaLibrary(
             AudienceScopeId = pending.AudienceScopeId,
             UploadedBy = caller,
             UploadedAt = Now,
+            FolderId = pending.FolderId is { } folder && await db.Folders.AnyAsync(existing => existing.Id == folder, cancellationToken) ? folder : null,
         };
         db.Items.Add(item);
         Mark(item.Id);

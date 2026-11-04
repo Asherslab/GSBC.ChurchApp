@@ -1,0 +1,53 @@
+<Sheet Open="Open" OpenChanged="_ => OnCancel.InvokeAsync()" Title="@Title" Lead="@Lead">
+    <ChildContent>
+        <div class="folder-picker" role="radiogroup" aria-label="Folders">
+            @foreach ((string? id, string name, int depth) in Targets)
+            {
+                bool blocked = Blocked?.Invoke(id) == true;
+                bool on = id == _target && !blocked;
+                <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" disabled="@blocked"
+                        class="folder-picker__row @(on ? "folder-picker__row--on" : "")" style="--depth: @depth" @onclick="() => _target = id">
+                    <Icon Name="@(id is null ? "image" : "folder")" Size="IconSize.Small" />
+                    <span class="folder-picker__name">@name</span>
+                    @if (id == Current)
+                    {
+                        <span class="folder-picker__here">Here now</span>
+                    }
+                </button>
+            }
+        </div>
+        <Notice Tone="NoticeTone.Warning" Text="@Problem" />
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
+        <Button Icon="folder-input" Busy="Busy" Disabled="@(Blocked?.Invoke(_target) == true || _target == Current)" OnClick="() => OnMove.InvokeAsync(_target)">@Action</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string? _target;
+    private bool _wasOpen;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter, EditorRequired] public required FolderMap Map { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter] public string Action { get; set; } = "Move here";
+    [Parameter] public string? Current { get; set; }
+    [Parameter] public string? Suggested { get; set; }
+    [Parameter] public Func<string?, bool>? Blocked { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public EventCallback<string?> OnMove { get; set; }
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+            _target = Suggested;
+        _wasOpen = Open;
+    }
+
+    private IEnumerable<(string? Id, string Name, int Depth)> Targets =>
+        Map.StaffFolders().Select(entry => ((string?)entry.Folder.Id, entry.Folder.Name, entry.Depth + 1)).Prepend((null, "Library", 0));
+}

@@ -11,6 +11,7 @@ public sealed class BeginUploadRequest
     [ProtoMember(3)] public long Bytes { get; set; }
     [ProtoMember(6)] public string AltText { get; set; } = "";
     [ProtoMember(7)] public MediaAudience? PrivateTo { get; set; }
+    [ProtoMember(8)] public string? FolderId { get; set; }
 }
 
 [ProtoContract]

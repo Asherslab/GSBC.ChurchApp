@@ -222,6 +222,13 @@ Linchpins first, then outwards, one feature at a time and tested on a phone befo
    verified by the server, dimensions come from the bytes, unused files can be deleted, feeds can
    prefetch their images for offline, and settings can hold an image or rich text
    ([rich-text.md](architecture/rich-text.md)). Not yet run against the API.
+   **Folders** (2026-11-04, branch `feature/media-folders`, an Impeccable run; brief in
+   `.impeccable/surfaces/edia-gsbc-churchapp-features-media-client-75160210.md`): staff folders that
+   nest, move by drag and drop or Move to, and never change a file's id, key or uses; system folders
+   that features fill through `IMediaSystemFolders` (`Chats / <group>`), locked to staff and seen by
+   their audience or `media.system.view`; the library as two shelves (Library, Made by the app); the
+   picture sheet browses folders and remembers the last one. Open: the first feature to file into a
+   system folder (chats).
 7. **Drafts and previews** ([drafts.md](architecture/drafts.md)). Built 2026-11-02 (branch
    `feature/drafts`): every change staff arrange is made in a draft, previewed live on their own phone
    (proven on the owner's iPhone: a save shows within a second), shared through Access, then published

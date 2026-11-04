@@ -42,6 +42,7 @@ public sealed class PendingUpload
     public string? AudiencePermission { get; set; }
     public string? AudienceScopeId { get; set; }
     public DateTime ExpiresAt { get; set; }
+    public Guid? FolderId { get; set; }
 
     public string StagingKey => $"uploads/{Id:N}";
 }

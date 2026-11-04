@@ -1,53 +1,66 @@
 @inject MediaClient Media
+@inject MediaFolderMemory Memory
 
 <div class="media-choice">
     <div class="media-choice__tools">
-        <SearchField Label="@(ImagesOnly ? "Find a picture" : "Find a file")" Placeholder="@(ImagesOnly ? "Find a picture" : "Find a file")" @bind-Value="_query" SettleMilliseconds="120" />
+        <SearchField Label="@(ImagesOnly ? "Find a picture in every folder" : "Find a file in every folder")" Placeholder="@(ImagesOnly ? "Find a picture in every folder" : "Find a file in every folder")"
+                     Value="@_query" ValueChanged="SearchAsync" SettleMilliseconds="200" />
         <Button Variant="ButtonVariant.Quiet" Icon="@(_uploading ? "x" : "arrow-up")" OnClick="() => _uploading = !_uploading">@(_uploading ? "Close upload" : "Upload")</Button>
     </div>
     @if (_uploading)
     {
-        <MediaUpload Label="@(ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" OnUploaded="UploadedAsync" />
+        <MediaUpload Label="@(ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" FolderId="@(Searching ? null : _folderId)" OnUploaded="UploadedAsync" />
     }
-    <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the pictures right now">
-        @if (Shown(context.Value) is { Count: > 0 } shown)
+    <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the pictures right now" Context="tree">
+        @if (Searching)
         {
-            <div class="media-choice__grid" role="listbox" aria-label="@(ImagesOnly ? "Pictures" : "Files")">
-                @foreach (MediaItemInfo item in shown)
-                {
-                    MediaRef media = item.Media!;
-                    bool on = media.Id == _selected?.Id;
-                    <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="media-choice__item @(on ? "media-choice__item--on" : "")"
-                            @onclick="() => _selected = media" @ondblclick="() => OnPick.InvokeAsync(media)">
-                        <span class="media-choice__thumb">
-                            @if (media.IsImage)
-                            {
-                                <MediaImage Media="media" Class="media-choice__image" />
-                            }
-                            else
-                            {
-                                <Icon Name="book-open" />
-                            }
-                            @if (on)
-                            {
-                                <span class="media-choice__tick" aria-hidden="true"><Icon Name="check" Size="IconSize.Small" /></span>
-                            }
-                        </span>
-                        <span class="media-choice__name">@NameOf(media)</span>
-                        <span class="media-choice__used">@(item.Uses == 0 ? "Not used yet" : item.Uses == 1 ? "Used in 1 place" : $"Used in {item.Uses} places")</span>
-                    </button>
-                }
-            </div>
-            @if (context.Value.HasMore)
-            {
-                <div class="media-more"><Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button></div>
-            }
+            <p class="media-choice__where">Results for “@_query” in every folder</p>
         }
         else
         {
-            <EmptyState Icon="image" Title="@(_query.Length > 0 ? "Nothing matches" : ImagesOnly ? "No pictures yet" : "No files yet")"
-                        Body="@(_query.Length > 0 ? "Try another word." : "Upload one, and it's kept in Media for any tile or page.")" />
+            <Breadcrumbs Label="Where you are" Trail="Trail(tree.Value)" OnOpen="crumb => OpenAsync(crumb.Key)" />
+            <FolderTiles Compact="true" Folders="tree.Value.ChildrenOf(_folderId, system: false).ToList()" OnOpen="folder => OpenAsync(folder.Id)" />
         }
+        <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the pictures right now">
+            @if (context.Value.Items is { Count: > 0 } shown)
+            {
+                <div class="media-choice__grid" role="listbox" aria-label="@(ImagesOnly ? "Pictures" : "Files")">
+                    @foreach (MediaItemInfo item in shown)
+                    {
+                        MediaRef media = item.Media!;
+                        bool on = media.Id == _selected?.Id;
+                        <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="media-choice__item @(on ? "media-choice__item--on" : "")"
+                                @onclick="() => _selected = media" @ondblclick="() => OnPick.InvokeAsync(media)">
+                            <span class="media-choice__thumb">
+                                @if (media.IsImage)
+                                {
+                                    <MediaImage Media="media" Class="media-choice__image" />
+                                }
+                                else
+                                {
+                                    <Icon Name="file" />
+                                }
+                                @if (on)
+                                {
+                                    <span class="media-choice__tick" aria-hidden="true"><Icon Name="check" Size="IconSize.Small" /></span>
+                                }
+                            </span>
+                            <span class="media-choice__name">@NameOf(media)</span>
+                            <span class="media-choice__used">@(Searching ? $"In {tree.Value.PathName(item.FolderId)}" : item.Uses == 0 ? "Not used yet" : item.Uses == 1 ? "Used in 1 place" : $"Used in {item.Uses} places")</span>
+                        </button>
+                    }
+                </div>
+                @if (context.Value.HasMore)
+                {
+                    <div class="media-more"><Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button></div>
+                }
+            }
+            else
+            {
+                <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : _folderId is null ? (ImagesOnly ? "No pictures yet" : "No files yet") : (ImagesOnly ? "No pictures in this folder" : "This folder is empty"))"
+                            Body="@(Searching ? "Try another word." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
+            }
+        </LiveData>
     </LiveData>
     <div class="media-choice__foot">
         <span class="media-choice__chosen">@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
@@ -59,7 +72,10 @@
 @code {
     private const int PageSize = 60;
 
+    private LiveData<FolderMap>? _treeLive;
     private LiveData<MediaList>? _live;
+    private FolderMap _map = FolderMap.Empty;
+    private string? _folderId;
     private int _wanted = PageSize;
     private string _query = "";
     private MediaRef? _selected;
@@ -69,17 +85,50 @@
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public bool ImagesOnly { get; set; }
 
+    private bool Searching => _query.Length > 0;
+
+    protected override async Task OnInitializedAsync() => _folderId = await Memory.LastFolderAsync();
+
+    private IReadOnlyList<Crumb> Trail(FolderMap map) =>
+        [new Crumb("Library", null, "image"), .. map.PathTo(_folderId).Select(folder => new Crumb(folder.Name, folder.Id, "folder"))];
+
+    private async Task<FolderMap> LoadTreeAsync()
+    {
+        _map = await Media.FoldersAsync();
+        if (_folderId is not null && _map.Find(_folderId) is not { IsSystem: false })
+            await OpenAsync(null);
+        return _map;
+    }
+
     private async Task<MediaList> LoadAsync()
     {
-        MediaList page = await Media.ListAsync(0, _wanted);
+        MediaList page = await Media.ListAsync(new MediaQuery
+        {
+            FolderId = Searching ? null : _folderId,
+            Search = _query,
+            Filter = ImagesOnly ? MediaFilter.Pictures : MediaFilter.All,
+            Take = _wanted,
+        });
         page.Items.RemoveAll(item => item.Media is null);
         return page;
     }
 
-    private List<MediaItemInfo> Shown(MediaList list) => list.Items
-        .Where(item => (!ImagesOnly || item.Media!.IsImage)
-            && (_query.Length == 0 || NameOf(item.Media!).Contains(_query, StringComparison.CurrentCultureIgnoreCase) || item.Media!.AltText.Contains(_query, StringComparison.CurrentCultureIgnoreCase)))
-        .ToList();
+    private async Task OpenAsync(string? folderId)
+    {
+        _folderId = folderId;
+        _wanted = PageSize;
+        await Memory.RememberAsync(folderId);
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query.Trim();
+        _wanted = PageSize;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
 
     private async Task MoreAsync()
     {
@@ -92,6 +141,8 @@
     {
         _uploading = false;
         _selected = media;
+        if (_treeLive is not null)
+            await _treeLive.ReloadAsync();
         if (_live is not null)
             await _live.ReloadAsync();
     }

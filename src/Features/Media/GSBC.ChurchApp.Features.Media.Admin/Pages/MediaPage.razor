@@ -1,16 +1,21 @@
 @page "/media"
 @using GSBC.ChurchApp.Features.Media.Contracts
 
-<TitleBand Title="Media" Lead="Every picture and PDF uploaded for the app. Choose one to see it, open it, or delete it if nothing uses it.">
+<TitleBand Title="Media" Lead="Every picture and PDF for the app, in folders you make. Moving a file never changes where it's used.">
     <Actions>
+        <SearchField Label="Find a file in every folder" Placeholder="Find a file in every folder" Class="media-search" @bind-Value="_query" />
+        <Can Permission="MediaPermissions.Organise">
+            <Button Variant="ButtonVariant.Quiet" Icon="folder-plus" OnClick="() => _library?.StartNewFolder()">New folder</Button>
+        </Can>
         <Can Permission="MediaPermissions.Upload">
             <Button Icon="plus" OnClick="() => _library?.StartUpload()">Upload</Button>
         </Can>
     </Actions>
 </TitleBand>
 
-<MediaLibrary @ref="_library" />
+<MediaLibrary @ref="_library" Query="@_query" OnClearSearch="() => _query = string.Empty" />
 
 @code {
     private MediaLibrary? _library;
+    private string _query = "";
 }

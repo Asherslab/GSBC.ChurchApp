@@ -14,6 +14,13 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
             migrationBuilder.AddColumn<Guid>(
                 name: "folder_id",
                 schema: "media",
+                table: "pending_uploads",
+                type: "uuid",
+                nullable: true);
+
+            migrationBuilder.AddColumn<Guid>(
+                name: "folder_id",
+                schema: "media",
                 table: "items",
                 type: "uuid",
                 nullable: true);
@@ -91,6 +98,11 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                 name: "ix_items_folder_id",
                 schema: "media",
                 table: "items");
+
+            migrationBuilder.DropColumn(
+                name: "folder_id",
+                schema: "media",
+                table: "pending_uploads");
 
             migrationBuilder.DropColumn(
                 name: "folder_id",

@@ -1,0 +1,56 @@
+<nav class="breadcrumbs" aria-label="@Label">
+    <ol class="breadcrumbs__list">
+        @for (int index = 0; index < Trail.Count; index++)
+        {
+            Crumb crumb = Trail[index];
+            bool current = index == Trail.Count - 1;
+            bool droppable = !current && CanDrop?.Invoke(crumb) == true;
+            <li class="breadcrumbs__item">
+                @if (index > 0)
+                {
+                    <Icon Name="chevron-right" Size="IconSize.Small" Class="breadcrumbs__sep" />
+                }
+                @if (current)
+                {
+                    <span class="breadcrumbs__current" aria-current="page">
+                        @if (crumb.Icon is not null)
+                        {
+                            <Icon Name="@crumb.Icon" Size="IconSize.Small" />
+                        }
+                        @crumb.Label
+                    </span>
+                }
+                else
+                {
+                    <button type="button" class="breadcrumbs__link @(droppable && _over == crumb.Key ? "breadcrumbs__link--drop" : "")"
+                            @onclick="() => OnOpen.InvokeAsync(crumb)"
+                            @ondragenter="() => _over = droppable ? crumb.Key : null" @ondragleave="() => _over = null"
+                            @ondragover:preventDefault="droppable" @ondrop="() => DropAsync(crumb)">
+                        @if (crumb.Icon is not null)
+                        {
+                            <Icon Name="@crumb.Icon" Size="IconSize.Small" />
+                        }
+                        @crumb.Label
+                    </button>
+                }
+            </li>
+        }
+    </ol>
+</nav>
+
+@code {
+    private string? _over;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<Crumb> Trail { get; set; }
+    [Parameter] public EventCallback<Crumb> OnOpen { get; set; }
+    [Parameter] public Func<Crumb, bool>? CanDrop { get; set; }
+    [Parameter] public EventCallback<Crumb> OnDrop { get; set; }
+
+    private async Task DropAsync(Crumb crumb)
+    {
+        _over = null;
+        if (CanDrop?.Invoke(crumb) == true)
+            await OnDrop.InvokeAsync(crumb);
+    }
+}

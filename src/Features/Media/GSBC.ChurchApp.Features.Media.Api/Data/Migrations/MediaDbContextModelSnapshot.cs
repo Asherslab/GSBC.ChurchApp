@@ -199,6 +199,10 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("file_name");
 
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("folder_id");
+
                     b.Property<Guid>("UploadedBy")
                         .HasColumnType("uuid")
                         .HasColumnName("uploaded_by");

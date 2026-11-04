@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 {
     [DbContext(typeof(MediaDbContext))]
-    [Migration("20261104075343_MediaFolders")]
+    [Migration("20261104080229_MediaFolders")]
     partial class MediaFolders
     {
         /// <inheritdoc />
@@ -201,6 +201,10 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("file_name");
+
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("folder_id");
 
                     b.Property<Guid>("UploadedBy")
                         .HasColumnType("uuid")
