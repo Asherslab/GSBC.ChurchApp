@@ -236,6 +236,10 @@ within a second or two:
   short "Undone. Redo" by the save status. Typing in one field is one step, and one gesture that changes
   several tiles (a drag) is one step. *Undo changes to this* on a tile and *Put back* are steps too, so
   they say what they did and offer Undo. The history lasts while the draft is open.
+- **The draft's header never wraps its buttons** (owner, 2026-11-04): the buttons stay one row, beside the
+  name or, when the name needs the room, under it. Below 640px of pane Share and More show as icons (with
+  labels for screen readers and tooltips); below 380px Undo and Redo leave the header for More, where they
+  are always listed, and the shortcuts still work. A draft waiting for a publisher shows *Waiting to publish*.
 - Deleting a draft that's on for an event is refused until it's turned off.
 - **The phone preview can't drift from the app:** Home draws through `HomeScreen` and each surface
   through `SurfaceViews` (Platform.Ui), which the preview shares. `PreviewRules` (Architecture.Tests)

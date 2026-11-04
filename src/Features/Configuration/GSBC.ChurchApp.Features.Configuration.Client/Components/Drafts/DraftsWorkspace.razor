@@ -62,6 +62,10 @@ else
             <ChildContent>
                 <TextField Label="Name" Value="@_rename" ValueChanged="value => _rename = value" MaxLength="80" />
                 <ListGroup>
+                    <ListRow Title="Undo" Subtitle="Take back your last change (⌘Z, or Ctrl+Z)" Icon="undo" Disabled="@(!_session.CanStepBack)" OnClick="() => StepFromMoreAsync(StepBackAsync)" />
+                    <ListRow Title="Redo" Subtitle="Bring back what you undid (⇧⌘Z, or Ctrl+Shift+Z)" Icon="redo" Disabled="@(!_session.CanStepForward)" OnClick="() => StepFromMoreAsync(StepForwardAsync)" />
+                </ListGroup>
+                <ListGroup>
                     @if (MayPublishDraft)
                     {
                         @if (_session.Draft.LayerOn)
@@ -210,20 +214,20 @@ else
                     <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
                     <span class="draft-pane__step-slot">@StepNotice</span>
                 </div>
-                <div class="ui-actions">
+                <div class="ui-actions draft-pane__actions">
                     <span class="draft-pane__steps" role="group" aria-label="Undo and redo" data-undo-keys>
                         <Button Variant="ButtonVariant.Quiet" Icon="undo" AriaLabel="Undo" Tooltip="Undo (⌘Z, or Ctrl+Z)" Disabled="@(!session.CanStepBack)" OnClick="StepBackAsync" />
                         <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z, or Ctrl+Shift+Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
                     </span>
-                    <Button Variant="ButtonVariant.Quiet" Icon="share" OnClick="() => _sharing = true">Share</Button>
-                    <Button Variant="ButtonVariant.Quiet" Icon="more" OnClick="OpenMore">More</Button>
+                    <Button Variant="ButtonVariant.Quiet" Icon="share" AriaLabel="Share" Tooltip="Share" OnClick="() => _sharing = true"><span class="draft-pane__label">Share</span></Button>
+                    <Button Variant="ButtonVariant.Quiet" Icon="more" AriaLabel="More" Tooltip="More" OnClick="OpenMore"><span class="draft-pane__label">More</span></Button>
                     @if (MayPublishDraft)
                     {
                         <Button Busy="_busy" Disabled="@(session.ChangedForEveryone.Count > 0 || !session.Patches.Any() || _save == SaveState.Failed)" OnClick="PublishAsync">Publish now</Button>
                     }
                     else if (draft.Status == DraftStatus.WaitingToPublish)
                     {
-                        <Button Disabled="true">Waiting for a publisher</Button>
+                        <Button Disabled="true">Waiting to publish</Button>
                     }
                     else
                     {
@@ -999,6 +1003,12 @@ else
         Tell(note, offersRedo: false);
         SaveSoon();
         return Task.CompletedTask;
+    }
+
+    private Task StepFromMoreAsync(Func<Task> step)
+    {
+        _more = false;
+        return step();
     }
 
     private Task StepBackAsync() => StepAsync("undo");

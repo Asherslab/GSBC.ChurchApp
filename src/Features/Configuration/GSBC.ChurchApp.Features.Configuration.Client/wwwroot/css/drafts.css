@@ -18,10 +18,19 @@
 .layer-band__warning { display: flex; gap: 6px; align-items: flex-start; margin-top: 6px; font-size: var(--text-caption); font-weight: 600; color: var(--masthead-note); }
 .layer-band__actions { display: flex; flex-wrap: wrap; gap: 8px; }
 
-.draft-pane { display: grid; gap: var(--stack); max-width: 880px; }
+.draft-pane { display: grid; gap: var(--stack); max-width: 880px; container: draft-pane / inline-size; }
 .draft-pane__back { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
 .draft-pane__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px 24px; }
+.ui-actions.draft-pane__actions { flex: none; flex-wrap: nowrap; margin-left: auto; }
+.draft-pane__actions .btn { white-space: nowrap; }
 .draft-pane__steps { display: inline-flex; gap: 2px; margin-right: 4px; }
+@container draft-pane (max-width: 640px) {
+  .draft-pane__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .ui-actions.draft-pane__actions { gap: 6px; }
+}
+@container draft-pane (max-width: 380px) {
+  .draft-pane__steps { display: none; }
+}
 .draft-pane__step-slot { display: flex; min-width: 0; min-height: calc(var(--text-caption) * 1.5); white-space: nowrap; }
 .draft-pane__step-note { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; font-size: var(--text-caption); color: var(--ink-2); animation: step-note-in 160ms var(--ease-out); }
 .draft-pane__step-words { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
