@@ -46,7 +46,7 @@
                                 }
                             </span>
                             <span class="media-choice__name">@NameOf(media)</span>
-                            <span class="media-choice__used">@(Searching ? $"In {tree.Value.PathName(item.FolderId)}" : item.Uses == 0 ? "Not used yet" : item.Uses == 1 ? "Used in 1 place" : $"Used in {item.Uses} places")</span>
+                            <span class="media-choice__used">@(Searching ? $"In {tree.Value.PathName(item.FolderId)}" : MediaWords.UsedIn(item.Uses))</span>
                         </button>
                     }
                 </div>
@@ -137,10 +137,10 @@
             await _live.ReloadAsync();
     }
 
-    private async Task UploadedAsync(MediaRef media)
+    private async Task UploadedAsync(UploadedMedia uploaded)
     {
         _uploading = false;
-        _selected = media;
+        _selected = uploaded.Item!.Media;
         if (_treeLive is not null)
             await _treeLive.ReloadAsync();
         if (_live is not null)

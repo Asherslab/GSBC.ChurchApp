@@ -1,13 +1,41 @@
 @inject MediaClient Media
+@inject IJSRuntime JS
 
 <div class="media-upload">
     <label class="media-upload__drop @(_busy ? "media-upload__drop--busy" : "")">
         <Icon Name="image" />
         <span class="media-upload__label">@Label</span>
-        <span class="media-upload__hint">@(_file is null ? "Click to choose a file from this computer" : _file.Name)</span>
-        <InputFile OnChange="Choose" accept="@string.Join(",", MediaTypes.Accepted)" disabled="@_busy" class="visually-hidden" />
+        <span class="media-upload__hint">@(_file is null ? "Click to choose a file from this computer" : _checking ? $"{_file.Name}: checking the library…" : _file.Name)</span>
+        <InputFile @ref="_picker" OnChange="ChooseAsync" accept="@string.Join(",", MediaTypes.Accepted)" disabled="@_busy" class="visually-hidden" />
     </label>
-    @if (_file is not null)
+    @if (_file is not null && _match is { Media: { } existing } match)
+    {
+        <section class="media-upload__match" aria-labelledby="media-upload-match-title">
+            <h3 id="media-upload-match-title" class="media-upload__match-title">Already in the library</h3>
+            <p class="media-upload__match-lead">@_file.Name is exactly the same file as this one. Use it, and there's one copy to look after instead of two.</p>
+            <div class="media-upload__existing">
+                <span class="media-thumb">
+                    @if (existing.IsImage)
+                    {
+                        <MediaImage Media="existing" Class="media-thumb__image" />
+                    }
+                    else
+                    {
+                        <Icon Name="file" />
+                    }
+                </span>
+                <span class="media-name">
+                    <strong>@MediaWords.NameOf(existing)</strong>
+                    <span class="quiet">In @_folders.PathName(match.FolderId) · @MediaWords.UsedIn(match.Uses)</span>
+                </span>
+            </div>
+            <div class="panel-actions">
+                <Button Icon="check" OnClick="UseExistingAsync">Use the existing one</Button>
+                <Button Variant="ButtonVariant.Quiet" OnClick="AddAgain">Add it again anyway</Button>
+            </div>
+        </section>
+    }
+    else if (_file is not null)
     {
         <TextField Label="Description" Hint="For people using screen readers: what the picture shows." @bind-Value="_altText" />
         @if (MediaTypes.IsLarge(_file.Size))
@@ -15,30 +43,76 @@
             <Notice Tone="NoticeTone.Warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</Notice>
         }
         <div class="panel-actions">
-            <Button Icon="arrow-up" Busy="_busy" OnClick="UploadAsync">@(MediaTypes.IsLarge(_file.Size) ? "Upload anyway" : "Upload")</Button>
-            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _file = null">Choose another</Button>
+            <Button Icon="arrow-up" Busy="_busy" Disabled="_checking" OnClick="UploadAsync">@(_addAgain ? "Add a second copy" : MediaTypes.IsLarge(_file.Size) ? "Upload anyway" : "Upload")</Button>
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Choose another</Button>
         </div>
     }
     <Notice Tone="NoticeTone.Warning" Text="@_error" />
 </div>
 
 @code {
+    private InputFile? _picker;
     private IBrowserFile? _file;
+    private MediaItemInfo? _match;
+    private FolderMap _folders = FolderMap.Empty;
     private string _altText = "";
+    private bool _checking;
+    private bool _addAgain;
     private bool _busy;
     private string? _error;
 
     [Parameter] public string Label { get; set; } = "Choose an image or PDF";
     [Parameter] public MediaAudience? PrivateTo { get; set; }
     [Parameter] public string? FolderId { get; set; }
-    [Parameter] public EventCallback<MediaRef> OnUploaded { get; set; }
+    [Parameter] public EventCallback<UploadedMedia> OnUploaded { get; set; }
 
-    private void Choose(InputFileChangeEventArgs args)
+    private async Task ChooseAsync(InputFileChangeEventArgs args)
     {
+        Reset();
+        if (!MediaTypes.TryGetExtension(args.File.ContentType, out _))
+        {
+            _error = $"{args.File.Name} isn't an image or PDF this app can show.";
+            return;
+        }
+
         _file = args.File;
-        _error = MediaTypes.TryGetExtension(_file.ContentType, out _) ? null : $"{_file.Name} isn't an image or PDF this app can show.";
-        if (_error is not null)
-            _file = null;
+        _checking = true;
+        try
+        {
+            _match = await FindExistingAsync(_file);
+            if (_match is not null)
+                _folders = await Media.FoldersAsync();
+        }
+        catch (Exception exception) when (exception is RpcException or JSException)
+        {
+            _match = null;
+        }
+        finally
+        {
+            _checking = false;
+        }
+    }
+
+    private async Task<MediaItemInfo?> FindExistingAsync(IBrowserFile file)
+    {
+        if (_picker?.Element is not { } input)
+            return null;
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Media.Client/media-upload.js");
+        return await module.InvokeAsync<string?>("sha256", input) is { } sha256 ? await Media.FindAsync(sha256, file.ContentType, PrivateTo) : null;
+    }
+
+    private async Task UseExistingAsync()
+    {
+        if (_match is not { } match)
+            return;
+        Reset();
+        await OnUploaded.InvokeAsync(new UploadedMedia { Item = match, AlreadyInLibrary = true });
+    }
+
+    private void AddAgain()
+    {
+        _match = null;
+        _addAgain = true;
     }
 
     private async Task UploadAsync()
@@ -51,7 +125,7 @@
         try
         {
             await using Stream content = _file.OpenReadStream(maxAllowedSize: long.MaxValue);
-            MediaRef uploaded = await Media.UploadAsync(new BeginUploadRequest
+            UploadedMedia uploaded = await Media.UploadAsync(new BeginUploadRequest
             {
                 FileName = _file.Name,
                 ContentType = _file.ContentType,
@@ -59,9 +133,8 @@
                 AltText = _altText,
                 PrivateTo = PrivateTo,
                 FolderId = FolderId,
-            }, content);
-            _file = null;
-            _altText = "";
+            }, content, _addAgain);
+            Reset();
             await OnUploaded.InvokeAsync(uploaded);
         }
         catch (RpcException exception)
@@ -76,6 +149,15 @@
         {
             _busy = false;
         }
+    }
+
+    private void Reset()
+    {
+        _file = null;
+        _match = null;
+        _addAgain = false;
+        _altText = "";
+        _error = null;
     }
 
     private static string Megabytes(long bytes) => $"{bytes / 1024d / 1024d:0.#} MB";

@@ -219,6 +219,13 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .media-upload__label { color: var(--ink); font-weight: 600; }
 .media-upload__hint { font-size: var(--text-caption); overflow-wrap: anywhere; }
 .media-upload__drop--busy { opacity: 0.6; cursor: progress; }
+.media-upload__match { display: grid; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--fill-on-surface); }
+.media-upload__match-title { margin: 0; font-size: var(--text-body); font-weight: 700; }
+.media-upload__match-lead { margin: -6px 0 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; overflow-wrap: anywhere; }
+.media-upload__existing { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.media-upload__existing .media-thumb { flex: none; width: 88px; }
+.media-upload__existing .media-name { font-size: var(--text-caption); }
+.media-upload__existing .media-name strong { overflow: hidden; color: var(--ink); white-space: nowrap; text-overflow: ellipsis; }
 .media-choice { display: grid; gap: 16px; }
 .media-choice__tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
 .media-choice__tools .search-field { max-width: none; }
