@@ -18,16 +18,24 @@
     <File Path="docs/architecture/architecture.svg" />
     <File Path="docs/architecture/changelog.md" />
     <File Path="docs/architecture/data-driven.md" />
+    <File Path="docs/architecture/destinations.md" />
+    <File Path="docs/architecture/drafts.md" />
+    <File Path="docs/architecture/email.md" />
+    <File Path="docs/architecture/environments.md" />
     <File Path="docs/architecture/identity.md" />
+    <File Path="docs/architecture/notifications.md" />
     <File Path="docs/architecture/offline-and-caching.md" />
     <File Path="docs/architecture/permissions.md" />
     <File Path="docs/architecture/repo-layout.md" />
+    <File Path="docs/architecture/rich-text.md" />
     <File Path="docs/architecture/storage.md" />
   </Folder>
   <Folder Name="/docs/features/">
     <File Path="docs/features/access.md" />
     <File Path="docs/features/accounts.md" />
+    <File Path="docs/features/analytics.md" />
     <File Path="docs/features/configuration.md" />
+    <File Path="docs/features/home.md" />
     <File Path="docs/features/life-groups.md" />
     <File Path="docs/features/media.md" />
     <File Path="docs/features/ministries.md" />
