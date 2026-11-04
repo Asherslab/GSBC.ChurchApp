@@ -49,6 +49,13 @@ public sealed class Shell(IJSRuntime js) : IDisposable
         return listener;
     }
 
+    public async ValueTask<WindowChannel> HearUndoKeysAsync(Func<string, Task> heard)
+    {
+        WindowChannel listener = new(heard);
+        listener.Subscription = await js.InvokeAsync<IJSObjectReference>("gsbcShell.undoKeys", listener.Receiver);
+        return listener;
+    }
+
     public ValueTask StartedAsync() => js.InvokeVoidAsync("gsbcShell.started");
 
     public ValueTask BackAsync(string fallback) => js.InvokeVoidAsync("gsbcShell.back", fallback);

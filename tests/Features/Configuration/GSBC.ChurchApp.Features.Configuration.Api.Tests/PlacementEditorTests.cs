@@ -71,7 +71,7 @@ public sealed class PlacementEditorTests : ConfigurationHost
     }
 
     [Fact]
-    public async Task UndoingAPublishedDraftRestoresWhatWasThereAndIsAuditedItself()
+    public async Task UndoingAPublishedDraftRestoresWhatWasThereIsAuditedAndCanBePublishedAgain()
     {
         ClaimsPrincipal staff = Access.Person(ArrangesHub, PublishesHub);
         Placement bible = Assert.Single(await PublishNowAsync(staff, HubSurfaces.Area, null, LinkTile("Bible")));
@@ -87,6 +87,13 @@ public sealed class PlacementEditorTests : ConfigurationHost
         ChangeBatch undo = (await Placements(editor => editor.ListChangesAsync(staff, new AreaQuery { Area = HubSurfaces.Area.Key }, Cancel))).Batches[0];
         Assert.Equal(history.Batches[0].Id, undo.RollsBack);
         Assert.Equal(2, undo.Changes.Count);
+
+        PublishedDraft undone = (await Drafts(editor => editor.ListAsync(staff, Cancel))).Published[0];
+        Assert.Equal(undo.Id, undone.UndoneBatchId);
+        await Placements(editor => editor.RollBackAsync(staff, new RollBackRequest { BatchId = undone.UndoneBatchId! }, Cancel));
+
+        Assert.Equal(["Read the Bible", "Camp"], (await LiveAsync(staff, HubSurfaces.Area)).Select(tile => ValueOf(tile, HubSurfaces.LinkTile.Title.Key)).Order().Reverse());
+        Assert.Null((await Drafts(editor => editor.ListAsync(staff, Cancel))).Published[0].UndoneBatchId);
     }
 
     [Fact]

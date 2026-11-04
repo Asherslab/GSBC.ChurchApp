@@ -613,7 +613,7 @@ internal sealed class DraftEditor(
             .OrderByDescending(change => change.At)
             .Take(RecentlyPublished * 20)
             .ToListAsync(cancellationToken);
-        return rows
+        List<PublishedDraft> published = rows
             .GroupBy(change => change.BatchId)
             .Take(RecentlyPublished)
             .Select(batch => new PublishedDraft
@@ -626,7 +626,36 @@ internal sealed class DraftEditor(
                 Changes = batch.Count(),
             })
             .ToList();
+        await MarkUndoneAsync(published, cancellationToken);
+        return published;
     }
+
+    private async Task MarkUndoneAsync(List<PublishedDraft> published, CancellationToken cancellationToken)
+    {
+        List<Rollback> undos = await RollbacksOfAsync(published.Select(entry => Guid.Parse(entry.BatchId)).ToList(), cancellationToken);
+        List<Rollback> redos = await RollbacksOfAsync(undos.Select(undo => undo.BatchId).ToList(), cancellationToken);
+        foreach (PublishedDraft entry in published)
+        {
+            Rollback? latest = undos.Where(undo => undo.RollsBack == Guid.Parse(entry.BatchId)).MaxBy(undo => undo.At);
+            if (latest is null || redos.Any(redo => redo.RollsBack == latest.BatchId && redo.At >= latest.At))
+                continue;
+            entry.UndoneBatchId = latest.BatchId.ToString();
+            entry.UndoneAt = latest.At;
+            entry.UndoneBy = latest.By.ToString();
+        }
+    }
+
+    private async Task<List<Rollback>> RollbacksOfAsync(List<Guid> batchIds, CancellationToken cancellationToken)
+    {
+        List<Guid?> ids = batchIds.Select(id => (Guid?)id).ToList();
+        return await db.Changes.AsNoTracking()
+            .Where(change => ids.Contains(change.RollsBack))
+            .Select(change => new Rollback(change.BatchId, change.RollsBack!.Value, change.At, change.By))
+            .Distinct()
+            .ToListAsync(cancellationToken);
+    }
+
+    private sealed record Rollback(Guid BatchId, Guid RollsBack, DateTime At, Guid By);
 
     private async Task<DraftRecord> VisibleAsync(ClaimsPrincipal caller, string id, CancellationToken cancellationToken, bool tracked = false)
     {

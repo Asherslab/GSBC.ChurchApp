@@ -48,17 +48,54 @@ else
     <ListGroup>
         @foreach (PublishedDraft published in List.Published)
         {
-            <ListRow Title="@published.Name" Subtitle="@($"{string.Join(", ", published.Areas)} · {Names.GetValueOrDefault(published.By, "Someone")} · {DraftWords.Day(published.At)}")" Icon="check" IconTone="RowTone.Quiet">
-                <TrailingContent>
-                    @if (MayUndo)
+            <ListRow Title="@published.Name" Subtitle="@($"{string.Join(", ", published.Areas)} · {Names.GetValueOrDefault(published.By, "Someone")} · {DraftWords.Day(published.At)}")"
+                     Icon="@(published.UndoneBatchId is null ? "check" : "undo")" IconTone="RowTone.Quiet" OnClick="() => _looking = published">
+                <Below>
+                    @if (published.UndoneBatchId is not null)
                     {
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnUndo.InvokeAsync(published)">Undo</Button>
+                        <Pill>Undone</Pill>
                     }
-                </TrailingContent>
+                </Below>
             </ListRow>
         }
     </ListGroup>
 }
+
+<Sheet Open="_looking is not null" OpenChanged="open => { if (!open) _looking = null; }" Title="@_looking?.Name" Lead="@PublishedLead">
+    <ChildContent>
+        @if (_looking is { } published)
+        {
+            @if (published.UndoneBatchId is null)
+            {
+                <p class="published-sheet__text">If you undo it, @Places(published) @(published.Areas.Count == 1 ? "goes" : "go") back to how @(published.Areas.Count == 1 ? "it was" : "they were") before “@published.Name” was published, for everyone, within a few seconds. Anything it changed goes back, even if it was changed again since.</p>
+                <p class="published-sheet__text">You can publish it again afterwards from here.</p>
+            }
+            else
+            {
+                <p class="published-sheet__text">@Names.GetValueOrDefault(published.UndoneBy ?? "", "Someone") undid it on @DraftWords.Day(published.UndoneAt ?? published.At), so @Places(published) @(published.Areas.Count == 1 ? "is" : "are") as @(published.Areas.Count == 1 ? "it was" : "they were") before.</p>
+                <p class="published-sheet__text">Publish it again to bring its changes back for everyone.</p>
+            }
+            @if (!MayUndo)
+            {
+                <Notice Text="Only someone who can publish can undo it or publish it again." />
+            }
+        }
+    </ChildContent>
+    <Actions>
+        @if (_looking is { } published && MayUndo)
+        {
+            @if (published.UndoneBatchId is null)
+            {
+                <Button Variant="ButtonVariant.Danger" Block="true" Icon="undo" OnClick="() => ActAsync(OnUndo, published)">Undo this publish</Button>
+            }
+            else
+            {
+                <Button Block="true" Icon="redo" OnClick="() => ActAsync(OnPublishAgain, published)">Publish it again</Button>
+            }
+        }
+        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _looking = null">@(MayUndo ? "Cancel" : "Close")</Button>
+    </Actions>
+</Sheet>
 
 @code {
     [Parameter, EditorRequired] public required DraftList List { get; set; }
@@ -68,6 +105,22 @@ else
     [Parameter] public EventCallback<Draft> OnOpen { get; set; }
     [Parameter] public EventCallback OnNew { get; set; }
     [Parameter] public EventCallback<PublishedDraft> OnUndo { get; set; }
+    [Parameter] public EventCallback<PublishedDraft> OnPublishAgain { get; set; }
+
+    private PublishedDraft? _looking;
+
+    private string? PublishedLead => _looking is { } published
+        ? $"Published by {(Names.GetValueOrDefault(published.By, "someone"))} on {DraftWords.Day(published.At)} · {(published.Changes == 1 ? "1 change" : $"{published.Changes} changes")}"
+        : null;
+
+    private static string Places(PublishedDraft published) =>
+        published.Areas.Count == 0 ? "the app" : string.Join(" and ", published.Areas.Select(area => area == published.Areas[0] ? area : area.ToLowerInvariant()));
+
+    private async Task ActAsync(EventCallback<PublishedDraft> action, PublishedDraft published)
+    {
+        _looking = null;
+        await action.InvokeAsync(published);
+    }
 
     private List<Draft> Waiting => List.Drafts.Where(draft => draft.Status == DraftStatus.WaitingToPublish).ToList();
 

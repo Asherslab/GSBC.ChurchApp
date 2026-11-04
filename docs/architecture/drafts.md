@@ -140,8 +140,8 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   "Changed for everyone since you edited it" with *Keep mine* / *Use everyone's*. A typo fix is edit, then
   *Publish now*.
 - **The admin panel's drafts page is a three-pane workbench** (owner's choice): drafts down the left (the
-  event layer as one navy band at the top, then *Waiting to publish*, *Open*, *Published recently* with
-  *Undo*), the chosen draft in the middle (its name, "Saved a moment ago", *Share*, *More*, *Publish now*
+  event layer as one navy band at the top, then *Waiting to publish*, *Open*, *Published recently*, each
+  opening a sheet to undo it or publish it again), the chosen draft in the middle (its name, "Saved a moment ago", *Share*, *More*, *Publish now*
   or *Ask to publish*, area tabs, rows with its changes marked), and on the right the chosen row's settings
   or a phone-size preview. A **Church year** view of the left column shows the event layer and dated
   changes across the coming weeks, for scheduling. A row changed for everyone since the draft touched it
@@ -221,6 +221,21 @@ within a second or two:
 - *Keep mine* re-bases the change on what everyone sees now; *Use everyone's* drops the fields that
   changed. Publishing is refused while any are unsettled.
 - Undo of a published draft needs the publish permission for every area it touched.
+- **Undoing is deliberate, and can be taken back** (owner, 2026-11-04, note 20). A row under *Published
+  recently* opens a sheet that says in plain words what will change ("Home screen goes back to how it
+  was before “Link tiles and a library” was published, for everyone") with *Undo this publish*; there's
+  no one-click button on the row. An undone publish stays in the list marked *Undone*, and its sheet
+  offers *Publish it again*, which rolls back the undo batch (the undo's `Before` states are exactly what
+  the publish made). Chosen over turning it back into a draft: a draft would need re-checking against
+  everything published since and a second publish step, while rolling back the undo is exact, audited
+  like any rollback, and one action. The list works out *Undone* from the history: a publish is undone
+  when its latest rollback hasn't itself been rolled back.
+- **Inside a draft, undo and redo** (note 20): every change to the draft is a step in the editor's
+  history (`DraftSession.StepBack`/`StepForward`), with Undo and Redo beside Share, ⌘Z and ⇧⌘Z (Ctrl
+  on Windows; ignored while typing in a field or with a sheet open, so a field's own undo works), and a
+  short "Undone. Redo" by the save status. Typing in one field is one step, and one gesture that changes
+  several tiles (a drag) is one step. *Undo changes to this* on a tile and *Put back* are steps too, so
+  they say what they did and offer Undo. The history lasts while the draft is open.
 - Deleting a draft that's on for an event is refused until it's turned off.
 - **The phone preview can't drift from the app:** Home draws through `HomeScreen` and each surface
   through `SurfaceViews` (Platform.Ui), which the preview shares. `PreviewRules` (Architecture.Tests)

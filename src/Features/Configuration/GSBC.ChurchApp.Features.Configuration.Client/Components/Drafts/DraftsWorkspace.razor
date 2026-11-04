@@ -1,4 +1,4 @@
-@implements IDisposable
+@implements IAsyncDisposable
 @inject DraftsClient Drafts
 @inject ConfigurationClient Configuration
 @inject SurfaceCatalog Surfaces
@@ -26,7 +26,7 @@ else
             <div class="drafts-column">
                 <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
                 <EventLayerBand Layer="Layer" MayChange="MayPublishAnything" Busy="_busy" OnOpen="draft => OpenAsync(draft.Id)" OnTurnOff="TurnOffAsync" OnChangeDates="ChangeDatesAsync" />
-                <DraftListing List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" />
+                <DraftListing List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync" />
             </div>
         </Aside>
         <ChildContent>
@@ -150,6 +150,10 @@ else
     private CancellationTokenSource? _pending;
     private string? _problem;
     private string? _message;
+    private string? _stepNote;
+    private bool _stepOffersRedo;
+    private int _stepNoteAt;
+    private WindowChannel? _undoKeys;
     private bool _busy;
     private bool _sharing;
     private bool _turningOn;
@@ -203,9 +207,16 @@ else
             <header class="draft-pane__head">
                 <div class="draft-pane__title">
                     <h2 title="@draft.Name">@draft.Name</h2>
-                    <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
+                    <span class="draft-pane__status">
+                        <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
+                        @StepNotice
+                    </span>
                 </div>
                 <div class="ui-actions">
+                    <span class="draft-pane__steps" role="group" aria-label="Undo and redo">
+                        <Button Variant="ButtonVariant.Quiet" Icon="undo" AriaLabel="Undo" Tooltip="Undo (⌘Z)" Disabled="@(!session.CanStepBack)" OnClick="StepBackAsync" />
+                        <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
+                    </span>
                     <Button Variant="ButtonVariant.Quiet" Icon="share" OnClick="() => _sharing = true">Share</Button>
                     <Button Variant="ButtonVariant.Quiet" Icon="more" OnClick="OpenMore">More</Button>
                     @if (MayPublishDraft)
@@ -452,7 +463,7 @@ else
         {
             if (_session.PatchFor(_formId) is not null)
             {
-                <Button Variant="ButtonVariant.Quiet" Small="@(!Narrow)" Block="Narrow" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo this change</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="@(!Narrow)" Block="Narrow" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo changes to this</Button>
             }
             if (IsHub && TileKind is not null && !Narrow)
             {
@@ -689,6 +700,9 @@ else
     private string SharedText(Draft draft) => draft.SharedWith.Count == 0
         ? "only you see it"
         : $"shared with {string.Join(", ", draft.SharedWith.Select(id => _names.GetValueOrDefault(id, "someone")))}";
+
+    private string AddedTitle(PlacementPatch patch) =>
+        patch.ValueChanges.GetValueOrDefault(HubTileKeys.Title) is { Length: > 0 } title ? title : Surfaces.ByKey.GetValueOrDefault(patch.Surface)?.Title ?? "it";
 
     private string RemovedTitle(PlacementPatch patch)
     {
@@ -961,7 +975,7 @@ else
             return Task.CompletedTask;
         StoredPlacement? live = _session.LiveOf(_area, _formId);
         if (live is null)
-            _session.Undo(_formId);
+            _session.Discard(_formId);
         else
             _session.Remove(_area, new ArrangedSurface(_form!.Surface, live));
         Deselect();
@@ -971,11 +985,55 @@ else
 
     private Task UndoAsync(string placementId)
     {
-        _session?.Undo(placementId);
+        if (_session is null)
+            return Task.CompletedTask;
+        string note = _session.PatchFor(placementId) is { } patch
+            ? patch.Kind == PatchKind.Add ? $"Took out “{AddedTitle(patch)}”, which this draft added." : $"“{RemovedTitle(patch)}” is back as everyone sees it."
+            : "Put back as everyone sees it.";
+        _session.Discard(placementId);
         Deselect();
+        Tell(note, offersRedo: false);
         SaveSoon();
         return Task.CompletedTask;
     }
+
+    private Task StepBackAsync() => StepAsync("undo");
+
+    private Task StepForwardAsync() => StepAsync("redo");
+
+    private async Task StepAsync(string which)
+    {
+        if (_session is null || !(which == "redo" ? _session.StepForward() : _session.StepBack()))
+            return;
+        if (_formId is not null)
+        {
+            if (_session.Arranged(CurrentArea!, _area.ScopeId).FirstOrDefault(candidate => KeyOf(candidate) == _formId) is { } entry)
+                Select(entry);
+            else
+                Deselect();
+        }
+        Tell(which == "redo" ? "Redone." : "Undone.", offersRedo: which != "redo");
+        SaveSoon();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private void Tell(string note, bool offersRedo)
+    {
+        _stepNote = note;
+        _stepOffersRedo = offersRedo;
+        _stepNoteAt = _session!.Edits;
+    }
+
+    private RenderFragment StepNotice => __builder =>
+    {
+        if (_stepNote is not null && _session?.Edits == _stepNoteAt)
+        {
+            <span class="draft-pane__step-note" role="status">
+                @_stepNote
+                <button type="button" class="draft-pane__step-again" @onclick="@(_stepOffersRedo ? StepForwardAsync : StepBackAsync)">@(_stepOffersRedo ? "Redo" : "Undo")</button>
+            </span>
+        }
+    };
 
     private void SaveSoon()
     {
@@ -1180,7 +1238,14 @@ else
     private Task UndoAsync(PublishedDraft published) => RunAsync(async () =>
     {
         await Configuration.RollBackAsync(published.BatchId);
-        _message = $"Undid \"{published.Name}\". Phones show it within a few seconds.";
+        _message = $"Undid “{published.Name}”. Phones show it within a few seconds. Open it under Published recently to publish it again.";
+        _list = await LoadListAsync();
+    });
+
+    private Task PublishAgainAsync(PublishedDraft published) => RunAsync(async () =>
+    {
+        await Configuration.RollBackAsync(published.UndoneBatchId!);
+        _message = $"Published “{published.Name}” again. Phones show it within a few seconds.";
         _list = await LoadListAsync();
     });
 
@@ -1202,5 +1267,16 @@ else
         }
     }
 
-    public void Dispose() => _pending?.Cancel();
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+            _undoKeys = await Shell.HearUndoKeysAsync(StepAsync);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _pending?.Cancel();
+        if (_undoKeys is not null)
+            await _undoKeys.DisposeAsync();
+    }
 }

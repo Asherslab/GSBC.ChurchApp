@@ -5,15 +5,28 @@ namespace GSBC.ChurchApp.Features.Configuration.Client;
 
 public readonly record struct AreaKey(string Area, string? ScopeId);
 
-internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces)
+internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces, TimeProvider? time = null)
 {
+    private const int MostSteps = 200;
+    private static readonly TimeSpan OneGesture = TimeSpan.FromMilliseconds(150);
+    private static readonly TimeSpan Typing = TimeSpan.FromSeconds(1.5);
+
     private readonly Dictionary<AreaKey, IReadOnlyList<StoredPlacement>> _live = [];
     private readonly Dictionary<string, PlacementPatch> _patches = draft.Patches().ToDictionary(patch => patch.PlacementId);
     private readonly HashSet<string> _dirty = [];
+    private readonly List<Step> _back = [];
+    private readonly List<Step> _forward = [];
+    private readonly TimeProvider _time = time ?? TimeProvider.System;
 
     public Draft Draft { get; private set; } = draft;
 
     public bool HasUnsaved => _dirty.Count > 0;
+
+    public int Edits { get; private set; }
+
+    public bool CanStepBack => _back.Count > 0;
+
+    public bool CanStepForward => _forward.Count > 0;
 
     public IReadOnlyCollection<PlacementPatch> Patches => _patches.Values;
 
@@ -61,7 +74,11 @@ internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces)
         Put(placement.Id, live is null ? null : new PlacementPatch(placement.Id, area.Area, area.ScopeId, placement.Surface, PatchKind.Remove, Base: live));
     }
 
-    public void Undo(string placementId) => Put(placementId, null);
+    public void Discard(string placementId) => Put(placementId, null);
+
+    public bool StepBack() => Replay(_back, _forward);
+
+    public bool StepForward() => Replay(_forward, _back);
 
     public (List<PatchMessage> Set, List<string> Cleared) TakeUnsaved()
     {
@@ -94,14 +111,51 @@ internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces)
 
     private IEnumerable<PlacementPatch> InArea(AreaKey area) => _patches.Values.Where(patch => patch.Touches(area.Area, area.ScopeId));
 
+    private bool Replay(List<Step> from, List<Step> to)
+    {
+        if (from.Count == 0)
+            return false;
+        Step step = from[^1];
+        from.RemoveAt(from.Count - 1);
+        Dictionary<string, PlacementPatch?> now = step.Before.Keys.ToDictionary(id => id, id => _patches.GetValueOrDefault(id));
+        foreach ((string id, PlacementPatch? before) in step.Before)
+            Write(id, before);
+        to.Add(new Step(now, DateTimeOffset.MinValue));
+        return true;
+    }
+
+    private void Remember(string placementId)
+    {
+        DateTimeOffset now = _time.GetUtcNow();
+        _forward.Clear();
+        if (_back.Count > 0 && _back[^1] is var last && (now - last.At < OneGesture || (last.Before.Count == 1 && last.Before.ContainsKey(placementId) && now - last.At < Typing)))
+        {
+            last.Before.TryAdd(placementId, _patches.GetValueOrDefault(placementId));
+            _back[^1] = last with { At = now };
+            return;
+        }
+        _back.Add(new Step(new Dictionary<string, PlacementPatch?> { [placementId] = _patches.GetValueOrDefault(placementId) }, now));
+        if (_back.Count > MostSteps)
+            _back.RemoveAt(0);
+    }
+
     private void Put(string placementId, PlacementPatch? patch)
     {
+        Remember(placementId);
+        Write(placementId, patch);
+    }
+
+    private void Write(string placementId, PlacementPatch? patch)
+    {
+        Edits++;
         if (patch is null)
             _patches.Remove(placementId);
         else
             _patches[placementId] = patch;
         _dirty.Add(placementId);
     }
+
+    private sealed record Step(Dictionary<string, PlacementPatch?> Before, DateTimeOffset At);
 
     private static PlacementPatch Added(AreaKey area, StoredPlacement wanted) =>
         new(wanted.Id, area.Area, area.ScopeId, wanted.Surface, PatchKind.Add, wanted.Order, wanted.Hidden, wanted.Audience,

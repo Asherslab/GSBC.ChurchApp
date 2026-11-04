@@ -106,6 +106,18 @@ window.gsbcShell = (() => {
       return { close: () => listener.close() };
     },
 
+    undoKeys(receiver) {
+      const typing = (target) => target instanceof Element && !!target.closest('input, textarea, select, [contenteditable="true"], dialog[open]');
+      const key = (event) => {
+        const letter = event.key.toLowerCase();
+        if (!(event.metaKey || event.ctrlKey) || event.altKey || (letter !== 'z' && letter !== 'y') || typing(event.target)) return;
+        event.preventDefault();
+        receiver.invokeMethodAsync('OnHeard', letter === 'y' || event.shiftKey ? 'redo' : 'undo');
+      };
+      document.addEventListener('keydown', key);
+      return { close: () => document.removeEventListener('keydown', key) };
+    },
+
     onReturn(receiver) {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') receiver.invokeMethodAsync('OnReturned');

@@ -62,6 +62,9 @@ public sealed class PublishedDraft
     [ProtoMember(4)] public string By { get; set; } = "";
     [ProtoMember(5)] public List<string> Areas { get; set; } = [];
     [ProtoMember(6)] public int Changes { get; set; }
+    [ProtoMember(7)] public string? UndoneBatchId { get; set; }
+    [ProtoMember(8)] public DateTime? UndoneAt { get; set; }
+    [ProtoMember(9)] public string? UndoneBy { get; set; }
 }
 
 [ProtoContract]
