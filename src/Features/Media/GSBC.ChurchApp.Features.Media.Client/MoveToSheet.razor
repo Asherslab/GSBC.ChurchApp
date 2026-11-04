@@ -4,9 +4,9 @@
             @foreach ((string? id, string name, int depth) in Targets)
             {
                 bool blocked = Blocked?.Invoke(id) == true;
-                bool on = id == _target && !blocked;
+                bool on = _picked && id == _target && !blocked;
                 <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" disabled="@blocked"
-                        class="folder-picker__row @(on ? "folder-picker__row--on" : "")" style="--depth: @depth" @onclick="() => _target = id">
+                        class="folder-picker__row @(on ? "folder-picker__row--on" : "")" style="--depth: @depth" @onclick="() => Pick(id)">
                     <Icon Name="@(id is null ? "image" : "folder")" Size="IconSize.Small" />
                     <span class="folder-picker__name">@name</span>
                     @if (id == Current)
@@ -20,12 +20,13 @@
     </ChildContent>
     <Actions>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
-        <Button Icon="folder-input" Busy="Busy" Disabled="@(Blocked?.Invoke(_target) == true || _target == Current)" OnClick="() => OnMove.InvokeAsync(_target)">@Action</Button>
+        <Button Icon="folder-input" Busy="Busy" Disabled="@(!_picked || Blocked?.Invoke(_target) == true || _target == Current)" OnClick="() => OnMove.InvokeAsync(_target)">@Action</Button>
     </Actions>
 </Sheet>
 
 @code {
     private string? _target;
+    private bool _picked;
     private bool _wasOpen;
 
     [Parameter] public bool Open { get; set; }
@@ -44,8 +45,17 @@
     protected override void OnParametersSet()
     {
         if (Open && !_wasOpen)
+        {
             _target = Suggested;
+            _picked = Suggested != Current;
+        }
         _wasOpen = Open;
+    }
+
+    private void Pick(string? id)
+    {
+        _target = id;
+        _picked = true;
     }
 
     private IEnumerable<(string? Id, string Name, int Depth)> Targets =>

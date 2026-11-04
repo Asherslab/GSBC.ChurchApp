@@ -4,18 +4,18 @@
 <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
     @{ FolderMap map = tree.Value; }
     <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
+        <div class="media-library__bar media-library__bar--top">
+            <Segmented TValue="Shelf" Label="Which files" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" />
+            @if (ShowsFiles(map))
+            {
+                <div class="media-library__tools">
+                    <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value.Counts)" Value="_filter" ValueChanged="FilterAsync" />
+                    <Segmented TValue="LibraryView" Label="Show as" Options="ViewOptions" @bind-Value="_view" />
+                </div>
+            }
+        </div>
         <SplitView Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
             <div class="media-library @(_dragItems.Count + _dragFolders.Count > 0 ? "media-library--dragging" : "")">
-                <div class="media-library__bar">
-                    <Segmented TValue="Shelf" Label="Which files" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" />
-                    @if (ShowsFiles(map))
-                    {
-                        <div class="media-library__tools">
-                            <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value.Counts)" Value="_filter" ValueChanged="FilterAsync" />
-                            <Segmented TValue="LibraryView" Label="Show as" Options="ViewOptions" @bind-Value="_view" />
-                        </div>
-                    }
-                </div>
 
                 @if (Searching)
                 {
@@ -31,9 +31,9 @@
                         @if (map.Find(_folderId) is { IsSystem: false } here && CanOrganise)
                         {
                             <div class="media-library__folder-actions">
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => StartRename(here)">Rename</Button>
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder-input" OnClick="() => StartMoveFolder(here)">Move</Button>
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => StartDelete(here)">Delete folder</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => StartRename(here)">Rename…</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder-input" OnClick="() => StartMoveFolder(here)">Move to…</Button>
+                                <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => StartDelete(here)">Delete folder…</Button>
                             </div>
                         }
                     </div>
@@ -50,10 +50,15 @@
                 }
 
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <Notice Text="@_moved" />
 
                 @if (ShowsFiles(map))
                 {
-                    @if (context.Value.Items.Count == 0)
+                    @if (context.Value.Items.Count == 0 && OnlyFolders(map))
+                    {
+                        <p class="media-library__only-folders">No files here, only the folders above. Drag files onto this folder, or upload straight into it.</p>
+                    }
+                    else if (context.Value.Items.Count == 0)
                     {
                         <EmptyState Icon="@(_shelf == Shelf.App ? "lock" : "image")" Title="@EmptyTitle(map)" Body="@EmptyBody" />
                     }
@@ -169,6 +174,7 @@
     private bool _busy;
     private string? _error;
     private string? _problem;
+    private string? _moved;
 
     private FolderSheet _sheet;
     private FolderInfo? _sheetFolder;
@@ -276,7 +282,7 @@
                   <dt>Size</dt>
                   <dd>@(media.Width > 0 ? $"{media.Width} × {media.Height} · {Size(media.Bytes)}" : Size(media.Bytes))</dd>
                   <dt>Used in</dt>
-                  <dd>@(selected.Uses == 0 ? "Nowhere yet" : UsedIn(selected.Uses))</dd>
+                  <dd>@UsedIn(selected.Uses)</dd>
                   @if (selected.PrivateTo is { } audience)
                   {
                       <dt>Who sees it</dt>
@@ -351,6 +357,9 @@
                 ? "Upload a picture to use it on the app's tiles and pages."
                 : "Drag files onto this folder, or upload straight into it.";
 
+    private bool OnlyFolders(FolderMap map) =>
+        !Searching && _filter == MediaFilter.All && _folderId is not null && map.ChildrenOf(_folderId, _shelf == Shelf.App).Any();
+
     private bool CanMoveFiles(FolderMap map, MediaItemInfo item) => CanOrganise && map.Find(item.FolderId) is not { IsSystem: true };
 
     private bool CanDropOn(FolderMap map, string? target)
@@ -387,6 +396,7 @@
     {
         _folderId = folderId;
         _problem = null;
+        _moved = null;
         _wanted = PageSize;
         ClearChosen();
         await ReloadListAsync();
@@ -505,6 +515,7 @@
         try
         {
             await Media.MoveAsync(items, folders, target);
+            _moved = Moved(items.Count, folders.Count, target);
             ClearChosen();
             await ReloadAllAsync();
         }
@@ -587,8 +598,22 @@
     private Task MoveAsync(string? target) => RunSheetAsync(async () =>
     {
         await Media.MoveAsync(_moveItems, _moveFolders, target);
+        _moved = Moved(_moveItems.Count, _moveFolders.Count, target);
         ClearChosen();
     });
+
+    private string Moved(int files, int folders, string? target)
+    {
+        string what = (files, folders) switch
+        {
+            (1, 0) => "1 file",
+            (_, 0) => $"{files} files",
+            (0, 1) => "The folder",
+            (0, _) => $"{folders} folders",
+            _ => $"{files} files and {folders} folders",
+        };
+        return $"{what} moved to {_map.PathName(target)}. Everything that uses them still shows them.";
+    }
 
     private Task DeleteFolderAsync(bool moveContents, string? target) => RunSheetAsync(async () =>
     {
@@ -667,7 +692,7 @@
 
     private static string UsedIn(int uses) => uses switch
     {
-        0 => "Not used",
+        0 => "Not used yet",
         1 => "Used in 1 place",
         _ => $"Used in {uses} places",
     };

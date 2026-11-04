@@ -238,9 +238,15 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .media-choice__where { margin: 0; color: var(--ink-2); font-weight: 600; }
 .media-choice .breadcrumbs { margin: -4px 0 -6px -8px; }
 
-@media (min-width: 901px) { .title-band__actions:has(.media-search) { flex-wrap: nowrap; } }
-.title-band__actions .media-search { flex: 0 1 260px; min-width: 200px; }
+@media (min-width: 901px) {
+    .title-band:has(.media-search) { flex-wrap: nowrap; }
+    .title-band:has(.media-search) .title-band__text { flex: 1 1 auto; }
+    .title-band__actions:has(.media-search) { flex: none; flex-wrap: nowrap; }
+}
+.title-band__actions .media-search { flex: 0 1 210px; min-width: 180px; }
 .media-library { display: grid; gap: 16px; min-width: 0; }
+.media-library__bar--top { margin-bottom: 16px; }
+.media-library__only-folders { margin: 4px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
 .media-library__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
 .media-library__bar .segmented, .media-library__tools .segmented { grid-auto-columns: auto; width: max-content; }
 .media-library__bar .segmented button, .media-library__tools .segmented button { padding: 0 14px; }
