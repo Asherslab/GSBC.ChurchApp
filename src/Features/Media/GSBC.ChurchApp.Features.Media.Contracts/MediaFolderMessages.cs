@@ -9,7 +9,6 @@ public sealed class FolderQuery;
 public sealed class FolderTree
 {
     [ProtoMember(1)] public List<FolderInfo> Folders { get; set; } = [];
-    [ProtoMember(2)] public int TopLevelFiles { get; set; }
 }
 
 [ProtoContract]

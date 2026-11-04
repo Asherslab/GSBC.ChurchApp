@@ -31,7 +31,6 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
 
         return new FolderTree
         {
-            TopLevelFiles = await db.Items.CountAsync(item => item.FolderId == null, cancellationToken),
             Folders = folders
                 .Where(folder => !hidden.Contains(folder.Id) || folder.ParentId is null)
                 .OrderBy(folder => folder.IsSystem)

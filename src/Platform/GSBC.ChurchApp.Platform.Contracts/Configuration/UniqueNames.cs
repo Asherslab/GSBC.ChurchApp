@@ -25,9 +25,10 @@ public static class UniqueNames
     {
         if (surface.UniqueBy is not { } setting)
             return [];
-        List<string> names = placements.Where(placement => placement.Surface == surface.Key).Select(placement => NameOf(placement, setting)).ToList();
-        return placements
-            .Where(placement => placement.Surface == surface.Key && changed.Contains(placement.Id))
+        List<StoredPlacement> onSurface = placements.Where(placement => placement.Surface == surface.Key).ToList();
+        List<string> names = onSurface.Select(placement => NameOf(placement, setting)).ToList();
+        return onSurface
+            .Where(placement => changed.Contains(placement.Id))
             .Select(placement => NameOf(placement, setting))
             .Where(name => names.Count(other => Same(other, name)) > 1)
             .Distinct(StringComparer.InvariantCultureIgnoreCase)

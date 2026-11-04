@@ -6,7 +6,7 @@
     <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
         <div class="media-library__bar media-library__bar--top">
             <Segmented TValue="Shelf" Label="Which files" Options="ShelfOptions" Value="_shelf" ValueChanged="SwitchShelfAsync" />
-            @if (ShowsFiles(map))
+            @if (ShowsFiles)
             {
                 <div class="media-library__tools">
                     <FilterChips TValue="MediaFilter" Label="Show" Options="Filters(context.Value.Counts)" Value="_filter" ValueChanged="FilterAsync" />
@@ -57,7 +57,7 @@
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <Notice Text="@_moved" />
 
-                @if (ShowsFiles(map))
+                @if (ShowsFiles)
                 {
                     @if (context.Value.Items.Count == 0 && OnlyFolders(map))
                     {
@@ -220,7 +220,7 @@
 
     private MediaItemInfo? Single => _chosen.Count == 1 ? _known.GetValueOrDefault(_chosen[0]) : null;
 
-    private bool ShowsFiles(FolderMap map) => Searching || _shelf == Shelf.Library || _folderId is not null;
+    private bool ShowsFiles => Searching || _shelf == Shelf.Library || _folderId is not null;
 
     private FolderInfo? SystemRoot(FolderMap map) => map.PathTo(_folderId).FirstOrDefault(folder => folder.IsSystem);
 
@@ -244,7 +244,7 @@
 
     private async Task<MediaList> LoadAsync()
     {
-        if (!ShowsFiles(_map))
+        if (!ShowsFiles)
             return new MediaList { Counts = new MediaCounts() };
 
         MediaList page = await Media.ListAsync(new MediaQuery { FolderId = _folderId, Search = _query, Filter = _filter, Take = _wanted });

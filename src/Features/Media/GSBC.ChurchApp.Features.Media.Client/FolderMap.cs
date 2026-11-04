@@ -9,14 +9,11 @@ public sealed class FolderMap
 
     public FolderMap(FolderTree tree)
     {
-        TopLevelFiles = tree.TopLevelFiles;
         _byId = tree.Folders.ToDictionary(folder => folder.Id);
         _children = tree.Folders.ToLookup(folder => folder.ParentId is { } parent && _byId.ContainsKey(parent) ? parent : "");
     }
 
     public static FolderMap Empty { get; } = new(new FolderTree());
-
-    public int TopLevelFiles { get; }
 
     public bool HasSystemFolders => _children[""].Any(folder => folder.IsSystem);
 

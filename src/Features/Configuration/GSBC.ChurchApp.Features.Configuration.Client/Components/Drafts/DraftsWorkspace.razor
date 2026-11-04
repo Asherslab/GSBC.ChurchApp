@@ -212,7 +212,15 @@ else
                 <div class="draft-pane__title">
                     <h2 title="@draft.Name">@draft.Name</h2>
                     <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
-                    <span class="draft-pane__step-slot">@StepNotice</span>
+                    <span class="draft-pane__step-slot">
+                        @if (_stepNote is not null && _session?.Edits == _stepNoteAt)
+                        {
+                            <span class="draft-pane__step-note" role="status">
+                                <span class="draft-pane__step-words">@_stepNote</span>
+                                <button type="button" class="draft-pane__step-again" @onclick="@(_stepOffersRedo ? StepForwardAsync : StepBackAsync)">@(_stepOffersRedo ? "Redo" : "Undo")</button>
+                            </span>
+                        }
+                    </span>
                 </div>
                 <div class="ui-actions draft-pane__actions">
                     <span class="draft-pane__steps" role="group" aria-label="Undo and redo" data-undo-keys>
@@ -1037,17 +1045,6 @@ else
         _stepOffersRedo = offersRedo;
         _stepNoteAt = _session!.Edits;
     }
-
-    private RenderFragment StepNotice => __builder =>
-    {
-        if (_stepNote is not null && _session?.Edits == _stepNoteAt)
-        {
-            <span class="draft-pane__step-note" role="status">
-                <span class="draft-pane__step-words">@_stepNote</span>
-                <button type="button" class="draft-pane__step-again" @onclick="@(_stepOffersRedo ? StepForwardAsync : StepBackAsync)">@(_stepOffersRedo ? "Redo" : "Undo")</button>
-            </span>
-        }
-    };
 
     private void SaveSoon()
     {

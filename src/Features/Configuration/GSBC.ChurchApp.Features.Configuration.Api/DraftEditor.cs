@@ -713,7 +713,7 @@ internal sealed class DraftEditor(
     {
         foreach (Surface surface in surfaces.ByKey.Values.Where(surface => surface.Area.Key == area.Key && surface.UniqueBy is not null))
         {
-            if (UniqueNames.Clashes(surface, composed, changed) is [string name, ..])
+            if (UniqueNames.Clashes(surface, composed, changed) is [{ } name, ..])
                 throw Invalid($"There's already a {surface.Title.ToLowerInvariant()} called “{name}”. Choose another name, or replace that one.");
         }
     }
