@@ -15,9 +15,12 @@ internal sealed class WebsiteClient(HttpClient http, IOptions<WebsiteOptions> op
 
     public Uri Absolute(string path) => new(new Uri(Options.BaseUrl), path);
 
-    public async Task<FetchedFeed> FeedAsync(string? etag, string? lastModified, CancellationToken cancellationToken)
+    public Task<FetchedFeed> FeedAsync(string? etag, string? lastModified, CancellationToken cancellationToken) =>
+        IfChangedAsync(Absolute(Options.FeedPath), etag, lastModified, cancellationToken);
+
+    public async Task<FetchedFeed> IfChangedAsync(Uri url, string? etag, string? lastModified, CancellationToken cancellationToken)
     {
-        using HttpRequestMessage request = new(HttpMethod.Get, Absolute(Options.FeedPath));
+        using HttpRequestMessage request = new(HttpMethod.Get, url);
         if (etag is not null && EntityTagHeaderValue.TryParse(etag, out EntityTagHeaderValue? tag))
             request.Headers.IfNoneMatch.Add(tag);
         if (lastModified is not null && DateTimeOffset.TryParse(lastModified, out DateTimeOffset modified))

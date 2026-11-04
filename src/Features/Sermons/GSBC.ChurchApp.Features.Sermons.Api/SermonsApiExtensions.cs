@@ -21,6 +21,7 @@ public static class SermonsApiExtensions
         services.Configure<WebsiteOptions>(configuration.GetSection(WebsiteOptions.Section));
         services.AddHttpClient<WebsiteClient>(client => client.Timeout = TimeSpan.FromMinutes(2));
         services.AddScoped<Artwork>();
+        services.AddMediaSystemArea(Artwork.Area);
         services.AddScoped<Speakers>();
         services.AddScoped<SermonPublisher>();
         services.AddScoped<WebsiteReader>();

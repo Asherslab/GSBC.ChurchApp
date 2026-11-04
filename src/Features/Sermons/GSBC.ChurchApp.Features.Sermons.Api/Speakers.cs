@@ -4,7 +4,7 @@ using Microsoft.Extensions.Logging;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
-internal sealed class Speakers(SermonsDbContext db, WebsiteClient website, Artwork artwork, TimeProvider time, ILogger<Speakers> logger)
+internal sealed class Speakers(SermonsDbContext db, Artwork artwork, TimeProvider time, ILogger<Speakers> logger)
 {
     private readonly Dictionary<string, SpeakerRecord> _resolved = new(StringComparer.Ordinal);
 
@@ -38,17 +38,19 @@ internal sealed class Speakers(SermonsDbContext db, WebsiteClient website, Artwo
             if (id is null || await db.Speakers.FindAsync([id.Value], cancellationToken) is not { } speaker || speaker.PhotoSourceUrl == url)
                 continue;
             speaker.PhotoSourceUrl = url;
+            speaker.PhotoHash = null;
             speaker.Photo = null;
         }
     }
 
     public async Task FillInPhotosAsync(CancellationToken cancellationToken)
     {
-        foreach (SpeakerRecord speaker in await db.Speakers.Where(speaker => speaker.Photo == null && speaker.PhotoSourceUrl != null).ToListAsync(cancellationToken))
+        foreach (SpeakerRecord speaker in await db.Speakers.Where(speaker => speaker.PhotoHash == null && speaker.PhotoSourceUrl != null).ToListAsync(cancellationToken))
         {
             try
             {
-                speaker.Photo = await artwork.PhotoAsync(await website.BytesAsync(speaker.PhotoSourceUrl!, cancellationToken), speaker.Name, cancellationToken);
+                ArtworkPhoto photo = await artwork.PhotoAsync(speaker.PhotoSourceUrl!, speaker.Name, Artwork.SpeakerOwner(speaker.Id), cancellationToken);
+                (speaker.PhotoHash, speaker.Photo) = (photo.Hash, photo.Photo);
             }
             catch (Exception exception) when (exception is HttpRequestException or InvalidDataException)
             {

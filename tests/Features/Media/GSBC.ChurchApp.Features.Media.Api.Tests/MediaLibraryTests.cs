@@ -247,6 +247,26 @@ public sealed class MediaLibraryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AFileTheAppKeepsIsStoredOnceAndOutlivesAStaffCopyOfTheSameBytes()
+    {
+        ClaimsPrincipal staff = Person();
+        byte[] bytes = Jpeg(seed: 11);
+        KeptFile file = new(bytes, "image/jpeg", "jpg", "artwork-large.jpg", 64, 48);
+        MediaRef kept = await FoldersCallAsync(folders => folders.KeepAsync(Chats, file, Cancellation));
+        MediaRef keptAgain = await FoldersCallAsync(folders => folders.KeepAsync(Chats, file, Cancellation));
+        Assert.Equal(kept.Id, keptAgain.Id);
+
+        MediaRef staffCopy = await UploadAsync(staff, bytes, "image/jpeg");
+        Assert.Equal(kept.Key, staffCopy.Key);
+        await LibraryCallAsync(library => Done(library.DeleteAsync(staffCopy.Id, Cancellation)));
+        using (HttpResponseMessage stillThere = await _http.GetAsync(kept.Url, Cancellation))
+            Assert.Equal(HttpStatusCode.OK, stillThere.StatusCode);
+
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => Done(library.DeleteAsync(kept.Id, Cancellation))));
+        Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
+    }
+
+    [Fact]
     public async Task MovingFilesAndFoldersAroundNeverChangesAFilesIdentityOrWhereItIsUsed()
     {
         ClaimsPrincipal staff = Person();

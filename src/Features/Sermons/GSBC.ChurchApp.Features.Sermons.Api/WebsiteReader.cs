@@ -94,6 +94,7 @@ internal sealed class WebsiteReader(
             if (original != sermon.ArtworkSourceUrl)
             {
                 sermon.ArtworkSourceUrl = original;
+                sermon.ArtworkHash = null;
                 sermon.Artwork = null;
                 sermon.Thumbnail = null;
             }
@@ -128,6 +129,7 @@ internal sealed class WebsiteReader(
                 if (page.ArtworkUrl != series.ArtworkSourceUrl)
                 {
                     series.ArtworkSourceUrl = page.ArtworkUrl;
+                    series.ArtworkHash = null;
                     series.Artwork = null;
                     series.Thumbnail = null;
                 }
@@ -173,18 +175,18 @@ internal sealed class WebsiteReader(
         foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.DurationSeconds == 0 && sermon.AudioUrl != "").ToListAsync(cancellationToken))
             await Attempt(async () => sermon.DurationSeconds = await DurationOfAsync(sermon, cancellationToken) ?? 0, "duration", sermon.AudioUrl);
 
-        foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.Artwork == null && sermon.ArtworkSourceUrl != null).ToListAsync(cancellationToken))
+        foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.ArtworkHash == null && sermon.ArtworkSourceUrl != null).OrderBy(sermon => sermon.AddedAt).ToListAsync(cancellationToken))
             await Attempt(async () =>
             {
-                ArtworkCopies copies = await artwork.CopiesAsync(await website.BytesAsync(sermon.ArtworkSourceUrl!, cancellationToken), sermon.EffectiveTitle, cancellationToken);
-                (sermon.Artwork, sermon.Thumbnail) = (copies.Large, copies.Small);
+                ArtworkCopies copies = await artwork.CopiesAsync(sermon.ArtworkSourceUrl!, sermon.EffectiveTitle, Artwork.SermonOwner(sermon.Id), cancellationToken);
+                (sermon.ArtworkHash, sermon.Artwork, sermon.Thumbnail) = (copies.Hash, copies.Large, copies.Small);
             }, "artwork", sermon.ArtworkSourceUrl!);
 
-        foreach (SeriesRecord series in await db.Series.Where(series => series.Artwork == null && series.ArtworkSourceUrl != null).ToListAsync(cancellationToken))
+        foreach (SeriesRecord series in await db.Series.Where(series => series.ArtworkHash == null && series.ArtworkSourceUrl != null).ToListAsync(cancellationToken))
             await Attempt(async () =>
             {
-                ArtworkCopies copies = await artwork.CopiesAsync(await website.BytesAsync(series.ArtworkSourceUrl!, cancellationToken), series.Name, cancellationToken);
-                (series.Artwork, series.Thumbnail) = (copies.Large, copies.Small);
+                ArtworkCopies copies = await artwork.CopiesAsync(series.ArtworkSourceUrl!, series.Name, Artwork.SeriesOwner(series.Id), cancellationToken);
+                (series.ArtworkHash, series.Artwork, series.Thumbnail) = (copies.Hash, copies.Large, copies.Small);
             }, "series artwork", series.ArtworkSourceUrl!);
 
         await speakers.FillInPhotosAsync(cancellationToken);

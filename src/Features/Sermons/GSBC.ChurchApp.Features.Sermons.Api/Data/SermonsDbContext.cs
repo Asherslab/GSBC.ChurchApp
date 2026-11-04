@@ -16,6 +16,8 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
     public DbSet<SpeakerAlias> SpeakerAliases => Set<SpeakerAlias>();
     public DbSet<ProgressRecord> Progress => Set<ProgressRecord>();
     public DbSet<SourceState> SourceStates => Set<SourceState>();
+    public DbSet<ArtworkSource> ArtworkSources => Set<ArtworkSource>();
+    public DbSet<ArtworkAddress> ArtworkAddresses => Set<ArtworkAddress>();
 
     protected override string Schema => SchemaName;
 
@@ -63,6 +65,20 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
         {
             entity.ToTable("progress");
             entity.HasKey(progress => new { progress.UserId, progress.SermonId });
+        });
+        modelBuilder.Entity<ArtworkSource>(entity =>
+        {
+            entity.ToTable("artwork_sources");
+            entity.HasKey(source => source.Hash);
+            Media(entity.Property(source => source.Large));
+            Media(entity.Property(source => source.Small));
+            Media(entity.Property(source => source.Photo));
+        });
+        modelBuilder.Entity<ArtworkAddress>(entity =>
+        {
+            entity.ToTable("artwork_addresses");
+            entity.HasKey(address => address.Url);
+            entity.HasIndex(address => address.Hash);
         });
         modelBuilder.Entity<SourceState>(entity =>
         {

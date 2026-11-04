@@ -39,10 +39,33 @@ internal sealed class MemoryBlobs : IBlobStore
     }
 }
 
-internal sealed class AnyMedia : IMediaReferences
+internal sealed class AnyMedia : IMediaReferences, IMediaSystemFolders
 {
+    private readonly Dictionary<string, MediaRef> _kept = [];
+
+    public List<KeptFile> Kept { get; } = [];
+    public Dictionary<string, List<string>> Uses { get; } = [];
+
+    public Task FileAsync(MediaSystemArea area, string? scopeId, string scopeName, IReadOnlyCollection<MediaRef> media, CancellationToken cancellationToken) =>
+        Task.CompletedTask;
+
+    public Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken)
+    {
+        string key = $"{Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(file.Bytes))}.{file.Extension}";
+        if (!_kept.TryGetValue(key, out MediaRef? kept))
+        {
+            Kept.Add(file);
+            kept = _kept[key] = new MediaRef { Id = Guid.CreateVersion7().ToString(), Key = key, ContentType = file.ContentType, Width = file.Width, Height = file.Height };
+        }
+        return Task.FromResult(kept);
+    }
+
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
 
-    public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
+    {
+        Uses[owner] = verified.Select(media => media.Id).ToList();
+        return Task.CompletedTask;
+    }
 }

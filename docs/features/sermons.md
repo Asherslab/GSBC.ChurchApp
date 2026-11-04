@@ -62,8 +62,20 @@ speaker, and "Watch at: https://youtu.be/…" (112 of 155). No series, no durati
   first few kilobytes (a ranged request: the Xing/VBRI header, or the bitrate for constant-bitrate files).
 - **Artwork** is made into two copies on the server: 1280 wide for the sermon page and 480 wide for lists and the
   Hub, JPEG, named by their SHA-256 in the public bucket, so phones cache them forever and prefetch the small
-  one; speakers' photos (from the series pages) become 192-pixel squares. Sermons stores these itself
-  (Platform.Storage), as files the app makes; they are not staff media. **SkiaSharp** does the resizing (MIT; its
+  one; speakers' photos (from the series pages) become 192-pixel squares.
+- **Each picture is made once (owner, 2026-11-05: "most of our messages use the same default graphic").** Tithe.ly
+  gives every sermon its own picture address even when the picture is the same, so Sermons hashes the **source
+  bytes** (SHA-256): `artwork_sources` maps a source hash to its copies (large, small, photo), and a known picture is
+  never resized or stored again. `artwork_addresses` remembers each address's hash with its ETag and Last-Modified,
+  so filling in a known address is a conditional request (a 304, no download) and a changed picture is noticed. On
+  dev's 155 sermons, 33 series and 12 photos: 196 addresses, **85 distinct pictures**, 158 stored copies (before
+  this, the same 158 objects came out only because the encoder happened to repeat itself, after 376 resizes).
+- **The copies are Media items, kept by the app:** `IMediaSystemFolders.KeepAsync` puts each in Media's
+  *Sermon artwork* system folder (audience `sermons.edit`; staff can't delete or move them), deduplicated by its
+  content key, and every sermon, series and speaker holds a **Media reference** to the copies it shows
+  (`sermons/sermon/{id}/artwork`, `sermons/series/{id}/artwork`, `sermons/speakers/{id}/photo`). So Media knows
+  they're in use, and a byte-identical staff upload deleted from Media never removes the blob a sermon uses (Media
+  deletes bytes only when no item lists them). A picture no longer used stays in the folder (small; no clean-up yet). **SkiaSharp** does the resizing (MIT; its
   `NativeAssets.Linux.NoDependencies` runs in the stock .NET container). The owner chose ImageSharp first
   (2026-11-04), but ImageSharp 3.2 and 4 refuse to build in Release without a Six Labors licence key, so it
   was swapped rather than adding a key to the build.

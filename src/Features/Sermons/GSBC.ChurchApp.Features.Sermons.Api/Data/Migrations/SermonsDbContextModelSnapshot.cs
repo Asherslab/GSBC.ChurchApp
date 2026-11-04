@@ -23,6 +23,66 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ArtworkAddress", b =>
+                {
+                    b.Property<string>("Url")
+                        .HasColumnType("text")
+                        .HasColumnName("url");
+
+                    b.Property<string>("ETag")
+                        .HasColumnType("text")
+                        .HasColumnName("e_tag");
+
+                    b.Property<DateTime>("FetchedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("fetched_at");
+
+                    b.Property<string>("Hash")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("hash");
+
+                    b.Property<string>("LastModified")
+                        .HasColumnType("text")
+                        .HasColumnName("last_modified");
+
+                    b.HasKey("Url")
+                        .HasName("pk_artwork_addresses");
+
+                    b.HasIndex("Hash")
+                        .HasDatabaseName("ix_artwork_addresses_hash");
+
+                    b.ToTable("artwork_addresses", "sermons");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ArtworkSource", b =>
+                {
+                    b.Property<string>("Hash")
+                        .HasColumnType("text")
+                        .HasColumnName("hash");
+
+                    b.Property<DateTime>("AddedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("added_at");
+
+                    b.Property<string>("Large")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("large");
+
+                    b.Property<string>("Photo")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("photo");
+
+                    b.Property<string>("Small")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("small");
+
+                    b.HasKey("Hash")
+                        .HasName("pk_artwork_sources");
+
+                    b.ToTable("artwork_sources", "sermons");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ProgressRecord", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -77,6 +137,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.Property<string>("Artwork")
                         .HasColumnType("jsonb")
                         .HasColumnName("artwork");
+
+                    b.Property<string>("ArtworkHash")
+                        .HasColumnType("text")
+                        .HasColumnName("artwork_hash");
 
                     b.Property<string>("ArtworkSourceUrl")
                         .HasColumnType("text")
@@ -144,6 +208,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.Property<string>("Artwork")
                         .HasColumnType("jsonb")
                         .HasColumnName("artwork");
+
+                    b.Property<string>("ArtworkHash")
+                        .HasColumnType("text")
+                        .HasColumnName("artwork_hash");
 
                     b.Property<string>("ArtworkSourceUrl")
                         .HasColumnType("text")
@@ -376,6 +444,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.Property<string>("Photo")
                         .HasColumnType("jsonb")
                         .HasColumnName("photo");
+
+                    b.Property<string>("PhotoHash")
+                        .HasColumnType("text")
+                        .HasColumnName("photo_hash");
 
                     b.Property<string>("PhotoSourceUrl")
                         .HasColumnType("text")

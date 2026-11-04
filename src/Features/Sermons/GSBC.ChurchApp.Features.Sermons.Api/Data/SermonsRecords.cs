@@ -36,6 +36,7 @@ public sealed class SermonRecord
     public string? AudioCopiedFrom { get; set; }
 
     public string? ArtworkSourceUrl { get; set; }
+    public string? ArtworkHash { get; set; }
     public MediaRef? Artwork { get; set; }
     public MediaRef? Thumbnail { get; set; }
 
@@ -59,6 +60,7 @@ public sealed class SeriesRecord
     public string? SourceName { get; set; }
     public string Description { get; set; } = "";
     public string? ArtworkSourceUrl { get; set; }
+    public string? ArtworkHash { get; set; }
     public MediaRef? Artwork { get; set; }
     public MediaRef? Thumbnail { get; set; }
     public MediaRef? ChosenArtwork { get; set; }
@@ -71,6 +73,7 @@ public sealed class SpeakerRecord
     public Guid Id { get; set; }
     public required string Name { get; set; }
     public string? PhotoSourceUrl { get; set; }
+    public string? PhotoHash { get; set; }
     public MediaRef? Photo { get; set; }
     public MediaRef? ChosenPhoto { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -110,4 +113,22 @@ public sealed class SourceState
     public DateTime? SeriesCheckedAt { get; set; }
     public string? SeriesProblem { get; set; }
     public bool HasReadOnce { get; set; }
+}
+
+public sealed class ArtworkSource
+{
+    public required string Hash { get; set; }
+    public MediaRef? Large { get; set; }
+    public MediaRef? Small { get; set; }
+    public MediaRef? Photo { get; set; }
+    public DateTime AddedAt { get; set; }
+}
+
+public sealed class ArtworkAddress
+{
+    public required string Url { get; set; }
+    public required string Hash { get; set; }
+    public string? ETag { get; set; }
+    public string? LastModified { get; set; }
+    public DateTime FetchedAt { get; set; }
 }

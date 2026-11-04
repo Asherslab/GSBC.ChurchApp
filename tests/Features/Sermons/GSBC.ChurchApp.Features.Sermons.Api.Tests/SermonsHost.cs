@@ -23,6 +23,7 @@ public abstract class SermonsHost : IAsyncLifetime
 
     internal FakeWebsite Website { get; } = new();
     internal MemoryBlobs Blobs { get; } = new();
+    internal AnyMedia Media { get; } = new();
     internal RecordedNotifications Notifications { get; } = new();
     internal RecordedRoles Roles { get; } = new();
     internal ManualClock Clock { get; } = new(ChurchTime.ToUtc(new DateTime(2026, 11, 4, 20, 0, 0)));
@@ -41,7 +42,8 @@ public abstract class SermonsHost : IAsyncLifetime
             .Build());
         services.AddSingleton<TimeProvider>(Clock);
         services.AddSingleton<IBlobStore>(Blobs);
-        services.AddSingleton<IMediaReferences, AnyMedia>();
+        services.AddSingleton<IMediaReferences>(Media);
+        services.AddSingleton<IMediaSystemFolders>(Media);
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
         services.AddOptions<WebsiteOptions>().Configure(options => options.BaseUrl = FakeWebsite.BaseUrl);
         services.AddHttpClient<WebsiteClient>().ConfigurePrimaryHttpMessageHandler(() => Website);
@@ -139,10 +141,10 @@ public abstract class SermonsHost : IAsyncLifetime
         return audio;
     }
 
-    protected static byte[] Picture(int width, int height)
+    protected static byte[] Picture(int width, int height, uint colour = 0xFF2A3D5E)
     {
         using SKBitmap bitmap = new(width, height);
-        bitmap.Erase(new SKColor(0x2a, 0x3d, 0x5e));
+        bitmap.Erase(new SKColor(colour));
         using SKImage image = SKImage.FromBitmap(bitmap);
         using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
         return data.ToArray();

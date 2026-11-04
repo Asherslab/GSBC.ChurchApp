@@ -298,12 +298,15 @@ internal sealed class SermonLibraryService(
         await db.Sermons.Where(sermon => sermon.SpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.SpeakerId, into.Id), cancellationToken);
         into.ChosenPhoto ??= from.ChosenPhoto;
         into.PhotoSourceUrl ??= from.PhotoSourceUrl;
-        into.Photo ??= from.Photo;
+        if (into.Photo is null && from.Photo is not null)
+            (into.Photo, into.PhotoHash) = (from.Photo, null);
         from.Photo = from.ChosenPhoto = null;
-        from.PhotoSourceUrl = null;
+        from.PhotoSourceUrl = from.PhotoHash = null;
         publisher.MarkAdmin(into.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+        await media.UseAsync(Artwork.SpeakerOwner(from.Id), [], cancellationToken);
+        await media.UseAsync($"sermons/speakers/{from.Id}", [], cancellationToken);
         db.Speakers.Remove(from);
         if (from.PublishedHash is not null)
             db.FeedChanges.Add(new Platform.Data.FeedChangeRecord { Feed = SermonsFeeds.Speakers, RecordId = from.Id.ToString(), Version = time.GetUtcNow().UtcDateTime.Ticks, Deleted = true });

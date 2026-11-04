@@ -18,9 +18,11 @@ internal sealed class FakeWebsite : HttpMessageHandler
     public void ServeText(string url, string body, string type = "text/html") =>
         Serve(url, _ => new HttpResponseMessage(HttpStatusCode.OK) { Content = new StringContent(body, System.Text.Encoding.UTF8, type) });
 
-    public void ServeBytes(string url, byte[] body) =>
+    public void ServeBytes(string url, byte[] body, string? etag = null) =>
         Serve(url, request =>
         {
+            if (etag is not null && request.Headers.IfNoneMatch.Any(tag => tag.ToString() == etag))
+                return new HttpResponseMessage(HttpStatusCode.NotModified);
             byte[] slice = body;
             HttpStatusCode status = HttpStatusCode.OK;
             if (request.Headers.Range?.Ranges.FirstOrDefault() is { From: { } from } range)
@@ -29,7 +31,10 @@ internal sealed class FakeWebsite : HttpMessageHandler
                 slice = body[(int)from..(int)(to + 1)];
                 status = HttpStatusCode.PartialContent;
             }
-            return new HttpResponseMessage(status) { Content = new ByteArrayContent(slice) };
+            HttpResponseMessage response = new(status) { Content = new ByteArrayContent(slice) };
+            if (etag is not null)
+                response.Headers.ETag = EntityTagHeaderValue.Parse(etag);
+            return response;
         });
 
     public void Fail(string url, HttpStatusCode status) => Serve(url, _ => new HttpResponseMessage(status));
