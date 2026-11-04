@@ -19,5 +19,5 @@
 @code {
     private GSBC.ChurchApp.Platform.Contracts.Destinations.DestinationPage Place =>
         ComingSoonDestinations.Pages.FirstOrDefault(page => page.Route == Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0].Trim('/'))
-        ?? ComingSoonDestinations.Sermons;
+        ?? ComingSoonDestinations.Pages[0];
 }

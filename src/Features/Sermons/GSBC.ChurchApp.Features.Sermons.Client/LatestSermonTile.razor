@@ -1,0 +1,107 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@implements IDisposable
+@inject SermonCatalogue Catalogue
+@inject IServiceProvider Services
+
+<LiveData TValue="Shown" Load="LoadAsync" Feeds="TileFeeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn(Shown.Nothing)</Loading>
+    <Failed>@Drawn(Shown.Nothing)</Failed>
+</LiveData>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private static readonly IReadOnlyList<string> TileFeeds = [.. SermonCatalogue.Feeds, .. Listening.Feeds];
+
+    private SermonPlayer? Player => Services.GetService(typeof(SermonPlayer)) as SermonPlayer;
+
+    private Listening? Listening => Services.GetService(typeof(Listening)) as Listening;
+
+    private sealed record Shown(Sermon? Sermon, ListeningEntry? Progress)
+    {
+        public static readonly Shown Nothing = new(null, null);
+    }
+
+    protected override void OnInitialized()
+    {
+        if (Player is { } player)
+            player.Audio.Changed += OnAudio;
+    }
+
+    private async Task<Shown> LoadAsync()
+    {
+        IReadOnlyList<Sermon> latest = await Catalogue.LatestAsync(1);
+        if (Listening is not { } listening || Variant.Key != SermonsTiles.Listening)
+            return new Shown(latest.FirstOrDefault(), null);
+
+        IReadOnlyDictionary<string, ListeningEntry> progress = await listening.LoadAsync();
+        SermonShelf shelf = await Catalogue.LoadAsync();
+        if (KeepGoing.Pick(shelf, progress, DateTime.UtcNow) is { } underway)
+            return new Shown(underway.Sermon, underway.Progress);
+        Sermon? newest = latest.FirstOrDefault();
+        return new Shown(newest, newest is null ? null : progress.GetValueOrDefault(newest.Id));
+    }
+
+    private TileLook Look => TileLook.Of(SermonsTiles.Latest, Entry.Values);
+
+    private TileVariant Variant => SermonsTiles.Latest.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
+    private RenderFragment Drawn(Shown shown)
+    {
+        TileLook look = Look;
+        if (shown.Sermon is not { } sermon)
+            return @<HubTile Look="look" Title="@look.Title" PlacementId="@Entry.Placement?.Id" />;
+
+        string? href = look.Link == SermonsDestinations.Listen.Path ? SermonsDestinations.Sermon.PathOf(sermon.Id) : null;
+        RenderFragment cover = Cover(sermon);
+        RenderFragment play = Play(sermon);
+        string id = Entry.Placement?.Id ?? "";
+        return Variant.Key switch
+        {
+            TileVariants.PictureBehind =>
+                @<HubTile Look="look" Layout="TileShape.Behind" Title="@sermon.Title" Lines="[Facts(sermon)]" Href="@href" PlacementId="@id" Cover="cover" Action="play" />,
+            SermonsTiles.Listening =>
+                @<HubTile Look="@(look with { Icon = "", Image = null })" Layout="@(Span.Rows > 1 ? TileShape.Poster : Span.Columns > 1 ? TileShape.Row : TileShape.Square)"
+                          Title="@sermon.Title" Lines="[Where(sermon, shown.Progress)]" Href="@href" PlacementId="@id" Action="play" />,
+            _ when Span is { Columns: 1, Rows: 1 } =>
+                @<HubTile Look="look" Layout="TileShape.Behind" Title="@sermon.Title" Class="hub-tile--cover-only" Href="@href" PlacementId="@id" Cover="cover" Action="play" />,
+            _ when Span.Rows == 1 =>
+                @<HubTile Look="look" Layout="TileShape.Beside" Title="@sermon.Title" Lines="[Day(sermon)]" Href="@href" PlacementId="@id" Cover="cover" Action="play" />,
+            _ =>
+                @<HubTile Look="look" Layout="TileShape.Picture" Title="@sermon.Title" Lines="[Facts(sermon)]" Href="@href" PlacementId="@id" Cover="cover" Action="play" />,
+        };
+    }
+
+    private static RenderFragment Cover(Sermon sermon) => sermon.Thumbnail is { } thumbnail
+        ? @<span class="hub-cover"><MediaImage Media="thumbnail" Alt="" /></span>
+        : @<span class="hub-cover"><BrandMark Decorative="true" /></span>;
+
+    private RenderFragment Play(Sermon sermon)
+    {
+        bool playing = Player?.IsPlaying(sermon) == true;
+        string label = playing ? $"Pause {sermon.Title}" : $"Play {sermon.Title}";
+        if (!Hub.Live || Player is null)
+            return @<span class="hub-play" aria-hidden="true"><Icon Name="play" /></span>;
+        return @<button type="button" class="hub-play" aria-label="@label" @onclick="() => Player.ToggleAsync(sermon)" @onclick:stopPropagation="true"><Icon Name="@(playing ? "pause" : "play")" /></button>;
+    }
+
+    private static string Day(Sermon sermon) => SermonText.Day(sermon.PreachedAt);
+
+    private static string Facts(Sermon sermon) => SermonText.Join(SermonText.Day(sermon.PreachedAt), SermonText.Length(sermon.DurationSeconds));
+
+    private static string Where(Sermon sermon, ListeningEntry? progress) =>
+        progress is { } entry && ListeningProgress.IsUnderway(entry) ? SermonText.Left(entry) : Facts(sermon);
+
+    private void OnAudio() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        if (Player is { } player)
+            player.Audio.Changed -= OnAudio;
+    }
+}

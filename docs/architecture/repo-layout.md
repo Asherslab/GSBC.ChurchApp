@@ -121,6 +121,9 @@ flowchart LR
     end
 
     subgraph Sermons["Features / Sermons"]
+        SermonsApp["Features.Sermons.App"]
+        SermonsAdmin["Features.Sermons.Admin"]
+        SermonsClient["Features.Sermons.Client"]
         SermonsApi["Features.Sermons.Api"]
         SermonsContracts["Features.Sermons.Contracts"]
     end
@@ -159,8 +162,8 @@ flowchart LR
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
     HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin
     HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & PlatformApi
     HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi
 
@@ -198,6 +201,9 @@ flowchart LR
     AnalyticsApi --> AnalyticsContracts & PlatformApi & PlatformCommon
     AnalyticsContracts --> PlatformContracts
 
+    SermonsApp --> SermonsClient
+    SermonsAdmin --> SermonsClient
+    SermonsClient --> SermonsContracts & PlatformClient & PlatformUi & PlatformCommon
     SermonsApi --> SermonsContracts & PlatformApi & PlatformCommon & PlatformStorage
     SermonsContracts --> PlatformContracts
 
@@ -245,8 +251,8 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), and rich text (`RichText`, its parser and save rules) | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), and media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration) | Yes |
-| `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor`, `MediaChooser` and `AudiencePicker`; `ChipPicker` (search and choose several, shown as chips) | Yes |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration), and the audio player (`IAudioPlayer`: the native player on the phone, an audio element in a browser, with a playback journal that survives the app being closed) | Yes |
+| `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor`, `MediaChooser` and `AudiencePicker`; `ChipPicker` (search and choose several, shown as chips); `VideoEmbed` (YouTube played inline from the app host's static `embed/youtube.html`) | Yes |
 | `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, `IPermissionHolders` and `IAccountEmails` (who holds a node, and their addresses), and `IMediaReferences` (the check features call on every `MediaRef` they save) | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2 in production, SeaweedFS in development): public and private buckets, signed links, copies with cache headers, content-addressed keys | No |
@@ -282,6 +288,9 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Contracts` | The `Sermons` and `Library` services, the sermon, series, speaker and listening messages, the progress merge rule (`ListeningProgress`), YouTube links, feeds, places and the `sermons.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Api` | Sermons from the website's feed and series pages (hourly) or uploads, staff corrections that survive re-reading, artwork made into small copies in R2, the catalogue, series and speaker feeds, and listening history merged per person (schema `sermons`) | No |
+| `GSBC.ChurchApp.Features.Sermons.Client` | The catalogue read from the phone's store (`SermonCatalogue`), listening history from the native journal and the account's feed, sent through the outbox (`Listening`), the sermon player over `IAudioPlayer`, and the Home tile *Latest sermon* | Yes |
+| `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
+| `GSBC.ChurchApp.Features.Sermons.Admin` | The admin panel's Sermons page: correcting what the website says, series and speakers, uploading, and where sermons come from | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |

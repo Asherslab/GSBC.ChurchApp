@@ -20,6 +20,8 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public string? Platform { get; private set; }
 
+    public Uri? Gateway { get; private set; }
+
     public int OsMajor { get; private set; }
 
     public event Action<bool>? AppStateChanged;
@@ -36,6 +38,7 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
         SignedIn = await js.InvokeAsync<bool>("gsbcNative.isSignedIn");
         (AppVersion, AppBuild) = await js.InvokeAsync<NativeAppVersion>("gsbcNative.appVersion");
         (Platform, OsMajor) = await js.InvokeAsync<NativeDevice>("gsbcNative.device");
+        Gateway = Uri.TryCreate(await js.InvokeAsync<string?>("gsbcNative.gateway"), UriKind.Absolute, out Uri? gateway) ? gateway : null;
         _receiver = DotNetObjectReference.Create(this);
         await js.InvokeVoidAsync("gsbcNative.listenSession", _receiver);
         await js.InvokeVoidAsync("gsbcNative.listenAppState", _receiver);

@@ -24,11 +24,17 @@ public static class SermonsApiExtensions
         services.AddScoped<Speakers>();
         services.AddScoped<SermonPublisher>();
         services.AddScoped<WebsiteReader>();
+        services.AddScoped<SermonUploads>();
+        services.AddScoped<PodcastFeedWriter>();
+        services.Configure<PodcastOptions>(configuration.GetSection(PodcastOptions.Section));
+        services.AddSingleton<AudioCopier>();
+        services.AddHostedService(provider => provider.GetRequiredService<AudioCopier>());
         services.AddSingleton<WebsiteSchedule>();
         services.AddHostedService(provider => provider.GetRequiredService<WebsiteSchedule>());
 
         services.AddPermissions(SermonsPermissions.All);
         services.AddDestinations(SermonsDestinations.All);
+        services.AddSurfaces(SermonsTiles.Surfaces);
         services.AddDestinationSource<SermonDestinationSource>();
         services.AddDestinationSource<SeriesDestinationSource>();
         services.AddDestinationSource<SpeakerDestinationSource>();

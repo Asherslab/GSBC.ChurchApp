@@ -241,7 +241,17 @@ YouTube, "proper embedding if possible", otherwise the YouTube app or Safari, **
 - **Fallback:** open `https://www.youtube.com/watch?v=…` with the system opener (`Shell.OpenExternalAsync`):
   the YouTube app takes it if installed (a universal link), Safari otherwise.
 
-Result of the spike: *to be written*.
+**Spike, 2026-11-04 (iOS Simulator, iOS 26.3, GSBC Dev against `dev-app.baptist.com.au`): it works.** The app frames
+`https://dev-app.baptist.com.au/embed/youtube.html#v=…`; the player reported *ready*, then *buffering* and *playing*,
+inline in the page with captions, and no error 152 or 153. The embed page is served by the gateway as one of the
+admin panel's static files (Hosts.Admin `wwwroot/embed/`), unchanged for every request; the video id travels in the
+fragment, which never reaches the server. It answers `play` and `pause` messages from the app (so starting the audio
+can pause the video), and reports its state back (`gsbc-youtube` messages), which is how *watched* is recorded and
+how the app falls back to the YouTube app when an embed is refused. YouTube's terms are met: the referrer is our https
+origin under `strict-origin-when-cross-origin`, the player is at least 200 × 200 (full width at 16:9), nothing overlays
+it. `VideoEmbed` (Platform.Ui) is the component; the design gallery shows it. Still to check on the owner's iPhone:
+picture-in-picture and fullscreen (iOS's own video controls). In production the page is served from
+`app.baptist.com.au`, with `no-cache` like the panel's other unfingerprinted files.
 
 ## Places, Home and notifications
 

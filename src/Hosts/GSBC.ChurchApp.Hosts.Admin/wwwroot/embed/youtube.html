@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <title>Video</title>
+  <style>
+    html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
+    #player { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+  </style>
+</head>
+<body>
+  <div id="player"></div>
+  <script>
+    (() => {
+      const hash = new URLSearchParams(location.hash.slice(1));
+      const id = hash.get('v') || '';
+      const start = Math.max(0, parseInt(hash.get('t') || '0', 10) || 0);
+      const tell = (state, detail) => parent.postMessage({ source: 'gsbc-youtube', state, ...detail }, '*');
+      if (!/^[A-Za-z0-9_-]{11}$/.test(id)) {
+        tell('error', { code: 'no-video' });
+        return;
+      }
+      let player = null;
+      window.addEventListener('message', (event) => {
+        if (event.source !== parent || !player) return;
+        if (event.data?.command === 'play') player.playVideo();
+        if (event.data?.command === 'pause') player.pauseVideo();
+      });
+      window.onYouTubeIframeAPIReady = () => {
+        player = new YT.Player('player', {
+          videoId: id,
+          playerVars: { playsinline: 1, rel: 0, start, origin: location.origin, widget_referrer: location.origin },
+          events: {
+            onReady: () => tell('ready'),
+            onStateChange: (event) => tell(['ended', 'playing', 'paused', 'buffering', 'cued'][event.data] || 'unstarted'),
+            onError: (event) => tell('error', { code: String(event.data) }),
+          },
+        });
+      };
+      const api = document.createElement('script');
+      api.src = 'https://www.youtube.com/iframe_api';
+      api.onerror = () => tell('error', { code: 'offline' });
+      document.head.appendChild(api);
+    })();
+  </script>
+</body>
+</html>

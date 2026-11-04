@@ -1,0 +1,19 @@
+@using GSBC.ChurchApp.Platform.Client.Audio
+
+<span class="audio-art @Class">
+    @if (Item.ArtworkUrl is { Length: > 0 } artwork && !_failed)
+    {
+        <img src="@artwork" alt="" @onerror="() => _failed = true" />
+    }
+    else
+    {
+        <BrandMark Decorative="true" />
+    }
+</span>
+
+@code {
+    private bool _failed;
+
+    [Parameter, EditorRequired] public required AudioItem Item { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

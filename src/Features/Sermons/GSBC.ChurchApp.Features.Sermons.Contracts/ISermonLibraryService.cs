@@ -32,5 +32,11 @@ public interface ISermonLibraryService
     ValueTask<SourceStatus> ChooseSourceAsync(SourceChoice request, CallContext context = default);
 
     [Requires(SermonsPermissions.EditNode)]
+    ValueTask<AudioUploadTicket> BeginAudioUploadAsync(AudioUploadRequest request, CallContext context = default);
+
+    [Requires(SermonsPermissions.EditNode)]
+    ValueTask<SermonDetail> AddUploadAsync(SermonUpload request, CallContext context = default);
+
+    [Requires(SermonsPermissions.EditNode)]
     ValueTask<SourceStatus> CheckNowAsync(Done request, CallContext context = default);
 }

@@ -13,6 +13,7 @@ window.gsbcNative = (() => {
     isDevelopmentBuild: () => isNative() && dataLayer().status().then((result) => !!result.developmentBuild),
     isSignedIn: () => isNative() && dataLayer().status().then((result) => !!result.signedIn),
     device: () => (isNative() ? dataLayer().status().then((result) => ({ platform: result.platform || null, osMajor: result.osMajor || 0 })) : { platform: null, osMajor: 0 }),
+    gateway: () => (isNative() ? dataLayer().status().then((result) => result.gateway || null) : null),
     appVersion: () => (isNative() ? dataLayer().status().then((result) => ({ version: result.version || null, build: result.build || null })) : { version: null, build: null }),
     preference: (key) => {
       if (isNative()) return dataLayer().preference({ key }).then((result) => result.value ?? null);

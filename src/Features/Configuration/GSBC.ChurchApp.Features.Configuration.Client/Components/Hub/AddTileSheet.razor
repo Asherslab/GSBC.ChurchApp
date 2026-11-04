@@ -36,7 +36,7 @@
     private RenderFragment Choice(HubTileKind kind) => __builder =>
     {
         <button type="button" class="add-tile__kind" @onclick="() => OnChosen.InvokeAsync(kind)">
-            <span class="row__icon @(kind.IsPlain ? "row__icon--warm" : "row__icon--accent")"><Icon Name="@(kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : kind == WaitingTiles.Sermon ? "sermons" : "layout")" Size="IconSize.Small" /></span>
+            <span class="row__icon @(kind.IsPlain ? "row__icon--warm" : "row__icon--accent")"><Icon Name="@(kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : "layout")" Size="IconSize.Small" /></span>
             <span class="add-tile__words">
                 <strong>@kind.Surface.Title</strong>
                 <span>@kind.Surface.Description</span>

@@ -17,11 +17,10 @@ public static class ConfigurationClientExtensions
         services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All)
             .AddSingleton<ConfigurationClient>().AddSingleton<DraftsClient>().AddSingleton<DatedChanges>()
             .AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All)
-            .AddHubTile<SermonTile>(WaitingTiles.Sermon)
             .AddHubTile<BulletinTile>(WaitingTiles.Bulletin)
             .AddHubTile<WeekTile>(WaitingTiles.Week)
             .AddHubTile<OutreachTile>(WaitingTiles.Outreach);
-        foreach (HubTileKind kind in WaitingTiles.All.Except([WaitingTiles.Sermon, WaitingTiles.Bulletin, WaitingTiles.Week, WaitingTiles.Outreach]))
+        foreach (HubTileKind kind in WaitingTiles.All.Except([WaitingTiles.Bulletin, WaitingTiles.Week, WaitingTiles.Outreach]))
             services.AddHubTile<WordsTileView>(kind);
         return services;
     }

@@ -71,6 +71,18 @@ public sealed class ProgressBatch
 }
 
 [ProtoContract]
+public sealed class LatestQuery
+{
+    [ProtoMember(1)] public int Count { get; set; }
+}
+
+[ProtoContract]
+public sealed class SermonPage
+{
+    [ProtoMember(1)] public List<Sermon> Sermons { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class SermonQuery
 {
     [ProtoMember(1)] public string Text { get; set; } = "";
@@ -169,6 +181,41 @@ public sealed class SourceStatus
     [ProtoMember(7)] public int ToCopy { get; set; }
     [ProtoMember(8)] public string? PodcastFeedUrl { get; set; }
     [ProtoMember(9)] public DateTime? SeriesCheckedAt { get; set; }
+    [ProtoMember(10)] public string? CopyNote { get; set; }
+}
+
+[ProtoContract]
+public sealed class AudioUploadRequest
+{
+    [ProtoMember(1)] public string FileName { get; set; } = "";
+    [ProtoMember(2)] public string ContentType { get; set; } = "";
+    [ProtoMember(3)] public long Bytes { get; set; }
+}
+
+[ProtoContract]
+public sealed class AudioUploadTicket
+{
+    [ProtoMember(1)] public string Key { get; set; } = "";
+    [ProtoMember(2)] public string Url { get; set; } = "";
+    [ProtoMember(3)] public string ContentType { get; set; } = "";
+    [ProtoMember(4)] public DateTime ExpiresAt { get; set; }
+}
+
+[ProtoContract]
+public sealed class SermonUpload
+{
+    [ProtoMember(1)] public string AudioKey { get; set; } = "";
+    [ProtoMember(2)] public string Title { get; set; } = "";
+    [ProtoMember(3)] public string? SpeakerId { get; set; }
+    [ProtoMember(4)] public string? NewSpeaker { get; set; }
+    [ProtoMember(5)] public string? SeriesId { get; set; }
+    [ProtoMember(6)] public string? NewSeries { get; set; }
+    [ProtoMember(7)] public string Service { get; set; } = "";
+    [ProtoMember(8)] public DateTime PreachedOn { get; set; }
+    [ProtoMember(9)] public string? YouTube { get; set; }
+    [ProtoMember(10)] public MediaRef? Artwork { get; set; }
+    [ProtoMember(11)] public string Summary { get; set; } = "";
+    [ProtoMember(12)] public int DurationSeconds { get; set; }
 }
 
 [ProtoContract]

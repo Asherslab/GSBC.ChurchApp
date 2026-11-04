@@ -6,35 +6,37 @@ import UIKit
 public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     public let identifier = "DataLayerPlugin"
     public let jsName = "DataLayer"
-    public let pluginMethods: [CAPPluginMethod] = [
-        CAPPluginMethod(name: "unary", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "startSync", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "stopSync", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "pull", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "status", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "readPage", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "storeInfo", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "enqueue", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "outbox", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "retryOutbox", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "discardOutbox", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "discardQuietOutbox", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "takeCrashes", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "cachedMedia", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "fetchMedia", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "prefetchMedia", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "clearPrivateMedia", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "signIn", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "registerPasskey", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "signInWithCode", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "signOut", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "preference", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setPreference", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "proveInstall", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "pushPermission", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "registerPush", returnType: CAPPluginReturnPromise),
-        CAPPluginMethod(name: "setBadge", returnType: CAPPluginReturnPromise)
-    ]
+    public let pluginMethods: [CAPPluginMethod] = DataLayerPlugin.dataMethods + DataLayerPlugin.audioMethods
+
+    private static let dataMethods: [CAPPluginMethod] = [
+        "unary",
+        "startSync",
+        "stopSync",
+        "pull",
+        "status",
+        "readPage",
+        "storeInfo",
+        "enqueue",
+        "outbox",
+        "retryOutbox",
+        "discardOutbox",
+        "discardQuietOutbox",
+        "takeCrashes",
+        "cachedMedia",
+        "fetchMedia",
+        "prefetchMedia",
+        "clearPrivateMedia",
+        "signIn",
+        "registerPasskey",
+        "signInWithCode",
+        "signOut",
+        "preference",
+        "setPreference",
+        "proveInstall",
+        "pushPermission",
+        "registerPush",
+        "setBadge",
+    ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
     private static let preferences = UserDefaults.standard
     private static let preferencePrefix = "gsbc.preference."
@@ -47,6 +49,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
     private var outbox: Outbox? { runtime.outbox }
 
     override public func load() {
+        listenToAudio()
         runtime.feedsChanged = { [weak self] feeds in
             self?.notifyListeners("feedsChanged", data: ["feeds": Array(feeds).sorted()])
         }
@@ -222,7 +225,8 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         let info = Bundle.main.infoDictionary
         call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild, "signedIn": runtime.signedIn,
                       "version": info?["CFBundleShortVersionString"] as? String ?? "", "build": info?["CFBundleVersion"] as? String ?? "",
-                      "platform": "ios", "osMajor": ProcessInfo.processInfo.operatingSystemVersion.majorVersion])
+                      "platform": "ios", "osMajor": ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
+                      "gateway": transport?.gateway.absoluteString ?? ""])
     }
 
     @objc func preference(_ call: CAPPluginCall) {

@@ -12,6 +12,8 @@ namespace GSBC.ChurchApp.Features.Sermons.Contracts;
 [ProtoSerializable(typeof(SpeakerInfo))]
 [ProtoSerializable(typeof(ListeningEntry))]
 [ProtoSerializable(typeof(ProgressBatch))]
+[ProtoSerializable(typeof(LatestQuery))]
+[ProtoSerializable(typeof(SermonPage))]
 [ProtoSerializable(typeof(SermonQuery))]
 [ProtoSerializable(typeof(SermonList))]
 [ProtoSerializable(typeof(SermonDetail))]
@@ -22,4 +24,7 @@ namespace GSBC.ChurchApp.Features.Sermons.Contracts;
 [ProtoSerializable(typeof(SpeakerList))]
 [ProtoSerializable(typeof(SourceStatus))]
 [ProtoSerializable(typeof(SourceChoice))]
+[ProtoSerializable(typeof(AudioUploadRequest))]
+[ProtoSerializable(typeof(AudioUploadTicket))]
+[ProtoSerializable(typeof(SermonUpload))]
 public partial class SermonsContractsModel : TypeModel;

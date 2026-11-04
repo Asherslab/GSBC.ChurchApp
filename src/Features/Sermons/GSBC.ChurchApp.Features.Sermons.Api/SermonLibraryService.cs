@@ -10,7 +10,8 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed class SermonLibraryService(
-    SermonsDbContext db, SermonPublisher publisher, IMediaReferences media, WebsiteSchedule schedule, TimeProvider time) : ISermonLibraryService
+    SermonsDbContext db, SermonPublisher publisher, IMediaReferences media, WebsiteSchedule schedule, SermonUploads uploads,
+    PodcastFeedWriter podcast, AudioCopier copier, TimeProvider time) : ISermonLibraryService
 {
     public const int TitleLimit = 160;
     public const int ServiceLimit = 80;
@@ -123,7 +124,14 @@ internal sealed class SermonLibraryService(
         publisher.MarkAdmin(sermon.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+        await WritePodcastIfOursAsync(cancellationToken);
         return Detail(sermon, await LookupsAsync(cancellationToken));
+    }
+
+    private async Task WritePodcastIfOursAsync(CancellationToken cancellationToken)
+    {
+        if ((await SourceStates.GetAsync(db, cancellationToken)).Source == SermonSources.Uploads)
+            await podcast.WriteAsync(cancellationToken);
     }
 
     public async ValueTask<SeriesList> ListSeriesAsync(Done request, CallContext context = default)
@@ -221,7 +229,18 @@ internal sealed class SermonLibraryService(
         await db.SaveChangesAsync(context.CancellationToken);
         if (request.Source == SermonSources.Website)
             schedule.ReadSoon();
+        else
+            await podcast.WriteAsync(context.CancellationToken);
         return await StatusAsync(context.CancellationToken);
+    }
+
+    public async ValueTask<AudioUploadTicket> BeginAudioUploadAsync(AudioUploadRequest request, CallContext context = default) =>
+        await uploads.BeginAsync(request, context.CancellationToken);
+
+    public async ValueTask<SermonDetail> AddUploadAsync(SermonUpload request, CallContext context = default)
+    {
+        SermonRecord sermon = await uploads.AddAsync(request, context.CancellationToken);
+        return Detail(sermon, await LookupsAsync(context.CancellationToken));
     }
 
     public async ValueTask<SourceStatus> CheckNowAsync(Done request, CallContext context = default)
@@ -241,6 +260,10 @@ internal sealed class SermonLibraryService(
             SeriesCheckedAt = state.SeriesCheckedAt,
             Problem = state.Problem ?? state.SeriesProblem,
             Sermons = await db.Sermons.CountAsync(sermon => !sermon.Hidden, cancellationToken),
+            Copied = await db.Sermons.CountAsync(sermon => sermon.AudioCopiedFrom != null, cancellationToken),
+            ToCopy = state.Source == SermonSources.Uploads ? await AudioCopier.Waiting(db).CountAsync(cancellationToken) : 0,
+            PodcastFeedUrl = state.Source == SermonSources.Uploads ? podcast.Url : null,
+            CopyNote = copier.Limit is { } limit ? $"While developing, only the newest {limit} are copied." : null,
         };
     }
 

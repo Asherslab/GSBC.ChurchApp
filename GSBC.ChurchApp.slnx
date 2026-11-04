@@ -79,7 +79,10 @@
     <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Contracts/GSBC.ChurchApp.Features.Notifications.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Features/Sermons/">
+    <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/GSBC.ChurchApp.Features.Sermons.Admin.csproj" />
     <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api/GSBC.ChurchApp.Features.Sermons.Api.csproj" />
+    <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.App/GSBC.ChurchApp.Features.Sermons.App.csproj" />
+    <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client/GSBC.ChurchApp.Features.Sermons.Client.csproj" />
     <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Contracts/GSBC.ChurchApp.Features.Sermons.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Features/ReleaseNotes/">

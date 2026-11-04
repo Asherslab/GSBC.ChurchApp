@@ -14,6 +14,19 @@ internal sealed class SermonsService(SermonsDbContext db, TimeProvider time) : I
     public const int BatchLimit = 500;
     public static readonly TimeSpan ClockSlack = TimeSpan.FromMinutes(5);
 
+    public const int MostLatest = 10;
+
+    public async ValueTask<SermonPage> LatestAsync(LatestQuery request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        List<SermonRecord> latest = await db.Sermons.AsNoTracking().Where(sermon => sermon.PublishedHash != null)
+            .OrderByDescending(sermon => sermon.PreachedAt).ThenByDescending(sermon => sermon.AddedAt)
+            .Take(Math.Clamp(request.Count, 1, MostLatest)).ToListAsync(cancellationToken);
+        Dictionary<Guid, SeriesRecord> series = await db.Series.AsNoTracking().ToDictionaryAsync(record => record.Id, cancellationToken);
+        Dictionary<Guid, SpeakerRecord> speakers = await db.Speakers.AsNoTracking().ToDictionaryAsync(record => record.Id, cancellationToken);
+        return new SermonPage { Sermons = latest.Select(sermon => SermonPublisher.Payload(sermon, series, speakers)).ToList() };
+    }
+
     public async ValueTask<Done> SaveProgressAsync(ProgressBatch request, CallContext context = default)
     {
         Guid userId = Caller.UserId(context.ServerCallContext!.GetHttpContext().User)

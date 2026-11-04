@@ -18,6 +18,11 @@
   --ink-3: #6b7384;
   --line: rgb(42 61 94 / 0.12);
   --scrim: rgb(0 0 0 / 0.38);
+  --video-ground: #000;
+  --on-video: #fff;
+  --video-shade: rgb(0 0 0 / 0.55);
+  --video-note: rgb(0 0 0 / 0.72);
+  --shadow-play: 0 10px 30px rgb(0 0 0 / 0.35);
 
   --masthead: #2a3d5e;
   --masthead-deep: #22334f;
