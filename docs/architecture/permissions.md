@@ -9,6 +9,8 @@ object's id. What changes is listed at the end.
 **Permission node.** A dot path a feature declares in its Contracts, with a description and the kind
 of scope it applies to:
 
+An example (Ministries isn't built; the real ones are in each feature's `*Permissions` class):
+
 ```csharp
 public static class MinistryPermissions
 {
@@ -41,8 +43,9 @@ rosters" in two lines. A role may include other roles, one level deep, so "Minis
 "Ministry member" plus more.
 
 **Roles are data** (requirement G). Holders of `access.roles.edit` create and change roles in the
-admin panel. Features also seed **system roles** in code (Owner, Staff, Ministry leader, Ministry
-member), reconciled on start-up, as the earlier model's role creator did; they can be assigned but not edited, so
+admin panel. Features also seed **system roles** in code (today Owner, Access manager, Account manager, App editor,
+Media editor, Announcer, Insights viewer, Developer, Draft reviewer and App reviewer; Staff and the
+ministry roles come with Ministries), reconciled on start-up, as the earlier model's role creator did; they can be assigned but not edited, so
 code can rely on them. A role also says **who can give it** (assignable by: Leaders give Member) and
 whether it **applies to a ministry's teams**; staff see all of it in plain words
 ([access.md](../features/access.md#how-staff-see-access-agreed-2026-11-02)).
@@ -85,7 +88,7 @@ grant.
   | `[Requires("ministries.news.post")]` | users holding the node at the request's scope |
 
   For a scoped node the request message implements `IScopedRequest`, so the interceptor knows which
-  object is being acted on. `Tests.Architecture` fails on a method with no tier, more than one, or a
+  object is being acted on. `Architecture.Tests` (`TierRules`) fails on a method with no tier, more than one, or a
   node no feature declares. With no attribute the default is deny (SPEC §6: fail closed).
 
 ## Checking, on the phone and in the browser

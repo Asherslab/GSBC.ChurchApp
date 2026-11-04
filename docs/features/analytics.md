@@ -1,6 +1,6 @@
 # Analytics
 
-Status: **phase 1 built, 2026-11-03** (branch `feature/analytics`): error reporting from the app, the admin
+Status: **phase 1 built, 2026-11-03**: error reporting from the app, the admin
 panel, the server and iOS native crashes; App health; usage counts and Insights; the Settings switch.
 What was built, and where it differs from the proposal below, is in [As built](#as-built-2026-11-03). The
 owner's decisions are marked *(owner, 2026-11-02)* and *(owner, 2026-11-03)*.
@@ -191,7 +191,7 @@ isn't served from the web anyway.
 
 ### How a count travels
 
-1. **A feature records:** `IUsage.Count(SermonMeasures.Played, sermon.Id)` (Platform.Client). It's a
+1. **A feature records:** `IUsage.Count(SermonMeasures.Played, sermon.Id)` (an example: Sermons isn't built, so `SermonMeasures` doesn't exist yet) (Platform.Client). It's a
    no-op when the Settings switch is off, and it never touches the network.
 2. **The phone sums** into local counters per day, measure and subject, and applies the once-only
    rules (first open this week, notice already seen).
@@ -206,10 +206,10 @@ isn't served from the web anyway.
 5. **A nightly job** (Brisbane time, one replica, like Sync's pruning) folds daily rows older than 25
    months into `analytics.monthly_counts` and prunes error reports.
 
-**The outbox needs a quiet kind of entry.** Today every entry shows to the person as pending, and as
-"couldn't send" when it gives up. Analytics and error reports must never appear there, and must be
-discarded silently when they give up (three days). That's a small change to the native outbox (a flag
-on the entry) and to `IOutbox`, made when this is built.
+**The outbox has a quiet kind of entry.** Every other entry shows to the person as pending, and as
+"couldn't send" when it gives up. Analytics and error reports never appear there, and are discarded
+silently when they give up (three days). It's a flag on the native outbox entry, and
+`IOutbox.EnqueueQuietlyAsync` on the C# side.
 
 **Tier: `[Public]` until App Attest works, then `[AppInstall]`.** App Attest waits on the Apple
 enrolment, and analytics shouldn't wait for it. Anyone could send made-up counts to a public method.
@@ -273,8 +273,8 @@ Platform, because every feature records counts and features can't reference each
 - **Subject names** ("Job 33: The breath of the Almighty" rather than an id) come through a small
   interface each feature implements, as `IScopeNamer` does for places.
 - **Services:** `Analytics.Report` and `Diagnostics.Report` (`[Public]`, later `[AppInstall]`);
-  `Insights.GetSummary`, `Insights.GetTop`, `Insights.GetSeen` (`[Requires("analytics.view")]`);
-  `Health.ListErrorKinds`, `Health.GetErrorKind` (`[Requires("analytics.health.view")]`). All gRPC, so
+  `Insights.GetSummary` (`[Requires("analytics.view")]`, which carries the top lists too);
+  `Health.GetOverview`, `Health.GetErrorKind` (`[Requires("analytics.health.view")]`). All gRPC, so
   **nothing needs the owner's approval under the hard rule.**
 - **Reads are online,** like Access's screens: the Insights page asks the server. There's no feed,
   because nothing here is needed offline.
@@ -463,7 +463,7 @@ tools/health/errors.sh --env dev 0195f0aa   # one error in full: type, where, fr
   a file, the chat or a command line.
 - **What a tool may do:** what its account may, except anything sensitive, which Access refuses
   ([identity.md](../architecture/identity.md), *Connected tools*). App health isn't sensitive, so it works.
-- **Environments:** `dev` and `uat` (`https://uat-app.baptist.com.au`, once this is deployed there).
+- **Environments:** `dev` and `uat` (`https://uat-app.baptist.com.au`).
   Production gets a line in the list at the top of `Errors.cs` once it has a host.
 - An ended or expired session (30 days unused) says so and says how to connect again; an account without
   `analytics.health.view` is told it needs the Developer role.

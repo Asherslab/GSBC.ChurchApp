@@ -52,7 +52,9 @@ puts in the build and the AppHost passes to the dev gateway as `Apple:TeamId`.
 - **Applinks:** `/welcome` (invitations and recovery links) and `/open/*` (shared links to a place in the
   app, [destinations.md](destinations.md)) open the app.
 
-**Needs setting up outside this repo (owner):**
+**Done for UAT** (owner): its gateway serves its own association file, and the UAT check in
+`uat-backend.yml` fails the deploy if it doesn't name the UAT app. **For production, when it exists**
+(future work, nothing waits on it today), outside this repo (owner):
 
 - `https://baptist.com.au/.well-known/apple-app-site-association` for production, at the apex in
   front of the website (a Cloudflare rule or Worker), with the same content as dev's but for
@@ -186,7 +188,7 @@ the native `PasskeyCeremonyTests` hold this).
 
 **Proven on the owner's iPhone, with the owner, 2026-11-03** (through `dev-app.baptist.com.au`): signing in
 with a passkey made earlier in Safari, the session surviving the app being completely closed, a Hub
-role given in the admin panel showing More → Drafts on the phone live, previewing a draft while
+role given in the admin panel showing More → Previews on the phone live, previewing a draft while
 signed in, signing out clearing drafts and staff tools, and an invitation link opening the app and
 creating its passkey there.
 

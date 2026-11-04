@@ -20,7 +20,9 @@ built.
   they can be assigned but not edited. Configuration declares **Draft reviewer** (at a draft: preview
   it; given and taken away by Configuration when a draft is shared) and **App editor** (`config.*`:
   arrange and publish the app, see every draft). Access declares **Owner** (`*`) and **Access manager** (`access.*`);
-  Accounts declares **Account manager** (`accounts.view`, `.manage`, `.review.manage`). Analytics declares
+  Accounts declares **Account manager** (`accounts.view`, `.manage`, `.review.manage`) and **App reviewer**
+  (grants nothing; it marks a demo account). Media declares **Media editor**; Notifications declares
+  **Announcer**. Analytics declares
   **Insights viewer** (`analytics.view`; nobody holds it by default) and **Developer**
   (`analytics.health.view`). Ministries will declare its own. A feature may add its own nodes to a role
   another feature declares (`AddToSystemRole`): Accounts adds `accounts.tools.connect` to Developer.
@@ -102,8 +104,9 @@ rules with refusals in words (`AssignmentRules`), grants compiled onto child min
 `IScopeHierarchy`, `Access.Explain` ("what can this person do?") and `Access.PreviewRole`, the
 in-process `IRoleAssignments` for Ministries, and the new Roles, role, copy-editor and Who-can-do-what
 screens. Tested in `Features.Access.Api.Tests`: leaders add members but only staff make leaders, the
-escalation guard's words, a leader covering a ministry's teams, the preview and the explanation. Not
-yet tried in a browser against the running backend.
+escalation guard's words, a leader covering a ministry's teams, the preview and the explanation. The
+screens have since been redesigned and checked in the admin panel on `dev-app.baptist.com.au`
+(2026-11-03).
 
 **Built 2026-11-01:** system roles and the catalogue reconciled at start-up, custom roles, assignments with
 scopes and end dates, the cached evaluator behind every `[Requires]`, the escalation and last-owner
@@ -244,7 +247,7 @@ parent changes, Ministries announces it and every grant cache drops.
 ### What Ministries must call
 
 Ministries is the first feature whose people give roles. Built 2026-11-02 for it to use (all in place
-and tested; Ministries only has to call them):
+and tested; Ministries isn't built, so nothing calls them yet):
 
 - **Its system roles**, declared with `AddSystemRole`: Member, Leader, Admin, Staff, each with its
   assignable-by keys and whether it applies to child ministries.

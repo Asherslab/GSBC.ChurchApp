@@ -1,6 +1,6 @@
 # Site map
 
-Status: draft, 2026-10-26. Extends [SPEC.md](../../SPEC.md). First used by
+Status: draft, 2026-10-26; not built yet. Extends [SPEC.md](../../SPEC.md). First used by
 [Life Groups](life-groups.md); meant for the whole app.
 
 ## Why it's app-wide

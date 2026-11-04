@@ -44,10 +44,21 @@ tests/                         mirrors src/
   Platform/GSBC.ChurchApp.Platform.<X>.Tests
   Features/<Feature>/GSBC.ChurchApp.Features.<Feature>.<Part>.Tests
 
+tools/access/                  make-owner.sh makes the first Owner (access.md)
 tools/aot-warnings/            check.sh publishes the app and checks its warning baseline (SPEC §9)
 tools/containers/              publish.sh builds the API, gateway and migrator images (environments.md)
+tools/dev/                     copy-main-db.sh copies the main checkout's database into a worktree; feed.sh
+tools/dev-proxy/               the dev tunnel and check-caching.sh (offline-and-caching.md)
+tools/docs/                    architecture.py redraws the picture below; check-links.py checks the docs' links and paths
+tools/health/                  errors.sh reads App health from the terminal (analytics.md)
+tools/ios/                     deploy.sh installs GSBC Dev on a phone; environment-icons.py
+tools/release-notes/           release.sh and the TestFlight What to Test tools (changelog.md)
+changelog/                     release notes, one file per change (changelog.md)
+.github/workflows/             ci.yml, uat-backend.yml, testflight-uat.yml (environments.md)
 .config/dotnet-tools.json      dotnet-ef
+.editorconfig                  code style and the IDE's warning levels; GSBC.ChurchApp.slnx.DotSettings holds Rider's
 docs/                          architecture/, features/ (one per feature), the spec's detail
+DESIGN.md, PRODUCT.md          the design system and the product brief
 spikes/                        frozen; reference only, not in the solution
 reference/                     gitignored; the church's own files (logo pack, flyers, site plan)
 ```
@@ -234,10 +245,10 @@ flowchart LR
 |---|---|---|
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
-| `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), and rich text (`RichText`, its parser and save rules) | Yes |
+| `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), rich text (`RichText`, its parser and save rules), the Hub's tiles, grid and icon cleaning (`HubGrid`, `SvgIcons`), places (`DestinationPage`, `DestinationKind`), notification kinds, and usage measures | Yes |
 | `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), and media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration) | Yes |
-| `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor`, `MediaChooser` and `AudiencePicker`; `ChipPicker` (search and choose several, shown as chips) | Yes |
-| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, `IPermissionHolders` and `IAccountEmails` (who holds a node, and their addresses), and `IMediaReferences` (the check features call on every `MediaRef` they save) | No |
+| `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the admin panel's building blocks (`DataTable`, `SplitView`, `SearchField`, `FilterChips`, `DayRail`, `TitleBand`, `SelectionTray`), Home (`Surfaces/`: `HomeScreen`, `HubTile`, `PhoneFrame`), places (`Destinations/`: `PlaceField`, `LinkOpener`, the directory and explorer), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor`, `MediaChooser` and `AudiencePicker`; `ChipPicker` (search and choose several, shown as chips) | Yes |
+| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, `IPermissionHolders` and `IAccountEmails` (who holds a node, and their addresses), `IMediaReferences` (the check features call on every `MediaRef` they save), `IMediaSystemFolders`, `INotifications`, the places directory (`gsbc.destinations.Destinations`), and the App Attest install check behind `[AppInstall]` | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2 in production, SeaweedFS in development): public and private buckets, signed links, copies with cache headers, content-addressed keys | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
@@ -253,9 +264,9 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Admin` | The Roles and Who-holds-what pages | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Contracts` | The `Configuration` service, its messages and the placements feed | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Api` | Placements and their audit (schema `config`): validates against descriptors, checks each area's permission, writes the feed, rolls back | No |
-| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store, and the generic `SurfaceEditor` | Yes |
-| `GSBC.ChurchApp.Features.Configuration.App` | The phone's Arrange page and its navigation entry | Yes |
-| `GSBC.ChurchApp.Features.Configuration.Admin` | The admin panel's Arrange page and its navigation entry | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store (`LocalSurfaceLayout`), the drafts workbench (`DraftsWorkspace`), the Hub canvas and its settings (`HubCanvas`, `TileSettings`), and the generic setting inputs | Yes |
+| `GSBC.ChurchApp.Features.Configuration.App` | The phone's Previews page (More → Previews) and the *coming soon* page | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Admin` | The admin panel's Drafts workbench and its pop-out phone preview, and the drafts waiting for Home's week | Yes |
 | `GSBC.ChurchApp.Features.Media.Contracts` | The `Media` service, its messages, the accepted file types and the `media.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Media.Api` | Uploads through signed R2 links, checked and named by their SHA-256, with dimensions read from the bytes; signed links to private media for whoever holds its audience; `IMediaReferences` and which records use which file; deleting unused files (schema `media`) | No |
 | `GSBC.ChurchApp.Features.Media.Client` | Media's gRPC proxies, uploading, private links behind `IPrivateMediaLinks`, and the shared `MediaUpload`, `MediaLibrary` and `MediaChoice` components (`MediaChoice` is the `MediaPicker`) | Yes |
@@ -267,7 +278,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Admin` | The App health and Insights pages (admin panel only) | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Contracts` | The `Notifications` and `Announcements` services, the inbox, kinds and preferences feeds, the announcement kinds and the `notifications.announcements.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Api` | `INotifications`: audiences through Access, the inbox feeds, preferences, pacing, quiet hours; push through APNs with retries and dead tokens dropped; the silent push for sync; announcements and their schedule (schema `notifications`) | No |
-| `GSBC.ChurchApp.Features.Notifications.Client` | The inbox (`Inbox`, also the bell's `IInboxCount`), push registration, preferences, and the shared `InboxView`, `NotificationSettings` and `AnnouncementsWorkbench` components | Yes |
+| `GSBC.ChurchApp.Features.Notifications.Client` | The inbox (`Inbox`, also the bell's `IInboxCount`), push registration, preferences, and the shared `InboxView`, `NotificationSettings` and `AnnouncementsDesk` components | Yes |
 | `GSBC.ChurchApp.Features.Notifications.App` | The phone's Notifications list (from the bell) and More → Notifications | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |

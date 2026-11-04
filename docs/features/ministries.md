@@ -1,6 +1,6 @@
 # Ministries
 
-Status: draft, 2026-10-30; areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: draft, 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
