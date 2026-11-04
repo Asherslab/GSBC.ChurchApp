@@ -54,7 +54,7 @@
                     {
                         @if (chosen.ScopeKind != ScopeKind.Global.Name)
                         {
-                            <TextField Label="@($"Which {chosen.ScopeKind}")" @bind-Value="_scopeObjectId" />
+                            <TextField Label="@($"Which {chosen.ScopeKind}")" Value="@(_scopeObjectId ?? "")" ValueChanged="value => _scopeObjectId = value.Length == 0 ? null : value" />
                         }
                         <TextField Label="Until" Type="date" Value="@(_ends ?? "")" ValueChanged="value => _ends = value.Length == 0 ? null : value" Hint="Leave it empty to keep the role." />
                         <div>
