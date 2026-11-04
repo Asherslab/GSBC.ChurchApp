@@ -333,6 +333,8 @@ public sealed class MediaLibraryTests : IAsyncLifetime
             RpcException refused = await Assert.ThrowsAsync<RpcException>(() => FoldersCallAsync(folders => Done(folders.MoveAsync(move, Cancellation))));
             Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
         }
+        RpcException deletedFile = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => Done(library.DeleteAsync(shared.Id, Cancellation))));
+        Assert.Equal(StatusCode.FailedPrecondition, deletedFile.StatusCode);
         RpcException renamed = await Assert.ThrowsAsync<RpcException>(() =>
             FoldersCallAsync(folders => Done(folders.RenameAsync(new RenameFolderRequest { Id = chats.Id, Name = "Old chats" }, Cancellation))));
         Assert.Equal(StatusCode.FailedPrecondition, renamed.StatusCode);

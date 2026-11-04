@@ -304,7 +304,11 @@
                       <a class="btn btn--quiet" href="@media.Url" target="_blank" rel="noopener"><Icon Name="external-link" Size="IconSize.Small" />Open</a>
                   }
               </div>
-              @if (selected.Uses == 0)
+              @if (map.Find(selected.FolderId) is { IsSystem: true })
+              {
+                  <p class="panel-hint">The app keeps this file where it put it.</p>
+              }
+              else if (selected.Uses == 0)
               {
                   <Can Permission="MediaPermissions.Delete">
                       <section class="panel-section @(_confirming ? "panel-confirm" : "")" aria-label="Delete">

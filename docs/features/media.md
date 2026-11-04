@@ -62,7 +62,7 @@ a lock and the area's caption ("Made by the app: files people share in group cha
   record that holds uploads it calls `IMediaSystemFolders.FileAsync(area, scopeId, scopeName, refs)`.
   The area's folder and the scope's subfolder (`Chats / Youth group`) are made on demand, and the
   subfolder is renamed when the scope's name changes.
-- **Staff can't rename, move or delete them, or move files in or out** (`FailedPrecondition`).
+- **Staff can't rename, move or delete them, move files in or out, or delete the files in them** (`FailedPrecondition`): the app keeps them where it put them, and the feature that filed a file removes it.
 - **Who sees inside goes through Access** (owner, 2026-11-04): people holding the area's audience
   permission at that scope (the same audience as the files, e.g. members of that chat), plus anyone
   holding `media.system.view`, a sensitive permission only the Owner role has by default, for

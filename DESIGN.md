@@ -541,6 +541,40 @@ components:
     padding: "10px 12px"
   layout-picker-choice-on:
     backgroundColor: "{colors.white}"
+  breadcrumb-link:
+    textColor: "{colors.aqua-deep}"
+    rounded: "{rounded.inner}"
+    height: "34px"
+    padding: "0 8px"
+    typography: "{typography.row-title}"
+  selection-tray:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    height: "58px"
+    padding: "8px 10px 8px 22px"
+  folder-tile:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.field}"
+    height: "64px"
+    padding: "10px 14px"
+  folder-tile-hover:
+    backgroundColor: "{colors.sand}"
+  folder-tile-icon:
+    backgroundColor: "{colors.sand}"
+    textColor: "{colors.navy}"
+    rounded: "{rounded.inner}"
+    size: "38px"
+  media-card-thumb:
+    backgroundColor: "{colors.sand-strong}"
+    textColor: "{colors.ink-3}"
+    rounded: "{rounded.field}"
+  folder-picker-row:
+    textColor: "{colors.ink}"
+    rounded: "{rounded.inner}"
+    height: "42px"
+    padding: "0 12px"
 ---
 
 # Design System: GSBC Church App
@@ -670,6 +704,7 @@ A two-column shell: a 248px navy sidebar, sticky at the full window height and s
 - **Office week:** the home page is the rail (36px below it), then two columns at 1.4 to 1 with a 48px gap: "Needs you" and "Your areas", both hairline rows at least 64px tall with a 34px leading tile.
 - **Announcements desk:** the fortnight rail, the "Not sent yet" chips tucked under it, then the writing column beside a sticky proof aside (280 to 340px, 24px from the top) with a 40px gap, capped at 1180px; "Sent earlier" follows as a table.
 - **Places in the app:** the directory beside a sticky 440px phone column (24px from the top) with a 40px gap, capped at 1320px. The phone's holder is as tall as the window allows between 380 and 560px (the window height less 340px), and the phone fits that height.
+- **Media:** above 900px the title band keeps its search (180 to 210px), New folder and Upload on the title row. Under it, a wrapping bar (12 by 20px gaps, 16px below): the shelf switch on the left, the type filter chips and the Grid/List switch on the right. Then the path row (at least 36px: breadcrumbs, with the open folder's actions at its end) and, on the app's shelf, its note. The bar, the path row and the note span above the split view, so opening a file's detail never moves the grid at any depth. Inside the list: folder tiles auto-filling at least 210px wide (10px gaps), 16px, then the picture grid auto-filling at least 168px wide (20 by 14px gaps).
 - **Split view:** a list beside a detail column of 340 to 440px with a 32px gap, capped at 1600px; the detail is sticky 24px from the top and scrolls within the window height. Between 1201 and 1440px the detail narrows to 300 to 360px with a 24px gap. Under 1200px it drops beneath the list. A table inside the list hides its optional columns once the list is narrower than 760px.
 - **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the three-pane workbench narrows its outer panes at 1648px and drops the detail under the work area at 1428px; the office week stacks its columns and lets the seven-day rail scroll sideways (days at least 84px) at 1228px, where the announcements desk also drops its proof under the writing column (static, up to 360px); the fortnight rail always keeps days at least 56px and scrolls sideways when they don't fit; the Access page stacks its role column above the place at 1328px; the Places explorer drops its phone column under the directory at 1100px (static, up to 420px, a hairline above, 24px of space).
 - **Narrow (900px and under):** the sidebar becomes a sticky top strip (8 by 12px padding) that scrolls sideways: the mark without its name, the links in one row without group labels, and the marker bar turned into a 3px underline. The work area padding drops to 20px top, 16px sides and 48px foot.
@@ -679,7 +714,7 @@ A two-column shell: a 248px navy sidebar, sticky at the full window height and s
 
 **The Masthead First Rule.** Every tab root and every settings page opens on a masthead with a title; long, sectioned pages add sticky section tabs under it. Detail pages with a picture lead with the picture instead (a 16:9 hero under a solid navy top bar). The admin panel has no masthead: its navy is the sidebar, and every page opens on a title band.
 
-**The One Column Rule.** No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns and the Places explorer's directory and phone, and still no grid of tool tiles.
+**The One Column Rule.** No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns, the Places explorer's directory and phone, and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.
 
 ## Elevation & Depth
 
@@ -694,7 +729,7 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 - **Drag lift** (`filter: drop-shadow(0 18px 26px` ink at 30%`)`, with the tile scaled to 1.04 while it moves): a Home tile while it is being moved or resized on the admin canvas, nowhere else.
 
 ### Named Rules
-**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Card tone (`raised`) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
+**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Card tone (`raised`) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel and the selection tray (docked over a list that scrolls beneath it); tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
 
 **The Tonal Selection Rule.** A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border. A sand leading tile on a selected row takes the page colour (white in light, night in dark) so it still reads as a tile; an accent tile keeps its tint.
 
@@ -702,7 +737,7 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 
 Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles. Home tiles take the 14px radius and clip what they hold (a picture, the bleeding mark); their icons sit in the 34px, 10px-radius row tile.
 
-The admin panel uses the same scale: sidebar links, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields, the search field and the chosen-place token at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. The upload drop zone is the one dashed border: 1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus.
+The admin panel uses the same scale: sidebar links, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields, the search field and the chosen-place token at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. The upload drop zone is the one dashed border: 1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus. Folder tiles and the media grid's thumbnails take the 12px field radius (folder tiles with a hairline border, their icon tile at 9px); breadcrumbs and folder-picker rows round at 9px; the selection tray takes the 14px radius.
 
 The phone frame carries device geometry, not UI shapes: a 46px screen radius inside a 9px bezel ring, a Dynamic Island capsule (124 by 36px) or a notch (160 by 32px, its bottom corners at 20px). The lock-screen proof draws a lock screen the same way: a 3.2rem tabular clock, and a 20px app icon at a 28% radius. These match the hardware being drawn; they are not part of the radius scale and never appear on a UI box.
 
@@ -760,7 +795,7 @@ The workhorse. A row is a full-width line at least 56px tall: optional leading t
 - **Copy field:** a labelled, read-only 40px field in fill-on-surface at the 12px radius (row-size tabular text, a little tracking), with a small quiet Copy button beside it that turns to "Copied" with a check, and a polite caption status line beneath (a hint, or how to copy by hand if copying fails). Used for sign-in codes and recovery links; selecting the field selects the whole value.
 - **Copy button:** the copy field without its field, where the value is already shown beside it: a small quiet capsule with a link icon ("Copy link") that turns to "Copied" with a check, or "Couldn't copy: select the address" with an alert icon, spoken politely. In Places in the app it sits between the primary action and the quiet ones.
 - **Who sees it (audience picker):** a segmented Everyone, Signed in and Roles (a fourth "Set up specially" appears only for an audience the three can't express), and under Roles the chip picker of roles ("Find a role") with a hint line; one audience can name several roles.
-- **Media chooser:** choosing a picture or file opens a wide sheet titled "Choose a picture" with Media's own picker: a search ("Find a picture") and a quiet Upload, then an auto-filling grid of items at least 150px wide (14 by 12px gaps, up to 52vh or 560px tall, scrolling on its own), each a 4:3 thumbnail on strong sand at the field radius over its name in caption at 600 (one line, ellipsis) and where it's used in caption ink-3 ("Not used yet", "Used in 3 places"). Hover rings the thumbnail 2px in marker at 55%; the chosen one is ringed 3px in marker with a 26px marker tick disc in its top-right corner; focus is the deep-aqua outline 4px out. A hairline-ruled foot holds the chosen name in caption ink-2, Cancel (quiet) and Choose (primary, disabled until something is chosen). Double-clicking an item chooses it. Opening it moves focus into the sheet without scrolling the page behind.
+- **Media chooser:** choosing a picture or file opens a wide sheet titled "Choose a picture" with Media's own picker. It opens on the last folder used. On top, a search ("Find a picture in every folder", or "Find a file in every folder") and a quiet Upload; then the folder breadcrumbs (Library first) and the open folder's subfolders as compact folder tiles (at least 180px wide, 8px gaps, 50px tall with a 32px icon tile); then an auto-filling grid of items at least 150px wide (14 by 12px gaps, up to 52vh or 560px tall, scrolling on its own), each a 4:3 thumbnail on strong sand at the field radius over its name in caption at 600 (one line, ellipsis) and where it's used in caption ink-3 ("Not used yet", "Used in 3 places"). Searching looks in every folder: the breadcrumbs and tiles give way to "Results for “…” in every folder" at 600 in ink-2, and each item says which folder it's in ("In Sermons › 2026 series"). An empty folder is an empty state ("No pictures in this folder"). Hover rings the thumbnail 2px in marker at 55%; the chosen one is ringed 3px in marker with a 26px marker tick disc in its top-right corner; focus is the deep-aqua outline 4px out. A hairline-ruled foot holds the chosen name (or "Nothing chosen yet") in caption ink-2, Cancel (quiet) and Choose (primary, disabled until something is chosen). Double-clicking an item chooses it. Opening it moves focus into the sheet without scrolling the page behind.
 - **Place field:** how staff choose what something opens. With nothing chosen it is a quiet button with a map-pin icon ("Choose a place in the app"). The chosen place is a token: a fill-on-surface box at the 12px radius, at least 56px tall, holding the row's 34px tile (sand for pages, accent for things in them), the name at row size and 600 over where it is (or its date) in caption ink-2, both cut off with an ellipsis, then a small quiet Change and a small quiet icon-only clear ("Open nothing"). A place that can no longer be opened takes the warm tile (marker at 30%, marker-ink alert icon) and says why. Change opens a wide sheet carrying the Places directory, listing only what the audience can open.
 
 ### Navigation
@@ -842,6 +877,26 @@ The app laid out on the desk: every place in the app, grouped by area, beside a 
 - **Directory:** the shared search field and filter chips (All and each area) wrapping above the list, then a group per area: an uppercase micro head in ink-3 at 600 (+0.06em) over hairline rows, each with its icon on a sand tile for pages or an accent tile for things in them (events, files), the name, where it is ("More → What's new") or its date, and who can open it as trailing text. The chosen row takes the Tonal Selection. A group cut short ends in a deep-aqua 600 "Show all …" at label size with a chevron (44px target). Nothing matching is an empty state. The same directory is the place picker in a wide sheet.
 - **Phone column:** centred under the phone: the name in title type (balanced), where it is in caption ink-2, then who can open it as a 600 caption line in ink-2 with a people icon. Then the actions, centred and wrapping 8px apart: the place's own change action as a small primary ("Change it in a draft"), the copy button, then small quiet actions ("Announce it"). Under them the link itself (host and path, caption ink-2, tabular, breaking anywhere) and one note in ink-3 caption up to 40ch on what the link does on a phone. A place that can't be shown is an empty state in the column.
 - **The phone:** a feature can register a live view of its place (Home draws through HomeScreen); any other place is the phone frame with the app's masthead carrying the place's name and where it is as its note.
+
+### Breadcrumbs
+Where you are inside something nested, as a row of crumbs (a navigation landmark named "Where you are"). Crumbs sit 2px apart with a small chevron in ink-3 between them; each is 34px tall, 8px at the sides, at the 9px radius, row size at 600, with an optional small leading icon (an image for the Library, a folder, a lock for what the app owns). Earlier crumbs are deep-aqua buttons that fill with sand on hover and take the 2px deep-aqua outline on focus; the last is the current place in ink. A crumb can take a drop: only the crumb under the drag lights, with a 12% deep-aqua tint and a 2px inset deep-aqua ring. Placed at the start of a row, the crumbs pull 8px left so their text lines up with the content below.
+
+### Selection tray
+A navy bar that docks at the foot of the work area while several things are chosen, carrying what can be done to all of them. It is sticky 20px from the bottom of the window, at least 58px tall, padded 8px 10px 8px 22px at the 14px radius, in primary with on-primary text at 600 and the Lift shadow, 24px below the list. It reads the count with tabular figures ("3 files chosen", spoken politely), then Clear (quiet, on-primary at 14%) and the actions; a primary action inside it turns white with ink text. It rises 10px from 40% over 220ms (not with reduced motion). Media shows it only for two or more files: one chosen file is the split view's detail.
+
+### Media library
+Staff's library as two shelves: the Library, which staff organise in folders, and Made by the app, which the app fills. Reached from the sidebar's Content group.
+- **Shelf switch:** a segmented control sized to its labels (14px at the sides): Library (an image icon) and Made by the app (a lock). The type filter chips (All, Pictures, PDFs and files, Not used, each with a count) and a Grid/List segmented control share its row.
+- **Path row:** breadcrumbs from the shelf down to the open folder, each folder crumb a drop target. An open staff folder puts its actions at the row's end: small quiet Rename… and Move to…, and a small danger Delete folder…. Searching replaces the row with "Results for “…” in every folder" at 600 and a small quiet Clear search.
+- **Folder tiles:** a white tile at the 12px field radius with a hairline border, at least 64px tall, 10 by 14px padding: a 38px sand icon tile at 9px with the folder in primary, then the name at 600 (one line, ellipsis) over a caption count in ink-2 ("3 files · 1 folder", "Empty", or "Shared with others" for one the viewer can't open). Hover drops the border and fills the tile with sand, its icon tile turning white. An app folder shows a lock in ink-2. A tile under a drag takes a deep-aqua border, a 1px inset deep-aqua ring and a 10% deep-aqua tint; what is being dragged fades to 45%. A folder holding only folders says so in a caption under the tiles ("No files here, only the folders above…") rather than calling itself empty.
+- **Picture grid:** each file a 4:3 thumbnail on strong sand at the field radius over its name in caption at 600 and how it's used in caption ink-3, one line each. Hover rings the thumbnail 2px in marker at 55%; a chosen file is ringed 3px in marker. A 28px round tick sits in the top-left corner (ink at 40% inside a 2px page-coloured border), shown on hover, on focus, when chosen (a marker disc with an on-marker tick) and on every card while two or more are chosen. Focus is the deep-aqua outline 4px out. Files drag onto folder tiles and crumbs. The List view is the data table, a 64px 16:10 thumbnail leading each row.
+- **Detail:** one chosen file opens in the split view's detail; its Folder fact is a deep-aqua 600 link that opens that folder, after a lock when the app owns it, and Move to… leads its actions.
+- **Move notice:** after a move, an info notice above the grid says what moved, where to, and that nothing broke: "3 files moved to Sermons › 2026 series. Everything that uses them still shows them." A failed move is a warning notice in the same place.
+- **Folder picker (Move to…):** a sheet titled for what is moving ("Move 3 files", "Move “Sermons”") with the lead "Things that use them keep working: moving only changes where you find them here." Under it, a list of folders (up to 50vh or 420px, scrolling on its own): the Library with an image icon, then every staff folder with a small folder icon, indented 22px per level. Rows are 42px at 9px with the name at 600 (ellipsis); the folder something is in now says "Here now" in caption ink-3. Hover fills Selected Fill at 55%; the chosen row takes Selected Fill (the Tonal Selection Rule); a folder it can't go into (itself or one inside it) is ink-3 and can't be chosen. It starts with nothing chosen, and Move here (primary, a folder-input icon) stays disabled until a different folder is chosen, beside Cancel (quiet). Deleting a folder with things in it uses the same sheet ("Delete “Sermons”?", Move them and delete); an empty one is a plain confirm with a danger Delete folder.
+- **New folder, Rename:** a sheet with one Name field (up to 80 characters) and Make folder or Rename.
+- **Made by the app:** see the App's Own Rule. Its crumbs and folder tiles carry the lock; under the path row a caption note in ink-2 (up to 72ch) leads with a small lock and says what the folder holds and that its files stay where the app put them. With nothing in it, the shelf is a lock empty state ("Nothing made by the app yet").
+
+**The App's Own Rule.** Wherever the app owns something rather than staff (the Made by the app shelf, its folders and crumbs, a file's folder, the shelf's empty state), it carries the lock glyph and one plain caption saying what it is and what staff can't do to it. The lock is ink-2 or the surrounding text colour; ownership takes no colour or badge of its own.
 
 ### Sign-in and gates
 - **Sign-in card:** a white card at the 14px radius, lifted, up to 460px wide (28px padding, 20px at the foot), centred on a full-window sand stage, with the mark and name in primary at 700 at its head; fields and quiet buttons inside it use fill-on-surface. A small quiet "App reviewer? Sign in with a code" switches it to the code form.
@@ -989,7 +1044,10 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Hub canvas | `HubCanvas`, `TileSettings`, `AddTileSheet`, `HubLibrary` (Configuration Client) | Arranging, sizing and recolouring tiles in a draft; the controls rail; the settings panel with swatches, the layout picker and the contrast warning. `hub-canvas.js` carries the live drag and a port of `HubGrid`'s packing |
 | Choose several | `ChipPicker` | `Items`, `Chosen`, `Text`, an optional `Detail`, `Placeholder`, `Empty`; matches starting with the search come first |
 | Who sees it | `AudiencePicker` (Content) | Everyone, Signed in, or several roles through `ChipPicker`; an audience it can't express shows as "Set up specially" |
-| Choose a picture or file | `MediaChooser` (Content) | A wide `Sheet` around the registered `MediaPicker` (Media's `MediaChoice`); `ImagesOnly` |
+| Choose a picture or file | `MediaChooser` (Content) | A wide `Sheet` around the registered `MediaPicker` (Media's `MediaChoice`); `ImagesOnly`; opens on the last folder used |
+| Breadcrumbs | `Breadcrumbs`, `Crumb` | `Label`, a `Trail` of crumbs (label, key, icon), `OnOpen`; `CanDrop` and `OnDrop` make crumbs drop targets |
+| Act on several | `SelectionTray` | `Label`, `Count` (hidden at 0), `One` and `Many` nouns, `OnClear`, the actions as child content |
+| Media library | `MediaLibrary`, `FolderTiles`, `MoveToSheet` (Media Client) | The shelves, path row, tiles, grid or list, tray and folder sheets; `FolderTiles` has a `Compact` form for the chooser; `MoveToSheet` takes `Current`, `Suggested`, `Blocked` and an `Action` label |
 | Places in the app | `PlaceDirectory`, `PlaceExplorer`, `PlacePhone`, `PlaceField` | Search, area chips and grouped rows; the directory beside the phone column with `PlaceAction`s (one `Leads`); a `PlacePreview` a feature registers, else the masthead summary; the picker field in a wide sheet. A holder with `data-fit-height` fits the phone frame to its height |
 | Icons, mark | `Icon`, `BrandMark` | Lucide paths (ISC); the mark is the logo pack's file as a mask, never redrawn |
 
@@ -1012,6 +1070,7 @@ A development build has More → Design gallery, which shows every block in the 
 - **Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.
 - **Do** mark the chosen tile on the Hub canvas with the 2px marker ring, its size capsule in words and the corner grip, and warn in plain words only when a tone's text is hard to read in light or dark.
 - **Do** grey out a layout that doesn't suit a tile and say why, rather than hiding it.
+- **Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its split view so choosing an item never moves the list.
 
 ### Don't:
 - **Don't** lay a tab root other than Home out as a grid of tiles, and don't let the Hub become a uniform grid of identical icon squares or a feed of identical cards.

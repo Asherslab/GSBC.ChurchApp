@@ -229,6 +229,9 @@ internal sealed class MediaLibrary(
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
 
+        if (item.FolderId is { } folderId && await db.Folders.AnyAsync(folder => folder.Id == folderId && folder.SystemArea != null, cancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be deleted here."));
+
         int uses = await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken);
         if (uses > 0)
             throw InUse(uses);

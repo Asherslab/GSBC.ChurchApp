@@ -299,8 +299,8 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 
 .folder-picker { display: grid; gap: 2px; max-height: min(50vh, 420px); margin: 0 -8px; padding: 4px 8px; overflow-y: auto; overscroll-behavior: contain; }
 .folder-picker__row { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px 0 calc(12px + var(--depth) * 22px); border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
-.folder-picker__row:hover:not(:disabled) { background: var(--sand); }
-.folder-picker__row--on, .folder-picker__row--on:hover:not(:disabled) { background: color-mix(in srgb, var(--primary) 9%, var(--surface)); box-shadow: inset 0 0 0 2px var(--primary); }
+.folder-picker__row:hover:not(:disabled) { background: color-mix(in srgb, var(--selected-fill) 55%, transparent); }
+.folder-picker__row--on, .folder-picker__row--on:hover:not(:disabled) { background: var(--selected-fill); }
 .folder-picker__row:disabled { color: var(--ink-3); cursor: not-allowed; }
 .folder-picker__row:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
 .folder-picker__name { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
