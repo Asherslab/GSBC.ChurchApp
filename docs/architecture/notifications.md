@@ -5,7 +5,7 @@ push that makes the phone sync. The owner (2026-11-03): "We should make a proper
 for this. There will be a lot of places they could come from." Backbone, like drafts: designed and
 decided before anything raises one.
 
-**Status: approved by the owner, 2026-11-03,** with one change (decision 9). Built the same day; see *Status* at the end.
+**Status: approved by the owner, 2026-11-03,** with one change (decision 9). Built, and running on phones through UAT; see *Status* at the end. Following (decisions 1, 2 and 4) is built as parts only: the Follow button waits for Ministries.
 
 ## Decisions (owner, 2026-11-03)
 
@@ -15,8 +15,8 @@ decided before anything raises one.
 2. **Following gives a phone notices, and for a Life Group it is joining.** A *Follower* role at a
    ministry. It opens nothing members-only; for a Life Group it is life-groups.md's per-phone Join,
    counted in the leader's "14 joined".
-3. **A phone proves it is that phone with App Attest,** so this station builds the `[AppInstall]`
-   tier (SPEC §6) first. Registering a push token and following are App writes.
+3. **A phone proves it is that phone with App Attest,** so the `[AppInstall]`
+   tier (SPEC §6) is built first. Registering a push token and following are App writes.
 4. **Signing in moves a phone's follows to the person,** so they follow on every device they sign
    in on.
 5. **Staff announcements: compose, test, send.** An announcement is its own record (drafts decision
@@ -61,11 +61,11 @@ feature, only Platform.
 public static class DraftNotifications
 {
     public static readonly NotificationKind WaitingToPublish = new(
-        "config.drafts.waiting", "A draft is waiting for you to publish", area: "Drafts",
-        defaultPush: true);
+        "config.drafts.waiting", "A draft is waiting for you to publish", "Drafts", Waits: true, For: HubSurfaces.Edit);
 
     public static readonly NotificationKind SharedWithYou = new(
-        "config.drafts.shared", "A draft is shared with you", area: "Drafts", defaultPush: true);
+        "config.drafts.shared", "Someone shares a draft with you", "Drafts", Waits: true,
+        For: ConfigurationPermissions.PreviewDraft);
 }
 ```
 
@@ -75,22 +75,21 @@ A kind has:
 |---|---|
 | Key, description, area | Shown in preferences, grouped by area, in the same voice as abilities ("Can …" becomes "Tell me when …") |
 | `defaultPush` | Whether it pushes for someone who hasn't chosen. The inbox always gets it |
-| `Mandatory` | Can't be turned off (security). Implies push, and email |
-| `ScopeKind` | `null`, or `Ministry`: the switch is then per ministry ("Music: notices") |
+| `Mandatory` | Can't be turned off (security). Implies push |
+| `PerScope` | `null`, or a scope kind such as `Ministry`: the switch is then per ministry ("Music: notices") |
 | `MayBeUrgent` | Whether a raise may be urgent (skips quiet hours, time-sensitive on iOS) |
-| `EmailAllowed` | Off for every kind except security, for now (decision 6) |
-| `Pacing` | `EveryOne` (each pushes: chat messages, security), or `Limited(n, per)`: past *n* pushes per recipient and ministry in that time, they collapse (below). Declared per kind (decision 9) |
+| `Pacing` | `null` (each pushes: chat messages, security), or `NotificationPacing(pushes, per)`: past that many pushes per recipient and ministry in that time, they collapse (below). Declared per kind (decision 9) |
 | `Waits` | It asks something of you (a draft to publish, a draft shared with you, an announcement to send). It shows under *Waiting* in the inbox until the feature **settles** its subject (below) |
 | `For` | The permission its audience holds. The phone's preferences list only kinds a person could get, checked with `IAccess.CanSomewhere` (held anywhere, at any scope); a kind without one is for everyone (owner, 2026-11-03: "through permissions") |
 | `InAdminPanel` | Its task is done in the admin panel (an announcement waiting to send). On the phone the row says so and doesn't open anything |
 
 `Platform.Contracts.Notifications` holds `NotificationKind` (AOT; the phone reads it).
-`Platform.Api.Notifications.INotifications` is the one call a feature makes:
+`INotifications` (Platform.Api, namespace `Platform.Api.Notifications`) is the one call a feature makes:
 
 ```csharp
 await notifications.RaiseAsync(new Notification(
     DraftNotifications.WaitingToPublish,
-    NotificationAudience.Holding(ConfigPermissions.HubPublish),
+    NotificationAudience.Holding(area.PublishPermission, scopeId),
     Title: $"“{draft.Name}” is waiting to publish",
     Body: $"{author} asked for it to be published. Publish it from the admin panel.",
     Link: $"/previews?draft={draft.Id}",
@@ -117,8 +116,8 @@ Known sources, and how each will raise:
 
 | Source | Kind | Audience |
 |---|---|---|
-| Drafts (this station) | waiting to publish; shared with you | holders of the area's publish permission; the person |
-| Announcements (this station) | church-wide announcements | as staff pick (below) |
+| Drafts | waiting to publish; shared with you | holders of the area's publish permission; the person |
+| Announcements | church-wide announcements | as staff pick (below) |
 | Account and security | a new passkey was added, a session signed in, recovery used | the person; mandatory, also email |
 | Ministries and Life Groups | important notice, new chat message, roster ("You're on Sunday") | holders of `ministries.notices.receive` at the ministry; chat members; the rostered person |
 | Life Groups | "Choose your group for Round 3" | everyone who followed a group last round |
@@ -136,8 +135,8 @@ NotificationAudience.Holding(permission, scopeId?)    // people and phones holdi
 ```
 
 There is no list of recipients anywhere in a feature. "Members of Music" is
-`Holding(MinistryPermissions.ReceiveNotices, "music")`; "people who can publish the Hub" is
-`Holding(ConfigPermissions.HubPublish)`.
+`Holding("ministries.notices.receive", "music")` once Ministries exists; "people who can publish the Hub" is
+`Holding(HubSurfaces.PublishNode)`.
 
 **Access is extended in two ways:**
 
@@ -151,15 +150,16 @@ There is no list of recipients anywhere in a feature. "Members of Music" is
   phone can never hold anything else. They compile through the same `RoleGrants`, so
   `IPermissionHolders` treats both alike, while people's lists, the evaluator and the grants feed
   never see a phone. A signed-out phone can't read a private feed (Sync is public and unsigned), so
-  **the phone keeps its own follows** locally, from the Follow reply and an `[AppInstall]`
-  `MyFollows` call, as life-groups.md planned. Built 2026-11-03, tested in
-  `AccessEvaluatorTests` (a phone follows, a phone can't be given Member, the follow moves on sign-in).
+  **the phone will keep its own follows** locally, from the Follow reply and an `[AppInstall]` call
+  that lists them, as life-groups.md plans; neither exists until Ministries builds Follow. The holder
+  model is built and tested in `AccessEvaluatorTests` (a phone follows, a phone can't be given Member,
+  the follow moves on sign-in).
 
-**Following** (Ministries builds the button; this station builds the parts):
+**Following** (Ministries builds the button and its calls; the parts below are built):
 
-- Ministries declares the system role **Follower** (assignable to a phone or a person, at a
+- Ministries will declare the system role **Follower** (assignable to a phone or a person, at a
   ministry) with the one ability `ministries.notices.receive`. Member, Leader and Staff include it.
-- Follow and Unfollow are App writes (`[AppInstall]`): `GiveAsFeatureAsync` to the install, or to
+- Follow and Unfollow will be App writes (`[AppInstall]`): `GiveAsFeatureAsync` to the install, or to
   the person when signed in. Rate-limited per install.
 - **Signing in** moves every assignment held by that phone to the person
   (`IPhoneRoles.MoveToPersonAsync`), merging duplicates, so the follows go with them
@@ -182,7 +182,7 @@ Built here because decision 3 puts following and tokens behind it, and prayer re
   (`System.Formats.Cbor`), X.509 and ECDSA.
 - **Each App write** carries `gsbc-install: <key id>` and `gsbc-assertion`: an assertion over
   `SHA256(method path ‖ "\n" ‖ the gRPC-Web request body)`. The tier interceptor (`[AppInstall]`,
-  today "not available yet") checks the signature and that the counter grew, then passes the install
+  checks the signature and that the counter grew, then passes the install
   id to the method. The native Transport attaches both to every call to an `[AppInstall]` method;
   the outbox signs when it sends, not when it queues.
 - **Signing rule (2026-11-04):** the counter must grow strictly, so two signed calls that overlap can
@@ -227,10 +227,10 @@ Two feeds, because a signed-out phone has no person to hold a private feed for:
 
 A signed-in phone shows `notifications.inbox`. A signed-out phone shows the `notifications.public`
 rows for everyone plus the ministries it follows (the follows it keeps). Anything sent to phones is,
-by construction, public content: Follower only covers public notices. Retention: the latest 200 per
-person, and 60 days for the public feed.
+by construction, public content: Follower only covers public notices. Neither feed is pruned yet (see
+*Status*).
 
-- **Marking read** is an outbox write (`Notifications.MarkRead(ids)` / `MarkAllRead`), so it works
+- **Marking read** is an outbox write (`Notifications.MarkRead` with the ids, or `All`), so it works
   offline and reaches the person's other devices through the feed.
 - **Opening a row** opens its link and marks it read. A row whose thing is gone (a deleted event)
   opens the page's own not-found state.
@@ -282,7 +282,7 @@ person, and 60 days for the public feed.
 ### Opening what was tapped (decision 8)
 
 - The native layer is the push delegate (`UNUserNotificationCenterDelegate`). A tap records the
-  payload's `link` and id, and the plugin raises `notificationOpened` to Blazor; on a cold start the
+  payload's `link` and id, and the plugin raises `linkOpened` to Blazor (`NativeBridge.OnLinkOpened`); on a cold start the
   link waits until Blazor asks for it. Blazor navigates to the route (`NavigationManager`), as an
   in-app link does, and the inbox marks it read.
 - **Capacitor must not take the delegate.** By default Capacitor's bridge makes its own
@@ -290,8 +290,8 @@ person, and 60 days for the public feed.
   delegate set ours, so taps (and foreground banners) went to a router with no handler and every tap
   opened the app where it was. `ios.handleApplicationNotifications: false` in `capacitor.config.json`
   keeps `DataLayerPush` as the delegate (fixed 2026-11-03, from UAT).
-- A push received while the app is open shows as a banner in the app (Platform.Ui, generic), not the
-  system banner, and the bell's badge updates.
+- A push received while the app is open shows as the system banner (the delegate presents it), and the
+  bell's count updates through sync.
 - In the admin panel there's no push; its pages already update live.
 
 ### Silent push for sync
@@ -387,9 +387,9 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
 
 - **Platform.Contracts:** `NotificationKind`, the push payload's keys.
 - **Platform.Api:** `INotifications`, `Notification`, `NotificationAudience`, `IPermissionHolders`,
-  `AddNotificationKind`, and the installs check behind `[AppInstall]` (`IInstallVerifier`).
-- **Platform.Client:** `INotificationOpens` (the tapped link), and the native bridge calls for the
-  token and permission prompt.
+  `AddNotificationKinds`, and the installs check behind `[AppInstall]` (`IInstallVerifier`).
+- **Platform.Client:** the native bridge (`NativeBridge`): the tapped link (`linkOpened`), the token and
+  the permission prompt.
 - **Features/Notifications:** Contracts (services, messages, permissions), Api (the service,
   delivery, APNs, the nudger, schema `notifications`), Client (the inbox component, the bell's
   count, preferences, the announcement composer), App (More → Notifications, the inbox page), Admin
@@ -406,6 +406,9 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
 - **No new API paths:** every inbound call is a gRPC method. APNs is an outbound call. No webhooks.
 
 ## What the owner sets up
+
+Done for UAT: the APNs key, the Push Notifications and App Attest identifiers, and the `apns-secret`.
+Production doesn't exist yet; steps 1 and 4 repeat for it. For dev, step 2 puts the key in user secrets.
 
 1. **Apple developer portal** (team `YNT9A4LGVA`), Certificates, Identifiers & Profiles:
    - **Keys → +**: name it `GSBC Church App push`, tick **Apple Push Notifications service (APNs)**,
@@ -437,7 +440,7 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
 
 The key never goes in the repo or in chat. One key serves every app and both APNs environments.
 
-## Build order (this station)
+## Build order (as built)
 
 1. Installs and App Attest (`[AppInstall]`), tested against Apple's sample attestation.
 2. Access: phone holders, `IPermissionHolders`, the move on sign-in.
@@ -451,8 +454,9 @@ The key never goes in the repo or in chat. One key serves every app and both APN
 
 ## Status (2026-11-03)
 
-**Built, and tested against Postgres; not yet run on a phone** (the backend was in use by another
-station, and push waits for the owner's APNs key):
+**Built and tested against Postgres. Running on phones through UAT** (the APNs key and the App Store
+Connect record are done for UAT; the install-proof fix of 2026-11-04 came from UAT's refused
+`RegisterDevice` calls):
 
 - **App Attest** (`[AppInstall]`): see *Phones* above. `AppAttestTests`, `InstallVerifierTests`,
   `InstallProofOrderTests`.
@@ -483,21 +487,22 @@ station, and push waits for the owner's APNs key):
 
 **Decided while building (no owner question needed):**
 
-- A push that arrives while the app is open shows as the system banner, not an in-app one; the
-  bell's count updates through sync.
+- A push that arrives while the app is open shows as the system banner; the bell's count updates
+  through sync.
 - *Who it's for* in the composer offers *Everyone with the app* and *Everyone signed in* for now;
   *People who can …*, *A ministry* and *One person* are in the service and come to the screen with
   Ministries and a people picker.
 - A signed-out phone's inbox shows church-wide notifications until Ministries gives phones
   something to follow; the follows it keeps then add their ministries' rows.
 - Silent pushes go to every device at most once per 15 minutes on any feed change outside
-  Notifications' own; nothing tracks which devices hold a `Watch` stream yet.
+  Notifications' own; nothing tracks which devices hold a `Watch` stream yet, so the "aren't holding
+  a stream" refinement under *Silent push for sync* isn't built.
 - Inbox feed rows aren't pruned yet (`FeedRetention` has no window for them); to do with the first
   busy source.
 
 ## Open
 
-- Analytics' "seen on / opened on" per push: with the analytics station.
+- Analytics' "seen on / opened on" per push: still to do.
 - FCM and Play Integrity: when Android is built.
 - Whether a ministry's leaders may send an announcement to their own followers (likely: the same
   composer at a ministry scope, `notifications.announcements.send` at that ministry).

@@ -1,8 +1,9 @@
 # Drafts, event layers and previews
 
 How staff prepare changes to what the app shows, look at them on their own phone, and put them out
-to everyone, either for good or for an event. Decided with the owner on 2026-11-02, before Home is
-built, so everything staff arrange is built on it from the start.
+to everyone, either for good or for an event. Decided with the owner on 2026-11-02, before Home was
+built, so everything staff arrange is built on it. Notifications for "waiting to publish" and "shared with
+you" are built ([notifications.md](notifications.md)).
 
 ## What staff need
 
@@ -146,8 +147,8 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   or a phone-size preview. A **Church year** view of the left column shows the event layer and dated
   changes across the coming weeks, for scheduling. A row changed for everyone since the draft touched it
   stays marked until someone settles it.
-- **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. Until
-  Home is built the preview draws an area's surfaces generically.
+- **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. The
+  preview draws Home through the app's own `HomeScreen`, and other areas' surfaces generically.
 - **The phone** gets More → Previews (*What
   everyone sees* or a draft; *Show it as* Me, A visitor, A member; *On a date*), and the banner, docked to
   the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
@@ -165,8 +166,6 @@ Drafts reach a phone only for someone signed in. Since 2026-11-03 that's the rea
 passkey in the app ([identity.md](identity.md), *Signing in on the phone*); signed out, More →
 Previews offers *Sign in*. The development-only *Link this phone* is gone (owner, 2026-11-03).
 Previewing a draft from the signed-in account was proven on the owner's iPhone the same day.
-
-
 
 ## Status (2026-11-02)
 
@@ -194,8 +193,8 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
   draft.
 - **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
-  (hideable until the app next comes to the foreground), and Home listing the Hub's
-  link tiles. The phone previews from the signed-in account.
+  (hideable until the app next comes to the foreground), and Home as the Hub's tiles
+  ([home.md](../features/home.md)). The phone previews from the signed-in account.
 
 ### Live in the admin panel (2026-11-03)
 
@@ -246,15 +245,14 @@ within a second or two:
 - Deleting a draft that's on for an event is refused until it's turned off.
 - **The phone preview can't drift from the app:** Home draws through `HomeScreen` and each surface
   through `SurfaceViews` (Platform.Ui), which the preview shares. `PreviewRules` (Architecture.Tests)
-  fails if the app's Home stops using `HomeScreen` or a Hub surface has no view. When Home is built,
-  keep everything a draft can change inside `HomeScreen` and register a view for every new surface.
-  Home is only `HomeScreen` now: the skeleton's Connection section is gone (owner, 2026-11-04, note 10),
-  and being offline shows in the masthead's `SyncIndicator`, which draws only when Home is live.
+  fails if the app's Home stops using `HomeScreen` or a Hub surface has no view. Keep everything a
+  draft can change inside `HomeScreen` and register a view for every new surface. Home is only
+  `HomeScreen`: the skeleton's Connection section is gone (owner, 2026-11-04), and being offline shows in
+  the masthead's `SyncIndicator`, which draws only when Home is live.
 
 ## Open
 
 - **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.
-- Notifications ("Conference 2027 is waiting to publish"): with Push.
 - Drafts for feature records (events, sermons): not now, by decision 1.

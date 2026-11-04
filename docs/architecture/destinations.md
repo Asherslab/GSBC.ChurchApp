@@ -1,6 +1,6 @@
 # Places in the app (destinations)
 
-Decided and built 2026-11-03 (branch `feature/app-destinations`), after the owner's note on Announcements →
+Decided and built 2026-11-03, after the owner's note on Announcements →
 What it opens: "we need a way for them to discover / get links for pages in the app easily. even link
 directly to specific sermons, calendar events, whatever."
 

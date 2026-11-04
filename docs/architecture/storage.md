@@ -22,11 +22,9 @@
 
 - **One interface, `IBlobStore`,** over the S3 API (AWSSDK.S3 with a configurable service URL), so the
   provider is configuration.
-- **Recommended: Cloudflare R2.** Egress is free, and egress is what a church app does most (every
-  phone downloading sermon artwork and notes). S3 charges for every byte served. Prices to confirm
-  before choosing: R2 about US$0.015 per GB-month stored, the first 10 GB free; S3 about US$0.025
-  per GB-month in Sydney plus about US$0.11 per GB out. At church scale (tens of GB) R2 is likely a
-  dollar or two a month.
+- **Cloudflare R2** (chosen by the owner, 2026-11-02). Egress is free, and egress is what a church app
+  does most (every phone downloading sermon artwork and notes); S3 charges for every byte served. At
+  church scale (tens of GB) R2 is likely a dollar or two a month.
 - **Two buckets:** public media (behind Cloudflare on a custom domain; see
   [offline-and-caching.md](offline-and-caching.md)) and private files (only through signed URLs).
 - **Keys are content hashes** for media (`<sha256>.<extension>`), so a file's URL never changes

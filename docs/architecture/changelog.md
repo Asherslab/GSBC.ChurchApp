@@ -55,7 +55,7 @@ Try: Sign in, completely close the app, open it again…
   include. It is the version being built now. Android will read the same line when it is built.
 - **The build number** is CI's run number (`testflight-uat.yml`); a dev build is build 1.
 - **Releasing a version:** `tools/release-notes/release.sh 1.1` moves `changelog/unreleased/*` into
-  `changelog/1.1/` (with `git mv`, so ids and history stay) and sets the marketing version to 1.1. Commit
+  `changelog/<version>/` (with `git mv`, so ids and history stay) and sets the marketing version to 1.1. Commit
   that, then cut the store build from it. New notes go to `unreleased/` again.
 - UAT is a separate App Store Connect app that is never released, so its version trains never close; UAT
   builds can keep the same version for as long as it's useful.
@@ -74,7 +74,7 @@ The notes describe the code in the build, so they travel with it: there is no se
     the UAT and production apps share one WASM publish and differ only in the Xcode configuration.
   A production build therefore can't contain a staff note: it is never compiled in
   (`BuildNotesTests`, and checked in the published `.wasm` on 2026-11-03).
-- Images in `changelog/images/` ship as the App project's static web assets
+- Images in `changelog/images/*` (the folder is made with the first image) ship as the App project's static web assets
   (`_content/GSBC.ChurchApp.Features.ReleaseNotes.App/release-notes/<file>`); the generator fails a note
   whose image isn't there.
 

@@ -9,12 +9,11 @@ signed links from gRPC; [offline-and-caching.md](../architecture/offline-and-cac
 
 | Who | Can |
 |---|---|
-| `media.upload` | Upload an image (JPEG, PNG, WebP, GIF) or a PDF, public or private to an audience they belong to |
+| `media.upload` | Upload an image (JPEG, PNG, WebP, GIF) or a PDF, public or private to an audience they belong to; bring a font in from Google Fonts (free to use in the app), for a theme |
 | `media.view` | See the media library: every staff folder and the files in it, and where each file is used |
 | `media.organise` | Make, rename, move and delete folders, and move files between them (folders, below) |
 | `media.system.view` | See inside every system folder, such as the files people share in group chats (sensitive; only the Owner role by default) |
 | `media.delete` | Delete a file nothing uses any more |
-| `media.upload` | Bring a font in from Google Fonts (free to use in the app), for a theme |
 | `media.fonts.upload` | Upload a font file (.woff2, .woff, .ttf, .otf): only fonts the church is licensed to embed in an app |
 | Anyone signed in | Get a link to a private file, **if they hold its audience right now** |
 | Anyone | See public media: it's a plain URL on the media host |
@@ -44,7 +43,7 @@ in folders should not unlink them from the various pieces they are used in." Dec
   transaction (`DeletingAFolderNeverDeletesTheFilesInIt`).
 - **Moving:** drag files or folders onto a folder tile or a breadcrumb, or choose files (click, Ctrl
   or ⌘-click, Shift-click, or the round tick on a picture) and press **Move to…** in the tray, which
-  lists every staff folder for keyboard users. `Media.Move` takes many files and folders at once.
+  lists every staff folder for keyboard users. `Folders.Move` takes many files and folders at once.
 - **Uploads go into the open folder** (`BeginUploadRequest.FolderId`); search, from the title band,
   covers every folder the viewer may see and shows each result's folder. The type filters and
   "Not used" work inside a folder, counted by the server (`MediaList.Counts`).
@@ -243,10 +242,11 @@ localhost at all. So the dev tunnel also serves `dev-media.baptist.com.au` → S
 `~/.cloudflared/config.yml` names that hostname. It's `dev-media`, not `media.dev`: Cloudflare's
 free certificate covers one level of subdomain only.
 
-## What the owner sets up in Cloudflare (not done yet)
+## What the owner sets up in Cloudflare
 
-For production. UAT has its own two buckets on `uat-media.baptist.com.au`, set up the same way; the
-clicks are in [environments.md](../architecture/environments.md), *Setting it up*.
+Done for UAT: its own two buckets on `uat-media.baptist.com.au`, working (the clicks are in
+[environments.md](../architecture/environments.md), *Setting it up*). Production doesn't exist yet; this
+is the same list for its buckets when it does.
 
 1. **Two R2 buckets**, for example `gsbc-media` (public) and `gsbc-private`. Leave the `r2.dev`
    public URL off on both.
@@ -288,8 +288,6 @@ clicks are in [environments.md](../architecture/environments.md), *Setting it up
 
 ## Open
 
-- **The server changes aren't running yet:** the `media.uses` migration, verification and Delete need
-  the API restarted from a checkout that has them.
 - **Android's media cache:** Android has no `MediaCache` yet, so prefetching (and caching) are iOS only.
 - **Background prefetch:** records synced in the background get their images on the next open (above).
 - **Media in the Storage screen's total.**

@@ -38,8 +38,8 @@ changed, the outbox changed. Components say what they depend on and the platform
   to those directly.
 
 `Architecture.Tests` (`LiveDataRules`) fails on a component that injects a data source and loads on
-start without one of these. Components written before the rule are listed there (`NotYetMigrated`:
-Access's admin pages, People, AccountDetails, the media library) and come off the list as they move.
+start without one of these. Every component follows it; the rule's exemption list (`NotYetMigrated`) is
+empty and stays that way.
 
 ## Personal and private data
 
@@ -79,7 +79,7 @@ Built 2026-11-02; see [media.md](../features/media.md). Keys are `<sha256>.<exte
 Cloudflare caches them by default; each object is copied into place with the `immutable` header above.
 Private media is linked only while the caller holds its audience, checked on every link (owner,
 2026-11-02). The buckets, the custom domain, a cache rule, CORS and a lifecycle rule are the owner's
-to set up (media.md lists them).
+to set up (media.md lists them): done for UAT, and for production when it exists.
 
 ## Where Cloudflare caches, and where it doesn't
 
@@ -116,7 +116,7 @@ How the `baptist.com.au` zone is set (owner, 2026-11-02, checked through the pub
   (only for browser user agents, so a plain `curl` doesn't show it) and nobody used it.
 - **Purged** `dev.` and `app.` once, after the two changes above.
 - **No cache rules.** None are needed: the edge respects `no-store`, and fingerprinted files cache
-  on their own `immutable` header. The media host will need one (above).
+  on their own `immutable` header. The media hosts have one (above).
 - **Nothing may rewrite our HTML or scripts:** Rocket Loader and Email Obfuscation must stay off,
   since they would break the integrity hashes Blazor checks. Neither had touched our pages when
   checked.

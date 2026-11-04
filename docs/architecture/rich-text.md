@@ -69,7 +69,7 @@ the shortcuts and Enter in the link box into toolbar clicks. The edits themselve
 (`RichTextEdits`).
 
 `MediaChooser` shows whichever component is registered as the `MediaPicker` (Platform.Client). Media
-registers its `MediaLibrary` in pick mode, so Platform.Ui and other features can offer "choose an
+registers `MediaChoice` (the picture sheet), so Platform.Ui and other features can offer "choose an
 image" without referencing Media. With no picker registered, the Picture button isn't shown.
 
 Styling uses the design system's tokens (`css/rich-text.css` in Platform.Ui), so it follows the

@@ -1,6 +1,6 @@
 # Outreach
 
-Status: draft, 2026-10-27. Extends [SPEC.md](../../SPEC.md). A POC is in the PWA spike
+Status: draft, 2026-10-27; not built yet (Home has a sample *Outreach day* tile that opens *coming soon*). Extends [SPEC.md](../../SPEC.md). A POC is in the PWA spike
 (`spikes/app-poc`, More → Outreach and the Hub tile).
 
 ## What it is
@@ -251,7 +251,7 @@ Services, all gRPC (the AGENTS.md hard rule; nothing here needs an exception):
   rebuilding `outreach.streets`.
 - **Building the street graph** is a server job, not a request path: fetch OSM and the address data,
   place letterboxes, publish a new version of `outreach.streets`. The POC's
-  `tools/outreach/build_data.py` is that job in miniature.
+  `spikes/app-poc/tools/outreach/build_data.py` is that job in miniature.
 
 ## Where routes are made: on the phone
 

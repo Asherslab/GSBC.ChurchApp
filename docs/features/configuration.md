@@ -85,8 +85,9 @@ Management reads go over gRPC, like Access's screens; only the phone's display r
 The drafts workbench (`DraftsWorkspace`, Configuration.Client) renders any area from its descriptors: a
 row per surface, with show or hide, move up and down where the area's order matters, then the settings
 form (one input per field kind), audience and dates, and "needs app version X" where it applies. It's
-the page `drafts` (`drafts?area={key}` opens on an area) in both the app and the admin panel. Other
-features link to it by route rather than embedding it, since they can't reference Configuration.
+the admin panel's Drafts page (`/drafts`); the app has no editor, only More → Previews (admin work stays
+in the admin panel, AGENTS.md). Other features link to it by route rather than embedding it, since they
+can't reference Configuration.
 
 ## The first consumer: Home
 
@@ -102,12 +103,12 @@ The app's **theme** (`app.appearance`: an `app.theme` surface with a palette cho
 or one they made, for everyone, and the phone applies it live. See
 [data-driven.md](../architecture/data-driven.md), *Themes*. It's edited under Colours in a draft.
 
-## Status (2026-11-02)
+## Status
 
 **Built:** the descriptors and layout composition in Platform.Contracts; `ISurfaceLayout` and
 `AddSurfaces` in Platform.Client and Platform.Api; the `config` schema, the service with validation,
-per-area permissions, revisions, audit and rollback, and the `config.placements` feed; the editor and
-its Arrange page in the app and the admin panel; the Hub area with its link tile. Tested by
+per-area permissions, revisions, audit and rollback, and the `config.placements` feed; the editor in
+the admin panel's Drafts page; the Hub area. Tested by
 `Features.Configuration.Api.Tests` (Postgres) and `SurfaceLayoutTests` in Platform.Contracts.Tests.
 
 **Built 2026-11-02: drafts, the event layer and previews** ([drafts.md](../architecture/drafts.md),
@@ -120,9 +121,6 @@ through the AppHost and on the owner's iPhone.
 **Open:**
 
 - ~~Home renders it properly~~: built 2026-11-04 ([home.md](home.md)).
-- **The phone holds no grants yet:** Access.Client isn't in the app, so "signed in" and
-  permission audiences are hidden there, and the Arrange entry doesn't show, until Access joins the app
-  (with its private grants feed, [access.md](access.md)).
 - **Choosing a permission as an audience** isn't offered in the editor (an existing one is kept and
   shown as "only people with a particular permission"): picking one needs the plain-language
   permissions from Access's *Usability comes first*.
@@ -133,5 +131,4 @@ through the AppHost and on the owner's iPhone.
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible
   to forget; do it when a second feature writes a feed.
 - ~~A role audience~~: built 2026-11-04 through Access's membership grants ([home.md](home.md), *Who sees it*).
-- The media and rich-text field kinds and the theme surface need the API restarted with these changes
-  before staff can save them (an unknown surface is refused).
+

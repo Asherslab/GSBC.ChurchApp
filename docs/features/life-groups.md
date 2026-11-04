@@ -1,6 +1,6 @@
 # Life Groups
 
-Status: draft, 2026-10-26; Life Groups became a kind of ministry on 2026-10-30. Extends
+Status: draft, 2026-10-26; not built yet; Life Groups became a kind of ministry on 2026-10-30. Extends
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
 
