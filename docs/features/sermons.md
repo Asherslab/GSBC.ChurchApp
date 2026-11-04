@@ -313,6 +313,30 @@ uploads checked on save.
 - **An architecture rule** (`NoTwoPagesInTheAppClaimTheSameRoute`) now fails when two app pages claim one route: the
   coming-soon page still claiming `/sermons` stopped the app starting.
 
+## What the owner sets up
+
+Nothing for the website version: it reads public pages, as any browser does.
+
+For the uploads version, before it's used for real:
+
+1. **The media host's cache rule** (Cloudflare → the zone → Caching → Cache Rules) caches everything on
+   `<env>-media.baptist.com.au` for a long time, which is right for the content-addressed files but not for
+   `podcast/feed.xml`, which changes. Add a rule above it: *URI Path equals `/podcast/feed.xml`* → *Eligible for cache*,
+   *Edge TTL: use cache-control header if present* and *Browser TTL: respect origin* (the object carries
+   `max-age=300`). Then check through the public host: `curl -sD - -o /dev/null https://<env>-media.baptist.com.au/podcast/feed.xml`
+   should show `cache-control: public, max-age=300`.
+2. **CORS on the public bucket** must allow `PUT` from the admin panel's host (`https://<env>-app.baptist.com.au`), as
+   it already does for Media's uploads to the private bucket; uploads go to the public one.
+3. **Storage:** copying the website's audio puts about 7.8 GB in the public bucket (R2's free tier is 10 GB).
+4. **Moving the podcast:** in Podcasts Connect and Spotify for Creators, change the feed URL to the one shown on the
+   Sermons page; ask Tithe.ly whether the old feed can redirect or carry `itunes:new-feed-url`, so subscribers move
+   with it.
+5. **Optional:** `Sermons:Podcast:ImageUrl` (the 3000 × 3000 podcast cover) and `Sermons:Podcast:Email` in the API's
+   configuration; they aren't secrets.
+
+To try it in dev, flip *Where new sermons come from* on the admin panel's Sermons page; in development only the newest
+20 sermons are copied.
+
 ## Status (2026-11-05)
 
 Built on branch `feature/sermons`:

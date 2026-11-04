@@ -39,6 +39,7 @@
   z-index: 20;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+  column-gap: 8px;
   align-items: center;
   gap: 8px;
   min-height: calc(var(--top-h) + var(--sat));

@@ -48,7 +48,7 @@
         SpeakerInfo? speaker = view.Shelf.FindSpeaker(sermon.SpeakerId);
         IReadOnlyList<Sermon> series = sermon.SeriesId is { } seriesId ? view.Shelf.InSeries(seriesId) : [];
         IReadOnlyList<Sermon> bySpeaker = view.Shelf.BySpeaker(sermon.SpeakerId).Where(other => other.Id != sermon.Id).Take(4).ToList();
-        return @<Page Title="@sermon.Title" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+        return @<Page Title="@SermonText.ShortTitle(sermon)" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
             <div class="sermon-hero">
                 @if (_watching && sermon.YouTubeId is { } video)
                 {
