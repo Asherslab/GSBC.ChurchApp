@@ -1,0 +1,19 @@
+root = true
+
+[*.cs]
+dotnet_naming_symbols.local_constants.applicable_kinds = local
+dotnet_naming_symbols.local_constants.required_modifiers = const
+dotnet_naming_style.pascal_case.capitalization = pascal_case
+dotnet_naming_rule.local_constants_are_pascal_case.symbols = local_constants
+dotnet_naming_rule.local_constants_are_pascal_case.style = pascal_case
+dotnet_naming_rule.local_constants_are_pascal_case.severity = suggestion
+resharper_not_accessed_positional_property_global_highlighting = none
+
+[**/IsExternalInit.cs]
+resharper_check_namespace_highlighting = none
+
+[**/BlobStoreOptions.cs]
+resharper_unused_auto_property_accessor_global_highlighting = none
+
+[**/MediaLibrary.cs]
+resharper_parameter_only_used_for_precondition_check_local_highlighting = none
