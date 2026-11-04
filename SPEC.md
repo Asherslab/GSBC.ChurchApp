@@ -1,6 +1,6 @@
 # GSBC Church App: spec
 
-Status: draft, 2026-10-26. A starting point for discussion, not a commitment.
+Status: the design the app is built to (drafted 2026-10-26, kept current with the code as of 2026-11-04). What is built and what is next is in [docs/README.md](docs/README.md).
 
 ## 1. Why
 
@@ -271,21 +271,22 @@ On the server:
 no buffering, heartbeats holding the stream). *On a real iPhone 2026-11-02* through Cloudflare, with
    Configuration's feed: changes within a second, the stream surviving 4 minutes idle, catch-up after
    aeroplane mode and after the app was killed offline, and the outbox sending the moment the network
-   returns. Traefik still to test, in the cluster.
+   returns. UAT runs behind Cloudflare and Traefik since 2026-11-03; its deploy checks cover native gRPC health and a unary gRPC-Web call, not a long-held `Watch`, so that last hop is still to prove.
 
 ## 6. Who may call what
 
-Every service method falls into one of three tiers. The API **fails closed**: the default policy
-requires a signed-in staff member, so a method that forgets its attribute is locked, not open.
+Every service method declares exactly one tier. The API **fails closed**: a method that forgets its
+attribute is refused, not open ([permissions.md](docs/architecture/permissions.md)).
 
 | Tier | Examples | Requirement |
 |---|---|---|
-| **Public read** | Events, sermons, groups, `Sync` and `Watch` for public feeds | `[AllowAnonymous]`, rate-limited |
-| **App write** | Prayer request, "I'm interested", push-topic subscription, joining a Life Group | A **genuine installed app** (below), rate-limited per install |
-| **Admin** | Editing anything, sending pushes, reading prayer requests | A **staff passkey** session; every method, no exceptions. Some roles, such as Life Group leaders, are further limited to their own records |
+| **Public read**, `[Public]` | Events, sermons, groups, `Sync` and `Watch` for public feeds, error and usage reports | Anyone, rate-limited |
+| **App write**, `[AppInstall]` | Prayer request, "I'm interested", registering for push, joining a Life Group | A **genuine installed app** (below), rate-limited per install |
+| **Signed in**, `[SignedIn]` | Your own permissions, your inbox preferences | Any signed-in person; the method checks anything finer itself |
+| **Admin**, `[Requires(node)]` | Editing anything, sending pushes, reading prayer requests | A passkey session whose person holds the permission at that scope, checked live on every call. Some roles, such as Life Group leaders, are further limited to their own records |
 
-A test enumerates every gRPC endpoint and fails if any method lacks an explicit tier, or if an
-admin feature's service has a method below Admin.
+A test (`TierRules`) enumerates every gRPC endpoint and fails if any method lacks an explicit tier, has
+more than one, or names a permission nobody declares.
 
 ### Admin: passkeys, behind a YARP BFF, as in ImpactKids
 
@@ -623,8 +624,9 @@ third-party SDK or service on top.
   Cloud Messaging. Using FCM means a Firebase project and a `google-services.json` in the Android
   build; nothing else from Firebase is used. The API sends with the FCM HTTP v1 API and a service
   account key.
-- **The API stores device tokens** with the platform and topic subscriptions (Youth, Kids, Prayer and
-  so on). It fans out per topic itself.
+- **The API stores device tokens** with the platform and the person (if signed in), and works out who
+  gets a notification through Access's permissions, not topic lists
+  ([notifications.md](docs/architecture/notifications.md)). It fans out itself.
 - **Not used:** Firebase on iOS, Firebase analytics, and hosted push services (OneSignal etc.).
   This keeps the dependency to the bare transport.
 
@@ -641,10 +643,9 @@ third-party SDK or service on top.
 
 None block the skeleton. One has a deadline:
 
-1. **Store accounts.** The church has none yet. They aren't needed for the skeleton, but they are needed
-   for the device spike's push and attestation checks (Apple's paid programme, a Play Console listing)
-   and for any store testing. Enrol the church as an organisation: Apple requires a D-U-N-S number,
-   which is free but can take days to weeks with Apple's review, so start before the device spike.
+1. **Store accounts.** Apple is done: the church is enrolled as an organisation (2026-11-03), UAT has its
+   App Store Connect record and TestFlight builds have shipped, and the APNs key is set for UAT. Still
+   to do: the production app's record, when production is set up, and a Play Console listing for Android.
    Owning the app from the first build avoids a later app transfer.
 2. **Life Groups and the site map** have their own open questions in their docs.
 
@@ -680,9 +681,10 @@ Decided, for the record:
    Also: the module layout (§8) with the §9 rules, the warning baseline and an AOT CI
    gate (publish, check, then smoke-test the binaries). Then the native data layer spike (§5's five
    open points): a Capacitor shell with one screen fed through the native Transport, Store and Sync,
-   on a real iPhone and Android device, through Cloudflare.
+   on a real iPhone and Android device, through Cloudflare. (The iPhone side is done and in use; Android's
+   native layer is stubbed until Android is built.)
 2. **API + admin:** events, announcements and sermons editable by staff, appearing in the app with
-   no release.
+   no release. (Announcements and Home are built; sermons and events are next.)
 3. **v1 features:** Home, Sermons, Events, Life Groups, site map, Groups, Give (link out), push
    (APNs + FCM).
 4. **Store submission:** TestFlight / internal testing, then public release.

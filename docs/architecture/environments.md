@@ -3,6 +3,10 @@
 Three apps that sit side by side on one phone, each with its own backend, passkeys and media (owner,
 2026-11-03). **UAT** is what staff test through TestFlight: it follows `main`, and it is never released.
 
+**Where each one stands (2026-11-04):** dev runs on the AppHost. UAT is live: its backend deploys by itself
+from every push to `main`, its R2 media works, and TestFlight builds 1 to 5 have shipped. Production
+doesn't exist yet; its set-up is future work and nothing is waiting on it.
+
 | | Dev | UAT | Production |
 |---|---|---|---|
 | App | **GSBC Dev**, orange `DEV` band | **GSBC UAT**, aqua `UAT` band | **Good Shepherd** |
@@ -64,16 +68,17 @@ for it; nothing is deployed if CI fails):
    as `sha-<commit>`; after CI passes it moves the `uat` tag to them;
 2. rewrites the three `#image` lines in `gsbc.argo`'s `clusters/mini/app/church-app-uat/kustomization.yaml`
    and pushes, as the other apps do; Argo CD rolls it out;
-3. checks `https://uat-app.baptist.com.au` through Cloudflare: native gRPC health answers `SERVING`, the
-   API answers a gRPC-Web call through the gateway, `check-caching.sh` passes, and the association file
-   is a 200 `application/json` naming the UAT app. It checks that UAT is healthy after the push; it can't
-   tell which commit is serving.
+3. checks `https://uat-app.baptist.com.au` through Cloudflare: it waits until `dotnet.js` names this
+   build's fingerprinted runtime (so the check is of this build, not the one before), then native gRPC
+   health answers `SERVING`, the API answers a gRPC-Web call through the gateway, `check-caching.sh`
+   passes, and the association file is a 200 `application/json` naming the UAT app.
 
 **A push that only changes docs builds nothing:** CI skips it (Markdown, `docs/`, `.impeccable/`,
 `spikes/`, `.run/`), so UAT isn't redeployed either. `repo-layout.md` and `architecture.svg` still run CI,
 because `ProjectMapRules` reads them.
 
-**The app goes to TestFlight only when someone presses the button** (below).
+**The app goes to TestFlight only when someone starts it by hand** (below), when the app changed; a
+backend-only change needs no build, because UAT's backend follows `main` on its own.
 
 **Backend changes stay additive,** because TestFlight builds stay installed for up to 90 days while UAT's
 backend moves on with every push: add gRPC methods, fields and feeds rather than changing or removing
@@ -188,6 +193,11 @@ account). Five wrong codes for the account in 15 minutes lock it for 15 minutes,
 that the code didn't work, check the code in App Store Connect before making a new one.
 
 ## Setting it up (owner, in this order)
+
+Done for UAT and dev: the developer portal and App Store Connect records, the `uat` environment and its
+secrets, the Cloudflare and R2 settings, the cluster secrets, the APNs key and the association file. This
+is the order to follow again for production, with `app`/`media`/`baptist.com.au` for the `uat-` hosts,
+the `Release` configuration and `gsbc-media`/`gsbc-private`.
 
 **1. Apple developer portal** (developer.apple.com → Account → Certificates, IDs & Profiles):
 

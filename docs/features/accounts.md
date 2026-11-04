@@ -2,7 +2,7 @@
 
 Signing up, signing in, passkeys, sessions, invitations and recovery, for everyone, in the browser
 and in the app. The rules are in [identity.md](../architecture/identity.md); this is how they're
-built. Permissions (who may do what) are the Access feature, next.
+built. Permissions (who may do what) are the Access feature ([access.md](access.md)).
 
 ## What people can do (v1)
 
@@ -78,12 +78,12 @@ Recovering never removes existing passkeys; the person removes lost ones afterwa
 | Project | Holds |
 |---|---|
 | `Features.Accounts.Contracts` | `Session` and `Accounts` services, messages, `accounts.*` permissions |
-| `Features.Accounts.Data` (new part) | `AccountsDbContext` (schema `accounts`): Identity users and passkeys, sessions, tickets, codes, audit log; the session store |
+| `Features.Accounts.Data` | `AccountsDbContext` (schema `accounts`): Identity users and passkeys, sessions, tickets, codes, audit log; the session store |
 | `Features.Accounts.Api` | The gRPC services |
-| `Features.Accounts.Gateway` (new part) | The ceremony endpoints, session cookie and header handling, the session-to-token transform |
+| `Features.Accounts.Gateway` | The ceremony endpoints, session cookie and header handling, the session-to-token transform |
 | `Features.Accounts.Client` / `.App` / `.Admin` | Sign-in and account screens; staff screens in Admin |
 
-`Data` and `Gateway` are new optional parts: features whose state the gateway needs (only Accounts, so
+`Data` and `Gateway` are optional parts: features whose state the gateway needs (only Accounts, so
 far) put it in `Data`, shared by `Api` and `Gateway`.
 
 ## Robustness
@@ -100,11 +100,11 @@ far) put it in `Data`, shared by `Api` and `Gateway`.
 1. Data, the gRPC services, and the browser ceremonies on the gateway; tested locally (`localhost`
    is a valid passkey domain in the browser), then through `dev-app.baptist.com.au`.
 2. The admin panel's sign-in and account screens; the token transform; the API's token check.
-3. The app's account screens, read-only signed out.
+3. The app's account screens (More → Account).
 4. After the enrolment: Associated Domains, native passkeys in the app, the Keychain session (built
    2026-11-03).
 
-## Status (2026-11-01)
+## Status
 
 **Built, in the browser:** sign-up, sign-in, adding and removing passkeys, confirming an email,
 recovery by email link, invitation links, seeing and ending sessions, signing out everywhere, the
@@ -129,9 +129,9 @@ development the emails (confirmation codes, links) appear in the API's log in th
   opening the app. Tested by `Features.Accounts.Gateway.Tests` (the phone gets a secret, not a cookie,
   until the session ends; the association file) and the native `PasskeyCeremonyTests`, and proven on
   the owner's iPhone ([identity.md](../architecture/identity.md), *Signing in on the phone*).
-- *Production keys and relying party:* the token signing key and `Accounts:Passkeys` for
+- *Production keys and relying party* (future work: production doesn't exist yet): the token signing key and `Accounts:Passkeys` for
   `baptist.com.au`, as cluster secrets and config through `gsbc.argo`.
 
 ## Open
 
-- The token signing key in production: a cluster secret through `gsbc.argo` (owner).
+- The token signing key in production (future work): a cluster secret through `gsbc.argo` (owner).

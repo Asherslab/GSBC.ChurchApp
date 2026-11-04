@@ -42,7 +42,7 @@ They install beside TestFlight's **GSBC UAT** and the store app: see
 
 The script finds the phone, writes your team and this Mac's address (`<LocalHostName>.local:5300`) into
 `ios/local.xcconfig` (gitignored, so nothing machine-specific is committed), then builds, installs and
-launches. Home shows whether the app reached the server. Override with `GSBC_GATEWAY=host:port` or
+launches. The masthead's sync indicator shows whether the app reached the server. Override with `GSBC_GATEWAY=host:port` or
 `GSBC_DEVICE=<udid>`.
 
 To see sync working: open **Storage** in the app (it lists what's stored, the sync state and anything
@@ -59,7 +59,7 @@ there to queue a send that succeeds and one that fails, for the outbox. Store bu
 
 Accounts: sign up or sign in at https://dev-app.baptist.com.au/account (the admin panel) with a real
 passkey. To make yourself the first owner (once per environment): `tools/access/make-owner.sh <your email>`;
-the admin panel then shows People, Roles and Who holds what. In development, emails such as confirmation codes and recovery links go to the API's log in
+the admin panel then shows People, Roles and Who can do what. In development, emails such as confirmation codes and recovery links go to the API's log in
 the Aspire dashboard instead of being sent.
 
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to
