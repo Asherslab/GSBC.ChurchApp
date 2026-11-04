@@ -68,3 +68,15 @@ window's height; head and tabs stay, the area under them scrolls), so the phone 
 under the head with a floor of 0.6 instead of 0.72, and the how-to caption moved to the rail. The drag's
 target is the cell under the dragged tile's centre (20% leeway, 180 ms rest), and `HubGrid.Plan` picks the
 order, swaps included, that lands it there moving no tile outside that cell where it can.
+
+Round 3 (after the owner's recordings, 2026-11-04): the drag is built to iOS's home-screen edit mode. No slot
+box and no column hairlines: the gap the tile left is the landing place. The lifted tile is a copy in a drag
+layer over the phone's screen (above the masthead and the tab bar, under the status bar), 1.05 large with the
+deep shadow, following the pointer 1:1, and the real cell goes invisible so its gap stays. The target is the
+cell under the tile's top-left cell (20% leeway, 130 ms rest), every plan is made from the arrangement the
+drag started with, and `HubGrid.Plan` lands the tile exactly there, letting a big tile give way downwards and
+the row above fill in, with the fewest moves. Neighbours glide 220 ms; the drop settles on a gentle `linear()`
+spring as the shadow fades; Escape glides everything back and scrolls the phone back smoothly. Holding near
+the top or bottom scrolls every frame, faster nearer the edge, never past the end, and the grid stays still
+until the scroll stops. Arrow keys move the chosen tile a cell in that direction through the same plan.
+Reduced motion keeps the drag but drops the glides and the lift.

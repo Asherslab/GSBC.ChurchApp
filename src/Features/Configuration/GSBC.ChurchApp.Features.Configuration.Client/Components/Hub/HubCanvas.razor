@@ -262,8 +262,12 @@
         }
         List<ArrangedSurface> visible = Visible;
         int from = visible.IndexOf(entry);
-        int to = from + (across != 0 ? across : down);
-        if (from >= 0 && to >= 0 && to < visible.Count)
+        if (from < 0)
+            return;
+        List<TileSpan> spans = visible.Select(HubTiles.SpanOf).ToList();
+        TilePlace place = HubGrid.Pack(Columns, spans)[from];
+        int to = HubGrid.Plan(Columns, spans, from, place.Column - 1 + across, place.Row - 1 + down).ToList().IndexOf(from);
+        if (to != from)
             await Moved(key, to);
     }
 

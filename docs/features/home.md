@@ -146,8 +146,9 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   as a cut.
   Click a tile to choose it: an orange outline, its size, and a corner grip.
 - **Dragging, as on an iPhone's home screen** (owner, 2026-11-04, notes 5 and 14; round 3 after the owner's
-  recordings): the tile lifts (opaque, 1.05 larger, a deep shadow, above everything) and follows the pointer
-  with no lag. There is no slot box and no column guides: the gap the tile left is where it will land, as on
+  recordings): the tile lifts as a copy in a drag layer over the phone's screen (opaque, 1.05 larger, a deep shadow,
+  above the masthead and the tab bar, under the status bar) and follows the pointer with no lag, while its
+  own cell goes invisible so its gap stays. There is no slot box and no column guides: the gap the tile left is where it will land, as on
   iOS. The target is the grid cell under the centre of the tile's first (top-left) cell, so a wide or tall
   tile snaps by its top-left corner; it changes only once that point is 20% past the current cell's edge and
   has rested in the new cell for 130 ms, and letting go applies a pending target at once. Every plan starts
@@ -164,8 +165,11 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   held to the right of an empty row) does nothing move. Tests: `HubGridTests`. The others glide to their new
   places in 220 ms (the page packs with `pack`, a port of `HubGrid.Pack`). Letting go settles the tile into
   its gap with a gentle spring, the shadow fading as it lands, then saves; Escape, or letting go off the
-  phone, glides everything back including the phone's scroll. Holding a tile near the phone's top or bottom
-  scrolls the screen every frame, faster the deeper into the 72 px edge zone, never past the end of the grid.
+  phone, glides everything back and scrolls the phone back smoothly. Letting go waits for a plan still being
+  asked for, so a tile rested over its target never drops into the old order. Holding a tile near the phone's top or bottom
+  scrolls the screen every frame, faster the deeper into the 72 px edge zone, never past the end of the grid,
+  and the grid stays still until the scroll stops. Keyboard arrows move the chosen tile one cell in that
+  direction through the same plan (they used to move it one place in reading order).
   Dragging the grip resizes, and the others make room the same way. Keyboard: Tab to a tile, arrows move it
   a place, Shift with arrows resizes it, and the others glide too; each move is announced. With reduced
   motion, tiles move without gliding or lifting. Choosing a tile scrolls the phone only as far as needed to

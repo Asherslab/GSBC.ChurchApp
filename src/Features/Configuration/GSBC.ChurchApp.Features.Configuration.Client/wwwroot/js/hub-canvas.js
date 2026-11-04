@@ -40,6 +40,7 @@ export function attach(canvas, receiver) {
   const cells = () => [...canvas.querySelectorAll('.hub-cell[data-tile]')];
   const byKey = (key) => canvas.querySelector(`.hub-cell[data-tile="${CSS.escape(key)}"]`);
   const screen = () => canvas.querySelector('.phone-frame__screen');
+  const frame = () => canvas.querySelector('.phone-frame');
   const tracks = (text) => text.split(' ').map(parseFloat).filter((value) => !Number.isNaN(value));
 
   const measure = (cell) => {
@@ -87,19 +88,35 @@ export function attach(canvas, receiver) {
     flip(before, gesture.metrics.scale);
   };
 
-  const rest = () => {
-    const cell = gesture.cell;
-    const transform = cell.style.transform;
-    cell.style.transform = 'none';
-    const box = cell.getBoundingClientRect();
-    cell.style.transform = transform;
-    gesture.home = { left: box.left, top: box.top, width: box.width, height: box.height };
+  const inFrame = (x, y, scale) => {
+    const box = frame().getBoundingClientRect();
+    return { x: (x - box.left) / scale, y: (y - box.top) / scale };
   };
 
   const follow = () => {
-    const { home, grab, last, metrics } = gesture;
-    if (!last) return;
-    gesture.cell.style.transform = `translate(${(last.x - grab.x - home.left) / metrics.scale}px, ${(last.y - grab.y - home.top) / metrics.scale}px)`;
+    const { ghost, grab, last, metrics } = gesture;
+    if (!ghost || !last) return;
+    const { x, y } = inFrame(last.x - grab.x, last.y - grab.y, metrics.scale);
+    ghost.style.transform = `translate(${x}px, ${y}px)`;
+  };
+
+  const raise = (cell, box) => {
+    let layer = frame().querySelector('.hub-drag-layer');
+    if (!layer) {
+      layer = document.createElement('div');
+      layer.className = 'hub-drag-layer';
+      frame().append(layer);
+    }
+    const ghost = cell.cloneNode(true);
+    ghost.classList.add('hub-drag');
+    ghost.classList.remove('hub-cell--lifted', 'hub-cell--settling');
+    ghost.removeAttribute('data-tile');
+    ghost.setAttribute('inert', '');
+    ghost.style.width = `${box.width / gesture.metrics.scale}px`;
+    ghost.style.height = `${box.height / gesture.metrics.scale}px`;
+    ghost.style.transition = 'none';
+    layer.replaceChildren(ghost);
+    return ghost;
   };
 
   const lift = (event) => {
@@ -117,12 +134,15 @@ export function attach(canvas, receiver) {
     gesture.scroll = screen()?.scrollTop ?? 0;
     getSelection()?.removeAllRanges();
     canvas.classList.add(gesture.kind === 'move' ? 'hub-canvas--moving' : 'hub-canvas--sizing');
-    cell.classList.remove('hub-cell--settling');
     cell.classList.add('hub-cell--lifted');
     cell.style.transition = '';
-    rest();
     document.addEventListener('keydown', escape, true);
     if (gesture.kind === 'move') {
+      gesture.ghost = raise(cell, box);
+      follow();
+      gesture.ghost.getBoundingClientRect();
+      gesture.ghost.style.transition = '';
+      gesture.ghost.classList.add('hub-drag--up');
       gesture.target = cellAt(anchor());
       gesture.frame = requestAnimationFrame(creep);
     }
@@ -160,15 +180,12 @@ export function attach(canvas, receiver) {
   const plan = async (asked, here) => {
     const spans = asked.original.map((each) => asked.spans.get(each));
     const indices = await receiver.invokeMethodAsync('Plan', asked.metrics.columns, spans.map((span) => span.columns), spans.map((span) => span.rows), asked.original.indexOf(asked.key), here.column, here.row);
-    if (gesture !== asked) return false;
+    if (gesture !== asked) return;
     asked.target = here;
     const order = indices.map((index) => asked.original[index]);
-    if (order.join() === asked.order.join()) return false;
+    if (order.join() === asked.order.join()) return;
     asked.order = order;
     lay(order, asked.spans, asked.cell);
-    rest();
-    follow();
-    return true;
   };
 
   const retarget = () => {
@@ -190,14 +207,15 @@ export function attach(canvas, receiver) {
     if (gesture.waiting === wanted) return;
     clearTimeout(gesture.timer);
     gesture.waiting = wanted;
-    gesture.timer = setTimeout(async () => {
+    gesture.timer = setTimeout(() => {
       if (!gesture || gesture.waiting !== wanted) return;
       gesture.waiting = null;
       const now = cellAt(anchor());
       if (`${now.column}:${now.row}` !== wanted) return;
       const asked = gesture;
-      await plan(asked, now);
-      if (gesture === asked) asked.target = cellAt(anchor());
+      asked.planning = plan(asked, now).then(() => {
+        if (gesture === asked) asked.target = cellAt(anchor());
+      });
     }, settle);
   };
 
@@ -209,23 +227,35 @@ export function attach(canvas, receiver) {
     const edge = view.getBoundingClientRect();
     const { scale } = gesture.metrics;
     const tabs = canvas.querySelector('.phone-frame .tabbar')?.getBoundingClientRect();
-    const top = edge.top + (parseFloat(getComputedStyle(view).getPropertyValue('--sat')) || 0) * scale + 44 * scale;
-    const bottom = (tabs ? tabs.top : edge.bottom);
+    const top = edge.top + ((parseFloat(getComputedStyle(view).getPropertyValue('--sat')) || 0) + 44) * scale;
+    const bottom = tabs ? tabs.top : edge.bottom;
     const zone = edgeZone * scale;
     const y = gesture.last.y;
     let push = 0;
     if (y < top + zone) push = -Math.min(1, (top + zone - y) / zone);
     else if (y > bottom - zone) push = Math.min(1, (y - (bottom - zone)) / zone);
-    if (push === 0) return;
+    if (push === 0) {
+      if (gesture.scrolling) {
+        gesture.scrolling = false;
+        retarget();
+      }
+      return;
+    }
     const by = Math.sign(push) * fastestScroll * Math.abs(push) ** 1.6;
     const was = view.scrollTop;
     const grid = gesture.cell.parentElement.getBoundingClientRect();
     const most = was + (grid.bottom + (parseFloat(getComputedStyle(view).paddingBottom) || 0) * scale - edge.bottom) / scale;
     view.scrollTop = Math.max(0, Math.min(most, was + by));
-    if (view.scrollTop === was) return;
-    rest();
-    follow();
-    retarget();
+    if (view.scrollTop === was) {
+      if (gesture.scrolling) {
+        gesture.scrolling = false;
+        retarget();
+      }
+      return;
+    }
+    gesture.scrolling = true;
+    clearTimeout(gesture.timer);
+    gesture.waiting = null;
   };
 
   const down = (event) => {
@@ -258,7 +288,7 @@ export function attach(canvas, receiver) {
     gesture.last = { x: event.clientX, y: event.clientY };
     if (gesture.kind === 'move') {
       follow();
-      retarget();
+      if (!gesture.scrolling) retarget();
       return;
     }
     const { columns, columnStep, rowStep } = gesture.metrics;
@@ -283,17 +313,40 @@ export function attach(canvas, receiver) {
     canvas.classList.remove('hub-canvas--moving', 'hub-canvas--sizing');
   };
 
-  const settleInto = (cell, scaled) => {
-    cell.classList.remove('hub-cell--lifted');
-    if (still()) {
-      cell.style.transform = '';
+  const land = (done, scrollTo) => new Promise((resolve) => {
+    const { cell, ghost, metrics } = done;
+    const view = screen();
+    const finish = () => {
+      ghost.remove();
+      cell.classList.remove('hub-cell--lifted');
+      resolve();
+    };
+    if (!ghost) {
+      cell.classList.remove('hub-cell--lifted');
+      resolve();
       return;
     }
-    cell.classList.add('hub-cell--settling');
-    cell.style.transition = `transform ${glide}ms ${scaled ? dropCurve : glideCurve}, scale ${glide}ms ${glideCurve}`;
-    cell.style.transform = '';
-    setTimeout(() => cell.classList.remove('hub-cell--settling'), glide + 60);
-  };
+    if (still()) {
+      if (view && scrollTo !== undefined) view.scrollTop = scrollTo;
+      finish();
+      return;
+    }
+    const box = cell.getBoundingClientRect();
+    const { x, y } = inFrame(box.left, box.top, metrics.scale);
+    const shift = view && scrollTo !== undefined ? scrollTo - view.scrollTop : 0;
+    ghost.classList.remove('hub-drag--up');
+    ghost.classList.add('hub-drag--landing');
+    ghost.style.transition = `transform ${glide}ms ${scrollTo === undefined ? dropCurve : glideCurve}, scale ${glide}ms ${glideCurve}`;
+    ghost.style.transform = `translate(${x}px, ${y - shift}px)`;
+    if (view && scrollTo !== undefined) view.scrollTo({ top: scrollTo, behavior: 'smooth' });
+    const began = performance.now();
+    const settled = () => {
+      const stillScrolling = view && scrollTo !== undefined && Math.abs(view.scrollTop - scrollTo) > 1;
+      if (performance.now() - began < glide || (stillScrolling && performance.now() - began < 800)) requestAnimationFrame(settled);
+      else finish();
+    };
+    requestAnimationFrame(settled);
+  });
 
   const abandon = () => {
     const done = gesture;
@@ -304,21 +357,13 @@ export function attach(canvas, receiver) {
       return;
     }
     const before = boxes(done.cell);
-    const box = done.cell.getBoundingClientRect();
-    const view = screen();
-    if (view) view.scrollTop = done.scroll;
     for (const [cell, style] of done.styles) {
       if (style === null) cell.removeAttribute('style');
       else cell.setAttribute('style', style);
     }
     flip(before, done.metrics.scale);
-    if (!still()) {
-      const home = done.cell.getBoundingClientRect();
-      done.cell.style.transition = 'none';
-      done.cell.style.transform = `translate(${(box.left - home.left) / done.metrics.scale}px, ${(box.top - home.top) / done.metrics.scale}px)`;
-      done.cell.getBoundingClientRect();
-    }
-    settleInto(done.cell, false);
+    if (done.kind === 'move') land(done, done.scroll);
+    else done.cell.classList.remove('hub-cell--lifted');
     const badge = done.cell.querySelector('[data-size]');
     if (badge && done.size) badge.textContent = `${done.size.columns} wide, ${done.size.rows} tall`;
   };
@@ -348,21 +393,26 @@ export function attach(canvas, receiver) {
       return;
     }
     const done = gesture;
-    if (done.kind === 'move' && done.waiting) {
+    if (done.kind === 'move') {
       clearTimeout(done.timer);
-      done.waiting = null;
-      await plan(done, cellAt(anchor()));
+      await done.planning;
       if (gesture !== done) return;
+      if (done.waiting || done.scrolling) {
+        done.waiting = null;
+        await plan(done, cellAt(anchor()));
+        if (gesture !== done) return;
+      }
     }
     gesture = null;
     tidy(done);
-    settleInto(done.cell, done.kind === 'move');
     if (done.kind === 'move') {
+      await land(done);
       const to = done.order.indexOf(done.key);
       if (to === done.original.indexOf(done.key)) return;
-      if (!still()) await new Promise((resolve) => setTimeout(resolve, glide));
       await receiver.invokeMethodAsync('Moved', done.key, to);
-    } else if (done.next) {
+    } else {
+      done.cell.classList.remove('hub-cell--lifted');
+      if (!done.next) return;
       const was = done.spans.get(done.key);
       if (done.next.columns !== was.columns || done.next.rows !== was.rows)
         await receiver.invokeMethodAsync('Resized', done.key, done.next.columns, done.next.rows);
@@ -415,6 +465,7 @@ export function attach(canvas, receiver) {
       canvas.removeEventListener('pointercancel', cancel);
       canvas.removeEventListener('transitionend', ended);
       document.removeEventListener('keydown', escape, true);
+      frame()?.querySelector('.hub-drag-layer')?.remove();
     },
   };
 }
