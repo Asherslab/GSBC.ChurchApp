@@ -2,11 +2,12 @@
     <ol class="breadcrumbs__list">
         @for (int index = 0; index < Trail.Count; index++)
         {
-            Crumb crumb = Trail[index];
-            bool current = index == Trail.Count - 1;
+            int position = index;
+            Crumb crumb = Trail[position];
+            bool current = position == Trail.Count - 1;
             bool droppable = !current && CanDrop?.Invoke(crumb) == true;
             <li class="breadcrumbs__item">
-                @if (index > 0)
+                @if (position > 0)
                 {
                     <Icon Name="chevron-right" Size="IconSize.Small" Class="breadcrumbs__sep" />
                 }
@@ -22,9 +23,9 @@
                 }
                 else
                 {
-                    <button type="button" class="breadcrumbs__link @(droppable && _over == crumb.Key ? "breadcrumbs__link--drop" : "")"
+                    <button type="button" class="breadcrumbs__link @(droppable && _over == position ? "breadcrumbs__link--drop" : "")"
                             @onclick="() => OnOpen.InvokeAsync(crumb)"
-                            @ondragenter="() => _over = droppable ? crumb.Key : null" @ondragleave="() => _over = null"
+                            @ondragenter="() => _over = droppable ? position : NotOver" @ondragleave="() => _over = NotOver"
                             @ondragover:preventDefault="droppable" @ondrop="() => DropAsync(crumb)">
                         @if (crumb.Icon is not null)
                         {
@@ -39,7 +40,8 @@
 </nav>
 
 @code {
-    private string? _over;
+    private const int NotOver = -1;
+    private int _over = NotOver;
 
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<Crumb> Trail { get; set; }
@@ -49,7 +51,7 @@
 
     private async Task DropAsync(Crumb crumb)
     {
-        _over = null;
+        _over = NotOver;
         if (CanDrop?.Invoke(crumb) == true)
             await OnDrop.InvokeAsync(crumb);
     }
