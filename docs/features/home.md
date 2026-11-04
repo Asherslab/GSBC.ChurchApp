@@ -174,6 +174,25 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   a place, Shift with arrows resizes it, and the others glide too; each move is announced. With reduced
   motion, tiles move without gliding or lifting. Choosing a tile scrolls the phone only as far as needed to
   show it (it used to snap by 72 px, which collapsed the masthead after a click).
+- **A drag always ends clean** (owner, 2026-11-04, after a tile was left invisible twice): the drop sends
+  the whole planned order to Blazor (`HubCanvas.Arranged`, then `OnMove` with the tiles in sequence), not
+  just the dragged tile's new index, because a plan can slide other tiles past each other and a single move
+  would save a different picture from the one dropped into. The plan is asked synchronously
+  (`invokeMethod`) so a save or render in progress can't delay the reflow. Every way a drag can end runs
+  one idempotent clean-up: drop, Escape, letting go off the phone, `pointercancel`, `lostpointercapture`,
+  the window losing focus or the tab hiding, a right click (its menu is suppressed mid-drag), a second
+  pointer (ignored), a new drag during the drop glide (the earlier copy is replaced and its cell shown),
+  and Blazor re-rendering mid-drag (the page re-asserts the planned layout and the dragged cell's lift).
+  A self-heal (`heal`, from a MutationObserver on the grid and after every drag) re-derives the idle
+  layout from Blazor's own DOM order and spans, strips stray lift classes, transforms and copies, and
+  holds the dropped picture only until Blazor's render lands (1.5 s at most). Edge scrolling arms only
+  once the pointer has left the edge zone or moved half a row, so picking up a tile in the last visible
+  row no longer scrolls the phone at once. The lifted copy's pictures load eagerly (the tile's own are
+  lazy), so the copy no longer shows a blank block for its first frames. Repros, run on dev's admin in
+  Chromium and WebKit: quick repeated drags, a drag while the draft saves, a second tab moving a tile
+  mid-drag, Escape during the glide, a new drag during the glide, the tab hiding, pointer capture lost, a
+  right click. The actual cause of the owner's invisible tile wasn't reproduced; the self-heal makes the
+  state impossible to keep.
 - **Why the drag was wrong in Safari:** the phone was fitted with CSS `zoom`, and WebKit reports boxes
   inside a zoomed element unscaled, so every position the drag measured was off (the slot landed away from
   the pointer and the layout thrashed). The phone is now scaled with `transform: scale()`

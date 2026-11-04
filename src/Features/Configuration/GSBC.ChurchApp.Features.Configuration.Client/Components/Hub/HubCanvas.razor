@@ -81,7 +81,7 @@
     [Parameter] public string? SelectedKey { get; set; }
     [Parameter] public IReadOnlyDictionary<string, string> Marks { get; set; } = new Dictionary<string, string>();
     [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
-    [Parameter] public EventCallback<(ArrangedSurface Tile, int To)> OnMove { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<ArrangedSurface>> OnMove { get; set; }
     [Parameter] public EventCallback<(ArrangedSurface Tile, int Columns, int Rows)> OnResize { get; set; }
     [Parameter] public EventCallback<int> OnColumns { get; set; }
     [Parameter] public EventCallback OnAdd { get; set; }
@@ -230,14 +230,14 @@
         HubGrid.Plan(columns, widths.Zip(heights, (width, height) => new TileSpan(width, height)).ToList(), dragged, column, row).ToArray();
 
     [JSInvokable]
-    public async Task Moved(string key, int toVisibleIndex)
+    public async Task Arranged(string[] keys, string moved)
     {
         List<ArrangedSurface> visible = Visible;
-        if (Find(key) is not { } entry || toVisibleIndex < 0 || toVisibleIndex >= visible.Count)
+        List<ArrangedSurface> arranged = keys.Select(Find).OfType<ArrangedSurface>().ToList();
+        if (arranged.Count != visible.Count || !visible.All(arranged.Contains) || Find(moved) is not { } entry)
             return;
-        int to = Tiles.ToList().IndexOf(visible[toVisibleIndex]);
-        await InvokeAsync(() => OnMove.InvokeAsync((entry, to)));
-        Announce($"Moved {DraftWords.NameOf(entry)} to place {toVisibleIndex + 1} of {visible.Count}.");
+        await InvokeAsync(() => OnMove.InvokeAsync(arranged));
+        Announce($"Moved {DraftWords.NameOf(entry)} to place {arranged.IndexOf(entry) + 1} of {arranged.Count}.");
     }
 
     [JSInvokable]
@@ -266,9 +266,9 @@
             return;
         List<TileSpan> spans = visible.Select(HubTiles.SpanOf).ToList();
         TilePlace place = HubGrid.Pack(Columns, spans)[from];
-        int to = HubGrid.Plan(Columns, spans, from, place.Column - 1 + across, place.Row - 1 + down).ToList().IndexOf(from);
-        if (to != from)
-            await Moved(key, to);
+        IReadOnlyList<int> order = HubGrid.Plan(Columns, spans, from, place.Column - 1 + across, place.Row - 1 + down);
+        if (!order.SequenceEqual(Enumerable.Range(0, visible.Count)))
+            await Arranged(order.Select(index => HubTiles.KeyOf(visible[index])).ToArray(), key);
     }
 
     private void Announce(string words)
