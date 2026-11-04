@@ -14,8 +14,22 @@ public sealed class MediaItem
     public string? AudienceScopeId { get; set; }
     public Guid UploadedBy { get; set; }
     public DateTime UploadedAt { get; set; }
+    public Guid? FolderId { get; set; }
 
     public bool IsPrivate => AudiencePermission is not null;
+}
+
+public sealed class MediaFolder
+{
+    public Guid Id { get; set; }
+    public Guid? ParentId { get; set; }
+    public required string Name { get; set; }
+    public string? SystemArea { get; set; }
+    public string? SystemScope { get; set; }
+    public Guid CreatedBy { get; set; }
+    public DateTime CreatedAt { get; set; }
+
+    public bool IsSystem => SystemArea is not null;
 }
 
 public sealed class PendingUpload

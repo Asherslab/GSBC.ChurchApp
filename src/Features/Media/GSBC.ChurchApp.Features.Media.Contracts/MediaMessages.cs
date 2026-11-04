@@ -53,6 +53,17 @@ public sealed class MediaQuery
 {
     [ProtoMember(1)] public int Skip { get; set; }
     [ProtoMember(2)] public int Take { get; set; }
+    [ProtoMember(3)] public string? FolderId { get; set; }
+    [ProtoMember(4)] public string Search { get; set; } = "";
+    [ProtoMember(5)] public MediaFilter Filter { get; set; }
+}
+
+public enum MediaFilter
+{
+    All = 0,
+    Pictures = 1,
+    Documents = 2,
+    Unused = 3,
 }
 
 [ProtoContract]
@@ -60,6 +71,16 @@ public sealed class MediaList
 {
     [ProtoMember(1)] public List<MediaItemInfo> Items { get; set; } = [];
     [ProtoMember(2)] public bool HasMore { get; set; }
+    [ProtoMember(3)] public MediaCounts? Counts { get; set; }
+}
+
+[ProtoContract]
+public sealed class MediaCounts
+{
+    [ProtoMember(1)] public int All { get; set; }
+    [ProtoMember(2)] public int Pictures { get; set; }
+    [ProtoMember(3)] public int Documents { get; set; }
+    [ProtoMember(4)] public int Unused { get; set; }
 }
 
 [ProtoContract]
@@ -70,6 +91,7 @@ public sealed class MediaItemInfo
     [ProtoMember(3)] public string UploadedBy { get; set; } = "";
     [ProtoMember(4)] public MediaAudience? PrivateTo { get; set; }
     [ProtoMember(5)] public int Uses { get; set; }
+    [ProtoMember(6)] public string? FolderId { get; set; }
 }
 
 [ProtoContract]

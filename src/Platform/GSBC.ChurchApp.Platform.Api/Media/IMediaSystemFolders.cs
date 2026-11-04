@@ -1,0 +1,8 @@
+using GSBC.ChurchApp.Platform.Contracts.Media;
+
+namespace GSBC.ChurchApp.Platform.Api.Media;
+
+public interface IMediaSystemFolders
+{
+    Task FileAsync(MediaSystemArea area, string? scopeId, string scopeName, IReadOnlyCollection<MediaRef> media, CancellationToken cancellationToken);
+}

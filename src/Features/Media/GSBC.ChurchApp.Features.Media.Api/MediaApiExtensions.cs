@@ -20,13 +20,15 @@ public static class MediaApiExtensions
         services.AddMediaData();
         services.AddBlobStore(configuration);
         services.AddScoped<MediaLibrary>();
+        services.AddScoped<MediaFolders>();
+        services.AddScoped<IMediaSystemFolders>(provider => provider.GetRequiredService<MediaFolders>());
         services.AddScoped<IMediaReferences, MediaReferences>();
         services.AddDestinations(MediaDestinations.All);
         services.AddDestinationSource<MediaDestinationSource>();
         services.AddPermissions(MediaPermissions.All);
         services.AddFeed(new FeedDefinition(MediaFeeds.Library, FeedAudience.Holding(MediaPermissions.View)));
-        services.AddSystemRole(new SystemRole("media-editor", "Media editor", "Upload images and files, and see the media library",
-            ScopeKind.Global, [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode]));
+        services.AddSystemRole(new SystemRole("media-editor", "Media editor", "Upload images and files, keep them in folders, and see the media library",
+            ScopeKind.Global, [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode, MediaPermissions.OrganiseNode]));
         services.AddHttpClient<GoogleFonts>(client => client.DefaultRequestHeaders.UserAgent.ParseAdd(GoogleFonts.BrowserAgent));
         services.AddScoped<FontsService>();
         return services;
@@ -36,6 +38,7 @@ public static class MediaApiExtensions
     {
         endpoints.MapGrpcService<MediaService>();
         endpoints.MapGrpcService<FontsService>();
+        endpoints.MapGrpcService<MediaFoldersService>();
         return endpoints;
     }
 }

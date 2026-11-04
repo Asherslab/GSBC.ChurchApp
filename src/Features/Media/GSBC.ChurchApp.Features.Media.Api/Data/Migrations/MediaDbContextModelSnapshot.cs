@@ -23,6 +23,55 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid>("CreatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("created_by");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("name");
+
+                    b.Property<Guid?>("ParentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("parent_id");
+
+                    b.Property<string>("SystemArea")
+                        .HasColumnType("text")
+                        .HasColumnName("system_area");
+
+                    b.Property<string>("SystemScope")
+                        .HasColumnType("text")
+                        .HasColumnName("system_scope");
+
+                    b.HasKey("Id")
+                        .HasName("pk_folders");
+
+                    b.HasIndex("ParentId")
+                        .HasDatabaseName("ix_folders_parent_id");
+
+                    b.HasIndex("SystemArea", "SystemScope")
+                        .IsUnique()
+                        .HasDatabaseName("ix_folders_system_area_system_scope")
+                        .HasFilter("system_area IS NOT NULL");
+
+                    NpgsqlIndexBuilderExtensions.AreNullsDistinct(b.HasIndex("SystemArea", "SystemScope"), false);
+
+                    b.ToTable("folders", "media");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaItem", b =>
                 {
                     b.Property<Guid>("Id")
@@ -57,6 +106,10 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("file_name");
 
+                    b.Property<Guid?>("FolderId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("folder_id");
+
                     b.Property<int>("Height")
                         .HasColumnType("integer")
                         .HasColumnName("height");
@@ -80,6 +133,9 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_items");
+
+                    b.HasIndex("FolderId")
+                        .HasDatabaseName("ix_items_folder_id");
 
                     b.HasIndex("Key")
                         .HasDatabaseName("ix_items_key");
@@ -224,6 +280,24 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         {
                             t.ExcludeFromMigrations();
                         });
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", null)
+                        .WithMany()
+                        .HasForeignKey("ParentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_folders_folders_parent_id");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaItem", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", null)
+                        .WithMany()
+                        .HasForeignKey("FolderId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .HasConstraintName("fk_items_folders_folder_id");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaUse", b =>

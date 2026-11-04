@@ -18,7 +18,7 @@ internal sealed class MediaService(MediaLibrary library) : IMediaService
         await library.GetLinkAsync(UserOf(context), request.Id, context.CancellationToken);
 
     public async ValueTask<MediaList> ListAsync(MediaQuery request, CallContext context = default) =>
-        await library.ListAsync(request, context.CancellationToken);
+        await library.ListAsync(UserOf(context), request, context.CancellationToken);
 
     public async ValueTask<Done> DeleteAsync(DeleteMediaRequest request, CallContext context = default)
     {
@@ -26,6 +26,6 @@ internal sealed class MediaService(MediaLibrary library) : IMediaService
         return new Done();
     }
 
-    private static ClaimsPrincipal UserOf(CallContext context) =>
+    internal static ClaimsPrincipal UserOf(CallContext context) =>
         context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
 }
