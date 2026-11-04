@@ -32,6 +32,7 @@
         {
             <button type="button" class="link hub-canvas__today" @onclick="() => _on = null">Back to today</button>
         }
+        <p class="hub-canvas__keys">Drag a tile to move it, or its corner to resize it. With the keyboard: Tab to a tile, then arrows move it and Shift with arrows resizes it.</p>
     </div>
     @if (NotShown.Count > 0 || Removed.Count > 0)
     {
@@ -46,11 +47,10 @@
         @HiddenList
     }
 
-    <div class="hub-canvas__stage" data-fit-least="0.72">
+    <div class="hub-canvas__stage" data-fit-least="0.6">
         <PhoneFrame Title="Good Shepherd" Scheme="_scheme" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
             <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
         </PhoneFrame>
-        <p class="hub-canvas__keys">Drag a tile to move it, or its corner to resize it. With the keyboard: Tab to a tile, then arrows move it and Shift with arrows resizes it.</p>
     </div>
     <p class="visually-hidden" aria-live="polite">@_announced</p>
 
@@ -224,6 +224,10 @@
             await _module.InvokeVoidAsync("show", _canvas, key);
         }
     }
+
+    [JSInvokable]
+    public int[] Plan(int columns, int[] widths, int[] heights, int dragged, int column, int row) =>
+        HubGrid.Plan(columns, widths.Zip(heights, (width, height) => new TileSpan(width, height)).ToList(), dragged, column, row).ToArray();
 
     [JSInvokable]
     public async Task Moved(string key, int toVisibleIndex)

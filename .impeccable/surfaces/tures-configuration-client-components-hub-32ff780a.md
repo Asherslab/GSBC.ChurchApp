@@ -62,3 +62,9 @@ below the legible 0.72 scale, the canvas's controls moved from a strip above the
 it (Add a tile, Columns, Show Home for, Preview Light/Dark, Preview as on), the phone starting right under
 the draft head. The size capsule on the chosen tile is orange, the Marker, like the outline and grip it
 belongs to; it reads "2 wide, 1 tall", never "2 × 1". Column hairlines show only while dragging.
+
+Round 2 (owner, 2026-11-04, notes 11-14): the page never scrolls on the canvas (the workbench is the
+window's height; head and tabs stay, the area under them scrolls), so the phone is fitted to the height
+under the head with a floor of 0.6 instead of 0.72, and the how-to caption moved to the rail. The drag's
+target is the cell under the dragged tile's centre (20% leeway, 180 ms rest), and `HubGrid.Plan` picks the
+order, swaps included, that lands it there moving no tile outside that cell where it can.

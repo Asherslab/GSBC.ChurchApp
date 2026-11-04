@@ -138,7 +138,7 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   place), so the phone and the settings always sit side by side. The settings column scrolls on its own
   and the phone stays in view (owner, 2026-11-04, note 2, option B: pinning the middle would still leave
   the settings' foot out of reach on a short window).
-- **The phone:** Home drawn by the app's own `HomeScreen`, fitted to the window (never smaller than 72%)
+- **The phone:** Home drawn by the app's own `HomeScreen`, fitted under the draft head so the whole phone shows without scrolling (never smaller than 60%, reached only on a window about 800 tall; owner note 12)
   and kept in view while the settings scroll. Tiles changed in this draft carry an orange *Changed* or
   *Added* capsule. Its status bar behaves as the app's does: clear over the masthead, and solid with the
   page's title once the screen scrolls past it (`PhoneFrame`, the same `is-stuck` rule as `Page`). It used

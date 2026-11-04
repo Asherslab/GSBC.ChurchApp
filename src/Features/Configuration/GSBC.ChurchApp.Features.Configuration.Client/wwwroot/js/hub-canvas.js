@@ -29,29 +29,6 @@ export function pack(columns, spans) {
   });
 }
 
-export function plan(columns, spans, order, key, target) {
-  const current = new Map(pack(columns, order.map((each) => spans.get(each))).map((spot, index) => [order[index], spot]));
-  const others = order.filter((each) => each !== key);
-  let best = null;
-  for (let at = 0; at <= others.length; at++) {
-    const candidate = [...others.slice(0, at), key, ...others.slice(at)];
-    const spots = pack(columns, candidate.map((each) => spans.get(each)));
-    const own = spots[at];
-    const covers = target.column >= own.column - 1 && target.column < own.column - 1 + own.columns
-      && target.row >= own.row - 1 && target.row < own.row - 1 + own.rows;
-    const distance = Math.abs(own.column - 1 - target.column) + Math.abs(own.row - 1 - target.row);
-    const moved = candidate.filter((each, index) => {
-      if (each === key) return false;
-      const was = current.get(each);
-      return was.column !== spots[index].column || was.row !== spots[index].row;
-    }).length;
-    const score = [covers ? 0 : 1, covers ? 0 : distance, moved];
-    if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && (score[1] < best.score[1] || (score[1] === best.score[1] && score[2] < best.score[2]))))
-      best = { order: candidate, score };
-  }
-  return best.order;
-}
-
 export function attach(canvas, receiver) {
   let gesture = null;
 
@@ -199,13 +176,17 @@ export function attach(canvas, receiver) {
     if (gesture.waiting === wanted) return;
     clearTimeout(gesture.timer);
     gesture.waiting = wanted;
-    gesture.timer = setTimeout(() => {
+    gesture.timer = setTimeout(async () => {
       if (!gesture || gesture.waiting !== wanted) return;
       gesture.waiting = null;
       const now = cellAt(centre().x, centre().y);
       if (`${now.column}:${now.row}` !== wanted) return;
       gesture.target = now;
-      const order = plan(gesture.metrics.columns, gesture.spans, gesture.order, gesture.key, now);
+      const asked = gesture;
+      const spans = asked.order.map((each) => asked.spans.get(each));
+      const indices = await receiver.invokeMethodAsync('Plan', asked.metrics.columns, spans.map((span) => span.columns), spans.map((span) => span.rows), asked.order.indexOf(asked.key), now.column, now.row);
+      if (gesture !== asked) return;
+      const order = indices.map((index) => asked.order[index]);
       if (order.join() === gesture.order.join()) return;
       gesture.order = order;
       lay(order, gesture.spans, gesture.cell);
