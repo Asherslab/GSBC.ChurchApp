@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Common
 @inject Inbox Inbox
-@inject GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener Links
+@inject Platform.Ui.Destinations.LinkOpener Links
 @inject TimeProvider Clock
 
 <LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">

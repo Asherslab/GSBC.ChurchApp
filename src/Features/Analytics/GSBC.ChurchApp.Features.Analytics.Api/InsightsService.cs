@@ -101,7 +101,7 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
             if (top.Count == 0)
                 continue;
 
-            IReadOnlyDictionary<string, string> names = subjectNames.FirstOrDefault(naming => naming.SubjectKind == measure.SubjectKind) is { } naming
+            IReadOnlyDictionary<string, string> names = subjectNames.FirstOrDefault(candidate => candidate.SubjectKind == measure.SubjectKind) is { } naming
                 ? await naming.NamesAsync(top.Select(total => total.Subject).ToList(), cancellationToken)
                 : new Dictionary<string, string>();
             lists.Add(new TopList

@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Features.Notifications.Api.Data;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;

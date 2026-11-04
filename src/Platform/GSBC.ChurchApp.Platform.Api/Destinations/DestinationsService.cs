@@ -63,7 +63,7 @@ public sealed class DestinationDirectory(
             case ResolvedPage { Page: var page }:
                 Destination described = Describe(page, DestinationState.Available);
                 return await MayOpenAsync(user, described, cancellationToken) ? described : Withheld(described.Path, DestinationState.NotForYou);
-            case ResolvedItem { Kind: var kind, Id: var id } item when sources.FirstOrDefault(source => source.Kind == kind) is { } source:
+            case ResolvedItem { Kind: var kind, Id: var id } item when sources.FirstOrDefault(candidate => candidate.Kind == kind) is { } source:
                 if (await source.FindAsync(id, cancellationToken) is not { } place)
                     return Withheld(item.Path, DestinationState.Gone);
                 Destination destination = Describe(kind, place, DestinationState.Available);

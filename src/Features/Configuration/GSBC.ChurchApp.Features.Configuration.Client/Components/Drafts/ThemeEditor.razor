@@ -1,4 +1,3 @@
-@using GSBC.ChurchApp.Platform.Ui.Content
 @using CustomTheme = GSBC.ChurchApp.Platform.Contracts.Configuration.AppearanceSurfaces.CustomTheme
 
 <TextField Label="Name" Placeholder="Advent 2026" MaxLength="CustomTheme.Name.MaxLength" Value="@Draft.Values[CustomTheme.Name.Key]"
@@ -80,7 +79,7 @@
         ThemeDerivation.ProblemsOf(CustomTheme.SpecOf(Values)).Where(problem => problem.Scheme == Scheme).ToList();
 
     private string? ProblemFor(string role) =>
-        Problems.FirstOrDefault(problem => problem.TextRole == role || (problem.BackgroundRole == role && Overrides.ContainsKey(ColourOverridesSetting.RoleKey(Scheme, role)))) is { } problem
+        Problems.FirstOrDefault(candidate => candidate.TextRole == role || (candidate.BackgroundRole == role && Overrides.ContainsKey(ColourOverridesSetting.RoleKey(Scheme, role)))) is { } problem
             ? string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Hard to read on {Label(problem.BackgroundRole == role ? problem.TextRole : problem.BackgroundRole)}: {problem.Contrast:0.0}:1, it needs {ThemeDerivation.ReadableText}:1.")
             : null;
 

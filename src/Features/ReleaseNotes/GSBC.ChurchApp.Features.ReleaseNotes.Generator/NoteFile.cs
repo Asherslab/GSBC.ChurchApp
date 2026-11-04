@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace GSBC.ChurchApp.Features.ReleaseNotes.Generator;
@@ -111,7 +108,7 @@ public static class NoteFile
         {
             null or "false" => false,
             "true" => true,
-            string other => throw new NoteException($"\"{key}\" is true or false (not \"{other}\")"),
+            { } other => throw new NoteException($"\"{key}\" is true or false (not \"{other}\")"),
         };
 
     private static NoteAudience Audience(string value) =>

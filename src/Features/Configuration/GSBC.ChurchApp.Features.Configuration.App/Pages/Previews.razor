@@ -118,13 +118,13 @@
 
     private static string Local(DateTime utc) => ChurchTime.ToChurch(utc).ToString(LocalFormat, CultureInfo.InvariantCulture);
 
-    private static RenderFragment Check(bool chosen) => __builder =>
-    {
-        if (chosen)
+    private static RenderFragment Check(bool chosen) =>
+        @<text>
+        @if (chosen)
         {
             <span class="check"><Icon Name="check" Size="IconSize.Small" /></span>
         }
-    };
+        </text>;
 
     private void OnPreviewChanged() => InvokeAsync(StateHasChanged);
 

@@ -7,7 +7,6 @@ using GSBC.ChurchApp.Features.Notifications.Api;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
-using Grpc.AspNetCore.Web;
 
 WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 

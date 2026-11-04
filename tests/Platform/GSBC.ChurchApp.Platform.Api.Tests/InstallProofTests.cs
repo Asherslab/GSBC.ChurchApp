@@ -1,8 +1,6 @@
 using System.Net;
-using Grpc.Core;
 using Grpc.Core.Interceptors;
 using Grpc.Health.V1;
-using Grpc.AspNetCore.Web;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
 using GSBC.ChurchApp.Platform.Api.Hosting;

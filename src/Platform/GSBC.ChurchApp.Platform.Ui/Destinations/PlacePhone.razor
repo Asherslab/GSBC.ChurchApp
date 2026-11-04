@@ -2,7 +2,7 @@
 @using GSBC.ChurchApp.Platform.Contracts.Destinations
 @inject IEnumerable<PlacePreview> Previews
 
-@if (Previews.FirstOrDefault(preview => preview.Shows(Destination)) is { } preview)
+@if (Previews.FirstOrDefault(candidate => candidate.Shows(Destination)) is { } preview)
 {
     @Render(preview)
 }

@@ -27,7 +27,7 @@ internal sealed class ScopeNames(IEnumerable<IScopeNamer> namers) : IScopeNames
     public async Task<IReadOnlyDictionary<string, string>> NamesAsync(string scopeKind, IReadOnlyCollection<string> objectIds)
     {
         Dictionary<string, string> names = objectIds.Distinct().ToDictionary(id => id, id => id);
-        if (_namers.FirstOrDefault(namer => namer.Kind.Name == scopeKind) is { } namer && names.Count > 0)
+        if (_namers.FirstOrDefault(candidate => candidate.Kind.Name == scopeKind) is { } namer && names.Count > 0)
             foreach ((string id, string name) in await namer.NamesAsync(names.Keys.ToList()))
                 if (names.ContainsKey(id))
                     names[id] = name;

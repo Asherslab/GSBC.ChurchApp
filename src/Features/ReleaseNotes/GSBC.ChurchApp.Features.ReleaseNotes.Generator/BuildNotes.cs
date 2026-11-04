@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-
 namespace GSBC.ChurchApp.Features.ReleaseNotes.Generator;
 
 public static class BuildNotes
@@ -20,9 +16,9 @@ public static class BuildNotes
         {
             "staff" => NoteAudience.Staff,
             "everyone" or "" or null => NoteAudience.Everyone,
-            string other => throw new NoteException($"GsbcReleaseNotes is staff or everyone (not \"{other}\")"),
+            { } other => throw new NoteException($"GsbcReleaseNotes is staff or everyone (not \"{other}\")"),
         };
 
     private static Version VersionKey(string? version) =>
-        version is null ? new Version(int.MaxValue, 0) : System.Version.Parse(version);
+        version is null ? new Version(int.MaxValue, 0) : Version.Parse(version);
 }

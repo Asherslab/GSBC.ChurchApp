@@ -44,7 +44,7 @@
         <RichTextEditor Label="@Setting.Label" Value="@(richText.TryParse(Value, out RichText content) ? content : new RichText())"
                         ValueChanged="changed => SetAsync(richText.Format(changed))" MaximumLength="richText.MaxLength" Rows="6" />
         break;
-    case IconSetting icon:
+    case IconSetting:
         <SelectField Label="@Setting.Label" Options="@IconOptions" Value="@Value" ValueChanged="SetAsync" Problem="@Problem" />
         break;
     case LinkSetting:

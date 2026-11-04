@@ -25,13 +25,13 @@ internal sealed class MediaDestinationSource(MediaDbContext db, IBlobStore blobs
     }
 
     public async Task<FoundPlace?> FindAsync(string id, CancellationToken cancellationToken) =>
-        Guid.TryParse(id, out Guid mediaId) && await db.Items.AsNoTracking().SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken) is { } item
+        Guid.TryParse(id, out Guid mediaId) && await db.Items.AsNoTracking().SingleOrDefaultAsync(stored => stored.Id == mediaId, cancellationToken) is { } item
             ? Place(item)
             : null;
 
     public async Task<string?> OpenUrlAsync(string id, CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(id, out Guid mediaId) || await db.Items.AsNoTracking().SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken) is not { } item)
+        if (!Guid.TryParse(id, out Guid mediaId) || await db.Items.AsNoTracking().SingleOrDefaultAsync(stored => stored.Id == mediaId, cancellationToken) is not { } item)
             return null;
         return item.IsPrivate
             ? (await blobs.PresignDownloadAsync(BlobBucket.Private, item.Key, MediaLibrary.PrivateLinkLifetime)).ToString()

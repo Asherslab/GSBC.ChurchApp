@@ -197,9 +197,9 @@
 
     private const double EasyToRead = 4.5;
 
-    private RenderFragment ChosenIcon => __builder =>
-    {
-        if (Look.Icon.Length == 0)
+    private RenderFragment ChosenIcon =>
+        @<text>
+        @if (Look.Icon.Length == 0)
         {
             <Icon Name="x" Size="IconSize.Small" />
         }
@@ -211,7 +211,7 @@
         {
             <Icon Name="@Look.Icon" Size="IconSize.Small" />
         }
-    };
+        </text>;
 
     private string ChosenIconName => Look.Icon.Length == 0 ? "No icon"
         : Icons.TryGetValue(Look.Icon, out CustomIcon? custom) ? custom.Name : IconWords(Look.Icon);

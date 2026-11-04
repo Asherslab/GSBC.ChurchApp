@@ -244,7 +244,7 @@ else
 
             <TabStrip TValue="AreaKey" Label="What this draft changes" Options="AreaTabs" Value="_area" ValueChanged="SelectAreaAsync">
                 <Trailing>
-                    @foreach (SurfaceArea other in EditableAreas.Where(area => AreaTabs.All(tab => tab.Value.Area != area.Key)))
+                    @foreach (SurfaceArea other in EditableAreas.Where(surface => AreaTabs.All(tab => tab.Value.Area != surface.Key)))
                     {
                         <button type="button" class="tab-strip__add" @onclick="() => SelectAreaAsync(new AreaKey(other.Key, null))"><Icon Name="plus" Size="IconSize.Small" /> @other.Title</button>
                     }
@@ -344,9 +344,8 @@ else
         </div>
     };
 
-    private RenderFragment DetailPane => __builder =>
-    {
-        <div class="detail-pane">
+    private RenderFragment DetailPane =>
+        @<div class="detail-pane">
             @if (_session is not null && EditingTheme is { } theme)
             {
                 <div class="detail-pane__head">
@@ -363,8 +362,7 @@ else
             {
                 @SettingsOrPreview
             }
-        </div>
-    };
+        </div>;
 
     private RenderFragment HubDetail => __builder =>
     {
@@ -520,7 +518,7 @@ else
         if (TileKinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind)) is not { } kind)
             return;
         IReadOnlyList<ArrangedSurface> tiles = HubTilesNow;
-        AddFrom(kind, saved.Values.Get(HubSurfaces.Saved.Tile), tiles.Count == 0 ? 0 : tiles.Max(entry => entry.Order) + 10);
+        AddFrom(kind, saved.Values.Get(HubSurfaces.Saved.Tile), tiles.Count == 0 ? 0 : tiles.Max(tile => tile.Order) + 10);
     }
 
     private void AddFrom(HubTileKind kind, IReadOnlyDictionary<string, string> values, int order)
@@ -531,7 +529,7 @@ else
         string id = Guid.CreateVersion7().ToString();
         _session!.Set(_area, added.ToStored(id));
         SaveSoon();
-        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(entry => entry.Placement?.Id == id) is { } entry)
+        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(candidate => candidate.Placement?.Id == id) is { } entry)
             Select(entry);
     }
 
@@ -539,11 +537,11 @@ else
     {
         _addingTile = false;
         IReadOnlyList<ArrangedSurface> tiles = HubTilesNow;
-        PlacementDraft added = PlacementDraft.New(kind.Surface, tiles.Count == 0 ? 0 : tiles.Max(entry => entry.Order) + 10);
+        PlacementDraft added = PlacementDraft.New(kind.Surface, tiles.Count == 0 ? 0 : tiles.Max(tile => tile.Order) + 10);
         string id = Guid.CreateVersion7().ToString();
         _session!.Set(_area, added.ToStored(id));
         SaveSoon();
-        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(entry => entry.Placement?.Id == id) is { } entry)
+        if (_session.Arranged(HubSurfaces.Area, null).FirstOrDefault(candidate => candidate.Placement?.Id == id) is { } entry)
             Select(entry);
     }
 
@@ -634,7 +632,7 @@ else
         ? $"New {_form.Surface.Title.ToLowerInvariant()}"
         : _form.Surface.Repeatable && _form.Surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title ? _form.Values[title.Key] : _form.Surface.Title;
 
-    private string? RowClass(ArrangedSurface entry) => string.Join(' ', new[]
+    private string RowClass(ArrangedSurface entry) => string.Join(' ', new[]
     {
         entry.Hidden ? "row--muted" : null,
         KeyOf(entry) == _selectedKey ? "row--selected" : null,
@@ -773,7 +771,7 @@ else
             return;
         _session.Forget(_formId);
         _changedWhileEditing = false;
-        if (_session.Arranged(CurrentArea!, _area.ScopeId).FirstOrDefault(entry => KeyOf(entry) == _formId) is { } entry)
+        if (_session.Arranged(CurrentArea!, _area.ScopeId).FirstOrDefault(candidate => KeyOf(candidate) == _formId) is { } entry)
             Select(entry);
         else
             Deselect();

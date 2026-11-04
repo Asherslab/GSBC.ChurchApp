@@ -45,7 +45,7 @@
 
     private async Task OpenAsync()
     {
-        if (Services.GetService(typeof(GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener)) is GSBC.ChurchApp.Platform.Ui.Destinations.LinkOpener opener && Look.Link.Length > 0)
+        if (Services.GetService(typeof(Platform.Ui.Destinations.LinkOpener)) is Platform.Ui.Destinations.LinkOpener opener && Look.Link.Length > 0)
             await opener.OpenAsync(Look.Link);
     }
 

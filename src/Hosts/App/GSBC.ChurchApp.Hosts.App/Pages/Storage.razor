@@ -5,7 +5,7 @@
 @using GSBC.ChurchApp.Platform.Contracts.Sync
 @inject ILocalFeeds Feeds
 @inject IOutbox Outbox
-@inject GSBC.ChurchApp.Platform.Client.Native.NativeBridge Bridge
+@inject Platform.Client.Native.NativeBridge Bridge
 
 <RefreshOn On="ChangeKind.Feeds | ChangeKind.Outbox | ChangeKind.Reconnected" Changed="LoadAsync" />
 

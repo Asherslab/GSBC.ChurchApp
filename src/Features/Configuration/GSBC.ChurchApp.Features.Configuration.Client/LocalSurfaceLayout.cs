@@ -87,7 +87,7 @@ internal sealed class LocalSurfaceLayout : ISurfaceLayout, IDisposable
 
     private void WatchBoundary(EventLayer layer, DateTime now)
     {
-        DateTime? next = new[] { layer.StartsAt, layer.EndsAt }.Where(at => at > now).Min();
+        DateTime? next = new[] { layer.StartsAt, layer.EndsAt }.Where(moment => moment > now).Min();
         _boundary?.Dispose();
         _boundary = next is { } at && at - now < FurthestBoundary
             ? _time.CreateTimer(_ => Changed?.Invoke(), null, at - now + TimeSpan.FromSeconds(1), Timeout.InfiniteTimeSpan)
