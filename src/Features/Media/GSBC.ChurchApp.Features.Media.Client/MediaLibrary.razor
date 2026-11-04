@@ -41,11 +41,11 @@
                     {
                         <p class="media-library__system-note">
                             <Icon Name="lock" Size="IconSize.Small" />
-                            @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Made by the app: files people share in the app.") The app files these itself, so they can't be moved, renamed or deleted here.
+                            @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") They stay where the app put them: they can't be moved, renamed or deleted here.
                         </p>
                     }
                     <FolderTiles Folders="map.ChildrenOf(_folderId, _shelf == Shelf.App).ToList()" OnOpen="folder => OpenAsync(folder.Id)"
-                                 CanDrag="folder => CanOrganise && !folder.IsSystem" Dragging="folder => _dragFolders.Contains(folder.Id)"
+                                 Subfolders="folder => map.ChildrenOf(folder.Id, folder.IsSystem).Count()" CanDrag="folder => CanOrganise && !folder.IsSystem" Dragging="folder => _dragFolders.Contains(folder.Id)"
                                  OnDragStart="DragFolder" OnDragEnd="EndDrag" CanDrop="folder => CanDropOn(map, folder.Id)" OnDrop="folder => DropAsync(folder.Id)" />
                 }
 
@@ -59,7 +59,7 @@
                     }
                     else if (_view == LibraryView.Grid)
                     {
-                        <ul class="media-grid" aria-label="Files" @onkeydown="KeyAsync"
+                        <ul class="media-grid @(_chosen.Count > 1 ? "media-grid--choosing" : "")" aria-label="Files" @onkeydown="KeyAsync"
                             ondragstart="event.dataTransfer.setData('text/plain', 'gsbc-media'); event.dataTransfer.effectAllowed = 'move'">
                             @foreach (MediaItemInfo item in context.Value.Items)
                             {
@@ -92,7 +92,7 @@
                     else
                     {
                         <DataTable TItem="MediaItemInfo" Label="Files" Items="context.Value.Items" Columns="Columns(map)" Key="item => item.Media!.Id"
-                                   Selected="Single" SelectedChanged="item => ChooseOnly(item)" SortColumn="3" SortDescending="true" />
+                                   Selected="Single" SelectedChanged="item => ChooseOnly(item)" RowClass="item => _chosen.Contains(item.Media!.Id) ? MultiChosen : null" SortColumn="3" SortDescending="true" />
                     }
                     @if (context.Value.HasMore)
                     {
@@ -108,7 +108,7 @@
             </div>
         </SplitView>
 
-        <SelectionTray Label="Chosen files" Count="_chosen.Count" One="file" Many="files" OnClear="ClearChosen">
+        <SelectionTray Label="Chosen files" Count="@(_chosen.Count > 1 ? _chosen.Count : 0)" One="file" Many="files" OnClear="ClearChosen">
             @if (CanOrganise && _shelf == Shelf.Library)
             {
                 <Button Icon="folder-input" OnClick="StartMoveChosen">Move to…</Button>
@@ -116,7 +116,7 @@
         </SelectionTray>
 
         <MoveToSheet Open="_sheet == FolderSheet.Move" Map="map" Title="@_moveTitle" Lead="Things that use them keep working: moving only changes where you find them here."
-                     Current="_moveFrom" Suggested="_moveFrom" Blocked="target => IsBlocked(map, target)" Busy="_busy" Problem="@_sheetProblem"
+                     Current="@_moveFrom" Suggested="@_moveFrom" Blocked="target => IsBlocked(map, target)" Busy="_busy" Problem="@_sheetProblem"
                      OnMove="MoveAsync" OnCancel="CloseSheet" />
 
         <Sheet Open="_sheet is FolderSheet.Create or FolderSheet.Rename" OpenChanged="_ => CloseSheet()" Title="@(_sheet == FolderSheet.Create ? "New folder" : "Rename folder")"
@@ -134,7 +134,7 @@
 
         <MoveToSheet Open="_sheet == FolderSheet.Delete" Map="map" Title="@($"Delete “{_sheetFolder?.Name}”?")" Action="Move them and delete"
                      Lead="@($"It has {Contents(map, _sheetFolder)}. Nothing is deleted with it: choose where they go. Things that use them keep working.")"
-                     Suggested="_sheetFolder?.ParentId" Blocked="target => target is not null && _sheetFolder is not null && map.IsWithin(target, _sheetFolder.Id)"
+                     Current="@_sheetFolder?.Id" Suggested="@_sheetFolder?.ParentId" Blocked="target => target is not null && _sheetFolder is not null && map.IsWithin(target, _sheetFolder.Id)"
                      Busy="_busy" Problem="@_sheetProblem" OnMove="target => DeleteFolderAsync(true, target)" OnCancel="CloseSheet" />
 
         <Sheet Open="_sheet == FolderSheet.DeleteEmpty" OpenChanged="_ => CloseSheet()" Title="@($"Delete “{_sheetFolder?.Name}”?")" Lead="It's empty, so nothing else changes.">
@@ -149,6 +149,7 @@
 
 @code {
     private const int PageSize = 60;
+    private const string MultiChosen = "data-table__row--selected";
 
     private LiveData<FolderMap>? _treeLive;
     private LiveData<MediaList>? _live;

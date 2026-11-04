@@ -19,7 +19,7 @@
         else
         {
             <Breadcrumbs Label="Where you are" Trail="Trail(tree.Value)" OnOpen="crumb => OpenAsync(crumb.Key)" />
-            <FolderTiles Compact="true" Folders="tree.Value.ChildrenOf(_folderId, system: false).ToList()" OnOpen="folder => OpenAsync(folder.Id)" />
+            <FolderTiles Compact="true" Folders="tree.Value.ChildrenOf(_folderId, system: false).ToList()" Subfolders="folder => tree.Value.ChildrenOf(folder.Id, system: false).Count()" OnOpen="folder => OpenAsync(folder.Id)" />
         }
         <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the pictures right now">
             @if (context.Value.Items is { Count: > 0 } shown)
