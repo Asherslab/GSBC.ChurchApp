@@ -22,8 +22,10 @@
 .draft-pane__back { justify-self: start; display: inline-flex; align-items: center; gap: 2px; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
 .draft-pane__head { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 14px 24px; }
 .draft-pane__steps { display: inline-flex; gap: 2px; margin-right: 4px; }
-.draft-pane__status { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 10px; }
-.draft-pane__step-note { display: inline-flex; align-items: baseline; gap: 6px; font-size: var(--text-caption); color: var(--ink-2); animation: step-note-in 160ms var(--ease-out); }
+.draft-pane__step-slot { display: flex; min-width: 0; min-height: calc(var(--text-caption) * 1.5); white-space: nowrap; }
+.draft-pane__step-note { display: inline-flex; align-items: baseline; gap: 6px; min-width: 0; font-size: var(--text-caption); color: var(--ink-2); animation: step-note-in 160ms var(--ease-out); }
+.draft-pane__step-words { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.draft-pane__step-again { flex: none; }
 .draft-pane__step-again { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; font-weight: 700; cursor: pointer; }
 .draft-pane__step-again:hover { text-decoration: underline; }
 .draft-pane__step-again:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
@@ -209,10 +211,9 @@
 .saved-tiles--managing .add-tile__kind { padding-block: 10px; }
 .saved-tiles { container-type: inline-size; }
 @container (max-width: 30rem) {
-  .add-tile__kind--managing { flex-wrap: wrap; row-gap: 6px; }
-  .add-tile__kind--managing .add-tile__words { flex-basis: calc(100% - 48px); }
-  .add-tile__kind--managing .btn { margin-left: auto; }
+  .saved-tiles__take-words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
+.tile-settings__saved { display: flex; align-items: center; gap: 6px; margin: 8px 0 0; font-size: var(--text-caption); color: var(--ink-2); }
 .add-tile__kind--gone { align-items: center; cursor: default; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
 .add-tile__kind--gone:hover { background: transparent; }
 .tile-settings .media-setting .field__label { display: none; }

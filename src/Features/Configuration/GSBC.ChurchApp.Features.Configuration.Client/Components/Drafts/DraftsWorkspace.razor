@@ -207,15 +207,13 @@ else
             <header class="draft-pane__head">
                 <div class="draft-pane__title">
                     <h2 title="@draft.Name">@draft.Name</h2>
-                    <span class="draft-pane__status">
-                        <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
-                        @StepNotice
-                    </span>
+                    <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
+                    <span class="draft-pane__step-slot">@StepNotice</span>
                 </div>
                 <div class="ui-actions">
-                    <span class="draft-pane__steps" role="group" aria-label="Undo and redo">
-                        <Button Variant="ButtonVariant.Quiet" Icon="undo" AriaLabel="Undo" Tooltip="Undo (⌘Z)" Disabled="@(!session.CanStepBack)" OnClick="StepBackAsync" />
-                        <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
+                    <span class="draft-pane__steps" role="group" aria-label="Undo and redo" data-undo-keys>
+                        <Button Variant="ButtonVariant.Quiet" Icon="undo" AriaLabel="Undo" Tooltip="Undo (⌘Z, or Ctrl+Z)" Disabled="@(!session.CanStepBack)" OnClick="StepBackAsync" />
+                        <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z, or Ctrl+Shift+Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
                     </span>
                     <Button Variant="ButtonVariant.Quiet" Icon="share" OnClick="() => _sharing = true">Share</Button>
                     <Button Variant="ButtonVariant.Quiet" Icon="more" OnClick="OpenMore">More</Button>
@@ -386,6 +384,10 @@ else
             <TileSettings Draft="_form" Kind="kind" Columns="@HubSurfaces.Grid.ColumnsIn(session.Arranged(HubSurfaces.Area, null))" Changed="FormChangedAsync"
                           Palette="@HubPalette" Icons="CustomIcons" AddIcon="AddIcon" Notices="@SettleNotice" />
             <div class="ui-actions tile-settings__actions">@FormActions</div>
+            @if (_savedNote is not null)
+            {
+                <p class="tile-settings__saved" role="status"><Icon Name="check" Size="IconSize.Small" /> @_savedNote</p>
+            }
         }
         else if (_form is not null)
         {
@@ -468,7 +470,7 @@ else
             if (IsHub && TileKind is not null && !Narrow)
             {
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="CopyTile">Make a copy</Button>
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="() => _savingTile = true">@(_savedNote ?? "Save to the library")</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="() => _savingTile = true">Save to the library</Button>
             }
             if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
             {
@@ -974,11 +976,13 @@ else
         if (_session is null || _formId is null)
             return Task.CompletedTask;
         StoredPlacement? live = _session.LiveOf(_area, _formId);
+        string title = FormTitle;
         if (live is null)
             _session.Discard(_formId);
         else
             _session.Remove(_area, new ArrangedSurface(_form!.Surface, live));
         Deselect();
+        Tell($"Took out “{title}”.", offersRedo: false);
         SaveSoon();
         return Task.CompletedTask;
     }
@@ -988,8 +992,8 @@ else
         if (_session is null)
             return Task.CompletedTask;
         string note = _session.PatchFor(placementId) is { } patch
-            ? patch.Kind == PatchKind.Add ? $"Took out “{AddedTitle(patch)}”, which this draft added." : $"“{RemovedTitle(patch)}” is back as everyone sees it."
-            : "Put back as everyone sees it.";
+            ? patch.Kind == PatchKind.Add ? $"Took out “{AddedTitle(patch)}”." : $"Put “{RemovedTitle(patch)}” back as it was."
+            : "Put back as it was.";
         _session.Discard(placementId);
         Deselect();
         Tell(note, offersRedo: false);
@@ -1029,7 +1033,7 @@ else
         if (_stepNote is not null && _session?.Edits == _stepNoteAt)
         {
             <span class="draft-pane__step-note" role="status">
-                @_stepNote
+                <span class="draft-pane__step-words">@_stepNote</span>
                 <button type="button" class="draft-pane__step-again" @onclick="@(_stepOffersRedo ? StepForwardAsync : StepBackAsync)">@(_stepOffersRedo ? "Redo" : "Undo")</button>
             </span>
         }

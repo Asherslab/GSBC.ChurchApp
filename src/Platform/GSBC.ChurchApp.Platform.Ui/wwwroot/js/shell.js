@@ -110,7 +110,7 @@ window.gsbcShell = (() => {
       const typing = (target) => target instanceof Element && !!target.closest('input, textarea, select, [contenteditable="true"], dialog[open]');
       const key = (event) => {
         const letter = event.key.toLowerCase();
-        if (!(event.metaKey || event.ctrlKey) || event.altKey || (letter !== 'z' && letter !== 'y') || typing(event.target)) return;
+        if (!(event.metaKey || event.ctrlKey) || event.altKey || (letter !== 'z' && letter !== 'y') || typing(event.target) || !document.querySelector('[data-undo-keys]')) return;
         event.preventDefault();
         receiver.invokeMethodAsync('OnHeard', letter === 'y' || event.shiftKey ? 'redo' : 'undo');
       };

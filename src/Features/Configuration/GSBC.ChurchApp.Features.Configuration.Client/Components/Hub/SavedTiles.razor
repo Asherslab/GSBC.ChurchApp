@@ -30,7 +30,7 @@
                         <TextField Label="Name in the library" Value="@(_renaming.GetValueOrDefault(saved.Placement.Id) ?? name)" MaxLength="HubSurfaces.Saved.Name.MaxLength"
                                    Problem="@RenameProblem(saved)" ValueChanged="text => RenameAsync(saved, text)" />
                     </span>
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => TakeOutAsync(saved)">Take out</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Take “{name}” out of the library")" Tooltip="Take it out of the library" OnClick="() => TakeOutAsync(saved)"><span class="saved-tiles__take-words">Take out</span></Button>
                 </div>
             }
             else if (kind is not null)

@@ -73,7 +73,7 @@ else
             else
             {
                 <p class="published-sheet__text">@Names.GetValueOrDefault(published.UndoneBy ?? "", "Someone") undid it on @DraftWords.Day(published.UndoneAt ?? published.At), so @Places(published) @(published.Areas.Count == 1 ? "is" : "are") as @(published.Areas.Count == 1 ? "it was" : "they were") before.</p>
-                <p class="published-sheet__text">Publish it again to bring its changes back for everyone.</p>
+                <p class="published-sheet__text">Publish it again and its changes come back for everyone within a few seconds. Anything changed since it was undone goes back to how this publish left it.</p>
             }
             @if (!MayUndo)
             {
@@ -114,7 +114,7 @@ else
         : null;
 
     private static string Places(PublishedDraft published) =>
-        published.Areas.Count == 0 ? "the app" : string.Join(" and ", published.Areas.Select(area => area == published.Areas[0] ? area : area.ToLowerInvariant()));
+        published.Areas.Count == 0 ? "the app" : "the " + string.Join(" and ", published.Areas.Select(area => area == published.Areas[0] ? area : area.ToLowerInvariant()));
 
     private async Task ActAsync(EventCallback<PublishedDraft> action, PublishedDraft published)
     {

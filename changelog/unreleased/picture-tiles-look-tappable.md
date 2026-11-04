@@ -1,5 +1,6 @@
 ---
 title: Picture tiles show they can be tapped
+audience: everyone
 icon: image
 area: Home
 ---
