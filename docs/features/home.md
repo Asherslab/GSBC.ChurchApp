@@ -148,11 +148,13 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
 - **Dragging, as on an iPhone's home screen** (owner, 2026-11-04, notes 5 and 14): the tile lifts (opaque,
   1.04 larger, a deep shadow, above everything) and follows the pointer. The target is the grid cell under
   the dragged tile's centre, not under the pointer: it changes only once the centre is 20% past the current
-  cell's edge and has rested in the new cell for 180 ms. Then `plan` (`hub-canvas.js`) tries every place
-  in the order, packs each with `HubGrid.Pack`'s dense packing (ported as `pack`), and keeps the one that
-  puts the tile in that cell while moving the fewest others; the others glide there in 200 ms and a dashed
-  orange slot marks the landing cell, with faint column lines while dragging. When no order can put it in
-  the cell (a tall tile fills it), nothing moves. Letting go glides the tile into its slot, then saves;
+  cell's edge and has rested in the new cell for 180 ms. Then `HubGrid.Plan` (Platform.Contracts, asked
+  through `HubCanvas.Plan`) tries a swap with the tile under that cell and every insertion point, packs
+  each, and keeps the one that lands the tile there moving no tile outside that cell if it can, then the
+  fewest; dropping a tile on another of its size swaps the two and nothing else moves. The others glide
+  there in 200 ms (the page packs with `pack`, a port of `HubGrid.Pack`) and a dashed orange slot marks the
+  landing cell, with faint column lines while dragging. When no order can put it in the cell (a bigger
+  tile fills it), nothing moves. Tests: `HubGridTests`. Letting go glides the tile into its slot, then saves;
   Escape, or letting go off the phone, glides everything back. The phone's screen scrolls near its edges.
   Dragging the grip resizes, and the others make room the same way. Keyboard: Tab to a tile, arrows move
   it a place, Shift with arrows resizes it, and the others glide too; each move is announced. With reduced
