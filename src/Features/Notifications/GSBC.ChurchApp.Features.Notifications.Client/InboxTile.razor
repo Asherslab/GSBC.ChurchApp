@@ -47,7 +47,7 @@ else
                 <span class="hub-dots">
                     @foreach (InboxEntry entry in unread.Take(span.Rows > 1 ? span.Rows * 2 : 2))
                     {
-                        <span class="hub-dots__item"><i class="hub-tile__dot" aria-hidden="true"></i>@entry.Item.Title</span>
+                        <span class="hub-dots__item"><i class="hub-tile__dot" aria-hidden="true"></i><span class="hub-dots__title">@entry.Item.Title</span></span>
                     }
                 </span>
             </HubTile>,

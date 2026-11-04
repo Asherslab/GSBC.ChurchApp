@@ -122,9 +122,8 @@
   position: absolute;
   inset: -6px 0;
   z-index: 0;
-  background-image: linear-gradient(to right, var(--guide) 0 1px, transparent 1px), linear-gradient(to right, var(--guide) 0 1px, transparent 1px);
+  background-image: linear-gradient(to right, var(--guide) 0 1px, transparent 1px calc(100% - var(--hub-gap) - 1px), var(--guide) calc(100% - var(--hub-gap) - 1px) calc(100% - var(--hub-gap)), transparent 0);
   background-size: calc(var(--column) + var(--hub-gap)) 100%;
-  background-position: 0 0, calc(var(--column) - 1px) 0;
   background-repeat: repeat-x;
   opacity: 0;
   pointer-events: none;
@@ -214,6 +213,10 @@
 
 .hub-arrange__mark { padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; pointer-events: none; }
 .draft-pane__back--folded { display: none; }
+.workbench--canvas .draft-pane__head { flex-wrap: nowrap; }
+.workbench--canvas .draft-pane__title h2 { overflow: hidden; font-size: var(--text-title-lg); white-space: nowrap; text-overflow: ellipsis; }
+.workbench--canvas .draft-pane__head > :last-child { flex: none; }
+.workbench--canvas .draft-pane__lead { display: none; }
 .workbench--canvas .workbench__detail { position: sticky; top: 0; z-index: 2; align-self: start; max-height: 100dvh; overflow-y: auto; overscroll-behavior: contain; scrollbar-gutter: stable; }
 @media (max-width: 1648px) {
   .workbench.workbench--canvas.workbench--canvas { grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); }

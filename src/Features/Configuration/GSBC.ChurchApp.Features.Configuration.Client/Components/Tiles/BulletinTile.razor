@@ -23,7 +23,7 @@
     [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
     [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
 
-    private const string Verse = "Job 33:4";
+    private const string Verse = "Job\u00a033:4";
     private const string VerseText = "The Spirit of God hath made me, and the breath of the Almighty hath given me life.";
 
     private TileLook Look => TileLook.Of(WaitingTiles.Bulletin, Entry.Values);

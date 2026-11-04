@@ -105,6 +105,8 @@
 [data-preview-scheme="dark"] {
   --tile-soft-mix: 40%;
   --tile-warm-base: var(--on-marker);
+  --tile-soft-ink: 92%;
+  --tile-warm-go: var(--ink);
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
   --page: #141d31;
