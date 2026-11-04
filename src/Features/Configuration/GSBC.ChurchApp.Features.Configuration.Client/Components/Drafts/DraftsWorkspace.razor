@@ -26,7 +26,7 @@ else
             <div class="drafts-column">
                 <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
                 <EventLayerBand Layer="Layer" MayChange="MayPublishAnything" Busy="_busy" OnOpen="draft => OpenAsync(draft.Id)" OnTurnOff="TurnOffAsync" OnChangeDates="ChangeDatesAsync" />
-                <DraftListing List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync" />
+                <DraftListing List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync" PublishedNote="_publishedNote" />
             </div>
         </Aside>
         <ChildContent>
@@ -154,6 +154,7 @@ else
     private CancellationTokenSource? _pending;
     private string? _problem;
     private string? _message;
+    private DraftListing.Note? _publishedNote;
     private string? _stepNote;
     private bool _stepOffersRedo;
     private int _stepNoteAt;
@@ -1246,19 +1247,30 @@ else
         return Task.CompletedTask;
     }
 
-    private Task UndoAsync(PublishedDraft published) => RunAsync(async () =>
-    {
-        await Configuration.RollBackAsync(published.BatchId);
-        _message = $"Undid “{published.Name}”. Phones show it within a few seconds. Open it under Published recently to publish it again.";
-        _list = await LoadListAsync();
-    });
+    private Task UndoAsync(PublishedDraft published) => RollBackAsync(published.BatchId,
+        $"Undid “{published.Name}”. Phones show it within a few seconds; open it here to publish it again.");
 
-    private Task PublishAgainAsync(PublishedDraft published) => RunAsync(async () =>
+    private Task PublishAgainAsync(PublishedDraft published) => RollBackAsync(published.UndoneBatchId!,
+        $"Published “{published.Name}” again. Phones show it within a few seconds.");
+
+    private async Task RollBackAsync(string batchId, string done)
     {
-        await Configuration.RollBackAsync(published.UndoneBatchId!);
-        _message = $"Published “{published.Name}” again. Phones show it within a few seconds.";
+        _busy = true;
+        try
+        {
+            await Configuration.RollBackAsync(batchId);
+            _publishedNote = new DraftListing.Note(done, Warns: false);
+        }
+        catch (RpcException exception)
+        {
+            _publishedNote = new DraftListing.Note(exception.Status.Detail, Warns: true);
+        }
+        finally
+        {
+            _busy = false;
+        }
         _list = await LoadListAsync();
-    });
+    }
 
     private async Task RunAsync(Func<Task> action)
     {

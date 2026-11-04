@@ -96,8 +96,25 @@ internal sealed class PlacementEditor(
             }
         }
 
+        if (changes.All(change => PlacementState.Same(change.Before, change.After)))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, await NothingToChangeAsync(batch, cancellationToken)));
         await CommitAsync(CallerId(caller), changes, rollsBack: batchId, draft: null, cancellationToken);
         return new AreaPlacements();
+    }
+
+    private async Task<string> NothingToChangeAsync(List<ChangeRecord> batch, CancellationToken cancellationToken)
+    {
+        List<string> titles = batch.Select(change => surfaces.Areas.GetValueOrDefault(change.Area)?.Title ?? change.Area).Distinct().ToList();
+        string places = "the " + string.Join(" and ", titles.Select((title, index) => index == 0 ? title : title.ToLowerInvariant()));
+        (string looks, string did) = titles.Count == 1 ? ("looks", "it did") : ("look", "they did");
+        if (batch[0].DraftName is { } name)
+            return $"Nothing to change: {places} already {looks} as {did} before “{name}” was published.";
+        Guid? original = batch[0].RollsBack;
+        string? published = original is null ? null : await db.Changes.AsNoTracking()
+            .Where(change => change.BatchId == original).Select(change => change.DraftName).FirstOrDefaultAsync(cancellationToken);
+        return published is null
+            ? $"Nothing to change: {places} already {looks} like that."
+            : $"Nothing to change: {places} already {looks} as “{published}” left {(titles.Count == 1 ? "it" : "them")}.";
     }
 
     public async Task<(SurfaceArea Area, string? ScopeId)> AuthoriseAsync(

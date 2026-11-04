@@ -626,23 +626,35 @@ internal sealed class DraftEditor(
                 Changes = batch.Count(),
             })
             .ToList();
-        await MarkUndoneAsync(published, cancellationToken);
+        await MarkUndoneAsync(published, rows, cancellationToken);
         return published;
     }
 
-    private async Task MarkUndoneAsync(List<PublishedDraft> published, CancellationToken cancellationToken)
+    private async Task MarkUndoneAsync(List<PublishedDraft> published, List<ChangeRecord> rows, CancellationToken cancellationToken)
     {
         List<Rollback> undos = await RollbacksOfAsync(published.Select(entry => Guid.Parse(entry.BatchId)).ToList(), cancellationToken);
         List<Rollback> redos = await RollbacksOfAsync(undos.Select(undo => undo.BatchId).ToList(), cancellationToken);
         foreach (PublishedDraft entry in published)
         {
             Rollback? latest = undos.Where(undo => undo.RollsBack == Guid.Parse(entry.BatchId)).MaxBy(undo => undo.At);
-            if (latest is null || redos.Any(redo => redo.RollsBack == latest.BatchId && redo.At >= latest.At))
+            if (latest is null || redos.Any(redo => redo.RollsBack == latest.BatchId && redo.At >= latest.At)
+                || await StillAsPublishedAsync(rows.Where(row => row.BatchId == Guid.Parse(entry.BatchId)).ToList(), cancellationToken))
                 continue;
             entry.UndoneBatchId = latest.BatchId.ToString();
             entry.UndoneAt = latest.At;
             entry.UndoneBy = latest.By.ToString();
         }
+    }
+
+    private async Task<bool> StillAsPublishedAsync(List<ChangeRecord> batch, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = batch.Select(change => change.PlacementId).ToList();
+        Dictionary<Guid, PlacementRecord> live = await db.Placements.AsNoTracking()
+            .Where(placement => ids.Contains(placement.Id))
+            .ToDictionaryAsync(placement => placement.Id, cancellationToken);
+        return batch.All(change => PlacementState.Same(
+            live.TryGetValue(change.PlacementId, out PlacementRecord? record) ? PlacementState.Of(record) : null,
+            PlacementState.FromJson(change.After)));
     }
 
     private async Task<List<Rollback>> RollbacksOfAsync(List<Guid> batchIds, CancellationToken cancellationToken)

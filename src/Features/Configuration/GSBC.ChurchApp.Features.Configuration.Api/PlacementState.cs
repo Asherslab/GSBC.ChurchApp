@@ -10,6 +10,8 @@ internal sealed record PlacementState(
 {
     public string ToJson() => JsonSerializer.Serialize(this, JsonSerializerOptions.Default);
 
+    public static bool Same(PlacementState? left, PlacementState? right) => left?.ToJson() == right?.ToJson();
+
     public static PlacementState? FromJson(string? json) =>
         json is null ? null : JsonSerializer.Deserialize<PlacementState>(json, JsonSerializerOptions.Default);
 

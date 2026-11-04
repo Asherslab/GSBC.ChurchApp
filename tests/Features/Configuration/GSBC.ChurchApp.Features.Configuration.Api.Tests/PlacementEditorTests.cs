@@ -97,6 +97,32 @@ public sealed class PlacementEditorTests : ConfigurationHost
     }
 
     [Fact]
+    public async Task APublishWhoseChangesAreBackShowsAsPublishedAndARollbackThatChangesNothingIsRefused()
+    {
+        ClaimsPrincipal staff = Access.Person(ArrangesHub, PublishesHub);
+        Placement bible = Assert.Single(await PublishNowAsync(staff, HubSurfaces.Area, null, LinkTile("Bible")));
+        Draft fixes = await NewDraftAsync(staff, "Hub Fixes");
+        await SaveAsync(staff, fixes, Change(bible, (HubSurfaces.LinkTile.Title.Key, "Read the Bible")));
+        await PublishAsync(staff, fixes);
+        PublishedDraft published = Published(await Drafts(editor => editor.ListAsync(staff, Cancel)), "Hub Fixes");
+        await Placements(editor => editor.RollBackAsync(staff, new RollBackRequest { BatchId = published.BatchId }, Cancel));
+        string undo = Published(await Drafts(editor => editor.ListAsync(staff, Cancel)), "Hub Fixes").UndoneBatchId!;
+
+        Draft again = await NewDraftAsync(staff, "Hub Fixes 2");
+        await SaveAsync(staff, again, Change(bible, (HubSurfaces.LinkTile.Title.Key, "Read the Bible")));
+        await PublishAsync(staff, again);
+
+        Assert.Null(Published(await Drafts(editor => editor.ListAsync(staff, Cancel)), "Hub Fixes").UndoneBatchId);
+        int batches = (await Placements(editor => editor.ListChangesAsync(staff, new AreaQuery { Area = HubSurfaces.Area.Key }, Cancel))).Batches.Count;
+        RpcException refused = await Refused(() => Placements(editor => editor.RollBackAsync(staff, new RollBackRequest { BatchId = undo }, Cancel)));
+        Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
+        Assert.Equal("Nothing to change: the Home screen already looks as “Hub Fixes” left it.", refused.Status.Detail);
+        Assert.Equal(batches, (await Placements(editor => editor.ListChangesAsync(staff, new AreaQuery { Area = HubSurfaces.Area.Key }, Cancel))).Batches.Count);
+    }
+
+    private static PublishedDraft Published(DraftList list, string name) => list.Published.First(entry => entry.Name == name);
+
+    [Fact]
     public async Task ImagesInSettingsAreTheLibrarysAndForgedOrPrivateOnesAreRefused()
     {
         ClaimsPrincipal staff = Access.Person(ArrangesHub, PublishesHub);

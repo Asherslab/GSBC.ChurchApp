@@ -228,8 +228,11 @@ within a second or two:
   offers *Publish it again*, which rolls back the undo batch (the undo's `Before` states are exactly what
   the publish made). Chosen over turning it back into a draft: a draft would need re-checking against
   everything published since and a second publish step, while rolling back the undo is exact, audited
-  like any rollback, and one action. The list works out *Undone* from the history: a publish is undone
-  when its latest rollback hasn't itself been rolled back.
+  like any rollback, and one action. The list works out *Undone* from the history and from what's live: a
+  publish is undone when its latest rollback hasn't itself been rolled back **and** the live placements no
+  longer match what it left (a later publish can bring the same changes back; owner's bug on UAT,
+  2026-11-04). A rollback that would change nothing writes no batch and is refused in plain words ("Nothing to
+  change: the Home screen already looks as “Hub Fixes” left it."), shown under *Published recently*.
 - **Inside a draft, undo and redo** (note 20): every change to the draft is a step in the editor's
   history (`DraftSession.StepBack`/`StepForward`), with Undo and Redo beside Share, ⌘Z and ⇧⌘Z (Ctrl
   on Windows; ignored while typing in a field or with a sheet open, so a field's own undo works), and a

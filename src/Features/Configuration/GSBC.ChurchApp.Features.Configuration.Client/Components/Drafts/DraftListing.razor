@@ -45,6 +45,10 @@ else
 @if (List.Published.Count > 0)
 {
     <h2 class="draft-list__head">Published recently</h2>
+    @if (PublishedNote is { } note)
+    {
+        <Notice Tone="@(note.Warns ? NoticeTone.Warning : NoticeTone.Info)" Text="@note.Text" />
+    }
     <ListGroup>
         @foreach (PublishedDraft published in List.Published)
         {
@@ -106,6 +110,9 @@ else
     [Parameter] public EventCallback OnNew { get; set; }
     [Parameter] public EventCallback<PublishedDraft> OnUndo { get; set; }
     [Parameter] public EventCallback<PublishedDraft> OnPublishAgain { get; set; }
+    [Parameter] public Note? PublishedNote { get; set; }
+
+    public sealed record Note(string Text, bool Warns);
 
     private PublishedDraft? _looking;
 
