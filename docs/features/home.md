@@ -98,8 +98,23 @@ and live, Marker, Quiet, or (for uploaded icons) *Its own colours*.
 Staff keep configured tiles to add again (owner, 2026-11-04, note C). **Save to the library** on a tile stores a
 **saved tile** (`hub.saved`, in the Hub area): its name, its kind and every value, as a template. It shows under
 *Your library* in Add a tile; adding it makes a **new, independent tile** with those values, ready to change.
-**Make a copy** does the same for a tile on the canvas. With nothing chosen, the settings panel lists the
-saved tiles (rename, or take one out). It all goes through drafts and `config.hub.edit` like any placement.
+**Make a copy** does the same for a tile on the canvas. It all goes through drafts and `config.hub.edit`
+like any placement.
+
+**A name of its own, one per name** (owner, 2026-11-04, notes 17–19). A saved tile's **name in the library**
+is its own value (`Saved.Name`), separate from the tile's title, and never shown in the app; Save to the
+library opens a small sheet with the name, filled in from the title. Names are unique in the library,
+compared trimmed and ignoring case (`UniqueNames`): when the name is taken, the sheet offers **Replace
+"Ministries"** (the saved tile takes this tile's values) or **Save as a new name** (fills in "Ministries 2"
+to adjust). The server enforces it through the surface's `uniqueBy` setting: saving a draft or publishing
+is refused when a placement it adds or renames shares a name with another. Only a changed placement can
+clash, so duplicates saved before the rule still open, rename and publish; renaming one settles it.
+
+**Managing the library** lives where people meet it: **Manage** beside *Your library*, in Add a tile and in
+the settings panel when nothing is chosen (one component, `SavedTiles`). Manage turns each saved tile into
+its name, renamed as you type, and **Take out**; a tile taken out leaves a line with **Undo** until Done.
+Chosen over a "…" menu per tile (a menu inside a sheet needs a popover layer, and rename then needs a
+second dialog); the decision page is `.impeccable/mocks/decision/hub-library/`.
 
 Decided: **templates, not linked copies.** A linked copy would change every tile made from it when the
 template changes, which surprises staff who added it to change a word or a colour; a template keeps each

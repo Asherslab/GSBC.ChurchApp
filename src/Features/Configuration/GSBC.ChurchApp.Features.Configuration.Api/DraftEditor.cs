@@ -108,6 +108,7 @@ internal sealed class DraftEditor(
         DraftRecord draft = await ManagedAsync(caller, request.DraftId, cancellationToken);
         Guid actor = CallerId(caller);
         List<DraftChangeRecord> existing = await db.DraftChanges.Where(change => change.DraftId == draft.Id).ToListAsync(cancellationToken);
+        List<DraftChangeRecord> touched = [];
 
         foreach (PatchMessage message in request.Set)
         {
@@ -137,6 +138,7 @@ internal sealed class DraftEditor(
             row.Patch = Serialize(patch);
             row.ChangedAt = Now;
             row.ChangedBy = actor;
+            touched.Add(row);
         }
 
         foreach (string cleared in request.Cleared)
@@ -148,6 +150,16 @@ internal sealed class DraftEditor(
                 db.DraftChanges.Remove(row);
                 existing.Remove(row);
             }
+        }
+
+        foreach (IGrouping<(string Area, string? ScopeId), DraftChangeRecord> inArea in touched
+                     .Where(row => row.Kind != PatchKind.Remove && existing.Contains(row) && HasUniqueNames(row.Area))
+                     .GroupBy(row => (row.Area, row.ScopeId)))
+        {
+            SurfaceArea area = surfaces.Areas[inArea.Key.Area];
+            List<StoredPlacement> live = (await placements.InArea(area, inArea.Key.ScopeId).AsNoTracking().ToListAsync(cancellationToken)).Select(Stored).ToList();
+            IEnumerable<PlacementPatch> patches = existing.Where(row => row.Area == area.Key && row.ScopeId == inArea.Key.ScopeId).Select(Deserialize);
+            RefuseClashingNames(area, DraftComposition.Apply(live, patches), inArea.Select(row => row.PlacementId.ToString()).ToList());
         }
 
         draft.Status = DraftStatus.Open;
@@ -240,6 +252,8 @@ internal sealed class DraftEditor(
             if (DraftComposition.ChangedSince(existing.Select(Stored), patches) is { Count: > 0 } changed)
                 throw new RpcException(new Status(StatusCode.FailedPrecondition,
                     $"Some of this draft was changed for everyone since it was edited: {string.Join(", ", changed.Select(entry => TitleOf(entry.Patch)))}. Keep yours or use everyone's first."));
+            RefuseClashingNames(area, DraftComposition.Apply(existing.Select(Stored), patches),
+                patches.Where(patch => patch.Kind != PatchKind.Remove).Select(patch => patch.PlacementId).ToList());
 
             foreach (PlacementPatch patch in patches)
             {
@@ -661,6 +675,18 @@ internal sealed class DraftEditor(
             ? patch.ValueChanges.GetValueOrDefault(title.Key) ?? patch.Base?.Values.GetValueOrDefault(title.Key)
             : null;
         return named is null ? surface?.Title ?? patch.Surface : $"\"{named}\"";
+    }
+
+    private bool HasUniqueNames(string areaKey) =>
+        surfaces.ByKey.Values.Any(surface => surface.Area.Key == areaKey && surface.UniqueBy is not null);
+
+    private void RefuseClashingNames(SurfaceArea area, IReadOnlyList<StoredPlacement> composed, IReadOnlyCollection<string> changed)
+    {
+        foreach (Surface surface in surfaces.ByKey.Values.Where(surface => surface.Area.Key == area.Key && surface.UniqueBy is not null))
+        {
+            if (UniqueNames.Clashes(surface, composed, changed) is [string name, ..])
+                throw Invalid($"There's already a {surface.Title.ToLowerInvariant()} called “{name}”. Choose another name, or replace that one.");
+        }
     }
 
     private static StoredPlacement Stored(PlacementRecord record) => PlacementState.Of(record).ToStored(record.Id, record.Revision);

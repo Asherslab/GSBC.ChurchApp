@@ -75,7 +75,7 @@ public static class HubSurfaces
         public static readonly TemplateSetting Tile = new("tile", "The tile");
 
         public static readonly Surface Surface = new("hub.saved", Area, "Saved tile", "A tile kept in the library to add again",
-            [Name, Kind, Tile], defaultOrder: 6000, repeatable: true);
+            [Name, Kind, Tile], defaultOrder: 6000, repeatable: true, uniqueBy: Name);
     }
 
     public static readonly HubTileKind PlainTile = new("hub.tile", "Link tile",

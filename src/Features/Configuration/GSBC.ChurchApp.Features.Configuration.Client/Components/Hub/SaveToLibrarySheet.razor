@@ -1,0 +1,47 @@
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Save to the library" Lead="Kept under Add a tile, ready to add again as a new copy.">
+    <ChildContent>
+        <TextField Label="Name in the library" Value="@_name" ValueChanged="name => _name = name" MaxLength="HubSurfaces.Saved.Name.MaxLength"
+                   Hint="Only staff see it. The tile keeps its own title on the phone." Problem="@(_name.Trim().Length == 0 ? "Give it a name." : null)" />
+        @if (Clash is { } taken)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@($"Your library already has “{Name(taken)}”. Replace it with this tile, or save this one under a new name.")" />
+        }
+    </ChildContent>
+    <Actions>
+        @if (Clash is { } existing)
+        {
+            <Button Block="true" Icon="refresh" OnClick="() => OnReplace.InvokeAsync((existing, _name.Trim()))">Replace “@Name(existing)”</Button>
+            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="NewName">Save as a new name</Button>
+        }
+        else
+        {
+            <Button Block="true" Icon="bookmark" Disabled="@(_name.Trim().Length == 0)" OnClick="() => OnSave.InvokeAsync(_name.Trim())">Save</Button>
+        }
+        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => OpenChanged.InvokeAsync(false)">Cancel</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string _name = "";
+    private bool _wasOpen;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string Suggested { get; set; } = "";
+    [Parameter] public IReadOnlyList<ArrangedSurface> Saved { get; set; } = [];
+    [Parameter] public EventCallback<string> OnSave { get; set; }
+    [Parameter] public EventCallback<(ArrangedSurface Saved, string Name)> OnReplace { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+            _name = Suggested;
+        _wasOpen = Open;
+    }
+
+    private ArrangedSurface? Clash => _name.Trim().Length == 0 ? null : Saved.FirstOrDefault(saved => UniqueNames.Same(Name(saved), _name));
+
+    private static string Name(ArrangedSurface saved) => saved.Values.Get(HubSurfaces.Saved.Name);
+
+    private void NewName() => _name = UniqueNames.Free(_name, Saved.Select(Name).ToList());
+}

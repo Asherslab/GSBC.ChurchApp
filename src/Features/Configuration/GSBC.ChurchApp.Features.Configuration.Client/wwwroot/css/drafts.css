@@ -189,6 +189,24 @@
 .add-tile__words span { font-size: var(--text-caption); line-height: 1.4; color: var(--ink-2); }
 .add-tile__words .pill { justify-self: start; margin-top: 4px; }
 .add-tile__size { font-size: var(--text-caption); font-weight: 600; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.saved-tiles__head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 6px 0 8px; }
+.saved-tiles__head .add-tile__group { margin: 0; }
+.saved-tiles .tile-settings__note { margin: 0 0 14px; }
+.add-tile__kind--managing { align-items: center; cursor: default; }
+.add-tile__kind--managing:hover { background: var(--fill-on-surface); }
+.add-tile__kind--managing .field { margin: 0; }
+.add-tile__kind--managing .field__input { background: var(--surface); }
+.add-tile__kind--managing .field__label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.saved-tiles--managing .add-tile__kinds { grid-template-columns: 1fr; }
+.saved-tiles--managing .add-tile__kind { padding-block: 10px; }
+.saved-tiles { container-type: inline-size; }
+@container (max-width: 30rem) {
+  .add-tile__kind--managing { flex-wrap: wrap; row-gap: 6px; }
+  .add-tile__kind--managing .add-tile__words { flex-basis: calc(100% - 48px); }
+  .add-tile__kind--managing .btn { margin-left: auto; }
+}
+.add-tile__kind--gone { align-items: center; cursor: default; background: transparent; box-shadow: inset 0 0 0 1px var(--line); }
+.add-tile__kind--gone:hover { background: transparent; }
 .tile-settings .media-setting .field__label { display: none; }
 
 .layout-picker { display: grid; gap: 6px; }

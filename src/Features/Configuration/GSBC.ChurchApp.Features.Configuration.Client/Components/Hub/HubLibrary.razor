@@ -4,21 +4,8 @@
         <span>Click a tile on the phone to change it, or add one. Changes save by themselves; phones previewing this draft follow along.</span>
     </header>
 
-    <section class="tile-settings__group" aria-labelledby="hub-saved">
-        <h4 class="tile-settings__legend" id="hub-saved">Saved tiles</h4>
-        @if (Saved.Count == 0)
-        {
-            <p class="tile-settings__note">None yet. Choose a tile and Save to the library; it then shows under Add a tile, ready to add again as a new copy.</p>
-        }
-        else
-        {
-            <ListGroup>
-                @foreach (ArrangedSurface saved in Saved)
-                {
-                    <ListRow Title="@saved.Values.Get(HubSurfaces.Saved.Name)" Subtitle="Saved tile" Icon="bookmark" OnClick="() => OnChoose.InvokeAsync(saved)" />
-                }
-            </ListGroup>
-        }
+    <section class="tile-settings__group">
+        @Library
     </section>
 
     <section class="tile-settings__group" aria-labelledby="hub-icons">
@@ -43,6 +30,6 @@
 
 @code {
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Icons { get; set; }
-    [Parameter] public IReadOnlyList<ArrangedSurface> Saved { get; set; } = [];
+    [Parameter] public RenderFragment? Library { get; set; }
     [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
 }

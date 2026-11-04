@@ -53,7 +53,8 @@ else
 
     @if (_session is not null)
     {
-        <AddTileSheet Open="_addingTile" OpenChanged="open => _addingTile = open" OnChosen="AddTile" Saved="SavedTiles" OnSaved="AddSaved" />
+        <AddTileSheet Open="_addingTile" OpenChanged="open => _addingTile = open" OnChosen="AddTile" Saved="SavedTiles" Library="Library" />
+        <SaveToLibrarySheet Open="_savingTile" OpenChanged="open => _savingTile = open" Suggested="@SuggestedLibraryName" Saved="SavedTiles" OnSave="SaveTile" OnReplace="ReplaceSaved" />
         <ShareSheet Draft="_session.Draft" Open="_sharing" OpenChanged="open => _sharing = open" Names="_names" OnShare="ShareAsync" OnUnshare="UnshareAsync" />
         <EventLayerSheet Draft="_session.Draft" Open="_turningOn" OpenChanged="open => _turningOn = open" Busy="_busy" Problem="@_problem"
                          Replacing="@(Layer is { } layer && layer.Id != _session.Draft.Id ? layer.Name : null)" OnTurnOn="TurnOnAsync" />
@@ -131,6 +132,7 @@ else
 
     private ThemeScheme _themeScheme;
     private bool _addingTile;
+    private bool _savingTile;
     private string? _savedNote;
     private IReadOnlyDictionary<Guid, string> _roleNames = new Dictionary<Guid, string>();
     private DraftList? _list;
@@ -386,7 +388,7 @@ else
         }
         else
         {
-            <HubLibrary Icons="CustomIconEntries" Saved="SavedTiles" OnChoose="Select" />
+            <HubLibrary Icons="CustomIconEntries" Library="Library" OnChoose="Select" />
         }
     };
 
@@ -455,7 +457,7 @@ else
             if (IsHub && TileKind is not null && !Narrow)
             {
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="CopyTile">Make a copy</Button>
-                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="SaveTile">@(_savedNote ?? "Save to the library")</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="() => _savingTile = true">@(_savedNote ?? "Save to the library")</Button>
             }
             if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
             {
@@ -491,17 +493,63 @@ else
         ? []
         : _session.Arranged(HubSurfaces.Area, null).Where(entry => entry.Surface == HubSurfaces.Saved.Surface && entry.Placement is not null).ToList();
 
-    private void SaveTile()
+    private RenderFragment Library => __builder =>
+    {
+        <SavedTiles Saved="SavedTiles" OnAdd="AddSaved" OnRename="RenameSaved" OnTakeOut="TakeOutSaved" OnPutBack="PutBackSaved" />
+    };
+
+    private static readonly AreaKey HubArea = new(HubSurfaces.Area.Key, null);
+
+    private string SuggestedLibraryName => _form?.Values.GetValueOrDefault(HubTileKeys.Title, "") is { Length: > 0 } title
+        ? title
+        : TileKind?.Surface.Title ?? "";
+
+    private void SaveTile(string name)
     {
         if (_form is null || TileKind is not { } kind)
             return;
         PlacementDraft saved = PlacementDraft.New(HubSurfaces.Saved.Surface, HubSurfaces.Saved.Surface.DefaultOrder);
-        string title = _form.Values.GetValueOrDefault(HubTileKeys.Title, "");
-        saved.Values[HubSurfaces.Saved.Name.Key] = title.Length > 0 ? title : kind.Surface.Title;
+        KeepInLibrary(saved, kind, name, Guid.CreateVersion7().ToString());
+    }
+
+    private void ReplaceSaved((ArrangedSurface Saved, string Name) replacing)
+    {
+        if (_form is null || TileKind is not { } kind)
+            return;
+        KeepInLibrary(PlacementDraft.Of(replacing.Saved), kind, replacing.Name, replacing.Saved.Placement!.Id);
+    }
+
+    private void KeepInLibrary(PlacementDraft saved, HubTileKind kind, string name, string id)
+    {
+        saved.Values[HubSurfaces.Saved.Name.Key] = name;
         saved.Values[HubSurfaces.Saved.Kind.Key] = kind.Surface.Key;
-        saved.Values[HubSurfaces.Saved.Tile.Key] = HubSurfaces.Saved.Tile.Format(_form.Values);
-        _session!.Set(new AreaKey(HubSurfaces.Area.Key, null), saved.ToStored(Guid.CreateVersion7().ToString()));
-        _savedNote = "Saved to the library";
+        saved.Values[HubSurfaces.Saved.Tile.Key] = HubSurfaces.Saved.Tile.Format(_form!.Values);
+        _session!.Set(HubArea, saved.ToStored(id));
+        _savingTile = false;
+        _savedNote = $"Saved as “{name}”";
+        SaveSoon();
+    }
+
+    private void RenameSaved((ArrangedSurface Saved, string Name) renaming)
+    {
+        PlacementDraft renamed = PlacementDraft.Of(renaming.Saved);
+        renamed.Values[HubSurfaces.Saved.Name.Key] = renaming.Name;
+        _session!.Set(HubArea, renamed.ToStored(renaming.Saved.Placement!.Id));
+        SaveSoon();
+    }
+
+    private void TakeOutSaved(ArrangedSurface saved)
+    {
+        _session!.Remove(HubArea, saved);
+        SaveSoon();
+    }
+
+    private void PutBackSaved(ArrangedSurface saved)
+    {
+        PlacementDraft back = PlacementDraft.Of(saved);
+        back.Values[HubSurfaces.Saved.Name.Key] = UniqueNames.Free(saved.Values.Get(HubSurfaces.Saved.Name),
+            SavedTiles.Select(other => other.Values.Get(HubSurfaces.Saved.Name)).ToList());
+        _session!.Set(HubArea, back.ToStored(saved.Placement!.Id));
         SaveSoon();
     }
 

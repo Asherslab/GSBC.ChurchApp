@@ -48,6 +48,27 @@ public sealed class DraftEditorTests : ConfigurationHost
     }
 
     [Fact]
+    public async Task TheLibraryKeepsOneSavedTilePerNameWhateverItsCaseOrSpacing()
+    {
+        ClaimsPrincipal staff = Access.Person(ArrangesHub, PublishesHub);
+        await PublishNowAsync(staff, HubSurfaces.Area, null, SavedTile("Ministries"));
+
+        Draft draft = await NewDraftAsync(staff);
+        RpcException refused = await Refused(() => SaveAsync(staff, draft, SavedTile("  ministries ")));
+        Assert.Equal(StatusCode.InvalidArgument, refused.StatusCode);
+        Assert.Contains("“ministries”", refused.Status.Detail);
+
+        await SaveAsync(staff, draft, SavedTile("Ministries (wide, picture)"));
+
+        Draft other = await NewDraftAsync(staff, "Another");
+        await SaveAsync(staff, other, SavedTile("Youth"));
+        Draft clashing = await NewDraftAsync(staff, "A third");
+        await SaveAsync(staff, clashing, SavedTile("YOUTH"));
+        await PublishAsync(staff, other);
+        Assert.Equal(StatusCode.InvalidArgument, (await Refused(() => PublishAsync(staff, clashing))).StatusCode);
+    }
+
+    [Fact]
     public async Task PublishingNeedsThePublishPermissionForEveryAreaItTouches()
     {
         ClaimsPrincipal editor = Access.Person(ArrangesHub, (AppearanceSurfaces.EditNode, null), PublishesHub);
@@ -144,4 +165,8 @@ public sealed class DraftEditorTests : ConfigurationHost
 
         public int GetHashCode((string, DateTime) value) => value.Item1.GetHashCode();
     }
+
+    private static PatchMessage SavedTile(string name) =>
+        Add(HubSurfaces.Saved.Surface, HubSurfaces.Area, null, (HubSurfaces.Saved.Name.Key, name), (HubSurfaces.Saved.Kind.Key, HubSurfaces.PlainTile.Surface.Key),
+            (HubSurfaces.Saved.Tile.Key, HubSurfaces.Saved.Tile.Format(new Dictionary<string, string> { [HubTileKeys.Title] = name })));
 }

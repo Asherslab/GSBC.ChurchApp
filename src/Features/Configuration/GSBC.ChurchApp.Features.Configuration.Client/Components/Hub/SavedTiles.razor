@@ -1,0 +1,125 @@
+@inject IEnumerable<HubTileKind> Kinds
+
+<section class="saved-tiles @(_managing ? "saved-tiles--managing" : "")" aria-labelledby="@_headingId">
+    <div class="saved-tiles__head">
+        <h4 class="add-tile__group" id="@_headingId">Your library</h4>
+        @if (Saved.Count > 0 || _takenOut.Count > 0)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@(_managing ? "check" : "pencil")" OnClick="ToggleManaging">@(_managing ? "Done" : "Manage")</Button>
+        }
+    </div>
+    @if (Saved.Count == 0 && _takenOut.Count == 0)
+    {
+        <p class="tile-settings__note">@Empty</p>
+    }
+    else if (_managing)
+    {
+        <p class="tile-settings__note">Change a name to rename it; it saves as you type. Only staff see these names.</p>
+    }
+    <div class="add-tile__kinds">
+        @foreach (ArrangedSurface saved in Saved)
+        {
+            HubTileKind? kind = KindOf(saved);
+            IReadOnlyDictionary<string, string> values = saved.Values.Get(HubSurfaces.Saved.Tile);
+            string name = saved.Values.Get(HubSurfaces.Saved.Name);
+            @if (_managing)
+            {
+                <div class="add-tile__kind add-tile__kind--managing" @key="saved.Placement!.Id">
+                    <span class="row__icon row__icon--warm"><Icon Name="@IconOf(kind, values)" Size="IconSize.Small" /></span>
+                    <span class="add-tile__words">
+                        <TextField Label="Name in the library" Value="@(_renaming.GetValueOrDefault(saved.Placement.Id) ?? name)" MaxLength="HubSurfaces.Saved.Name.MaxLength"
+                                   Problem="@RenameProblem(saved)" ValueChanged="text => RenameAsync(saved, text)" />
+                    </span>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => TakeOutAsync(saved)">Take out</Button>
+                </div>
+            }
+            else if (kind is not null)
+            {
+                <button type="button" class="add-tile__kind" @key="saved.Placement!.Id" @onclick="() => OnAdd.InvokeAsync(saved)">
+                    <span class="row__icon row__icon--warm"><Icon Name="@IconOf(kind, values)" Size="IconSize.Small" /></span>
+                    <span class="add-tile__words">
+                        <strong>@name</strong>
+                        <span>@SavedLine(kind, values, name)</span>
+                    </span>
+                    <span class="add-tile__size">@SpanOf(kind, values).Words</span>
+                </button>
+            }
+        }
+        @foreach (ArrangedSurface gone in _takenOut)
+        {
+            <div class="add-tile__kind add-tile__kind--gone" @key="@($"gone-{gone.Placement!.Id}")" role="status">
+                <span class="add-tile__words"><span>“@gone.Values.Get(HubSurfaces.Saved.Name)” is out of the library</span></span>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => PutBackAsync(gone)">Undo</Button>
+            </div>
+        }
+    </div>
+</section>
+
+@code {
+    private static int _lists;
+    private readonly string _headingId = $"saved-tiles-{Interlocked.Increment(ref _lists)}";
+    private readonly List<ArrangedSurface> _takenOut = [];
+    private readonly Dictionary<string, string> _renaming = [];
+    private bool _managing;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Saved { get; set; }
+    [Parameter] public string Empty { get; set; } = "Nothing saved yet. Choose a tile on the phone and Save to the library to reuse it here.";
+    [Parameter] public EventCallback<ArrangedSurface> OnAdd { get; set; }
+    [Parameter] public EventCallback<(ArrangedSurface Saved, string Name)> OnRename { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnTakeOut { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnPutBack { get; set; }
+
+    private HubTileKind? KindOf(ArrangedSurface saved) =>
+        Kinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind));
+
+    private static string IconOf(HubTileKind? kind, IReadOnlyDictionary<string, string> values) =>
+        values.GetValueOrDefault(HubTileKeys.Icon) is { Length: > 0 } icon && !IconSetting.IsCustom(icon, out _) ? icon
+        : kind?.Defaults.Icon is { Length: > 0 } fallback ? fallback : "layout";
+
+    private static TileSpan SpanOf(HubTileKind kind, IReadOnlyDictionary<string, string> values) => new(
+        int.TryParse(values.GetValueOrDefault(HubTileKeys.Columns), out int wide) ? wide : kind.Defaults.Columns,
+        int.TryParse(values.GetValueOrDefault(HubTileKeys.Rows), out int tall) ? tall : kind.Defaults.Rows);
+
+    private static string SavedLine(HubTileKind kind, IReadOnlyDictionary<string, string> values, string name) =>
+        values.GetValueOrDefault(HubTileKeys.Title) is { Length: > 0 } title && !UniqueNames.Same(title, name)
+            ? $"Shows “{title}” on the phone"
+            : $"Saved {kind.Surface.Title.ToLowerInvariant()}";
+
+    private string? RenameProblem(ArrangedSurface saved)
+    {
+        if (_renaming.GetValueOrDefault(saved.Placement!.Id) is not { } text)
+            return null;
+        if (string.IsNullOrWhiteSpace(text))
+            return "Give it a name.";
+        return UniqueNames.Taken(text, Saved.Where(other => other != saved).Select(other => other.Values.Get(HubSurfaces.Saved.Name))) is { } taken
+            ? $"There's already one called “{taken}”."
+            : null;
+    }
+
+    private void ToggleManaging()
+    {
+        _managing = !_managing;
+        _renaming.Clear();
+        _takenOut.Clear();
+    }
+
+    private async Task RenameAsync(ArrangedSurface saved, string text)
+    {
+        _renaming[saved.Placement!.Id] = text;
+        if (RenameProblem(saved) is null)
+            await OnRename.InvokeAsync((saved, text.Trim()));
+    }
+
+    private async Task TakeOutAsync(ArrangedSurface saved)
+    {
+        _renaming.Remove(saved.Placement!.Id);
+        _takenOut.Add(saved);
+        await OnTakeOut.InvokeAsync(saved);
+    }
+
+    private async Task PutBackAsync(ArrangedSurface gone)
+    {
+        _takenOut.Remove(gone);
+        await OnPutBack.InvokeAsync(gone);
+    }
+}

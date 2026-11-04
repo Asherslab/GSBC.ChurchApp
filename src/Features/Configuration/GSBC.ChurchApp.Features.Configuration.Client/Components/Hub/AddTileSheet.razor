@@ -2,27 +2,9 @@
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a tile" Lead="Write your own, add one the app fills in, or reuse a tile you saved." Wide="true">
     <ChildContent>
-        @if (Saved.Count > 0)
+        @if (Saved.Count > 0 && Library is not null)
         {
-            <h4 class="add-tile__group">Your library</h4>
-            <div class="add-tile__kinds">
-                @foreach (ArrangedSurface saved in Saved)
-                {
-                    HubTileKind? kind = Kinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind));
-                    @if (kind is not null)
-                    {
-                        IReadOnlyDictionary<string, string> values = saved.Values.Get(HubSurfaces.Saved.Tile);
-                        <button type="button" class="add-tile__kind" @onclick="() => OnSaved.InvokeAsync(saved)">
-                            <span class="row__icon row__icon--warm"><Icon Name="@(values.GetValueOrDefault(HubTileKeys.Icon) is { Length: > 0 } icon && !IconSetting.IsCustom(icon, out _) ? icon : kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : "layout")" Size="IconSize.Small" /></span>
-                            <span class="add-tile__words">
-                                <strong>@saved.Values.Get(HubSurfaces.Saved.Name)</strong>
-                                <span>Saved @kind.Surface.Title.ToLowerInvariant()</span>
-                            </span>
-                            <span class="add-tile__size">@(new TileSpan(int.TryParse(values.GetValueOrDefault(HubTileKeys.Columns), out int wide) ? wide : kind.Defaults.Columns, int.TryParse(values.GetValueOrDefault(HubTileKeys.Rows), out int tall) ? tall : kind.Defaults.Rows).Words)</span>
-                        </button>
-                    }
-                }
-            </div>
+            @Library
         }
         <h4 class="add-tile__group">Your own</h4>
         <div class="add-tile__kinds">
@@ -49,7 +31,7 @@
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public EventCallback<HubTileKind> OnChosen { get; set; }
     [Parameter] public IReadOnlyList<ArrangedSurface> Saved { get; set; } = [];
-    [Parameter] public EventCallback<ArrangedSurface> OnSaved { get; set; }
+    [Parameter] public RenderFragment? Library { get; set; }
 
     private RenderFragment Choice(HubTileKind kind) => __builder =>
     {
