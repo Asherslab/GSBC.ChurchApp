@@ -271,7 +271,7 @@ else
                 {
                     <HubCanvas Hub="@session.Arranged(area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)" SelectedKey="@_selectedKey"
                                Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()"
-                               RoleNames="_roleNames" OnChoose="Select" OnMove="MoveTileAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
+                               RoleNames="_roleNames" OnChoose="Select" OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
                                OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" />
                 }
                 else
@@ -558,15 +558,13 @@ else
         return IconSetting.Custom(id);
     }
 
-    private Task MoveTileAsync((ArrangedSurface Tile, int To) move)
+    private Task ArrangeTilesAsync(IReadOnlyList<ArrangedSurface> arranged)
     {
-        List<ArrangedSurface> tiles = [.. HubTilesNow];
-        int from = tiles.FindIndex(entry => KeyOf(entry) == KeyOf(move.Tile));
-        if (from < 0 || move.To < 0 || move.To >= tiles.Count || from == move.To)
+        HashSet<string> keys = [.. arranged.Select(KeyOf)];
+        Queue<ArrangedSurface> next = new(arranged);
+        List<ArrangedSurface> tiles = HubTilesNow.Select(entry => keys.Contains(KeyOf(entry)) ? next.Dequeue() : entry).ToList();
+        if (tiles.Count != HubTilesNow.Count || tiles.Select(KeyOf).SequenceEqual(HubTilesNow.Select(KeyOf)))
             return Task.CompletedTask;
-        ArrangedSurface moving = tiles[from];
-        tiles.RemoveAt(from);
-        tiles.Insert(move.To, moving);
         for (int index = 0; index < tiles.Count; index++)
         {
             ArrangedSurface entry = tiles[index];
