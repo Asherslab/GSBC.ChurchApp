@@ -72,6 +72,7 @@
   --sab: env(safe-area-inset-bottom);
 
   --lift: 0 1px 2px rgb(24 35 58 / 0.06), 0 10px 24px -14px rgb(24 35 58 / 0.3);
+  --tile-lift: 0 0 1px rgb(24 35 58 / 0.14), 0 2px 6px rgb(24 35 58 / 0.06), 0 8px 22px -6px rgb(24 35 58 / 0.14);
   --segment-shadow: 0 1px 3px rgb(0 0 0 / 0.14);
   --knob-shadow: 0 2px 6px rgb(0 0 0 / 0.2);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -132,6 +133,7 @@
   --knob: #f2ede4;
   --bar: rgb(20 29 49 / 0.9);
   --lift: 0 1px 0 rgb(255 255 255 / 0.04) inset, 0 14px 28px -18px rgb(0 0 0 / 0.7);
+  --tile-lift: var(--lift);
   color-scheme: dark;
 }
 

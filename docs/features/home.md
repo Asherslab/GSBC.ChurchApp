@@ -68,7 +68,7 @@ one concept-seed round per kind with sketches at 1 × 1, 2 × 1, 1 × 2 and 2 ×
 ### Colours: theme tones, never a hex
 
 A tile's colour is a **tone**, a pair of theme roles (`TileTones`), named for staff by where the colour
-shows (owner, 2026-11-04, note 9: no design-token words): Soft (sand on ink), Card (surface with a hairline edge in the line colour and lift, so a white card shows on the white page; note 11), Top
+shows (owner, 2026-11-04, note 9: no design-token words): Soft (sand on ink), Card (surface with `--tile-lift`: in light a soft ambient halo on all sides as well as the lift below, so a white card shows on the white page without a drawn border; in dark the usual lift; a Card tile with a picture gets only the lift, no edge. Owner notes 11 and 15: a hairline looked wrong, a tinted page hid the Soft tiles), Top
 of Home (masthead), Buttons (primary), Pale accent, Accent (live), Pale highlight, Highlight (marker). Each
 swatch shows its name. In dark mode the pale highlight mixes 34% of the marker, not 24%, so it doesn't
 turn muddy. The text colour is the

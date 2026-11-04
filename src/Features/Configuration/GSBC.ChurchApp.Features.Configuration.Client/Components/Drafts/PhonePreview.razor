@@ -4,7 +4,7 @@
 {
     <SelectField Label="Phone" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
 }
-<PhoneFrame Title="Good Shepherd" Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"Home on an {_device.Name}, as a visitor sees it with this draft")">
+<PhoneFrame Title="Good Shepherd" Bell="true" Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"Home on an {_device.Name}, as a visitor sees it with this draft")">
     <HomeScreen Shown="Shown" At="Now" />
 </PhoneFrame>
 @if (!Compact)
