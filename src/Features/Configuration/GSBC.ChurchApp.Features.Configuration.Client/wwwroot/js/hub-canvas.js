@@ -1,6 +1,7 @@
 const startAfter = 5;
 const glide = 200;
-const settle = 110;
+const settle = 180;
+const leeway = 0.2;
 const mostRows = 4;
 
 const still = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -26,6 +27,29 @@ export function pack(columns, spans) {
       }
     }
   });
+}
+
+export function plan(columns, spans, order, key, target) {
+  const current = new Map(pack(columns, order.map((each) => spans.get(each))).map((spot, index) => [order[index], spot]));
+  const others = order.filter((each) => each !== key);
+  let best = null;
+  for (let at = 0; at <= others.length; at++) {
+    const candidate = [...others.slice(0, at), key, ...others.slice(at)];
+    const spots = pack(columns, candidate.map((each) => spans.get(each)));
+    const own = spots[at];
+    const covers = target.column >= own.column - 1 && target.column < own.column - 1 + own.columns
+      && target.row >= own.row - 1 && target.row < own.row - 1 + own.rows;
+    const distance = Math.abs(own.column - 1 - target.column) + Math.abs(own.row - 1 - target.row);
+    const moved = candidate.filter((each, index) => {
+      if (each === key) return false;
+      const was = current.get(each);
+      return was.column !== spots[index].column || was.row !== spots[index].row;
+    }).length;
+    const score = [covers ? 0 : 1, covers ? 0 : distance, moved];
+    if (!best || score[0] < best.score[0] || (score[0] === best.score[0] && (score[1] < best.score[1] || (score[1] === best.score[1] && score[2] < best.score[2]))))
+      best = { order: candidate, score };
+  }
+  return best.order;
 }
 
 export function attach(canvas, receiver) {
@@ -119,25 +143,74 @@ export function attach(canvas, receiver) {
       gesture.slot = slot;
     }
     document.addEventListener('keydown', escape, true);
+    if (gesture.kind === 'move') {
+      const { x, y } = centre();
+      gesture.target = cellAt(x, y);
+    }
   };
 
-  const retarget = (event) => {
-    const over = document.elementsFromPoint(event.clientX, event.clientY)
-      .map(cellOf).find((found) => found && found !== gesture.cell && canvas.contains(found));
-    const candidate = over ? over.dataset.tile : null;
-    if (candidate === gesture.waiting) return;
-    clearTimeout(gesture.timer);
-    gesture.waiting = candidate;
-    if (!candidate) return;
-    gesture.timer = setTimeout(() => {
-      if (!gesture || gesture.waiting !== candidate) return;
-      const to = gesture.order.indexOf(candidate);
-      const order = gesture.order.filter((key) => key !== gesture.key);
-      order.splice(to, 0, gesture.key);
-      gesture.order = order;
+  const tracks = (text) => text.split(' ').map(parseFloat).filter((value) => !Number.isNaN(value));
+
+  const cellAt = (x, y) => {
+    const grid = gesture.cell.parentElement;
+    const style = getComputedStyle(grid);
+    const box = grid.getBoundingClientRect();
+    const { scale } = gesture.metrics;
+    const across = tracks(style.gridTemplateColumns);
+    const down = tracks(style.gridTemplateRows);
+    const gapX = (parseFloat(style.columnGap) || 0) * scale;
+    const gapY = (parseFloat(style.rowGap) || 0) * scale;
+    const find = (start, sizes, gap, at) => {
+      let edge = start;
+      for (let index = 0; index < sizes.length; index++) {
+        const size = sizes[index] * scale;
+        if (at < edge + size + gap / 2) return { index, from: edge, size };
+        edge += size + gap;
+      }
+      const last = sizes.length ? sizes[sizes.length - 1] * scale : 0;
+      return { index: sizes.length, from: edge, size: last || 1 };
+    };
+    const column = find(box.left, across, gapX, x);
+    const row = find(box.top, down, gapY, y);
+    return { column: Math.min(column.index, across.length - 1), row: row.index, box: { left: column.from, top: row.from, width: column.size, height: row.size } };
+  };
+
+  const centre = () => {
+    const box = gesture.cell.getBoundingClientRect();
+    return { x: box.left + box.width / 2, y: box.top + box.height / 2 };
+  };
+
+  const retarget = () => {
+    const { x, y } = centre();
+    const here = cellAt(x, y);
+    const held = gesture.target;
+    if (held && held.column === here.column && held.row === here.row) {
+      clearTimeout(gesture.timer);
       gesture.waiting = null;
+      return;
+    }
+    if (held) {
+      const margin = { x: held.box.width * leeway, y: held.box.height * leeway };
+      const inside = x > held.box.left - margin.x && x < held.box.left + held.box.width + margin.x
+        && y > held.box.top - margin.y && y < held.box.top + held.box.height + margin.y;
+      if (inside) return;
+    }
+    const wanted = `${here.column}:${here.row}`;
+    if (gesture.waiting === wanted) return;
+    clearTimeout(gesture.timer);
+    gesture.waiting = wanted;
+    gesture.timer = setTimeout(() => {
+      if (!gesture || gesture.waiting !== wanted) return;
+      gesture.waiting = null;
+      const now = cellAt(centre().x, centre().y);
+      if (`${now.column}:${now.row}` !== wanted) return;
+      gesture.target = now;
+      const order = plan(gesture.metrics.columns, gesture.spans, gesture.order, gesture.key, now);
+      if (order.join() === gesture.order.join()) return;
+      gesture.order = order;
       lay(order, gesture.spans, gesture.cell);
       if (gesture.last) follow(gesture.last);
+      gesture.target = cellAt(centre().x, centre().y);
     }, settle);
   };
 
@@ -180,7 +253,7 @@ export function attach(canvas, receiver) {
     if (gesture.kind === 'move') {
       scrollNear(event);
       follow(event);
-      retarget(event);
+      retarget();
       return;
     }
     const { columns, columnStep, rowStep } = gesture.metrics;
@@ -274,7 +347,9 @@ export function attach(canvas, receiver) {
     settleInto(done.cell);
     if (done.kind === 'move') {
       const to = done.order.indexOf(done.key);
-      if (to !== done.original.indexOf(done.key)) await receiver.invokeMethodAsync('Moved', done.key, to);
+      if (to === done.original.indexOf(done.key)) return;
+      if (!still()) await new Promise((resolve) => setTimeout(resolve, glide));
+      await receiver.invokeMethodAsync('Moved', done.key, to);
     } else if (done.next) {
       const was = done.spans.get(done.key);
       if (done.next.columns !== was.columns || done.next.rows !== was.rows)

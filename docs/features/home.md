@@ -68,7 +68,7 @@ one concept-seed round per kind with sketches at 1 × 1, 2 × 1, 1 × 2 and 2 ×
 ### Colours: theme tones, never a hex
 
 A tile's colour is a **tone**, a pair of theme roles (`TileTones`), named for staff by where the colour
-shows (owner, 2026-11-04, note 9: no design-token words): Soft (sand on ink), Card (surface with lift), Top
+shows (owner, 2026-11-04, note 9: no design-token words): Soft (sand on ink), Card (surface with a hairline edge in the line colour and lift, so a white card shows on the white page; note 11), Top
 of Home (masthead), Buttons (primary), Pale accent, Accent (live), Pale highlight, Highlight (marker). Each
 swatch shows its name. In dark mode the pale highlight mixes 34% of the marker, not 24%, so it doesn't
 turn muddy. The text colour is the
@@ -145,15 +145,24 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   to be solid all the time and overlapped the top of "Good Shepherd" by a few points, which Safari showed
   as a cut.
   Click a tile to choose it: an orange outline, its size, and a corner grip.
-- **Dragging, as on an iPhone's home screen** (owner, 2026-11-04, note 5): the tile lifts (a little larger,
-  a deeper shadow) and follows the pointer; resting on another tile for a moment takes its place, and the
-  grid repacks there and then, the others gliding to their new cells in 200 ms while a dashed orange slot
-  shows where it will land. Letting go commits; Escape, or letting go off the phone, glides everything back.
-  The phone's screen scrolls near its edges. Dragging the grip resizes, and the others make room the same
-  way. The repacking is `HubGrid.Pack`'s dense packing, done in the page (`hub-canvas.js`, `pack`) so the
-  preview and the saved order agree. Keyboard: Tab to a tile, arrows move it a place, Shift with arrows
-  resizes it, and the others glide too; each move is announced. With reduced motion, tiles move without
-  gliding.
+- **Dragging, as on an iPhone's home screen** (owner, 2026-11-04, notes 5 and 14): the tile lifts (opaque,
+  1.04 larger, a deep shadow, above everything) and follows the pointer. The target is the grid cell under
+  the dragged tile's centre, not under the pointer: it changes only once the centre is 20% past the current
+  cell's edge and has rested in the new cell for 180 ms. Then `plan` (`hub-canvas.js`) tries every place
+  in the order, packs each with `HubGrid.Pack`'s dense packing (ported as `pack`), and keeps the one that
+  puts the tile in that cell while moving the fewest others; the others glide there in 200 ms and a dashed
+  orange slot marks the landing cell, with faint column lines while dragging. When no order can put it in
+  the cell (a tall tile fills it), nothing moves. Letting go glides the tile into its slot, then saves;
+  Escape, or letting go off the phone, glides everything back. The phone's screen scrolls near its edges.
+  Dragging the grip resizes, and the others make room the same way. Keyboard: Tab to a tile, arrows move
+  it a place, Shift with arrows resizes it, and the others glide too; each move is announced. With reduced
+  motion, tiles move without gliding.
+- **Why the drag was wrong in Safari:** the phone was fitted with CSS `zoom`, and WebKit reports boxes
+  inside a zoomed element unscaled, so every position the drag measured was off (the slot landed away from
+  the pointer and the layout thrashed). The phone is now scaled with `transform: scale()`
+  (`gsbcShell.fitToSpace`), whose boxes every browser reports on screen.
+- **The page never scrolls on the canvas** (note 12): the workbench is exactly the window's height, and the
+  drafts list, the middle column and the settings each scroll on their own.
 - **Settings:** size steppers, its layout ("Best for this size (now …)" or one chosen; layouts that need
   a picture or a bigger tile are greyed out with the reason), colour swatches with their names, the chosen
   icon with **Change icon** opening the grid and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in

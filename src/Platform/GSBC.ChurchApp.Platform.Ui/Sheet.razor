@@ -1,7 +1,10 @@
+@inject Shell Shell
+
 @if (Open)
 {
+    <dialog class="sheet-layer" @ref="_layer" aria-labelledby="@(Title is null ? null : _titleId)" aria-label="@(Title is null ? Label : null)">
     <div class="sheet-backdrop" @onclick="CloseAsync"></div>
-    <div class="sheet @(Cover is null ? "" : "sheet--cover") @(Wide ? "sheet--wide" : "")" role="dialog" aria-modal="true" aria-labelledby="@(Title is null ? null : _titleId)" aria-label="@(Title is null ? Label : null)" tabindex="-1" @ref="_sheet" @onkeydown="KeyAsync">
+    <div class="sheet @(Cover is null ? "" : "sheet--cover") @(Wide ? "sheet--wide" : "")" tabindex="-1" @ref="_sheet" @onkeydown="KeyAsync">
         @if (Cover is not null)
         {
             <div class="sheet__cover">
@@ -28,12 +31,14 @@
             <div class="sheet__actions">@Actions</div>
         }
     </div>
+    </dialog>
 }
 
 @code {
     private static int _sheets;
     private readonly string _titleId = $"sheet-{Interlocked.Increment(ref _sheets)}";
     private ElementReference _sheet;
+    private ElementReference _layer;
     private bool _focused;
 
     [Parameter] public bool Open { get; set; }
@@ -51,6 +56,7 @@
         if (Open && !_focused)
         {
             _focused = true;
+            await Shell.ShowModalAsync(_layer);
             await _sheet.FocusAsync(preventScroll: true);
         }
         else if (!Open)

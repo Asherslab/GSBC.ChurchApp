@@ -954,7 +954,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads, via `Media`), `Masthead` |
 | Rows and boxed lists | `ListGroup`, `ListRow` | Leading tile tones, trailing text or content, chevron or external-link icon, disabled; `Reading` for entries to read, `TitleExtra` for a pill after the title, `Below` for more; `Unread` true or false sets the dot and the title weight |
 | Pull to refresh | `PullToRefresh` | Wraps the whole page body, masthead included; the indicator sits under the top bar. Touch only, so offer a button too |
-| Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (then name it with `Label`); `Wide` for a list to choose from; opening moves focus into it without scrolling the page |
+| Sheet | `Sheet` | Grabber, title, lead, body, actions; Escape and the scrim close it; centred on wide screens; `Cover` adds the navy band (then name it with `Label`); `Wide` for a list to choose from; opening moves focus into it without scrolling the page; it opens in a native `<dialog>` with `showModal()` (the top layer), so no scrolling, sticky or transformed ancestor can clip or hide it (Safari did), falling back to the fixed overlay where `showModal` is missing |
 | Sheet heading | `SheetHeading` | `Icon`, `Title` and an optional `Note`; goes in a sheet's `Cover` |
 | Paged sheet | `PagedSheet` | `Count`, a `Cover` and `Page` per index, an optional `Action`; page dots, swipe, Next and Done |
 | Facts | `FactList`, `Fact` | Label and text, with an optional icon tile; a fact with no text is skipped |

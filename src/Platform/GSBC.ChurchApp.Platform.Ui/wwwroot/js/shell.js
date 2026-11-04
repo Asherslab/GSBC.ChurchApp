@@ -71,10 +71,16 @@ window.gsbcShell = (() => {
         const tall = holder.hasAttribute('data-fit-height')
           ? holder.clientHeight - above
           : innerHeight - Math.max(chrome + 16, holder.getBoundingClientRect().top) - above - 24;
-        const scale = Math.min(1, holder.clientWidth / (width + bezel), tall / (height + bezel));
-        frame.style.zoom = Math.max(parseFloat(holder.dataset.fitLeast) || 0.4, scale).toFixed(3);
+        const scale = Math.max(parseFloat(holder.dataset.fitLeast) || 0.4, Math.min(1, holder.clientWidth / (width + bezel), tall / (height + bezel)));
+        const spare = 1 - scale;
+        frame.style.transform = `scale(${scale.toFixed(3)})`;
+        frame.style.transformOrigin = 'top center';
+        frame.style.marginBottom = `${9 - height * spare}px`;
+        frame.style.marginInline = `${9 - (width * spare) / 2}px`;
+        frame.dataset.scale = scale.toFixed(3);
       };
-      frame.style.zoom = '';
+      frame.style.transform = '';
+      frame.style.margin = '';
       update();
       if (!frame.gsbcFit) {
         frame.gsbcFit = new ResizeObserver(update);
@@ -124,6 +130,12 @@ window.gsbcShell = (() => {
 
     scrollToTop() {
       scroller()?.scrollTo({ top: 0, behavior: reducedMotion.matches ? 'auto' : 'smooth' });
+    },
+
+    showModal(dialog) {
+      if (!dialog || dialog.open || typeof dialog.showModal !== 'function') return;
+      dialog.addEventListener('cancel', (event) => event.preventDefault());
+      dialog.showModal();
     },
 
     async copy(text) {
