@@ -19,6 +19,10 @@
             }
         </span>
     }
+    @if (Shape is TileShape.Picture or TileShape.Behind or TileShape.Beside && Target is not null && Action is null && Go is not { Length: > 0 })
+    {
+        <span class="hub-tile__corner" aria-hidden="true"><Icon Name="@(OpensOutside ? "external-link" : "chevron-right")" Size="IconSize.Small" /></span>
+    }
     <span class="hub-tile__body">
         @if (Shape is TileShape.Square or TileShape.Poster && HasIcon)
         {
