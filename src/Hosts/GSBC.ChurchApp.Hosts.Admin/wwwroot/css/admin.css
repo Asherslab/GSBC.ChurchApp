@@ -220,8 +220,10 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .media-upload__hint { font-size: var(--text-caption); overflow-wrap: anywhere; }
 .media-upload__drop--busy { opacity: 0.6; cursor: progress; }
 .media-upload__match { display: grid; gap: 12px; padding: 16px; border-radius: var(--radius); background: var(--fill-on-surface); }
+.media-upload__match:focus { outline: none; }
+.media-upload__match .btn--quiet { background: var(--surface); }
 .media-upload__match-title { margin: 0; font-size: var(--text-body); font-weight: 700; }
-.media-upload__match-lead { margin: -6px 0 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; overflow-wrap: anywhere; }
+.media-upload__match-lead { max-width: 60ch; margin: -6px 0 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; overflow-wrap: anywhere; }
 .media-upload__existing { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .media-upload__existing .media-thumb { flex: none; width: 88px; }
 .media-upload__existing .media-name { font-size: var(--text-caption); }

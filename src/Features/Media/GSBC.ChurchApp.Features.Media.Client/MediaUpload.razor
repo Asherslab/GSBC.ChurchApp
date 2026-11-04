@@ -10,9 +10,9 @@
     </label>
     @if (_file is not null && _match is { Media: { } existing } match)
     {
-        <section class="media-upload__match" aria-labelledby="media-upload-match-title">
+        <section @ref="_prompt" class="media-upload__match" tabindex="-1" aria-labelledby="media-upload-match-title" aria-describedby="media-upload-match-lead">
             <h3 id="media-upload-match-title" class="media-upload__match-title">Already in the library</h3>
-            <p class="media-upload__match-lead">@_file.Name is exactly the same file as this one. Use it, and there's one copy to look after instead of two.</p>
+            <p id="media-upload-match-lead" class="media-upload__match-lead">@_file.Name is exactly the same file as this one. Use it, and there's one copy to look after instead of two.</p>
             <div class="media-upload__existing">
                 <span class="media-thumb">
                     @if (existing.IsImage)
@@ -52,6 +52,8 @@
 
 @code {
     private InputFile? _picker;
+    private ElementReference _prompt;
+    private bool _showPrompt;
     private IBrowserFile? _file;
     private MediaItemInfo? _match;
     private FolderMap _folders = FolderMap.Empty;
@@ -81,7 +83,10 @@
         {
             _match = await FindExistingAsync(_file);
             if (_match is not null)
+            {
                 _folders = await Media.FoldersAsync();
+                _showPrompt = true;
+            }
         }
         catch (Exception exception) when (exception is RpcException or JSException)
         {
@@ -93,11 +98,30 @@
         }
     }
 
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_showPrompt || _match is null)
+            return;
+        _showPrompt = false;
+        try
+        {
+            await using IJSObjectReference module = await ImportAsync();
+            await module.InvokeVoidAsync("reveal", _prompt);
+        }
+        catch (JSException)
+        {
+            await _prompt.FocusAsync();
+        }
+    }
+
+    private ValueTask<IJSObjectReference> ImportAsync() =>
+        JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Media.Client/media-upload.js");
+
     private async Task<MediaItemInfo?> FindExistingAsync(IBrowserFile file)
     {
         if (_picker?.Element is not { } input)
             return null;
-        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Media.Client/media-upload.js");
+        await using IJSObjectReference module = await ImportAsync();
         return await module.InvokeAsync<string?>("sha256", input) is { } sha256 ? await Media.FindAsync(sha256, file.ContentType, PrivateTo) : null;
     }
 
