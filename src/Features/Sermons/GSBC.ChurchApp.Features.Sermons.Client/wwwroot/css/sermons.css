@@ -127,3 +127,29 @@
 @media (max-width: 1228px) { .series-desk { grid-template-columns: 1fr 1fr; } .series-desk__edit { grid-column: 1 / -1; position: static; padding-left: 0; border-left: 0; } }
 .source-strip .segmented { background: var(--page); }
 .sermons-desk__list { grid-auto-rows: max-content; }
+
+.sermon-head__series { justify-self: start; min-height: 32px; margin-top: -6px; }
+.speaker-strip__item { align-content: start; }
+.sermon-feature__actions .btn:first-child .icon, .sermon-head__actions .btn:first-child .icon { fill: currentColor; }
+.sermon-transport { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 14px; color: var(--on-masthead); }
+.sermon-transport__time { min-width: 3.4rem; color: var(--masthead-note); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.sermon-transport__time:last-child { text-align: right; }
+.sermon-transport__skip { position: relative; display: grid; place-items: center; width: 48px; height: 48px; padding: 0; border: 0; border-radius: var(--radius-full); background: none; color: inherit; -webkit-appearance: none; appearance: none; }
+.sermon-transport__skip .icon { width: 30px; height: 30px; stroke-width: 1.5; }
+.sermon-transport__skip span { position: absolute; padding-top: 2px; font-size: 0.6471rem; font-weight: 700; }
+.sermon-transport__play { display: grid; place-items: center; width: 56px; height: 56px; padding: 0; border: 0; border-radius: var(--radius-full); background: var(--on-masthead); color: var(--masthead); -webkit-appearance: none; appearance: none; transition: transform 140ms var(--ease-out); }
+.sermon-transport__play .icon { width: 22px; height: 22px; fill: currentColor; }
+.sermon-transport__play:active, .sermon-transport__skip:active { transform: scale(0.94); }
+.source-strip__state { flex: 1 1 18rem; }
+.source-strip__row .btn { margin-left: 0; }
+.media-cover--whole img { object-fit: contain; }
+.sermon-head--tight { padding-top: 0; }
+.sermon-download { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.sermon-download .progress-track { flex: 1 1 100%; }
+.sermon-download__state { display: inline-flex; align-items: center; gap: 6px; }
+.sermon-download__state .icon { color: var(--accent); }
+.sermon-download .text-link:last-child { margin-left: auto; }
+.sermon-download .text-link:only-child { margin-left: 0; }
+.sermon-pick:has(.media-cover--whole), .sermon-row__thumb.media-cover--whole { background: var(--sand-strong); }
+:root:has(.sermon-transport) .now-playing { display: none; }
+:root:has(.sermon-transport) .page-scroll { padding-bottom: calc(var(--tab-h) + var(--sab) + 32px); }

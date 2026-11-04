@@ -1,0 +1,44 @@
+@using GSBC.ChurchApp.Platform.Client.Audio
+@implements IDisposable
+@inject IAudioPlayer Player
+
+<div class="audio-preview">
+    <button type="button" class="audio-preview__toggle" aria-label="@(Playing ? $"Pause {Item.Title}" : $"Play {Item.Title}")" @onclick="ToggleAsync">
+        <Icon Name="@(Playing ? "pause" : "play")" />
+    </button>
+    <span class="audio-preview__time">@NowPlaying.Clock(Position)</span>
+    <input type="range" min="0" max="@Math.Max(1, Duration).ToString("0")" step="1" value="@Position.ToString("0")" aria-label="Position"
+           style="--filled: @(Duration > 0 ? Math.Clamp(Position / Duration * 100, 0, 100) : 0)%" disabled="@(!Loaded)" @onchange="SeekAsync" />
+    <span class="audio-preview__time">@NowPlaying.Clock(Duration)</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required AudioItem Item { get; set; }
+
+    private bool Loaded => Player.State.Item?.Id == Item.Id;
+
+    private bool Playing => Loaded && Player.State.Playing;
+
+    private double Position => Loaded ? Player.State.Position : 0;
+
+    private double Duration => Loaded && Player.State.Duration > 0 ? Player.State.Duration : Item.Duration;
+
+    protected override void OnInitialized() => Player.Changed += OnChanged;
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    private Task ToggleAsync() => Playing ? Player.PauseAsync() : Loaded ? Player.PlayAsync() : Player.LoadAsync(Item, 0, play: true);
+
+    private async Task SeekAsync(ChangeEventArgs change)
+    {
+        if (double.TryParse(change.Value?.ToString(), System.Globalization.CultureInfo.InvariantCulture, out double position))
+            await Player.SeekAsync(position);
+    }
+
+    public void Dispose()
+    {
+        Player.Changed -= OnChanged;
+        if (Loaded && Player.State.Playing)
+            _ = Player.PauseAsync();
+    }
+}

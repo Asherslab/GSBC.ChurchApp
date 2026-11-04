@@ -3,6 +3,10 @@
         <MediaCover Media="Sermon.Thumbnail" Class="sermon-row__thumb" />
     </Leading>
     <TrailingContent>
+        @if (Downloaded)
+        {
+            <span class="sermon-row__heard" title="Downloaded"><Icon Name="arrow-down" Size="IconSize.Small" /><span class="visually-hidden">Downloaded</span></span>
+        }
         @if (Heard)
         {
             <span class="sermon-row__heard" title="Played"><Icon Name="check-circle" Size="IconSize.Small" /><span class="visually-hidden">Played</span></span>
@@ -22,6 +26,7 @@
     [Parameter] public bool ShowSpeaker { get; set; } = true;
     [Parameter] public bool ShowPart { get; set; }
     [Parameter] public bool Current { get; set; }
+    [Parameter] public bool Downloaded { get; set; }
 
     private string Href => SermonsDestinations.Sermon.PathOf(Sermon.Id).TrimStart('/');
 

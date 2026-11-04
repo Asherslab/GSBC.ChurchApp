@@ -2,6 +2,7 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
@@ -9,7 +10,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
-internal sealed class SermonsService(SermonsDbContext db, TimeProvider time) : ISermonsService
+internal sealed class SermonsService(SermonsDbContext db, SermonFollowing following, TimeProvider time) : ISermonsService
 {
     public const int BatchLimit = 500;
     public static readonly TimeSpan ClockSlack = TimeSpan.FromMinutes(5);
@@ -26,6 +27,15 @@ internal sealed class SermonsService(SermonsDbContext db, TimeProvider time) : I
         Dictionary<Guid, SpeakerRecord> speakers = await db.Speakers.AsNoTracking().ToDictionaryAsync(record => record.Id, cancellationToken);
         return new SermonPage { Sermons = latest.Select(sermon => SermonPublisher.Payload(sermon, series, speakers)).ToList() };
     }
+
+    public async ValueTask<Follows> FollowAsync(FollowRequest request, CallContext context = default) =>
+        await following.FollowAsync(CallingInstall.Of(context), CallerId(context), request, context.CancellationToken);
+
+    public async ValueTask<Follows> FollowsAsync(Done request, CallContext context = default) =>
+        await following.FollowsAsync(CallingInstall.Of(context), CallerId(context), context.CancellationToken);
+
+    private static Guid? CallerId(CallContext context) =>
+        context.ServerCallContext?.GetHttpContext().User is { } user ? Caller.UserId(user) : null;
 
     public async ValueTask<Done> SaveProgressAsync(ProgressBatch request, CallContext context = default)
     {

@@ -79,12 +79,15 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
             AudioBytes = sermon.AudioBytes,
             DurationSeconds = sermon.DurationSeconds,
             YouTubeId = sermon.EffectiveYouTubeId,
-            Artwork = sermon.Artwork ?? its?.ChosenArtwork ?? its?.Artwork,
-            Thumbnail = sermon.Thumbnail ?? its?.Thumbnail ?? its?.ChosenArtwork,
+            Artwork = Wide(sermon.Artwork) ? sermon.Artwork : its?.ChosenArtwork ?? its?.Artwork ?? sermon.Artwork,
+            Thumbnail = Wide(sermon.Thumbnail) ? sermon.Thumbnail : its?.Thumbnail ?? its?.ChosenArtwork ?? sermon.Thumbnail,
             Summary = sermon.Origin == SermonSources.Uploads ? sermon.Summary : "",
             WebLink = sermon.WebLink,
         };
     }
+
+    private static bool Wide(Platform.Contracts.Media.MediaRef? picture) =>
+        picture is { Width: > 0, Height: > 0 } && (double)picture.Width / picture.Height >= 1.6;
 
     private static SeriesInfo SeriesPayload(SeriesRecord record, List<SermonRecord> sermons) => new()
     {

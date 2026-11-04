@@ -1,0 +1,15 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject IEnumerable<StoragePart> Parts
+
+@foreach (StoragePart part in Parts)
+{
+    @Render(part)
+}
+
+@code {
+    private static RenderFragment Render(StoragePart part) => builder =>
+    {
+        builder.OpenComponent(0, part.Component);
+        builder.CloseComponent();
+    };
+}

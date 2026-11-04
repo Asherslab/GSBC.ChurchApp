@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
 
-<span class="media-cover @Class">
+<span class="media-cover @(Whole ? "media-cover--whole" : "") @Class">
     @if (Media is { } media)
     {
         <MediaImage Media="media" Alt="@Alt" />
@@ -22,4 +22,6 @@
     [Parameter] public string? FallbackTitle { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool Whole => Media is { Width: > 0, Height: > 0 } media && (double)media.Width / media.Height < 1.6;
 }

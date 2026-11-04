@@ -185,3 +185,10 @@ export const upNext = (items) => player().upNext(items);
 export const stop = () => player().stop();
 export const mark = (id, name, at) => player().mark(id, name, at);
 export const journal = (since) => player().journal(since);
+
+export function listenDownloads(dotnet) {
+  if (isNative()) dataLayer().addListener('downloadsChanged', () => dotnet.invokeMethodAsync('OnDownloadsChanged'));
+}
+export const downloads = () => (isNative() ? dataLayer().audioDownloads().then((result) => result.json) : '[]');
+export const download = (id, url, title) => dataLayer().audioDownload({ id, url, title });
+export const removeDownload = (id) => dataLayer().audioRemoveDownload({ id });

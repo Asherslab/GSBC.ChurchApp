@@ -224,9 +224,17 @@ a sermon).
   position, duration, rate, sleep timer, ended). An item is an id, a URL, a title, an artist, an album and an
   artwork URL. **Android** is stubbed; the browser (the admin panel) uses an HTML audio element behind the same
   interface.
-- **Downloads (designed, not built):** `Download(item)` would fetch the audio with a background `URLSession`
-  into Application Support, outside the media cache's size limit, listed in Storage with a size and *Remove*;
-  the player plays the file when it's there. The bridge leaves room for it; built once the owner wants it.
+- **Downloads (owner, 2026-11-05):** *Download for when you're offline* on a sermon fetches the audio with a background
+  `URLSession` (it carries on with the app closed; the AppDelegate hands iOS's completion to `AudioDownloads`), and the
+  player plays the file whenever it's there. Files go to the app's **Documents/Sermons** folder under the sermon's title
+  ("Anchored In Hope.mp3"), with file sharing on (`UIFileSharingEnabled`, `LSSupportsOpeningDocumentsInPlace`), so
+  iOS's Settings → iPhone Storage → the app lists them (the owner asked for "what they are, not just app storage") and
+  the Files app shows them under On My iPhone → Good Shepherd → Sermons; nothing else is kept in Documents. They are
+  excluded from iCloud backup (they can be downloaded again). A file deleted from Settings or Files simply stops counting
+  as downloaded (`DownloadShelf`, tests in `DownloadShelfTests`). The app shows them as a *Downloaded* shelf on the tab,
+  a mark on rows, and *Downloaded sermons* in More → Storage with sizes, Remove and Remove all (a feature adds a
+  Storage section through `AddStoragePart`). `IAudioDownloads` (Platform.Client) is the bridge; the browser has none.
+  Apple Music's grouped breakdown in Settings isn't open to other apps; the Documents list is what's possible.
 
 ## Video
 
@@ -266,10 +274,18 @@ picture-in-picture and fullscreen (iOS's own video controls). In production the 
   layouts (Cover first, Where you're up to, Picture behind), so tiles staff placed keep working. It shows the
   latest sermon (or the one you're part-way through, for *Where you're up to*), with a play button that starts it
   in the player.
-- **New sermon** notification: **left for later.** Not raised: a notification always reaches everyone's inbox, and only its push is optional, so raising one
-  for every sermon would put three a week in every inbox. A kind that reaches only the people who opted in is a
-  small change to Notifications (another station's area); when it exists, Sermons raises it once per sermon, only
-  for one preached in the last three days and never on the first read.
+- **Following (owner, 2026-11-05: "opt in … even for specific series"):** *Tell me when a new sermon is out* on the
+  Sermons tab, and *Follow this series* on a series. Built on Access, like following a ministry: a following phone (no
+  sign-in needed) or person holds a **Sermon follower** role (`sermons.new.receive`) or a **Series follower** role at the
+  series (`sermons.series.receive`, a new scope kind `sermon-series` in Platform.Permissions); both are phone-holdable,
+  and signing in moves a phone's follows to the person as for every follow. `Sermons.Follow` and `Sermons.Follows` are
+  `[AppInstall]`. When a sermon first appears (preached in the last three days, never on the first read, once) the
+  announcer raises `sermons.new` to holders of the first and `sermons.series.new` to holders of the second at that
+  series. They are opt-in in the true sense: only holders get them, inbox included. A signed-out phone's inbox shows
+  only what it follows: the public rows carry a scope (`sermons`, or the series' id) and Notifications' inbox now
+  includes rows whose scope a feature says this phone follows (`IFollowedScopes`, Platform.Client; one filter line in
+  Notifications.Client). Someone following both all sermons and a series hears twice for that series' sermons. Roles
+  with every permission (the Owner's `*`) hold these too, so the Owner hears of every sermon.
 
 ## Permissions
 
@@ -355,8 +371,6 @@ with the screen locked, switching tabs, closing and reopening, a second device s
 ## Open
 
 - The real-phone checks above, by the owner.
-- Downloads for offline (designed above).
-- The *New sermon* notification (above).
 - A held-for-review step for uploads, with audio tooling.
 - Sharing a sermon from the phone (needs the owner's yes as phone UI, destinations.md).
 - Notes and passages (SPEC §3): the feed has none; a field staff fill in can come with uploads.

@@ -83,6 +83,20 @@ public sealed class SermonPage
 }
 
 [ProtoContract]
+public sealed class FollowRequest
+{
+    [ProtoMember(1)] public string? SeriesId { get; set; }
+    [ProtoMember(2)] public bool Follow { get; set; }
+}
+
+[ProtoContract]
+public sealed class Follows
+{
+    [ProtoMember(1)] public bool NewSermons { get; set; }
+    [ProtoMember(2)] public List<string> SeriesIds { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class SermonQuery
 {
     [ProtoMember(1)] public string Text { get; set; } = "";

@@ -10,7 +10,7 @@
         <nav class="tabbar" aria-label="Main">
             @foreach (NavEntry entry in Permitted.Where(entry => entry.Placement == NavPlacement.Tab))
             {
-                @Tab(entry.Title, entry.Href, entry.Icon, Section == FirstSegment(entry.Href))
+                @Tab(entry.Title, entry.Href, entry.Icon, Section == FirstSegment(entry.Href) || entry.AlsoUnder?.Contains(Section) == true)
             }
             @if (Permitted.Any(entry => entry.Placement == NavPlacement.More))
             {

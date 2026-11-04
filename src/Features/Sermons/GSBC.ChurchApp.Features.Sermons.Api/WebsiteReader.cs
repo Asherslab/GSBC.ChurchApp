@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed class WebsiteReader(
-    SermonsDbContext db, WebsiteClient website, Artwork artwork, Speakers speakers, SermonPublisher publisher,
+    SermonsDbContext db, WebsiteClient website, Artwork artwork, Speakers speakers, SermonPublisher publisher, SermonAnnouncer announcer,
     IOptions<WebsiteOptions> options, TimeProvider time, ILogger<WebsiteReader> logger)
 {
     public const string Origin = SermonSources.Website;
@@ -52,8 +52,10 @@ internal sealed class WebsiteReader(
         {
             state.HasReadOnce = true;
             await db.Sermons.Where(sermon => sermon.CheckedAt == null).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.CheckedAt, now), cancellationToken);
+            await db.Sermons.Where(sermon => sermon.AnnouncedAt == null).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.AnnouncedAt, now), cancellationToken);
             await db.SaveChangesAsync(cancellationToken);
         }
+        await announcer.AnnounceAsync(cancellationToken);
     }
 
     private async Task TakeAsync(IReadOnlyList<PodcastItem> items, CancellationToken cancellationToken)

@@ -10,6 +10,8 @@ internal sealed record AudioStateJson(
 
 internal sealed record PlaybackRecordJson(string Id, double Position, double Duration, long HeardAt, Dictionary<string, long>? Marks, long Seq);
 
+internal sealed record AudioDownloadJson(string Id, string Title, long Bytes, long Expected, string State);
+
 internal sealed record PlaybackJournalJson(PlaybackRecordJson[] Records, long LatestSeq);
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
@@ -17,4 +19,5 @@ internal sealed record PlaybackJournalJson(PlaybackRecordJson[] Records, long La
 [JsonSerializable(typeof(AudioItemJson[]))]
 [JsonSerializable(typeof(AudioStateJson))]
 [JsonSerializable(typeof(PlaybackJournalJson))]
+[JsonSerializable(typeof(AudioDownloadJson[]))]
 internal sealed partial class AudioJson : JsonSerializerContext;

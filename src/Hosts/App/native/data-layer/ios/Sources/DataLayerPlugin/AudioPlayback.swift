@@ -91,7 +91,7 @@ final class AudioPlayback: NSObject {
 
     func load(_ next: AudioItem, startAt: Double, play: Bool) {
         if loaded { save() }
-        guard let url = URL(string: next.url) else {
+        guard let url = AudioDownloads.shared.shelf.fileURL(next.id) ?? URL(string: next.url) else {
             problem = "This sermon couldn’t be played."
             emit()
             return

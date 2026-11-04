@@ -1,17 +1,28 @@
 @page "/sermons/search"
+@implements IDisposable
 @inject SermonLibrary Library
 
 <Page Title="Search sermons" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
     <div class="sermon-search">
         <SearchField Label="Search sermons" Placeholder="Title, series, speaker or day" @bind-Value="_text" SettleMilliseconds="150" AutoFocus="true" />
     </div>
-    <LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
         <ChildContent>@Results(context.Value)</ChildContent>
         <Loading><Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="4" /></Section></Loading>
     </LiveData>
 </Page>
 
 @code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
     private const int MostShown = 60;
     private string _text = "";
 
@@ -60,7 +71,7 @@
                     <ListGroup>
                         @foreach (Sermon sermon in sermons.Take(MostShown))
                         {
-                            <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" />
+                            <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" Downloaded="view.Downloaded(sermon)" />
                         }
                     </ListGroup>
                 </Section>
@@ -70,4 +81,6 @@
 
     private static bool Matches(string name, string text) =>
         text.Split(' ', StringSplitOptions.RemoveEmptyEntries).All(word => name.Contains(word, StringComparison.OrdinalIgnoreCase));
+
+    public void Dispose() => Library.Downloads.Changed -= OnDownloads;
 }

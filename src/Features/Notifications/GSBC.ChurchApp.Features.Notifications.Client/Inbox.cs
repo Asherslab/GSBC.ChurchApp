@@ -25,10 +25,13 @@ public sealed class Inbox : IInboxCount, IDisposable
     private readonly ILocalPreferences _preferences;
     private readonly NativeBridge _bridge;
     private readonly ClientSignals _signals;
+    private readonly IEnumerable<IFollowedScopes> _followed;
     private readonly HashSet<string> _readHere = [];
 
-    public Inbox(ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences preferences, NativeBridge bridge, ClientSignals signals)
+    public Inbox(ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences preferences, NativeBridge bridge, ClientSignals signals,
+        IEnumerable<IFollowedScopes> followed)
     {
+        _followed = followed;
         _feeds = feeds;
         _access = access;
         _outbox = outbox;
@@ -57,7 +60,7 @@ public sealed class Inbox : IInboxCount, IDisposable
         {
             await LoadReadHereAsync();
             entries = (await ReadAsync(NotificationsFeeds.Public))
-                .Where(item => item.ScopeId is null)
+                .Where(item => item.ScopeId is null || _followed.Any(follows => follows.Scopes.Contains(item.ScopeId)))
                 .Select(item => new InboxEntry(item, !_readHere.Contains(item.Id)))
                 .ToList();
         }

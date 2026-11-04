@@ -70,7 +70,7 @@
                         {
                             <button type="button" class="chip" @onclick="() => Player.SleepAsync(SleepTimer.After(minutes))">@($"{minutes} min")</button>
                         }
-                        <button type="button" class="chip @(State.SleepAtEnd ? "is-on" : "")" aria-pressed="@State.SleepAtEnd" @onclick="() => Player.SleepAsync(SleepTimer.AtTheEnd)">End of this one</button>
+                        <button type="button" class="chip @(State.SleepAtEnd ? "is-on" : "")" aria-pressed="@State.SleepAtEnd" @onclick="() => Player.SleepAsync(SleepTimer.AtTheEnd)">At the end</button>
                     </div>
                 </div>
             </div>

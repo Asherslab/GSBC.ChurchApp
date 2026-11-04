@@ -13,6 +13,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         return true
     }
 
+    func application(_ application: UIApplication, handleEventsForBackgroundURLSession identifier: String,
+                     completionHandler: @escaping () -> Void) {
+        AudioDownloads.shared.backgroundCompletion = completionHandler
+        AudioDownloads.shared.reconnect()
+    }
+
     func application(_ application: UIApplication, didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         DataLayerPush.shared.registered(deviceToken: deviceToken)
     }

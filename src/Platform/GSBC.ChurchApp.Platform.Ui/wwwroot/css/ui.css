@@ -1115,3 +1115,20 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .avatar { --avatar: 40px; position: relative; display: grid; place-items: center; flex: none; width: var(--avatar); height: var(--avatar); overflow: hidden; border-radius: var(--radius-full); background: var(--sand); color: var(--primary); }
 .avatar img, .avatar .media-placeholder { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .avatar__initials { font-size: calc(var(--avatar) * 0.36); font-weight: 700; letter-spacing: 0.02em; }
+
+.player-sheet__option .chips { flex-wrap: nowrap; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; }
+.player-sheet__option .chips::-webkit-scrollbar { display: none; }
+.player-sheet__option .chip { flex: none; }
+.now-playing { clip-path: inset(0 round var(--radius)); }
+
+.audio-preview { display: flex; align-items: center; gap: 12px; padding: 10px 14px 10px 10px; border-radius: var(--radius); background: var(--sand); }
+.audio-preview__toggle { display: grid; place-items: center; flex: none; width: 48px; height: 48px; padding: 0; border: 0; border-radius: var(--radius-full); background: var(--primary); color: var(--on-primary); -webkit-appearance: none; appearance: none; cursor: pointer; }
+.audio-preview__toggle .icon { width: 20px; height: 20px; fill: currentColor; }
+.audio-preview__toggle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.audio-preview__time { color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
+.audio-preview input[type="range"] { flex: 1; min-width: 0; height: 28px; margin: 0; background: transparent; -webkit-appearance: none; appearance: none; }
+.audio-preview input[type="range"]::-webkit-slider-runnable-track { height: 4px; border-radius: 4px; background: linear-gradient(to right, var(--marker) var(--filled), var(--sand-strong) var(--filled)); }
+.audio-preview input[type="range"]::-webkit-slider-thumb { width: 16px; height: 16px; margin-top: -6px; border-radius: var(--radius-full); background: var(--marker); -webkit-appearance: none; appearance: none; }
+.audio-preview input[type="range"]::-moz-range-track { height: 4px; border-radius: 4px; background: var(--sand-strong); }
+.audio-preview input[type="range"]::-moz-range-progress { height: 4px; border-radius: 4px; background: var(--marker); }
+.audio-preview input[type="range"]::-moz-range-thumb { width: 16px; height: 16px; border: 0; border-radius: var(--radius-full); background: var(--marker); }

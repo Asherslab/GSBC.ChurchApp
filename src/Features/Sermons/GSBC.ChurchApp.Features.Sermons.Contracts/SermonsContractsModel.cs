@@ -14,6 +14,8 @@ namespace GSBC.ChurchApp.Features.Sermons.Contracts;
 [ProtoSerializable(typeof(ProgressBatch))]
 [ProtoSerializable(typeof(LatestQuery))]
 [ProtoSerializable(typeof(SermonPage))]
+[ProtoSerializable(typeof(FollowRequest))]
+[ProtoSerializable(typeof(Follows))]
 [ProtoSerializable(typeof(SermonQuery))]
 [ProtoSerializable(typeof(SermonList))]
 [ProtoSerializable(typeof(SermonDetail))]

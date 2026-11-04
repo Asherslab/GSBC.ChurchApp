@@ -1,7 +1,8 @@
 @page "/speaker/{Id}"
+@implements IDisposable
 @inject SermonLibrary Library
 
-<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Speaker" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
@@ -11,6 +12,16 @@
 </LiveData>
 
 @code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
     [Parameter] public string Id { get; set; } = "";
 
     private RenderFragment Drawn(SermonView view)
@@ -49,10 +60,12 @@
                 <ListGroup>
                     @foreach (Sermon sermon in sermons)
                     {
-                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" ShowSpeaker="false" />
+                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" Downloaded="view.Downloaded(sermon)" ShowSpeaker="false" />
                     }
                 </ListGroup>
             </Section>
         </Page>;
     }
+
+    public void Dispose() => Library.Downloads.Changed -= OnDownloads;
 }

@@ -41,7 +41,7 @@ covers), "Speakers" (faces). The mini-player floats above the tab bar while some
 
 FORM: Shelves, third on the ranked list (1 the POC's section tabs, 2 Sunday by Sunday, 3 shelves, 4 series wall,
 5 search-led, 6 the year of preaching with series bands, 7 three segmented views), dealt as a card and chosen by the
-owner over THE ROLL. seed: d9d1255c (session-local key d9d1255c9e851ad2bdda79c028caac9f). Signature move: the masthead
+owner over THE ROLL. seed:61faa7a4cdf6ce28. Signature move: the masthead
 that knows where you were (Keep going), with the bulletin's orange progress line.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

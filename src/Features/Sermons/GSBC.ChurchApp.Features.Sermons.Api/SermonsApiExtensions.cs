@@ -25,6 +25,13 @@ public static class SermonsApiExtensions
         services.AddScoped<SermonPublisher>();
         services.AddScoped<WebsiteReader>();
         services.AddScoped<SermonUploads>();
+        services.AddScoped<SermonFollowing>();
+        services.AddScoped<SermonAnnouncer>();
+        services.AddNotificationKinds(SermonsNotifications.All);
+        services.AddSystemRole(new SystemRole(SermonsPermissions.FollowerRole, "Sermon follower",
+            "Hears when a new sermon is out", ScopeKind.Global, [SermonsPermissions.HearNewNode], PhoneHoldable: true));
+        services.AddSystemRole(new SystemRole(SermonsPermissions.SeriesFollowerRole, "Series follower",
+            "Hears when a series has a new sermon", ScopeKind.SermonSeries, [SermonsPermissions.HearSeriesNode], PhoneHoldable: true));
         services.AddScoped<PodcastFeedWriter>();
         services.Configure<PodcastOptions>(configuration.GetSection(PodcastOptions.Section));
         services.AddSingleton<AudioCopier>();

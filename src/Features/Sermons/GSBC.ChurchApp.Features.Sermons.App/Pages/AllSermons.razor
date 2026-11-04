@@ -1,7 +1,8 @@
 @page "/sermons/all"
+@implements IDisposable
 @inject SermonLibrary Library
 
-<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>
         <Page Title="All sermons" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
             @foreach (IGrouping<string, Sermon> month in context.Value.Shelf.Sermons.Take(_shown).GroupBy(sermon => SermonText.Month(sermon.PreachedAt)))
@@ -10,7 +11,7 @@
                     <ListGroup>
                         @foreach (Sermon sermon in month)
                         {
-                            <SermonRow Sermon="sermon" Progress="context.Value.ProgressOf(sermon)" />
+                            <SermonRow Sermon="sermon" Progress="context.Value.ProgressOf(sermon)" Downloaded="context.Value.Downloaded(sermon)" />
                         }
                     </ListGroup>
                 </Section>
@@ -31,6 +32,18 @@
 </LiveData>
 
 @code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
     private const int Page = 40;
     private int _shown = Page;
+
+    public void Dispose() => Library.Downloads.Changed -= OnDownloads;
 }

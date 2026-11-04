@@ -23,6 +23,8 @@ public abstract class SermonsHost : IAsyncLifetime
 
     internal FakeWebsite Website { get; } = new();
     internal MemoryBlobs Blobs { get; } = new();
+    internal RecordedNotifications Notifications { get; } = new();
+    internal RecordedRoles Roles { get; } = new();
     internal ManualClock Clock { get; } = new(ChurchTime.ToUtc(new DateTime(2026, 11, 4, 20, 0, 0)));
 
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;
@@ -50,6 +52,11 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddScoped<SermonsService>();
         services.AddScoped<SermonLibraryService>();
         services.AddScoped<SermonUploads>();
+        services.AddScoped<SermonAnnouncer>();
+        services.AddScoped<SermonFollowing>();
+        services.AddSingleton<GSBC.ChurchApp.Platform.Api.Notifications.INotifications>(Notifications);
+        services.AddSingleton<GSBC.ChurchApp.Platform.Api.Access.IRoleAssignments>(Roles);
+        services.AddSingleton<GSBC.ChurchApp.Platform.Api.Access.IPhoneRoles>(Roles);
         services.AddScoped<PodcastFeedWriter>();
         services.AddOptions<PodcastOptions>();
         services.AddSingleton<IHostEnvironment>(new HostingEnvironment { EnvironmentName = Environments.Production });

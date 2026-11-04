@@ -5,11 +5,15 @@ extension DataLayerPlugin {
     static let audioMethods: [CAPPluginMethod] = [
         "audioState", "audioLoad", "audioPlay", "audioPause", "audioSeek", "audioSkip", "audioRate",
         "audioSleep", "audioUpNext", "audioStop", "audioMark", "audioJournal",
+        "audioDownload", "audioDownloads", "audioRemoveDownload",
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
     func listenToAudio() {
         AudioPlayback.shared.onState = { [weak self] state in
             self?.notifyListeners("audioState", data: ["state": state])
+        }
+        AudioDownloads.shared.onChanged = { [weak self] in
+            self?.notifyListeners("downloadsChanged", data: [:])
         }
     }
 
@@ -68,6 +72,23 @@ extension DataLayerPlugin {
         let json = (try? JSONSerialization.data(withJSONObject: ["records": records, "latestSeq": journal.latest]))
             .map { String(decoding: $0, as: UTF8.self) } ?? "{\"records\":[],\"latestSeq\":\(since)}"
         call.resolve(["json": json])
+    }
+
+    @objc func audioDownload(_ call: CAPPluginCall) {
+        guard let id = call.getString("id"), let url = call.getString("url") else { return call.reject("audioDownload needs an id and a url") }
+        AudioDownloads.shared.start(id: id, url: url, title: call.getString("title") ?? "")
+        call.resolve()
+    }
+
+    @objc func audioDownloads(_ call: CAPPluginCall) {
+        let json = (try? JSONSerialization.data(withJSONObject: AudioDownloads.shared.list())).map { String(decoding: $0, as: UTF8.self) } ?? "[]"
+        call.resolve(["json": json])
+    }
+
+    @objc func audioRemoveDownload(_ call: CAPPluginCall) {
+        guard let id = call.getString("id") else { return call.reject("audioRemoveDownload needs an id") }
+        AudioDownloads.shared.remove(id: id)
+        call.resolve()
     }
 
     private func onMain(_ call: CAPPluginCall, _ work: @escaping (CAPPluginCall) -> Void) {

@@ -1,9 +1,10 @@
 @page "/series/{Id}"
+@implements IDisposable
 @inject SermonLibrary Library
 @inject SermonPlayer Player
 @inject Shell Shell
 
-<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Series" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
@@ -14,6 +15,16 @@
 </LiveData>
 
 @code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
     [Parameter] public string Id { get; set; } = "";
 
     private RenderFragment Drawn(SermonView view)
@@ -55,9 +66,14 @@
             </div>
             <Section>
                 <ListGroup>
+                    <FollowSwitch SeriesId="@series.Id" Title="Follow this series" Description="A notification on this phone when a new sermon is added to it." />
+                </ListGroup>
+            </Section>
+            <Section>
+                <ListGroup>
                     @foreach (Sermon sermon in sermons)
                     {
-                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" ShowPart="true" ShowSpeaker="!oneSpeaker" />
+                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" Downloaded="view.Downloaded(sermon)" ShowPart="true" ShowSpeaker="!oneSpeaker" />
                     }
                 </ListGroup>
             </Section>
@@ -79,4 +95,6 @@
         await Shell.HapticAsync();
         await Player.PlayAsync(sermon);
     }
+
+    public void Dispose() => Library.Downloads.Changed -= OnDownloads;
 }

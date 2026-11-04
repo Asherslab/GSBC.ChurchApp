@@ -27,6 +27,7 @@ public static class ClientServiceCollectionExtensions
         services.AddSingleton<OpeningSheets>();
         services.TryAddSingleton<IUsage, NoUsage>();
         services.TryAddSingleton<IAudioPlayer, AudioPlayer>();
+        services.TryAddSingleton<IAudioDownloads, AudioDownloads>();
         return services;
     }
 }

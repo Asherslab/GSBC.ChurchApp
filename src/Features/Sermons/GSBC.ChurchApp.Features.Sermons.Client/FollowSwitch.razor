@@ -1,0 +1,28 @@
+@implements IDisposable
+@inject SermonFollows Follows
+
+<ToggleRow Title="@Title" Description="@(_problem ?? Description)" Checked="@Following" CheckedChanged="SetAsync" Disabled="_busy" />
+
+@code {
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public string? SeriesId { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Description { get; set; }
+
+    private bool Following => SeriesId is { } series ? Follows.Series(series) : Follows.NewSermons;
+
+    protected override void OnInitialized() => Follows.Changed += OnChanged;
+
+    private async Task SetAsync(bool follow)
+    {
+        _busy = true;
+        _problem = await Follows.SetAsync(SeriesId, follow);
+        _busy = false;
+    }
+
+    private void OnChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Follows.Changed -= OnChanged;
+}

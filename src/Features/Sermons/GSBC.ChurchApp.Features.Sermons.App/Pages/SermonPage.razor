@@ -4,7 +4,7 @@
 @inject SermonPlayer Player
 @inject Shell Shell
 
-<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Sermon" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
@@ -15,6 +15,16 @@
 </LiveData>
 
 @code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
     [Parameter] public string Id { get; set; } = "";
 
     [SupplyParameterFromQuery] public bool Watch { get; set; }
@@ -61,16 +71,16 @@
             </div>
 
             <div class="sermon-head">
+                <h1 class="sermon-head__title selectable">@SermonText.ShortTitle(sermon)</h1>
                 @if (sermon.SeriesId is { } seriesLink)
                 {
-                    <a class="sermon-head__series" href="@SermonsDestinations.Series.PathOf(seriesLink).TrimStart('/')">@SermonText.Join(sermon.SeriesName, sermon.Part > 0 ? $"Part {sermon.Part}" : null)</a>
+                    <a class="text-link sermon-head__series" href="@SermonsDestinations.Series.PathOf(seriesLink).TrimStart('/')">@(sermon.Part > 0 ? $"Part {sermon.Part} of {sermon.SeriesName}" : sermon.SeriesName)<Icon Name="chevron-right" Size="IconSize.Small" /></a>
                 }
-                <h1 class="sermon-head__title selectable">@SermonText.ShortTitle(sermon)</h1>
                 <a class="sermon-head__speaker" href="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
                     <Avatar Name="@sermon.SpeakerName" Photo="speaker?.Photo" Size="44" />
                     <span>
                         <strong>@sermon.SpeakerName</strong>
-                        <span>@SermonText.Join(SermonText.LongDay(sermon.PreachedAt), sermon.Service)</span>
+                        <span>@SermonText.When(sermon)</span>
                     </span>
                 </a>
 
@@ -101,6 +111,8 @@
                 </div>
             </div>
 
+            <div class="sermon-head sermon-head--tight"><SermonDownload Sermon="sermon" Download="view.DownloadOf(sermon)" /></div>
+
             @if (sermon.Summary.Length > 0)
             {
                 <Section Title="About this sermon">
@@ -114,7 +126,7 @@
                     <ListGroup>
                         @foreach (Sermon part in series)
                         {
-                            <SermonRow Sermon="part" Progress="view.ProgressOf(part)" ShowPart="true" ShowSpeaker="@(part.SpeakerId != sermon.SpeakerId)" Current="@(part.Id == sermon.Id)" />
+                            <SermonRow Sermon="part" Progress="view.ProgressOf(part)" Downloaded="view.Downloaded(part)" ShowPart="true" ShowSpeaker="@(part.SpeakerId != sermon.SpeakerId)" Current="@(part.Id == sermon.Id)" />
                         }
                     </ListGroup>
                 </Section>
@@ -125,7 +137,7 @@
                     <ListGroup>
                         @foreach (Sermon other in bySpeaker)
                         {
-                            <SermonRow Sermon="other" Progress="view.ProgressOf(other)" ShowSpeaker="false" />
+                            <SermonRow Sermon="other" Progress="view.ProgressOf(other)" Downloaded="view.Downloaded(other)" ShowSpeaker="false" />
                         }
                     </ListGroup>
                 </Section>
@@ -155,5 +167,11 @@
 
     private void OnAudio() => InvokeAsync(StateHasChanged);
 
-    public void Dispose() => Player.Audio.Changed -= OnAudio;
+    public void Dispose()
+    {
+        Library.Downloads.Changed -= OnDownloads;
+        DisposeAudio();
+    }
+
+    private void DisposeAudio() => Player.Audio.Changed -= OnAudio;
 }

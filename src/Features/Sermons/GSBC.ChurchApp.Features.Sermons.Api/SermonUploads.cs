@@ -12,7 +12,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed partial class SermonUploads(
-    SermonsDbContext db, IBlobStore blobs, IMediaReferences media, Speakers speakers, SermonPublisher publisher, PodcastFeedWriter podcast, TimeProvider time)
+    SermonsDbContext db, IBlobStore blobs, IMediaReferences media, Speakers speakers, SermonPublisher publisher, PodcastFeedWriter podcast,
+    SermonAnnouncer announcer, TimeProvider time)
 {
     public static readonly TimeSpan UploadWindow = TimeSpan.FromHours(2);
     private const int HeadBytes = 64 * 1024;
@@ -79,6 +80,7 @@ internal sealed partial class SermonUploads(
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
         await podcast.WriteAsync(cancellationToken);
+        await announcer.AnnounceAsync(cancellationToken);
         return sermon;
     }
 

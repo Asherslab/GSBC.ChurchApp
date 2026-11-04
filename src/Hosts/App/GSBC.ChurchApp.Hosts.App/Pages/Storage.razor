@@ -35,6 +35,8 @@
                 </ChildContent>
             </Section>
 
+            <StorageSections />
+
             <Section Title="Waiting to send" Lead="Changes made offline wait here and go as soon as there's a signal.">
                 @if (_outbox.Count == 0)
                 {
