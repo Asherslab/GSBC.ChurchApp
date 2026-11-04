@@ -115,7 +115,9 @@ refused until another picture is chosen.
 
 ### Who sees it
 
-Everyone, people signed in, or **people in a role**. A role audience is checked through Access: Access
+Everyone, people signed in, or **people in roles**: one or more roles, chosen by searching (owner,
+2026-11-04: a select with every role in it doesn't scale, and allowed only one). Anyone holding any of
+them sees the tile. A role audience is checked through Access: Access
 gives everyone who holds a role (or a role that includes it) a membership grant,
 `roles.held.<role id>` (`RoleMembership`, Platform.Permissions), compiled with their other grants and
 sent to their phone in the grants feed; the phone asks `IAccess` as for any permission. Dates are
@@ -125,21 +127,35 @@ church days, as for every placement.
 
 Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the list editor):
 
-- **Toolbar** (one row where it fits): Columns (2, 3, 4), **Show it as** (every tile, a visitor, someone
-  signed in, someone in a role a tile is for), a date, and Add a tile. Below it, a toggle lists tiles not on
+- **Toolbar:** Columns (2, 3, 4), **Show it as** (every tile, a visitor, someone signed in, someone in a
+  role a tile is for), **Preview** Light or Dark (the phone only; the admin panel keeps its own mode, and the
+  switch starts on it), a date, and Add a tile. Below it, a toggle lists tiles not on
   the phone now (hidden, dated, for another audience, or taken out in this draft, with *Put back*).
 - **Width:** in canvas mode the drafts column folds away below 1648 px (an *All drafts* link takes its
-  place), so the phone and the settings always sit side by side.
+  place), so the phone and the settings always sit side by side. The settings column scrolls on its own
+  and the phone stays in view (owner, 2026-11-04, note 2, option B: pinning the middle would still leave
+  the settings' foot out of reach on a short window).
 - **The phone:** Home drawn by the app's own `HomeScreen`, fitted to the window (never smaller than 72%)
   and kept in view while the settings scroll. Tiles changed in this draft carry an orange *Changed* or
-  *Added* capsule.
-  Click a tile to choose it: an orange outline, its size, and a corner grip. Drag a tile to move it
-  (dropping on another tile takes its place; the phone's screen scrolls near its edges); drag the grip
-  to resize. Keyboard: Tab to a tile, arrows move it, Shift with arrows resizes it; each move is
-  announced.
-- **Settings:** the chosen tile's proof in light or dark with both contrast readings, size steppers,
-  colour swatches, icon picker and upload, words, picture and the part to keep in view, Opens (a place
-  through the place picker, or a web page), who sees it, its dates and Shown. With nothing chosen: the
+  *Added* capsule. Its status bar behaves as the app's does: clear over the masthead, and solid with the
+  page's title once the screen scrolls past it (`PhoneFrame`, the same `is-stuck` rule as `Page`). It used
+  to be solid all the time and overlapped the top of "Good Shepherd" by a few points, which Safari showed
+  as a cut.
+  Click a tile to choose it: an orange outline, its size, and a corner grip.
+- **Dragging, as on an iPhone's home screen** (owner, 2026-11-04, note 5): the tile lifts (a little larger,
+  a deeper shadow) and follows the pointer; resting on another tile for a moment takes its place, and the
+  grid repacks there and then, the others gliding to their new cells in 200 ms while a dashed orange slot
+  shows where it will land. Letting go commits; Escape, or letting go off the phone, glides everything back.
+  The phone's screen scrolls near its edges. Dragging the grip resizes, and the others make room the same
+  way. The repacking is `HubGrid.Pack`'s dense packing, done in the page (`hub-canvas.js`, `pack`) so the
+  preview and the saved order agree. Keyboard: Tab to a tile, arrows move it a place, Shift with arrows
+  resizes it, and the others glide too; each move is announced. With reduced motion, tiles move without
+  gliding.
+- **Settings:** the chosen tile's proof in light or dark, size steppers, its layout, colour swatches, icon
+  picker and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in
+  view, Opens (a place through the place picker, or a web page), who sees it, its dates and Shown. When the
+  words on a colour are hard to read in light or dark, a plain warning says so and suggests another colour;
+  otherwise nothing is said (owner, 2026-11-04, note 9: a ratio means nothing to staff). With nothing chosen: the
   icons uploaded so far.
 - **Add a tile:** your own (Plain tile) or from the app, each with its size and, where it applies,
   *Sample until … is built*.
@@ -187,7 +203,5 @@ declaring one path fail at start-up, so it can't be forgotten.
 
 - A custom theme in the light/dark proof.
 - Outreach's live state ("Outreach is on till 3pm") waits for Outreach.
-- Narrow admin windows (under about 1430 px) put the settings under the phone; choosing a tile scrolls
-  them into view. A side-by-side layout there would need the drafts column to fold away.
 - Tests: `HubGridTests`, `SvgIconTests` (Platform.Contracts.Tests), `HubTileTests`
   (Configuration.Api.Tests), the role membership test in `AccessEvaluatorTests`, `PreviewRules`.

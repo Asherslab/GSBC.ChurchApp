@@ -86,9 +86,11 @@ these open; none split into materially different designs, so they were decided a
   content. A surface for "signed in" or "holds a permission" is hidden from others on the phone, but
   its settings can be read by anyone, so settings never hold anything private. Content behind a
   surface keeps its own feed audience.
-- **Audience "a role"** (built 2026-11-04): Access grants everyone holding a role a membership node,
-  `roles.held.<role id>`, which reaches the phone in the private grants feed like any permission, so
-  "people in a role" is checked through `IAccess` ([home.md](../features/home.md), *Who sees it*).
+- **Audience "people in roles"** (built 2026-11-04): Access grants everyone holding a role a membership
+  node, `roles.held.<role id>`, which reaches the phone in the private grants feed like any permission, so
+  "people in a role" is checked through `IAccess` ([home.md](../features/home.md), *Who sees it*). An
+  audience can name several roles (`role:<id>,<id>`): anyone holding one of them sees it. It's chosen
+  with `AudiencePicker` (Platform.Ui): Everyone, Signed in, or People in roles with a searchable list.
 - **Rollback is per save.** Every save is one change batch, audited with each placement's before and
   after; rolling back restores the batch's before state, validated against today's descriptors, as a
   new audited save. A save carries the revision it was based on and is refused if someone else saved

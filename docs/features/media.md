@@ -153,8 +153,12 @@ cost is that records arriving by **background** sync have their images prefetche
 is opened online, not in the background. Hub tile pictures (the placements feed) are the first rule.
 In a browser, prefetching does nothing.
 
-The admin panel registers `MediaLibrary` as the `MediaPicker`, so "choose an image" in rich text and in
-settings opens the library in pick mode, uploading included.
+The admin panel registers `MediaChoice` as the `MediaPicker`, so "choose a picture" in rich text, in
+settings and on a Home tile opens a sheet (`MediaChooser`, Platform.Ui): search, Upload, a grid of
+thumbnails with their names and where they're used, one click to select (an orange ring and a tick),
+double-click or **Choose** to use it, **Cancel** or Escape to leave. A picture uploaded there is selected,
+ready to choose. The Media page's own library (`MediaLibrary`) is for managing files only (owner, 2026-11-04:
+the table squeezed into a 380 px settings column had two scrollbars and a detail panel on top of it).
 
 ## Configuration
 

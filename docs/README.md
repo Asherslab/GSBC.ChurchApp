@@ -50,9 +50,10 @@ error reports with the secret from the macOS Keychain. Proven on dev with a test
 ([analytics.md](features/analytics.md), *Reading App health from the terminal*).
 
 **Home, the Hub the church arranges (2026-11-04, branch `feature/hub`):** Home is a grid of tiles staff
-arrange in a draft on a phone canvas in the admin panel: drag to move, drag a corner to resize, keyboard
-too; tiles take theme tones (never a hex), built-in or uploaded SVG icons (cleaned on the server), words,
-pictures, a place or web page, and an audience of everyone, signed in or a role (through Access). Plain
+arrange in a draft on a phone canvas in the admin panel: drag to move (the others make room as you drag),
+drag a corner to resize, keyboard too, a light/dark preview; tiles take theme tones (never a hex),
+built-in or uploaded SVG icons (cleaned on the server), words, pictures (from a picture sheet), a place
+or web page, and an audience of everyone, signed in or one or more roles (through Access). Plain
 tiles, Notifications for real, and sample tiles for features not built yet, opening *coming soon*
 places. The old Hub was rebuilt in dev through the admin panel and published
 ([home.md](features/home.md)).
