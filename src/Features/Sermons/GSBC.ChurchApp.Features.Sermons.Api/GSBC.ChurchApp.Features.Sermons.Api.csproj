@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" PrivateAssets="all" />
+    <PackageReference Include="SkiaSharp" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Sermons.Api.Tests" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Sermons.Contracts\GSBC.ChurchApp.Features.Sermons.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Common\GSBC.ChurchApp.Platform.Common.csproj" />
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Storage\GSBC.ChurchApp.Platform.Storage.csproj" />
+  </ItemGroup>
+</Project>

@@ -120,6 +120,11 @@ flowchart LR
         NotificationsContracts["Features.Notifications.Contracts"]
     end
 
+    subgraph Sermons["Features / Sermons"]
+        SermonsApi["Features.Sermons.Api"]
+        SermonsContracts["Features.Sermons.Contracts"]
+    end
+
     subgraph ReleaseNotes["Features / ReleaseNotes"]
         ReleaseNotesApp["Features.ReleaseNotes.App"]
         ReleaseNotesGenerator["Features.ReleaseNotes.Generator"]
@@ -148,6 +153,7 @@ flowchart LR
         MediaTests["Features.Media.Api.Tests"]
         AnalyticsTests["Features.Analytics.Api.Tests"]
         NotificationsTests["Features.Notifications.Api.Tests"]
+        SermonsTests["Features.Sermons.Api.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
     end
 
@@ -155,8 +161,8 @@ flowchart LR
     HostsGateway --> HostsAdmin & AccountsGateway
     HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -192,6 +198,9 @@ flowchart LR
     AnalyticsApi --> AnalyticsContracts & PlatformApi & PlatformCommon
     AnalyticsContracts --> PlatformContracts
 
+    SermonsApi --> SermonsContracts & PlatformApi & PlatformCommon & PlatformStorage
+    SermonsContracts --> PlatformContracts
+
     ReleaseNotesApp --> PlatformUi & ReleaseNotesGenerator
 
     PlatformUi --> PlatformClient & PlatformCommon
@@ -210,6 +219,7 @@ flowchart LR
     MediaTests --> MediaApi
     AnalyticsTests --> AnalyticsApi
     NotificationsTests --> NotificationsApi
+    SermonsTests --> SermonsApi
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -270,6 +280,8 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.Client` | The inbox (`Inbox`, also the bell's `IInboxCount`), push registration, preferences, and the shared `InboxView`, `NotificationSettings` and `AnnouncementsWorkbench` components | Yes |
 | `GSBC.ChurchApp.Features.Notifications.App` | The phone's Notifications list (from the bell) and More → Notifications | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
+| `GSBC.ChurchApp.Features.Sermons.Contracts` | The `Sermons` and `Library` services, the sermon, series, speaker and listening messages, the progress merge rule (`ListeningProgress`), YouTube links, feeds, places and the `sermons.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Sermons.Api` | Sermons from the website's feed and series pages (hourly) or uploads, staff corrections that survive re-reading, artwork made into small copies in R2, the catalogue, series and speaker feeds, and listening history merged per person (schema `sermons`) | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
@@ -288,6 +300,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Api.Tests` | Against Postgres: one kind per error however many phones report it, a resent report counts once, the owner hears once per new kind, only the app and admin panel may report and only about recent days, failed calls add up, errors go after 30 days; stack summaries keep no paths or build numbers | No |
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
+| `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 

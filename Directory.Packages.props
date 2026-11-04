@@ -44,6 +44,8 @@
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="10.0.1" />
     <PackageVersion Include="EFCore.NamingConventions" Version="10.0.1" />
     <PackageVersion Include="AWSSDK.S3" Version="4.0.104.8" />
+    <PackageVersion Include="SkiaSharp" Version="3.119.1" />
+    <PackageVersion Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="3.119.1" />
   </ItemGroup>
 
   <ItemGroup Label="Aspire (local development)">
