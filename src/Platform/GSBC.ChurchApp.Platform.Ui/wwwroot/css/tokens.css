@@ -103,7 +103,8 @@
 
 :root[data-scheme="dark"],
 [data-preview-scheme="dark"] {
-  --tile-soft-mix: 34%;
+  --tile-soft-mix: 40%;
+  --tile-warm-base: var(--on-marker);
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
   --page: #141d31;

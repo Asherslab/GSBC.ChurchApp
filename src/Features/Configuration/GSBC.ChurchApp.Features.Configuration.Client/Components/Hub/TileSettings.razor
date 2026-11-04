@@ -218,10 +218,10 @@
 
     private string? WhyNot(TileVariant variant) => variant switch
     {
-        _ when !variant.Suits(Span) && variant.Suits(Span with { Columns = 2 }) => "Needs a wider tile",
-        _ when !variant.Suits(Span) => "Needs a bigger tile",
-        { NeedsPicture: true } when Look.Image is null => "Needs a picture: choose one under Picture",
-        _ => null,
+        _ when variant.Suits(Span) => variant.NeedsPicture && Look.Image is null ? "Needs a picture: choose one under Picture" : null,
+        _ when variant.Suits(Span with { Columns = 2 }) && !variant.Suits(Span with { Rows = 2 }) => "Needs a wider tile",
+        _ when variant.Suits(Span with { Rows = 2 }) && !variant.Suits(Span with { Columns = 2 }) => "Needs a taller tile",
+        _ => "Needs a bigger tile",
     };
 
     private string? HardToRead

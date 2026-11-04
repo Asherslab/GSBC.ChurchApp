@@ -6,12 +6,12 @@
 
 <div class="hub-canvas" @ref="_canvas">
     <div class="hub-canvas__bar">
-        <div class="hub-canvas__row">
+        <Button Icon="plus" Block="true" OnClick="OnAdd">Add a tile</Button>
         <div class="hub-canvas__control">
             <span id="hub-columns">Columns</span>
             <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
         </div>
-        <label class="hub-canvas__control hub-canvas__control--wide">
+        <label class="hub-canvas__control">
             <span>Show Home for</span>
             <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? EveryTile">
                 @foreach (FieldOption option in ViewerChoices)
@@ -20,22 +20,18 @@
                 }
             </select>
         </label>
-        </div>
-        <div class="hub-canvas__row">
         <div class="hub-canvas__control">
             <span>Preview</span>
             <Segmented TValue="ThemeScheme" Label="Preview in light or dark" Options="Schemes" Value="_scheme" ValueChanged="scheme => _scheme = scheme" />
         </div>
         <label class="hub-canvas__control">
-            <span>On</span>
-            <input class="hub-canvas__select hub-canvas__date" type="date" value="@Iso(_on)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
+            <span>Preview as on</span>
+            <input class="hub-canvas__select hub-canvas__date" type="date" value="@Iso(_on ?? Today)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
         </label>
-        @if (_on is not null)
+        @if (_on is not null && _on != Today)
         {
-            <button type="button" class="link" @onclick="() => _on = null">Back to today</button>
+            <button type="button" class="link hub-canvas__today" @onclick="() => _on = null">Back to today</button>
         }
-        <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
-        </div>
     </div>
     @if (NotShown.Count > 0 || Removed.Count > 0)
     {
@@ -96,6 +92,8 @@
 
     private int Columns => HubSurfaces.Grid.ColumnsIn(Hub);
 
+    private DateOnly Today => DateOnly.FromDateTime(ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime));
+
     private DateTime At => _on is { } day ? ChurchTime.ToUtc(day.ToDateTime(new TimeOnly(9, 0))) : Clock.GetUtcNow().UtcDateTime;
 
     private IReadOnlyList<ArrangedSurface> Tiles => HubTiles.TilesIn(Hub, Views);
@@ -105,7 +103,7 @@
 
     private IReadOnlyList<FieldOption> ViewerChoices =>
     [
-        new(EveryTile, "Everyone (every tile)"),
+        new(EveryTile, "Everyone"),
         new(Visitor, "A visitor, not signed in"),
         new(SignedIn, "Someone signed in"),
         .. RolesInUse.Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),

@@ -56,3 +56,9 @@ it is Everyone, Signed in or Roles, roles found by typing and shown as chips (`C
 in Platform.Ui); dragging reflows the grid live with a dashed orange landing slot, a lift of 1.04 and a deep
 shadow, 200 ms glides, Escape or dropping off the phone to cancel, and no glide under reduced motion. The
 settings column scrolls on its own beside the pinned phone; the toolbar has a Preview Light/Dark switch.
+
+Finish review, morning round (2026-11-04): so the whole phone fits a 900px-tall window without dropping
+below the legible 0.72 scale, the canvas's controls moved from a strip above the phone into a rail beside
+it (Add a tile, Columns, Show Home for, Preview Light/Dark, Preview as on), the phone starting right under
+the draft head. The size capsule on the chosen tile is orange, the Marker, like the outline and grip it
+belongs to; it reads "2 wide, 1 tall", never "2 × 1". Column hairlines show only while dragging.

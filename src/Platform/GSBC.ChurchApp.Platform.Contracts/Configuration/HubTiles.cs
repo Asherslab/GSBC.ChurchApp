@@ -299,9 +299,9 @@ public static class TileVariants
         new(PictureBehind, "Picture behind", "The picture fills the tile with the words over a shade",
             TileVariant.AnySize, (span, picture) => picture && TileVariant.Small(span), NeedsPicture: true),
         new(PictureAbove, "Picture above", "The picture fills the top and the words sit under it",
-            TileVariant.AnySize, (_, picture) => picture, NeedsPicture: true),
+            TileVariant.Tall, (span, picture) => picture && span.Rows > 1, NeedsPicture: true),
         new(PictureBeside, "Picture beside", "A square picture at the start with the words beside it",
-            TileVariant.Wide, (_, _) => false, NeedsPicture: true),
+            TileVariant.Wide, (span, picture) => picture && TileVariant.OneRowWide(span), NeedsPicture: true),
     ];
 }
 

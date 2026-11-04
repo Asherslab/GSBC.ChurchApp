@@ -12,7 +12,7 @@ public sealed class TileVariantTests
     [InlineData(1, 1, false, TileVariants.WordsKey)]
     [InlineData(2, 2, false, TileVariants.WordsKey)]
     [InlineData(1, 1, true, TileVariants.PictureBehind)]
-    [InlineData(2, 1, true, TileVariants.PictureAbove)]
+    [InlineData(2, 1, true, TileVariants.PictureBeside)]
     [InlineData(1, 2, true, TileVariants.PictureAbove)]
     public void EachSizeGetsADesignedDefaultAndAPictureChangesIt(int columns, int rows, bool picture, string expected)
     {
@@ -35,6 +35,7 @@ public sealed class TileVariantTests
     {
         Assert.Equal(TileVariants.WordsKey, Plain.VariantFor(Look(2, 1, false, TileVariants.PictureBeside), 2).Key);
         Assert.Equal(TileVariants.WordsKey, Plain.VariantFor(Look(2, 2, false, TileVariants.PictureAbove), 2).Key);
+        Assert.Equal(TileVariants.PictureBeside, Plain.VariantFor(Look(2, 1, true, TileVariants.PictureAbove), 2).Key);
     }
 
     [Fact]
