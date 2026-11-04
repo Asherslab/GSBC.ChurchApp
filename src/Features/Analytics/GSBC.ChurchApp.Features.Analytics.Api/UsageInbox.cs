@@ -27,7 +27,7 @@ internal sealed partial class UsageInbox(AnalyticsDbContext db, MeasureCatalog m
 
         DateOnly today = ChurchTime.Today(time);
         string version = context.AppVersion.Length > MaximumVersionLength ? context.AppVersion[..MaximumVersionLength] : context.AppVersion;
-        var lines = report.Counts
+        IEnumerable<CleanLine> lines = report.Counts
             .Take(UsageReport.MaximumCounts)
             .Select(line => Clean(line, today))
             .OfType<CleanLine>()

@@ -46,8 +46,8 @@
     @foreach (ThemeRole role in ThemeDerivation.Editable)
     {
         string key = ColourOverridesSetting.RoleKey(Scheme, role.Key);
-        <ColourField Label="@role.Label" Value="@Overrides.GetValueOrDefault(key)" WorkedOut="@WorkedOut(role.Key)"
-                     ValueChanged="value => SetOverrideAsync(key, value)" OnReset="() => SetOverrideAsync(key, null)" Problem="@ProblemFor(role.Key)" />
+        <ColourField Label="@role.Label" Value="@Overrides.GetValueOrDefault(key, "")" WorkedOut="@WorkedOut(role.Key)"
+                     ValueChanged="value => SetOverrideAsync(key, value)" OnReset="() => ResetOverrideAsync(key)" Problem="@ProblemFor(role.Key)" />
     }
     }
 </div>
@@ -114,13 +114,16 @@
         return Changed.InvokeAsync();
     }
 
-    private Task SetOverrideAsync(string key, string? value)
+    private Task SetOverrideAsync(string key, string value) =>
+        SaveOverridesAsync(new Dictionary<string, string>(Overrides) { [key] = value });
+
+    private Task ResetOverrideAsync(string key)
     {
         Dictionary<string, string> overrides = new(Overrides);
-        if (value is null)
-            overrides.Remove(key);
-        else
-            overrides[key] = value;
-        return SetAsync(CustomTheme.Overrides, CustomTheme.Overrides.Format(overrides));
+        overrides.Remove(key);
+        return SaveOverridesAsync(overrides);
     }
+
+    private Task SaveOverridesAsync(Dictionary<string, string> overrides) =>
+        SetAsync(CustomTheme.Overrides, CustomTheme.Overrides.Format(overrides));
 }
