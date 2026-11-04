@@ -63,7 +63,7 @@ public sealed class DraftEditorTests : ConfigurationHost
 
         Notification waiting = Assert.Single(Raised.All);
         Assert.Equal(DraftNotifications.WaitingToPublish, waiting.Kind);
-        Assert.Equal(NotificationAudience.Holding(AppearanceSurfaces.Publish, null), waiting.Audience);
+        Assert.Equal(NotificationAudience.Holding(AppearanceSurfaces.Publish), waiting.Audience);
         Assert.Equal($"/previews?draft={draft.Id}", waiting.Link);
 
         await Drafts(drafts => drafts.DeleteAsync(editor, new DraftQuery { DraftId = draft.Id }, Cancel));

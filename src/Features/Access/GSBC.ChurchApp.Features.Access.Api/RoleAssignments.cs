@@ -46,7 +46,7 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
         return await db.ActiveAssignments(Now)
             .Where(assignment => assignment.RoleId == role.Id && assignment.ScopeObjectId == objectId)
             .OrderBy(assignment => assignment.CreatedAt)
-            .Select(assignment => new RoleHolder(assignment.UserId, assignment.ExpiresAt))
+            .Select(assignment => new RoleHolder(assignment.UserId))
             .ToListAsync(cancellationToken);
     }
 

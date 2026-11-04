@@ -37,7 +37,7 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
                     values => JsonSerializer.Serialize(values, JsonSerializerOptions.Default),
                     json => JsonSerializer.Deserialize<Dictionary<string, string>>(json, JsonSerializerOptions.Default) ?? new Dictionary<string, string>(),
                     new ValueComparer<Dictionary<string, string>>(
-                        (left, right) => left!.Count == right!.Count && !left.Except(right).Any(),
+                        (left, right) => left!.Count == right!.Count && left.All(pair => right.GetValueOrDefault(pair.Key) == pair.Value),
                         values => values.Aggregate(0, (hash, pair) => HashCode.Combine(hash, pair.Key, pair.Value)),
                         values => new Dictionary<string, string>(values)));
         });

@@ -129,8 +129,9 @@ internal sealed class ErrorReporter(IServiceProvider services, AnalyticsConsent 
                 await services.GetRequiredService<ChannelBase>().CreateGrpcService<IDiagnosticsService>().ReportAsync(report);
             }
         }
-        catch (Exception)
+        catch (Exception failure)
         {
+            Swallow(failure);
         }
     }
 
@@ -163,9 +164,15 @@ internal sealed class ErrorReporter(IServiceProvider services, AnalyticsConsent 
                     AppBuild = crash.AppBuild,
                 });
         }
-        catch (Exception)
+        catch (Exception failure)
         {
+            Swallow(failure);
         }
+    }
+
+    private static void Swallow(Exception failure)
+    {
+        _ = failure;
     }
 
     private void OnCrashesArrived() => _ = TakeNativeCrashesAsync();

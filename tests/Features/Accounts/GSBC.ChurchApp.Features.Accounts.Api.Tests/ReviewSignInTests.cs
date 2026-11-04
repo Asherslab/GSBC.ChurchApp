@@ -179,7 +179,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
     private Task<bool> SessionExistsAsync(string secret) =>
         WithDbAsync(db => db.Sessions.AnyAsync(session => session.SecretHash == AppSessions.HashOf(secret), TestContext.Current.CancellationToken));
 
-    private Task<T> WithDbAsync<T>(Func<AccountsDbContext, Task<T>> action) => WithAsync<AccountsDbContext, T>(action);
+    private Task<T> WithDbAsync<T>(Func<AccountsDbContext, Task<T>> action) => WithAsync(action);
 
     private async Task WithAsync<TService>(Func<TService, Task> action) where TService : notnull =>
         await WithAsync<TService, bool>(async service => { await action(service); return true; });
@@ -205,7 +205,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         public void TakeAway(Guid userId) => _holders.Remove(userId);
 
         public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<IReadOnlyList<RoleHolder>>(roleKey == DemoAccounts.RoleKey ? _holders.Select(id => new RoleHolder(id, null)).ToList() : []);
+            ValueTask.FromResult<IReadOnlyList<RoleHolder>>(roleKey == DemoAccounts.RoleKey ? _holders.Select(id => new RoleHolder(id)).ToList() : []);
 
         public ValueTask GiveAsFeatureAsync(Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
         {

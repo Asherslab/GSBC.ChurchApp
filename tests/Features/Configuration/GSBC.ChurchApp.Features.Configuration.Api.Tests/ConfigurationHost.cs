@@ -258,7 +258,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
         public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
             ValueTask.FromResult<IReadOnlyList<RoleHolder>>(_grants
                 .Where(pair => pair.Value.Any(grant => Same(grant, GrantOf(ConfigurationPermissions.PreviewDraft.Node, objectId))))
-                .Select(pair => new RoleHolder(pair.Key, null))
+                .Select(pair => new RoleHolder(pair.Key))
                 .ToList());
 
         public ValueTask<AssignmentOutcome> GiveAsync(Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) =>

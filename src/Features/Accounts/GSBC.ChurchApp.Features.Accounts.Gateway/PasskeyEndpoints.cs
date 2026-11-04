@@ -17,7 +17,7 @@ public static class PasskeyEndpoints
     private const int MaximumPasskeyNameLength = 60;
     private const string CodeSessionsCannotAddPasskeys = "This account signs in with a sign-in code, so it can't have a passkey.";
     private const string ToolsCannotAddPasskeys = "A connected tool can't add a passkey. Add one in the admin panel.";
-    private static readonly CodePurpose[] Ticket = [CodePurpose.RegisterPasskey];
+    private static readonly CodePurpose[] TicketPurposes = [CodePurpose.RegisterPasskey];
 
     public sealed record CreationOptionsRequest(string? Ticket);
 
@@ -81,7 +81,7 @@ public static class PasskeyEndpoints
         bool fromTicket = request.Ticket is { Length: > 0 };
         if (fromTicket)
         {
-            OneTimeCode? code = await codes.FindTokenAsync(request.Ticket!, Ticket, cancellationToken);
+            OneTimeCode? code = await codes.FindTokenAsync(request.Ticket!, TicketPurposes, cancellationToken);
             if (code is null || code.UserId != user.Id)
                 return Results.Problem("That sign-up has expired. Start again.", statusCode: StatusCodes.Status401Unauthorized);
             codes.Use(code);
@@ -172,7 +172,7 @@ public static class PasskeyEndpoints
 
     private static async Task<AccountUser?> UserForTicketAsync(
         string ticket, UserManager<AccountUser> users, OneTimeCodes codes, CancellationToken cancellationToken) =>
-        await codes.FindTokenAsync(ticket, Ticket, cancellationToken) is { } code
+        await codes.FindTokenAsync(ticket, TicketPurposes, cancellationToken) is { } code
             ? await users.FindByIdAsync(code.UserId.ToString())
             : null;
 

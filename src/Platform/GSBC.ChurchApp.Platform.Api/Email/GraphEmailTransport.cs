@@ -31,7 +31,8 @@ public sealed class GraphEmailTransport(
     {
         AccessToken token = await credential.GetTokenAsync(GraphScope, cancellationToken);
         string sendMail = $"https://graph.microsoft.com/v1.0/users/{Uri.EscapeDataString(options.Value.Sender)}/sendMail";
-        using HttpRequestMessage request = new(HttpMethod.Post, sendMail) { Content = JsonContent.Create(SendMailBody(message)) };
+        using HttpRequestMessage request = new(HttpMethod.Post, sendMail);
+        request.Content = JsonContent.Create(SendMailBody(message));
         request.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token.Token);
 
         using HttpResponseMessage response = await http.SendAsync(request, cancellationToken);

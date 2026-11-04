@@ -24,4 +24,4 @@ public sealed record AssignmentOutcome(bool Done, string? Refusal)
     public static AssignmentOutcome Refused(string reason) => new(false, reason);
 }
 
-public sealed record RoleHolder(Guid UserId, DateTime? ExpiresAt);
+public sealed record RoleHolder(Guid UserId);

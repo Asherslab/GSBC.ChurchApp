@@ -23,12 +23,10 @@ internal sealed class ApnsTransport(HttpClient http, IOptions<ApnsOptions> optio
     public async Task<PushResult> SendAsync(PushTarget target, PushMessage message, CancellationToken cancellationToken)
     {
         string host = target.Environment == SandboxEnvironment ? SandboxHost : ProductionHost;
-        using HttpRequestMessage request = new(HttpMethod.Post, $"{host}/3/device/{target.Token}")
-        {
-            Version = HttpVersion.Version20,
-            VersionPolicy = HttpVersionPolicy.RequestVersionExact,
-            Content = new StringContent(Payload(message), Encoding.UTF8, "application/json"),
-        };
+        using HttpRequestMessage request = new(HttpMethod.Post, $"{host}/3/device/{target.Token}");
+        request.Version = HttpVersion.Version20;
+        request.VersionPolicy = HttpVersionPolicy.RequestVersionExact;
+        request.Content = new StringContent(Payload(message), Encoding.UTF8, "application/json");
         request.Headers.Authorization = new AuthenticationHeaderValue("bearer", Bearer());
         request.Headers.Add("apns-topic", target.AppId);
         request.Headers.Add("apns-push-type", message.Background ? "background" : "alert");

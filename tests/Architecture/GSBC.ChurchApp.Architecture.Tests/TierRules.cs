@@ -36,7 +36,8 @@ public sealed class TierRules
         IEnumerable<string> appInstallMethods = ServedOperations(api)
             .Where(operation => operation.Tiers is [AppInstallAttribute])
             .Select(operation => operation.Path)
-            .Distinct();
+            .Distinct()
+            .ToList();
 
         Assert.Equal(appInstallMethods.Order(StringComparer.Ordinal), api.Services.GetRequiredService<InstallProofMethods>().Paths);
         Assert.Contains("/gsbc.notifications.Notifications/RegisterDevice", appInstallMethods);

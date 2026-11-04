@@ -56,7 +56,7 @@ internal sealed class PostgresNotificationListener(
         foreach (NotificationHandler handler in _byChannel.SelectMany(group => group))
             handler.OnReconnected();
 
-        while (true)
+        while (!stoppingToken.IsCancellationRequested)
             await connection.WaitAsync(stoppingToken);
     }
 }
