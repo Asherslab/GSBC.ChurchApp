@@ -1,6 +1,9 @@
 namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
 
-public readonly record struct TileSpan(int Columns, int Rows);
+public readonly record struct TileSpan(int Columns, int Rows)
+{
+    public string Words => $"{Columns} wide, {Rows} tall";
+}
 
 public readonly record struct TilePlace(int Column, int Row, int Columns, int Rows);
 

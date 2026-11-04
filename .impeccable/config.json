@@ -79,6 +79,24 @@
         ],
         "createdAt": "2026-11-04T01:01:47.244Z",
         "reason": "Claude: miniature wireframe sketches on an internal decision page, not shipped UI"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/hub-morning/index.html"
+        ],
+        "createdAt": "2026-11-04T01:24:13.432Z",
+        "reason": "Claude: miniature wireframe sketches on an internal decision page, not shipped UI"
+      },
+      {
+        "rule": "undersized-ui-text",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/hub-morning/index.html"
+        ],
+        "createdAt": "2026-11-04T01:24:13.469Z",
+        "reason": "Claude: miniature wireframe sketches on an internal decision page, not shipped UI"
       }
     ]
   }

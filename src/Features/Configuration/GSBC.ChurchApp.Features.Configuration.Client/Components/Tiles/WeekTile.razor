@@ -10,7 +10,7 @@ else if (Span is { Columns: 1, Rows: 1 } && Coming.FirstOrDefault() is { } next)
 }
 else
 {
-    <HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" GoBeside="true" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
+    <HubTile Look="@(Look with { Icon = "" })" Layout="TileShape.Square" Title="@Look.Title" Go="@Look.Text" GoBeside="@(Span.Columns > 1)" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
         <span class="hub-list">
             @foreach (WaitingWeek.Gathering gathering in Coming.Take(Fits))
             {
@@ -36,7 +36,7 @@ else
 
     private IReadOnlyList<WaitingWeek.Gathering> Coming => WaitingWeek.Next(Clock, Entry.Values.Get(WaitingTiles.WeekEntries));
 
-    private int Fits => Span.Rows == 1 ? Span.Columns > 1 ? 3 : 1 : Span.Rows * (Span.Columns > 1 ? 3 : 2);
+    private int Fits => Span.Rows == 1 ? Span.Columns > 1 ? 3 : 1 : Span.Columns > 1 ? Span.Rows * 3 : Span.Rows * 2 - 1;
 
     private DateTime Today => ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime).Date;
 
@@ -48,5 +48,5 @@ else
 
     private IReadOnlyList<string> CountLines => [$"{Coming.Count} on at church"];
 
-    private IReadOnlyList<string> NextLines(WaitingWeek.Gathering next) => [$"Next · {When(next)}"];
+    private IReadOnlyList<string> NextLines(WaitingWeek.Gathering next) => [$"This week · {When(next)}"];
 }

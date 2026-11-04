@@ -110,8 +110,8 @@ public sealed class SvgIconSetting(string key, string label, string help = "")
             return $"{Label} is needed.";
         string? clean = SvgIcons.Sanitise(text);
         if (clean is null)
-            return $"{Label} isn't an SVG drawing the app can show: it needs shapes and a size, up to {SvgIcons.MostCharactersKept / 1000} KB once cleaned.";
-        return clean == text ? null : $"{Label} hasn't been cleaned. Upload it again.";
+            return $"This file can't be used as an icon. Try a simple drawing saved as SVG, under {SvgIcons.MostCharactersKept / 1000} KB.";
+        return clean == text ? null : "Something went wrong with this icon. Upload it again.";
     }
 }
 
@@ -119,14 +119,14 @@ public sealed record TileTone(string Value, string Label, string Background, str
 
 public static class TileTones
 {
-    public static readonly TileTone Sand = new("sand", "Shaded", "sand", "ink", false);
-    public static readonly TileTone Raised = new("raised", "Raised", "surface", "ink", false);
-    public static readonly TileTone Masthead = new("masthead", "Masthead", "masthead", "on-masthead", true);
-    public static readonly TileTone Primary = new("primary", "Main buttons", "primary", "on-primary", true);
-    public static readonly TileTone LiveSoft = new("live-soft", "Live, soft", "live", "ink", false);
-    public static readonly TileTone Live = new("live", "Live", "live", "on-live", true);
-    public static readonly TileTone MarkerSoft = new("marker-soft", "Marker, soft", "marker", "ink", false);
-    public static readonly TileTone Marker = new("marker", "Marker", "marker", "on-marker", true);
+    public static readonly TileTone Sand = new("sand", "Soft", "sand", "ink", false);
+    public static readonly TileTone Raised = new("raised", "Card", "surface", "ink", false);
+    public static readonly TileTone Masthead = new("masthead", "Top of Home", "masthead", "on-masthead", true);
+    public static readonly TileTone Primary = new("primary", "Buttons", "primary", "on-primary", true);
+    public static readonly TileTone LiveSoft = new("live-soft", "Pale accent", "live", "ink", false);
+    public static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
+    public static readonly TileTone MarkerSoft = new("marker-soft", "Pale highlight", "marker", "ink", false);
+    public static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
 
     public static readonly IReadOnlyList<TileTone> All = [Sand, Raised, Masthead, Primary, LiveSoft, Live, MarkerSoft, Marker];
 
@@ -143,10 +143,10 @@ public static class IconTones
     public static readonly IReadOnlyList<Choice> Choices =
     [
         new(Auto, "Goes with the tile"),
-        new("primary", "Main colour"),
-        new("accent", "Links and live"),
-        new("warm", "Marker"),
-        new("quiet", "Quiet"),
+        new("primary", "Buttons"),
+        new("accent", "Accent"),
+        new("warm", "Highlight"),
+        new("quiet", "Grey"),
         new(Own, "Its own colours"),
     ];
 }
@@ -182,8 +182,8 @@ public sealed record TileSettings(
     public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout];
 
     public static TileSettings For(TileDefaults defaults, IReadOnlyList<TileVariant> variants) => new(
-        new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "In columns of the grid"),
-        new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "In rows of the grid"),
+        new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "How many columns across"),
+        new NumberSetting(HubTileKeys.Rows, "Height", defaults.Rows, 1, HubGrid.MostRows, help: "How many rows down"),
         new ColourSetting(HubTileKeys.Tone, "Colour", TileTones.Choices, (defaults.Tone ?? TileTones.Sand).Value),
         new IconSetting(HubTileKeys.Icon, "Icon", defaults.Icon),
         new ChoiceSetting(HubTileKeys.IconTone, "Icon colour", IconTones.Choices, IconTones.Auto),
@@ -240,7 +240,7 @@ public sealed class HubTileKind
     {
         TileSpan span = new(Math.Clamp(look.Columns, 1, Math.Max(1, gridColumns)), look.Rows);
         TileVariant? chosen = Variants.FirstOrDefault(variant => variant.Key == look.Layout);
-        return chosen is not null && chosen.Suits(span) ? chosen : DefaultFor(span, look.Image is not null);
+        return chosen is not null && chosen.SuitsTile(span, look.Image is not null) ? chosen : DefaultFor(span, look.Image is not null);
     }
     public TileDefaults Defaults { get; }
     public string From { get; }
@@ -266,8 +266,10 @@ public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon,
         values.Get(kind.Tile.Layout));
 }
 
-public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault)
+public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault, bool NeedsPicture = false)
 {
+    public bool SuitsTile(TileSpan span, bool hasPicture) => Suits(span) && (hasPicture || !NeedsPicture);
+
     public const string Automatic = "auto";
 
     public static bool AnySize(TileSpan span) => true;
@@ -279,6 +281,8 @@ public sealed record TileVariant(string Key, string Label, string Description, F
     public static bool Tall(TileSpan span) => span.Rows > 1;
 
     public static bool Wide(TileSpan span) => span.Columns > 1;
+
+    public static bool NotSmall(TileSpan span) => !Small(span);
 }
 
 public static class TileVariants
@@ -293,11 +297,11 @@ public static class TileVariants
         new(WordsKey, "Words and icon", "The title, the line under it and the icon; a picture isn't shown",
             TileVariant.AnySize, (_, picture) => !picture),
         new(PictureBehind, "Picture behind", "The picture fills the tile with the words over a shade",
-            TileVariant.AnySize, (span, picture) => picture && TileVariant.Small(span)),
+            TileVariant.AnySize, (span, picture) => picture && TileVariant.Small(span), NeedsPicture: true),
         new(PictureAbove, "Picture above", "The picture fills the top and the words sit under it",
-            TileVariant.AnySize, (_, picture) => picture),
+            TileVariant.AnySize, (_, picture) => picture, NeedsPicture: true),
         new(PictureBeside, "Picture beside", "A square picture at the start with the words beside it",
-            TileVariant.Wide, (_, _) => false),
+            TileVariant.Wide, (_, _) => false, NeedsPicture: true),
     ];
 }
 

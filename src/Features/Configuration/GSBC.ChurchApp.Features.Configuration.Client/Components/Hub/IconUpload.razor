@@ -4,7 +4,7 @@
 {
     <label class="icon-upload">
         <Icon Name="plus" Size="IconSize.Small" />
-        <span>Upload an SVG icon</span>
+        <span>Upload your own icon (SVG)</span>
         <input @ref="_input" type="file" accept=".svg,image/svg+xml" class="visually-hidden" @onchange="ReadAsync" />
     </label>
     @if (_problem is not null)

@@ -37,12 +37,12 @@ public static class WaitingTiles
             TitleLabel: "Words to open it", ShowsText: false),
         sample: true, variants:
         [
-            new(Layouts.Poster, "Poster", "The date when small, one line when one row tall, the bulletin's cover when taller",
+            new(Layouts.Poster, "Poster", "The date when small; the theme, the date and the verse with a link to read it when bigger",
                 TileVariant.AnySize, (_, _) => true),
             new(Layouts.Theme, "Theme first", "The year's theme is the title at every size",
                 TileVariant.AnySize, (_, _) => false),
             new(Layouts.Verse, "Verse", "This week's verse in large type, the date small",
-                TileVariant.AnySize, (_, _) => false),
+                TileVariant.NotSmall, (_, _) => false),
         ]);
 
     public static readonly NumberSetting WeekEntries = new("entries", "How many to show", 2, 1, 4);

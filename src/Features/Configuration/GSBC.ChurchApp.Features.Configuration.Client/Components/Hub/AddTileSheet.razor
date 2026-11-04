@@ -1,6 +1,6 @@
 @inject IEnumerable<HubTileKind> Kinds
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a tile" Lead="A link tile says whatever you write. A tile from the app is filled by that part of the app, and you choose its look and words. Tiles you saved add as new copies you can change." Wide="true">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a tile" Lead="Write your own, add one the app fills in, or reuse a tile you saved." Wide="true">
     <ChildContent>
         @if (Saved.Count > 0)
         {
@@ -16,9 +16,9 @@
                             <span class="row__icon row__icon--warm"><Icon Name="@(values.GetValueOrDefault(HubTileKeys.Icon) is { Length: > 0 } icon && !IconSetting.IsCustom(icon, out _) ? icon : kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : "layout")" Size="IconSize.Small" /></span>
                             <span class="add-tile__words">
                                 <strong>@saved.Values.Get(HubSurfaces.Saved.Name)</strong>
-                                <span>@kind.Surface.Title, as you saved it</span>
+                                <span>Saved @kind.Surface.Title.ToLowerInvariant()</span>
                             </span>
-                            <span class="add-tile__size">@values.GetValueOrDefault(HubTileKeys.Columns, kind.Defaults.Columns.ToString()) × @values.GetValueOrDefault(HubTileKeys.Rows, kind.Defaults.Rows.ToString())</span>
+                            <span class="add-tile__size">@(new TileSpan(int.TryParse(values.GetValueOrDefault(HubTileKeys.Columns), out int wide) ? wide : kind.Defaults.Columns, int.TryParse(values.GetValueOrDefault(HubTileKeys.Rows), out int tall) ? tall : kind.Defaults.Rows).Words)</span>
                         </button>
                     }
                 }
@@ -54,16 +54,16 @@
     private RenderFragment Choice(HubTileKind kind) => __builder =>
     {
         <button type="button" class="add-tile__kind" @onclick="() => OnChosen.InvokeAsync(kind)">
-            <span class="row__icon @(kind.IsPlain ? "row__icon--warm" : "row__icon--accent")"><Icon Name="@(kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : "layout")" Size="IconSize.Small" /></span>
+            <span class="row__icon @(kind.IsPlain ? "row__icon--warm" : "row__icon--accent")"><Icon Name="@(kind.Defaults.Icon.Length > 0 ? kind.Defaults.Icon : kind == WaitingTiles.Sermon ? "sermons" : "layout")" Size="IconSize.Small" /></span>
             <span class="add-tile__words">
                 <strong>@kind.Surface.Title</strong>
                 <span>@kind.Surface.Description</span>
                 @if (kind.Sample)
                 {
-                    <Pill>Sample until @kind.From is built</Pill>
+                    <Pill>Example content for now</Pill>
                 }
             </span>
-            <span class="add-tile__size">@kind.Defaults.Columns × @kind.Defaults.Rows</span>
+            <span class="add-tile__size">@(new TileSpan(kind.Defaults.Columns, kind.Defaults.Rows).Words)</span>
         </button>
     };
 }

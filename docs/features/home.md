@@ -67,8 +67,11 @@ one concept-seed round per kind with sketches at 1 × 1, 2 × 1, 1 × 2 and 2 ×
 
 ### Colours: theme tones, never a hex
 
-A tile's colour is a **tone**, a pair of theme roles (`TileTones`): Shaded (sand on ink), Raised
-(surface with lift), Masthead, Main buttons, Live soft, Live, Marker soft, Marker. The text colour is the
+A tile's colour is a **tone**, a pair of theme roles (`TileTones`), named for staff by where the colour
+shows (owner, 2026-11-04, note 9: no design-token words): Soft (sand on ink), Card (surface with lift), Top
+of Home (masthead), Buttons (primary), Pale accent, Accent (live), Pale highlight, Highlight (marker). Each
+swatch shows its name. In dark mode the pale highlight mixes 34% of the marker, not 24%, so it doesn't
+turn muddy. The text colour is the
 role the theme pairs with the background (`on-masthead`, `on-primary`, …), which the theme already
 keeps readable, so staff can't make unreadable text. The settings panel shows the tile in light and
 dark and reads the contrast off the render. Icon colours are *Goes with the tile*, Main colour, Links
@@ -151,8 +154,9 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   preview and the saved order agree. Keyboard: Tab to a tile, arrows move it a place, Shift with arrows
   resizes it, and the others glide too; each move is announced. With reduced motion, tiles move without
   gliding.
-- **Settings:** the chosen tile's proof in light or dark, size steppers, its layout, colour swatches, icon
-  picker and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in
+- **Settings:** size steppers, its layout ("Best for this size (now …)" or one chosen; layouts that need
+  a picture or a bigger tile are greyed out with the reason), colour swatches with their names, the chosen
+  icon with **Change icon** opening the grid and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in
   view, Opens (a place through the place picker, or a web page), who sees it, its dates and Shown. When the
   words on a colour are hard to read in light or dark, a plain warning says so and suggests another colour;
   otherwise nothing is said (owner, 2026-11-04, note 9: a ratio means nothing to staff). With nothing chosen: the
@@ -186,8 +190,9 @@ declaring one path fail at start-up, so it can't be forgotten.
   owner sees every role's tiles.
 - **The role list** for the audience picker comes from a new `[SignedIn]` `Access.ListRoleNames`
   (names and descriptions only).
-- **The light and dark proof** uses the built-in palette in use; a custom theme's colours show on the
-  phone canvas but not in the proof.
+- **No separate proof.** The settings panel used to draw the tile again in light or dark; the toolbar's
+  Preview switch shows the real tile on the phone, so the panel only measures the words' contrast on hidden
+  copies (built-in palette) and warns when they're hard to read.
 - **The old link tile** isn't offered; existing ones still draw.
 - **Layout defaults** (from the decision pages): words tiles show words and icon without a picture, the
   picture behind at 1 × 1 and above when larger; the sermon is cover first; the bulletin is the poster
@@ -196,12 +201,12 @@ declaring one path fail at start-up, so it can't be forgotten.
 - **Margins** match the POC (20 px gutter, 12 px gap, 22 px under the masthead); the first install had a
   doubled inset, fixed before the owner's note A was written up. This week's *Calendar ›* sits beside its
   heading again.
-- **Varied defaults** (finish review): Outreach in Marker soft, Life Groups (Marker soft) and Ministries
-  (Live soft) as a 1 × 1 pair, Visit us Raised, so the lower Hub isn't a run of identical sand rows.
+- **Varied defaults** (finish review): Outreach in Pale highlight, Life Groups (Pale highlight) and
+  Ministries (Pale accent) as a 1 × 1 pair, Visit us Card, so the lower Hub isn't a run of identical sand rows.
 
 ## Open
 
-- A custom theme in the light/dark proof.
+- A custom theme's colours in the contrast warning (it measures the built-in palette).
 - Outreach's live state ("Outreach is on till 3pm") waits for Outreach.
 - Tests: `HubGridTests`, `SvgIconTests` (Platform.Contracts.Tests), `HubTileTests`
   (Configuration.Api.Tests), the role membership test in `AccessEvaluatorTests`, `PreviewRules`.

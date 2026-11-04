@@ -15,7 +15,7 @@
             <ListGroup>
                 @foreach (ArrangedSurface saved in Saved)
                 {
-                    <ListRow Title="@saved.Values.Get(HubSurfaces.Saved.Name)" Subtitle="In the library: rename it or take it out" Icon="bookmark" OnClick="() => OnChoose.InvokeAsync(saved)" />
+                    <ListRow Title="@saved.Values.Get(HubSurfaces.Saved.Name)" Subtitle="Saved tile" Icon="bookmark" OnClick="() => OnChoose.InvokeAsync(saved)" />
                 }
             </ListGroup>
         }
@@ -25,7 +25,7 @@
         <h4 class="tile-settings__legend" id="hub-icons">Icons you've uploaded</h4>
         @if (Icons.Count == 0)
         {
-            <p class="tile-settings__note">None yet. Upload an SVG from a tile's Icon choices; it's cleaned, drawn in the theme's colours, and kept here for any tile.</p>
+            <p class="tile-settings__note">None yet. Upload one from a tile's Icon choices. It's coloured to match the theme and kept here for any tile.</p>
         }
         else
         {

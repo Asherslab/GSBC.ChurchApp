@@ -105,6 +105,8 @@ export function attach(canvas, receiver) {
     gesture.spans = new Map(cells().map((found) => [found.dataset.tile, { columns: Number(found.dataset.columns), rows: Number(found.dataset.rows) }]));
     gesture.styles = new Map(cells().map((found) => [found, found.getAttribute('style')]));
     gesture.grab = { x: event.clientX - box.left, y: event.clientY - box.top };
+    gesture.scroll = screen()?.scrollTop ?? 0;
+    getSelection()?.removeAllRanges();
     canvas.classList.add(gesture.kind === 'move' ? 'hub-canvas--moving' : 'hub-canvas--sizing');
     cell.classList.add('hub-cell--lifted');
     if (gesture.kind === 'move') {
@@ -193,7 +195,7 @@ export function attach(canvas, receiver) {
     spans.set(gesture.key, gesture.next);
     lay(gesture.order, spans, null);
     const badge = gesture.cell.querySelector('[data-size]');
-    if (badge) badge.textContent = `${wide} × ${tall}`;
+    if (badge) badge.textContent = `${wide} wide, ${tall} tall`;
   };
 
   const tidy = (done) => {
@@ -227,6 +229,8 @@ export function attach(canvas, receiver) {
     gesture = null;
     tidy(done);
     if (!done.started) return;
+    const view = screen();
+    if (view) view.scrollTop = done.scroll;
     const box = done.cell.getBoundingClientRect();
     restore(done);
     if (!still()) {
@@ -237,7 +241,7 @@ export function attach(canvas, receiver) {
     }
     settleInto(done.cell);
     const badge = done.cell.querySelector('[data-size]');
-    if (badge && done.size) badge.textContent = `${done.size.columns} × ${done.size.rows}`;
+    if (badge && done.size) badge.textContent = `${done.size.columns} wide, ${done.size.rows} tall`;
   };
 
   function escape(event) {
@@ -377,8 +381,14 @@ export function show(canvas, key) {
     const view = screen.getBoundingClientRect();
     const bottom = (tabs ? tabs.getBoundingClientRect().top : view.bottom) - 16;
     const scale = view.height / screen.clientHeight || 1;
-    if (box.bottom > bottom) screen.scrollTop += (box.bottom - bottom) / scale;
-    else if (box.top < view.top + 70 * scale) screen.scrollTop -= (view.top + 70 * scale - box.top) / scale;
+    const top = view.top + 116 * scale;
+    const current = screen.scrollTop;
+    let next = box.bottom > bottom ? current + (box.bottom - bottom) / scale : current;
+    const topAfter = box.top - (next - current) * scale;
+    if (topAfter < top) next -= (top - topAfter) / scale;
+    next = Math.max(0, next);
+    if (next > 0 && next < 72) next = next < 36 ? 0 : 72;
+    if (Math.abs(next - screen.scrollTop) > 1) screen.scrollTo({ top: next, behavior: still() ? 'auto' : 'smooth' });
   });
 }
 

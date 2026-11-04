@@ -31,6 +31,13 @@ public sealed class TileVariantTests
     }
 
     [Fact]
+    public void APictureLayoutChosenWithoutAPictureFallsBackToWords()
+    {
+        Assert.Equal(TileVariants.WordsKey, Plain.VariantFor(Look(2, 1, false, TileVariants.PictureBeside), 2).Key);
+        Assert.Equal(TileVariants.WordsKey, Plain.VariantFor(Look(2, 2, false, TileVariants.PictureAbove), 2).Key);
+    }
+
+    [Fact]
     public void EveryKindsLayoutChoiceIsStoredAsAKnownLayoutOrAutomatic()
     {
         Assert.Null(Plain.Tile.Layout.ProblemWith(TileVariants.PictureBeside));

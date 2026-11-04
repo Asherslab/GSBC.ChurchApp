@@ -63,6 +63,6 @@
     [Parameter] public IReadOnlyList<(string Title, string Icon)> Tabs { get; set; } = [("Home", "home"), ("More", "more")];
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public string? Title { get; set; }
-    [Parameter] public int StuckAt { get; set; } = 120;
+    [Parameter] public int StuckAt { get; set; } = 44;
     [Parameter] public RenderFragment? ChildContent { get; set; }
 }

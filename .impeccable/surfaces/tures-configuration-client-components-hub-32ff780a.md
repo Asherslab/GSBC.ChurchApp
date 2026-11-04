@@ -31,7 +31,7 @@ off to the side.
 OWN-WORLD: The drafts workbench as it is (sand drafts column, white work area, lifted white settings panel, Montserrat
 400/600/700, navy primaries, deep-aqua actions). On the canvas: the selected tile outlined by the 2px orange marker
 with an orange corner grip and a small navy size capsule ("2 × 1"); the grid's columns as faint hairline guides only
-while dragging; theme swatches as real role chips with their contrast ratio in tabular figures.
+while dragging; theme swatches as real role chips named in staff words (Soft, Card, Top of Home, Buttons, Pale accent, Accent, Pale highlight, Highlight), with a plain warning only when words on one are hard to read (owner, 2026-11-04, note 9: no ratios).
 
 STORY: I open my draft on Home, see the phone as everyone sees it, drag the bulletin under the sermon, pull its corner
 to make it tall, click it, pick navy, change its words, check it on my own phone, and publish.
@@ -47,3 +47,12 @@ raises from the lead (an ordered list for what the canvas can't draw) and from s
 seed:5ac23732b3d42ef3.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance
+
+## Morning round (owner's notes, 2026-11-04)
+
+Decided on `.impeccable/mocks/decision/hub-morning/` for the owner to react to: pictures are chosen in a
+sheet (search, upload, thumbnail grid, Choose and Cancel), shared by every caller of `MediaChooser`; Who sees
+it is Everyone, Signed in or Roles, roles found by typing and shown as chips (`ChipPicker`, `AudiencePicker`
+in Platform.Ui); dragging reflows the grid live with a dashed orange landing slot, a lift of 1.04 and a deep
+shadow, 200 ms glides, Escape or dropping off the phone to cancel, and no glide under reduced motion. The
+settings column scrolls on its own beside the pinned phone; the toolbar has a Preview Light/Dark switch.

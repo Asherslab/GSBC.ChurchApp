@@ -13,7 +13,7 @@
     }
     else if (Current == Reach.Permission)
     {
-        <span class="field__hint">Only people with a particular permission. Choose another option to change it.</span>
+        <span class="field__hint">Set up specially. Choose another option to change who sees it.</span>
     }
 </div>
 
@@ -28,10 +28,10 @@
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
 
     private static readonly IReadOnlyList<SegmentOption<Reach>> ThreeReaches =
-        [new(Reach.Everyone, "Everyone"), new(Reach.SignedIn, "Signed in"), new(Reach.Roles, "People in roles")];
+        [new(Reach.Everyone, "Everyone"), new(Reach.SignedIn, "Signed in"), new(Reach.Roles, "Roles")];
 
     private IReadOnlyList<SegmentOption<Reach>> Reaches => Parsed is { Node: not null }
-        ? [.. ThreeReaches, new(Reach.Permission, "By permission")]
+        ? [.. ThreeReaches, new(Reach.Permission, "Set up specially")]
         : ThreeReaches;
 
     private Audience? Parsed => Audience.TryParse(Value, out Audience? audience) ? audience : null;
@@ -53,7 +53,7 @@
 
     private string RolesHint => ChosenRoles.Count == 0
         ? "Until a role is chosen, everyone signed in sees it."
-        : "Anyone who holds one of these roles, wherever it was given. Roles are given under Access.";
+        : "Anyone with one of these roles. Give people roles under Roles.";
 
     protected override async Task OnInitializedAsync()
     {

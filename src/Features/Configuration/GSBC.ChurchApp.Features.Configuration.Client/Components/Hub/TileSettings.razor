@@ -11,11 +11,14 @@
     </header>
     @Notices
 
-    <div class="tile-settings__proof">
-        <Segmented TValue="string" Label="Show this tile in" Options="SchemeChoices" Value="@_proofScheme" ValueChanged="scheme => _proofScheme = scheme" />
+    @if (HardToRead is { } hard)
+    {
+        <Notice Tone="NoticeTone.Warning" Text="@hard" />
+    }
+    <div class="tile-settings__proof" aria-hidden="true">
         @foreach (string scheme in Schemes)
         {
-            <div class="tile-settings__sample" hidden="@(scheme != _proofScheme)" data-preview-scheme="@scheme" data-palette="@Palette">
+            <div class="tile-settings__sample" data-preview-scheme="@scheme" data-palette="@Palette">
                 <CascadingValue Value="Proof">
                     <div class="hub-cell" style="--tile-rows: @Math.Min(Look.Rows, 2)" data-proof="@scheme">
                         @Views.For(ProofEntry)
@@ -23,14 +26,10 @@
                 </CascadingValue>
             </div>
         }
-        @if (HardToRead is { } hard)
-        {
-            <Notice Tone="NoticeTone.Warning" Text="@hard" />
-        }
     </div>
 
     <fieldset class="tile-settings__group">
-        <legend>Size on the grid</legend>
+        <legend>Size</legend>
         <div class="tile-settings__steps">
             @Stepper("Width", Look.Columns, Math.Min(Look.Columns, Columns), 1, HubGrid.MostColumns, value => SetAsync(Kind.Tile.Columns, value), "column")
             @Stepper("Height", Look.Rows, Look.Rows, 1, HubGrid.MostRows, value => SetAsync(Kind.Tile.Rows, value), "row")
@@ -44,10 +43,10 @@
     <fieldset class="tile-settings__group">
         <legend>Layout at this size</legend>
         <div class="layout-picker" role="radiogroup" aria-label="Layout at this size">
-            @LayoutChoice(TileVariant.Automatic, $"Automatic: {Kind.DefaultFor(Span, Look.Image is not null).Label}", "Changes with the tile's size", true)
+            @LayoutChoice(TileVariant.Automatic, $"Best for this size (now {Kind.DefaultFor(Span, Look.Image is not null).Label})", "Changes by itself when you resize the tile", true)
             @foreach (TileVariant variant in Kind.Variants)
             {
-                @LayoutChoice(variant.Key, variant.Label, variant.Suits(Span) ? variant.Description : "Needs a wider tile", variant.Suits(Span))
+                @LayoutChoice(variant.Key, variant.Label, WhyNot(variant) ?? variant.Description, WhyNot(variant) is null)
             }
         </div>
     </fieldset>
@@ -59,15 +58,23 @@
             {
                 <button type="button" role="radio" aria-checked="@(tone == Look.Tone ? "true" : "false")" class="hub-swatch hub-tone--@tone.Value @(tone == Look.Tone ? "hub-swatch--on" : "")"
                         title="@tone.Label" @onclick="() => SetAsync(Kind.Tile.Tone, tone.Value)">
-                    <span>Aa</span>
+                    <span class="hub-swatch__chip">Aa</span>
+                    <span class="hub-swatch__name">@tone.Label</span>
                 </button>
             }
         </div>
-        <span class="tile-settings__note">@Look.Tone.Label. Text always takes the colour the theme pairs with it.</span>
+        <span class="tile-settings__note">The words change colour by themselves to stay easy to read.</span>
     </fieldset>
 
     <fieldset class="tile-settings__group">
         <legend>Icon</legend>
+        <div class="icon-current">
+            <span class="icon-current__shown">@ChosenIcon</span>
+            <span class="icon-current__name">@ChosenIconName</span>
+            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _choosingIcon = !_choosingIcon">@(_choosingIcon ? "Done" : "Change icon")</Button>
+        </div>
+        @if (_choosingIcon)
+        {
         <div class="icon-picker" role="radiogroup" aria-label="Icon">
             <button type="button" role="radio" aria-checked="@(Look.Icon.Length == 0 ? "true" : "false")" class="icon-picker__choice @(Look.Icon.Length == 0 ? "icon-picker__choice--on" : "")" title="No icon" aria-label="No icon" @onclick="() => SetAsync(Kind.Tile.Icon, string.Empty)">
                 <Icon Name="x" Size="IconSize.Small" />
@@ -86,6 +93,7 @@
             }
         </div>
         <IconUpload OnAdd="AddIconAsync" />
+        }
         @if (Look.Icon.Length > 0)
         {
             <SelectField Label="Icon colour" Options="IconColours" Value="@Look.IconTone" ValueChanged="value => SetAsync(Kind.Tile.IconTone, value)" />
@@ -140,8 +148,8 @@
         <legend>Who sees it, and when</legend>
         <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
         <div class="ui-pair">
-            <TextField Label="First day shown" Type="date" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
-            <TextField Label="Last day shown" Type="date" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+            <TextField Label="First day shown" Hint="Empty: from now" Type="date" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+            <TextField Label="Last day shown" Hint="Empty: no end" Type="date" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
         </div>
         <ToggleRow Title="Shown" Description="Turn off to hide it without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
     </fieldset>
@@ -154,8 +162,7 @@
 
 @code {
     private static readonly string[] Schemes = ["light", "dark"];
-    private static readonly IReadOnlyList<SegmentOption<string>> SchemeChoices = [new("light", "Light", "sun"), new("dark", "Dark", "moon")];
-    private string _proofScheme = "light";
+    private bool _choosingIcon;
     private Dictionary<string, double> _contrast = [];
     private string _measuredFor = "";
     private bool? _web;
@@ -189,6 +196,33 @@
     private string Heading => Kind.IsPlain ? Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title : Kind.Surface.Title;
 
     private const double EasyToRead = 4.5;
+
+    private RenderFragment ChosenIcon => __builder =>
+    {
+        if (Look.Icon.Length == 0)
+        {
+            <Icon Name="x" Size="IconSize.Small" />
+        }
+        else if (Icons.TryGetValue(Look.Icon, out CustomIcon? custom))
+        {
+            <SvgIcon Drawing="@custom.Drawing" />
+        }
+        else
+        {
+            <Icon Name="@Look.Icon" Size="IconSize.Small" />
+        }
+    };
+
+    private string ChosenIconName => Look.Icon.Length == 0 ? "No icon"
+        : Icons.TryGetValue(Look.Icon, out CustomIcon? custom) ? custom.Name : IconWords(Look.Icon);
+
+    private string? WhyNot(TileVariant variant) => variant switch
+    {
+        _ when !variant.Suits(Span) && variant.Suits(Span with { Columns = 2 }) => "Needs a wider tile",
+        _ when !variant.Suits(Span) => "Needs a bigger tile",
+        { NeedsPicture: true } when Look.Image is null => "Needs a picture: choose one under Picture",
+        _ => null,
+    };
 
     private string? HardToRead
     {
@@ -232,7 +266,7 @@
 
     private string FromWords => Kind.IsPlain
         ? "Your own tile: everything on it is yours to write"
-        : Kind.Sample ? $"Filled by {Kind.From}. Shows sample content until {Kind.From} is built" : $"Filled by {Kind.From}";
+        : Kind.Sample ? $"Filled in by {Kind.From}. Shows example content for now; the real thing appears once {Kind.From} is in the app" : $"Filled in by {Kind.From}";
 
     private bool OpensWeb => _web ?? LinkTargets.KindOf(Look.Link) == LinkKind.Web;
 

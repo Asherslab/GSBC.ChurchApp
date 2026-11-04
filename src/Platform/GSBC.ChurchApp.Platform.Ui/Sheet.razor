@@ -51,7 +51,7 @@
         if (Open && !_focused)
         {
             _focused = true;
-            await _sheet.FocusAsync();
+            await _sheet.FocusAsync(preventScroll: true);
         }
         else if (!Open)
         {

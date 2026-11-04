@@ -6,12 +6,13 @@
 
 <div class="hub-canvas" @ref="_canvas">
     <div class="hub-canvas__bar">
+        <div class="hub-canvas__row">
         <div class="hub-canvas__control">
             <span id="hub-columns">Columns</span>
             <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
         </div>
         <label class="hub-canvas__control hub-canvas__control--wide">
-            <span>Show it as</span>
+            <span>Show Home for</span>
             <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? EveryTile">
                 @foreach (FieldOption option in ViewerChoices)
                 {
@@ -19,12 +20,22 @@
                 }
             </select>
         </label>
+        </div>
+        <div class="hub-canvas__row">
         <div class="hub-canvas__control">
             <span>Preview</span>
             <Segmented TValue="ThemeScheme" Label="Preview in light or dark" Options="Schemes" Value="_scheme" ValueChanged="scheme => _scheme = scheme" />
         </div>
-        <input class="hub-canvas__select hub-canvas__date" type="date" aria-label="On a date" value="@Iso(_on)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
+        <label class="hub-canvas__control">
+            <span>On</span>
+            <input class="hub-canvas__select hub-canvas__date" type="date" value="@Iso(_on)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
+        </label>
+        @if (_on is not null)
+        {
+            <button type="button" class="link" @onclick="() => _on = null">Back to today</button>
+        }
         <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
+        </div>
     </div>
     @if (NotShown.Count > 0 || Removed.Count > 0)
     {
@@ -94,7 +105,7 @@
 
     private IReadOnlyList<FieldOption> ViewerChoices =>
     [
-        new(EveryTile, "Every tile"),
+        new(EveryTile, "Everyone (every tile)"),
         new(Visitor, "A visitor, not signed in"),
         new(SignedIn, "Someone signed in"),
         .. RolesInUse.Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
@@ -158,7 +169,7 @@
     private string WhyHidden(ArrangedSurface entry)
     {
         if (entry.Hidden)
-            return "Switched off";
+            return "Hidden: Shown is off";
         if (entry.StartsAt is { } starts && At < starts)
             return $"Shows from {DraftWords.Day(starts)}";
         if (entry.EndsAt is { } ends && At >= ends)
@@ -172,13 +183,13 @@
         <div class="hub-arrange @(selected ? "hub-arrange--selected" : "")" data-arrange tabindex="0" role="button" aria-pressed="@(selected ? "true" : "false")"
              aria-label="@($"{DraftWords.NameOf(cell.Entry)}, {cell.Place.Columns} by {cell.Place.Rows}, tile {cell.Index + 1} of {Tiles.Count(ShownNow)}")">
             <span class="hub-arrange__tags">
-                @if (Marks.GetValueOrDefault(HubTiles.KeyOf(cell.Entry)) is { } mark)
+                @if (!selected && Marks.GetValueOrDefault(HubTiles.KeyOf(cell.Entry)) is { } mark)
                 {
                     <span class="hub-arrange__mark">@mark</span>
                 }
                 @if (selected)
                 {
-                    <span class="hub-arrange__size" data-size>@cell.Place.Columns × @cell.Place.Rows</span>
+                    <span class="hub-arrange__size" data-size>@(new TileSpan(cell.Place.Columns, cell.Place.Rows).Words)</span>
                 }
             </span>
             @if (selected)
