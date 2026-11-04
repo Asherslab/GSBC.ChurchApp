@@ -246,6 +246,7 @@ code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-s
 .title-band__actions .media-search { flex: 0 1 210px; min-width: 180px; }
 .media-library { display: grid; gap: 16px; min-width: 0; }
 .media-library__bar--top { margin-bottom: 16px; }
+.media-library__head { display: grid; gap: 12px; margin-bottom: 16px; }
 .media-library__only-folders { margin: 4px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
 .media-library__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; }
 .media-library__bar .segmented, .media-library__tools .segmented { grid-auto-columns: auto; width: max-content; }

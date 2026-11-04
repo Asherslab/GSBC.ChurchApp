@@ -14,36 +14,41 @@
                 </div>
             }
         </div>
+        <div class="media-library__head">
+            @if (Searching)
+            {
+                <div class="media-library__path">
+                    <p class="media-library__results">Results for “@_query” in every folder</p>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => OnClearSearch.InvokeAsync()">Clear search</Button>
+                </div>
+            }
+            else
+            {
+                <div class="media-library__path">
+                    <Breadcrumbs Label="Where you are" Trail="Trail(map)" OnOpen="crumb => OpenAsync(crumb.Key)" CanDrop="crumb => CanDropOn(map, crumb.Key)" OnDrop="crumb => DropAsync(crumb.Key)" />
+                    @if (map.Find(_folderId) is { IsSystem: false } here && CanOrganise)
+                    {
+                        <div class="media-library__folder-actions">
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => StartRename(here)">Rename…</Button>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder-input" OnClick="() => StartMoveFolder(here)">Move to…</Button>
+                            <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => StartDelete(here)">Delete folder…</Button>
+                        </div>
+                    }
+                </div>
+                @if (_shelf == Shelf.App)
+                {
+                    <p class="media-library__system-note">
+                        <Icon Name="lock" Size="IconSize.Small" />
+                        @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") They stay where the app put them: they can't be moved, renamed or deleted here.
+                    </p>
+                }
+            }
+        </div>
         <SplitView Detail="@Detail(map)" DetailLabel="@(_uploading ? "Upload" : "File")">
             <div class="media-library @(_dragItems.Count + _dragFolders.Count > 0 ? "media-library--dragging" : "")">
 
-                @if (Searching)
+                @if (!Searching)
                 {
-                    <div class="media-library__path">
-                        <p class="media-library__results">Results for “@_query” in every folder</p>
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => OnClearSearch.InvokeAsync()">Clear search</Button>
-                    </div>
-                }
-                else
-                {
-                    <div class="media-library__path">
-                        <Breadcrumbs Label="Where you are" Trail="Trail(map)" OnOpen="crumb => OpenAsync(crumb.Key)" CanDrop="crumb => CanDropOn(map, crumb.Key)" OnDrop="crumb => DropAsync(crumb.Key)" />
-                        @if (map.Find(_folderId) is { IsSystem: false } here && CanOrganise)
-                        {
-                            <div class="media-library__folder-actions">
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pencil" OnClick="() => StartRename(here)">Rename…</Button>
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder-input" OnClick="() => StartMoveFolder(here)">Move to…</Button>
-                                <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => StartDelete(here)">Delete folder…</Button>
-                            </div>
-                        }
-                    </div>
-                    @if (_shelf == Shelf.App)
-                    {
-                        <p class="media-library__system-note">
-                            <Icon Name="lock" Size="IconSize.Small" />
-                            @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") They stay where the app put them: they can't be moved, renamed or deleted here.
-                        </p>
-                    }
                     <FolderTiles Folders="map.ChildrenOf(_folderId, _shelf == Shelf.App).ToList()" OnOpen="folder => OpenAsync(folder.Id)"
                                  Subfolders="folder => map.ChildrenOf(folder.Id, folder.IsSystem).Count()" CanDrag="folder => CanOrganise && !folder.IsSystem" Dragging="folder => _dragFolders.Contains(folder.Id)"
                                  OnDragStart="DragFolder" OnDragEnd="EndDrag" CanDrop="folder => CanDropOn(map, folder.Id)" OnDrop="folder => DropAsync(folder.Id)" />
