@@ -880,7 +880,7 @@
       },
       {
         "name": "drag-lift",
-        "value": "filter: drop-shadow(0 14px 22px color-mix(in srgb, var(--ink) 28%, transparent))",
+        "value": "filter: drop-shadow(0 18px 26px color-mix(in srgb, var(--ink) 30%, transparent)); scale: 1.04 while moving",
         "purpose": "A Home tile while it is moved or resized on the admin Hub canvas, nowhere else."
       }
     ],
@@ -1026,6 +1026,9 @@
       "row": "min(132px, max(88px, one column's width))",
       "tileSpan": "1 to 4 columns by 1 to 4 rows",
       "narrowTile": "at 112px or less: no lines, title at label size, 12px padding",
+      "smallTile": "at 200px or less: play disc 40px in the top corner, trailing icon hidden on picture and beside, agenda time stacked above the event, unread-dot titles up to 2 lines",
+      "posterIcon": "52px when the poster is 240px wide or more",
+      "canvasGlide": "200ms cubic-bezier(0.2, 0.8, 0.2, 1) after a 110ms dwell; landing slot outline 2px dashed var(--marker) on marker at 12%; column guides ink at 18% only while dragging",
       "tones": [
         "sand",
         "raised",
@@ -1283,8 +1286,8 @@
       "name": "Hub canvas: chosen tile",
       "kind": "custom",
       "refersTo": "hub-arrange-size",
-      "description": "The tile chosen on the admin canvas: a 2px marker ring, a change capsule and the size capsule at the top-right, and the corner grip.",
-      "html": "<div class=\"ds-arr\"><div class=\"ds-arr__tile\">Life Groups<span class=\"ds-arr__tags\"><span class=\"ds-arr__cap\">Changed</span><span class=\"ds-arr__cap\">2 × 1</span></span><span class=\"ds-arr__grip\"></span></div></div>",
+      "description": "The tile chosen on the admin canvas: a 2px marker ring, the size capsule in words across its top edge (a Changed capsule takes that place on tiles not chosen), and the corner grip.",
+      "html": "<div class=\"ds-arr\"><div class=\"ds-arr__tile\">Life Groups<span class=\"ds-arr__tags\"><span class=\"ds-arr__cap\">2 wide, 1 tall</span></span><span class=\"ds-arr__grip\"></span></div></div>",
       "css": ".ds-arr { padding: 16px; background: var(--page, #ffffff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-arr__tile { position: relative; display: flex; align-items: flex-end; width: 260px; height: 110px; padding: 16px; border-radius: 14px; background: var(--sand, #f4efe7); color: var(--ink, #18233a); font-weight: 700; box-shadow: 0 0 0 2px var(--marker, #e7ae74); cursor: grab; } .ds-arr__tile:hover { box-shadow: 0 0 0 2px var(--marker, #e7ae74); } .ds-arr__tags { position: absolute; top: 6px; right: 6px; display: flex; gap: 4px; } .ds-arr__cap { padding: 2px 8px; border-radius: 999px; background: var(--marker, #e7ae74); color: var(--on-marker, #2a1a08); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-arr__grip { position: absolute; right: -8px; bottom: -8px; width: 18px; height: 18px; border: 3px solid var(--page, #ffffff); border-radius: 9px; background: var(--marker, #e7ae74); cursor: nwse-resize; }"
     },
     {
@@ -1318,7 +1321,7 @@
       },
       {
         "name": "The Marker Rule",
-        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Marker or Marker soft tone, which staff choose for a tile they want to stand out; no tile ships in solid Marker by default.",
+        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Highlight or Pale highlight tone (`marker`, `marker-soft`), which staff choose for a tile they want to stand out; no tile ships in solid Highlight by default. On the canvas it also draws the landing slot while a tile is dragged, and the chosen picture in the media chooser.",
         "section": "colors"
       },
       {
@@ -1358,7 +1361,7 @@
       },
       {
         "name": "The Flat Page Rule",
-        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Raised tone may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Card tone (`raised`) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels and the workbench's settings panel; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
         "section": "elevation"
       },
       {
@@ -1380,7 +1383,8 @@
       "**Do** offset admin breakpoints by the 248px sidebar.",
       "**Do** let staff choose what something opens with the place field and its directory, never by typing an address.",
       "**Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.",
-      "**Do** mark the chosen tile on the Hub canvas with the 2px marker ring, its size capsule and the corner grip, and show both schemes' contrast before a tone is kept."
+      "**Do** mark the chosen tile on the Hub canvas with the 2px marker ring, its size capsule in words and the corner grip, and warn in plain words only when a tone's text is hard to read in light or dark.",
+      "**Do** grey out a layout that doesn't suit a tile and say why, rather than hiding it."
     ],
     "donts": [
       "**Don't** lay a tab root other than Home out as a grid of tiles, and don't let the Hub become a uniform grid of identical icon squares or a feed of identical cards.",

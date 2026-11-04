@@ -193,7 +193,7 @@ public sealed record TileSettings(
         new FocusSetting(HubTileKeys.Focus, "Keep in view"),
         new LinkSetting(HubTileKeys.Link, "Opens", defaults.Link),
         new ChoiceSetting(HubTileKeys.Layout, "Layout",
-            [new Choice(TileVariant.Automatic, "Automatic"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic));
+            [new Choice(TileVariant.Automatic, "Best for this size"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic));
 }
 
 public static class HubTileKeys
