@@ -3,7 +3,7 @@
 @switch (Variant.Key)
 {
     case var _ when WordsTileView.ShapeOf(Variant) is { } shape:
-        <HubTile Look="Look" Layout="shape" Title="Almighty God" Lines="@(Span is { Columns: 1, Rows: 1 } ? [ShortSunday] : Span.Columns > 1 ? RowLines : [$"{ShortSunday} · {Verse}"])"
+        <HubTile Look="Look" Layout="shape" Title="Almighty God" Lines="@(Span is { Columns: 1, Rows: 1 } ? [ShortSunday] : Span.Columns > 1 && shape != TileShape.Beside ? RowLines : [$"{ShortSunday} · {Verse}"])"
                  Go="@(Span is { Columns: 1, Rows: 1 } ? null : Look.Title)" PlacementId="@Entry.Placement?.Id" />
         break;
     case WaitingTiles.Layouts.Verse:

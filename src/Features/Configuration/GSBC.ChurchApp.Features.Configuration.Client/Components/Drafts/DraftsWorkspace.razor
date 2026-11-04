@@ -976,13 +976,13 @@ else
         if (_session is null || _formId is null)
             return Task.CompletedTask;
         StoredPlacement? live = _session.LiveOf(_area, _formId);
-        string title = FormTitle;
+        string note = _form!.Surface.Repeatable ? $"Took out “{FormTitle}”." : $"Put “{FormTitle}” back to how the app starts.";
         if (live is null)
             _session.Discard(_formId);
         else
             _session.Remove(_area, new ArrangedSurface(_form!.Surface, live));
         Deselect();
-        Tell($"Took out “{title}”.", offersRedo: false);
+        Tell(note, offersRedo: false);
         SaveSoon();
         return Task.CompletedTask;
     }
