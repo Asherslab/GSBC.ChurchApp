@@ -1,0 +1,36 @@
+@page "/sermons/all"
+@inject SermonLibrary Library
+
+<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>
+        <Page Title="All sermons" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            @foreach (IGrouping<string, Sermon> month in context.Value.Shelf.Sermons.Take(_shown).GroupBy(sermon => SermonText.Month(sermon.PreachedAt)))
+            {
+                <Section Title="@month.Key" First="@(month.Key == SermonText.Month(context.Value.Shelf.Sermons[0].PreachedAt))">
+                    <ListGroup>
+                        @foreach (Sermon sermon in month)
+                        {
+                            <SermonRow Sermon="sermon" Progress="context.Value.ProgressOf(sermon)" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+            @if (_shown < context.Value.Shelf.Sermons.Count)
+            {
+                <Section>
+                    <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _shown += Page">Show older sermons</Button>
+                </Section>
+            }
+        </Page>
+    </ChildContent>
+    <Loading>
+        <Page Title="All sermons" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <Section First="true"><Skeleton Count="6" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private const int Page = 40;
+    private int _shown = Page;
+}

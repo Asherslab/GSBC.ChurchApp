@@ -1,0 +1,159 @@
+@page "/sermon/{Id}"
+@implements IDisposable
+@inject SermonLibrary Library
+@inject SermonPlayer Player
+@inject Shell Shell
+
+<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Sermon" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <div class="sermon-hero"><MediaCover /></div>
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="3" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    [SupplyParameterFromQuery] public bool Watch { get; set; }
+
+    private bool _watching;
+    private string? _watchingId;
+
+    protected override void OnInitialized() => Player.Audio.Changed += OnAudio;
+
+    protected override void OnParametersSet()
+    {
+        if (_watchingId != Id)
+        {
+            _watching = Watch;
+            _watchingId = Id;
+        }
+    }
+
+    private RenderFragment Drawn(SermonView view) => view.Shelf.Find(Id) is { } sermon ? Sermon(view, sermon) : Gone;
+
+    private static readonly RenderFragment Gone =
+        @<Page Title="Sermon" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <EmptyState Icon="sermons" Title="This sermon isn't here any more" Body="It may have been taken down, or it's older than the sermons this phone keeps.">
+                <Button Href="sermons" Variant="ButtonVariant.Quiet">All sermons</Button>
+            </EmptyState>
+        </Page>;
+
+    private RenderFragment Sermon(SermonView view, Sermon sermon)
+    {
+        ListeningEntry? progress = view.ProgressOf(sermon);
+        SpeakerInfo? speaker = view.Shelf.FindSpeaker(sermon.SpeakerId);
+        IReadOnlyList<Sermon> series = sermon.SeriesId is { } seriesId ? view.Shelf.InSeries(seriesId) : [];
+        IReadOnlyList<Sermon> bySpeaker = view.Shelf.BySpeaker(sermon.SpeakerId).Where(other => other.Id != sermon.Id).Take(4).ToList();
+        return @<Page Title="@sermon.Title" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <div class="sermon-hero">
+                @if (_watching && sermon.YouTubeId is { } video)
+                {
+                    <VideoEmbed @key="video" YouTubeId="@video" Title="@sermon.Title" Poster="sermon.Artwork" Open="true" Watched="() => Player.MarkWatchedAsync(sermon)" />
+                }
+                else
+                {
+                    <MediaCover Media="sermon.Artwork ?? sermon.Thumbnail" FallbackTitle="@(sermon.SeriesName ?? sermon.Title)" />
+                }
+            </div>
+
+            <div class="sermon-head">
+                @if (sermon.SeriesId is { } seriesLink)
+                {
+                    <a class="sermon-head__series" href="@SermonsDestinations.Series.PathOf(seriesLink).TrimStart('/')">@SermonText.Join(sermon.SeriesName, sermon.Part > 0 ? $"Part {sermon.Part}" : null)</a>
+                }
+                <h1 class="sermon-head__title selectable">@SermonText.ShortTitle(sermon)</h1>
+                <a class="sermon-head__speaker" href="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
+                    <Avatar Name="@sermon.SpeakerName" Photo="speaker?.Photo" Size="44" />
+                    <span>
+                        <strong>@sermon.SpeakerName</strong>
+                        <span>@SermonText.Join(SermonText.LongDay(sermon.PreachedAt), sermon.Service)</span>
+                    </span>
+                </a>
+
+                <div class="sermon-head__actions">
+                    <Button Icon="@(Player.IsPlaying(sermon) ? "pause" : "play")" OnClick="() => ListenAsync(sermon)">@ListenLabel(sermon, progress)</Button>
+                    @if (sermon.YouTubeId is not null && !_watching)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Icon="video" OnClick="() => WatchAsync(sermon)">Watch</Button>
+                    }
+                </div>
+
+                <div class="sermon-head__progress">
+                    @if (progress is { } underway && ListeningProgress.IsUnderway(underway))
+                    {
+                        <ProgressTrack Fraction="ListeningProgress.Fraction(underway)" />
+                        <span>@SermonText.Join($"{SermonText.Length(underway.Position)} in", SermonText.Left(underway))</span>
+                    }
+                    else if (progress is { } finished && ListeningProgress.IsFinished(finished))
+                    {
+                        <span class="sermon-head__played"><Icon Name="check-circle" Size="IconSize.Small" />Played</span>
+                        <button type="button" class="text-link" @onclick="() => Player.MarkNotPlayedAsync(sermon)">Mark as not played</button>
+                    }
+                    else
+                    {
+                        <span>@SermonText.Length(sermon.DurationSeconds)</span>
+                        <button type="button" class="text-link" @onclick="() => Player.MarkPlayedAsync(sermon)">Mark as played</button>
+                    }
+                </div>
+            </div>
+
+            @if (sermon.Summary.Length > 0)
+            {
+                <Section Title="About this sermon">
+                    <p class="prose selectable">@sermon.Summary</p>
+                </Section>
+            }
+
+            @if (series.Count > 1)
+            {
+                <Section Title="@($"{sermon.SeriesName}")" LinkText="The series" LinkHref="@SermonsDestinations.Series.PathOf(sermon.SeriesId!).TrimStart('/')">
+                    <ListGroup>
+                        @foreach (Sermon part in series)
+                        {
+                            <SermonRow Sermon="part" Progress="view.ProgressOf(part)" ShowPart="true" ShowSpeaker="@(part.SpeakerId != sermon.SpeakerId)" Current="@(part.Id == sermon.Id)" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+            else if (bySpeaker.Count > 0)
+            {
+                <Section Title="@($"More from {sermon.SpeakerName}")" LinkText="All of them" LinkHref="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
+                    <ListGroup>
+                        @foreach (Sermon other in bySpeaker)
+                        {
+                            <SermonRow Sermon="other" Progress="view.ProgressOf(other)" ShowSpeaker="false" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+        </Page>;
+    }
+
+    private string ListenLabel(Sermon sermon, ListeningEntry? progress) =>
+        Player.IsPlaying(sermon) ? "Pause"
+        : progress is { } entry && ListeningProgress.IsUnderway(entry) ? "Keep listening"
+        : progress is { } done && ListeningProgress.IsFinished(done) ? "Listen again"
+        : "Listen";
+
+    private async Task ListenAsync(Sermon sermon)
+    {
+        await Shell.HapticAsync();
+        _watching = false;
+        await Player.ToggleAsync(sermon);
+    }
+
+    private async Task WatchAsync(Sermon sermon)
+    {
+        if (Player.IsPlaying(sermon))
+            await Player.Audio.PauseAsync();
+        _watching = true;
+    }
+
+    private void OnAudio() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Player.Audio.Changed -= OnAudio;
+}

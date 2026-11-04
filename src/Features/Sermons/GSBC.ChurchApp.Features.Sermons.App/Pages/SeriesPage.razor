@@ -1,0 +1,82 @@
+@page "/series/{Id}"
+@inject SermonLibrary Library
+@inject SermonPlayer Player
+@inject Shell Shell
+
+<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Series" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <div class="sermon-hero"><MediaCover /></div>
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="4" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private RenderFragment Drawn(SermonView view)
+    {
+        if (view.Shelf.FindSeries(Id) is not { } series)
+            return @<Page Title="Series" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+                <EmptyState Icon="layers" Title="This series isn't here any more" Body="Its sermons may be older than the ones this phone keeps.">
+                    <Button Href="sermons" Variant="ButtonVariant.Quiet">All sermons</Button>
+                </EmptyState>
+            </Page>;
+
+        IReadOnlyList<Sermon> sermons = view.Shelf.InSeries(series.Id);
+        int heard = sermons.Count(view.Heard);
+        Sermon? next = sermons.FirstOrDefault(sermon => view.ProgressOf(sermon) is { } entry && ListeningProgress.IsUnderway(entry))
+            ?? sermons.FirstOrDefault(sermon => !view.Heard(sermon));
+        bool oneSpeaker = sermons.Select(sermon => sermon.SpeakerId).Distinct().Count() == 1;
+        return @<Page Title="@series.Name" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <div class="sermon-hero"><MediaCover Media="series.Artwork ?? series.Thumbnail" FallbackTitle="@series.Name" /></div>
+            <div class="sermon-head">
+                <h1 class="sermon-head__title">@series.Name</h1>
+                <p class="sermon-head__facts">@SermonText.Join(Count(sermons.Count), Span(series), oneSpeaker && sermons.Count > 0 ? sermons[0].SpeakerName : null)</p>
+                @if (series.Description.Length > 0)
+                {
+                    <p class="prose selectable">@series.Description</p>
+                }
+                @if (next is not null && sermons.Count > 0)
+                {
+                    <div class="sermon-head__actions">
+                        <Button Icon="play" OnClick="() => PlayAsync(next)">@(heard == 0 && next == sermons[0] ? "Play from the start" : $"Play part {Position(sermons, next)}")</Button>
+                    </div>
+                }
+                @if (heard > 0)
+                {
+                    <div class="sermon-head__progress">
+                        <ProgressTrack Fraction="(double)heard / sermons.Count" Label="How much of the series you've heard" />
+                        <span>@(heard == sermons.Count ? "You've heard them all" : $"You've heard {heard} of {sermons.Count}")</span>
+                    </div>
+                }
+            </div>
+            <Section>
+                <ListGroup>
+                    @foreach (Sermon sermon in sermons)
+                    {
+                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" ShowPart="true" ShowSpeaker="!oneSpeaker" />
+                    }
+                </ListGroup>
+            </Section>
+        </Page>;
+    }
+
+    private static int Position(IReadOnlyList<Sermon> sermons, Sermon sermon) => sermon.Part > 0 ? sermon.Part : sermons.ToList().IndexOf(sermon) + 1;
+
+    private static string Count(int count) => count == 1 ? "1 sermon" : $"{count} sermons";
+
+    private static string Span(SeriesInfo series)
+    {
+        string first = SermonText.Month(series.FirstAt), last = SermonText.Month(series.LastAt);
+        return first == last ? first : $"{first} – {last}";
+    }
+
+    private async Task PlayAsync(Sermon sermon)
+    {
+        await Shell.HapticAsync();
+        await Player.PlayAsync(sermon);
+    }
+}

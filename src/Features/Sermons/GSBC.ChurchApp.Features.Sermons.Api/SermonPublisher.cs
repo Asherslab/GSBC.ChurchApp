@@ -81,7 +81,7 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
             YouTubeId = sermon.EffectiveYouTubeId,
             Artwork = sermon.Artwork ?? its?.ChosenArtwork ?? its?.Artwork,
             Thumbnail = sermon.Thumbnail ?? its?.Thumbnail ?? its?.ChosenArtwork,
-            Summary = sermon.Summary,
+            Summary = sermon.Origin == SermonSources.Uploads ? sermon.Summary : "",
             WebLink = sermon.WebLink,
         };
     }

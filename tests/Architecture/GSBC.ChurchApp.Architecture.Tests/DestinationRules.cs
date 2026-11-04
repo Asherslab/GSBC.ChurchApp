@@ -21,6 +21,20 @@ public sealed partial class DestinationRules
         Assert.Empty(missing);
     }
 
+    [Fact]
+    public void NoTwoPagesInTheAppClaimTheSameRoute()
+    {
+        List<string> clashes = Files("*.razor")
+            .Where(path => path.Contains("/Hosts/App/") || AppProject().IsMatch(path))
+            .SelectMany(path => AnyPageRoute().Matches(File.ReadAllText(path)).Select(match => (Path.GetFileName(path), Route: match.Groups[1].Value.ToLowerInvariant())))
+            .GroupBy(page => page.Route)
+            .Where(group => group.Count() > 1)
+            .Select(group => $"{group.Key}: {string.Join(", ", group.Select(page => page.Item1))}")
+            .ToList();
+
+        Assert.Empty(clashes);
+    }
+
     private static IEnumerable<string> Files(string pattern) =>
         Directory.EnumerateFiles(Path.Combine(RepoRoot.Path, "src"), pattern, SearchOption.AllDirectories)
             .Select(path => path.Replace(Path.DirectorySeparatorChar, '/'))
@@ -31,6 +45,9 @@ public sealed partial class DestinationRules
 
     [GeneratedRegex("@page \"([^\"{]*)\"")]
     private static partial Regex PageRoute();
+
+    [GeneratedRegex("@page \"([^\"]*)\"")]
+    private static partial Regex AnyPageRoute();
 
     [GeneratedRegex("DestinationPage \\w+ = new\\(\"(/[^\"]*)\"")]
     private static partial Regex DeclaredPage();

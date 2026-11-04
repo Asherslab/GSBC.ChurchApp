@@ -13,7 +13,8 @@ public static class SermonsClientExtensions
             .AddSermonsClient()
             .AddSingleton<Listening>()
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<Listening>())
-            .AddSingleton<SermonPlayer>();
+            .AddSingleton<SermonPlayer>()
+            .AddSingleton<SermonLibrary>();
 
     public static IServiceCollection AddSermonsClient(this IServiceCollection services) =>
         services
