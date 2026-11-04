@@ -176,6 +176,12 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         Assert.Empty(await FindAsync(uploaderOnly, poster, "image/jpeg"));
         Assert.Single(await FindAsync(staff, poster, "image/jpeg"));
 
+        byte[] campPhoto = Jpeg(seed: 13);
+        MediaRef keptByTheApp = await UploadAsync(leader, campPhoto, "image/jpeg");
+        await FoldersCallAsync(folders => Done(folders.FileAsync(Chats, Ministry, "Youth group", [keptByTheApp], Cancellation)));
+        Assert.Empty(await FindAsync(staff, campPhoto, "image/jpeg"));
+        Assert.Empty(await FindAsync(leader, campPhoto, "image/jpeg"));
+
         UploadedMedia staffCopy = await UploadAgainAsync(staff, notes, "application/pdf");
         Assert.False(staffCopy.AlreadyInLibrary);
         Assert.NotEqual(privateNotes.Id, staffCopy.Item!.Media!.Id);
