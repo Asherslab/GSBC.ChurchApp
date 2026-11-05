@@ -119,6 +119,13 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("key");
 
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("sha256")
+                        .IsFixedLength();
+
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("uploaded_at");
@@ -139,6 +146,9 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 
                     b.HasIndex("Key")
                         .HasDatabaseName("ix_items_key");
+
+                    b.HasIndex("Sha256")
+                        .HasDatabaseName("ix_items_sha256");
 
                     b.HasIndex("UploadedAt")
                         .HasDatabaseName("ix_items_uploaded_at");

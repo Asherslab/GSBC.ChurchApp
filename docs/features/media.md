@@ -102,14 +102,22 @@ on the phone, and held by the draft or theme that uses it, so it can't be delete
 No endpoint is added to our hosts: bytes go between the device and the bucket, and our API only hands
 out links over gRPC (AGENTS.md's hard rule).
 
+0. **Is it already here?** As soon as a file is chosen, the browser hashes it (SHA-256, with
+   `crypto.subtle` on the file itself, so no bytes go anywhere) and asks `Media.FindByHash` (gRPC). If the
+   library has it, the upload says so in plain words and shows the file it has (name, folder, how often
+   it's used, a thumbnail), with **Use the existing one** (the default) or **Add it again anyway**. Using
+   the existing one sends nothing: no ticket, no bytes. Duplicates, below.
 1. `Media.BeginUpload` (gRPC) checks the type, and for a private file that the uploader holds its
    audience, then records a pending upload and returns a **presigned PUT** (15 minutes) to a staging
    key `uploads/<id>` in the private bucket.
 2. The browser or phone PUTs the bytes straight to R2 with that content type.
 3. `Media.CompleteUpload` (gRPC) reads the staged object, **hashes it and checks its first bytes match
-   its claimed type** (an HTML page sent as `image/png` is refused), copies it to its final key with
-   `Cache-Control: public, max-age=31536000, immutable`, deletes the staged copy, and returns a
-   `MediaRef`. An image's **width and height are read from its bytes** (PNG, GIF, WebP and JPEG,
+   its claimed type** (an HTML page sent as `image/png` is refused). **It checks for a duplicate again**
+   with its own hash, since it can't trust the client's: if the caller can see a file with the same
+   bytes and the same audience, and didn't ask to add it again (`AddAgain`), it discards the staged
+   object and returns that file (`UploadedMedia.AlreadyInLibrary`). Otherwise it copies it to its final key with
+   `Cache-Control: public, max-age=31536000, immutable`, deletes the staged copy, and returns the new
+   library entry. An image's **width and height are read from its bytes** (PNG, GIF, WebP and JPEG,
    turned by the JPEG's EXIF orientation so a sideways phone photo gets its displayed shape), so
    placeholders know their shape. The client no longer sends them.
 
@@ -123,9 +131,34 @@ problem.
 ## Names: a file's name is its content
 
 The key is `<sha256 of the bytes>.<extension>`, computed by the server, never the client. New bytes
-get a new key, the same bytes always get the same key (re-uploads collapse), and a key's bytes never
-change, so everything can be cached forever and nothing is ever purged. The extension comes from the
-content type, so Cloudflare caches the media host by default.
+get a new key, the same bytes always get the same key, and a key's bytes never change, so everything
+can be cached forever and nothing is ever purged. The extension comes from the content type, so
+Cloudflare caches the media host by default.
+
+Each library entry also keeps its hash as a column of its own (`media.items.sha256`, indexed), so
+finding a duplicate never depends on how keys are spelled. It was backfilled from the keys on
+2026-11-05; before that, every object in the dev bucket was checked to hash to its name (174 of 174).
+
+## Duplicates: one stored copy, and one library entry unless asked (owner, 2026-11-05)
+
+The owner's request: "make sure media in R2 is deduped... Most of our messages use the same default
+graphic, or all in a series will." Sermon artwork, a series graphic and a default picture come up again
+and again.
+
+- **Storage is always deduplicated.** The same bytes are one object per bucket, whoever uploads them and
+  however many library entries list them.
+- **The library is deduplicated by default.** An upload of a file the library already has returns the
+  entry it has: checked before the upload (`FindByHash`) and again on completion. Server-side imports
+  (`StoreAsync`: Google Fonts, downloaded artwork) reuse an existing public entry the same way.
+- **"Add it again anyway"** makes a second entry for the same object, with its own name, description and
+  folder. Deleting one entry leaves the object while another lists it.
+- **A match must be one the caller may see** (owner, 2026-11-05: a private file's audience must not leak
+  through "this already exists"). It counts only with the same audience as the upload (public, or the
+  same permission and scope, which the uploader must hold right now), never from a system folder, and,
+  for someone without `media.view`, only among files they uploaded themselves. Otherwise the upload goes
+  ahead as a new entry for the same stored object, and nothing is said.
+- Matching is on the hash and the content type, so the same bytes declared as two types stay apart, as
+  their keys do.
 
 ## What syncs
 
@@ -159,7 +192,7 @@ image must be public too.
 `Media.Delete` (`media.delete`) refuses a file that any record uses ("still used in 2 places"); the
 library shows "Used in N places" in place of the Delete button. A foreign key from `media.uses` to
 `media.items` closes the race with a save. The bytes are removed from the bucket only when no other
-library entry has the same content (re-uploads share a key).
+library entry has the same content (an entry added again shares its key).
 
 What deleting can't do: a deleted public file may still be at Cloudflare's edge, under its
 `immutable` header, until the edge evicts it, and it stays on phones that cached it until their cache
@@ -282,6 +315,9 @@ is the same list for its buckets when it does.
 - `PlacementEditorTests` (Configuration): images in settings are stored as the library's; forged and
   private ones are refused.
 - Tiers and permissions on every `Media` method: `TierRules` in Architecture.Tests.
+- Duplicates (`Features.Media.Api.Tests`): uploading a file the library has gives back the entry it has
+  and keeps one object; adding it again anyway makes a second entry for the same object; a match the
+  caller can't see (another audience, or the whole library without `media.view`) is never revealed.
 - Folders (`Features.Media.Api.Tests`): moving never changes a file's identity or uses; deleting a
   folder never deletes files; system folders are locked and only their audience or
   `media.system.view` sees inside.

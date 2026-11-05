@@ -55,11 +55,11 @@ internal sealed class MediaLibrary(
         return new UploadTicket { UploadId = pending.Id.ToString(), Url = url.ToString(), ContentType = pending.ContentType, ExpiresAt = pending.ExpiresAt };
     }
 
-    public async Task<MediaRef> CompleteUploadAsync(ClaimsPrincipal user, string uploadId, CancellationToken cancellationToken)
+    public async Task<UploadedMedia> CompleteUploadAsync(ClaimsPrincipal user, CompleteUploadRequest request, CancellationToken cancellationToken)
     {
         Guid caller = CallerId(user);
         PendingUpload pending = await db.PendingUploads
-            .SingleOrDefaultAsync(upload => upload.Id == ParseId(uploadId) && upload.UploadedBy == caller, cancellationToken)
+            .SingleOrDefaultAsync(upload => upload.Id == ParseId(request.UploadId) && upload.UploadedBy == caller, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "That upload has expired. Start again."));
 
         if (await blobs.FindAsync(BlobBucket.Private, pending.StagingKey, cancellationToken) is null)
@@ -75,6 +75,13 @@ internal sealed class MediaLibrary(
             throw Invalid($"That file isn't really {pending.ContentType}.");
         }
 
+        if (!request.AddAgain
+            && await SameContentAsync(user, content.Sha256, pending.ContentType, pending.AudiencePermission, pending.AudienceScopeId, cancellationToken) is [var match, ..])
+        {
+            await DiscardAsync(pending, cancellationToken);
+            return new UploadedMedia { Item = await InfoOfAsync(match, cancellationToken), AlreadyInLibrary = true };
+        }
+
         MediaTypes.TryGetExtension(pending.ContentType, out string extension);
         string key = ContentAddress.KeyFor(content.Sha256, extension);
         BlobBucket bucket = pending.AudiencePermission is null ? BlobBucket.Public : BlobBucket.Private;
@@ -88,6 +95,7 @@ internal sealed class MediaLibrary(
         {
             Id = Guid.CreateVersion7(),
             Key = key,
+            Sha256 = content.Sha256,
             ContentType = pending.ContentType,
             Bytes = content.Bytes,
             Width = content.Dimensions.Width,
@@ -103,8 +111,52 @@ internal sealed class MediaLibrary(
         db.Items.Add(item);
         Mark(item.Id);
         await DiscardAsync(pending, cancellationToken);
-        return MediaRefs.Of(item, blobs);
+        return new UploadedMedia { Item = InfoOf(item, uses: 0) };
     }
+
+    public async Task<MediaMatches> FindByHashAsync(ClaimsPrincipal user, FindByHashRequest request, CancellationToken cancellationToken)
+    {
+        string sha256 = request.Sha256.Trim().ToLowerInvariant();
+        if (!ContentAddress.IsSha256(sha256))
+            throw Invalid("That isn't a SHA-256 hash.");
+
+        List<MediaItem> matches = await SameContentAsync(user, sha256, request.ContentType.ToLowerInvariant(),
+            NullIfEmpty(request.PrivateTo?.Permission), NullIfEmpty(request.PrivateTo?.ScopeId), cancellationToken);
+        List<MediaItemInfo> items = [];
+        foreach (MediaItem match in matches)
+            items.Add(await InfoOfAsync(match, cancellationToken));
+        return new MediaMatches { Items = items };
+    }
+
+    private async Task<List<MediaItem>> SameContentAsync(
+        ClaimsPrincipal user, string sha256, string contentType, string? audiencePermission, string? audienceScopeId, CancellationToken cancellationToken)
+    {
+        if (audiencePermission is not null && !await access.IsAllowedAsync(user, audiencePermission, audienceScopeId, cancellationToken))
+            return [];
+
+        Guid caller = CallerId(user);
+        bool seesLibrary = await access.IsAllowedAsync(user, MediaPermissions.ViewNode, null, cancellationToken);
+        return await db.Items.AsNoTracking()
+            .Where(item => item.Sha256 == sha256 && item.ContentType == contentType)
+            .Where(item => item.AudiencePermission == audiencePermission && item.AudienceScopeId == audienceScopeId)
+            .Where(item => seesLibrary || item.UploadedBy == caller)
+            .Where(item => item.FolderId == null || !db.Folders.Any(folder => folder.Id == item.FolderId && folder.SystemArea != null))
+            .OrderBy(item => item.UploadedAt)
+            .ToListAsync(cancellationToken);
+    }
+
+    private async Task<MediaItemInfo> InfoOfAsync(MediaItem item, CancellationToken cancellationToken) =>
+        InfoOf(item, await db.Uses.CountAsync(use => use.MediaId == item.Id, cancellationToken));
+
+    private MediaItemInfo InfoOf(MediaItem item, int uses) => new()
+    {
+        Media = MediaRefs.Of(item, blobs),
+        Uses = uses,
+        UploadedAt = item.UploadedAt,
+        UploadedBy = item.UploadedBy.ToString(),
+        PrivateTo = item.AudiencePermission is null ? null : new MediaAudience { Permission = item.AudiencePermission, ScopeId = item.AudienceScopeId },
+        FolderId = item.FolderId?.ToString(),
+    };
 
     public async Task<MediaRef> StoreAsync(ClaimsPrincipal user, byte[] bytes, string contentType, string fileName, CancellationToken cancellationToken)
     {
@@ -115,7 +167,10 @@ internal sealed class MediaLibrary(
 
         MediaTypes.TryGetExtension(contentType, out string extension);
         string key = ContentAddress.KeyFor(inspected.Sha256, extension);
-        if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Key == key && item.AudiencePermission == null, cancellationToken) is { } existing)
+        if (await db.Items.AsNoTracking()
+                .Where(item => item.Sha256 == inspected.Sha256 && item.ContentType == contentType && item.AudiencePermission == null)
+                .OrderBy(item => item.UploadedAt)
+                .FirstOrDefaultAsync(cancellationToken) is { } existing)
             return MediaRefs.Of(existing, blobs);
 
         if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
@@ -128,6 +183,7 @@ internal sealed class MediaLibrary(
         {
             Id = Guid.CreateVersion7(),
             Key = key,
+            Sha256 = inspected.Sha256,
             ContentType = contentType,
             Bytes = inspected.Bytes,
             FileName = fileName,
@@ -179,15 +235,7 @@ internal sealed class MediaLibrary(
         {
             HasMore = items.Count > take,
             Counts = counts,
-            Items = items.Take(take).Select(row => new MediaItemInfo
-            {
-                Media = MediaRefs.Of(row.Item, blobs),
-                Uses = row.Uses,
-                UploadedAt = row.Item.UploadedAt,
-                UploadedBy = row.Item.UploadedBy.ToString(),
-                PrivateTo = row.Item.AudiencePermission is null ? null : new MediaAudience { Permission = row.Item.AudiencePermission, ScopeId = row.Item.AudienceScopeId },
-                FolderId = row.Item.FolderId?.ToString(),
-            }).ToList(),
+            Items = items.Take(take).Select(row => InfoOf(row.Item, row.Uses)).ToList(),
         };
     }
 

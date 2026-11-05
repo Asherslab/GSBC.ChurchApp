@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Tiers;
 using ProtoBuf.Grpc;
 using ProtoBuf.Grpc.Configuration;
@@ -12,7 +11,10 @@ public interface IMediaService
     ValueTask<UploadTicket> BeginUploadAsync(BeginUploadRequest request, CallContext context = default);
 
     [Requires(MediaPermissions.UploadNode)]
-    ValueTask<MediaRef> CompleteUploadAsync(CompleteUploadRequest request, CallContext context = default);
+    ValueTask<UploadedMedia> CompleteUploadAsync(CompleteUploadRequest request, CallContext context = default);
+
+    [Requires(MediaPermissions.UploadNode)]
+    ValueTask<MediaMatches> FindByHashAsync(FindByHashRequest request, CallContext context = default);
 
     [SignedIn]
     ValueTask<MediaLink> GetLinkAsync(LinkRequest request, CallContext context = default);

@@ -34,6 +34,28 @@ public sealed class UploadTicket
 public sealed class CompleteUploadRequest
 {
     [ProtoMember(1)] public string UploadId { get; set; } = "";
+    [ProtoMember(2)] public bool AddAgain { get; set; }
+}
+
+[ProtoContract]
+public sealed class UploadedMedia
+{
+    [ProtoMember(1)] public MediaItemInfo? Item { get; set; }
+    [ProtoMember(2)] public bool AlreadyInLibrary { get; set; }
+}
+
+[ProtoContract]
+public sealed class FindByHashRequest
+{
+    [ProtoMember(1)] public string Sha256 { get; set; } = "";
+    [ProtoMember(2)] public string ContentType { get; set; } = "";
+    [ProtoMember(3)] public MediaAudience? PrivateTo { get; set; }
+}
+
+[ProtoContract]
+public sealed class MediaMatches
+{
+    [ProtoMember(1)] public List<MediaItemInfo> Items { get; set; } = [];
 }
 
 [ProtoContract]

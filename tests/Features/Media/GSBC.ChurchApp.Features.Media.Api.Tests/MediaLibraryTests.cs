@@ -5,6 +5,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using Amazon.S3;
+using Amazon.S3.Model;
 using DotNet.Testcontainers.Builders;
 using DotNet.Testcontainers.Containers;
 using Grpc.Core;
@@ -113,6 +114,78 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         Assert.Equal(photo, await served.Content.ReadAsByteArrayAsync(Cancellation));
         Assert.Equal("image/jpeg", served.Content.Headers.ContentType?.MediaType);
         Assert.Equal(ContentAddress.ImmutableCacheControl, served.Headers.CacheControl?.ToString());
+    }
+
+    [Fact]
+    public async Task UploadingAFileTheLibraryAlreadyHasGivesBackTheOneItHas()
+    {
+        ClaimsPrincipal staff = Person();
+        _access.Grant(staff, MediaPermissions.ViewNode, null);
+        byte[] graphic = Jpeg(seed: 10);
+        MediaRef first = await UploadAsync(staff, graphic, "image/jpeg", fileName: "Series graphic");
+
+        MediaMatches before = await LibraryCallAsync(library => library.FindByHashAsync(staff, new FindByHashRequest
+        {
+            Sha256 = Convert.ToHexString(SHA256.HashData(graphic)),
+            ContentType = "image/jpeg",
+        }, Cancellation));
+        UploadedMedia again = await UploadAgainAsync(staff, graphic, "image/jpeg", fileName: "Series graphic (1)");
+
+        Assert.Equal(first.Id, Assert.Single(before.Items).Media!.Id);
+        Assert.True(again.AlreadyInLibrary);
+        Assert.Equal(first.Id, again.Item!.Media!.Id);
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        MediaDbContext db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+        MediaItem only = Assert.Single(await db.Items.ToListAsync(Cancellation));
+        Assert.Equal(Convert.ToHexStringLower(SHA256.HashData(graphic)), only.Sha256);
+        Assert.Empty(await db.PendingUploads.ToListAsync(Cancellation));
+    }
+
+    [Fact]
+    public async Task AddingAFileAgainAnywayMakesASecondEntryForTheSameStoredBytes()
+    {
+        ClaimsPrincipal staff = Person();
+        byte[] graphic = Jpeg(seed: 11);
+        MediaRef first = await UploadAsync(staff, graphic, "image/jpeg");
+
+        UploadedMedia second = await UploadAgainAsync(staff, graphic, "image/jpeg", addAgain: true);
+
+        Assert.False(second.AlreadyInLibrary);
+        Assert.NotEqual(first.Id, second.Item!.Media!.Id);
+        Assert.Equal(first.Key, second.Item.Media.Key);
+        ListObjectsV2Response stored = await _services.GetRequiredService<IAmazonS3>().ListObjectsV2Async(new ListObjectsV2Request { BucketName = PublicBucket }, Cancellation);
+        Assert.Equal(first.Key, Assert.Single(stored.S3Objects).Key);
+    }
+
+    [Fact]
+    public async Task AMatchTheCallerCanNotSeeIsNeverRevealed()
+    {
+        ClaimsPrincipal leader = Person();
+        ClaimsPrincipal staff = Person();
+        ClaimsPrincipal uploaderOnly = Person();
+        _access.Grant(leader, ReadFiles.Node, Ministry);
+        _access.Grant(staff, MediaPermissions.ViewNode, null);
+        MediaAudience group = new() { Permission = ReadFiles.Node, ScopeId = Ministry };
+        byte[] notes = "%PDF-1.7 the leaders' notes"u8.ToArray();
+        byte[] poster = Jpeg(seed: 12);
+        MediaRef privateNotes = await UploadAsync(leader, notes, "application/pdf", group);
+        await UploadAsync(staff, poster, "image/jpeg");
+
+        Assert.Empty(await FindAsync(staff, notes, "application/pdf"));
+        Assert.Empty(await FindAsync(staff, notes, "application/pdf", group));
+        Assert.Empty(await FindAsync(uploaderOnly, poster, "image/jpeg"));
+        Assert.Single(await FindAsync(staff, poster, "image/jpeg"));
+
+        byte[] campPhoto = Jpeg(seed: 13);
+        MediaRef keptByTheApp = await UploadAsync(leader, campPhoto, "image/jpeg");
+        await FoldersCallAsync(folders => Done(folders.FileAsync(Chats, Ministry, "Youth group", [keptByTheApp], Cancellation)));
+        Assert.Empty(await FindAsync(staff, campPhoto, "image/jpeg"));
+        Assert.Empty(await FindAsync(leader, campPhoto, "image/jpeg"));
+
+        UploadedMedia staffCopy = await UploadAgainAsync(staff, notes, "application/pdf");
+        Assert.False(staffCopy.AlreadyInLibrary);
+        Assert.NotEqual(privateNotes.Id, staffCopy.Item!.Media!.Id);
+        Assert.False(staffCopy.Item.Media.IsPrivate);
     }
 
     [Fact]
@@ -230,7 +303,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         ClaimsPrincipal staff = Person();
         byte[] bytes = Jpeg(seed: 5);
         MediaRef used = await UploadAsync(staff, bytes, "image/jpeg");
-        MediaRef sameBytes = await UploadAsync(staff, bytes, "image/jpeg");
+        MediaRef sameBytes = (await UploadAgainAsync(staff, bytes, "image/jpeg", addAgain: true)).Item!.Media!;
         await ReferencesCallAsync(references => Done(references.UseAsync("news.post/3", [used], Cancellation)));
 
         RpcException inUse = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => Done(library.DeleteAsync(used.Id, Cancellation))));
@@ -363,7 +436,11 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         Assert.Equal(StatusCode.FailedPrecondition, deleted.StatusCode);
     }
 
-    private async Task<MediaRef> UploadAsync(ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null, string fileName = "file")
+    private async Task<MediaRef> UploadAsync(ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null, string fileName = "file") =>
+        (await UploadAgainAsync(user, bytes, contentType, privateTo, fileName)).Item!.Media!;
+
+    private async Task<UploadedMedia> UploadAgainAsync(
+        ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null, string fileName = "file", bool addAgain = false)
     {
         UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, new BeginUploadRequest
         {
@@ -378,8 +455,16 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         using HttpResponseMessage put = await _http.PutAsync(ticket.Url, body, Cancellation);
         put.EnsureSuccessStatusCode();
 
-        return await LibraryCallAsync(library => library.CompleteUploadAsync(user, ticket.UploadId, Cancellation));
+        return await LibraryCallAsync(library => library.CompleteUploadAsync(user, new CompleteUploadRequest { UploadId = ticket.UploadId, AddAgain = addAgain }, Cancellation));
     }
+
+    private async Task<List<MediaItemInfo>> FindAsync(ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null) =>
+        (await LibraryCallAsync(library => library.FindByHashAsync(user, new FindByHashRequest
+        {
+            Sha256 = Convert.ToHexStringLower(SHA256.HashData(bytes)),
+            ContentType = contentType,
+            PrivateTo = privateTo,
+        }, Cancellation))).Items;
 
     private async Task<T> FoldersCallAsync<T>(Func<MediaFolders, Task<T>> call)
     {

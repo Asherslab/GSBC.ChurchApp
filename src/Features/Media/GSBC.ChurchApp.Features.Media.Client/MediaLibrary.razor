@@ -1,3 +1,4 @@
+@using static MediaWords
 @inject MediaClient Media
 @inject IAccess Access
 
@@ -652,12 +653,19 @@
         }
     }
 
-    private async Task UploadedAsync(MediaRef media)
+    private async Task UploadedAsync(UploadedMedia uploaded)
     {
         _uploading = false;
-        _known[media.Id] = new MediaItemInfo { Media = media, UploadedAt = DateTime.UtcNow, FolderId = _shelf == Shelf.Library && !Searching ? _folderId : null };
+        MediaItemInfo item = uploaded.Item!;
+        _known[item.Media!.Id] = item;
+        if (uploaded.AlreadyInLibrary)
+        {
+            await RevealAsync(item);
+            _moved = $"“{NameOf(item.Media)}” was already in the library, so nothing new was added. Here it is.";
+            return;
+        }
         _chosen.Clear();
-        _chosen.Add(media.Id);
+        _chosen.Add(item.Media.Id);
         await ReloadAllAsync();
     }
 
@@ -698,15 +706,6 @@
         string files = folder.Files == 1 ? "1 file" : $"{folder.Files} files";
         return folders == 0 ? files : folder.Files == 0 ? (folders == 1 ? "1 folder" : $"{folders} folders") : $"{files} and {(folders == 1 ? "1 folder" : $"{folders} folders")}";
     }
-
-    private static string UsedIn(int uses) => uses switch
-    {
-        0 => "Not used yet",
-        1 => "Used in 1 place",
-        _ => $"Used in {uses} places",
-    };
-
-    private static string NameOf(MediaRef media) => string.IsNullOrEmpty(media.FileName) ? media.Key : media.FileName;
 
     private static string Size(long bytes) => bytes < 1024 * 1024 ? $"{bytes / 1024d:0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
 

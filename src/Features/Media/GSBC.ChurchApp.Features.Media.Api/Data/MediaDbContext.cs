@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Media.Api.Data;
@@ -23,6 +24,8 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
             entity.ToTable("items");
             entity.HasKey(item => item.Id);
             entity.HasIndex(item => item.Key);
+            entity.Property(item => item.Sha256).HasMaxLength(ContentAddress.Sha256HexLength).IsFixedLength();
+            entity.HasIndex(item => item.Sha256);
             entity.HasIndex(item => item.UploadedAt);
             entity.HasIndex(item => item.FolderId);
             entity.HasOne<MediaFolder>().WithMany().HasForeignKey(item => item.FolderId).OnDelete(DeleteBehavior.Restrict);

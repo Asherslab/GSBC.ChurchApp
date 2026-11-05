@@ -25,11 +25,11 @@ public sealed class FontLibrary(ChannelBase channel, MediaClient media, IAccess 
     {
         string contentType = MediaTypes.FontTypeOf(fileName)
             ?? throw new RpcException(new Status(StatusCode.InvalidArgument, $"{fileName} isn't a font file. Use .woff2, .woff, .ttf or .otf."));
-        MediaRef uploaded = await media.UploadAsync(new BeginUploadRequest { FileName = fileName, ContentType = contentType, Bytes = bytes }, content, cancellationToken);
+        UploadedMedia uploaded = await media.UploadAsync(new BeginUploadRequest { FileName = fileName, ContentType = contentType, Bytes = bytes }, content, cancellationToken: cancellationToken);
         return new CustomFont
         {
             Family = Path.GetFileNameWithoutExtension(fileName),
-            Files = [new FontFile { Media = uploaded, Weight = FontFile.RegularToBold }],
+            Files = [new FontFile { Media = uploaded.Item!.Media!, Weight = FontFile.RegularToBold }],
         };
     }
 }

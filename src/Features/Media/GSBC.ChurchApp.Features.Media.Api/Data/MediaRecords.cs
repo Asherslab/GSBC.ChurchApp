@@ -4,6 +4,7 @@ public sealed class MediaItem
 {
     public Guid Id { get; set; }
     public required string Key { get; set; }
+    public required string Sha256 { get; set; }
     public required string ContentType { get; set; }
     public long Bytes { get; set; }
     public int Width { get; set; }
