@@ -168,7 +168,8 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
     public async Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken)
     {
         MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
-        string key = ContentAddress.KeyFor(Convert.ToHexStringLower(SHA256.HashData(file.Bytes)), file.Extension);
+        string sha256 = Convert.ToHexStringLower(SHA256.HashData(file.Bytes));
+        string key = ContentAddress.KeyFor(sha256, file.Extension);
         if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Key == key && item.FolderId == folder.Id, cancellationToken) is { } kept)
             return MediaRefs.Of(kept, blobs);
 
@@ -178,6 +179,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         {
             Id = Guid.CreateVersion7(),
             Key = key,
+            Sha256 = sha256,
             ContentType = file.ContentType,
             Bytes = file.Bytes.Length,
             Width = file.Width,
