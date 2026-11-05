@@ -30,7 +30,7 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
         (ArtworkSource source, byte[]? bytes) = await SourceAsync(url, cancellationToken);
         source.Picture = source.Picture is { } kept
             ? (await references.VerifyAsync([kept], cancellationToken))[0]
-            : await KeepAsync(bytes ?? await website.BytesAsync(url, cancellationToken), source.Hash, cancellationToken);
+            : await KeepAsync(bytes ?? await website.BytesAsync(url, cancellationToken), url, source.Hash, cancellationToken);
         await references.UseAsync(owner, [source.Picture], cancellationToken);
         return new ArtworkPicture(source.Hash, Described(source.Picture, altText));
     }
@@ -91,7 +91,16 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
         Sizes = kept.Sizes,
     };
 
-    private async Task<MediaRef> KeepAsync(byte[] bytes, string sourceHash, CancellationToken cancellationToken)
+    private static string FileNameOf(string url, string sourceHash, string extension)
+    {
+        string named = Uri.TryCreate(url, UriKind.Absolute, out Uri? address) ? Uri.UnescapeDataString(address.Segments[^1]).Trim('/') : "";
+        string stem = Path.GetFileNameWithoutExtension(named);
+        return stem.Length is > 0 and <= 80 && stem.All(letter => char.IsLetterOrDigit(letter) || letter is '-' or '_' or '.' or ' ')
+            ? $"{stem}.{extension}"
+            : $"{sourceHash[..12]}.{extension}";
+    }
+
+    private async Task<MediaRef> KeepAsync(byte[] bytes, string url, string sourceHash, CancellationToken cancellationToken)
     {
         using SKCodec codec = SKCodec.Create(new SKMemoryStream(bytes)) ?? throw new InvalidDataException("That isn't a picture.");
         (string contentType, string extension) = codec.EncodedFormat switch
@@ -104,6 +113,6 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
         };
         bool turned = codec.EncodedOrigin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
         (int width, int height) = turned ? (codec.Info.Height, codec.Info.Width) : (codec.Info.Width, codec.Info.Height);
-        return await folders.KeepAsync(Area, new KeptFile(bytes, contentType, extension, $"{sourceHash[..12]}.{extension}", width, height), cancellationToken);
+        return await folders.KeepAsync(Area, new KeptFile(bytes, contentType, extension, FileNameOf(url, sourceHash, extension), width, height), cancellationToken);
     }
 }

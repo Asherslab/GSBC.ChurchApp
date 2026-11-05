@@ -48,11 +48,13 @@
                 <span class="field__label">Picture</span>
                 @if (_artwork is { } artwork)
                 {
-                    <div class="sermon-upload__art">
-                        <MediaCover Media="artwork" Size="MediaSizeName.Thumbnail" />
-                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button>
+                    <div class="sermon-picture">
+                        <div class="sermon-upload__art">
+                            <MediaCover Media="artwork" Size="MediaSizeName.Thumbnail" />
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button>
+                        </div>
+                        <MediaShownAt Media="artwork" Size="MediaSizeName.ForPhones" />
                     </div>
-                    <MediaShownAt Media="artwork" Size="MediaSizeName.ForPhones" Class="sermon-picture__shown" />
                 }
                 else
                 {

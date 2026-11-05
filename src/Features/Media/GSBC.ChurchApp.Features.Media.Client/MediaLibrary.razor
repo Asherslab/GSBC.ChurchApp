@@ -390,7 +390,7 @@
     };
 
     private bool CanRemoveOriginal(MediaItemInfo item) =>
-        Access.Can(MediaPermissions.Delete) && item.Original is { Removed: false } && item.Media!.Sizes.Count > 0;
+        Access.Can(MediaPermissions.Delete) && item.Original is { Removed: false } && item.Media!.Sizes.Any(size => size.Width >= MediaSizes.ForPhonesWidth);
 
     private string EmptyTitle(FolderMap map) => Searching || _filter != MediaFilter.All
         ? "Nothing matches"

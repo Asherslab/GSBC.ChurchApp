@@ -492,7 +492,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RemovingAnOriginalKeepsItsSizesAndEverywhereThatUsesThePicture()
+    public async Task RemovingAnOriginalKeepsItsSizesAndEverywhereThatUsesThePictureAndNeverLeavesAFullWidthScreenWithAThumbnail()
     {
         ClaimsPrincipal staff = Person();
         byte[] photo = Picture(3000, 1688);
@@ -523,6 +523,10 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         await ReferencesCallAsync(references => Done(references.UseAsync("draft/1", [inADraft], Cancellation)));
         RpcException refused = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.RemoveOriginalAsync(inADraft.Id, Cancellation)));
         Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
+
+        MediaRef shownFullWidth = await UploadAsync(staff, Picture(800, 450), "image/jpeg");
+        RpcException kept = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.RemoveOriginalAsync(shownFullWidth.Id, Cancellation)));
+        Assert.Equal(StatusCode.FailedPrecondition, kept.StatusCode);
     }
 
     [Fact]

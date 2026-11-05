@@ -73,6 +73,7 @@ public sealed class ArtworkTests : SermonsHost
         Assert.Equal(kept + 1, Media.Kept.Count);
         SermonRecord changed = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Sermons.AsNoTracking()
             .SingleAsync(sermon => sermon.ArtworkSourceUrl == Harbour, Cancel));
-        Assert.Equal($"{changed.ArtworkHash![..12]}.png", Media.Kept[^1].FileName);
+        Assert.Equal(changed.ArtworkHash, Artwork.HashOf(Media.Kept[^1].Bytes));
+        Assert.Equal("harbour-4.png", Media.Kept[^1].FileName);
     }
 }

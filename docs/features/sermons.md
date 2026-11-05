@@ -73,7 +73,7 @@ speaker, and "Watch at: https://youtu.be/…" (112 of 155). No series, no durati
   ([media.md](media.md), *Sizes*): each sermon, series and speaker holds one `MediaRef` with its sizes, and each
   screen asks for the size it shows (`MediaCover`/`MediaImage` `Size`: the sermon page and series hero use For
   phones, rows, tiles and the Hub's cover use Thumbnail, the lock screen For phones). Speakers' photos are kept
-  whole too; `Avatar` crops the thumbnail to a circle on screen. Before this, Sermons made its own 1280 and 480
+  whole too; `Avatar` crops the thumbnail to a circle on screen. A kept picture is named after the website's own file (`anchored-series.jpg`), or its hash when that name is unusable. Before this, Sermons made its own 1280 and 480
   JPEG copies (and 192-pixel squares for photos); Media's `MediaSizes` migration made each such pair one picture,
   and those stay as they are: a known picture is never downloaded again.
 - **Each picture is made once (owner, 2026-11-05: "most of our messages use the same default graphic").** Tithe.ly

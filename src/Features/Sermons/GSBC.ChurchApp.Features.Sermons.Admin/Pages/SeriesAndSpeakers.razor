@@ -73,20 +73,22 @@
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="@(editing.FromWebsite ? "A name you give it here stays when the website changes." : null)" />
                 <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
                 <span class="field__label">Picture</span>
-                <div class="sermon-upload__art">
-                    <MediaCover Media="ShownArtwork(editing)" Size="MediaSizeName.Thumbnail" FallbackTitle="@_name" />
-                    <span class="series-desk__picture-actions">
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
-                        @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
-                        {
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
-                        }
-                    </span>
+                <div class="sermon-picture">
+                    <div class="sermon-upload__art">
+                        <MediaCover Media="ShownArtwork(editing)" Size="MediaSizeName.Thumbnail" FallbackTitle="@_name" />
+                        <span class="series-desk__picture-actions">
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
+                            @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
+                            }
+                        </span>
+                    </div>
+                    @if (ShownArtwork(editing) is { } artwork)
+                    {
+                        <MediaShownAt Media="artwork" Size="SeriesSize" />
+                    }
                 </div>
-                @if (ShownArtwork(editing) is { } artwork)
-                {
-                    <MediaShownAt Media="artwork" Size="SeriesSize" Class="sermon-picture__shown" />
-                }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
                     <Button Busy="_busy" OnClick="SaveSeriesAsync">@(editing.Id.Length == 0 ? "Add the series" : "Save")</Button>

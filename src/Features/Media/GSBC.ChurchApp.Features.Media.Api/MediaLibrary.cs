@@ -148,6 +148,8 @@ internal sealed class MediaLibrary(
             return await InfoOfAsync(item, cancellationToken);
         if (!await db.Renditions.AnyAsync(rendition => rendition.MediaId == mediaId, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already small, so the original is the only copy. There's nothing smaller to keep in its place."));
+        if (!await db.Renditions.AnyAsync(rendition => rendition.MediaId == mediaId && rendition.Width >= MediaSizes.ForPhonesWidth, cancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "The app shows this original on full-width screens, so it stays."));
         if (!await holders.CanAllRefreshAsync(mediaId, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition,
                 "Somewhere that uses it, such as a draft that isn't published yet, can't switch to a smaller size by itself. Publish or close the draft first."));

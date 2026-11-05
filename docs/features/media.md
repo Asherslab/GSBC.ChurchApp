@@ -206,7 +206,8 @@ keep a picture's sizes with their original, as one entry.
 stays, and its tile, list row and detail say *Original removed · was 4.2 MB*. Its id stays the same, and a saved `MediaRef` holding
 the old original key still verifies (any key the picture has or had is accepted), coming back with the
 current versions. The object is deleted only when no other entry lists that key. It's refused for a
-picture with no smaller size, or used somewhere that can't take the new sizes by itself. Pictures in a system
+picture with no For phones size (one 1280 or narrower is what the app shows full width, so only a thumbnail would
+be left; 2026-11-06), or used somewhere that can't take the new sizes by itself. Pictures in a system
 folder may lose their original too (2026-11-06, so sermon artwork can): the holder rule below keeps that safe for
 whichever feature keeps them. Deleting them is still refused.
 
