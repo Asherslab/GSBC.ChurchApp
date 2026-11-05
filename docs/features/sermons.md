@@ -62,9 +62,10 @@ speaker, and "Watch at: https://youtu.be/…" (112 of 155). No series, no durati
   first few kilobytes (a ranged request: the Xing/VBRI header, or the bitrate for constant-bitrate files).
 - **The whole graphic, not the feed's crop (owner's note, 2026-11-06).** The feed's `itunes:image` original is
   itself a 1400 × 1400 square that Tithe.ly cuts from the middle of a wide graphic, so "Building a Life of Prayer"
-  lost its edges in every copy. Each sermon's page carries the real graphic as its `og:image` (a resizer job naming
-  the CloudFront original, 1672 × 941 for that one), so each sermon's page is read once (`page_read_at`) and its
-  original used; the feed's picture (`feed_artwork_url`) stays as the fallback, and a new feed picture means the page
+  lost its edges in every copy. Each sermon's page carries the real graphic twice: its `og:image` (sometimes a resizer
+  job naming the CloudFront original, 1672 × 941 for that one; usually a 690-wide copy) and the sermon's own picture
+  (800 × 450). Each sermon's page is read once (`page_read_at`) and the larger of the two used (on dev, 154 of 155 are
+  800 wide, whole); the feed's picture (`feed_artwork_url`) stays as the fallback, and a new feed picture means the page
   is read again. A page that's gone counts as read. This also runs while sermons are uploaded, for the sermons that
   came from the website. In the app, `MediaCover` shows a picture whole (`contain`, on the masthead colour) unless
   it's within a few percent of 16:9, so nothing is cropped.
