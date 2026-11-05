@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+
 namespace GSBC.ChurchApp.Platform.Storage;
 
 public static class ContentAddress
@@ -6,6 +8,8 @@ public static class ContentAddress
     public const int Sha256HexLength = 64;
 
     public static string KeyFor(string sha256Hex, string extension) => $"{sha256Hex}.{extension}";
+
+    public static string Sha256Of(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
 
     public static bool IsSha256(string value) => value.Length == Sha256HexLength && value.All(char.IsAsciiHexDigitLower);
 }

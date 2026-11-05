@@ -465,6 +465,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .pill--accent { background: color-mix(in srgb, var(--live) 16%, transparent); color: var(--accent); }
 .pill--masthead { background: var(--masthead); color: var(--on-masthead); }
 .pill--quiet { background: var(--fill-on-surface); color: var(--ink-2); }
+.media-shown-at { color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 
 .save-status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
 .save-status > .icon { color: var(--accent); }

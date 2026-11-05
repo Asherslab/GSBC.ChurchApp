@@ -65,6 +65,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
             .AddSingleton<ISignedInSessions, AlwaysSignedIn>()
             .AddScoped<PlacementEditor>()
             .AddScoped<DraftEditor>()
+            .AddScoped<IMediaHolder, PlacementMediaHolder>()
             .AddSyncData()
             .AddConfigurationData()
             .BuildServiceProvider();
@@ -182,14 +183,21 @@ public abstract class ConfigurationHost : IAsyncLifetime
     {
         private readonly Dictionary<string, MediaRef> _items = [];
         private readonly Dictionary<string, List<string>> _uses = [];
+        private readonly HashSet<string> _formerKeys = [];
 
         public MediaRef Add(MediaRef media) => _items[media.Id] = media;
+
+        public MediaRef Replace(MediaRef media)
+        {
+            _formerKeys.Add(_items[media.Id].Key);
+            return Add(media);
+        }
 
         public List<string> UsedBy(string owner) => _uses.GetValueOrDefault(owner, []);
 
         public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<MediaRef>>(claimed
-                .Select(media => _items.TryGetValue(media.Id, out MediaRef? known) && (media.Key.Length == 0 || media.Key == known.Key)
+                .Select(media => _items.TryGetValue(media.Id, out MediaRef? known) && (media.Key.Length == 0 || media.Key == known.Key || _formerKeys.Contains(media.Key))
                     ? known.IsPrivate ? throw new RpcException(new Status(StatusCode.InvalidArgument, "Settings need a public image.")) : known
                     : throw new RpcException(new Status(StatusCode.InvalidArgument, "Not in the library.")))
                 .ToList());

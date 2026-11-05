@@ -1,0 +1,90 @@
+<section class="picture-versions" aria-labelledby="picture-versions-title">
+    <h3 id="picture-versions-title" class="panel-subtitle">Sizes</h3>
+    <ul class="picture-versions__list">
+        <li class="picture-versions__row @(Original.Removed ? "picture-versions__row--removed" : "")">
+            <span class="picture-versions__name">Original</span>
+            <span class="picture-versions__facts">@(Original.Removed ? $"Removed · was {MediaSizes.Weight(Original.Bytes)}" : Facts(Original.Width, Original.Height, Original.Bytes))</span>
+        </li>
+        @foreach (MediaSize size in Kept)
+        {
+            <li class="picture-versions__row">
+                <span class="picture-versions__name">@MediaSizes.LabelOf(size.Name)</span>
+                <span class="picture-versions__facts">@Facts(size.Width, size.Height, size.Bytes)</span>
+            </li>
+        }
+    </ul>
+    <p class="panel-hint">@Note</p>
+    @if (CanRemoveOriginal)
+    {
+        <div class="picture-versions__remove @(_confirming ? "panel-confirm" : "")">
+            @if (_confirming)
+            {
+                <h4 class="panel-subtitle">Remove the original?</h4>
+                <p class="panel-lead">The smaller sizes stay, so everywhere it's used keeps showing it. That saves @MediaSizes.Weight(Original.Bytes). Upload the same file again later and you can put it back.</p>
+                <div class="panel-actions">
+                    <Button Variant="ButtonVariant.Danger" Busy="Busy" OnClick="RemoveAsync">Remove the original</Button>
+                    <Button Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _confirming = false">Keep it</Button>
+                </div>
+            }
+            else
+            {
+                @if (Item.HasLargeOriginal)
+                {
+                    <p class="picture-versions__flag">Large original · @MediaSizes.Weight(Original.Bytes)</p>
+                }
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _confirming = true">Remove the original to save space…</Button>
+            }
+        </div>
+    }
+    <Notice Tone="NoticeTone.Warning" Text="@Problem" />
+</section>
+
+@code {
+    private bool _confirming;
+    private string? _shownFor;
+
+    [Parameter, EditorRequired] public required MediaItemInfo Item { get; set; }
+    [Parameter, EditorRequired] public required MediaOriginal Original { get; set; }
+    [Parameter] public bool CanRemoveOriginal { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public EventCallback OnRemoveOriginal { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (_shownFor == Item.Media?.Id)
+            return;
+        _shownFor = Item.Media?.Id;
+        _confirming = false;
+    }
+
+    private IEnumerable<MediaSize> Kept
+    {
+        get
+        {
+            MediaRef media = Item.Media!;
+            if (media.Version != MediaSizeName.Original)
+                yield return new MediaSize { Name = media.Version, Width = media.Width, Height = media.Height, Bytes = media.Bytes };
+            foreach (MediaSize size in media.Sizes)
+                yield return size;
+        }
+    }
+
+    private string Note => Item.Sizing switch
+    {
+        PictureSizing.Waiting => "Its smaller sizes are still being made.",
+        PictureSizing.KeptAsIs when Original.ContentType == "image/gif" => "GIFs, which may move, and SVGs are kept as they are, so phones get the original.",
+        PictureSizing.KeptAsIs => "This picture couldn't be made smaller, so phones get the original.",
+        _ when Item.Media!.Sizes.Count == 0 && Item.Media.Version == MediaSizeName.Original => "It's already small enough for phones, so the original is the only size.",
+        _ => "Made automatically. Each screen in the app uses the smallest size that looks sharp.",
+    };
+
+    private async Task RemoveAsync()
+    {
+        await OnRemoveOriginal.InvokeAsync();
+        _confirming = false;
+    }
+
+    private static string Facts(int width, int height, long bytes) =>
+        width > 0 ? $"{width}×{height} · {MediaSizes.Weight(bytes)}" : MediaSizes.Weight(bytes);
+}

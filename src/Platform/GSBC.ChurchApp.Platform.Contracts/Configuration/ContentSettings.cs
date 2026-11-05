@@ -10,11 +10,12 @@ public interface IHoldsMedia
     string WithMedia(string text, IReadOnlyDictionary<string, MediaRef> verified);
 }
 
-public sealed class MediaSetting(string key, string label, bool required = false, bool imagesOnly = true, string help = "")
+public sealed class MediaSetting(string key, string label, bool required = false, bool imagesOnly = true, string help = "", MediaSizeName shownAt = MediaSizeName.ForPhones)
     : Setting<MediaRef?>(key, label, null, help), IHoldsMedia
 {
     public bool Required { get; } = required;
     public bool ImagesOnly { get; } = imagesOnly;
+    public MediaSizeName ShownAt { get; } = shownAt;
 
     public override bool TryParse(string text, out MediaRef? value)
     {

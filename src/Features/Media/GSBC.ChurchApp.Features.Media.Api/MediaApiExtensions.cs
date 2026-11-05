@@ -20,6 +20,9 @@ public static class MediaApiExtensions
         services.AddMediaData();
         services.AddBlobStore(configuration);
         services.AddScoped<MediaLibrary>();
+        services.AddScoped<MediaSizer>();
+        services.AddScoped<MediaHolders>();
+        services.AddHostedService<MediaSizesBackfill>();
         services.AddScoped<MediaFolders>();
         services.AddScoped<IMediaSystemFolders>(provider => provider.GetRequiredService<MediaFolders>());
         services.AddScoped<IMediaReferences, MediaReferences>();

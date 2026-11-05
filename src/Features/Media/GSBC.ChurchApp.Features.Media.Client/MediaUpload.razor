@@ -11,8 +11,16 @@
     @if (_file is not null && _match is { Media: { } existing } match)
     {
         <section @ref="_prompt" class="media-upload__match" tabindex="-1" aria-labelledby="media-upload-match-title" aria-describedby="media-upload-match-lead">
-            <h3 id="media-upload-match-title" class="media-upload__match-title">Already in the library</h3>
-            <p id="media-upload-match-lead" class="media-upload__match-lead">@_file.Name is exactly the same file as this one. Use it, and there's one copy to look after instead of two.</p>
+            @if (_putBack)
+            {
+                <h3 id="media-upload-match-title" class="media-upload__match-title">This is the original of a picture in the library</h3>
+                <p id="media-upload-match-lead" class="media-upload__match-lead">“@MediaWords.NameOf(existing)” had its original removed to save space, and @_file.Name is that original. Put it back, and the picture is whole again with nothing new to look after.</p>
+            }
+            else
+            {
+                <h3 id="media-upload-match-title" class="media-upload__match-title">Already in the library</h3>
+                <p id="media-upload-match-lead" class="media-upload__match-lead">@_file.Name is exactly the same file as this one. Use it, and there's one copy to look after instead of two.</p>
+            }
             <div class="media-upload__existing">
                 <span class="media-thumb">
                     @if (existing.IsImage)
@@ -30,20 +38,28 @@
                 </span>
             </div>
             <div class="panel-actions">
-                <Button Icon="check" OnClick="UseExistingAsync">Use the existing one</Button>
-                <Button Variant="ButtonVariant.Quiet" OnClick="AddAgain">Add it again anyway</Button>
+                @if (_putBack)
+                {
+                    <Button Icon="check" Busy="_busy" OnClick="PutBackAsync">Put it back as the original of “@MediaWords.NameOf(existing)”</Button>
+                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="AddAgain">Add it as a new picture</Button>
+                }
+                else
+                {
+                    <Button Icon="check" OnClick="UseExistingAsync">Use the existing one</Button>
+                    <Button Variant="ButtonVariant.Quiet" OnClick="AddAgain">Add it again anyway</Button>
+                }
             </div>
         </section>
     }
     else if (_file is not null)
     {
         <TextField Label="Description" Hint="For people using screen readers: what the picture shows." @bind-Value="_altText" />
-        @if (MediaTypes.IsLarge(_file.Size))
+        @if (MediaTypes.WarnsWhenLarge(_file.ContentType, _file.Size))
         {
             <Notice Tone="NoticeTone.Warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</Notice>
         }
         <div class="panel-actions">
-            <Button Icon="arrow-up" Busy="_busy" Disabled="_checking" OnClick="UploadAsync">@(_addAgain ? "Add a second copy" : MediaTypes.IsLarge(_file.Size) ? "Upload anyway" : "Upload")</Button>
+            <Button Icon="arrow-up" Busy="_busy" Disabled="_checking" OnClick="UploadAsync">@(_addAgain ? (_asNewPicture ? "Add as a new picture" : "Add a second copy") : MediaTypes.WarnsWhenLarge(_file.ContentType, _file.Size) ? "Upload anyway" : "Upload")</Button>
             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Choose another</Button>
         </div>
     }
@@ -56,6 +72,8 @@
     private bool _showPrompt;
     private IBrowserFile? _file;
     private MediaItemInfo? _match;
+    private bool _putBack;
+    private bool _asNewPicture;
     private FolderMap _folders = FolderMap.Empty;
     private string _altText = "";
     private bool _checking;
@@ -81,7 +99,9 @@
         _checking = true;
         try
         {
-            _match = await FindExistingAsync(_file);
+            MediaMatches? found = await FindExistingAsync(_file);
+            _match = found?.Items.FirstOrDefault() ?? found?.RemovedOriginals.FirstOrDefault();
+            _putBack = _match is not null && found!.Items.Count == 0;
             if (_match is not null)
             {
                 _folders = await Media.FoldersAsync();
@@ -117,7 +137,7 @@
     private ValueTask<IJSObjectReference> ImportAsync() =>
         JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Media.Client/media-upload.js");
 
-    private async Task<MediaItemInfo?> FindExistingAsync(IBrowserFile file)
+    private async Task<MediaMatches?> FindExistingAsync(IBrowserFile file)
     {
         if (_picker?.Element is not { } input)
             return null;
@@ -135,11 +155,17 @@
 
     private void AddAgain()
     {
+        _asNewPicture = _putBack;
         _match = null;
+        _putBack = false;
         _addAgain = true;
     }
 
-    private async Task UploadAsync()
+    private Task PutBackAsync() => _match?.Media is { } existing ? SendAsync(existing.Id) : Task.CompletedTask;
+
+    private Task UploadAsync() => SendAsync(null);
+
+    private async Task SendAsync(string? putBackInto)
     {
         if (_file is null)
             return;
@@ -157,7 +183,7 @@
                 AltText = _altText,
                 PrivateTo = PrivateTo,
                 FolderId = FolderId,
-            }, content, _addAgain);
+            }, content, _addAgain, putBackInto);
             Reset();
             await OnUploaded.InvokeAsync(uploaded);
         }
@@ -179,6 +205,8 @@
     {
         _file = null;
         _match = null;
+        _putBack = false;
+        _asNewPicture = false;
         _addAgain = false;
         _altText = "";
         _error = null;

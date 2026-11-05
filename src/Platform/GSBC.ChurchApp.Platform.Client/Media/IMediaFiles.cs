@@ -13,5 +13,5 @@ public interface IMediaFiles
 
 public interface IPrivateMediaLinks
 {
-    ValueTask<string?> LinkAsync(string mediaId);
+    ValueTask<string?> LinkAsync(string mediaId, string key);
 }

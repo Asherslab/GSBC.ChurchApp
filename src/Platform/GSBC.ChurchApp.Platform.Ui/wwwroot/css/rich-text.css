@@ -118,6 +118,11 @@
     gap: 8px;
 }
 
+.media-setting__shown {
+    flex: 1 1 12em;
+    min-width: 0;
+}
+
 .media-setting .media-thumbnail {
     width: 96px;
     height: 64px;

@@ -27,12 +27,16 @@
             <span class="field__label">@Setting.Label</span>
             @if (media.TryParse(Value, out MediaRef? chosen) && chosen is not null)
             {
-                <MediaImage Media="chosen" Class="media-thumbnail" />
+                <MediaImage Media="chosen" Size="MediaSizeName.Thumbnail" Class="media-thumbnail" />
+                @if (chosen.IsImage)
+                {
+                    <MediaShownAt Media="chosen" Size="media.ShownAt" Class="media-setting__shown" />
+                }
                 <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SetAsync(media.Format(null))">Remove</Button>
             }
             @if (_choosing)
             {
-                <MediaChooser ImagesOnly="media.ImagesOnly" OnChosen="chosenMedia => ChooseAsync(media, chosenMedia)" OnCancel="() => _choosing = false" />
+                <MediaChooser ImagesOnly="media.ImagesOnly" Size="media.ShownAt" OnChosen="chosenMedia => ChooseAsync(media, chosenMedia)" OnCancel="() => _choosing = false" />
             }
             else if (MediaChooser.IsAvailable(Services))
             {

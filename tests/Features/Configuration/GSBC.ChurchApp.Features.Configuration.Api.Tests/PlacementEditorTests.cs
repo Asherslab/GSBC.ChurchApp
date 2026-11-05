@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
@@ -145,6 +146,35 @@ public sealed class PlacementEditorTests : ConfigurationHost
 
         Assert.Equal(StatusCode.InvalidArgument, (await Refused(() => SaveAsync(staff, draft, forged))).StatusCode);
         Assert.Contains("public image", (await Refused(() => SaveAsync(staff, draft, privateImage))).Status.Detail);
+    }
+
+    [Fact]
+    public async Task APlacedPictureIsSavedAgainWithItsCurrentSizesWhenMediaAsks()
+    {
+        ClaimsPrincipal staff = Access.Person(ArrangesHub, PublishesHub);
+        MediaRef photo = Media.Add(new MediaRef { Id = "photo", Key = $"{new string('a', 64)}.jpg", ContentType = "image/jpeg", Url = "https://media.example/a.jpg", Width = 4000, Height = 2250 });
+        PatchMessage tile = LinkTile("Camp");
+        tile.Values.Add(Value(HubSurfaces.LinkTile.Image, photo));
+        Placement placed = Assert.Single(await PublishNowAsync(staff, HubSurfaces.Area, null, tile));
+        MediaRef withoutOriginal = Media.Replace(new MediaRef
+        {
+            Id = photo.Id, Key = $"{new string('c', 64)}.jpg", ContentType = "image/jpeg", Url = "https://media.example/c.jpg", Width = 1280, Height = 720,
+            Version = MediaSizeName.ForPhones,
+            Sizes = [new MediaSize { Name = MediaSizeName.Thumbnail, Key = $"{new string('d', 64)}.jpg", ContentType = "image/jpeg", Url = "https://media.example/d.jpg", Width = 480, Height = 270 }],
+        });
+
+        await Use<IMediaHolder, bool>(async holder =>
+        {
+            Assert.True(holder.Holds($"config.placement/{placed.Id}"));
+            await holder.RefreshAsync($"config.placement/{placed.Id}", Cancel);
+            return true;
+        });
+
+        Placement live = Assert.Single(await LiveAsync(staff, HubSurfaces.Area));
+        Assert.True(HubSurfaces.LinkTile.Image.TryParse(ValueOf(live, HubSurfaces.LinkTile.Image.Key), out MediaRef? shown));
+        Assert.Equal((withoutOriginal.Key, MediaSizeName.ForPhones), (shown!.Key, shown.Version));
+        Assert.Equal(withoutOriginal.Sizes[0].Key, shown.At(MediaSizeName.Thumbnail).Key);
+        Assert.True(live.Revision > placed.Revision);
     }
 
     [Fact]

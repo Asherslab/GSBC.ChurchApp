@@ -12,7 +12,7 @@ using Npgsql;
 namespace GSBC.ChurchApp.Features.Media.Api;
 
 internal sealed class MediaLibrary(
-    MediaDbContext db, MediaFolders folders, IBlobStore blobs, IAccessEvaluator access, PermissionCatalog catalog, TimeProvider time)
+    MediaDbContext db, MediaFolders folders, MediaSizer sizer, MediaHolders holders, IBlobStore blobs, IAccessEvaluator access, PermissionCatalog catalog, TimeProvider time)
 {
     public static readonly TimeSpan UploadWindow = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan PrivateLinkLifetime = TimeSpan.FromMinutes(5);
@@ -75,11 +75,21 @@ internal sealed class MediaLibrary(
             throw Invalid($"That file isn't really {pending.ContentType}.");
         }
 
-        if (!request.AddAgain
-            && await SameContentAsync(user, content.Sha256, pending.ContentType, pending.AudiencePermission, pending.AudienceScopeId, cancellationToken) is [var match, ..])
+        if (!request.AddAgain)
         {
-            await DiscardAsync(pending, cancellationToken);
-            return new UploadedMedia { Item = await InfoOfAsync(match, cancellationToken), AlreadyInLibrary = true };
+            List<MediaItem> same = await SameContentAsync(user, content.Sha256, pending.ContentType, pending.AudiencePermission, pending.AudienceScopeId, cancellationToken);
+            if (same.FirstOrDefault(item => item.KeepsOriginal) is { } match)
+            {
+                await DiscardAsync(pending, cancellationToken);
+                return new UploadedMedia { Item = await InfoOfAsync(match, cancellationToken), AlreadyInLibrary = true };
+            }
+
+            List<MediaItem> removed = same.Where(item => !item.KeepsOriginal).ToList();
+            MediaItem? putBack = request.PutBackInto is { Length: > 0 } wanted ? removed.FirstOrDefault(item => item.Id.ToString() == wanted) : removed.FirstOrDefault();
+            if (putBack is not null)
+                return await PutBackAsync(pending, putBack.Id, cancellationToken);
+            if (request.PutBackInto is { Length: > 0 })
+                throw new RpcException(new Status(StatusCode.NotFound, "That picture isn't in the library any more. Add it as a new picture instead."));
         }
 
         MediaTypes.TryGetExtension(pending.ContentType, out string extension);
@@ -108,11 +118,66 @@ internal sealed class MediaLibrary(
             UploadedAt = Now,
             FolderId = pending.FolderId is { } folder && await db.Folders.AnyAsync(existing => existing.Id == folder, cancellationToken) ? folder : null,
         };
+        await sizer.SizeAsync(item, token => MediaSizer.BytesOfAsync(blobs, BlobBucket.Private, pending.StagingKey, token), cancellationToken);
         db.Items.Add(item);
         Mark(item.Id);
         await DiscardAsync(pending, cancellationToken);
-        return new UploadedMedia { Item = InfoOf(item, uses: 0) };
+        return new UploadedMedia { Item = await InfoOfAsync(item, cancellationToken) };
     }
+
+    private async Task<UploadedMedia> PutBackAsync(PendingUpload pending, Guid mediaId, CancellationToken cancellationToken)
+    {
+        MediaItem item = await db.Items.SingleAsync(item => item.Id == mediaId, cancellationToken);
+        BlobBucket bucket = item.IsPrivate ? BlobBucket.Private : BlobBucket.Public;
+        if (await blobs.FindAsync(bucket, item.Key, cancellationToken) is null)
+            await blobs.CopyAsync(BlobBucket.Private, pending.StagingKey, bucket, item.Key, new BlobHeaders(item.ContentType, ContentAddress.ImmutableCacheControl), cancellationToken);
+
+        item.OriginalRemovedAt = null;
+        Mark(item.Id);
+        await DiscardAsync(pending, cancellationToken);
+        await holders.RefreshAsync([item.Id], cancellationToken);
+        return new UploadedMedia { Item = await InfoOfAsync(item, cancellationToken), PutBack = true };
+    }
+
+    public async Task<MediaItemInfo> RemoveOriginalAsync(string id, CancellationToken cancellationToken)
+    {
+        Guid mediaId = ParseId(id);
+        MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+        if (!item.KeepsOriginal)
+            return await InfoOfAsync(item, cancellationToken);
+        if (await InSystemFolderAsync(item, cancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "The app looks after the files it keeps for itself, so their originals stay."));
+        if (!await db.Renditions.AnyAsync(rendition => rendition.MediaId == mediaId, cancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already small, so the original is the only copy. There's nothing smaller to keep in its place."));
+        if (!await holders.CanAllRefreshAsync(mediaId, cancellationToken))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition,
+                "Somewhere that uses it, such as a draft that isn't published yet, can't switch to a smaller size by itself. Publish or close the draft first."));
+
+        item.OriginalRemovedAt = Now;
+        Mark(item.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        await holders.RefreshAsync([item.Id], cancellationToken);
+        await DeleteUnlistedAsync(item.IsPrivate, [item.Key], cancellationToken);
+        return await InfoOfAsync(item, cancellationToken);
+    }
+
+    private async Task DeleteUnlistedAsync(bool isPrivate, IEnumerable<string> keys, CancellationToken cancellationToken)
+    {
+        foreach (string key in keys.Distinct())
+        {
+            bool listed = await db.Items.AnyAsync(other => other.Key == key && other.OriginalRemovedAt == null && (other.AudiencePermission == null) != isPrivate, cancellationToken)
+                || await db.Renditions.AnyAsync(rendition => rendition.Key == key
+                    && db.Items.Any(other => other.Id == rendition.MediaId && (other.AudiencePermission == null) != isPrivate), cancellationToken);
+            if (!listed)
+                await blobs.DeleteAsync(isPrivate ? BlobBucket.Private : BlobBucket.Public, key, cancellationToken);
+        }
+    }
+
+    private Task<bool> InSystemFolderAsync(MediaItem item, CancellationToken cancellationToken) =>
+        item.FolderId is { } folderId
+            ? db.Folders.AnyAsync(folder => folder.Id == folderId && folder.SystemArea != null, cancellationToken)
+            : Task.FromResult(false);
 
     public async Task<MediaMatches> FindByHashAsync(ClaimsPrincipal user, FindByHashRequest request, CancellationToken cancellationToken)
     {
@@ -122,10 +187,10 @@ internal sealed class MediaLibrary(
 
         List<MediaItem> matches = await SameContentAsync(user, sha256, request.ContentType.ToLowerInvariant(),
             NullIfEmpty(request.PrivateTo?.Permission), NullIfEmpty(request.PrivateTo?.ScopeId), cancellationToken);
-        List<MediaItemInfo> items = [];
+        MediaMatches found = new();
         foreach (MediaItem match in matches)
-            items.Add(await InfoOfAsync(match, cancellationToken));
-        return new MediaMatches { Items = items };
+            (match.KeepsOriginal ? found.Items : found.RemovedOriginals).Add(await InfoOfAsync(match, cancellationToken));
+        return found;
     }
 
     private async Task<List<MediaItem>> SameContentAsync(
@@ -146,11 +211,13 @@ internal sealed class MediaLibrary(
     }
 
     private async Task<MediaItemInfo> InfoOfAsync(MediaItem item, CancellationToken cancellationToken) =>
-        InfoOf(item, await db.Uses.CountAsync(use => use.MediaId == item.Id, cancellationToken));
+        InfoOf(item, await db.Uses.CountAsync(use => use.MediaId == item.Id, cancellationToken), (await MediaRefs.RenditionsOfAsync(db, [item.Id], cancellationToken))[item.Id]);
 
-    private MediaItemInfo InfoOf(MediaItem item, int uses) => new()
+    private MediaItemInfo InfoOf(MediaItem item, int uses, IReadOnlyCollection<MediaRendition> renditions) => new()
     {
-        Media = MediaRefs.Of(item, blobs),
+        Media = MediaRefs.Of(item, renditions, blobs),
+        Original = item.ContentType.StartsWith("image/", StringComparison.Ordinal) ? MediaRefs.OriginalOf(item) : null,
+        Sizing = item.Sizing,
         Uses = uses,
         UploadedAt = item.UploadedAt,
         UploadedBy = item.UploadedBy.ToString(),
@@ -171,7 +238,7 @@ internal sealed class MediaLibrary(
                 .Where(item => item.Sha256 == inspected.Sha256 && item.ContentType == contentType && item.AudiencePermission == null)
                 .OrderBy(item => item.UploadedAt)
                 .FirstOrDefaultAsync(cancellationToken) is { } existing)
-            return MediaRefs.Of(existing, blobs);
+            return await MediaRefs.OfAsync(db, existing, blobs, cancellationToken);
 
         if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
         {
@@ -190,25 +257,31 @@ internal sealed class MediaLibrary(
             UploadedBy = CallerId(user),
             UploadedAt = Now,
         };
+        await sizer.SizeAsync(item, _ => Task.FromResult(bytes), cancellationToken);
         db.Items.Add(item);
         Mark(item.Id);
         await db.SaveChangesAsync(cancellationToken);
-        return MediaRefs.Of(item, blobs);
+        return await MediaRefs.OfAsync(db, item, blobs, cancellationToken);
     }
 
-    public async Task<MediaLink> GetLinkAsync(ClaimsPrincipal user, string id, CancellationToken cancellationToken)
+    public async Task<MediaLink> GetLinkAsync(ClaimsPrincipal user, LinkRequest request, CancellationToken cancellationToken)
     {
-        MediaItem item = await db.Items.AsNoTracking().SingleOrDefaultAsync(item => item.Id == ParseId(id), cancellationToken)
+        Guid mediaId = await MediaAliases.ResolveAsync(db, ParseId(request.Id), cancellationToken);
+        MediaItem item = await db.Items.AsNoTracking().SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
+        MediaRef media = await MediaRefs.OfAsync(db, item, blobs, cancellationToken);
+        string key = request.Key.Length == 0 || request.Key == media.Key || media.Sizes.Any(size => size.Key == request.Key)
+            ? request.Key.Length == 0 ? media.Key : request.Key
+            : throw new RpcException(new Status(StatusCode.NotFound, "That size of it isn't kept any more."));
 
         if (item.AudiencePermission is not { } permission)
-            return new MediaLink { Url = blobs.PublicUrlOf(item.Key).ToString(), ExpiresAt = DateTime.MaxValue.ToUniversalTime() };
+            return new MediaLink { Url = blobs.PublicUrlOf(key).ToString(), ExpiresAt = DateTime.MaxValue.ToUniversalTime() };
 
         if (!await access.IsAllowedAsync(user, permission, item.AudienceScopeId, cancellationToken))
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
 
         DateTime expiresAt = Now + PrivateLinkLifetime;
-        Uri url = await blobs.PresignDownloadAsync(BlobBucket.Private, item.Key, PrivateLinkLifetime);
+        Uri url = await blobs.PresignDownloadAsync(BlobBucket.Private, key, PrivateLinkLifetime);
         return new MediaLink { Url = url.ToString(), ExpiresAt = expiresAt };
     }
 
@@ -222,6 +295,7 @@ internal sealed class MediaLibrary(
             Pictures = await Filtered(scope, MediaFilter.Pictures).CountAsync(cancellationToken),
             Documents = await Filtered(scope, MediaFilter.Documents).CountAsync(cancellationToken),
             Unused = await Filtered(scope, MediaFilter.Unused).CountAsync(cancellationToken),
+            LargeOriginals = await Filtered(scope, MediaFilter.LargeOriginals).CountAsync(cancellationToken),
         };
 
         List<Listed> items = await Filtered(scope, query.Filter)
@@ -231,11 +305,13 @@ internal sealed class MediaLibrary(
             .Select(item => new Listed(item, db.Uses.Count(use => use.MediaId == item.Id)))
             .ToListAsync(cancellationToken);
 
+        List<Listed> shown = items.Take(take).ToList();
+        Dictionary<Guid, List<MediaRendition>> renditions = await MediaRefs.RenditionsOfAsync(db, shown.Select(row => row.Item.Id), cancellationToken);
         return new MediaList
         {
             HasMore = items.Count > take,
             Counts = counts,
-            Items = items.Take(take).Select(row => InfoOf(row.Item, row.Uses)).ToList(),
+            Items = shown.Select(row => InfoOf(row.Item, row.Uses, renditions[row.Item.Id])).ToList(),
         };
     }
 
@@ -268,6 +344,8 @@ internal sealed class MediaLibrary(
         MediaFilter.Pictures => items.Where(item => item.ContentType.StartsWith("image/")),
         MediaFilter.Documents => items.Where(item => !item.ContentType.StartsWith("image/")),
         MediaFilter.Unused => items.Where(item => !db.Uses.Any(use => use.MediaId == item.Id)),
+        MediaFilter.LargeOriginals => items.Where(item => item.OriginalRemovedAt == null && item.Bytes > MediaTypes.LargeOriginalBytes
+            && db.Renditions.Any(rendition => rendition.MediaId == item.Id)),
         _ => items,
     };
 
@@ -277,13 +355,14 @@ internal sealed class MediaLibrary(
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
 
-        if (item.FolderId is { } folderId && await db.Folders.AnyAsync(folder => folder.Id == folderId && folder.SystemArea != null, cancellationToken))
+        if (await InSystemFolderAsync(item, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be deleted here."));
 
         int uses = await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken);
         if (uses > 0)
             throw InUse(uses);
 
+        List<string> keys = [item.Key, .. await db.Renditions.Where(rendition => rendition.MediaId == mediaId).Select(rendition => rendition.Key).ToListAsync(cancellationToken)];
         db.Items.Remove(item);
         Mark(item.Id, deleted: true);
         try
@@ -295,9 +374,7 @@ internal sealed class MediaLibrary(
             throw InUse(await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken));
         }
 
-        bool bytesStillListed = await db.Items.AnyAsync(other => other.Key == item.Key && (other.AudiencePermission == null) == (item.AudiencePermission == null), cancellationToken);
-        if (!bytesStillListed)
-            await blobs.DeleteAsync(item.IsPrivate ? BlobBucket.Private : BlobBucket.Public, item.Key, cancellationToken);
+        await DeleteUnlistedAsync(item.IsPrivate, keys, cancellationToken);
     }
 
     private static RpcException InUse(int uses) =>

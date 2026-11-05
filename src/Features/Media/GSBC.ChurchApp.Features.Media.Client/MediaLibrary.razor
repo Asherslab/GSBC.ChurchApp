@@ -82,7 +82,11 @@
                                         <span class="media-card__thumb">
                                             @if (media.IsImage)
                                             {
-                                                <MediaImage Media="media" Class="media-card__image" />
+                                                <MediaImage Media="media" Size="MediaSizeName.Thumbnail" Class="media-card__image" />
+                                                @if (VersionCount(media) > 1)
+                                                {
+                                                    <span class="media-card__sizes">@VersionCount(media) sizes</span>
+                                                }
                                             }
                                             else
                                             {
@@ -91,6 +95,10 @@
                                         </span>
                                         <span class="media-card__name">@NameOf(media)</span>
                                         <span class="media-card__meta">@(Searching ? $"In {map.PathName(item.FolderId)}" : UsedIn(item.Uses))</span>
+                                        @if (item.HasLargeOriginal)
+                                        {
+                                            <span class="media-card__flag">@LargeOriginal(item)</span>
+                                        }
                                     </button>
                                     <button type="button" role="checkbox" aria-checked="@(on ? "true" : "false")" aria-label="Choose @NameOf(media)"
                                             class="media-card__check" @onclick="() => Toggle(item)">
@@ -181,6 +189,7 @@
     private string? _error;
     private string? _problem;
     private string? _moved;
+    private string? _versionsProblem;
 
     private FolderSheet _sheet;
     private FolderInfo? _sheetFolder;
@@ -285,8 +294,11 @@
                   </dd>
                   <dt>Uploaded</dt>
                   <dd><DateLine At="selected.UploadedAt" /></dd>
-                  <dt>Size</dt>
-                  <dd>@(media.Width > 0 ? $"{media.Width} × {media.Height} · {Size(media.Bytes)}" : Size(media.Bytes))</dd>
+                  @if (selected.Original is null)
+                  {
+                      <dt>Size</dt>
+                      <dd>@MediaSizes.Weight(media.Bytes)</dd>
+                  }
                   <dt>Used in</dt>
                   <dd>@UsedIn(selected.Uses)</dd>
                   @if (selected.PrivateTo is { } audience)
@@ -295,6 +307,11 @@
                       <dd>Only people with @audience.Permission@(audience.ScopeId is null ? "" : $" in {audience.ScopeId}")</dd>
                   }
               </dl>
+              @if (selected.Original is { } original)
+              {
+                  <PictureVersions Item="selected" Original="original" CanRemoveOriginal="CanRemoveOriginal(map, selected)" Busy="_busy" Problem="@_versionsProblem"
+                                   OnRemoveOriginal="RemoveOriginalAsync" />
+              }
               <div class="panel-actions">
                   @if (CanMoveFiles(map, selected))
                   {
@@ -338,22 +355,32 @@
 
     private IReadOnlyList<TableColumn<MediaItemInfo>> Columns(FolderMap map) =>
     [
-        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="file" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
-        new("Name", item => @<span class="media-name"><span class="cell-strong">@NameOf(item.Media!)</span>@if (item.Media!.AltText.Length > 0) {<span class="quiet">@item.Media.AltText</span>}</span>, item => NameOf(item.Media!)),
+        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Size="MediaSizeName.Thumbnail" Class="media-thumb__image" />} else {<Icon Name="file" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
+        new("Name", item => @<span class="media-name"><span class="cell-strong">@NameOf(item.Media!)</span>@if (item.HasLargeOriginal) {<span class="media-name__flag">@LargeOriginal(item)</span>} else if (item.Media!.AltText.Length > 0) {<span class="quiet">@item.Media.AltText</span>}</span>, item => NameOf(item.Media!)),
         Searching
             ? new("Folder", item => @<span>@map.PathName(item.FolderId)</span>, item => map.PathName(item.FolderId))
             : new("Used in", item => @<span>@UsedIn(item.Uses)</span>, item => item.Uses, "nowrap"),
         new("Uploaded", item => @<DateLine At="item.UploadedAt" Style="DateLineStyle.Short" />, item => item.UploadedAt, "num"),
-        new("Size", item => @<span>@Size(item.Media!.Bytes)</span>, item => item.Media!.Bytes, "num optional"),
+        new("Size", item => @<span>@MediaSizes.Weight(item.Media!.Bytes)</span>, item => item.Media!.Bytes, "num optional"),
     ];
 
-    private static IReadOnlyList<FilterOption<MediaFilter>> Filters(MediaCounts? counts) =>
+    private IReadOnlyList<FilterOption<MediaFilter>> Filters(MediaCounts? counts) =>
     [
         new(MediaFilter.All, "All", counts?.All),
         new(MediaFilter.Pictures, "Pictures", counts?.Pictures),
         new(MediaFilter.Documents, "PDFs and files", counts?.Documents),
         new(MediaFilter.Unused, "Not used", counts?.Unused),
+        .. counts?.LargeOriginals > 0 || _filter == MediaFilter.LargeOriginals
+            ? [new FilterOption<MediaFilter>(MediaFilter.LargeOriginals, "Large originals", counts?.LargeOriginals)]
+            : Array.Empty<FilterOption<MediaFilter>>(),
     ];
+
+    private static int VersionCount(MediaRef media) => media.Sizes.Count + 1;
+
+    private static string LargeOriginal(MediaItemInfo item) => $"Large original · {MediaSizes.Weight(item.Original!.Bytes)}";
+
+    private bool CanRemoveOriginal(FolderMap map, MediaItemInfo item) =>
+        Access.Can(MediaPermissions.Delete) && map.Find(item.FolderId) is not { IsSystem: true } && item.Original is { Removed: false } && item.Media!.Sizes.Count > 0;
 
     private string EmptyTitle(FolderMap map) => Searching || _filter != MediaFilter.All
         ? "Nothing matches"
@@ -479,6 +506,7 @@
         _uploading = false;
         _confirming = false;
         _error = null;
+        _versionsProblem = null;
     }
 
     private void ClearChosen()
@@ -658,6 +686,12 @@
         _uploading = false;
         MediaItemInfo item = uploaded.Item!;
         _known[item.Media!.Id] = item;
+        if (uploaded.PutBack)
+        {
+            await RevealAsync(item);
+            _moved = $"The original of “{NameOf(item.Media)}” is back, so it's whole again. Nothing new was added.";
+            return;
+        }
         if (uploaded.AlreadyInLibrary)
         {
             await RevealAsync(item);
@@ -667,6 +701,26 @@
         _chosen.Clear();
         _chosen.Add(item.Media.Id);
         await ReloadAllAsync();
+    }
+
+    private async Task RemoveOriginalAsync()
+    {
+        _busy = true;
+        _versionsProblem = null;
+        try
+        {
+            MediaItemInfo updated = await Media.RemoveOriginalAsync(_chosen[0]);
+            _known[updated.Media!.Id] = updated;
+            await ReloadListAsync();
+        }
+        catch (RpcException exception)
+        {
+            _versionsProblem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
     }
 
     private async Task DeleteAsync()
@@ -706,8 +760,6 @@
         string files = folder.Files == 1 ? "1 file" : $"{folder.Files} files";
         return folders == 0 ? files : folder.Files == 0 ? (folders == 1 ? "1 folder" : $"{folders} folders") : $"{files} and {(folders == 1 ? "1 folder" : $"{folders} folders")}";
     }
-
-    private static string Size(long bytes) => bytes < 1024 * 1024 ? $"{bytes / 1024d:0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
 
     private enum Shelf
     {

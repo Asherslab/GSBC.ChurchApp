@@ -33,7 +33,7 @@ public sealed class NativeMediaFiles(NativeBridge bridge, IJSRuntime js, IServic
             return;
 
         List<PrefetchItemJson> items = [];
-        foreach (MediaRef item in media.Where(item => item.IsImage).DistinctBy(item => item.Key))
+        foreach (MediaRef item in media.Where(item => item.IsImage).Select(item => item.At(MediaSizeName.ForPhones)).DistinctBy(item => item.Key))
         {
             string? url = item.IsPrivate ? await PrivateLinkIfNotCachedAsync(item) : item.Url;
             if (url is not null)

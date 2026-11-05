@@ -1,0 +1,9 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+<span class="media-shown-at @Class">Shown at @MediaSizes.Describe(Media.At(Size))</span>
+
+@code {
+    [Parameter, EditorRequired] public required MediaRef Media { get; set; }
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public string? Class { get; set; }
+}

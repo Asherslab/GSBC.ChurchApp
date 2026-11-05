@@ -160,6 +160,70 @@ and again.
 - Matching is on the hash and the content type, so the same bytes declared as two types stay apart, as
   their keys do.
 
+## Sizes: one picture, made in the sizes phones need (owner, 2026-11-05)
+
+The owner's request, from the library full of sermon artwork's `-large.jpg` and `-small.jpg` pairs:
+keep a picture's sizes with their original, as one entry.
+
+- **Sizes are made automatically** whenever a picture enters Media (an upload, `StoreAsync`,
+  `KeepAsync`): **For phones**, 1280 wide, and **Thumbnail**, 480 wide (`MediaSizes`), from the picture
+  turned by its EXIF orientation, keeping its aspect ratio. **Never cropped.** A picture already that
+  narrow or narrower gets no copy at that size. JPEG, PNG and WebP are resized: opaque results are
+  JPEG, those with transparency WebP. GIFs (which may move) and anything that can't be decoded are
+  kept as they are, and the detail says so. Fonts, PDFs and audio have no sizes. Staff never choose a
+  size.
+- **Stored like everything else:** each size is its own content-addressed object (`<sha256>.<ext>`,
+  immutable), in the picture's bucket, and listed in `media.renditions`. A second entry for the same
+  bytes (Add it again anyway, a kept copy) takes the sizes already made instead of making them again.
+- **Existing pictures** are sized in the background when the API starts (`MediaSizesBackfill`, items
+  with `sizing = Waiting`), and places using them are refreshed (below).
+- **`MediaRef` carries its sizes.** Its own fields describe the main version (the original, or the
+  For phones size once the original is removed: `Version`), and `Sizes` lists the smaller ones, each
+  with key, URL, type, dimensions and bytes. A client calls `media.At(MediaSizeName.ForPhones)`, which
+  picks the smallest kept size at least that wide, or the main one; `MediaImage` takes a `Size`
+  (For phones by default; the admin grid and picture fields use Thumbnail). The phone's cache is keyed
+  and verified by the size's own key, unchanged, and prefetching fetches the For phones size. A private picture's sizes are linked by `GetLink`
+  with the key wanted; only keys the picture keeps are linked.
+- **The library** shows one tile per picture with a mark ("3 sizes"), and the detail lists each version
+  with dimensions and weight. A picture whose original is over 2 MB and has sizes is flagged "Large
+  original · 4.2 MB", and the Large originals filter finds them.
+- **"Shown at …"** (`MediaShownAt`, Platform.Ui): wherever a picture is placed in the admin panel, a
+  subtitle says which version is shown and its weight. A `MediaSetting` declares the size its screen
+  uses (`shownAt`, For phones by default), and `MediaChooser` passes a `Size` on to the picture sheet.
+- **Upload warnings:** pictures that are resized get none; other files over 10 MB (PDFs, GIFs, fonts)
+  keep the warning.
+
+### Removing an original
+
+`Media.RemoveOriginal` (`media.delete`) deletes the original's bytes and keeps the sizes; the entry
+stays and says *Original removed · was 4.2 MB*. Its id stays the same, and a saved `MediaRef` holding
+the old original key still verifies (any key the picture has or had is accepted), coming back with the
+current versions. The object is deleted only when no other entry lists that key. It's refused for a
+picture with no smaller size, in a system folder, or used somewhere that can't take the new sizes by
+itself.
+
+That last rule is **`IMediaHolder`** (Platform.Api): a feature that stores `MediaRef`s can be asked to
+re-verify and re-save the ones an owner string holds. Media asks every holder of a picture after
+removing or putting back its original and after making sizes for an existing picture. Configuration's
+placements implement it (`config.placement/…`: re-verified, revision bumped, feed marked). Drafts and
+Sermons don't yet, so a picture they use keeps its original until they do.
+
+### Putting it back
+
+The removed original's SHA-256 stays on the entry. Uploading the same bytes again is recognised by
+`FindByHash` (as `RemovedOriginals`) and by `CompleteUpload`: the upload offers **Put it back as the
+original of *X*** (the default, also the server's choice when nothing was chosen) or **Add it as a new
+picture**. Putting back copies the bytes to the original key and refreshes the places that use it. The
+same visibility rules as duplicates apply: never from another audience, a system folder, or (without
+`media.view`) someone else's upload; otherwise the upload is a new picture and nothing is said.
+
+### Sermon artwork pairs (migration `MediaSizes`)
+
+Each pair Sermons kept in its system folder (`<hash>-large.jpg` and `<hash>-small.jpg`) became one
+entry: the large one, with the small one as its Thumbnail. The small entry's id is kept as an alias
+(`media.aliases`), so Sermons' saved `MediaRef`s and its `UseAsync` calls with either id keep working;
+the small one's uses moved to the picture.
+
 ## What syncs
 
 There is no media feed. A feature's record carries a `MediaRef` (Platform.Contracts: id, key, type,
@@ -321,6 +385,12 @@ is the same list for its buckets when it does.
 - Folders (`Features.Media.Api.Tests`): moving never changes a file's identity or uses; deleting a
   folder never deletes files; system folders are locked and only their audience or
   `media.system.view` sees inside.
+- Sizes (`Features.Media.Api.Tests`): sizes are made once and shared by every entry of the same bytes
+  (and are their own content's hash); they show the whole picture, turned upright, never cropped;
+  removing an original keeps its sizes, refreshes the places using it and still verifies their saved
+  refs; uploading a removed original offers to put it back and putting it back restores it; a removed
+  original is never offered to someone who can't see its picture; sermon artwork pairs become one
+  picture without breaking the ids Sermons holds.
 
 ## Open
 
@@ -328,5 +398,8 @@ is the same list for its buckets when it does.
 - **Background prefetch:** records synced in the background get their images on the next open (above).
 - **Media in the Storage screen's total.**
 - **A phone page** for uploading (Life Group leaders), when a feature needs it.
+- **Sermons on sizes:** Sermons still makes its own large and small copies and stores both refs. It
+  can keep one (`KeepAsync` of the picture as fetched) and use `At(…)`, then implement `IMediaHolder`.
+- **Drafts as media holders,** so a picture in an unpublished draft can lose its original.
 - **Existing items' dimensions:** files uploaded before 2026-11-02 keep the dimensions the client sent
   (none, from the admin panel). Development data only; re-upload if it matters.

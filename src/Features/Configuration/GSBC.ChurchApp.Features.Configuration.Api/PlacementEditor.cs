@@ -140,19 +140,44 @@ internal sealed class PlacementEditor(
     public async Task<PlacementState> ValidatedAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
     {
         PlacementState claimed = Validated(surface, state);
-        List<(Setting Setting, IHoldsMedia Holder)> holders = MediaHolders(surface);
-        if (holders.Count == 0)
-            return claimed;
+        return MediaHolders(surface).Count == 0 ? claimed : Validated(surface, await WithCurrentMediaAsync(surface, claimed, cancellationToken));
+    }
 
-        List<MediaRef> refs = holders.SelectMany(field => field.Holder.MediaIn(claimed.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
+    private async Task<PlacementState> WithCurrentMediaAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
+    {
+        List<(Setting Setting, IHoldsMedia Holder)> holders = MediaHolders(surface);
+        List<MediaRef> refs = holders.SelectMany(field => field.Holder.MediaIn(state.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
         Dictionary<string, MediaRef> verified = (await media.VerifyAsync(refs, cancellationToken)).DistinctBy(item => item.Id).ToDictionary(item => item.Id);
-        SortedDictionary<string, string> values = new(claimed.Values);
+        SortedDictionary<string, string> values = new(state.Values);
         foreach ((Setting setting, IHoldsMedia holder) in holders)
         {
             if (values.TryGetValue(setting.Key, out string? text))
                 values[setting.Key] = holder.WithMedia(text, verified);
         }
-        return Validated(surface, claimed with { Values = values });
+        return state with { Values = values };
+    }
+
+    public async Task RefreshMediaAsync(Guid placementId, CancellationToken cancellationToken)
+    {
+        if (await db.Placements.SingleOrDefaultAsync(placement => placement.Id == placementId, cancellationToken) is not { } record
+            || !surfaces.ByKey.TryGetValue(record.Surface, out Surface? surface))
+            return;
+
+        PlacementState stored = PlacementState.Of(record);
+        PlacementState current = await WithCurrentMediaAsync(surface, stored, cancellationToken);
+        if (PlacementState.Same(stored, current))
+            return;
+
+        current.ApplyTo(record);
+        record.Revision++;
+        db.FeedChanges.Add(FeedChangeOf(record, deleted: false));
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public static bool IsMediaOwner(string owner, out Guid placementId)
+    {
+        placementId = Guid.Empty;
+        return owner.StartsWith(MediaOwnerPrefix, StringComparison.Ordinal) && Guid.TryParse(owner[MediaOwnerPrefix.Length..], out placementId);
     }
 
     private static List<(Setting Setting, IHoldsMedia Holder)> MediaHolders(Surface surface) =>
@@ -265,7 +290,9 @@ internal sealed class PlacementEditor(
         return batchId;
     }
 
-    private static string MediaOwner(Guid placementId) => $"config.placement/{placementId}";
+    private const string MediaOwnerPrefix = "config.placement/";
+
+    private static string MediaOwner(Guid placementId) => $"{MediaOwnerPrefix}{placementId}";
 
     public static FeedChangeRecord FeedChangeOf(PlacementRecord record, bool deleted) => new()
     {

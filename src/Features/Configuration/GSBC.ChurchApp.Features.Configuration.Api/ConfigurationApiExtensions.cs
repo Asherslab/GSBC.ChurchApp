@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Hosting;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -19,6 +20,7 @@ public static class ConfigurationApiExtensions
         services.AddConfigurationData();
         services.AddScoped<PlacementEditor>();
         services.AddScoped<DraftEditor>();
+        services.AddScoped<IMediaHolder, PlacementMediaHolder>();
         services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All);
         services.AddPermissions(HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, ConfigurationPermissions.PreviewDraft);
         services.AddSystemRole(new SystemRole(ConfigurationPermissions.DraftReviewerRole, "Draft reviewer",
