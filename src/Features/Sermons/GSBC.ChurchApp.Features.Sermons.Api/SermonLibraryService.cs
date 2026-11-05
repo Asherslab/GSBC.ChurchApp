@@ -190,7 +190,7 @@ internal sealed class SermonLibraryService(
 
         series.Name = name;
         series.Description = request.Description.Trim();
-        series.ChosenArtwork = await VerifiedAsync(request.ArtworkChosen ? request.Artwork : null, $"sermons/series/{series.Id}", cancellationToken);
+        series.ChosenArtwork = await VerifiedAsync(request.ArtworkChosen ? request.Artwork : null, Artwork.ChosenArtworkOwner(series.Id), cancellationToken);
         publisher.MarkAdmin(series.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
@@ -226,7 +226,7 @@ internal sealed class SermonLibraryService(
             db.Speakers.Add(speaker);
         }
         speaker.Name = name;
-        speaker.ChosenPhoto = await VerifiedAsync(request.PhotoChosen ? request.Photo : null, $"sermons/speakers/{speaker.Id}", cancellationToken);
+        speaker.ChosenPhoto = await VerifiedAsync(request.PhotoChosen ? request.Photo : null, Artwork.ChosenPhotoOwner(speaker.Id), cancellationToken);
 
         HashSet<string> wanted = request.Aliases.Append(name).Select(Speakers.AliasOf).Where(alias => alias.Length > 0).ToHashSet();
         List<SpeakerAlias> taken = await db.SpeakerAliases.Where(alias => wanted.Contains(alias.Alias) && alias.SpeakerId != speaker.Id).ToListAsync(cancellationToken);
@@ -331,17 +331,21 @@ internal sealed class SermonLibraryService(
         await db.SpeakerAliases.Where(alias => alias.SpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(alias => alias.SpeakerId, into.Id), cancellationToken);
         await db.Sermons.Where(sermon => sermon.SourceSpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.SourceSpeakerId, into.Id), cancellationToken);
         await db.Sermons.Where(sermon => sermon.SpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.SpeakerId, into.Id), cancellationToken);
+        bool takesChosen = into.ChosenPhoto is null && from.ChosenPhoto is not null;
         into.ChosenPhoto ??= from.ChosenPhoto;
         into.PhotoSourceUrl ??= from.PhotoSourceUrl;
         if (into.Photo is null && from.Photo is not null)
             (into.Photo, into.PhotoHash) = (from.Photo, null);
+        await SourceIdMove.RememberAsync(db, from.Id, into.Id, FormerId.Speaker, time.GetUtcNow().UtcDateTime, settled: true, cancellationToken);
         from.Photo = from.ChosenPhoto = null;
         from.PhotoSourceUrl = from.PhotoHash = null;
         publisher.MarkAdmin(into.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
         await media.UseAsync(Artwork.SpeakerOwner(from.Id), [], cancellationToken);
-        await media.UseAsync($"sermons/speakers/{from.Id}", [], cancellationToken);
+        await media.UseAsync(Artwork.ChosenPhotoOwner(from.Id), [], cancellationToken);
+        if (takesChosen)
+            await media.UseAsync(Artwork.ChosenPhotoOwner(into.Id), [into.ChosenPhoto!], cancellationToken);
         db.Speakers.Remove(from);
         if (from.PublishedHash is not null)
             db.FeedChanges.Add(new Platform.Data.FeedChangeRecord { Feed = SermonsFeeds.Speakers, RecordId = from.Id.ToString(), Version = time.GetUtcNow().UtcDateTime.Ticks, Deleted = true });

@@ -49,7 +49,7 @@
                         @foreach (SeriesInfo one in series)
                         {
                             <a class="series-strip__item" href="@SermonsDestinations.Series.PathOf(one.Id).TrimStart('/')">
-                                <MediaCover Media="one.Thumbnail ?? one.Artwork" FallbackTitle="@one.Name" />
+                                <MediaCover Media="one.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@one.Name" />
                                 <span>@one.Name</span>
                             </a>
                         }

@@ -212,6 +212,30 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         Assert.Empty(await phones.HeldAsync(phone, cancellationToken));
     }
 
+    [Fact]
+    public async Task WhenAScopedThingGetsANewIdItsPeopleAndPhonesMoveWithItAndNoOneHoldsItTwice()
+    {
+        Guid phone = Guid.CreateVersion7(), follower = Guid.CreateVersion7(), both = Guid.CreateVersion7();
+        const string Renamed = "music-ministry";
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        IPhoneRoles phones = scope.ServiceProvider.GetRequiredService<IPhoneRoles>();
+        IRoleAssignments roles = scope.ServiceProvider.GetRequiredService<IRoleAssignments>();
+        IPermissionHolders holders = scope.ServiceProvider.GetRequiredService<IPermissionHolders>();
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await phones.GiveAsync(phone, "follower", Music, null, cancellationToken);
+        await roles.GiveAsFeatureAsync(follower, "follower", Music, null, cancellationToken);
+        await roles.GiveAsFeatureAsync(both, "follower", Music, null, cancellationToken);
+        await roles.GiveAsFeatureAsync(both, "follower", Renamed, null, cancellationToken);
+
+        await roles.MoveScopeAsync(ScopeKind.Ministry, Music, Renamed, cancellationToken);
+
+        PermissionHolders moved = await holders.HoldersAsync(ReceiveNotices, Renamed, cancellationToken);
+        Assert.Equal([phone], moved.Phones);
+        Assert.Equal(new HashSet<Guid> { follower, both }, moved.People.ToHashSet());
+        Assert.Equal(2, (await roles.HoldersAsync("follower", Renamed, cancellationToken)).Count);
+        Assert.Empty((await holders.HoldersAsync(ReceiveNotices, Music, cancellationToken)).People);
+    }
+
     private async Task<bool> IsLastActiveOwnerAsync(Assignment assignment)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();

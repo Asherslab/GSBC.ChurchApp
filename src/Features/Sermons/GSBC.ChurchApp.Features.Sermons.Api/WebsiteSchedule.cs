@@ -19,6 +19,7 @@ internal sealed class WebsiteSchedule(IServiceScopeFactory scopes, IOptions<Webs
     {
         if (!options.Value.Enabled)
             return;
+        await RefreshPicturesAsync(stoppingToken);
         while (!stoppingToken.IsCancellationRequested)
         {
             try
@@ -30,6 +31,19 @@ internal sealed class WebsiteSchedule(IServiceScopeFactory scopes, IOptions<Webs
                 logger.LogError(exception, "Reading sermons from the website failed; trying again later");
             }
             await _now.WaitAsync(options.Value.Every, stoppingToken);
+        }
+    }
+
+    private async Task RefreshPicturesAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            await using AsyncServiceScope scope = scopes.CreateAsyncScope();
+            await scope.ServiceProvider.GetRequiredService<SermonPictures>().RefreshAllAsync(cancellationToken);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            logger.LogError(exception, "Giving sermon pictures their current sizes failed; trying again at the next start");
         }
     }
 
@@ -45,6 +59,7 @@ internal sealed class WebsiteSchedule(IServiceScopeFactory scopes, IOptions<Webs
             return false;
         try
         {
+            await scope.ServiceProvider.GetRequiredService<SourceIdMove>().RunAsync(cancellationToken);
             WebsiteReader reader = scope.ServiceProvider.GetRequiredService<WebsiteReader>();
             if (fromWebsite)
                 await reader.ReadAsync(force, cancellationToken);

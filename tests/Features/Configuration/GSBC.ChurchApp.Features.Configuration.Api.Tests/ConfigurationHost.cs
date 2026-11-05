@@ -280,6 +280,8 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
         public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
+        public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
         public static Guid IdOf(ClaimsPrincipal person) => Caller.UserId(person)!.Value;
 
         private static bool Same(Grant left, Grant right) => left.Pattern.Text == right.Pattern.Text && left.Scope == right.Scope;

@@ -57,6 +57,11 @@ Group round) and a source:
 - **derived:** a feature made it from something else (joining a ministry's team makes you its member),
   and that feature owns it. Elvanto team membership can feed this later.
 
+**When a scope object gets a new id** (2026-11-06), the feature that owns it calls
+`IRoleAssignments.MoveScopeAsync(kind, from, to)`: every person's and phone's assignment of a role of that scope
+kind moves to the new id, and someone who already held it there keeps one. Sermons uses it when a series moves to
+its lasting id, so its followers keep following ([sermons.md](../features/sermons.md), *Lasting ids*).
+
 **Holding a role** (2026-11-04). Compiling someone's grants also gives them a global
 `roles.held.<role id>` grant for each role they hold and each role it includes (`RoleMembership`), so
 "people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't

@@ -9,11 +9,11 @@ public sealed class ArtworkTests : SermonsHost
     private const string Harbour = "https://files.example/2026/11/01/art/harbour-4.png";
 
     [Fact]
-    public async Task APictureUsedByManySermonsAndSeriesIsMadeAndKeptOnceAndEveryUserHoldsAReference()
+    public async Task APictureUsedByManySermonsAndSeriesIsKeptOnceAsTheWebsiteHasItAndEveryUserHoldsAReference()
     {
         await ReadTheWebsiteAsync();
 
-        Assert.Equal(["large", "small", "photo"], Media.Kept.Select(file => file.FileName.Split('-', '.')[1]));
+        Assert.Equal([(1920, 1080), (300, 400)], Media.Kept.Select(file => (file.Width, file.Height)));
         List<SermonRecord> sermons = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Sermons.AsNoTracking()
             .Where(sermon => sermon.ArtworkSourceUrl != null).ToListAsync(Cancel));
         List<SeriesRecord> series = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Series.AsNoTracking()
@@ -21,9 +21,9 @@ public sealed class ArtworkTests : SermonsHost
         Assert.True(sermons.Count >= 2 && series.Count >= 2);
         Assert.Single(sermons.Select(sermon => sermon.Artwork!.Key).Concat(series.Select(record => record.Artwork!.Key)).Distinct());
         foreach (SermonRecord sermon in sermons)
-            Assert.Equal([sermon.Artwork!.Id, sermon.Thumbnail!.Id], Media.Uses[Artwork.SermonOwner(sermon.Id)]);
+            Assert.Equal([sermon.Artwork!.Id], Media.Uses[Artwork.SermonOwner(sermon.Id)]);
         foreach (SeriesRecord record in series)
-            Assert.Equal([record.Artwork!.Id, record.Thumbnail!.Id], Media.Uses[Artwork.SeriesOwner(record.Id)]);
+            Assert.Equal([record.Artwork!.Id], Media.Uses[Artwork.SeriesOwner(record.Id)]);
     }
 
     [Fact]
@@ -42,7 +42,7 @@ public sealed class ArtworkTests : SermonsHost
             .SingleAsync(record => record.WebLink == Page, Cancel));
         Assert.Equal(Whole, sermon.ArtworkSourceUrl);
         Assert.Equal(Harbour, sermon.FeedArtworkUrl);
-        Assert.Equal((1280, 720), (sermon.Artwork!.Width, sermon.Artwork.Height));
+        Assert.Equal((1672, 941), (sermon.Artwork!.Width, sermon.Artwork.Height));
 
         Website.Requests.Clear();
         await ReadTheWebsiteAsync(force: true);
@@ -70,9 +70,9 @@ public sealed class ArtworkTests : SermonsHost
         await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Sermons
             .ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.ArtworkHash, (string?)null), Cancel));
         await ReadTheWebsiteAsync(force: true);
-        Assert.Equal(kept + 2, Media.Kept.Count);
+        Assert.Equal(kept + 1, Media.Kept.Count);
         SermonRecord changed = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Sermons.AsNoTracking()
             .SingleAsync(sermon => sermon.ArtworkSourceUrl == Harbour, Cancel));
-        Assert.Equal(Media.Kept[^2].FileName.Split('-')[0], changed.ArtworkHash![..12]);
+        Assert.Equal($"{changed.ArtworkHash![..12]}.png", Media.Kept[^1].FileName);
     }
 }

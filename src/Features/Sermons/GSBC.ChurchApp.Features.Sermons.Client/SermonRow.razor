@@ -1,6 +1,6 @@
 <ListRow Title="@(ShowPart ? SermonText.ShortTitle(Sermon) : Sermon.Title)" Subtitle="@Subtitle" Href="@(Current ? null : Href)" Class="@(Current ? "sermon-row is-current" : "sermon-row")">
     <Leading>
-        <MediaCover Media="Sermon.Thumbnail" Class="sermon-row__thumb" />
+        <MediaCover Media="Sermon.Artwork" Size="MediaSizeName.Thumbnail" Class="sermon-row__thumb" />
     </Leading>
     <TrailingContent>
         @if (Downloaded)

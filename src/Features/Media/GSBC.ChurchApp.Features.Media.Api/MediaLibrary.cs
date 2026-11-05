@@ -146,8 +146,6 @@ internal sealed class MediaLibrary(
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
         if (!item.KeepsOriginal)
             return await InfoOfAsync(item, cancellationToken);
-        if (await InSystemFolderAsync(item, cancellationToken))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "The app looks after the files it keeps for itself, so their originals stay."));
         if (!await db.Renditions.AnyAsync(rendition => rendition.MediaId == mediaId, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already small, so the original is the only copy. There's nothing smaller to keep in its place."));
         if (!await holders.CanAllRefreshAsync(mediaId, cancellationToken))

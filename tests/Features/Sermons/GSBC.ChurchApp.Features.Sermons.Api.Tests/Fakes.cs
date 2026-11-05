@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
@@ -61,4 +62,14 @@ internal sealed class RecordedRoles : IRoleAssignments, IPhoneRoles
     public ValueTask<bool> MayGiveAsync(Guid actorId, string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken)
+    {
+        foreach (var held in Held.Where(held => held.ObjectId == fromObjectId).ToList())
+        {
+            Held.Remove(held);
+            Held.Add(held with { ObjectId = toObjectId });
+        }
+        return ValueTask.CompletedTask;
+    }
 }

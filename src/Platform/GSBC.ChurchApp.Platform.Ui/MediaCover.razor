@@ -3,7 +3,7 @@
 <span class="media-cover @(Whole ? "media-cover--whole" : "") @Class">
     @if (Media is { } media)
     {
-        <MediaImage Media="media" Alt="@Alt" />
+        <MediaImage Media="media" Size="Size" Alt="@Alt" />
     }
     else
     {
@@ -18,6 +18,7 @@
 
 @code {
     [Parameter] public MediaRef? Media { get; set; }
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public string? Alt { get; set; } = "";
     [Parameter] public string? FallbackTitle { get; set; }
     [Parameter] public string? Class { get; set; }

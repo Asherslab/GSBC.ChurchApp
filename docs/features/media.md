@@ -206,14 +206,16 @@ keep a picture's sizes with their original, as one entry.
 stays, and its tile, list row and detail say *Original removed · was 4.2 MB*. Its id stays the same, and a saved `MediaRef` holding
 the old original key still verifies (any key the picture has or had is accepted), coming back with the
 current versions. The object is deleted only when no other entry lists that key. It's refused for a
-picture with no smaller size, in a system folder, or used somewhere that can't take the new sizes by
-itself.
+picture with no smaller size, or used somewhere that can't take the new sizes by itself. Pictures in a system
+folder may lose their original too (2026-11-06, so sermon artwork can): the holder rule below keeps that safe for
+whichever feature keeps them. Deleting them is still refused.
 
-That last rule is **`IMediaHolder`** (Platform.Api): a feature that stores `MediaRef`s can be asked to
+The holder rule is **`IMediaHolder`** (Platform.Api): a feature that stores `MediaRef`s can be asked to
 re-verify and re-save the ones an owner string holds. Media asks every holder of a picture after
 removing or putting back its original and after making sizes for an existing picture. Configuration's
-placements implement it (`config.placement/…`: re-verified, revision bumped, feed marked). Drafts and
-Sermons don't yet, so a picture they use keeps its original until they do.
+placements implement it (`config.placement/…`: re-verified, revision bumped, feed marked), and so does Sermons
+(`sermons/…`: the record's pictures re-verified and republished). Drafts don't yet, so a picture a draft uses keeps
+its original until they do.
 
 ### Putting it back
 
@@ -408,8 +410,6 @@ is the same list for its buckets when it does.
 - **Background prefetch:** records synced in the background get their images on the next open (above).
 - **Media in the Storage screen's total.**
 - **A phone page** for uploading (Life Group leaders), when a feature needs it.
-- **Sermons on sizes:** Sermons still makes its own large and small copies and stores both refs. It
-  can keep one (`KeepAsync` of the picture as fetched) and use `At(…)`, then implement `IMediaHolder`.
 - **Drafts as media holders,** so a picture in an unpublished draft can lose its original.
 - **Existing items' dimensions:** files uploaded before 2026-11-02 keep the dimensions the client sent
   (none, from the admin panel). Development data only; re-upload if it matters.

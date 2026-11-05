@@ -9,7 +9,7 @@
                     @foreach (SeriesInfo series in context.Value.Shelf.Series)
                     {
                         <a class="series-grid__item" href="@SermonsDestinations.Series.PathOf(series.Id).TrimStart('/')">
-                            <MediaCover Media="series.Thumbnail ?? series.Artwork" FallbackTitle="@series.Name" />
+                            <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" />
                             <span>@series.Name</span>
                             <small>@SermonText.Join(SermonText.Sermons(series.Count), SermonText.Month(series.LastAt))</small>
                         </a>

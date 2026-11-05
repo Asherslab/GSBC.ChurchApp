@@ -23,8 +23,7 @@ public sealed class WebsiteReadingTests : SermonsHost
         Assert.Equal("Sunday morning", hope.Service);
         Assert.Equal("AbCdEfGhIj0", hope.YouTubeId);
         Assert.Equal("Jo Ellery", hope.SpeakerName);
-        Assert.Equal((1280, 720), (hope.Artwork!.Width, hope.Artwork.Height));
-        Assert.Equal(480, hope.Thumbnail!.Width);
+        Assert.Equal((1920, 1080), (hope.Artwork!.Width, hope.Artwork.Height));
         Assert.Contains(Website.Requests, request => request.RequestUri!.ToString() == "https://files.example/2026/11/01/art/harbour-4.png");
 
         Sermon mercy = catalogue.Single(sermon => sermon.Title == "Mercy Before Judgement");
@@ -44,7 +43,7 @@ public sealed class WebsiteReadingTests : SermonsHost
         Assert.Equal(2, series.Single(info => info.Name == "Safe Harbour").Count);
 
         List<SpeakerInfo> speakers = (await LiveRowsAsync(SermonsFeeds.Speakers)).Select(row => SermonsPayloads.Decode<SpeakerInfo>(row.Payload)).ToList();
-        Assert.Equal(192, speakers.Single(speaker => speaker.Name == "Jo Ellery").Photo!.Width);
+        Assert.Equal((300, 400), speakers.Single(speaker => speaker.Name == "Jo Ellery").Photo is { } photo ? (photo.Width, photo.Height) : default);
     }
 
     [Fact]

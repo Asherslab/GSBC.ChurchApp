@@ -65,22 +65,46 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("added_at");
 
-                    b.Property<string>("Large")
+                    b.Property<string>("Picture")
                         .HasColumnType("jsonb")
-                        .HasColumnName("large");
-
-                    b.Property<string>("Photo")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("photo");
-
-                    b.Property<string>("Small")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("small");
+                        .HasColumnName("picture");
 
                     b.HasKey("Hash")
                         .HasName("pk_artwork_sources");
 
                     b.ToTable("artwork_sources", "sermons");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.FormerId", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("CurrentId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("current_id");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTime>("MovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("moved_at");
+
+                    b.Property<bool>("Settled")
+                        .HasColumnType("boolean")
+                        .HasColumnName("settled");
+
+                    b.HasKey("Id")
+                        .HasName("pk_former_ids");
+
+                    b.HasIndex("CurrentId")
+                        .HasDatabaseName("ix_former_ids_current_id");
+
+                    b.ToTable("former_ids", "sermons");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ProgressRecord", b =>
@@ -175,10 +199,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.Property<string>("SourceName")
                         .HasColumnType("text")
                         .HasColumnName("source_name");
-
-                    b.Property<string>("Thumbnail")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("thumbnail");
 
                     b.HasKey("Id")
                         .HasName("pk_series");
@@ -339,10 +359,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("summary");
-
-                    b.Property<string>("Thumbnail")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("thumbnail");
 
                     b.Property<string>("Title")
                         .HasColumnType("text")

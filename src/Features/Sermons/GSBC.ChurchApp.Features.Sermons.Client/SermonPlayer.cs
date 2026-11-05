@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Client.Audio;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Sermons.Client;
 
@@ -9,7 +10,7 @@ public sealed class SermonPlayer(IAudioPlayer player, Listening listening, Sermo
 
     public IAudioPlayer Audio => player;
 
-    public bool IsLoaded(Sermon sermon) => player.State.Item?.Id == sermon.Id;
+    public bool IsLoaded(Sermon sermon) => player.State.Item?.Id is { } id && (id == sermon.Id || sermon.FormerIds.Contains(id));
 
     public bool IsPlaying(Sermon sermon) => IsLoaded(sermon) && player.State.Playing;
 
@@ -56,7 +57,7 @@ public sealed class SermonPlayer(IAudioPlayer player, Listening listening, Sermo
         sermon.Title,
         sermon.SpeakerName,
         sermon.SeriesName ?? "Good Shepherd Baptist Church",
-        sermon.Artwork?.Url ?? sermon.Thumbnail?.Url,
+        sermon.Artwork?.At(MediaSizeName.ForPhones).Url,
         sermon.DurationSeconds,
         SermonsDestinations.Sermon.PathOf(sermon.Id));
 }

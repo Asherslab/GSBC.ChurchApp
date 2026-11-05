@@ -1,5 +1,4 @@
 @page "/sermons/series-and-speakers"
-@using GSBC.ChurchApp.Platform.Contracts.Media
 @inject SermonsAdminClient Sermons
 
 <TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
@@ -26,7 +25,7 @@
                 @foreach (SeriesDetail series in Matching(context.Value.Series, _seriesQuery, one => one.Name))
                 {
                     <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSeries(series)">
-                        <MediaCover Media="series.Artwork" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
+                        <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
                         <span class="sermon-pick__words">
                             <strong>@series.Name</strong>
                             <span>@SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null, series.FromWebsite ? "from the website" : null)</span>
@@ -75,13 +74,19 @@
                 <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
                 <span class="field__label">Picture</span>
                 <div class="sermon-upload__art">
-                    <MediaCover Media="ShownArtwork(editing)" FallbackTitle="@_name" />
-                    <span class="series-desk__picture-actions">
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
-                        @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
+                    <MediaCover Media="ShownArtwork(editing)" Size="MediaSizeName.Thumbnail" FallbackTitle="@_name" />
+                    <span class="sermon-picture__side">
+                        @if (ShownArtwork(editing) is { } artwork)
                         {
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
+                            <MediaShownAt Media="artwork" Size="SeriesSize" />
                         }
+                        <span class="series-desk__picture-actions">
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
+                            @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
+                            }
+                        </span>
                     </span>
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -97,12 +102,18 @@
                 <span class="field__label">Photo</span>
                 <div class="series-desk__photo">
                     <Avatar Name="@_name" Photo="ShownPhoto(speaker)" Size="72" />
-                    <span class="series-desk__picture-actions">
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownPhoto(speaker) is null ? "Choose a photo" : "Use another photo")</Button>
-                        @if (_picture is not null || speaker.PhotoChosen && !_useSource)
+                    <span class="sermon-picture__side">
+                        @if (ShownPhoto(speaker) is { } photo)
                         {
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Remove the chosen photo</Button>
+                            <MediaShownAt Media="photo" Size="MediaSizeName.Thumbnail" />
                         }
+                        <span class="series-desk__picture-actions">
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownPhoto(speaker) is null ? "Choose a photo" : "Use another photo")</Button>
+                            @if (_picture is not null || speaker.PhotoChosen && !_useSource)
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Remove the chosen photo</Button>
+                            }
+                        </span>
                     </span>
                 </div>
                 @if (speaker.Id.Length > 0)
@@ -124,7 +135,7 @@
             }
             @if (_choosing)
             {
-                <MediaChooser ImagesOnly="true" OnChosen="Chose" OnCancel="() => _choosing = false" />
+                <MediaChooser ImagesOnly="true" Size="@(_speaker is null ? SeriesSize : MediaSizeName.Thumbnail)" OnChosen="Chose" OnCancel="() => _choosing = false" />
             }
         </section>
     </div>
@@ -132,6 +143,7 @@
 
 @code {
     private static readonly IReadOnlyList<string> ListFeeds = [SermonsFeeds.Admin, SermonsFeeds.Series, SermonsFeeds.Speakers];
+    private const MediaSizeName SeriesSize = MediaSizeName.ForPhones;
 
     private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers, bool Ours);
 

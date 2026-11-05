@@ -51,6 +51,7 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddScoped<Speakers>();
         services.AddScoped<SermonPublisher>();
         services.AddScoped<WebsiteReader>();
+        services.AddScoped<SourceIdMove>();
         services.AddScoped<SermonsService>();
         services.AddScoped<SermonLibraryService>();
         services.AddScoped<SermonUploads>();

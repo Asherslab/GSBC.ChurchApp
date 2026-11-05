@@ -24,9 +24,9 @@ public sealed class Sermon
     [ProtoMember(13)] public int DurationSeconds { get; set; }
     [ProtoMember(14)] public string? YouTubeId { get; set; }
     [ProtoMember(15)] public MediaRef? Artwork { get; set; }
-    [ProtoMember(16)] public MediaRef? Thumbnail { get; set; }
     [ProtoMember(17)] public string Summary { get; set; } = "";
     [ProtoMember(18)] public string? WebLink { get; set; }
+    [ProtoMember(19)] public List<string> FormerIds { get; set; } = [];
 }
 
 [ProtoContract]
@@ -36,10 +36,10 @@ public sealed class SeriesInfo
     [ProtoMember(2)] public string Name { get; set; } = "";
     [ProtoMember(3)] public string Description { get; set; } = "";
     [ProtoMember(4)] public MediaRef? Artwork { get; set; }
-    [ProtoMember(5)] public MediaRef? Thumbnail { get; set; }
     [ProtoMember(6)] public int Count { get; set; }
     [ProtoMember(7)] public DateTime FirstAt { get; set; }
     [ProtoMember(8)] public DateTime LastAt { get; set; }
+    [ProtoMember(9)] public List<string> FormerIds { get; set; } = [];
 }
 
 [ProtoContract]
@@ -50,6 +50,7 @@ public sealed class SpeakerInfo
     [ProtoMember(3)] public MediaRef? Photo { get; set; }
     [ProtoMember(4)] public int Count { get; set; }
     [ProtoMember(5)] public DateTime LatestAt { get; set; }
+    [ProtoMember(6)] public List<string> FormerIds { get; set; } = [];
 }
 
 [ProtoContract]

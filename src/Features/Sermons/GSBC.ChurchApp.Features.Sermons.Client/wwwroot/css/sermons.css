@@ -126,6 +126,7 @@
 .series-desk__none { margin: 8px; color: var(--ink-2); font-size: var(--text-caption); }
 .series-desk__photo { display: flex; align-items: center; gap: 16px; }
 .series-desk__picture-actions { display: flex; flex-wrap: wrap; gap: 4px 8px; }
+.sermon-picture__side { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
 .series-desk__edit { position: sticky; top: 24px; display: grid; gap: 14px; padding-left: 32px; border-left: 1px solid var(--line); }
 @media (max-width: 1228px) { .series-desk { grid-template-columns: 1fr 1fr; } .series-desk__edit { grid-column: 1 / -1; position: static; padding-left: 0; border-left: 0; } }
 .source-strip .segmented { background: var(--page); }

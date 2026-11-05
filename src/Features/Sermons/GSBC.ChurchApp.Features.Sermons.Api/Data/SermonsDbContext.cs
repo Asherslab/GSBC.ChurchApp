@@ -18,6 +18,7 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
     public DbSet<SourceState> SourceStates => Set<SourceState>();
     public DbSet<ArtworkSource> ArtworkSources => Set<ArtworkSource>();
     public DbSet<ArtworkAddress> ArtworkAddresses => Set<ArtworkAddress>();
+    public DbSet<FormerId> FormerIds => Set<FormerId>();
 
     protected override string Schema => SchemaName;
 
@@ -32,7 +33,6 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
             entity.HasIndex(sermon => sermon.ExternalId).IsUnique();
             entity.HasIndex(sermon => sermon.PreachedAt);
             Media(entity.Property(sermon => sermon.Artwork));
-            Media(entity.Property(sermon => sermon.Thumbnail));
             Media(entity.Property(sermon => sermon.AudioMedia));
             entity.Ignore(sermon => sermon.EffectiveTitle);
             entity.Ignore(sermon => sermon.EffectiveSpeakerId);
@@ -46,7 +46,6 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
             entity.HasKey(series => series.Id);
             entity.HasIndex(series => series.Slug).IsUnique();
             Media(entity.Property(series => series.Artwork));
-            Media(entity.Property(series => series.Thumbnail));
             Media(entity.Property(series => series.ChosenArtwork));
         });
         modelBuilder.Entity<SpeakerRecord>(entity =>
@@ -71,15 +70,20 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
         {
             entity.ToTable("artwork_sources");
             entity.HasKey(source => source.Hash);
-            Media(entity.Property(source => source.Large));
-            Media(entity.Property(source => source.Small));
-            Media(entity.Property(source => source.Photo));
+            Media(entity.Property(source => source.Picture));
         });
         modelBuilder.Entity<ArtworkAddress>(entity =>
         {
             entity.ToTable("artwork_addresses");
             entity.HasKey(address => address.Url);
             entity.HasIndex(address => address.Hash);
+        });
+        modelBuilder.Entity<FormerId>(entity =>
+        {
+            entity.ToTable("former_ids");
+            entity.HasKey(former => former.Id);
+            entity.Property(former => former.Id).ValueGeneratedNever();
+            entity.HasIndex(former => former.CurrentId);
         });
         modelBuilder.Entity<SourceState>(entity =>
         {
