@@ -119,8 +119,9 @@
 }
 
 .media-setting__shown {
-    flex: 1 1 12em;
+    flex: 1 1 0;
     min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .media-setting .media-thumbnail {

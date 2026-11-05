@@ -384,7 +384,7 @@
 
     private static string? OriginalNote(MediaItemInfo item) => item.Original switch
     {
-        { Removed: true } removed => $"Original removed · was {MediaSizes.Weight(removed.Bytes)}",
+        { Removed: true } removed => $"Original removed · was\u00A0{MediaSizes.Weight(removed.Bytes)}",
         { } original when item.HasLargeOriginal => $"Large original · {MediaSizes.Weight(original.Bytes)}",
         _ => null,
     };

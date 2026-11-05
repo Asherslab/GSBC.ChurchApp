@@ -86,7 +86,7 @@ public static class MediaSizes
         _ => "Original",
     };
 
-    public static string Weight(long bytes) => bytes < 1024 * 1024 ? $"{Math.Max(1, bytes / 1024d):0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
+    public static string Weight(long bytes) => bytes < 1024 * 1024 ? $"{Math.Max(1, bytes / 1024d):0}\u00A0KB" : $"{bytes / 1024d / 1024d:0.#}\u00A0MB";
 
     public static IReadOnlyList<string> ShownAs(MediaRef version)
     {
