@@ -4,7 +4,6 @@ using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Data;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
 

@@ -43,7 +43,7 @@
             </Page>;
 
         AudioState audio = Player.Audio.State;
-        Sermon? loaded = audio.Item is { } item ? view.Shelf.Find(item.Id) : null;
+        Sermon? loaded = audio.Item is { } playing ? view.Shelf.Find(playing.Id) : null;
         Underway? underway = loaded is not null
             ? new Underway(loaded, ListeningProgress.Heard(loaded.Id, audio.Position, audio.Duration, DateTime.UtcNow))
             : view.KeepGoing(DateTime.UtcNow);

@@ -46,7 +46,7 @@ public sealed class LastingIdTests : SermonsHost
 
         Assert.Equal(lasting, await IdsAsync());
         Assert.Equal(hope.Id, (await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Progress.AsNoTracking().SingleAsync(Cancel))).SermonId);
-        Assert.Contains((person, SermonsPermissions.SeriesFollowerRole, (string?)hope.SourceSeriesId.ToString(), false), Roles.Held);
+        Assert.Contains((person, SermonsPermissions.SeriesFollowerRole, hope.SourceSeriesId.ToString(), false), Roles.Held);
         Assert.DoesNotContain(Roles.Held, held => held.ObjectId == seriesWas.ToString());
         Assert.Empty(Media.Uses[Artwork.SeriesOwner(seriesWas)]);
         Assert.NotEmpty(Media.Uses[Artwork.SeriesOwner(hope.SourceSeriesId.Value)]);

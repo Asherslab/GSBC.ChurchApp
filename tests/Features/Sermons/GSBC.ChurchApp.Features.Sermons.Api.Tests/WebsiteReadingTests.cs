@@ -1,7 +1,6 @@
 using System.Net;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
-using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
