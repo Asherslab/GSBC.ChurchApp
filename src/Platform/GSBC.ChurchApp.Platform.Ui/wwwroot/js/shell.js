@@ -30,7 +30,8 @@ window.gsbcShell = (() => {
     document.addEventListener('touchstart', (event) => {
       const page = scroller();
       const touch = event.touches[0];
-      start = page?.dataset.backHref && touch.clientX < edge ? { x: touch.clientX, y: touch.clientY, page, dx: 0, at: event.timeStamp } : null;
+      const own = event.target instanceof Element && !!event.target.closest('.now-playing, .sheet-layer');
+      start = page?.dataset.backHref && touch.clientX < edge && !own ? { x: touch.clientX, y: touch.clientY, page, dx: 0, at: event.timeStamp } : null;
     }, { passive: true });
     document.addEventListener('touchmove', (event) => {
       if (!start) return;
@@ -162,6 +163,148 @@ window.gsbcShell = (() => {
     openExternal(url) {
       if (isNative()) window.location.href = url;
       else window.open(url, '_blank', 'noopener');
+    },
+
+    swipeAway(element, receiver) {
+      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      let start = null;
+      let swiped = false;
+      const place = (x, y) => {
+        element.style.transform = reducedMotion.matches ? '' : `translate(${x}px, ${y}px)`;
+        element.style.opacity = String(1 - Math.min(0.8, Math.max(Math.abs(x) / element.offsetWidth, y / element.offsetHeight / 2)));
+      };
+      const settle = () => {
+        element.style.transition = `transform 200ms ${ease}, opacity 200ms ${ease}`;
+        place(0, 0);
+        element.style.opacity = '';
+        setTimeout(() => { element.style.transition = ''; }, 220);
+      };
+      const onStart = (event) => {
+        const touch = event.touches[0];
+        start = { x: touch.clientX, y: touch.clientY, at: event.timeStamp, axis: null, dx: 0, dy: 0 };
+        swiped = false;
+      };
+      const onMove = (event) => {
+        if (!start) return;
+        const touch = event.touches[0];
+        const dx = touch.clientX - start.x;
+        const dy = touch.clientY - start.y;
+        if (!start.axis) {
+          if (Math.hypot(dx, dy) < 8) return;
+          start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : dy > 0 ? 'y' : null;
+          if (!start.axis) { start = null; return; }
+        }
+        event.preventDefault();
+        swiped = true;
+        start.dx = start.axis === 'x' ? dx : 0;
+        start.dy = start.axis === 'y' ? Math.max(0, dy) : 0;
+        element.style.transition = '';
+        place(start.dx, start.dy);
+      };
+      const onEnd = (event) => {
+        if (!start?.axis) { start = null; return; }
+        const { dx, dy, at, axis } = start;
+        start = null;
+        const speed = Math.max(Math.abs(dx), dy) / Math.max(1, event.timeStamp - at);
+        const away = axis === 'x'
+          ? Math.abs(dx) > element.offsetWidth * 0.35 || (speed > 0.5 && Math.abs(dx) > 40)
+          : dy > element.offsetHeight * 0.8 || (speed > 0.5 && dy > 24);
+        if (!away) { settle(); return; }
+        window.gsbcShell.haptic('light');
+        element.style.transition = `transform 180ms ${ease}, opacity 180ms ${ease}`;
+        place(axis === 'x' ? Math.sign(dx) * element.offsetWidth * 1.1 : 0, axis === 'y' ? element.offsetHeight * 1.5 : 0);
+        element.style.opacity = '0';
+        setTimeout(() => receiver.invokeMethodAsync('OnSwipedAway'), reducedMotion.matches ? 0 : 170);
+      };
+      const onClick = (event) => {
+        if (!swiped) return;
+        swiped = false;
+        event.stopPropagation();
+        event.preventDefault();
+      };
+      element.addEventListener('touchstart', onStart, { passive: true });
+      element.addEventListener('touchmove', onMove, { passive: false });
+      element.addEventListener('touchend', onEnd);
+      element.addEventListener('touchcancel', settle);
+      element.addEventListener('click', onClick, true);
+      return {
+        dispose() {
+          element.removeEventListener('touchstart', onStart);
+          element.removeEventListener('touchmove', onMove);
+          element.removeEventListener('touchend', onEnd);
+          element.removeEventListener('touchcancel', settle);
+          element.removeEventListener('click', onClick, true);
+        },
+      };
+    },
+
+    sheetDrag(sheet, receiver) {
+      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      const backdrop = () => sheet.parentElement?.querySelector('.sheet-backdrop');
+      const docked = () => getComputedStyle(sheet).bottom === '0px';
+      const fixed = 'input, textarea, select, [contenteditable="true"], .chips, .no-sheet-drag';
+      let start = null;
+      const place = (dy) => {
+        sheet.style.transform = `translateY(${dy}px)`;
+        const scrim = backdrop();
+        if (scrim) scrim.style.opacity = String(1 - Math.min(1, dy / sheet.offsetHeight));
+      };
+      const reset = () => {
+        sheet.style.transition = `transform 240ms ${ease}`;
+        place(0);
+        const scrim = backdrop();
+        if (scrim) { scrim.style.transition = 'opacity 240ms'; scrim.style.opacity = ''; }
+        setTimeout(() => { sheet.style.transition = ''; sheet.style.transform = ''; if (scrim) scrim.style.transition = ''; }, 260);
+      };
+      const onStart = (event) => {
+        const target = event.target instanceof Element ? event.target : null;
+        const onHandle = !!target?.closest('.sheet__grabber, .sheet__cover');
+        start = docked() && !reducedMotion.matches && (onHandle || sheet.scrollTop <= 0) && !target?.closest(fixed)
+          ? { y: event.touches[0].clientY, x: event.touches[0].clientX, at: event.timeStamp, dy: 0, dragging: false }
+          : null;
+      };
+      const onMove = (event) => {
+        if (!start) return;
+        const touch = event.touches[0];
+        const dy = touch.clientY - start.y;
+        const dx = touch.clientX - start.x;
+        if (!start.dragging) {
+          if (Math.hypot(dx, dy) < 6) return;
+          if (dy <= 0 || Math.abs(dx) > dy || sheet.scrollTop > 0) { start = null; return; }
+          start.dragging = true;
+          sheet.style.animation = 'none';
+          sheet.style.transition = '';
+        }
+        event.preventDefault();
+        start.dy = Math.max(0, dy);
+        place(start.dy);
+      };
+      const onEnd = (event) => {
+        if (!start?.dragging) { start = null; return; }
+        const { dy, at } = start;
+        start = null;
+        const speed = dy / Math.max(1, event.timeStamp - at);
+        if (dy > sheet.offsetHeight * 0.3 || (speed > 0.6 && dy > 30)) {
+          sheet.style.transition = `transform 200ms ${ease}`;
+          place(sheet.offsetHeight + 24);
+          setTimeout(() => receiver.invokeMethodAsync('OnDragDismissed'), 190);
+        } else {
+          reset();
+        }
+      };
+      sheet.addEventListener('touchstart', onStart, { passive: true });
+      sheet.addEventListener('touchmove', onMove, { passive: false });
+      sheet.addEventListener('touchend', onEnd);
+      const onCancel = () => { if (start?.dragging) reset(); start = null; };
+      sheet.addEventListener('touchcancel', onCancel);
+      return {
+        dispose() {
+          sheet.removeEventListener('touchstart', onStart);
+          sheet.removeEventListener('touchmove', onMove);
+          sheet.removeEventListener('touchend', onEnd);
+          sheet.removeEventListener('touchcancel', onCancel);
+        },
+      };
     },
 
     pullToRefresh(host, receiver) {

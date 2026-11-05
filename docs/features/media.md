@@ -68,7 +68,11 @@ a lock and the area's caption ("Made by the app: files people share in group cha
   oversight. Other staff see that the area exists ("Shared with others") but not its subfolders or
   files, and search leaves those files out
   (`SystemFoldersAreKeptByTheAppAndOnlyTheirAudienceOrOversightSeesInside`).
-- No feature files anything yet: the first is group chats. A feature's uploads still need
+- **Files a feature makes or stores itself** go in its area's top folder: `KeepAsync(area, KeptFile)` stores bytes
+  the feature made (Sermons' artwork copies) under their hash, and `KeepStoredAsync(area, StoredFile)` registers a
+  file already in the public bucket by its key and SHA-256, without reading it (Sermons' audio, up to 300 MB). Both
+  return the entry the folder already has for the same content. The feature then holds a reference to it.
+- No feature files uploads yet: the first is group chats. A feature's uploads still need
   `media.upload` today; a phone upload path for members is part of that feature's work.
 
 ### The picture sheet

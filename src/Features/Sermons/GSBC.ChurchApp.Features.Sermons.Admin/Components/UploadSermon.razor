@@ -32,19 +32,15 @@
         <div class="sermon-check__fields">
             <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
             <div class="sermon-check__field">
-                <SelectField Label="Speaker" Options="SpeakerOptions" @bind-Value="_speakerId" />
-                @if (_speakerId == NewOne)
-                {
-                    <TextField Label="Their name" @bind-Value="_newSpeaker" MaxLength="80" />
-                }
+                <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="Popular" Text="SpeakerName" Detail="SpeakerCount" Value="SpeakerOf(_speakerId)"
+                              ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Who preached?"
+                              CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="NewSpeaker" />
             </div>
             <div class="sermon-check__field"><TextField Label="Day" Type="date" @bind-Value="_day" /></div>
             <div class="sermon-check__field">
-                <SelectField Label="Series" Options="SeriesOptions" @bind-Value="_seriesId" />
-                @if (_seriesId == NewOne)
-                {
-                    <TextField Label="The series' name" @bind-Value="_newSeries" MaxLength="80" />
-                }
+                <SearchPicker TItem="SeriesDetail" Label="Series" Items="Series" Text="SeriesName" Value="SeriesOf(_seriesId)" NoneText="Not in a series"
+                              ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"
+                              CreateText="@(name => $"Start a new series called “{name}”")" OnCreate="NewSeries" />
             </div>
             <div class="sermon-check__field"><TextField Label="Service" Placeholder="Sunday morning" @bind-Value="_service" MaxLength="80" /></div>
             <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Video" Placeholder="A YouTube link, if there is one" @bind-Value="_youTube" /></div>
@@ -111,11 +107,25 @@
     private bool Ready => _file is not null && _title.Trim().Length > 0 && _day.Length > 0
         && (_speakerId.Length > 0 && _speakerId != NewOne || _newSpeaker.Trim().Length > 0);
 
-    private IReadOnlyList<FieldOption> SpeakerOptions =>
-        [new("", "Choose who preached"), .. Speakers.OrderByDescending(speaker => speaker.Count).Select(speaker => new FieldOption(speaker.Id, speaker.Name)), new(NewOne, "Someone new…")];
+    private IReadOnlyList<SpeakerDetail> Popular => Speakers.OrderByDescending(speaker => speaker.Count).ToList();
 
-    private IReadOnlyList<FieldOption> SeriesOptions =>
-        [new("", "Not in a series"), .. Series.Select(series => new FieldOption(series.Id, series.Name)), new(NewOne, "A new series…")];
+    private SpeakerDetail? SpeakerOf(string id) => Speakers.FirstOrDefault(speaker => speaker.Id == id);
+
+    private SeriesDetail? SeriesOf(string id) => Series.FirstOrDefault(series => series.Id == id);
+
+    private static string SpeakerName(SpeakerDetail speaker) => speaker.Name;
+
+    private static string SpeakerCount(SpeakerDetail speaker) => SermonText.Sermons(speaker.Count);
+
+    private static string SeriesName(SeriesDetail series) => series.Name;
+
+    private void ChooseSpeaker(SpeakerDetail? speaker) => (_speakerId, _newSpeaker) = (speaker?.Id ?? "", "");
+
+    private void NewSpeaker(string name) => (_speakerId, _newSpeaker) = (NewOne, name);
+
+    private void ChooseSeries(SeriesDetail? series) => (_seriesId, _newSeries) = (series?.Id ?? "", "");
+
+    private void NewSeries(string name) => (_seriesId, _newSeries) = (NewOne, name);
 
     private async Task<IJSObjectReference> ModuleAsync() =>
         _module ??= await Js.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Sermons.Client/js/audio-upload.js");

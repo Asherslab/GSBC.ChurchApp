@@ -3,7 +3,7 @@
 @inject SermonLibrary Library
 @inject SermonPlayer Player
 @inject Shell Shell
-@inject NavigationManager Navigation
+@inject NowPlayingBar Bar
 
 <LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
@@ -28,7 +28,11 @@
 
     private const int LatestShown = 3;
 
-    protected override void OnInitialized() => Player.Audio.Changed += OnAudio;
+    protected override void OnInitialized()
+    {
+        Player.Audio.Changed += OnAudio;
+        Bar.Show();
+    }
 
     private RenderFragment Drawn(SermonView view)
     {
@@ -139,7 +143,7 @@
                             <a class="series-strip__item" href="@SermonsDestinations.Series.PathOf(series.Id).TrimStart('/')">
                                 <MediaCover Media="series.Thumbnail ?? series.Artwork" FallbackTitle="@series.Name" />
                                 <span>@series.Name</span>
-                                <small>@(series.Count == 1 ? "1 sermon" : $"{series.Count} sermons")</small>
+                                <small>@SermonText.Sermons(series.Count)</small>
                             </a>
                         }
                     </div>

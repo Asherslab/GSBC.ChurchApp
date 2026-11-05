@@ -58,7 +58,8 @@
             }
             else if (Selected(context.Value) is { } selected)
             {
-                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers" Saved="SavedAsync" />
+                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers"
+                             OursToAdd="context.Value.Status.Source == SermonSources.Uploads" Saved="SavedAsync" />
             }
             else
             {
@@ -102,7 +103,6 @@
     private static IReadOnlyList<FilterOption<string>> Filters(SermonList list) =>
     [
         new(SermonFilters.NeedsALook, "Needs a look", list.Counts.GetValueOrDefault(SermonFilters.NeedsALook)),
-        new(SermonFilters.NoSeries, "No series", list.Counts.GetValueOrDefault(SermonFilters.NoSeries)),
         new(SermonFilters.All, "All", list.Counts.GetValueOrDefault(SermonFilters.All)),
         new(SermonFilters.Hidden, "Hidden", list.Counts.GetValueOrDefault(SermonFilters.Hidden)),
     ];

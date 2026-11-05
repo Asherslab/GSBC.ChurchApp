@@ -3,42 +3,67 @@
 @inject SermonsAdminClient Sermons
 
 <TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
-           Lead="Name a series, give it a picture and a line about it; tidy speakers' names and join two spellings of one person." />
+           Lead="Name a series, give it a picture and a line about it; tidy speakers' names and photos, and join two spellings of one person." />
 
 <LiveData @ref="_live" TValue="Lists" Feeds="ListFeeds" Load="LoadAsync" FailedTitle="Can't load series and speakers right now">
+    @if (!context.Value.Ours)
+    {
+        <Notice Tone="NoticeTone.Info">While sermons come from the website, so do series and speakers: new ones appear when the website has them. A name, picture or description you set here stays when the website changes.</Notice>
+    }
     <div class="series-desk">
         <section aria-label="Series">
             <div class="series-desk__head">
                 <h2>Series</h2>
-                <Can Permission="SermonsPermissions.Edit">
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSeries">New series</Button>
-                </Can>
+                @if (context.Value.Ours)
+                {
+                    <Can Permission="SermonsPermissions.Edit">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSeries">New series</Button>
+                    </Can>
+                }
             </div>
+            <SearchField Label="Find a series" Placeholder="Find a series" Value="@_seriesQuery" ValueChanged="query => _seriesQuery = query" />
             <div class="series-desk__list">
-                @foreach (SeriesDetail series in context.Value.Series)
+                @foreach (SeriesDetail series in Matching(context.Value.Series, _seriesQuery, one => one.Name))
                 {
                     <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSeries(series)">
                         <MediaCover Media="series.Artwork" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
                         <span class="sermon-pick__words">
                             <strong>@series.Name</strong>
-                            <span>@SermonText.Join(series.Count == 1 ? "1 sermon" : $"{series.Count} sermons", series.LastAt is { } last ? SermonText.Month(last) : null, series.FromWebsite ? "from the website" : null)</span>
+                            <span>@SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null, series.FromWebsite ? "from the website" : null)</span>
                         </span>
                     </button>
+                }
+                @if (_seriesQuery.Length > 0 && !Matching(context.Value.Series, _seriesQuery, one => one.Name).Any())
+                {
+                    <p class="series-desk__none">No series called “@_seriesQuery”.</p>
                 }
             </div>
         </section>
         <section aria-label="Speakers">
-            <div class="series-desk__head"><h2>Speakers</h2></div>
-            <div class="series-desk__list">
-                @foreach (SpeakerDetail speaker in context.Value.Speakers)
+            <div class="series-desk__head">
+                <h2>Speakers</h2>
+                @if (context.Value.Ours)
                 {
-                    <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id ? "is-selected" : "")" @onclick="() => EditSpeaker(speaker)">
+                    <Can Permission="SermonsPermissions.Edit">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSpeaker">New speaker</Button>
+                    </Can>
+                }
+            </div>
+            <SearchField Label="Find a speaker" Placeholder="Find a speaker" Value="@_speakerQuery" ValueChanged="query => _speakerQuery = query" />
+            <div class="series-desk__list">
+                @foreach (SpeakerDetail speaker in Matching(context.Value.Speakers, _speakerQuery, one => string.Join(' ', [one.Name, .. one.Aliases])))
+                {
+                    <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id && _speaker.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSpeaker(speaker)">
                         <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="40" />
                         <span class="sermon-pick__words">
                             <strong>@speaker.Name</strong>
-                            <span>@SermonText.Join(speaker.Count == 1 ? "1 sermon" : $"{speaker.Count} sermons", speaker.Aliases.Count > 0 ? $"also “{string.Join("”, “", speaker.Aliases)}”" : null)</span>
+                            <span>@SermonText.Join(SermonText.Sermons(speaker.Count), speaker.Aliases.Count > 0 ? $"also “{string.Join("”, “", speaker.Aliases)}”" : null)</span>
                         </span>
                     </button>
+                }
+                @if (_speakerQuery.Length > 0 && !Matching(context.Value.Speakers, _speakerQuery, one => string.Join(' ', [one.Name, .. one.Aliases])).Any())
+                {
+                    <p class="series-desk__none">No speaker called “@_speakerQuery”.</p>
                 }
             </div>
         </section>
@@ -46,39 +71,60 @@
             @if (_series is { } editing)
             {
                 <h2>@(editing.Id.Length == 0 ? "A new series" : editing.Name)</h2>
-                <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
+                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="@(editing.FromWebsite ? "A name you give it here stays when the website changes." : null)" />
                 <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
                 <span class="field__label">Picture</span>
                 <div class="sermon-upload__art">
-                    <MediaCover Media="_artwork ?? editing.Artwork" FallbackTitle="@_name" />
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(editing.FromWebsite ? "Use another picture" : "Choose a picture")</Button>
+                    <MediaCover Media="ShownArtwork(editing)" FallbackTitle="@_name" />
+                    <span class="series-desk__picture-actions">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
+                        @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
+                        }
+                    </span>
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <Button Busy="_busy" OnClick="SaveSeriesAsync">Save</Button>
+                    <Button Busy="_busy" OnClick="SaveSeriesAsync">@(editing.Id.Length == 0 ? "Add the series" : "Save")</Button>
                     <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
                 </div>
-                @if (_choosing)
-                {
-                    <MediaChooser ImagesOnly="true" OnChosen="picture => { _artwork = picture; _choosing = false; }" OnCancel="() => _choosing = false" />
-                }
             }
             else if (_speaker is { } speaker)
             {
-                <h2>@speaker.Name</h2>
+                <h2>@(speaker.Id.Length == 0 ? "A new speaker" : speaker.Name)</h2>
                 <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="As it shows in the app, for example “Ps Jo Ellery”." />
-                <TextField Label="Other spellings" @bind-Value="_aliases" Hint="Names the website uses for them too, separated by commas. Sermons under any of them are theirs." />
-                <SelectField Label="Or join them with" Options="MergeOptions(context.Value.Speakers, speaker)" @bind-Value="_mergeInto"
-                             Hint="When two names are one person: their sermons move across and this name becomes another spelling." />
+                <span class="field__label">Photo</span>
+                <div class="series-desk__photo">
+                    <Avatar Name="@_name" Photo="ShownPhoto(speaker)" Size="72" />
+                    <span class="series-desk__picture-actions">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownPhoto(speaker) is null ? "Choose a photo" : "Use another photo")</Button>
+                        @if (_picture is not null || speaker.PhotoChosen && !_useSource)
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Remove the chosen photo</Button>
+                        }
+                    </span>
+                </div>
+                @if (speaker.Id.Length > 0)
+                {
+                    <TextField Label="Other spellings" @bind-Value="_aliases" Hint="Names the website uses for them too, separated by commas. Sermons under any of them are theirs." />
+                    <SearchPicker TItem="SpeakerDetail" Label="Or join them with" Items="Others(context.Value.Speakers, speaker)" Text="SpeakerName" Value="MergeTarget(context.Value.Speakers)"
+                                  ValueChanged="other => _mergeInto = other?.Id ?? string.Empty" NoneText="Keep them apart" Placeholder="Find the other name"
+                                  Hint="When two names are one person: their sermons move across and this name becomes another spelling." />
+                }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(_mergeInto.Length > 0 ? "Join them" : "Save")</Button>
+                    <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(_mergeInto.Length > 0 ? "Join them" : speaker.Id.Length == 0 ? "Add the speaker" : "Save")</Button>
                     <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
                 </div>
             }
             else
             {
                 <EmptyState Icon="layers" Title="Choose a series or a speaker" Body="Changes show on everyone's phone as soon as they're saved." />
+            }
+            @if (_choosing)
+            {
+                <MediaChooser ImagesOnly="true" OnChosen="Chose" OnCancel="() => _choosing = false" />
             }
         </section>
     </div>
@@ -87,27 +133,41 @@
 @code {
     private static readonly IReadOnlyList<string> ListFeeds = [SermonsFeeds.Admin, SermonsFeeds.Series, SermonsFeeds.Speakers];
 
-    private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers);
+    private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers, bool Ours);
 
     private LiveData<Lists>? _live;
     private SeriesDetail? _series;
     private SpeakerDetail? _speaker;
-    private string _name = "", _description = "", _aliases = "", _mergeInto = "";
-    private MediaRef? _artwork;
-    private bool _busy, _choosing;
+    private string _name = "", _description = "", _aliases = "", _mergeInto = "", _seriesQuery = "", _speakerQuery = "";
+    private MediaRef? _picture;
+    private bool _busy, _choosing, _useSource;
     private string? _problem;
 
     private async Task<Lists> LoadAsync()
     {
         ValueTask<SpeakerList> speakers = Sermons.SpeakersAsync();
+        ValueTask<SourceStatus> status = Sermons.StatusAsync();
         SeriesList series = await Sermons.SeriesAsync();
-        return new Lists(series.Series, (await speakers).Speakers);
+        return new Lists(series.Series, (await speakers).Speakers, (await status).Source == SermonSources.Uploads);
     }
 
-    private static IReadOnlyList<FieldOption> MergeOptions(IReadOnlyList<SpeakerDetail> speakers, SpeakerDetail speaker) =>
-        [new("", "Keep them apart"), .. speakers.Where(other => other.Id != speaker.Id).Select(other => new FieldOption(other.Id, other.Name))];
+    private static IEnumerable<T> Matching<T>(IEnumerable<T> items, string query, Func<T, string> text) =>
+        query.Trim() is { Length: > 0 } wanted ? items.Where(item => text(item).Contains(wanted, StringComparison.CurrentCultureIgnoreCase)) : items;
+
+    private static IReadOnlyList<SpeakerDetail> Others(IReadOnlyList<SpeakerDetail> speakers, SpeakerDetail speaker) =>
+        speakers.Where(other => other.Id != speaker.Id).ToList();
+
+    private SpeakerDetail? MergeTarget(IReadOnlyList<SpeakerDetail> speakers) => speakers.FirstOrDefault(other => other.Id == _mergeInto);
+
+    private static string SpeakerName(SpeakerDetail speaker) => speaker.Name;
+
+    private MediaRef? ShownArtwork(SeriesDetail series) => _picture ?? (_useSource && series.ArtworkChosen ? null : series.Artwork);
+
+    private MediaRef? ShownPhoto(SpeakerDetail speaker) => _picture ?? (_useSource && speaker.PhotoChosen ? null : speaker.Photo);
 
     private void NewSeries() => EditSeries(new SeriesDetail());
+
+    private void NewSpeaker() => EditSpeaker(new SpeakerDetail());
 
     private void EditSeries(SeriesDetail series)
     {
@@ -125,32 +185,51 @@
         _aliases = string.Join(", ", speaker.Aliases);
     }
 
+    private void Chose(MediaRef picture)
+    {
+        _picture = picture;
+        _useSource = false;
+        _choosing = false;
+    }
+
+    private void UseWebsitePicture()
+    {
+        _picture = null;
+        _useSource = true;
+    }
+
     private void Close()
     {
         _series = null;
         _speaker = null;
-        _artwork = null;
+        _picture = null;
+        _useSource = false;
+        _choosing = false;
         _mergeInto = "";
         _problem = null;
     }
 
+    private (MediaRef? Picture, bool Chosen) PictureToSave(MediaRef? current, bool chosen) =>
+        _picture is not null ? (_picture, true) : _useSource ? (null, false) : (chosen ? current : null, chosen);
+
     private Task SaveSeriesAsync() => RunAsync(async () =>
     {
-        SeriesDetail saved = await Sermons.SaveSeriesAsync(new SeriesDetail { Id = _series!.Id, Name = _name, Description = _description, Artwork = _artwork ?? (_series.FromWebsite ? null : _series.Artwork) });
-        _series = saved;
+        (MediaRef? artwork, bool chosen) = PictureToSave(_series!.Artwork, _series.ArtworkChosen);
+        EditSeries(await Sermons.SaveSeriesAsync(new SeriesDetail { Id = _series.Id, Name = _name, Description = _description, Artwork = artwork, ArtworkChosen = chosen }));
     });
 
     private Task SaveSpeakerAsync() => RunAsync(async () =>
     {
-        SpeakerDetail saved = await Sermons.SaveSpeakerAsync(new SpeakerDetail
+        (MediaRef? photo, bool chosen) = PictureToSave(_speaker!.Photo, _speaker.PhotoChosen);
+        EditSpeaker(await Sermons.SaveSpeakerAsync(new SpeakerDetail
         {
-            Id = _speaker!.Id,
+            Id = _speaker.Id,
             Name = _name,
-            Photo = null,
+            Photo = photo,
+            PhotoChosen = chosen,
             Aliases = _aliases.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList(),
             MergeInto = _mergeInto.Length > 0 ? _mergeInto : null,
-        });
-        EditSpeaker(saved);
+        }));
     });
 
     private async Task RunAsync(Func<Task> work)

@@ -47,7 +47,6 @@ internal sealed class WebsiteReader(
             await ReadSeriesAsync(state, cancellationToken);
 
         await FillInAsync(cancellationToken);
-        await publisher.PublishAsync(cancellationToken);
         if (!state.HasReadOnce)
         {
             state.HasReadOnce = true;
@@ -91,14 +90,50 @@ internal sealed class WebsiteReader(
             if (sermon.AudioCopiedFrom is null)
                 sermon.AudioBytes = item.AudioBytes;
             string? original = TithelyArtwork.OriginalOf(item.ImageUrl, fileHost);
-            if (original != sermon.ArtworkSourceUrl)
+            if (original != sermon.FeedArtworkUrl)
             {
-                sermon.ArtworkSourceUrl = original;
-                sermon.ArtworkHash = null;
-                sermon.Artwork = null;
-                sermon.Thumbnail = null;
+                sermon.FeedArtworkUrl = original;
+                sermon.PageReadAt = null;
+                UseArtwork(sermon, original);
             }
             sermon.UpdatedAt = now;
+        }
+    }
+
+    private static void UseArtwork(SermonRecord sermon, string? url)
+    {
+        if (url == sermon.ArtworkSourceUrl)
+            return;
+        sermon.ArtworkSourceUrl = url;
+        sermon.ArtworkHash = null;
+        sermon.Artwork = null;
+        sermon.Thumbnail = null;
+    }
+
+    private async Task ReadPagesAsync(CancellationToken cancellationToken)
+    {
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.Origin == Origin && sermon.PageReadAt == null && sermon.WebLink != null)
+                     .OrderByDescending(sermon => sermon.PreachedAt).ToListAsync(cancellationToken))
+            await Attempt(async () =>
+            {
+                string? fileHost = Uri.TryCreate(sermon.FeedArtworkUrl, UriKind.Absolute, out Uri? feedImage) ? feedImage.Host : null;
+                if (await PageOfAsync(sermon.WebLink!, cancellationToken) is { } page && SermonPages.ArtworkOf(page, fileHost) is { } whole)
+                    UseArtwork(sermon, whole);
+                sermon.PageReadAt = now;
+            }, "sermon page", sermon.WebLink!);
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task<string?> PageOfAsync(string url, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return await website.PageAsync(url, cancellationToken);
+        }
+        catch (HttpRequestException exception) when (exception.StatusCode is System.Net.HttpStatusCode.NotFound or System.Net.HttpStatusCode.Gone)
+        {
+            return null;
         }
     }
 
@@ -170,8 +205,9 @@ internal sealed class WebsiteReader(
         return first with { SermonPaths = sermons.Distinct().ToList(), SpeakerPhotos = photos };
     }
 
-    private async Task FillInAsync(CancellationToken cancellationToken)
+    public async Task FillInAsync(CancellationToken cancellationToken)
     {
+        await ReadPagesAsync(cancellationToken);
         foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.DurationSeconds == 0 && sermon.AudioUrl != "").ToListAsync(cancellationToken))
             await Attempt(async () => sermon.DurationSeconds = await DurationOfAsync(sermon, cancellationToken) ?? 0, "duration", sermon.AudioUrl);
 
@@ -191,6 +227,7 @@ internal sealed class WebsiteReader(
 
         await speakers.FillInPhotosAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        await publisher.PublishAsync(cancellationToken);
     }
 
     private async Task<int?> DurationOfAsync(SermonRecord sermon, CancellationToken cancellationToken)

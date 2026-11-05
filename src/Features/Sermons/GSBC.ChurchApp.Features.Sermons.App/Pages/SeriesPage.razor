@@ -82,7 +82,7 @@
 
     private static int Position(IReadOnlyList<Sermon> sermons, Sermon sermon) => sermon.Part > 0 ? sermon.Part : sermons.ToList().IndexOf(sermon) + 1;
 
-    private static string Count(int count) => count == 1 ? "1 sermon" : $"{count} sermons";
+    private static string Count(int count) => SermonText.Sermons(count);
 
     private static string Span(SeriesInfo series)
     {

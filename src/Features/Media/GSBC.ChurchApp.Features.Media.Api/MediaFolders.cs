@@ -194,6 +194,31 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         return MediaRefs.Of(item, blobs);
     }
 
+    public async Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken)
+    {
+        MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
+        if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Sha256 == file.Sha256 && item.FolderId == folder.Id, cancellationToken) is { } kept)
+            return MediaRefs.Of(kept, blobs);
+        if (await blobs.FindAsync(BlobBucket.Public, file.Key, cancellationToken) is null)
+            throw new InvalidOperationException($"There's no stored file at {file.Key} to keep.");
+
+        MediaItem item = new()
+        {
+            Id = Guid.CreateVersion7(),
+            Key = file.Key,
+            Sha256 = file.Sha256,
+            ContentType = file.ContentType,
+            Bytes = file.Bytes,
+            FileName = file.FileName,
+            UploadedAt = Now,
+            FolderId = folder.Id,
+        };
+        db.Items.Add(item);
+        Mark(item.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return MediaRefs.Of(item, blobs);
+    }
+
     private async Task<MediaFolder> SystemFolderAsync(string area, string? scope, string name, Guid? parentId, CancellationToken cancellationToken)
     {
         string trimmed = name.Trim() is { Length: > 0 } given ? given[..Math.Min(given.Length, MaximumNameLength)] : "Untitled";

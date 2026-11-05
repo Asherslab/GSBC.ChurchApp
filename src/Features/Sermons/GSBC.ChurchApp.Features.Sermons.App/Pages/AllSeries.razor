@@ -11,7 +11,7 @@
                         <a class="series-grid__item" href="@SermonsDestinations.Series.PathOf(series.Id).TrimStart('/')">
                             <MediaCover Media="series.Thumbnail ?? series.Artwork" FallbackTitle="@series.Name" />
                             <span>@series.Name</span>
-                            <small>@SermonText.Join(series.Count == 1 ? "1 sermon" : $"{series.Count} sermons", SermonText.Month(series.LastAt))</small>
+                            <small>@SermonText.Join(SermonText.Sermons(series.Count), SermonText.Month(series.LastAt))</small>
                         </a>
                     }
                 </div>

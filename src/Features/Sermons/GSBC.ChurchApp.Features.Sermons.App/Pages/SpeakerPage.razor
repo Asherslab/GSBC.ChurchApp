@@ -40,7 +40,7 @@
             <div class="speaker-head">
                 <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="96" />
                 <h1 class="sermon-head__title">@speaker.Name</h1>
-                <p class="sermon-head__facts">@SermonText.Join(sermons.Count == 1 ? "1 sermon" : $"{sermons.Count} sermons", $"latest {SermonText.Day(speaker.LatestAt)}")</p>
+                <p class="sermon-head__facts">@SermonText.Join(SermonText.Sermons(sermons.Count), $"latest {SermonText.Day(speaker.LatestAt)}")</p>
             </div>
             @if (series.Count > 0)
             {

@@ -1,24 +1,28 @@
 @using GSBC.ChurchApp.Platform.Client.Audio
-@implements IDisposable
+@implements IAsyncDisposable
 @inject IAudioPlayer Player
 @inject Shell Shell
+@inject NowPlayingBar Bar
 @inject NavigationManager Navigation
 
 @if (Player.State.Item is { } item)
 {
-    <div class="now-playing @(State.Playing ? "is-playing" : "")">
-        <button type="button" class="now-playing__open" @onclick="OpenSheet" aria-label="@($"Now playing: {item.Title}. Open the player")">
-            <AudioArt Item="item" Class="now-playing__art" />
-            <span class="now-playing__words">
-                <span class="now-playing__title">@item.Title</span>
-                <span class="now-playing__line">@Line(item)</span>
-            </span>
-        </button>
-        <button type="button" class="now-playing__toggle" aria-label="@(State.Playing ? "Pause" : "Play")" @onclick="ToggleAsync">
-            <Icon Name="@(State.Playing ? "pause" : "play")" />
-        </button>
-        <i class="now-playing__progress" style="width: @Percent(State)%" aria-hidden="true"></i>
-    </div>
+    if (!Bar.Hidden)
+    {
+        <div class="now-playing @(State.Playing ? "is-playing" : "")" @ref="_bar">
+            <button type="button" class="now-playing__open" @onclick="OpenSheet" aria-label="@($"Now playing: {item.Title}. Open the player")">
+                <AudioArt Item="item" Class="now-playing__art" />
+                <span class="now-playing__words">
+                    <span class="now-playing__title">@item.Title</span>
+                    <span class="now-playing__line">@Line(item)</span>
+                </span>
+            </button>
+            <button type="button" class="now-playing__toggle" aria-label="@(State.Playing ? "Pause" : "Play")" @onclick="ToggleAsync">
+                <Icon Name="@(State.Playing ? "pause" : "play")" />
+            </button>
+            <i class="now-playing__progress" style="width: @Percent(State)%" aria-hidden="true"></i>
+        </div>
+    }
 
     <Sheet Open="_sheet" OpenChanged="open => _sheet = open" Label="Now playing">
         <div class="player-sheet">
@@ -88,6 +92,10 @@
     private static readonly IReadOnlyList<int> SleepMinutes = [15, 30, 45];
     private bool _sheet;
     private double? _scrubbing;
+    private bool _wasPlaying;
+    private ElementReference _bar;
+    private IJSObjectReference? _swipe;
+    private DotNetObjectReference<NowPlaying>? _receiver;
 
     private AudioState State => Player.State;
 
@@ -97,9 +105,57 @@
 
     private string? SleepNote => State.SleepAt is { } at ? $"stops at {at.ToLocalTime():h:mm tt}".ToLowerInvariant() : State.SleepAtEnd ? "stops at the end" : null;
 
-    protected override void OnInitialized() => Player.Changed += OnChanged;
+    protected override void OnInitialized()
+    {
+        Player.Changed += OnChanged;
+        Bar.Changed += OnBarChanged;
+    }
 
-    private void OnChanged() => InvokeAsync(StateHasChanged);
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        bool shown = Player.State.Item is not null && !Bar.Hidden;
+        if (shown && _swipe is null)
+        {
+            _receiver ??= DotNetObjectReference.Create(this);
+            _swipe = await Shell.SwipeAwayAsync(_bar, _receiver);
+        }
+        else if (!shown && _swipe is not null)
+        {
+            await StopSwipeAsync();
+        }
+    }
+
+    private void OnChanged()
+    {
+        if (Bar.HiddenFor is { } hidden && (State.Item?.Id != hidden || State.Playing && !_wasPlaying))
+            Bar.Show();
+        _wasPlaying = State.Playing;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnBarChanged() => InvokeAsync(StateHasChanged);
+
+    [JSInvokable]
+    public void OnSwipedAway()
+    {
+        if (State.Item is { } item)
+            Bar.Hide(item.Id);
+    }
+
+    private async Task StopSwipeAsync()
+    {
+        if (_swipe is null)
+            return;
+        try
+        {
+            await _swipe.InvokeVoidAsync("dispose");
+            await _swipe.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _swipe = null;
+    }
 
     private async Task ToggleAsync()
     {
@@ -135,5 +191,11 @@
         return time.TotalHours >= 1 ? time.ToString(@"h\:mm\:ss") : time.ToString(@"m\:ss");
     }
 
-    public void Dispose() => Player.Changed -= OnChanged;
+    public async ValueTask DisposeAsync()
+    {
+        Player.Changed -= OnChanged;
+        Bar.Changed -= OnBarChanged;
+        await StopSwipeAsync();
+        _receiver?.Dispose();
+    }
 }

@@ -1,4 +1,5 @@
 @using static MediaWords
+@using GSBC.ChurchApp.Platform.Client.Audio
 @inject MediaClient Media
 @inject IAccess Access
 
@@ -86,7 +87,7 @@
                                             }
                                             else
                                             {
-                                                <Icon Name="file" Size="IconSize.Large" />
+                                                <Icon Name="@IconOf(media)" Size="IconSize.Large" />
                                             }
                                         </span>
                                         <span class="media-card__name">@NameOf(media)</span>
@@ -269,6 +270,10 @@
               {
                   <MediaImage @key="media.Id" Media="media" Class="media-preview" />
               }
+              else if (IsAudio(media) && media.Url is { } audio)
+              {
+                  <AudioPreview @key="media.Id" Item="new AudioItem(media.Id, audio, NameOf(media), string.Empty, string.Empty, null, 0)" />
+              }
               <h2 class="panel-title media-detail__title">@NameOf(media)</h2>
               @if (media.AltText.Length > 0)
               {
@@ -338,7 +343,7 @@
 
     private IReadOnlyList<TableColumn<MediaItemInfo>> Columns(FolderMap map) =>
     [
-        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="file" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
+        new("", item => @<span class="media-thumb">@if (item.Media!.IsImage) {<MediaImage Media="item.Media" Class="media-thumb__image" />} else {<Icon Name="@IconOf(item.Media)" Size="IconSize.Small" />}</span>, null, "media-thumb-cell"),
         new("Name", item => @<span class="media-name"><span class="cell-strong">@NameOf(item.Media!)</span>@if (item.Media!.AltText.Length > 0) {<span class="quiet">@item.Media.AltText</span>}</span>, item => NameOf(item.Media!)),
         Searching
             ? new("Folder", item => @<span>@map.PathName(item.FolderId)</span>, item => map.PathName(item.FolderId))

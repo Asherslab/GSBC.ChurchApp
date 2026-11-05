@@ -60,6 +60,14 @@ speaker, and "Watch at: https://youtu.be/…" (112 of 155). No series, no durati
   YouTube id from any `youtu.be/…`, `youtube.com/watch?v=…`, `/live/…` or `/embed/…` link; the original
   artwork (the resizer's job names the CloudFront original, 1920 × 1080); the duration, read from the mp3's
   first few kilobytes (a ranged request: the Xing/VBRI header, or the bitrate for constant-bitrate files).
+- **The whole graphic, not the feed's crop (owner's note, 2026-11-06).** The feed's `itunes:image` original is
+  itself a 1400 × 1400 square that Tithe.ly cuts from the middle of a wide graphic, so "Building a Life of Prayer"
+  lost its edges in every copy. Each sermon's page carries the real graphic as its `og:image` (a resizer job naming
+  the CloudFront original, 1672 × 941 for that one), so each sermon's page is read once (`page_read_at`) and its
+  original used; the feed's picture (`feed_artwork_url`) stays as the fallback, and a new feed picture means the page
+  is read again. A page that's gone counts as read. This also runs while sermons are uploaded, for the sermons that
+  came from the website. In the app, `MediaCover` shows a picture whole (`contain`, on the masthead colour) unless
+  it's within a few percent of 16:9, so nothing is cropped.
 - **Artwork** is made into two copies on the server: 1280 wide for the sermon page and 480 wide for lists and the
   Hub, JPEG, named by their SHA-256 in the public bucket, so phones cache them forever and prefetch the small
   one; speakers' photos (from the series pages) become 192-pixel squares.
@@ -90,6 +98,12 @@ help centre documents only the RSS feed and a sermon importer), so we read the p
   each series page links its sermons as `/media/<slug>`, which is exactly the feed's `link`. That link is the
   join, so a renamed sermon still matches.
 - A series takes its name and its artwork (the page's series image) from the page.
+- **Where series and speakers come from (owner, 2026-11-06):** while sermons come from the website, so do series and
+  speakers: new ones only arrive from it, and `SaveSeries`/`SaveSpeaker` refuse to add one (`FailedPrecondition`). A
+  name, description or chosen picture set here stays when the website changes (a series' name follows the website only
+  while nobody has renamed it; `ChosenArtwork`/`ChosenPhoto` win over the website's). While sermons are uploaded,
+  series and speakers are ours, starting from the website's copies: add them on Series and speakers, from the
+  sermon editor's pickers, or in the upload form. Tests: `SourceRuleTests`.
 - Read when the feed changed, and once a day regardless. A page that fails or no longer parses keeps the
   last known series, and the problem shows on the admin panel's Sermons page (*Where sermons come from*) and
   in the API's log, so a website redesign is noticed and nothing goes missing. (App health hears only about
@@ -114,6 +128,17 @@ sermons are a feature's own records (drafts.md, decision 1); a correction is liv
   by default, or a picture from Media's picture sheet). The audio goes straight from the browser to R2
   through a signed link (`Sermons.BeginAudioUpload`, as Media does), named
   `sermons/audio/<id>.<ext>`; the server checks it arrived, its size and type, and reads its duration.
+- **Sermon audio is a Media item (owner, 2026-11-06: "keep an eye on sizes").** Copied audio is hashed as it
+  downloads and stored under its SHA-256 (`<hash>.mp3`), so the same recording is stored once; uploaded audio is
+  hashed in the background after it's added. Each is kept in Media's *Sermon audio* system folder through
+  `IMediaSystemFolders.KeepStoredAsync` (registers a file already in the bucket by key and hash, with no bytes in
+  memory; a second file with the same hash reuses the first, and the duplicate blob is deleted), and every sermon holds
+  a reference (`sermons/sermon/{id}/audio`). Audience `sermons.edit` (and `media.system.view`). Media shows audio with a
+  music icon, its size, and a player in the details panel (the length shows once it's played: Media keeps no
+  duration).
+- **Copying shows each sermon's progress live:** the copier writes each sermon's state (waiting, copying with bytes
+  so far, copied, couldn't copy and why) about once a second and marks `sermons.copying`; the admin panel's copy panel
+  listens to that feed alone, so the rest of the page doesn't reload.
   A sermon can be saved for later or set to appear at a time.
 - **Audio tooling** (levelling, trimming, intro/outro) is the owner's next idea; it plugs in between the
   upload and publishing, and isn't built.
@@ -171,6 +196,7 @@ starting point (the team liked them).
 | `sermons.series` | Public | Every series with a sermon in the window: name, artwork, description, count, first and last day |
 | `sermons.speakers` | Public | Every speaker with a sermon in the window: name, photo, count, latest day |
 | `sermons.progress` | Own records | The signed-in person's listening history (below), one row per sermon |
+| `sermons.copying` | `sermons.edit` | A marker per sermon as its audio is copied, so the copy panel updates live |
 | `sermons.admin` | `sermons.edit` | Markers for the admin panel's live pages |
 
 A sermon payload is about 600 bytes, so the catalogue is about 240 KB on a phone. The screens read whole small
@@ -311,7 +337,8 @@ picture-in-picture and fullscreen (iOS's own video controls). In production the 
 Real rules only: the feed parser against a trimmed, anonymised sample (made-up names and links), series joined
 by link, corrections surviving a re-read, the retention window, the merge rule's laws, progress saved
 through the service reaching the person's feed and nobody else's, a sermon only once in the notification,
-uploads checked on save.
+uploads checked on save, a sermon's whole graphic taken from its page, new series and speakers only while sermons are
+uploaded, and copied audio stored once by its content and held in Media.
 
 ## Decided while building
 
@@ -333,6 +360,10 @@ uploads checked on save.
   are.
 - **The mini-player and player sheet are Platform.Ui's `NowPlaying`**, generic over `IAudioPlayer`, placed above the
   tab bar in the app's layout; an `AudioItem` carries a link back to its sermon.
+- **Swiping the mini-player away (owner, 2026-11-06)** hides it and nothing else: the sermon keeps playing and the lock
+  screen controls stay. It comes back when playback starts again (play from anywhere, or another sermon), and on the
+  Sermons tab or the playing sermon's page (`NowPlayingBar`). Every `Sheet` can be pulled down by its top like a native
+  sheet: it follows the finger and closes past a third of its height or on a quick flick, otherwise it springs back.
 - **The admin panel plays audio** with the browser's own audio element on the sermon being checked; it has no
   mini-player.
 - **Uploading** goes from the browser's file straight to R2 (an XHR with progress), not through WebAssembly memory;

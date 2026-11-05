@@ -1,3 +1,5 @@
+@using Microsoft.JSInterop
+@implements IAsyncDisposable
 @inject Shell Shell
 
 @if (Open)
@@ -40,6 +42,8 @@
     private ElementReference _sheet;
     private ElementReference _layer;
     private bool _focused;
+    private IJSObjectReference? _drag;
+    private DotNetObjectReference<Sheet>? _receiver;
 
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
@@ -58,14 +62,41 @@
             _focused = true;
             await Shell.ShowModalAsync(_layer);
             await _sheet.FocusAsync(preventScroll: true);
+            _receiver ??= DotNetObjectReference.Create(this);
+            _drag = await Shell.SheetDragAsync(_sheet, _receiver);
         }
-        else if (!Open)
+        else if (!Open && _focused)
         {
             _focused = false;
+            await StopDragAsync();
         }
     }
 
+    [JSInvokable]
+    public Task OnDragDismissed() => CloseAsync();
+
     private Task CloseAsync() => OpenChanged.InvokeAsync(false);
+
+    private async Task StopDragAsync()
+    {
+        if (_drag is null)
+            return;
+        try
+        {
+            await _drag.InvokeVoidAsync("dispose");
+            await _drag.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _drag = null;
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        await StopDragAsync();
+        _receiver?.Dispose();
+    }
 
     private Task KeyAsync(KeyboardEventArgs key) => key.Key == "Escape" ? CloseAsync() : Task.CompletedTask;
 }

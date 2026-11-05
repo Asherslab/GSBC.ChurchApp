@@ -45,7 +45,7 @@
                     <ListGroup>
                         @foreach (SeriesInfo one in series)
                         {
-                            <ListRow Title="@one.Name" Subtitle="@(one.Count == 1 ? "1 sermon" : $"{one.Count} sermons")" Href="@SermonsDestinations.Series.PathOf(one.Id).TrimStart('/')" Class="sermon-row">
+                            <ListRow Title="@one.Name" Subtitle="@SermonText.Sermons(one.Count)" Href="@SermonsDestinations.Series.PathOf(one.Id).TrimStart('/')" Class="sermon-row">
                                 <Leading><MediaCover Media="one.Thumbnail ?? one.Artwork" Class="sermon-row__thumb" /></Leading>
                             </ListRow>
                         }
@@ -58,7 +58,7 @@
                     <ListGroup>
                         @foreach (SpeakerInfo one in speakers)
                         {
-                            <ListRow Title="@one.Name" Subtitle="@(one.Count == 1 ? "1 sermon" : $"{one.Count} sermons")" Href="@SermonsDestinations.Speaker.PathOf(one.Id).TrimStart('/')">
+                            <ListRow Title="@one.Name" Subtitle="@SermonText.Sermons(one.Count)" Href="@SermonsDestinations.Speaker.PathOf(one.Id).TrimStart('/')">
                                 <Leading><Avatar Name="@one.Name" Photo="one.Photo" Size="40" /></Leading>
                             </ListRow>
                         }
@@ -67,7 +67,7 @@
             }
             @if (sermons.Count > 0)
             {
-                <Section Title="@(sermons.Count == 1 ? "1 sermon" : $"{sermons.Count} sermons")" First="@(series.Count == 0 && speakers.Count == 0)">
+                <Section Title="@SermonText.Sermons(sermons.Count)" First="@(series.Count == 0 && speakers.Count == 0)">
                     <ListGroup>
                         @foreach (Sermon sermon in sermons.Take(MostShown))
                         {

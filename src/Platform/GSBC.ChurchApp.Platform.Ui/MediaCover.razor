@@ -23,5 +23,8 @@
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
-    private bool Whole => Media is { Width: > 0, Height: > 0 } media && (double)media.Width / media.Height < 1.6;
+    private const double Frame = 16d / 9;
+    private const double CloseEnough = 0.08;
+
+    private bool Whole => Media is { Width: > 0, Height: > 0 } media && Math.Abs((double)media.Width / media.Height - Frame) > CloseEnough;
 }
