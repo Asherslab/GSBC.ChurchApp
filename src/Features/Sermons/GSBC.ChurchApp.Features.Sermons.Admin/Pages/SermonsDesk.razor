@@ -1,0 +1,163 @@
+@page "/sermons"
+@inject SermonsAdminClient Sermons
+
+<TitleBand Title="Sermons" Lead="New sermons arrive from the website or the AV team's uploads. Give each one a look; what you correct stays put when the website changes.">
+    <Actions>
+        <Button Variant="ButtonVariant.Quiet" Icon="layers" Href="sermons/series-and-speakers">Series and speakers</Button>
+        <Can Permission="SermonsPermissions.Upload">
+            <Button Icon="plus" OnClick="StartUpload">Upload a sermon</Button>
+        </Can>
+    </Actions>
+</TitleBand>
+
+<LiveData @ref="_live" TValue="DeskView" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load sermons right now">
+    <SourceStrip Status="context.Value.Status" Changed="ReloadAsync" />
+    <div class="sermons-desk">
+        <section class="sermons-desk__queue" aria-label="Sermons">
+            <FilterChips TValue="string" Label="Show" Options="Filters(context.Value.Sermons)" Value="_filter" ValueChanged="FilterAsync" />
+            <SearchField Label="Find a sermon" Placeholder="Title, speaker, series or service" Value="@_query" ValueChanged="SearchAsync" />
+            @if (context.Value.Sermons.Sermons.Count == 0)
+            {
+                <EmptyState Icon="@(_filter == SermonFilters.NeedsALook ? "check" : "search")" Title="@EmptyTitle" Body="@EmptyBody" />
+            }
+            else
+            {
+                <div class="sermons-desk__list" role="listbox" aria-label="Sermons">
+                    @foreach (SermonDetail detail in context.Value.Sermons.Sermons)
+                    {
+                        <button type="button" role="option" aria-selected="@(detail.Sermon.Id == _selectedId)" class="sermon-pick @(detail.Sermon.Id == _selectedId ? "is-selected" : "")"
+                                @onclick="() => Select(detail.Sermon.Id)">
+                            <MediaCover Media="detail.Sermon.Thumbnail" Class="sermon-pick__thumb" />
+                            <span class="sermon-pick__words">
+                                <strong>@detail.Sermon.Title</strong>
+                                <span>@SermonText.Join(SermonText.Day(detail.Sermon.PreachedAt), detail.Sermon.SpeakerName)</span>
+                                <span class="sermon-pick__pills">
+                                    @foreach (string reason in detail.NeedsALook)
+                                    {
+                                        <Pill Tone="@(reason == "Just uploaded" ? PillTone.Accent : PillTone.Marker)">@reason</Pill>
+                                    }
+                                    @if (detail.Hidden)
+                                    {
+                                        <Pill Tone="PillTone.Quiet">Hidden</Pill>
+                                    }
+                                </span>
+                            </span>
+                        </button>
+                    }
+                </div>
+                @if (context.Value.Sermons.Sermons.Count < context.Value.Sermons.Total)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="MoreAsync">Show more</Button>
+                }
+            }
+        </section>
+        <section class="sermons-desk__record" aria-label="@(_uploading ? "Upload a sermon" : "The sermon")">
+            @if (_uploading)
+            {
+                <UploadSermon Sermons="Sermons" Status="context.Value.Status" Series="context.Value.Series" Speakers="context.Value.Speakers" Added="AddedAsync" Cancelled="() => _uploading = false" />
+            }
+            else if (Selected(context.Value) is { } selected)
+            {
+                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers" Saved="SavedAsync" />
+            }
+            else
+            {
+                <EmptyState Icon="sermons" Title="Choose a sermon" Body="Its details, its audio and what to correct show here." />
+            }
+        </section>
+    </div>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> DeskFeeds = [SermonsFeeds.Admin, SermonsFeeds.Catalogue];
+    private const int PageSize = 40;
+
+    private LiveData<DeskView>? _live;
+    private DeskView? _view;
+    private string _filter = SermonFilters.NeedsALook;
+    private string _query = "";
+    private int _take = PageSize;
+    private string? _selectedId;
+    private bool _uploading;
+    private bool _chosenFilter;
+
+    private async Task<DeskView> LoadAsync()
+    {
+        ValueTask<SourceStatus> status = Sermons.StatusAsync();
+        ValueTask<SeriesList> series = Sermons.SeriesAsync();
+        ValueTask<SpeakerList> speakers = Sermons.SpeakersAsync();
+        SermonList list = await Sermons.ListAsync(new SermonQuery { Filter = _filter, Text = _query, Take = _take });
+        if (!_chosenFilter && _filter == SermonFilters.NeedsALook && list.Total == 0 && _query.Length == 0)
+        {
+            _filter = SermonFilters.All;
+            list = await Sermons.ListAsync(new SermonQuery { Filter = _filter, Take = _take });
+        }
+        _view = new DeskView(list, await status, (await series).Series, (await speakers).Speakers);
+        return _view;
+    }
+
+    private SermonDetail? Selected(DeskView view) =>
+        view.Sermons.Sermons.FirstOrDefault(detail => detail.Sermon.Id == _selectedId) ?? (_selectedId is null ? view.Sermons.Sermons.FirstOrDefault() : null);
+
+    private static IReadOnlyList<FilterOption<string>> Filters(SermonList list) =>
+    [
+        new(SermonFilters.NeedsALook, "Needs a look", list.Counts.GetValueOrDefault(SermonFilters.NeedsALook)),
+        new(SermonFilters.NoSeries, "No series", list.Counts.GetValueOrDefault(SermonFilters.NoSeries)),
+        new(SermonFilters.All, "All", list.Counts.GetValueOrDefault(SermonFilters.All)),
+        new(SermonFilters.Hidden, "Hidden", list.Counts.GetValueOrDefault(SermonFilters.Hidden)),
+    ];
+
+    private string EmptyTitle => _query.Length > 0 ? $"No sermons match “{_query}”" : _filter == SermonFilters.NeedsALook ? "Nothing needs a look" : "No sermons here";
+
+    private string EmptyBody => _query.Length > 0 ? "Try part of the title or the speaker's name." : _filter == SermonFilters.NeedsALook ? "Every new sermon has been checked." : "Choose another filter.";
+
+    private void Select(string id)
+    {
+        _uploading = false;
+        _selectedId = id;
+    }
+
+    private void StartUpload() => _uploading = true;
+
+    private Task FilterAsync(string filter)
+    {
+        _filter = filter;
+        _chosenFilter = true;
+        _take = PageSize;
+        _selectedId = null;
+        return ReloadAsync();
+    }
+
+    private Task SearchAsync(string query)
+    {
+        _query = query;
+        _take = PageSize;
+        return ReloadAsync();
+    }
+
+    private Task MoreAsync()
+    {
+        _take += PageSize;
+        return ReloadAsync();
+    }
+
+    private async Task SavedAsync(SermonSaved saved)
+    {
+        if (saved.Next && _view?.Sermons.Sermons is { } shown)
+        {
+            int index = shown.FindIndex(detail => detail.Sermon.Id == saved.Detail.Sermon.Id);
+            _selectedId = shown.Skip(index + 1).FirstOrDefault()?.Sermon.Id ?? shown.Take(index).FirstOrDefault(detail => detail.Sermon.Id != saved.Detail.Sermon.Id)?.Sermon.Id;
+        }
+        await ReloadAsync();
+    }
+
+    private async Task AddedAsync(SermonDetail added)
+    {
+        _uploading = false;
+        _filter = SermonFilters.NeedsALook;
+        _selectedId = added.Sermon.Id;
+        await ReloadAsync();
+    }
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+}

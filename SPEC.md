@@ -32,7 +32,9 @@ The app is not published as a website for now. The only public site is the staff
 **Capacitor, with one native plugin of our own.** Nothing in scope needs native UI. Device features
 come from official plugins: Push Notifications, Haptics, Share, Browser, App (Android back button,
 deep links), Preferences and Splash Screen. The one plugin we write is the data layer (§5), in Swift
-and Kotlin. It is generic, so it is written once per platform, not once per feature.
+and Kotlin. It is generic, so it is written once per platform, not once per feature. Since 2026-11-05 it
+also plays audio (AVPlayer, the lock screen's controls and a playback journal) for Sermons, still generic:
+it knows URLs and item ids, never a sermon ([docs/features/sermons.md](docs/features/sermons.md)).
 
 **UI stack:** Blazor WebAssembly, **AOT-compiled**. It reuses our existing GSBC stack (ImpactKids,
 Accounting) and the patterns proven in the Graced POC: native-feel navigation, safe areas and
@@ -653,8 +655,9 @@ Decided, for the record:
 
 - **ImpactKids:** stays separate; no connection (non-goal, §1).
 - **Giving:** stays on Tithe.ly (§7).
-- **Sermons:** hosted in Tithe.ly, probably consumed through its RSS feed. The detail is settled when
-  that feature is built.
+- **Sermons:** read from the website's RSS feed and series pages, or (switchable) uploaded here to R2 with
+  our own podcast feed; both built for the owner to put to the church staff (2026-11-05); see
+  [docs/features/sermons.md](docs/features/sermons.md).
 - **Android without Google Play:** read-only, no fallback (§6).
 - **Bundle id:** `au.com.baptist.app` (2026-11-03; it replaced `au.com.baptist.churchapp`, see identity.md),
   with `.dev` and `.uat` beside it for dev builds and TestFlight's UAT app.

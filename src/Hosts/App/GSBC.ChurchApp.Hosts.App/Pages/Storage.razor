@@ -23,7 +23,9 @@
         }
         else
         {
-            <Section First="true" Title="Synced to this phone">
+            <StorageSections />
+
+            <Section Title="Synced to this phone">
                 <Trailing><Button Variant="ButtonVariant.Quiet" Small="true" Icon="refresh" Busy="_refreshing" OnClick="RefreshAsync">Sync now</Button></Trailing>
                 <ChildContent>
                     <ListGroup>

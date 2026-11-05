@@ -1,0 +1,24 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+<span class="avatar @Class" style="@(Size is { } size ? $"--avatar: {size}px" : null)" aria-hidden="true">
+    @if (Photo is { } photo)
+    {
+        <MediaImage Media="photo" Alt="" />
+    }
+    else
+    {
+        <span class="avatar__initials">@Initials</span>
+    }
+</span>
+
+@code {
+    [Parameter, EditorRequired] public required string Name { get; set; }
+    [Parameter] public MediaRef? Photo { get; set; }
+    [Parameter] public int? Size { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Initials => string.Concat(Name.Split(' ', StringSplitOptions.RemoveEmptyEntries)
+        .Where(word => char.IsLetter(word[0]) && !IsTitle(word)).Take(2).Select(word => char.ToUpperInvariant(word[0])));
+
+    private static bool IsTitle(string word) => word.TrimEnd('.') is "Ps" or "Pastor" or "Bro" or "Rev" or "Dr" or "Mr" or "Mrs" or "Ms";
+}

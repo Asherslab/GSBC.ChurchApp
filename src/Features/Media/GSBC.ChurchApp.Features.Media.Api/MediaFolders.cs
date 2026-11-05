@@ -1,4 +1,5 @@
 using System.Security.Claims;
+using System.Security.Cryptography;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
@@ -6,13 +7,14 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using Npgsql;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
 
-internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, IEnumerable<MediaSystemArea> areas, TimeProvider time) : IMediaSystemFolders
+internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, IEnumerable<MediaSystemArea> areas, IBlobStore blobs, TimeProvider time) : IMediaSystemFolders
 {
     public const int MaximumNameLength = 80;
     private const string MadeByTheApp = "Made by the app.";
@@ -161,6 +163,33 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, item.Id.ToString(), Now));
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    public async Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken)
+    {
+        MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
+        string key = ContentAddress.KeyFor(Convert.ToHexStringLower(SHA256.HashData(file.Bytes)), file.Extension);
+        if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Key == key && item.FolderId == folder.Id, cancellationToken) is { } kept)
+            return MediaRefs.Of(kept, blobs);
+
+        if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
+            await blobs.PutAsync(BlobBucket.Public, key, new MemoryStream(file.Bytes), new BlobHeaders(file.ContentType, ContentAddress.ImmutableCacheControl), cancellationToken);
+        MediaItem item = new()
+        {
+            Id = Guid.CreateVersion7(),
+            Key = key,
+            ContentType = file.ContentType,
+            Bytes = file.Bytes.Length,
+            Width = file.Width,
+            Height = file.Height,
+            FileName = file.FileName,
+            UploadedAt = Now,
+            FolderId = folder.Id,
+        };
+        db.Items.Add(item);
+        Mark(item.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return MediaRefs.Of(item, blobs);
     }
 
     private async Task<MediaFolder> SystemFolderAsync(string area, string? scope, string name, Guid? parentId, CancellationToken cancellationToken)

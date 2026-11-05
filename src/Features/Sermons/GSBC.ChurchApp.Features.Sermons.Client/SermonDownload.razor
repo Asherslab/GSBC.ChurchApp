@@ -1,0 +1,35 @@
+@inject IAudioDownloads Downloads
+
+@if (Downloads.IsAvailable)
+{
+    <div class="sermon-download">
+        @switch (Download?.State)
+        {
+            case DownloadState.Done:
+                <span class="sermon-download__state"><Icon Name="check-circle" Size="IconSize.Small" />@SermonText.Join("Downloaded", Size(Download.Bytes))</span>
+                <button type="button" class="text-link" @onclick="() => Downloads.RemoveAsync(Sermon.Id)">Remove download</button>
+                break;
+            case DownloadState.Downloading:
+                <ProgressTrack Fraction="Download.Fraction" Label="Downloading" />
+                <span class="sermon-download__state">@($"Downloading… {Download.Fraction:P0}")</span>
+                <button type="button" class="text-link" @onclick="() => Downloads.RemoveAsync(Sermon.Id)">Stop</button>
+                break;
+            case DownloadState.Failed:
+                <span class="sermon-download__state">The download didn't finish.</span>
+                <button type="button" class="text-link" @onclick="StartAsync">Try again</button>
+                break;
+            default:
+                <button type="button" class="text-link" @onclick="StartAsync"><Icon Name="arrow-down" Size="IconSize.Small" />@SermonText.Join("Download for when you're offline", Size(Sermon.AudioBytes))</button>
+                break;
+        }
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public required Sermon Sermon { get; set; }
+    [Parameter] public AudioDownload? Download { get; set; }
+
+    private Task StartAsync() => Downloads.DownloadAsync(SermonPlayer.Item(Sermon));
+
+    public static string? Size(long bytes) => bytes <= 0 ? null : bytes >= 1024 * 1024 ? $"{bytes / 1024d / 1024d:0} MB" : $"{Math.Max(1, bytes / 1024)} KB";
+}

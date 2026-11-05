@@ -1,0 +1,13 @@
+@if (Show)
+{
+    <p class="use-source">
+        <span>Corrected here. The website says: <q>@Value</q></span>
+        <button type="button" class="text-link" @onclick="OnUse">Use the website's</button>
+    </p>
+}
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback OnUse { get; set; }
+}

@@ -3,7 +3,7 @@
 <label class="search-field @Class">
     <Icon Name="search" Size="IconSize.Small" />
     <span class="visually-hidden">@Label</span>
-    <input type="search" class="search-field__input" placeholder="@Placeholder" value="@Value" @oninput="TypeAsync" />
+    <input type="search" class="search-field__input" placeholder="@Placeholder" value="@Value" @oninput="TypeAsync" autofocus="@AutoFocus" />
 </label>
 
 @code {
@@ -15,6 +15,7 @@
     [Parameter] public EventCallback<string> ValueChanged { get; set; }
     [Parameter] public int SettleMilliseconds { get; set; } = 250;
     [Parameter] public string? Class { get; set; }
+    [Parameter] public bool AutoFocus { get; set; }
 
     private async Task TypeAsync(ChangeEventArgs change)
     {

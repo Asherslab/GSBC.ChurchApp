@@ -1,0 +1,11 @@
+<span class="progress-track @Class" role="progressbar" aria-label="@Label" aria-valuemin="0" aria-valuemax="100" aria-valuenow="@Percent">
+    <i style="width: @Percent%"></i>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public required double Fraction { get; set; }
+    [Parameter] public string Label { get; set; } = "How far you got";
+    [Parameter] public string? Class { get; set; }
+
+    private int Percent => (int)Math.Round(Math.Clamp(Fraction, 0, 1) * 100);
+}

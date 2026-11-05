@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Analytics;
+using GSBC.ChurchApp.Platform.Client.Audio;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Client.Media;
@@ -25,6 +26,8 @@ public static class ClientServiceCollectionExtensions
         services.AddSingleton<CurrentPage>();
         services.AddSingleton<OpeningSheets>();
         services.TryAddSingleton<IUsage, NoUsage>();
+        services.TryAddSingleton<IAudioPlayer, AudioPlayer>();
+        services.TryAddSingleton<IAudioDownloads, AudioDownloads>();
         return services;
     }
 }

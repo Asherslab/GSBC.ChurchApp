@@ -1,0 +1,49 @@
+{
+  "title": "Sermons: how the tab is laid out",
+  "question": "Three ways to arrange the Sermons tab, in the app's own bulletin look. Every one opens on Keep going (when you listened in the past week) or the latest sermon, audio first. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "timeline",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The year of preaching",
+      "lineage": "the bulletin's dated order of service, read as a year",
+      "thesis": "One dated list down the page, with each series drawn as a band beside the weeks it ran.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#007A70", "#E7AE74", "#F3EFE8"],
+      "materials": ["navy masthead", "hairline rows", "aqua series bands"],
+      "viewport": "Masthead with Keep going or the latest; filter chips (Everything, Series, Speakers, Sundays, Wednesdays); then November, October… with the day in a navy date column and a series band down the left.",
+      "risk": "Series and speakers live behind chips, so browsing by series is one tap further than the other two.",
+      "html": ".impeccable/mocks/decision/sermons/timeline.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "shelves",
+      "kind": "dealt",
+      "label": "Shelves",
+      "lineage": "a church library's front shelves",
+      "thesis": "Short shelves under the masthead: Latest, Series as covers, Speakers as faces, with search above.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#007A70", "#E7AE74"],
+      "materials": ["navy masthead", "16:9 series covers", "round speaker photos"],
+      "viewport": "Masthead with Keep going or the latest; a search field; Latest (two rows, All 155 ›); Series as a sideways row of covers; Speakers as faces.",
+      "risk": "The most familiar of the three: a podcast app's library, and it scrolls sideways in two places.",
+      "html": ".impeccable/mocks/decision/sermons/shelves.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "segmented",
+      "kind": "dealt",
+      "label": "Three views",
+      "lineage": "the bulletin's sections, one at a time",
+      "thesis": "Under the masthead, one switch: Latest, Series or Speakers, each a full list of its own.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy masthead", "sand segmented switch", "week headings"],
+      "viewport": "Masthead with Keep going or the latest; a sticky Latest | Series | Speakers switch; Latest grouped This week, Last week, then by month, with how far you got under each.",
+      "risk": "Series and speakers are hidden until switched to, so people browsing may not find them.",
+      "html": ".impeccable/mocks/decision/sermons/segmented.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code", "toggle": false }
+}

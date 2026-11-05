@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Features.Configuration.Api.Data;
 using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
+using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,6 +20,7 @@ builder.Services.AddConfigurationData();
 builder.Services.AddMediaData();
 builder.Services.AddAnalyticsData();
 builder.Services.AddNotificationsData();
+builder.Services.AddSermonsData();
 
 using IHost host = builder.Build();
 await using AsyncServiceScope scope = host.Services.CreateAsyncScope();

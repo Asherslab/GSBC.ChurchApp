@@ -1,0 +1,126 @@
+@inject SermonsAdminClient Sermons
+
+<section class="source-strip" aria-label="Where new sermons come from">
+    <div class="source-strip__row">
+        <strong>Where new sermons come from</strong>
+        <Can Permission="SermonsPermissions.Source">
+            <ChildContent>
+                <Segmented TValue="string" Label="Where new sermons come from" Options="Sources" Value="@(_switchingTo ?? Status.Source)" ValueChanged="Choose" />
+            </ChildContent>
+            <Otherwise>
+                <span>@(Status.Source == SermonSources.Uploads ? "Uploads here" : "The website")</span>
+            </Otherwise>
+        </Can>
+        <span class="source-strip__state">@StateLine</span>
+        @if (Status.Source == SermonSources.Website)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="refresh" Busy="_busy" OnClick="CheckNowAsync">Check now</Button>
+        }
+    </div>
+
+    @if (_switchingTo is { } target)
+    {
+        <Notice Tone="NoticeTone.Info">
+            @if (target == SermonSources.Uploads)
+            {
+                <p>New sermons will be uploaded here instead of read from the website. The website's audio is copied into the church's own storage, a few at a time, so every sermon plays from there; the podcast feed for Apple Podcasts and Spotify is made here too. Switching back starts reading the website again; uploaded sermons stay.</p>
+            }
+            else
+            {
+                <p>New sermons will be read from the website again, every hour. Sermons uploaded here stay in the app.</p>
+            }
+            <div class="panel-actions">
+                <Button Busy="_busy" OnClick="ConfirmAsync">@(target == SermonSources.Uploads ? "Switch to uploads" : "Switch to the website")</Button>
+                <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _switchingTo = null">Keep it as it is</Button>
+            </div>
+        </Notice>
+    }
+
+    @if (Status.Problem is { } problem)
+    {
+        <Notice Tone="NoticeTone.Warning">The last check had a problem: @problem What was read before is kept.</Notice>
+    }
+
+    @if (Status.Source == SermonSources.Uploads)
+    {
+        <div class="source-strip__uploads">
+            @if (Status.ToCopy > 0 || Status.Copied > 0)
+            {
+                <div class="source-strip__copy">
+                    <span>@(Status.ToCopy == 0 ? $"All {Status.Copied} of the website's sermons are in the church's storage." : $"Copying the website's audio into the church's storage: {Status.Copied} of {Status.Copied + Status.ToCopy} done.")</span>
+                    @if (Status.ToCopy > 0)
+                    {
+                        <ProgressTrack Fraction="(double)Status.Copied / Math.Max(1, Status.Copied + Status.ToCopy)" Label="Copying progress" />
+                    }
+                    @if (Status.CopyNote is { } note)
+                    {
+                        <span class="hint">@note</span>
+                    }
+                </div>
+            }
+            @if (Status.PodcastFeedUrl is { } feed)
+            {
+                <CopyField Label="Podcast feed" Value="@feed" Hint="Give this address to Apple Podcasts and Spotify. It updates within five minutes of a change." />
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<string>> Sources =
+        [new(SermonSources.Website, "The website"), new(SermonSources.Uploads, "Uploads here")];
+
+    private string? _switchingTo;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public required SourceStatus Status { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private string StateLine => Status.Source == SermonSources.Website
+        ? SermonText.Join(Status.CheckedAt is { } checkedAt ? $"Checked {Ago(checkedAt)}" : "Not checked yet", $"{Status.Sermons} sermons",
+            Status.SeriesCheckedAt is { } series ? $"series read {Ago(series)}" : null)
+        : $"{Status.Sermons} sermons";
+
+    private void Choose(string source) => _switchingTo = source == Status.Source ? null : source;
+
+    private async Task ConfirmAsync()
+    {
+        if (_switchingTo is not { } target)
+            return;
+        _busy = true;
+        try
+        {
+            await Sermons.ChooseSourceAsync(target);
+            _switchingTo = null;
+            await Changed.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task CheckNowAsync()
+    {
+        _busy = true;
+        try
+        {
+            await Sermons.CheckNowAsync();
+            await Task.Delay(1500);
+            await Changed.InvokeAsync();
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private static string Ago(DateTime utc)
+    {
+        TimeSpan age = DateTime.UtcNow - utc;
+        return age.TotalMinutes < 2 ? "just now"
+            : age.TotalHours < 1 ? $"{(int)age.TotalMinutes} minutes ago"
+            : age.TotalHours < 24 ? $"{(int)age.TotalHours} hour{((int)age.TotalHours == 1 ? "" : "s")} ago"
+            : utc.ToLocalTime().ToString("d MMM");
+    }
+}

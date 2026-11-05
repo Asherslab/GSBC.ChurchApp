@@ -6,8 +6,6 @@ public static class WaitingTiles
 {
     public static class Layouts
     {
-        public const string Cover = "cover";
-        public const string Listening = "listening";
         public const string Poster = "poster";
         public const string Theme = "theme";
         public const string Verse = "verse";
@@ -18,20 +16,6 @@ public static class WaitingTiles
 
     private static readonly TileVariant Link = new(Layouts.JustALink, "Just a link", "The icon and the title, with a count where there is one",
         TileVariant.AnySize, (_, _) => false);
-
-    public static readonly HubTileKind Sermon = new("hub.sermon", "Latest sermon",
-        "The newest sermon with its picture and a play button", "Sermons",
-        new TileDefaults("Sermons", Columns: 2, Rows: 2, Tone: TileTones.Raised, Link: ComingSoonDestinations.Sermons.Path,
-            TitleLabel: "Title before a sermon is out", TitleHelp: "The sermon's own title shows once there is one", ShowsText: false),
-        sample: true, variants:
-        [
-            new(Layouts.Cover, "Cover first", "Cover and play when small, the title beside the cover one row tall, under it when taller",
-                TileVariant.AnySize, (_, _) => true, ShowsPicture: true),
-            new(Layouts.Listening, "Where you're up to", "The play button and how far you got lead; no cover",
-                TileVariant.AnySize, (_, _) => false),
-            new(TileVariants.PictureBehind, "Picture behind", "The picture fills the tile with the title, the date and play over a shade",
-                TileVariant.NotSmall, (_, _) => false, NeedsPicture: true),
-        ]);
 
     public static readonly HubTileKind Bulletin = new("hub.bulletin", "Sunday bulletin",
         "This Sunday's date, theme and verse, opening the bulletin", "the bulletin",
@@ -104,7 +88,7 @@ public static class WaitingTiles
         new TileDefaults("Visit us", "Sundays 10:30am and 6pm · 185 Old Northern Road, Albany Creek", Columns: 2, Tone: TileTones.Raised, Icon: "map-pin",
             Link: "https://maps.apple.com/?q=185+Old+Northern+Road,+Albany+Creek+QLD+4035"), offered: false);
 
-    public static readonly IReadOnlyList<HubTileKind> All = [Sermon, Bulletin, Week, Outreach, Prayer, Give, Bible, LifeGroups, Ministries, Visit];
+    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Week, Outreach, Prayer, Give, Bible, LifeGroups, Ministries, Visit];
 
     public static SurfaceSet Surfaces => new(All.Select(kind => kind.Surface).ToList());
 }

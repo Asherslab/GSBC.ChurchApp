@@ -1,0 +1,190 @@
+@page "/sermons"
+@implements IDisposable
+@inject SermonLibrary Library
+@inject SermonPlayer Player
+@inject Shell Shell
+@inject NavigationManager Navigation
+
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Sermons" StuckAt="200">
+            <Masthead Title="Sermons" Note=" " />
+            <Section First="true"><Skeleton Count="3" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
+    private const int LatestShown = 3;
+
+    protected override void OnInitialized() => Player.Audio.Changed += OnAudio;
+
+    private RenderFragment Drawn(SermonView view)
+    {
+        if (view.Shelf.Sermons.Count == 0)
+            return @<Page Title="Sermons">
+                <Masthead Title="Sermons" Note="Listen and watch, wherever you are" />
+                <EmptyState Icon="sermons" Title="Sermons will be here soon" Body="They arrive the first time the app connects, and stay on this phone after that." />
+            </Page>;
+
+        AudioState audio = Player.Audio.State;
+        Sermon? loaded = audio.Item is { } item ? view.Shelf.Find(item.Id) : null;
+        Underway? underway = loaded is not null
+            ? new Underway(loaded, ListeningProgress.Heard(loaded.Id, audio.Position, audio.Duration, DateTime.UtcNow))
+            : view.KeepGoing(DateTime.UtcNow);
+        Sermon featured = underway?.Sermon ?? view.Shelf.Sermons[0];
+        List<Underway> others = KeepGoing.All(view.Shelf, view.Progress).Where(item => item.Sermon.Id != featured.Id).Take(3).ToList();
+        List<Sermon> latest = view.Shelf.Sermons.Where(sermon => sermon.Id != featured.Id).Take(LatestShown).ToList();
+        List<SpeakerInfo> speakers = view.Shelf.Speakers.OrderByDescending(speaker => speaker.Count).ThenByDescending(speaker => speaker.LatestAt).ToList();
+        string note = loaded is not null && underway is { } current
+            ? $"{(audio.Playing ? "Playing" : "Paused")} · {SermonText.Left(current.Progress)}"
+            : underway is { } going
+            ? $"Keep going · {SermonText.Left(going.Progress)}"
+            : SermonText.Join("Latest", SermonText.Day(featured.PreachedAt), featured.Service);
+
+        return @<Page Title="Sermons" StuckAt="260">
+            <Masthead Title="Sermons" Note="@note">
+                <a class="sermon-feature" href="@SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')">
+                    <MediaCover Media="featured.Thumbnail ?? featured.Artwork" Class="sermon-feature__art" />
+                    <span class="sermon-feature__words">
+                        <strong>@featured.Title</strong>
+                        <span>@SermonText.Join(featured.SpeakerName, underway is null ? SermonText.Length(featured.DurationSeconds) : null)</span>
+                    </span>
+                </a>
+                @if (underway is { } progress)
+                {
+                    <ProgressTrack Fraction="ListeningProgress.Fraction(progress.Progress)" Class="sermon-feature__progress" />
+                }
+                @if (loaded is not null)
+                {
+                    <div class="sermon-transport">
+                        <span class="sermon-transport__time">@SermonText.Clock(audio.Position)</span>
+                        <button type="button" class="sermon-transport__skip" aria-label="Back 15 seconds" @onclick="() => Player.Audio.SkipAsync(-15)"><Icon Name="rotate-ccw" /><span>15</span></button>
+                        <button type="button" class="sermon-transport__play" aria-label="@(audio.Playing ? "Pause" : "Play")" @onclick="() => ListenAsync(featured)"><Icon Name="@(audio.Playing ? "pause" : "play")" /></button>
+                        <button type="button" class="sermon-transport__skip" aria-label="Forward 30 seconds" @onclick="() => Player.Audio.SkipAsync(30)"><Icon Name="rotate-cw" /><span>30</span></button>
+                        <span class="sermon-transport__time">-@SermonText.Clock(audio.Remaining)</span>
+                    </div>
+                }
+                else
+                {
+                <div class="sermon-feature__actions">
+                    <Button Variant="ButtonVariant.OnMasthead" Icon="@(Player.IsPlaying(featured) ? "pause" : "play")" OnClick="() => ListenAsync(featured)">
+                        @(Player.IsPlaying(featured) ? "Pause" : underway is not null ? "Keep listening" : "Listen")
+                    </Button>
+                    @if (featured.YouTubeId is not null)
+                    {
+                        <Button Variant="ButtonVariant.GhostOnMasthead" Icon="video" Href="@($"{SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')}?watch=true")">Watch</Button>
+                    }
+                </div>
+                }
+            </Masthead>
+
+            <div class="sermon-search sermon-search--home">
+                <a class="search-field sermon-search__open" href="sermons/search">
+                    <Icon Name="search" Size="IconSize.Small" />
+                    <span>Search sermons, series, speakers</span>
+                </a>
+            </div>
+
+            @if (others.Count > 0)
+            {
+                <Section Title="Keep listening" First="true">
+                    <ListGroup>
+                        @foreach (Underway item in others)
+                        {
+                            <SermonRow Sermon="item.Sermon" Progress="item.Progress" Downloaded="view.Downloaded(item.Sermon)" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+
+            @if (Downloaded(view) is { Count: > 0 } downloaded)
+            {
+                <Section Title="Downloaded" First="@(others.Count == 0)" Lead="These play without a connection.">
+                    <ListGroup>
+                        @foreach (Sermon sermon in downloaded)
+                        {
+                            <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" Downloaded="true" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+
+            <Section Title="Latest" First="@(others.Count == 0)" LinkText="@($"All {view.Shelf.Sermons.Count}")" LinkHref="sermons/all">
+                <ListGroup>
+                    @foreach (Sermon sermon in latest)
+                    {
+                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" Downloaded="view.Downloaded(sermon)" />
+                    }
+                </ListGroup>
+            </Section>
+
+            @if (view.Shelf.Series.Count > 0)
+            {
+                <Section Title="Series" LinkText="All series" LinkHref="sermons/series">
+                    <div class="series-strip">
+                        @foreach (SeriesInfo series in view.Shelf.Series)
+                        {
+                            <a class="series-strip__item" href="@SermonsDestinations.Series.PathOf(series.Id).TrimStart('/')">
+                                <MediaCover Media="series.Thumbnail ?? series.Artwork" FallbackTitle="@series.Name" />
+                                <span>@series.Name</span>
+                                <small>@(series.Count == 1 ? "1 sermon" : $"{series.Count} sermons")</small>
+                            </a>
+                        }
+                    </div>
+                </Section>
+            }
+
+            <Section Title="Notifications">
+                <ListGroup>
+                    <FollowSwitch Title="Tell me when a new sermon is out" Description="A notification on this phone when each new sermon arrives. Follow a single series from its page." />
+                </ListGroup>
+            </Section>
+
+            @if (speakers.Count > 0)
+            {
+                <Section Title="Speakers">
+                    <div class="speaker-strip">
+                        @foreach (SpeakerInfo speaker in speakers)
+                        {
+                            <a class="speaker-strip__item" href="@SermonsDestinations.Speaker.PathOf(speaker.Id).TrimStart('/')">
+                                <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="64" />
+                                <span>@speaker.Name</span>
+                            </a>
+                        }
+                    </div>
+                </Section>
+            }
+        </Page>;
+    }
+
+    private static List<Sermon> Downloaded(SermonView view) =>
+        view.Shelf.Sermons.Where(view.Downloaded).Take(6).ToList();
+
+    private async Task ListenAsync(Sermon sermon)
+    {
+        await Shell.HapticAsync();
+        await Player.ToggleAsync(sermon);
+    }
+
+    private void OnAudio() => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Library.Downloads.Changed -= OnDownloads;
+        DisposeAudio();
+    }
+
+    private void DisposeAudio() => Player.Audio.Changed -= OnAudio;
+}

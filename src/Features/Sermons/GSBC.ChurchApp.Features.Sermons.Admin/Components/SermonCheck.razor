@@ -1,0 +1,156 @@
+
+<div class="sermon-check">
+    <div class="sermon-check__head">
+        <MediaCover Media="Detail.Sermon.Artwork ?? Detail.Sermon.Thumbnail" FallbackTitle="@Detail.Sermon.Title" Class="sermon-check__art" />
+        <div class="sermon-check__intro">
+            <h2>@Detail.Sermon.Title</h2>
+            <p>@SermonText.Join(SermonText.LongDay(Detail.Sermon.PreachedAt), SermonText.Length(Detail.Sermon.DurationSeconds), Origin)</p>
+            @if (Detail.CheckedAt is null && !Detail.Hidden)
+            {
+                <p class="sermon-check__reasons">@foreach (string reason in Detail.NeedsALook)
+                {
+                    <Pill Tone="@(reason == "Just uploaded" ? PillTone.Accent : PillTone.Marker)">@reason</Pill>
+                }</p>
+            }
+            <AudioPreview Item="SermonPlayer.Item(Detail.Sermon)" />
+            @if (Detail.Sermon.WebLink is { } link)
+            {
+                <a class="text-link" href="@link" target="_blank" rel="noopener">Open on the website<Icon Name="external-link" Size="IconSize.Small" /></a>
+            }
+        </div>
+    </div>
+
+    <div class="sermon-check__fields">
+        <div class="sermon-check__field">
+            <TextField Label="Title" @bind-Value="_title" MaxLength="160" />
+            <UseSource Show="Corrected(Fields.Title)" Value="@Detail.FromSource.Title" OnUse="() => UseSourceAsync(Fields.Title)" />
+        </div>
+        <div class="sermon-check__field">
+            <SelectField Label="Speaker" Options="SpeakerOptions" @bind-Value="_speakerId" />
+            <UseSource Show="Corrected(Fields.Speaker)" Value="@Detail.FromSource.Speaker" OnUse="() => UseSourceAsync(Fields.Speaker)" />
+        </div>
+        <div class="sermon-check__field">
+            <SelectField Label="Series" Options="SeriesOptions" @bind-Value="_seriesId" />
+            @if (_seriesId.Length == 0 && Detail.SuggestedSeries is { } suggested)
+            {
+                <button type="button" class="text-link" @onclick="() => PutInSeriesAsync(suggested)">Put it in “@suggested”</button>
+            }
+            <UseSource Show="Corrected(Fields.Series)" Value="@SeriesName(Detail.FromSource.SeriesId)" OnUse="() => UseSourceAsync(Fields.Series)" />
+        </div>
+        <div class="sermon-check__field">
+            <TextField Label="Service" Placeholder="Sunday morning" @bind-Value="_service" MaxLength="80" />
+            <UseSource Show="Corrected(Fields.Service)" Value="@Detail.FromSource.Service" OnUse="() => UseSourceAsync(Fields.Service)" />
+        </div>
+        <div class="sermon-check__field sermon-check__field--wide">
+            <TextField Label="Video" Placeholder="A YouTube link" Hint="Paste the video's address; leave empty when there's no video." @bind-Value="_youTube" />
+            <UseSource Show="Corrected(Fields.YouTube)" Value="@(Detail.FromSource.YouTubeId is { } video ? YouTubeIds.WatchUrl(video) : "No video")" OnUse="() => UseSourceAsync(Fields.YouTube)" />
+        </div>
+    </div>
+
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+    <div class="panel-actions">
+        @if (Detail.CheckedAt is null && !Detail.Hidden)
+        {
+            <Button Icon="check" Busy="_busy" OnClick="() => SaveAsync(check: true)">@(Dirty ? "Save · looks right · next" : "Looks right · next")</Button>
+        }
+        else if (Dirty)
+        {
+            <Button Icon="check" Busy="_busy" OnClick="() => SaveAsync(check: false)">Save</Button>
+        }
+        @if (Dirty)
+        {
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Undo changes</Button>
+        }
+        <Button Variant="ButtonVariant.Quiet" Icon="@(Detail.Hidden ? "eye" : "eye-off")" Disabled="_busy" OnClick="ToggleHiddenAsync">@(Detail.Hidden ? "Show in the app" : "Hide from the app")</Button>
+    </div>
+</div>
+
+@code {
+    private static class Fields
+    {
+        public const string Title = "title";
+        public const string Speaker = "speaker";
+        public const string Series = "series";
+        public const string Service = "service";
+        public const string YouTube = "youtube";
+    }
+
+    private string _title = "", _speakerId = "", _seriesId = "", _service = "", _youTube = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required SermonsAdminClient Sermons { get; set; }
+    [Parameter, EditorRequired] public required SermonDetail Detail { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
+    [Parameter] public EventCallback<SermonSaved> Saved { get; set; }
+
+    protected override void OnInitialized() => Reset();
+
+    private string Origin => Detail.Origin == SermonSources.Uploads ? "uploaded" : "from the website";
+
+    private bool Corrected(string field) => Detail.Corrected.Contains(field);
+
+    private bool Dirty =>
+        _title.Trim() != Detail.Sermon.Title || _speakerId != Detail.Sermon.SpeakerId || _seriesId != (Detail.Sermon.SeriesId ?? "")
+        || _service.Trim() != Detail.Sermon.Service || YouTubeIds.Find(_youTube) != Detail.Sermon.YouTubeId;
+
+    private IReadOnlyList<FieldOption> SpeakerOptions => Speakers.Select(speaker => new FieldOption(speaker.Id, speaker.Name)).ToList();
+
+    private IReadOnlyList<FieldOption> SeriesOptions =>
+        [new FieldOption("", "Not in a series"), .. Series.OrderBy(series => series.Name).Select(series => new FieldOption(series.Id, series.Name))];
+
+    private string SeriesName(string? id) => id is null ? "Not in a series" : Series.FirstOrDefault(series => series.Id == id)?.Name ?? "Not in a series";
+
+    private void Reset()
+    {
+        _title = Detail.Sermon.Title;
+        _speakerId = Detail.Sermon.SpeakerId;
+        _seriesId = Detail.Sermon.SeriesId ?? "";
+        _service = Detail.Sermon.Service;
+        _youTube = Detail.Sermon.YouTubeId is { } video ? YouTubeIds.WatchUrl(video) : "";
+        _problem = null;
+    }
+
+    private Task SaveAsync(bool check) => SendAsync(new SermonCorrection
+    {
+        Id = Detail.Sermon.Id,
+        Title = _title.Trim() != Detail.Sermon.Title ? _title : null,
+        SpeakerId = _speakerId != Detail.Sermon.SpeakerId ? _speakerId : null,
+        SeriesId = _seriesId != (Detail.Sermon.SeriesId ?? "") ? _seriesId : null,
+        Service = _service.Trim() != Detail.Sermon.Service ? _service : null,
+        YouTube = YouTubeIds.Find(_youTube) != Detail.Sermon.YouTubeId ? _youTube : null,
+        Checked = check ? true : null,
+    }, next: check);
+
+    private Task UseSourceAsync(string field) => SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, UseSource = [field] }, next: false);
+
+    private Task ToggleHiddenAsync() => SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, Hidden = !Detail.Hidden }, next: false);
+
+    private async Task PutInSeriesAsync(string name)
+    {
+        SeriesDetail series = Series.FirstOrDefault(existing => string.Equals(existing.Name, name, StringComparison.OrdinalIgnoreCase))
+            ?? await Sermons.SaveSeriesAsync(new SeriesDetail { Name = name });
+        await SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, SeriesId = series.Id }, next: false);
+    }
+
+    private async Task SendAsync(SermonCorrection correction, bool next)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            SermonDetail saved = await Sermons.CorrectAsync(correction);
+            await Saved.InvokeAsync(new SermonSaved(saved, next));
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

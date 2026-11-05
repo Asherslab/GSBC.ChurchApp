@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Sermons: the year of preaching</title><style>:root{--navy:#2A3D5E;--navy-deep:#22324d;--beige:#D5C9B7;--aqua:#009C8F;--aqua-deep:#007a70;--orange:#E7AE74;--orange-ink:#9a5a1c;--sand:#F3EFE8;--sand-strong:#E6DFD3;--ink:#1F2A3C;--ink2:#4a5568;--ink3:#7a8494;--line:#E7E2DA;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;background:var(--white);color:var(--ink);font-size:16px;position:relative}
+.status{height:47px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;color:#fff;font-weight:600;font-size:15px;position:absolute;top:0;left:0;right:0;z-index:3}
+.mast{background:var(--navy);color:#fff;padding:96px 20px 22px;position:relative;overflow:hidden}
+.mast .ring{position:absolute;right:-70px;top:30px;width:210px;height:210px;border-radius:50%;border:34px solid rgba(255,255,255,.07)}
+.mast h1{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.02}
+.mast .note{color:var(--beige);font-weight:600;font-size:14.5px;margin-top:8px}
+.topbar{position:absolute;top:47px;left:0;right:0;height:48px;display:flex;justify-content:flex-end;align-items:center;gap:4px;padding:0 10px;z-index:3}
+.ib{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff}
+.ib svg{width:22px;height:22px}
+.now{display:flex;gap:14px;margin-top:18px;align-items:center}
+.art{width:136px;aspect-ratio:16/9;border-radius:12px;flex:none;background:linear-gradient(135deg,#5b6f8f,#2f4466);position:relative;overflow:hidden}
+.art b{position:absolute;left:10px;bottom:8px;font-size:13px;color:#fff;font-weight:700;letter-spacing:-.01em}
+.now strong{display:block;font-size:15.5px;font-weight:600;line-height:1.3}
+.now span{display:block;color:var(--beige);font-size:14px;margin-top:4px}
+.prog{height:4px;border-radius:4px;background:rgba(255,255,255,.18);margin-top:14px;overflow:hidden}.prog i{display:block;height:100%;width:58%;background:var(--orange)}
+.acts{display:flex;gap:10px;margin-top:16px}
+.btn{height:44px;border-radius:22px;padding:0 18px;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:15px}
+.btn.on{background:#fff;color:var(--navy)}.btn.ghost{background:rgba(255,255,255,.12);color:#fff}
+.sec{padding:22px 20px 0}.sec h2{font-size:20px;font-weight:700;letter-spacing:-.015em;margin-bottom:12px;display:flex;justify-content:space-between;align-items:baseline}
+.sec h2 a{font-size:14.5px;color:var(--aqua-deep);font-weight:600}
+.row{display:flex;gap:12px;align-items:center;min-height:64px;border-top:1px solid var(--line);padding:10px 0}
+.thumb{width:96px;aspect-ratio:16/9;border-radius:8px;flex:none;background:linear-gradient(135deg,#8a9bb5,#4c5f80)}
+.rt{font-size:15.5px;font-weight:600;line-height:1.3}.rs{font-size:14px;color:var(--ink2);margin-top:2px}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:83px;border-top:1px solid var(--line);background:rgba(255,255,255,.92);display:grid;grid-template-columns:repeat(3,1fr);padding-top:7px;z-index:4}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--ink3)}.tab.on{color:var(--aqua-deep)}
+.tab svg{width:24px;height:24px}
+.mini{position:absolute;left:8px;right:8px;bottom:91px;height:60px;border-radius:14px;background:var(--navy);color:#fff;display:flex;align-items:center;gap:10px;padding:0 8px 0 8px;z-index:4;overflow:hidden}
+.mini .a{width:72px;aspect-ratio:16/9;border-radius:8px;background:linear-gradient(135deg,#5b6f8f,#2f4466)}
+.mini strong{font-size:14px;font-weight:600;flex:1;line-height:1.25}.mini small{display:block;color:var(--beige);font-size:12px;font-weight:500}
+.mini .pp{width:40px;height:40px;border-radius:50%;background:#fff;color:var(--navy);display:grid;place-items:center}
+.mini .bar{position:absolute;left:0;bottom:0;height:3px;width:58%;background:var(--orange)} 
+.tl{position:relative;padding:4px 20px 0 20px}
+.month{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--ink3);padding:16px 0 6px 64px}
+.item{display:grid;grid-template-columns:44px 1fr;gap:20px;min-height:62px;align-items:center;border-top:1px solid var(--line);position:relative}
+.d{font-variant-numeric:tabular-nums;color:var(--navy);font-weight:700;font-size:15px;line-height:1.1;text-align:right}.d small{display:block;font-size:11px;font-weight:600;color:var(--ink3)}
+.band{position:absolute;left:62px;width:4px;border-radius:4px;background:var(--aqua-deep)}
+.bandlabel{position:absolute;left:52px;font-size:11px;font-weight:700;color:var(--aqua-deep);writing-mode:vertical-rl;transform:rotate(180deg);letter-spacing:.04em}
+.item .rt{padding-left:8px}.item .rs{padding-left:8px}
+.heard{display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--orange);margin-right:6px}
+.chips{display:flex;gap:8px;padding:16px 20px 2px;overflow:hidden}.chip{height:36px;border-radius:18px;padding:0 14px;display:inline-flex;align-items:center;background:var(--sand);color:var(--ink2);font-size:14px;font-weight:600;white-space:nowrap}.chip.on{background:var(--navy);color:#fff}
+</style></head><body><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="topbar"><span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg></span><span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/></svg></span></div><header class="mast"><i class="ring"></i><h1>Sermons</h1><p class="note">Keep going · you're 31 min in</p><div class="now"><span class="art"><b>Anchored</b></span><div><strong>Anchored: Part 4 · Anchored In Hope</strong><span>Ps J. Ellery · Sunday morning</span></div></div><div class="prog"><i></i></div><div class="acts"><span class="btn on"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Keep listening</span><span class="btn ghost"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg> Watch</span></div></header>
+<div class="chips"><span class="chip on">Everything</span><span class="chip">Series</span><span class="chip">Speakers</span><span class="chip">Sundays</span><span class="chip">Wednesdays</span></div>
+<div class="tl"><p class="month">November 2026</p>
+<div class="item"><span class="d">4<small>WED</small></span><div><div class="rt">Building A Life Of Prayer</div><div class="rs">Ps M. Hale · Wednesday · 46 min</div></div></div>
+<div class="item"><span class="d">1<small>SUN</small></span><div><div class="rt"><i class="heard"></i>Anchored In Hope</div><div class="rs">Part 4 · Ps J. Ellery · 53 min</div></div></div>
+<div class="item"><span class="d">1<small>SUN</small></span><div><div class="rt">What the Church Is and Isn&rsquo;t</div><div class="rs">Ps L. Varga · Sunday evening</div></div></div>
+<p class="month">October 2026</p>
+<div class="item"><span class="d">25<small>SUN</small></span><div><div class="rt">Anchored In Community</div><div class="rs">Part 3 · Ps J. Ellery · 49 min</div></div></div>
+<div class="item"><span class="d">11<small>SUN</small></span><div><div class="rt">Anchored In Truth</div><div class="rs">Part 2 · Ps J. Ellery</div></div></div>
+<span class="band" style="top:118px;height:250px"></span><span class="bandlabel" style="top:180px">ANCHORED · 4</span></div>
+<div class="mini"><span class="a"></span><strong>Anchored In Hope<small>Ps J. Ellery · 22 min left</small></strong><span class="pp"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg></span><i class="bar"></i></div><nav class="tabbar"><span class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 4l9 7v9H3z"/></svg> Home</span><span class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="5" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/></svg> Sermons</span><span class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg> More</span></nav></body></html>

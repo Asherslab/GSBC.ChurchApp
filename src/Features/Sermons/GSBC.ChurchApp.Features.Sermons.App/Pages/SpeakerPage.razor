@@ -1,0 +1,71 @@
+@page "/speaker/{Id}"
+@implements IDisposable
+@inject SermonLibrary Library
+
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Speaker" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private LiveData<SermonView>? _live;
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+            Library.Downloads.Changed += OnDownloads;
+    }
+
+    private void OnDownloads() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
+    [Parameter] public string Id { get; set; } = "";
+
+    private RenderFragment Drawn(SermonView view)
+    {
+        if (view.Shelf.FindSpeaker(Id) is not { } speaker)
+            return @<Page Title="Speaker" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+                <EmptyState Icon="user" Title="No sermons from this speaker here" Body="Their sermons may be older than the ones this phone keeps.">
+                    <Button Href="sermons" Variant="ButtonVariant.Quiet">All sermons</Button>
+                </EmptyState>
+            </Page>;
+
+        IReadOnlyList<Sermon> sermons = view.Shelf.BySpeaker(speaker.Id);
+        List<SeriesInfo> series = sermons.Where(sermon => sermon.SeriesId is not null).Select(sermon => sermon.SeriesId!).Distinct()
+            .Select(view.Shelf.FindSeries).OfType<SeriesInfo>().ToList();
+        return @<Page Title="@speaker.Name" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <div class="speaker-head">
+                <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="96" />
+                <h1 class="sermon-head__title">@speaker.Name</h1>
+                <p class="sermon-head__facts">@SermonText.Join(sermons.Count == 1 ? "1 sermon" : $"{sermons.Count} sermons", $"latest {SermonText.Day(speaker.LatestAt)}")</p>
+            </div>
+            @if (series.Count > 0)
+            {
+                <Section Title="Series">
+                    <div class="series-strip">
+                        @foreach (SeriesInfo one in series)
+                        {
+                            <a class="series-strip__item" href="@SermonsDestinations.Series.PathOf(one.Id).TrimStart('/')">
+                                <MediaCover Media="one.Thumbnail ?? one.Artwork" FallbackTitle="@one.Name" />
+                                <span>@one.Name</span>
+                            </a>
+                        }
+                    </div>
+                </Section>
+            }
+            <Section Title="Sermons">
+                <ListGroup>
+                    @foreach (Sermon sermon in sermons)
+                    {
+                        <SermonRow Sermon="sermon" Progress="view.ProgressOf(sermon)" Downloaded="view.Downloaded(sermon)" ShowSpeaker="false" />
+                    }
+                </ListGroup>
+            </Section>
+        </Page>;
+    }
+
+    public void Dispose() => Library.Downloads.Changed -= OnDownloads;
+}

@@ -1,0 +1,42 @@
+<ListRow Title="@(ShowPart ? SermonText.ShortTitle(Sermon) : Sermon.Title)" Subtitle="@Subtitle" Href="@(Current ? null : Href)" Class="@(Current ? "sermon-row is-current" : "sermon-row")">
+    <Leading>
+        <MediaCover Media="Sermon.Thumbnail" Class="sermon-row__thumb" />
+    </Leading>
+    <TrailingContent>
+        @if (Downloaded)
+        {
+            <span class="sermon-row__heard" title="Downloaded"><Icon Name="arrow-down" Size="IconSize.Small" /><span class="visually-hidden">Downloaded</span></span>
+        }
+        @if (Heard)
+        {
+            <span class="sermon-row__heard" title="Played"><Icon Name="check-circle" Size="IconSize.Small" /><span class="visually-hidden">Played</span></span>
+        }
+    </TrailingContent>
+    <Below>
+        @if (Underway is { } entry)
+        {
+            <span class="sermon-row__progress"><ProgressTrack Fraction="ListeningProgress.Fraction(entry)" /><span>@SermonText.Left(entry)</span></span>
+        }
+    </Below>
+</ListRow>
+
+@code {
+    [Parameter, EditorRequired] public required Sermon Sermon { get; set; }
+    [Parameter] public ListeningEntry? Progress { get; set; }
+    [Parameter] public bool ShowSpeaker { get; set; } = true;
+    [Parameter] public bool ShowPart { get; set; }
+    [Parameter] public bool Current { get; set; }
+    [Parameter] public bool Downloaded { get; set; }
+
+    private string Href => SermonsDestinations.Sermon.PathOf(Sermon.Id).TrimStart('/');
+
+    private bool Heard => Progress is { } entry && ListeningProgress.IsFinished(entry);
+
+    private ListeningEntry? Underway => Progress is { } entry && ListeningProgress.IsUnderway(entry) ? entry : null;
+
+    private string Subtitle => SermonText.Join(
+        ShowPart && Sermon.Part > 0 ? $"Part {Sermon.Part}" : null,
+        ShowSpeaker ? Sermon.SpeakerName : null,
+        SermonText.Day(Sermon.PreachedAt),
+        Underway is null ? SermonText.Length(Sermon.DurationSeconds) : null);
+}

@@ -13,7 +13,7 @@ list wherever something opens a place, and shared as a link that opens the app.
 | | Declared as | Example | Path |
 |---|---|---|---|
 | **A page** | `DestinationPage` in the feature's Contracts | Notification settings | `/notifications/settings` |
-| **One thing** | `DestinationKind` in Contracts, plus an `IDestinationSource` in the feature's Api | A file in Media | `/files/{id}` |
+| **One thing** | `DestinationKind` in Contracts, plus an `IDestinationSource` in the feature's Api | A file in Media, a sermon | `/files/{id}`, `/sermon/{id}` |
 
 Both live in `Platform.Contracts/Destinations`, so the API, the app and the admin panel read the same
 declarations. Each feature registers its own set (`AddDestinations(XxxDestinations.All)`) in its Api and its
@@ -30,7 +30,7 @@ Client, as it does for permissions, surfaces and notification kinds. Features ne
   `/x?y`, `/open/x`, or `https://<app host>/open/x`. Two features claiming the same path fail at start-up.
 - `DestinationRules` (Architecture tests) fails when a declared page isn't a route in the app.
 
-**Places that aren't built yet** (2026-11-04): Home's feature tiles open `/sermons`, `/sunday`, `/week`,
+**Places that aren't built yet** (2026-11-04; Sermons built 2026-11-05): Home's feature tiles open `/sunday`, `/week`,
 `/prayer`, `/outreach`, `/life-groups` and `/ministries`, declared in `ComingSoonDestinations`
 (Configuration) and drawn by the app's *coming soon* page. A feature built later removes its path there
 and declares its own ([home.md](../features/home.md)).

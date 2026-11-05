@@ -1,0 +1,26 @@
+@page "/sermons/series"
+@inject SermonLibrary Library
+
+<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <ChildContent>
+        <Page Title="Series" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <Section First="true">
+                <div class="series-grid">
+                    @foreach (SeriesInfo series in context.Value.Shelf.Series)
+                    {
+                        <a class="series-grid__item" href="@SermonsDestinations.Series.PathOf(series.Id).TrimStart('/')">
+                            <MediaCover Media="series.Thumbnail ?? series.Artwork" FallbackTitle="@series.Name" />
+                            <span>@series.Name</span>
+                            <small>@SermonText.Join(series.Count == 1 ? "1 sermon" : $"{series.Count} sermons", SermonText.Month(series.LastAt))</small>
+                        </a>
+                    }
+                </div>
+            </Section>
+        </Page>
+    </ChildContent>
+    <Loading>
+        <Page Title="Series" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
+            <Section First="true"><Skeleton Count="4" /></Section>
+        </Page>
+    </Loading>
+</LiveData>

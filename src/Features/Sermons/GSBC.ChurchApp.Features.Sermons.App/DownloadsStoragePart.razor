@@ -1,0 +1,62 @@
+@implements IDisposable
+@inject SermonLibrary Library
+
+@if (Library.Downloads.IsAvailable)
+{
+    <Section First="true" Title="Downloaded sermons" Lead="@Lead">
+        @if (_downloads.Count == 0)
+        {
+            <ListGroup><ListRow Title="None yet" Subtitle="Download a sermon from its page to listen without a connection." Icon="arrow-down" IconTone="RowTone.Quiet" /></ListGroup>
+        }
+        else
+        {
+            <ListGroup>
+                @foreach (AudioDownload download in _downloads)
+                {
+                    <ListRow Title="@download.Title" Subtitle="@(download.State == DownloadState.Done ? SermonDownload.Size(download.Bytes) : download.State == DownloadState.Failed ? "Didn't finish" : $"Downloading… {download.Fraction:P0}")"
+                             Icon="sermons" IconTone="RowTone.Quiet">
+                        <TrailingContent>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Library.Downloads.RemoveAsync(download.Id)">Remove</Button>
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+            @if (_downloads.Count > 1)
+            {
+                <div class="ui-actions ui-after">
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="RemoveAllAsync">Remove all</Button>
+                </div>
+            }
+        }
+    </Section>
+}
+
+@code {
+    private List<AudioDownload> _downloads = [];
+
+    private string Lead => _downloads.Count == 0
+        ? "Sermons you download play without a connection. They're also in the Files app, under Good Shepherd → Sermons."
+        : $"{SermonDownload.Size(_downloads.Where(download => download.State == DownloadState.Done).Sum(download => download.Bytes)) ?? "0 MB"} · also in the Files app, under Good Shepherd → Sermons.";
+
+    protected override async Task OnInitializedAsync()
+    {
+        Library.Downloads.Changed += OnChanged;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync() => _downloads = [.. (await Library.Downloads.ListAsync()).Values];
+
+    private void OnChanged() => InvokeAsync(async () =>
+    {
+        await LoadAsync();
+        StateHasChanged();
+    });
+
+    private async Task RemoveAllAsync()
+    {
+        foreach (AudioDownload download in _downloads.ToList())
+            await Library.Downloads.RemoveAsync(download.Id);
+    }
+
+    public void Dispose() => Library.Downloads.Changed -= OnChanged;
+}
