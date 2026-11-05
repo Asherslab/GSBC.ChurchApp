@@ -8,7 +8,8 @@ using Microsoft.Extensions.Logging;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
-internal sealed partial class SermonPictures(SermonsDbContext db, IMediaReferences references, SermonPublisher publisher, ILogger<SermonPictures> logger) : IMediaHolder
+internal sealed partial class SermonPictures(
+    SermonsDbContext db, IMediaReferences references, IMediaSystemFolders folders, SermonPublisher publisher, ILogger<SermonPictures> logger) : IMediaHolder
 {
     public bool Holds(string owner) => OwnerPattern().IsMatch(owner);
 
@@ -38,6 +39,7 @@ internal sealed partial class SermonPictures(SermonsDbContext db, IMediaReferenc
 
     public async Task RefreshAllAsync(CancellationToken cancellationToken)
     {
+        await NameByTheWebsiteAsync(cancellationToken);
         foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.Artwork != null).ToListAsync(cancellationToken))
             await RefreshAsync(sermon, cancellationToken);
         foreach (SeriesRecord series in await db.Series.Where(series => series.Artwork != null || series.ChosenArtwork != null).ToListAsync(cancellationToken))
@@ -48,6 +50,21 @@ internal sealed partial class SermonPictures(SermonsDbContext db, IMediaReferenc
             source.Picture = await CurrentAsync(source.Picture, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+    }
+
+    private async Task NameByTheWebsiteAsync(CancellationToken cancellationToken)
+    {
+        List<ArtworkSource> sources = await db.ArtworkSources.AsNoTracking().Where(source => source.Picture != null).ToListAsync(cancellationToken);
+        Dictionary<string, string> addresses = (await db.ArtworkAddresses.AsNoTracking().OrderBy(address => address.Url).ToListAsync(cancellationToken))
+            .GroupBy(address => address.Hash).ToDictionary(group => group.Key, group => group.First().Url);
+        foreach (ArtworkSource source in sources)
+        {
+            if (!HashNamed().IsMatch(source.Picture!.FileName) || !addresses.TryGetValue(source.Hash, out string? url))
+                continue;
+            string named = Artwork.FileNameOf(url, source.Hash, Path.GetExtension(source.Picture.FileName).TrimStart('.'));
+            if (named != source.Picture.FileName)
+                await folders.NameAsync(Artwork.Area, source.Picture.Id, named, cancellationToken);
+        }
     }
 
     private async Task RefreshAsync(SermonRecord sermon, CancellationToken cancellationToken) =>
@@ -79,6 +96,9 @@ internal sealed partial class SermonPictures(SermonsDbContext db, IMediaReferenc
             return saved;
         }
     }
+
+    [GeneratedRegex("^[0-9a-f]{12}\\.[a-z]+$")]
+    private static partial Regex HashNamed();
 
     [GeneratedRegex("^sermons/(?<kind>sermon|series|speakers)/(?<id>[0-9a-f-]{36})(/|$)")]
     private static partial Regex OwnerPattern();

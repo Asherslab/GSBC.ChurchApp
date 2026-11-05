@@ -91,7 +91,7 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
         Sizes = kept.Sizes,
     };
 
-    private static string FileNameOf(string url, string sourceHash, string extension)
+    public static string FileNameOf(string url, string sourceHash, string extension)
     {
         string named = Uri.TryCreate(url, UriKind.Absolute, out Uri? address) ? Uri.UnescapeDataString(address.Segments[^1]).Trim('/') : "";
         string stem = Path.GetFileNameWithoutExtension(named);
