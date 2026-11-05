@@ -14,7 +14,7 @@
             @if (_putBack)
             {
                 <h3 id="media-upload-match-title" class="media-upload__match-title">This is the original of a picture in the library</h3>
-                <p id="media-upload-match-lead" class="media-upload__match-lead">“@MediaWords.NameOf(existing)” had its original removed to save space, and @_file.Name is that original. Put it back, and the picture is whole again with nothing new to look after.</p>
+                <p id="media-upload-match-lead" class="media-upload__match-lead">@(_file.Name == MediaWords.NameOf(existing) ? $"It was removed from “{_file.Name}” earlier to save space." : $"{_file.Name} was removed from “{MediaWords.NameOf(existing)}” earlier to save space.") Put it back and the picture is whole again, with nothing new to look after.</p>
             }
             else
             {

@@ -191,16 +191,19 @@ keep a picture's sizes with their original, as one entry.
 - **The library** shows one tile per picture with a mark ("3 sizes"), and the detail lists each version
   with dimensions and weight. A picture whose original is over 2 MB and has sizes is flagged "Large
   original · 4.2 MB", and the Large originals filter finds them.
-- **"Shown at …"** (`MediaShownAt`, Platform.Ui): wherever a picture is placed in the admin panel, a
-  subtitle says which version is shown and its weight. A `MediaSetting` declares the size its screen
-  uses (`shownAt`, For phones by default), and `MediaChooser` passes a `Size` on to the picture sheet.
+- **What the app shows** (`MediaShownAt`, Platform.Ui): wherever a picture is placed in the admin
+  panel, a line under it says which version the app shows and its weight: "The app shows a 1280×720
+  copy · 210 KB", "The app shows a 480×270 thumbnail · 10 KB", or "The app shows the original ·
+  600×338 · 30 KB" when the picture is already small (owner, 2026-11-06: not "Shown at For phones").
+  A `MediaSetting` declares the size its screen uses (`shownAt`, For phones by default), and
+  `MediaChooser` passes a `Size` on to the picture sheet.
 - **Upload warnings:** pictures that are resized get none; other files over 10 MB (PDFs, GIFs, fonts)
   keep the warning.
 
 ### Removing an original
 
 `Media.RemoveOriginal` (`media.delete`) deletes the original's bytes and keeps the sizes; the entry
-stays and says *Original removed · was 4.2 MB*. Its id stays the same, and a saved `MediaRef` holding
+stays, and its tile, list row and detail say *Original removed · was 4.2 MB*. Its id stays the same, and a saved `MediaRef` holding
 the old original key still verifies (any key the picture has or had is accepted), coming back with the
 current versions. The object is deleted only when no other entry lists that key. It's refused for a
 picture with no smaller size, in a system folder, or used somewhere that can't take the new sizes by
@@ -225,8 +228,8 @@ same visibility rules as duplicates apply: never from another audience, a system
 
 Sermons keeps its copies in its system folder as `<first 12 of the source hash>-large.jpg` and
 `-small.jpg`. Copies are paired by that prefix only, so the migration is deterministic: a prefix with
-exactly one large and one small becomes one entry (the large one, with the small one as its
-Thumbnail), and anything else (a prefix with two of either, or one alone) stays as it is. When the API
+exactly one large and one small becomes one entry (the large one, renamed `<prefix>.jpg`, with the
+small one as its Thumbnail), and anything else (a prefix with two of either, or one alone) stays as it is. When the API
 starts, it logs how many copies are still unpaired. The small entry's id is kept as an alias
 (`media.aliases`), so Sermons' saved `MediaRef`s and its `UseAsync` calls with either id keep working;
 the small one's uses moved to the picture.

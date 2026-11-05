@@ -88,6 +88,14 @@ public static class MediaSizes
 
     public static string Weight(long bytes) => bytes < 1024 * 1024 ? $"{Math.Max(1, bytes / 1024d):0} KB" : $"{bytes / 1024d / 1024d:0.#} MB";
 
-    public static string Describe(MediaRef version) =>
-        version.Width > 0 ? $"{LabelOf(version.Version)} · {version.Width}×{version.Height} · {Weight(version.Bytes)}" : $"{LabelOf(version.Version)} · {Weight(version.Bytes)}";
+    public static IReadOnlyList<string> ShownAs(MediaRef version)
+    {
+        string dimensions = version.Width > 0 ? $"{version.Width}×{version.Height}" : "";
+        return version.Version switch
+        {
+            MediaSizeName.ForPhones => [$"The app shows a {dimensions} copy", Weight(version.Bytes)],
+            MediaSizeName.Thumbnail => [$"The app shows a {dimensions} thumbnail", Weight(version.Bytes)],
+            _ => dimensions.Length > 0 ? ["The app shows the original", dimensions, Weight(version.Bytes)] : ["The app shows the original", Weight(version.Bytes)],
+        };
+    }
 }

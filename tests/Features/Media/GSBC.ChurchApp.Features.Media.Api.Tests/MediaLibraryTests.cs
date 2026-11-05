@@ -616,6 +616,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         Assert.Equal(new[] { LargeArtwork, TwiceLarge, TwiceLargeAgain, TwiceSmall }.Order(), (await merged.Items.Select(item => item.Id).ToListAsync(Cancellation)).Order());
         MediaRendition thumbnail = Assert.Single(await merged.Renditions.ToListAsync(Cancellation));
         Assert.Equal((LargeArtwork, small.Key), (thumbnail.MediaId, thumbnail.Key));
+        Assert.Equal("0123456789ab.jpg", (await merged.Items.SingleAsync(item => item.Id == LargeArtwork, Cancellation)).FileName);
         Assert.All(verified, media => Assert.Equal((LargeArtwork.ToString(), large.Key), (media.Id, media.Key)));
         Assert.Equal(small.Key, verified[1].At(MediaSizeName.Thumbnail).Key);
         Assert.Equal(["sermons/sermon/1/artwork", "sermons/sermon/2/artwork", "sermons/sermon/3/artwork"],

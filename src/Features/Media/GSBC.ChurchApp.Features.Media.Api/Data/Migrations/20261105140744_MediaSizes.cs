@@ -97,7 +97,7 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 
                 DELETE FROM media.uses used USING sermon_artwork_pairs pair WHERE used.media_id = pair.small_id;
                 DELETE FROM media.items item USING sermon_artwork_pairs pair WHERE item.id = pair.small_id;
-                UPDATE media.items item SET sizing = 2 FROM sermon_artwork_pairs pair WHERE item.id = pair.large_id;
+                UPDATE media.items item SET sizing = 2, file_name = left(item.file_name, 12) || '.jpg' FROM sermon_artwork_pairs pair WHERE item.id = pair.large_id;
 
                 DROP TABLE sermon_artwork_pairs;
                 """);

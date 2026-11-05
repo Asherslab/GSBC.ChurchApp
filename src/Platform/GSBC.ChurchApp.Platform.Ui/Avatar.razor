@@ -3,7 +3,7 @@
 <span class="avatar @Class" style="@(Size is { } size ? $"--avatar: {size}px" : null)" aria-hidden="true">
     @if (Photo is { } photo)
     {
-        <MediaImage Media="photo" Alt="" />
+        <MediaImage Media="photo" Size="MediaSizeName.Thumbnail" Alt="" />
     }
     else
     {
