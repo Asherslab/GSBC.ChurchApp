@@ -1104,6 +1104,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .player-sheet__option .chip { min-height: 36px; padding: 0 14px; border: 0; border-radius: var(--radius-full); background: var(--fill-on-surface, var(--sand)); color: var(--ink-2); font: inherit; font-size: var(--text-caption); font-weight: 600; font-variant-numeric: tabular-nums; -webkit-appearance: none; appearance: none; }
 .player-sheet__option .chip.is-on { background: var(--primary); color: var(--on-primary); }
 .player-sheet__next { margin: 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: var(--text-row); font-weight: 600; }
+.player-sheet__hide { color: var(--ink-2); }
 .player-sheet__next span { display: block; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
 
 .media-cover { position: relative; display: grid; place-items: center; overflow: hidden; aspect-ratio: 16 / 9; background: var(--masthead); color: var(--on-masthead); }

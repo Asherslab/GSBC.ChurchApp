@@ -249,17 +249,18 @@ window.gsbcShell = (() => {
         const scrim = backdrop();
         if (scrim) scrim.style.opacity = String(1 - Math.min(1, dy / sheet.offsetHeight));
       };
+      const settleIn = reducedMotion.matches ? 0 : 240;
       const reset = () => {
-        sheet.style.transition = `transform 240ms ${ease}`;
+        sheet.style.transition = settleIn ? `transform ${settleIn}ms ${ease}` : 'none';
         place(0);
         const scrim = backdrop();
-        if (scrim) { scrim.style.transition = 'opacity 240ms'; scrim.style.opacity = ''; }
-        setTimeout(() => { sheet.style.transition = ''; sheet.style.transform = ''; if (scrim) scrim.style.transition = ''; }, 260);
+        if (scrim) { scrim.style.transition = settleIn ? `opacity ${settleIn}ms` : 'none'; scrim.style.opacity = ''; }
+        setTimeout(() => { sheet.style.transition = ''; sheet.style.transform = ''; if (scrim) scrim.style.transition = ''; }, settleIn + 20);
       };
       const onStart = (event) => {
         const target = event.target instanceof Element ? event.target : null;
         const onHandle = !!target?.closest('.sheet__grabber, .sheet__cover');
-        start = docked() && !reducedMotion.matches && (onHandle || sheet.scrollTop <= 0) && !target?.closest(fixed)
+        start = docked() && (onHandle || sheet.scrollTop <= 0) && !target?.closest(fixed)
           ? { y: event.touches[0].clientY, x: event.touches[0].clientX, at: event.timeStamp, dy: 0, dragging: false }
           : null;
       };
@@ -285,9 +286,10 @@ window.gsbcShell = (() => {
         start = null;
         const speed = dy / Math.max(1, event.timeStamp - at);
         if (dy > sheet.offsetHeight * 0.3 || (speed > 0.6 && dy > 30)) {
-          sheet.style.transition = `transform 200ms ${ease}`;
+          const away = reducedMotion.matches ? 0 : 200;
+          sheet.style.transition = away ? `transform ${away}ms ${ease}` : 'none';
           place(sheet.offsetHeight + 24);
-          setTimeout(() => receiver.invokeMethodAsync('OnDragDismissed'), 190);
+          setTimeout(() => receiver.invokeMethodAsync('OnDragDismissed'), away ? away - 10 : 0);
         } else {
           reset();
         }

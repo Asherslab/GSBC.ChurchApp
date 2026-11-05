@@ -363,7 +363,8 @@ uploaded, and copied audio stored once by its content and held in Media.
   tab bar in the app's layout; an `AudioItem` carries a link back to its sermon.
 - **Swiping the mini-player away (owner, 2026-11-06)** hides it and nothing else: the sermon keeps playing and the lock
   screen controls stay. It comes back when playback starts again (play from anywhere, or another sermon), and on the
-  Sermons tab or the playing sermon's page (`NowPlayingBar`). Every `Sheet` can be pulled down by its top like a native
+  Sermons tab or the playing sermon's page (`NowPlayingBar`). The player sheet's *Hide the player* does the same for
+  anyone who can't swipe (VoiceOver, Switch Control). Every `Sheet` can be pulled down by its top like a native
   sheet: it follows the finger and closes past a third of its height or on a quick flick, otherwise it springs back.
 - **The admin panel plays audio** with the browser's own audio element on the sermon being checked; it has no
   mini-player.

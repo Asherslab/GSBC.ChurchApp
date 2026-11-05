@@ -83,6 +83,8 @@
             {
                 <p class="player-sheet__next"><span>Up next</span> @next.Title</p>
             }
+
+            <button type="button" class="text-link player-sheet__hide" @onclick="() => HidePlayer(item)">Hide the player<Icon Name="chevron-down" Size="IconSize.Small" /></button>
         </div>
     </Sheet>
 }
@@ -134,6 +136,12 @@
     }
 
     private void OnBarChanged() => InvokeAsync(StateHasChanged);
+
+    private void HidePlayer(AudioItem item)
+    {
+        _sheet = false;
+        Bar.Hide(item.Id);
+    }
 
     [JSInvokable]
     public void OnSwipedAway()
