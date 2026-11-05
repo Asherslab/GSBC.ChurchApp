@@ -118,7 +118,8 @@ internal sealed class WebsiteReader(
             await Attempt(async () =>
             {
                 string? fileHost = Uri.TryCreate(sermon.FeedArtworkUrl, UriKind.Absolute, out Uri? feedImage) ? feedImage.Host : null;
-                if (await PageOfAsync(sermon.WebLink!, cancellationToken) is { } page && SermonPages.ArtworkOf(page, fileHost) is { } whole)
+                if (await PageOfAsync(sermon.WebLink!, cancellationToken) is { } page
+                    && await artwork.LargestAsync(SermonPages.ArtworkOf(page, sermon.SourceTitle, fileHost), cancellationToken) is { } whole)
                     UseArtwork(sermon, whole);
                 sermon.PageReadAt = now;
             }, "sermon page", sermon.WebLink!);

@@ -38,7 +38,7 @@
   top: 0;
   z-index: 20;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, auto) minmax(0, 1fr);
+  grid-template-columns: minmax(max-content, 1fr) minmax(0, auto) minmax(0, 1fr);
   column-gap: 12px;
   align-items: center;
   min-height: calc(var(--top-h) + var(--sat));
@@ -59,7 +59,7 @@
   transition: opacity 180ms, transform 180ms;
 }
 .topbar.is-stuck .topbar__title, .topbar--solid .topbar__title { opacity: 1; transform: none; }
-.topbar__start { justify-self: start; display: flex; align-items: center; min-width: 0; width: 100%; container-type: inline-size; }
+.topbar__start { justify-self: start; display: flex; align-items: center; min-width: 0; }
 .topbar__end { justify-self: end; display: flex; align-items: center; gap: 2px; }
 
 .icon-btn {
@@ -78,8 +78,6 @@
 }
 .icon-btn:active { background: var(--masthead-chip); transform: scale(0.94); }
 .icon-btn--back { width: auto; max-width: 100%; min-width: 0; padding: 0 10px 0 4px; display: inline-flex; align-items: center; overflow: hidden; white-space: nowrap; font-size: var(--text-body); font-weight: 500; }
-.icon-btn__label { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-@container (max-width: 5.5rem) { .icon-btn--back .icon-btn__label { display: none; } }
 .icon-btn--back .icon { flex: none; }
 .badge-count {
   position: absolute;

@@ -31,8 +31,10 @@ public sealed class ArtworkTests : SermonsHost
     {
         const string Page = "https://church.example/media/2026-11-01-safe-harbour-part-4-harbour-of-hope";
         const string Whole = "https://files.example/2026/11/01/art/harbour-4-wide.png";
-        Website.ServeText(Page, $$"""<html><head><meta property="og:image" content="https://church.example/df_media/{{DragonflyJob("2026/11/01/art/harbour-4-wide.png")}}/harbour-4-wide.png?sha=1" /></head></html>""");
+        const string Smaller = "https://files.example/2026/11/01/art/harbour-4-page.png";
+        Website.ServeText(Page, $$"""<html><head><meta property="og:image" content="https://church.example/df_media/{{DragonflyJob("2026/11/01/art/harbour-4-wide.png")}}/harbour-4-wide.png?sha=1" /></head><body><img class="mb-3" alt="Safe Harbour: Part 4 - Harbour of Hope" src="{{Smaller}}" /></body></html>""");
         Website.ServeBytes(Whole, Picture(1672, 941));
+        Website.ServeBytes(Smaller, Picture(800, 450));
 
         await ReadTheWebsiteAsync();
 

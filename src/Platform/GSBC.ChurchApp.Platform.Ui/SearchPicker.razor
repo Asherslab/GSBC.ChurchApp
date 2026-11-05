@@ -48,8 +48,7 @@
 
     private sealed record Choice(ChoiceKind Kind, string Text, string? Detail, TItem? Item = null);
 
-    private static int _pickers;
-    private readonly string _id = $"search-picker-{Interlocked.Increment(ref _pickers)}";
+    private readonly string _id = PickerMatches.NextId();
     private string ListId => $"{_id}-options";
     private string _query = "";
     private int _active;

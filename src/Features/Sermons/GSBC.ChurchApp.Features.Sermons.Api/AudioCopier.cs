@@ -123,7 +123,9 @@ internal sealed class AudioCopier(IServiceScopeFactory scopes, IHostEnvironment 
                 sermon.AudioBytes = bytes;
                 sermon.CopiedBytes = bytes;
                 sermon.CopyStartedAt = null;
-                await KeepAsync(sermon, new StoredFile(key, sha256, bytes, sermon.AudioType, FileNameOf(sermon)), cancellationToken);
+                MediaRef kept = await KeepAsync(sermon, new StoredFile(key, sha256, bytes, sermon.AudioType, FileNameOf(sermon)), cancellationToken);
+                if (kept.Key != key && !await db.Sermons.AnyAsync(other => other.AudioUrl == blobs.PublicUrlOf(key).ToString(), cancellationToken))
+                    await blobs.DeleteAsync(BlobBucket.Public, key, cancellationToken);
                 return true;
             }
             catch (Exception exception) when (exception is HttpRequestException or IOException || exception is TaskCanceledException && !cancellationToken.IsCancellationRequested)

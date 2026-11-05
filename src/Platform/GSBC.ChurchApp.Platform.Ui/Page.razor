@@ -8,7 +8,7 @@
             @if (BackHref is not null)
             {
                 <button type="button" class="icon-btn icon-btn--back" @onclick="BackAsync" aria-label="@(BackLabel == DefaultBack ? BackLabel : $"Back to {BackLabel}")">
-                    <Icon Name="chevron-left" /><span class="icon-btn__label">@BackLabel</span>
+                    <Icon Name="chevron-left" />@BackLabel
                 </button>
             }
         </div>
