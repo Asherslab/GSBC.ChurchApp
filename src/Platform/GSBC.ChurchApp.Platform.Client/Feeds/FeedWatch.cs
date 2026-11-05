@@ -20,6 +20,7 @@ public sealed class FeedWatch : IFeedSignals, IDisposable
     private readonly HashSet<string> _hidden = [];
     private readonly CancellationTokenSource _stopped = new();
     private CancellationTokenSource _interrupt = new();
+    private string? _origin;
     private bool _started;
     private DateTime _lastHeard;
 
@@ -126,6 +127,7 @@ public sealed class FeedWatch : IFeedSignals, IDisposable
                 Cursors = _followed
                     .Select(feed => _cursors.TryGetValue(feed, out long cursor) ? new FeedCursor { Feed = feed, Cursor = cursor } : new FeedCursor { Feed = feed, Latest = true })
                     .ToList(),
+                Origin = _origin,
             };
             return (request, fromLatest);
         }
@@ -136,6 +138,8 @@ public sealed class FeedWatch : IFeedSignals, IDisposable
         HashSet<string> changed = [];
         lock (_gate)
         {
+            if (!string.IsNullOrEmpty(message.Origin))
+                _origin = message.Origin;
             foreach (FeedBatch batch in message.Feeds)
             {
                 _cursors[batch.Feed] = batch.Cursor;

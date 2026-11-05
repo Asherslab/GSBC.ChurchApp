@@ -14,18 +14,22 @@ public sealed class FeedCursor
 public sealed class PullRequest
 {
     [ProtoMember(1)] public List<FeedCursor> Cursors { get; set; } = [];
+    [ProtoMember(2)] public string? Origin { get; set; }
 }
 
 [ProtoContract]
 public sealed class PullReply
 {
     [ProtoMember(1)] public List<FeedBatch> Feeds { get; set; } = [];
+    // The same number as WatchEvent.Origin: the native layer reads both replies with one decoder.
+    [ProtoMember(3)] public string? Origin { get; set; }
 }
 
 [ProtoContract]
 public sealed class WatchRequest
 {
     [ProtoMember(1)] public List<FeedCursor> Cursors { get; set; } = [];
+    [ProtoMember(2)] public string? Origin { get; set; }
 }
 
 [ProtoContract]
@@ -33,6 +37,7 @@ public sealed class WatchEvent
 {
     [ProtoMember(1)] public List<FeedBatch> Feeds { get; set; } = [];
     [ProtoMember(2)] public bool IsHeartbeat { get; set; }
+    [ProtoMember(3)] public string? Origin { get; set; }
 }
 
 [ProtoContract]

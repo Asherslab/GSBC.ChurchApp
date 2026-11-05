@@ -44,4 +44,18 @@ public sealed class SyncWireFormatTests
 
         Assert.Equal(WatchEventHex, Convert.ToHexStringLower(bytes.ToArray()));
     }
+
+    [Fact]
+    public void TheOriginTravelsAtTheNumbersTheNativeLayerUses()
+    {
+        Assert.Equal("0a0a0a086465762e6563686f1207756e6b6e6f776e", Hex(new WatchRequest { Cursors = [new FeedCursor { Feed = "dev.echo" }], Origin = "unknown" }));
+        Assert.Equal("0a0a0a066576656e747318011a026f31", Hex(new PullReply { Feeds = [new FeedBatch { Feed = "events", Reset = true }], Origin = "o1" }));
+    }
+
+    private static string Hex<T>(T message)
+    {
+        using MemoryStream bytes = new();
+        Serializer.Serialize(bytes, message);
+        return Convert.ToHexStringLower(bytes.ToArray());
+    }
 }

@@ -42,13 +42,15 @@ public struct FeedBatch {
 public struct WatchEvent {
     public var batches: [FeedBatch] = []
     public var isHeartbeat = false
+    public var origin = ""
 }
 
 public enum SyncMessages {
     public static let pullMethod = "/gsbc.sync.Sync/Pull"
     public static let watchMethod = "/gsbc.sync.Sync/Watch"
+    private static let unknownOrigin = "unknown"
 
-    public static func cursorsRequest(_ cursors: [String: Int64]) -> Data {
+    public static func cursorsRequest(_ cursors: [String: Int64], origin: String?) -> Data {
         var request = ProtoWriter()
         for (feed, cursor) in cursors.sorted(by: { $0.key < $1.key }) {
             var entry = ProtoWriter()
@@ -56,11 +58,12 @@ public enum SyncMessages {
             entry.int64(2, cursor)
             request.bytes(1, entry.data)
         }
+        request.string(2, origin ?? unknownOrigin)
         return request.data
     }
 
-    public static func pullReply(_ data: Data) throws -> [FeedBatch] {
-        try watchEvent(data).batches
+    public static func pullReply(_ data: Data) throws -> WatchEvent {
+        try watchEvent(data)
     }
 
     public static func watchEvent(_ data: Data) throws -> WatchEvent {
@@ -71,6 +74,7 @@ public enum SyncMessages {
             switch field {
             case 1: event.batches.append(try batch(try reader.bytes()))
             case 2: event.isHeartbeat = try reader.bool()
+            case 3: event.origin = try reader.string()
             default: try reader.skip(wireType: wireType)
             }
         }

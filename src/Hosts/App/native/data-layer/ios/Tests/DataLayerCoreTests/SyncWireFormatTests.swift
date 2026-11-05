@@ -34,9 +34,16 @@ final class SyncWireFormatTests: XCTestCase {
     }
 
     func testEncodesCursorsTheWayTheServerReadsThem() {
-        let request = SyncMessages.cursorsRequest(["dev.echo": 0])
+        let request = SyncMessages.cursorsRequest(["dev.echo": 0], origin: nil)
 
-        XCTAssertEqual(request, Data(hex: "0a0a0a086465762e6563686f"))
+        XCTAssertEqual(request, Data(hex: "0a0a0a086465762e6563686f1207756e6b6e6f776e"))
+    }
+
+    func testReadsTheOriginOfAPullReply() throws {
+        let reply = try SyncMessages.pullReply(Data(hex: "0a0a0a066576656e747318011a026f31"))
+
+        XCTAssertEqual(reply.origin, "o1")
+        XCTAssertTrue(reply.batches[0].reset)
     }
 }
 

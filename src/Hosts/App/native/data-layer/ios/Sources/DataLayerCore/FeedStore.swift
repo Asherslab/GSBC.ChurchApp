@@ -110,6 +110,9 @@ public final class FeedStore: Sendable {
         migrator.registerMigration("v4-quiet-outbox") { db in
             try db.execute(sql: "ALTER TABLE outbox ADD COLUMN quiet INTEGER NOT NULL DEFAULT 0")
         }
+        migrator.registerMigration("v5-origin") { db in
+            try db.execute(sql: "CREATE TABLE origin (only INTEGER PRIMARY KEY CHECK (only = 1), origin TEXT NOT NULL)")
+        }
         return migrator
     }
 
@@ -124,9 +127,19 @@ public final class FeedStore: Sendable {
         }
     }
 
-    public func apply(_ batches: [FeedBatch]) throws -> Set<String> {
+    public func origin() throws -> String? {
+        try database.read { db in try String.fetchOne(db, sql: "SELECT origin FROM origin") }
+    }
+
+    public func apply(_ batches: [FeedBatch], origin: String = "") throws -> Set<String> {
+        let newOrigin = try origin.isEmpty || origin == self.origin() ? nil : origin
+        guard !batches.isEmpty || newOrigin != nil else { return [] }
         var changed = Set<String>()
         try database.write { db in
+            if let newOrigin {
+                try db.execute(sql: "INSERT INTO origin (only, origin) VALUES (1, ?) ON CONFLICT (only) DO UPDATE SET origin = excluded.origin",
+                               arguments: [newOrigin])
+            }
             for batch in batches {
                 if batch.reset {
                     try db.execute(sql: "DELETE FROM records WHERE feed = ?", arguments: [batch.feed])
