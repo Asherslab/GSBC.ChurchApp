@@ -10,7 +10,7 @@ public sealed class MediaClient(ChannelBase channel, HttpClient http)
     private readonly IMediaService _media = channel.CreateGrpcService<IMediaService>();
     private readonly IMediaFoldersService _folders = channel.CreateGrpcService<IMediaFoldersService>();
 
-    public async Task<UploadedMedia> UploadAsync(BeginUploadRequest request, Stream content, bool addAgain = false, CancellationToken cancellationToken = default)
+    public async Task<UploadedMedia> UploadAsync(BeginUploadRequest request, Stream content, bool addAgain = false, string? putBackInto = null, CancellationToken cancellationToken = default)
     {
         UploadTicket ticket = await _media.BeginUploadAsync(request);
 
@@ -20,13 +20,15 @@ public sealed class MediaClient(ChannelBase channel, HttpClient http)
         if (!response.IsSuccessStatusCode)
             throw new RpcException(new Status(StatusCode.Unavailable, $"The file couldn't be sent ({(int)response.StatusCode})."));
 
-        return await _media.CompleteUploadAsync(new CompleteUploadRequest { UploadId = ticket.UploadId, AddAgain = addAgain });
+        return await _media.CompleteUploadAsync(new CompleteUploadRequest { UploadId = ticket.UploadId, AddAgain = addAgain, PutBackInto = putBackInto });
     }
 
-    public async Task<MediaItemInfo?> FindAsync(string sha256, string contentType, MediaAudience? privateTo) =>
-        (await _media.FindByHashAsync(new FindByHashRequest { Sha256 = sha256, ContentType = contentType, PrivateTo = privateTo })).Items.FirstOrDefault();
+    public async Task<MediaMatches> FindAsync(string sha256, string contentType, MediaAudience? privateTo) =>
+        await _media.FindByHashAsync(new FindByHashRequest { Sha256 = sha256, ContentType = contentType, PrivateTo = privateTo });
 
-    public ValueTask<MediaLink> GetLinkAsync(string id) => _media.GetLinkAsync(new LinkRequest { Id = id });
+    public ValueTask<MediaLink> GetLinkAsync(string id, string key) => _media.GetLinkAsync(new LinkRequest { Id = id, Key = key });
+
+    public ValueTask<MediaItemInfo> RemoveOriginalAsync(string id) => _media.RemoveOriginalAsync(new RemoveOriginalRequest { Id = id });
 
     public ValueTask<MediaList> ListAsync(MediaQuery query) => _media.ListAsync(query);
 

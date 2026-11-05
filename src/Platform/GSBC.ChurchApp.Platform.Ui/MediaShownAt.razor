@@ -1,0 +1,11 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+<span class="media-shown-at @Class">@foreach ((string part, int index) in Parts.Select((part, index) => (part, index))){<span class="media-shown-at__part">@(index == 0 ? part : $" · {part}")</span>}</span>
+
+@code {
+    [Parameter, EditorRequired] public required MediaRef Media { get; set; }
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public string? Class { get; set; }
+
+    private IReadOnlyList<string> Parts => MediaSizes.ShownAs(Media.At(Size));
+}

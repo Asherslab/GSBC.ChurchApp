@@ -16,17 +16,20 @@ internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs, TimeP
     public async Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken)
     {
         List<Guid> ids = claimed.Select(media => Guid.TryParse(media.Id, out Guid id) ? id : throw NotInLibrary(media)).ToList();
+        Dictionary<Guid, Guid> resolved = await MediaAliases.ResolveAsync(db, ids, cancellationToken);
+        List<Guid> targets = [.. resolved.Values.Distinct()];
         Dictionary<Guid, MediaItem> items = await db.Items.AsNoTracking()
-            .Where(item => ids.Contains(item.Id))
+            .Where(item => targets.Contains(item.Id))
             .ToDictionaryAsync(item => item.Id, cancellationToken);
+        Dictionary<Guid, List<MediaRendition>> renditions = await MediaRefs.RenditionsOfAsync(db, items.Keys, cancellationToken);
 
-        return claimed.Zip(ids, (media, id) => Verified(media, items.GetValueOrDefault(id))).ToList();
+        return claimed.Zip(ids, (media, id) => items.GetValueOrDefault(resolved[id]) is { } item ? Verified(media, item, renditions[item.Id]) : throw NotInLibrary(media)).ToList();
     }
 
     public async Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(owner);
-        HashSet<Guid> ids = [.. verified.Select(media => Guid.Parse(media.Id))];
+        HashSet<Guid> ids = [.. (await MediaAliases.ResolveAsync(db, verified.Select(media => Guid.Parse(media.Id)).ToList(), cancellationToken)).Values];
 
         await using IDbContextTransaction transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         HashSet<Guid> usedBefore = [.. await db.Uses.Where(use => use.Owner == owner).Select(use => use.MediaId).ToListAsync(cancellationToken)];
@@ -51,12 +54,12 @@ internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs, TimeP
         await transaction.CommitAsync(cancellationToken);
     }
 
-    private MediaRef Verified(MediaRef claimed, MediaItem? item)
+    private MediaRef Verified(MediaRef claimed, MediaItem item, List<MediaRendition> renditions)
     {
-        if (item is null || (claimed.Key.Length > 0 && claimed.Key != item.Key))
+        if (claimed.Key.Length > 0 && claimed.Key != item.Key && renditions.All(rendition => rendition.Key != claimed.Key))
             throw NotInLibrary(claimed);
 
-        MediaRef verified = MediaRefs.Of(item, blobs);
+        MediaRef verified = MediaRefs.Of(item, renditions, blobs);
         string altText = claimed.AltText.Trim();
         if (altText.Length > 0)
             verified.AltText = altText.Length <= MediaRefs.MaximumTextLength ? altText : throw Invalid("Keep image descriptions under 200 characters.");

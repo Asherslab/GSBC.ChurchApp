@@ -26,6 +26,8 @@ namespace GSBC.ChurchApp.Features.Media.Contracts;
 [ProtoSerializable(typeof(RenameFolderRequest))]
 [ProtoSerializable(typeof(MoveRequest))]
 [ProtoSerializable(typeof(DeleteFolderRequest))]
+[ProtoSerializable(typeof(RemoveOriginalRequest))]
+[ProtoSerializable(typeof(MediaItemInfo))]
 [ProtoSerializable(typeof(DeleteMediaRequest))]
 [ProtoSerializable(typeof(Done))]
 [ProtoSerializable(typeof(FontSearch))]

@@ -34,7 +34,7 @@
                             <span class="media-choice__thumb">
                                 @if (media.IsImage)
                                 {
-                                    <MediaImage Media="media" Class="media-choice__image" />
+                                    <MediaImage Media="media" Size="MediaSizeName.Thumbnail" Class="media-choice__image" />
                                 }
                                 else
                                 {
@@ -63,7 +63,13 @@
         </LiveData>
     </LiveData>
     <div class="media-choice__foot">
-        <span class="media-choice__chosen">@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
+        <span class="media-choice__chosen">
+            <span class="media-choice__chosen-name">@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
+            @if (_selected is { IsImage: true } picture)
+            {
+                <MediaShownAt Media="picture" Size="Size" />
+            }
+        </span>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => OnCancel.InvokeAsync()">Cancel</Button>
         <Button Icon="check" Disabled="_selected is null" OnClick="() => OnPick.InvokeAsync(_selected!)">Choose</Button>
     </div>
@@ -84,6 +90,7 @@
     [Parameter] public EventCallback<MediaRef> OnPick { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public bool ImagesOnly { get; set; }
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
 
     private bool Searching => _query.Length > 0;
 

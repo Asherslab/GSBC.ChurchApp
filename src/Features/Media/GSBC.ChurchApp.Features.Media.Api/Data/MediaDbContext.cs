@@ -12,6 +12,8 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
     public DbSet<PendingUpload> PendingUploads => Set<PendingUpload>();
     public DbSet<MediaUse> Uses => Set<MediaUse>();
     public DbSet<MediaFolder> Folders => Set<MediaFolder>();
+    public DbSet<MediaRendition> Renditions => Set<MediaRendition>();
+    public DbSet<MediaAlias> Aliases => Set<MediaAlias>();
 
     protected override string Schema => SchemaName;
 
@@ -30,6 +32,23 @@ public sealed class MediaDbContext(DbContextOptions<MediaDbContext> options) : F
             entity.HasIndex(item => item.FolderId);
             entity.HasOne<MediaFolder>().WithMany().HasForeignKey(item => item.FolderId).OnDelete(DeleteBehavior.Restrict);
             entity.Ignore(item => item.IsPrivate);
+            entity.Ignore(item => item.KeepsOriginal);
+            entity.HasIndex(item => item.Sizing).HasFilter("sizing = 1");
+        });
+        modelBuilder.Entity<MediaRendition>(entity =>
+        {
+            entity.ToTable("renditions");
+            entity.HasKey(rendition => new { rendition.MediaId, rendition.Size });
+            entity.HasIndex(rendition => rendition.Key);
+            entity.Property(rendition => rendition.Sha256).HasMaxLength(ContentAddress.Sha256HexLength).IsFixedLength();
+            entity.HasOne<MediaItem>().WithMany().HasForeignKey(rendition => rendition.MediaId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<MediaAlias>(entity =>
+        {
+            entity.ToTable("aliases");
+            entity.HasKey(alias => alias.Id);
+            entity.HasIndex(alias => alias.MediaId);
+            entity.HasOne<MediaItem>().WithMany().HasForeignKey(alias => alias.MediaId).OnDelete(DeleteBehavior.Cascade);
         });
         modelBuilder.Entity<MediaFolder>(entity =>
         {

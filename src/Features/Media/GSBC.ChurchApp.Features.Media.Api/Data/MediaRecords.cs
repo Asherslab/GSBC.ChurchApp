@@ -1,3 +1,6 @@
+using GSBC.ChurchApp.Features.Media.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Media;
+
 namespace GSBC.ChurchApp.Features.Media.Api.Data;
 
 public sealed class MediaItem
@@ -16,8 +19,30 @@ public sealed class MediaItem
     public Guid UploadedBy { get; set; }
     public DateTime UploadedAt { get; set; }
     public Guid? FolderId { get; set; }
+    public PictureSizing Sizing { get; set; }
+    public DateTime? OriginalRemovedAt { get; set; }
 
     public bool IsPrivate => AudiencePermission is not null;
+
+    public bool KeepsOriginal => OriginalRemovedAt is null;
+}
+
+public sealed class MediaRendition
+{
+    public Guid MediaId { get; set; }
+    public MediaSizeName Size { get; set; }
+    public required string Key { get; set; }
+    public required string Sha256 { get; set; }
+    public required string ContentType { get; set; }
+    public long Bytes { get; set; }
+    public int Width { get; set; }
+    public int Height { get; set; }
+}
+
+public sealed class MediaAlias
+{
+    public Guid Id { get; set; }
+    public Guid MediaId { get; set; }
 }
 
 public sealed class MediaFolder

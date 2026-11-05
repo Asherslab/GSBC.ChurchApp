@@ -11,6 +11,7 @@
 
 @code {
     [Parameter] public bool ImagesOnly { get; set; } = true;
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public EventCallback<MediaRef> OnChosen { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
@@ -22,6 +23,7 @@
         builder.AddComponentParameter(1, MediaPicker.ImagesOnlyParameter, ImagesOnly);
         builder.AddComponentParameter(2, MediaPicker.OnPickParameter, EventCallback.Factory.Create<MediaRef>(this, media => OnChosen.InvokeAsync(media)));
         builder.AddComponentParameter(3, MediaPicker.OnCancelParameter, EventCallback.Factory.Create(this, () => OnCancel.InvokeAsync()));
+        builder.AddComponentParameter(4, MediaPicker.SizeParameter, Size);
         builder.CloseComponent();
     };
 

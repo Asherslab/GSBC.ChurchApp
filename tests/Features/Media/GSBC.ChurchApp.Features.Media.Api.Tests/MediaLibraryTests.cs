@@ -19,7 +19,10 @@ using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Platform.Storage;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.Extensions.DependencyInjection;
+using SkiaSharp;
 using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Media.Api.Tests;
@@ -51,6 +54,7 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         .Build();
 
     private readonly GrantedEvaluator _access = new();
+    private readonly TileHolder _tiles = new();
     private readonly HttpClient _http = new();
     private ServiceProvider _services = null!;
 
@@ -80,6 +84,9 @@ public sealed class MediaLibraryTests : IAsyncLifetime
             .AddMediaData()
             .AddSyncData()
             .AddScoped<MediaLibrary>()
+            .AddScoped<MediaSizer>()
+            .AddScoped<MediaHolders>()
+            .AddSingleton<IMediaHolder>(_tiles)
             .AddSingleton(Chats)
             .AddScoped<MediaFolders>()
             .AddScoped<IMediaReferences, MediaReferences>()
@@ -220,12 +227,12 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         using (HttpResponseMessage anonymous = await _http.GetAsync($"{PublicUrlBase}/{file.Key}", Cancellation))
             Assert.False(anonymous.IsSuccessStatusCode);
 
-        MediaLink link = await LibraryCallAsync(library => library.GetLinkAsync(member, file.Id, Cancellation));
+        MediaLink link = await LibraryCallAsync(library => library.GetLinkAsync(member, new LinkRequest { Id = file.Id }, Cancellation));
         Assert.Equal(notes, await _http.GetByteArrayAsync(link.Url, Cancellation));
 
         _access.Revoke(member, ReadFiles.Node, Ministry);
-        RpcException removed = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(member, file.Id, Cancellation)));
-        RpcException never = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(outsider, file.Id, Cancellation)));
+        RpcException removed = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(member, new LinkRequest { Id = file.Id }, Cancellation)));
+        RpcException never = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(outsider, new LinkRequest { Id = file.Id }, Cancellation)));
         Assert.Equal(StatusCode.PermissionDenied, removed.StatusCode);
         Assert.Equal(StatusCode.PermissionDenied, never.StatusCode);
     }
@@ -436,6 +443,186 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         Assert.Equal(StatusCode.FailedPrecondition, deleted.StatusCode);
     }
 
+    [Fact]
+    public async Task APicturesSizesAreMadeOnceAndSharedByEveryEntryOfTheSameBytes()
+    {
+        ClaimsPrincipal staff = Person();
+        byte[] photo = Picture(3000, 1688);
+
+        UploadedMedia first = await UploadAgainAsync(staff, photo, "image/jpeg");
+        UploadedMedia second = await UploadAgainAsync(staff, photo, "image/jpeg", addAgain: true);
+        MediaRef kept = await FoldersCallAsync(folders => folders.KeepAsync(Chats, new KeptFile(photo, "image/jpeg", "jpg", "kept.jpg", 3000, 1688), Cancellation));
+        MediaRef small = await UploadAsync(staff, Picture(400, 300), "image/jpeg");
+
+        MediaRef media = first.Item!.Media!;
+        Assert.Equal(PictureSizing.Made, first.Item.Sizing);
+        Assert.Equal([(MediaSizeName.ForPhones, 1280, 720), (MediaSizeName.Thumbnail, 480, 270)], media.Sizes.Select(size => (size.Name, size.Width, size.Height)));
+        Assert.Equal(media.Sizes.Select(size => size.Key), second.Item!.Media!.Sizes.Select(size => size.Key));
+        Assert.Equal(media.Sizes.Select(size => size.Key), kept.Sizes.Select(size => size.Key));
+        Assert.Empty(small.Sizes);
+        Assert.Equal(media.Sizes[0].Key, media.At(MediaSizeName.ForPhones).Key);
+        Assert.Equal(media.Sizes[1].Key, media.At(MediaSizeName.Thumbnail).Key);
+        Assert.Equal(small.Key, small.At(MediaSizeName.ForPhones).Key);
+
+        ListObjectsV2Response stored = await _services.GetRequiredService<IAmazonS3>().ListObjectsV2Async(new ListObjectsV2Request { BucketName = PublicBucket }, Cancellation);
+        Assert.Equal(4, stored.S3Objects.Count);
+        foreach (MediaSize size in media.Sizes)
+            Assert.Equal(size.Key, $"{Convert.ToHexStringLower(SHA256.HashData(await _http.GetByteArrayAsync(size.Url, Cancellation)))}.jpg");
+    }
+
+    [Fact]
+    public async Task SizesShowTheWholePictureTurnedTheWayItIsShownAndNeverCropIt()
+    {
+        ClaimsPrincipal staff = Person();
+        MediaRef wide = await UploadAsync(staff, Picture(3000, 1688), "image/jpeg");
+        MediaRef sideways = await UploadAsync(staff, WithOrientation(Picture(2000, 1000), orientation: 6), "image/jpeg");
+
+        foreach (MediaSize size in wide.Sizes)
+        {
+            using SKBitmap shown = SKBitmap.Decode(await _http.GetByteArrayAsync(size.Url, Cancellation));
+            Assert.Equal((size.Width, size.Height), (shown.Width, shown.Height));
+            Assert.Equal(3000d / 1688, (double)shown.Width / shown.Height, 0.01);
+            Assert.Equal(Corners, CornersOf(shown));
+        }
+
+        MediaSize thumbnail = Assert.Single(sideways.Sizes);
+        Assert.Equal((MediaSizeName.Thumbnail, 480, 960), (thumbnail.Name, thumbnail.Width, thumbnail.Height));
+        using SKBitmap turned = SKBitmap.Decode(await _http.GetByteArrayAsync(thumbnail.Url, Cancellation));
+        Assert.Equal([Corners[2], Corners[0], Corners[3], Corners[1]], CornersOf(turned));
+    }
+
+    [Fact]
+    public async Task RemovingAnOriginalKeepsItsSizesAndEverywhereThatUsesThePicture()
+    {
+        ClaimsPrincipal staff = Person();
+        byte[] photo = Picture(3000, 1688);
+        MediaRef uploaded = await UploadAsync(staff, photo, "image/jpeg");
+        MediaRef placed = Assert.Single(await ReferencesCallAsync(references => references.VerifyAsync([uploaded], Cancellation)));
+        await ReferencesCallAsync(references => Done(references.UseAsync(TileHolder.Tile, [placed], Cancellation)));
+
+        MediaItemInfo removed = await LibraryCallAsync(library => library.RemoveOriginalAsync(placed.Id, Cancellation));
+
+        Assert.True(removed.Original!.Removed);
+        Assert.Equal(photo.Length, removed.Original.Bytes);
+        Assert.Equal(MediaSizeName.ForPhones, removed.Media!.Version);
+        Assert.Equal(MediaSizeName.Thumbnail, Assert.Single(removed.Media.Sizes).Name);
+        Assert.Contains(TileHolder.Tile, _tiles.Refreshed);
+        using (HttpResponseMessage original = await _http.GetAsync(placed.Url, Cancellation))
+            Assert.False(original.IsSuccessStatusCode);
+
+        MediaRef stillPlaced = Assert.Single(await ReferencesCallAsync(references => references.VerifyAsync([placed], Cancellation)));
+        Assert.Equal(removed.Media.Key, stillPlaced.Key);
+        Assert.Equal(placed.AltText, stillPlaced.AltText);
+        foreach (string? url in new[] { stillPlaced.Url, stillPlaced.At(MediaSizeName.Thumbnail).Url })
+        {
+            using HttpResponseMessage shown = await _http.GetAsync(url, Cancellation);
+            Assert.Equal(HttpStatusCode.OK, shown.StatusCode);
+        }
+
+        MediaRef inADraft = await UploadAsync(staff, Picture(2000, 1500), "image/jpeg");
+        await ReferencesCallAsync(references => Done(references.UseAsync("draft/1", [inADraft], Cancellation)));
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.RemoveOriginalAsync(inADraft.Id, Cancellation)));
+        Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
+    }
+
+    [Fact]
+    public async Task UploadingARemovedOriginalAgainOffersToPutItBackAndPuttingItBackMakesThePictureWhole()
+    {
+        ClaimsPrincipal staff = Person();
+        _access.Grant(staff, MediaPermissions.ViewNode, null);
+        byte[] photo = Picture(3000, 1688);
+        MediaRef picture = await UploadAsync(staff, photo, "image/jpeg");
+        await ReferencesCallAsync(references => Done(references.UseAsync(TileHolder.Tile, [picture], Cancellation)));
+        await LibraryCallAsync(library => library.RemoveOriginalAsync(picture.Id, Cancellation));
+        _tiles.Refreshed.Clear();
+
+        MediaMatches offered = await LibraryCallAsync(library => library.FindByHashAsync(staff, new FindByHashRequest { Sha256 = Sha256Of(photo), ContentType = "image/jpeg" }, Cancellation));
+        UploadedMedia putBack = await UploadAgainAsync(staff, photo, "image/jpeg");
+
+        Assert.Empty(offered.Items);
+        Assert.Equal(picture.Id, Assert.Single(offered.RemovedOriginals).Media!.Id);
+        Assert.True(putBack.PutBack);
+        Assert.Equal(picture.Id, putBack.Item!.Media!.Id);
+        Assert.False(putBack.Item.Original!.Removed);
+        Assert.Equal(MediaSizeName.Original, putBack.Item.Media.Version);
+        Assert.Equal(photo, await _http.GetByteArrayAsync(picture.Url, Cancellation));
+        Assert.Contains(TileHolder.Tile, _tiles.Refreshed);
+
+        await LibraryCallAsync(library => library.RemoveOriginalAsync(picture.Id, Cancellation));
+        UploadedMedia asNew = await UploadAgainAsync(staff, photo, "image/jpeg", addAgain: true);
+        Assert.False(asNew.PutBack);
+        Assert.NotEqual(picture.Id, asNew.Item!.Media!.Id);
+    }
+
+    [Fact]
+    public async Task ARemovedOriginalIsOnlyOfferedBackToPeopleWhoCanSeeItsPicture()
+    {
+        ClaimsPrincipal staff = Person();
+        ClaimsPrincipal uploaderOnly = Person();
+        _access.Grant(staff, MediaPermissions.ViewNode, null);
+        byte[] photo = Picture(3000, 1688);
+        MediaRef picture = await UploadAsync(staff, photo, "image/jpeg");
+        await LibraryCallAsync(library => library.RemoveOriginalAsync(picture.Id, Cancellation));
+
+        MediaMatches offered = await LibraryCallAsync(library => library.FindByHashAsync(uploaderOnly, new FindByHashRequest { Sha256 = Sha256Of(photo), ContentType = "image/jpeg" }, Cancellation));
+        RpcException named = await Assert.ThrowsAsync<RpcException>(() => PutBackIntoAsync(uploaderOnly, photo, picture.Id));
+        UploadedMedia theirs = await UploadAgainAsync(uploaderOnly, photo, "image/jpeg");
+
+        Assert.Empty(offered.Items);
+        Assert.Empty(offered.RemovedOriginals);
+        Assert.False(theirs.PutBack);
+        Assert.NotEqual(picture.Id, theirs.Item!.Media!.Id);
+        Assert.Equal(StatusCode.NotFound, named.StatusCode);
+        MediaItemInfo stillRemoved = Assert.Single((await LibraryCallAsync(library => library.FindByHashAsync(staff,
+            new FindByHashRequest { Sha256 = Sha256Of(photo), ContentType = "image/jpeg" }, Cancellation))).RemovedOriginals);
+        Assert.Equal(picture.Id, stillRemoved.Media!.Id);
+    }
+
+    [Fact]
+    public async Task SermonArtworkPairsBecomeOnePictureWithoutBreakingWhatSermonsHolds()
+    {
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            MediaDbContext db = scope.ServiceProvider.GetRequiredService<MediaDbContext>();
+            await db.GetService<IMigrator>().MigrateAsync("20261104155719_MediaContentHash", cancellationToken: Cancellation);
+            Guid nobody = Guid.Empty;
+            string largeKey = $"{new string('a', 64)}.jpg", smallKey = $"{new string('b', 64)}.jpg";
+            string largeHash = new('a', 64), smallHash = new('b', 64);
+            string twiceLargeHash = new('c', 64), twiceLargeAgainHash = new('d', 64), twiceSmallHash = new('e', 64);
+            string twiceLargeKey = $"{twiceLargeHash}.jpg", twiceLargeAgainKey = $"{twiceLargeAgainHash}.jpg", twiceSmallKey = $"{twiceSmallHash}.jpg";
+            await db.Database.ExecuteSqlAsync($"INSERT INTO media.folders (id, name, system_area, created_by, created_at) VALUES ({ArtworkFolder}, 'Sermon artwork', 'sermons', {nobody}, now())", Cancellation);
+            await db.Database.ExecuteSqlAsync($"""
+                INSERT INTO media.items (id, key, sha256, content_type, bytes, width, height, file_name, alt_text, uploaded_by, uploaded_at, folder_id) VALUES
+                    ({LargeArtwork}, {largeKey}, {largeHash}, 'image/jpeg', 200000, 1280, 720, '0123456789ab-large.jpg', '', {nobody}, now(), {ArtworkFolder}),
+                    ({SmallArtwork}, {smallKey}, {smallHash}, 'image/jpeg', 40000, 480, 270, '0123456789ab-small.jpg', '', {nobody}, now(), {ArtworkFolder}),
+                    ({TwiceLarge}, {twiceLargeKey}, {twiceLargeHash}, 'image/jpeg', 210000, 1280, 720, 'fedcba987654-large.jpg', '', {nobody}, now(), {ArtworkFolder}),
+                    ({TwiceLargeAgain}, {twiceLargeAgainKey}, {twiceLargeAgainHash}, 'image/jpeg', 215000, 1280, 720, 'fedcba987654-large.jpg', '', {nobody}, now(), {ArtworkFolder}),
+                    ({TwiceSmall}, {twiceSmallKey}, {twiceSmallHash}, 'image/jpeg', 41000, 480, 270, 'fedcba987654-small.jpg', '', {nobody}, now(), {ArtworkFolder})
+                """, Cancellation);
+            await db.Database.ExecuteSqlAsync($"""
+                INSERT INTO media.uses (media_id, owner) VALUES
+                    ({LargeArtwork}, 'sermons/sermon/1/artwork'), ({SmallArtwork}, 'sermons/sermon/1/artwork'), ({SmallArtwork}, 'sermons/sermon/2/artwork')
+                """, Cancellation);
+            await db.Database.MigrateAsync(Cancellation);
+        }
+
+        MediaRef small = new() { Id = SmallArtwork.ToString(), Key = $"{new string('b', 64)}.jpg" };
+        MediaRef large = new() { Id = LargeArtwork.ToString(), Key = $"{new string('a', 64)}.jpg" };
+        IReadOnlyList<MediaRef> verified = await ReferencesCallAsync(references => references.VerifyAsync([large, small], Cancellation));
+        await ReferencesCallAsync(references => Done(references.UseAsync("sermons/sermon/3/artwork", [large, small], Cancellation)));
+
+        await using AsyncServiceScope after = _services.CreateAsyncScope();
+        MediaDbContext merged = after.ServiceProvider.GetRequiredService<MediaDbContext>();
+        Assert.Equal(new[] { LargeArtwork, TwiceLarge, TwiceLargeAgain, TwiceSmall }.Order(), (await merged.Items.Select(item => item.Id).ToListAsync(Cancellation)).Order());
+        MediaRendition thumbnail = Assert.Single(await merged.Renditions.ToListAsync(Cancellation));
+        Assert.Equal((LargeArtwork, small.Key), (thumbnail.MediaId, thumbnail.Key));
+        Assert.Equal("0123456789ab.jpg", (await merged.Items.SingleAsync(item => item.Id == LargeArtwork, Cancellation)).FileName);
+        Assert.All(verified, media => Assert.Equal((LargeArtwork.ToString(), large.Key), (media.Id, media.Key)));
+        Assert.Equal(small.Key, verified[1].At(MediaSizeName.Thumbnail).Key);
+        Assert.Equal(["sermons/sermon/1/artwork", "sermons/sermon/2/artwork", "sermons/sermon/3/artwork"],
+            (await merged.Uses.Where(use => use.MediaId == LargeArtwork).Select(use => use.Owner).ToListAsync(Cancellation)).Order());
+    }
+
     private async Task<MediaRef> UploadAsync(ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null, string fileName = "file") =>
         (await UploadAgainAsync(user, bytes, contentType, privateTo, fileName)).Item!.Media!;
 
@@ -456,6 +643,16 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         put.EnsureSuccessStatusCode();
 
         return await LibraryCallAsync(library => library.CompleteUploadAsync(user, new CompleteUploadRequest { UploadId = ticket.UploadId, AddAgain = addAgain }, Cancellation));
+    }
+
+    private async Task<UploadedMedia> PutBackIntoAsync(ClaimsPrincipal user, byte[] bytes, string mediaId)
+    {
+        UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, new BeginUploadRequest { FileName = "again.jpg", ContentType = "image/jpeg", Bytes = bytes.Length }, Cancellation));
+        using ByteArrayContent body = new(bytes);
+        body.Headers.ContentType = new MediaTypeHeaderValue(ticket.ContentType);
+        using HttpResponseMessage put = await _http.PutAsync(ticket.Url, body, Cancellation);
+        put.EnsureSuccessStatusCode();
+        return await LibraryCallAsync(library => library.CompleteUploadAsync(user, new CompleteUploadRequest { UploadId = ticket.UploadId, PutBackInto = mediaId }, Cancellation));
     }
 
     private async Task<List<MediaItemInfo>> FindAsync(ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null) =>
@@ -517,6 +714,56 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         return bytes;
     }
 
+    private static readonly Guid ArtworkFolder = Guid.CreateVersion7();
+    private static readonly Guid LargeArtwork = Guid.CreateVersion7();
+    private static readonly Guid SmallArtwork = Guid.CreateVersion7();
+    private static readonly Guid TwiceLarge = Guid.CreateVersion7();
+    private static readonly Guid TwiceLargeAgain = Guid.CreateVersion7();
+    private static readonly Guid TwiceSmall = Guid.CreateVersion7();
+
+    private static readonly SKColor[] Corners = [SKColors.Red, SKColors.Lime, SKColors.Blue, SKColors.Black];
+
+    private static string Sha256Of(byte[] bytes) => Convert.ToHexStringLower(SHA256.HashData(bytes));
+
+    private static byte[] Picture(int width, int height)
+    {
+        using SKBitmap bitmap = new(width, height);
+        using (SKCanvas canvas = new(bitmap))
+        {
+            canvas.Clear(SKColors.White);
+            int corner = Math.Max(width, height) / 10;
+            SKPoint[] origins = [new(0, 0), new(width - corner, 0), new(0, height - corner), new(width - corner, height - corner)];
+            for (int index = 0; index < Corners.Length; index++)
+            {
+                using SKPaint paint = new();
+                paint.Color = Corners[index];
+                canvas.DrawRect(SKRect.Create(origins[index], new SKSize(corner, corner)), paint);
+            }
+        }
+        using SKData data = bitmap.Encode(SKEncodedImageFormat.Jpeg, 90);
+        return data.ToArray();
+    }
+
+    private static SKColor[] CornersOf(SKBitmap shown)
+    {
+        int inset = Math.Max(2, Math.Min(shown.Width, shown.Height) / 40);
+        SKColor[] corners =
+        [
+            shown.GetPixel(inset, inset), shown.GetPixel(shown.Width - 1 - inset, inset),
+            shown.GetPixel(inset, shown.Height - 1 - inset), shown.GetPixel(shown.Width - 1 - inset, shown.Height - 1 - inset),
+        ];
+        return corners.Select(Nearest).ToArray();
+    }
+
+    private static SKColor Nearest(SKColor color) =>
+        Corners.Append(SKColors.White).MinBy(known => Math.Abs(known.Red - color.Red) + Math.Abs(known.Green - color.Green) + Math.Abs(known.Blue - color.Blue));
+
+    private static byte[] WithOrientation(byte[] jpeg, ushort orientation)
+    {
+        byte[] exif = [.. "Exif\0\0"u8, .. "II"u8, 42, 0, 8, 0, 0, 0, 1, 0, 0x12, 0x01, 3, 0, 1, 0, 0, 0, (byte)orientation, 0, 0, 0, 0, 0, 0, 0];
+        return [0xFF, 0xD8, 0xFF, 0xE1, (byte)((exif.Length + 2) >> 8), (byte)(exif.Length + 2), .. exif, .. jpeg.AsSpan(2)];
+    }
+
     private static byte[] JpegWithOrientation(int width, int height, ushort orientation)
     {
         List<byte> bytes = [0xFF, 0xD8];
@@ -534,6 +781,21 @@ public sealed class MediaLibraryTests : IAsyncLifetime
         _http.Dispose();
         await _services.DisposeAsync();
         await Task.WhenAll(_postgres.DisposeAsync().AsTask(), _s3.DisposeAsync().AsTask());
+    }
+
+    private sealed class TileHolder : IMediaHolder
+    {
+        public const string Tile = "tile/1";
+
+        public List<string> Refreshed { get; } = [];
+
+        public bool Holds(string owner) => owner.StartsWith("tile/", StringComparison.Ordinal);
+
+        public Task RefreshAsync(string owner, CancellationToken cancellationToken)
+        {
+            Refreshed.Add(owner);
+            return Task.CompletedTask;
+        }
     }
 
     private sealed class GrantedEvaluator : IAccessEvaluator

@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
@@ -14,7 +13,7 @@ using Npgsql;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
 
-internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, IEnumerable<MediaSystemArea> areas, IBlobStore blobs, TimeProvider time) : IMediaSystemFolders
+internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, IEnumerable<MediaSystemArea> areas, IBlobStore blobs, MediaSizer sizer, TimeProvider time) : IMediaSystemFolders
 {
     public const int MaximumNameLength = 80;
     private const string MadeByTheApp = "Made by the app.";
@@ -168,10 +167,10 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
     public async Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken)
     {
         MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
-        string sha256 = Convert.ToHexStringLower(SHA256.HashData(file.Bytes));
+        string sha256 = ContentAddress.Sha256Of(file.Bytes);
         string key = ContentAddress.KeyFor(sha256, file.Extension);
         if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Key == key && item.FolderId == folder.Id, cancellationToken) is { } kept)
-            return MediaRefs.Of(kept, blobs);
+            return await MediaRefs.OfAsync(db, kept, blobs, cancellationToken);
 
         if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
             await blobs.PutAsync(BlobBucket.Public, key, new MemoryStream(file.Bytes), new BlobHeaders(file.ContentType, ContentAddress.ImmutableCacheControl), cancellationToken);
@@ -188,17 +187,18 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             UploadedAt = Now,
             FolderId = folder.Id,
         };
+        await sizer.SizeAsync(item, _ => Task.FromResult(file.Bytes), cancellationToken);
         db.Items.Add(item);
         Mark(item.Id);
         await db.SaveChangesAsync(cancellationToken);
-        return MediaRefs.Of(item, blobs);
+        return await MediaRefs.OfAsync(db, item, blobs, cancellationToken);
     }
 
     public async Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken)
     {
         MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
         if (await db.Items.AsNoTracking().FirstOrDefaultAsync(item => item.Sha256 == file.Sha256 && item.FolderId == folder.Id, cancellationToken) is { } kept)
-            return MediaRefs.Of(kept, blobs);
+            return await MediaRefs.OfAsync(db, kept, blobs, cancellationToken);
         if (await blobs.FindAsync(BlobBucket.Public, file.Key, cancellationToken) is null)
             throw new InvalidOperationException($"There's no stored file at {file.Key} to keep.");
 
@@ -213,10 +213,11 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             UploadedAt = Now,
             FolderId = folder.Id,
         };
+        await sizer.SizeStoredAsync(item, cancellationToken);
         db.Items.Add(item);
         Mark(item.Id);
         await db.SaveChangesAsync(cancellationToken);
-        return MediaRefs.Of(item, blobs);
+        return await MediaRefs.OfAsync(db, item, blobs, cancellationToken);
     }
 
     private async Task<MediaFolder> SystemFolderAsync(string area, string? scope, string name, Guid? parentId, CancellationToken cancellationToken)

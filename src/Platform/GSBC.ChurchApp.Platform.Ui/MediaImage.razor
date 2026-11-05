@@ -4,7 +4,7 @@
 
 @if (_source is not null)
 {
-    <img src="@_source" alt="@(Alt ?? Media.AltText)" class="@Class" style="@Style" width="@NullIfZero(Media.Width)" height="@NullIfZero(Media.Height)" loading="lazy" />
+    <img src="@_source" alt="@(Alt ?? Media.AltText)" class="@Class" style="@Style" width="@NullIfZero(_shown.Width)" height="@NullIfZero(_shown.Height)" loading="lazy" />
 }
 else
 {
@@ -14,20 +14,24 @@ else
 @code {
     private string? _source;
     private string? _resolvedKey;
+    private MediaRef _shown = new();
 
     [Parameter, EditorRequired] public required MediaRef Media { get; set; }
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public string? Alt { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public string? Style { get; set; }
 
     protected override async Task OnParametersSetAsync()
     {
-        if (Media.Key == _resolvedKey)
+        MediaRef shown = Media.At(Size);
+        if (shown.Key == _resolvedKey)
             return;
 
-        _resolvedKey = Media.Key;
+        _shown = shown;
+        _resolvedKey = shown.Key;
         _source = null;
-        _source = await Files.SourceOfAsync(Media);
+        _source = await Files.SourceOfAsync(shown);
     }
 
     private string? AspectRatio => Media.Width > 0 && Media.Height > 0 ? $"aspect-ratio: {Media.Width} / {Media.Height}" : null;

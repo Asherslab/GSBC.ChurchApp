@@ -23,6 +23,26 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaAlias", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("media_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_aliases");
+
+                    b.HasIndex("MediaId")
+                        .HasDatabaseName("ix_aliases_media_id");
+
+                    b.ToTable("aliases", "media");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", b =>
                 {
                     b.Property<Guid>("Id")
@@ -119,12 +139,20 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("key");
 
+                    b.Property<DateTime?>("OriginalRemovedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("original_removed_at");
+
                     b.Property<string>("Sha256")
                         .IsRequired()
                         .HasMaxLength(64)
                         .HasColumnType("character(64)")
                         .HasColumnName("sha256")
                         .IsFixedLength();
+
+                    b.Property<int>("Sizing")
+                        .HasColumnType("integer")
+                        .HasColumnName("sizing");
 
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp with time zone")
@@ -150,10 +178,62 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                     b.HasIndex("Sha256")
                         .HasDatabaseName("ix_items_sha256");
 
+                    b.HasIndex("Sizing")
+                        .HasDatabaseName("ix_items_sizing")
+                        .HasFilter("sizing = 1");
+
                     b.HasIndex("UploadedAt")
                         .HasDatabaseName("ix_items_uploaded_at");
 
                     b.ToTable("items", "media");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaRendition", b =>
+                {
+                    b.Property<Guid>("MediaId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("media_id");
+
+                    b.Property<int>("Size")
+                        .HasColumnType("integer")
+                        .HasColumnName("size");
+
+                    b.Property<long>("Bytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("bytes");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("content_type");
+
+                    b.Property<int>("Height")
+                        .HasColumnType("integer")
+                        .HasColumnName("height");
+
+                    b.Property<string>("Key")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("key");
+
+                    b.Property<string>("Sha256")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("character(64)")
+                        .HasColumnName("sha256")
+                        .IsFixedLength();
+
+                    b.Property<int>("Width")
+                        .HasColumnType("integer")
+                        .HasColumnName("width");
+
+                    b.HasKey("MediaId", "Size")
+                        .HasName("pk_renditions");
+
+                    b.HasIndex("Key")
+                        .HasDatabaseName("ix_renditions_key");
+
+                    b.ToTable("renditions", "media");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaUse", b =>
@@ -296,6 +376,16 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         });
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaAlias", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Media.Api.Data.MediaItem", null)
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_aliases_items_media_id");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", b =>
                 {
                     b.HasOne("GSBC.ChurchApp.Features.Media.Api.Data.MediaFolder", null)
@@ -312,6 +402,16 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasForeignKey("FolderId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .HasConstraintName("fk_items_folders_folder_id");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaRendition", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Media.Api.Data.MediaItem", null)
+                        .WithMany()
+                        .HasForeignKey("MediaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_renditions_items_media_id");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Media.Api.Data.MediaUse", b =>

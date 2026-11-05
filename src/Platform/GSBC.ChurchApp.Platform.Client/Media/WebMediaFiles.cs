@@ -13,5 +13,5 @@ public sealed class WebMediaFiles(IServiceProvider services) : IMediaFiles
     public ValueTask PrefetchAsync(IReadOnlyList<MediaRef> media) => ValueTask.CompletedTask;
 
     internal static async ValueTask<string?> PrivateLinkAsync(IServiceProvider services, MediaRef media) =>
-        services.GetService<IPrivateMediaLinks>() is { } links ? await links.LinkAsync(media.Id) : null;
+        services.GetService<IPrivateMediaLinks>() is { } links ? await links.LinkAsync(media.Id, media.Key) : null;
 }
