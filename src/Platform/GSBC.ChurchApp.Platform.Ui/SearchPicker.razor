@@ -1,0 +1,146 @@
+@typeparam TItem where TItem : class
+
+<div class="field search-picker @(Problem is null ? "" : "field--problem")">
+    <label class="field__label" for="@_id">@Label</label>
+    <div class="chip-picker__search">
+        <Icon Name="search" Size="IconSize.Small" />
+        <input id="@_id" type="text" class="chip-picker__input" role="combobox" aria-expanded="@(_focused ? "true" : "false")" aria-controls="@ListId"
+               aria-activedescendant="@(_focused && Choices.Count > 0 ? OptionId(_active) : null)" aria-autocomplete="list" autocomplete="off"
+               aria-describedby="@(Hint is null ? null : $"{_id}-hint")" disabled="@Disabled"
+               placeholder="@(_focused ? Shown : Placeholder)" value="@(_focused ? _query : Shown)"
+               @oninput="Type" @onkeydown="KeyAsync" @onfocus="Focus" @onblur="() => _focused = false" />
+    </div>
+    @if (_focused)
+    {
+        <ul class="chip-picker__options" id="@ListId" role="listbox" aria-label="@Label">
+            @if (Choices.Count == 0)
+            {
+                <li class="chip-picker__none" role="presentation">@($"Nothing called “{_query}”")</li>
+            }
+            @for (int index = 0; index < Choices.Count; index++)
+            {
+                Choice choice = Choices[index];
+                int at = index;
+                <li id="@OptionId(at)" role="option" aria-selected="@(at == _active ? "true" : "false")"
+                    class="chip-picker__option @(at == _active ? "chip-picker__option--active" : "") @(choice.Kind == ChoiceKind.Create ? "search-picker__create" : "")"
+                    @onmousedown:preventDefault="true" @onmousedown="() => ChooseAsync(choice)" @onmouseenter="() => _active = at">
+                    <strong>@choice.Text</strong>
+                    @if (choice.Detail is { Length: > 0 } detail)
+                    {
+                        <span>@detail</span>
+                    }
+                </li>
+            }
+        </ul>
+    }
+    @if (Hint is not null)
+    {
+        <span class="field__hint" id="@(_id)-hint">@Hint</span>
+    }
+    @if (Problem is not null)
+    {
+        <span class="field__problem">@Problem</span>
+    }
+</div>
+
+@code {
+    private enum ChoiceKind { Item, None, Create }
+
+    private sealed record Choice(ChoiceKind Kind, string Text, string? Detail, TItem? Item = null);
+
+    private readonly string _id = PickerMatches.NextId();
+    private string ListId => $"{_id}-options";
+    private string _query = "";
+    private int _active;
+    private bool _focused;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<TItem> Items { get; set; }
+    [Parameter, EditorRequired] public required Func<TItem, string> Text { get; set; }
+    [Parameter] public Func<TItem, string>? Detail { get; set; }
+    [Parameter] public TItem? Value { get; set; }
+    [Parameter] public EventCallback<TItem?> ValueChanged { get; set; }
+    [Parameter] public string? NoneText { get; set; }
+    [Parameter] public string? Pending { get; set; }
+    [Parameter] public Func<string, string>? CreateText { get; set; }
+    [Parameter] public EventCallback<string> OnCreate { get; set; }
+    [Parameter] public string? Placeholder { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public int MostShown { get; set; } = 8;
+
+    private string Shown => Pending ?? (Value is { } value ? Text(value) : NoneText ?? "");
+
+    private List<Choice> Choices
+    {
+        get
+        {
+            List<Choice> choices = [];
+            if (NoneText is not null && _query.Length == 0)
+                choices.Add(new Choice(ChoiceKind.None, NoneText, null));
+            choices.AddRange(PickerMatches.Of(Items, Text, Detail, _query, MostShown).Select(item => new Choice(ChoiceKind.Item, Text(item), Detail?.Invoke(item), item)));
+            string wanted = _query.Trim();
+            if (CreateText is not null && wanted.Length > 0 && !Items.Any(item => string.Equals(Text(item), wanted, StringComparison.CurrentCultureIgnoreCase)))
+                choices.Add(new Choice(ChoiceKind.Create, CreateText(wanted), null));
+            return choices;
+        }
+    }
+
+    private string OptionId(int index) => $"{_id}-option-{index}";
+
+    private void Focus()
+    {
+        _focused = true;
+        _query = "";
+        _active = Value is { } value ? Math.Max(0, Choices.FindIndex(choice => choice.Item == value)) : 0;
+    }
+
+    private void Type(ChangeEventArgs change)
+    {
+        _focused = true;
+        _query = change.Value?.ToString() ?? "";
+        _active = 0;
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs key)
+    {
+        int count = Choices.Count;
+        switch (key.Key)
+        {
+            case "ArrowDown" when count > 0:
+                _active = (_active + 1) % count;
+                break;
+            case "ArrowUp" when count > 0:
+                _active = (_active - 1 + count) % count;
+                break;
+            case "Enter" when count > 0:
+                await ChooseAsync(Choices[Math.Min(_active, count - 1)]);
+                break;
+            case "Escape":
+                _query = "";
+                _focused = false;
+                break;
+        }
+    }
+
+    private async Task ChooseAsync(Choice choice)
+    {
+        string wanted = _query.Trim();
+        _query = "";
+        _active = 0;
+        _focused = false;
+        switch (choice.Kind)
+        {
+            case ChoiceKind.Create:
+                await OnCreate.InvokeAsync(wanted);
+                break;
+            case ChoiceKind.None:
+                await ValueChanged.InvokeAsync(null);
+                break;
+            default:
+                await ValueChanged.InvokeAsync(choice.Item);
+                break;
+        }
+    }
+}

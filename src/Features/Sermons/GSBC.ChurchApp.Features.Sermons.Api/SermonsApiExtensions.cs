@@ -22,6 +22,7 @@ public static class SermonsApiExtensions
         services.AddHttpClient<WebsiteClient>(client => client.Timeout = TimeSpan.FromMinutes(2));
         services.AddScoped<Artwork>();
         services.AddMediaSystemArea(Artwork.Area);
+        services.AddMediaSystemArea(AudioCopier.Area);
         services.AddScoped<Speakers>();
         services.AddScoped<SermonPublisher>();
         services.AddScoped<WebsiteReader>();
@@ -56,6 +57,7 @@ public static class SermonsApiExtensions
         services.AddFeed(new FeedDefinition(SermonsFeeds.Speakers, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Progress, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Admin, FeedAudience.Holding(SermonsPermissions.Edit)));
+        services.AddFeed(new FeedDefinition(SermonsFeeds.Copying, FeedAudience.Holding(SermonsPermissions.Edit)));
         return services;
     }
 

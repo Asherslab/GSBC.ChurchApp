@@ -76,16 +76,18 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
 
             migrationBuilder.Sql("""
                 CREATE TEMP TABLE sermon_artwork_pairs AS
-                SELECT DISTINCT ON (large.id) large.id AS large_id, small.id AS small_id
+                SELECT DISTINCT ON (large.id) large.id AS large_id, small.id AS small_id,
+                    abs(extract(epoch FROM small.uploaded_at - large.uploaded_at)) AS apart
                 FROM media.items large
                 JOIN media.folders folder ON folder.id = large.folder_id AND folder.system_area = 'sermons'
                 JOIN media.items small ON small.folder_id = large.folder_id
                     AND small.file_name = left(large.file_name, length(large.file_name) - length('-large.jpg')) || '-small.jpg'
                 WHERE large.file_name LIKE '%-large.jpg'
-                ORDER BY large.id, small.uploaded_at;
+                ORDER BY large.id, abs(extract(epoch FROM small.uploaded_at - large.uploaded_at));
 
                 DELETE FROM sermon_artwork_pairs pair
-                WHERE EXISTS (SELECT 1 FROM sermon_artwork_pairs other WHERE other.small_id = pair.small_id AND other.large_id < pair.large_id);
+                WHERE EXISTS (SELECT 1 FROM sermon_artwork_pairs other WHERE other.small_id = pair.small_id
+                    AND (other.apart < pair.apart OR (other.apart = pair.apart AND other.large_id < pair.large_id)));
 
                 INSERT INTO media.renditions (media_id, size, key, sha256, content_type, bytes, width, height)
                 SELECT pair.large_id, 2, small.key, small.sha256, small.content_type, small.bytes, small.width, small.height

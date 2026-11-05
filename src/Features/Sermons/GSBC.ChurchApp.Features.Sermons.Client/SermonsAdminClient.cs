@@ -22,6 +22,8 @@ public sealed class SermonsAdminClient(ChannelBase channel)
 
     public ValueTask<SourceStatus> StatusAsync() => _library.StatusAsync(new Done());
 
+    public ValueTask<CopyProgress> CopyingAsync() => _library.CopyingAsync(new Done());
+
     public ValueTask<SourceStatus> ChooseSourceAsync(string source) => _library.ChooseSourceAsync(new SourceChoice { Source = source });
 
     public ValueTask<SourceStatus> CheckNowAsync() => _library.CheckNowAsync(new Done());

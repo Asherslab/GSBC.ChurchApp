@@ -44,20 +44,7 @@
     @if (Status.Source == SermonSources.Uploads)
     {
         <div class="source-strip__uploads">
-            @if (Status.ToCopy > 0 || Status.Copied > 0)
-            {
-                <div class="source-strip__copy">
-                    <span>@(Status.ToCopy == 0 ? $"All {Status.Copied} of the website's sermons are in the church's storage." : $"Copying the website's audio into the church's storage: {Status.Copied} of {Status.Copied + Status.ToCopy} done.")</span>
-                    @if (Status.ToCopy > 0)
-                    {
-                        <ProgressTrack Fraction="(double)Status.Copied / Math.Max(1, Status.Copied + Status.ToCopy)" Label="Copying progress" />
-                    }
-                    @if (Status.CopyNote is { } note)
-                    {
-                        <span class="hint">@note</span>
-                    }
-                </div>
-            }
+            <div class="source-strip__copy"><CopyingPanel /></div>
             @if (Status.PodcastFeedUrl is { } feed)
             {
                 <CopyField Label="Podcast feed" Value="@feed" Hint="Give this address to Apple Podcasts and Spotify. It updates within five minutes of a change." />

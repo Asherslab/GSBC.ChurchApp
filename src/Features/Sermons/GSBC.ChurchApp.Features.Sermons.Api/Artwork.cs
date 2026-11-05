@@ -55,6 +55,19 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
         return new ArtworkPhoto(source.Hash, Described(source.Photo, altText));
     }
 
+    public async Task<string?> LargestAsync(IReadOnlyList<string> urls, CancellationToken cancellationToken)
+    {
+        string? largest = null;
+        long most = 0;
+        foreach (string url in urls)
+        {
+            using SKCodec? codec = SKCodec.Create(new SKMemoryStream(await website.BytesAsync(url, cancellationToken)));
+            if (codec is not null && (long)codec.Info.Width * codec.Info.Height > most)
+                (largest, most) = (url, (long)codec.Info.Width * codec.Info.Height);
+        }
+        return largest;
+    }
+
     public Task ReleaseAsync(string owner, CancellationToken cancellationToken) => references.UseAsync(owner, [], cancellationToken);
 
     private async Task<(ArtworkSource Source, byte[]? Bytes)> SourceAsync(string url, CancellationToken cancellationToken)

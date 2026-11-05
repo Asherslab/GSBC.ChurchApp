@@ -28,6 +28,8 @@ public static partial class SermonText
         return Join(day.ToString(serviceNamesTheDay ? "d MMMM yyyy" : "dddd d MMMM yyyy"), sermon.Service);
     }
 
+    public static string Sermons(int count) => count == 1 ? "1 sermon" : $"{count} sermons";
+
     public static string Month(DateTime at) => ChurchTime.ToChurch(at).ToString("MMM yyyy");
 
     public static string Length(double seconds) => seconds switch

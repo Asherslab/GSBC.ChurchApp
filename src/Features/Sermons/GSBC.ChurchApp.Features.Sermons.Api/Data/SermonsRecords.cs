@@ -34,7 +34,13 @@ public sealed class SermonRecord
     public long AudioBytes { get; set; }
     public int DurationSeconds { get; set; }
     public string? AudioCopiedFrom { get; set; }
+    public DateTime? CopyStartedAt { get; set; }
+    public long CopiedBytes { get; set; }
+    public string? CopyProblem { get; set; }
+    public MediaRef? AudioMedia { get; set; }
 
+    public string? FeedArtworkUrl { get; set; }
+    public DateTime? PageReadAt { get; set; }
     public string? ArtworkSourceUrl { get; set; }
     public string? ArtworkHash { get; set; }
     public MediaRef? Artwork { get; set; }

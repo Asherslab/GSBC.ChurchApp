@@ -60,6 +60,18 @@ internal sealed class AnyMedia : IMediaReferences, IMediaSystemFolders
         return Task.FromResult(kept);
     }
 
+    public List<StoredFile> Stored { get; } = [];
+
+    public Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken)
+    {
+        if (!_kept.TryGetValue(file.Sha256, out MediaRef? kept))
+        {
+            Stored.Add(file);
+            kept = _kept[file.Sha256] = new MediaRef { Id = Guid.CreateVersion7().ToString(), Key = file.Key, ContentType = file.ContentType, Bytes = file.Bytes };
+        }
+        return Task.FromResult(kept);
+    }
+
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
 

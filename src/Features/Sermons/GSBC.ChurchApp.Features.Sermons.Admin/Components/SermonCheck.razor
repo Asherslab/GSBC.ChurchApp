@@ -26,11 +26,15 @@
             <UseSource Show="Corrected(Fields.Title)" Value="@Detail.FromSource.Title" OnUse="() => UseSourceAsync(Fields.Title)" />
         </div>
         <div class="sermon-check__field">
-            <SelectField Label="Speaker" Options="SpeakerOptions" @bind-Value="_speakerId" />
+            <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="AllSpeakers" Text="SpeakerName" Detail="SermonCount" Value="SpeakerOf(_speakerId)"
+                          ValueChanged="speaker => _speakerId = speaker?.Id ?? _speakerId" Placeholder="Find a speaker"
+                          CreateText="@(OursToAdd ? name => $"Add “{name}” as a new speaker" : null)" OnCreate="AddSpeakerAsync" />
             <UseSource Show="Corrected(Fields.Speaker)" Value="@Detail.FromSource.Speaker" OnUse="() => UseSourceAsync(Fields.Speaker)" />
         </div>
         <div class="sermon-check__field">
-            <SelectField Label="Series" Options="SeriesOptions" @bind-Value="_seriesId" />
+            <SearchPicker TItem="SeriesDetail" Label="Series" Items="AllSeries" Text="SeriesTitle" Detail="SeriesCount" Value="SeriesOf(_seriesId)"
+                          ValueChanged="series => _seriesId = series?.Id ?? string.Empty" NoneText="Not in a series" Placeholder="Find a series"
+                          CreateText="@(OursToAdd ? name => $"Start a new series called “{name}”" : null)" OnCreate="AddSeriesAsync" />
             @if (_seriesId.Length == 0 && Detail.SuggestedSeries is { } suggested)
             {
                 <button type="button" class="text-link" @onclick="() => PutInSeriesAsync(suggested)">Put it in “@suggested”</button>
@@ -79,11 +83,14 @@
     private string _title = "", _speakerId = "", _seriesId = "", _service = "", _youTube = "";
     private bool _busy;
     private string? _problem;
+    private readonly List<SpeakerDetail> _addedSpeakers = [];
+    private readonly List<SeriesDetail> _addedSeries = [];
 
     [Parameter, EditorRequired] public required SermonsAdminClient Sermons { get; set; }
     [Parameter, EditorRequired] public required SermonDetail Detail { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
+    [Parameter] public bool OursToAdd { get; set; }
     [Parameter] public EventCallback<SermonSaved> Saved { get; set; }
 
     protected override void OnInitialized() => Reset();
@@ -96,12 +103,55 @@
         _title.Trim() != Detail.Sermon.Title || _speakerId != Detail.Sermon.SpeakerId || _seriesId != (Detail.Sermon.SeriesId ?? "")
         || _service.Trim() != Detail.Sermon.Service || YouTubeIds.Find(_youTube) != Detail.Sermon.YouTubeId;
 
-    private IReadOnlyList<FieldOption> SpeakerOptions => Speakers.Select(speaker => new FieldOption(speaker.Id, speaker.Name)).ToList();
+    private IReadOnlyList<SpeakerDetail> AllSpeakers => [.. Speakers, .. _addedSpeakers.Where(added => Speakers.All(speaker => speaker.Id != added.Id))];
 
-    private IReadOnlyList<FieldOption> SeriesOptions =>
-        [new FieldOption("", "Not in a series"), .. Series.OrderBy(series => series.Name).Select(series => new FieldOption(series.Id, series.Name))];
+    private IReadOnlyList<SeriesDetail> AllSeries => [.. Series, .. _addedSeries.Where(added => Series.All(series => series.Id != added.Id))];
+
+    private SpeakerDetail? SpeakerOf(string id) => AllSpeakers.FirstOrDefault(speaker => speaker.Id == id);
+
+    private SeriesDetail? SeriesOf(string id) => AllSeries.FirstOrDefault(series => series.Id == id);
+
+    private static string SpeakerName(SpeakerDetail speaker) => speaker.Name;
+
+    private static string SeriesTitle(SeriesDetail series) => series.Name;
+
+    private static string SermonCount(SpeakerDetail speaker) => SermonText.Sermons(speaker.Count);
+
+    private static string SeriesCount(SeriesDetail series) => SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null);
 
     private string SeriesName(string? id) => id is null ? "Not in a series" : Series.FirstOrDefault(series => series.Id == id)?.Name ?? "Not in a series";
+
+    private async Task AddSpeakerAsync(string name)
+    {
+        if (await RunAsync(() => Sermons.SaveSpeakerAsync(new SpeakerDetail { Name = name }).AsTask()) is { } added)
+        {
+            _addedSpeakers.Add(added);
+            _speakerId = added.Id;
+        }
+    }
+
+    private async Task AddSeriesAsync(string name)
+    {
+        if (await RunAsync(() => Sermons.SaveSeriesAsync(new SeriesDetail { Name = name }).AsTask()) is { } added)
+        {
+            _addedSeries.Add(added);
+            _seriesId = added.Id;
+        }
+    }
+
+    private async Task<T?> RunAsync<T>(Func<Task<T>> work) where T : class
+    {
+        _problem = null;
+        try
+        {
+            return await work();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+            return null;
+        }
+    }
 
     private void Reset()
     {

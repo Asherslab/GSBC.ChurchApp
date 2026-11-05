@@ -63,14 +63,7 @@
 
     private bool Open => _focused;
 
-    private List<TItem> Matches => Items
-        .Where(item => !Chosen.Contains(item))
-        .Where(item => _query.Length == 0 || Text(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase)
-            || (Detail?.Invoke(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase) ?? false))
-        .OrderBy(item => _query.Length == 0 || Text(item).StartsWith(_query, StringComparison.CurrentCultureIgnoreCase) ? 0
-            : Text(item).Contains(_query, StringComparison.CurrentCultureIgnoreCase) ? 1 : 2)
-        .Take(MostShown)
-        .ToList();
+    private List<TItem> Matches => PickerMatches.Of(Items.Where(item => !Chosen.Contains(item)), Text, Detail, _query, MostShown);
 
     private string OptionId(int index) => $"{_listId}-{index}";
 

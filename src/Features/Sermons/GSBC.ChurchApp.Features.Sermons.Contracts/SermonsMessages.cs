@@ -161,6 +161,7 @@ public sealed class SeriesDetail
     [ProtoMember(5)] public int Count { get; set; }
     [ProtoMember(6)] public DateTime? LastAt { get; set; }
     [ProtoMember(7)] public bool FromWebsite { get; set; }
+    [ProtoMember(8)] public bool ArtworkChosen { get; set; }
 }
 
 [ProtoContract]
@@ -178,6 +179,7 @@ public sealed class SpeakerDetail
     [ProtoMember(4)] public List<string> Aliases { get; set; } = [];
     [ProtoMember(5)] public int Count { get; set; }
     [ProtoMember(6)] public string? MergeInto { get; set; }
+    [ProtoMember(7)] public bool PhotoChosen { get; set; }
 }
 
 [ProtoContract]
@@ -194,11 +196,37 @@ public sealed class SourceStatus
     [ProtoMember(3)] public DateTime? ChangedAt { get; set; }
     [ProtoMember(4)] public string? Problem { get; set; }
     [ProtoMember(5)] public int Sermons { get; set; }
-    [ProtoMember(6)] public int Copied { get; set; }
-    [ProtoMember(7)] public int ToCopy { get; set; }
     [ProtoMember(8)] public string? PodcastFeedUrl { get; set; }
     [ProtoMember(9)] public DateTime? SeriesCheckedAt { get; set; }
-    [ProtoMember(10)] public string? CopyNote { get; set; }
+}
+
+[ProtoContract]
+public sealed class CopyProgress
+{
+    [ProtoMember(1)] public List<CopyItem> Items { get; set; } = [];
+    [ProtoMember(2)] public int Copied { get; set; }
+    [ProtoMember(3)] public int Total { get; set; }
+    [ProtoMember(4)] public string? Note { get; set; }
+}
+
+[ProtoContract]
+public sealed class CopyItem
+{
+    [ProtoMember(1)] public string SermonId { get; set; } = "";
+    [ProtoMember(2)] public string Title { get; set; } = "";
+    [ProtoMember(3)] public DateTime PreachedAt { get; set; }
+    [ProtoMember(4)] public string State { get; set; } = "";
+    [ProtoMember(5)] public long Bytes { get; set; }
+    [ProtoMember(6)] public long CopiedBytes { get; set; }
+    [ProtoMember(7)] public string? Problem { get; set; }
+}
+
+public static class CopyStates
+{
+    public const string Waiting = "waiting";
+    public const string Copying = "copying";
+    public const string Copied = "copied";
+    public const string Failed = "failed";
 }
 
 [ProtoContract]

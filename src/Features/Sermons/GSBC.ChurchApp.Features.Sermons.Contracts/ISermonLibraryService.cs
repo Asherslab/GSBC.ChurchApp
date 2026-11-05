@@ -28,6 +28,9 @@ public interface ISermonLibraryService
     [SignedIn]
     ValueTask<SourceStatus> StatusAsync(Done request, CallContext context = default);
 
+    [Requires(SermonsPermissions.EditNode)]
+    ValueTask<CopyProgress> CopyingAsync(Done request, CallContext context = default);
+
     [Requires(SermonsPermissions.SourceNode)]
     ValueTask<SourceStatus> ChooseSourceAsync(SourceChoice request, CallContext context = default);
 

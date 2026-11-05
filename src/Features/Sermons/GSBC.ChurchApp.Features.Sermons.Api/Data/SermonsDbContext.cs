@@ -33,6 +33,7 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
             entity.HasIndex(sermon => sermon.PreachedAt);
             Media(entity.Property(sermon => sermon.Artwork));
             Media(entity.Property(sermon => sermon.Thumbnail));
+            Media(entity.Property(sermon => sermon.AudioMedia));
             entity.Ignore(sermon => sermon.EffectiveTitle);
             entity.Ignore(sermon => sermon.EffectiveSpeakerId);
             entity.Ignore(sermon => sermon.EffectiveSeriesId);

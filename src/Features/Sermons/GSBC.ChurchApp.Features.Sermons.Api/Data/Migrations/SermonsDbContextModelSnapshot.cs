@@ -225,6 +225,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("audio_copied_from");
 
+                    b.Property<string>("AudioMedia")
+                        .HasColumnType("jsonb")
+                        .HasColumnName("audio_media");
+
                     b.Property<string>("AudioType")
                         .IsRequired()
                         .HasColumnType("text")
@@ -243,6 +247,18 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("checked_by");
 
+                    b.Property<long>("CopiedBytes")
+                        .HasColumnType("bigint")
+                        .HasColumnName("copied_bytes");
+
+                    b.Property<string>("CopyProblem")
+                        .HasColumnType("text")
+                        .HasColumnName("copy_problem");
+
+                    b.Property<DateTime?>("CopyStartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("copy_started_at");
+
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("integer")
                         .HasColumnName("duration_seconds");
@@ -250,6 +266,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.Property<string>("ExternalId")
                         .HasColumnType("text")
                         .HasColumnName("external_id");
+
+                    b.Property<string>("FeedArtworkUrl")
+                        .HasColumnType("text")
+                        .HasColumnName("feed_artwork_url");
 
                     b.Property<bool>("Hidden")
                         .HasColumnType("boolean")
@@ -259,6 +279,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("origin");
+
+                    b.Property<DateTime?>("PageReadAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("page_read_at");
 
                     b.Property<DateTime>("PreachedAt")
                         .HasColumnType("timestamp with time zone")

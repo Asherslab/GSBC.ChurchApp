@@ -37,8 +37,7 @@ internal sealed class WebsiteSchedule(IServiceScopeFactory scopes, IOptions<Webs
     {
         await using AsyncServiceScope scope = scopes.CreateAsyncScope();
         SermonsDbContext db = scope.ServiceProvider.GetRequiredService<SermonsDbContext>();
-        if ((await SourceStates.GetAsync(db, cancellationToken)).Source != SermonSources.Website)
-            return false;
+        bool fromWebsite = (await SourceStates.GetAsync(db, cancellationToken)).Source == SermonSources.Website;
 
         await db.Database.OpenConnectionAsync(cancellationToken);
         bool locked = await db.Database.SqlQuery<bool>($"SELECT pg_try_advisory_lock({AdvisoryLockKey}) AS \"Value\"").SingleAsync(cancellationToken);
@@ -46,8 +45,12 @@ internal sealed class WebsiteSchedule(IServiceScopeFactory scopes, IOptions<Webs
             return false;
         try
         {
-            await scope.ServiceProvider.GetRequiredService<WebsiteReader>().ReadAsync(force, cancellationToken);
-            return true;
+            WebsiteReader reader = scope.ServiceProvider.GetRequiredService<WebsiteReader>();
+            if (fromWebsite)
+                await reader.ReadAsync(force, cancellationToken);
+            else
+                await reader.FillInAsync(cancellationToken);
+            return fromWebsite;
         }
         finally
         {

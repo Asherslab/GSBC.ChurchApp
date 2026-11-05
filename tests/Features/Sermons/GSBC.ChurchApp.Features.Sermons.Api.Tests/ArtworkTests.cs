@@ -27,6 +27,32 @@ public sealed class ArtworkTests : SermonsHost
     }
 
     [Fact]
+    public async Task ASermonShowsTheWholeGraphicFromItsPageRatherThanTheFeedsSquareCrop()
+    {
+        const string Page = "https://church.example/media/2026-11-01-safe-harbour-part-4-harbour-of-hope";
+        const string Whole = "https://files.example/2026/11/01/art/harbour-4-wide.png";
+        const string Smaller = "https://files.example/2026/11/01/art/harbour-4-page.png";
+        Website.ServeText(Page, $$"""<html><head><meta property="og:image" content="https://church.example/df_media/{{DragonflyJob("2026/11/01/art/harbour-4-wide.png")}}/harbour-4-wide.png?sha=1" /></head><body><img class="mb-3" alt="Safe Harbour: Part 4 - Harbour of Hope" src="{{Smaller}}" /></body></html>""");
+        Website.ServeBytes(Whole, Picture(1672, 941));
+        Website.ServeBytes(Smaller, Picture(800, 450));
+
+        await ReadTheWebsiteAsync();
+
+        SermonRecord sermon = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Sermons.AsNoTracking()
+            .SingleAsync(record => record.WebLink == Page, Cancel));
+        Assert.Equal(Whole, sermon.ArtworkSourceUrl);
+        Assert.Equal(Harbour, sermon.FeedArtworkUrl);
+        Assert.Equal((1280, 720), (sermon.Artwork!.Width, sermon.Artwork.Height));
+
+        Website.Requests.Clear();
+        await ReadTheWebsiteAsync(force: true);
+        Assert.DoesNotContain(Website.Requests, request => request.RequestUri!.ToString() == Page);
+    }
+
+    private static string DragonflyJob(string path) =>
+        Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"[[\"f\",\"{path}\"],[\"p\",\"thumb\",\"690x\"]]")).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+
+    [Fact]
     public async Task AKnownPictureIsOnlyRevalidatedAndIsMadeAgainOnlyWhenItChanges()
     {
         Website.ServeBytes(Harbour, Picture(1920, 1080), "\"one\"");
