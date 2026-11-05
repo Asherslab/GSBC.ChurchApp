@@ -33,9 +33,14 @@ public sealed class LiveFeedTests : IAsyncLifetime
     public async ValueTask InitializeAsync()
     {
         await _postgres.StartAsync();
-        _services = new ServiceCollection()
+        _services = await DatabaseAsync(_postgres.GetConnectionString());
+    }
+
+    private async Task<ServiceProvider> DatabaseAsync(string connection)
+    {
+        ServiceProvider services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", connection)])
                 .Build())
             .AddSyncData()
             .AddSingleton(new FeedRegistry([new FeedDefinition(Library, FeedAudience.Holding(SeeLibrary))]))
@@ -45,8 +50,9 @@ public sealed class LiveFeedTests : IAsyncLifetime
             .AddScoped<SyncService>()
             .BuildServiceProvider();
 
-        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await using AsyncServiceScope scope = services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
+        return services;
     }
 
     public async ValueTask DisposeAsync()
@@ -97,6 +103,22 @@ public sealed class LiveFeedTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AnOpenPageHearsOfItsFeedsWhenTheServerMovesToAnotherDatabase()
+    {
+        await ChangeAsync("older upload");
+        using Watching editor = Watch(Person(seesLibrary: true));
+        await editor.ConnectedAsync();
+        editor.Forget();
+        await using ServiceProvider rebuilt = await DatabaseAsync(
+            new Npgsql.NpgsqlConnectionStringBuilder(_postgres.GetConnectionString()) { Database = "rebuilt" }.ConnectionString);
+        await ChangeAsync("upload in the rebuilt database", rebuilt);
+
+        editor.MoveTo(rebuilt);
+
+        Assert.Contains(Library, await editor.NextChangeAsync());
+    }
+
+    [Fact]
     public async Task AStreamEndsOnceItsSignInHasEnded()
     {
         ClaimsPrincipal person = Person(seesLibrary: true);
@@ -130,9 +152,9 @@ public sealed class LiveFeedTests : IAsyncLifetime
         return watching;
     }
 
-    private async Task ChangeAsync(string recordId)
+    private async Task ChangeAsync(string recordId, IServiceProvider? database = null)
     {
-        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await using AsyncServiceScope scope = (database ?? _services).CreateAsyncScope();
         SyncDbContext db = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
         db.FeedChanges.Add(FeedChangeRecord.Marker(Library, recordId, DateTime.UtcNow));
         await db.SaveChangesAsync();
@@ -193,11 +215,20 @@ public sealed class LiveFeedTests : IAsyncLifetime
 
         public void Restore() => _sync.Down = false;
 
+        public void MoveTo(IServiceProvider database)
+        {
+            _sync.Services = database;
+            DropConnection();
+            Restore();
+        }
+
         public void Dispose() => Watch.Dispose();
     }
 
     private sealed class InProcessSync(IServiceProvider services, ClaimsPrincipal person) : ISyncService
     {
+        public IServiceProvider Services { get; set; } = services;
+
         private CancellationTokenSource _connection = new();
 
         public bool Down
@@ -219,7 +250,7 @@ public sealed class LiveFeedTests : IAsyncLifetime
                 throw new RpcException(new Status(StatusCode.Unavailable, "No connection."));
 
             using CancellationTokenSource call = CancellationTokenSource.CreateLinkedTokenSource(context.CancellationToken, _connection.Token);
-            await using AsyncServiceScope scope = services.CreateAsyncScope();
+            await using AsyncServiceScope scope = Services.CreateAsyncScope();
             await foreach (WatchEvent message in Stream(scope.ServiceProvider.GetRequiredService<SyncService>(), request, call.Token))
                 yield return message;
         }

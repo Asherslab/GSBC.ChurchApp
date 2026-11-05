@@ -53,12 +53,12 @@ public actor SyncEngine {
     public func pull() async throws {
         var due = feeds.isEmpty ? try store.registeredFeeds() : feeds
         while !due.isEmpty {
-            let cursors = try store.cursors(for: due)
-            let result = try await transport.unary(method: SyncMessages.pullMethod, message: SyncMessages.cursorsRequest(cursors))
+            let request = SyncMessages.cursorsRequest(try store.cursors(for: due), origin: try store.origin())
+            let result = try await transport.unary(method: SyncMessages.pullMethod, message: request)
             guard result.status == GrpcWebTransport.ok else { throw GrpcError(status: result.status, message: result.message) }
-            let batches = try SyncMessages.pullReply(result.body)
-            apply(batches)
-            due = batches.filter(\.hasMore).map(\.feed)
+            let reply = try SyncMessages.pullReply(result.body)
+            apply(reply)
+            due = reply.batches.filter(\.hasMore).map(\.feed)
         }
     }
 
@@ -67,11 +67,11 @@ public actor SyncEngine {
         while !Task.isCancelled {
             report(.connecting)
             do {
-                let request = SyncMessages.cursorsRequest(try store.cursors(for: feeds))
+                let request = SyncMessages.cursorsRequest(try store.cursors(for: feeds), origin: try store.origin())
                 for try await message in transport.serverStream(method: SyncMessages.watchMethod, message: request) {
                     failures = 0
                     report(.live)
-                    apply(try SyncMessages.watchEvent(message).batches)
+                    apply(try SyncMessages.watchEvent(message))
                 }
             } catch {
                 if Task.isCancelled { return }
@@ -96,9 +96,10 @@ public actor SyncEngine {
         onState(newState)
     }
 
-    private func apply(_ batches: [FeedBatch]) {
+    private func apply(_ event: WatchEvent) {
+        let batches = event.batches
         if batches.contains(where: \.reset) { onReset() }
-        guard !batches.isEmpty, let changed = try? store.apply(batches), !changed.isEmpty else { return }
+        guard let changed = try? store.apply(batches, origin: event.origin), !changed.isEmpty else { return }
         onFeedsChanged(changed)
     }
 }

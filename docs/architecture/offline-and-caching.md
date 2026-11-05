@@ -19,6 +19,21 @@ builds on SPEC §5.
   they give up (three days). `IOutbox.EnqueueQuietlyAsync`, and `DiscardQuietAsync` when someone turns
   "Help improve the app" off.
 - **Gone means gone.** A feed the app no longer registers is dropped; a format change resets a feed.
+- **A cursor only means something to the database that issued it.** Each database has a **sync
+  origin**, a random id made once by the migration that creates `sync.origin` (built 2026-11-06,
+  after a phone that had synced against three dev databases showed every sermon series three times).
+  The phone sends the origin its cursors came from with every `Pull` and `Watch`, and every reply
+  carries the server's. When they differ, the server resets every feed the phone asked for, known or
+  not: its rows are dropped and the feed re-reads from 0. The phone stores the new origin with the
+  reply that resets it. A phone that has never stored one sends `unknown`, so a phone from before
+  origins starts again once. A client that sends no origin at all (an old build) is not reset by it.
+- **A cursor ahead of the server resets too.** If nothing is newer than a phone's cursor and the
+  cursor is past both the feed's newest row and its horizon, that feed resets. This catches a
+  database restored from its own backup, which keeps its origin but goes back in time, as long as the
+  phone syncs before the restored database has written past the phone's cursor. After that, cursor
+  numbers are reused for different changes and nothing can tell, so **restoring a backup also gives
+  the database a new origin**: `UPDATE sync.origin SET id = gen_random_uuid();` as part of the
+  restore. `tools/dev/copy-main-db.sh` does the same for a worktree's copy of the main database.
 - **The sync stream is the phone's connection.** Its state (live, catching up, offline) is the one
   signal for "online", and a retry while offline still reads as offline, so nothing flickers.
 
@@ -140,7 +155,8 @@ other's changes within a second or two.
 - **One stream, generic.** `FeedWatch` (Platform.Client, registered by `AddGrpcWebTransport`) holds one
   `Watch` call for every feed the open pages name. `LiveData` and `RefreshOn` follow the feeds they're
   given, so naming a feed is all a page does; no feature wires anything up.
-- **Signals, not data.** The browser keeps a cursor per feed and nothing else. A change becomes a feed
+- **Signals, not data.** The browser keeps a cursor per feed and the sync origin, nothing else, so a
+  server moved to another database resets its feeds as a phone's would. A change becomes a feed
   change in `ClientSignals`, and the page reloads through its own gRPC methods.
 - **It starts at now.** A feed the browser hasn't watched yet is asked for with `FeedCursor.Latest`, so
   no history is replayed. When the stream is up those feeds get one reload, which closes the gap between

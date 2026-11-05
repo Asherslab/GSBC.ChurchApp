@@ -14,7 +14,8 @@
 - **Each environment has its own database:** the AppHost's container in dev, a Postgres StatefulSet in
   UAT's namespace.
 - **Backups** use the owner's existing Postgres backup setup (Databasus on the mini, which UAT's database
-  is added to).
+  is added to). **A restore gives the database a new sync origin** (`UPDATE sync.origin SET id =
+  gen_random_uuid();`), so every phone starts its feeds again ([offline-and-caching.md](offline-and-caching.md)).
 - **Every change to a synced record** writes its feed change row and a `NOTIFY` in the same
   transaction (SPEC §5). Platform.Data provides this so a feature can't forget it.
 

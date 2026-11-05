@@ -133,6 +133,20 @@ namespace GSBC.ChurchApp.Platform.Data.Migrations.Sync
 
                     b.ToTable("feed_horizons", "sync");
                 });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.SyncOrigin", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id")
+                        .HasDefaultValueSql("gen_random_uuid()");
+
+                    b.HasKey("Id")
+                        .HasName("pk_origin");
+
+                    b.ToTable("origin", "sync");
+                });
 #pragma warning restore 612, 618
         }
     }

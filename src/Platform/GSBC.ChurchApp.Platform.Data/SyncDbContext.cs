@@ -6,6 +6,7 @@ public sealed class SyncDbContext(DbContextOptions<SyncDbContext> options) : Fea
 {
     public DbSet<FeedHorizon> FeedHorizons => Set<FeedHorizon>();
     public DbSet<AudienceMark> AudienceMarks => Set<AudienceMark>();
+    public DbSet<SyncOrigin> Origin => Set<SyncOrigin>();
 
     protected override string Schema => FeedChangeTable.Schema;
 
@@ -24,6 +25,12 @@ public sealed class SyncDbContext(DbContextOptions<SyncDbContext> options) : Fea
             entity.ToTable("audience_marks");
             entity.HasKey(mark => new { mark.SessionId, mark.Feed });
             entity.HasIndex(mark => mark.SeenAt);
+        });
+        modelBuilder.Entity<SyncOrigin>(entity =>
+        {
+            entity.ToTable("origin");
+            entity.HasKey(origin => origin.Id);
+            entity.Property(origin => origin.Id).HasDefaultValueSql("gen_random_uuid()");
         });
     }
 }
