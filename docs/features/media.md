@@ -223,8 +223,11 @@ same visibility rules as duplicates apply: never from another audience, a system
 
 ### Sermon artwork pairs (migration `MediaSizes`)
 
-Each pair Sermons kept in its system folder (`<hash>-large.jpg` and `<hash>-small.jpg`) became one
-entry: the large one, with the small one as its Thumbnail. The small entry's id is kept as an alias
+Sermons keeps its copies in its system folder as `<first 12 of the source hash>-large.jpg` and
+`-small.jpg`. Copies are paired by that prefix only, so the migration is deterministic: a prefix with
+exactly one large and one small becomes one entry (the large one, with the small one as its
+Thumbnail), and anything else (a prefix with two of either, or one alone) stays as it is. When the API
+starts, it logs how many copies are still unpaired. The small entry's id is kept as an alias
 (`media.aliases`), so Sermons' saved `MediaRef`s and its `UseAsync` calls with either id keep working;
 the small one's uses moved to the picture.
 
@@ -394,7 +397,7 @@ is the same list for its buckets when it does.
   removing an original keeps its sizes, refreshes the places using it and still verifies their saved
   refs; uploading a removed original offers to put it back and putting it back restores it; a removed
   original is never offered to someone who can't see its picture; sermon artwork pairs become one
-  picture without breaking the ids Sermons holds.
+  picture by their shared name, leaving ambiguous ones apart, without breaking the ids Sermons holds.
 
 ## Open
 

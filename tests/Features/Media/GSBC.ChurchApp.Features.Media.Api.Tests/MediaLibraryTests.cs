@@ -588,15 +588,16 @@ public sealed class MediaLibraryTests : IAsyncLifetime
             Guid nobody = Guid.Empty;
             string largeKey = $"{new string('a', 64)}.jpg", smallKey = $"{new string('b', 64)}.jpg";
             string largeHash = new('a', 64), smallHash = new('b', 64);
-            string remadeLargeKey = $"{new string('c', 64)}.jpg", remadeSmallKey = $"{new string('d', 64)}.jpg";
-            string remadeLargeHash = new('c', 64), remadeSmallHash = new('d', 64);
+            string twiceLargeHash = new('c', 64), twiceLargeAgainHash = new('d', 64), twiceSmallHash = new('e', 64);
+            string twiceLargeKey = $"{twiceLargeHash}.jpg", twiceLargeAgainKey = $"{twiceLargeAgainHash}.jpg", twiceSmallKey = $"{twiceSmallHash}.jpg";
             await db.Database.ExecuteSqlAsync($"INSERT INTO media.folders (id, name, system_area, created_by, created_at) VALUES ({ArtworkFolder}, 'Sermon artwork', 'sermons', {nobody}, now())", Cancellation);
             await db.Database.ExecuteSqlAsync($"""
                 INSERT INTO media.items (id, key, sha256, content_type, bytes, width, height, file_name, alt_text, uploaded_by, uploaded_at, folder_id) VALUES
                     ({LargeArtwork}, {largeKey}, {largeHash}, 'image/jpeg', 200000, 1280, 720, '0123456789ab-large.jpg', '', {nobody}, now(), {ArtworkFolder}),
                     ({SmallArtwork}, {smallKey}, {smallHash}, 'image/jpeg', 40000, 480, 270, '0123456789ab-small.jpg', '', {nobody}, now(), {ArtworkFolder}),
-                    ({RemadeLarge}, {remadeLargeKey}, {remadeLargeHash}, 'image/jpeg', 210000, 1280, 720, '0123456789ab-large.jpg', '', {nobody}, now() + interval '1 day', {ArtworkFolder}),
-                    ({RemadeSmall}, {remadeSmallKey}, {remadeSmallHash}, 'image/jpeg', 41000, 480, 270, '0123456789ab-small.jpg', '', {nobody}, now() + interval '1 day', {ArtworkFolder})
+                    ({TwiceLarge}, {twiceLargeKey}, {twiceLargeHash}, 'image/jpeg', 210000, 1280, 720, 'fedcba987654-large.jpg', '', {nobody}, now(), {ArtworkFolder}),
+                    ({TwiceLargeAgain}, {twiceLargeAgainKey}, {twiceLargeAgainHash}, 'image/jpeg', 215000, 1280, 720, 'fedcba987654-large.jpg', '', {nobody}, now(), {ArtworkFolder}),
+                    ({TwiceSmall}, {twiceSmallKey}, {twiceSmallHash}, 'image/jpeg', 41000, 480, 270, 'fedcba987654-small.jpg', '', {nobody}, now(), {ArtworkFolder})
                 """, Cancellation);
             await db.Database.ExecuteSqlAsync($"""
                 INSERT INTO media.uses (media_id, owner) VALUES
@@ -612,9 +613,9 @@ public sealed class MediaLibraryTests : IAsyncLifetime
 
         await using AsyncServiceScope after = _services.CreateAsyncScope();
         MediaDbContext merged = after.ServiceProvider.GetRequiredService<MediaDbContext>();
-        Assert.Equal(new[] { LargeArtwork, RemadeLarge }.Order(), (await merged.Items.Select(item => item.Id).ToListAsync(Cancellation)).Order());
-        Dictionary<Guid, string> thumbnails = await merged.Renditions.ToDictionaryAsync(rendition => rendition.MediaId, rendition => rendition.Key, Cancellation);
-        Assert.Equal(($"{new string('b', 64)}.jpg", $"{new string('d', 64)}.jpg"), (thumbnails[LargeArtwork], thumbnails[RemadeLarge]));
+        Assert.Equal(new[] { LargeArtwork, TwiceLarge, TwiceLargeAgain, TwiceSmall }.Order(), (await merged.Items.Select(item => item.Id).ToListAsync(Cancellation)).Order());
+        MediaRendition thumbnail = Assert.Single(await merged.Renditions.ToListAsync(Cancellation));
+        Assert.Equal((LargeArtwork, small.Key), (thumbnail.MediaId, thumbnail.Key));
         Assert.All(verified, media => Assert.Equal((LargeArtwork.ToString(), large.Key), (media.Id, media.Key)));
         Assert.Equal(small.Key, verified[1].At(MediaSizeName.Thumbnail).Key);
         Assert.Equal(["sermons/sermon/1/artwork", "sermons/sermon/2/artwork", "sermons/sermon/3/artwork"],
@@ -715,8 +716,9 @@ public sealed class MediaLibraryTests : IAsyncLifetime
     private static readonly Guid ArtworkFolder = Guid.CreateVersion7();
     private static readonly Guid LargeArtwork = Guid.CreateVersion7();
     private static readonly Guid SmallArtwork = Guid.CreateVersion7();
-    private static readonly Guid RemadeLarge = Guid.CreateVersion7();
-    private static readonly Guid RemadeSmall = Guid.CreateVersion7();
+    private static readonly Guid TwiceLarge = Guid.CreateVersion7();
+    private static readonly Guid TwiceLargeAgain = Guid.CreateVersion7();
+    private static readonly Guid TwiceSmall = Guid.CreateVersion7();
 
     private static readonly SKColor[] Corners = [SKColors.Red, SKColors.Lime, SKColors.Blue, SKColors.Black];
 
