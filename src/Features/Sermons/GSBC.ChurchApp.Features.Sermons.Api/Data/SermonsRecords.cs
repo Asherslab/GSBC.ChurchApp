@@ -44,7 +44,6 @@ public sealed class SermonRecord
     public string? ArtworkSourceUrl { get; set; }
     public string? ArtworkHash { get; set; }
     public MediaRef? Artwork { get; set; }
-    public MediaRef? Thumbnail { get; set; }
 
     public string? PublishedHash { get; set; }
     public DateTime? AnnouncedAt { get; set; }
@@ -68,7 +67,6 @@ public sealed class SeriesRecord
     public string? ArtworkSourceUrl { get; set; }
     public string? ArtworkHash { get; set; }
     public MediaRef? Artwork { get; set; }
-    public MediaRef? Thumbnail { get; set; }
     public MediaRef? ChosenArtwork { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PublishedHash { get; set; }
@@ -121,12 +119,23 @@ public sealed class SourceState
     public bool HasReadOnce { get; set; }
 }
 
+public sealed class FormerId
+{
+    public const string Sermon = "sermon";
+    public const string Series = "series";
+    public const string Speaker = "speaker";
+
+    public Guid Id { get; set; }
+    public Guid CurrentId { get; set; }
+    public required string Kind { get; set; }
+    public DateTime MovedAt { get; set; }
+    public bool Settled { get; set; }
+}
+
 public sealed class ArtworkSource
 {
     public required string Hash { get; set; }
-    public MediaRef? Large { get; set; }
-    public MediaRef? Small { get; set; }
-    public MediaRef? Photo { get; set; }
+    public MediaRef? Picture { get; set; }
     public DateTime AddedAt { get; set; }
 }
 

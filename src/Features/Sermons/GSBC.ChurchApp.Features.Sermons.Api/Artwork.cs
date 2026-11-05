@@ -7,22 +7,13 @@ using SkiaSharp;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
-internal sealed record ArtworkCopies(string Hash, MediaRef Large, MediaRef Small);
-
-internal sealed record ArtworkPhoto(string Hash, MediaRef Photo);
+internal sealed record ArtworkPicture(string Hash, MediaRef Picture);
 
 internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMediaSystemFolders folders, IMediaReferences references, TimeProvider time)
 {
-    public const int LargeWidth = 1280;
-    public const int SmallWidth = 480;
-    public const int PhotoSize = 192;
-    private const int JpegQuality = 82;
-
     public static readonly MediaSystemArea Area = new("sermons", "Sermon artwork",
-        "Pictures the app made from the website's sermon, series and speaker pictures. Each picture is kept once, however many sermons use it.",
+        "The website's sermon, series and speaker pictures, as the website has them. Each picture is kept once, however many sermons use it, and Media makes the sizes phones need.",
         SermonsPermissions.Edit);
-
-    private static readonly SKSamplingOptions Sampling = new(SKCubicResampler.Mitchell);
 
     public static string SermonOwner(Guid id) => $"sermons/sermon/{id}/artwork";
 
@@ -30,29 +21,18 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
 
     public static string SpeakerOwner(Guid id) => $"sermons/speakers/{id}/photo";
 
-    public async Task<ArtworkCopies> CopiesAsync(string url, string altText, string owner, CancellationToken cancellationToken)
-    {
-        (ArtworkSource source, byte[]? bytes) = await SourceAsync(url, cancellationToken);
-        if (source.Large is null || source.Small is null)
-        {
-            using SKBitmap image = Decode(bytes ?? await website.BytesAsync(url, cancellationToken));
-            source.Large = await KeepAsync(Scaled(image, LargeWidth), source.Hash, "large", cancellationToken);
-            source.Small = await KeepAsync(Scaled(image, SmallWidth), source.Hash, "small", cancellationToken);
-        }
-        await references.UseAsync(owner, [source.Large, source.Small], cancellationToken);
-        return new ArtworkCopies(source.Hash, Described(source.Large, altText), Described(source.Small, altText));
-    }
+    public static string ChosenArtworkOwner(Guid id) => $"sermons/series/{id}";
 
-    public async Task<ArtworkPhoto> PhotoAsync(string url, string altText, string owner, CancellationToken cancellationToken)
+    public static string ChosenPhotoOwner(Guid id) => $"sermons/speakers/{id}";
+
+    public async Task<ArtworkPicture> PictureAsync(string url, string altText, string owner, CancellationToken cancellationToken)
     {
         (ArtworkSource source, byte[]? bytes) = await SourceAsync(url, cancellationToken);
-        if (source.Photo is null)
-        {
-            using SKBitmap image = Decode(bytes ?? await website.BytesAsync(url, cancellationToken));
-            source.Photo = await KeepAsync(Square(image), source.Hash, "photo", cancellationToken);
-        }
-        await references.UseAsync(owner, [source.Photo], cancellationToken);
-        return new ArtworkPhoto(source.Hash, Described(source.Photo, altText));
+        source.Picture = source.Picture is { } kept
+            ? (await references.VerifyAsync([kept], cancellationToken))[0]
+            : await KeepAsync(bytes ?? await website.BytesAsync(url, cancellationToken), url, source.Hash, cancellationToken);
+        await references.UseAsync(owner, [source.Picture], cancellationToken);
+        return new ArtworkPicture(source.Hash, Described(source.Picture, altText));
     }
 
     public async Task<string?> LargestAsync(IReadOnlyList<string> urls, CancellationToken cancellationToken)
@@ -107,64 +87,32 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
         Url = kept.Url,
         FileName = kept.FileName,
         AltText = altText,
+        Version = kept.Version,
+        Sizes = kept.Sizes,
     };
 
-    private static SKBitmap Square(SKBitmap image)
+    public static string FileNameOf(string url, string sourceHash, string extension)
     {
-        int side = Math.Min(image.Width, image.Height);
-        SKBitmap square = new(PhotoSize, PhotoSize);
-        using SKCanvas canvas = new(square);
-        using SKImage source = SKImage.FromBitmap(image);
-        SKRect crop = SKRect.Create((image.Width - side) / 2f, (image.Height - side) / 2f, side, side);
-        canvas.DrawImage(source, crop, SKRect.Create(PhotoSize, PhotoSize), Sampling);
-        return square;
+        string named = Uri.TryCreate(url, UriKind.Absolute, out Uri? address) ? Uri.UnescapeDataString(address.Segments[^1]).Trim('/') : "";
+        string stem = Path.GetFileNameWithoutExtension(named);
+        return stem.Length is > 0 and <= 80 && stem.All(letter => char.IsLetterOrDigit(letter) || letter is '-' or '_' or '.' or ' ')
+            ? $"{stem}.{extension}"
+            : $"{sourceHash[..12]}.{extension}";
     }
 
-    private static SKBitmap Decode(byte[] bytes)
+    private async Task<MediaRef> KeepAsync(byte[] bytes, string url, string sourceHash, CancellationToken cancellationToken)
     {
         using SKCodec codec = SKCodec.Create(new SKMemoryStream(bytes)) ?? throw new InvalidDataException("That isn't a picture.");
-        SKBitmap decoded = SKBitmap.Decode(codec) ?? throw new InvalidDataException("That picture couldn't be read.");
-        return Oriented(decoded, codec.EncodedOrigin);
-    }
-
-    private static SKBitmap Oriented(SKBitmap bitmap, SKEncodedOrigin origin)
-    {
-        if (origin is SKEncodedOrigin.TopLeft or SKEncodedOrigin.Default)
-            return bitmap;
-        bool swaps = origin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
-        SKBitmap turned = new(swaps ? bitmap.Height : bitmap.Width, swaps ? bitmap.Width : bitmap.Height);
-        using (SKCanvas canvas = new(turned))
+        (string contentType, string extension) = codec.EncodedFormat switch
         {
-            SKMatrix matrix = origin switch
-            {
-                SKEncodedOrigin.TopRight => new SKMatrix(-1, 0, bitmap.Width, 0, 1, 0, 0, 0, 1),
-                SKEncodedOrigin.BottomRight => new SKMatrix(-1, 0, bitmap.Width, 0, -1, bitmap.Height, 0, 0, 1),
-                SKEncodedOrigin.BottomLeft => new SKMatrix(1, 0, 0, 0, -1, bitmap.Height, 0, 0, 1),
-                SKEncodedOrigin.LeftTop => new SKMatrix(0, 1, 0, 1, 0, 0, 0, 0, 1),
-                SKEncodedOrigin.RightTop => new SKMatrix(0, -1, bitmap.Height, 1, 0, 0, 0, 0, 1),
-                SKEncodedOrigin.RightBottom => new SKMatrix(0, -1, bitmap.Height, -1, 0, bitmap.Width, 0, 0, 1),
-                _ => new SKMatrix(0, 1, 0, -1, 0, bitmap.Width, 0, 0, 1),
-            };
-            canvas.SetMatrix(matrix);
-            canvas.DrawBitmap(bitmap, 0, 0);
-        }
-        bitmap.Dispose();
-        return turned;
-    }
-
-    private static SKBitmap Scaled(SKBitmap image, int width) =>
-        image.Width <= width
-            ? image.Copy()
-            : image.Resize(new SKImageInfo(width, (int)Math.Round(image.Height * (double)width / image.Width)), Sampling);
-
-    private async Task<MediaRef> KeepAsync(SKBitmap bitmap, string sourceHash, string size, CancellationToken cancellationToken)
-    {
-        byte[] bytes;
-        int width = bitmap.Width, height = bitmap.Height;
-        using (bitmap)
-        using (SKImage image = SKImage.FromBitmap(bitmap))
-        using (SKData data = image.Encode(SKEncodedImageFormat.Jpeg, JpegQuality))
-            bytes = data.ToArray();
-        return await folders.KeepAsync(Area, new KeptFile(bytes, "image/jpeg", "jpg", $"{sourceHash[..12]}-{size}.jpg", width, height), cancellationToken);
+            SKEncodedImageFormat.Jpeg => ("image/jpeg", "jpg"),
+            SKEncodedImageFormat.Png => ("image/png", "png"),
+            SKEncodedImageFormat.Webp => ("image/webp", "webp"),
+            SKEncodedImageFormat.Gif => ("image/gif", "gif"),
+            _ => throw new InvalidDataException("That picture isn't a JPEG, PNG, WebP or GIF."),
+        };
+        bool turned = codec.EncodedOrigin is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
+        (int width, int height) = turned ? (codec.Info.Height, codec.Info.Width) : (codec.Info.Width, codec.Info.Height);
+        return await folders.KeepAsync(Area, new KeptFile(bytes, contentType, extension, FileNameOf(url, sourceHash, extension), width, height), cancellationToken);
     }
 }

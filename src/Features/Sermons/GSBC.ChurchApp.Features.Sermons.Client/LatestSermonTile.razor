@@ -77,8 +77,8 @@
         };
     }
 
-    private static RenderFragment Cover(Sermon sermon) => sermon.Thumbnail is { } thumbnail
-        ? @<span class="hub-cover"><MediaImage Media="thumbnail" Alt="" /></span>
+    private static RenderFragment Cover(Sermon sermon) => sermon.Artwork is { } artwork
+        ? @<span class="hub-cover"><MediaImage Media="artwork" Size="MediaSizeName.Thumbnail" Alt="" /></span>
         : @<span class="hub-cover"><BrandMark Decorative="true" /></span>;
 
     private RenderFragment Play(Sermon sermon)

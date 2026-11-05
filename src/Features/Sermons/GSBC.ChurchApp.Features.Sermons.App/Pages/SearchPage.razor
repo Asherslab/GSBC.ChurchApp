@@ -46,7 +46,7 @@
                         @foreach (SeriesInfo one in series)
                         {
                             <ListRow Title="@one.Name" Subtitle="@SermonText.Sermons(one.Count)" Href="@SermonsDestinations.Series.PathOf(one.Id).TrimStart('/')" Class="sermon-row">
-                                <Leading><MediaCover Media="one.Thumbnail ?? one.Artwork" Class="sermon-row__thumb" /></Leading>
+                                <Leading><MediaCover Media="one.Artwork" Size="MediaSizeName.Thumbnail" Class="sermon-row__thumb" /></Leading>
                             </ListRow>
                         }
                     </ListGroup>

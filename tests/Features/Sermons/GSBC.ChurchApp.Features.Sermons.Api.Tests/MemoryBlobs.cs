@@ -72,6 +72,14 @@ internal sealed class AnyMedia : IMediaReferences, IMediaSystemFolders
         return Task.FromResult(kept);
     }
 
+    public Dictionary<string, string> Named { get; } = [];
+
+    public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken)
+    {
+        Named[mediaId] = fileName;
+        return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
 

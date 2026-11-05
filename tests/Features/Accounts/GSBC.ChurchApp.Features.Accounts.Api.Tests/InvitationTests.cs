@@ -182,6 +182,8 @@ public sealed class InvitationTests : IAsyncLifetime
         public ValueTask TakeAwayAsFeatureAsync(Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class NoGrants : IAccessEvaluator

@@ -164,6 +164,17 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken)
+    {
+        Guid id = ParseId(mediaId);
+        MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
+        if (await db.Items.SingleOrDefaultAsync(item => item.Id == id && item.FolderId == folder.Id, cancellationToken) is not { } item || item.FileName == fileName)
+            return;
+        item.FileName = fileName;
+        db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, item.Id.ToString(), Now));
+        await db.SaveChangesAsync(cancellationToken);
+    }
+
     public async Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken)
     {
         MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);

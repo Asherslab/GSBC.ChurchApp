@@ -21,7 +21,9 @@ internal sealed class Speakers(SermonsDbContext db, Artwork artwork, TimeProvide
             .SingleOrDefaultAsync(cancellationToken);
         if (speaker is null)
         {
-            speaker = new SpeakerRecord { Id = Guid.CreateVersion7(), Name = name.Trim(), CreatedAt = time.GetUtcNow().UtcDateTime };
+            Guid lasting = SourceIds.Speaker(alias);
+            Guid id = await db.Speakers.AnyAsync(known => known.Id == lasting, cancellationToken) || db.Speakers.Local.Any(known => known.Id == lasting) ? Guid.CreateVersion7() : lasting;
+            speaker = new SpeakerRecord { Id = id, Name = name.Trim(), CreatedAt = time.GetUtcNow().UtcDateTime };
             db.Speakers.Add(speaker);
             db.SpeakerAliases.Add(new SpeakerAlias { Alias = alias, SpeakerId = speaker.Id });
         }
@@ -49,8 +51,8 @@ internal sealed class Speakers(SermonsDbContext db, Artwork artwork, TimeProvide
         {
             try
             {
-                ArtworkPhoto photo = await artwork.PhotoAsync(speaker.PhotoSourceUrl!, speaker.Name, Artwork.SpeakerOwner(speaker.Id), cancellationToken);
-                (speaker.PhotoHash, speaker.Photo) = (photo.Hash, photo.Photo);
+                ArtworkPicture photo = await artwork.PictureAsync(speaker.PhotoSourceUrl!, speaker.Name, Artwork.SpeakerOwner(speaker.Id), cancellationToken);
+                (speaker.PhotoHash, speaker.Photo) = (photo.Hash, photo.Picture);
             }
             catch (Exception exception) when (exception is HttpRequestException or InvalidDataException)
             {

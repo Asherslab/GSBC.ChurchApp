@@ -42,7 +42,7 @@
             ?? sermons.FirstOrDefault(sermon => !view.Heard(sermon));
         bool oneSpeaker = sermons.Select(sermon => sermon.SpeakerId).Distinct().Count() == 1;
         return @<Page Title="@series.Name" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
-            <div class="sermon-hero"><MediaCover Media="series.Artwork ?? series.Thumbnail" FallbackTitle="@series.Name" /></div>
+            <div class="sermon-hero"><MediaCover Media="series.Artwork" FallbackTitle="@series.Name" /></div>
             <div class="sermon-head">
                 <h1 class="sermon-head__title">@series.Name</h1>
                 <p class="sermon-head__facts">@SermonText.Join(Count(sermons.Count), Span(series), oneSpeaker && sermons.Count > 0 ? sermons[0].SpeakerName : null)</p>

@@ -71,7 +71,6 @@ internal sealed partial class SermonUploads(
             AudioBytes = audio.Bytes,
             DurationSeconds = await DurationAsync(request, audio.Bytes, extension, cancellationToken),
             Artwork = artwork,
-            Thumbnail = artwork,
         };
         db.Sermons.Add(sermon);
         if (artwork is not null)

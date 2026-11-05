@@ -43,7 +43,7 @@
             </Page>;
 
         AudioState audio = Player.Audio.State;
-        Sermon? loaded = audio.Item is { } item ? view.Shelf.Find(item.Id) : null;
+        Sermon? loaded = audio.Item is { } playing ? view.Shelf.Find(playing.Id) : null;
         Underway? underway = loaded is not null
             ? new Underway(loaded, ListeningProgress.Heard(loaded.Id, audio.Position, audio.Duration, DateTime.UtcNow))
             : view.KeepGoing(DateTime.UtcNow);
@@ -60,7 +60,7 @@
         return @<Page Title="Sermons" StuckAt="260">
             <Masthead Title="Sermons" Note="@note">
                 <a class="sermon-feature" href="@SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')">
-                    <MediaCover Media="featured.Thumbnail ?? featured.Artwork" Class="sermon-feature__art" />
+                    <MediaCover Media="featured.Artwork" Class="sermon-feature__art" />
                     <span class="sermon-feature__words">
                         <strong>@featured.Title</strong>
                         <span>@SermonText.Join(featured.SpeakerName, underway is null ? SermonText.Length(featured.DurationSeconds) : null)</span>
@@ -141,7 +141,7 @@
                         @foreach (SeriesInfo series in view.Shelf.Series)
                         {
                             <a class="series-strip__item" href="@SermonsDestinations.Series.PathOf(series.Id).TrimStart('/')">
-                                <MediaCover Media="series.Thumbnail ?? series.Artwork" FallbackTitle="@series.Name" />
+                                <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" />
                                 <span>@series.Name</span>
                                 <small>@SermonText.Sermons(series.Count)</small>
                             </a>

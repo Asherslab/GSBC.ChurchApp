@@ -69,25 +69,33 @@ speaker, and "Watch at: https://youtu.be/…" (112 of 155). No series, no durati
   is read again. A page that's gone counts as read. This also runs while sermons are uploaded, for the sermons that
   came from the website. In the app, `MediaCover` shows a picture whole (`contain`, on the masthead colour) unless
   it's within a few percent of 16:9, so nothing is cropped.
-- **Artwork** is made into two copies on the server: 1280 wide for the sermon page and 480 wide for lists and the
-  Hub, JPEG, named by their SHA-256 in the public bucket, so phones cache them forever and prefetch the small
-  one; speakers' photos (from the series pages) become 192-pixel squares.
+- **Artwork is kept once, as the website has it (2026-11-06),** and Media makes the sizes phones need
+  ([media.md](media.md), *Sizes*): each sermon, series and speaker holds one `MediaRef` with its sizes, and each
+  screen asks for the size it shows (`MediaCover`/`MediaImage` `Size`: the sermon page and series hero use For
+  phones, rows, tiles and the Hub's cover use Thumbnail, the lock screen For phones). Speakers' photos are kept
+  whole too; `Avatar` crops the thumbnail to a circle on screen. A kept picture is named after the website's own file (`anchored-series.jpg`), or its hash when that name is unusable; pictures kept before that were renamed once at start (`IMediaSystemFolders.NameAsync`, only names that are still a hash). Before this, Sermons made its own 1280 and 480
+  JPEG copies (and 192-pixel squares for photos); Media's `MediaSizes` migration made each such pair one picture,
+  and those stay as they are: a known picture is never downloaded again.
 - **Each picture is made once (owner, 2026-11-05: "most of our messages use the same default graphic").** Tithe.ly
   gives every sermon its own picture address even when the picture is the same, so Sermons hashes the **source
-  bytes** (SHA-256): `artwork_sources` maps a source hash to its copies (large, small, photo), and a known picture is
-  never resized or stored again. `artwork_addresses` remembers each address's hash with its ETag and Last-Modified,
+  bytes** (SHA-256): `artwork_sources` maps a source hash to the picture kept for it (`picture`; the migration took the old large
+  copy, or the photo), and a known picture is never fetched or stored again. `artwork_addresses` remembers each address's hash with its ETag and Last-Modified,
   so filling in a known address is a conditional request (a 304, no download) and a changed picture is noticed. On
-  dev's 155 sermons, 33 series and 12 photos: 196 addresses, **85 distinct pictures**, 158 stored copies (before
-  this, the same 158 objects came out only because the encoder happened to repeat itself, after 376 resizes).
-- **The copies are Media items, kept by the app:** `IMediaSystemFolders.KeepAsync` puts each in Media's
+  dev's 155 sermons, 33 series and 12 photos: 196 addresses, **85 distinct pictures**.
+- **The pictures are Media items, kept by the app:** `IMediaSystemFolders.KeepAsync` puts each in Media's
   *Sermon artwork* system folder (audience `sermons.edit`; staff can't delete or move them), deduplicated by its
-  content key, and every sermon, series and speaker holds a **Media reference** to the copies it shows
-  (`sermons/sermon/{id}/artwork`, `sermons/series/{id}/artwork`, `sermons/speakers/{id}/photo`). So Media knows
+  content key, and every sermon, series and speaker holds a **Media reference** to the picture it shows
+  (`sermons/sermon/{id}/artwork`, `sermons/series/{id}/artwork`, `sermons/speakers/{id}/photo`; a chosen
+  picture is `sermons/series/{id}` or `sermons/speakers/{id}`). Sermons is an **`IMediaHolder`** for every
+  `sermons/…` owner (`SermonPictures`): when Media removes or puts back an original, or makes sizes for a picture
+  already in use, Sermons re-verifies that record's pictures and republishes it, so a sermon picture's original can
+  be removed to save space. Each API start also re-verifies every saved picture once, which is how records saved
+  before sizes existed get theirs. So Media knows
   they're in use, and a byte-identical staff upload deleted from Media never removes the blob a sermon uses (Media
-  deletes bytes only when no item lists them). A picture no longer used stays in the folder (small; no clean-up yet). **SkiaSharp** does the resizing (MIT; its
-  `NativeAssets.Linux.NoDependencies` runs in the stock .NET container). The owner chose ImageSharp first
-  (2026-11-04), but ImageSharp 3.2 and 4 refuse to build in Release without a Six Labors licence key, so it
-  was swapped rather than adding a key to the build.
+  deletes bytes only when no item lists them). A picture no longer used stays in the folder (small; no clean-up yet). **SkiaSharp** reads a picture's
+  size and format (MIT; its `NativeAssets.Linux.NoDependencies` runs in the stock .NET container). The owner chose
+  ImageSharp first (2026-11-04), but ImageSharp 3.2 and 4 refuse to build in Release without a Six Labors licence
+  key, so it was swapped rather than adding a key to the build.
 
 ### Series from the website's series pages
 
@@ -113,6 +121,33 @@ help centre documents only the RSS feed and a sermon importer), so we read the p
 - **Suggestions** for sermons in no series: titles like "Anchored: Part 4 - Anchored In Hope" or
   "Cross Words - Part 7: …" suggest "Anchored" or "Cross Words" in the admin panel; staff accept or ignore.
   Never applied by themselves ("Commandment 6" belongs to "The Ten Commandments in Modernity").
+
+### Lasting ids for what came from the website (owner, 2026-11-06)
+
+The owner saw each series three times on their phone after dev's backend moved between databases. Sync now
+notices a different database (`SyncOrigin`), but the flaw behind it was that every database gave the same website
+sermon its own random id. Now **a record read from the website has an id derived from where it came from**
+(`SourceIds`, UUIDv5 over a fixed namespace): a sermon from its feed item's `guid`, a series from its page's slug, a
+speaker from their name as the feed writes it (`speaker_aliases`' normalised form). Reading the same website into
+any empty database gives the same ids, and a re-read finds the same records. Uploaded sermons and series or
+speakers added on the admin panel keep random ids. If a derived id is somehow taken, the record gets a random one.
+
+**Moving existing records (`SourceIdMove`, at the start of each website read, under its lock):** every website
+sermon, series and speaker whose id isn't its lasting one moves to it in one transaction, with everything in
+Sermons that points at it (series and speaker of each sermon, speaker aliases, listening progress). The feeds get a
+deletion for the old id and the record under its new one, and listening progress is republished. Then, outside
+that transaction and retried until done (`former_ids.settled`), the Media uses move to the new owner strings and
+follows move with `IRoleAssignments.MoveScopeAsync` (people's and phones'). A speaker counts as from the website
+when a website sermon names them; their id comes from their own name if the feed uses it, otherwise from the
+name the feed uses most.
+
+**Old ids keep working (`former_ids`):** each move, and each speaker merge, records the old id. The server maps
+old ids when progress is sent and when following a series, and the destination sources find a place by an old
+id (so Hub links and announcements made before still resolve in the editor). Each payload carries its
+`FormerIds`, and the app's lookups (`SermonShelf.Find*`, a sermon's progress and download, the loaded sermon)
+accept them, so links in notifications already delivered, downloads made under an old id and progress a phone
+keeps without an account still find their sermon. Nothing outside Sermons is rewritten: notifications already
+raised and Hub tiles keep their old links, which resolve as above.
 
 ### Corrections survive
 
@@ -339,7 +374,9 @@ Real rules only: the feed parser against a trimmed, anonymised sample (made-up n
 by link, corrections surviving a re-read, the retention window, the merge rule's laws, progress saved
 through the service reaching the person's feed and nobody else's, a sermon only once in the notification,
 uploads checked on save, a sermon's whole graphic taken from its page, new series and speakers only while sermons are
-uploaded, and copied audio stored once by its content and held in Media.
+uploaded, copied audio stored once by its content and held in Media, the same website read into two empty databases
+giving the same ids, and records with old ids moving to their lasting ones with their progress, follows and
+pictures, never duplicated by a re-read (`LastingIdTests`).
 
 ## Decided while building
 

@@ -27,7 +27,7 @@
                     {
                         <button type="button" role="option" aria-selected="@(detail.Sermon.Id == _selectedId)" class="sermon-pick @(detail.Sermon.Id == _selectedId ? "is-selected" : "")"
                                 @onclick="() => Select(detail.Sermon.Id)">
-                            <MediaCover Media="detail.Sermon.Thumbnail" Class="sermon-pick__thumb" />
+                            <MediaCover Media="detail.Sermon.Artwork" Size="MediaSizeName.Thumbnail" Class="sermon-pick__thumb" />
                             <span class="sermon-pick__words">
                                 <strong>@detail.Sermon.Title</strong>
                                 <span>@SermonText.Join(SermonText.Day(detail.Sermon.PreachedAt), detail.Sermon.SpeakerName)</span>

@@ -69,7 +69,7 @@ internal sealed class WebsiteReader(
         {
             if (!known.TryGetValue(item.Guid, out SermonRecord? sermon))
             {
-                sermon = new SermonRecord { Id = Guid.CreateVersion7(), Origin = Origin, ExternalId = item.Guid, AddedAt = now };
+                sermon = new SermonRecord { Id = SourceIds.Sermon(item.Guid), Origin = Origin, ExternalId = item.Guid, AddedAt = now };
                 db.Sermons.Add(sermon);
             }
 
@@ -107,7 +107,6 @@ internal sealed class WebsiteReader(
         sermon.ArtworkSourceUrl = url;
         sermon.ArtworkHash = null;
         sermon.Artwork = null;
-        sermon.Thumbnail = null;
     }
 
     private async Task ReadPagesAsync(CancellationToken cancellationToken)
@@ -155,7 +154,7 @@ internal sealed class WebsiteReader(
                 SeriesPage page = await ReadSeriesPageAsync(link, cancellationToken);
                 if (!bySlug.TryGetValue(link.Slug, out SeriesRecord? series))
                 {
-                    series = new SeriesRecord { Id = Guid.CreateVersion7(), Slug = link.Slug, Name = link.Name, CreatedAt = now };
+                    series = new SeriesRecord { Id = await FreeOrNewAsync(SourceIds.Series(link.Slug), cancellationToken), Slug = link.Slug, Name = link.Name, CreatedAt = now };
                     db.Series.Add(series);
                     bySlug[link.Slug] = series;
                 }
@@ -167,7 +166,6 @@ internal sealed class WebsiteReader(
                     series.ArtworkSourceUrl = page.ArtworkUrl;
                     series.ArtworkHash = null;
                     series.Artwork = null;
-                    series.Thumbnail = null;
                 }
                 foreach (string path in page.SermonPaths)
                     seriesOfLink.TryAdd(website.Absolute(path).ToString(), series.Id);
@@ -190,6 +188,9 @@ internal sealed class WebsiteReader(
         }
         await db.SaveChangesAsync(cancellationToken);
     }
+
+    private async Task<Guid> FreeOrNewAsync(Guid lasting, CancellationToken cancellationToken) =>
+        await db.Series.AnyAsync(series => series.Id == lasting, cancellationToken) ? Guid.CreateVersion7() : lasting;
 
     private async Task<SeriesPage> ReadSeriesPageAsync(SeriesLink link, CancellationToken cancellationToken)
     {
@@ -215,15 +216,15 @@ internal sealed class WebsiteReader(
         foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.ArtworkHash == null && sermon.ArtworkSourceUrl != null).OrderBy(sermon => sermon.AddedAt).ToListAsync(cancellationToken))
             await Attempt(async () =>
             {
-                ArtworkCopies copies = await artwork.CopiesAsync(sermon.ArtworkSourceUrl!, sermon.EffectiveTitle, Artwork.SermonOwner(sermon.Id), cancellationToken);
-                (sermon.ArtworkHash, sermon.Artwork, sermon.Thumbnail) = (copies.Hash, copies.Large, copies.Small);
+                ArtworkPicture picture = await artwork.PictureAsync(sermon.ArtworkSourceUrl!, sermon.EffectiveTitle, Artwork.SermonOwner(sermon.Id), cancellationToken);
+                (sermon.ArtworkHash, sermon.Artwork) = (picture.Hash, picture.Picture);
             }, "artwork", sermon.ArtworkSourceUrl!);
 
         foreach (SeriesRecord series in await db.Series.Where(series => series.ArtworkHash == null && series.ArtworkSourceUrl != null).ToListAsync(cancellationToken))
             await Attempt(async () =>
             {
-                ArtworkCopies copies = await artwork.CopiesAsync(series.ArtworkSourceUrl!, series.Name, Artwork.SeriesOwner(series.Id), cancellationToken);
-                (series.ArtworkHash, series.Artwork, series.Thumbnail) = (copies.Hash, copies.Large, copies.Small);
+                ArtworkPicture picture = await artwork.PictureAsync(series.ArtworkSourceUrl!, series.Name, Artwork.SeriesOwner(series.Id), cancellationToken);
+                (series.ArtworkHash, series.Artwork) = (picture.Hash, picture.Picture);
             }, "series artwork", series.ArtworkSourceUrl!);
 
         await speakers.FillInPhotosAsync(cancellationToken);

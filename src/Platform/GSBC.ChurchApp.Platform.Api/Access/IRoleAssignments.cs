@@ -1,3 +1,5 @@
+using GSBC.ChurchApp.Platform.Permissions;
+
 namespace GSBC.ChurchApp.Platform.Api.Access;
 
 public interface IRoleAssignments
@@ -15,6 +17,8 @@ public interface IRoleAssignments
     ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken);
 
     ValueTask ScopesChangedAsync(CancellationToken cancellationToken);
+
+    ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken);
 }
 
 public sealed record AssignmentOutcome(bool Done, string? Refusal)

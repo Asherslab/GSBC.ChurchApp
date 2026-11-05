@@ -52,6 +52,32 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
 
     public async ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => await changes.AnnounceAsync(cancellationToken);
 
+    public async ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken)
+    {
+        List<Guid> roles = await db.Roles.Where(role => role.ScopeKind == kind.Name).Select(role => role.Id).ToListAsync(cancellationToken);
+        List<Assignment> people = await db.Assignments.Where(assignment => roles.Contains(assignment.RoleId) && assignment.ScopeObjectId == fromObjectId).ToListAsync(cancellationToken);
+        foreach (Assignment assignment in people)
+        {
+            if (await db.Assignments.AnyAsync(other => other.UserId == assignment.UserId && other.RoleId == assignment.RoleId && other.ScopeObjectId == toObjectId, cancellationToken))
+                db.Assignments.Remove(assignment);
+            else
+                assignment.ScopeObjectId = toObjectId;
+        }
+
+        List<PhoneAssignment> phones = await db.PhoneAssignments.Where(assignment => roles.Contains(assignment.RoleId) && assignment.ScopeObjectId == fromObjectId).ToListAsync(cancellationToken);
+        foreach (PhoneAssignment assignment in phones)
+        {
+            if (await db.PhoneAssignments.AnyAsync(other => other.InstallId == assignment.InstallId && other.RoleId == assignment.RoleId && other.ScopeObjectId == toObjectId, cancellationToken))
+                db.PhoneAssignments.Remove(assignment);
+            else
+                assignment.ScopeObjectId = toObjectId;
+        }
+
+        await db.SaveChangesAsync(cancellationToken);
+        if (people.Count + phones.Count > 0)
+            await changes.AnnounceAsync(cancellationToken);
+    }
+
     async ValueTask IPhoneRoles.GiveAsync(Guid installId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
     {
         RoleRecord role = await PhoneRoleAsync(roleKey, objectId, cancellationToken);

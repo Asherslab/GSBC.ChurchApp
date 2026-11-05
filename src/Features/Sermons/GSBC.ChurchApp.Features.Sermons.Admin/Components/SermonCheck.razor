@@ -1,7 +1,7 @@
 
 <div class="sermon-check">
     <div class="sermon-check__head">
-        <MediaCover Media="Detail.Sermon.Artwork ?? Detail.Sermon.Thumbnail" FallbackTitle="@Detail.Sermon.Title" Class="sermon-check__art" />
+        <MediaCover Media="Detail.Sermon.Artwork" FallbackTitle="@Detail.Sermon.Title" Class="sermon-check__art" />
         <div class="sermon-check__intro">
             <h2>@Detail.Sermon.Title</h2>
             <p>@SermonText.Join(SermonText.LongDay(Detail.Sermon.PreachedAt), SermonText.Length(Detail.Sermon.DurationSeconds), Origin)</p>

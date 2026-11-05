@@ -314,7 +314,7 @@
               </dl>
               @if (selected.Original is { } original)
               {
-                  <PictureVersions Item="selected" Original="original" CanRemoveOriginal="CanRemoveOriginal(map, selected)" Busy="_busy" Problem="@_versionsProblem"
+                  <PictureVersions Item="selected" Original="original" CanRemoveOriginal="CanRemoveOriginal(selected)" Busy="_busy" Problem="@_versionsProblem"
                                    OnRemoveOriginal="RemoveOriginalAsync" />
               }
               <div class="panel-actions">
@@ -389,8 +389,8 @@
         _ => null,
     };
 
-    private bool CanRemoveOriginal(FolderMap map, MediaItemInfo item) =>
-        Access.Can(MediaPermissions.Delete) && map.Find(item.FolderId) is not { IsSystem: true } && item.Original is { Removed: false } && item.Media!.Sizes.Count > 0;
+    private bool CanRemoveOriginal(MediaItemInfo item) =>
+        Access.Can(MediaPermissions.Delete) && item.Original is { Removed: false } && item.Media!.Sizes.Any(size => size.Width >= MediaSizes.ForPhonesWidth);
 
     private string EmptyTitle(FolderMap map) => Searching || _filter != MediaFilter.All
         ? "Nothing matches"
