@@ -75,20 +75,18 @@
                 <span class="field__label">Picture</span>
                 <div class="sermon-upload__art">
                     <MediaCover Media="ShownArtwork(editing)" Size="MediaSizeName.Thumbnail" FallbackTitle="@_name" />
-                    <span class="sermon-picture__side">
-                        @if (ShownArtwork(editing) is { } artwork)
+                    <span class="series-desk__picture-actions">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
+                        @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
                         {
-                            <MediaShownAt Media="artwork" Size="SeriesSize" />
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
                         }
-                        <span class="series-desk__picture-actions">
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
-                            @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
-                            {
-                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
-                            }
-                        </span>
                     </span>
                 </div>
+                @if (ShownArtwork(editing) is { } artwork)
+                {
+                    <MediaShownAt Media="artwork" Size="SeriesSize" Class="sermon-picture__shown" />
+                }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
                     <Button Busy="_busy" OnClick="SaveSeriesAsync">@(editing.Id.Length == 0 ? "Add the series" : "Save")</Button>

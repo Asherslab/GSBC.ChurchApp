@@ -50,11 +50,9 @@
                 {
                     <div class="sermon-upload__art">
                         <MediaCover Media="artwork" Size="MediaSizeName.Thumbnail" />
-                        <span class="sermon-picture__side">
-                            <MediaShownAt Media="artwork" Size="MediaSizeName.ForPhones" />
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button>
-                        </span>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button>
                     </div>
+                    <MediaShownAt Media="artwork" Size="MediaSizeName.ForPhones" Class="sermon-picture__shown" />
                 }
                 else
                 {
