@@ -218,8 +218,9 @@ starting point (the team liked them).
   across everything on the phone, offline.
 - **The player**: a mini-player above the tab bar on every screen while something is loaded (cover, title,
   play/pause, progress), and a full sheet from it: scrubbing, back 15 and forward 30 seconds, speed
-  (0.8–2×), a sleep timer (15, 30, 45 minutes, end of sermon), and *Up next* (the next in the series, or the
-  next newest), which plays on in the background.
+  (0.8–2×), and *Up next* (the next in the series, or the next newest), which plays on in the background.
+  There is no sleep timer: the owner doesn't want the app to encourage falling asleep to a sermon
+  (2026-11-06).
 - **Home**: the Hub's *Latest sermon* tile is real (below).
 - **Offline:** every screen reads the phone's store. Downloading a sermon to keep is designed (below), not
   built in v1.
@@ -290,12 +291,12 @@ a sermon).
 - **iOS:** `AVPlayer` with `AVAudioSession` `.playback` (spoken audio), `UIBackgroundModes` `audio`,
   `MPNowPlayingInfoCenter` (title, speaker, artwork, position, rate) and `MPRemoteCommandCenter` (play, pause,
   toggle, skip back 15, skip forward 30, scrub, next track when there's an up-next). Interruptions (a call, Siri,
-  an alarm) pause and resume when iOS says to; unplugging headphones or AirPods pauses. Sleep timer and up-next
-  run natively, so they work in the background.
+  an alarm) pause and resume when iOS says to; unplugging headphones or AirPods pauses. Up-next runs natively, so it
+  works in the background.
 - **Bridge contract** (`IAudioPlayer`, Platform.Client; platform-neutral): `LoadAsync(item, startAt, play)`,
-  `Play`, `Pause`, `SeekTo`, `SkipBy`, `SetRate`, `SetSleepTimer`, `SetUpNext(items)`, `MarkAsync(id, finished |
+  `Play`, `Pause`, `SeekTo`, `SkipBy`, `SetRate`, `SetUpNext(items)`, `MarkAsync(id, finished |
   watched | cleared)`, `JournalAsync()`, and a `Changed` event with the state (item, playing, buffering,
-  position, duration, rate, sleep timer, ended). An item is an id, a URL, a title, an artist, an album and an
+  position, duration, rate, ended). An item is an id, a URL, a title, an artist, an album and an
   artwork URL. **Android** is stubbed; the browser (the admin panel) uses an HTML audio element behind the same
   interface.
 - **Downloads (owner, 2026-11-05):** *Download for when you're offline* on a sermon fetches the audio with a background

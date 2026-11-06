@@ -16,7 +16,6 @@ const native = {
   seek: (to) => dataLayer().audioSeek({ to }),
   skip: (by) => dataLayer().audioSkip({ by }),
   rate: (rate) => dataLayer().audioRate({ rate }),
-  sleep: (minutes, endOfItem) => dataLayer().audioSleep({ minutes, endOfItem }),
   upNext: (items) => dataLayer().audioUpNext({ items: JSON.parse(items) }),
   stop: () => dataLayer().audioStop(),
   mark: (id, mark, at) => dataLayer().audioMark({ id, mark, at }),
@@ -32,9 +31,6 @@ const web = (() => {
   audio.preload = 'metadata';
   let item = null;
   let upNext = [];
-  let sleepAt = null;
-  let sleepAtEnd = false;
-  let sleepTimer = null;
   let ended = false;
   let problem = null;
   let lastSaved = 0;
@@ -70,19 +66,10 @@ const web = (() => {
     position: audio.currentTime || 0,
     duration: Number.isFinite(audio.duration) ? audio.duration : item?.duration ?? 0,
     rate: audio.playbackRate,
-    sleepAt,
-    sleepAtEnd,
     ended,
     problem,
   });
   const emit = () => send(state());
-
-  const clearSleep = () => {
-    clearTimeout(sleepTimer);
-    sleepTimer = null;
-    sleepAt = null;
-    sleepAtEnd = false;
-  };
 
   const loadItem = (next, startAt, play) => {
     item = next;
@@ -112,12 +99,6 @@ const web = (() => {
   audio.addEventListener('error', () => { problem = 'This sermon couldn’t be played.'; emit(); });
   audio.addEventListener('ended', () => {
     save();
-    if (sleepAtEnd) {
-      clearSleep();
-      ended = true;
-      emit();
-      return;
-    }
     const next = upNext.shift();
     if (next) loadItem(next, 0, true);
     else { ended = true; emit(); }
@@ -140,22 +121,12 @@ const web = (() => {
     seek: (to) => { audio.currentTime = Math.max(0, to); },
     skip: (by) => { audio.currentTime = Math.max(0, (audio.currentTime || 0) + by); },
     rate: (rate) => { audio.playbackRate = rate; },
-    sleep: (minutes, endOfItem) => {
-      clearSleep();
-      if (endOfItem) sleepAtEnd = true;
-      else if (minutes > 0) {
-        sleepAt = Date.now() + minutes * 60000;
-        sleepTimer = setTimeout(() => { audio.pause(); clearSleep(); emit(); }, minutes * 60000);
-      }
-      emit();
-    },
     upNext: (items) => { upNext = JSON.parse(items); },
     stop: () => {
       save();
       audio.pause();
       audio.removeAttribute('src');
       item = null;
-      clearSleep();
       try { localStorage.removeItem(currentKey); } catch { }
       emit();
     },
@@ -180,7 +151,6 @@ export const pause = () => player().pause();
 export const seek = (to) => player().seek(to);
 export const skip = (by) => player().skip(by);
 export const rate = (value) => player().rate(value);
-export const sleep = (minutes, endOfItem) => player().sleep(minutes, endOfItem);
 export const upNext = (items) => player().upNext(items);
 export const stop = () => player().stop();
 export const mark = (id, name, at) => player().mark(id, name, at);

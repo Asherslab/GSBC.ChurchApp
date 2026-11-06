@@ -4,7 +4,7 @@ import Foundation
 extension DataLayerPlugin {
     static let audioMethods: [CAPPluginMethod] = [
         "audioState", "audioLoad", "audioPlay", "audioPause", "audioSeek", "audioSkip", "audioRate",
-        "audioSleep", "audioUpNext", "audioStop", "audioMark", "audioJournal",
+        "audioUpNext", "audioStop", "audioMark", "audioJournal",
         "audioDownload", "audioDownloads", "audioRemoveDownload",
     ].map { CAPPluginMethod(name: $0, returnType: CAPPluginReturnPromise) }
 
@@ -43,10 +43,6 @@ extension DataLayerPlugin {
 
     @objc func audioRate(_ call: CAPPluginCall) {
         onMain(call) { AudioPlayback.shared.setRate($0.getDouble("rate") ?? 1); $0.resolve() }
-    }
-
-    @objc func audioSleep(_ call: CAPPluginCall) {
-        onMain(call) { AudioPlayback.shared.sleep(minutes: $0.getInt("minutes") ?? 0, endOfItem: $0.getBool("endOfItem") ?? false); $0.resolve() }
     }
 
     @objc func audioUpNext(_ call: CAPPluginCall) {

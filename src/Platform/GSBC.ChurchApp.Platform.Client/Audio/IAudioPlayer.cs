@@ -4,19 +4,11 @@ public sealed record AudioItem(string Id, string Url, string Title, string Artis
 
 public sealed record AudioState(
     AudioItem? Item, bool Playing, bool Buffering, double Position, double Duration, double Rate,
-    DateTime? SleepAt, bool SleepAtEnd, bool Ended, string? Problem)
+    bool Ended, string? Problem)
 {
-    public static readonly AudioState Idle = new(null, false, false, 0, 0, 1, null, false, false, null);
+    public static readonly AudioState Idle = new(null, false, false, 0, 0, 1, false, null);
 
     public double Remaining => Math.Max(0, Duration - Position);
-}
-
-public sealed record SleepTimer(int Minutes, bool EndOfItem)
-{
-    public static readonly SleepTimer Off = new(0, false);
-    public static readonly SleepTimer AtTheEnd = new(0, true);
-
-    public static SleepTimer After(int minutes) => new(minutes, false);
 }
 
 public sealed record PlaybackRecord(string Id, double Position, double Duration, DateTime HeardAt, IReadOnlyDictionary<string, DateTime> Marks, long Seq);
@@ -46,8 +38,6 @@ public interface IAudioPlayer
     Task SkipAsync(double seconds);
 
     Task SetRateAsync(double rate);
-
-    Task SleepAsync(SleepTimer timer);
 
     Task SetUpNextAsync(IReadOnlyList<AudioItem> items);
 

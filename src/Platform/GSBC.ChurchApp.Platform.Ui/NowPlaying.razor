@@ -66,17 +66,6 @@
                         }
                     </div>
                 </div>
-                <div class="player-sheet__option">
-                    <span class="player-sheet__label">Sleep timer@(SleepNote is { } note ? $" · {note}" : "")</span>
-                    <div class="chips" role="group" aria-label="Sleep timer">
-                        <button type="button" class="chip @(NoSleep ? "is-on" : "")" aria-pressed="@NoSleep" @onclick="() => Player.SleepAsync(SleepTimer.Off)">Off</button>
-                        @foreach (int minutes in SleepMinutes)
-                        {
-                            <button type="button" class="chip" @onclick="() => Player.SleepAsync(SleepTimer.After(minutes))">@($"{minutes} min")</button>
-                        }
-                        <button type="button" class="chip @(State.SleepAtEnd ? "is-on" : "")" aria-pressed="@State.SleepAtEnd" @onclick="() => Player.SleepAsync(SleepTimer.AtTheEnd)">At the end</button>
-                    </div>
-                </div>
             </div>
 
             @if (Player.UpNext.FirstOrDefault() is { } next)
@@ -91,7 +80,6 @@
 
 @code {
     private static readonly IReadOnlyList<double> Speeds = [0.8, 1, 1.2, 1.5, 1.75, 2];
-    private static readonly IReadOnlyList<int> SleepMinutes = [15, 30, 45];
     private bool _sheet;
     private double? _scrubbing;
     private bool _wasPlaying;
@@ -102,10 +90,6 @@
     private AudioState State => Player.State;
 
     private double ShownPosition => _scrubbing ?? State.Position;
-
-    private bool NoSleep => State.SleepAt is null && !State.SleepAtEnd;
-
-    private string? SleepNote => State.SleepAt is { } at ? $"stops at {at.ToLocalTime():h:mm tt}".ToLowerInvariant() : State.SleepAtEnd ? "stops at the end" : null;
 
     protected override void OnInitialized()
     {

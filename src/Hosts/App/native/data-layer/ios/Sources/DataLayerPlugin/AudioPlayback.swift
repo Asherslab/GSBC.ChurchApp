@@ -52,9 +52,6 @@ final class AudioPlayback: NSObject {
     private var restoredPosition = 0.0
     private var upNext: [AudioItem] = []
     private var rate: Float = 1
-    private var sleepTimer: Timer?
-    private var sleepAt: Date?
-    private var sleepAtEnd = false
     private var ended = false
     private var problem: String?
     private var lastSaved = Date.distantPast
@@ -80,11 +77,9 @@ final class AudioPlayback: NSObject {
             "position": position,
             "duration": duration,
             "rate": Double(rate),
-            "sleepAtEnd": sleepAtEnd,
             "ended": ended,
         ]
         if let item { result["item"] = item.json }
-        if let sleepAt { result["sleepAt"] = Int64(sleepAt.timeIntervalSince1970 * 1000) }
         if let problem { result["problem"] = problem }
         return result
     }
@@ -162,21 +157,6 @@ final class AudioPlayback: NSObject {
         emit()
     }
 
-    func sleep(minutes: Int, endOfItem: Bool) {
-        sleepTimer?.invalidate()
-        sleepTimer = nil
-        sleepAt = nil
-        sleepAtEnd = endOfItem
-        if minutes > 0 {
-            sleepAt = Date().addingTimeInterval(TimeInterval(minutes * 60))
-            sleepTimer = Timer.scheduledTimer(withTimeInterval: TimeInterval(minutes * 60), repeats: false) { [weak self] _ in
-                self?.sleepAt = nil
-                self?.pause()
-            }
-        }
-        emit()
-    }
-
     func setUpNext(_ items: [AudioItem]) {
         upNext = items
         MPRemoteCommandCenter.shared().nextTrackCommand.isEnabled = !items.isEmpty
@@ -189,7 +169,6 @@ final class AudioPlayback: NSObject {
         item = nil
         loaded = false
         upNext = []
-        sleep(minutes: 0, endOfItem: false)
         UserDefaults.standard.removeObject(forKey: Self.currentKey)
         MPNowPlayingInfoCenter.default().nowPlayingInfo = nil
         try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
@@ -249,11 +228,6 @@ final class AudioPlayback: NSObject {
     @objc private func itemEnded(_ notification: Notification) {
         guard let ended = notification.object as? AVPlayerItem, ended == player.currentItem, let item else { return }
         journal.heard(item.id, position: duration, duration: duration)
-        if sleepAtEnd {
-            sleep(minutes: 0, endOfItem: false)
-            finish()
-            return
-        }
         if !upNext.isEmpty {
             load(upNext.removeFirst(), startAt: 0, play: true)
             setUpNext(upNext)

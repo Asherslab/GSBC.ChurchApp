@@ -6,7 +6,7 @@ internal sealed record AudioItemJson(string Id, string Url, string Title, string
 
 internal sealed record AudioStateJson(
     AudioItemJson? Item, bool Playing, bool Buffering, double Position, double Duration, double Rate,
-    long? SleepAt, bool SleepAtEnd, bool Ended, string? Problem);
+    bool Ended, string? Problem);
 
 internal sealed record PlaybackRecordJson(string Id, double Position, double Duration, long HeardAt, Dictionary<string, long>? Marks, long Seq);
 

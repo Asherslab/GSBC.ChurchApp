@@ -36,8 +36,6 @@ public sealed class AudioPlayer(IJSRuntime js) : IAudioPlayer, IAsyncDisposable
 
     public async Task SetRateAsync(double rate) => await (await ModuleAsync()).InvokeVoidAsync("rate", rate);
 
-    public async Task SleepAsync(SleepTimer timer) => await (await ModuleAsync()).InvokeVoidAsync("sleep", timer.Minutes, timer.EndOfItem);
-
     public async Task SetUpNextAsync(IReadOnlyList<AudioItem> items)
     {
         _upNext = items;
@@ -68,7 +66,7 @@ public sealed class AudioPlayer(IJSRuntime js) : IAudioPlayer, IAsyncDisposable
         AudioItem? item = state.Item is { } current ? Item(current) : null;
         bool advanced = item is not null && State.Item is { } before && before.Id != item.Id && !State.Ended && State.Playing;
         State = new AudioState(item, state.Playing, state.Buffering, state.Position, state.Duration > 0 ? state.Duration : item?.Duration ?? 0, state.Rate,
-            state.SleepAt is { } sleepAt ? Time(sleepAt) : null, state.SleepAtEnd, state.Ended, state.Problem);
+            state.Ended, state.Problem);
         if (advanced)
         {
             _upNext = _upNext.SkipWhile(next => next.Id != item!.Id).Skip(1).ToList();
