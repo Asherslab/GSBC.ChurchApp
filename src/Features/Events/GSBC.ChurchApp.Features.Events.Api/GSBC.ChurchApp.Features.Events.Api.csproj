@@ -7,6 +7,7 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Events.Api.Tests" />
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Events.Unit.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Events.Contracts\GSBC.ChurchApp.Features.Events.Contracts.csproj" />

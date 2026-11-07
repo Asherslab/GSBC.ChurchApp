@@ -1,6 +1,7 @@
+using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Events.Contracts;
 
-namespace GSBC.ChurchApp.Features.Events.Api.Tests;
+namespace GSBC.ChurchApp.Features.Events.Unit.Tests;
 
 public sealed class DetailsReminderTests
 {

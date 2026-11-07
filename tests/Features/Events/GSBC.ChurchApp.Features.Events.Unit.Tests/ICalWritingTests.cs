@@ -1,8 +1,9 @@
 using System.Text;
+using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Common;
 
-namespace GSBC.ChurchApp.Features.Events.Api.Tests;
+namespace GSBC.ChurchApp.Features.Events.Unit.Tests;
 
 public sealed class ICalWritingTests
 {

@@ -1,8 +1,9 @@
 using System.Net;
 using System.Net.Http.Headers;
+using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 
-namespace GSBC.ChurchApp.Features.Events.Api.Tests;
+namespace GSBC.ChurchApp.Features.Events.Unit.Tests;
 
 public sealed class ICalReadingTests
 {
