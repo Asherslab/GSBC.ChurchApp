@@ -114,9 +114,36 @@ sometimes a register link, and a button to the website's events. Its items are e
 events, specials and breaks, and some arrive before their details ("full details this Sunday").
 
 18. **Try a "send the digest" button** in place of building it by hand: the digest made from the calendar.
-    Only a proof of concept to show staff, with little invested, since it may be scrapped quickly.
+    Only a proof of concept to show staff, with little invested, since it may be scrapped quickly. Built after
+    the design settles, as a quick mock with sample events, not real code. Recommended shape: an admin page
+    pre-fills the digest from *Coming up* for the next two weeks; staff untick, reorder or reword items; **Copy
+    for email** gives the finished email for the tool the office uses now; **Send to the app** posts a
+    notification that opens the digest in the app. The app's digest is **in the app's own design language**,
+    made of its own components, never a copy of the email (owner, 2026-11-07). Which tool sends the email today
+    isn't known (not Elvanto: it has no such template).
+
+### What an event carries (owner, 2026-11-07)
+
+19. **Title, calendar and when** (start and end, all day, or several days for a camp), and optionally: a short
+    **label** when the calendar's name isn't the right one ("Ladies Event"), a **picture** (Media), a
+    **description** ([rich text](../architecture/rich-text.md)), a **place**, **contacts**, a **Register link**
+    and other links (a flyer).
+20. **A place is a site-map place or an address.** A site-map place (`PlaceId`, [site-map.md](site-map.md))
+    opens the map; an address (Teralba Park, a bowls club) opens the phone's maps app. Addresses used before are
+    offered again, so outreach Saturdays aren't retyped.
+21. **Contacts** are app people (name, phone and email from their account, so they stay current) or a name with
+    a phone and email typed in. Contact details show only to people signed in. A contact is shown, not given
+    access to anything. **Once Ministries is built,** an event on a ministry's calendar offers *Contact the
+    ministry* instead, through the ministry's chat, so the ministry decides who answers (several members, only
+    leaders, or one person). Events reaches that through a place in the app (destinations.md), not by
+    referencing Ministries.
 
 ### Pinned for later
+
+- **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
+### Pinned for later
+
+- **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
 
 - **The website shows the app's calendar** (owner, 2026-11-07): replace the website's events page with an
   embed from the app. To discuss another time. Whatever it serves will need the same care as iCal out (an
@@ -126,7 +153,6 @@ events, specials and breaks, and some arrive before their details ("full details
 
 - **Who edits a calendar:** a permission scoped to the calendar, and how a ministry's leaders come to hold it.
 - Not overloading people: what someone sees by default, following, Home, filters, a digest.
-- What an event carries: place (Site map), people responsible, links, picture (Media), description.
 - Details filled in later, and reminding whoever is responsible.
 - Subscribing from a phone's calendar app (iCal out; needs the owner's decision on an HTTP path or a static
   file).
