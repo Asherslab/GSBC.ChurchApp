@@ -37,14 +37,7 @@ internal sealed class SermonFollowing(SermonsDbContext db, IRoleAssignments role
     public async Task<Follows> FollowsAsync(Guid installId, Guid? userId, CancellationToken cancellationToken)
     {
         if (userId is not { } person)
-        {
-            IReadOnlyList<HeldRole> held = await phoneRoles.HeldAsync(installId, cancellationToken);
-            return new Follows
-            {
-                NewSermons = held.Any(role => role.RoleKey == SermonsPermissions.FollowerRole),
-                SeriesIds = held.Where(role => role.RoleKey == SermonsPermissions.SeriesFollowerRole && role.ObjectId is not null).Select(role => role.ObjectId!).ToList(),
-            };
-        }
+            return PhoneFollows(await phoneRoles.HeldAsync(installId, cancellationToken));
 
         bool newSermons = (await roles.HoldersAsync(SermonsPermissions.FollowerRole, null, cancellationToken)).Any(holder => holder.UserId == person);
         List<string> series = [];
@@ -53,4 +46,10 @@ internal sealed class SermonFollowing(SermonsDbContext db, IRoleAssignments role
                 series.Add(id.ToString());
         return new Follows { NewSermons = newSermons, SeriesIds = series };
     }
+
+    internal static Follows PhoneFollows(IReadOnlyList<HeldRole> held) => new()
+    {
+        NewSermons = held.Any(role => role.RoleKey == SermonsPermissions.FollowerRole),
+        SeriesIds = held.Where(role => role is { RoleKey: SermonsPermissions.SeriesFollowerRole, ObjectId: not null }).Select(role => role.ObjectId!).ToList(),
+    };
 }

@@ -21,18 +21,7 @@ public sealed partial class TestRules
         "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/DraftEditorTests.cs",
         "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/HubTileTests.cs",
         "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/PlacementEditorTests.cs",
-        "tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/MediaPrivacyAndFolderTests.cs",
-        "tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/MediaUploadTests.cs",
-        "tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/PictureSizeTests.cs",
         "tests/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api.Tests/NotificationsTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/ArtworkTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/AudioStorageTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/FollowingTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/LastingIdTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/ProgressTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/SourceRuleTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/UploadTests.cs",
-        "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/WebsiteReadingTests.cs",
     ];
 
     [Fact]

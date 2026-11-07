@@ -73,31 +73,36 @@ internal sealed class WebsiteReader(
                 db.Sermons.Add(sermon);
             }
 
-            sermon.SourceTitle = item.Title;
-            sermon.WebLink = item.Link;
-            sermon.PreachedAt = item.PublishedAt;
-            sermon.SourceSpeaker = item.Author;
-            sermon.SourceSpeakerId = item.Author.Length > 0 ? (await speakers.ResolveAsync(item.Author, cancellationToken)).Id : null;
-            sermon.SourceService = ServiceLabels.FromSummary(item.Summary, item.Author);
-            sermon.SourceYouTubeId = YouTubeIds.Find(item.Summary);
-            sermon.Summary = item.Summary;
-            if (sermon.AudioCopiedFrom is null && sermon.AudioUrl != item.AudioUrl)
-            {
-                sermon.AudioUrl = item.AudioUrl;
-                sermon.DurationSeconds = 0;
-            }
-            sermon.AudioType = item.AudioType;
-            if (sermon.AudioCopiedFrom is null)
-                sermon.AudioBytes = item.AudioBytes;
-            string? original = TithelyArtwork.OriginalOf(item.ImageUrl, fileHost);
-            if (original != sermon.FeedArtworkUrl)
-            {
-                sermon.FeedArtworkUrl = original;
-                sermon.PageReadAt = null;
-                UseArtwork(sermon, original);
-            }
-            sermon.UpdatedAt = now;
+            Take(sermon, item, item.Author.Length > 0 ? (await speakers.ResolveAsync(item.Author, cancellationToken)).Id : null, fileHost, now);
         }
+    }
+
+    internal static void Take(SermonRecord sermon, PodcastItem item, Guid? speakerId, string? fileHost, DateTime now)
+    {
+        sermon.SourceTitle = item.Title;
+        sermon.WebLink = item.Link;
+        sermon.PreachedAt = item.PublishedAt;
+        sermon.SourceSpeaker = item.Author;
+        sermon.SourceSpeakerId = speakerId;
+        sermon.SourceService = ServiceLabels.FromSummary(item.Summary, item.Author);
+        sermon.SourceYouTubeId = YouTubeIds.Find(item.Summary);
+        sermon.Summary = item.Summary;
+        if (sermon.AudioCopiedFrom is null && sermon.AudioUrl != item.AudioUrl)
+        {
+            sermon.AudioUrl = item.AudioUrl;
+            sermon.DurationSeconds = 0;
+        }
+        sermon.AudioType = item.AudioType;
+        if (sermon.AudioCopiedFrom is null)
+            sermon.AudioBytes = item.AudioBytes;
+        string? original = TithelyArtwork.OriginalOf(item.ImageUrl, fileHost);
+        if (original != sermon.FeedArtworkUrl)
+        {
+            sermon.FeedArtworkUrl = original;
+            sermon.PageReadAt = null;
+            UseArtwork(sermon, original);
+        }
+        sermon.UpdatedAt = now;
     }
 
     private static void UseArtwork(SermonRecord sermon, string? url)
@@ -158,15 +163,7 @@ internal sealed class WebsiteReader(
                     db.Series.Add(series);
                     bySlug[link.Slug] = series;
                 }
-                if (series.SourceName is not null && series.Name == series.SourceName)
-                    series.Name = link.Name;
-                series.SourceName = link.Name;
-                if (page.ArtworkUrl != series.ArtworkSourceUrl)
-                {
-                    series.ArtworkSourceUrl = page.ArtworkUrl;
-                    series.ArtworkHash = null;
-                    series.Artwork = null;
-                }
+                Take(series, link, page);
                 foreach (string path in page.SermonPaths)
                     seriesOfLink.TryAdd(website.Absolute(path).ToString(), series.Id);
                 foreach ((string name, string photo) in page.SpeakerPhotos)
@@ -187,6 +184,19 @@ internal sealed class WebsiteReader(
             state.SeriesProblem = Problem(exception);
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    internal static void Take(SeriesRecord series, SeriesLink link, SeriesPage page)
+    {
+        if (series.SourceName is not null && series.Name == series.SourceName)
+            series.Name = link.Name;
+        series.SourceName = link.Name;
+        if (page.ArtworkUrl != series.ArtworkSourceUrl)
+        {
+            series.ArtworkSourceUrl = page.ArtworkUrl;
+            series.ArtworkHash = null;
+            series.Artwork = null;
+        }
     }
 
     private async Task<Guid> FreeOrNewAsync(Guid lasting, CancellationToken cancellationToken) =>
@@ -255,7 +265,7 @@ internal sealed class WebsiteReader(
         }
     }
 
-    private static string Problem(Exception exception) => exception switch
+    internal static string Problem(Exception exception) => exception switch
     {
         HttpRequestException { StatusCode: { } status } => $"The website answered {(int)status}.",
         HttpRequestException => "The website couldn't be reached.",

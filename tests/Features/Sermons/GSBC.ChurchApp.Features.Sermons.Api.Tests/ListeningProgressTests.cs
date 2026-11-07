@@ -65,6 +65,15 @@ public sealed class ListeningProgressTests
     public void ReachingTheLastThirtySecondsCountsAsFinished(double position, double duration, bool finished) =>
         Assert.Equal(finished, ListeningProgress.ReachesTheEnd(position, duration));
 
+    [Fact]
+    public void ATimeFromAPhoneWhoseClockRunsFastIsHeldToAFewMinutesAhead()
+    {
+        ListeningEntry clamped = SermonsService.Clamped(ListeningProgress.Heard(Sermon, 900, 2400, Start.AddDays(3)), Start);
+
+        Assert.Equal(Start + SermonsService.ClockSlack, clamped.HeardAt);
+        Assert.Equal(Start.AddMinutes(-5), SermonsService.Clamped(ListeningProgress.Heard(Sermon, 900, 2400, Start.AddMinutes(-5)), Start).HeardAt);
+    }
+
     private static ListeningEntry RandomEntry(Random random) => new()
     {
         SermonId = Sermon,

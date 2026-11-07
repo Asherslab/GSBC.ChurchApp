@@ -23,7 +23,7 @@ internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs, TimeP
             .ToDictionaryAsync(item => item.Id, cancellationToken);
         Dictionary<Guid, List<MediaRendition>> renditions = await MediaRefs.RenditionsOfAsync(db, items.Keys, cancellationToken);
 
-        return claimed.Zip(ids, (media, id) => items.GetValueOrDefault(resolved[id]) is { } item ? Verified(media, item, renditions[item.Id]) : throw NotInLibrary(media)).ToList();
+        return claimed.Zip(ids, (media, id) => items.GetValueOrDefault(resolved[id]) is { } item ? Verified(media, item, renditions[item.Id], blobs) : throw NotInLibrary(media)).ToList();
     }
 
     public async Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
@@ -54,7 +54,7 @@ internal sealed class MediaReferences(MediaDbContext db, IBlobStore blobs, TimeP
         await transaction.CommitAsync(cancellationToken);
     }
 
-    private MediaRef Verified(MediaRef claimed, MediaItem item, List<MediaRendition> renditions)
+    internal static MediaRef Verified(MediaRef claimed, MediaItem item, List<MediaRendition> renditions, IBlobStore blobs)
     {
         if (claimed.Key.Length > 0 && claimed.Key != item.Key && renditions.All(rendition => rendition.Key != claimed.Key))
             throw NotInLibrary(claimed);

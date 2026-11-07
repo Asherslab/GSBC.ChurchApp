@@ -15,9 +15,9 @@ internal sealed class SermonLibraryService(
     PodcastFeedWriter podcast, AudioCopier copier, TimeProvider time) : ISermonLibraryService
 {
     public const int TitleLimit = 160;
-    public const int ServiceLimit = 80;
+    private const int ServiceLimit = 80;
     public const int NameLimit = 80;
-    public const int DescriptionLimit = 600;
+    private const int DescriptionLimit = 600;
 
     public static class Filters
     {
@@ -62,13 +62,13 @@ internal sealed class SermonLibraryService(
         Dictionary<string, int> counts = new()
         {
             [Filters.All] = await matching.CountAsync(sermon => !sermon.Hidden, cancellationToken),
-            [Filters.Corrected] = await Corrected(matching).CountAsync(cancellationToken),
+            [Filters.Corrected] = await WithCorrections(matching).CountAsync(cancellationToken),
             [Filters.Hidden] = await matching.CountAsync(sermon => sermon.Hidden, cancellationToken),
             [Filters.NeedsALook] = await matching.CountAsync(sermon => !sermon.Hidden && sermon.CheckedAt == null, cancellationToken),
         };
         IQueryable<SermonRecord> filtered = request.Filter switch
         {
-            Filters.Corrected => Corrected(matching),
+            Filters.Corrected => WithCorrections(matching),
             Filters.Hidden => matching.Where(sermon => sermon.Hidden),
             Filters.NeedsALook => matching.Where(sermon => !sermon.Hidden && sermon.CheckedAt == null),
             _ => matching.Where(sermon => !sermon.Hidden),
@@ -90,45 +90,12 @@ internal sealed class SermonLibraryService(
     {
         CancellationToken cancellationToken = context.CancellationToken;
         SermonRecord sermon = await FindSermonAsync(request.Id, cancellationToken);
-        HashSet<string> useSource = request.UseSource.ToHashSet();
+        bool speakerExists = !request.UseSource.Contains(Fields.Speaker) && Guid.TryParse(request.SpeakerId, out Guid speakerId)
+            && await db.Speakers.AnyAsync(speaker => speaker.Id == speakerId, cancellationToken);
+        bool seriesExists = !request.UseSource.Contains(Fields.Series) && Guid.TryParse(request.SeriesId, out Guid seriesId)
+            && await db.Series.AnyAsync(series => series.Id == seriesId, cancellationToken);
+        Correct(sermon, request, speakerExists, seriesExists);
 
-        if (useSource.Contains(Fields.Title))
-            sermon.Title = null;
-        else if (request.Title is { } title)
-            sermon.Title = title.Trim() is { Length: > 0 and <= TitleLimit } trimmed ? Corrected(trimmed, sermon.SourceTitle) : throw Invalid($"Give it a title of up to {TitleLimit} characters.");
-
-        if (useSource.Contains(Fields.Speaker))
-            sermon.SpeakerId = null;
-        else if (request.SpeakerId is { } speakerId)
-            sermon.SpeakerId = Guid.TryParse(speakerId, out Guid id) && await db.Speakers.AnyAsync(speaker => speaker.Id == id, cancellationToken)
-                ? (id == sermon.SourceSpeakerId ? null : id)
-                : throw Invalid("Choose a speaker from the list.");
-
-        if (useSource.Contains(Fields.Series))
-            (sermon.SeriesCorrected, sermon.SeriesId) = (false, null);
-        else if (request.SeriesId is { } seriesId)
-        {
-            Guid? chosen = seriesId.Length == 0 ? null
-                : Guid.TryParse(seriesId, out Guid id) && await db.Series.AnyAsync(series => series.Id == id, cancellationToken) ? id
-                : throw Invalid("Choose a series from the list.");
-            (sermon.SeriesCorrected, sermon.SeriesId) = chosen == sermon.SourceSeriesId && sermon.Origin == SermonSources.Website ? (false, null) : (true, chosen);
-        }
-
-        if (useSource.Contains(Fields.Service))
-            sermon.Service = null;
-        else if (request.Service is { } service)
-            sermon.Service = service.Trim().Length <= ServiceLimit ? Corrected(service.Trim(), sermon.SourceService) : throw Invalid($"Keep the service to {ServiceLimit} characters.");
-
-        if (useSource.Contains(Fields.YouTube))
-            (sermon.YouTubeCorrected, sermon.YouTubeId) = (false, null);
-        else if (request.YouTube is { } youTube)
-        {
-            string? id = youTube.Trim().Length == 0 ? null : YouTubeIds.Find(youTube) ?? throw Invalid("That isn't a YouTube link. Paste the video's address.");
-            (sermon.YouTubeCorrected, sermon.YouTubeId) = id == sermon.SourceYouTubeId ? (false, null) : (true, id);
-        }
-
-        if (request.Hidden is { } hidden)
-            sermon.Hidden = hidden;
         if (request.Checked is { } isChecked)
         {
             sermon.CheckedAt = isChecked ? time.GetUtcNow().UtcDateTime : null;
@@ -143,9 +110,55 @@ internal sealed class SermonLibraryService(
         return Detail(sermon, await LookupsAsync(cancellationToken));
     }
 
-    private async Task RequireOursAsync(string what, CancellationToken cancellationToken)
+    internal static void Correct(SermonRecord sermon, SermonCorrection request, bool speakerExists, bool seriesExists)
     {
-        if ((await SourceStates.GetAsync(db, cancellationToken)).Source != SermonSources.Uploads)
+        HashSet<string> useSource = request.UseSource.ToHashSet();
+
+        if (useSource.Contains(Fields.Title))
+            sermon.Title = null;
+        else if (request.Title is { } title)
+            sermon.Title = title.Trim() is { Length: > 0 and <= TitleLimit } trimmed ? UnlessSource(trimmed, sermon.SourceTitle) : throw Invalid($"Give it a title of up to {TitleLimit} characters.");
+
+        if (useSource.Contains(Fields.Speaker))
+            sermon.SpeakerId = null;
+        else if (request.SpeakerId is { } speakerId)
+            sermon.SpeakerId = Guid.TryParse(speakerId, out Guid id) && speakerExists
+                ? (id == sermon.SourceSpeakerId ? null : id)
+                : throw Invalid("Choose a speaker from the list.");
+
+        if (useSource.Contains(Fields.Series))
+            (sermon.SeriesCorrected, sermon.SeriesId) = (false, null);
+        else if (request.SeriesId is { } seriesId)
+        {
+            Guid? chosen = seriesId.Length == 0 ? null
+                : Guid.TryParse(seriesId, out Guid id) && seriesExists ? id
+                : throw Invalid("Choose a series from the list.");
+            (sermon.SeriesCorrected, sermon.SeriesId) = chosen == sermon.SourceSeriesId && sermon.Origin == SermonSources.Website ? (false, null) : (true, chosen);
+        }
+
+        if (useSource.Contains(Fields.Service))
+            sermon.Service = null;
+        else if (request.Service is { } service)
+            sermon.Service = service.Trim().Length <= ServiceLimit ? UnlessSource(service.Trim(), sermon.SourceService) : throw Invalid($"Keep the service to {ServiceLimit} characters.");
+
+        if (useSource.Contains(Fields.YouTube))
+            (sermon.YouTubeCorrected, sermon.YouTubeId) = (false, null);
+        else if (request.YouTube is { } youTube)
+        {
+            string? id = youTube.Trim().Length == 0 ? null : YouTubeIds.Find(youTube) ?? throw Invalid("That isn't a YouTube link. Paste the video's address.");
+            (sermon.YouTubeCorrected, sermon.YouTubeId) = id == sermon.SourceYouTubeId ? (false, null) : (true, id);
+        }
+
+        if (request.Hidden is { } hidden)
+            sermon.Hidden = hidden;
+    }
+
+    private async Task RequireOursAsync(string what, CancellationToken cancellationToken) =>
+        RequireOurs(await SourceStates.GetAsync(db, cancellationToken), what);
+
+    internal static void RequireOurs(SourceState state, string what)
+    {
+        if (state.Source != SermonSources.Uploads)
             throw new RpcException(new Status(StatusCode.FailedPrecondition,
                 $"While sermons come from the website, {what} come from it too. Switch Where new sermons come from to uploads to add them here."));
     }
@@ -308,7 +321,7 @@ internal sealed class SermonLibraryService(
         };
     }
 
-    private static CopyItem CopyItem(SermonRecord sermon) => new()
+    internal static CopyItem CopyItem(SermonRecord sermon) => new()
     {
         SermonId = sermon.Id.ToString(),
         Title = sermon.EffectiveTitle,
@@ -382,20 +395,13 @@ internal sealed class SermonLibraryService(
 
     private static SermonDetail Detail(SermonRecord sermon, Lookups lookups)
     {
-        List<string> corrected = [];
-        if (sermon.Title is not null) corrected.Add(Fields.Title);
-        if (sermon.SpeakerId is not null) corrected.Add(Fields.Speaker);
-        if (sermon.SeriesCorrected) corrected.Add(Fields.Series);
-        if (sermon.Service is not null) corrected.Add(Fields.Service);
-        if (sermon.YouTubeCorrected) corrected.Add(Fields.YouTube);
-
         string? suggestion = sermon.EffectiveSeriesId is null ? TitleParts.SuggestedSeries(sermon.EffectiveTitle) : null;
         return new SermonDetail
         {
             Sermon = SermonPublisher.Payload(sermon, lookups.Series, lookups.Speakers),
             Origin = sermon.Origin,
             Hidden = sermon.Hidden,
-            Corrected = corrected,
+            Corrected = CorrectedFields(sermon),
             FromSource = new SermonFields
             {
                 Title = sermon.SourceTitle,
@@ -408,18 +414,29 @@ internal sealed class SermonLibraryService(
                 : lookups.Series.Values.FirstOrDefault(series => string.Equals(series.Name, suggestion, StringComparison.OrdinalIgnoreCase))?.Name ?? suggestion,
             AddedAt = sermon.AddedAt,
             CheckedAt = sermon.CheckedAt,
-            NeedsALook = sermon.CheckedAt is null && !sermon.Hidden ? ReasonsFor(sermon, lookups) : [],
+            NeedsALook = sermon.CheckedAt is null && !sermon.Hidden ? ReasonsFor(sermon, lookups.SpeakerCounts) : [],
         };
     }
 
-    private static List<string> ReasonsFor(SermonRecord sermon, Lookups lookups)
+    internal static List<string> CorrectedFields(SermonRecord sermon)
+    {
+        List<string> corrected = [];
+        if (sermon.Title is not null) corrected.Add(Fields.Title);
+        if (sermon.SpeakerId is not null) corrected.Add(Fields.Speaker);
+        if (sermon.SeriesCorrected) corrected.Add(Fields.Series);
+        if (sermon.Service is not null) corrected.Add(Fields.Service);
+        if (sermon.YouTubeCorrected) corrected.Add(Fields.YouTube);
+        return corrected;
+    }
+
+    internal static List<string> ReasonsFor(SermonRecord sermon, IReadOnlyDictionary<Guid, int>? speakerCounts)
     {
         List<string> reasons = [];
         if (sermon.Origin == SermonSources.Uploads)
             reasons.Add(Reasons.JustUploaded);
         if (sermon.EffectiveSeriesId is null && TitleParts.SuggestedSeries(sermon.EffectiveTitle) is not null)
             reasons.Add(Reasons.NoSeries);
-        if (sermon.EffectiveSpeakerId is { } speaker && lookups.SpeakerCounts?.GetValueOrDefault(speaker) == 1)
+        if (sermon.EffectiveSpeakerId is { } speaker && speakerCounts?.GetValueOrDefault(speaker) == 1)
             reasons.Add(Reasons.NewSpeaker);
         return reasons.Count > 0 ? reasons : [Reasons.New];
     }
@@ -446,10 +463,10 @@ internal sealed class SermonLibraryService(
         Count = count,
     };
 
-    private static IQueryable<SermonRecord> Corrected(IQueryable<SermonRecord> sermons) =>
+    private static IQueryable<SermonRecord> WithCorrections(IQueryable<SermonRecord> sermons) =>
         sermons.Where(sermon => sermon.Title != null || sermon.SpeakerId != null || sermon.SeriesCorrected || sermon.Service != null || sermon.YouTubeCorrected);
 
-    private static string? Corrected(string value, string fromSource) => value == fromSource ? null : value;
+    private static string? UnlessSource(string value, string fromSource) => value == fromSource ? null : value;
 
     private async Task<SermonRecord> FindSermonAsync(string id, CancellationToken cancellationToken) =>
         await db.Sermons.FindAsync([ParseId(id, "sermon")], cancellationToken) ?? throw NotFound("That sermon");

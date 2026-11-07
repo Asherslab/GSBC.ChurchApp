@@ -11,10 +11,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed class SermonsService(SermonsDbContext db, SermonFollowing following, TimeProvider time) : ISermonsService
 {
-    public const int BatchLimit = 500;
+    private const int BatchLimit = 500;
     public static readonly TimeSpan ClockSlack = TimeSpan.FromMinutes(5);
 
-    public const int MostLatest = 10;
+    private const int MostLatest = 10;
 
     public async ValueTask<SermonPage> LatestAsync(LatestQuery request, CallContext context = default)
     {
@@ -116,7 +116,7 @@ internal sealed class SermonsService(SermonsDbContext db, SermonFollowing follow
         record.UpdatedAt = now > record.UpdatedAt ? now : record.UpdatedAt.AddTicks(1);
     }
 
-    private static ListeningEntry Clamped(ListeningEntry entry, DateTime now)
+    internal static ListeningEntry Clamped(ListeningEntry entry, DateTime now)
     {
         DateTime latest = now + ClockSlack;
         DateTime? Clamp(DateTime? at) => at is { } value ? (value.ToUniversalTime() > latest ? latest : value.ToUniversalTime()) : null;

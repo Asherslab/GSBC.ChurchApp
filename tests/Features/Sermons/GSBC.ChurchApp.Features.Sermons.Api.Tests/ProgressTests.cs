@@ -1,13 +1,15 @@
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
+[Integration("Saved progress is merged with the stored row and published as a feed row scoped to its person, and only for sermons that exist")]
 public sealed class ProgressTests : SermonsHost
 {
     [Fact]
-    public async Task ProgressIsMergedByTheRuleAndReachesOnlyThatPersonsPhones()
+    public async Task ProgressIsMergedWithWhatIsStoredAndReachesOnlyThatPersonsPhones()
     {
         await ReadTheWebsiteAsync();
         string sermon = (await CatalogueAsync()).First().Id;
@@ -17,15 +19,6 @@ public sealed class ProgressTests : SermonsHost
         await SaveAsync(person, ListeningProgress.Heard(sermon, 600, 2400, now.AddMinutes(-10)));
         await SaveAsync(person, ListeningProgress.Heard(sermon, 100, 2400, now.AddMinutes(-60)));
         Assert.Equal(600, (await StoredAsync(person, sermon)).Position);
-
-        await SaveAsync(person, ListeningProgress.Heard(sermon, 2390, 2400, now.AddMinutes(-5)));
-        await SaveAsync(person, ListeningProgress.Heard(sermon, 45, 2400, now.AddMinutes(-1)));
-        ListeningEntry relistening = await StoredAsync(person, sermon);
-        Assert.Equal(45, relistening.Position);
-        Assert.True(ListeningProgress.IsFinished(relistening));
-
-        await SaveAsync(person, ListeningProgress.Heard(sermon, 900, 2400, now.AddDays(3)));
-        Assert.Equal(now + SermonsService.ClockSlack, (await StoredAsync(person, sermon)).HeardAt);
 
         List<FeedChangeRecord> rows = await LiveRowsAsync(SermonsFeeds.Progress);
         Assert.All(rows, row => Assert.Equal(person.ToString(), row.ScopeId));
