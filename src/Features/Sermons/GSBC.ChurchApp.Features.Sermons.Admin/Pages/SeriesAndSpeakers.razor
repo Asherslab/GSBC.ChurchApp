@@ -157,10 +157,11 @@
 
     private async Task<Lists> LoadAsync()
     {
-        ValueTask<SpeakerList> speakers = Sermons.SpeakersAsync();
-        ValueTask<SourceStatus> status = Sermons.StatusAsync();
-        SeriesList series = await Sermons.SeriesAsync();
-        return new Lists(series.Series, (await speakers).Speakers, (await status).Source == SermonSources.Uploads);
+        Task<SpeakerList> speakers = Sermons.SpeakersAsync().AsTask();
+        Task<SourceStatus> status = Sermons.StatusAsync().AsTask();
+        Task<SeriesList> series = Sermons.SeriesAsync().AsTask();
+        await Task.WhenAll(speakers, status, series);
+        return new Lists((await series).Series, (await speakers).Speakers, (await status).Source == SermonSources.Uploads);
     }
 
     private static IEnumerable<T> Matching<T>(IEnumerable<T> items, string query, Func<T, string> text) =>

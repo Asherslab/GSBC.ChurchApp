@@ -68,8 +68,10 @@
 
     private async Task<PeopleView> LoadAsync()
     {
-        ValueTask<PeopleList> searching = Accounts.SearchPeopleAsync(_query);
-        List<InvitationInfo> invitations = (await Accounts.ListInvitationsAsync()).Invitations;
+        Task<PeopleList> searching = Accounts.SearchPeopleAsync(_query).AsTask();
+        Task<InvitationList> listing = Accounts.ListInvitationsAsync().AsTask();
+        await Task.WhenAll(searching, listing);
+        List<InvitationInfo> invitations = (await listing).Invitations;
         List<PersonInfo> people = (await searching).People;
         _invitations = invitations.ToDictionary(invitation => invitation.UserId);
         if (_selected is null && PersonId is { } chosen && _invitations.TryGetValue(chosen, out InvitationInfo? linked))
