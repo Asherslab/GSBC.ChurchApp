@@ -2,9 +2,10 @@
 @inject YourCalendars Yours
 
 <Page Title="@First.ToString("MMMM", English)" StuckAt="90">
-    <Masthead Title="@First.ToString("MMMM", English)" Beside="Switch" Class="masthead--week">
+    <Masthead Title="@First.ToString("MMMM", English)" Class="masthead--week">
         <div class="month-steps">
             <span class="month-steps__year">@First.Year</span>
+            @Switch
             <button type="button" class="icon-btn" aria-label="@($"Back to {First.AddMonths(-1).ToString("MMMM", English)}")" disabled="@(First <= Earliest)" @onclick="() => Step(-1)"><Icon Name="chevron-left" /></button>
             <button type="button" class="icon-btn" aria-label="@($"On to {First.AddMonths(1).ToString("MMMM", English)}")" disabled="@(First >= Latest)" @onclick="() => Step(1)"><Icon Name="chevron-right" /></button>
         </div>

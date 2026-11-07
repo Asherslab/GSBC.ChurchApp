@@ -13,8 +13,9 @@
 .week-more { display: grid; padding: 24px var(--gutter) 0; }
 .week-end { padding: 20px var(--gutter) 0; }
 
-.month-steps { display: flex; align-items: center; gap: 2px; margin-top: -6px; color: var(--masthead-note); font-weight: 600; font-variant-numeric: tabular-nums; }
+.month-steps { display: flex; align-items: center; gap: 2px; margin-top: -4px; color: var(--masthead-note); font-weight: 600; font-variant-numeric: tabular-nums; }
 .month-steps__year { margin-right: auto; font-size: var(--text-label); }
+.month-steps .segmented { margin-right: 6px; }
 .month-steps .icon-btn { color: var(--on-masthead); }
 .month-steps .icon-btn:disabled { opacity: 0.35; }
 .month-body { padding: 12px 14px 0; }
@@ -46,13 +47,13 @@
 .event-head__title { margin: 0; color: var(--on-masthead); font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; }
 .event-head__title:focus { outline: none; }
 .event-head__when { margin: 0; color: var(--masthead-note); font-size: var(--text-label); font-weight: 600; font-variant-numeric: tabular-nums; }
-.event-head__editable { justify-self: start; padding: 2px 6px; margin: -2px -6px; border: 0; border-radius: 6px; outline: 2px dashed color-mix(in srgb, var(--on-masthead) 45%, transparent); outline-offset: 3px; background: none; font-family: inherit; text-align: left; cursor: pointer; }
+.event-head__editable { justify-self: start; padding: 2px 6px; margin: -2px -6px; border: 0; border-radius: var(--radius-inner); outline: 2px dashed color-mix(in srgb, var(--on-masthead) 45%, transparent); outline-offset: 3px; background: none; font-family: inherit; text-align: left; cursor: pointer; }
 .event-head__editable:hover { background: var(--masthead-chip); }
 .event-head__editable:focus-visible { outline-style: solid; outline-color: var(--marker); }
 .event-head--compact { gap: 12px; padding: 16px; }
 .event-head--compact .event-head__title { font-size: var(--text-title); }
 .event-head--compact .date-block { width: 62px; padding: 6px 0; border-radius: var(--radius-field); }
-.event-head--compact .date-block__day { font-size: 1.53rem; }
+.event-head--compact .date-block__day { font-size: var(--text-headline); }
 
 .date-block { display: grid; justify-items: center; flex: none; width: 78px; padding: 8px 0 9px; border: 0; border-radius: var(--radius); background: var(--surface); color: var(--primary); font: inherit; font-variant-numeric: tabular-nums; }
 .date-block__weekday { color: var(--ink-3); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.06em; }
@@ -97,7 +98,6 @@
 .editor-foot--panel { position: static; padding: 14px 16px 16px; background: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 
 .topbar__text-btn { min-height: var(--touch); padding: 0 12px; border: 0; background: none; color: var(--on-masthead); font: inherit; font-size: var(--text-body); font-weight: 600; cursor: pointer; }
-.topbar__editing { padding: 0 12px; color: var(--masthead-note); font-size: var(--text-label); font-weight: 600; }
 
 .calendar-choice { gap: 12px; }
 .calendar-choice__name { display: grid; flex: 1; min-width: 0; color: inherit; text-decoration: none; }
@@ -164,3 +164,5 @@
 @media (max-width: 1428px) {
   .calendar-workbench .workbench__detail { border-left: 0; }
 }
+.calendar-subhead { margin: 24px 0 4px; font-size: var(--text-label); font-weight: 700; }
+.calendar-editors { margin: 0; }

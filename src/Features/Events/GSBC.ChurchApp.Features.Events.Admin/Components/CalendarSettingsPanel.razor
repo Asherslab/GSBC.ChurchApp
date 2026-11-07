@@ -14,7 +14,7 @@
                    Hint="@IcalHint" Problem="@(Calendar?.Settings.ICalProblem is { Length: > 0 } problem ? problem : null)" />
         <div class="field">
             <span class="field__label">Who can edit it</span>
-            <p class="field__hint">Calendar editors of @(_name.Length > 0 ? _name : "this calendar"), given in Who can do what: choose someone, then give them Calendar editor at this calendar. Its editors can give it to others.</p>
+            <p class="field__hint calendar-editors">Calendar editors of @(_name.Length > 0 ? _name : "this calendar"), given in Who can do what: choose someone, then give them Calendar editor at this calendar. Its editors can give it to others.</p>
             <TextLink Href="access/people">Open Who can do what</TextLink>
         </div>
         @if (Calendar is { } existing)

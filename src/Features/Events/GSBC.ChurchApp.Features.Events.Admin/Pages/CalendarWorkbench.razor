@@ -330,7 +330,7 @@
             }
             @if (view.Asked.Items.Count > 0)
             {
-                <h3 class="calendar-day__head">Waiting to publish</h3>
+                <h3 class="calendar-subhead">Waiting to publish</h3>
                 <div class="list">
                     @foreach (AskedItem item in view.Asked.Items)
                     {
@@ -344,7 +344,7 @@
             }
             @if (view.Desk.AskedToShow.Count > 0)
             {
-                <h3 class="calendar-day__head">Asked to show on your calendar</h3>
+                <h3 class="calendar-subhead">Asked to show on your calendar</h3>
                 <div class="list">
                     @foreach (ShowingRequest request in view.Desk.AskedToShow)
                     {

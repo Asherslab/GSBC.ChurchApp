@@ -3,13 +3,13 @@
                   Value="Chosen" ValueChanged="PickAsync" NoneText="@(Missing ? EventFieldKeys.Missing(EventFieldKeys.Place) : "No place")"
                   Placeholder="Find a place used before, or type a new one" CreateText="@(text => $"A new place: “{text}”")" OnCreate="CreateAsync"
                   Problem="@(Missing && Place is null ? "Each date needs a place." : null)" />
-    @if (Place is { } place)
+    @if (Place is { } place && !Used.Any(used => Same(used, place)))
     {
         <div class="ui-pair">
             <TextField Label="Called" Value="@place.Name" ValueChanged="value => Change(place, name: value)" Placeholder="Teralba Park" MaxLength="80" />
-            <TextField Label="Address" Value="@place.Address" ValueChanged="value => Change(place, address: value)" Placeholder="Street, suburb" MaxLength="160"
-                       Hint="An address opens the phone's maps." />
+            <TextField Label="Address" Value="@place.Address" ValueChanged="value => Change(place, address: value)" Placeholder="Street, suburb" MaxLength="160" />
         </div>
+        <span class="field__hint">With an address, tapping the place opens the phone's maps.</span>
     }
 </div>
 

@@ -13,9 +13,6 @@
 else
 {
     <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="Closed" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
-        <Actions>
-            <span class="topbar__editing">@(Target.IsNew ? "New event" : "Editing")</span>
-        </Actions>
         <ChildContent>@Body</ChildContent>
     </Page>
 }
