@@ -91,6 +91,31 @@ unrelated and isn't used here.
 13. **Sunday services are entered here** as regular events in v1, not read from Elvanto. Whether to read
     Elvanto's services later is undecided.
 
+### Not overloading people (owner, 2026-11-07)
+
+14. **A new install shows only the default calendars.** The office marks a few calendars as for everyone by
+    default (*Sunday services*, *Whole church*, likely). Every other calendar for everyone is listed to find,
+    and stays off until someone **adds it to their calendar**. Adding needs no sign-in, and moves to the person
+    when they sign in, as following a sermon series does.
+15. **A ministry's calendars show for its team.** Someone given a private calendar (*Kids team*, *Church
+    members*) sees it without adding it. A ministry's team also sees that ministry's public calendars
+    (*Kids*): helpers almost always serve at those events. Either can be turned off.
+16. **Regular events stay in the background.** The week view shows them as quiet single lines; **Coming up**
+    lists only one-off events, specials and dates that are not on; the Home tile shows the next few of those.
+17. **Chips to hide a calendar for a moment,** one per calendar you've added, with **Browse all calendars**
+    beside them to add or remove calendars. No "show everything" switch.
+
+### The weekly digest (owner, 2026-11-07)
+
+The office sends *What's Next at Good Shepherd* by email today, built by hand: a few items, each with a
+picture, a label (the ministry or kind: "Outreach", "Ladies Event", "Life Groups on break"), a when line ("This
+Saturday 24 October", "This Friday @ 6:30pm", "Next two Sundays"), a description with the place, a contact and
+sometimes a register link, and a button to the website's events. Its items are exactly the calendar's one-off
+events, specials and breaks, and some arrive before their details ("full details this Sunday").
+
+18. **Try a "send the digest" button** in place of building it by hand: the digest made from the calendar.
+    Only a proof of concept to show staff, with little invested, since it may be scrapped quickly.
+
 ### Pinned for later
 
 - **The website shows the app's calendar** (owner, 2026-11-07): replace the website's events page with an
