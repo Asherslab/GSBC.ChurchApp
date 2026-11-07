@@ -3,10 +3,12 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
+[Integration("A calendar link's secret is checked against Postgres, so a calendar file is served only to a holder it's still for, and a reset link stops working")]
 public sealed class CalendarFileTests : EventsHost
 {
     private const string Agm = "Annual general meeting";

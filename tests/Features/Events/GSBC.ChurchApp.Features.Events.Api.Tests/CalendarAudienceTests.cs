@@ -1,7 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
-namespace GSBC.ChurchApp.Features.Events.Unit.Tests;
+namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
 public sealed class CalendarAudienceTests
 {

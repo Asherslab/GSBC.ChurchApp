@@ -1,9 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
-using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 
-namespace GSBC.ChurchApp.Features.Events.Unit.Tests;
+namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
 public sealed class ICalReadingTests
 {
@@ -56,7 +55,7 @@ public sealed class ICalReadingTests
 
         Assert.Equal(
             [
-                ("youth-night/20261113T080000Z", "Youth night", new DateOnly(2026, 11, 13), (DateOnly?)null, (int?)(18 * 60), (int?)(20 * 60), "Church hall"),
+                ("youth-night/20261113T080000Z", "Youth night", new DateOnly(2026, 11, 13), null, 18 * 60, 20 * 60, "Church hall"),
                 ("youth-night/20261127T080000Z", "Youth night: games", new DateOnly(2026, 11, 27), null, 19 * 60, 21 * 60, ""),
                 ("school-camp", "School camp, Year 6", new DateOnly(2026, 12, 1), new DateOnly(2026, 12, 3), null, null, ""),
                 ("youth-night/20261204T080000Z", "Youth night", new DateOnly(2026, 12, 4), null, 18 * 60, 20 * 60, "Church hall"),

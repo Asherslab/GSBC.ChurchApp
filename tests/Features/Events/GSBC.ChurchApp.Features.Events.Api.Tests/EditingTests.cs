@@ -1,105 +1,74 @@
-using System.Security.Claims;
-using Grpc.Core;
+using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
-using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
-public sealed class EditingTests : EventsHost
+public sealed class EditingTests
 {
+    private static readonly DateOnly Today = new(2026, 11, 8);
+    private static readonly DateTime Now = ChurchTime.ToUtc(new DateTime(2026, 11, 8, 20, 0, 0));
+
     [Fact]
-    public async Task AnEditorOfOneCalendarCantReachAnotherCalendarsEventsThroughTheirOwn()
+    public void OnACalendarThatNeedsAPublisherOnlyAPublisherShowsAnEventOrChangesOneOnceShown()
     {
-        CalendarSettings kids = await CalendarAsync("Kids", Audience.Everyone);
-        CalendarSettings members = await CalendarAsync("Church members", Audience.SignedIn);
-        ClaimsPrincipal office = Person((EventsPermissions.EditNode, null));
-        EventDetail agm = await EditingAsync(office, (editing, context) => editing.SaveEventAsync(Event(members, "Annual general meeting"), context));
-        ClaimsPrincipal kidsLeader = Person((EventsPermissions.EditNode, kids.Calendar.Id));
+        CalendarRecord youth = Calendar("Youth", needsPublisher: true);
+        CalendarRecord kids = Calendar("Kids", needsPublisher: false);
+        EventRecord camp = new() { Id = Guid.CreateVersion7(), CalendarId = youth.Id, Showing = Showing.SavedForLater };
+        EventRecord breakUp = new() { Id = Guid.CreateVersion7(), CalendarId = kids.Id, Showing = Showing.Shown };
 
-        RpcException throughKids = await Assert.ThrowsAsync<RpcException>(() => EditingAsync(kidsLeader, (editing, context) =>
-            editing.SaveEventAsync(Event(kids, "Moved into Kids", agm.Id), context)));
-        RpcException readThroughKids = await Assert.ThrowsAsync<RpcException>(() => EditingAsync(kidsLeader, (editing, context) =>
-            editing.EventAsync(new EventRef { CalendarId = kids.Calendar.Id, EventId = agm.Id }, context)));
-        CalendarDesk desk = await EditingAsync(kidsLeader, (editing, context) => editing.DeskAsync(new Done(), context));
-        Agenda agenda = await EditingAsync(kidsLeader, (editing, context) => editing.AgendaAsync(new AgendaQuery { CalendarIds = [members.Calendar.Id] }, context));
+        Assert.True(EventWriter.ShowingNeedsAPublisher(youth, null, Showing.Shown, Now));
+        Assert.True(EventWriter.ShowingNeedsAPublisher(youth, camp, Showing.ShownFrom, Now));
+        Assert.False(EventWriter.ShowingNeedsAPublisher(youth, camp, Showing.SavedForLater, Now));
+        Assert.False(EventWriter.ChangeNeedsAPublisher(youth, camp, Now));
+        Assert.True(EventWriter.ShowingNeedsAPublisher(youth, breakUp, Showing.Shown, Now));
+        Assert.False(EventWriter.ShowingNeedsAPublisher(kids, null, Showing.Shown, Now));
 
-        Assert.Equal(StatusCode.PermissionDenied, throughKids.StatusCode);
-        Assert.Equal(StatusCode.NotFound, readThroughKids.StatusCode);
-        Assert.Equal(["Kids"], desk.Calendars.Select(calendar => calendar.Settings.Calendar.Name));
-        Assert.Empty(agenda.Occurrences);
+        camp.Showing = Showing.Shown;
+
+        Assert.True(EventWriter.ChangeNeedsAPublisher(youth, camp, Now));
+        Assert.False(EventWriter.ChangeNeedsAPublisher(kids, breakUp, Now));
     }
 
     [Fact]
-    public async Task OnACalendarThatNeedsAPublisherAnEditorAsksAndAPublisherShowsIt()
+    public void ThisDateOnlyKeepsWhatItChangedAndEveryDateChangesTheRestButWarnsFirstAboutWhatADateKeeps()
     {
-        CalendarSettings youth = await CalendarAsync("Youth", Audience.Everyone, needsPublisher: true);
-        ClaimsPrincipal leader = Person((EventsPermissions.EditNode, youth.Calendar.Id));
-        ClaimsPrincipal publisher = Person((EventsPermissions.EditNode, youth.Calendar.Id), (EventsPermissions.PublishNode, youth.Calendar.Id));
-
-        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => EditingAsync(leader, (editing, context) =>
-            editing.SaveEventAsync(Event(youth, "Youth camp"), context)));
-        EventSave forLater = Event(youth, "Youth camp");
-        forLater.Showing = Showing.SavedForLater;
-        EventDetail saved = await EditingAsync(leader, (editing, context) => editing.SaveEventAsync(forLater, context));
-        ItemRef camp = new() { CalendarId = youth.Calendar.Id, EventId = saved.Id };
-        await EditingAsync(leader, (editing, context) => editing.AskToPublishAsync(camp, context));
-        AskedList asked = await EditingAsync(publisher, (editing, context) => editing.AskedToPublishAsync(new Done(), context));
-        Assert.Empty(await OccurrencesAsync(EventsFeeds.Public));
-
-        await EditingAsync(publisher, (editing, context) => editing.PublishAsync(camp, context));
-
-        Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
-        Assert.Equal("Youth camp", Assert.Single(asked.Items).Title);
-        Notification told = Assert.Single(Notifications.Raised);
-        Assert.Equal(EventsNotifications.AskedToPublish, told.Kind);
-        Assert.Equal(NotificationAudience.Holding(EventsPermissions.Publish, youth.Calendar.Id), told.Audience);
-        Assert.Equal("Youth camp", Assert.Single(await OccurrencesAsync(EventsFeeds.Public)).Fields.Title);
-        Assert.Empty((await EditingAsync(publisher, (editing, context) => editing.AskedToPublishAsync(new Done(), context))).Items);
-    }
-
-    [Fact]
-    public async Task ThisDateOnlyChangesOneDateAndEveryDateChangesTheRestButWarnsFirstAboutWhatASpecialKeeps()
-    {
-        CalendarSettings services = await CalendarAsync("Sunday services", Audience.Everyone);
-        ClaimsPrincipal office = Person((EventsPermissions.EditNode, services.Calendar.Id));
-        RegularEventSave every = new()
+        CalendarRecord services = Calendar("Sunday services", needsPublisher: false);
+        RegularEventRecord morning = new()
         {
-            CalendarId = services.Calendar.Id, Fields = new EventFields { Title = "Morning service", Place = new EventPlace { Name = "Auditorium" } },
-            Pattern = Weekly(DayOfWeek.Sunday), StartMinute = 10 * 60 + 30, EndMinute = 12 * 60, Showing = Showing.Shown,
+            Id = Guid.CreateVersion7(), CalendarId = services.Id, Fields = Fields("Morning service", "Auditorium"),
+            Pattern = new RegularPattern { Repeats = Repeats.Weekly, Days = [DayOfWeek.Sunday], StartDate = EventDates.Format(Today.AddDays(-60)) },
+            StartMinute = 10 * 60 + 30, EndMinute = 12 * 60, Showing = Showing.Shown,
         };
-        RegularEventDetail morning = (await EditingAsync(office, (editing, context) => editing.SaveRegularEventAsync(every, context))).Detail!;
         DateOnly anniversary = Today.AddDays(7);
-
-        await EditingAsync(office, (editing, context) => editing.SaveDateAsync(new DateSave
+        Timed every = new(morning.Fields, morning.StartMinute, morning.EndMinute);
+        Timed thatDay = new(Fields("Anniversary Sunday Service", "Auditorium"), 9 * 60, 12 * 60);
+        SpecialRecord special = new()
         {
-            CalendarId = services.Calendar.Id, RegularEventId = morning.Id, Date = EventDates.Format(anniversary),
-            Fields = new EventFields { Title = "Anniversary Sunday Service", Place = new EventPlace { Name = "Auditorium" } }, StartMinute = 9 * 60, EndMinute = 12 * 60,
-        }, context));
+            RegularEventId = morning.Id, Date = anniversary, Changed = FieldValues.Differences(every, thatDay),
+            Fields = thatDay.Fields, StartMinute = thatDay.StartMinute, EndMinute = thatDay.EndMinute,
+        };
+        Timed everyAfter = new(Fields("Morning service", "Fellowship Area"), 11 * 60, 12 * 60);
 
-        every.RegularEventId = morning.Id;
-        every.StartMinute = 11 * 60;
-        every.Fields.Place = new EventPlace { Name = "Fellowship Area" };
-        RegularEventSaved warned = await EditingAsync(office, (editing, context) => editing.SaveRegularEventAsync(every, context));
-        every.KeepOwnConfirmed = true;
-        await EditingAsync(office, (editing, context) => editing.SaveRegularEventAsync(every, context));
+        List<KeptValue> kept = EventWriter.KeptValues(morning, FieldValues.Differences(every, everyAfter), [special]);
+        (morning.Fields, morning.StartMinute) = (everyAfter.Fields, everyAfter.StartMinute);
+        List<EventOccurrence> dates = new EventsBook([services], [], [morning], [special], [], [], [])
+            .Occurrences(anniversary, anniversary.AddDays(7), _ => true).OrderBy(occurrence => occurrence.StartsAt).ToList();
 
-        Assert.False(warned.Saved);
-        KeptValue kept = Assert.Single(warned.KeepOwn);
-        Assert.Equal((EventFieldKeys.Time, "9am–12pm"), (kept.Field, kept.Value));
-        List<EventOccurrence> dates = await OccurrencesAsync(EventsFeeds.Public);
-        EventOccurrence special = dates.Single(date => date.Date == EventDates.Format(anniversary));
-        EventOccurrence ordinary = dates.Single(date => date.Date == EventDates.Format(anniversary.AddDays(7)));
-        Assert.Equal(("Anniversary Sunday Service", 9, "Fellowship Area"), (special.Fields.Title, Hour(special), special.Fields.Place!.Name));
-        Assert.Equal(("Morning service", 11, "Fellowship Area"), (ordinary.Fields.Title, Hour(ordinary), ordinary.Fields.Place!.Name));
-        Assert.Equal("Now 11am–12pm · Now at Fellowship Area", ordinary.ChangeNote);
+        KeptValue time = Assert.Single(kept);
+        Assert.Equal((EventDates.Format(anniversary), EventFieldKeys.Time, "9am–12pm"), (time.Date, time.Field, time.Value));
+        Assert.Equal([("Anniversary Sunday Service", 9, "Fellowship Area"), ("Morning service", 11, "Fellowship Area")], dates.Select(Seen));
+        Assert.Equal("Now 11am–12pm · Now at Fellowship Area", FieldValues.ChangeNote(every, everyAfter));
     }
 
-    private static int Hour(EventOccurrence occurrence) => Platform.Common.ChurchTime.ToChurch(occurrence.StartsAt).Hour;
+    private static (string, int, string) Seen(EventOccurrence occurrence) =>
+        (occurrence.Fields.Title, ChurchTime.ToChurch(occurrence.StartsAt).Hour, occurrence.Fields.Place!.Name);
 
-    private static EventSave Event(CalendarSettings calendar, string title, string eventId = "") => new()
+    private static EventFields Fields(string title, string place) => new() { Title = title, Place = new EventPlace { Name = place } };
+
+    private static CalendarRecord Calendar(string name, bool needsPublisher) => new()
     {
-        CalendarId = calendar.Calendar.Id, EventId = eventId, Fields = new EventFields { Title = title },
-        Times = new EventTimes { StartDate = EventDates.Format(Today.AddDays(10)), StartMinute = 19 * 60 }, Showing = Showing.Shown,
+        Id = Guid.CreateVersion7(), Name = name, Slug = CalendarLinks.SlugOf(name), Audience = Audience.Everyone.Text, NeedsPublisher = needsPublisher,
     };
 }

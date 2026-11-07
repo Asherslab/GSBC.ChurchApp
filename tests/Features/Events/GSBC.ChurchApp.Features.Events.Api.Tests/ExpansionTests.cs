@@ -1,8 +1,7 @@
-using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 
-namespace GSBC.ChurchApp.Features.Events.Unit.Tests;
+namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
 public sealed class ExpansionTests
 {
@@ -38,12 +37,7 @@ public sealed class ExpansionTests
 
         Assert.Equal(["2026-12-20", "2026-12-27", "2027-01-03", "2027-01-31", "2027-02-07"], dates.Select(date => date.Date));
         Assert.All(dates.Where(date => date.Date is "2026-12-27" or "2027-01-03"), date =>
-        {
-            Assert.True(date.NotOn);
-            Assert.Equal("Christmas break", date.NotOnReason);
-            Assert.Equal("2027-01-31", date.BackOn);
-            Assert.Equal("Evening service", date.Fields.Title);
-        });
+            Assert.Equal((true, "Christmas break", "2027-01-31", "Evening service"), (date.NotOn, date.NotOnReason, date.BackOn, date.Fields.Title)));
         Assert.False(dates[0].NotOn);
     }
 

@@ -315,12 +315,14 @@ all four on 2026-11-08):
 - **Sample calendar** in Development only (made-up names): Sunday services with an Anniversary special and a
   Christmas break, Whole church, Kids (with a camp weekend off), Kids team, Outreach every second Saturday needing a
   place, Church members.
-- **Tests, split by whether they need storage:** `Events.Unit.Tests` touches no database, container or network
-  (patterns, breaks, specials, the window, which feed and audience each row gets, contact details, audiences and
-  widening; `EventsBook` is built from plain lists and `EventsPublisher.Rows` is pure). `Events.Api.Tests` runs against
-  Postgres only for rules that are about storage: publishing deletes, per-calendar permission checks, Ask to publish,
-  this date only vs every date, adding a calendar and *Tell people*, and showing on another calendar. Sync's per-row
-  audiences are `RowAudienceFeedTests` in Platform.Api.Tests (Postgres). The split follows `testing.md` once it lands.
+- **Tests** (`Events.Api.Tests`, split as [testing.md](../architecture/testing.md) says): unit tests for patterns,
+  breaks, specials, the window, which feed and audience each row gets, contact details, audiences and widening
+  (`EventsBook` is built from plain lists and `EventsPublisher.Rows` is pure), who must publish
+  (`EventWriter.ShowingNeedsAPublisher`), this date only vs every date (`EventWriter.KeptValues`) and adding or telling a
+  calendar for signed-in people (`CalendarFollowing.WhyNotAdd`, `Tellable`). `[Integration]` against Postgres:
+  publishing deletes, Ask to publish, reaching events only through their own calendar, and showing on another
+  calendar. Sync's per-row audiences are `FeedVisibilityTests` in Platform.Api.Tests; `RowAudienceFeedTests` covers
+  the pruned tombstone (Postgres).
 
 **Events screens (2026-11-08, Station 2):** every screen, on the phone and in the admin panel, built with impeccable from
 the locked sketches and finish-reviewed (`.impeccable/review/events/`).
@@ -366,10 +368,10 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   workbench to look again.
 - **Reminders** (decisions 22-25): `events.details.needed` (inbox and push, per calendar), raised by `DetailsReminders`
   on the 15-minute schedule (one replica at a time).
-- **Tests.** `Events.Unit.Tests`, no I/O: reading an iCal calendar (a weekly repeat with a skipped and a changed
+- **Tests.** Unit, no I/O: reading an iCal calendar (a weekly repeat with a skipped and a changed
   date, in another time zone, and an all-day camp) into dated events; the ETag on the next read; an address on a
   private network never read; writing a calendar file (escaping, folding, all-day ends); a reminder due once at 7 and
-  once at 2 days, and when it settles. `Events.Api.Tests`, against Postgres because the secret links live there: a private calendar never
+  once at 2 days, and when it settles. `[Integration]` against Postgres, because the secret links live there: a private calendar never
   served without a valid link of someone it's for (nor after their role is taken away, nor to a signed-out phone
   holding a stale *Calendar added*); a reset link refused. `EndpointRules` allows exactly the four paths.
 
