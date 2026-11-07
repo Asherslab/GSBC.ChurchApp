@@ -13,6 +13,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
+[Integration("Invitation links are one-time codes in Postgres: resending replaces the stored code, withdrawing deletes it and the unused account, and a passkey closes the invitation")]
 public sealed class InvitationTests : IAsyncLifetime
 {
     private TestDatabase _database = null!;

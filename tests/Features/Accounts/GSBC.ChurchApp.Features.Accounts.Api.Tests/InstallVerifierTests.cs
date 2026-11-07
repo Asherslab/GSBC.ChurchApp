@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
+[Integration("An install's assertion counter only moves forward through one conditional UPDATE, so a replayed or overtaken assertion is refused")]
 public sealed class InstallVerifierTests : IAsyncLifetime
 {
     private const string AppId = "YNT9A4LGVA.au.com.baptist.app.dev";

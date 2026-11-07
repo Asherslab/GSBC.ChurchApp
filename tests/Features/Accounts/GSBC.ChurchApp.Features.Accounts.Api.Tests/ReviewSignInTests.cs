@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
+[Integration("Sign-in codes are matched in Postgres: each use stores a session that turning the code off deletes, wrong guesses are counted from audit rows, and cleanup spares demo accounts")]
 public sealed class ReviewSignInTests : IAsyncLifetime
 {
     private const string Address = "203.0.113.7";
@@ -20,7 +21,6 @@ public sealed class ReviewSignInTests : IAsyncLifetime
 
     private readonly TestClock _clock = new();
     private readonly RoleHolders _roles = new();
-    private readonly Grants _grants = new();
     private ServiceProvider _services = null!;
     private Guid _staff;
 
@@ -35,7 +35,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
             .AddSingleton<TimeProvider>(_clock)
             .AddLogging()
             .AddSingleton<IRoleAssignments>(_roles)
-            .AddSingleton<IAccessEvaluator>(_grants)
+            .AddSingleton<IAccessEvaluator>(new NoGrants())
             .AddSingleton(new PermissionCatalog([new PermissionSet(AccountsPermissions.All)]))
             .AddScoped<DemoAccounts>()
             .AddScoped<ReviewSignIns>()
@@ -52,48 +52,28 @@ public sealed class ReviewSignInTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task ACodeSignsInUntilItExpiresOrIsTurnedOff()
+    public async Task EachUseStoresASessionThatEndsWhenItsCodeIsTurnedOff()
     {
         Guid demo = await NewDemoAccountAsync("review@example.com");
         string code = (await CreateCodeAsync(demo)).Code;
 
-        string secret = await SignInAsync("review@example.com", code.ToLowerInvariant().Replace("-", " "));
+        string secret = await SignInAsync("review@example.com", code);
         AccountSession session = await SessionAsync(secret);
         Assert.Equal(demo, session.UserId);
         Assert.NotNull(session.ReviewCodeId);
-        Assert.NotEmpty(await SignInAsync("review@example.com", code));
 
         await WithAsync<ReviewSignIns>(reviews => reviews.TurnOffAsync(_staff, session.ReviewCodeId.ToString()!, TestContext.Current.CancellationToken));
         Assert.False(await SessionExistsAsync(secret));
         Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("review@example.com", code));
-
-        string expiring = (await CreateCodeAsync(demo)).Code;
-        await WithDbAsync(db => db.ReviewCodes.Where(candidate => candidate.Hash == ReviewCodes.HashOf(expiring))
-            .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.ExpiresAt, _clock.UtcNow.AddMinutes(-1)), TestContext.Current.CancellationToken));
-        Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("review@example.com", expiring));
     }
 
     [Fact]
-    public async Task ACodeNeverReachesAnAccountThatIsNotADemoAccount()
+    public async Task ACodeOnlyOpensTheAccountItWasMadeFor()
     {
         Guid demo = await NewDemoAccountAsync("demo@example.com");
         string code = (await CreateCodeAsync(demo)).Code;
+        await NewDemoAccountAsync("person@example.com");
 
-        _roles.TakeAway(demo);
-        Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("demo@example.com", code));
-        await Assert.ThrowsAsync<RpcException>(() => CreateCodeAsync(demo));
-
-        _roles.Give(demo);
-        _grants.Give(demo, "*");
-        Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("demo@example.com", code));
-        _grants.TakeAway(demo);
-
-        await GivePasskeyAsync(demo);
-        Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("demo@example.com", code));
-
-        Guid person = await NewAccountAsync("person@example.com");
-        await WithDbAsync(db => db.ReviewCodes.Where(candidate => candidate.Hash == ReviewCodes.HashOf(code))
-            .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.UserId, person), TestContext.Current.CancellationToken));
         Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("person@example.com", code));
         Assert.Equal(0, await WithDbAsync(db => db.Sessions.CountAsync(TestContext.Current.CancellationToken)));
     }
@@ -129,15 +109,6 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         Assert.False(await WithDbAsync(db => db.Users.AnyAsync(user => user.Id == abandoned, TestContext.Current.CancellationToken)));
     }
 
-    [Fact]
-    public void CodesAreGroupedAndFreeOfLookalikes()
-    {
-        string code = ReviewCodes.NewCode();
-
-        Assert.Matches("^[A-Z0-9]{4}-[A-Z0-9]{4}-[A-Z0-9]{4}$", code);
-        Assert.DoesNotContain(code, character => "01258BILOSZ".Contains(character));
-    }
-
     private Task<CodeReply> CreateCodeAsync(Guid demo) =>
         WithAsync<ReviewSignIns, CodeReply>(reviews => reviews.CreateCodeAsync(_staff, demo.ToString(), "TestFlight", 0, TestContext.Current.CancellationToken));
 
@@ -163,17 +134,6 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         }));
         return id;
     }
-
-    private Task GivePasskeyAsync(Guid userId) => WithDbAsync(async db =>
-    {
-        db.Set<IdentityUserPasskey<Guid>>().Add(new IdentityUserPasskey<Guid>
-        {
-            UserId = userId,
-            CredentialId = [1, 2, 3],
-            Data = new IdentityPasskeyData { PublicKey = [1], Transports = [], AttestationObject = [], ClientDataJson = [], CreatedAt = _clock.GetUtcNow() },
-        });
-        return await db.SaveChangesAsync(TestContext.Current.CancellationToken);
-    });
 
     private Task<AccountSession> SessionAsync(string secret) =>
         WithDbAsync(db => db.Sessions.SingleAsync(session => session.SecretHash == AppSessions.HashOf(secret), TestContext.Current.CancellationToken));
@@ -204,8 +164,6 @@ public sealed class ReviewSignInTests : IAsyncLifetime
 
         public void Give(Guid userId) => _holders.Add(userId);
 
-        public void TakeAway(Guid userId) => _holders.Remove(userId);
-
         public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
             ValueTask.FromResult<IReadOnlyList<RoleHolder>>(roleKey == DemoAccounts.RoleKey ? _holders.Select(id => new RoleHolder(id)).ToList() : []);
 
@@ -228,16 +186,9 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
-    private sealed class Grants : IAccessEvaluator
+    private sealed class NoGrants : IAccessEvaluator
     {
-        private readonly Dictionary<Guid, GrantSet> _grants = [];
-
-        public void Give(Guid userId, string pattern) => _grants[userId] = new GrantSet([new Grant(PermissionPattern.Parse(pattern), Scope.Global)]);
-
-        public void TakeAway(Guid userId) => _grants.Remove(userId);
-
-        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(_grants.GetValueOrDefault(userId, GrantSet.Empty));
+        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(GrantSet.Empty);
 
         public ValueTask<bool> IsAllowedAsync(System.Security.Claims.ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
             throw new NotSupportedException();

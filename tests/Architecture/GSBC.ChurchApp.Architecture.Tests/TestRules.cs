@@ -16,10 +16,6 @@ public sealed partial class TestRules
 
     private static readonly HashSet<string> NotYetSorted =
     [
-        "tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api.Tests/InstallVerifierTests.cs",
-        "tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api.Tests/InvitationTests.cs",
-        "tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Api.Tests/ReviewSignInTests.cs",
-        "tests/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Gateway.Tests/PasskeyCeremonyTests.cs",
         "tests/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Api.Tests/DiagnosticsInboxTests.cs",
         "tests/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Api.Tests/UsageTests.cs",
         "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/DraftEditorTests.cs",

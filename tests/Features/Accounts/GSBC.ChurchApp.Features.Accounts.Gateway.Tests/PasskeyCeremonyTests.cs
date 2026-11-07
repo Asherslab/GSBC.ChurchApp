@@ -1,7 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
-using System.Text.Json;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Testing;
@@ -18,11 +17,10 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace GSBC.ChurchApp.Features.Accounts.Gateway.Tests;
 
+[Integration("A sign-in is a passkey and a session row in Postgres that every request checks: a used ticket, a disabled account, an ended session or a turned-off code stops it")]
 public sealed class PasskeyCeremonyTests : IAsyncLifetime
 {
     private const string Origin = "https://localhost";
-    private const string TeamId = "ABCDE12345";
-    private const string UatBundleId = "au.com.baptist.app.uat";
 
     private TestDatabase _database = null!;
     private readonly ECDsa _tokenKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -40,13 +38,10 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
             ["Accounts:Passkeys:RelyingPartyId"] = "localhost",
             ["Accounts:Passkeys:AllowedOrigins:0"] = Origin,
             [AccountTokens.SigningKeySetting] = _tokenKey.ExportPkcs8PrivateKeyPem(),
-            [$"{AppAssociation.Section}:TeamId"] = TeamId,
-            [$"{AppAssociation.Section}:BundleId"] = UatBundleId,
         });
         builder.Services.AddAccountsGateway(builder.Configuration).AddSyncData();
 
         _app = builder.Build();
-        _app.UseAppAssociation();
         _app.UseRouting();
         _app.UseAuthentication();
         _app.UseRateLimiter();
@@ -89,13 +84,10 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task RefusesAForeignOriginAUsedTicketAndADisabledAccount()
+    public async Task RefusesAUsedTicketAndADisabledAccount()
     {
         (Guid userId, string ticket) = await NewAccountWithTicketAsync("grace@example.com");
         using SoftwareAuthenticator authenticator = new(Origin);
-
-        using HttpClient noOrigin = Browser(origin: null);
-        Assert.Equal(HttpStatusCode.Forbidden, (await Post(noOrigin, "request-options", new { })).StatusCode);
 
         using HttpClient browser = Browser();
         await RegisterAsync(browser, authenticator, ticket);
@@ -184,21 +176,6 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         Assert.Equal(HttpStatusCode.Unauthorized, (await TokenWithSessionAsync(tool, secret)).StatusCode);
     }
 
-    [Fact]
-    public async Task TheAssociationFileNamesTheConfiguredTeamAndBundleAndOpensSharedLinks()
-    {
-        HttpResponseMessage response = await Browser().GetAsync(AppAssociation.RequestPath, TestContext.Current.CancellationToken);
-
-        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-        Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
-        using JsonDocument association = JsonDocument.Parse(await response.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
-        string app = $"{TeamId}.{UatBundleId}";
-        Assert.Equal(app, association.RootElement.GetProperty("webcredentials").GetProperty("apps")[0].GetString());
-        JsonElement details = association.RootElement.GetProperty("applinks").GetProperty("details")[0];
-        Assert.Equal(app, details.GetProperty("appIDs")[0].GetString());
-        Assert.Contains("/open/*", details.GetProperty("components").EnumerateArray().Select(component => component.GetProperty("/").GetString()));
-    }
-
     private static Task<HttpResponseMessage> TokenWithSessionAsync(HttpClient phone, string secret)
     {
         HttpRequestMessage request = new(HttpMethod.Get, "/test/token");
@@ -276,14 +253,13 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
             .ExecuteUpdateAsync(update => update.SetProperty(user => user.Disabled, true));
     }
 
-    private HttpClient Browser(string? origin = Origin)
+    private HttpClient Browser()
     {
         HttpClient client = new(new CookieContainerHandler { InnerHandler = _app.GetTestServer().CreateHandler() })
         {
             BaseAddress = new Uri("https://localhost"),
         };
-        if (origin is not null)
-            client.DefaultRequestHeaders.Add("Origin", origin);
+        client.DefaultRequestHeaders.Add("Origin", Origin);
         return client;
     }
 

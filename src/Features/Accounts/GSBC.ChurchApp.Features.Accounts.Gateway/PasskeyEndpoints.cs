@@ -180,11 +180,13 @@ public static class PasskeyEndpoints
     {
         HttpContext http = context.HttpContext;
         string[] allowed = http.RequestServices.GetRequiredService<IOptions<AccountsGatewayOptions>>().Value.AllowedOrigins;
-        string? origin = http.Request.Headers.Origin;
-        return origin is not null && allowed.Contains(origin, StringComparer.OrdinalIgnoreCase)
+        return IsAllowedOrigin(http.Request.Headers.Origin, allowed)
             ? await next(context)
             : Results.Problem("This request didn't come from the Good Shepherd site.", statusCode: StatusCodes.Status403Forbidden);
     }
+
+    public static bool IsAllowedOrigin(string? origin, IEnumerable<string> allowed) =>
+        origin is not null && allowed.Contains(origin, StringComparer.OrdinalIgnoreCase);
 
     private static string PasskeyName(string? name) =>
         string.IsNullOrWhiteSpace(name) ? "Passkey" : name.Trim()[..Math.Min(name.Trim().Length, MaximumPasskeyNameLength)];
