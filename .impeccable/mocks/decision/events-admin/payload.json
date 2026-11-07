@@ -1,0 +1,81 @@
+{
+  "title": "The church calendar: the admin panel",
+  "question": "Three ways to lay out the admin panel's Calendar page, on a computer. Each reaches every calendar you can edit, Needs details, Ask to publish (off by default), and opens events in the same editor as the phone. Calendar setup and named breaks are their own pages under it. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "lanes",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Lanes",
+      "lineage": "the office week's rail, a lane per calendar",
+      "thesis": "A fortnight across, one lane per calendar down: the whole church at a glance, with clashes and gaps visible, in the office week's capsule language; scroll sideways for later weeks.",
+      "palette": [
+        "#2A3D5E",
+        "#FFFFFF",
+        "#F3EFE8",
+        "#E7AE74",
+        "#007A70"
+      ],
+      "materials": [
+        "sand track with white day columns",
+        "capsules per event",
+        "lane labels"
+      ],
+      "viewport": "Title band: Calendar, + New event. Needs details strip (2). Then a fortnight of days across, lanes for Sunday services, Whole church, Kids, Kids team, Outreach, Church members: regular events as quiet capsules, specials in primary, not on hatched, needing details in marker. Clicking a capsule opens the editor at the side.",
+      "risk": "Dense; a busy Sunday packs several capsules into one cell, and seeing a whole month means scrolling sideways.",
+      "html": ".impeccable/mocks/decision/events-admin/lanes.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "desk",
+      "kind": "dealt",
+      "label": "The desk",
+      "lineage": "the office week home page",
+      "thesis": "Leads with what needs someone (details missing, asked to publish, changed recently), then the fortnight rail of what's coming, then your calendars as rows.",
+      "palette": [
+        "#2A3D5E",
+        "#FFFFFF",
+        "#F3EFE8",
+        "#E7AE74",
+        "#007A70"
+      ],
+      "materials": [
+        "Needs you rows with marker tiles",
+        "fortnight rail",
+        "calendar rows"
+      ],
+      "viewport": "Title band. Two columns: Needs you (Outreach morning 14 Nov: no place yet \u00b7 reminder sent; Kids break-up night: asked to publish) and Your calendars (each with its next event and how many need details). Under them, the fortnight rail.",
+      "risk": "The calendar itself sits below the fold; planning a month means opening a calendar.",
+      "html": ".impeccable/mocks/decision/events-admin/desk.html",
+      "htmlFrame": "1440x900"
+    },
+    {
+      "id": "workbench",
+      "kind": "dealt",
+      "label": "Workbench",
+      "lineage": "the drafts workbench and the review queue",
+      "thesis": "Three panes: calendars on the left (with counts), the chosen calendars' agenda or month in the middle, the event's editor on the right, always open.",
+      "palette": [
+        "#2A3D5E",
+        "#FFFFFF",
+        "#F3EFE8",
+        "#E7AE74",
+        "#007A70"
+      ],
+      "materials": [
+        "sand calendar column",
+        "agenda rows",
+        "editor panel"
+      ],
+      "viewport": "Left: All, Needs details 2, then each calendar with a switch. Middle: Agenda | Month, the week's rows as on the phone. Right: the selected event in the editor, This date only | Every date, Save.",
+      "risk": "The most familiar; the month at a glance is one switch away rather than the first thing seen.",
+      "html": ".impeccable/mocks/decision/events-admin/workbench.html",
+      "htmlFrame": "1440x900"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {
+    "value": "code"
+  }
+}

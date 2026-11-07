@@ -243,6 +243,12 @@ commit as the code (the owner approved all four on 2026-11-08):
   event opens the same page empty, starting on its calendar and title. Tapping the time line of a regular event
   opens how it repeats, its breaks and what each date needs. One component (Events.Client), on the phone and in the
   admin panel.
+- **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
+  desk; `.impeccable/mocks/decision/events-admin/`). Three panes, as drafts' workbench: a sand column with *All
+  your calendars*, *Needs details* and *Asked to publish* (each with its count, the latter only when a calendar
+  uses it), then each calendar you can edit with a switch, and *Calendars and breaks*; the middle pane is Agenda |
+  Month of the chosen calendars, in the phone's rows, with *+ New event*; the right pane is the chosen event in the
+  same editor as the phone (*This date only | Every …*, *Save*, *Not on this date*).
 - **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
   chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
   accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
@@ -361,6 +367,12 @@ commit as the code (the owner approved all four on 2026-11-08):
   event opens the same page empty, starting on its calendar and title. Tapping the time line of a regular event
   opens how it repeats, its breaks and what each date needs. One component (Events.Client), on the phone and in the
   admin panel.
+- **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
+  desk; `.impeccable/mocks/decision/events-admin/`). Three panes, as drafts' workbench: a sand column with *All
+  your calendars*, *Needs details* and *Asked to publish* (each with its count, the latter only when a calendar
+  uses it), then each calendar you can edit with a switch, and *Calendars and breaks*; the middle pane is Agenda |
+  Month of the chosen calendars, in the phone's rows, with *+ New event*; the right pane is the chosen event in the
+  same editor as the phone (*This date only | Every …*, *Save*, *Not on this date*).
 - **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
   chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
   accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
