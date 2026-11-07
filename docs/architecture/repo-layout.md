@@ -177,6 +177,7 @@ flowchart LR
         NotificationsTests["Features.Notifications.Api.Tests"]
         SermonsTests["Features.Sermons.Api.Tests"]
         EventsTests["Features.Events.Api.Tests"]
+        EventsUnitTests["Features.Events.Unit.Tests"]
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
     end
@@ -254,6 +255,7 @@ flowchart LR
     NotificationsTests --> NotificationsApi
     SermonsTests --> SermonsApi
     EventsTests --> EventsApi
+    EventsUnitTests --> EventsApi
     EventsClientTests --> EventsClient
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
@@ -343,7 +345,8 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Api.Tests` | Against Postgres: one kind per error however many phones report it, a resent report counts once, the owner hears once per new kind, only the app and admin panel may report and only about recent days, failed calls add up, errors go after 30 days; stack summaries keep no paths or build numbers | No |
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
-| `GSBC.ChurchApp.Features.Events.Api.Tests` | Against Postgres: each repeat pattern's dates; breaks show their first dates as not on; a special overrides only what it changed; the 30-day/12-month window; a private calendar never in the public feed; contact details only to people signed in; an editor can't reach another calendar's events; Ask to publish; this date only vs every date | No |
+| `GSBC.ChurchApp.Features.Events.Api.Tests` | Against Postgres, only for rules that need storage: publishing sends a date leaving the window, or a calendar turning private, as deletes; an editor can't reach another calendar's events; Ask to publish; this date only vs every date; adding a calendar and *Tell people* respect its audience; a copy on another calendar follows the home event | No |
+| `GSBC.ChurchApp.Features.Events.Unit.Tests` | No database, container or network: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |

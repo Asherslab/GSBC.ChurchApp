@@ -14,7 +14,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
     public static readonly IReadOnlyList<string> EachRowFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts];
     private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public];
 
-    private sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience, DateTime? StartsAt = null, DateTime? EndsAt = null, string? SortKey = null, string? GroupKey = null);
+    internal sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience, DateTime? StartsAt = null, DateTime? EndsAt = null, string? SortKey = null, string? GroupKey = null);
 
     public async Task PublishAsync(CancellationToken cancellationToken)
     {
@@ -71,7 +71,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
             Feed = EventsFeeds.Admin, RecordId = itemId.ToString(), Version = time.GetUtcNow().UtcDateTime.Ticks, ScopeId = calendarId.ToString(),
         });
 
-    private static IEnumerable<Row> Rows(EventsBook book, DateTime now)
+    public static IEnumerable<Row> Rows(EventsBook book, DateTime now)
     {
         foreach (CalendarRecord calendar in book.Calendars.Values)
         {
