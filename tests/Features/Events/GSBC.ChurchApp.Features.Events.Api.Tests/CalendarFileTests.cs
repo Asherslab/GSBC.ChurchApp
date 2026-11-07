@@ -70,7 +70,7 @@ public sealed class CalendarFileTests : EventsHost
         WithAsync(provider => provider.GetRequiredService<CalendarLinkSecrets>().OfAsync(holder, Cancel));
 
     private Task<CalendarFile> FileAsync(string calendar, string secret = "") =>
-        WithAsync(provider => provider.GetRequiredService<CalendarFiles>().ReadAsync(new CalendarFileRequest { Calendar = calendar, Secret = secret }, Cancel));
+        WithAsync(provider => provider.GetRequiredService<CalendarFiles>().ReadAsync(new CalendarFileRequest { Calendar = calendar, Key = secret }, Cancel));
 
     private Task SaveEventAsync(CalendarSettings calendar, string title) =>
         EditingAsync(Person((EventsPermissions.EditNode, calendar.Calendar.Id)), (editing, context) => editing.SaveEventAsync(new EventSave

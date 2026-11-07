@@ -15,9 +15,9 @@ internal sealed class CalendarFiles(EventsDbContext db, CalendarLinkSecrets link
 
     public async Task<CalendarFile> ReadAsync(CalendarFileRequest request, CancellationToken cancellationToken)
     {
-        if (request.Secret.Length == 0)
+        if (request.Key.Length == 0)
             return await PublicAsync(request.Calendar, cancellationToken);
-        if (await links.HolderAsync(request.Secret, cancellationToken) is not { } holder)
+        if (await links.HolderAsync(request.Key, cancellationToken) is not { } holder)
             return NotFound;
 
         Viewer viewer = await ViewerAsync(holder, cancellationToken);

@@ -17,9 +17,9 @@ public static partial class CalendarLinks
 
     public static string PublicPath => CalendarPath(Public);
 
-    public static string MinePath(string secret) => $"/calendars/{Mine}/{secret}{Extension}";
+    public static string MinePath(string key) => $"/calendars/{Mine}/{key}{Extension}";
 
-    public static string MinePath(string secret, string slug) => $"/calendars/{Mine}/{secret}/{slug}{Extension}";
+    public static string MinePath(string key, string slug) => $"/calendars/{Mine}/{key}/{slug}{Extension}";
 
     public static string Subscribe(Uri origin, string path) => new UriBuilder(new Uri(origin, path)) { Scheme = "webcal", Port = origin.IsDefaultPort ? -1 : origin.Port }.Uri.ToString();
 

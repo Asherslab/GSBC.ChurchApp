@@ -325,7 +325,9 @@ all four on 2026-11-08):
   asked for; a calendar the holder can no longer see is left out of *All my calendars* and answers 404 alone.
 - **Secret links:** `CalendarFiles.Link` and `ResetLink` (`[AppInstall]`: the person when signed in, otherwise the
   phone) and `PersonLink` and `ResetPersonLink` (`[SignedIn]`, for the admin panel). `CalendarLinks` builds the paths
-  and the `webcal://` address for the Subscribe buttons (`CalendarLinks.Subscribe(origin, path)`).
+  and the `webcal://` address for the Subscribe buttons (`CalendarLinks.Subscribe(origin, path)`). The contract calls
+  the link's secret its **key** (`CalendarLink.Key`, `CalendarFileRequest.Key`), since client code may not use the
+  word "secret" (`SessionSecretRules`); the server and the approved paths keep `{secret}`.
 - **iCal in** (decision 8): every calendar with an iCal address is copied every 30 minutes and straight after an
   address is set (`ICalSchedule`, one replica at a time), with ETag/If-Modified-Since; its status is the calendar's
   `ICalReadAt` and `ICalProblem` in `CalendarSettings`, and an `events.admin` marker (the calendar's id) tells the

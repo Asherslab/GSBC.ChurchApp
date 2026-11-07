@@ -12,16 +12,16 @@ internal sealed class CalendarFilesService(CalendarFiles files, CalendarLinkSecr
         await files.ReadAsync(request, context.CancellationToken);
 
     public async ValueTask<CalendarLink> LinkAsync(Done request, CallContext context = default) =>
-        new() { Secret = await links.OfAsync(PhoneHolder(context), context.CancellationToken) };
+        new() { Key = await links.OfAsync(PhoneHolder(context), context.CancellationToken) };
 
     public async ValueTask<CalendarLink> ResetLinkAsync(Done request, CallContext context = default) =>
-        new() { Secret = await links.ResetAsync(PhoneHolder(context), context.CancellationToken) };
+        new() { Key = await links.ResetAsync(PhoneHolder(context), context.CancellationToken) };
 
     public async ValueTask<CalendarLink> PersonLinkAsync(Done request, CallContext context = default) =>
-        new() { Secret = await links.OfAsync(PersonHolder(context), context.CancellationToken) };
+        new() { Key = await links.OfAsync(PersonHolder(context), context.CancellationToken) };
 
     public async ValueTask<CalendarLink> ResetPersonLinkAsync(Done request, CallContext context = default) =>
-        new() { Secret = await links.ResetAsync(PersonHolder(context), context.CancellationToken) };
+        new() { Key = await links.ResetAsync(PersonHolder(context), context.CancellationToken) };
 
     private static LinkHolder PhoneHolder(CallContext context) => new(CallerId(context), CallingInstall.Of(context));
 

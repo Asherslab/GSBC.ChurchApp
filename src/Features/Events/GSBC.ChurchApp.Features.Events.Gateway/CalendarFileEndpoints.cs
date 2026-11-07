@@ -27,9 +27,9 @@ public static class CalendarFileEndpoints
         endpoints.MapGet("/calendars/{calendar}.ics", (string calendar, HttpContext http, ICalendarFilesService files) =>
             ServeAsync(http, files, new CalendarFileRequest { Calendar = calendar }, SharedCaching));
         endpoints.MapGet("/calendars/mine/{secret}.ics", (string secret, HttpContext http, ICalendarFilesService files) =>
-            ServeAsync(http, files, new CalendarFileRequest { Secret = secret }, SecretCaching));
+            ServeAsync(http, files, new CalendarFileRequest { Key = secret }, SecretCaching));
         endpoints.MapGet("/calendars/mine/{secret}/{calendar}.ics", (string secret, string calendar, HttpContext http, ICalendarFilesService files) =>
-            ServeAsync(http, files, new CalendarFileRequest { Secret = secret, Calendar = calendar }, SecretCaching));
+            ServeAsync(http, files, new CalendarFileRequest { Key = secret, Calendar = calendar }, SecretCaching));
         return endpoints;
     }
 
