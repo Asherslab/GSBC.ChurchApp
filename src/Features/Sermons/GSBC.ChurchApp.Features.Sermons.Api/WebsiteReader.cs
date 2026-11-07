@@ -285,4 +285,8 @@ internal static class SourceStates
         db.SourceStates.Add(state);
         return state;
     }
+
+    public static async Task<string> SourceAsync(SermonsDbContext db, CancellationToken cancellationToken) =>
+        await db.SourceStates.AsNoTracking().Where(state => state.Id == SourceState.SingleId).Select(state => state.Source).SingleOrDefaultAsync(cancellationToken)
+        ?? SermonSources.Website;
 }

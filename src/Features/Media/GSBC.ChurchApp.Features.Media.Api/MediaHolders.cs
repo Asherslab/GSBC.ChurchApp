@@ -8,7 +8,10 @@ namespace GSBC.ChurchApp.Features.Media.Api;
 internal sealed class MediaHolders(MediaDbContext db, IEnumerable<IMediaHolder> holders, ILogger<MediaHolders> logger)
 {
     public async Task<bool> CanAllRefreshAsync(Guid mediaId, CancellationToken cancellationToken) =>
-        (await OwnersOfAsync([mediaId], cancellationToken)).All(owner => HolderOf(owner) is not null);
+        CanAllRefresh(holders, await OwnersOfAsync([mediaId], cancellationToken));
+
+    internal static bool CanAllRefresh(IEnumerable<IMediaHolder> holders, IEnumerable<string> owners) =>
+        owners.All(owner => HolderOf(holders, owner) is not null);
 
     public async Task RefreshAsync(IReadOnlyCollection<Guid> mediaIds, CancellationToken cancellationToken)
     {
@@ -27,7 +30,9 @@ internal sealed class MediaHolders(MediaDbContext db, IEnumerable<IMediaHolder> 
         }
     }
 
-    private IMediaHolder? HolderOf(string owner) => holders.FirstOrDefault(holder => holder.Holds(owner));
+    private IMediaHolder? HolderOf(string owner) => HolderOf(holders, owner);
+
+    private static IMediaHolder? HolderOf(IEnumerable<IMediaHolder> holders, string owner) => holders.FirstOrDefault(holder => holder.Holds(owner));
 
     private Task<List<string>> OwnersOfAsync(IReadOnlyCollection<Guid> mediaIds, CancellationToken cancellationToken) =>
         db.Uses.AsNoTracking().Where(use => mediaIds.Contains(use.MediaId)).Select(use => use.Owner).Distinct().ToListAsync(cancellationToken);

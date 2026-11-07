@@ -8,14 +8,15 @@ using GSBC.ChurchApp.Testing;
 
 namespace GSBC.ChurchApp.Features.Media.Api.Tests;
 
-[Integration("Stored bytes stay while any entry lists them, and private ones are only reachable through a short-lived presigned link")]
+[Integration("Stored bytes stay while any entry lists them, and private ones are only reachable through a short-lived presigned link, given only while the caller is in their audience")]
 public sealed class StoredBytesTests : MediaLibraryHost
 {
     [Fact]
-    public async Task APrivateFileIsNeverPublicAndIsReachedThroughAShortLivedLink()
+    public async Task APrivateFileIsNeverPublicAndIsLinkedOnlyWhileTheCallerStillHoldsItsAudience()
     {
         ClaimsPrincipal leader = Person();
         ClaimsPrincipal member = Person();
+        ClaimsPrincipal outsider = Person();
         Access.Grant(leader, ReadFiles.Node, Ministry);
         Access.Grant(member, ReadFiles.Node, Ministry);
         byte[] notes = "%PDF-1.7 the group's notes"u8.ToArray();
@@ -29,6 +30,12 @@ public sealed class StoredBytesTests : MediaLibraryHost
 
         MediaLink link = await LibraryCallAsync(library => library.GetLinkAsync(member, new LinkRequest { Id = file.Id }, Cancellation));
         Assert.Equal(notes, await Http.GetByteArrayAsync(link.Url, Cancellation));
+
+        Access.Revoke(member, ReadFiles.Node, Ministry);
+        RpcException removed = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(member, new LinkRequest { Id = file.Id }, Cancellation)));
+        RpcException never = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(outsider, new LinkRequest { Id = file.Id }, Cancellation)));
+        Assert.Equal(StatusCode.PermissionDenied, removed.StatusCode);
+        Assert.Equal(StatusCode.PermissionDenied, never.StatusCode);
     }
 
     [Fact]

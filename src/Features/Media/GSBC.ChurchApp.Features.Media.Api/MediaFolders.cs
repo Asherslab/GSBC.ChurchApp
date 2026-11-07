@@ -88,8 +88,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         if (items.Count != itemIds.Distinct().Count())
             throw new RpcException(new Status(StatusCode.NotFound, "A file you chose has been deleted. Choose again."));
         HashSet<Guid> systemFolders = [.. await db.Folders.Where(folder => folder.SystemArea != null).Select(folder => folder.Id).ToListAsync(cancellationToken)];
-        if (items.Any(item => item.FolderId is { } folder && systemFolders.Contains(folder)))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be moved."));
+        CheckMovable(items, systemFolders);
 
         List<MediaFolder> folders = [];
         foreach (Guid id in folderIds)
@@ -113,6 +112,12 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
             Mark(folder.Id);
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    internal static void CheckMovable(IEnumerable<MediaItem> items, IReadOnlySet<Guid> systemFolders)
+    {
+        if (items.Any(item => item.FolderId is { } folder && systemFolders.Contains(folder)))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be moved."));
     }
 
     public async Task DeleteAsync(DeleteFolderRequest request, CancellationToken cancellationToken)

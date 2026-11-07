@@ -37,6 +37,20 @@ public sealed class FolderRuleTests
     }
 
     [Fact]
+    public void AFileTheAppKeepsInASystemFolderCanNotBeMovedOrDeletedButAStaffFileCan()
+    {
+        Guid chats = Guid.CreateVersion7();
+        HashSet<Guid> systemFolders = [chats];
+        MediaItem campPhoto = File(chats), poster = File(null);
+
+        Assert.Equal(StatusCode.FailedPrecondition, Assert.Throws<RpcException>(() => MediaFolders.CheckMovable([poster, campPhoto], systemFolders)).StatusCode);
+        Assert.Equal(StatusCode.FailedPrecondition, Assert.Throws<RpcException>(() => MediaLibrary.CheckDeletable(campPhoto, systemFolders, uses: 0)).StatusCode);
+        MediaFolders.CheckMovable([poster], systemFolders);
+        MediaLibrary.CheckDeletable(poster, systemFolders, uses: 0);
+        Assert.Equal(StatusCode.FailedPrecondition, Assert.Throws<RpcException>(() => MediaLibrary.CheckDeletable(poster, systemFolders, uses: 1)).StatusCode);
+    }
+
+    [Fact]
     public async Task OnlyAFoldersAudienceOrSomeoneOverseeingSystemFoldersSeesInside()
     {
         ClaimsPrincipal staff = Person(), member = Person(), pastor = Person();
@@ -56,6 +70,9 @@ public sealed class FolderRuleTests
 
         Task<HashSet<Guid>> HiddenAsync(ClaimsPrincipal user) => MediaFolders.HiddenAsync(access, areas, user, folders, TestContext.Current.CancellationToken);
     }
+
+    private static MediaItem File(Guid? folder) =>
+        new() { Id = Guid.CreateVersion7(), Key = $"{new string('a', 64)}.jpg", Sha256 = new string('a', 64), ContentType = "image/jpeg", FolderId = folder };
 
     private static ClaimsPrincipal Person() =>
         new(new ClaimsIdentity([new Claim(Caller.UserIdClaim, Guid.CreateVersion7().ToString())], "test"));
