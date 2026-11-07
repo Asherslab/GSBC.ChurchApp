@@ -322,8 +322,12 @@ the digest (decision 18).
 - **Feeds respect calendars' audiences row by row.** A calendar's audience is Hub tiles' shape (everyone, anyone
   signed in, chosen roles), so Sync gained `FeedAudience.EachRow`: each row carries its audience, Sync sends a row only
   to people it includes (through the person's grants, so role membership is Access's), a signed-out phone gets none
-  of these feeds, and the feeds reset for a person when their grants change, as permission feeds do. A row whose
-  audience changes is deleted first and sent again, so nobody keeps a row they can no longer see. Rows of calendars
+  of these feeds, and the feeds reset for a person when their grants change, as permission feeds do. A row someone isn't in
+  reaches them as a deletion of that record (only its id), so a phone that lost access drops the row even after
+  retention has pruned the publisher's tombstone. The publisher still writes a tombstone before a row whose audience
+  changes. An event moving between the public and private feeds leaves a tombstone in the old feed, which is the
+  newest row for it there and so isn't pruned until deletions expire (then the feed resets). A contacts row's audience
+  is the event's own, narrowed to people signed in, never wider. Rows of calendars
   for everyone go in the public feeds; nothing private is ever written there.
 - **An event shown on other calendars** has the audience of all its calendars together (any for everyone makes it
   public). An editor of both calendars agrees at once; otherwise the other calendar's editors are asked.

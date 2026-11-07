@@ -201,13 +201,14 @@ public sealed class SyncService(
 
     private async Task<List<FeedChangeRecord>> RowsForTheirAudienceAsync(List<FeedChangeRecord> rows, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
-        if (Caller.UserId(user) is not { } userId)
-            return rows.Where(row => row.Deleted).ToList();
-
-        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
+        GrantSet grants = Caller.UserId(user) is { } userId ? await access.GrantsForAsync(userId, cancellationToken) : GrantSet.Empty;
         Viewer viewer = new(IsSignedIn(user), node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
-        return rows.Where(row => row.Deleted || (row.ScopeId is { } text && Audience.TryParse(text, out Audience? audience) && audience.Includes(viewer))).ToList();
+        return rows.Select(row => row.Deleted || (row.ScopeId is { } text && Audience.TryParse(text, out Audience? audience) && audience.Includes(viewer)) ? row : Gone(row))
+            .ToList();
     }
+
+    private static FeedChangeRecord Gone(FeedChangeRecord row) =>
+        new() { Cursor = row.Cursor, Feed = row.Feed, RecordId = row.RecordId, Version = row.Version, Deleted = true };
 
     private async Task<bool> AudienceChangedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
