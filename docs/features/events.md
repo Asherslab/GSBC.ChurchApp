@@ -56,13 +56,29 @@ unrelated and isn't used here.
    (its members). *Church members* (AGMs and the like) is for people who are officially members of the
    church and belongs to no ministry. Nothing private can reach someone who subscribed to a calendar meant
    for everyone.
+5. **Who a calendar is for** is chosen as Hub tiles' audience is: everyone, anyone signed in, or people in
+   chosen roles, checked through Access ([home.md](home.md), *Who sees it*). *Church members* is for the
+   **Church member** role, which the office gives by hand in the admin panel; it may follow Elvanto's
+   membership later. A ministry's team calendar is for that ministry's team once Ministries is built.
+
+### Where events come from (owner, 2026-11-07)
+
+6. **Entered here,** in the admin panel (and by ministry leaders once Ministries is built). The church uses
+   Elvanto for rosters and services only, not for events, so Elvanto isn't a source of events. The church
+   website has an events page, but staff stopped keeping it up a month or two ago (its editor frustrated
+   them).
+7. **A Register link** on an event, opened in the app's browser. The app never counts registrations; a
+   reminder that registrations are low is a person's decision, sent as any notification is.
+
+### Pinned for later
+
+- **The website shows the app's calendar** (owner, 2026-11-07): replace the website's events page with an
+  embed from the app. To discuss another time. Whatever it serves will need the same care as iCal out (an
+  HTTP path needs the owner's yes; a static file may not).
 
 ## Open
 
-- **Where events come from:** entered here, Elvanto, the church website, reading iCal in, or a mix.
-- **Registration:** a link out in v1, or more.
-- **Who a calendar is for, in Access terms:** everyone, signed in, people in roles (as Hub tiles do), or
-  holders of a permission at a ministry. Who counts as an official church member, and where that comes from.
+- **Reading iCal in,** calendar by calendar (recommended, not yet answered).
 - **Who edits a calendar:** a permission scoped to the calendar, and how a ministry's leaders come to hold it.
 - Regular events, specials and breaks: the rules.
 - Not overloading people: what someone sees by default, following, Home, filters, a digest.
