@@ -1,0 +1,101 @@
+@inject CalendarEditing Editing
+
+<div class="event-panel">
+    <EventHead Day="@EventDates.Parse(_start)" Title="@(_name.Length > 0 ? _name : "New break")" Label="A named break" When="@When" Compact="true" />
+    <div class="event-body event-body--editing">
+        <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" Placeholder="Christmas break" Hint="Shown on the dates that aren't on." />
+        <div class="ui-pair">
+            <TextField Label="From" Type="date" Value="@_start" ValueChanged="value => _start = value" />
+            <TextField Label="To" Type="date" Value="@_end" Min="@_start" ValueChanged="value => _end = value" />
+        </div>
+        @if (Break is { UsedBy.Count: > 0 } used)
+        {
+            <div class="field">
+                <span class="field__label">Used by</span>
+                <ul class="kept-list">
+                    @foreach (string id in used.UsedBy)
+                    {
+                        <li>@(RegularEvents.TryGetValue(id, out string? title) ? title : "A regular event in a calendar that's turned off")</li>
+                    }
+                </ul>
+                <span class="field__hint">Changing the dates changes every one of these.</span>
+            </div>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </div>
+    <div class="editor-foot editor-foot--panel">
+        <div class="editor-foot__actions">
+            <Button Block="true" Busy="_saving" Disabled="@(!Valid)" OnClick="SaveAsync">@(Break is null ? "Add the break" : "Save")</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
+        </div>
+        @if (Break is not null)
+        {
+            <button type="button" class="editor-foot__delete" @onclick="DeleteAsync">Delete this break</button>
+        }
+    </div>
+</div>
+
+@code {
+    private string _name = "";
+    private string _start = "";
+    private string _end = "";
+    private string? _problem;
+    private bool _saving;
+
+    [Parameter] public BreakInfo? Break { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> RegularEvents { get; set; } = new Dictionary<string, string>();
+    [Parameter] public EventCallback Saved { get; set; }
+    [Parameter] public EventCallback Closed { get; set; }
+
+    private bool Valid => _name.Trim().Length > 0 && EventDates.Parse(_start) is { } start && EventDates.Parse(_end) is { } end && end >= start;
+
+    private string? When => EventDates.Parse(_start) is { } start && EventDates.Parse(_end) is { } end ? $"{EventWords.Date(start)} to {EventWords.Date(end)}" : null;
+
+    protected override void OnParametersSet()
+    {
+        _name = Break?.Name ?? "";
+        _start = Break?.StartDate ?? "";
+        _end = Break?.EndDate ?? "";
+    }
+
+    private async Task SaveAsync()
+    {
+        await RunAsync(async () =>
+        {
+            await Editing.Setup.SaveBreakAsync(new BreakInfo { Id = Break?.Id ?? "", Name = _name.Trim(), StartDate = _start, EndDate = _end });
+            await Saved.InvokeAsync();
+            if (Break is null)
+                await Closed.InvokeAsync();
+        });
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (Break is null)
+            return;
+        await RunAsync(async () =>
+        {
+            await Editing.Setup.DeleteBreakAsync(new BreakRef { Id = Break.Id });
+            await Saved.InvokeAsync();
+            await Closed.InvokeAsync();
+        });
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _saving = true;
+        _problem = null;
+        try
+        {
+            await work();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}
