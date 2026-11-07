@@ -215,6 +215,17 @@ commit as the code (the owner approved all four on 2026-11-08):
 36. **Designed with impeccable's whole process,** every screen, phone and admin panel alike: interview,
     decision page, surface brief, detector and finish review.
 
+### The design (impeccable)
+
+- **The week on the phone: *One long week*** (owner, 2026-11-08, on the decision page over *The noticeboard*
+  and *What's different*; sketches in `.impeccable/mocks/decision/events/`). The masthead holds *This week*,
+  the date range, Week | Month and the seven-day rail; the calendar chips sit under it; then one continuous
+  list from today onward, a heading per day, and scrolling past Saturday carries on into next week with the
+  rail following. Regular events are quiet single lines (time and name, lighter); a special or one-off is a
+  fuller row with its label and place; a date that's not on keeps its line, with an icon and "Not on this
+  week · back on 20 November" underneath, never a suffix on its name. A changed event keeps its orange
+  *Changed* mark until you've opened it.
+
 ### Pinned for later
 
 - **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
@@ -297,6 +308,17 @@ commit as the code (the owner approved all four on 2026-11-08):
     who each is for, the defaults and the named breaks aren't done on the fly.
 36. **Designed with impeccable's whole process,** every screen, phone and admin panel alike: interview,
     decision page, surface brief, detector and finish review.
+
+### The design (impeccable)
+
+- **The week on the phone: *One long week*** (owner, 2026-11-08, on the decision page over *The noticeboard*
+  and *What's different*; sketches in `.impeccable/mocks/decision/events/`). The masthead holds *This week*,
+  the date range, Week | Month and the seven-day rail; the calendar chips sit under it; then one continuous
+  list from today onward, a heading per day, and scrolling past Saturday carries on into next week with the
+  rail following. Regular events are quiet single lines (time and name, lighter); a special or one-off is a
+  fuller row with its label and place; a date that's not on keeps its line, with an icon and "Not on this
+  week · back on 20 November" underneath, never a suffix on its name. A changed event keeps its orange
+  *Changed* mark until you've opened it.
 
 ### Pinned for later
 

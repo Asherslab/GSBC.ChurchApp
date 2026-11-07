@@ -1,0 +1,50 @@
+{
+  "title": "The church calendar: the week on the phone",
+  "question": "Three ways to lay out the calendar's first screen, all in the app's bulletin look and text first. Each opens on this week, keeps regular events quiet, makes specials, changes and dates not on stand out, and has Week | Month and your calendar chips. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "agenda",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "One long week",
+      "lineage": "the bulletin's This week page, read as a running diary",
+      "thesis": "One continuous list from today onward, day by day; the day rail in the masthead follows as you scroll, so the week and the weeks after are one gesture.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy masthead with the day rail", "hairline agenda rows", "orange 'Changed' marker"],
+      "viewport": "Masthead: This week, the date range, Week | Month, and the seven-day rail. Under it the calendar chips. Then Sunday, Monday… each a heading and its rows: regular events as quiet single lines, a special or one-off as a fuller row (label, place), a date not on struck through with a quiet icon. Scrolling past Saturday carries on into next week.",
+      "risk": "Coming up isn't a section of its own: the special things further out are only found by scrolling or the month.",
+      "raised": [{"from": "vernacular-ephemera-boarding-pass-and-gate-board", "raise": "A changed event keeps its orange 'Changed' mark until you've opened it, like a gate change that stays lit until you've noticed."}],
+      "html": ".impeccable/mocks/decision/events/agenda.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "noticeboard",
+      "kind": "dealt",
+      "label": "The noticeboard",
+      "lineage": "the foyer noticeboard, one pinned sheet per ministry",
+      "thesis": "Grouped by calendar rather than by day: each calendar you've added shows what's next in it, the ordinary week printed once at the top as 'Every week'.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy masthead", "sand 'Every week' timetable", "a section per calendar"],
+      "viewport": "Masthead: Calendar, Week | Month. A sand 'Every week' box: the regular timetable in two columns of day and time (Sun 9:00 LIFE Groups, 10:30, 6:00; Wed 7:00 …), with this week's exceptions marked in it. Then a section per calendar (Whole church, Kids, Outreach), each its next two or three dated things.",
+      "risk": "'What's on Thursday?' means reading across sections; the day-by-day view lives in Month.",
+      "html": ".impeccable/mocks/decision/events/noticeboard.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "different",
+      "kind": "dealt",
+      "label": "What's different",
+      "lineage": "the What's Next email, made live",
+      "thesis": "Lead with what's different this week (specials, one-offs, dates not on, changes), then the ordinary week as a compact timetable, then Coming up.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy masthead with the day rail", "a 'Different this week' list", "compact timetable rows"],
+      "viewport": "Masthead: This week, the range, Week | Month and the day rail. 'Different this week': three rows, each saying how (Anniversary Sunday, 10:30 · Sunday evening not on · Outreach moved to Teralba Park). Then 'The rest of the week', compact two-line days. Then Coming up.",
+      "risk": "The same event can appear twice (in Different and in its day), which some people will find repetitive.",
+      "html": ".impeccable/mocks/decision/events/different.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

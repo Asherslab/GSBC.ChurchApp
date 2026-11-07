@@ -1,0 +1,50 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Calendar: the noticeboard</title><style>:root{--navy:#2A3D5E;--beige:#D5C9B7;--aqua:#009C8F;--aqua-deep:#007a70;--orange:#E7AE74;--orange-ink:#9a5a1c;--sand:#F3EFE8;--sand-strong:#E6DFD3;--ink:#1F2A3C;--ink2:#4a5568;--ink3:#7a8494;--line:#E7E2DA;--white:#fff}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;background:var(--white);color:var(--ink);font-size:16px;position:relative;font-variant-numeric:tabular-nums}
+.status{height:47px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;color:#fff;font-weight:600;font-size:15px;position:absolute;top:0;left:0;right:0;z-index:3}
+.topbar{position:absolute;top:47px;left:0;right:0;height:48px;display:flex;justify-content:flex-end;align-items:center;padding:0 10px;z-index:3}
+.ib{width:44px;height:44px;display:grid;place-items:center;color:#fff}.ib svg{width:22px;height:22px}
+.mast{background:var(--navy);color:#fff;padding:92px 20px 18px;position:relative;overflow:hidden}
+.ring{position:absolute;right:-70px;top:30px;width:210px;height:210px;border-radius:50%;border:34px solid rgba(255,255,255,.07)}
+.mast h1{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.02}
+.note{color:var(--beige);font-weight:600;font-size:14.5px;margin-top:8px}
+.mrow{display:flex;justify-content:space-between;align-items:flex-end}
+.seg{display:flex;background:rgba(255,255,255,.12);border-radius:12px;padding:3px;font-size:13px;font-weight:600}
+.seg span{padding:7px 13px;border-radius:9px;color:#fff}.seg span.on{background:#fff;color:var(--navy)}
+.rail{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:16px}
+.rail div{text-align:center;padding:6px 0 7px;border-radius:12px;color:#fff}
+.rail b{display:block;font-size:11px;font-weight:600;letter-spacing:.04em;opacity:.75}
+.rail span{display:block;font-size:17px;font-weight:700;margin-top:2px}
+.rail i{display:block;width:5px;height:5px;border-radius:50%;margin:4px auto 0;background:var(--beige)}
+.rail .today{background:#fff;color:var(--navy)}.rail .today i{background:var(--orange)}.rail .today b{opacity:1}
+.chips{display:flex;gap:8px;padding:14px 20px 0;overflow:hidden;white-space:nowrap}
+.chip{height:34px;border-radius:17px;padding:0 13px;display:inline-flex;align-items:center;gap:6px;font-size:13.5px;font-weight:600;background:var(--sand);color:var(--ink2);flex:none}
+.chip.on{background:var(--navy);color:#fff}.chip.add{background:none;color:var(--aqua-deep);padding:0 4px}
+.day{padding:18px 20px 0}.day h2{font-size:15px;font-weight:700;display:flex;gap:8px;align-items:baseline;margin-bottom:6px}.day h2 span{font-size:13.5px;color:var(--ink3);font-weight:500}
+.r{display:flex;gap:0;align-items:flex-start;border-top:1px solid var(--line);padding:10px 0;min-height:44px}
+.t{width:66px;flex:none;color:var(--navy);font-weight:600;font-size:14.5px;padding-top:1px}
+.rt{font-size:15.5px;font-weight:600;line-height:1.3}.rs{font-size:14px;color:var(--ink2);margin-top:2px}
+.quiet .rt{font-weight:500;color:var(--ink2)}.quiet .t{color:var(--ink3);font-weight:500}
+.off .rt{color:var(--ink3);font-weight:500;text-decoration:line-through;text-decoration-color:rgba(122,132,148,.6)}
+.off .rs{color:var(--ink3)}
+.lab{display:inline-block;font-size:12px;font-weight:700;color:var(--aqua-deep);margin-bottom:2px}
+.pill{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;border-radius:10px;padding:2px 8px;background:rgba(231,174,116,.28);color:var(--orange-ink);margin-left:6px;vertical-align:2px}
+.offic{display:inline-flex;font-size:12px;font-weight:700;border-radius:10px;padding:2px 8px;background:var(--sand-strong);color:var(--ink2);margin-left:6px;vertical-align:2px}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:83px;border-top:1px solid var(--line);background:rgba(255,255,255,.94);display:grid;grid-template-columns:repeat(4,1fr);padding-top:7px;z-index:4}
+.tab{display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;font-weight:600;color:var(--ink3)}.tab.on{color:var(--aqua-deep)}.tab svg{width:24px;height:24px}
+.box{margin:16px 20px 0;background:var(--sand);border-radius:14px;padding:14px 16px}.box h2{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;justify-content:space-between}.box h2 span{font-size:13px;color:var(--ink3);font-weight:500}.tt{display:grid;grid-template-columns:40px 1fr;row-gap:5px;font-size:13.5px}.tt b{font-weight:700;color:var(--navy)}.tt .x{color:var(--ink3);text-decoration:line-through}.tt em{font-style:normal;color:var(--orange-ink);font-weight:700;font-size:12px;margin-left:4px;text-decoration:none;display:inline-block}.cal{padding:20px 20px 0}.cal h2{font-size:20px;font-weight:700;letter-spacing:-.015em;margin-bottom:8px;display:flex;justify-content:space-between;align-items:baseline}.cal h2 a{font-size:14px;color:var(--aqua-deep);font-weight:600}.d{width:66px;flex:none;color:var(--navy);font-weight:600;font-size:13.5px;line-height:1.25}</style></head><body><div class="status"><span>9:41</span><span>●●● ▮</span></div><div class="topbar"><span class="ib"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/></svg></span></div>
+<header class="mast"><i class="ring"></i><div class="mrow"><h1>Calendar</h1><div class="seg"><span class="on">Week</span><span>Month</span></div></div><p class="note">This week · 8 – 14 November</p></header>
+<div class="chips"><span class="chip on">Sunday services</span><span class="chip on">Whole church</span><span class="chip on">Kids</span><span class="chip on">Outreach</span><span class="chip add">+ Browse</span></div>
+<div class="box"><h2>Every week <span>this week's changes marked</span></h2><div class="tt">
+<b>Sun</b><span>9:00 LIFE Groups · 10:30 Morning · 6:00 Evening</span>
+<b>Wed</b><span>7:00 Bible study and prayer</span>
+<b>Fri</b><span>5:00 Men's prayer · <span class="x">6:30 Impact Kids</span><em>Not on</em></span>
+</div></div>
+<section class="cal"><h2>Whole church <a>All ›</a></h2>
+<div class="r"><span class="d">Today<br>10:30</span><div><div class="rt">Anniversary Sunday Service</div><div class="rs">Auditorium · lunch together after</div></div></div>
+<div class="r"><span class="d">Sun 13 Dec<br>6:00</span><div><div class="rt">Carols by candlelight</div><div class="rs">Auditorium</div></div></div></section>
+<section class="cal"><h2>Outreach <a>All ›</a></h2>
+<div class="r"><span class="d">Sat 14<br>8:30</span><div><div class="rt">Outreach morning<span class="pill">Changed</span></div><div class="rs">Now meeting at Teralba Park</div></div></div></section>
+<section class="cal"><h2>Kids <a>All ›</a></h2>
+<div class="r"><span class="d">Fri 27<br>6:30</span><div><div class="rt">Break-up night</div><div class="rs">School oval · bring a plate</div></div></div></section>
+<nav class="tabbar"><span class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11 12 4l9 7v9H3z"/></svg>Home</span><span class="tab on"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg>Calendar</span><span class="tab"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 14v-2a8 8 0 0 1 16 0v2"/><rect x="3" y="14" width="5" height="7" rx="2"/><rect x="16" y="14" width="5" height="7" rx="2"/></svg>Sermons</span><span class="tab"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>More</span></nav></body></html>
