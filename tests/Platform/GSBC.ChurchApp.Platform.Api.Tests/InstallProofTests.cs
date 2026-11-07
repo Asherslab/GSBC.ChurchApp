@@ -1,36 +1,28 @@
-using System.Net;
 using Grpc.Core.Interceptors;
 using Grpc.Health.V1;
 using Grpc.Net.Client;
 using Grpc.Net.Client.Web;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Installs;
-using GSBC.ChurchApp.Platform.Data;
-using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Hosting.Server;
-using Microsoft.AspNetCore.Hosting.Server.Features;
-using Microsoft.AspNetCore.Http.Features;
-using Microsoft.AspNetCore.Server.Kestrel.Core;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using static Grpc.Health.V1.HealthCheckResponse.Types;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
 public sealed class InstallProofTests : IAsyncLifetime
 {
-    private TestDatabase _database = null!;
     private WebApplication _api = null!;
 
     public async ValueTask InitializeAsync()
     {
-        _database = await TestDatabase.CreateAsync();
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
-        builder.WebHost.ConfigureKestrel(kestrel => kestrel.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http1));
-        builder.Configuration.AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)]);
+        builder.WebHost.UseTestServer();
         builder.AddPlatformApi();
+        foreach (ServiceDescriptor appWork in builder.Services.Where(IsTheAppsBackgroundWork).ToList())
+            builder.Services.Remove(appWork);
         _api = builder.Build();
         _api.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
         _api.MapPlatformApi();
@@ -40,13 +32,10 @@ public sealed class InstallProofTests : IAsyncLifetime
     [Fact]
     public async Task ASignedCallStillReachesItsMethodWithItsMessage()
     {
-        string address = _api.Services.GetRequiredService<IServer>().Features.GetRequiredFeature<IServerAddressesFeature>().Addresses
-            .First(address => address.StartsWith("http://127.0.0.1:", StringComparison.Ordinal));
-        using GrpcChannel channel = GrpcChannel.ForAddress(address, new GrpcChannelOptions
+        TestServer server = _api.GetTestServer();
+        using GrpcChannel channel = GrpcChannel.ForAddress(server.BaseAddress, new GrpcChannelOptions
         {
-            HttpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWeb, new HttpClientHandler()),
-            HttpVersion = HttpVersion.Version11,
-            HttpVersionPolicy = HttpVersionPolicy.RequestVersionExact,
+            HttpHandler = new GrpcWebHandler(GrpcWebMode.GrpcWeb, server.CreateHandler()),
         });
         Health.HealthClient health = new(channel.Intercept(metadata =>
         {
@@ -55,16 +44,14 @@ public sealed class InstallProofTests : IAsyncLifetime
             return metadata;
         }));
 
-        HealthCheckResponse response = await health.CheckAsync(
-            new HealthCheckRequest { Service = PlatformApiExtensions.ReadinessService },
-            cancellationToken: TestContext.Current.CancellationToken);
+        HealthCheckResponse response = await health.CheckAsync(new HealthCheckRequest(), cancellationToken: TestContext.Current.CancellationToken);
 
         Assert.Equal(ServingStatus.Serving, response.Status);
     }
 
-    public async ValueTask DisposeAsync()
-    {
-        await _api.DisposeAsync();
-        await _database.DisposeAsync();
-    }
+    private static bool IsTheAppsBackgroundWork(ServiceDescriptor service) =>
+        service.ServiceType == typeof(IHostedService)
+        && service.ImplementationType?.Namespace?.StartsWith("Microsoft.", StringComparison.Ordinal) != true;
+
+    public async ValueTask DisposeAsync() => await _api.DisposeAsync();
 }

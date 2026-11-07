@@ -18,6 +18,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
+[Integration("A watch stream reads committed feed changes past each phone's cursor from Postgres and pushes them live, to its audience only, across reconnects and a move to another database")]
 public sealed class LiveFeedTests : IAsyncLifetime
 {
     private const string Library = "media.library";

@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
+[Integration("Pruning old feed rows moves the feed's horizon, so a phone behind it starts again and every phone converges on the live records")]
 public sealed class FeedRetentionTests : IAsyncLifetime
 {
     private const string Feed = "events";

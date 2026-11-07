@@ -33,12 +33,6 @@ public sealed partial class TestRules
         "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/SourceRuleTests.cs",
         "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/UploadTests.cs",
         "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/WebsiteReadingTests.cs",
-        "tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/EmailDispatcherTests.cs",
-        "tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/FeedRetentionTests.cs",
-        "tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/HealthProbeTests.cs",
-        "tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/InstallProofTests.cs",
-        "tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/LiveFeedTests.cs",
-        "tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/SyncOriginTests.cs",
     ];
 
     [Fact]

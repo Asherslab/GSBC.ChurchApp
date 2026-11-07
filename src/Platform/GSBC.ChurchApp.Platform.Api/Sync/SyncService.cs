@@ -117,7 +117,7 @@ public sealed class SyncService(
             bool behindHorizon = cursors[name] > 0 && cursors[name] < horizons.GetValueOrDefault(name);
             bool audienceChanged = await AudienceChangedAsync(feed, user, cancellationToken) && cursors[name] > 0;
             FeedBatch batch;
-            if (!await CanSeeFeedAsync(feed, user, cancellationToken))
+            if (!await FeedVisibility.CanSeeFeedAsync(feed, user, access, cancellationToken))
             {
                 batch = new FeedBatch { Feed = feed.Name, Reset = true };
             }
@@ -165,7 +165,7 @@ public sealed class SyncService(
         if (hasMore)
             rows.RemoveAt(PageSize);
 
-        List<FeedChangeRecord> visible = await VisibleRowsAsync(feed, rows, user, cancellationToken);
+        List<FeedChangeRecord> visible = await FeedVisibility.VisibleRowsAsync(feed, rows, user, access, cancellationToken);
 
         return new FeedBatch
         {
@@ -179,21 +179,6 @@ public sealed class SyncService(
                 .Select(ToMessage)
                 .ToList(),
         };
-    }
-
-    private async Task<List<FeedChangeRecord>> VisibleRowsAsync(
-        FeedDefinition feed, List<FeedChangeRecord> rows, ClaimsPrincipal user, CancellationToken cancellationToken)
-    {
-        if (feed.Audience is FeedAudience.OwnRecordsAudience)
-            return Caller.UserId(user)?.ToString() is { } userId ? rows.Where(row => row.ScopeId == userId).ToList() : [];
-        if (feed.Audience is not FeedAudience.PermissionAudience audience)
-            return rows;
-
-        Dictionary<string, bool> allowedByScope = [];
-        foreach (string? scopeId in rows.Select(row => row.ScopeId).Distinct())
-            allowedByScope[scopeId ?? ""] = await access.IsAllowedAsync(user, audience.Permission.Node, scopeId, cancellationToken);
-
-        return rows.Where(row => allowedByScope[row.ScopeId ?? ""]).ToList();
     }
 
     private async Task<bool> AudienceChangedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken)
@@ -222,17 +207,6 @@ public sealed class SyncService(
             .Select(grant => $"{grant.Pattern}@{grant.Scope}")
             .Order(StringComparer.Ordinal)))));
 
-    private async Task<bool> CanSeeFeedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken) =>
-        feed.Audience switch
-        {
-            FeedAudience.PublicAudience => true,
-            FeedAudience.SignedInAudience or FeedAudience.OwnRecordsAudience => IsSignedIn(user),
-            FeedAudience.PermissionAudience audience when audience.Permission.ScopeKind == ScopeKind.Global =>
-                IsSignedIn(user) && await access.IsAllowedAsync(user, audience.Permission.Node, null, cancellationToken),
-            FeedAudience.PermissionAudience => IsSignedIn(user),
-            _ => false,
-        };
-
     private static Dictionary<string, long> CursorsOf(List<FeedCursor> cursors) =>
         cursors.GroupBy(cursor => cursor.Feed).ToDictionary(group => group.Key, group => group.Last().Cursor);
 
@@ -250,6 +224,4 @@ public sealed class SyncService(
 
     private static ClaimsPrincipal UserOf(CallContext context) =>
         context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
-
-    private static bool IsSignedIn(ClaimsPrincipal user) => user.Identity?.IsAuthenticated == true;
 }

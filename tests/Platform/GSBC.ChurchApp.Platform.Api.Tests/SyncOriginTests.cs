@@ -11,6 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
+[Integration("Each database has its own origin and cursor sequence, so a phone from another database or ahead of the server starts its feeds again")]
 public sealed class SyncOriginTests : IAsyncLifetime
 {
     private const string Series = "sermons.series";

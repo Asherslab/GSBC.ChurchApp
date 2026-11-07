@@ -10,6 +10,7 @@ using static Grpc.Health.V1.HealthCheckResponse.Types;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
+[Integration("Readiness follows the database and stops serving once it is gone, while liveness never asks it")]
 public sealed class HealthProbeTests : IAsyncLifetime
 {
     private TestDatabase _database = null!;
