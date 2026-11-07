@@ -168,7 +168,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
     {
         Guid id = ParseId(mediaId);
         MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);
-        if (await db.Items.SingleOrDefaultAsync(item => item.Id == id && item.FolderId == folder.Id, cancellationToken) is not { } item || item.FileName == fileName)
+        if (await db.Items.SingleOrDefaultAsync(candidate => candidate.Id == id && candidate.FolderId == folder.Id, cancellationToken) is not { } item || item.FileName == fileName)
             return;
         item.FileName = fileName;
         db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, item.Id.ToString(), Now));
@@ -260,7 +260,11 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         }
     }
 
-    private async Task<HashSet<Guid>> HiddenAsync(ClaimsPrincipal user, IReadOnlyCollection<MediaFolder> folders, CancellationToken cancellationToken)
+    private Task<HashSet<Guid>> HiddenAsync(ClaimsPrincipal user, IReadOnlyCollection<MediaFolder> folders, CancellationToken cancellationToken) =>
+        HiddenAsync(access, _areas, user, folders, cancellationToken);
+
+    internal static async Task<HashSet<Guid>> HiddenAsync(
+        IAccessEvaluator access, IReadOnlyDictionary<string, MediaSystemArea> areas, ClaimsPrincipal user, IReadOnlyCollection<MediaFolder> folders, CancellationToken cancellationToken)
     {
         List<MediaFolder> system = folders.Where(folder => folder.IsSystem).ToList();
         if (system.Count == 0 || await access.IsAllowedAsync(user, MediaPermissions.SystemViewNode, null, cancellationToken))
@@ -269,32 +273,37 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         HashSet<Guid> hidden = [];
         foreach (MediaFolder folder in system)
         {
-            bool inAudience = AreaOf(folder) is { } area && await access.IsAllowedAsync(user, area.Audience.Node, folder.SystemScope, cancellationToken);
+            bool inAudience = AreaOf(areas, folder) is { } area && await access.IsAllowedAsync(user, area.Audience.Node, folder.SystemScope, cancellationToken);
             if (!inAudience)
                 hidden.Add(folder.Id);
         }
         return hidden;
     }
 
-    private MediaSystemArea? AreaOf(MediaFolder folder) => folder.SystemArea is { } key ? _areas.GetValueOrDefault(key) : null;
+    private MediaSystemArea? AreaOf(MediaFolder folder) => AreaOf(_areas, folder);
+
+    private static MediaSystemArea? AreaOf(IReadOnlyDictionary<string, MediaSystemArea> areas, MediaFolder folder) =>
+        folder.SystemArea is { } key ? areas.GetValueOrDefault(key) : null;
 
     private async Task<Guid?> StaffFolderAsync(string? id, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(id))
             return null;
-        MediaFolder folder = await FolderAsync(id, cancellationToken);
-        return folder.IsSystem
-            ? throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{folder.Name}' is kept by the app. Choose one of your own folders."))
-            : folder.Id;
+        return StaffFolder(await FolderAsync(id, cancellationToken));
     }
 
-    private async Task<MediaFolder> StaffFolderToChangeAsync(string id, CancellationToken cancellationToken)
-    {
-        MediaFolder folder = await FolderAsync(id, cancellationToken);
-        return folder.IsSystem
+    internal static Guid StaffFolder(MediaFolder folder) =>
+        folder.IsSystem
+            ? throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{folder.Name}' is kept by the app. Choose one of your own folders."))
+            : folder.Id;
+
+    private async Task<MediaFolder> StaffFolderToChangeAsync(string id, CancellationToken cancellationToken) =>
+        StaffFolderToChange(await FolderAsync(id, cancellationToken));
+
+    internal static MediaFolder StaffFolderToChange(MediaFolder folder) =>
+        folder.IsSystem
             ? throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{folder.Name}' is kept by the app, so it can't be renamed, moved or deleted."))
             : folder;
-    }
 
     private async Task<MediaFolder> FolderAsync(string id, CancellationToken cancellationToken)
     {
@@ -302,9 +311,11 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         return await db.Folders.SingleOrDefaultAsync(folder => folder.Id == folderId, cancellationToken) ?? throw NoSuchFolder();
     }
 
-    private async Task<bool> IsWithinAsync(Guid folderId, Guid ancestorId, CancellationToken cancellationToken)
+    private async Task<bool> IsWithinAsync(Guid folderId, Guid ancestorId, CancellationToken cancellationToken) =>
+        IsWithin(await db.Folders.AsNoTracking().ToDictionaryAsync(folder => folder.Id, folder => folder.ParentId, cancellationToken), folderId, ancestorId);
+
+    internal static bool IsWithin(IReadOnlyDictionary<Guid, Guid?> parents, Guid folderId, Guid ancestorId)
     {
-        Dictionary<Guid, Guid?> parents = await db.Folders.AsNoTracking().ToDictionaryAsync(folder => folder.Id, folder => folder.ParentId, cancellationToken);
         for (Guid? current = folderId; current is { } id; current = parents.GetValueOrDefault(id))
         {
             if (id == ancestorId)
