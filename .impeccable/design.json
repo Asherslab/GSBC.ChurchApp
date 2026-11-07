@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-04T09:15:14+00:00",
+  "generatedAt": "2026-11-07T16:12:17+00:00",
   "title": "Design System: GSBC Church App",
   "extensions": {
     "colorMeta": {
@@ -830,11 +830,15 @@
       },
       "pill": {
         "displayName": "Pill",
-        "purpose": "Pills, admin sidebar count capsules, office-week capsule dates."
+        "purpose": "Pills, admin sidebar count capsules, office-week capsule dates. The label line over a special in the agenda and on an event head."
       },
       "code": {
         "displayName": "Code",
         "purpose": "Permission nodes and patterns in the admin developer roles tool only."
+      },
+      "date-numeral": {
+        "displayName": "Date numeral",
+        "purpose": "The day of the month in an event's date block (2rem, 700, tabular); headline size in the compact block."
       }
     },
     "shadows": [
@@ -949,6 +953,11 @@
         "name": "sort-arrow",
         "value": "160ms opacity, ease-out",
         "purpose": "Data-table sort arrow appearing on hover."
+      },
+      {
+        "name": "calendar-fills",
+        "value": "160ms ease-out (week rail), 140ms ease-out curve (month grid, rich text toolbar)",
+        "purpose": "Week-rail and month-grid days filling on press or hover; the rich text toolbar buttons."
       }
     ],
     "breakpoints": [
@@ -1047,6 +1056,37 @@
         "behind",
         "beside"
       ]
+    },
+    "calendar": {
+      "purpose": "The church calendar (Events): one running diary from today; the ordinary stays quiet and only what is different speaks.",
+      "weekBand": "Sticky at var(--top-h) + var(--sat), z-index 19, masthead ground, padding 0 var(--gutter) 14px; the masthead above it ends with 14px padding; the top bar turns solid after 90px.",
+      "agendaTimeColumn": "4.75rem, label size, 600, tabular, primary; quiet and not-on rows at 400 in ink-3.",
+      "monthMarks": {
+        "regular": "5px dot, sand-strong",
+        "special": "5px dot, accent",
+        "changed": "5px dot, marker",
+        "notOn": "6px open ring, inset 1.2px ink-3",
+        "onToday": "regular on-primary 50%, special on-primary, ring on-primary"
+      },
+      "monthDay": {
+        "today": "primary fill, on-primary",
+        "chosen": "box-shadow: inset 0 0 0 2px var(--primary)",
+        "past": "ink-3",
+        "outside": "opacity 0.45"
+      },
+      "dateBlock": {
+        "light": "surface tile (white) with primary numerals, weekday ink-3",
+        "dark": "surface tile (night-surface) with primary numerals (bright aqua): a dark tile with aqua numerals",
+        "size": "78px wide, 14px radius; compact 62px, 12px radius"
+      },
+      "changeNote": "background: color-mix(in srgb, var(--marker) 22%, transparent); 12px radius; 11px 14px; caption in ink; lead in marker-ink 700",
+      "wideningAsk": "background: color-mix(in srgb, var(--marker) 18%, transparent); 12px radius; 11px 14px",
+      "editOutlines": {
+        "dateBlock": "outline: 2px dashed color-mix(in srgb, var(--on-masthead) 50%, transparent); outline-offset: 3px",
+        "words": "outline: 2px dashed color-mix(in srgb, var(--on-masthead) 45%, transparent); outline-offset: 4px; 9px radius",
+        "focus": "outline-style: solid; outline-color: var(--marker)"
+      },
+      "editorFoot": "position: sticky; bottom: -32px (docked on the tab bar); var(--bar) with backdrop-filter: blur(18px) saturate(1.4); hairline top; in the admin panel sticky bottom 0 on var(--surface), 14px 16px 16px, no blur."
     }
   },
   "components": [
@@ -1329,6 +1369,62 @@
       "description": "The Move to sheet's list: the Library, then staff folders indented 22px a level; Here now on the current one, the chosen row in Selected Fill (the Tonal Selection Rule).",
       "html": "<div class=\"ds-picker\" role=\"radiogroup\" aria-label=\"Folders\"><button type=\"button\" role=\"radio\" aria-checked=\"false\" style=\"--depth:0\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect width=\"18\" height=\"18\" x=\"3\" y=\"3\" rx=\"2\" ry=\"2\"/><circle cx=\"9\" cy=\"9\" r=\"2\"/><path d=\"m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21\"/></svg><span>Library</span><small>Here now</small></button><button type=\"button\" role=\"radio\" aria-checked=\"false\" style=\"--depth:1\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"/></svg><span>Sermons</span></button><button type=\"button\" role=\"radio\" aria-checked=\"true\" class=\"ds-picker-on\" style=\"--depth:2\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"/></svg><span>2026 series</span></button><button type=\"button\" role=\"radio\" aria-checked=\"false\" disabled style=\"--depth:1\"><svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z\"/></svg><span>Events</span></button></div>",
       "css": ".ds-picker { display: grid; gap: 2px; max-width: 480px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-picker button { display: flex; align-items: center; gap: 10px; min-height: 42px; padding: 0 12px 0 calc(12px + var(--depth) * 22px); border: 0; border-radius: 9px; background: none; color: var(--ink, #18233a); font: inherit; text-align: left; cursor: pointer; } .ds-picker button:hover:not(:disabled) { background: var(--sand, #f4efe7); } .ds-picker button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: -2px; } .ds-picker .ds-picker-on, .ds-picker .ds-picker-on:hover:not(:disabled) {background:var(--selected-fill,#f4efe7)} .ds-picker button:disabled { color: var(--ink-3, #6b7384); cursor: not-allowed; } .ds-picker span { flex: 1; min-width: 0; overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; } .ds-picker small { color: var(--ink-3, #6b7384); font-size: 0.8235rem; }"
+    },
+    {
+      "name": "Agenda rows and the week band",
+      "kind": "custom",
+      "refersTo": "agenda-row",
+      "description": "The sticky week band with the week rail (today a white tile with an orange dot, the day in view on the masthead tint), over a day section of agenda rows: a regular row quiet, a special with its aqua label line, a date not on with the circle-off line under its title.",
+      "html": "<div class=\"ds-cal\"><div class=\"ds-band\"><p class=\"ds-band__range\">Sunday 8 – Saturday 14 November</p><div class=\"ds-wrail\"><button class=\"ds-wday ds-wday--today\"><span>SUN</span><b>8</b><i></i></button><button class=\"ds-wday ds-wday--here\"><span>MON</span><b>9</b><i class=\"ds-none\"></i></button><button class=\"ds-wday\"><span>TUE</span><b>10</b><i class=\"ds-none\"></i></button><button class=\"ds-wday\"><span>WED</span><b>11</b><i></i></button><button class=\"ds-wday\"><span>THU</span><b>12</b><i class=\"ds-none\"></i></button><button class=\"ds-wday\"><span>FRI</span><b>13</b><i></i></button><button class=\"ds-wday\"><span>SAT</span><b>14</b><i></i></button></div></div><div class=\"ds-day\"><h3>Today <span>Sunday 8 November</span></h3><a class=\"ds-arow ds-arow--quiet\" href=\"#\"><span class=\"ds-arow__time\">9am</span><span><span class=\"ds-arow__title\">LIFE Groups</span></span></a><a class=\"ds-arow\" href=\"#\"><span class=\"ds-arow__time\">10:30am</span><span><span class=\"ds-arow__label\">Whole church</span><span class=\"ds-arow__title\">Anniversary Sunday Service</span><span class=\"ds-arow__sub\">Auditorium · lunch together after</span></span></a><a class=\"ds-arow ds-arow--off\" href=\"#\"><span class=\"ds-arow__time\">6:30pm</span><span><span class=\"ds-arow__title\">Impact Kids</span><span class=\"ds-arow__sub\"><svg width=\"14\" height=\"14\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"><path d=\"m2 2 20 20\"/><path d=\"M8.35 2.69A10 10 0 0 1 21.3 15.65\"/><path d=\"M19.08 19.08A10 10 0 1 1 4.92 4.92\"/></svg>Kids camp weekend · back on 20 November</span></span></a></div></div>",
+      "css": ".ds-cal { font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; background: var(--page, #fff); } .ds-band { padding: 0 20px 14px; background: var(--masthead, #2a3d5e); color: var(--on-masthead, #fff); } .ds-band__range { margin: 0 0 12px; padding-top: 12px; color: var(--masthead-note, #d5c9b7); font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-wrail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; } .ds-wday { display: grid; justify-items: center; gap: 2px; min-height: 44px; padding: 6px 0 7px; border: 0; border-radius: 12px; background: none; color: inherit; font: inherit; cursor: pointer; transition: background 160ms ease-out; } .ds-wday:active, .ds-wday--here { background: var(--masthead-chip, rgb(255 255 255 / 0.12)); } .ds-wday span { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; opacity: 0.75; } .ds-wday b { font-size: 18px; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; } .ds-wday i { width: 5px; height: 5px; margin-top: 2px; border-radius: 50%; background: var(--masthead-note, #d5c9b7); } .ds-wday i.ds-none { visibility: hidden; } .ds-wday--today { background: var(--surface, #fff); color: var(--primary, #2a3d5e); } .ds-wday--today span { opacity: 1; } .ds-wday--today i { background: var(--marker, #e7ae74); } .ds-wday:focus-visible { outline: 2px solid var(--marker, #e7ae74); outline-offset: 2px; } .ds-day { padding: 0 20px 12px; } .ds-day h3 { display: flex; align-items: baseline; gap: 8px; margin: 20px 0 6px; color: var(--ink, #18233a); font-size: 15.5px; font-weight: 700; } .ds-day h3 span { color: var(--ink-3, #6b7384); font-size: 14px; font-weight: 500; } .ds-arow { display: flex; align-items: flex-start; min-height: 44px; padding: 10px 0; border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); color: var(--ink, #18233a); text-decoration: none; } .ds-arow:active { background: var(--line, rgb(42 61 94 / 0.12)); } .ds-arow:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-arow__time { flex: none; width: 4.75rem; padding-top: 1px; color: var(--primary, #2a3d5e); font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-arow__label { display: block; margin-bottom: 2px; color: var(--accent, #00776d); font-size: 12px; font-weight: 700; } .ds-arow__title { display: block; font-size: 15.5px; font-weight: 600; line-height: 1.3; } .ds-arow__sub { display: flex; align-items: center; gap: 5px; margin-top: 2px; color: var(--ink-2, #545e70); font-size: 14px; } .ds-arow--quiet .ds-arow__title { color: var(--ink-2, #545e70); font-weight: 500; } .ds-arow--quiet .ds-arow__time, .ds-arow--off .ds-arow__time { color: var(--ink-3, #6b7384); font-weight: 500; } .ds-arow--off .ds-arow__title, .ds-arow--off .ds-arow__sub { color: var(--ink-3, #6b7384); font-weight: 500; }"
+    },
+    {
+      "name": "Event head and date block",
+      "kind": "custom",
+      "refersTo": "date-block",
+      "description": "The navy event head: the white date block beside the label line, title and when line; in dark the block is a dark tile with aqua numerals. In edit mode dashed outlines mark what can be changed in place.",
+      "html": "<div class=\"ds-ehead\"><span class=\"ds-dblock\"><span>SAT</span><b>14</b><span class=\"ds-dblock__m\">NOV</span></span><div class=\"ds-ehead__words\"><p class=\"ds-ehead__label\">Outreach</p><h1>Outreach morning</h1><p class=\"ds-ehead__when\">8:30–11:30am · every second Saturday</p></div></div><div class=\"ds-ehead ds-ehead--night\"><span class=\"ds-dblock\"><span>SAT</span><b>14</b><span class=\"ds-dblock__m\">NOV</span></span><div class=\"ds-ehead__words\"><p class=\"ds-ehead__label\">Outreach</p><h1>Outreach morning</h1><p class=\"ds-ehead__when\">8:30–11:30am</p></div></div><div class=\"ds-ehead ds-ehead--editing\"><button class=\"ds-dblock ds-edit-block\"><span>SAT</span><b>14</b><span class=\"ds-dblock__m\">NOV</span></button><div class=\"ds-ehead__words\"><p class=\"ds-ehead__label\">Outreach</p><button class=\"ds-edit\">Outreach morning</button><button class=\"ds-edit ds-ehead__when\">8:30–11:30am · every second Saturday</button></div></div>",
+      "css": ".ds-ehead { display: flex; align-items: flex-start; gap: 16px; padding: 22px 20px; background: var(--masthead, #2a3d5e); color: var(--on-masthead, #fff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-ehead--night { background: #283c62; } .ds-ehead__words { display: grid; gap: 6px; flex: 1; min-width: 0; padding-top: 2px; } .ds-ehead__label { margin: 0; color: var(--masthead-note, #d5c9b7); font-size: 12px; font-weight: 700; } .ds-ehead h1, .ds-edit:not(.ds-ehead__when) { margin: 0; color: inherit; font-size: 27px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; } .ds-ehead__when { margin: 0; color: var(--masthead-note, #d5c9b7); font-size: 14.5px; font-weight: 600; font-variant-numeric: tabular-nums; } .ds-dblock { display: grid; justify-items: center; flex: none; width: 78px; padding: 8px 0 9px; border: 0; border-radius: 14px; background: var(--surface, #fff); color: var(--primary, #2a3d5e); font: inherit; font-variant-numeric: tabular-nums; } .ds-dblock span { color: var(--ink-3, #6b7384); font-size: 11px; font-weight: 700; letter-spacing: 0.06em; } .ds-dblock b { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; } .ds-dblock .ds-dblock__m { color: inherit; font-size: 12px; letter-spacing: 0; } .ds-ehead--night .ds-dblock { background: #1d2840; color: #2ec4b6; } .ds-ehead--night .ds-dblock span { color: #8a92a3; } .ds-ehead--night .ds-dblock .ds-dblock__m { color: #2ec4b6; } .ds-edit-block { outline: 2px dashed rgb(255 255 255 / 0.5); outline-offset: 3px; cursor: pointer; } .ds-edit { justify-self: start; padding: 0; border: 0; border-radius: 9px; outline: 2px dashed rgb(255 255 255 / 0.45); outline-offset: 4px; background: none; font-family: inherit; text-align: left; cursor: pointer; } .ds-edit:hover { background: var(--masthead-chip, rgb(255 255 255 / 0.12)); } .ds-edit:focus-visible, .ds-edit-block:focus-visible { outline-style: solid; outline-color: var(--marker, #e7ae74); }"
+    },
+    {
+      "name": "Month grid",
+      "kind": "custom",
+      "refersTo": "month-grid-day",
+      "description": "Seven columns of day buttons with up to three marks: pale for regular, accent for a special, marker for a change, an open ring for not on; today filled primary, the chosen day ringed.",
+      "html": "<div class=\"ds-month\"><div class=\"ds-month__row\"><span class=\"ds-wk\">SUN</span><span class=\"ds-wk\">MON</span><span class=\"ds-wk\">TUE</span><span class=\"ds-wk\">WED</span><span class=\"ds-wk\">THU</span><span class=\"ds-wk\">FRI</span><span class=\"ds-wk\">SAT</span></div><div class=\"ds-month__row\"><button class=\"ds-mday ds-mday--past\"><b>1</b><span class=\"ds-marks\"><i></i><i></i><i></i></span></button><button class=\"ds-mday ds-mday--today\"><b>2</b><span class=\"ds-marks\"><i></i><i class=\"ds-sp\"></i></span></button><button class=\"ds-mday\" aria-selected=\"true\"><b>3</b><span class=\"ds-marks\"><i class=\"ds-off\"></i></span></button><button class=\"ds-mday\"><b>4</b><span class=\"ds-marks\"><i></i></span></button><button class=\"ds-mday\"><b>5</b><span class=\"ds-marks\"></span></button><button class=\"ds-mday\"><b>6</b><span class=\"ds-marks\"><i class=\"ds-ch\"></i></span></button><button class=\"ds-mday ds-mday--out\"><b>7</b><span class=\"ds-marks\"><i></i></span></button></div><ul class=\"ds-key\"><li><i></i>Every week</li><li><i class=\"ds-sp\"></i>Special</li><li><i class=\"ds-ch\"></i>Changed</li><li><i class=\"ds-off\"></i>Not on</li></ul></div>",
+      "css": ".ds-month { display: grid; gap: 2px; padding: 12px 14px; background: var(--page, #fff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-month__row { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 2px; } .ds-wk { padding-bottom: 6px; color: var(--ink-3, #6b7384); font-size: 11px; font-weight: 600; letter-spacing: 0.04em; text-align: center; } .ds-mday { display: grid; justify-items: center; align-content: start; gap: 4px; min-height: 46px; padding: 6px 0 4px; border: 0; border-radius: 12px; background: none; color: var(--ink, #18233a); font: inherit; cursor: pointer; transition: background 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-mday:hover { background: var(--sand, #f4efe7); } .ds-mday:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-mday b { font-size: 15.5px; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; } .ds-mday--past { color: var(--ink-3, #6b7384); } .ds-mday--out { opacity: 0.45; } .ds-mday[aria-selected=\"true\"] { box-shadow: inset 0 0 0 2px var(--primary, #2a3d5e); } .ds-mday--today, .ds-mday--today:hover { background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); } .ds-marks { display: flex; gap: 3px; height: 6px; } .ds-month i { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--sand-strong, #e9e1d4); } .ds-month i.ds-sp { background: var(--accent, #00776d); } .ds-month i.ds-ch { background: var(--marker, #e7ae74); } .ds-month i.ds-off { width: 6px; height: 6px; background: none; box-shadow: inset 0 0 0 1.2px var(--ink-3, #6b7384); } .ds-mday--today i { background: rgb(255 255 255 / 0.5); } .ds-mday--today i.ds-sp { background: #fff; } .ds-key { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 8px 0 0; padding: 0 6px; list-style: none; color: var(--ink-3, #6b7384); font-size: 14px; } .ds-key li { display: inline-flex; align-items: center; gap: 5px; }"
+    },
+    {
+      "name": "Toggle chips",
+      "kind": "chip",
+      "refersTo": "toggle-chip",
+      "description": "Several on at once: 36px capsules, sand when off, primary when on, scrolling sideways, with a trailing Browse link.",
+      "html": "<div class=\"ds-tchips\"><button aria-pressed=\"true\">Sunday services</button><button aria-pressed=\"true\">Whole church</button><button aria-pressed=\"false\">Kids</button><a href=\"#\">+ Browse</a></div>",
+      "css": ".ds-tchips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; white-space: nowrap; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-tchips button { flex: none; min-height: 36px; padding: 0 14px; border: 0; border-radius: 999px; background: var(--sand, #f4efe7); color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 160ms cubic-bezier(0.22, 1, 0.36, 1), color 160ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-tchips button:hover { color: var(--ink, #18233a); } .ds-tchips button[aria-pressed=\"true\"] { background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); } .ds-tchips button:focus-visible, .ds-tchips a:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-tchips a { display: inline-flex; flex: none; align-items: center; min-height: 36px; padding: 0 6px; color: var(--accent, #00776d); font-size: 14px; font-weight: 600; text-decoration: none; }"
+    },
+    {
+      "name": "Event body and editor foot bar",
+      "kind": "custom",
+      "refersTo": "editor-foot",
+      "description": "The change note in marker at 22%, an add-row, and the frosted foot bar with This date only | Every … and Save beside Not on this date.",
+      "html": "<div class=\"ds-ebody\"><p class=\"ds-change\"><strong>Changed</strong>Now meeting at Teralba Park, not the church car park</p><button class=\"ds-addrow\">+ Add a contact</button><p class=\"ds-widen\">This changes every second Saturday from 14 November.</p></div><div class=\"ds-foot\"><div class=\"ds-seg\"><button aria-checked=\"true\">This date only</button><button aria-checked=\"false\">Every second Saturday</button></div><div class=\"ds-foot__actions\"><button class=\"ds-save\">Save</button><button class=\"ds-quiet\">Not on this date</button></div></div>",
+      "css": ".ds-ebody { display: grid; gap: 14px; padding: 16px 20px; background: var(--page, #fff); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-change { margin: 0; padding: 11px 14px; border-radius: 12px; background: color-mix(in srgb, var(--marker, #e7ae74) 22%, transparent); color: var(--ink, #18233a); font-size: 14px; line-height: 1.45; } .ds-change strong { margin-right: 6px; color: var(--marker-ink, #8a5422); font-weight: 700; } .ds-addrow { display: flex; align-items: center; width: 100%; min-height: 44px; padding: 0; border: 0; border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); background: none; color: var(--accent, #00776d); font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; } .ds-addrow:hover { color: var(--ink, #18233a); } .ds-widen { margin: 0; color: var(--marker-ink, #8a5422); font-size: 14px; font-weight: 600; } .ds-foot { display: grid; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); background: var(--bar, rgb(255 255 255 / 0.9)); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-seg { display: flex; padding: 3px; border-radius: 12px; background: var(--sand, #f4efe7); } .ds-seg button { flex: 1; min-height: 36px; border: 0; border-radius: 9px; background: none; color: var(--ink-2, #545e70); font: inherit; font-size: 14.5px; font-weight: 600; } .ds-seg button[aria-checked=\"true\"] { background: var(--segment-on, #fff); color: var(--ink, #18233a); box-shadow: 0 1px 3px rgb(0 0 0 / 0.14); } .ds-foot__actions { display: flex; gap: 8px; } .ds-save, .ds-quiet { min-height: 52px; padding: 0 18px; border: 0; font: inherit; font-weight: 600; cursor: pointer; transition: transform 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-save { flex: 1 1 auto; border-radius: 14px; background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); } .ds-quiet { flex: none; border-radius: 22px; background: var(--sand, #f4efe7); color: var(--ink, #18233a); } .ds-save:active, .ds-quiet:active { transform: scale(0.96); } .ds-save:focus-visible, .ds-quiet:focus-visible, .ds-addrow:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; }"
+    },
+    {
+      "name": "Calendar workbench column",
+      "kind": "nav",
+      "refersTo": "calendar-aside-item",
+      "description": "The admin calendar's sand column: items with orange count capsules, calendar rows with a settings icon button and a small switch, + New calendar, and Breaks in a foot group.",
+      "html": "<nav class=\"ds-caside\"><h2>Calendar</h2><button class=\"ds-citem\" aria-current=\"true\">All your calendars</button><button class=\"ds-citem\">Needs details <span class=\"ds-count\">2</span></button><ul class=\"ds-ccals\"><li class=\"ds-ccal\"><span class=\"ds-cname\">Kids team<small>Needs a publisher</small></span><button class=\"ds-cset\" aria-label=\"Settings\"><svg width=\"18\" height=\"18\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M21 4h-7M10 4H3M21 12h-9M8 12H3M21 20h-5M12 20H3M14 2v4M8 10v4M16 18v4\"/></svg></button><span class=\"ds-sw\" aria-hidden=\"true\"></span></li></ul><button class=\"ds-cadd\">+ New calendar</button><button class=\"ds-citem ds-citem--foot\">Breaks <span class=\"ds-qcount\">2</span></button></nav>",
+      "css": ".ds-caside { display: grid; gap: 4px; width: 300px; padding: 24px 18px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-caside h2 { margin: 0 4px 10px; color: var(--ink, #18233a); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; } .ds-citem { display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 40px; padding: 0 12px; border: 0; border-radius: 10px; background: none; color: var(--ink, #18233a); font: inherit; font-size: 14.5px; font-weight: 600; text-align: left; cursor: pointer; transition: background 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-citem:hover { background: color-mix(in srgb, var(--segment-on, #fff) 60%, transparent); } .ds-citem[aria-current=\"true\"] { background: var(--segment-on, #fff); } .ds-citem:focus-visible, .ds-cset:focus-visible, .ds-cadd:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--marker, #e7ae74); color: var(--on-marker, #2a1a08); font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums; } .ds-qcount { color: var(--ink-3, #6b7384); font-size: 14px; font-variant-numeric: tabular-nums; } .ds-ccals { display: grid; gap: 2px; margin: 8px 0 0; padding: 10px 0 0; border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); list-style: none; } .ds-ccal { display: flex; align-items: center; gap: 6px; min-height: 44px; padding: 0 4px 0 12px; border-radius: 10px; } .ds-cname { display: grid; flex: 1; color: var(--ink, #18233a); font-size: 14.5px; font-weight: 600; } .ds-cname small { color: var(--ink-3, #6b7384); font-size: 12px; } .ds-cset { display: grid; place-items: center; width: 34px; height: 34px; border: 0; border-radius: 50%; background: none; color: var(--ink-3, #6b7384); cursor: pointer; } .ds-cset:hover { background: var(--line, rgb(42 61 94 / 0.12)); } .ds-sw { position: relative; width: 36px; height: 22px; border-radius: 999px; background: var(--live, #009c8f); } .ds-sw::after { content: \"\"; position: absolute; top: 2px; left: 16px; width: 18px; height: 18px; border-radius: 50%; background: #fff; box-shadow: 0 2px 6px rgb(0 0 0 / 0.2); } .ds-cadd { justify-self: start; min-height: 40px; padding: 0 12px; border: 0; background: none; color: var(--accent, #00776d); font: inherit; font-size: 14.5px; font-weight: 600; cursor: pointer; } .ds-citem--foot { margin-top: 6px; border-top: 1px solid var(--line, rgb(42 61 94 / 0.12)); border-radius: 0; }"
+    },
+    {
+      "name": "Rich text editor",
+      "kind": "input",
+      "refersTo": "rich-text-input",
+      "description": "Toolbar of fill-on-surface capsules (primary when pressed) over a sand field with the inset accent focus ring, then \"How it looks\" as a plain caption over the preview.",
+      "html": "<div class=\"ds-rte\"><div class=\"ds-rte__tools\"><button aria-pressed=\"true\">B</button><button aria-pressed=\"false\"><i>I</i></button><button aria-pressed=\"false\">Heading</button><button aria-pressed=\"false\">• List</button><button aria-pressed=\"false\">Link</button></div><textarea class=\"ds-rte__input\" rows=\"3\">We meet for prayer and a short devotional, then head out in pairs.</textarea><div class=\"ds-rte__preview\"><span>How it looks</span><p>We meet for prayer and a short devotional, then head out in pairs.</p></div></div>",
+      "css": ".ds-rte { display: grid; gap: 8px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-rte__tools { display: flex; flex-wrap: wrap; gap: 4px; } .ds-rte__tools button { min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: var(--fill-on-surface, #f4efe7); color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 140ms cubic-bezier(0.22, 1, 0.36, 1), color 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-rte__tools button:hover { color: var(--ink, #18233a); } .ds-rte__tools button[aria-pressed=\"true\"] { background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); } .ds-rte__tools button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-rte__input { width: 100%; box-sizing: border-box; padding: 13px 14px; border: 0; border-radius: 12px; background: var(--fill-on-surface, #f4efe7); color: var(--ink, #18233a); caret-color: var(--accent, #00776d); font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; } .ds-rte__input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-rte__preview { padding: 12px; border: 1px dashed var(--line, rgb(42 61 94 / 0.12)); border-radius: 9px; } .ds-rte__preview span { display: block; margin-bottom: 6px; color: var(--ink-2, #545e70); font-size: 14px; font-weight: 600; } .ds-rte__preview p { margin: 0; line-height: 1.5; }"
     }
   ],
   "narrative": {
@@ -1343,6 +1439,7 @@
       "rem type tied to the iOS body text size, so Dynamic Type scales the whole app.",
       "In the admin panel, a 248px navy sidebar with beige group labels, an orange marker bar on the current page and orange count capsules, over a white work area that opens with a title band.",
       "Home as the Hub: a 2 to 4 column grid of 14px-radius tiles in theme tones, each tile one of six shapes, sized by the church in columns and rows, under a compact masthead.",
+      "The calendar as one running diary: a sticky navy week band with the seven-day rail over day sections of hairline agenda rows, where regular events stay quiet and only what's different (a special, a change, a date that isn't on) speaks; an event opens on a navy head with a white date block, and is edited where it is read.",
       "A tab bar built from what features register, ending in More; with the Hub home (favoured 2026-10-27) it grows to Home, Listen, Prayer, More. A notifications bell with an orange unread badge joins every tab root with the inbox."
     ],
     "rules": [
@@ -1353,7 +1450,7 @@
       },
       {
         "name": "The Marker Rule",
-        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Highlight or Pale highlight tone (`marker`, `marker-soft`), which staff choose for a tile they want to stand out; no tile ships in solid Highlight by default. On the canvas it also draws the landing slot while a tile is dragged, and the chosen picture in the media chooser.",
+        "body": "Orange means \"here\" or \"new\": the active section, the unread item, how far you've listened, today on the week rail, an event changed since members last opened it, the tile chosen on the Hub canvas. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Highlight or Pale highlight tone (`marker`, `marker-soft`), which staff choose for a tile they want to stand out; no tile ships in solid Highlight by default. On the canvas it also marks the chosen picture in the media chooser.",
         "section": "colors"
       },
       {
@@ -1373,7 +1470,7 @@
       },
       {
         "name": "The Numbers Line Up Rule",
-        "body": "Times, durations, dates in the day rail and positions use tabular figures.",
+        "body": "Times, durations, dates in the day rail and positions use tabular figures; so do the agenda's time column, the week rail, the month grid, the week band's range and an event's when line and date block.",
         "section": "typography"
       },
       {
@@ -1405,6 +1502,11 @@
         "name": "The App's Own Rule",
         "body": "Wherever the app owns something rather than staff (the Made by the app shelf, its folders and crumbs, a file's folder, the shelf's empty state), it carries the lock glyph and one plain caption saying what it is and what staff can't do to it. The lock is ink-2 or the surrounding text colour; ownership takes no colour or badge of its own.",
         "section": "components"
+      },
+      {
+        "name": "The Quiet Regular Rule",
+        "body": "In the calendar the ordinary stays quiet and only what's different speaks: a regular event is ink-2 at 400 with its time in ink-3 and no label; a special or one-off carries its label in accent and its time in primary; a change is marked in orange until it has been opened; a date that isn't on keeps its place in ink-3 with the circle-off line under its title, never a suffix and never dropped from the list.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -1422,6 +1524,8 @@
       "**Do** give a Home tile one of the eight theme tones, and draw it in a layout its kind declares for its size.",
       "**Do** mark the chosen tile on the Hub canvas with the 2px marker ring, its size capsule in words and the corner grip, and warn in plain words only when a tone's text is hard to read in light or dark.",
       "**Do** grey out a layout that doesn't suit a tile and say why, rather than hiding it.",
+      "**Do** keep a regular event quiet in the agenda and let only a special, a change or a date that isn't on speak, with a date not on said in a line under its title.",
+      "**Do** edit an event where it is read: the same head with dashed outlines round what can change, and the save and scope choices in a foot bar.",
       "**Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its split view so choosing an item never moves the list."
     ],
     "donts": [
@@ -1434,7 +1538,8 @@
       "**Don't** set font sizes in px.",
       "**Don't** put a phone masthead in the admin panel, or open it on a grid of tool tiles.",
       "**Don't** box the split view's detail as a card; it is a hairline-ruled column.",
-      "**Don't** make the admin work area a size container."
+      "**Don't** make the admin work area a size container.",
+      "**Don't** mark a date that isn't on with a suffix on its title or by dropping it from the list."
     ]
   }
 }

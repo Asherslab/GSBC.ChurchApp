@@ -57,7 +57,7 @@
     [Parameter] public string MoreHref { get; set; } = "more";
     [Parameter] public IReadOnlyDictionary<string, int>? Counts { get; set; }
 
-    private IEnumerable<NavEntry> Permitted => Modules.Navigation.Where(entry => entry.Requires is null || Access.Can(entry.Requires));
+    private IEnumerable<NavEntry> Permitted => Modules.Navigation.Where(entry => entry.Requires is null || Access.CanSomewhere(entry.Requires));
 
     private string Section => FirstSegment(Navigation.ToBaseRelativePath(Navigation.Uri));
 

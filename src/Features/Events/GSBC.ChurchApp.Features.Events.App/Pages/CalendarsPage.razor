@@ -1,0 +1,111 @@
+@page "/week/calendars"
+@implements IDisposable
+@inject CalendarDiary Diary
+@inject YourCalendars Yours
+@inject Shell Shell
+@inject IAccess Access
+
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Calendars" BackHref="@EventsPlaces.Week" BackLabel="This week">
+            <Masthead Title="Calendars" Note="Choose what shows in your week" />
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private string? _problem;
+    private string? _busy;
+
+    protected override void OnInitialized() => Yours.Changed += OnYours;
+
+    private RenderFragment Drawn(Diary diary)
+    {
+        IReadOnlyList<CalendarInfo> inWeek = Yours.InYourWeek(diary.Calendars);
+        IReadOnlyList<CalendarInfo> more = diary.Calendars.Except(inWeek).ToList();
+        return @<Page Title="Calendars" BackHref="@EventsPlaces.Week" BackLabel="This week">
+            <Masthead Title="Calendars" Note="Choose what shows in your week" />
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            <Section First="true" Title="In your week">
+                @if (inWeek.Count == 0)
+                {
+                    <p class="hint">Nothing yet. Add a calendar below and its events show in your week.</p>
+                }
+                else
+                {
+                    <div class="list">
+                        @foreach (CalendarInfo calendar in inWeek)
+                        {
+                            <div class="row calendar-choice">
+                                <a class="calendar-choice__name" href="@EventsPlaces.CalendarPath(calendar)">
+                                    <span class="row__title">@calendar.Name
+                                        @if (CalendarChoices.IsGiven(calendar))
+                                        {
+                                            <span class="row__title-extra"><Pill Tone="PillTone.Quiet" Icon="lock">For you</Pill></span>
+                                        }
+                                    </span>
+                                    @if (calendar.Description.Length > 0)
+                                    {
+                                        <span class="row__subtitle">@calendar.Description</span>
+                                    }
+                                </a>
+                                <label class="switch">
+                                    <input type="checkbox" role="switch" checked aria-label="@($"Show {calendar.Name} in your week")" disabled="@(_busy == calendar.Id)" @onchange="() => ChooseAsync(calendar, false)" />
+                                    <span aria-hidden="true"></span>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                    <p class="hint">Turning one off takes it out of your week. Turn it back on here any time.</p>
+                }
+            </Section>
+            @if (more.Count > 0)
+            {
+                <Section Title="More calendars">
+                    <div class="list">
+                        @foreach (CalendarInfo calendar in more)
+                        {
+                            <div class="row calendar-choice">
+                                <a class="calendar-choice__name" href="@EventsPlaces.CalendarPath(calendar)">
+                                    <span class="row__title">@calendar.Name</span>
+                                    @if (calendar.Description.Length > 0)
+                                    {
+                                        <span class="row__subtitle">@calendar.Description</span>
+                                    }
+                                </a>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == calendar.Id)" AriaLabel="@($"Add {calendar.Name} to your week")" OnClick="() => ChooseAsync(calendar, true)">Add</Button>
+                            </div>
+                        }
+                    </div>
+                </Section>
+            }
+            @if (!Access.SignedIn)
+            {
+                <Section>
+                    <p class="hint">Some calendars are for church members or a ministry's team. Sign in to see the ones that are for you.</p>
+                </Section>
+            }
+            <Section Title="In your phone's calendar" Lead="Subscribe once and your calendar app keeps itself up to date.">
+                <h3 class="subscribe__head">All my calendars</h3>
+                <SubscribeLinks Mine="true" Action="Subscribe to mine" />
+                <h3 class="subscribe__head">Everything public</h3>
+                <SubscribeLinks Action="Subscribe to everything public" />
+            </Section>
+        </Page>;
+    }
+
+    private async Task ChooseAsync(CalendarInfo calendar, bool inYourWeek)
+    {
+        _busy = calendar.Id;
+        _problem = null;
+        await Shell.HapticAsync();
+        _problem = await Yours.ChooseAsync(calendar.Id, inYourWeek);
+        _busy = null;
+    }
+
+    private void OnYours() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Yours.Changed -= OnYours;
+}

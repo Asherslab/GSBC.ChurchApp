@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Grpc.Core;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -17,6 +18,7 @@ public sealed class SyncService(
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan AudienceMarkResolution = TimeSpan.FromDays(1);
+    private static readonly string AnyRoleMembership = RoleMembership.Prefix + "any";
 
     public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
     {
@@ -183,10 +185,13 @@ public sealed class SyncService(
 
     private async Task<bool> AudienceChangedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
-        if (feed.Audience is not FeedAudience.PermissionAudience audience || Caller.SessionId(user) is not { } session || Caller.UserId(user) is not { } userId)
+        if (feed.Audience is not (FeedAudience.PermissionAudience or FeedAudience.EachRowAudience) || Caller.SessionId(user) is not { } session || Caller.UserId(user) is not { } userId)
             return false;
 
-        string fingerprint = Fingerprint(await access.GrantsForAsync(userId, cancellationToken), audience.Permission.Node);
+        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
+        string fingerprint = feed.Audience is FeedAudience.PermissionAudience audience
+            ? Fingerprint(grants, grant => grant.Pattern.Matches(audience.Permission.Node))
+            : Fingerprint(grants, MayDecideRoleMembership);
         AudienceMark? mark = await db.AudienceMarks.FindAsync([session, feed.Name], cancellationToken);
         bool changed = mark is not null && mark.Fingerprint != fingerprint;
         DateTime now = time.GetUtcNow().UtcDateTime;
@@ -201,9 +206,12 @@ public sealed class SyncService(
         return changed;
     }
 
-    private static string Fingerprint(GrantSet grants, string node) =>
+    private static bool MayDecideRoleMembership(Grant grant) =>
+        grant.Pattern.Matches(AnyRoleMembership) || grant.Pattern.Text.TrimStart('-').StartsWith(RoleMembership.Prefix, StringComparison.Ordinal);
+
+    private static string Fingerprint(GrantSet grants, Func<Grant, bool> counts) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', grants.Grants
-            .Where(grant => grant.Pattern.Matches(node))
+            .Where(counts)
             .Select(grant => $"{grant.Pattern}@{grant.Scope}")
             .Order(StringComparer.Ordinal)))));
 

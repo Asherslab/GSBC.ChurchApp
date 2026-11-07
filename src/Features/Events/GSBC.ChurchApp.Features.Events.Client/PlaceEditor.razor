@@ -1,0 +1,34 @@
+<div class="field place-editor">
+    <SearchPicker TItem="EventPlace" Label="Where" Items="Used" Text="place => place.Name.Length > 0 ? place.Name : place.Address" Detail="place => place.Name.Length > 0 ? place.Address : string.Empty"
+                  Value="Chosen" ValueChanged="PickAsync" NoneText="@(Missing ? EventFieldKeys.Missing(EventFieldKeys.Place) : "No place")"
+                  Placeholder="Find a place used before, or type a new one" CreateText="@(text => $"A new place: “{text}”")" OnCreate="CreateAsync"
+                  Problem="@(Missing && Place is null ? "Each date needs a place." : null)" />
+    @if (Place is { } place && !Used.Any(used => Same(used, place)))
+    {
+        <div class="ui-pair">
+            <TextField Label="Called" Value="@place.Name" ValueChanged="value => Change(place, name: value)" Placeholder="Teralba Park" MaxLength="80" />
+            <TextField Label="Address" Value="@place.Address" ValueChanged="value => Change(place, address: value)" Placeholder="Street, suburb" MaxLength="160" />
+        </div>
+        <span class="field__hint">With an address, tapping the place opens the phone's maps.</span>
+    }
+</div>
+
+@code {
+    [Parameter] public EventPlace? Place { get; set; }
+    [Parameter] public EventCallback<EventPlace?> PlaceChanged { get; set; }
+    [Parameter] public IReadOnlyList<EventPlace> Used { get; set; } = [];
+    [Parameter] public bool Missing { get; set; }
+
+    private EventPlace? Chosen => Place is null ? null : Used.FirstOrDefault(used => Same(used, Place)) ?? Place;
+
+    private static bool Same(EventPlace one, EventPlace other) =>
+        one.PlaceId == other.PlaceId && one.Name == other.Name && one.Address == other.Address;
+
+    private Task PickAsync(EventPlace? place) =>
+        PlaceChanged.InvokeAsync(place is null ? null : new EventPlace { PlaceId = place.PlaceId, Name = place.Name, Address = place.Address });
+
+    private Task CreateAsync(string text) => PlaceChanged.InvokeAsync(new EventPlace { Name = text.Trim() });
+
+    private Task Change(EventPlace place, string? name = null, string? address = null) =>
+        PlaceChanged.InvokeAsync(new EventPlace { PlaceId = place.PlaceId, Name = name ?? place.Name, Address = address ?? place.Address });
+}

@@ -1,0 +1,72 @@
+@using System.Globalization
+@inject YourCalendars Yours
+
+<Page Title="@First.ToString("MMMM", English)" StuckAt="90">
+    <Masthead Title="@First.ToString("MMMM", English)" Class="masthead--week">
+        <div class="month-steps">
+            <span class="month-steps__year">@First.Year</span>
+            @Switch
+            <button type="button" class="icon-btn" aria-label="@($"Back to {First.AddMonths(-1).ToString("MMMM", English)}")" disabled="@(First <= Earliest)" @onclick="() => Step(-1)"><Icon Name="chevron-left" /></button>
+            <button type="button" class="icon-btn" aria-label="@($"On to {First.AddMonths(1).ToString("MMMM", English)}")" disabled="@(First >= Latest)" @onclick="() => Step(1)"><Icon Name="chevron-right" /></button>
+        </div>
+    </Masthead>
+    <div class="week-chips">@Chips</div>
+    <div class="month-body">
+        <MonthGrid First="First" Today="Today" Occurrences="Shown" Selected="Selected" IsChanged="Yours.IsNewChange" Picked="Pick" />
+    </div>
+    @{ IReadOnlyList<EventOccurrence> onDay = Shown.Where(occurrence => EventWords.DayOf(occurrence) == Selected).ToList(); }
+    <section class="week-day" aria-live="polite">
+        <h2 class="week-day__head">@EventWords.DayHeading(Selected, Today) <span>@EventWords.Date(Selected)</span></h2>
+        @if (onDay.Count == 0)
+        {
+            <p class="hint">Nothing on in your calendars.</p>
+        }
+        else
+        {
+            <div class="list">
+                @foreach (EventOccurrence occurrence in onDay)
+                {
+                    <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" NewChange="Yours.IsNewChange(occurrence)" />
+                }
+            </div>
+        }
+    </section>
+</Page>
+
+@code {
+    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
+    private DateOnly? _first;
+    private DateOnly? _selected;
+
+    [Parameter, EditorRequired] public required Diary Diary { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<EventOccurrence> Shown { get; set; }
+    [Parameter, EditorRequired] public required DateTime NowUtc { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment Switch { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment Chips { get; set; }
+
+    private DateOnly Today => EventWords.Today(NowUtc);
+
+    private DateOnly First => _first ?? new DateOnly(Today.Year, Today.Month, 1);
+
+    private DateOnly Selected => _selected ?? Today;
+
+    private DateOnly Earliest => FirstOf(Today.AddDays(-EventsFeeds.DaysBack));
+
+    private DateOnly Latest => FirstOf(Today.AddMonths(EventsFeeds.MonthsAhead));
+
+    private static DateOnly FirstOf(DateOnly day) => new(day.Year, day.Month, 1);
+
+    private void Step(int months)
+    {
+        DateOnly first = First.AddMonths(months);
+        _first = first;
+        _selected = first.Year == Today.Year && first.Month == Today.Month ? Today : first;
+    }
+
+    private void Pick(DateOnly day)
+    {
+        _selected = day;
+        if (day.Month != First.Month)
+            _first = FirstOf(day);
+    }
+}

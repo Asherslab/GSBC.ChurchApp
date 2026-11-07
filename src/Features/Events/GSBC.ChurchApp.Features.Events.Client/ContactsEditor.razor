@@ -1,0 +1,60 @@
+<div class="field editor-list">
+    @if (Contacts.Count > 0)
+    {
+        <span class="field__label">Contact</span>
+    }
+    @foreach (EventContact contact in Contacts)
+    {
+        @if (_open == contact)
+        {
+            <div class="editor-list__item">
+                <TextField Label="Name" Value="@contact.Name" ValueChanged="value => contact.Name = value" MaxLength="80" />
+                <div class="ui-pair">
+                    <TextField Label="Phone" Type="tel" Value="@contact.Phone" ValueChanged="value => contact.Phone = value.Trim()" AutoComplete="off" />
+                    <TextField Label="Email" Type="email" Value="@contact.Email" ValueChanged="value => contact.Email = value.Trim()" AutoComplete="off" />
+                </div>
+                <div class="ui-actions">
+                    <Button Small="true" OnClick="() => _open = null">Done</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => Remove(contact)">Remove</Button>
+                </div>
+            </div>
+        }
+        else
+        {
+            <button type="button" class="contact-row" aria-label="@($"Change {Named(contact)}")" @onclick="() => _open = contact">
+                <span class="row__icon"><Icon Name="user" Size="IconSize.Small" /></span>
+                <span class="row__body">
+                    <span class="row__title">@Named(contact)</span>
+                    <span class="row__subtitle">@Reach(contact)</span>
+                </span>
+                <Icon Name="pencil" Size="IconSize.Small" />
+            </button>
+        }
+    }
+    <button type="button" class="add-row" @onclick="Add"><Icon Name="plus" Size="IconSize.Small" />Add a contact</button>
+    <span class="field__hint">Only people signed in see a contact's phone and email.</span>
+</div>
+
+@code {
+    private EventContact? _open;
+
+    [Parameter, EditorRequired] public required List<EventContact> Contacts { get; set; }
+
+    private static string Named(EventContact contact) => contact.Name.Length > 0 ? contact.Name : "A contact with no name yet";
+
+    private static string Reach(EventContact contact) =>
+        EventWords.Join(contact.Phone, contact.Email) is { Length: > 0 } reach ? reach : "No phone or email yet";
+
+    private void Add()
+    {
+        EventContact contact = new();
+        Contacts.Add(contact);
+        _open = contact;
+    }
+
+    private void Remove(EventContact contact)
+    {
+        Contacts.Remove(contact);
+        _open = null;
+    }
+}

@@ -1,0 +1,49 @@
+{
+  "title": "The church calendar: an event, opened",
+  "question": "Three ways to show one event when it's tapped, text first, in the bulletin look. All three carry the same things: what and when, the place, Add to calendar, Register when there is one, what changed, the description, contacts for signed-in people, and the other dates of a regular event. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "sheet",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "A sheet over the week",
+      "lineage": "the app's own sheets, as What's new uses them",
+      "thesis": "Tapping an event raises a sheet over the calendar instead of leaving it: the essentials at once, the rest a pull up; the week stays where you were.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["page-coloured sheet with a grabber", "fact list", "orange change note"],
+      "viewport": "The week dimmed behind. The sheet: label and title, the when line with the regular event (every second Saturday), Add to calendar and Share, the change note in an orange-tinted box, then place and contact as facts; pulled up, the description and Other dates.",
+      "risk": "A shared link or a notification opens the same sheet over the calendar, not a page of its own; a long description lives in a scrolling sheet.",
+      "html": ".impeccable/mocks/decision/events-page/sheet.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "dateblock",
+      "kind": "dealt",
+      "label": "The date block",
+      "lineage": "the bulletin's dated notices, the day set large",
+      "thesis": "A pushed page whose navy head carries a large tabular date block beside the title, so 'when' is read before anything else; a picture, when there is one, sits under the head.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy head with a date block", "fact list", "hairline sections"],
+      "viewport": "Back to This week. Navy head: SAT / 14 / NOV block and 8:30–11:30 beside the label and title. Under it Add to calendar and Share. The change note. Facts: place (opens maps), contact. About. Other dates.",
+      "risk": "The most familiar of the three; with no picture it leans on the date block to be memorable.",
+      "html": ".impeccable/mocks/decision/events-page/dateblock.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "placeled",
+      "kind": "dealt",
+      "label": "Where first",
+      "lineage": "the site map and the street directory",
+      "thesis": "When an event has a place, the place leads: the site-map crop or a map of the address fills the top, the title and when sit over its foot, and Directions is the first action.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70", "#DCE6DA"],
+      "materials": ["map crop as the hero", "navy band of title and time", "fact list"],
+      "viewport": "A map of Teralba Park with a pin, the change note on it. A navy band: Outreach morning, Saturday 14 November, 8:30–11:30. Directions, Add to calendar. Facts and About under it.",
+      "risk": "Events without a place (most regular ones) need a different top; a map of an outside address needs a map image source, which the app doesn't have yet.",
+      "html": ".impeccable/mocks/decision/events-page/placeled.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

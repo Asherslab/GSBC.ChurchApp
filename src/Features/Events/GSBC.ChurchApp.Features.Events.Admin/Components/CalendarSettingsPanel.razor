@@ -1,0 +1,109 @@
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject CalendarEditing Editing
+@inject CalendarSubscriptions Subscriptions
+
+<div class="event-panel">
+    <EventHead Title="@(_name.Length > 0 ? _name : "New calendar")" Compact="true" />
+    <div class="event-body event-body--editing">
+        <TextField Label="Name" Value="@_name" ValueChanged="value => _name = value" MaxLength="60" Required="true" />
+        <TextField Label="Description" Value="@_description" ValueChanged="value => _description = value" MaxLength="160" Hint="One line under its name in Browse calendars." />
+        <AudiencePicker Label="Who it's for" Value="@_audience" ValueChanged="value => _audience = value" />
+        <ToggleRow Title="Shown on new phones" Description="@(_defaults ? "On: everyone it's for sees it without adding it" : "Off: people add it from Browse calendars")" Checked="_defaults" CheckedChanged="value => _defaults = value" />
+        <ToggleRow Title="Needs a publisher" Description="Editors without the publisher role save events and ask to publish" Checked="_needsPublisher" CheckedChanged="value => _needsPublisher = value" />
+        <TextField Label="Copy from an iCal address (optional)" Type="url" Value="@_icalSource" ValueChanged="value => _icalSource = value.Trim()" Placeholder="https://"
+                   Hint="@IcalHint" Problem="@(Calendar?.Settings.ICalProblem is { Length: > 0 } problem ? problem : null)" />
+        <div class="field">
+            <span class="field__label">Who can edit it</span>
+            <p class="field__hint calendar-editors">Calendar editors of @(_name.Length > 0 ? _name : "this calendar"), given in Who can do what: choose someone, then give them Calendar editor at this calendar. Its editors can give it to others.</p>
+            <TextLink Href="access/people">Open Who can do what</TextLink>
+        </div>
+        @if (Calendar is { } existing)
+        {
+            <CopyField Label="Link for calendar apps" Value="@LinkFor(existing.Settings.Calendar)"
+                       Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "A private calendar: people subscribe through their own link in the app.")" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        @if (_saved)
+        {
+            <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Saved.</p>
+        }
+    </div>
+    <div class="editor-foot editor-foot--panel">
+        <div class="editor-foot__actions">
+            <Button Block="true" Busy="_saving" Disabled="@(_name.Trim().Length == 0)" OnClick="SaveAsync">@(Calendar is null ? "Add the calendar" : "Save")</Button>
+            <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string _name = "";
+    private string _description = "";
+    private string _audience = "";
+    private bool _defaults;
+    private bool _needsPublisher;
+    private string _icalSource = "";
+    private string? _problem;
+    private bool _saving;
+    private bool _saved;
+
+    [Parameter] public DeskCalendar? Calendar { get; set; }
+    [Parameter] public EventCallback Saved { get; set; }
+    [Parameter] public EventCallback Closed { get; set; }
+
+    private string IcalHint => Calendar?.Settings.ICalReadAt is { } read
+        ? $"Read-only here while it's set. Last read {EventWords.Date(EventWords.Today(read))}."
+        : "A calendar copied from elsewhere (school terms, a ministry's Google Calendar) stays read-only here and refreshes by itself.";
+
+    protected override void OnParametersSet()
+    {
+        CalendarSettings? settings = Calendar?.Settings;
+        _name = settings?.Calendar.Name ?? "";
+        _description = settings?.Calendar.Description ?? "";
+        _audience = settings?.Calendar.Audience ?? "everyone";
+        _defaults = settings?.Calendar.ShownOnNewPhones ?? false;
+        _needsPublisher = settings?.NeedsPublisher ?? false;
+        _icalSource = settings?.ICalSource ?? "";
+    }
+
+    private string LinkFor(CalendarInfo calendar) => Subscriptions.Web(CalendarSubscriptions.CalendarPath(calendar));
+
+    private async Task SaveAsync()
+    {
+        _saving = true;
+        _problem = null;
+        _saved = false;
+        try
+        {
+            CalendarInfo calendar = Calendar?.Settings.Calendar ?? new CalendarInfo();
+            await Editing.Setup.SaveCalendarAsync(new CalendarSettings
+            {
+                Calendar = new CalendarInfo
+                {
+                    Id = calendar.Id,
+                    Name = _name.Trim(),
+                    Slug = calendar.Slug,
+                    Description = _description.Trim(),
+                    Audience = _audience,
+                    ShownOnNewPhones = _defaults,
+                    MinistryId = calendar.MinistryId,
+                    Order = calendar.Order,
+                },
+                NeedsPublisher = _needsPublisher,
+                ICalSource = _icalSource,
+            });
+            _saved = true;
+            await Saved.InvokeAsync();
+            if (Calendar is null)
+                await Closed.InvokeAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

@@ -140,6 +140,15 @@ flowchart LR
         SermonsContracts["Features.Sermons.Contracts"]
     end
 
+    subgraph Events["Features / Events"]
+        EventsApp["Features.Events.App"]
+        EventsAdmin["Features.Events.Admin"]
+        EventsClient["Features.Events.Client"]
+        EventsApi["Features.Events.Api"]
+        EventsGateway["Features.Events.Gateway"]
+        EventsContracts["Features.Events.Contracts"]
+    end
+
     subgraph ReleaseNotes["Features / ReleaseNotes"]
         ReleaseNotesApp["Features.ReleaseNotes.App"]
         ReleaseNotesGenerator["Features.ReleaseNotes.Generator"]
@@ -169,16 +178,19 @@ flowchart LR
         AnalyticsTests["Features.Analytics.Api.Tests"]
         NotificationsTests["Features.Notifications.Api.Tests"]
         SermonsTests["Features.Sermons.Api.Tests"]
+        EventsTests["Features.Events.Api.Tests"]
+        EventsUnitTests["Features.Events.Unit.Tests"]
+        EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
         Testing["Testing"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
-    HostsGateway --> HostsAdmin & AccountsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi
+    HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
+    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & EventsAdmin
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & EventsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & EventsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -220,6 +232,13 @@ flowchart LR
     SermonsApi --> SermonsContracts & PlatformApi & PlatformCommon & PlatformStorage
     SermonsContracts --> PlatformContracts
 
+    EventsApp --> EventsClient
+    EventsAdmin --> EventsClient
+    EventsClient --> EventsContracts & PlatformClient & PlatformUi & PlatformCommon
+    EventsApi --> EventsContracts & PlatformApi & PlatformCommon
+    EventsGateway --> EventsContracts
+    EventsContracts --> PlatformContracts
+
     ReleaseNotesApp --> PlatformUi & ReleaseNotesGenerator
 
     PlatformUi --> PlatformClient & PlatformCommon
@@ -239,6 +258,9 @@ flowchart LR
     AnalyticsTests --> AnalyticsApi & Testing
     NotificationsTests --> NotificationsApi & Testing
     SermonsTests --> SermonsApi & Testing
+    EventsTests --> EventsApi
+    EventsUnitTests --> EventsApi
+    EventsClientTests --> EventsClient
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -303,6 +325,12 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.Api` | Sermons from the website's feed and series pages (hourly) or uploads, staff corrections that survive re-reading, artwork made into small copies in R2, the catalogue, series and speaker feeds, and listening history merged per person (schema `sermons`) | No |
 | `GSBC.ChurchApp.Features.Sermons.Client` | The catalogue read from the phone's store (`SermonCatalogue`), listening history from the native journal and the account's feed, sent through the outbox (`Listening`), the sermon player over `IAudioPlayer`, and the Home tile *Latest sermon* | Yes |
 | `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
+| `GSBC.ChurchApp.Features.Events.Contracts` | The `Events`, `Editing`, `Setup` and `CalendarFiles` services, the iCal link paths, calendars, events, regular events and their patterns, specials, breaks, the dated rows phones hold, the *in your week* rule (`CalendarChoices`), feeds, places and the `events.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Events.Api` | Calendars, one-off and regular events, specials, breaks and showing on other calendars (schema `events`); each regular event worked out into dated rows for 30 days back and 12 months ahead, public calendars' rows in a public feed and the rest in per-row-audience feeds; Ask to publish, *Tell people* and *Needs details*; iCal files for calendar apps and their secret links, calendars copied from an iCal address, and reminders to organisers for missing details | No |
+| `GSBC.ChurchApp.Features.Events.Gateway` | The four iCal links (approved non-gRPC paths): each asks the API's `CalendarFiles` service for the file and sets its caching | No |
+| `GSBC.ChurchApp.Features.Events.Client` | The Events gRPC clients and places, for the phone and the admin panel | Yes |
+| `GSBC.ChurchApp.Features.Events.App` | The phone's calendar: *This week* (`/week`), an event and a calendar (a placeholder until the screens are built) | Yes |
+| `GSBC.ChurchApp.Features.Events.Admin` | The admin panel's Calendar workbench (empty until the screens are built) | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Admin` | The admin panel's Sermons page: correcting what the website says, series and speakers, uploading, and where sermons come from | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
@@ -322,7 +350,10 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Api.Tests` | Against Postgres: one kind per error however many phones report it, a resent report counts once, the owner hears once per new kind, only the app and admin panel may report and only about recent days, failed calls add up, errors go after 30 days; stack summaries keep no paths or build numbers | No |
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
+| `GSBC.ChurchApp.Features.Events.Api.Tests` | Against Postgres, only for rules that need storage: publishing sends a date leaving the window, or a calendar turning private, as deletes; an editor can't reach another calendar's events; Ask to publish; this date only vs every date; adding a calendar and *Tell people* respect its audience; a copy on another calendar follows the home event; a private calendar's iCal file only through a valid link of someone it's for (not after their role goes, nor to a signed-out phone with a stale *Calendar added*); a reset link refused | No |
+| `GSBC.ChurchApp.Features.Events.Unit.Tests` | No database, container or network: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them; reading iCal (repeats, skipped and changed dates, other time zones) and asking with its ETag; addresses on private networks never read; writing calendar files; reminders due at 7 and 2 days and when they settle | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
+| `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 | `GSBC.ChurchApp.Testing` | What the tests share ([testing.md](testing.md)): `TestDatabase` gives each test its own database on one Postgres for the whole run, which every test project joins and which stops by itself once no test has used it for 30 seconds; `TestBuckets` gives each test its own buckets on one S3 server; `TestClock` is the time tests run at | No |

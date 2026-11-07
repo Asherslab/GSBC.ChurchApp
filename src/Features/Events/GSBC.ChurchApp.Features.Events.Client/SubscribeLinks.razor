@@ -1,0 +1,58 @@
+@inject CalendarSubscriptions Subscriptions
+@inject Shell Shell
+
+<div class="subscribe">
+    @if (_path is { } path)
+    {
+        <div class="subscribe__actions">
+            <Button Icon="calendar-plus" OnClick="() => Shell.OpenExternalAsync(Subscriptions.Subscribe(path)).AsTask()">@Action</Button>
+            <CopyField Label="Copy link" Value="@Subscriptions.Web(path)" ButtonOnly="true" />
+        </div>
+        <p class="hint">Your calendar app keeps itself up to date. Dates that aren't on are left out.</p>
+        @if (Mine)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="refresh" Busy="_resetting" OnClick="ResetAsync">Make a new link</Button>
+            <p class="hint">A new link stops the old one working, on every calendar app that used it.</p>
+        }
+    }
+    else if (_loaded)
+    {
+        <p class="hint">@Waiting</p>
+    }
+</div>
+
+@code {
+    private string? _path;
+    private bool _loaded;
+    private bool _resetting;
+
+    [Parameter] public CalendarInfo? Calendar { get; set; }
+    [Parameter] public bool Mine { get; set; }
+    [Parameter] public string Action { get; set; } = "Subscribe";
+
+    private string Waiting => Mine
+        ? "Your own link for calendar apps needs a connection to fetch. It holds everything in your week, private calendars included. Try again when you're online."
+        : "This calendar is private, so it's subscribed to through your own link, which needs a connection to fetch. Try again when you're online.";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Mine && Calendar is { } open && CalendarSubscriptions.IsForEveryone(open))
+            _path = CalendarSubscriptions.CalendarPath(open);
+        else if (!Mine && Calendar is null)
+            _path = CalendarSubscriptions.PublicPath;
+        else
+        {
+            string? key = await Subscriptions.PersonalKeyAsync();
+            _path = key is null ? null : Calendar is { } calendar ? CalendarSubscriptions.MinePath(key, calendar) : CalendarSubscriptions.MinePath(key);
+        }
+        _loaded = true;
+    }
+
+    private async Task ResetAsync()
+    {
+        _resetting = true;
+        if (await Subscriptions.ResetAsync() is { } key)
+            _path = Calendar is { } calendar ? CalendarSubscriptions.MinePath(key, calendar) : CalendarSubscriptions.MinePath(key);
+        _resetting = false;
+    }
+}

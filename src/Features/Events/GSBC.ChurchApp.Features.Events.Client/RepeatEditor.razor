@@ -1,0 +1,161 @@
+@using System.Globalization
+
+<div class="repeat-editor">
+    <SelectField Label="Repeats" Options="Kinds" Value="@Draft.Pattern.Repeats.ToString()" ValueChanged="Choose" />
+    @switch (Draft.Pattern.Repeats)
+    {
+        case Repeats.Weekly or Repeats.EverySecondWeek:
+            <div class="field">
+                <span class="field__label">On</span>
+                <ToggleChips TValue="DayOfWeek" Label="Days of the week" Chips="DayChips" Toggled="ToggleDay" Class="toggle-chips--wrap" />
+            </div>
+            break;
+        case Repeats.MonthlyByWeekday:
+            <div class="ui-pair">
+                <SelectField Label="Which" Options="Weeks" Value="@Draft.Pattern.WeekOfMonth.ToString(CultureInfo.InvariantCulture)"
+                             ValueChanged="value => Draft.Pattern.WeekOfMonth = int.Parse(value, CultureInfo.InvariantCulture)" />
+                <SelectField Label="Day" Options="DayOptions" Value="@(Draft.Pattern.Days.FirstOrDefault().ToString())"
+                             ValueChanged="value => Draft.Pattern.Days = [Enum.Parse<DayOfWeek>(value)]" />
+            </div>
+            break;
+        case Repeats.MonthlyByDate:
+            <TextField Label="Day of the month" Type="number" Min="1" Max="31" Value="@Draft.Pattern.DayOfMonth.ToString(CultureInfo.InvariantCulture)"
+                       ValueChanged="value => Draft.Pattern.DayOfMonth = int.TryParse(value, out int day) ? Math.Clamp(day, 1, 31) : Draft.Pattern.DayOfMonth" />
+            break;
+        case Repeats.OnDates:
+            <div class="field editor-list">
+                <span class="field__label">Dates</span>
+                @foreach (string date in Draft.Pattern.Dates.OrderBy(date => date))
+                {
+                    <div class="editor-list__line">
+                        <span>@(EventDates.Parse(date) is { } day ? EventWords.LongDate(day) : date)</span>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="@($"Remove {date}")" OnClick="() => Draft.Pattern.Dates.Remove(date)">Remove</Button>
+                    </div>
+                }
+                <TextField Label="Add a date" Type="date" Value="" ValueChanged="AddDate" />
+            </div>
+            break;
+    }
+    @if (Draft.Pattern.Repeats != Repeats.OnDates)
+    {
+        <div class="ui-pair">
+            <TextField Label="Starting" Type="date" Value="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.StartDate = value" />
+            <TextField Label="Until (optional)" Type="date" Value="@Draft.Pattern.EndDate" Min="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.EndDate = value" />
+        </div>
+    }
+
+    <h3 class="repeat-editor__head">Breaks</h3>
+    @if (Breaks.Breaks.Count > 0)
+    {
+        <div class="field">
+            <span class="field__label">Not on during</span>
+            <ToggleChips TValue="string" Label="Named breaks" Chips="BreakChips" Toggled="ToggleBreak" Class="toggle-chips--wrap" />
+            <span class="field__hint">The office keeps these. Fixing a break's dates fixes every regular event using it.</span>
+        </div>
+    }
+    @foreach (BreakInfo own in Draft.OwnBreaks)
+    {
+        <div class="editor-list__item">
+            <TextField Label="Break" Value="@own.Name" ValueChanged="value => own.Name = value" Placeholder="Camp weekend" MaxLength="60" />
+            <div class="ui-pair">
+                <TextField Label="From" Type="date" Value="@own.StartDate" ValueChanged="value => own.StartDate = value" />
+                <TextField Label="To" Type="date" Value="@own.EndDate" Min="@own.StartDate" ValueChanged="value => own.EndDate = value" />
+            </div>
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => Draft.OwnBreaks.Remove(own)">Remove this break</Button>
+        </div>
+    }
+    <button type="button" class="add-row" @onclick="() => Draft.OwnBreaks.Add(new BreakInfo())"><Icon Name="plus" Size="IconSize.Small" />Add a break just for this</button>
+
+    <h3 class="repeat-editor__head">What each date needs</h3>
+    <ToggleChips TValue="string" Label="What each date needs" Chips="NeedChips" Toggled="ToggleNeed" Class="toggle-chips--wrap" />
+    <span class="field__hint">@NeedsHint</span>
+    @if (Draft.Needs.Count > 0)
+    {
+        <div class="field">
+            <span class="field__label">Remind the organisers</span>
+            <ToggleChips TValue="int" Label="Days before to remind" Chips="ReminderChips" Toggled="ToggleReminder" Class="toggle-chips--wrap" />
+        </div>
+    }
+</div>
+
+@code {
+    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
+    private static readonly DayOfWeek[] Week = [DayOfWeek.Sunday, DayOfWeek.Monday, DayOfWeek.Tuesday, DayOfWeek.Wednesday, DayOfWeek.Thursday, DayOfWeek.Friday, DayOfWeek.Saturday];
+    private static readonly int[] ReminderDays = [14, 7, 3, 2, 1];
+
+    private static readonly IReadOnlyList<FieldOption> Kinds =
+    [
+        new(nameof(Repeats.Weekly), "Every week"),
+        new(nameof(Repeats.EverySecondWeek), "Every second week"),
+        new(nameof(Repeats.MonthlyByWeekday), "Monthly, on a weekday (the first Sunday…)"),
+        new(nameof(Repeats.MonthlyByDate), "Monthly, on a date (the 15th…)"),
+        new(nameof(Repeats.OnDates), "On dates I choose"),
+    ];
+
+    private static readonly IReadOnlyList<FieldOption> Weeks =
+        [new("1", "First"), new("2", "Second"), new("3", "Third"), new("4", "Fourth"), new("-1", "Last")];
+
+    private static readonly IReadOnlyList<FieldOption> DayOptions = Week.Select(day => new FieldOption(day.ToString(), English.DateTimeFormat.GetDayName(day))).ToList();
+
+    [Parameter, EditorRequired] public required EventDraft Draft { get; set; }
+    [Parameter] public BreakList Breaks { get; set; } = new();
+
+    private IReadOnlyList<ToggleChip<DayOfWeek>> DayChips =>
+        Week.Select(day => new ToggleChip<DayOfWeek>(day, English.DateTimeFormat.GetAbbreviatedDayName(day), Draft.Pattern.Days.Contains(day))).ToList();
+
+    private IReadOnlyList<ToggleChip<string>> BreakChips =>
+        Breaks.Breaks.Select(entry => new ToggleChip<string>(entry.Id, entry.Name, Draft.BreakIds.Contains(entry.Id))).ToList();
+
+    private IReadOnlyList<ToggleChip<string>> NeedChips =>
+        EventFieldKeys.Needable.Select(key => new ToggleChip<string>(key, Capital(EventWords.Need(key)), Draft.Needs.Contains(key))).ToList();
+
+    private IReadOnlyList<ToggleChip<int>> ReminderChips =>
+        ReminderDays.Select(days => new ToggleChip<int>(days, days == 1 ? "The day before" : $"{days} days before", Draft.RemindDaysBefore.Contains(days))).ToList();
+
+    private string NeedsHint => Draft.Needs.Count == 0
+        ? "Nothing yet, so nobody is reminded. Tick what's filled in shortly before each date (outreach Saturdays need a place)."
+        : "Until it's set, the date says so in plain words (Place to be announced) and the organisers are reminded.";
+
+    private static string Capital(string words) => char.ToUpperInvariant(words[0]) + words[1..];
+
+    private void Choose(string value)
+    {
+        Repeats repeats = Enum.Parse<Repeats>(value);
+        Draft.Pattern.Repeats = repeats;
+        DayOfWeek first = EventDates.Parse(Draft.Pattern.StartDate)?.DayOfWeek ?? DayOfWeek.Sunday;
+        if (Draft.Pattern.Days.Count == 0)
+            Draft.Pattern.Days = [first];
+        if (repeats == Repeats.MonthlyByWeekday && Draft.Pattern.WeekOfMonth == 0)
+            Draft.Pattern.WeekOfMonth = 1;
+        if (repeats == Repeats.MonthlyByDate && Draft.Pattern.DayOfMonth == 0)
+            Draft.Pattern.DayOfMonth = EventDates.Parse(Draft.Pattern.StartDate)?.Day ?? 1;
+    }
+
+    private void ToggleDay(ToggleChip<DayOfWeek> chip)
+    {
+        if (chip.On && Draft.Pattern.Days.Count > 1)
+            Draft.Pattern.Days.Remove(chip.Value);
+        else if (!chip.On)
+            Draft.Pattern.Days.Add(chip.Value);
+    }
+
+    private void AddDate(string value)
+    {
+        if (EventDates.Parse(value) is { } day && !Draft.Pattern.Dates.Contains(EventDates.Format(day)))
+            Draft.Pattern.Dates.Add(EventDates.Format(day));
+    }
+
+    private void ToggleBreak(ToggleChip<string> chip) => Toggle(Draft.BreakIds, chip.Value, chip.On);
+
+    private void ToggleNeed(ToggleChip<string> chip) => Toggle(Draft.Needs, chip.Value, chip.On);
+
+    private void ToggleReminder(ToggleChip<int> chip) => Toggle(Draft.RemindDaysBefore, chip.Value, chip.On);
+
+    private static void Toggle<T>(List<T> list, T value, bool on)
+    {
+        if (on)
+            list.Remove(value);
+        else
+            list.Add(value);
+    }
+}

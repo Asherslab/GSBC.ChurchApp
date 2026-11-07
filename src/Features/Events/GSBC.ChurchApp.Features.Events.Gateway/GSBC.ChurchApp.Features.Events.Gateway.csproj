@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="protobuf-net.Grpc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Events.Contracts\GSBC.ChurchApp.Features.Events.Contracts.csproj" />
+  </ItemGroup>
+</Project>

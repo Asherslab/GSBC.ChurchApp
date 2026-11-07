@@ -1,7 +1,7 @@
 @typeparam TValue
 @inject Shell Shell
 
-<div class="segmented" role="radiogroup" aria-label="@Label">
+<div class="segmented @Class" role="radiogroup" aria-label="@Label">
     @foreach (SegmentOption<TValue> option in Options)
     {
         bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
@@ -24,6 +24,7 @@
     [Parameter, EditorRequired] public required IReadOnlyList<SegmentOption<TValue>> Options { get; set; }
     [Parameter] public TValue Value { get; set; } = default!;
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public string? Class { get; set; }
 
     private async Task SelectAsync(TValue value)
     {

@@ -1,0 +1,25 @@
+@using System.Globalization
+
+<div class="week-rail" role="group" aria-label="@Label">
+    @foreach (RailDay day in Days)
+    {
+        bool today = day.Date == Today;
+        <button type="button" class="week-rail__day @(today ? "week-rail__day--today" : "") @(day.Date == Here && !today ? "week-rail__day--here" : "") @(day.Date < Today ? "week-rail__day--past" : "")"
+                aria-current="@(today ? "date" : null)" aria-label="@Spoken(day)" @onclick="() => Picked.InvokeAsync(day.Date)">
+            <span class="week-rail__weekday">@day.Date.ToString("ddd", CultureInfo.InvariantCulture).ToUpperInvariant()</span>
+            <span class="week-rail__date">@day.Date.Day</span>
+            <span class="week-rail__dot @(day.Marked ? "" : "week-rail__dot--none")" aria-hidden="true"></span>
+        </button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<RailDay> Days { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Today { get; set; }
+    [Parameter] public DateOnly? Here { get; set; }
+    [Parameter] public string Label { get; set; } = "Days of the week";
+    [Parameter] public EventCallback<DateOnly> Picked { get; set; }
+
+    private static string Spoken(RailDay day) =>
+        $"{day.Date.ToString("dddd d MMMM", CultureInfo.InvariantCulture)}{(day.Marked ? "" : ", nothing on")}";
+}

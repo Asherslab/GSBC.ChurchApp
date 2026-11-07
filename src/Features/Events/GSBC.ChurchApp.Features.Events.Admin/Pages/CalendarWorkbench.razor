@@ -1,0 +1,523 @@
+@page "/calendar"
+@inject CalendarEditing Editing
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+@inject Shell Shell
+@inject WideningWords Widening
+
+<PageTitle>Calendar · Good Shepherd admin</PageTitle>
+
+<LiveData @ref="_live" TValue="WorkbenchView" Load="LoadAsync" Feeds="WorkbenchFeeds" FailedTitle="Can't load the calendar right now">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Workbench AsideLabel="Calendars" Class="calendar-workbench">
+            <Aside><h1 class="calendar-aside__title">Calendar</h1><Skeleton Shape="SkeletonShape.Lines" Count="6" /></Aside>
+            <ChildContent><Skeleton Shape="SkeletonShape.Lines" Count="8" /></ChildContent>
+        </Workbench>
+    </Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> WorkbenchFeeds = [EventsFeeds.Admin];
+    private static readonly IReadOnlyList<SegmentOption<bool>> Views = [new(false, "Agenda"), new(true, "Month")];
+    private const int FirstWeeks = 6;
+    private const int MoreWeeks = 6;
+
+    private enum Middle { All, NeedsDetails, Asked, Breaks }
+
+    private abstract record Chosen;
+    private sealed record ChosenEvent(EditTarget Target, string OccurrenceId) : Chosen;
+    private sealed record NewEvent(string CalendarId, DateOnly? On) : Chosen;
+    private sealed record ChosenCalendar(DeskCalendar? Calendar) : Chosen;
+    private sealed record ChosenBreak(BreakInfo? Break) : Chosen;
+
+    private sealed record WorkbenchView(CalendarDesk Desk, IReadOnlyList<EventOccurrence> Agenda, NeedsDetailsList Needs, AskedList Asked, BreakList Breaks, IReadOnlyDictionary<ShowingRequest, string?> Widens);
+
+    private LiveData<WorkbenchView>? _live;
+    private Middle _middle = Middle.All;
+    private bool _month;
+    private DateOnly? _monthFirst;
+    private DateOnly? _monthDay;
+    private int _weeks = FirstWeeks;
+    private HashSet<string>? _hidden;
+    private Chosen? _chosen;
+    private string? _problem;
+    private string? _busy;
+    private bool _readUrl;
+
+    [SupplyParameterFromQuery(Name = "show")] public string? Show { get; set; }
+    [SupplyParameterFromQuery(Name = "event")] public string? EventId { get; set; }
+    [SupplyParameterFromQuery(Name = "settings")] public string? SettingsId { get; set; }
+    [SupplyParameterFromQuery(Name = "break")] public string? BreakId { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateOnly Today => EventWords.Today(Now);
+
+    private DateOnly MonthFirst => _monthFirst ?? new DateOnly(Today.Year, Today.Month, 1);
+
+    protected override void OnParametersSet()
+    {
+        _middle = Show switch
+        {
+            CalendarWorkbenchLinks.NeedsDetails => Middle.NeedsDetails,
+            "asked" => Middle.Asked,
+            "breaks" => Middle.Breaks,
+            _ => _middle,
+        };
+        _readUrl = EventId is null && SettingsId is null && BreakId is null;
+    }
+
+    private async Task<WorkbenchView> LoadAsync()
+    {
+        Task<CalendarDesk> desk = Editing.DeskAsync().AsTask();
+        Task<NeedsDetailsList> needs = Editing.Editing.NeedsDetailsAsync(new Done()).AsTask();
+        Task<AskedList> asked = Editing.Editing.AskedToPublishAsync(new Done()).AsTask();
+        Task<BreakList> breaks = Editing.BreaksAsync().AsTask();
+        await Task.WhenAll(desk, needs, asked, breaks);
+        _hidden ??= [];
+        List<string> shown = desk.Result.Calendars.Where(calendar => calendar.CanEdit && !_hidden.Contains(calendar.Settings.Calendar.Id))
+            .Select(calendar => calendar.Settings.Calendar.Id).ToList();
+        (DateOnly from, DateOnly to) = _month
+            ? (EventWords.SundayOf(MonthFirst), EventWords.SundayOf(MonthFirst.AddMonths(1)).AddDays(6))
+            : (Today, Today.AddDays(7 * _weeks));
+        IReadOnlyList<EventOccurrence> agenda = shown.Count == 0 ? [] : (await Editing.AgendaAsync(shown, from, to)).Occurrences;
+        Dictionary<ShowingRequest, string?> widens = [];
+        foreach (ShowingRequest request in desk.Result.AskedToShow)
+        {
+            string home = desk.Result.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == request.HomeCalendarId)?.Settings.Calendar.Name ?? "its own calendar";
+            widens[request] = await Widening.SentenceAsync(request.Widens, request.NewlyReaches, request.NewlyReachesRoleIds, home);
+        }
+        WorkbenchView view = new(desk.Result, agenda, needs.Result, asked.Result, breaks.Result, widens);
+        if (!_readUrl)
+        {
+            _readUrl = true;
+            ChooseFromUrl(view);
+        }
+        return view;
+    }
+
+    private void ChooseFromUrl(WorkbenchView view)
+    {
+        EventOccurrence? found = view.Agenda.FirstOrDefault(occurrence => occurrence.Id == EventId)
+            ?? view.Needs.Items.Select(item => item.Occurrence).FirstOrDefault(occurrence => occurrence.Id == EventId);
+        if (found is not null)
+            _chosen = new ChosenEvent(EditTarget.Of(found), found.Id);
+        else if (view.Desk.CanManage && view.Desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == SettingsId || calendar.Settings.Calendar.Slug == SettingsId) is { } calendar)
+            _chosen = new ChosenCalendar(calendar);
+        else if (view.Desk.CanManage && view.Breaks.Breaks.FirstOrDefault(entry => entry.Id == BreakId) is { } chosenBreak)
+        {
+            _middle = Middle.Breaks;
+            _chosen = new ChosenBreak(chosenBreak);
+        }
+    }
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private RenderFragment Drawn(WorkbenchView view) =>
+        @<Workbench AsideLabel="Calendars" DetailLabel="@DetailLabel" Class="calendar-workbench" Showing="@(_chosen is null ? WorkbenchPane.Main : WorkbenchPane.Detail)">
+            <Aside>@Aside(view)</Aside>
+            <ChildContent>@Main(view)</ChildContent>
+            <Detail>@Detail(view)</Detail>
+        </Workbench>;
+
+    private string DetailLabel => _chosen switch
+    {
+        ChosenCalendar => "Calendar settings",
+        ChosenBreak => "Break",
+        _ => "Event",
+    };
+
+    private RenderFragment Aside(WorkbenchView view)
+    {
+        CalendarDesk desk = view.Desk;
+        bool publishing = desk.Calendars.Any(calendar => calendar.Settings.NeedsPublisher) || view.Asked.Items.Count > 0 || desk.AskedToShow.Count > 0;
+        return @<div class="calendar-aside">
+            <h1 class="calendar-aside__title">Calendar</h1>
+            <nav class="calendar-aside__group" aria-label="What to show">
+                @AsideItem("All your calendars", null, _middle == Middle.All, () => Go(Middle.All))
+                @AsideItem("Needs details", desk.NeedsDetails, _middle == Middle.NeedsDetails, () => Go(Middle.NeedsDetails))
+                @if (publishing)
+                {
+                    @AsideItem("Asked to publish", desk.AskedToPublish + desk.AskedToShow.Count, _middle == Middle.Asked, () => Go(Middle.Asked))
+                }
+            </nav>
+            <ul class="calendar-aside__calendars" aria-label="Your calendars">
+                @foreach (DeskCalendar calendar in desk.Calendars)
+                {
+                    CalendarInfo info = calendar.Settings.Calendar;
+                    bool on = calendar.CanEdit && !_hidden!.Contains(info.Id);
+                    bool chosen = _chosen is ChosenCalendar { Calendar: { } open } && open.Settings.Calendar.Id == info.Id;
+                    <li class="calendar-aside__calendar @(chosen ? "is-chosen" : "")">
+                        <span class="calendar-aside__name">
+                            @info.Name
+                            @if (info.ReadOnly)
+                            {
+                                <small>Copied from iCal</small>
+                            }
+                            else if (calendar.Settings.NeedsPublisher)
+                            {
+                                <small>Needs a publisher</small>
+                            }
+                        </span>
+                        @if (desk.CanManage)
+                        {
+                            <button type="button" class="icon-btn icon-btn--small" aria-label="@($"Settings for {info.Name}")" aria-pressed="@(chosen ? "true" : "false")" @onclick="() => Choose(new ChosenCalendar(calendar))">
+                                <Icon Name="sliders" Size="IconSize.Small" />
+                            </button>
+                        }
+                        @if (calendar.CanEdit)
+                        {
+                            <label class="switch switch--small">
+                                <input type="checkbox" role="switch" checked="@on" aria-label="@($"Show {info.Name}")" @onchange="change => ToggleAsync(info.Id, change.Value is true)" />
+                                <span aria-hidden="true"></span>
+                            </label>
+                        }
+                    </li>
+                }
+            </ul>
+            @if (desk.CanManage)
+            {
+                <button type="button" class="calendar-aside__add" @onclick="() => Choose(new ChosenCalendar(null))"><Icon Name="plus" Size="IconSize.Small" />New calendar</button>
+            }
+            <nav class="calendar-aside__group calendar-aside__group--foot" aria-label="Breaks">
+                @AsideItem("Breaks", view.Breaks.Breaks.Count, _middle == Middle.Breaks, () => Go(Middle.Breaks), quietCount: true)
+            </nav>
+        </div>;
+    }
+
+    private RenderFragment AsideItem(string label, int? count, bool current, Func<Task> go, bool quietCount = false) =>
+        @<button type="button" class="calendar-aside__item" aria-current="@(current ? "true" : null)" @onclick="go">
+            <span>@label</span>
+            @if (count is > 0)
+            {
+                <span class="@(quietCount ? "calendar-aside__quiet-count" : "count-capsule")">@count</span>
+            }
+        </button>;
+
+    private RenderFragment Main(WorkbenchView view) => _middle switch
+    {
+        Middle.NeedsDetails => NeedsList(view),
+        Middle.Asked => AskedLists(view),
+        Middle.Breaks => BreaksList(view),
+        _ => AgendaOrMonth(view),
+    };
+
+    private RenderFragment MainHead(string title, string? lead, RenderFragment? actions = null) =>
+        @<div class="calendar-main__head">
+            <div>
+                <h2 class="calendar-main__title">@title</h2>
+                @if (lead is not null)
+                {
+                    <p class="calendar-main__lead">@lead</p>
+                }
+            </div>
+            @actions
+        </div>;
+
+    private RenderFragment AgendaOrMonth(WorkbenchView view)
+    {
+        IReadOnlyList<DeskCalendar> editable = view.Desk.Calendars.Where(calendar => calendar.CanEdit && !calendar.Settings.Calendar.ReadOnly).ToList();
+        RenderFragment actions = @<div class="calendar-main__actions">
+            <Segmented TValue="bool" Label="Agenda or month" Options="Views" Value="_month" ValueChanged="ShowMonthAsync" />
+            @if (editable.Count > 0)
+            {
+                <Button Icon="plus" OnClick="() => Choose(new NewEvent(editable[0].Settings.Calendar.Id, _month ? _monthDay : null))">New event</Button>
+            }
+        </div>;
+        if (view.Desk.Calendars.Count == 0)
+            return @<div>
+                @MainHead("All your calendars", null, actions)
+                <EmptyState Icon="calendar" Title="No calendars you can change" Body="Someone who looks after the calendars can make you a Calendar editor of one." />
+            </div>;
+        return @<div>
+            @MainHead("All your calendars", null, actions)
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            @if (_month)
+            {
+                @Month(view)
+            }
+            else
+            {
+                @Agenda(view)
+            }
+        </div>;
+    }
+
+    private RenderFragment Agenda(WorkbenchView view)
+    {
+        List<IGrouping<DateOnly, EventOccurrence>> days = view.Agenda.GroupBy(EventWords.DayOf).OrderBy(day => day.Key).ToList();
+        return @<div class="calendar-agenda">
+            @if (days.Count == 0)
+            {
+                <EmptyState Icon="calendar" Title="Nothing in the next few weeks" Body="Turn on more calendars on the left, or add an event." />
+            }
+            @foreach (IGrouping<DateOnly, EventOccurrence> day in days)
+            {
+                <section class="calendar-day">
+                    <h3 class="calendar-day__head">@EventWords.DayHeading(day.Key, Today) <span>@(day.Key == Today ? EventWords.LongDate(day.Key) : EventWords.Date(day.Key))</span></h3>
+                    <div class="list">
+                        @foreach (EventOccurrence occurrence in day)
+                        {
+                            @Row(view, occurrence)
+                        }
+                    </div>
+                </section>
+            }
+            @if (Today.AddDays(7 * _weeks) < Today.AddMonths(EventsFeeds.MonthsAhead))
+            {
+                <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Show the next @MoreWeeks weeks</Button>
+            }
+        </div>;
+    }
+
+    private RenderFragment Row(WorkbenchView view, EventOccurrence occurrence) =>
+        @<OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="CalendarOf(view, occurrence.CalendarId)" NowUtc="Now" ShowNeeds="true" ShowSaved="true"
+                        NewChange="@(occurrence.ChangedAt is not null)" Selected="@(_chosen is ChosenEvent chosen && chosen.OccurrenceId == occurrence.Id)"
+                        OnClick="() => Choose(new ChosenEvent(EditTarget.Of(occurrence), occurrence.Id))" />;
+
+    private RenderFragment Month(WorkbenchView view)
+    {
+        DateOnly selected = _monthDay ?? (MonthFirst.Month == Today.Month && MonthFirst.Year == Today.Year ? Today : MonthFirst);
+        List<EventOccurrence> onDay = view.Agenda.Where(occurrence => EventWords.DayOf(occurrence) == selected).ToList();
+        return @<div class="calendar-month">
+            <div class="calendar-month__steps">
+                <button type="button" class="icon-btn" aria-label="Previous month" @onclick="() => StepMonthAsync(-1)"><Icon Name="chevron-left" /></button>
+                <h3>@MonthFirst.ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)</h3>
+                <button type="button" class="icon-btn" aria-label="Next month" @onclick="() => StepMonthAsync(1)"><Icon Name="chevron-right" /></button>
+            </div>
+            <MonthGrid First="MonthFirst" Today="Today" Occurrences="view.Agenda" Selected="selected" Picked="day => _monthDay = day" />
+            <section class="calendar-day">
+                <h3 class="calendar-day__head">@EventWords.LongDate(selected)</h3>
+                @if (onDay.Count == 0)
+                {
+                    <p class="hint">Nothing on in the calendars you've turned on.</p>
+                }
+                else
+                {
+                    <div class="list">
+                        @foreach (EventOccurrence occurrence in onDay)
+                        {
+                            @Row(view, occurrence)
+                        }
+                    </div>
+                }
+            </section>
+        </div>;
+    }
+
+    private RenderFragment NeedsList(WorkbenchView view) =>
+        @<div>
+            @MainHead("Needs details", "Dates of regular events still missing what they need. Their organisers are reminded until it's set.")
+            @if (view.Needs.Items.Count == 0)
+            {
+                <EmptyState Icon="check" Title="Nothing needs details" Body="Every date coming up has what it needs." />
+            }
+            else
+            {
+                <div class="list">
+                    @foreach (NeedsDetailsItem item in view.Needs.Items)
+                    {
+                        <OccurrenceRow @key="item.Occurrence.Id" Occurrence="item.Occurrence" Calendar="CalendarOf(view, item.Occurrence.CalendarId)" ShowNeeds="true"
+                                       Selected="@(_chosen is ChosenEvent chosen && chosen.OccurrenceId == item.Occurrence.Id)"
+                                       OnClick="() => Choose(new ChosenEvent(EditTarget.Of(item.Occurrence), item.Occurrence.Id))" />
+                    }
+                </div>
+                <p class="hint">Days are counted to each date: @string.Join(", ", view.Needs.Items.Take(3).Select(item => $"{item.Occurrence.Fields.Title} in {Days(item.DaysToGo)}")).</p>
+            }
+        </div>;
+
+    private static string Days(int days) => days switch { 0 => "less than a day", 1 => "1 day", _ => $"{days} days" };
+
+    private RenderFragment AskedLists(WorkbenchView view) =>
+        @<div>
+            @MainHead("Asked to publish", "Events saved by editors who can't show them yet, and other calendars asking to show their events on yours.")
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            @if (view.Asked.Items.Count == 0 && view.Desk.AskedToShow.Count == 0)
+            {
+                <EmptyState Icon="check" Title="Nothing is waiting" Body="When an editor asks to publish, it shows here and you're told." />
+            }
+            @if (view.Asked.Items.Count > 0)
+            {
+                <h3 class="calendar-subhead">Waiting to publish</h3>
+                <div class="list">
+                    @foreach (AskedItem item in view.Asked.Items)
+                    {
+                        <ListRow Title="@item.Title" Subtitle="@EventWords.Join(CalendarOf(view, item.CalendarId)?.Name, $"asked {EventWords.Date(EventWords.Today(item.AskedAt))}")">
+                            <TrailingContent>
+                                <Button Small="true" Busy="@(_busy == (item.EventId ?? item.RegularEventId))" OnClick="() => PublishAsync(item)">Publish</Button>
+                            </TrailingContent>
+                        </ListRow>
+                    }
+                </div>
+            }
+            @if (view.Desk.AskedToShow.Count > 0)
+            {
+                <h3 class="calendar-subhead">Asked to show on your calendar</h3>
+                <div class="list">
+                    @foreach (ShowingRequest request in view.Desk.AskedToShow)
+                    {
+                        <ListRow Title="@request.Title" Subtitle="@($"From {CalendarOf(view, request.HomeCalendarId)?.Name ?? "another calendar"}, to show on {CalendarOf(view, request.CalendarId)?.Name ?? "yours"}")">
+                            <Below>
+                                @if (view.Widens.GetValueOrDefault(request) is { } sentence)
+                                {
+                                    <span class="widening"><Icon Name="users" Size="IconSize.Small" />@sentence</span>
+                                }
+                            </Below>
+                            <TrailingContent>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => AnswerAsync(request, false)">Not on ours</Button>
+                                <Button Small="true" Busy="@(_busy == request.Title)" OnClick="() => AnswerAsync(request, true)">Show it</Button>
+                            </TrailingContent>
+                        </ListRow>
+                    }
+                </div>
+            }
+        </div>;
+
+    private RenderFragment BreaksList(WorkbenchView view) =>
+        @<div>
+            @MainHead("Breaks", "Named breaks any regular event can use. Fixing a break's dates fixes every regular event using it.", view.Desk.CanManage ? NewBreak : null)
+            @if (view.Breaks.Breaks.Count == 0)
+            {
+                <EmptyState Icon="calendar" Title="No breaks yet" Body="Add the school holidays or the Christmas break once, then choose them on each regular event." />
+            }
+            else
+            {
+                <div class="list">
+                    @foreach (BreakInfo entry in view.Breaks.Breaks)
+                    {
+                        <ListRow Title="@entry.Name" Subtitle="@EventWords.Join(BreakDates(entry), Used(entry))" Class="@(_chosen is ChosenBreak { Break: { } open } && open.Id == entry.Id ? "row--selected" : null)"
+                                 OnClick="() => ChooseBreak(view, entry)" />
+                    }
+                </div>
+            }
+        </div>;
+
+    private RenderFragment NewBreak => @<Button Icon="plus" OnClick="() => Choose(new ChosenBreak(null))">New break</Button>;
+
+    private static string BreakDates(BreakInfo entry) =>
+        EventDates.Parse(entry.StartDate) is { } start && EventDates.Parse(entry.EndDate) is { } end
+            ? $"{EventWords.Date(start)} to {EventWords.Date(end)}{(end.Year != start.Year ? $" {end.Year}" : "")}"
+            : "";
+
+    private static string Used(BreakInfo entry) => entry.UsedBy.Count switch
+    {
+        0 => "Not used yet",
+        1 => "Used by 1 regular event",
+        _ => $"Used by {entry.UsedBy.Count} regular events",
+    };
+
+    private RenderFragment Detail(WorkbenchView view) => _chosen switch
+    {
+        ChosenEvent chosen => @<EventEditor @key="chosen.OccurrenceId" Target="chosen.Target" InPanel="true" Saved="SavedAsync" Closed="CloseDetail" />,
+        NewEvent fresh => @<EventEditor @key="@($"new-{fresh.CalendarId}")" Target="EditTarget.New(fresh.CalendarId)" NewOn="fresh.On" InPanel="true" Saved="SavedNewAsync" Closed="CloseDetail" />,
+        ChosenCalendar calendar => @<CalendarSettingsPanel @key="@(calendar.Calendar?.Settings.Calendar.Id ?? "new")" Calendar="calendar.Calendar" Saved="ReloadAsync" Closed="CloseDetail" />,
+        ChosenBreak chosen => @<BreakPanel @key="@(chosen.Break?.Id ?? "new")" Break="chosen.Break" RegularEvents="RegularTitles(view)" Saved="ReloadAsync" Closed="CloseDetail" />,
+        _ => @<div class="calendar-detail-empty">
+            <EmptyState Icon="calendar" Title="Choose an event" Body="It opens here to change, in the same editor as the phone." />
+        </div>,
+    };
+
+    private static IReadOnlyDictionary<string, string> RegularTitles(WorkbenchView view) =>
+        view.Agenda.Where(occurrence => occurrence.Kind != OccurrenceKind.OneOff).GroupBy(occurrence => occurrence.ItemId)
+            .ToDictionary(group => group.Key, group => group.First().Fields.Title);
+
+    private static CalendarInfo? CalendarOf(WorkbenchView view, string id) =>
+        view.Desk.Calendars.Select(calendar => calendar.Settings.Calendar).FirstOrDefault(calendar => calendar.Id == id);
+
+    private void Choose(Chosen chosen) => _chosen = chosen;
+
+    private void ChooseBreak(WorkbenchView view, BreakInfo entry)
+    {
+        if (view.Desk.CanManage)
+            _chosen = new ChosenBreak(entry);
+    }
+
+    private void CloseDetail() => _chosen = null;
+
+    private async Task Go(Middle middle)
+    {
+        _middle = middle;
+        _problem = null;
+        await Shell.HapticAsync();
+    }
+
+    private async Task ToggleAsync(string calendarId, bool on)
+    {
+        if (on)
+            _hidden!.Remove(calendarId);
+        else
+            _hidden!.Add(calendarId);
+        await ReloadAsync();
+    }
+
+    private async Task ShowMonthAsync(bool month)
+    {
+        _month = month;
+        await ReloadAsync();
+    }
+
+    private async Task StepMonthAsync(int months)
+    {
+        _monthFirst = MonthFirst.AddMonths(months);
+        _monthDay = null;
+        await ReloadAsync();
+    }
+
+    private async Task MoreAsync()
+    {
+        _weeks += MoreWeeks;
+        await ReloadAsync();
+    }
+
+    private async Task SavedAsync(string occurrenceId)
+    {
+        if (occurrenceId.Length == 0)
+            _chosen = null;
+        await ReloadAsync();
+    }
+
+    private async Task SavedNewAsync(string occurrenceId)
+    {
+        await ReloadAsync();
+        _chosen = null;
+    }
+
+    private async Task PublishAsync(AskedItem item)
+    {
+        _busy = item.EventId ?? item.RegularEventId;
+        _problem = null;
+        try
+        {
+            await Editing.Editing.PublishAsync(new ItemRef { CalendarId = item.CalendarId, EventId = item.EventId, RegularEventId = item.RegularEventId });
+            await ReloadAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+
+    private async Task AnswerAsync(ShowingRequest request, bool agree)
+    {
+        _busy = request.Title;
+        _problem = null;
+        try
+        {
+            await Editing.Editing.AnswerShowingAsync(new ShowingAnswer { CalendarId = request.CalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId, Agree = agree });
+            await ReloadAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

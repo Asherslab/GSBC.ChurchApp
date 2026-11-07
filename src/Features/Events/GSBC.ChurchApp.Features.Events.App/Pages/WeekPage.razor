@@ -1,0 +1,192 @@
+@page "/week"
+@implements IAsyncDisposable
+@inject CalendarDiary Diary
+@inject YourCalendars Yours
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+@inject IJSRuntime Js
+
+<LiveData @ref="_live" TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="This week" StuckAt="90">
+            <Masthead Title="@(Month ? EventWords.Today(Now).ToString("MMMM", English) : "This week")" Beside="Switch" />
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="6" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private const int FirstWeeks = 3;
+    private const int MoreWeeks = 4;
+    private static readonly System.Globalization.CultureInfo English = System.Globalization.CultureInfo.InvariantCulture;
+
+    private LiveData<Diary>? _live;
+    private DotNetObjectReference<WeekPage>? _self;
+    private bool _following;
+    private int _weeks = FirstWeeks;
+    private DateOnly? _here;
+
+    [SupplyParameterFromQuery(Name = "view")] public string? View { get; set; }
+
+    private bool Month => View == "month";
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateOnly Today => EventWords.Today(Now);
+
+    protected override void OnInitialized() => Yours.Changed += OnYours;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (Month || _following)
+            return;
+        _self ??= DotNetObjectReference.Create(this);
+        await Js.InvokeVoidAsync("gsbcEvents.follow", _self);
+        _following = true;
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Month && _following)
+        {
+            _following = false;
+            await Js.InvokeVoidAsync("gsbcEvents.unfollow");
+        }
+    }
+
+    [JSInvokable]
+    public void Here(string day)
+    {
+        if (EventDates.Parse(day) is { } date && date != _here)
+        {
+            _here = date;
+            StateHasChanged();
+        }
+    }
+
+    private RenderFragment Switch => @<Segmented TValue="bool" Label="Show the week or the month" Class="segmented--on-masthead"
+                                                Options="Views" Value="Month" ValueChanged="ShowAsync" />;
+
+    private static readonly IReadOnlyList<SegmentOption<bool>> Views = [new(false, "Week"), new(true, "Month")];
+
+    private void ShowAsync(bool month) =>
+        Navigation.NavigateTo(month ? EventsPlaces.Month : EventsPlaces.Week, new NavigationOptions { ReplaceHistoryEntry = true });
+
+    private RenderFragment Drawn(Diary diary)
+    {
+        IReadOnlySet<string> showing = Yours.Showing(diary.Calendars);
+        IReadOnlyList<EventOccurrence> shown = diary.In(showing);
+        if (Month)
+            return @<MonthView Diary="diary" Shown="shown" NowUtc="Now" Switch="Switch" Chips="Chips(diary)" />;
+
+        DateOnly today = Today;
+        DateOnly weekStart = EventWords.SundayOf(_here ?? today);
+        DateOnly last = EventWords.SundayOf(today).AddDays(7 * _weeks - 1);
+        List<IGrouping<DateOnly, EventOccurrence>> days = shown
+            .Where(occurrence => EventWords.DayOf(occurrence) >= today && EventWords.DayOf(occurrence) <= last)
+            .GroupBy(EventWords.DayOf).OrderBy(day => day.Key).ToList();
+        bool more = shown.Any(occurrence => EventWords.DayOf(occurrence) > last);
+        HashSet<DateOnly> marked = shown.Select(EventWords.DayOf).ToHashSet();
+        IReadOnlyList<RailDay> rail = Enumerable.Range(0, 7).Select(offset => weekStart.AddDays(offset)).Select(day => new RailDay(day, marked.Contains(day))).ToList();
+
+        return @<Page Title="This week" StuckAt="90">
+            <Masthead Title="This week" Beside="Switch" Class="masthead--week" />
+            <div class="week-band">
+                <p class="week-band__range">@EventWords.Range(weekStart, weekStart.AddDays(6))</p>
+                <WeekRail Days="rail" Today="today" Here="_here" Picked="day => GoToAsync(day, days)" />
+            </div>
+            <div class="week-chips">@Chips(diary)</div>
+            @if (diary.Calendars.Count == 0)
+            {
+                <Section First="true">
+                    <EmptyState Icon="calendar" Title="The calendar is on its way" Body="It comes down with everything else the next time this phone is online." />
+                </Section>
+            }
+            else if (showing.Count == 0)
+            {
+                <Section First="true">
+                    <EmptyState Icon="calendar" Title="No calendars in your week" Body="Add the calendars you'd like to see, or turn one back on above.">
+                        <Button Variant="ButtonVariant.Quiet" Icon="plus" Href="@EventsPlaces.Calendars">Browse calendars</Button>
+                    </EmptyState>
+                </Section>
+            }
+            else if (days.Count == 0)
+            {
+                <Section First="true">
+                    <EmptyState Icon="calendar" Title="Nothing on in the next few weeks" Body="Nothing in the calendars you have. Browse for others that might be on.">
+                        @if (more)
+                        {
+                            <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Look further ahead</Button>
+                        }
+                        else
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Icon="plus" Href="@EventsPlaces.Calendars">Browse calendars</Button>
+                        }
+                    </EmptyState>
+                </Section>
+            }
+            else
+            {
+                @foreach (IGrouping<DateOnly, EventOccurrence> day in days)
+                {
+                    <DaySection @key="day.Key" Day="day.Key" Today="today" Occurrences="day" Diary="diary" NowUtc="Now" IsNewChange="Yours.IsNewChange" />
+                }
+                @if (more)
+                {
+                    <div class="week-more">
+                        <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Carry on past @EventWords.Date(last)</Button>
+                    </div>
+                }
+                else
+                {
+                    <p class="hint week-end">That's everything in your calendars for the next @(EventsFeeds.MonthsAhead) months.</p>
+                }
+            }
+        </Page>;
+    }
+
+    private RenderFragment Chips(Diary diary)
+    {
+        IReadOnlyList<ToggleChip<string>> chips = Yours.InYourWeek(diary.Calendars)
+            .Select(calendar => new ToggleChip<string>(calendar.Id, calendar.Name, !Yours.IsHidden(calendar.Id))).ToList();
+        return @<ToggleChips TValue="string" Label="Calendars in your week" Chips="chips" Toggled="chip => Yours.Hide(chip.Value, chip.On)">
+            <Trailing>
+                <a class="toggle-chips__browse" href="@EventsPlaces.Calendars"><Icon Name="plus" Size="IconSize.Small" />Browse</a>
+            </Trailing>
+        </ToggleChips>;
+    }
+
+    private Task MoreAsync()
+    {
+        _weeks += MoreWeeks;
+        return Task.CompletedTask;
+    }
+
+    private async Task GoToAsync(DateOnly day, IReadOnlyList<IGrouping<DateOnly, EventOccurrence>> days)
+    {
+        DateOnly? target = days.Select(group => group.Key).Where(date => date >= day).Cast<DateOnly?>().FirstOrDefault();
+        if (target is not { } found)
+            return;
+        _here = day;
+        await Js.InvokeAsync<bool>("gsbcEvents.scrollToDay", EventDates.Format(found));
+    }
+
+    private void OnYours() => InvokeAsync(StateHasChanged);
+
+    public async ValueTask DisposeAsync()
+    {
+        Yours.Changed -= OnYours;
+        if (_following)
+        {
+            try
+            {
+                await Js.InvokeVoidAsync("gsbcEvents.unfollow");
+            }
+            catch (JSDisconnectedException)
+            {
+            }
+        }
+        _self?.Dispose();
+    }
+}

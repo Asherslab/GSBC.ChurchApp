@@ -1,0 +1,32 @@
+<AgendaRow Time="@EventWords.TimeOf(Occurrence)" Title="@Occurrence.Fields.Title" Label="@Label" Subtitle="@Subtitle" Warn="@(Subtitle is not null && Subtitle == Needs)"
+           NotOn="@(Occurrence.NotOn ? EventWords.NotOnLine(Occurrence) : null)" Quiet="@Quiet" Past="@Past" Selected="Selected"
+           Href="@(OnClick.HasDelegate ? null : EventsPlaces.EventPath(Occurrence.Id))" OnClick="OnClick" TitleExtra="@Extra" />
+
+@code {
+    [Parameter, EditorRequired] public required EventOccurrence Occurrence { get; set; }
+    [Parameter] public CalendarInfo? Calendar { get; set; }
+    [Parameter] public DateTime NowUtc { get; set; }
+    [Parameter] public bool NewChange { get; set; }
+    [Parameter] public bool ShowNeeds { get; set; }
+    [Parameter] public bool ShowSaved { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private bool Quiet => Occurrence.Kind == OccurrenceKind.Regular && !NewChange && !(ShowNeeds && Occurrence.Missing.Count > 0);
+
+    private bool Past => NowUtc != default && Occurrence.EndsAt < NowUtc;
+
+    private string? Label => Quiet ? null : EventWords.LabelOf(Occurrence, Calendar);
+
+    private string? Needs => ShowNeeds && Occurrence.Missing.Count > 0 ? EventWords.NeedsLine(Occurrence.Missing) : null;
+
+    private string? Subtitle => Needs ?? (NewChange && Occurrence.ChangeNote.Length > 0 ? Occurrence.ChangeNote : Quiet ? null : EventWords.PlaceLine(Occurrence));
+
+    private RenderFragment? Extra => (NewChange, ShowSaved && Occurrence.Showing != Showing.Shown, ShowSaved && Occurrence.Asked) switch
+    {
+        (_, _, true) => @<Pill Tone="PillTone.Quiet">Asked to publish</Pill>,
+        (_, true, _) => @<Pill Tone="PillTone.Quiet">@(Occurrence.Showing == Showing.ShownFrom ? "Shown later" : "Not shown yet")</Pill>,
+        (true, _, _) => @<Pill>Changed</Pill>,
+        _ => null,
+    };
+}

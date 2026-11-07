@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Access.Api;
 using GSBC.ChurchApp.Features.Analytics.Api;
 using GSBC.ChurchApp.Features.Accounts.Api;
 using GSBC.ChurchApp.Features.Configuration.Api;
+using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Media.Api;
 using GSBC.ChurchApp.Features.Notifications.Api;
 using GSBC.ChurchApp.Features.Sermons.Api;
@@ -20,6 +21,7 @@ builder.Services.AddMediaApi(builder.Configuration);
 builder.Services.AddAnalyticsApi();
 builder.Services.AddNotificationsApi(builder.Configuration);
 builder.Services.AddSermonsApi(builder.Configuration);
+builder.Services.AddEventsApi();
 
 if (builder.Environment.IsDevelopment())
     builder.Services.AddFeed(new FeedDefinition(DevelopmentFeeds.Echo, FeedAudience.Public));
@@ -37,5 +39,6 @@ app.MapMediaApi();
 app.MapAnalyticsApi();
 app.MapNotificationsApi();
 app.MapSermonsApi();
+app.MapEventsApi();
 
 app.Run();

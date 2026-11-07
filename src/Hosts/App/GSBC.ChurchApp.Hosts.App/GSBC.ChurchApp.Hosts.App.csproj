@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\..\Features\Media\GSBC.ChurchApp.Features.Media.Client\GSBC.ChurchApp.Features.Media.Client.csproj" />
     <ProjectReference Include="..\..\..\Features\Notifications\GSBC.ChurchApp.Features.Notifications.App\GSBC.ChurchApp.Features.Notifications.App.csproj" />
     <ProjectReference Include="..\..\..\Features\Sermons\GSBC.ChurchApp.Features.Sermons.App\GSBC.ChurchApp.Features.Sermons.App.csproj" />
+    <ProjectReference Include="..\..\..\Features\Events\GSBC.ChurchApp.Features.Events.App\GSBC.ChurchApp.Features.Events.App.csproj" />
     <ProjectReference Include="..\..\..\Features\ReleaseNotes\GSBC.ChurchApp.Features.ReleaseNotes.App\GSBC.ChurchApp.Features.ReleaseNotes.App.csproj" />
     <ProjectReference Include="..\..\..\Features\Analytics\GSBC.ChurchApp.Features.Analytics.App\GSBC.ChurchApp.Features.Analytics.App.csproj" />
   </ItemGroup>

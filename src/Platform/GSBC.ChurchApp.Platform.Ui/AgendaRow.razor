@@ -1,0 +1,72 @@
+@inject Shell Shell
+
+@if (Href is not null)
+{
+    <a class="row agenda-row @Classes" href="@Href" aria-current="@(Selected ? "true" : null)" @onclick="TapAsync">@Body</a>
+}
+else if (OnClick.HasDelegate)
+{
+    <button type="button" class="row agenda-row @Classes" aria-pressed="@(Selected ? "true" : null)" @onclick="ActivateAsync">@Body</button>
+}
+else
+{
+    <div class="row agenda-row @Classes">@Body</div>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string Time { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Subtitle { get; set; }
+    [Parameter] public string? NotOn { get; set; }
+    [Parameter] public bool Quiet { get; set; }
+    [Parameter] public bool Past { get; set; }
+    [Parameter] public bool Selected { get; set; }
+    [Parameter] public bool Warn { get; set; }
+    [Parameter] public RenderFragment? TitleExtra { get; set; }
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private string Classes => string.Join(" ", new[]
+    {
+        Quiet && NotOn is null ? "agenda-row--quiet" : null,
+        NotOn is not null ? "agenda-row--off" : null,
+        Past ? "agenda-row--past" : null,
+        Selected ? "row--selected" : null,
+        Class,
+    }.OfType<string>());
+
+    private RenderFragment Body => @<text>
+        <span class="agenda-row__time">@Time</span>
+        <span class="row__body">
+            @if (!string.IsNullOrEmpty(Label) && NotOn is null)
+            {
+                <span class="agenda-row__label">@Label</span>
+            }
+            <span class="row__title">
+                @Title
+                @if (TitleExtra is not null)
+                {
+                    <span class="row__title-extra">@TitleExtra</span>
+                }
+            </span>
+            @if (NotOn is not null)
+            {
+                <span class="row__subtitle agenda-row__off"><Icon Name="circle-off" Size="IconSize.Small" />@NotOn</span>
+            }
+            else if (!string.IsNullOrEmpty(Subtitle))
+            {
+                <span class="row__subtitle @(Warn ? "agenda-row__warn" : "")">@Subtitle</span>
+            }
+        </span>
+    </text>;
+
+    private Task TapAsync() => Shell.HapticAsync().AsTask();
+
+    private async Task ActivateAsync()
+    {
+        await TapAsync();
+        await OnClick.InvokeAsync();
+    }
+}

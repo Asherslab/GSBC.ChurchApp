@@ -1,0 +1,21 @@
+<div class="field editor-list">
+    @if (Links.Count > 0)
+    {
+        <span class="field__label">Links</span>
+    }
+    @foreach (EventLink link in Links)
+    {
+        <div class="editor-list__item">
+            <div class="ui-pair">
+                <TextField Label="Called" Value="@link.Title" ValueChanged="value => link.Title = value" Placeholder="The flyer" MaxLength="60" />
+                <TextField Label="Address" Type="url" Value="@link.Url" ValueChanged="value => link.Url = value.Trim()" Placeholder="https://" />
+            </div>
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => Links.Remove(link)">Remove this link</Button>
+        </div>
+    }
+    <button type="button" class="add-row" @onclick="() => Links.Add(new EventLink())"><Icon Name="plus" Size="IconSize.Small" />Add a link (a flyer, a form)</button>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required List<EventLink> Links { get; set; }
+}

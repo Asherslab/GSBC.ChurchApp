@@ -1,0 +1,107 @@
+@using GSBC.ChurchApp.Platform.Common
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@implements IDisposable
+@inject CalendarDiary Diary
+@inject TimeProvider Clock
+@inject IServiceProvider Services
+
+<LiveData @ref="_live" TValue="IReadOnlyList<EventOccurrence>" Load="LoadAsync" Feeds="CalendarDiary.Feeds">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn([])</Loading>
+    <Failed>@Drawn([])</Failed>
+</LiveData>
+
+@code {
+    private const int AdminWeeksAhead = 8;
+    private LiveData<IReadOnlyList<EventOccurrence>>? _live;
+
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private YourCalendars? Yours => Services.GetService(typeof(YourCalendars)) as YourCalendars;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private TileLook Look => TileLook.Of(EventsTiles.Week, Entry.Values);
+
+    private TileVariant Variant => EventsTiles.Week.VariantFor(Look, Hub.Columns);
+
+    private TileSpan Span => new(Math.Min(Look.Columns, Hub.Columns), Look.Rows);
+
+    private int Fits => Span.Rows == 1 ? Span.Columns > 1 ? 3 : 1 : Span.Columns > 1 ? Span.Rows * 3 : Span.Rows * 2 - 1;
+
+    private int Wanted => Math.Max(Entry.Values.Get(EventsTiles.Entries), Fits);
+
+    protected override void OnInitialized()
+    {
+        if (Yours is { } yours)
+            yours.Changed += OnYours;
+    }
+
+    private async Task<IReadOnlyList<EventOccurrence>> LoadAsync()
+    {
+        if (Diary.IsOnThisDevice && Yours is { } yours)
+        {
+            Diary diary = await Diary.LoadAsync();
+            return CalendarDiary.ComingUp(diary.In(yours.Showing(diary.Calendars)), Now, Wanted);
+        }
+        if (Services.GetService(typeof(CalendarEditing)) is not CalendarEditing editing)
+            return [];
+        CalendarDesk desk = await editing.DeskAsync();
+        List<string> defaults = desk.Calendars.Where(calendar => calendar.Settings.Calendar.ShownOnNewPhones).Select(calendar => calendar.Settings.Calendar.Id).ToList();
+        if (defaults.Count == 0)
+            return [];
+        DateOnly today = EventWords.Today(Now);
+        Agenda agenda = await editing.AgendaAsync(defaults, today, today.AddDays(7 * AdminWeeksAhead));
+        return CalendarDiary.ComingUp(agenda.Occurrences, Now, Wanted);
+    }
+
+    private RenderFragment Drawn(IReadOnlyList<EventOccurrence> coming)
+    {
+        TileLook look = Look;
+        string? id = Entry.Placement?.Id;
+        if (WordsTileView.ShapeOf(Variant) is { } shape)
+            return @<HubTile Look="@(look with { Icon = "" })" Layout="shape" Title="@look.Title" Lines="@(coming.FirstOrDefault() is { } first ? [Line(first)] : Quiet)"
+                             Go="@(Span is { Columns: 1, Rows: 1 } ? null : look.Text)" PlacementId="@id" />;
+        if (Variant.Key == EventsTiles.JustALink)
+            return @<HubTile Look="@(look.Icon.Length == 0 ? look with { Icon = "calendar", Image = null } : look with { Image = null })" Title="@look.Title" Lines="@Count(coming)" PlacementId="@id" />;
+        if (Span is { Columns: 1, Rows: 1 } && coming.FirstOrDefault() is { } next)
+            return @<HubTile Look="@(look with { Icon = "", Image = null })" Title="@next.Fields.Title" Lines="[When(next)]" PlacementId="@id" />;
+        if (coming.Count == 0)
+            return @<HubTile Look="@(look with { Icon = "", Image = null })" Title="@look.Title" Lines="Quiet" Go="@look.Text" GoBeside="@(Span.Columns > 1)" PlacementId="@id" />;
+
+        return @<HubTile Look="@(look with { Icon = "", Image = null })" Layout="TileShape.Square" Title="@look.Title" Go="@look.Text" GoBeside="@(Span.Columns > 1)" Class="hub-tile--list" PlacementId="@id">
+            <span class="hub-list">
+                @foreach (EventOccurrence occurrence in coming.Take(Fits))
+                {
+                    <span class="hub-list__entry @(occurrence.NotOn ? "hub-list__entry--off" : "")">
+                        <span class="hub-list__when">@(occurrence.NotOn ? "Not on" : EventWords.TimeOf(occurrence))<small>@Relative(occurrence)</small></span>
+                        <span class="hub-list__what">@occurrence.Fields.Title</span>
+                    </span>
+                }
+            </span>
+        </HubTile>;
+    }
+
+    private static readonly IReadOnlyList<string> Quiet = ["Nothing special coming up"];
+
+    private IReadOnlyList<string> Count(IReadOnlyList<EventOccurrence> coming) =>
+        [coming.Count == 0 ? "Nothing special coming up" : coming.Count == 1 ? "1 thing coming up" : $"{coming.Count} things coming up"];
+
+    private string Relative(EventOccurrence occurrence) =>
+        ChurchDates.Relative(EventWords.DayOf(occurrence).ToDateTime(TimeOnly.MinValue), EventWords.Today(Now).ToDateTime(TimeOnly.MinValue));
+
+    private string When(EventOccurrence occurrence) =>
+        occurrence.NotOn ? $"Not on {Relative(occurrence)}" : $"{Relative(occurrence)} {EventWords.TimeOf(occurrence)}";
+
+    private string Line(EventOccurrence occurrence) => $"{occurrence.Fields.Title} · {When(occurrence)}";
+
+    private void OnYours() => InvokeAsync(() => _live?.ReloadAsync() ?? Task.CompletedTask);
+
+    public void Dispose()
+    {
+        if (Yours is { } yours)
+            yours.Changed -= OnYours;
+    }
+}

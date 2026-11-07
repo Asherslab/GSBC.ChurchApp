@@ -1,0 +1,46 @@
+<header class="event-head @(Compact ? "event-head--compact" : "") @(Editing ? "event-head--editing" : "")">
+    <BrandMark Class="event-head__mark" Decorative="true" />
+    @if (Day is { } day)
+    {
+        <DateBlock Day="day" OnClick="OnDate" />
+    }
+    <div class="event-head__words">
+        @if (Label is not null)
+        {
+            <p class="event-head__label">@Label</p>
+        }
+        @if (Editing && OnTitle.HasDelegate)
+        {
+            <button type="button" class="event-head__title event-head__editable" @onclick="OnTitle">@(Title.Length > 0 ? Title : "Add a title")</button>
+        }
+        else
+        {
+            <h1 class="event-head__title" tabindex="-1">@Title</h1>
+        }
+        @if (When is not null)
+        {
+            @if (Editing && OnWhen.HasDelegate)
+            {
+                <button type="button" class="event-head__when event-head__editable" @onclick="OnWhen">@When</button>
+            }
+            else
+            {
+                <p class="event-head__when">@When</p>
+            }
+        }
+        @ChildContent
+    </div>
+</header>
+
+@code {
+    [Parameter] public DateOnly? Day { get; set; }
+    [Parameter] public string? Label { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? When { get; set; }
+    [Parameter] public bool Compact { get; set; }
+    [Parameter] public bool Editing { get; set; }
+    [Parameter] public EventCallback OnDate { get; set; }
+    [Parameter] public EventCallback OnTitle { get; set; }
+    [Parameter] public EventCallback OnWhen { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

@@ -1,0 +1,118 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@inject CalendarEditing Editing
+@inject WideningWords Words
+
+<div class="field shown-on">
+    <span class="field__label">Also shown on</span>
+    @if (Draft.IsNew)
+    {
+        <span class="field__hint">Once it's saved, it can show on other calendars too. Who edits it stays with @HomeName.</span>
+    }
+    else if (Others.Count == 0)
+    {
+        <span class="field__hint">There are no other calendars to show it on.</span>
+    }
+    else
+    {
+        <ToggleChips TValue="string" Label="Also shown on" Chips="Chips" Toggled="ToggleAsync" Class="toggle-chips--wrap" />
+        @if (_confirming is { } calendar && _sentence is { } sentence)
+        {
+            <div class="widening widening--ask" role="alert">
+                <span><Icon Name="users" Size="IconSize.Small" />@sentence</span>
+                <span class="widening__actions">
+                    <Button Small="true" Busy="_busy" OnClick="() => ShowAsync(calendar, true)">Show it there</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _confirming = null">Not now</Button>
+                </span>
+            </div>
+        }
+        <span class="field__hint">@Hint</span>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    }
+</div>
+
+@code {
+    private CalendarSettings? _confirming;
+    private string? _sentence;
+    private string? _problem;
+    private bool _busy;
+    private string _note = "";
+
+    [Parameter, EditorRequired] public required EventDraft Draft { get; set; }
+    [Parameter, EditorRequired] public required CalendarDesk Desk { get; set; }
+
+    private IReadOnlyList<DeskCalendar> Others => Desk.Calendars.Where(calendar => calendar.Settings.Calendar.Id != Draft.CalendarId && !calendar.Settings.Calendar.ReadOnly).ToList();
+
+    private CalendarInfo? Home => Desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == Draft.CalendarId)?.Settings.Calendar;
+
+    private string HomeName => Home?.Name ?? "its calendar";
+
+    private IReadOnlyList<ToggleChip<string>> Chips => Others.Select(calendar =>
+    {
+        ShowingOn? on = Draft.AlsoOn.FirstOrDefault(showing => showing.CalendarId == calendar.Settings.Calendar.Id);
+        return new ToggleChip<string>(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name, on is not null);
+    }).ToList();
+
+    private string Hint => _note.Length > 0 ? _note : Waiting.Count > 0
+        ? $"Waiting for {string.Join(" and ", Waiting)} to agree. A calendar you don't edit is asked first."
+        : "A calendar you don't edit is asked first; its editors decide.";
+
+    private IReadOnlyList<string> Waiting => Draft.AlsoOn.Where(showing => !showing.Agreed)
+        .Select(showing => Others.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == showing.CalendarId)?.Settings.Calendar.Name)
+        .OfType<string>().Select(name => $"{name}'s editors").ToList();
+
+    private async Task ToggleAsync(ToggleChip<string> chip)
+    {
+        DeskCalendar? other = Others.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == chip.Value);
+        if (other is null)
+            return;
+        if (chip.On)
+        {
+            await ShowAsync(other.Settings, false);
+            return;
+        }
+        if (other.CanEdit)
+        {
+            Audience current = CalendarAudiences.Union(Draft.AlsoOn.Where(showing => showing.Agreed)
+                .Select(showing => Desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == showing.CalendarId)?.Settings.Calendar.Audience)
+                .OfType<string>().Append(Home?.Audience ?? "").Select(CalendarAudiences.Of));
+            Widening widening = CalendarAudiences.Widening(current, CalendarAudiences.Of(other.Settings.Calendar.Audience));
+            _sentence = await Words.SentenceAsync(widening.Widens, widening.Words, widening.NewRoleIds.Select(id => id.ToString()), HomeName);
+            if (_sentence is not null)
+            {
+                _confirming = other.Settings;
+                return;
+            }
+        }
+        await ShowAsync(other.Settings, true);
+    }
+
+    private async Task ShowAsync(CalendarSettings other, bool show)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            string otherId = other.Calendar.Id;
+            await Editing.Editing.ShowOnAsync(new ShowOnRequest
+            {
+                CalendarId = Draft.CalendarId, EventId = Draft.EventId, RegularEventId = Draft.RegularEventId, OtherCalendarId = otherId, Show = show,
+            });
+            Draft.AlsoOn.RemoveAll(showing => showing.CalendarId == otherId);
+            bool agreed = Desk.Calendars.Any(calendar => calendar.Settings.Calendar.Id == otherId && calendar.CanEdit);
+            if (show)
+                Draft.AlsoOn.Add(new ShowingOn { CalendarId = otherId, Agreed = agreed });
+            _note = !show ? $"Taken off {other.Calendar.Name}."
+                : agreed ? $"Shown on {other.Calendar.Name} too, once it's shown."
+                : $"{other.Calendar.Name}'s editors have been asked.";
+            _confirming = null;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,24 @@
+@typeparam TValue
+@inject Shell Shell
+
+<div class="toggle-chips @Class" role="group" aria-label="@Label">
+    @foreach (ToggleChip<TValue> chip in Chips)
+    {
+        <button type="button" class="filter-chip @(chip.On ? "filter-chip--on" : "")" aria-pressed="@(chip.On ? "true" : "false")" @onclick="() => ToggleAsync(chip)">@chip.Label</button>
+    }
+    @Trailing
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ToggleChip<TValue>> Chips { get; set; }
+    [Parameter] public EventCallback<ToggleChip<TValue>> Toggled { get; set; }
+    [Parameter] public RenderFragment? Trailing { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private async Task ToggleAsync(ToggleChip<TValue> chip)
+    {
+        await Shell.HapticAsync();
+        await Toggled.InvokeAsync(chip);
+    }
+}

@@ -1,0 +1,28 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Calendar: browse</title><style>
+:root{--navy:#2A3D5E;--beige:#D5C9B7;--aqua:#009C8F;--aqua-deep:#007a70;--sand:#F3EFE8;--sand-strong:#E6DFD3;--ink:#1F2A3C;--ink2:#4a5568;--ink3:#7a8494;--line:#E7E2DA}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;background:#fff;color:var(--ink);position:relative}
+.status{height:47px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;color:#fff;font-weight:600;font-size:15px;position:absolute;top:0;left:0;right:0;z-index:3}
+.mast{background:var(--navy);color:#fff;padding:60px 20px 20px;position:relative;overflow:hidden}.ring{position:absolute;right:-70px;top:10px;width:210px;height:210px;border-radius:50%;border:34px solid rgba(255,255,255,.07)}
+.back{font-weight:600;font-size:15px;margin-bottom:18px}.mast h1{font-size:34px;font-weight:700;letter-spacing:-.03em}.note{color:var(--beige);font-weight:600;font-size:14.5px;margin-top:6px}
+.sec{padding:20px 20px 0}.sec h2{font-size:20px;font-weight:700;letter-spacing:-.015em;margin-bottom:4px}.hint{font-size:13.5px;color:var(--ink2);margin-bottom:8px}
+.r{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding:10px 0;min-height:58px}
+.rt{font-size:15.5px;font-weight:600}.rs{font-size:14px;color:var(--ink2);margin-top:1px}
+.sw{margin-left:auto;width:51px;height:31px;border-radius:16px;background:var(--aqua);position:relative;flex:none}.sw::after{content:"";position:absolute;right:2px;top:2px;width:27px;height:27px;border-radius:50%;background:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}
+.sw.off{background:var(--sand-strong)}.sw.off::after{right:auto;left:2px}
+.add{margin-left:auto;height:34px;border-radius:17px;padding:0 14px;background:var(--sand);font-size:14px;font-weight:600;display:flex;align-items:center;flex:none}
+.sub{display:flex;gap:10px;margin-top:4px}.btn{height:44px;border-radius:22px;padding:0 16px;display:inline-flex;align-items:center;font-weight:600;font-size:14.5px;background:var(--sand)}.btn.p{background:var(--navy);color:#fff}
+.lock{font-size:12px;font-weight:700;color:var(--ink2);background:var(--sand);border-radius:10px;padding:2px 8px;margin-left:6px}
+</style></head><body><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<header class="mast"><i class="ring"></i><p class="back">‹ This week</p><h1>Calendars</h1><p class="note">Choose what shows in your week</p></header>
+<section class="sec"><h2>In your week</h2>
+<div class="r"><div><div class="rt">Sunday services</div><div class="rs">Every Sunday's services</div></div><span class="sw"></span></div>
+<div class="r"><div><div class="rt">Whole church</div><div class="rs">Specials, meetings and days for everyone</div></div><span class="sw"></span></div>
+<div class="r"><div><div class="rt">Kids team<span class="lock">For you</span></div><div class="rs">Children's Ministry helpers</div></div><span class="sw"></span></div>
+<div class="r"><div><div class="rt">Outreach</div><div class="rs">Saturday mornings and outreach days</div></div><span class="sw off"></span></div></section>
+<section class="sec"><h2>More calendars</h2>
+<div class="r"><div><div class="rt">Impact Youth</div><div class="rs">Fridays in term, camps</div></div><span class="add">Add</span></div>
+<div class="r"><div><div class="rt">Young Adults</div><div class="rs">Nights out and studies</div></div><span class="add">Add</span></div></section>
+<section class="sec"><h2>In your phone's calendar</h2><p class="hint">Subscribe once; your calendar app keeps itself up to date.</p>
+<div class="sub"><span class="btn p">All my calendars</span><span class="btn">Everything public</span></div></section>
+</body></html>

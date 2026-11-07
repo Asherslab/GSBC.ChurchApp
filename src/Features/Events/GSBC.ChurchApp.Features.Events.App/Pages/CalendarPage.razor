@@ -1,0 +1,94 @@
+@page "/calendar/{Id}"
+@implements IDisposable
+@inject CalendarDiary Diary
+@inject YourCalendars Yours
+@inject IAccess Access
+@inject TimeProvider Clock
+@inject Shell Shell
+
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Calendar" BackHref="@EventsPlaces.Calendars" BackLabel="Calendars">
+            <Masthead Title="Calendar" />
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private const int NextShown = 8;
+    private string? _problem;
+    private bool _busy;
+
+    [Parameter] public string Id { get; set; } = "";
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    protected override void OnInitialized() => Yours.Changed += OnYours;
+
+    private RenderFragment Drawn(Diary diary)
+    {
+        if (diary.Calendar(Id) is not { } calendar)
+            return @<Page Title="Not found" BackHref="@EventsPlaces.Calendars" BackLabel="Calendars">
+                <Masthead Title="Not found" />
+                <EmptyState Icon="layers" Title="This calendar isn't here" Body="It may have been taken down, or be for people in a role you don't have.">
+                    <Button Variant="ButtonVariant.Quiet" Href="@EventsPlaces.Calendars">All calendars</Button>
+                </EmptyState>
+            </Page>;
+
+        bool inWeek = Yours.InYourWeek(calendar);
+        IReadOnlySet<string> only = new HashSet<string> { calendar.Id };
+        IReadOnlyList<EventOccurrence> next = diary.In(only).Where(occurrence => occurrence.EndsAt >= Now).Take(NextShown).ToList();
+        bool canAdd = !calendar.ReadOnly && Access.Can(EventsPermissions.Edit, calendar.Id);
+        return @<Page Title="@calendar.Name" BackHref="@EventsPlaces.Calendars" BackLabel="Calendars">
+            <Masthead Title="@calendar.Name" Note="@(calendar.Description.Length > 0 ? calendar.Description : CalendarChoices.IsGiven(calendar) ? "A calendar for you" : "A calendar for everyone")">
+                <div class="calendar-head__actions">
+                    @if (inWeek)
+                    {
+                        <Button Variant="ButtonVariant.GhostOnMasthead" Icon="check" Busy="_busy" OnClick="() => ChooseAsync(calendar, false)">In your week</Button>
+                    }
+                    else
+                    {
+                        <Button Variant="ButtonVariant.OnMasthead" Icon="plus" Busy="_busy" OnClick="() => ChooseAsync(calendar, true)">Add to your week</Button>
+                    }
+                    @if (canAdd)
+                    {
+                        <Button Variant="ButtonVariant.GhostOnMasthead" Icon="plus" Href="@EventsPlaces.NewEventIn(calendar.Id)">New event</Button>
+                    }
+                </div>
+            </Masthead>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            <Section First="true" Title="What's next">
+                @if (next.Count == 0)
+                {
+                    <p class="hint">Nothing coming up in this calendar.</p>
+                }
+                else
+                {
+                    <div class="calendar-next">
+                        @foreach (IGrouping<DateOnly, EventOccurrence> day in next.GroupBy(EventWords.DayOf))
+                        {
+                            <DaySection @key="day.Key" Day="day.Key" Today="EventWords.Today(Now)" Occurrences="day" Diary="diary" NowUtc="Now" IsNewChange="Yours.IsNewChange" />
+                        }
+                    </div>
+                }
+            </Section>
+            <Section Title="In your phone's calendar" Lead="@($"Subscribe to {calendar.Name} on its own in your calendar app.")">
+                <SubscribeLinks Calendar="calendar" />
+            </Section>
+        </Page>;
+    }
+
+    private async Task ChooseAsync(CalendarInfo calendar, bool inYourWeek)
+    {
+        _busy = true;
+        await Shell.HapticAsync();
+        _problem = await Yours.ChooseAsync(calendar.Id, inYourWeek);
+        _busy = false;
+    }
+
+    private void OnYours() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Yours.Changed -= OnYours;
+}

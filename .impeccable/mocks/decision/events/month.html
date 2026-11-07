@@ -1,0 +1,38 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=390"><title>Calendar: month</title><style>
+:root{--navy:#2A3D5E;--beige:#D5C9B7;--aqua-deep:#007a70;--orange:#E7AE74;--orange-ink:#9a5a1c;--sand:#F3EFE8;--sand-strong:#E6DFD3;--ink:#1F2A3C;--ink2:#4a5568;--ink3:#7a8494;--line:#E7E2DA}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;background:#fff;color:var(--ink);position:relative;font-variant-numeric:tabular-nums}
+.status{height:47px;display:flex;justify-content:space-between;align-items:center;padding:0 28px;color:#fff;font-weight:600;font-size:15px;position:absolute;top:0;left:0;right:0;z-index:3}
+.mast{background:var(--navy);color:#fff;padding:92px 20px 18px;position:relative;overflow:hidden}.ring{position:absolute;right:-70px;top:30px;width:210px;height:210px;border-radius:50%;border:34px solid rgba(255,255,255,.07)}
+.mrow{display:flex;justify-content:space-between;align-items:flex-end}.mast h1{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.02}
+.note{color:var(--beige);font-weight:600;font-size:14.5px;margin-top:8px;display:flex;justify-content:space-between}.note span{color:#fff}
+.seg{display:flex;background:rgba(255,255,255,.12);border-radius:12px;padding:3px;font-size:13px;font-weight:600}.seg span{padding:7px 13px;border-radius:9px;color:#fff}.seg span.on{background:#fff;color:var(--navy)}
+.chips{display:flex;gap:8px;padding:14px 20px 0;overflow:hidden;white-space:nowrap}.chip{height:34px;border-radius:17px;padding:0 13px;display:inline-flex;align-items:center;font-size:13.5px;font-weight:600;background:var(--navy);color:#fff;flex:none}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);padding:12px 14px 0;row-gap:2px}
+.wd{text-align:center;font-size:11px;font-weight:600;color:var(--ink3);letter-spacing:.04em;padding-bottom:6px}
+.d{height:46px;text-align:center;font-size:15px;font-weight:600;padding-top:6px;border-radius:12px;position:relative}
+.d.o{color:var(--ink3);opacity:.5}.d.past{color:var(--ink3)}
+.d.today{background:var(--navy);color:#fff}.d.sel{box-shadow:inset 0 0 0 2px var(--navy)}
+.m{display:flex;gap:3px;justify-content:center;margin-top:4px;height:6px}.m i{width:5px;height:5px;border-radius:50%;background:var(--sand-strong)}
+.m i.s{background:var(--aqua-deep)}.m i.c{background:var(--orange)}.today .m i{background:rgba(255,255,255,.5)}.today .m i.s{background:#fff}
+.m i.x{background:none;border:1.2px solid var(--ink3);width:6px;height:6px}
+.key{display:flex;gap:14px;padding:8px 20px 0;font-size:12px;color:var(--ink3);font-weight:500}.key i{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:5px;vertical-align:1px}
+.day{padding:14px 20px 0}.day h2{font-size:15px;font-weight:700;margin-bottom:6px}.day h2 span{font-size:13.5px;color:var(--ink3);font-weight:500;margin-left:6px}
+.r{display:flex;border-top:1px solid var(--line);padding:10px 0}.t{width:66px;flex:none;color:var(--navy);font-weight:600;font-size:14.5px}.rt{font-size:15.5px;font-weight:600}.rs{font-size:14px;color:var(--ink2);margin-top:2px}.lab{font-size:12px;font-weight:700;color:var(--aqua-deep)}
+.pill{font-size:12px;font-weight:700;border-radius:10px;padding:2px 8px;background:rgba(231,174,116,.28);color:var(--orange-ink);margin-left:6px}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:83px;border-top:1px solid var(--line);background:rgba(255,255,255,.94);display:grid;grid-template-columns:repeat(4,1fr);padding-top:7px;font-size:11px;font-weight:600;color:var(--ink3);text-align:center}.tabbar .on{color:var(--aqua-deep)}
+</style></head><body><div class="status"><span>9:41</span><span>●●● ▮</span></div>
+<header class="mast"><i class="ring"></i><div class="mrow"><h1>November</h1><div class="seg"><span>Week</span><span class="on">Month</span></div></div><p class="note">2026 <span>‹ &nbsp; ›</span></p></header>
+<div class="chips"><span class="chip">Sunday services</span><span class="chip">Whole church</span><span class="chip">Kids</span><span class="chip">Outreach</span></div>
+<div class="grid">
+<div class="wd">SUN</div><div class="wd">MON</div><div class="wd">TUE</div><div class="wd">WED</div><div class="wd">THU</div><div class="wd">FRI</div><div class="wd">SAT</div>
+<div class="d past">1<div class="m"><i></i><i></i></div></div><div class="d past">2</div><div class="d past">3</div><div class="d past">4<div class="m"><i></i></div></div><div class="d past">5</div><div class="d past">6<div class="m"><i></i><i></i></div></div><div class="d past">7</div>
+<div class="d today">8<div class="m"><i></i><i class="s"></i><i></i></div></div><div class="d">9</div><div class="d">10</div><div class="d">11<div class="m"><i></i></div></div><div class="d">12<div class="m"><i class="s"></i></div></div><div class="d">13<div class="m"><i></i><i class="x"></i></div></div><div class="d sel">14<div class="m"><i class="c"></i></div></div>
+<div class="d">15<div class="m"><i></i><i></i><i></i></div></div><div class="d">16</div><div class="d">17</div><div class="d">18<div class="m"><i></i></div></div><div class="d">19</div><div class="d">20<div class="m"><i></i><i></i></div></div><div class="d">21<div class="m"><i class="s"></i></div></div>
+<div class="d">22<div class="m"><i></i><i></i><i></i></div></div><div class="d">23</div><div class="d">24</div><div class="d">25<div class="m"><i></i></div></div><div class="d">26</div><div class="d">27<div class="m"><i></i><i class="s"></i></div></div><div class="d">28<div class="m"><i></i></div></div>
+<div class="d">29<div class="m"><i></i><i></i><i></i></div></div><div class="d">30</div><div class="d o">1</div><div class="d o">2</div><div class="d o">3</div><div class="d o">4</div><div class="d o">5</div>
+</div>
+<div class="key"><span><i style="background:var(--sand-strong)"></i>Every week</span><span><i style="background:var(--aqua-deep)"></i>Special</span><span><i style="background:var(--orange)"></i>Changed</span><span><i style="border:1.2px solid var(--ink3)"></i>Not on</span></div>
+<section class="day"><h2>Saturday<span>14 November</span></h2>
+<div class="r"><span class="t">8:30</span><div><span class="lab">Outreach</span><div class="rt">Outreach morning<span class="pill">Changed</span></div><div class="rs">Now meeting at Teralba Park</div></div></div></section>
+<nav class="tabbar"><span>Home</span><span class="on">Calendar</span><span>Sermons</span><span>More</span></nav></body></html>

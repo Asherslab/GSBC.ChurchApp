@@ -1,0 +1,40 @@
+using System.Diagnostics.CodeAnalysis;
+using ProtoBuf;
+using ProtoBuf.Meta;
+
+namespace GSBC.ChurchApp.Features.Events.Contracts;
+
+[UnconditionalSuppressMessage("Trimming", "IL2095", Justification = "Annotation mismatch inside protobuf-net's TypeModel; the generated model does not use the reflective path (SPEC §9).")]
+[ProtoModel]
+[ProtoSerializable(typeof(Done))]
+[ProtoSerializable(typeof(CalendarInfo))]
+[ProtoSerializable(typeof(EventOccurrence))]
+[ProtoSerializable(typeof(OccurrenceContacts))]
+[ProtoSerializable(typeof(CalendarChoice))]
+[ProtoSerializable(typeof(MyCalendars))]
+[ProtoSerializable(typeof(CalendarSettings))]
+[ProtoSerializable(typeof(CalendarDesk))]
+[ProtoSerializable(typeof(EventRef))]
+[ProtoSerializable(typeof(EventDetail))]
+[ProtoSerializable(typeof(EventSave))]
+[ProtoSerializable(typeof(RegularRef))]
+[ProtoSerializable(typeof(RegularEventDetail))]
+[ProtoSerializable(typeof(RegularEventSave))]
+[ProtoSerializable(typeof(RegularEventSaved))]
+[ProtoSerializable(typeof(DateSave))]
+[ProtoSerializable(typeof(ItemRef))]
+[ProtoSerializable(typeof(ShowOnRequest))]
+[ProtoSerializable(typeof(ShowingAnswer))]
+[ProtoSerializable(typeof(TellPeople))]
+[ProtoSerializable(typeof(AgendaQuery))]
+[ProtoSerializable(typeof(Agenda))]
+[ProtoSerializable(typeof(NeedsDetailsList))]
+[ProtoSerializable(typeof(AskedList))]
+[ProtoSerializable(typeof(PlacesUsed))]
+[ProtoSerializable(typeof(BreakInfo))]
+[ProtoSerializable(typeof(BreakList))]
+[ProtoSerializable(typeof(BreakRef))]
+[ProtoSerializable(typeof(CalendarFileRequest))]
+[ProtoSerializable(typeof(CalendarFile))]
+[ProtoSerializable(typeof(CalendarLink))]
+public partial class EventsContractsModel : TypeModel;

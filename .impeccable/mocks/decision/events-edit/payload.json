@@ -1,0 +1,49 @@
+{
+  "title": "The church calendar: changing an event",
+  "question": "Three ways to change an event, sketched on the phone at the last-minute moment (the outreach morning's place has moved). The same component runs in the admin panel. Each asks whether the change is for this date only or every date of the regular event, and offers Tell people after saving. Lock one, steer it (\"quick actions first\"), or re-roll.",
+  "options": [
+    {
+      "id": "inplace",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Edit where you read it",
+      "lineage": "the date block page, turned editable",
+      "thesis": "Edit opens the event page you already know in an editing state: every part you can change is outlined and tapped to change, and a bar at the foot holds This date or Every date, and Save.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["the date block head", "outlined editable parts", "sticky foot bar"],
+      "viewport": "Navy head with the date block and title, each with a small edit mark. The place fact being changed (a search with recent places: Teralba Park, Club Pine Rivers). Contact, About as fields. Foot bar: This date only | Every date, and Save.",
+      "risk": "Fields the page doesn't show when empty (Register link, picture, other links) need an 'Add…' row, or they're hard to find.",
+      "html": ".impeccable/mocks/decision/events-edit/inplace.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "steps",
+      "kind": "dealt",
+      "label": "A step at a time",
+      "lineage": "the paged sheet (What's new), used for a form",
+      "thesis": "A short flow: What, When, Where, Details, then Show. Changing an existing event jumps straight to the step you tapped and saves from there.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["sheet with a cover", "page dots", "one question per step"],
+      "viewport": "Sheet cover: Outreach morning, step 3 of 5, Where. Choose: a place on the church site, or an address; recent addresses listed. This date only | Every date. Next / Save.",
+      "risk": "Seeing the whole event at once means stepping through it; slower for someone who knows exactly what to change.",
+      "html": ".impeccable/mocks/decision/events-edit/steps.html",
+      "htmlFrame": "390x844"
+    },
+    {
+      "id": "sentence",
+      "kind": "dealt",
+      "label": "The sentence",
+      "lineage": "the bulletin's own notice: one sentence that says it all",
+      "thesis": "The event is one plain sentence with each fact underlined; tap a fact to change it. What the church will read is exactly what you edit.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["a large plain sentence", "underlined facts in accent", "sand fields under it"],
+      "viewport": "'Outreach morning is on Saturday 14 November from 8:30 to 11:30 at Teralba Park, every second Saturday. Sam Ridley is the contact.' The place underlined and open below as a picker. This date only | Every date. About as a field. Save.",
+      "risk": "Unfamiliar; long values (an address, a label) make the sentence wrap awkwardly, and it needs care with screen readers.",
+      "html": ".impeccable/mocks/decision/events-edit/sentence.html",
+      "htmlFrame": "390x844"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}

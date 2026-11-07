@@ -41,7 +41,7 @@
         <MediaChooser ImagesOnly="true" OnChosen="InsertImageAsync" OnCancel="() => _choosingImage = false" />
     }
 
-    <textarea @ref="_textarea" value="@_markdown" @oninput="TypedAsync" rows="@Rows" aria-label="@Label" placeholder="@Placeholder"></textarea>
+    <textarea class="rich-text-input" @ref="_textarea" value="@_markdown" @oninput="TypedAsync" rows="@Rows" aria-label="@Label" placeholder="@Placeholder"></textarea>
 
     @foreach (string problem in _problems)
     {
@@ -49,7 +49,7 @@
     }
 
     <section class="rich-text-preview" aria-label="Preview">
-        <span class="rich-text-preview-label">Preview</span>
+        <span class="rich-text-preview-label">How it looks</span>
         @if (_draft.IsEmpty)
         {
             <p class="rich-text-preview-empty">Nothing yet.</p>

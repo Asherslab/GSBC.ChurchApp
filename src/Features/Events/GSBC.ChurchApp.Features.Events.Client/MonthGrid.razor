@@ -1,0 +1,90 @@
+@using System.Globalization
+
+<div class="month-grid" role="grid" aria-label="@First.ToString("MMMM yyyy", English)">
+    <div class="month-grid__row" role="row">
+        @foreach (string weekday in Weekdays)
+        {
+            <span class="month-grid__weekday" role="columnheader">@weekday</span>
+        }
+    </div>
+    @for (DateOnly week = EventWords.SundayOf(First); week <= Last; week = week.AddDays(7))
+    {
+        <div class="month-grid__row" role="row">
+            @for (int offset = 0; offset < 7; offset++)
+            {
+                DateOnly day = week.AddDays(offset);
+                IReadOnlyList<Mark> marks = MarksOn(day);
+                <button type="button" role="gridcell" class="month-grid__day @DayClass(day)" aria-selected="@(day == Selected ? "true" : "false")"
+                        aria-current="@(day == Today ? "date" : null)" aria-label="@Spoken(day, marks)" @onclick="() => Picked.InvokeAsync(day)">
+                    <span class="month-grid__date">@day.Day</span>
+                    <span class="month-grid__marks" aria-hidden="true">
+                        @foreach (Mark mark in marks)
+                        {
+                            <i class="month-grid__mark month-grid__mark--@mark.ToString().ToLowerInvariant()"></i>
+                        }
+                    </span>
+                </button>
+            }
+        </div>
+    }
+</div>
+<ul class="month-key" aria-label="What the marks mean">
+    <li><i class="month-grid__mark month-grid__mark--regular"></i>Every week</li>
+    <li><i class="month-grid__mark month-grid__mark--special"></i>Special</li>
+    <li><i class="month-grid__mark month-grid__mark--changed"></i>Changed</li>
+    <li><i class="month-grid__mark month-grid__mark--off"></i>Not on</li>
+</ul>
+
+@code {
+    private const int MostMarks = 3;
+    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
+    private static readonly string[] Weekdays = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
+
+    public enum Mark { Changed, Special, Off, Regular }
+
+    [Parameter, EditorRequired] public required DateOnly First { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Today { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<EventOccurrence> Occurrences { get; set; }
+    [Parameter] public DateOnly? Selected { get; set; }
+    [Parameter] public Func<EventOccurrence, bool> IsChanged { get; set; } = occurrence => occurrence.ChangedAt is not null;
+    [Parameter] public EventCallback<DateOnly> Picked { get; set; }
+
+    private DateOnly Last => First.AddMonths(1).AddDays(-1);
+
+    private ILookup<DateOnly, EventOccurrence> _byDay = Array.Empty<EventOccurrence>().ToLookup(EventWords.DayOf);
+
+    protected override void OnParametersSet() => _byDay = Occurrences.ToLookup(EventWords.DayOf);
+
+    private IReadOnlyList<Mark> MarksOn(DateOnly day) =>
+        _byDay[day].Select(MarkOf).OrderBy(mark => mark).Take(MostMarks).ToList();
+
+    private Mark MarkOf(EventOccurrence occurrence) => occurrence switch
+    {
+        { NotOn: true } => Mark.Off,
+        _ when IsChanged(occurrence) => Mark.Changed,
+        { Kind: OccurrenceKind.Regular } => Mark.Regular,
+        _ => Mark.Special,
+    };
+
+    private string DayClass(DateOnly day) => string.Join(" ", new[]
+    {
+        day.Month != First.Month ? "month-grid__day--outside" : null,
+        day < Today ? "month-grid__day--past" : null,
+        day == Today ? "month-grid__day--today" : null,
+    }.OfType<string>());
+
+    private static string Spoken(DateOnly day, IReadOnlyList<Mark> marks)
+    {
+        string date = day.ToString("dddd d MMMM", English);
+        if (marks.Count == 0)
+            return $"{date}, nothing on";
+        IEnumerable<string> words = marks.Distinct().Select(mark => mark switch
+        {
+            Mark.Changed => "something changed",
+            Mark.Special => "something special",
+            Mark.Off => "something not on",
+            _ => "regular events",
+        });
+        return $"{date}, {string.Join(", ", words)}";
+    }
+}

@@ -97,6 +97,42 @@
         ],
         "createdAt": "2026-11-04T01:24:13.469Z",
         "reason": "Claude: miniature wireframe sketches on an internal decision page, not shipped UI"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/digest/admin.html"
+        ],
+        "createdAt": "2026-11-07T14:52:20.210Z",
+        "reason": "DESIGN.md Admin sidebar (signature): current link carries a 3px orange bar at the left edge"
+      },
+      {
+        "rule": "nested-cards",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/digest/admin.html"
+        ],
+        "createdAt": "2026-11-07T14:52:20.249Z",
+        "reason": "DESIGN.md Previews: phone frame holds the real app screen, whose feature cards sit inside the frame"
+      },
+      {
+        "rule": "cramped-padding",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/digest/admin.html"
+        ],
+        "createdAt": "2026-11-07T14:52:20.287Z",
+        "reason": "DESIGN.md Previews: phone frame screen is edge-to-edge by design; its content has its own gutters"
+      },
+      {
+        "rule": "cream-palette",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/digest/email.html"
+        ],
+        "createdAt": "2026-11-07T14:52:20.326Z",
+        "reason": "DESIGN.md Neutral: sand #F3EFE8 is the brand's surface colour, used across the app and admin"
       }
     ]
   }

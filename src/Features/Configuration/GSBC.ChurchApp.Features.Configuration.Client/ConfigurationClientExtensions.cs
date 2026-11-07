@@ -18,9 +18,8 @@ public static class ConfigurationClientExtensions
             .AddSingleton<ConfigurationClient>().AddSingleton<DraftsClient>().AddSingleton<DatedChanges>()
             .AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All)
             .AddHubTile<BulletinTile>(WaitingTiles.Bulletin)
-            .AddHubTile<WeekTile>(WaitingTiles.Week)
             .AddHubTile<OutreachTile>(WaitingTiles.Outreach);
-        foreach (HubTileKind kind in WaitingTiles.All.Except([WaitingTiles.Bulletin, WaitingTiles.Week, WaitingTiles.Outreach]))
+        foreach (HubTileKind kind in WaitingTiles.All.Except([WaitingTiles.Bulletin, WaitingTiles.Outreach]))
             services.AddHubTile<WordsTileView>(kind);
         return services;
     }

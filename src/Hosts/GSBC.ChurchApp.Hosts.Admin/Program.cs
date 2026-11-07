@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Accounts.Admin;
 using GSBC.ChurchApp.Features.Configuration.Admin;
 using GSBC.ChurchApp.Features.Media.Admin;
 using GSBC.ChurchApp.Features.Notifications.Admin;
+using GSBC.ChurchApp.Features.Events.Admin;
 using GSBC.ChurchApp.Features.Sermons.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
 using GSBC.ChurchApp.Platform.Client;
@@ -30,6 +31,7 @@ builder.Services
     .AddMediaAdmin(modules)
     .AddNotificationsAdmin(modules)
     .AddSermonsAdmin(modules)
+    .AddEventsAdmin(modules)
     .AddAccountsAdmin(modules)
     .AddAccessAdmin(modules)
     .AddAnalyticsAdmin(modules);
