@@ -146,7 +146,7 @@
                 @if (more)
                 {
                     <div class="week-more">
-                        <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Carry on into @last.AddDays(1).ToString("MMMM", English)</Button>
+                        <Button Variant="ButtonVariant.Quiet" OnClick="MoreAsync">Carry on past @EventWords.Date(last)</Button>
                     </div>
                 }
                 else

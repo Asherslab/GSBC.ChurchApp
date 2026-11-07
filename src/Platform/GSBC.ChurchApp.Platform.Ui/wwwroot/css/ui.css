@@ -1169,9 +1169,9 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .toggle-chips { display: flex; gap: 8px; margin: 0 calc(-1 * var(--gutter)); padding: 0 var(--gutter); overflow-x: auto; scrollbar-width: none; white-space: nowrap; }
 .toggle-chips::-webkit-scrollbar { display: none; }
 .toggle-chips .filter-chip { flex: none; min-height: 36px; padding: 0 14px; }
-.masthead__row { display: flex; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.masthead__row { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; }
 .masthead__row h1 { min-width: 0; max-width: none; }
 .masthead__beside { flex: none; padding-bottom: 4px; }
 .segmented--on-masthead { background: var(--masthead-chip); }
-.segmented--on-masthead button { min-height: 32px; padding: 0 10px; color: var(--on-masthead); }
+.segmented--on-masthead button { min-height: 32px; padding: 0 8px; color: var(--on-masthead); }
 .segmented--on-masthead button[aria-checked="true"] { background: var(--surface); color: var(--primary); }
