@@ -22,19 +22,28 @@ internal sealed class SermonAnnouncer(SermonsDbContext db, INotifications notifi
         foreach (SermonRecord sermon in waiting)
         {
             sermon.AnnouncedAt = now;
-            if (now - sermon.PreachedAt > NewFor)
-                continue;
-            Sermon payload = SermonPublisher.Payload(sermon, series, speakers);
-            string link = SermonsDestinations.Sermon.PathOf(payload.Id);
-            string body = string.Join(" · ", new[] { payload.SpeakerName, payload.Service, payload.SeriesName }.Where(part => !string.IsNullOrEmpty(part)));
-            await notifications.RaiseAsync(new Notification(SermonsNotifications.NewSermon, NotificationAudience.Holding(SermonsPermissions.HearNew),
-                $"New sermon: {payload.Title}", body, Link: link, Subject: $"sermon/{payload.Id}", ScopeId: SermonsNotifications.AllSermonsScope,
-                Action: "Listen"), cancellationToken);
-            if (payload.SeriesId is { } seriesId)
-                await notifications.RaiseAsync(new Notification(SermonsNotifications.NewInSeries, NotificationAudience.Holding(SermonsPermissions.HearSeries, seriesId),
-                    $"New in {payload.SeriesName}: {payload.Title}", body, Link: link, Subject: $"sermon/{payload.Id}/series", ScopeId: seriesId,
-                    Action: "Listen"), cancellationToken);
+            foreach (Notification notification in Announcements(SermonPublisher.Payload(sermon, series, speakers), now))
+                await notifications.RaiseAsync(notification, cancellationToken);
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    internal static IReadOnlyList<Notification> Announcements(Sermon payload, DateTime now)
+    {
+        if (now - payload.PreachedAt > NewFor)
+            return [];
+        string link = SermonsDestinations.Sermon.PathOf(payload.Id);
+        string body = string.Join(" · ", new[] { payload.SpeakerName, payload.Service, payload.SeriesName }.Where(part => !string.IsNullOrEmpty(part)));
+        List<Notification> announcements =
+        [
+            new(SermonsNotifications.NewSermon, NotificationAudience.Holding(SermonsPermissions.HearNew),
+                $"New sermon: {payload.Title}", body, Link: link, Subject: $"sermon/{payload.Id}", ScopeId: SermonsNotifications.AllSermonsScope,
+                Action: "Listen"),
+        ];
+        if (payload.SeriesId is { } seriesId)
+            announcements.Add(new Notification(SermonsNotifications.NewInSeries, NotificationAudience.Holding(SermonsPermissions.HearSeries, seriesId),
+                $"New in {payload.SeriesName}: {payload.Title}", body, Link: link, Subject: $"sermon/{payload.Id}/series", ScopeId: seriesId,
+                Action: "Listen"));
+        return announcements;
     }
 }

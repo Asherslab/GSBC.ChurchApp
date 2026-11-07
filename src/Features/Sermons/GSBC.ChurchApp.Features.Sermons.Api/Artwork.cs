@@ -37,18 +37,24 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
 
     public async Task<string?> LargestAsync(IReadOnlyList<string> urls, CancellationToken cancellationToken)
     {
+        List<(string Url, byte[] Bytes)> pictures = [];
+        foreach (string url in urls)
+            pictures.Add((url, await website.BytesAsync(url, cancellationToken)));
+        return Largest(pictures);
+    }
+
+    public static string? Largest(IEnumerable<(string Url, byte[] Bytes)> pictures)
+    {
         string? largest = null;
         long most = 0;
-        foreach (string url in urls)
+        foreach ((string url, byte[] bytes) in pictures)
         {
-            using SKCodec? codec = SKCodec.Create(new SKMemoryStream(await website.BytesAsync(url, cancellationToken)));
+            using SKCodec? codec = SKCodec.Create(new SKMemoryStream(bytes));
             if (codec is not null && (long)codec.Info.Width * codec.Info.Height > most)
                 (largest, most) = (url, (long)codec.Info.Width * codec.Info.Height);
         }
         return largest;
     }
-
-    public Task ReleaseAsync(string owner, CancellationToken cancellationToken) => references.UseAsync(owner, [], cancellationToken);
 
     private async Task<(ArtworkSource Source, byte[]? Bytes)> SourceAsync(string url, CancellationToken cancellationToken)
     {
@@ -62,8 +68,7 @@ internal sealed class Artwork(SermonsDbContext db, WebsiteClient website, IMedia
             {
                 bytes = fetched.Body;
                 string hash = HashOf(bytes);
-                if (known is null)
-                    known = db.ArtworkAddresses.Add(new ArtworkAddress { Url = url, Hash = hash }).Entity;
+                known ??= db.ArtworkAddresses.Add(new ArtworkAddress { Url = url, Hash = hash }).Entity;
                 (known.Hash, known.ETag, known.LastModified) = (hash, fetched.ETag, fetched.LastModified);
             }
             known!.FetchedAt = now;

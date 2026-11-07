@@ -12,7 +12,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
-using SkiaSharp;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
@@ -81,9 +80,9 @@ public abstract class SermonsHost : IAsyncLifetime
         await _database.DisposeAsync();
     }
 
-    protected static string Sample(string name) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Samples", name));
+    protected static string Sample(string name) => SampleFiles.Text(name);
 
-    protected void ServeTheSampleSite()
+    private void ServeTheSampleSite()
     {
         Website.ServeFeed(Sample("feed.rss"));
         Website.ServeText($"{FakeWebsite.BaseUrl}/podcasts/media", Sample("media.html"));
@@ -128,26 +127,7 @@ public abstract class SermonsHost : IAsyncLifetime
     protected async Task<List<Sermon>> CatalogueAsync() =>
         (await LiveRowsAsync(SermonsFeeds.Catalogue)).Select(row => SermonsPayloads.Decode<Sermon>(row.Payload)).ToList();
 
-    protected static byte[] ConstantBitrateMp3()
-    {
-        const int FrameBytes = 417;
-        byte[] audio = new byte[FrameBytes * 4];
-        for (int frame = 0; frame < 4; frame++)
-        {
-            audio[frame * FrameBytes] = 0xFF;
-            audio[frame * FrameBytes + 1] = 0xFB;
-            audio[frame * FrameBytes + 2] = 0x90;
-            audio[frame * FrameBytes + 3] = 0x00;
-        }
-        return audio;
-    }
+    private static byte[] ConstantBitrateMp3() => SampleFiles.ConstantBitrateMp3();
 
-    protected static byte[] Picture(int width, int height, uint colour = 0xFF2A3D5E)
-    {
-        using SKBitmap bitmap = new(width, height);
-        bitmap.Erase(new SKColor(colour));
-        using SKImage image = SKImage.FromBitmap(bitmap);
-        using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
-        return data.ToArray();
-    }
+    protected static byte[] Picture(int width, int height, uint colour = 0xFF2A3D5E) => SampleFiles.Picture(width, height, colour);
 }

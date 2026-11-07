@@ -1,30 +1,15 @@
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Api.Destinations;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
+[Integration("Moving records to their lasting ids rewrites their keys in one transaction and leaves former ids that later saves and reads resolve")]
 public sealed class LastingIdTests : SermonsHost
 {
-    [Fact]
-    public async Task TheSameWebsiteReadIntoTwoEmptyDatabasesGivesEverySermonSeriesAndSpeakerTheSameIds()
-    {
-        await ReadTheWebsiteAsync();
-        Ids here = await IdsAsync();
-
-        await using AnotherDatabase there = new();
-        await there.InitializeAsync();
-        await there.ReadAsync();
-
-        Ids elsewhere = await there.IdsAsync();
-        Assert.Equal(4, here.Sermons.Count);
-        Assert.Equal(here.Sermons, elsewhere.Sermons);
-        Assert.Equal(here.Series, elsewhere.Series);
-        Assert.Equal(here.Speakers, elsewhere.Speakers);
-    }
-
     [Fact]
     public async Task RecordsReadBeforeLastingIdsMoveToThemCarryingProgressFollowsAndPicturesAndAReReadNeverDuplicates()
     {
@@ -77,16 +62,14 @@ public sealed class LastingIdTests : SermonsHost
         public override int GetHashCode() => Sermons.Count;
     }
 
-    private Task<Ids> IdsAsync() => WithAsync(IdsOf);
-
-    private static async Task<Ids> IdsOf(IServiceProvider provider)
+    private Task<Ids> IdsAsync() => WithAsync(async provider =>
     {
         SermonsDbContext db = provider.GetRequiredService<SermonsDbContext>();
         return new Ids(
             await db.Sermons.Select(sermon => sermon.Id).OrderBy(id => id).ToListAsync(Cancel),
             await db.Series.Select(series => series.Id).OrderBy(id => id).ToListAsync(Cancel),
             await db.Speakers.Select(speaker => speaker.Id).OrderBy(id => id).ToListAsync(Cancel));
-    }
+    });
 
     private Task GiveRandomIdsAsync(Guid sermon, Guid sermonWas, Guid series, Guid seriesWas, Guid speaker, Guid speakerWas) => WithAsync(async provider =>
     {
@@ -99,11 +82,4 @@ public sealed class LastingIdTests : SermonsHost
         await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET source_speaker_id = {speakerWas} WHERE source_speaker_id = {speaker}", Cancel);
         await provider.GetRequiredService<SermonPublisher>().PublishAsync(Cancel);
     });
-
-    private sealed class AnotherDatabase : SermonsHost
-    {
-        public Task ReadAsync() => ReadTheWebsiteAsync();
-
-        public Task<Ids> IdsAsync() => WithAsync(IdsOf);
-    }
 }

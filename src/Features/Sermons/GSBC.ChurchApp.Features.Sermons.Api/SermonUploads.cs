@@ -15,7 +15,7 @@ internal sealed partial class SermonUploads(
     SermonsDbContext db, IBlobStore blobs, IMediaReferences media, Speakers speakers, SermonPublisher publisher, PodcastFeedWriter podcast,
     SermonAnnouncer announcer, TimeProvider time)
 {
-    public static readonly TimeSpan UploadWindow = TimeSpan.FromHours(2);
+    private static readonly TimeSpan UploadWindow = TimeSpan.FromHours(2);
     private const int HeadBytes = 64 * 1024;
 
     public async Task<AudioUploadTicket> BeginAsync(AudioUploadRequest request, CancellationToken cancellationToken)
@@ -120,9 +120,12 @@ internal sealed partial class SermonUploads(
         return tag == 0 ? Mp3Duration.Seconds(head.AsSpan(0, read), bytes) ?? Math.Max(0, request.DurationSeconds) : Math.Max(0, request.DurationSeconds);
     }
 
-    private async Task RequireUploadsAsync(CancellationToken cancellationToken)
+    private async Task RequireUploadsAsync(CancellationToken cancellationToken) =>
+        RequireUploads(await SourceStates.GetAsync(db, cancellationToken));
+
+    internal static void RequireUploads(SourceState state)
     {
-        if ((await SourceStates.GetAsync(db, cancellationToken)).Source != SermonSources.Uploads)
+        if (state.Source != SermonSources.Uploads)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Sermons come from the website at the moment. Switch Where new sermons come from to uploads first."));
     }
 

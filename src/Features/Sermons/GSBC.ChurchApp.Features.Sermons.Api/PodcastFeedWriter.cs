@@ -23,8 +23,8 @@ public sealed class PodcastOptions
 
 internal sealed class PodcastFeedWriter(SermonsDbContext db, IBlobStore blobs, IOptions<PodcastOptions> options)
 {
-    public const string Key = "podcast/feed.xml";
-    public const string CacheControl = "public, max-age=300";
+    private const string Key = "podcast/feed.xml";
+    private const string CacheControl = "public, max-age=300";
     private static readonly XNamespace Itunes = "http://www.itunes.com/dtds/podcast-1.0.dtd";
     private static readonly XNamespace Atom = "http://www.w3.org/2005/Atom";
 
@@ -37,20 +37,20 @@ internal sealed class PodcastFeedWriter(SermonsDbContext db, IBlobStore blobs, I
         Dictionary<Guid, SpeakerRecord> speakers = await db.Speakers.AsNoTracking().ToDictionaryAsync(speaker => speaker.Id, cancellationToken);
         Dictionary<Guid, SeriesRecord> series = await db.Series.AsNoTracking().ToDictionaryAsync(record => record.Id, cancellationToken);
 
-        XDocument feed = Feed(sermons, series, speakers);
+        XDocument feed = Feed(options.Value, Url, sermons, series, speakers);
         byte[] xml = Encoding.UTF8.GetBytes(feed.Declaration + Environment.NewLine + feed.Root);
         await blobs.PutAsync(BlobBucket.Public, Key, new MemoryStream(xml), new BlobHeaders("application/rss+xml; charset=utf-8", CacheControl), cancellationToken);
     }
 
-    internal XDocument Feed(IReadOnlyList<SermonRecord> sermons, IReadOnlyDictionary<Guid, SeriesRecord> series, IReadOnlyDictionary<Guid, SpeakerRecord> speakers)
+    internal static XDocument Feed(
+        PodcastOptions podcast, string url, IReadOnlyList<SermonRecord> sermons, IReadOnlyDictionary<Guid, SeriesRecord> series, IReadOnlyDictionary<Guid, SpeakerRecord> speakers)
     {
-        PodcastOptions podcast = options.Value;
         XElement channel = new("channel",
             new XElement("title", podcast.Title),
             new XElement("link", podcast.Link),
             new XElement("description", podcast.Description),
             new XElement("language", "en-au"),
-            new XElement(Atom + "link", new XAttribute("href", Url), new XAttribute("rel", "self"), new XAttribute("type", "application/rss+xml")),
+            new XElement(Atom + "link", new XAttribute("href", url), new XAttribute("rel", "self"), new XAttribute("type", "application/rss+xml")),
             new XElement(Itunes + "author", podcast.Owner),
             new XElement(Itunes + "summary", podcast.Description),
             new XElement(Itunes + "owner", new XElement(Itunes + "name", podcast.Owner), podcast.Email is { } email ? new XElement(Itunes + "email", email) : null),
