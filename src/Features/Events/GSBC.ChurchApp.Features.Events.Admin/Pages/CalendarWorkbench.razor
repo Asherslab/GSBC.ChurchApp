@@ -47,6 +47,8 @@
 
     [SupplyParameterFromQuery(Name = "show")] public string? Show { get; set; }
     [SupplyParameterFromQuery(Name = "event")] public string? EventId { get; set; }
+    [SupplyParameterFromQuery(Name = "settings")] public string? SettingsId { get; set; }
+    [SupplyParameterFromQuery(Name = "break")] public string? BreakId { get; set; }
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
@@ -63,7 +65,7 @@
             "breaks" => Middle.Breaks,
             _ => _middle,
         };
-        _readUrl = EventId is null;
+        _readUrl = EventId is null && SettingsId is null && BreakId is null;
     }
 
     private async Task<WorkbenchView> LoadAsync()
@@ -101,6 +103,13 @@
             ?? view.Needs.Items.Select(item => item.Occurrence).FirstOrDefault(occurrence => occurrence.Id == EventId);
         if (found is not null)
             _chosen = new ChosenEvent(EditTarget.Of(found), found.Id);
+        else if (view.Desk.CanManage && view.Desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == SettingsId || calendar.Settings.Calendar.Slug == SettingsId) is { } calendar)
+            _chosen = new ChosenCalendar(calendar);
+        else if (view.Desk.CanManage && view.Breaks.Breaks.FirstOrDefault(entry => entry.Id == BreakId) is { } chosenBreak)
+        {
+            _middle = Middle.Breaks;
+            _chosen = new ChosenBreak(chosenBreak);
+        }
     }
 
     private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;

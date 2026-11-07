@@ -229,6 +229,7 @@ else
                 <PlaceEditor Place="Fields.Place" PlaceChanged="place => Fields.Place = place" Used="_placesUsed" Missing="@(draft.Needs.Contains(EventFieldKeys.Place))" />
                 <ContactsEditor Contacts="Fields.Contacts" />
                 <div class="field">
+                    <span class="field__label" aria-hidden="true">About</span>
                     <RichTextEditor Label="About" Value="@(Fields.Description ?? new RichText())" ValueChanged="text => Fields.Description = text" Rows="5"
                                     Placeholder="What it is, who it's for, what to bring" />
                 </div>
