@@ -6,7 +6,6 @@ using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
-using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
@@ -15,7 +14,7 @@ using Npgsql;
 namespace GSBC.ChurchApp.Features.Configuration.Api;
 
 internal sealed class PlacementEditor(
-    ConfigurationDbContext db, SurfaceCatalog surfaces, PermissionCatalog permissions, IAccessEvaluator access, IMediaReferences media, TimeProvider time)
+    ConfigurationDbContext db, SurfaceCatalog surfaces, PlacementRules rules, IAccessEvaluator access, IMediaReferences media, TimeProvider time)
 {
     public const string EventLayerHistory = "event-layer";
     private const int HistoryBatches = 50;
@@ -90,7 +89,7 @@ internal sealed class PlacementEditor(
                 Surface surface = surfaces.ByKey.TryGetValue(target.Surface, out Surface? known) && known.Area.Key == area.Key
                     ? known
                     : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"'{target.Surface}' isn't in this version of the app any more."));
-                PlacementState after = await ValidatedAsync(surface, target, cancellationToken);
+                PlacementState after = await rules.ValidatedAsync(surface, target, cancellationToken);
                 record ??= Create(area, scopeId, surface, change.PlacementId, existing);
                 changes.Add(new Change(record, record.Revision == 0 ? null : PlacementState.Of(record), after));
             }
@@ -105,56 +104,21 @@ internal sealed class PlacementEditor(
     private async Task<string> NothingToChangeAsync(List<ChangeRecord> batch, CancellationToken cancellationToken)
     {
         List<string> titles = batch.Select(change => surfaces.Areas.GetValueOrDefault(change.Area)?.Title ?? change.Area).Distinct().ToList();
-        string places = "the " + string.Join(" and ", titles.Select((title, index) => index == 0 ? title : title.ToLowerInvariant()));
-        (string looks, string did) = titles.Count == 1 ? ("looks", "it did") : ("look", "they did");
-        if (batch[0].DraftName is { } name)
-            return $"Nothing to change: {places} already {looks} as {did} before “{name}” was published.";
         Guid? original = batch[0].RollsBack;
-        string? published = original is null ? null : await db.Changes.AsNoTracking()
+        string? undone = batch[0].DraftName is not null || original is null ? null : await db.Changes.AsNoTracking()
             .Where(change => change.BatchId == original).Select(change => change.DraftName).FirstOrDefaultAsync(cancellationToken);
-        return published is null
-            ? $"Nothing to change: {places} already {looks} like that."
-            : $"Nothing to change: {places} already {looks} as “{published}” left {(titles.Count == 1 ? "it" : "them")}.";
+        return PublishHistory.NothingToChange(titles, batch[0].DraftName, undone);
     }
 
     public async Task<(SurfaceArea Area, string? ScopeId)> AuthoriseAsync(
         ClaimsPrincipal caller, string areaKey, string? requestedScope, CancellationToken cancellationToken, bool publishing = false)
     {
-        if (!surfaces.Areas.TryGetValue(areaKey, out SurfaceArea? area))
-            throw new RpcException(new Status(StatusCode.NotFound, $"There's no area '{areaKey}' to arrange."));
-
-        string? scopeId = string.IsNullOrWhiteSpace(requestedScope) ? null : requestedScope.Trim();
-        if (area.ScopeKind == ScopeKind.Global && scopeId is not null)
-            throw Invalid($"{area.Title} is arranged once for everyone, so it doesn't take a scope.");
-        if (area.ScopeKind != ScopeKind.Global && scopeId is null)
-            throw Invalid($"Choose which {area.ScopeKind.Name} to arrange.");
-
-        Permission needed = publishing ? area.PublishPermission : area.EditPermission;
+        (SurfaceArea area, string? scopeId, Permission needed) = rules.Required(areaKey, requestedScope, publishing);
         if (!await access.IsAllowedAsync(caller, needed.Node, scopeId, cancellationToken))
             throw new RpcException(new Status(StatusCode.PermissionDenied,
                 publishing ? $"You can't put changes to {area.Title} out to everyone. Ask someone who can publish it." : $"You can't arrange {area.Title}."));
 
         return (area, scopeId);
-    }
-
-    public async Task<PlacementState> ValidatedAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
-    {
-        PlacementState claimed = Validated(surface, state);
-        return MediaHolders(surface).Count == 0 ? claimed : Validated(surface, await WithCurrentMediaAsync(surface, claimed, cancellationToken));
-    }
-
-    private async Task<PlacementState> WithCurrentMediaAsync(Surface surface, PlacementState state, CancellationToken cancellationToken)
-    {
-        List<(Setting Setting, IHoldsMedia Holder)> holders = MediaHolders(surface);
-        List<MediaRef> refs = holders.SelectMany(field => field.Holder.MediaIn(state.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
-        Dictionary<string, MediaRef> verified = (await media.VerifyAsync(refs, cancellationToken)).DistinctBy(item => item.Id).ToDictionary(item => item.Id);
-        SortedDictionary<string, string> values = new(state.Values);
-        foreach ((Setting setting, IHoldsMedia holder) in holders)
-        {
-            if (values.TryGetValue(setting.Key, out string? text))
-                values[setting.Key] = holder.WithMedia(text, verified);
-        }
-        return state with { Values = values };
     }
 
     public async Task RefreshMediaAsync(Guid placementId, CancellationToken cancellationToken)
@@ -164,7 +128,7 @@ internal sealed class PlacementEditor(
             return;
 
         PlacementState stored = PlacementState.Of(record);
-        PlacementState current = await WithCurrentMediaAsync(surface, stored, cancellationToken);
+        PlacementState current = await rules.WithCurrentMediaAsync(surface, stored, cancellationToken);
         if (PlacementState.Same(stored, current))
             return;
 
@@ -180,43 +144,9 @@ internal sealed class PlacementEditor(
         return owner.StartsWith(MediaOwnerPrefix, StringComparison.Ordinal) && Guid.TryParse(owner[MediaOwnerPrefix.Length..], out placementId);
     }
 
-    private static List<(Setting Setting, IHoldsMedia Holder)> MediaHolders(Surface surface) =>
-        surface.Settings.OfType<IHoldsMedia>().Select(holder => ((Setting)holder, holder)).ToList();
-
-    public IReadOnlyList<MediaRef> MediaOf(string surfaceKey, PlacementState? state) =>
-        state is null || !surfaces.ByKey.TryGetValue(surfaceKey, out Surface? surface)
-            ? []
-            : MediaHolders(surface).SelectMany(field => field.Holder.MediaIn(state.Values.GetValueOrDefault(field.Setting.Key, ""))).ToList();
-
-    private bool HoldsMedia(string surfaceKey) =>
-        surfaces.ByKey.TryGetValue(surfaceKey, out Surface? surface) && MediaHolders(surface).Count > 0;
-
-    private PlacementState Validated(Surface surface, PlacementState state)
-    {
-        state = Normalised(surface, state);
-        List<string> problems = [.. surface.ProblemsWith(state.Values)];
-        if (!Audience.TryParse(state.Audience, out Audience? audience))
-            problems.Add($"'{state.Audience}' isn't an audience.");
-        else if (audience is { Node: { } node } && !permissions.ByNode.ContainsKey(node))
-            problems.Add($"No permission '{node}' exists to choose an audience by.");
-        if (state is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
-            problems.Add($"'{surface.Title}' has to end after it starts.");
-
-        return problems.Count == 0 ? state with { Audience = audience!.Text } : throw Invalid(string.Join(" ", problems));
-    }
-
-    private static PlacementState Normalised(Surface surface, PlacementState state)
-    {
-        SortedDictionary<string, string> values = new(state.Values);
-        foreach (Setting setting in surface.Settings.Where(setting => setting is INormalises && values.ContainsKey(setting.Key)))
-            values[setting.Key] = ((INormalises)setting).Normalise(values[setting.Key]);
-        return state with { Values = values };
-    }
-
     public PlacementRecord Create(SurfaceArea area, string? scopeId, Surface surface, Guid id, List<PlacementRecord> existing)
     {
-        if (!surface.Repeatable && existing.Any(placement => placement.Surface == surface.Key))
-            throw Conflict(surface.Title);
+        PlacementRules.RefuseSecondCopy(surface, existing.Select(placement => placement.Surface));
 
         PlacementRecord record = new()
         {
@@ -285,8 +215,8 @@ internal sealed class PlacementEditor(
             throw Conflict("it");
         }
 
-        foreach ((PlacementRecord record, _, PlacementState? after) in changes.Where(change => HoldsMedia(change.Record.Surface)))
-            await media.UseAsync(MediaOwner(record.Id), MediaOf(record.Surface, after), cancellationToken);
+        foreach ((PlacementRecord record, _, PlacementState? after) in changes.Where(change => rules.HoldsMedia(change.Record.Surface)))
+            await media.UseAsync(MediaOwner(record.Id), rules.MediaOf(record.Surface, after), cancellationToken);
         return batchId;
     }
 
@@ -294,7 +224,7 @@ internal sealed class PlacementEditor(
 
     private static string MediaOwner(Guid placementId) => $"{MediaOwnerPrefix}{placementId}";
 
-    public static FeedChangeRecord FeedChangeOf(PlacementRecord record, bool deleted) => new()
+    private static FeedChangeRecord FeedChangeOf(PlacementRecord record, bool deleted) => new()
     {
         Feed = ConfigurationFeeds.Placements,
         RecordId = record.Id.ToString(),
@@ -323,12 +253,7 @@ internal sealed class PlacementEditor(
     public IQueryable<PlacementRecord> InArea(SurfaceArea area, string? scopeId) =>
         db.Placements.Where(placement => placement.Area == area.Key && placement.ScopeId == scopeId);
 
-    public Surface SurfaceIn(SurfaceArea area, string key) =>
-        surfaces.ByKey.TryGetValue(key, out Surface? surface) && surface.Area.Key == area.Key
-            ? surface
-            : throw Invalid($"'{key}' can't be placed in {area.Title}.");
-
-    public static Placement ToMessage(PlacementRecord record)
+    private static Placement ToMessage(PlacementRecord record)
     {
         Placement message = PlacementState.Of(record).ToMessage(record.Id, record.Area, record.ScopeId);
         message.Revision = record.Revision;

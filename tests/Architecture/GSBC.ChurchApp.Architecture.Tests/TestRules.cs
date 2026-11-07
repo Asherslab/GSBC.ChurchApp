@@ -14,16 +14,6 @@ public sealed partial class TestRules
         ("tests/Architecture/GSBC.ChurchApp.Architecture.Tests/TestRules.cs", "It names what the rule forbids"),
     ];
 
-    private static readonly HashSet<string> NotYetSorted =
-    [
-        "tests/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Api.Tests/DiagnosticsInboxTests.cs",
-        "tests/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Api.Tests/UsageTests.cs",
-        "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/DraftEditorTests.cs",
-        "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/HubTileTests.cs",
-        "tests/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Api.Tests/PlacementEditorTests.cs",
-        "tests/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api.Tests/NotificationsTests.cs",
-    ];
-
     [Fact]
     public void TestsRunTheSameEveryTime()
     {
@@ -43,7 +33,7 @@ public sealed partial class TestRules
         {
             Dictionary<string, string> texts = project.ToDictionary(path => path, path => File.ReadAllText(Path.Combine(RepoRoot.Path, path)));
             HashSet<string> reachesStorage = ReachesStorage(texts);
-            foreach ((string path, string text) in texts.Where(file => TestMethod().IsMatch(file.Value) && !NotYetSorted.Contains(file.Key)))
+            foreach ((string path, string text) in texts.Where(file => TestMethod().IsMatch(file.Value)))
             {
                 bool saysWhy = IntegrationReason().Match(text) is { Success: true } reason && reason.Groups[1].Value.Trim().Length > 0;
                 if (reachesStorage.Contains(path) && !saysWhy)

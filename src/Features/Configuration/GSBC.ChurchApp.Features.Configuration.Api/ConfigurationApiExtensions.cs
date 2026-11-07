@@ -18,6 +18,8 @@ public static class ConfigurationApiExtensions
     public static IServiceCollection AddConfigurationApi(this IServiceCollection services)
     {
         services.AddConfigurationData();
+        services.AddSingleton<DraftRules>();
+        services.AddScoped<PlacementRules>();
         services.AddScoped<PlacementEditor>();
         services.AddScoped<DraftEditor>();
         services.AddScoped<IMediaHolder, PlacementMediaHolder>();

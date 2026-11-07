@@ -50,8 +50,7 @@ test together, keeps the project map as it is, and the trait gives the fast run 
 
 `TestRules` checks it: a test class that reaches `TestDatabase` or `TestBuckets` (directly, or through
 a host or helper in its project) must carry `[Integration]` with a reason, and a class that carries it
-must actually reach storage. Classes written before the rule are listed in its `NotYetSorted` until
-they're sorted; the list only shrinks.
+must actually reach storage.
 
 ## What a test gets
 

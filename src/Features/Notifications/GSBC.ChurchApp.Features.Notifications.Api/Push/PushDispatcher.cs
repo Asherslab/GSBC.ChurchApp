@@ -6,11 +6,8 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Push;
 
 internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport transport, ILogger<PushDispatcher> logger)
 {
-    public const string InboxLink = "/notifications";
     private const int BatchSize = 100;
     private static readonly TimeSpan Lease = TimeSpan.FromMinutes(2);
-    private static readonly TimeSpan GiveUpAfter = TimeSpan.FromHours(1);
-    private static readonly TimeSpan LongestBackoff = TimeSpan.FromMinutes(16);
 
     public async Task<int> DeliverDueAsync(DateTime now, CancellationToken cancellationToken)
     {
@@ -44,7 +41,7 @@ internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport t
 
             PushResult result = await transport.SendAsync(
                 new PushTarget(device.Platform, device.AppId, device.Environment, device.Token),
-                Message(deliveries, device.UserId is { } userId ? unread.GetValueOrDefault(userId) : null),
+                PushRules.Message(deliveries, device.UserId is { } userId ? unread.GetValueOrDefault(userId) : null),
                 cancellationToken);
             Record(deliveries, result, now);
             if (result.Outcome == PushOutcome.DeadToken)
@@ -58,52 +55,12 @@ internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport t
         return due.Count;
     }
 
-    private static PushMessage Message(List<Delivery> deliveries, int? badge)
-    {
-        Delivery first = deliveries[0];
-        if (first.Kind == DeliveryKind.Background)
-            return new PushMessage(null, null, null, null, null, null, null, Urgent: false, Background: true);
-
-        NotificationRecord latest = deliveries.MaxBy(delivery => delivery.Id)!.Notification!;
-        string thread = latest.ScopeId is null ? latest.Kind : $"{latest.Kind}|{latest.ScopeId}";
-        if (deliveries.Count > 1)
-        {
-            return new PushMessage(latest.Area, $"{deliveries.Count} new · {latest.Title}", InboxLink, null, thread, thread, badge,
-                Urgent: false, Background: false);
-        }
-
-        string title = latest.Test ? $"Test · {latest.Title}" : latest.Title;
-        return new PushMessage(title, latest.Body, latest.Link ?? InboxLink, latest.Id.ToString(), thread, latest.Subject,
-            badge, latest.Urgent, Background: false);
-    }
-
     private void Record(List<Delivery> deliveries, PushResult result, DateTime now)
     {
-        foreach (Delivery delivery in deliveries)
-        {
-            delivery.LeaseUntil = null;
-            delivery.LastError = result.Error;
-            switch (result.Outcome)
-            {
-                case PushOutcome.Sent:
-                    delivery.SentAt = now;
-                    break;
-                case PushOutcome.Retry when now - delivery.CreatedAt < GiveUpAfter:
-                    delivery.Attempts++;
-                    delivery.DueAt = now + Backoff(delivery.Attempts);
-                    break;
-                default:
-                    delivery.GaveUpAt = now;
-                    break;
-            }
-        }
-
+        PushRules.Record(deliveries, result, now);
         if (result.Outcome is PushOutcome.Failed)
             logger.LogWarning("A push couldn't be sent: {Error}", result.Error);
     }
-
-    private static TimeSpan Backoff(int attempts) =>
-        TimeSpan.FromMinutes(Math.Min(Math.Pow(2, attempts - 1), LongestBackoff.TotalMinutes));
 
     private async Task<Dictionary<Guid, int>> UnreadAsync(List<Delivery> due, CancellationToken cancellationToken)
     {
