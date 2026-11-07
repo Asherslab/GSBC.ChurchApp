@@ -37,8 +37,7 @@ internal sealed partial class SermonUploads(
             throw Invalid("Upload the audio first.");
         if (await db.Sermons.AnyAsync(sermon => sermon.AudioUrl == blobs.PublicUrlOf(request.AudioKey).ToString(), cancellationToken))
             throw Invalid("That audio is already a sermon.");
-        if (await blobs.FindAsync(BlobBucket.Public, request.AudioKey, cancellationToken) is not { Bytes: > 0 } audio)
-            throw Invalid("The audio hasn't finished uploading. Try again in a moment.");
+        BlobInfo audio = Arrived(await blobs.FindAsync(BlobBucket.Public, request.AudioKey, cancellationToken));
         if (request.Title.Trim() is not { Length: > 0 and <= SermonLibraryService.TitleLimit } title)
             throw Invalid($"Give it a title of up to {SermonLibraryService.TitleLimit} characters.");
         if (request.PreachedOn == default)
@@ -82,6 +81,9 @@ internal sealed partial class SermonUploads(
         await announcer.AnnounceAsync(cancellationToken);
         return sermon;
     }
+
+    internal static BlobInfo Arrived(BlobInfo? audio) =>
+        audio is { Bytes: > 0 } ? audio : throw Invalid("The audio hasn't finished uploading. Try again in a moment.");
 
     private async Task<SpeakerRecord> SpeakerAsync(SermonUpload request, CancellationToken cancellationToken)
     {

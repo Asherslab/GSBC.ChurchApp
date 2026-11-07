@@ -153,12 +153,9 @@ internal sealed class SermonLibraryService(
             sermon.Hidden = hidden;
     }
 
-    private async Task RequireOursAsync(string what, CancellationToken cancellationToken) =>
-        RequireOurs(await SourceStates.GetAsync(db, cancellationToken), what);
-
-    internal static void RequireOurs(SourceState state, string what)
+    internal static void MayMake(string source, bool isNew, string what)
     {
-        if (state.Source != SermonSources.Uploads)
+        if (isNew && source != SermonSources.Uploads)
             throw new RpcException(new Status(StatusCode.FailedPrecondition,
                 $"While sermons come from the website, {what} come from it too. Switch Where new sermons come from to uploads to add them here."));
     }
@@ -193,9 +190,9 @@ internal sealed class SermonLibraryService(
         SeriesRecord? series = request.Id.Length == 0 ? null : await FindSeriesAsync(request.Id, cancellationToken);
         if (await db.Series.AnyAsync(other => other.Id != (series == null ? Guid.Empty : series.Id) && other.Name.ToLower() == name.ToLower(), cancellationToken))
             throw Invalid($"There's already a series called “{name}”.");
+        MayMake(await SourceStates.SourceAsync(db, cancellationToken), series is null, "series");
         if (series is null)
         {
-            await RequireOursAsync("series", cancellationToken);
             series = new SeriesRecord { Id = Guid.CreateVersion7(), Name = name, CreatedAt = time.GetUtcNow().UtcDateTime };
             db.Series.Add(series);
         }
@@ -232,11 +229,10 @@ internal sealed class SermonLibraryService(
 
         if (request.Name.Trim() is not { Length: > 0 and <= NameLimit } name)
             throw Invalid($"Give the speaker a name of up to {NameLimit} characters.");
-        if (db.Entry(speaker).State == EntityState.Detached)
-        {
-            await RequireOursAsync("speakers", cancellationToken);
+        bool isNew = db.Entry(speaker).State == EntityState.Detached;
+        MayMake(await SourceStates.SourceAsync(db, cancellationToken), isNew, "speakers");
+        if (isNew)
             db.Speakers.Add(speaker);
-        }
         speaker.Name = name;
         speaker.ChosenPhoto = await VerifiedAsync(request.PhotoChosen ? request.Photo : null, Artwork.ChosenPhotoOwner(speaker.Id), cancellationToken);
 

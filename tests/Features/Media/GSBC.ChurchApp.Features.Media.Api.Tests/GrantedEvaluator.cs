@@ -10,6 +10,8 @@ internal sealed class GrantedEvaluator : IAccessEvaluator
 
     public void Grant(ClaimsPrincipal user, string node, string? scope) => _grants.Add((IdOf(user), node, scope));
 
+    public void Revoke(ClaimsPrincipal user, string node, string? scope) => _grants.Remove((IdOf(user), node, scope));
+
     public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
         ValueTask.FromResult(_grants.Contains((IdOf(user), node, scopeId)));
 

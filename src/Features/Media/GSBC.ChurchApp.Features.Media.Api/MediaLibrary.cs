@@ -164,10 +164,8 @@ internal sealed class MediaLibrary(
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
         if (!item.KeepsOriginal)
             return await InfoOfAsync(item, cancellationToken);
-        CheckOriginalCanGo(await db.Renditions.AsNoTracking().Where(rendition => rendition.MediaId == mediaId).ToListAsync(cancellationToken));
-        if (!await holders.CanAllRefreshAsync(mediaId, cancellationToken))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition,
-                "Somewhere that uses it, such as a draft that isn't published yet, can't switch to a smaller size by itself. Publish or close the draft first."));
+        CheckOriginalCanGo(await db.Renditions.AsNoTracking().Where(rendition => rendition.MediaId == mediaId).ToListAsync(cancellationToken),
+            await holders.CanAllRefreshAsync(mediaId, cancellationToken));
 
         item.OriginalRemovedAt = Now;
         Mark(item.Id);
@@ -177,12 +175,15 @@ internal sealed class MediaLibrary(
         return await InfoOfAsync(item, cancellationToken);
     }
 
-    internal static void CheckOriginalCanGo(IReadOnlyCollection<MediaRendition> sizes)
+    internal static void CheckOriginalCanGo(IReadOnlyCollection<MediaRendition> sizes, bool everyUseCanSwitch)
     {
         if (sizes.Count == 0)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already small, so the original is the only copy. There's nothing smaller to keep in its place."));
         if (!sizes.Any(size => size.Width >= MediaSizes.ForPhonesWidth))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "The app shows this original on full-width screens, so it stays."));
+        if (!everyUseCanSwitch)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition,
+                "Somewhere that uses it, such as a draft that isn't published yet, can't switch to a smaller size by itself. Publish or close the draft first."));
     }
 
     private async Task DeleteUnlistedAsync(bool isPrivate, IEnumerable<string> keys, CancellationToken cancellationToken)
@@ -196,11 +197,6 @@ internal sealed class MediaLibrary(
                 await blobs.DeleteAsync(isPrivate ? BlobBucket.Private : BlobBucket.Public, key, cancellationToken);
         }
     }
-
-    private Task<bool> InSystemFolderAsync(MediaItem item, CancellationToken cancellationToken) =>
-        item.FolderId is { } folderId
-            ? db.Folders.AnyAsync(folder => folder.Id == folderId && folder.SystemArea != null, cancellationToken)
-            : Task.FromResult(false);
 
     public async Task<MediaMatches> FindByHashAsync(ClaimsPrincipal user, FindByHashRequest request, CancellationToken cancellationToken)
     {
@@ -385,12 +381,8 @@ internal sealed class MediaLibrary(
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
 
-        if (await InSystemFolderAsync(item, cancellationToken))
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be deleted here."));
-
-        int uses = await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken);
-        if (uses > 0)
-            throw InUse(uses);
+        HashSet<Guid> systemFolders = [.. await db.Folders.AsNoTracking().Where(folder => folder.SystemArea != null).Select(folder => folder.Id).ToListAsync(cancellationToken)];
+        CheckDeletable(item, systemFolders, await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken));
 
         List<string> keys = [item.Key, .. await db.Renditions.Where(rendition => rendition.MediaId == mediaId).Select(rendition => rendition.Key).ToListAsync(cancellationToken)];
         db.Items.Remove(item);
@@ -405,6 +397,14 @@ internal sealed class MediaLibrary(
         }
 
         await DeleteUnlistedAsync(item.IsPrivate, keys, cancellationToken);
+    }
+
+    internal static void CheckDeletable(MediaItem item, IReadOnlySet<Guid> systemFolders, int uses)
+    {
+        if (item.FolderId is { } folder && systemFolders.Contains(folder))
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Files the app keeps for itself can't be deleted here."));
+        if (uses > 0)
+            throw InUse(uses);
     }
 
     private static RpcException InUse(int uses) =>
