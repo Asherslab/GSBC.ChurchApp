@@ -12,9 +12,9 @@ internal sealed class EventsBook
     private readonly ILookup<Guid, BreakRecord> _breaks;
     private readonly ILookup<Guid, ShowingRecord> _showings;
 
-    private EventsBook(
-        List<CalendarRecord> calendars, List<EventRecord> events, List<RegularEventRecord> regularEvents, List<SpecialRecord> specials,
-        List<BreakRecord> breaks, List<RegularEventBreak> links, List<ShowingRecord> showings)
+    public EventsBook(
+        IReadOnlyList<CalendarRecord> calendars, IReadOnlyList<EventRecord> events, IReadOnlyList<RegularEventRecord> regularEvents,
+        IReadOnlyList<SpecialRecord> specials, IReadOnlyList<BreakRecord> breaks, IReadOnlyList<RegularEventBreak> links, IReadOnlyList<ShowingRecord> showings)
     {
         Calendars = calendars.ToDictionary(calendar => calendar.Id);
         Events = events;

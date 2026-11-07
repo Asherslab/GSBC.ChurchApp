@@ -310,9 +310,12 @@ commit as the code (the owner approved all four on 2026-11-08):
 - **Sample calendar** in Development only (made-up names): Sunday services with an Anniversary special and a
   Christmas break, Whole church, Kids (with a camp weekend off), Kids team, Outreach every second Saturday needing a
   place, Church members.
-- **Tests:** `Events.Api.Tests` (patterns, breaks, specials, the window, a private calendar never in the public feed,
-  contact details, per-calendar permission checks, Ask to publish, this date only vs every date) and
-  `RowAudienceFeedTests` in Platform.Api.Tests.
+- **Tests, split by whether they need storage:** `Events.Unit.Tests` touches no database, container or network
+  (patterns, breaks, specials, the window, which feed and audience each row gets, contact details, audiences and
+  widening; `EventsBook` is built from plain lists and `EventsPublisher.Rows` is pure). `Events.Api.Tests` runs against
+  Postgres only for rules that are about storage: publishing deletes, per-calendar permission checks, Ask to publish,
+  this date only vs every date, adding a calendar and *Tell people*, and showing on another calendar. Sync's per-row
+  audiences are `RowAudienceFeedTests` in Platform.Api.Tests (Postgres). The split follows `testing.md` once it lands.
 
 **Not built yet:** the phone's and admin panel's screens; iCal in and out and reminders (decisions 8, 24, 26, 27);
 the digest (decision 18).

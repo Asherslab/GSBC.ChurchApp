@@ -150,6 +150,7 @@
   </Folder>
   <Folder Name="/tests/Features/Events/">
     <Project Path="tests/Features/Events/GSBC.ChurchApp.Features.Events.Api.Tests/GSBC.ChurchApp.Features.Events.Api.Tests.csproj" />
+    <Project Path="tests/Features/Events/GSBC.ChurchApp.Features.Events.Unit.Tests/GSBC.ChurchApp.Features.Events.Unit.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Sermons/">
     <Project Path="tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/GSBC.ChurchApp.Features.Sermons.Api.Tests.csproj" />
