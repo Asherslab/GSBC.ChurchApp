@@ -24,6 +24,7 @@ public static class EventsClientExtensions
             .AddSingleton<CalendarDiary>()
             .AddSingleton<CalendarEditing>()
             .AddSingleton<CalendarSubscriptions>()
+            .AddSingleton<WideningWords>()
             .AddHubTile<ComingUpTile>(EventsTiles.Week)
             .AddCalendarLinkSeam();
 

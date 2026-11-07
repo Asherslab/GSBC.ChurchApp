@@ -5,12 +5,12 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 
 public interface IYourCalendarLink
 {
-    Task<string?> SecretAsync();
+    Task<string?> PersonalKeyAsync();
 }
 
 public sealed class NoCalendarLinkYet : IYourCalendarLink
 {
-    public Task<string?> SecretAsync() => Task.FromResult<string?>(null);
+    public Task<string?> PersonalKeyAsync() => Task.FromResult<string?>(null);
 }
 
 public sealed class CalendarSubscriptions(ChannelBase channel, IYourCalendarLink yours)
@@ -25,11 +25,11 @@ public sealed class CalendarSubscriptions(ChannelBase channel, IYourCalendarLink
 
     public static string PublicPath => $"/calendars/{CalendarLinks.Public}.ics";
 
-    public static string MinePath(string secret) => $"/calendars/{CalendarLinks.Mine}/{secret}.ics";
+    public static string MinePath(string key) => $"/calendars/{CalendarLinks.Mine}/{key}.ics";
 
-    public static string MinePath(string secret, CalendarInfo calendar) => $"/calendars/{CalendarLinks.Mine}/{secret}/{calendar.Slug}.ics";
+    public static string MinePath(string key, CalendarInfo calendar) => $"/calendars/{CalendarLinks.Mine}/{key}/{calendar.Slug}.ics";
 
-    public Task<string?> SecretAsync() => yours.SecretAsync();
+    public Task<string?> PersonalKeyAsync() => yours.PersonalKeyAsync();
 
     public static bool IsForEveryone(CalendarInfo calendar) => calendar.Audience.Length == 0 || calendar.Audience == GSBC.ChurchApp.Platform.Contracts.Configuration.Audience.Everyone.Text;
 }

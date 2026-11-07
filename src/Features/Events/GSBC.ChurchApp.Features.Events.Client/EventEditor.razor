@@ -264,6 +264,7 @@ else
                 </div>
                 @if (!(draft.IsDateOfRegular && draft.Scope == DraftScope.ThisDate))
                 {
+                    <ShownOnEditor Draft="draft" Desk="_desk" />
                     <div class="field">
                         <span class="field__label">Shown in the app</span>
                         @if (MustAsk)

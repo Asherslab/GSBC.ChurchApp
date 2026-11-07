@@ -3,6 +3,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject WideningWords Widening
 
 <PageTitle>Calendar · Good Shepherd admin</PageTitle>
 
@@ -30,7 +31,7 @@
     private sealed record ChosenCalendar(DeskCalendar? Calendar) : Chosen;
     private sealed record ChosenBreak(BreakInfo? Break) : Chosen;
 
-    private sealed record WorkbenchView(CalendarDesk Desk, IReadOnlyList<EventOccurrence> Agenda, NeedsDetailsList Needs, AskedList Asked, BreakList Breaks);
+    private sealed record WorkbenchView(CalendarDesk Desk, IReadOnlyList<EventOccurrence> Agenda, NeedsDetailsList Needs, AskedList Asked, BreakList Breaks, IReadOnlyDictionary<ShowingRequest, string?> Widens);
 
     private LiveData<WorkbenchView>? _live;
     private Middle _middle = Middle.All;
@@ -79,7 +80,13 @@
             ? (EventWords.SundayOf(MonthFirst), EventWords.SundayOf(MonthFirst.AddMonths(1)).AddDays(6))
             : (Today, Today.AddDays(7 * _weeks));
         IReadOnlyList<EventOccurrence> agenda = shown.Count == 0 ? [] : (await Editing.AgendaAsync(shown, from, to)).Occurrences;
-        WorkbenchView view = new(desk.Result, agenda, needs.Result, asked.Result, breaks.Result);
+        Dictionary<ShowingRequest, string?> widens = [];
+        foreach (ShowingRequest request in desk.Result.AskedToShow)
+        {
+            string home = desk.Result.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == request.HomeCalendarId)?.Settings.Calendar.Name ?? "its own calendar";
+            widens[request] = await Widening.SentenceAsync(request.Widens, request.NewlyReaches, request.NewlyReachesRoleIds, home);
+        }
+        WorkbenchView view = new(desk.Result, agenda, needs.Result, asked.Result, breaks.Result, widens);
         if (!_readUrl)
         {
             _readUrl = true;
@@ -342,6 +349,12 @@
                     @foreach (ShowingRequest request in view.Desk.AskedToShow)
                     {
                         <ListRow Title="@request.Title" Subtitle="@($"From {CalendarOf(view, request.HomeCalendarId)?.Name ?? "another calendar"}, to show on {CalendarOf(view, request.CalendarId)?.Name ?? "yours"}")">
+                            <Below>
+                                @if (view.Widens.GetValueOrDefault(request) is { } sentence)
+                                {
+                                    <span class="widening"><Icon Name="users" Size="IconSize.Small" />@sentence</span>
+                                }
+                            </Below>
                             <TrailingContent>
                                 <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => AnswerAsync(request, false)">Not on ours</Button>
                                 <Button Small="true" Busy="@(_busy == request.Title)" OnClick="() => AnswerAsync(request, true)">Show it</Button>

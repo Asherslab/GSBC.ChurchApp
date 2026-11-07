@@ -3,6 +3,7 @@
 @inject CalendarDiary Diary
 @inject YourCalendars Yours
 @inject Shell Shell
+@inject IAccess Access
 
 <LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
     <ChildContent>@Drawn(context.Value)</ChildContent>
@@ -78,6 +79,12 @@
                             </div>
                         }
                     </div>
+                </Section>
+            }
+            @if (!Access.SignedIn)
+            {
+                <Section>
+                    <p class="hint">Some calendars are for church members or a ministry's team. Sign in to see the ones that are for you.</p>
                 </Section>
             }
             <Section Title="In your phone's calendar" Lead="Subscribe once and your calendar app keeps itself up to date.">

@@ -56,6 +56,7 @@ public sealed class EventDraft
     public bool NotOnThisDate { get; set; }
     public string RepeatWords { get; private set; } = "";
     public string ChangeNote { get; set; } = "";
+    public List<ShowingOn> AlsoOn { get; private init; } = [];
 
     public bool IsNew => EventId is null && RegularEventId is null;
 
@@ -87,6 +88,7 @@ public sealed class EventDraft
         WasShown = IsShown(detail.Showing, detail.ShowFrom, nowUtc),
         NotOnThisDate = detail.NotOn,
         ChangeNote = detail.ChangeNote,
+        AlsoOn = [.. detail.AlsoOn],
     };
 
     public static EventDraft From(RegularEventDetail detail, DateOnly? date, DateTime nowUtc)
@@ -114,6 +116,7 @@ public sealed class EventDraft
             NotOnThisDate = special?.NotOn == true,
             RepeatWords = detail.Repeats.Length > 0 ? detail.Repeats : Contracts.RepeatWords.Of(detail.Pattern),
             ChangeNote = special?.ChangeNote is { Length: > 0 } note ? note : detail.ChangeNote,
+            AlsoOn = [.. detail.AlsoOn],
         };
     }
 

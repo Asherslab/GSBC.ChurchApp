@@ -36,8 +36,8 @@
             _path = CalendarSubscriptions.PublicPath;
         else
         {
-            string? secret = await Subscriptions.SecretAsync();
-            _path = secret is null ? null : Calendar is { } calendar ? CalendarSubscriptions.MinePath(secret, calendar) : CalendarSubscriptions.MinePath(secret);
+            string? key = await Subscriptions.PersonalKeyAsync();
+            _path = key is null ? null : Calendar is { } calendar ? CalendarSubscriptions.MinePath(key, calendar) : CalendarSubscriptions.MinePath(key);
         }
         _loaded = true;
     }
