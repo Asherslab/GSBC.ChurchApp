@@ -124,6 +124,11 @@ events, specials and breaks, and some arrive before their details ("full details
     made of its own components, never a copy of the email (owner, 2026-11-07). Which tool sends the email today
     isn't known (not Elvanto: it has no such template).
 
+    The proof of concept is in [`.impeccable/mocks/digest/`](../../.impeccable/mocks/digest/README.md): the
+    admin page, the digest in the app and the email (2026-11-08). A picture leading each item is fine here
+    (owner, 2026-11-08): today's What's Next already puts a stock church photo related to each item between them,
+    so the digest's picture cards are what people know, unlike the calendar, which stays text first.
+
 ### What an event carries (owner, 2026-11-07)
 
 19. **Title, calendar and when** (start and end, all day, or several days for a camp), and optionally: a short
@@ -506,7 +511,7 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   `curl -sD - -o /dev/null https://dev-app.baptist.com.au/calendars/public.ics` for `no-store` on dev, and on
   production for `public, max-age=900` on the public links and `private, no-store` with no `cf-cache-status: HIT` on
   a secret link.
-- **The digest proof of concept** (decision 18): a quick mock with sample events, still to make.
+- **The digest proof of concept** (decision 18): mocks made (`.impeccable/mocks/digest/`); to show staff.
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.

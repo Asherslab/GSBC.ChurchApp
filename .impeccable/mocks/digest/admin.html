@@ -1,0 +1,88 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Weekly digest · Good Shepherd admin</title><style>:root{--navy:#2A3D5E;--beige:#D5C9B7;--aqua:#007a70;--aqua-fill:#00877c;--orange:#E7AE74;--oink:#9a5a1c;--sand:#F3EFE8;--sand2:#E6DFD3;--ink:#1F2A3C;--ink2:#4a5568;--ink3:#7a8494;--line:#E7E2DA}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;color:var(--ink);display:grid;grid-template-columns:248px 1fr;background:#fff;font-size:15px;font-variant-numeric:tabular-nums}
+.side{background:var(--navy);color:#fff;padding:22px 14px;display:grid;align-content:start;gap:4px}.side b{font-size:17px;padding:4px 10px 18px}.side small{color:var(--beige);font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:14px 10px 6px}
+.side a{padding:9px 10px;border-radius:9px;color:rgba(255,255,255,.76);font-weight:600;font-size:14px;display:flex;justify-content:space-between}.side a.on{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 3px 0 0 var(--orange)}.side a i{font-style:normal;background:var(--orange);color:#1b1408;border-radius:10px;padding:0 7px;font-size:12px;font-weight:700}
+.side a.sub{padding-left:26px;font-size:13.5px}
+main{display:grid;grid-template-columns:1fr 452px;height:900px;overflow:hidden}
+.work{padding:26px 36px 0;overflow:hidden}
+.back{color:var(--aqua);font-weight:600;font-size:13.5px;display:inline-flex;gap:4px;margin-bottom:6px}
+.band{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:6px}.band h1{font-size:27px;letter-spacing:-.02em}.band p{color:var(--ink2);font-size:14px;margin-top:6px;max-width:64ch;line-height:1.45}
+.btn{height:40px;border-radius:20px;padding:0 16px;display:inline-flex;align-items:center;gap:8px;font-weight:600;font-size:14px;background:var(--navy);color:#fff;white-space:nowrap}.btn.q{background:var(--sand);color:var(--ink)}.btn.s{height:32px;font-size:13px;padding:0 12px}
+.btn svg{width:17px;height:17px}
+.status{font-size:13px;color:var(--ink2);font-weight:600;display:flex;gap:6px;align-items:center;margin:12px 0 14px}.status svg{color:var(--aqua)}
+.status span{color:var(--ink2);font-weight:500}
+.range{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.chip{height:32px;border-radius:16px;padding:0 12px;display:inline-flex;align-items:center;background:var(--sand);color:var(--ink2);font-size:13px;font-weight:600;gap:6px}.chip.on{background:var(--navy);color:#fff}.chip em{font-style:normal;opacity:.75}
+.list{border-bottom:1px solid var(--line)}
+.r{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);padding:10px 8px;min-height:64px}
+.grip{color:var(--ink2);width:16px;flex:none}
+.tick{width:22px;height:22px;border-radius:7px;background:var(--aqua-fill);flex:none;display:grid;place-items:center;color:#fff}.tick svg{width:15px;height:15px}
+.tick.off{background:#fff;box-shadow:inset 0 0 0 2px var(--sand2)}
+.thumb{width:84px;height:47px;border-radius:8px;flex:none;position:relative;overflow:hidden}
+.c1{background:linear-gradient(135deg,#7fb7a4,#2f6e64)}.c2{background:linear-gradient(135deg,#e7ae74,#b9674a)}.c3{background:linear-gradient(135deg,#55688c,#2A3D5E)}.c4{background:linear-gradient(135deg,#d5c9b7,#a89272)}.c5{background:linear-gradient(135deg,#8fb0d6,#4f6fa0)}.c6{background:linear-gradient(135deg,#c9b7d9,#7e6a9c)}
+.thumb::after{content:'';position:absolute;right:-14px;bottom:-14px;width:44px;height:44px;border-radius:50%;border:9px solid rgba(255,255,255,.18)}
+.none{background:var(--sand);display:grid;place-items:center;color:var(--ink2);font-size:11px;font-weight:600}.none::after{display:none}
+.body{flex:1;min-width:0}
+.lab{font-size:12px;font-weight:700;color:var(--aqua)}
+.lab.brk{color:var(--oink)}
+.rt{font-weight:600;font-size:15px}.rs{font-size:13.5px;color:var(--ink2);margin-top:2px}
+.when{font-size:13.5px;color:var(--navy);font-weight:600;width:170px;flex:none;text-align:right}
+.pill{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(231,174,116,.28);color:var(--oink);margin-left:6px;vertical-align:1px}
+.pill.a{background:rgba(0,156,143,.16);color:var(--aqua)}
+.r.dim .thumb{opacity:.5}.r.dim .rt{font-weight:500;color:var(--ink2)}.r.dim .lab,.r.dim .when{color:var(--ink2)}
+.r.sel{background:var(--sand);border-radius:12px;border-color:transparent}
+.r.sel+.r{border-color:transparent}
+.hint{font-size:13px;color:var(--ink2);margin-top:12px;max-width:70ch;line-height:1.45}
+.hint b{font-weight:600;color:var(--ink)}
+.side2{border-left:1px solid var(--line);padding:22px 24px;overflow:hidden;background:#fff}
+.panel{border-radius:14px;box-shadow:0 1px 2px rgb(24 35 58/.06),0 10px 24px -14px rgb(24 35 58/.3);overflow:hidden;margin-bottom:14px}
+.ph{padding:14px 16px 4px;display:flex;justify-content:space-between;align-items:center}.ph h2{font-size:16px}.ph small{font-size:12.5px;color:var(--ink2);font-weight:600}
+.pb{padding:4px 16px 16px}.pb label{display:flex;justify-content:space-between;font-size:12.5px;font-weight:600;color:var(--ink2);margin:8px 0 4px}.pb label a{color:var(--aqua)}
+.f{background:var(--sand);border-radius:12px;padding:10px 12px;font-size:14px;line-height:1.4}.f.ed{box-shadow:inset 0 0 0 2px var(--aqua);background:#fff}
+.cap{font-size:12.5px;color:var(--ink2);margin-top:8px;display:flex;gap:6px;align-items:center}
+.seg{display:flex;background:var(--sand);border-radius:12px;padding:3px;font-size:13px;font-weight:600;margin-bottom:12px}.seg span{flex:1;text-align:center;padding:7px 0;border-radius:9px;color:var(--ink2)}.seg .on{background:#fff;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.phone{width:220px;height:292px;margin:0 auto;border-radius:30px;background:#111;padding:7px;box-shadow:0 10px 24px -14px rgb(24 35 58/.5)}
+.scr{width:206px;height:278px;border-radius:24px;overflow:hidden;background:#fff;position:relative}
+.real{width:390px;height:526px;transform:scale(.528);transform-origin:0 0;position:absolute;top:0;left:0}
+.pm{background:var(--navy);color:#fff;padding:56px 20px 18px;position:relative;overflow:hidden}.pm::after{content:'';position:absolute;right:-70px;top:20px;width:210px;height:210px;border-radius:50%;border:34px solid rgba(255,255,255,.07)}
+.pm b{font-size:36px;letter-spacing:-.03em;display:block}.pm span{color:var(--beige);font-size:14.5px;font-weight:600}
+.pc{margin:16px 20px 0;border-radius:14px;overflow:hidden;box-shadow:0 1px 2px rgb(24 35 58/.08),0 10px 24px -14px rgb(24 35 58/.3)}
+.pc .cv{height:130px}.pc .pt{padding:12px 16px 14px}.pc i{font-style:normal;font-size:12px;font-weight:700;color:var(--aqua);display:block}.pc strong{font-size:18px;display:block}.pc em{font-style:normal;font-size:14.5px;color:var(--navy);font-weight:600}
+.foot{display:flex;gap:8px;margin-top:14px}
+.reach{font-size:12.5px;color:var(--ink2);margin-top:8px;text-align:center}
+</style></head><body>
+<nav class="side"><b>Good Shepherd</b><a>This week</a><small>Content</small><a>Drafts</a><a>Announcements</a><a>Calendar <i>2</i></a><a class="sub on">Weekly digest</a><a>Sermons</a><a>Media</a><small>People</small><a>People</a><a>Roles</a><small>The app</small><a>Places in the app</a></nav>
+<main>
+<section class="work">
+<span class="back">‹ Calendar</span>
+<div class="band"><div><h1>Weekly digest</h1><p>What's next at Good Shepherd, made from the calendar: the one-off events, specials and breaks in the next two weeks. Untick what you'd leave out, drag to reorder, and reword anything for the digest. The calendar itself doesn't change.</p></div></div>
+<div class="status"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg>Saved <span>· last week's went to the app on Sunday 1 November</span></div>
+<div class="range"><span class="chip on">Monday 9 – Sunday 22 November</span><span class="chip">Three weeks</span><span class="chip">+ Add something not on the calendar</span></div>
+<div class="list">
+<div class="r"><span class="grip">⋮⋮</span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg></span><span class="thumb c3"></span><div class="body"><span class="lab">Church members</span><div class="rt">Annual general meeting</div><div class="rs">Fellowship Area · agenda from the office</div></div><span class="when">This Thursday 12 November @ 7:30pm</span></div>
+<div class="r sel"><span class="grip">⋮⋮</span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg></span><span class="thumb c1"></span><div class="body"><span class="lab">Outreach</span><div class="rt">Outreach morning<span class="pill">Reworded</span></div><div class="rs">Now meeting at Fernleigh Park · contact Sam Ridley</div></div><span class="when">This Saturday 14 November</span></div>
+<div class="r"><span class="grip">⋮⋮</span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg></span><span class="thumb c4"></span><div class="body"><span class="lab brk">Kids on break</span><div class="rt">No Impact Kids this Friday</div><div class="rs">A break · back on Friday 20 November</div></div><span class="when">This Friday 13 November</span></div>
+<div class="r"><span class="grip">⋮⋮</span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg></span><span class="thumb c5"></span><div class="body"><span class="lab">Whole church</span><div class="rt">Christmas choir rehearsals</div><div class="rs">Auditorium, straight after the morning service</div></div><span class="when">The next two Sundays</span></div>
+<div class="r"><span class="grip">⋮⋮</span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg></span><span class="thumb c6"></span><div class="body"><span class="lab">Youth</span><div class="rt">Youth games night<span class="pill">Needs details</span></div><div class="rs">Full details this Sunday</div></div><span class="when">Friday 20 November @ 6:30pm</span></div>
+<div class="r"><span class="grip">⋮⋮</span><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="m5 12 5 5 9-10"/></svg></span><span class="thumb c2"></span><div class="body"><span class="lab">Ladies Event</span><div class="rt">Ladies' Christmas high tea<span class="pill a">Register link</span></div><div class="rs">Fellowship Area · contact Joy Barlow</div></div><span class="when">Saturday 21 November @ 2pm</span></div>
+<div class="r dim"><span class="grip">⋮⋮</span><span class="tick off"></span><span class="thumb none">No picture</span><div class="body"><span class="lab">Men</span><div class="rt">Men's breakfast</div><div class="rs">Left out of this digest</div></div><span class="when">Saturday 21 November @ 7am</span></div>
+</div>
+<p class="hint">Regular events aren't listed: only one-off events, specials (a regular event that's different this week) and breaks. <b>Rewording</b> changes the digest only; the event in the calendar keeps its own words.</p>
+</section>
+<aside class="side2">
+<div class="panel"><div class="ph"><h2>Outreach morning</h2><small>For the digest</small></div><div class="pb">
+<label>Label</label><div class="f">Outreach</div>
+<label>When it says <a>Use the calendar's</a></label><div class="f">This Saturday 14 November</div>
+<label>What it says <a>Back to the calendar's words</a></label><div class="f ed">We're meeting at Fernleigh Park this time, not the church. Prayer and a short devotional at 8:30, then out in pairs. Morning tea after. Ask Sam Ridley if you'd like to come along.</div>
+<label>Button</label><div class="f" style="color:var(--ink2)">None · add a register link</div>
+</div></div>
+<div class="seg"><span class="on">In the app</span><span>Email</span></div>
+<div class="phone"><div class="scr"><div class="real"><div class="pm"><b>What's next</b><span>Monday 9 – Sunday 22 November</span></div>
+<div class="pc"><div class="cv c3"></div><div class="pt"><i>Church members</i><strong>Annual general meeting</strong><em>This Thursday 12 November · 7:30pm</em></div></div>
+<div class="pc"><div class="cv c1"></div><div class="pt"><i>Outreach</i><strong>Outreach morning</strong><em>This Saturday 14 November · 8:30am</em></div></div>
+</div></div></div>
+<div class="foot"><span class="btn q" style="flex:1;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>Copy for email</span><span class="btn" style="flex:1;justify-content:center"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21h4"/></svg>Send to the app</span></div>
+<p class="reach">Send to the app tells 214 phones: "What's next: 6 things in the next two weeks".</p>
+</aside>
+</main></body></html>
