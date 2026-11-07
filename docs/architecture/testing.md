@@ -71,7 +71,7 @@ SeaweedFS takes about 15 seconds to start, so a project that needs S3 pays that 
 
 **The time.** `TestClock` (a `TimeProvider`) is registered wherever the code under test takes one. It
 starts at a fixed instant, `TestClock.Start` or one the test chooses, and only moves when the test
-moves it (`Advance`, or setting `UtcNow`). Rows a test writes take their times from the same clock.
+moves it (`Advance`). Rows a test writes take their times from the same clock.
 Use `TestClock`, not `FakeTimeProvider` or a clock of the feature's own: one clock, so every test reads
 the same way. Nothing here needs fake timers; if a test ever does, extend `TestClock`.
 

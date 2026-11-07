@@ -8,7 +8,7 @@ public sealed class TestClock(DateTime utcNow) : TimeProvider
     {
     }
 
-    public DateTime UtcNow { get; set; } = DateTime.SpecifyKind(utcNow, DateTimeKind.Utc);
+    public DateTime UtcNow { get; private set; } = DateTime.SpecifyKind(utcNow, DateTimeKind.Utc);
 
     public override DateTimeOffset GetUtcNow() => new(UtcNow, TimeSpan.Zero);
 
