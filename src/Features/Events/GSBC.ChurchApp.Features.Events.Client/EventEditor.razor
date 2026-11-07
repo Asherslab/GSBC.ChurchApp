@@ -220,7 +220,6 @@ else
                 @if (draft.IsNew)
                 {
                     <SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />
-                    <TextField Label="Title" Value="@Fields.Title" ValueChanged="value => Fields.Title = value" MaxLength="120" Required="true" Placeholder="What's on" />
                 }
                 @if (draft.NotOnThisDate)
                 {

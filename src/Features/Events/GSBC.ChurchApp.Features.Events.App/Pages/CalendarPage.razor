@@ -66,10 +66,10 @@
                 }
                 else
                 {
-                    <div class="list">
-                        @foreach (EventOccurrence occurrence in next)
+                    <div class="calendar-next">
+                        @foreach (IGrouping<DateOnly, EventOccurrence> day in next.GroupBy(EventWords.DayOf))
                         {
-                            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="calendar" NowUtc="Now" NewChange="Yours.IsNewChange(occurrence)" />
+                            <DaySection @key="day.Key" Day="day.Key" Today="EventWords.Today(Now)" Occurrences="day" Diary="diary" NowUtc="Now" IsNewChange="Yours.IsNewChange" />
                         }
                     </div>
                 }

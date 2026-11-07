@@ -1,0 +1,23 @@
+<section class="week-day" aria-labelledby="@HeadingId">
+    <h2 class="week-day__head" id="@HeadingId" data-day="@EventDates.Format(Day)">
+        @EventWords.DayHeading(Day, Today)
+        <span>@(Day == Today ? EventWords.LongDate(Day) : EventWords.Date(Day))</span>
+    </h2>
+    <div class="list">
+        @foreach (EventOccurrence occurrence in Occurrences)
+        {
+            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" NewChange="IsNewChange(occurrence)" />
+        }
+    </div>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required DateOnly Day { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Today { get; set; }
+    [Parameter, EditorRequired] public required IEnumerable<EventOccurrence> Occurrences { get; set; }
+    [Parameter, EditorRequired] public required Diary Diary { get; set; }
+    [Parameter] public DateTime NowUtc { get; set; }
+    [Parameter] public Func<EventOccurrence, bool> IsNewChange { get; set; } = _ => false;
+
+    private string HeadingId => $"day-{EventDates.Format(Day)}";
+}

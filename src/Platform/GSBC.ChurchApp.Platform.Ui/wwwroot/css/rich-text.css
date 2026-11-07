@@ -94,7 +94,7 @@
     flex: 1 1 16rem;
 }
 
-.rich-text-editor textarea {
+.rich-text-editor .rich-text-input {
     width: 100%;
     box-sizing: border-box;
     border: 0;
@@ -109,7 +109,7 @@
     resize: vertical;
 }
 
-.rich-text-editor textarea:focus {
+.rich-text-editor .rich-text-input:focus {
     outline: none;
     box-shadow: inset 0 0 0 2px var(--accent);
 }

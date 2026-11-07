@@ -130,18 +130,7 @@
             {
                 @foreach (IGrouping<DateOnly, EventOccurrence> day in days)
                 {
-                    <section class="week-day" aria-labelledby="@($"day-{EventDates.Format(day.Key)}")">
-                        <h2 class="week-day__head" id="@($"day-{EventDates.Format(day.Key)}")" data-day="@EventDates.Format(day.Key)">
-                            @EventWords.DayHeading(day.Key, today)
-                            <span>@(day.Key == today ? EventWords.LongDate(day.Key) : EventWords.Date(day.Key))</span>
-                        </h2>
-                        <div class="list">
-                            @foreach (EventOccurrence occurrence in day)
-                            {
-                                <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="diary.Calendar(occurrence.CalendarId)" NowUtc="Now" NewChange="Yours.IsNewChange(occurrence)" />
-                            }
-                        </div>
-                    </section>
+                    <DaySection @key="day.Key" Day="day.Key" Today="today" Occurrences="day" Diary="diary" NowUtc="Now" IsNewChange="Yours.IsNewChange" />
                 }
                 @if (more)
                 {

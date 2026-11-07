@@ -41,7 +41,7 @@
         <MediaChooser ImagesOnly="true" OnChosen="InsertImageAsync" OnCancel="() => _choosingImage = false" />
     }
 
-    <textarea @ref="_textarea" value="@_markdown" @oninput="TypedAsync" rows="@Rows" aria-label="@Label" placeholder="@Placeholder"></textarea>
+    <textarea class="rich-text-input" @ref="_textarea" value="@_markdown" @oninput="TypedAsync" rows="@Rows" aria-label="@Label" placeholder="@Placeholder"></textarea>
 
     @foreach (string problem in _problems)
     {
