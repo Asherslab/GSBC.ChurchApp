@@ -160,19 +160,41 @@ events, specials and breaks, and some arrive before their details ("full details
     private, lets ministries put their events wherever suits them; nothing a ministry should put in a calendar
     is a major risk. A static file in R2 (as the podcast feed is) and writing into the phone's own calendar
     were considered; neither serves private calendars to every calendar app.
-27. **Subscribe to one calendar, or to all of yours.** A calendar's own link gives that calendar; *All my
-    calendars* gives one subscription holding everything you've added and been given. Private calendars are
+27. **Subscribe to one calendar, to all of yours, or to everything public.** A calendar's own link gives that
+    calendar; *All my calendars* gives one subscription holding everything you've added and been given; *All
+    public calendars* gives every calendar meant for everyone, for anyone who doesn't want to think about it. Private calendars are
     reached only through your own link, which carries a secret, works for a signed-out phone as well as a
     person, and can be reset (the old link stops working).
 
 When it's built, the paths below go into AGENTS.md's approved list and `EndpointRules`' allowlist in the same
-commit as the code:
+commit as the code (the owner approved all four on 2026-11-08):
 
 | Path | Host | Returns |
 |---|---|---|
 | `GET /calendars/{calendar}.ics` | Gateway | A calendar for everyone (no secret needed) |
+| `GET /calendars/public.ics` | Gateway | Every calendar for everyone, in one (`public` and `mine` can't be a calendar's name in a link) |
 | `GET /calendars/mine/{secret}.ics` | Gateway | Everything the link's holder has added and been given |
 | `GET /calendars/mine/{secret}/{calendar}.ics` | Gateway | One calendar through the holder's link (how a private one is subscribed to alone) |
+
+### Who edits, and publishing (owner, 2026-11-08)
+
+28. **Permissions** (Access, [permissions.md](../architecture/permissions.md)): `events.edit` at a calendar
+    (a new scope kind, *calendar*, in Platform.Permissions) adds and changes events and regular events in it;
+    `events.calendars.manage`, everywhere, creates calendars, chooses who each is for and which are defaults,
+    and keeps the named breaks. A **Calendar editor** role is given at a calendar, and its editors can give it
+    to others. A ministry's leaders get it on the ministry's calendars when Ministries is built, and so can
+    anyone else the ministry chooses (its admins, who do the paperwork, or one member), because editing is a
+    role at the calendar, not tied to being a leader.
+29. **Shown, or not yet shown.** An event or regular event is saved for later, shown now, or shown from a date.
+    Not drafts (drafts.md, decision 1).
+30. **Ask to publish is built, and off everywhere.** A calendar can be set to need a publisher
+    (`events.publish` at the calendar): its editors without that permission get *Ask to publish*, listed for
+    publishers and notified as drafts' *waiting to publish* is. Which calendars use it is the church's call
+    later (probably none).
+31. **Changing a shown event is quiet,** but it's marked **Changed** for a few days with what changed ("Now in
+    the Fellowship Area"). Beside Save, **Tell people** offers a notification that opens the event, to everyone
+    who has its calendar. Cancelling one date works the same way: it shows as not on, with *Tell people*
+    offered.
 
 ### Pinned for later
 
@@ -199,19 +221,41 @@ commit as the code:
     private, lets ministries put their events wherever suits them; nothing a ministry should put in a calendar
     is a major risk. A static file in R2 (as the podcast feed is) and writing into the phone's own calendar
     were considered; neither serves private calendars to every calendar app.
-27. **Subscribe to one calendar, or to all of yours.** A calendar's own link gives that calendar; *All my
-    calendars* gives one subscription holding everything you've added and been given. Private calendars are
+27. **Subscribe to one calendar, to all of yours, or to everything public.** A calendar's own link gives that
+    calendar; *All my calendars* gives one subscription holding everything you've added and been given; *All
+    public calendars* gives every calendar meant for everyone, for anyone who doesn't want to think about it. Private calendars are
     reached only through your own link, which carries a secret, works for a signed-out phone as well as a
     person, and can be reset (the old link stops working).
 
 When it's built, the paths below go into AGENTS.md's approved list and `EndpointRules`' allowlist in the same
-commit as the code:
+commit as the code (the owner approved all four on 2026-11-08):
 
 | Path | Host | Returns |
 |---|---|---|
 | `GET /calendars/{calendar}.ics` | Gateway | A calendar for everyone (no secret needed) |
+| `GET /calendars/public.ics` | Gateway | Every calendar for everyone, in one (`public` and `mine` can't be a calendar's name in a link) |
 | `GET /calendars/mine/{secret}.ics` | Gateway | Everything the link's holder has added and been given |
 | `GET /calendars/mine/{secret}/{calendar}.ics` | Gateway | One calendar through the holder's link (how a private one is subscribed to alone) |
+
+### Who edits, and publishing (owner, 2026-11-08)
+
+28. **Permissions** (Access, [permissions.md](../architecture/permissions.md)): `events.edit` at a calendar
+    (a new scope kind, *calendar*, in Platform.Permissions) adds and changes events and regular events in it;
+    `events.calendars.manage`, everywhere, creates calendars, chooses who each is for and which are defaults,
+    and keeps the named breaks. A **Calendar editor** role is given at a calendar, and its editors can give it
+    to others. A ministry's leaders get it on the ministry's calendars when Ministries is built, and so can
+    anyone else the ministry chooses (its admins, who do the paperwork, or one member), because editing is a
+    role at the calendar, not tied to being a leader.
+29. **Shown, or not yet shown.** An event or regular event is saved for later, shown now, or shown from a date.
+    Not drafts (drafts.md, decision 1).
+30. **Ask to publish is built, and off everywhere.** A calendar can be set to need a publisher
+    (`events.publish` at the calendar): its editors without that permission get *Ask to publish*, listed for
+    publishers and notified as drafts' *waiting to publish* is. Which calendars use it is the church's call
+    later (probably none).
+31. **Changing a shown event is quiet,** but it's marked **Changed** for a few days with what changed ("Now in
+    the Fellowship Area"). Beside Save, **Tell people** offers a notification that opens the event, to everyone
+    who has its calendar. Cancelling one date works the same way: it shows as not on, with *Tell people*
+    offered.
 
 ### Pinned for later
 
@@ -223,10 +267,8 @@ commit as the code:
 
 ## Open
 
-- **Who edits a calendar:** a permission scoped to the calendar, and how a ministry's leaders come to hold it.
 - Not overloading people: what someone sees by default, following, Home, filters, a digest.
 - **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
   (a secret link must never be cached at the edge) and check it through the public hostname.
-- Drafts and publishing for events; notifications that link to an event.
 - Offline and how far ahead and back phones keep events.
 - The admin panel and the phone: which screens go where.
