@@ -1,6 +1,16 @@
 <header class="masthead @Class">
     <BrandMark Class="masthead__mark" Decorative="true" />
-    <h1 tabindex="-1">@Title</h1>
+    @if (Beside is not null)
+    {
+        <div class="masthead__row">
+            <h1 tabindex="-1">@Title</h1>
+            <div class="masthead__beside">@Beside</div>
+        </div>
+    }
+    else
+    {
+        <h1 tabindex="-1">@Title</h1>
+    }
     @if (Note is not null)
     {
         <p class="masthead__note">@Note</p>
@@ -16,4 +26,5 @@
     [Parameter] public string? Note { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? Beside { get; set; }
 }

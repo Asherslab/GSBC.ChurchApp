@@ -1,0 +1,17 @@
+@if (Shown || _adding)
+{
+    @ChildContent
+}
+else
+{
+    <button type="button" class="add-row" @onclick="() => _adding = true"><Icon Name="plus" Size="IconSize.Small" />Add a @Adding.ToLowerInvariant()</button>
+}
+
+@code {
+    private bool _adding;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required string Adding { get; set; }
+    [Parameter] public bool Shown { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

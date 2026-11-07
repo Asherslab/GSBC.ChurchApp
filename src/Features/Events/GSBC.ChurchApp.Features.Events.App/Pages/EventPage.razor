@@ -1,0 +1,123 @@
+@page "/event/{Id}"
+@implements IDisposable
+@inject CalendarDiary Diary
+@inject YourCalendars Yours
+@inject IAccess Access
+@inject TimeProvider Clock
+@inject Shell Shell
+@inject IJSRuntime Js
+
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>
+        <Page Title="Event" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
+            <EventHead Title="" />
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="4" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private bool _editing;
+    private string? _shareNote;
+    private string? _seenFor;
+
+    [Parameter] public string Id { get; set; } = "";
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    protected override void OnInitialized() => Access.Changed += OnAccess;
+
+    protected override void OnParametersSet()
+    {
+        _editing = false;
+        _shareNote = null;
+    }
+
+    private RenderFragment Drawn(Diary diary)
+    {
+        if (diary.Find(Id) is not { } occurrence)
+            return @<Page Title="Not found" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
+                <Masthead Title="Not found" />
+                <EmptyState Icon="calendar" Title="This event isn't in the calendar" Body="It may have been taken off, be more than a month old, or be in a calendar you can't see.">
+                    <Button Variant="ButtonVariant.Quiet" Href="@EventsPlaces.Week">Back to the calendar</Button>
+                </EmptyState>
+            </Page>;
+
+        _ = MarkSeenAsync(occurrence);
+        CalendarInfo? calendar = diary.Calendar(occurrence.CalendarId);
+        bool canEdit = calendar is { ReadOnly: false } && Access.Can(EventsPermissions.Edit, occurrence.CalendarId);
+
+        if (_editing && canEdit)
+            return @<EventEditor Target="EditTarget.Of(occurrence)" Calendars="EditableCalendars(diary)" Closed="() => _editing = false" />;
+
+        return @<Page Title="@occurrence.Fields.Title" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
+            <Actions>
+                @if (canEdit)
+                {
+                    <button type="button" class="topbar__text-btn" @onclick="() => _editing = true">Edit</button>
+                }
+            </Actions>
+            <ChildContent>
+                <EventHead Day="EventWords.DayOf(occurrence)" Label="@EventWords.LabelOf(occurrence, calendar)" Title="@occurrence.Fields.Title" When="@EventWords.WhenLine(occurrence)" />
+                @if (occurrence.Fields.Picture is { } picture)
+                {
+                    <div class="event-picture"><MediaCover Media="picture" Alt="" /></div>
+                }
+                <EventDetails Occurrence="occurrence" Calendar="calendar" Contacts="diary.ContactsOf(occurrence)" SignedIn="Access.SignedIn" OtherDates="diary.OtherDates(occurrence, Now)">
+                    <Actions>
+                        @if (!occurrence.NotOn)
+                        {
+                            <Button Icon="calendar-plus" OnClick="() => AddToCalendarAsync(occurrence)">Add to calendar</Button>
+                            @if (occurrence.Fields.RegisterLink.Length > 0)
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Icon="external-link" OnClick="() => Shell.OpenExternalAsync(occurrence.Fields.RegisterLink).AsTask()">Register</Button>
+                            }
+                        }
+                        <Button Variant="ButtonVariant.Quiet" Icon="share" OnClick="() => ShareAsync(occurrence)">Share</Button>
+                    </Actions>
+                    <Note>
+                        @if (_shareNote is not null)
+                        {
+                            <p class="hint" role="status">@_shareNote</p>
+                        }
+                    </Note>
+                </EventDetails>
+            </ChildContent>
+        </Page>;
+    }
+
+    private IReadOnlyList<CalendarInfo> EditableCalendars(Diary diary) =>
+        diary.Calendars.Where(calendar => !calendar.ReadOnly && Access.Can(EventsPermissions.Edit, calendar.Id)).ToList();
+
+    private async Task MarkSeenAsync(EventOccurrence occurrence)
+    {
+        if (_seenFor == occurrence.Id + occurrence.ChangedAt)
+            return;
+        _seenFor = occurrence.Id + occurrence.ChangedAt;
+        await Task.Yield();
+        await Yours.SeenAsync(occurrence);
+    }
+
+    private async Task AddToCalendarAsync(EventOccurrence occurrence)
+    {
+        await Shell.HapticAsync();
+        await Js.InvokeVoidAsync("gsbcEvents.saveCalendarFile", EventFile.NameOf(occurrence), EventFile.Of(occurrence, Now));
+    }
+
+    private async Task ShareAsync(EventOccurrence occurrence)
+    {
+        string text = EventWords.Join(occurrence.Fields.Title, EventWords.LongDate(EventWords.DayOf(occurrence)), EventWords.Times(occurrence), EventWords.PlaceLine(occurrence));
+        string result = await Js.InvokeAsync<string>("gsbcEvents.share", occurrence.Fields.Title, text);
+        _shareNote = result switch
+        {
+            "copied" => "Copied, ready to paste into a message.",
+            "failed" => "Couldn't share from here. Try again in a moment.",
+            _ => null,
+        };
+    }
+
+    private void OnAccess() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Access.Changed -= OnAccess;
+}

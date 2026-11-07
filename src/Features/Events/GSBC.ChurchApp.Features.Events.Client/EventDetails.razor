@@ -1,0 +1,103 @@
+@using GSBC.ChurchApp.Platform.Ui.Content
+
+<div class="event-body">
+    @if (Occurrence.NotOn)
+    {
+        <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />@EventWords.NotOnLine(Occurrence)</p>
+    }
+    @if (Actions is not null)
+    {
+        <div class="event-actions">@Actions</div>
+    }
+    @Note
+    @if (Occurrence.ChangeNote.Length > 0 && Occurrence.ChangedAt is not null)
+    {
+        <p class="event-change"><strong>Changed</strong>@Occurrence.ChangeNote</p>
+    }
+    <div class="list event-facts">
+        @if (Occurrence.Fields.Place is { } place && (place.Name.Length > 0 || place.Address.Length > 0))
+        {
+            <ListRow Icon="map-pin" Title="@(place.Name.Length > 0 ? place.Name : place.Address)" Subtitle="@PlaceDetail(place)"
+                     Href="@MapsLink(place)" External="true" />
+        }
+        else if (Occurrence.Missing.Contains(EventFieldKeys.Place))
+        {
+            <ListRow Icon="map-pin" IconTone="RowTone.Quiet" Title="@EventFieldKeys.Missing(EventFieldKeys.Place)" Subtitle="It'll be here once it's set" />
+        }
+        @foreach (EventContact contact in Contacts)
+        {
+            <ListRow Icon="user" Title="@contact.Name" Subtitle="@ContactDetail(contact)" Href="@ContactLink(contact)" External="true" />
+        }
+        @if (Contacts.Count == 0 && Occurrence.Missing.Contains(EventFieldKeys.Contacts))
+        {
+            <ListRow Icon="user" IconTone="RowTone.Quiet" Title="@EventFieldKeys.Missing(EventFieldKeys.Contacts)" />
+        }
+        @foreach (EventLink link in Occurrence.Fields.Links)
+        {
+            <ListRow Icon="link" Title="@(link.Title.Length > 0 ? link.Title : link.Url)" Href="@link.Url" External="true" />
+        }
+    </div>
+    @if (Occurrence.Fields.Description is { Markdown.Length: > 0 } about)
+    {
+        <h2 class="event-section">About</h2>
+        <RichTextView Content="about" Class="prose selectable" />
+    }
+    else if (Occurrence.Missing.Contains(EventFieldKeys.Description))
+    {
+        <h2 class="event-section">About</h2>
+        <p class="prose">@EventFieldKeys.Missing(EventFieldKeys.Description).</p>
+    }
+    @if (OtherDates.Count > 0)
+    {
+        <h2 class="event-section">Other dates</h2>
+        <div class="list">
+            @foreach (EventOccurrence other in OtherDates.Take(MostOtherDates))
+            {
+                <a class="row event-date @(other.NotOn ? "event-date--off" : "")" href="@EventsPlaces.EventPath(other.Id)">
+                    <span class="row__body">
+                        <span class="row__title">@EventWords.LongDate(EventWords.DayOf(other))</span>
+                        @if (other.NotOn)
+                        {
+                            <span class="row__subtitle agenda-row__off"><Icon Name="circle-off" Size="IconSize.Small" />@(other.NotOnReason.Length > 0 ? other.NotOnReason : "Not on")</span>
+                        }
+                        else if (other.Kind == OccurrenceKind.Special && other.Fields.Title != Occurrence.Fields.Title)
+                        {
+                            <span class="row__subtitle">@other.Fields.Title</span>
+                        }
+                    </span>
+                    <span class="row__trail">@EventWords.TimeOf(other)</span>
+                </a>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private const int MostOtherDates = 6;
+
+    [Parameter, EditorRequired] public required EventOccurrence Occurrence { get; set; }
+    [Parameter] public CalendarInfo? Calendar { get; set; }
+    [Parameter] public IReadOnlyList<EventContact> Contacts { get; set; } = [];
+    [Parameter] public bool SignedIn { get; set; }
+    [Parameter] public IReadOnlyList<EventOccurrence> OtherDates { get; set; } = [];
+    [Parameter] public RenderFragment? Actions { get; set; }
+    [Parameter] public RenderFragment? Note { get; set; }
+
+    private static string? PlaceDetail(EventPlace place) =>
+        place.Name.Length > 0 && place.Address.Length > 0 ? $"{place.Address} · opens Maps"
+        : place.Address.Length > 0 ? "Opens Maps"
+        : place.PlaceId is not null ? "On the church site" : null;
+
+    private static string? MapsLink(EventPlace place) =>
+        place.Address.Length > 0 ? $"https://maps.apple.com/?q={Uri.EscapeDataString(EventWords.Join(place.Name, place.Address))}" : null;
+
+    private string? ContactDetail(EventContact contact)
+    {
+        if (!SignedIn)
+            return "Sign in to see how to reach them";
+        return contact.Phone.Length > 0 ? $"{contact.Phone} · call or message" : contact.Email.Length > 0 ? contact.Email : null;
+    }
+
+    private string? ContactLink(EventContact contact) =>
+        !SignedIn ? null : contact.Phone.Length > 0 ? $"tel:{contact.Phone.Replace(" ", "", StringComparison.Ordinal)}" : contact.Email.Length > 0 ? $"mailto:{contact.Email}" : null;
+}

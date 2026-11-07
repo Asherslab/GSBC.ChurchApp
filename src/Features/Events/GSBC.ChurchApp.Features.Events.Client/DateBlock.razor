@@ -1,0 +1,24 @@
+@using System.Globalization
+
+@if (OnClick.HasDelegate)
+{
+    <button type="button" class="date-block date-block--editable @Class" aria-label="@($"Date: {Day.ToString("dddd d MMMM", English)}. Change it")" @onclick="OnClick">@Face</button>
+}
+else
+{
+    <span class="date-block @Class" role="img" aria-label="@Day.ToString("dddd d MMMM", English)">@Face</span>
+}
+
+@code {
+    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
+
+    [Parameter, EditorRequired] public required DateOnly Day { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private RenderFragment Face => @<text>
+        <span class="date-block__weekday" aria-hidden="true">@Day.ToString("ddd", English).ToUpperInvariant()</span>
+        <span class="date-block__day" aria-hidden="true">@Day.Day</span>
+        <span class="date-block__month" aria-hidden="true">@Day.ToString("MMM", English).ToUpperInvariant()</span>
+    </text>;
+}

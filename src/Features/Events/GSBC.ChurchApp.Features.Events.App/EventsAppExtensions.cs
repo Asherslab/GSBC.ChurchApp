@@ -14,6 +14,6 @@ public static class EventsAppExtensions
                 AlsoUnder: [EventsDestinations.Event.PathPrefix, EventsDestinations.Calendar.PathPrefix])],
             EventsClientExtensions.Feeds,
             EventsClientExtensions.PrivateFeeds));
-        return services.AddEventsClient();
+        return services.AddEventsOnPhone();
     }
 }

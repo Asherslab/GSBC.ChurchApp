@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Client.Modules;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
@@ -9,6 +10,15 @@ public static class EventsClientExtensions
     public static readonly IReadOnlyList<string> Feeds = [EventsFeeds.Calendars, EventsFeeds.Public];
     public static readonly IReadOnlyList<string> PrivateFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts];
 
+    public static IServiceCollection AddEventsOnPhone(this IServiceCollection services) =>
+        services
+            .AddEventsClient()
+            .AddSingleton<YourCalendars>()
+            .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<YourCalendars>());
+
     public static IServiceCollection AddEventsClient(this IServiceCollection services) =>
-        services.AddDestinations(EventsDestinations.All);
+        services
+            .AddDestinations(EventsDestinations.All)
+            .AddSingleton<CalendarDiary>()
+            .AddSingleton<CalendarEditing>();
 }

@@ -1,0 +1,23 @@
+<div class="field editor-list">
+    @if (Contacts.Count > 0)
+    {
+        <span class="field__label">Contact</span>
+    }
+    @foreach (EventContact contact in Contacts)
+    {
+        <div class="editor-list__item">
+            <TextField Label="Name" Value="@contact.Name" ValueChanged="value => contact.Name = value" MaxLength="80" />
+            <div class="ui-pair">
+                <TextField Label="Phone" Type="tel" Value="@contact.Phone" ValueChanged="value => contact.Phone = value.Trim()" AutoComplete="off" />
+                <TextField Label="Email" Type="email" Value="@contact.Email" ValueChanged="value => contact.Email = value.Trim()" AutoComplete="off" />
+            </div>
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => Contacts.Remove(contact)">Remove @(contact.Name.Length > 0 ? contact.Name : "this contact")</Button>
+        </div>
+    }
+    <button type="button" class="add-row" @onclick="() => Contacts.Add(new EventContact())"><Icon Name="plus" Size="IconSize.Small" />Add a contact</button>
+    <span class="field__hint">Only people signed in see a contact's phone and email.</span>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required List<EventContact> Contacts { get; set; }
+}
