@@ -60,6 +60,8 @@ internal sealed class S3BlobStore(IAmazonS3 s3, S3Presigner presigner, IOptions<
             InputStream = content,
             AutoCloseStream = false,
             ContentType = headers.ContentType,
+            // Cloudflare R2 rejects the SDK's streaming chunked signature (STREAMING-AWS4-HMAC-SHA256-PAYLOAD); dev's SeaweedFS accepts it.
+            UseChunkEncoding = false,
         };
         request.Headers.CacheControl = headers.CacheControl;
         return s3.PutObjectAsync(request, cancellationToken);

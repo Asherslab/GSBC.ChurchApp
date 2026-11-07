@@ -84,10 +84,12 @@
 
     private async Task<DeskView> LoadAsync()
     {
-        ValueTask<SourceStatus> status = Sermons.StatusAsync();
-        ValueTask<SeriesList> series = Sermons.SeriesAsync();
-        ValueTask<SpeakerList> speakers = Sermons.SpeakersAsync();
-        SermonList list = await Sermons.ListAsync(new SermonQuery { Filter = _filter, Text = _query, Take = _take });
+        Task<SourceStatus> status = Sermons.StatusAsync().AsTask();
+        Task<SeriesList> series = Sermons.SeriesAsync().AsTask();
+        Task<SpeakerList> speakers = Sermons.SpeakersAsync().AsTask();
+        Task<SermonList> first = Sermons.ListAsync(new SermonQuery { Filter = _filter, Text = _query, Take = _take }).AsTask();
+        await Task.WhenAll(status, series, speakers, first);
+        SermonList list = await first;
         if (!_chosenFilter && _filter == SermonFilters.NeedsALook && list.Total == 0 && _query.Length == 0)
         {
             _filter = SermonFilters.All;
