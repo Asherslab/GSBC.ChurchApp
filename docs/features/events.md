@@ -100,8 +100,10 @@ unrelated and isn't used here.
 15. **A ministry's calendars show for its team.** Someone given a private calendar (*Kids team*, *Church
     members*) sees it without adding it. A ministry's team also sees that ministry's public calendars
     (*Kids*): helpers almost always serve at those events. Either can be turned off.
-16. **Regular events stay in the background.** The week view shows them as quiet single lines; **Coming up**
-    lists only one-off events, specials and dates that are not on; the Home tile shows the next few of those.
+16. **Regular events stay in the background.** The week view shows them as quiet single lines; the month view
+    marks specials, changes and dates not on; the Home tile's **Coming up** shows the next few one-off events,
+    specials and dates not on. The calendar itself has no Coming up section (owner, 2026-11-08, with *One long
+    week*).
 17. **Chips to hide a calendar for a moment,** one per calendar you've added, with **Browse all calendars**
     beside them to add or remove calendars. No "show everything" switch.
 
@@ -232,6 +234,14 @@ commit as the code (the owner approved all four on 2026-11-08):
   (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
   contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
   Missing details read in plain words where they'd be (*Place to be announced*).
+- **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
+  chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
+  accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
+  the week's rows. Today is filled, past days fade.
+- **Browse calendars** (owner, 2026-11-08; `browse.html`), from *+ Browse* beside the chips: *In your week* (a
+  switch per calendar; one given to you is marked *For you*), *More calendars* with *Add*, and *In your phone's
+  calendar* with *All my calendars* and *Everything public*. A calendar's name opens its page: what it's for,
+  what's next in it, and its own *Subscribe*.
 
 ### Pinned for later
 
@@ -333,6 +343,14 @@ commit as the code (the owner approved all four on 2026-11-08):
   (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
   contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
   Missing details read in plain words where they'd be (*Place to be announced*).
+- **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
+  chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
+  accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
+  the week's rows. Today is filled, past days fade.
+- **Browse calendars** (owner, 2026-11-08; `browse.html`), from *+ Browse* beside the chips: *In your week* (a
+  switch per calendar; one given to you is marked *For you*), *More calendars* with *Add*, and *In your phone's
+  calendar* with *All my calendars* and *Everything public*. A calendar's name opens its page: what it's for,
+  what's next in it, and its own *Subscribe*.
 
 ### Pinned for later
 
