@@ -234,6 +234,15 @@ commit as the code (the owner approved all four on 2026-11-08):
   (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
   contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
   Missing details read in plain words where they'd be (*Place to be announced*).
+- **Changing an event: *Edit where you read it*** (owner, 2026-11-08, over a step-by-step flow and an editable
+  sentence; `.impeccable/mocks/decision/events-edit/`). *Edit* on the event page turns it into its editing state:
+  the date block, title and time line are outlined and open their pickers when tapped; the facts become fields (the
+  place is a search over site-map places and addresses used before); fields the page hides when empty (Register,
+  picture, links, contacts) appear as *Add…* rows. A foot bar holds, for a date of a regular event, *This date
+  only | Every …* (the regular event's own words), and *Save*; saving a shown event offers *Tell people*. A new
+  event opens the same page empty, starting on its calendar and title. Tapping the time line of a regular event
+  opens how it repeats, its breaks and what each date needs. One component (Events.Client), on the phone and in the
+  admin panel.
 - **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
   chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
   accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
@@ -343,6 +352,15 @@ commit as the code (the owner approved all four on 2026-11-08):
   (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
   contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
   Missing details read in plain words where they'd be (*Place to be announced*).
+- **Changing an event: *Edit where you read it*** (owner, 2026-11-08, over a step-by-step flow and an editable
+  sentence; `.impeccable/mocks/decision/events-edit/`). *Edit* on the event page turns it into its editing state:
+  the date block, title and time line are outlined and open their pickers when tapped; the facts become fields (the
+  place is a search over site-map places and addresses used before); fields the page hides when empty (Register,
+  picture, links, contacts) appear as *Add…* rows. A foot bar holds, for a date of a regular event, *This date
+  only | Every …* (the regular event's own words), and *Save*; saving a shown event offers *Tell people*. A new
+  event opens the same page empty, starting on its calendar and title. Tapping the time line of a regular event
+  opens how it repeats, its breaks and what each date needs. One component (Events.Client), on the phone and in the
+  admin panel.
 - **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
   chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
   accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
