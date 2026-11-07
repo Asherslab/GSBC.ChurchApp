@@ -1,8 +1,8 @@
 # Events: the church calendar
 
 What's on at the church, in calendars people choose to follow, without drowning anyone in everything. Asked for
-by the owner on 2026-11-07; SPEC §3 (*Events*). Being designed with the owner before any code; this doc records
-each decision as it settles.
+by the owner on 2026-11-07; SPEC §3 (*Events*). Designed with the owner on 2026-11-07/08; this doc records each decision, then what was
+built (*Status*) and what was decided while building it.
 
 ## Words
 
@@ -281,8 +281,83 @@ commit as the code (the owner approved all four on 2026-11-08):
   embed from the app. To discuss another time. Whatever it serves will need the same care as iCal out (an
   HTTP path needs the owner's yes; a static file may not).
 
+## Status
+
+**Events core (2026-11-08, Station 1):** the data, rules and services; the screens, iCal and reminders build on it.
+
+- **Contracts** (`Features.Events.Contracts`): the `Events` service for phones (`[AppInstall]` add or turn off a calendar,
+  and which you've added), `Editing` for editors (`[Requires(events.edit)]` at the calendar, with `IScopedRequest`; the
+  workbench's lists are `[SignedIn]` and filtered per calendar), and `Setup` (`[Requires(events.calendars.manage)]`:
+  calendars and named breaks). Dates in patterns and editing are the church's (`yyyy-MM-dd`, minutes after midnight);
+  a dated row's start and end are UTC.
+- **Storage** (schema `events`): calendars, one-off events, regular events (weekly on days, every second week, monthly
+  by weekday or date, a list of dates; start and optional end), specials, named and own breaks, showings on other
+  calendars, and the rows last published. An iCal-copied calendar is read-only (`ICalSource`; events carry `SourceUid`).
+- **Dated rows:** `EventsBook` loads the calendar and `Expansion` works out each regular event's dates within 30 days
+  back and 12 months ahead; a special overrides only what it changed; a break's first 14 days show as not on with its
+  name and when it's back. `EventsPublisher` publishes on every change and every 15 minutes (the window slides), and a
+  date leaving the window is sent as a delete.
+- **Feeds:** `events.calendars` and `events.public` (public); `events.calendars.private`, `events.private` and
+  `events.contacts` (each row carries its audience, below); `events.admin` (markers for the workbench, per calendar).
+- **Access:** scope kinds `calendar` and `regular-event`; nodes `events.edit`, `events.publish` (at a calendar),
+  `events.calendars.manage` (everywhere), `events.organise` (at a regular event); system roles *Calendar editor* (its
+  holders give it at that calendar), *Calendar publisher*, *Calendars manager*, *Event organiser*, and the
+  phone-holdable *Calendar added* and *Calendar turned off*.
+- **Places:** `/week` (moved from Coming soon), `/event/{id}` (an event's date) and `/calendar/{id}`, with destination
+  sources; `Events.App` has a placeholder page for the three routes until the screens replace it.
+- **Notifications:** *Tell people* (`events.told`, per calendar), *waiting to publish* and *asked to show on your
+  calendar* (both in the admin panel).
+- **Sample calendar** in Development only (made-up names): Sunday services with an Anniversary special and a
+  Christmas break, Whole church, Kids (with a camp weekend off), Kids team, Outreach every second Saturday needing a
+  place, Church members.
+- **Tests:** `Events.Api.Tests` (patterns, breaks, specials, the window, a private calendar never in the public feed,
+  contact details, per-calendar permission checks, Ask to publish, this date only vs every date) and
+  `RowAudienceFeedTests` in Platform.Api.Tests.
+
+**Not built yet:** the phone's and admin panel's screens; iCal in and out and reminders (decisions 8, 24, 26, 27);
+the digest (decision 18).
+
+## Decided while building (Station 1, 2026-11-08)
+
+- **Feeds respect calendars' audiences row by row.** A calendar's audience is Hub tiles' shape (everyone, anyone
+  signed in, chosen roles), so Sync gained `FeedAudience.EachRow`: each row carries its audience, Sync sends a row only
+  to people it includes (through the person's grants, so role membership is Access's), a signed-out phone gets none
+  of these feeds, and the feeds reset for a person when their grants change, as permission feeds do. A row whose
+  audience changes is deleted first and sent again, so nobody keeps a row they can no longer see. Rows of calendars
+  for everyone go in the public feeds; nothing private is ever written there.
+- **An event shown on other calendars** has the audience of all its calendars together (any for everyone makes it
+  public). An editor of both calendars agrees at once; otherwise the other calendar's editors are asked.
+- **"Given" means a calendar for chosen roles you hold.** A calendar for anyone signed in is listed to add, like one
+  for everyone. In your week = added, or (not turned off and (shown on new phones or given)): `CalendarChoices`, used by
+  the phone and by iCal's *All my calendars*.
+- **Adding and turning off are roles** (*Calendar added*, *Calendar turned off*), held by a signed-out phone and moved to
+  the person when they sign in, as following a sermon series is. Turning off is only recorded for a calendar you'd
+  see anyway (a default or given one).
+- **Tell people reaches** a role calendar's role holders; for a default calendar, everyone it's for (someone who turned
+  it off is still told; they can mute *News about an event* for that calendar); otherwise those who added it.
+- **Ask to publish:** on a calendar that needs a publisher, an editor without `events.publish` saves for later and
+  asks; once it's shown, only a publisher changes or deletes it.
+- **This date only** sends the date's whole values; the server keeps only what differs from the regular event, so a
+  field put back to the regular event's value keeps in step again, and a date that matches in everything goes back to
+  being an ordinary date. **Every date** first returns what the specials keep (*Anniversary Sunday keeps its own time,
+  9am–12pm*) and saves when confirmed.
+- **Changed** stays on a row for 7 days with its note ("Now at Teralba Park"); the phone shows it until it's opened.
+  Notes are only made for an event that was already shown.
+- **Organisers** are holders of *Event organiser* at the regular event (scope kind `regular-event`); when nobody holds
+  it, the holders of `events.edit` at its calendar (for Station 3's reminders).
+- **Contacts:** names travel with the event; phone and email only in `events.contacts`, to people signed in who may see
+  the event.
+- **The admin panel's menu** honours permissions held at one calendar (`CanSomewhere`), so a calendar's editors see the
+  Calendar page.
+- **Sample data:** *Kids team* and *Church members* are for anyone signed in, because there's no *Church member* role
+  yet (the office creates it in Access and chooses it on the calendar).
+
 ## Open
 
 - **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
   (a secret link must never be cached at the edge) and check it through the public hostname.
 - **The digest proof of concept** (decision 18): a quick mock with sample events, still to make.
+- **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
+- **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
+  Platform lookup of a person's details, which doesn't exist yet.
+- **Removing a calendar** isn't built (calendars can be renamed and changed).
