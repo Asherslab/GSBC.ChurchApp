@@ -70,6 +70,27 @@ unrelated and isn't used here.
 7. **A Register link** on an event, opened in the app's browser. The app never counts registrations; a
    reminder that registrations are low is a person's decision, sent as any notification is.
 
+8. **Reading iCal in:** a calendar can copy an outside iCal address (school term dates, a Google Calendar a
+   ministry already keeps). It stays read-only here and refreshes by itself; reading it is an outbound call.
+
+### Regular events, specials and breaks (owner, 2026-11-07)
+
+9. **A regular event repeats** weekly (on one or more days), every second week, monthly by weekday ("first
+   Sunday", "third Friday"), monthly by date, or on a hand-picked list of dates (a six-week course). Each has a
+   start and an optional end. Nothing more exotic until someone needs it.
+10. **Breaks are named and reusable.** The office keeps breaks such as *School holidays 2027* and *Christmas
+    break* once, and any regular event can use them; a regular event can also have its own one-off breaks.
+    Fixing a break's dates fixes every regular event using it.
+11. **A date that's not on still shows, clearly.** For the first week or two of a break, the skipped date shows
+    in the calendar as not on, with the break's name, marked by an icon or colour; the event's name is never
+    given a suffix ("— not on"), which a narrow row would cut off. A subscribed phone calendar just leaves the
+    date out.
+12. **A special keeps in step with its regular event,** overriding only what it changed (title, time, place,
+    description, picture), as sermon corrections do. Changing the regular event warns first, naming the specials
+    that keep their own value ("Anniversary Sunday keeps its own time, 9:00").
+13. **Sunday services are entered here** as regular events in v1, not read from Elvanto. Whether to read
+    Elvanto's services later is undecided.
+
 ### Pinned for later
 
 - **The website shows the app's calendar** (owner, 2026-11-07): replace the website's events page with an
@@ -78,14 +99,12 @@ unrelated and isn't used here.
 
 ## Open
 
-- **Reading iCal in,** calendar by calendar (recommended, not yet answered).
 - **Who edits a calendar:** a permission scoped to the calendar, and how a ministry's leaders come to hold it.
-- Regular events, specials and breaks: the rules.
 - Not overloading people: what someone sees by default, following, Home, filters, a digest.
 - What an event carries: place (Site map), people responsible, links, picture (Media), description.
 - Details filled in later, and reminding whoever is responsible.
 - Subscribing from a phone's calendar app (iCal out; needs the owner's decision on an HTTP path or a static
-  file), and reading iCal or Elvanto in.
+  file).
 - Drafts and publishing for events; notifications that link to an event.
 - Offline and how far ahead and back phones keep events.
 - The admin panel and the phone: which screens go where.
