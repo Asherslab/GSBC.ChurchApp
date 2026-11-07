@@ -1,3 +1,4 @@
+using System.Net;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
@@ -27,6 +28,8 @@ public abstract class EventsHost : IAsyncLifetime
     internal ManualClock Clock { get; } = new(ChurchTime.ToUtc(new DateTime(2026, 11, 8, 20, 0, 0)));
     internal Grants Access { get; } = new();
     internal RecordedNotifications Notifications { get; } = new();
+    internal PhoneHeldRoles PhoneRoles { get; } = new();
+    internal ICalAddress ICalSource { get; } = new();
 
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
@@ -47,6 +50,17 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddScoped<EventWriter>();
         services.AddScoped<EventEditingService>();
         services.AddScoped<CalendarSetupService>();
+        services.AddSingleton<IPhoneRoles>(PhoneRoles);
+        services.AddSingleton<IRoleAssignments>(PhoneRoles);
+        services.AddSingleton<IPermissionHolders>(PhoneRoles);
+        services.AddScoped<CalendarFollowing>();
+        services.AddScoped<CalendarLinkSecrets>();
+        services.AddScoped<CalendarFiles>();
+        services.AddScoped<DetailsReminders>();
+        services.AddScoped<ICalCopier>();
+        services.AddSingleton(new ICalFetcher(new HttpClient(ICalSource)));
+        services.AddSingleton(provider => new ICalSchedule(provider.GetRequiredService<IServiceScopeFactory>(), Microsoft.Extensions.Logging.Abstractions.NullLogger<ICalSchedule>.Instance));
+        services.AddLogging();
         services.AddSyncData();
         services.AddEventsData();
         _services = services.BuildServiceProvider();
@@ -147,15 +161,20 @@ internal sealed class Grants : IAccessEvaluator
 
     public void Allow(Guid person, string node, string? calendarId) => _allowed.Add((person, node, calendarId));
 
+    public void Refuse(Guid person, string node, string? calendarId) => _allowed.Remove((person, node, calendarId));
+
     public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
         ValueTask.FromResult(Caller.UserId(user) is { } id && (_allowed.Contains((id, node, null)) || (scopeId is not null && _allowed.Contains((id, node, scopeId)))));
 
-    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(GrantSet.Empty);
+    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(new GrantSet(_allowed.Where(grant => grant.Item1 == userId && grant.Item3 is null)
+            .Select(grant => new Grant(PermissionPattern.Parse(grant.Item2), Scope.Global)).ToList()));
 }
 
 internal sealed class RecordedNotifications : INotifications
 {
     public List<Notification> Raised { get; } = [];
+    public List<string> Settled { get; } = [];
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
@@ -163,7 +182,77 @@ internal sealed class RecordedNotifications : INotifications
         return Task.CompletedTask;
     }
 
-    public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task SettleAsync(string subject, CancellationToken cancellationToken)
+    {
+        Settled.Add(subject);
+        return Task.CompletedTask;
+    }
+}
+
+internal sealed class PhoneHeldRoles : IPhoneRoles, IRoleAssignments, IPermissionHolders
+{
+    private readonly List<(Guid Holder, string Role, string? ObjectId)> _held = [];
+
+    public ValueTask GiveAsync(Guid installId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
+    {
+        _held.Add((installId, roleKey, objectId));
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask TakeAwayAsync(Guid installId, string roleKey, string? objectId, CancellationToken cancellationToken)
+    {
+        _held.RemoveAll(held => held == (installId, roleKey, objectId));
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask<IReadOnlyList<HeldRole>> HeldAsync(Guid installId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyList<HeldRole>>(_held.Where(held => held.Holder == installId).Select(held => new HeldRole(held.Role, held.ObjectId, null)).ToList());
+
+    public ValueTask MoveToPersonAsync(Guid installId, Guid userId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    public ValueTask<AssignmentOutcome> GiveAsync(Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) =>
+        throw new NotSupportedException();
+
+    public ValueTask<AssignmentOutcome> TakeAwayAsync(Guid actorId, Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) =>
+        throw new NotSupportedException();
+
+    public ValueTask<bool> MayGiveAsync(Guid actorId, string roleKey, string? objectId, CancellationToken cancellationToken) => ValueTask.FromResult(false);
+
+    public ValueTask GiveAsFeatureAsync(Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) =>
+        GiveAsync(userId, roleKey, objectId, expiresAt, cancellationToken);
+
+    public ValueTask TakeAwayAsFeatureAsync(Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) =>
+        TakeAwayAsync(userId, roleKey, objectId, cancellationToken);
+
+    public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyList<RoleHolder>>(_held.Where(held => held.Role == roleKey && held.ObjectId == objectId).Select(held => new RoleHolder(held.Holder)).ToList());
+
+    public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+    public ValueTask<PermissionHolders> HoldersAsync(Permission permission, string? objectId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(PermissionHolders.None);
+}
+
+internal sealed class ICalAddress : HttpMessageHandler
+{
+    public string Calendar { get; set; } = "";
+    public string ETag { get; set; } = "\"1\"";
+    public HttpStatusCode? Failing { get; set; }
+    public List<HttpRequestMessage> Requests { get; } = [];
+
+    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+    {
+        Requests.Add(request);
+        if (Failing is { } status)
+            return Task.FromResult(new HttpResponseMessage(status));
+        if (request.Headers.IfNoneMatch.Any(tag => tag.Tag == ETag))
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotModified));
+        HttpResponseMessage response = new(HttpStatusCode.OK) { Content = new StringContent(Calendar, System.Text.Encoding.UTF8, "text/calendar") };
+        response.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue(ETag);
+        return Task.FromResult(response);
+    }
 }
 
 internal sealed class AnyMedia : IMediaReferences

@@ -56,6 +56,7 @@ Every entry needs the owner's explicit approval in chat first.
 |---|---|---|---|
 | Passkey ceremonies: begin/complete for sign-in and for registering a passkey (including accepting a staff invitation). Built as `POST /accounts/passkeys/{creation-options,register,request-options,sign-in}` | Gateway | The browser's WebAuthn API exchanges JSON with the server; the owner chose plain HTTP for these, as in MealPlanner | 2026-10-26 |
 | The same passkey ceremonies, called from the app's native layer (Life Group leaders and staff signing in on the phone) | Gateway | The platform passkey APIs produce the same WebAuthn JSON; the owner confirmed the app may use these endpoints | 2026-10-26 |
+| iCal links for calendar apps: `GET /calendars/{calendar}.ics` (a calendar for everyone), `GET /calendars/public.ics` (every calendar for everyone), `GET /calendars/mine/{secret}.ics` (everything the link's holder has added and been given), `GET /calendars/mine/{secret}/{calendar}.ics` (one calendar through the holder's link) | Gateway | Calendar apps (iPhone, Google, Outlook) only fetch calendars over plain HTTP; the owner chose one standard method for every calendar, public or private | 2026-11-08 |
 
 **How self-service sign-up uses them** (owner confirmed 2026-11-01): `Accounts.StartSignUp` is a gRPC
 method that returns a short-lived sign-up ticket, and the first passkey is created through the

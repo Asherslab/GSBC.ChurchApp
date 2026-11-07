@@ -10,6 +10,19 @@ public static partial class CalendarLinks
 
     public static readonly IReadOnlyList<string> Reserved = [Public, Mine];
 
+    public const string Extension = ".ics";
+    public const string ContentType = "text/calendar; charset=utf-8";
+
+    public static string CalendarPath(string slug) => $"/calendars/{slug}{Extension}";
+
+    public static string PublicPath => CalendarPath(Public);
+
+    public static string MinePath(string secret) => $"/calendars/{Mine}/{secret}{Extension}";
+
+    public static string MinePath(string secret, string slug) => $"/calendars/{Mine}/{secret}/{slug}{Extension}";
+
+    public static string Subscribe(Uri origin, string path) => new UriBuilder(new Uri(origin, path)) { Scheme = "webcal", Port = origin.IsDefaultPort ? -1 : origin.Port }.Uri.ToString();
+
     public static bool IsValidSlug(string slug) =>
         slug.Length is > 0 and <= LongestSlug && SlugPattern().IsMatch(slug) && !Reserved.Contains(slug);
 

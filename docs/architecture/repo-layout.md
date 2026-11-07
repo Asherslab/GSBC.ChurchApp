@@ -144,6 +144,7 @@ flowchart LR
         EventsAdmin["Features.Events.Admin"]
         EventsClient["Features.Events.Client"]
         EventsApi["Features.Events.Api"]
+        EventsGateway["Features.Events.Gateway"]
         EventsContracts["Features.Events.Contracts"]
     end
 
@@ -181,7 +182,7 @@ flowchart LR
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
-    HostsGateway --> HostsAdmin & AccountsGateway
+    HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
     HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & EventsAdmin
     HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & EventsApi & PlatformApi
@@ -231,6 +232,7 @@ flowchart LR
     EventsAdmin --> EventsClient
     EventsClient --> EventsContracts & PlatformClient & PlatformUi & PlatformCommon
     EventsApi --> EventsContracts & PlatformApi & PlatformCommon
+    EventsGateway --> EventsContracts
     EventsContracts --> PlatformContracts
 
     ReleaseNotesApp --> PlatformUi & ReleaseNotesGenerator
@@ -317,8 +319,9 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.Api` | Sermons from the website's feed and series pages (hourly) or uploads, staff corrections that survive re-reading, artwork made into small copies in R2, the catalogue, series and speaker feeds, and listening history merged per person (schema `sermons`) | No |
 | `GSBC.ChurchApp.Features.Sermons.Client` | The catalogue read from the phone's store (`SermonCatalogue`), listening history from the native journal and the account's feed, sent through the outbox (`Listening`), the sermon player over `IAudioPlayer`, and the Home tile *Latest sermon* | Yes |
 | `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
-| `GSBC.ChurchApp.Features.Events.Contracts` | The `Events`, `Editing` and `Setup` services, calendars, events, regular events and their patterns, specials, breaks, the dated rows phones hold, the *in your week* rule (`CalendarChoices`), feeds, places and the `events.*` permission nodes | Yes |
-| `GSBC.ChurchApp.Features.Events.Api` | Calendars, one-off and regular events, specials, breaks and showing on other calendars (schema `events`); each regular event worked out into dated rows for 30 days back and 12 months ahead, public calendars' rows in a public feed and the rest in per-row-audience feeds; Ask to publish, *Tell people* and *Needs details* | No |
+| `GSBC.ChurchApp.Features.Events.Contracts` | The `Events`, `Editing`, `Setup` and `CalendarFiles` services, the iCal link paths, calendars, events, regular events and their patterns, specials, breaks, the dated rows phones hold, the *in your week* rule (`CalendarChoices`), feeds, places and the `events.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Events.Api` | Calendars, one-off and regular events, specials, breaks and showing on other calendars (schema `events`); each regular event worked out into dated rows for 30 days back and 12 months ahead, public calendars' rows in a public feed and the rest in per-row-audience feeds; Ask to publish, *Tell people* and *Needs details*; iCal files for calendar apps and their secret links, calendars copied from an iCal address, and reminders to organisers for missing details | No |
+| `GSBC.ChurchApp.Features.Events.Gateway` | The four iCal links (approved non-gRPC paths): each asks the API's `CalendarFiles` service for the file and sets its caching | No |
 | `GSBC.ChurchApp.Features.Events.Client` | The Events gRPC clients and places, for the phone and the admin panel | Yes |
 | `GSBC.ChurchApp.Features.Events.App` | The phone's calendar: *This week* (`/week`), an event and a calendar (a placeholder until the screens are built) | Yes |
 | `GSBC.ChurchApp.Features.Events.Admin` | The admin panel's Calendar workbench (empty until the screens are built) | Yes |
@@ -341,7 +344,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Analytics.Api.Tests` | Against Postgres: one kind per error however many phones report it, a resent report counts once, the owner hears once per new kind, only the app and admin panel may report and only about recent days, failed calls add up, errors go after 30 days; stack summaries keep no paths or build numbers | No |
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
-| `GSBC.ChurchApp.Features.Events.Api.Tests` | Against Postgres: each repeat pattern's dates; breaks show their first dates as not on; a special overrides only what it changed; the 30-day/12-month window; a private calendar never in the public feed; contact details only to people signed in; an editor can't reach another calendar's events; Ask to publish; this date only vs every date | No |
+| `GSBC.ChurchApp.Features.Events.Api.Tests` | Against Postgres: each repeat pattern's dates; breaks show their first dates as not on; a special overrides only what it changed; the 30-day/12-month window; a private calendar never in the public feed; contact details only to people signed in; an editor can't reach another calendar's events; Ask to publish; this date only vs every date; a private calendar's iCal file only through a valid link of someone it's for; a reset link refused; a details reminder once at 7 and 2 days and settled; copying an iCal calendar (repeats, skipped and changed dates, ETag, failures) | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |

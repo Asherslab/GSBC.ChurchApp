@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Accounts.Gateway;
+using GSBC.ChurchApp.Features.Events.Gateway;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 
@@ -11,6 +12,7 @@ builder.WebHost.ConfigureKestrel(kestrel =>
 });
 
 builder.Services.AddAccountsGateway(builder.Configuration);
+builder.Services.AddEventsGateway(builder.Configuration);
 builder.Services.AddReverseProxy().LoadFromConfig(builder.Configuration.GetSection("ReverseProxy")).AddApiTokens();
 builder.Services.AddGrpc(options => options.IgnoreUnknownServices = true);
 builder.Services.AddGrpcHealthChecks().AddCheck("live", () => HealthCheckResult.Healthy());
@@ -38,6 +40,7 @@ app.UseRateLimiter();
 app.MapStaticAssets();
 app.MapGrpcHealthChecksService();
 app.MapPasskeyCeremonies();
+app.MapCalendarFiles();
 app.MapReverseProxy();
 app.MapFallbackToFile("index.html");
 

@@ -19,9 +19,17 @@ public static class EventsApiExtensions
         services.AddScoped<EventsPublisher>();
         services.AddScoped<EventWriter>();
         services.AddScoped<CalendarFollowing>();
+        services.AddScoped<CalendarLinkSecrets>();
+        services.AddScoped<CalendarFiles>();
         services.AddScoped<EventPictures>();
         services.AddScoped<IMediaHolder>(provider => provider.GetRequiredService<EventPictures>());
         services.AddHostedService<EventsSchedule>();
+        services.AddScoped<DetailsReminders>();
+        services.AddScoped<ICalCopier>();
+        services.AddHttpClient<ICalFetcher>(client => client.Timeout = TimeSpan.FromMinutes(1))
+            .ConfigurePrimaryHttpMessageHandler(ICalFetcher.PublicInternetOnly);
+        services.AddSingleton<ICalSchedule>();
+        services.AddHostedService(provider => provider.GetRequiredService<ICalSchedule>());
         services.AddHostedService<SampleCalendar>();
 
         services.AddPermissions(EventsPermissions.All);
@@ -61,6 +69,7 @@ public static class EventsApiExtensions
         endpoints.MapGrpcService<EventsService>();
         endpoints.MapGrpcService<EventEditingService>();
         endpoints.MapGrpcService<CalendarSetupService>();
+        endpoints.MapGrpcService<CalendarFilesService>();
         return endpoints;
     }
 }
