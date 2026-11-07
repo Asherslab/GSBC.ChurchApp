@@ -16,6 +16,7 @@ How the causes found so far were fixed is the pattern to follow:
 | What failed | The cause | The fix |
 |---|---|---|
 | During set-up: a connection timed out, was refused ("Failed to connect to 127.0.0.1:…"), got an HTTP reply ("unknown response H"), or an S3 readiness check gave up after 100 s | Every test started its own Postgres or S3 container; with 170 of them starting and stopping at once, connections to a new one timed out or were refused, a freed port could be handed to another container, and each Media test waited about 15 s for its own SeaweedFS (5 to 13 minutes for the project) | One Postgres and one S3 server per run, a database and buckets per test |
+| Media failed with "ResourceReaperException: Initialization has been cancelled" under load | S3 still relied on Testcontainers' reaper container, which gives up when it can't start within its fixed timeout | SeaweedFS stops itself when unused, like Postgres, so no reaper is started |
 | An architecture rule failed on files nobody committed | It walked the disk and read a SwiftPM `.build` folder | Rules read the files git tracks or would add (`RepoFiles`), and `.build/` is ignored |
 | A history test picked the wrong "newest" change | Two steps ran on the real clock and usually landed a few milliseconds apart; on a frozen clock they tie | Tests run on `TestClock` and move it on between steps that must be apart |
 | "The ConnectionString property has not been initialized" in the output | Not a failure: the architecture tests started the real hosts, whose background services ran without a database | The rules start the hosts without the app's background services (`RoutesOnly`) |
@@ -67,7 +68,12 @@ to a developer's or the AppHost's database.
 
 **Buckets.** `await TestBuckets.CreateAsync()` names a public and a private bucket of the test's own
 on one SeaweedFS server for the test process; the test creates them through the app's S3 client.
-SeaweedFS takes about 15 seconds to start, so a project that needs S3 pays that once.
+SeaweedFS takes about 15 seconds to start, so a project that needs S3 pays that once. Like Postgres,
+it stops itself: 30 seconds after the test process lets go of its connection, even if the process
+crashed.
+
+Neither server uses Testcontainers' resource reaper (Ryuk): it is one more container with a fixed
+start-up timeout, and under load it gave up. Containers here clean themselves up instead.
 
 **The time.** `TestClock` (a `TimeProvider`) is registered wherever the code under test takes one. It
 starts at a fixed instant, `TestClock.Start` or one the test chooses, and only moves when the test
