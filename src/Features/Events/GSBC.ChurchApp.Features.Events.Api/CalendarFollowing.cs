@@ -1,17 +1,24 @@
+using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments roles, IPhoneRoles phoneRoles)
+internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments roles, IPhoneRoles phoneRoles, IAccessEvaluator access)
 {
-    public async Task<MyCalendars> ChooseAsync(Guid installId, Guid? userId, CalendarChoice choice, CancellationToken cancellationToken)
+    public async Task<MyCalendars> ChooseAsync(Guid installId, ClaimsPrincipal user, CalendarChoice choice, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(choice.CalendarId, out Guid calendarId) || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(calendar => calendar.Id == calendarId, cancellationToken) is not { } calendar)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "That calendar isn't here any more."));
+        Guid? userId = user.Identity?.IsAuthenticated == true ? Caller.UserId(user) : null;
+        if (choice.InYourWeek && !CalendarAudiences.Of(calendar.Audience).Includes(await ViewerAsync(userId, cancellationToken)))
+            throw new RpcException(new Status(userId is null ? StatusCode.Unauthenticated : StatusCode.PermissionDenied,
+                userId is null ? $"Sign in to add {calendar.Name}." : $"{calendar.Name} isn't for you."));
 
         bool shownAnyway = calendar.ShownOnNewPhones || CalendarAudiences.Of(calendar.Audience).IsForRoles;
         string objectId = calendarId.ToString();
@@ -48,6 +55,14 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
                 mine.TurnedOff.Add(objectId);
         }
         return mine;
+    }
+
+    private async Task<Viewer> ViewerAsync(Guid? userId, CancellationToken cancellationToken)
+    {
+        if (userId is not { } person)
+            return Viewer.Anonymous;
+        GrantSet grants = await access.GrantsForAsync(person, cancellationToken);
+        return new Viewer(true, node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
     }
 
     private static List<string> Held(IReadOnlyList<HeldRole> held, string role) =>

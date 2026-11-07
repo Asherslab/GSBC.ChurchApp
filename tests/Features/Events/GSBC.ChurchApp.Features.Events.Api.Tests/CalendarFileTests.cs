@@ -42,15 +42,21 @@ public sealed class CalendarFileTests : EventsHost
     }
 
     [Fact]
-    public async Task AResetLinkIsRefusedAndTheNewOneServesThePhonesCalendars()
+    public async Task AResetLinkIsRefusedAndTheNewOneServesOnlyThePhonesCalendarsForEveryone()
     {
         CalendarSettings outreach = await CalendarAsync("Outreach", Audience.Everyone);
+        CalendarSettings team = await CalendarAsync("Kids team", Audience.SignedIn);
         await SaveEventAsync(outreach, "Outreach Saturday");
+        await SaveEventAsync(team, "Team training");
         Guid phone = Guid.CreateVersion7();
-        await PhoneRoles.GiveAsync(phone, EventsPermissions.AdderRole, outreach.Calendar.Id, null, Cancel);
+        await Roles.GiveAsync(phone, EventsPermissions.AdderRole, outreach.Calendar.Id, null, Cancel);
+        await Roles.GiveAsync(phone, EventsPermissions.AdderRole, team.Calendar.Id, null, Cancel);
 
         string before = await LinkAsync(new LinkHolder(null, phone));
-        Assert.Contains("Outreach Saturday", (await FileAsync("", before)).Text);
+        CalendarFile phones = await FileAsync("", before);
+        Assert.Contains("Outreach Saturday", phones.Text);
+        Assert.DoesNotContain("Team training", phones.Text);
+        Assert.False((await FileAsync(team.Calendar.Slug, before)).Found);
 
         string after = await WithAsync(provider => provider.GetRequiredService<CalendarLinkSecrets>().ResetAsync(new LinkHolder(null, phone), Cancel));
 

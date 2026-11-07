@@ -9,7 +9,7 @@ namespace GSBC.ChurchApp.Features.Events.Api;
 internal sealed class EventsService(CalendarFollowing following, CalendarLinkSecrets links) : IEventsService
 {
     public async ValueTask<MyCalendars> ChooseAsync(CalendarChoice request, CallContext context = default) =>
-        await following.ChooseAsync(CallingInstall.Of(context), CallerId(context), request, context.CancellationToken);
+        await following.ChooseAsync(CallingInstall.Of(context), context.ServerCallContext?.GetHttpContext().User ?? new System.Security.Claims.ClaimsPrincipal(), request, context.CancellationToken);
 
     public async ValueTask<MyCalendars> MineAsync(Done request, CallContext context = default)
     {
