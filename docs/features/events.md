@@ -266,6 +266,10 @@ commit as the code (the owner approved all four on 2026-11-08):
   calendar* with *All my calendars* and *Everything public*. A calendar's name opens its page: what it's for,
   what's next in it, and its own *Subscribe*.
 
+- **Surface briefs** with their direction contracts, for whoever builds Events:
+  `.impeccable/surfaces/events-gsbc-churchapp-features-events-app-76ed283e.md` (the phone) and
+  `.impeccable/surfaces/ents-gsbc-churchapp-features-events-admin-755b7618.md` (the admin panel).
+
 ### Pinned for later
 
 - **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
@@ -413,4 +417,4 @@ commit as the code (the owner approved all four on 2026-11-08):
 
 - **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
   (a secret link must never be cached at the edge) and check it through the public hostname.
-- **The screens' design,** through impeccable (decision 36).
+- **The digest proof of concept** (decision 18): a quick mock with sample events, still to make.
