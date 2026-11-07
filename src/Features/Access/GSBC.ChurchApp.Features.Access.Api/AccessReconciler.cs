@@ -51,7 +51,7 @@ internal sealed class AccessReconciler(
         Dictionary<string, RoleRecord> roles = await db.Roles.Include(role => role.Patterns).Include(role => role.Assigners)
             .Where(role => role.SystemKey != null).ToDictionaryAsync(role => role.SystemKey!, cancellationToken);
         Dictionary<string, RoleRecord> reconciled = [];
-        foreach (SystemRole declared in WithAdditions())
+        foreach (SystemRole declared in Declared(systemRoles, additions))
         {
             if (!roles.Remove(declared.Key, out RoleRecord? role))
             {
@@ -93,10 +93,10 @@ internal sealed class AccessReconciler(
         await db.AnnounceChangeAsync(cancellationToken);
     }
 
-    private IEnumerable<SystemRole> WithAdditions()
+    public static List<SystemRole> Declared(IEnumerable<SystemRole> declared, IEnumerable<SystemRolePatterns> added)
     {
-        List<SystemRole> roles = systemRoles.ToList();
-        foreach (SystemRolePatterns addition in additions)
+        List<SystemRole> roles = declared.ToList();
+        foreach (SystemRolePatterns addition in added)
         {
             int index = roles.FindIndex(role => role.Key == addition.RoleKey);
             if (index < 0)

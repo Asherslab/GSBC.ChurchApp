@@ -22,16 +22,23 @@ internal sealed class PermissionHolderLookup(AccessDbContext db, IScopeHierarchy
 
         Dictionary<Guid, RoleRecord> roles = await db.LoadRolesWithIncludesAsync(
             people.Concat(phones).Select(assignment => assignment.RoleId), cancellationToken);
-        string? scope = permission.ScopeKind == ScopeKind.Global || string.IsNullOrEmpty(objectId) ? null : objectId;
 
-        return new PermissionHolders(
-            await AllowedAsync(people, roles, permission, scope, cancellationToken),
-            await AllowedAsync(phones, roles, permission, scope, cancellationToken));
+        return await HoldersAsync(people, phones, roles, permission, objectId, hierarchy, cancellationToken);
     }
 
-    private async Task<IReadOnlyList<Guid>> AllowedAsync(
-        List<(Guid Holder, Guid RoleId, string? ObjectId)> assignments, Dictionary<Guid, RoleRecord> roles, Permission permission, string? scope,
-        CancellationToken cancellationToken)
+    public static async Task<PermissionHolders> HoldersAsync(
+        IReadOnlyCollection<(Guid Holder, Guid RoleId, string? ObjectId)> people, IReadOnlyCollection<(Guid Holder, Guid RoleId, string? ObjectId)> phones,
+        IReadOnlyDictionary<Guid, RoleRecord> roles, Permission permission, string? objectId, IScopeHierarchy hierarchy, CancellationToken cancellationToken)
+    {
+        string? scope = permission.ScopeKind == ScopeKind.Global || string.IsNullOrEmpty(objectId) ? null : objectId;
+        return new PermissionHolders(
+            await AllowedAsync(people, roles, permission, scope, hierarchy, cancellationToken),
+            await AllowedAsync(phones, roles, permission, scope, hierarchy, cancellationToken));
+    }
+
+    private static async Task<IReadOnlyList<Guid>> AllowedAsync(
+        IReadOnlyCollection<(Guid Holder, Guid RoleId, string? ObjectId)> assignments, IReadOnlyDictionary<Guid, RoleRecord> roles, Permission permission,
+        string? scope, IScopeHierarchy hierarchy, CancellationToken cancellationToken)
     {
         List<Guid> allowed = [];
         foreach (IGrouping<Guid, (Guid Holder, Guid RoleId, string? ObjectId)> holder in assignments.GroupBy(assignment => assignment.Holder))

@@ -160,11 +160,13 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
         await db.Roles.AsNoTracking().Include(role => role.Assigners).SingleOrDefaultAsync(role => role.SystemKey == roleKey, cancellationToken)
         ?? throw new InvalidOperationException($"No system role '{roleKey}' is declared.");
 
-    private async Task<RoleRecord> PhoneRoleAsync(string roleKey, string? objectId, CancellationToken cancellationToken)
+    private async Task<RoleRecord> PhoneRoleAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
+        PhoneHoldable(await SystemRoleAsync(roleKey, cancellationToken), objectId);
+
+    public static RoleRecord PhoneHoldable(RoleRecord role, string? objectId)
     {
-        RoleRecord role = await SystemRoleAsync(roleKey, cancellationToken);
         if (!role.PhoneHoldable)
-            throw new InvalidOperationException($"The role '{roleKey}' can't be given to a phone.");
+            throw new InvalidOperationException($"The role '{role.SystemKey}' can't be given to a phone.");
         ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
         if (AssignmentRules.ScopeProblem(kind, objectId) is { } problem)
             throw new ArgumentException(problem, nameof(objectId));

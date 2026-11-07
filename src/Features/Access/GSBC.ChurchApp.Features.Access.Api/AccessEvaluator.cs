@@ -15,17 +15,15 @@ internal sealed class AccessEvaluator(
         if (Caller.UserId(user) is not { } userId || !catalog.ByNode.TryGetValue(node, out Permission? permission))
             return false;
 
-        GrantSet grants = await CompiledAsync(userId, cancellationToken);
-        if (Caller.IsTool(user))
-            grants = grants.Refusing(catalog.Sensitive);
+        GrantSet grants = AsSeenBy(await CompiledAsync(userId, cancellationToken), Caller.IsTool(user), catalog);
         return grants.IsAllowed(permission, string.IsNullOrEmpty(scopeId) ? null : scopeId);
     }
 
-    public async ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken)
-    {
-        GrantSet grants = await CompiledAsync(userId, cancellationToken);
-        return tools.ActsThroughATool(userId) ? grants.Refusing(catalog.Sensitive) : grants;
-    }
+    public async ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
+        AsSeenBy(await CompiledAsync(userId, cancellationToken), tools.ActsThroughATool(userId), catalog);
+
+    public static GrantSet AsSeenBy(GrantSet grants, bool throughATool, PermissionCatalog catalog) =>
+        throughATool ? grants.Refusing(catalog.Sensitive) : grants;
 
     private async ValueTask<GrantSet> CompiledAsync(Guid userId, CancellationToken cancellationToken)
     {
