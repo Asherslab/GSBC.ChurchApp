@@ -246,9 +246,17 @@ commit as the code (the owner approved all four on 2026-11-08):
 - **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
   desk; `.impeccable/mocks/decision/events-admin/`). Three panes, as drafts' workbench: a sand column with *All
   your calendars*, *Needs details* and *Asked to publish* (each with its count, the latter only when a calendar
-  uses it), then each calendar you can edit with a switch, and *Calendars and breaks*; the middle pane is Agenda |
-  Month of the chosen calendars, in the phone's rows, with *+ New event*; the right pane is the chosen event in the
-  same editor as the phone (*This date only | Every …*, *Save*, *Not on this date*).
+  uses it), then each calendar you can edit with a switch and a settings button, *+ New calendar*, and *Breaks*;
+  the middle pane is Agenda | Month of the chosen calendars, in the phone's rows, with *+ New event*; the right
+  pane is the chosen event in the same editor as the phone (*This date only | Every …*, *Save*, *Not on this
+  date*).
+- **Calendar setup lives in the workbench too** (owner, 2026-11-08: "settings per calendar on the workbench, breaks
+  & etc"; `workbench-settings.html`), not on a page of its own. A calendar's settings button opens them in the right
+  pane: description, who it's for (Hub tiles' picker), *Shown on new phones*, *Needs a publisher*, who can edit it
+  (Calendar editor holders at that calendar, given through Access), an iCal address to copy from for a read-only
+  calendar, and its link for calendar apps. *Breaks* lists the named breaks in the middle pane (dates, and which
+  regular events use each) and opens the chosen one on the right. Setup controls show only to holders of
+  `events.calendars.manage`.
 - **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
   chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
   accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
@@ -370,9 +378,17 @@ commit as the code (the owner approved all four on 2026-11-08):
 - **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
   desk; `.impeccable/mocks/decision/events-admin/`). Three panes, as drafts' workbench: a sand column with *All
   your calendars*, *Needs details* and *Asked to publish* (each with its count, the latter only when a calendar
-  uses it), then each calendar you can edit with a switch, and *Calendars and breaks*; the middle pane is Agenda |
-  Month of the chosen calendars, in the phone's rows, with *+ New event*; the right pane is the chosen event in the
-  same editor as the phone (*This date only | Every …*, *Save*, *Not on this date*).
+  uses it), then each calendar you can edit with a switch and a settings button, *+ New calendar*, and *Breaks*;
+  the middle pane is Agenda | Month of the chosen calendars, in the phone's rows, with *+ New event*; the right
+  pane is the chosen event in the same editor as the phone (*This date only | Every …*, *Save*, *Not on this
+  date*).
+- **Calendar setup lives in the workbench too** (owner, 2026-11-08: "settings per calendar on the workbench, breaks
+  & etc"; `workbench-settings.html`), not on a page of its own. A calendar's settings button opens them in the right
+  pane: description, who it's for (Hub tiles' picker), *Shown on new phones*, *Needs a publisher*, who can edit it
+  (Calendar editor holders at that calendar, given through Access), an iCal address to copy from for a read-only
+  calendar, and its link for calendar apps. *Breaks* lists the named breaks in the middle pane (dates, and which
+  regular events use each) and opens the chosen one on the right. Setup controls show only to holders of
+  `events.calendars.manage`.
 - **The month** (owner, 2026-11-08; `month.html`): the masthead names the month with Week | Month and arrows; the
   chips stay; a grid of days, each with up to three small marks (regular events pale, a special or one-off in
   accent, changed in marker, not on as an open ring) and a key under it; tapping a day lists its events below in
