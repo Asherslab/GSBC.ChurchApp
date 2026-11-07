@@ -168,8 +168,8 @@ events, specials and breaks, and some arrive before their details ("full details
     reached only through your own link, which carries a secret, works for a signed-out phone as well as a
     person, and can be reset (the old link stops working).
 
-When it's built, the paths below go into AGENTS.md's approved list and `EndpointRules`' allowlist in the same
-commit as the code (the owner approved all four on 2026-11-08):
+Built 2026-11-08: the paths below are in AGENTS.md's approved list and `EndpointRules`' allowlist (the owner approved
+all four on 2026-11-08):
 
 | Path | Host | Returns |
 |---|---|---|
@@ -314,8 +314,29 @@ commit as the code (the owner approved all four on 2026-11-08):
   contact details, per-calendar permission checks, Ask to publish, this date only vs every date) and
   `RowAudienceFeedTests` in Platform.Api.Tests.
 
-**Not built yet:** the phone's and admin panel's screens; iCal in and out and reminders (decisions 8, 24, 26, 27);
-the digest (decision 18).
+**iCal and reminders (2026-11-08, Station 3):** calendar apps, copying calendars in, and reminding organisers.
+
+- **iCal out** (decisions 26, 27): the four approved paths on the gateway (`Features.Events.Gateway`), each asking the
+  API's `CalendarFiles.Read` (`[Public]`) for the file. `{calendar}` is the calendar's link name (its slug). A private
+  calendar is served only through the secret link of someone it's for, checked through Access when the file is
+  asked for; a calendar the holder can no longer see is left out of *All my calendars* and answers 404 alone.
+- **Secret links:** `CalendarFiles.Link` and `ResetLink` (`[AppInstall]`: the person when signed in, otherwise the
+  phone) and `PersonLink` and `ResetPersonLink` (`[SignedIn]`, for the admin panel). `CalendarLinks` builds the paths
+  and the `webcal://` address for the Subscribe buttons (`CalendarLinks.Subscribe(origin, path)`).
+- **iCal in** (decision 8): every calendar with an iCal address is copied every 30 minutes and straight after an
+  address is set (`ICalSchedule`, one replica at a time), with ETag/If-Modified-Since; its status is the calendar's
+  `ICalReadAt` and `ICalProblem` in `CalendarSettings`, and an `events.admin` marker (the calendar's id) tells the
+  workbench to look again.
+- **Reminders** (decisions 22-25): `events.details.needed` (inbox and push, per calendar), raised by `DetailsReminders`
+  on the 15-minute schedule (one replica at a time).
+- **Tests** (`Events.Api.Tests`): a private calendar never served without a valid link of someone it's for (and not
+  after their role is taken away); a reset link refused; a reminder once at 7 and at 2 days and settled when the
+  place arrives; copying an iCal calendar (a weekly repeat with a skipped and a changed date, in another time zone,
+  an all-day camp, the ETag on the next read, a failure keeping what was copied). `EndpointRules` allows exactly the
+  four paths.
+
+**Not built yet:** the phone's and admin panel's screens (the Subscribe buttons and the iCal status are theirs, on the
+calls above); the digest (decision 18).
 
 ## Decided while building (Station 1, 2026-11-08)
 
@@ -356,10 +377,53 @@ the digest (decision 18).
 - **Sample data:** *Kids team* and *Church members* are for anyone signed in, because there's no *Church member* role
   yet (the office creates it in Access and chooses it on the calendar).
 
+## Decided while building (Station 3, 2026-11-08)
+
+- **Calendar apps get each date as its own event,** not RRULE/EXDATE: the server already works out every date for
+  phones, so a special, a changed time and a date that's not on reach a calendar app exactly as they reach the phone,
+  with nothing for each app to get wrong. Each date's UID is `{occurrence id}@calendar.gsbc-churchapp`, so it's
+  updated in place. Times go out in UTC, all-day dates as dates. A date that's not on is left out (decision 11).
+- **What an event carries in a calendar app:** title, place (a site-map place's name, or the address), the
+  description, what's still missing in plain words (*Place to be announced*), the Register link (as `URL` and in the
+  description) and other links, and the label as a category. **Contacts are left out**: their details are only for
+  people signed in, and a calendar file is fetched by an app, not a person.
+- **The gateway asks the API over gRPC.** The gateway keeps no Events data; its four routes call `CalendarFiles.Read`,
+  a `[Public]` method that returns no more than the links themselves would.
+- **A link's secret** is 24 random bytes (32 characters, URL-safe), kept as it is so the Subscribe buttons can show
+  it again. A person or a signed-out phone holds one; reset replaces every link the holder has. **A signed-out
+  phone's link becomes the person's when that phone signs in** (on its next *which calendars have I added* call), so a
+  calendar subscribed before signing in keeps working and now holds the person's calendars, which moved with them.
+- **Caching** (the plan before deploying, ~/.claude/CLAUDE.md): a calendar for everyone and *All public calendars*
+  send `Cache-Control: public, max-age=900` (the publisher refreshes every 15 minutes); a secret link sends
+  `private, no-store`, so Cloudflare never keeps it at the edge; a 404 sends `no-store`. Dev and preview send
+  `no-store` for everything (the gateway's rule). Cloudflare doesn't cache `.ics` at the edge by default.
+- **Copying an iCal calendar in:** each date becomes a read-only one-off event keyed by its UID (`UID/date` for a
+  repeat), shown at once and quietly (no *Changed* marks); a date gone from the source is removed; a failure keeps
+  what was copied and records the problem. Repeats understood: daily, weekly, monthly and yearly with interval,
+  count, until, days (with "first", "last" and so on), days of the month and months; EXDATE, RDATE and changed dates
+  (RECURRENCE-ID, which carry only their own details, as iCal says). Other rule parts are ignored. Times in any time
+  zone are moved into church time. The source is read in full once a day (the window moves), otherwise only when it
+  has changed. Only addresses on the public internet are read (an address that resolves to a private network is
+  refused), up to 8 MB.
+- **Reminders:** sent from the 15-minute schedule; a date coming up inside both 7 and 2 days at once (a regular event
+  made late) gets one reminder, not two. They go to the regular event's *Event organiser* holders, or the calendar's
+  editors when it has none. **Settled** on the next run after the details arrive, the date is set as not on, or the
+  date passes. Once a reminder has gone for a date, removing the details again doesn't send it again. Email follows
+  when Notifications gains an email channel; nothing in Events needs to change for it.
+
+## What the owner sets up
+
+- **Nothing new in Cloudflare for dev.** For production, the zone's Browser Cache TTL set to *Respect existing headers*
+  (already the plan for every app), and no Cache Rule that caches everything under `/calendars/mine/` (a "cache
+  everything" rule would override `private, no-store`).
+
 ## Open
 
-- **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
-  (a secret link must never be cached at the edge) and check it through the public hostname.
+- **Checking the iCal links' caching live** through `https://dev-app.baptist.com.au` (and production once deployed):
+  Station 3 couldn't run its own backend (the main checkout's AppHost held the ports). Check with
+  `curl -sD - -o /dev/null https://dev-app.baptist.com.au/calendars/public.ics` for `no-store` on dev, and on
+  production for `public, max-age=900` on the public links and `private, no-store` with no `cf-cache-status: HIT` on
+  a secret link.
 - **The digest proof of concept** (decision 18): a quick mock with sample events, still to make.
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
