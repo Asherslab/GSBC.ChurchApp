@@ -124,6 +124,9 @@ events, specials and breaks, and some arrive before their details ("full details
     made of its own components, never a copy of the email (owner, 2026-11-07). Which tool sends the email today
     isn't known (not Elvanto: it has no such template).
 
+    The proof of concept is in [`.impeccable/mocks/digest/`](../../.impeccable/mocks/digest/README.md): the
+    admin page, the digest in the app and the email (2026-11-08).
+
 ### What an event carries (owner, 2026-11-07)
 
 19. **Title, calendar and when** (start and end, all day, or several days for a camp), and optionally: a short
@@ -285,4 +288,4 @@ commit as the code (the owner approved all four on 2026-11-08):
 
 - **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
   (a secret link must never be cached at the edge) and check it through the public hostname.
-- **The digest proof of concept** (decision 18): a quick mock with sample events, still to make.
+- **The digest proof of concept** (decision 18): mocks made (`.impeccable/mocks/digest/`); to show staff.
