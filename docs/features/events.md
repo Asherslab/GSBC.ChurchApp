@@ -125,7 +125,9 @@ events, specials and breaks, and some arrive before their details ("full details
     isn't known (not Elvanto: it has no such template).
 
     The proof of concept is in [`.impeccable/mocks/digest/`](../../.impeccable/mocks/digest/README.md): the
-    admin page, the digest in the app and the email (2026-11-08).
+    admin page, the digest in the app and the email (2026-11-08). A picture leading each item is fine here
+    (owner, 2026-11-08): today's What's Next already puts a stock church photo related to each item between them,
+    so the digest's picture cards are what people know, unlike the calendar, which stays text first.
 
 ### What an event carries (owner, 2026-11-07)
 
