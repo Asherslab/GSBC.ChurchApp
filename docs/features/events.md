@@ -314,8 +314,33 @@ commit as the code (the owner approved all four on 2026-11-08):
   contact details, per-calendar permission checks, Ask to publish, this date only vs every date) and
   `RowAudienceFeedTests` in Platform.Api.Tests.
 
-**Not built yet:** the phone's and admin panel's screens; iCal in and out and reminders (decisions 8, 24, 26, 27);
-the digest (decision 18).
+**Events screens (2026-11-08, Station 2):** every screen, on the phone and in the admin panel, built with impeccable from
+the locked sketches and finish-reviewed (`.impeccable/review/events/`).
+
+- **The phone** (`Events.App`): `/week` is *One long week* (masthead with Week | Month, the day rail in a sticky band
+  that follows the list, chips, Browse; regular events quiet, specials and one-offs fuller, not on with an icon and a
+  line under, *Changed* until opened); `/week?view=month` is the month (marks, key, the chosen day's rows);
+  `/event/{id}` is *The date block* (Add to calendar, Register, Share, the change note, place and contacts as facts,
+  About, Other dates, missing details in plain words); `/week/calendars` is Browse (in your week, more calendars,
+  subscribe to all yours or everything public); `/calendar/{id}` is a calendar's page with its own Subscribe;
+  `/event/new` starts a new event.
+- **Editing** (`Events.Client`, shared): *Edit where you read it* (`EventEditor`): the date block, title and time line
+  open their sheets; the place searches places used before; contacts, About, Register, links and a picture; how a
+  regular event repeats, its breaks, what each date needs and when organisers are reminded; *This date only | Every …*;
+  *Not on this date*; *Tell people* after saving something already shown; *Ask to publish*; *Also shown on* with the
+  widening sentence; delete. On the phone for holders of `events.edit` at the calendar.
+- **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars with switches and settings, Needs
+  details, Asked to publish with *Asked to show on your calendar* and its widening sentence, + New calendar, Breaks;
+  Agenda | Month; the editor, a calendar's settings or a break on the right). Its Needs details and Asked to publish
+  feed the office week and the sidebar's count.
+- **Home:** *This week* (`hub.week`, same key and layouts) moved from Configuration's waiting tiles into Events as
+  `EventsTiles.Week`, showing *Coming up*.
+- **Shared components** added to Platform.Ui: `AgendaRow`, `WeekRail`, `ToggleChips`; `Masthead` gained a `Beside`
+  slot, `Segmented` a `Class`, `Page` an `OnBack`.
+- **Tests:** `Events.Client.Tests` (unit, no I/O): Coming up, this date only vs every date, the not-on line, the widening
+  sentence.
+
+**Not built yet:** iCal in and out and reminders (decisions 8, 24, 26, 27; Station 3); the digest (decision 18).
 
 ## Decided while building (Station 1, 2026-11-08)
 
@@ -374,6 +399,34 @@ the digest (decision 18).
 - **Sample data:** *Kids team* and *Church members* are for anyone signed in, because there's no *Church member* role
   yet (the office creates it in Access and chooses it on the calendar).
 
+## Decided while building (Station 2, screens, 2026-11-08)
+
+- **The week starts on Sunday** on the phone and in the admin panel's month, as the sketches do.
+- **Routes:** Week and Month are one page (`/week`, `/week?view=month`, switched in place); Browse is `/week/calendars`;
+  a new event is `/event/new?calendar=…`. In the month view Week | Month sits on the year line beside the arrows, so a
+  long month name keeps the title on one line.
+- **Changed until opened** is remembered on the phone per date and change (occurrence id and change time), so a second
+  change lights it again. Hiding a calendar with its chip is for the moment: it isn't remembered once the app closes.
+- **Add to calendar** saves one event as an `.ics` file for the phone's calendar; **Share** uses the phone's share
+  sheet, or copies a line (title, date, time, place) where there isn't one.
+- **A site-map place** shows its name with "On the church site" and no link until the site map exists; an address
+  opens Maps.
+- **Subscribe** links are `webcal://` on the gateway's host with the paths in decision 27. *All my calendars* and a
+  private calendar's own link need the person's link from the iCal station: the seam is `IYourCalendarLink`
+  (`NoCalendarLinkYet` until then, which says the link isn't ready rather than showing a broken button).
+- **Who can edit it** in a calendar's settings explains and links to Access's *Who can do what*, where Calendar editor
+  is given at the calendar. Listing its holders there needs a Platform lookup of who holds a role at a scope (Open).
+- **This date only | Every …** keeps two working copies: switching shows that scope's own values, so a special's title
+  never leaks into every date by accident.
+- **The editor reads the calendar's publishing rules from the desk** (`Editing.Desk`), on the phone too, so an editor
+  of a calendar that needs a publisher saves for later and gets *Ask to publish*.
+- **Home's tile on the admin canvas** reads the default calendars through `Editing.Agenda` (staff are signed in), so
+  no public method was added. The Contracts are unchanged by this station.
+- **The agenda's time column** is 4.75rem, not 66px: "10:30am" didn't fit.
+- **Not shown on the office rail:** dates that aren't on (the rail has no way to show them other than a suffix).
+- **Checked headlessly:** the owner's AppHost held the fixed ports, so the screens were checked by rendering the real
+  components with sample data and the real CSS (light and dark), not on dev-app.baptist.com.au or the Simulator.
+
 ## Open
 
 - **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
@@ -386,3 +439,7 @@ the digest (decision 18).
   written as a public notification. Nobody would choose one, but the calendar settings don't refuse it yet; that
   needs Access to say which roles are phone-holdable.
 - **Removing a calendar** isn't built (calendars can be renamed and changed).
+- **Who can edit a calendar** can't be listed on its settings yet: it needs a Platform lookup of who holds a role at a
+  scope, which Access would provide. Until then the settings link to *Who can do what*.
+- **Choosing site-map places** in the editor's Where waits for the site map; the place search offers places used before.
+- **Checking the screens live** in the Simulator and through dev-app.baptist.com.au, once a backend can run with them.
