@@ -24,7 +24,6 @@ public sealed partial class TestRules
         "tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/MediaPrivacyAndFolderTests.cs",
         "tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/MediaUploadTests.cs",
         "tests/Features/Media/GSBC.ChurchApp.Features.Media.Api.Tests/PictureSizeTests.cs",
-        "tests/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api.Tests/NotificationsTests.cs",
         "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/ArtworkTests.cs",
         "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/AudioStorageTests.cs",
         "tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/FollowingTests.cs",

@@ -3,8 +3,6 @@ using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
-using GSBC.ChurchApp.Platform.Common;
-using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,15 +12,13 @@ internal sealed class NotificationRaiser(
     NotificationsDbContext db, NotificationKindCatalog kinds, IPermissionHolders holders, IPeopleIndex people, PushSignal signal, TimeProvider time)
     : INotifications
 {
-    private static readonly TimeSpan SummaryPause = TimeSpan.FromMinutes(10);
-
     public async Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => await RaisedAsync(notification, cancellationToken);
 
     public async Task<Guid> RaisedAsync(Notification notification, CancellationToken cancellationToken)
     {
-        NotificationKind kind = Validated(notification);
+        NotificationKind kind = NotificationRules.Validated(kinds, notification);
         DateTime now = time.GetUtcNow().UtcDateTime;
-        Recipients recipients = await RecipientsAsync(notification, cancellationToken);
+        Recipients recipients = await NotificationRules.RecipientsAsync(notification, holders, people, cancellationToken);
 
         NotificationRecord record = new()
         {
@@ -90,43 +86,10 @@ internal sealed class NotificationRaiser(
 
     public async Task<(int People, int Phones)> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken)
     {
-        Recipients recipients = await RecipientsAsync(new Notification(AnnouncementNotifications.Announcement, audience, "", ""), cancellationToken);
+        Recipients recipients = await NotificationRules.RecipientsAsync(
+            new Notification(AnnouncementNotifications.Announcement, audience, "", ""), holders, people, cancellationToken);
         List<Device> devices = await DevicesAsync(recipients, cancellationToken);
         return (recipients.People.Count, devices.Count);
-    }
-
-    private NotificationKind Validated(Notification notification)
-    {
-        if (!kinds.ByKey.TryGetValue(notification.Kind.Key, out NotificationKind? kind))
-            throw new InvalidOperationException($"The notification kind '{notification.Kind.Key}' isn't registered.");
-        if (notification.Subject is not null && LinkTargets.InAppRoute(notification.Link ?? "") is null)
-            throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(notification));
-        if (notification.Link is { } link && !LinkTargets.IsSafe(link))
-            throw new ArgumentException($"'{link}' isn't a safe link.", nameof(notification));
-        if (notification.Urgent && !kind.MayBeUrgent)
-            throw new ArgumentException($"'{kind.Key}' notifications can't be urgent.", nameof(notification));
-        return kind;
-    }
-
-    private async Task<Recipients> RecipientsAsync(Notification notification, CancellationToken cancellationToken)
-    {
-        if (notification.Test && notification.Audience is not NotificationAudience.PersonAudience)
-            throw new ArgumentException("A test goes to one person.", nameof(notification));
-
-        switch (notification.Audience)
-        {
-            case NotificationAudience.EveryoneAudience:
-                return new Recipients(await people.EveryoneAsync(cancellationToken), [], EveryPhone: true, Public: true);
-            case NotificationAudience.SignedInAudience:
-                return new Recipients(await people.EveryoneAsync(cancellationToken), [], EveryPhone: false, Public: false);
-            case NotificationAudience.PersonAudience person:
-                return new Recipients([person.UserId], [], EveryPhone: false, Public: false);
-            case NotificationAudience.HoldingAudience holding:
-                PermissionHolders found = await holders.HoldersAsync(holding.Permission, holding.ObjectId, cancellationToken);
-                return new Recipients(found.People, found.Phones, EveryPhone: false, Public: found.Phones.Count > 0);
-            default:
-                throw new ArgumentException("Unknown audience.", nameof(notification));
-        }
     }
 
     private async Task QueuePushesAsync(
@@ -148,14 +111,12 @@ internal sealed class NotificationRaiser(
         Dictionary<Guid, int> recent = kind.Pacing is { } pacing
             ? await RecentPushesAsync(devices.Select(device => device.Id).ToList(), pacingGroup, now - pacing.Per, cancellationToken)
             : [];
-        bool interrupts = notification.Urgent || kind.Mandatory || notification.Test;
 
         foreach (Device device in devices)
         {
-            if (!PushWanted(kind, notification.ScopeId, device, preferences))
+            if (!NotificationRules.PushWanted(kind, notification.ScopeId, device, preferences))
                 continue;
-            bool overLimit = kind.Pacing is { } limit && recent.GetValueOrDefault(device.Id) >= limit.Pushes;
-            DateTime due = overLimit ? now + SummaryPause : now;
+            (bool summarised, DateTime due) = NotificationRules.Scheduled(kind, notification, recent.GetValueOrDefault(device.Id), now);
             db.Deliveries.Add(new Delivery
             {
                 DeviceId = device.Id,
@@ -163,25 +124,15 @@ internal sealed class NotificationRaiser(
                 UserId = device.UserId,
                 Kind = DeliveryKind.Visible,
                 PacingGroup = pacingGroup,
-                Summarised = overLimit,
+                Summarised = summarised,
                 CreatedAt = now,
-                DueAt = interrupts ? due : AfterQuietHours(due),
+                DueAt = due,
             });
         }
     }
 
-    private static DateTime AfterQuietHours(DateTime utc) =>
-        QuietHours.HeldUntil(ChurchTime.ToChurch(utc)) is { } morning ? ChurchTime.ToUtc(morning) : utc;
-
-    private async Task<List<Device>> DevicesAsync(Recipients recipients, CancellationToken cancellationToken)
-    {
-        List<Guid> peopleIds = [.. recipients.People];
-        List<Guid> phoneIds = [.. recipients.Phones];
-        return await db.Devices.AsNoTracking()
-            .Where(device => (device.UserId != null && peopleIds.Contains(device.UserId.Value))
-                || (device.UserId == null && (recipients.EveryPhone || phoneIds.Contains(device.InstallId))))
-            .ToListAsync(cancellationToken);
-    }
+    private Task<List<Device>> DevicesAsync(Recipients recipients, CancellationToken cancellationToken) =>
+        db.Devices.AsNoTracking().Where(recipients.Devices()).ToListAsync(cancellationToken);
 
     private async Task<Dictionary<Guid, int>> RecentPushesAsync(List<Guid> deviceIds, string pacingGroup, DateTime since, CancellationToken cancellationToken) =>
         await db.Deliveries.AsNoTracking()
@@ -189,19 +140,4 @@ internal sealed class NotificationRaiser(
             .GroupBy(delivery => delivery.DeviceId)
             .Select(group => new { group.Key, Count = group.Count() })
             .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
-
-    private static bool PushWanted(NotificationKind kind, string? scopeId, Device device, List<Preference> preferences)
-    {
-        if (kind.Mandatory)
-            return true;
-        IEnumerable<Preference> mine = device.UserId is { } userId
-            ? preferences.Where(preference => preference.UserId == userId)
-            : preferences.Where(preference => preference.InstallId == device.InstallId);
-        List<Preference> list = mine.ToList();
-        Preference? chosen = list.FirstOrDefault(preference => scopeId is not null && preference.ScopeId == scopeId)
-            ?? list.FirstOrDefault(preference => preference.ScopeId is null);
-        return chosen?.Push ?? kind.DefaultPush;
-    }
-
-    private sealed record Recipients(IReadOnlyList<Guid> People, IReadOnlyList<Guid> Phones, bool EveryPhone, bool Public);
 }
