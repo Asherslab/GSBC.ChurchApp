@@ -138,9 +138,37 @@ events, specials and breaks, and some arrive before their details ("full details
     leaders, or one person). Events reaches that through a place in the app (destinations.md), not by
     referencing Ministries.
 
+### Details filled in later (owner, 2026-11-08)
+
+22. **Organisers are reminded.** A regular event's organisers default to whoever owns its calendar (the
+    outreach ministry's leaders for *Outreach*; the office for *Whole church*), meaning the holders of the
+    calendar's edit permission. A regular event can name its own organisers instead: an Access role given at
+    that regular event, never a list of people kept by Events. Contacts are shown to people and never reminded.
+23. **A regular event says what each date needs** ("each date needs: a place"), ticked when it's set up.
+    Nothing by default, so ordinary Sundays never remind anyone.
+24. **Reminders 7 days and 2 days before** while something needed is missing, adjustable per regular event,
+    by inbox and push. Email when Notifications has an email channel (the kind allows it). The admin panel
+    lists **Needs details**, so nothing depends on a notification being opened.
+25. **An event shows before its details are in,** saying what's missing in plain words: *Place to be
+    announced*.
+
 ### Pinned for later
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
+### Details filled in later (owner, 2026-11-08)
+
+22. **Organisers are reminded.** A regular event's organisers default to whoever owns its calendar (the
+    outreach ministry's leaders for *Outreach*; the office for *Whole church*), meaning the holders of the
+    calendar's edit permission. A regular event can name its own organisers instead: an Access role given at
+    that regular event, never a list of people kept by Events. Contacts are shown to people and never reminded.
+23. **A regular event says what each date needs** ("each date needs: a place"), ticked when it's set up.
+    Nothing by default, so ordinary Sundays never remind anyone.
+24. **Reminders 7 days and 2 days before** while something needed is missing, adjustable per regular event,
+    by inbox and push. Email when Notifications has an email channel (the kind allows it). The admin panel
+    lists **Needs details**, so nothing depends on a notification being opened.
+25. **An event shows before its details are in,** saying what's missing in plain words: *Place to be
+    announced*.
+
 ### Pinned for later
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
@@ -153,7 +181,6 @@ events, specials and breaks, and some arrive before their details ("full details
 
 - **Who edits a calendar:** a permission scoped to the calendar, and how a ministry's leaders come to hold it.
 - Not overloading people: what someone sees by default, following, Home, filters, a digest.
-- Details filled in later, and reminding whoever is responsible.
 - Subscribing from a phone's calendar app (iCal out; needs the owner's decision on an HTTP path or a static
   file).
 - Drafts and publishing for events; notifications that link to an event.
