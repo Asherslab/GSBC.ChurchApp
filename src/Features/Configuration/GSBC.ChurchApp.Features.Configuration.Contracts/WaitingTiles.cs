@@ -32,11 +32,13 @@ public static class WaitingTiles
             .. TileVariants.Pictures,
         ]);
 
+    private const string CalendarPath = "/week";
+
     public static readonly NumberSetting WeekEntries = new("entries", "How many to show", 2, 1, 4);
 
     public static readonly HubTileKind Week = new("hub.week", "This week",
         "The next things on at church this week", "the calendar",
-        new TileDefaults("This week", Columns: 2, Tone: TileTones.Raised, Link: ComingSoonDestinations.Week.Path, Text: "Calendar",
+        new TileDefaults("This week", Columns: 2, Tone: TileTones.Raised, Link: CalendarPath, Text: "Calendar",
             TextLabel: "Words to open the calendar"),
         sample: true, more: [WeekEntries], variants:
         [

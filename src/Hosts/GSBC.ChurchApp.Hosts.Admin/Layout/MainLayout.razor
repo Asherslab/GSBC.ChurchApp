@@ -27,7 +27,7 @@
                 </EmptyState>
             </div>
         }
-        else if (Area is { Requires: { } permission } locked && !Access.Can(permission))
+        else if (Area is { Requires: { } permission } locked && !Access.CanSomewhere(permission))
         {
             <TitleBand Title="@locked.Title" />
             <div class="admin-gate">

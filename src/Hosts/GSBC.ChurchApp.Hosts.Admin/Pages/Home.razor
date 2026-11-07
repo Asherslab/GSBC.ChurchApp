@@ -84,7 +84,7 @@ else
     private IReadOnlyCollection<string> Feeds => Sources.SelectMany(source => source.Feeds).ToHashSet();
 
     private IEnumerable<NavEntry> Areas =>
-        Modules.Navigation.Where(entry => entry.Summary is not null && (entry.Requires is null || Access.Can(entry.Requires)));
+        Modules.Navigation.Where(entry => entry.Summary is not null && (entry.Requires is null || Access.CanSomewhere(entry.Requires)));
 
     private async Task<OfficeWeek> LoadAsync()
     {

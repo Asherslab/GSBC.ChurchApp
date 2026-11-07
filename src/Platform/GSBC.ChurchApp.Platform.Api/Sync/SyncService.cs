@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Grpc.Core;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -186,6 +187,8 @@ public sealed class SyncService(
     {
         if (feed.Audience is FeedAudience.OwnRecordsAudience)
             return Caller.UserId(user)?.ToString() is { } userId ? rows.Where(row => row.ScopeId == userId).ToList() : [];
+        if (feed.Audience is FeedAudience.EachRowAudience)
+            return await RowsForTheirAudienceAsync(rows, user, cancellationToken);
         if (feed.Audience is not FeedAudience.PermissionAudience audience)
             return rows;
 
@@ -196,12 +199,23 @@ public sealed class SyncService(
         return rows.Where(row => allowedByScope[row.ScopeId ?? ""]).ToList();
     }
 
+    private async Task<List<FeedChangeRecord>> RowsForTheirAudienceAsync(List<FeedChangeRecord> rows, ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        if (Caller.UserId(user) is not { } userId)
+            return rows.Where(row => row.Deleted).ToList();
+
+        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
+        Viewer viewer = new(IsSignedIn(user), node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
+        return rows.Where(row => row.Deleted || (row.ScopeId is { } text && Audience.TryParse(text, out Audience? audience) && audience.Includes(viewer))).ToList();
+    }
+
     private async Task<bool> AudienceChangedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
-        if (feed.Audience is not FeedAudience.PermissionAudience audience || Caller.SessionId(user) is not { } session || Caller.UserId(user) is not { } userId)
+        if (feed.Audience is not (FeedAudience.PermissionAudience or FeedAudience.EachRowAudience) || Caller.SessionId(user) is not { } session || Caller.UserId(user) is not { } userId)
             return false;
 
-        string fingerprint = Fingerprint(await access.GrantsForAsync(userId, cancellationToken), audience.Permission.Node);
+        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
+        string fingerprint = feed.Audience is FeedAudience.PermissionAudience audience ? Fingerprint(grants, audience.Permission.Node) : Fingerprint(grants);
         AudienceMark? mark = await db.AudienceMarks.FindAsync([session, feed.Name], cancellationToken);
         bool changed = mark is not null && mark.Fingerprint != fingerprint;
         DateTime now = DateTime.UtcNow;
@@ -216,9 +230,9 @@ public sealed class SyncService(
         return changed;
     }
 
-    private static string Fingerprint(GrantSet grants, string node) =>
+    private static string Fingerprint(GrantSet grants, string? node = null) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', grants.Grants
-            .Where(grant => grant.Pattern.Matches(node))
+            .Where(grant => node is null || grant.Pattern.Matches(node))
             .Select(grant => $"{grant.Pattern}@{grant.Scope}")
             .Order(StringComparer.Ordinal)))));
 
@@ -226,7 +240,7 @@ public sealed class SyncService(
         feed.Audience switch
         {
             FeedAudience.PublicAudience => true,
-            FeedAudience.SignedInAudience or FeedAudience.OwnRecordsAudience => IsSignedIn(user),
+            FeedAudience.SignedInAudience or FeedAudience.OwnRecordsAudience or FeedAudience.EachRowAudience => IsSignedIn(user),
             FeedAudience.PermissionAudience audience when audience.Permission.ScopeKind == ScopeKind.Global =>
                 IsSignedIn(user) && await access.IsAllowedAsync(user, audience.Permission.Node, null, cancellationToken),
             FeedAudience.PermissionAudience => IsSignedIn(user),

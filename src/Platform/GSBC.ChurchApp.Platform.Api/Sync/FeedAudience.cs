@@ -7,6 +7,7 @@ public abstract record FeedAudience
     public static readonly FeedAudience Public = new PublicAudience();
     public static readonly FeedAudience SignedIn = new SignedInAudience();
     public static readonly FeedAudience OwnRecords = new OwnRecordsAudience();
+    public static readonly FeedAudience EachRow = new EachRowAudience();
 
     public static FeedAudience Holding(Permission permission) => new PermissionAudience(permission);
 
@@ -15,6 +16,8 @@ public abstract record FeedAudience
     public sealed record SignedInAudience : FeedAudience;
 
     public sealed record OwnRecordsAudience : FeedAudience;
+
+    public sealed record EachRowAudience : FeedAudience;
 
     public sealed record PermissionAudience(Permission Permission) : FeedAudience;
 }
