@@ -152,6 +152,28 @@ events, specials and breaks, and some arrive before their details ("full details
 25. **An event shows before its details are in,** saying what's missing in plain words: *Place to be
     announced*.
 
+### Subscribing from a calendar app (owner, 2026-11-08)
+
+26. **One standard way for every calendar: iCal links served by the gateway.** The owner approved this
+    non-gRPC path in chat on 2026-11-08 (AGENTS.md's hard rule): calendar apps (iPhone, Google, Outlook) only
+    fetch calendars over plain HTTP, so it can't be a gRPC method. One method for every calendar, public or
+    private, lets ministries put their events wherever suits them; nothing a ministry should put in a calendar
+    is a major risk. A static file in R2 (as the podcast feed is) and writing into the phone's own calendar
+    were considered; neither serves private calendars to every calendar app.
+27. **Subscribe to one calendar, or to all of yours.** A calendar's own link gives that calendar; *All my
+    calendars* gives one subscription holding everything you've added and been given. Private calendars are
+    reached only through your own link, which carries a secret, works for a signed-out phone as well as a
+    person, and can be reset (the old link stops working).
+
+When it's built, the paths below go into AGENTS.md's approved list and `EndpointRules`' allowlist in the same
+commit as the code:
+
+| Path | Host | Returns |
+|---|---|---|
+| `GET /calendars/{calendar}.ics` | Gateway | A calendar for everyone (no secret needed) |
+| `GET /calendars/mine/{secret}.ics` | Gateway | Everything the link's holder has added and been given |
+| `GET /calendars/mine/{secret}/{calendar}.ics` | Gateway | One calendar through the holder's link (how a private one is subscribed to alone) |
+
 ### Pinned for later
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
@@ -169,6 +191,28 @@ events, specials and breaks, and some arrive before their details ("full details
 25. **An event shows before its details are in,** saying what's missing in plain words: *Place to be
     announced*.
 
+### Subscribing from a calendar app (owner, 2026-11-08)
+
+26. **One standard way for every calendar: iCal links served by the gateway.** The owner approved this
+    non-gRPC path in chat on 2026-11-08 (AGENTS.md's hard rule): calendar apps (iPhone, Google, Outlook) only
+    fetch calendars over plain HTTP, so it can't be a gRPC method. One method for every calendar, public or
+    private, lets ministries put their events wherever suits them; nothing a ministry should put in a calendar
+    is a major risk. A static file in R2 (as the podcast feed is) and writing into the phone's own calendar
+    were considered; neither serves private calendars to every calendar app.
+27. **Subscribe to one calendar, or to all of yours.** A calendar's own link gives that calendar; *All my
+    calendars* gives one subscription holding everything you've added and been given. Private calendars are
+    reached only through your own link, which carries a secret, works for a signed-out phone as well as a
+    person, and can be reset (the old link stops working).
+
+When it's built, the paths below go into AGENTS.md's approved list and `EndpointRules`' allowlist in the same
+commit as the code:
+
+| Path | Host | Returns |
+|---|---|---|
+| `GET /calendars/{calendar}.ics` | Gateway | A calendar for everyone (no secret needed) |
+| `GET /calendars/mine/{secret}.ics` | Gateway | Everything the link's holder has added and been given |
+| `GET /calendars/mine/{secret}/{calendar}.ics` | Gateway | One calendar through the holder's link (how a private one is subscribed to alone) |
+
 ### Pinned for later
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
@@ -181,8 +225,8 @@ events, specials and breaks, and some arrive before their details ("full details
 
 - **Who edits a calendar:** a permission scoped to the calendar, and how a ministry's leaders come to hold it.
 - Not overloading people: what someone sees by default, following, Home, filters, a digest.
-- Subscribing from a phone's calendar app (iCal out; needs the owner's decision on an HTTP path or a static
-  file).
+- **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
+  (a secret link must never be cached at the edge) and check it through the public hostname.
 - Drafts and publishing for events; notifications that link to an event.
 - Offline and how far ahead and back phones keep events.
 - The admin panel and the phone: which screens go where.
