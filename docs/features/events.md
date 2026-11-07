@@ -196,7 +196,28 @@ commit as the code (the owner approved all four on 2026-11-08):
     who has its calendar. Cancelling one date works the same way: it shows as not on, with *Tell people*
     offered.
 
+### The phone and the admin panel (owner, 2026-11-08)
+
+32. **Phones keep 30 days back and 12 months ahead.** The server works out each regular event's dates within
+    that window, so the phone has no repeat logic and the calendar works fully offline. The iCal links cover
+    the same window.
+33. **The calendar page has a week view and a month view.** *This week* (`/week`, already Home's tile) opens on
+    the day rail and agenda with *Coming up*; the month view is a tap away for planning ahead.
+34. **Whether it's a tab is the church's choice:** the owner wants the app's tab bar configurable by staff in
+    the admin panel, through drafts, as the Hub is. That's a Configuration change of its own (below); the
+    calendar page is a place that can be a tab.
+35. **Full event editing on the phone too** (owner, 2026-11-08, the yes AGENTS.md asks for before putting
+    staff screens in the app): a meeting moved or cancelled at the last minute is handled by whoever is there,
+    and they may not have a laptop. Editors edit events and regular events on the phone as in the admin panel,
+    from the same components, gated by `events.edit` at the calendar (repo-layout: a management screen lives in
+    the feature's Client).
+36. **Designed with impeccable's whole process,** every screen, phone and admin panel alike: interview,
+    decision page, surface brief, detector and finish review.
+
 ### Pinned for later
+
+- **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
+  drafts. Not part of Events; Configuration's to design.
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
 ### Details filled in later (owner, 2026-11-08)
@@ -257,7 +278,28 @@ commit as the code (the owner approved all four on 2026-11-08):
     who has its calendar. Cancelling one date works the same way: it shows as not on, with *Tell people*
     offered.
 
+### The phone and the admin panel (owner, 2026-11-08)
+
+32. **Phones keep 30 days back and 12 months ahead.** The server works out each regular event's dates within
+    that window, so the phone has no repeat logic and the calendar works fully offline. The iCal links cover
+    the same window.
+33. **The calendar page has a week view and a month view.** *This week* (`/week`, already Home's tile) opens on
+    the day rail and agenda with *Coming up*; the month view is a tap away for planning ahead.
+34. **Whether it's a tab is the church's choice:** the owner wants the app's tab bar configurable by staff in
+    the admin panel, through drafts, as the Hub is. That's a Configuration change of its own (below); the
+    calendar page is a place that can be a tab.
+35. **Full event editing on the phone too** (owner, 2026-11-08, the yes AGENTS.md asks for before putting
+    staff screens in the app): a meeting moved or cancelled at the last minute is handled by whoever is there,
+    and they may not have a laptop. Editors edit events and regular events on the phone as in the admin panel,
+    from the same components, gated by `events.edit` at the calendar (repo-layout: a management screen lives in
+    the feature's Client).
+36. **Designed with impeccable's whole process,** every screen, phone and admin panel alike: interview,
+    decision page, surface brief, detector and finish review.
+
 ### Pinned for later
+
+- **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
+  drafts. Not part of Events; Configuration's to design.
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
 
@@ -267,8 +309,6 @@ commit as the code (the owner approved all four on 2026-11-08):
 
 ## Open
 
-- Not overloading people: what someone sees by default, following, Home, filters, a digest.
 - **Caching of the iCal links** behind Cloudflare: decide each path's `Cache-Control` before it's deployed
   (a secret link must never be cached at the edge) and check it through the public hostname.
-- Offline and how far ahead and back phones keep events.
-- The admin panel and the phone: which screens go where.
+- **The screens' design,** through impeccable (decision 36).
