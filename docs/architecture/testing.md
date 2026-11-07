@@ -20,6 +20,39 @@ How the causes found so far were fixed is the pattern to follow:
 | A history test picked the wrong "newest" change | Two steps ran on the real clock and usually landed a few milliseconds apart; on a frozen clock they tie | Tests run on `TestClock` and move it on between steps that must be apart |
 | "The ConnectionString property has not been initialized" in the output | Not a failure: the architecture tests started the real hosts, whose background services ran without a database | The rules start the hosts without the app's background services (`RoutesOnly`) |
 
+## Unit tests and integration tests
+
+**A unit test touches no I/O:** no database, no S3, no network, no container, no files beyond its own
+sample data. It calls plain code (a function, a small class taking its inputs) and checks the result.
+Most rules are like this: what a crop keeps, which series a sermon belongs to, who is in an audience,
+whether two uploads are the same file, when a repeating event next falls.
+
+**An integration test covers a database or storage rule,** and says which: the class carries
+`[Integration("…")]` naming the behaviour, for example `[Integration("ON CONFLICT keeps the furthest
+listening position when two phones save at once")]`. It is for what only the real store can show: sync
+cursors, `NOTIFY`, pruning, advisory locks, raw SQL, `ON CONFLICT`, jsonb queries, content-addressed
+blobs, transactions and concurrency, migrations. Everything else it reaches is incidental, so it keeps
+its assertions to the storage rule and leaves the logic to unit tests.
+
+When a rule sits inside a service that also saves things, pull the rule out into plain code the
+service calls, and test that. Don't add seams only for tests: the extraction is the seam.
+
+**Where they live:** in the same project, side by side: a feature part has one test project
+(`GSBC.ChurchApp.Features.<Feature>.<Part>.Tests`). The attribute is also an xunit trait, so the unit
+tests run on their own, with no Docker, in a couple of seconds:
+
+```bash
+dotnet test --solution GSBC.ChurchApp.slnx --no-build --filter-not-trait "Kind=Integration"
+```
+
+One project per part rather than separate unit and integration projects keeps a rule's two kinds of
+test together, keeps the project map as it is, and the trait gives the fast run anyway.
+
+`TestRules` checks it: a test class that reaches `TestDatabase` or `TestBuckets` (directly, or through
+a host or helper in its project) must carry `[Integration]` with a reason, and a class that carries it
+must actually reach storage. Classes written before the rule are listed in its `NotYetSorted` until
+they're sorted; the list only shrinks.
+
 ## What a test gets
 
 Everything shared lives in `tests/Testing/GSBC.ChurchApp.Testing`. A test never starts a container
