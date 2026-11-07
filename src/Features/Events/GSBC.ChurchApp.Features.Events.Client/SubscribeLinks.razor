@@ -9,6 +9,11 @@
             <CopyField Label="Copy link" Value="@Subscriptions.Web(path)" ButtonOnly="true" />
         </div>
         <p class="hint">Your calendar app keeps itself up to date. Dates that aren't on are left out.</p>
+        @if (Mine)
+        {
+            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="refresh" Busy="_resetting" OnClick="ResetAsync">Make a new link</Button>
+            <p class="hint">A new link stops the old one working, on every calendar app that used it.</p>
+        }
     }
     else if (_loaded)
     {
@@ -19,6 +24,7 @@
 @code {
     private string? _path;
     private bool _loaded;
+    private bool _resetting;
 
     [Parameter] public CalendarInfo? Calendar { get; set; }
     [Parameter] public bool Mine { get; set; }
@@ -40,5 +46,13 @@
             _path = key is null ? null : Calendar is { } calendar ? CalendarSubscriptions.MinePath(key, calendar) : CalendarSubscriptions.MinePath(key);
         }
         _loaded = true;
+    }
+
+    private async Task ResetAsync()
+    {
+        _resetting = true;
+        if (await Subscriptions.ResetAsync() is { } key)
+            _path = Calendar is { } calendar ? CalendarSubscriptions.MinePath(key, calendar) : CalendarSubscriptions.MinePath(key);
+        _resetting = false;
     }
 }

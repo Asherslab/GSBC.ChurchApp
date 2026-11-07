@@ -6,11 +6,15 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 public interface IYourCalendarLink
 {
     Task<string?> PersonalKeyAsync();
+
+    Task<string?> ResetAsync();
 }
 
 public sealed class NoCalendarLinkYet : IYourCalendarLink
 {
     public Task<string?> PersonalKeyAsync() => Task.FromResult<string?>(null);
+
+    public Task<string?> ResetAsync() => Task.FromResult<string?>(null);
 }
 
 public sealed class CalendarSubscriptions(ChannelBase channel, IYourCalendarLink yours)
@@ -30,6 +34,8 @@ public sealed class CalendarSubscriptions(ChannelBase channel, IYourCalendarLink
     public static string MinePath(string key, CalendarInfo calendar) => $"/calendars/{CalendarLinks.Mine}/{key}/{calendar.Slug}.ics";
 
     public Task<string?> PersonalKeyAsync() => yours.PersonalKeyAsync();
+
+    public Task<string?> ResetAsync() => yours.ResetAsync();
 
     public static bool IsForEveryone(CalendarInfo calendar) => calendar.Audience.Length == 0 || calendar.Audience == GSBC.ChurchApp.Platform.Contracts.Configuration.Audience.Everyone.Text;
 }
