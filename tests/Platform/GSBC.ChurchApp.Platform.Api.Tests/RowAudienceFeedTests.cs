@@ -55,9 +55,28 @@ public sealed class RowAudienceFeedTests : IAsyncLifetime
         await AddAsync("helpers night", Audience.SignedIn);
         await AddAsync("no audience", null);
 
-        Assert.Equal(["agm", "helpers night"], await ReadAsync(Person(churchMember)));
-        Assert.Equal(["helpers night"], await ReadAsync(Person()));
-        Assert.Empty(await ReadAsync(new ClaimsPrincipal()));
+        Assert.Equal(["agm", "helpers night"], Shown(await ReadAsync(Person(churchMember))));
+        Assert.Equal(["helpers night"], Shown(await ReadAsync(Person())));
+        Assert.Empty((await ReadAsync(new ClaimsPrincipal())).Feeds.SelectMany(batch => batch.Changes));
+    }
+
+    [Fact]
+    public async Task SomeoneWhoLostARowsAudienceIsToldItsGoneEvenAfterItsTombstoneWasPruned()
+    {
+        Guid kidsTeam = Guid.CreateVersion7();
+        Guid leaders = Guid.CreateVersion7();
+        ClaimsPrincipal helper = Person(kidsTeam);
+        await AddAsync("helpers night", Audience.HoldingRole(kidsTeam));
+        long synced = (await ReadAsync(helper)).Feeds.Single().Cursor;
+
+        await AddAsync("helpers night", null, deleted: true);
+        await AddAsync("helpers night", Audience.HoldingRole(leaders));
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            Assert.True(await new FeedRetention(scope.ServiceProvider.GetRequiredService<SyncDbContext>()).PruneAsync(DateTime.UtcNow, TestContext.Current.CancellationToken));
+
+        FeedChange change = Assert.Single((await ReadAsync(helper, synced)).Feeds.Single().Changes);
+        Assert.Equal(("helpers night", true), (change.Id, change.Deleted));
+        Assert.Empty(change.Payload);
     }
 
     private ClaimsPrincipal Person(params Guid[] roles)
@@ -67,21 +86,23 @@ public sealed class RowAudienceFeedTests : IAsyncLifetime
         return new ClaimsPrincipal(new ClaimsIdentity([new Claim(Caller.UserIdClaim, id.ToString())], "test"));
     }
 
-    private async Task AddAsync(string id, Audience? audience)
+    private async Task AddAsync(string id, Audience? audience, bool deleted = false)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         SyncDbContext db = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
-        db.FeedChanges.Add(new FeedChangeRecord { Feed = Feed, RecordId = id, Version = 1, ScopeId = audience?.Text });
+        db.FeedChanges.Add(new FeedChangeRecord { Feed = Feed, RecordId = id, Version = 1, ScopeId = audience?.Text, Deleted = deleted, Payload = deleted ? [] : [1] });
         await db.SaveChangesAsync();
     }
 
-    private async Task<List<string>> ReadAsync(ClaimsPrincipal person)
+    private async Task<PullReply> ReadAsync(ClaimsPrincipal person, long cursor = 0)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
-        PullReply reply = await scope.ServiceProvider.GetRequiredService<SyncService>()
-            .PullAsync(new PullRequest { Cursors = [new FeedCursor { Feed = Feed }] }, new CallContext(person, new Context(person)));
-        return reply.Feeds.SelectMany(batch => batch.Changes).Select(change => change.Id).Order(StringComparer.Ordinal).ToList();
+        return await scope.ServiceProvider.GetRequiredService<SyncService>()
+            .PullAsync(new PullRequest { Cursors = [new FeedCursor { Feed = Feed, Cursor = cursor }] }, new CallContext(person, new Context(person)));
     }
+
+    private static List<string> Shown(PullReply reply) =>
+        reply.Feeds.SelectMany(batch => batch.Changes).Where(change => !change.Deleted).Select(change => change.Id).Order(StringComparer.Ordinal).ToList();
 
     private sealed class HeldRoles(Dictionary<Guid, GrantSet> grants) : IAccessEvaluator
     {
