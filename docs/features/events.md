@@ -210,7 +210,8 @@ commit as the code (the owner approved all four on 2026-11-08):
     staff screens in the app): a meeting moved or cancelled at the last minute is handled by whoever is there,
     and they may not have a laptop. Editors edit events and regular events on the phone as in the admin panel,
     from the same components, gated by `events.edit` at the calendar (repo-layout: a management screen lives in
-    the feature's Client).
+    the feature's Client). **Calendar setup stays in the admin panel** (owner, 2026-11-08): creating calendars,
+    who each is for, the defaults and the named breaks aren't done on the fly.
 36. **Designed with impeccable's whole process,** every screen, phone and admin panel alike: interview,
     decision page, surface brief, detector and finish review.
 
@@ -292,7 +293,8 @@ commit as the code (the owner approved all four on 2026-11-08):
     staff screens in the app): a meeting moved or cancelled at the last minute is handled by whoever is there,
     and they may not have a laptop. Editors edit events and regular events on the phone as in the admin panel,
     from the same components, gated by `events.edit` at the calendar (repo-layout: a management screen lives in
-    the feature's Client).
+    the feature's Client). **Calendar setup stays in the admin panel** (owner, 2026-11-08): creating calendars,
+    who each is for, the defaults and the named breaks aren't done on the fly.
 36. **Designed with impeccable's whole process,** every screen, phone and admin panel alike: interview,
     decision page, surface brief, detector and finish review.
 
