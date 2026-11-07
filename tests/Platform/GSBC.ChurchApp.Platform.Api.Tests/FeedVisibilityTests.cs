@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Sync;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 
@@ -47,6 +48,27 @@ public sealed class FeedVisibilityTests
         Assert.Equal(["ruth"], seen);
     }
 
+    [Fact]
+    public async Task AnEachRowFeedShowsARowOnlyToThoseItsAudienceIncludesAndSendsTheRestAsDeletions()
+    {
+        Guid churchMember = Guid.CreateVersion7();
+        ClaimsPrincipal member = Person(), visitor = Person();
+        _access.Hold(member, churchMember);
+        FeedChangeRecord[] rows = [Row("agm", Audience.HoldingRole(churchMember).Text), Row("helpers night", Audience.SignedIn.Text), Row("no audience", null)];
+
+        Assert.False(await CanSeeAsync(FeedAudience.EachRow, SignedOut));
+        Assert.Equal(["agm", "helpers night"], await ShownAsync(member, rows));
+        Assert.Equal(["helpers night"], await ShownAsync(visitor, rows));
+        List<FeedChangeRecord> hidden = (await FeedVisibility.VisibleRowsAsync(new FeedDefinition("feed", FeedAudience.EachRow), [.. rows], visitor, _access, TestContext.Current.CancellationToken))
+            .Where(row => row.Deleted).ToList();
+        Assert.Equal(["agm", "no audience"], hidden.Select(row => row.RecordId));
+        Assert.All(hidden, row => Assert.Empty(row.Payload));
+    }
+
+    private async Task<List<string>> ShownAsync(ClaimsPrincipal user, FeedChangeRecord[] rows) =>
+        (await FeedVisibility.VisibleRowsAsync(new FeedDefinition("feed", FeedAudience.EachRow), [.. rows], user, _access, TestContext.Current.CancellationToken))
+        .Where(row => !row.Deleted).Select(row => row.RecordId).ToList();
+
     private Task<bool> CanSeeAsync(FeedAudience audience, ClaimsPrincipal user) =>
         FeedVisibility.CanSeeFeedAsync(new FeedDefinition("feed", audience), user, _access, TestContext.Current.CancellationToken);
 
@@ -62,12 +84,18 @@ public sealed class FeedVisibilityTests
     private sealed class Permitted : IAccessEvaluator
     {
         private readonly HashSet<(Guid, string, string?)> _allowed = [];
+        private readonly Dictionary<Guid, Guid> _roles = [];
 
         public void Allow(ClaimsPrincipal user, string node, string? scopeId) => _allowed.Add((Caller.UserId(user)!.Value, node, scopeId));
+
+        public void Hold(ClaimsPrincipal user, Guid role) => _roles[Caller.UserId(user)!.Value] = role;
 
         public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
             ValueTask.FromResult(Caller.UserId(user) is { } id && _allowed.Contains((id, node, scopeId)));
 
-        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(GrantSet.Empty);
+        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult(_roles.TryGetValue(userId, out Guid role)
+                ? new GrantSet([new Grant(PermissionPattern.Parse(RoleMembership.NodeOf(role)), Scope.Global)])
+                : GrantSet.Empty);
     }
 }
