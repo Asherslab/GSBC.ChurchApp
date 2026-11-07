@@ -11,12 +11,7 @@ namespace GSBC.ChurchApp.Features.Analytics.Api;
 internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog measures, IEnumerable<ISubjectNames> subjectNames, TimeProvider time)
     : IInsightsService
 {
-    public const int TrendWeeks = 12;
-    private const int TopEntries = 5;
-    private const int DaysInAWeek = 7;
     private const int WeeksInAYear = 52;
-
-    private static readonly UsageGroup[] Groups = [UsageGroup.NotSignedIn, UsageGroup.SignedIn, UsageGroup.OnATeam];
 
     public async ValueTask<InsightsSummary> GetSummaryAsync(InsightsQuery request, CallContext context = default)
     {
@@ -24,8 +19,8 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
         DateOnly today = ChurchTime.Today(time);
         DateOnly weekStart = ChurchTime.WeekStart(today);
         DateOnly monthStart = new(today.Year, today.Month, 1);
-        DateOnly trendStart = weekStart.AddDays(-DaysInAWeek * (TrendWeeks - 1));
-        DateOnly lastYearStart = trendStart.AddDays(-DaysInAWeek * WeeksInAYear);
+        DateOnly trendStart = weekStart.AddDays(-InsightsTallies.DaysInAWeek * (InsightsTallies.TrendWeeks - 1));
+        DateOnly lastYearStart = trendStart.AddDays(-InsightsTallies.DaysInAWeek * WeeksInAYear);
 
         List<DailyCountRecord> weekly = await db.DailyCounts
             .Where(count => count.Measure == AnalyticsMeasures.ActiveWeek.Key && count.Day >= lastYearStart)
@@ -46,14 +41,14 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
             WeekStart = weekStart.DayNumber,
             LastReportAt = lastReport is { } at ? DateTime.SpecifyKind(at, DateTimeKind.Utc) : null,
             ThisWeek = Tally.Of(thisWeek.Sum(count => count.Count)),
-            LastWeek = Tally.Of(weekly.Where(count => count.Day >= weekStart.AddDays(-DaysInAWeek) && count.Day < weekStart).Sum(count => count.Count)),
+            LastWeek = Tally.Of(weekly.Where(count => count.Day >= weekStart.AddDays(-InsightsTallies.DaysInAWeek) && count.Day < weekStart).Sum(count => count.Count)),
             ThisMonth = Tally.Of(thisMonth),
             NewThisMonth = Tally.Of(newThisMonth),
             NewLastMonth = Tally.Of(newLastMonth),
             ReturningThisWeek = Tally.Of(returning),
-            Groups = Groups.Select(group => new GroupTally { Group = group, Phones = Tally.Of(thisWeek.Where(count => count.Group == group).Sum(count => count.Count)) }).ToList(),
-            Weeks = WeeksFrom(weekly, trendStart),
-            WeeksLastYear = weekly.Any(count => count.Day < trendStart) ? WeeksFrom(weekly, lastYearStart) : [],
+            Groups = InsightsTallies.GroupsOf(thisWeek),
+            Weeks = InsightsTallies.Weeks(weekly, trendStart),
+            WeeksLastYear = weekly.Any(count => count.Day < trendStart) ? InsightsTallies.Weeks(weekly, lastYearStart) : [],
             Top = await TopAsync(weekStart, cancellationToken),
             States = await StatesAsync(weekStart, cancellationToken),
             Platforms = thisWeek.GroupBy(count => count.Platform)
@@ -74,43 +69,22 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
             .Where(count => count.Measure == measure.Key && count.Day >= from && count.Day < until)
             .SumAsync(count => count.Count, cancellationToken);
 
-    private static List<WeekPoint> WeeksFrom(List<DailyCountRecord> weekly, DateOnly first) =>
-        Enumerable.Range(0, TrendWeeks)
-            .Select(week => first.AddDays(DaysInAWeek * week))
-            .Select(start => new WeekPoint
-            {
-                WeekStart = start.DayNumber,
-                Phones = Tally.Of(weekly.Where(count => count.Day >= start && count.Day < start.AddDays(DaysInAWeek)).Sum(count => count.Count)),
-            })
-            .ToList();
-
     private async Task<List<TopList>> TopAsync(DateOnly weekStart, CancellationToken cancellationToken)
     {
         List<Measure> ranked = measures.ByKey.Values.Where(measure => measure.SubjectKind is not null).ToList();
-        List<string> keys = ranked.Select(measure => measure.Key).ToList();
-        var totals = await db.DailyCounts
-            .Where(count => keys.Contains(count.Measure) && count.Day >= weekStart)
-            .GroupBy(count => new { count.Measure, count.Subject })
-            .Select(group => new { group.Key.Measure, group.Key.Subject, Count = group.Sum(count => count.Count) })
-            .ToListAsync(cancellationToken);
+        List<SubjectTotal> totals = await TotalsAsync(ranked, weekStart, cancellationToken);
 
         List<TopList> lists = [];
         foreach (Measure measure in ranked)
         {
-            var top = totals.Where(total => total.Measure == measure.Key).OrderByDescending(total => total.Count).Take(TopEntries).ToList();
+            List<SubjectTotal> top = InsightsTallies.TopOf(measure, totals);
             if (top.Count == 0)
                 continue;
 
             IReadOnlyDictionary<string, string> names = subjectNames.FirstOrDefault(candidate => candidate.SubjectKind == measure.SubjectKind) is { } naming
                 ? await naming.NamesAsync(top.Select(total => total.Subject).ToList(), cancellationToken)
                 : new Dictionary<string, string>();
-            lists.Add(new TopList
-            {
-                Measure = measure.Key,
-                Label = measure.Label,
-                Counts = measure.Counts,
-                Entries = top.Select(total => new LabelTally { Label = names.GetValueOrDefault(total.Subject, "Something since removed"), Count = Tally.Of(total.Count) }).ToList(),
-            });
+            lists.Add(InsightsTallies.Ranked(measure, top, names));
         }
         return lists;
     }
@@ -118,27 +92,21 @@ internal sealed class InsightsService(AnalyticsDbContext db, MeasureCatalog meas
     private async Task<List<TopList>> StatesAsync(DateOnly weekStart, CancellationToken cancellationToken)
     {
         List<Measure> stated = measures.ByKey.Values.Where(measure => measure.States is not null).ToList();
-        List<string> keys = stated.Select(measure => measure.Key).ToList();
-        var totals = await db.DailyCounts
-            .Where(count => keys.Contains(count.Measure) && count.Day >= weekStart)
-            .GroupBy(count => new { count.Measure, count.Subject })
-            .Select(group => new { group.Key.Measure, group.Key.Subject, Count = group.Sum(count => count.Count) })
-            .ToListAsync(cancellationToken);
-
+        List<SubjectTotal> totals = await TotalsAsync(stated, weekStart, cancellationToken);
         return stated
             .Where(measure => totals.Any(total => total.Measure == measure.Key))
-            .Select(measure => new TopList
-            {
-                Measure = measure.Key,
-                Label = measure.Label,
-                Counts = measure.Counts,
-                Entries = measure.States!
-                    .Select(state => (state.Label, Count: totals.Where(total => total.Measure == measure.Key && total.Subject == state.Key).Sum(total => total.Count)))
-                    .Where(state => state.Count > 0)
-                    .Select(state => new LabelTally { Label = state.Label, Count = Tally.Of(state.Count) })
-                    .ToList(),
-            })
+            .Select(measure => InsightsTallies.Stated(measure, totals))
             .ToList();
+    }
+
+    private Task<List<SubjectTotal>> TotalsAsync(List<Measure> of, DateOnly weekStart, CancellationToken cancellationToken)
+    {
+        List<string> keys = of.Select(measure => measure.Key).ToList();
+        return db.DailyCounts
+            .Where(count => keys.Contains(count.Measure) && count.Day >= weekStart)
+            .GroupBy(count => new { count.Measure, count.Subject })
+            .Select(group => new SubjectTotal(group.Key.Measure, group.Key.Subject, group.Sum(count => count.Count)))
+            .ToListAsync(cancellationToken);
     }
 
     private static string? LatestOf(List<DailyCountRecord> counts) =>

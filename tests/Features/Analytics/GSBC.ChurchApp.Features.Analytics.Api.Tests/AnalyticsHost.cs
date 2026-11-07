@@ -1,5 +1,4 @@
 using GSBC.ChurchApp.Features.Analytics.Api.Data;
-using GSBC.ChurchApp.Features.Analytics.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Email;
@@ -43,7 +42,7 @@ internal sealed class AnalyticsHost : IAsyncDisposable
             .AddSingleton<IPermissionHolders>(new Holders([Owner]))
             .AddSingleton<IAccountEmails>(new Emails(new Dictionary<Guid, string> { [Owner] = "owner@example.org" }))
             .AddSingleton<IEmailSender>(Email)
-            .AddSingleton(new MeasureCatalog([new MeasureSet([.. AnalyticsMeasures.All, Measures.TileTapped, Measures.Notifications])]))
+            .AddSingleton(TestMeasures.Catalog)
             .AddAnalyticsData()
             .AddSingleton<AnalyticsEnvironment>()
             .AddScoped<NewErrorKinds>()
@@ -79,16 +78,6 @@ internal sealed class AnalyticsHost : IAsyncDisposable
     {
         await _services.DisposeAsync();
         await _database.DisposeAsync();
-    }
-
-    public static class Measures
-    {
-        public static readonly Platform.Contracts.Analytics.Measure TileTapped =
-            new("hub.tile.tapped", "Home screen tiles tapped", "Taps on each tile", Platform.Contracts.Analytics.SubjectKinds.HubTile, SplitByGroup: true);
-
-        public static readonly Platform.Contracts.Analytics.Measure Notifications =
-            new("notifications.push", "Notifications", "Phones by whether notifications are on", OncePerPhone: true,
-                States: [new("on", "On"), new("off", "Turned off")]);
     }
 
     internal sealed class RecordingEmail : IEmailSender

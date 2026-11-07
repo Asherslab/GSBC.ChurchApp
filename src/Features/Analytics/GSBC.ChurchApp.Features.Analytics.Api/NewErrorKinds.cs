@@ -12,7 +12,7 @@ internal sealed class NewErrorKinds(
     AnalyticsDbContext db, IPermissionHolders holders, IAccountEmails accounts, IEmailSender email,
     AnalyticsEnvironment environment, TimeProvider time, ILogger<NewErrorKinds> logger)
 {
-    public const int MaximumEmailsPerDay = 10;
+    private const int MaximumEmailsPerDay = 10;
 
     public async Task AnnounceAsync(IReadOnlyCollection<Guid> kinds, CancellationToken cancellationToken)
     {
@@ -40,7 +40,7 @@ internal sealed class NewErrorKinds(
             {
                 kind.NotifiedAt = now;
                 foreach (string recipient in recipients)
-                    await email.SendAsync(Describe(kind, recipient), cancellationToken);
+                    await email.SendAsync(Describe(kind, recipient, environment), cancellationToken);
             }
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -50,7 +50,7 @@ internal sealed class NewErrorKinds(
         }
     }
 
-    private EmailMessage Describe(ErrorKindRecord kind, string recipient) => new(recipient,
+    public static EmailMessage Describe(ErrorKindRecord kind, string recipient, AnalyticsEnvironment environment) => new(recipient,
         $"New error on {environment.Name}: {ShortName(kind.ExceptionType)}",
         $"""
         A kind of error that hasn't been seen before has just been reported.
