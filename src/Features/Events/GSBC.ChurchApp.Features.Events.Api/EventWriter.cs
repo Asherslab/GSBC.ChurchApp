@@ -14,10 +14,10 @@ namespace GSBC.ChurchApp.Features.Events.Api;
 internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher, IAccessEvaluator access, IMediaReferences media, TimeProvider time)
 {
     public const int LongestTitle = 120;
-    public const int LongestLabel = 40;
-    public const int NextDatesShown = 8;
+    private const int LongestLabel = 40;
+    private const int NextDatesShown = 8;
     public const int MostRemindDays = 60;
-    public static readonly IReadOnlyList<int> DefaultRemindDays = [7, 2];
+    private static readonly IReadOnlyList<int> DefaultRemindDays = [7, 2];
 
     public async Task<EventRecord> EventInAsync(string calendarId, string eventId, CancellationToken cancellationToken) =>
         Guid.TryParse(calendarId, out Guid calendar) && Guid.TryParse(eventId, out Guid id)
@@ -53,7 +53,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
 
         EventFields fields = await CheckedAsync(request.Fields, cancellationToken);
         (DateOnly startDate, DateOnly? endDate, int? startMinute, int? endMinute) = Times(request.Times);
-        await MayShowAsync(user, calendar, record, request.Showing, request.ShowFrom, now, cancellationToken);
+        DateTime? showFrom = ShowFromOf(request.Showing, request.ShowFrom);
+        await MayShowAsync(user, calendar, record, request.Showing, now, cancellationToken);
         if (record is not null)
             await MayChangeShownAsync(user, record, now, cancellationToken);
 
@@ -76,9 +77,9 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         record.CalendarId = calendar.Id;
         record.Fields = fields;
         (record.StartDate, record.EndDate, record.StartMinute, record.EndMinute) = (startDate, endDate, startMinute, endMinute);
-        (record.Showing, record.ShowFrom) = (request.Showing, request.Showing == Showing.ShownFrom ? Utc(request.ShowFrom) : null);
+        (record.Showing, record.ShowFrom) = (request.Showing, showFrom);
         (record.NotOn, record.NotOnNote) = (request.NotOn, request.NotOn ? request.NotOnNote.Trim() : "");
-        if (EventsBook.IsShown(record, now) || record.Showing == Showing.ShownFrom)
+        if (IsOrWillBeShown(record, now))
             (record.AskedAt, record.AskedBy) = (null, null);
         record.UpdatedAt = now;
 
@@ -130,7 +131,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             throw Invalid("One of those breaks isn't here any more.");
         List<(Guid? Id, string Name, DateOnly Start, DateOnly End)> ownBreaks = request.OwnBreaks.Select(CheckedBreak).ToList();
 
-        await MayShowAsync(user, calendar, record, request.Showing, request.ShowFrom, now, cancellationToken);
+        DateTime? showFrom = ShowFromOf(request.Showing, request.ShowFrom);
+        await MayShowAsync(user, calendar, record, request.Showing, now, cancellationToken);
         if (record is not null)
             await MayChangeShownAsync(user, record, now, cancellationToken);
 
@@ -157,8 +159,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         record.Fields = fields;
         record.Pattern = pattern;
         (record.StartMinute, record.EndMinute) = (startMinute, endMinute);
-        (record.Showing, record.ShowFrom) = (request.Showing, request.Showing == Showing.ShownFrom ? Utc(request.ShowFrom) : null);
-        if (EventsBook.IsShown(record, now) || record.Showing == Showing.ShownFrom)
+        (record.Showing, record.ShowFrom) = (request.Showing, showFrom);
+        if (IsOrWillBeShown(record, now))
             (record.AskedAt, record.AskedBy) = (null, null);
         record.Needs = needs;
         record.RemindDaysBefore = remind;
@@ -311,11 +313,11 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         ReadOnly = calendar.ICalSource is { Length: > 0 },
     };
 
-    public static string EventOwner(Guid id) => $"events/event/{id}";
+    private static string EventOwner(Guid id) => $"events/event/{id}";
 
-    public static string RegularOwner(Guid id) => $"events/regular/{id}";
+    private static string RegularOwner(Guid id) => $"events/regular/{id}";
 
-    public static string SpecialOwner(Guid regularEventId, DateOnly date) => $"events/regular/{regularEventId}/{EventDates.Format(date)}";
+    private static string SpecialOwner(Guid regularEventId, DateOnly date) => $"events/regular/{regularEventId}/{EventDates.Format(date)}";
 
     private static Timed Effective(RegularEventRecord regular, SpecialRecord special)
     {
@@ -337,25 +339,28 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         ChangedAt = special.ChangedAt,
     };
 
-    private async Task<List<KeptValue>> KeptValuesAsync(RegularEventRecord record, List<string> changed, CancellationToken cancellationToken)
-    {
-        if (changed.Count == 0)
-            return [];
-        DateOnly today = ChurchTime.Today(time);
-        List<SpecialRecord> specials = await db.Specials.AsNoTracking()
-            .Where(special => special.RegularEventId == record.Id && special.Date >= today).OrderBy(special => special.Date).ToListAsync(cancellationToken);
-        return specials.SelectMany(special => changed.Where(special.Changed.Contains).Select(field => new KeptValue
+    public static List<KeptValue> KeptValues(RegularEventRecord record, IReadOnlyCollection<string> changed, IEnumerable<SpecialRecord> upcoming) =>
+        upcoming.SelectMany(special => changed.Where(special.Changed.Contains).Select(field => new KeptValue
         {
             Date = EventDates.Format(special.Date),
             Title = Effective(record, special).Fields.Title,
             Field = field,
             Value = FieldValues.Words(Effective(record, special), field),
         })).ToList();
+
+    private async Task<List<KeptValue>> KeptValuesAsync(RegularEventRecord record, List<string> changed, CancellationToken cancellationToken)
+    {
+        if (changed.Count == 0)
+            return [];
+        DateOnly today = ChurchTime.Today(time);
+        List<SpecialRecord> upcoming = await db.Specials.AsNoTracking()
+            .Where(special => special.RegularEventId == record.Id && special.Date >= today).OrderBy(special => special.Date).ToListAsync(cancellationToken);
+        return KeptValues(record, changed, upcoming);
     }
 
     private async Task<CalendarRecord> WritableCalendarAsync(string calendarId, CancellationToken cancellationToken)
     {
-        CalendarRecord calendar = Guid.TryParse(calendarId, out Guid id) && await db.Calendars.SingleOrDefaultAsync(found => found.Id == id, cancellationToken) is { } found
+        CalendarRecord calendar = Guid.TryParse(calendarId, out Guid id) && await db.Calendars.SingleOrDefaultAsync(calendar => calendar.Id == id, cancellationToken) is { } found
             ? found
             : throw NotHere("That calendar isn't here any more.");
         if (calendar.ICalSource is { Length: > 0 })
@@ -363,24 +368,28 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         return calendar;
     }
 
-    private async Task MayShowAsync(ClaimsPrincipal user, CalendarRecord calendar, IShowable? record, Showing showing, DateTime? showFrom, DateTime now, CancellationToken cancellationToken)
+    private async Task MayShowAsync(ClaimsPrincipal user, CalendarRecord calendar, IShowable? record, Showing showing, DateTime now, CancellationToken cancellationToken)
     {
-        if (showing == Showing.ShownFrom && showFrom is null)
-            throw Invalid("Choose the date it's shown from.");
-        bool showsNow = showing != Showing.SavedForLater;
-        bool alreadyShown = record is not null && (EventsBook.IsShown(record, now) || record.Showing == Showing.ShownFrom) && record.CalendarId == calendar.Id;
-        if (showsNow && !alreadyShown && calendar.NeedsPublisher && !await CanAsync(user, EventsPermissions.PublishNode, calendar.Id, cancellationToken))
+        if (ShowingNeedsAPublisher(calendar, record, showing, now) && !await CanAsync(user, EventsPermissions.PublishNode, calendar.Id, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{calendar.Name} needs a publisher: save it for later and ask to publish."));
     }
 
     public async Task MayChangeShownAsync(ClaimsPrincipal user, IShowable record, DateTime now, CancellationToken cancellationToken)
     {
-        if (!(EventsBook.IsShown(record, now) || record.Showing == Showing.ShownFrom))
+        if (!IsOrWillBeShown(record, now))
             return;
         CalendarRecord calendar = await db.Calendars.AsNoTracking().SingleAsync(found => found.Id == record.CalendarId, cancellationToken);
-        if (calendar.NeedsPublisher && !await CanAsync(user, EventsPermissions.PublishNode, calendar.Id, cancellationToken))
+        if (ChangeNeedsAPublisher(calendar, record, now) && !await CanAsync(user, EventsPermissions.PublishNode, calendar.Id, cancellationToken))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{calendar.Name} needs a publisher: a publisher changes events once they're shown."));
     }
+
+    public static bool ShowingNeedsAPublisher(CalendarRecord calendar, IShowable? record, Showing showing, DateTime now) =>
+        calendar.NeedsPublisher && showing != Showing.SavedForLater && !(record is not null && IsOrWillBeShown(record, now) && record.CalendarId == calendar.Id);
+
+    public static bool ChangeNeedsAPublisher(CalendarRecord calendar, IShowable record, DateTime now) =>
+        calendar.NeedsPublisher && IsOrWillBeShown(record, now);
+
+    private static bool IsOrWillBeShown(IShowable record, DateTime now) => EventsBook.IsShown(record, now) || record.Showing == Showing.ShownFrom;
 
     private async Task<bool> CanAsync(ClaimsPrincipal user, string node, Guid calendarId, CancellationToken cancellationToken) =>
         await access.IsAllowedAsync(user, node, calendarId.ToString(), cancellationToken);
@@ -392,14 +401,14 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             throw Invalid($"Give it a title of up to {LongestTitle} characters.");
         if (fields.Label.Trim().Length > LongestLabel)
             throw Invalid($"Keep the label to {LongestLabel} characters.");
-        if (fields.Description is { } description && description.Markdown.Length > RichText.MaximumLength)
+        if (fields.Description is { Markdown.Length: > RichText.MaximumLength })
             throw Invalid("The description is too long.");
         if (fields.RegisterLink.Trim() is { Length: > 0 } register && !IsWebAddress(register))
             throw Invalid("The Register link needs to be a web address.");
         if (fields.Links.Any(link => !IsWebAddress(link.Url.Trim())))
             throw Invalid("Each link needs to be a web address.");
 
-        List<MediaRef> claimed = new[] { fields.Picture }.OfType<MediaRef>().Concat(fields.Description?.Media ?? []).ToList();
+        List<MediaRef> claimed = Pictures(fields);
         IReadOnlyList<MediaRef> verified = claimed.Count == 0 ? [] : await media.VerifyAsync(claimed, cancellationToken);
         MediaRef? picture = fields.Picture is null ? null : verified[0];
         RichText? checkedDescription = fields.Description is { IsEmpty: false } text
@@ -428,7 +437,15 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     }
 
     private async Task UsePicturesAsync(string owner, EventFields fields, CancellationToken cancellationToken) =>
-        await media.UseAsync(owner, new[] { fields.Picture }.OfType<MediaRef>().Concat(fields.Description?.Media ?? []).ToList(), cancellationToken);
+        await media.UseAsync(owner, Pictures(fields), cancellationToken);
+
+    private static List<MediaRef> Pictures(EventFields fields)
+    {
+        List<MediaRef> pictures = [.. fields.Description?.Media ?? []];
+        if (fields.Picture is { } picture)
+            pictures.Insert(0, picture);
+        return pictures;
+    }
 
     private static RegularPattern Checked(RegularPattern pattern, DateOnly today)
     {
@@ -490,6 +507,9 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
 
     private static bool Shown(Showing showing, DateTime? showFrom, DateTime now) =>
         showing == Showing.Shown || (showing == Showing.ShownFrom && showFrom is { } from && from.ToUniversalTime() <= now);
+
+    private static DateTime? ShowFromOf(Showing showing, DateTime? showFrom) =>
+        showing != Showing.ShownFrom ? null : Utc(showFrom) ?? throw Invalid("Choose the date it's shown from.");
 
     private static DateTime? Utc(DateTime? at) => at is { } value ? DateTime.SpecifyKind(value.ToUniversalTime(), DateTimeKind.Utc) : null;
 

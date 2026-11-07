@@ -13,12 +13,11 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
 {
     public async Task<MyCalendars> ChooseAsync(Guid installId, ClaimsPrincipal user, CalendarChoice choice, CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(choice.CalendarId, out Guid calendarId) || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(calendar => calendar.Id == calendarId, cancellationToken) is not { } calendar)
+        if (!Guid.TryParse(choice.CalendarId, out Guid calendarId) || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(found => found.Id == calendarId, cancellationToken) is not { } calendar)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "That calendar isn't here any more."));
         Guid? userId = user.Identity?.IsAuthenticated == true ? Caller.UserId(user) : null;
-        if (choice.InYourWeek && !CalendarAudiences.Of(calendar.Audience).Includes(await ViewerAsync(userId, cancellationToken)))
-            throw new RpcException(new Status(userId is null ? StatusCode.Unauthenticated : StatusCode.PermissionDenied,
-                userId is null ? $"Sign in to add {calendar.Name}." : $"{calendar.Name} isn't for you."));
+        if (choice.InYourWeek && WhyNotAdd(calendar, userId is not null, await ViewerAsync(userId, cancellationToken)) is { } refused)
+            throw new RpcException(refused);
 
         bool shownAnyway = calendar.ShownOnNewPhones || CalendarAudiences.Of(calendar.Audience).IsForRoles;
         string objectId = calendarId.ToString();
@@ -56,6 +55,11 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
         }
         return mine;
     }
+
+    public static Status? WhyNotAdd(CalendarRecord calendar, bool signedIn, Viewer viewer) =>
+        CalendarAudiences.Of(calendar.Audience).Includes(viewer) ? null
+        : signedIn ? new Status(StatusCode.PermissionDenied, $"{calendar.Name} isn't for you.")
+        : new Status(StatusCode.Unauthenticated, $"Sign in to add {calendar.Name}.");
 
     private async Task<Viewer> ViewerAsync(Guid? userId, CancellationToken cancellationToken)
     {
