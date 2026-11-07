@@ -16,8 +16,8 @@ using static GSBC.ChurchApp.Features.Configuration.Api.PlacementEditor;
 namespace GSBC.ChurchApp.Features.Configuration.Api;
 
 internal sealed class DraftEditor(
-    ConfigurationDbContext db, PlacementEditor placements, SurfaceCatalog surfaces, IAccessEvaluator access, IRoleAssignments roles,
-    IMediaReferences media, INotifications notifications, TimeProvider time)
+    ConfigurationDbContext db, PlacementEditor placements, PlacementRules rules, DraftRules draftRules, SurfaceCatalog surfaces, IAccessEvaluator access,
+    IRoleAssignments roles, IMediaReferences media, INotifications notifications, TimeProvider time)
 {
     private const int RecentlyPublished = 10;
 
@@ -113,7 +113,7 @@ internal sealed class DraftEditor(
         foreach (PatchMessage message in request.Set)
         {
             (SurfaceArea area, string? scopeId) = await placements.AuthoriseAsync(caller, message.Area, message.ScopeId, cancellationToken, publishing: draft.LayerOn);
-            Surface surface = placements.SurfaceIn(area, message.Surface);
+            Surface surface = rules.SurfaceIn(area, message.Surface);
             Guid placementId = ParseId(message.PlacementId);
             DraftChangeRecord? row = existing.SingleOrDefault(change => change.PlacementId == placementId);
             PlacementPatch patch = await ValidatedAsync(area, scopeId, surface, placementId, message, row, cancellationToken);
@@ -153,13 +153,13 @@ internal sealed class DraftEditor(
         }
 
         foreach (IGrouping<(string Area, string? ScopeId), DraftChangeRecord> inArea in touched
-                     .Where(row => row.Kind != PatchKind.Remove && existing.Contains(row) && HasUniqueNames(row.Area))
+                     .Where(row => row.Kind != PatchKind.Remove && existing.Contains(row) && draftRules.HasUniqueNames(row.Area))
                      .GroupBy(row => (row.Area, row.ScopeId)))
         {
             SurfaceArea area = surfaces.Areas[inArea.Key.Area];
             List<StoredPlacement> live = (await placements.InArea(area, inArea.Key.ScopeId).AsNoTracking().ToListAsync(cancellationToken)).Select(Stored).ToList();
             IEnumerable<PlacementPatch> patches = existing.Where(row => row.Area == area.Key && row.ScopeId == inArea.Key.ScopeId).Select(Deserialize);
-            RefuseClashingNames(area, DraftComposition.Apply(live, patches), inArea.Select(row => row.PlacementId.ToString()).ToList());
+            draftRules.RefuseClashingNames(area, DraftComposition.Apply(live, patches), inArea.Select(row => row.PlacementId.ToString()).ToList());
         }
 
         draft.Status = DraftStatus.Open;
@@ -189,10 +189,7 @@ internal sealed class DraftEditor(
         else
         {
             StoredPlacement now = Stored(live);
-            ChangedForEveryone? changed = DraftComposition.ChangedSince([now], [patch]).SingleOrDefault();
-            PlacementPatch settled = request.KeepMine || changed is null ? patch with { Base = now } : Without(patch, changed.Fields) with { Base = now };
-            bool nothingLeft = settled.Kind == PatchKind.Remove ? !request.KeepMine : settled.Kind == PatchKind.Change && !settled.Fields.Any();
-            if (nothingLeft)
+            if (DraftRules.Settled(patch, now, request.KeepMine) is not { } settled)
             {
                 db.DraftChanges.Remove(row);
                 existing.Remove(row);
@@ -220,18 +217,8 @@ internal sealed class DraftEditor(
         draft.AskedAt = Now;
         Touch(draft);
         await SaveAsync(draft, cancellationToken, changes);
-        DraftChangeRecord first = changes.OrderBy(change => change.Area, StringComparer.Ordinal).First();
-        if (surfaces.Areas.TryGetValue(first.Area, out SurfaceArea? area))
-        {
-            await notifications.RaiseAsync(new Notification(
-                DraftNotifications.WaitingToPublish,
-                NotificationAudience.Holding(area.PublishPermission, first.ScopeId),
-                $"“{draft.Name}” is waiting to publish",
-                $"{NameOf(caller)} asked for it to be published. Publish it from the admin panel.",
-                Link: $"/previews?draft={draft.Id}",
-                Subject: Subject(draft),
-                Action: "Preview it"), cancellationToken);
-        }
+        if (draftRules.WaitingToPublish(draft, changes, NameOf(caller)) is { } waiting)
+            await notifications.RaiseAsync(waiting, cancellationToken);
         return await ToMessageAsync(draft, changes, caller, cancellationToken);
     }
 
@@ -249,15 +236,13 @@ internal sealed class DraftEditor(
             (SurfaceArea area, string? scopeId) = await placements.AuthoriseAsync(caller, inArea.Key.Area, inArea.Key.ScopeId, cancellationToken, publishing: true);
             List<PlacementRecord> existing = await placements.InArea(area, scopeId).ToListAsync(cancellationToken);
             List<PlacementPatch> patches = inArea.Select(Deserialize).ToList();
-            if (DraftComposition.ChangedSince(existing.Select(Stored), patches) is { Count: > 0 } changed)
-                throw new RpcException(new Status(StatusCode.FailedPrecondition,
-                    $"Some of this draft was changed for everyone since it was edited: {string.Join(", ", changed.Select(entry => TitleOf(entry.Patch)))}. Keep yours or use everyone's first."));
-            RefuseClashingNames(area, DraftComposition.Apply(existing.Select(Stored), patches),
+            draftRules.RefuseChangedForEveryone(existing.Select(Stored), patches);
+            draftRules.RefuseClashingNames(area, DraftComposition.Apply(existing.Select(Stored), patches),
                 patches.Where(patch => patch.Kind != PatchKind.Remove).Select(patch => patch.PlacementId).ToList());
 
             foreach (PlacementPatch patch in patches)
             {
-                Surface surface = placements.SurfaceIn(area, patch.Surface);
+                Surface surface = rules.SurfaceIn(area, patch.Surface);
                 Guid placementId = ParseId(patch.PlacementId);
                 PlacementRecord? record = existing.SingleOrDefault(placement => placement.Id == placementId);
                 if (patch.Kind == PatchKind.Remove)
@@ -270,7 +255,7 @@ internal sealed class DraftEditor(
                 }
 
                 StoredPlacement wanted = record is null ? patch.Created() : patch.ApplyTo(Stored(record));
-                PlacementState after = await placements.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
+                PlacementState after = await rules.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
                 record ??= placements.Create(area, scopeId, surface, placementId, existing);
                 commits.Add(new Change(record, record.Revision == 0 ? null : PlacementState.Of(record), after));
             }
@@ -303,15 +288,15 @@ internal sealed class DraftEditor(
             Dictionary<Guid, PlacementRecord> existing = await placements.InArea(area, scopeId).AsNoTracking().ToDictionaryAsync(placement => placement.Id, cancellationToken);
             foreach (PlacementPatch patch in inArea.Select(Deserialize))
             {
-                Surface surface = placements.SurfaceIn(area, patch.Surface);
+                Surface surface = rules.SurfaceIn(area, patch.Surface);
                 if (patch.Kind == PatchKind.Remove)
                     continue;
                 StoredPlacement wanted = existing.TryGetValue(ParseId(patch.PlacementId), out PlacementRecord? live)
                     ? patch.ApplyTo(Stored(live))
                     : patch.Kind == PatchKind.Add
                         ? patch.Created()
-                        : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{TitleOf(patch)} was removed for everyone. Take it out of this draft first."));
-                await placements.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
+                        : throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{draftRules.TitleOf(patch)} was removed for everyone. Take it out of this draft first."));
+                await rules.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
             }
         }
 
@@ -363,14 +348,7 @@ internal sealed class DraftEditor(
         if (sharing)
         {
             await roles.GiveAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), null, cancellationToken);
-            await notifications.RaiseAsync(new Notification(
-                DraftNotifications.SharedWithYou,
-                NotificationAudience.Person(person),
-                $"{NameOf(caller)} shared “{draft.Name}” with you",
-                "See it on your phone before anyone else does.",
-                Link: $"/previews?draft={draft.Id}",
-                Subject: Subject(draft),
-                Action: "Preview it"), cancellationToken);
+            await notifications.RaiseAsync(DraftRules.SharedWith(draft, person, NameOf(caller)), cancellationToken);
         }
         else
             await roles.TakeAwayAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken);
@@ -404,8 +382,7 @@ internal sealed class DraftEditor(
         {
             if (live is not null)
                 throw Invalid($"{surface.Title} is already placed; change it instead.");
-            if (!surface.Repeatable && await placements.InArea(area, scopeId).AnyAsync(placement => placement.Surface == surface.Key, cancellationToken))
-                throw Conflict(surface.Title);
+            PlacementRules.RefuseSecondCopy(surface, await placements.InArea(area, scopeId).Select(placement => placement.Surface).ToListAsync(cancellationToken));
         }
         else if (live is null)
         {
@@ -428,22 +405,13 @@ internal sealed class DraftEditor(
             return patch;
 
         StoredPlacement wanted = kind == PatchKind.Add ? patch.Created() : patch.ApplyTo(Stored(live!));
-        PlacementState validated = await placements.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
+        PlacementState validated = await rules.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
         return patch with
         {
             Audience = patch.Audience is null ? null : validated.Audience,
             Values = patch.ValueChanges.ToDictionary(pair => pair.Key, pair => pair.Value is null ? null : validated.Values.GetValueOrDefault(pair.Key)),
         };
     }
-
-    private static PlacementPatch Without(PlacementPatch patch, IReadOnlyList<string> fields) => patch with
-    {
-        Order = fields.Contains(PatchField.Order) ? null : patch.Order,
-        Hidden = fields.Contains(PatchField.Hidden) ? null : patch.Hidden,
-        Audience = fields.Contains(PatchField.Audience) ? null : patch.Audience,
-        SetsDates = patch.SetsDates && !fields.Contains(PatchField.Dates),
-        Values = patch.ValueChanges.Where(pair => !fields.Contains(PatchField.Value(pair.Key))).ToDictionary(),
-    };
 
     private async Task DropRemovedFromLayerAsync(List<Guid> removed, CancellationToken cancellationToken)
     {
@@ -455,7 +423,7 @@ internal sealed class DraftEditor(
         if (dropped.Count == 0)
             return;
 
-        layer.DroppedFromLayer = [.. layer.DroppedFromLayer, .. dropped.Select(row => TitleOf(Deserialize(row)))];
+        layer.DroppedFromLayer = [.. layer.DroppedFromLayer, .. dropped.Select(row => draftRules.TitleOf(Deserialize(row)))];
         db.DraftChanges.RemoveRange(dropped);
         rows.RemoveAll(dropped.Contains);
         layer.Revision++;
@@ -484,8 +452,6 @@ internal sealed class DraftEditor(
             await db.SaveChangesAsync(cancellationToken);
     }
 
-    private static string Subject(DraftRecord draft) => $"draft/{draft.Id}";
-
     private void Close(DraftRecord draft)
     {
         if (draft.LayerOn)
@@ -504,19 +470,14 @@ internal sealed class DraftEditor(
     private async Task AfterClosingAsync(DraftRecord draft, CancellationToken cancellationToken)
     {
         await media.UseAsync(MediaOwner(draft), [], cancellationToken);
-        await notifications.SettleAsync(Subject(draft), cancellationToken);
+        await notifications.SettleAsync(DraftRules.Subject(draft), cancellationToken);
         foreach (RoleHolder holder in await roles.HoldersAsync(ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken))
             await roles.TakeAwayAsFeatureAsync(holder.UserId, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken);
     }
 
     private async Task UseMediaAsync(DraftRecord draft, CancellationToken cancellationToken)
     {
-        List<MediaRef> used = (await ChangesOfAsync(draft, cancellationToken))
-            .Select(Deserialize)
-            .Where(patch => patch.Kind != PatchKind.Remove)
-            .SelectMany(patch => placements.MediaOf(patch.Surface, PlacementState.Of(patch.Created())))
-            .DistinctBy(item => item.Id)
-            .ToList();
+        List<MediaRef> used = rules.MediaOfDraft((await ChangesOfAsync(draft, cancellationToken)).Select(Deserialize));
         await media.UseAsync(MediaOwner(draft), used, cancellationToken);
     }
 
@@ -634,27 +595,11 @@ internal sealed class DraftEditor(
     {
         List<Rollback> undos = await RollbacksOfAsync(published.Select(entry => Guid.Parse(entry.BatchId)).ToList(), cancellationToken);
         List<Rollback> redos = await RollbacksOfAsync(undos.Select(undo => undo.BatchId).ToList(), cancellationToken);
-        foreach (PublishedDraft entry in published)
-        {
-            Rollback? latest = undos.Where(undo => undo.RollsBack == Guid.Parse(entry.BatchId)).MaxBy(undo => undo.At);
-            if (latest is null || redos.Any(redo => redo.RollsBack == latest.BatchId && redo.At >= latest.At)
-                || await StillAsPublishedAsync(rows.Where(row => row.BatchId == Guid.Parse(entry.BatchId)).ToList(), cancellationToken))
-                continue;
-            entry.UndoneBatchId = latest.BatchId.ToString();
-            entry.UndoneAt = latest.At;
-            entry.UndoneBy = latest.By.ToString();
-        }
-    }
-
-    private async Task<bool> StillAsPublishedAsync(List<ChangeRecord> batch, CancellationToken cancellationToken)
-    {
-        List<Guid> ids = batch.Select(change => change.PlacementId).ToList();
-        Dictionary<Guid, PlacementRecord> live = await db.Placements.AsNoTracking()
+        List<Guid> ids = rows.Select(change => change.PlacementId).Distinct().ToList();
+        Dictionary<Guid, PlacementState> live = await db.Placements.AsNoTracking()
             .Where(placement => ids.Contains(placement.Id))
-            .ToDictionaryAsync(placement => placement.Id, cancellationToken);
-        return batch.All(change => PlacementState.Same(
-            live.TryGetValue(change.PlacementId, out PlacementRecord? record) ? PlacementState.Of(record) : null,
-            PlacementState.FromJson(change.After)));
+            .ToDictionaryAsync(placement => placement.Id, PlacementState.Of, cancellationToken);
+        PublishHistory.MarkUndone(published, rows, undos, redos, live);
     }
 
     private async Task<List<Rollback>> RollbacksOfAsync(List<Guid> batchIds, CancellationToken cancellationToken)
@@ -666,8 +611,6 @@ internal sealed class DraftEditor(
             .Distinct()
             .ToListAsync(cancellationToken);
     }
-
-    private sealed record Rollback(Guid BatchId, Guid RollsBack, DateTime At, Guid By);
 
     private async Task<DraftRecord> VisibleAsync(ClaimsPrincipal caller, string id, CancellationToken cancellationToken, bool tracked = false)
     {
@@ -707,27 +650,6 @@ internal sealed class DraftEditor(
     {
         draft.Revision++;
         draft.UpdatedAt = Now;
-    }
-
-    private string TitleOf(PlacementPatch patch)
-    {
-        Surface? surface = surfaces.ByKey.GetValueOrDefault(patch.Surface);
-        string? named = surface?.Settings.OfType<TextSetting>().FirstOrDefault() is { } title && surface.Repeatable
-            ? patch.ValueChanges.GetValueOrDefault(title.Key) ?? patch.Base?.Values.GetValueOrDefault(title.Key)
-            : null;
-        return named is null ? surface?.Title ?? patch.Surface : $"\"{named}\"";
-    }
-
-    private bool HasUniqueNames(string areaKey) =>
-        surfaces.ByKey.Values.Any(surface => surface.Area.Key == areaKey && surface.UniqueBy is not null);
-
-    private void RefuseClashingNames(SurfaceArea area, IReadOnlyList<StoredPlacement> composed, IReadOnlyCollection<string> changed)
-    {
-        foreach (Surface surface in surfaces.ByKey.Values.Where(surface => surface.Area.Key == area.Key && surface.UniqueBy is not null))
-        {
-            if (UniqueNames.Clashes(surface, composed, changed) is [{ } name, ..])
-                throw Invalid($"There's already a {surface.Title.ToLowerInvariant()} called “{name}”. Choose another name, or replace that one.");
-        }
     }
 
     private static StoredPlacement Stored(PlacementRecord record) => PlacementState.Of(record).ToStored(record.Id, record.Revision);
