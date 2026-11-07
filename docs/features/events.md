@@ -225,6 +225,13 @@ commit as the code (the owner approved all four on 2026-11-08):
   fuller row with its label and place; a date that's not on keeps its line, with an icon and "Not on this
   week · back on 20 November" underneath, never a suffix on its name. A changed event keeps its orange
   *Changed* mark until you've opened it.
+- **An event, opened: *The date block*** (owner, 2026-11-08, over a sheet over the week and a map-led page;
+  `.impeccable/mocks/decision/events-page/`). A pushed page (`/event/{id}`, back to where you came from). Its navy
+  head sets a white date block (weekday, day, month) beside the label, the title and the time with how it repeats
+  ("8:30–11:30 · every second Saturday"); a picture, when there is one, sits under the head. Then *Add to calendar*
+  (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
+  contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
+  Missing details read in plain words where they'd be (*Place to be announced*).
 
 ### Pinned for later
 
@@ -319,6 +326,13 @@ commit as the code (the owner approved all four on 2026-11-08):
   fuller row with its label and place; a date that's not on keeps its line, with an icon and "Not on this
   week · back on 20 November" underneath, never a suffix on its name. A changed event keeps its orange
   *Changed* mark until you've opened it.
+- **An event, opened: *The date block*** (owner, 2026-11-08, over a sheet over the week and a map-led page;
+  `.impeccable/mocks/decision/events-page/`). A pushed page (`/event/{id}`, back to where you came from). Its navy
+  head sets a white date block (weekday, day, month) beside the label, the title and the time with how it repeats
+  ("8:30–11:30 · every second Saturday"); a picture, when there is one, sits under the head. Then *Add to calendar*
+  (primary), *Register* when there is one, and *Share*; the change note in an orange-tinted box; the place and
+  contacts as facts (an address opens Maps, a site-map place the map); *About*; *Other dates* of the regular event.
+  Missing details read in plain words where they'd be (*Place to be announced*).
 
 ### Pinned for later
 
