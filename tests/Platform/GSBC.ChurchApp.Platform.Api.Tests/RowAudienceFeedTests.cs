@@ -72,7 +72,7 @@ public sealed class RowAudienceFeedTests : IAsyncLifetime
         await AddAsync("helpers night", null, deleted: true);
         await AddAsync("helpers night", Audience.HoldingRole(leaders));
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
-            Assert.True(await new FeedRetention(scope.ServiceProvider.GetRequiredService<SyncDbContext>()).PruneAsync(DateTime.UtcNow, TestContext.Current.CancellationToken));
+            Assert.True(await new FeedRetention(scope.ServiceProvider.GetRequiredService<SyncDbContext>()).PruneAsync(new DateTime(2026, 11, 8, 10, 0, 0, DateTimeKind.Utc), TestContext.Current.CancellationToken));
 
         FeedChange change = Assert.Single((await ReadAsync(helper, synced)).Feeds.Single().Changes);
         Assert.Equal(("helpers night", true), (change.Id, change.Deleted));

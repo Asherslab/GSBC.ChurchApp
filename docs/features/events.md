@@ -319,6 +319,16 @@ the digest (decision 18).
 
 ## Decided while building (Station 1, 2026-11-08)
 
+- **Showing an event on another calendar waits for the home event** (owner, 2026-11-08: "nah, any calendars linking
+  to the core just wait until the core event is published. Can't be published until then."). Agreeing to show it isn't
+  publishing and the copy has no publish of its own: it appears on the other calendar only while the home event is
+  published, and goes when that event is saved for later again or deleted. Agreeing needs only edit rights on the
+  other calendar.
+- **A shown event reaches the union of its calendars' audiences, contacts included** (owner, 2026-11-08, over keeping
+  contacts at the home calendar's audience). Before agreeing, the agreeing editor sees one plain sentence when it
+  would widen ("This will show to everyone with the app, not only Kids team."): a pending showing carries `Widens`,
+  `NewlyReaches` ("everyone with the app", "anyone signed in") and `NewlyReachesRoleIds` (the screen names the roles).
+
 - **Feeds respect calendars' audiences row by row.** A calendar's audience is Hub tiles' shape (everyone, anyone
   signed in, chosen roles), so Sync gained `FeedAudience.EachRow`: each row carries its audience, Sync sends a row only
   to people it includes (through the person's grants, so role membership is Access's), a signed-out phone gets none
@@ -330,15 +340,21 @@ the digest (decision 18).
   is the event's own, narrowed to people signed in, never wider. Rows of calendars
   for everyone go in the public feeds; nothing private is ever written there.
 - **An event shown on other calendars** has the audience of all its calendars together (any for everyone makes it
-  public). An editor of both calendars agrees at once; otherwise the other calendar's editors are asked.
+  public). An editor of both calendars agrees at once; otherwise the other calendar's editors are asked. Asking to show
+  a shown event elsewhere goes through its home calendar's publisher rule, as any change to it does.
 - **"Given" means a calendar for chosen roles you hold.** A calendar for anyone signed in is listed to add, like one
   for everyone. In your week = added, or (not turned off and (shown on new phones or given)): `CalendarChoices`, used by
   the phone and by iCal's *All my calendars*.
+- **Only a calendar that's for you can be added.** A signed-out phone may add only calendars for everyone; a person,
+  only calendars whose audience includes them. Holding *Calendar added* never shows anyone a row its audience
+  excludes (the feeds decide), and iCal's *All my calendars* must check the audience too (Station 3).
 - **Adding and turning off are roles** (*Calendar added*, *Calendar turned off*), held by a signed-out phone and moved to
   the person when they sign in, as following a sermon series is. Turning off is only recorded for a calendar you'd
   see anyway (a default or given one).
-- **Tell people reaches** a role calendar's role holders; for a default calendar, everyone it's for (someone who turned
-  it off is still told; they can mute *News about an event* for that calendar); otherwise those who added it.
+- **Tell people is never wider than the calendar.** A calendar for chosen roles: those roles' holders. A calendar for
+  anyone signed in: everyone signed in (never the phones that added it, so it's never written as a public
+  notification). A calendar for everyone: everyone if it's shown on new phones (someone who turned it off is still
+  told and can mute *News about an event* for that calendar), otherwise those who added it.
 - **Ask to publish:** on a calendar that needs a publisher, an editor without `events.publish` saves for later and
   asks; once it's shown, only a publisher changes or deletes it.
 - **This date only** sends the date's whole values; the server keeps only what differs from the regular event, so a
@@ -353,6 +369,8 @@ the digest (decision 18).
   the event.
 - **The admin panel's menu** honours permissions held at one calendar (`CanSomewhere`), so a calendar's editors see the
   Calendar page.
+- **Sync's reset for these feeds** follows only the grants that can decide role membership, so adding or turning off a
+  calendar doesn't reset them.
 - **Sample data:** *Kids team* and *Church members* are for anyone signed in, because there's no *Church member* role
   yet (the office creates it in Access and chooses it on the calendar).
 
@@ -364,4 +382,7 @@ the digest (decision 18).
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.
+- **A calendar for a role a phone can hold** (such as *Calendar added*) would let *Tell people* reach phones and be
+  written as a public notification. Nobody would choose one, but the calendar settings don't refuse it yet; that
+  needs Access to say which roles are phone-holdable.
 - **Removing a calendar** isn't built (calendars can be renamed and changed).
