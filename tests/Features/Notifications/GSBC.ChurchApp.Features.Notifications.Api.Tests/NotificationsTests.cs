@@ -10,12 +10,12 @@ using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Tests;
 
@@ -30,18 +30,18 @@ public sealed class NotificationsTests : IAsyncLifetime
     private static readonly NotificationKind ChatMessage = new("ministries.chat", "New messages in your chats", "Ministries", PerScope: ScopeKind.Ministry);
     private static readonly NotificationKind RosterSwap = new("ministries.roster.swap", "Someone asks you to swap a roster", "Ministries", Waits: true);
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
-    private readonly Clock _clock = new(ChurchTime.ToUtc(new DateTime(2026, 11, 8, 10, 0, 0)));
+    private TestDatabase _database = null!;
+    private readonly TestClock _clock = new(ChurchTime.ToUtc(new DateTime(2026, 11, 8, 10, 0, 0)));
     private readonly Holders _holders = new();
     private readonly RecordingTransport _transport = new();
     private ServiceProvider _services = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
             .AddSingleton<TimeProvider>(_clock)
             .AddSingleton(new NotificationKindCatalog([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, .. AnnouncementNotifications.All])]))
@@ -65,7 +65,7 @@ public sealed class NotificationsTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     private static CancellationToken Cancel => TestContext.Current.CancellationToken;
@@ -101,7 +101,7 @@ public sealed class NotificationsTests : IAsyncLifetime
         Assert.Equal([member], await db.Inbox.Select(entry => entry.UserId).ToListAsync(Cancel));
         FeedChangeRecord publicRow = Assert.Single(await db.FeedChanges.Where(change => change.Feed == NotificationsFeeds.Public).ToListAsync(Cancel));
         Assert.Equal(Music, publicRow.GroupKey);
-        Assert.Equal(new HashSet<string> { Token(followingPhone), Token(membersPhone) }, _transport.Sent.Select(push => push.Target.Token).ToHashSet());
+        Assert.Equal([Token(followingPhone), Token(membersPhone)], _transport.Sent.Select(push => push.Target.Token).ToHashSet());
         Assert.All(_transport.Sent, push => Assert.Equal("/ministries/music/news", push.Message.Link));
     }
 
@@ -134,14 +134,14 @@ public sealed class NotificationsTests : IAsyncLifetime
     {
         Guid person = Guid.CreateVersion7();
         await RegisterAsync(Guid.CreateVersion7(), person);
-        _clock.Now = ChurchTime.ToUtc(new DateTime(2026, 11, 8, 22, 30, 0));
+        _clock.UtcNow = ChurchTime.ToUtc(new DateTime(2026, 11, 8, 22, 30, 0));
 
         await RaiseAsync(new Notification(Notice, NotificationAudience.Person(person), "Bring a plate on Sunday", ""));
         await RaiseAsync(new Notification(Notice, NotificationAudience.Person(person), "Tonight's service is cancelled", "", Urgent: true));
         await DeliverAsync();
         Assert.Equal(["Tonight's service is cancelled"], _transport.Sent.Select(push => push.Message.Title));
 
-        _clock.Now = ChurchTime.ToUtc(new DateTime(2026, 11, 9, 7, 0, 0));
+        _clock.UtcNow = ChurchTime.ToUtc(new DateTime(2026, 11, 9, 7, 0, 0));
         await DeliverAsync();
         Assert.Equal("Bring a plate on Sunday", _transport.Sent[^1].Message.Title);
     }
@@ -156,7 +156,7 @@ public sealed class NotificationsTests : IAsyncLifetime
         await DeliverAsync();
         Assert.Equal(3, _transport.Sent.Count);
 
-        _clock.Now += TimeSpan.FromMinutes(11);
+        _clock.UtcNow += TimeSpan.FromMinutes(11);
         await DeliverAsync();
 
         PushMessage summary = Assert.Single(_transport.Sent.Skip(3)).Message;
@@ -178,7 +178,7 @@ public sealed class NotificationsTests : IAsyncLifetime
         await DeliverAsync();
         Assert.Equal(1, await CountAsync(db => db.Devices));
 
-        _clock.Now += TimeSpan.FromMinutes(1);
+        _clock.UtcNow += TimeSpan.FromMinutes(1);
         await DeliverAsync();
         Assert.Equal(Token(flaky), _transport.Sent[^1].Target.Token);
         Assert.Equal(PushOutcome.Sent, _transport.Sent[^1].Result.Outcome);
@@ -262,13 +262,6 @@ public sealed class NotificationsTests : IAsyncLifetime
     private static string Token(Guid installId) => installId.ToString("N");
 
     private static ProtoBuf.Grpc.CallContext CallAs(Guid person) => new(person, new SignedInCallContext(person));
-
-    private sealed class Clock(DateTime start) : TimeProvider
-    {
-        public DateTime Now { get; set; } = start;
-
-        public override DateTimeOffset GetUtcNow() => new(Now, TimeSpan.Zero);
-    }
 
     private sealed class Holders : IPermissionHolders, IPeopleIndex
     {

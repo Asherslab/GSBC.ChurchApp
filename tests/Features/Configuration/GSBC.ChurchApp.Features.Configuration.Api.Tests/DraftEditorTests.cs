@@ -98,7 +98,7 @@ public sealed class DraftEditorTests : ConfigurationHost
         Placement map = Assert.Single(await PublishNowAsync(staff, HubSurfaces.Area, null, LinkTile("Site map")));
         Draft conference = await NewDraftAsync(staff, "Conference 2027");
         await SaveAsync(staff, conference, Change(map, (Title, "Conference site map")));
-        DateTime starts = DateTime.UtcNow.AddDays(10);
+        DateTime starts = Clock.UtcNow.AddDays(10);
 
         await Drafts(editor => editor.TurnOnAsync(staff, new EventLayerRequest { DraftId = conference.Id, StartsAt = starts, EndsAt = starts.AddDays(3) }, Cancel));
         EventLayerMessage sent = ConfigurationContractsModel.Instance.Deserialize<EventLayerMessage>(new MemoryStream(LayerRecords(await FeedAsync(ConfigurationFeeds.Placements))[^1].Payload));

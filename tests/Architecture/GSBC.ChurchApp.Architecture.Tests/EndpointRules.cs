@@ -3,7 +3,6 @@ extern alias GatewayHost;
 
 using Grpc.AspNetCore.Server;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.StaticAssets;
 using Microsoft.Extensions.DependencyInjection;
@@ -28,14 +27,14 @@ public sealed class EndpointRules
     [Fact]
     public void EveryApiEndpointIsGrpcOrApproved()
     {
-        using WebApplicationFactory<ApiHost::Program> api = new();
+        using RoutesOnly<ApiHost::Program> api = new();
         Assert.Empty(Violations(api.Services));
     }
 
     [Fact]
     public void EveryGatewayEndpointIsGrpcStaticFilesOrApproved()
     {
-        using WebApplicationFactory<GatewayHost::Program> gateway = new();
+        using RoutesOnly<GatewayHost::Program> gateway = new();
         Assert.Empty(Violations(gateway.Services));
     }
 

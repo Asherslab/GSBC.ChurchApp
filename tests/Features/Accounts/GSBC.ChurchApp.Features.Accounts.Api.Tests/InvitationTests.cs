@@ -5,30 +5,31 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
 public sealed class InvitationTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
+    private readonly TestClock _clock = new();
     private readonly SentEmails _sent = new();
     private ServiceProvider _services = null!;
     private Guid _staff;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         ServiceCollection services = new();
         services
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
-            .AddSingleton(TimeProvider.System)
+            .AddSingleton<TimeProvider>(_clock)
             .AddLogging()
             .AddSingleton<IRoleAssignments>(new NoRoles())
             .AddSingleton<IAccessEvaluator>(new NoGrants())
@@ -124,7 +125,7 @@ public sealed class InvitationTests : IAsyncLifetime
         Guid id = Guid.CreateVersion7();
         await WithAsync<UserManager<AccountUser>>(async users => await users.CreateAsync(new AccountUser
         {
-            Id = id, UserName = id.ToString(), Email = email, DisplayName = name, CreatedAt = DateTime.UtcNow,
+            Id = id, UserName = id.ToString(), Email = email, DisplayName = name, CreatedAt = _clock.UtcNow,
         }));
         return id;
     }
@@ -135,7 +136,7 @@ public sealed class InvitationTests : IAsyncLifetime
         {
             UserId = userId,
             CredentialId = userId.ToByteArray(),
-            Data = new IdentityPasskeyData { PublicKey = [1], Transports = [], AttestationObject = [], ClientDataJson = [], CreatedAt = DateTimeOffset.UtcNow },
+            Data = new IdentityPasskeyData { PublicKey = [1], Transports = [], AttestationObject = [], ClientDataJson = [], CreatedAt = _clock.GetUtcNow() },
         });
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     });
@@ -152,7 +153,7 @@ public sealed class InvitationTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     private sealed class SentEmails : IEmailSender

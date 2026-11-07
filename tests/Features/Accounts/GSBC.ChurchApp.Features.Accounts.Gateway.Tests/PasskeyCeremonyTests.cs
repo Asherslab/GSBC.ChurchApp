@@ -4,6 +4,7 @@ using System.Security.Cryptography;
 using System.Text.Json;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
@@ -14,7 +15,6 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.JsonWebTokens;
 using Microsoft.IdentityModel.Tokens;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Accounts.Gateway.Tests;
 
@@ -24,19 +24,19 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     private const string TeamId = "ABCDE12345";
     private const string UatBundleId = "au.com.baptist.app.uat";
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private readonly ECDsa _tokenKey = ECDsa.Create(ECCurve.NamedCurves.nistP256);
     private WebApplication _app = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
 
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
         builder.Configuration.AddInMemoryCollection(new Dictionary<string, string?>
         {
-            [$"ConnectionStrings:{Database.ConnectionStringName}"] = _postgres.GetConnectionString(),
+            [$"ConnectionStrings:{Database.ConnectionStringName}"] = _database.ConnectionString,
             ["Accounts:Passkeys:RelyingPartyId"] = "localhost",
             ["Accounts:Passkeys:AllowedOrigins:0"] = Origin,
             [AccountTokens.SigningKeySetting] = _tokenKey.ExportPkcs8PrivateKeyPem(),
@@ -60,6 +60,8 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<AccountsDbContext>().Database.MigrateAsync();
     }
+
+    private DateTime Now => _app.Services.GetRequiredService<TimeProvider>().GetUtcNow().UtcDateTime;
 
     [Fact]
     public async Task SignUpSignInAndEndASession()
@@ -146,7 +148,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
 
         await using (AsyncServiceScope scope = _app.Services.CreateAsyncScope())
             await scope.ServiceProvider.GetRequiredService<AccountsDbContext>().ReviewCodes.Where(code => code.Id == codeId)
-                .ExecuteUpdateAsync(update => update.SetProperty(code => code.TurnedOffAt, DateTime.UtcNow), TestContext.Current.CancellationToken);
+                .ExecuteUpdateAsync(update => update.SetProperty(code => code.TurnedOffAt, Now), TestContext.Current.CancellationToken);
         Assert.Equal(HttpStatusCode.Unauthorized, (await TokenWithSessionAsync(phone, secret)).StatusCode);
     }
 
@@ -158,7 +160,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
         await using (AsyncServiceScope scope = _app.Services.CreateAsyncScope())
         {
             AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
-            secret = AppSessions.StartTool(db, userId, "Claude on a Mac", DateTime.UtcNow);
+            secret = AppSessions.StartTool(db, userId, "Claude on a Mac", Now);
             await db.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
         using HttpClient tool = Browser();
@@ -246,11 +248,11 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
             Hash = ReviewCodes.HashOf(ReviewCodes.NewCode()),
             UserId = userId,
             Label = "Test",
-            CreatedAt = DateTime.UtcNow,
-            ExpiresAt = DateTime.UtcNow.AddDays(1),
+            CreatedAt = Now,
+            ExpiresAt = Now.AddDays(1),
         };
         db.ReviewCodes.Add(code);
-        string secret = AppSessions.Start(db, userId, "iPhone", DateTime.UtcNow, code.Id);
+        string secret = AppSessions.Start(db, userId, "iPhone", Now, code.Id);
         await db.SaveChangesAsync();
         return (code.Id, secret);
     }
@@ -299,7 +301,7 @@ public sealed class PasskeyCeremonyTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _app.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
         _tokenKey.Dispose();
     }
 }

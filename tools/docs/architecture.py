@@ -36,11 +36,15 @@ def projects():
     return sorted(names)
 
 
+def is_test(name):
+    return name.endswith(".Tests") or name == "Testing"
+
+
 def kind(name):
     name = name.removeprefix(PREFIX)
     if name in HOSTS:
         return "dev" if name == "Hosts.AppHost" else ("app" if name in ("Hosts.App", "Hosts.Admin") else "server")
-    if name.endswith(".Tests"):
+    if is_test(name):
         return "test"
     if name in APP_PLATFORM or (name.startswith("Features.") and name.endswith(APP_PARTS)):
         return "app"
@@ -153,7 +157,7 @@ def main():
             _, feature, part = n.split(".", 2)
             features.setdefault(feature, []).append(part)
     platform = [n.removeprefix("Platform.") for n in names if n.startswith("Platform.") and not n.endswith(".Tests")]
-    tests = [n for n in names if n.endswith(".Tests")]
+    tests = [n for n in names if is_test(n)]
 
     chip_w, gap = 104, 8
     feature_h = 60 + max(1, len(features)) * 44 + 24
@@ -175,15 +179,22 @@ def main():
     code_h = feature_h + 20 + platform_h
 
     ty = cy + code_h + 20
-    svg.panel(40, ty, 1160, 76, "tests/ · rules and real behaviour")
+    rows = [[]]
     x = 60
     for t in tests:
-        label = t
-        w = 14 + 7.4 * len(label)
-        svg.chip(x, ty + 36, w, label, PREFIX + t)
+        w = 14 + 7.4 * len(t)
+        if x + w > 1180 and rows[-1]:
+            rows.append([])
+            x = 60
+        rows[-1].append((x, w, t))
         x += w + 12
+    tests_h = 76 + (len(rows) - 1) * 36
+    svg.panel(40, ty, 1160, tests_h, "tests/ · rules and real behaviour")
+    for r, row in enumerate(rows):
+        for x, w, t in row:
+            svg.chip(x, ty + 36 + r * 36, w, t, PREFIX + t)
 
-    ly = ty + 106
+    ly = ty + tests_h + 30
     for i, (k, label) in enumerate([("app", "ships in the app or admin (AOT-checked)"), ("server", "server side"), ("dev", "local development only")]):
         lx = 40 + i * 330
         svg.add(f'<rect x="{lx}" y="{ly}" width="22" height="14" rx="4" fill="{FILL[k]}" stroke="{STROKE[k]}"/>')

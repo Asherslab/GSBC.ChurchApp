@@ -18,6 +18,7 @@
 | [notifications.md](architecture/notifications.md) | Notification kinds any feature raises, audiences through Access, the inbox, push, silent sync, announcements |
 | [changelog.md](architecture/changelog.md) | Release notes: one file per change, built into the app; What's new after an update; versions; TestFlight's What to Test |
 | [rich-text.md](architecture/rich-text.md) | The one formatted-text format: a Markdown subset, checked on save, one renderer and editor |
+| [testing.md](architecture/testing.md) | How tests get a database, buckets and the time; isolation; waiting for signals; running subsets; a flake is a bug |
 | [destinations.md](architecture/destinations.md) | Places in the app: pages and items features declare, finding them over gRPC, the picker, shared `/open` links, the phone's one router |
 
 ## Features

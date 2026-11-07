@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="System.Formats.Cbor" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Testing\GSBC.ChurchApp.Testing\GSBC.ChurchApp.Testing.csproj" />
     <ProjectReference Include="..\..\..\..\src\Features\Accounts\GSBC.ChurchApp.Features.Accounts.Gateway\GSBC.ChurchApp.Features.Accounts.Gateway.csproj" />
   </ItemGroup>
   <ItemGroup>

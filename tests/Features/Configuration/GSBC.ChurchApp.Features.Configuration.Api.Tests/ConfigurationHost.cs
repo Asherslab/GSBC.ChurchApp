@@ -11,17 +11,19 @@ using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProtoBuf.Grpc;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Configuration.Api.Tests;
 
 public abstract class ConfigurationHost : IAsyncLifetime
 {
+    protected TestClock Clock { get; } = new();
+
     protected static readonly Permission EditModules = new("ministries.modules.edit", ScopeKind.Ministry, "Arrange a ministry's modules");
     protected static readonly Permission PublishModules = new("ministries.modules.publish", ScopeKind.Ministry, "Publish a ministry's modules");
     protected static readonly SurfaceArea Modules = new("ministry.modules", "Modules", "", ScopeKind.Ministry, EditModules, PublishModules);
@@ -36,7 +38,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
     private static readonly PermissionCatalog Permissions = new([new PermissionSet(
         [HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, EditModules, PublishModules, ConfigurationPermissions.PreviewDraft])]);
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
 
     protected FakeAccess Access { get; } = new(Permissions);
@@ -45,12 +47,12 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
-            .AddSingleton(TimeProvider.System)
+            .AddSingleton<TimeProvider>(Clock)
             .AddSingleton(new SurfaceCatalog([HubSurfaces.All, AppearanceSurfaces.All, MinistrySurfaces, WaitingTiles.Surfaces]))
             .AddSingleton(Permissions)
             .AddSingleton<IAccessEvaluator>(Access)
@@ -78,7 +80,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;

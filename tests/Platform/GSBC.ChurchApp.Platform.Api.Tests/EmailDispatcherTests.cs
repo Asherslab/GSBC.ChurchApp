@@ -1,11 +1,11 @@
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Data.Email;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
@@ -13,15 +13,15 @@ public sealed class EmailDispatcherTests : IAsyncLifetime
 {
     private static readonly DateTime Start = new(2026, 11, 1, 9, 0, 0, DateTimeKind.Utc);
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
             .AddEmailData()
             .BuildServiceProvider();
@@ -83,7 +83,7 @@ public sealed class EmailDispatcherTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     private sealed class FlakyTransport(int failures) : IEmailTransport

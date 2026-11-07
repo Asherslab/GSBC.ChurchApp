@@ -12,7 +12,7 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Platform.Api.Sync;
 
 public sealed class SyncService(
-    SyncDbContext db, FeedRegistry feeds, IAccessEvaluator access, FeedChangeBroadcaster broadcaster, ISignedInSessions sessions) : ISyncService
+    SyncDbContext db, FeedRegistry feeds, IAccessEvaluator access, FeedChangeBroadcaster broadcaster, ISignedInSessions sessions, TimeProvider time) : ISyncService
 {
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
@@ -204,7 +204,7 @@ public sealed class SyncService(
         string fingerprint = Fingerprint(await access.GrantsForAsync(userId, cancellationToken), audience.Permission.Node);
         AudienceMark? mark = await db.AudienceMarks.FindAsync([session, feed.Name], cancellationToken);
         bool changed = mark is not null && mark.Fingerprint != fingerprint;
-        DateTime now = DateTime.UtcNow;
+        DateTime now = time.GetUtcNow().UtcDateTime;
         if (mark is not null && !changed && now - mark.SeenAt < AudienceMarkResolution)
             return false;
 

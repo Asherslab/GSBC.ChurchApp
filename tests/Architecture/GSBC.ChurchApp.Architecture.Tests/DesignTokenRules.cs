@@ -29,8 +29,7 @@ public sealed partial class DesignTokenRules
     }
 
     private static IEnumerable<string> Stylesheets() =>
-        Directory.EnumerateFiles(Path.Combine(RepoRoot.Path, "src"), "*.css", SearchOption.AllDirectories)
-            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}") && !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}"))
+        RepoFiles.Under("src", ".css")
             .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}shell{Path.DirectorySeparatorChar}"));
 
     private static IEnumerable<(string Where, string Text)> Lines(string path) =>

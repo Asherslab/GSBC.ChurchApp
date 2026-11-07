@@ -1,33 +1,34 @@
-using System.Text;
 using GSBC.ChurchApp.Features.Accounts.Api.Installs;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
 public sealed class InstallVerifierTests : IAsyncLifetime
 {
     private const string AppId = "YNT9A4LGVA.au.com.baptist.app.dev";
-    private static readonly byte[] Request = Encoding.UTF8.GetBytes("/gsbc.notifications.Notifications/RegisterDevice\nbody");
+    private static readonly byte[] Request = "/gsbc.notifications.Notifications/RegisterDevice\nbody"u8.ToArray();
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
+
+    private readonly TestClock _clock = new();
     private readonly TestDevice _device = new(AppId);
     private ServiceProvider _services = null!;
     private Guid _install;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
-            .AddSingleton(TimeProvider.System)
+            .AddSingleton<TimeProvider>(_clock)
             .AddLogging()
             .AddAccountsData()
             .BuildServiceProvider();
@@ -39,7 +40,7 @@ public sealed class InstallVerifierTests : IAsyncLifetime
         db.Installs.Add(new AppInstall
         {
             Id = _install, KeyId = _device.KeyId, PublicKey = _device.Key.ExportSubjectPublicKeyInfo(), AppId = AppId,
-            AttestedAt = DateTime.UtcNow, LastSeenAt = DateTime.UtcNow,
+            AttestedAt = _clock.UtcNow, LastSeenAt = _clock.UtcNow,
         });
         await db.SaveChangesAsync();
     }
@@ -60,7 +61,7 @@ public sealed class InstallVerifierTests : IAsyncLifetime
     private async Task<Guid?> VerifyAsync(InstallProof proof)
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
-        InstallVerifier verifier = new(scope.ServiceProvider.GetRequiredService<AccountsDbContext>(), TimeProvider.System);
+        InstallVerifier verifier = new(scope.ServiceProvider.GetRequiredService<AccountsDbContext>(), _clock);
         return await verifier.VerifyAsync(proof, TestContext.Current.CancellationToken);
     }
 
@@ -68,6 +69,6 @@ public sealed class InstallVerifierTests : IAsyncLifetime
     {
         _device.Dispose();
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 }

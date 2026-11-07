@@ -43,6 +43,7 @@ tests/                         mirrors src/
   Architecture/GSBC.ChurchApp.Architecture.Tests     the rules below, as tests
   Platform/GSBC.ChurchApp.Platform.<X>.Tests
   Features/<Feature>/GSBC.ChurchApp.Features.<Feature>.<Part>.Tests
+  Testing/GSBC.ChurchApp.Testing                     shared by the tests: databases, buckets, the clock (testing.md)
 
 tools/access/                  make-owner.sh makes the first Owner (access.md)
 tools/aot-warnings/            check.sh publishes the app and checks its warning baseline (SPEC §9)
@@ -169,6 +170,7 @@ flowchart LR
         NotificationsTests["Features.Notifications.Api.Tests"]
         SermonsTests["Features.Sermons.Api.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
+        Testing["Testing"]
     end
 
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
@@ -228,15 +230,15 @@ flowchart LR
     ArchitectureTests --> HostsApi & HostsGateway & PlatformUi
     PermissionsTests --> PlatformPermissions
     ContractsTests --> PlatformContracts
-    ApiTests --> PlatformApi & PlatformClient
-    GatewayTests --> AccountsGateway
-    AccountsApiTests --> AccountsApi
-    AccessTests --> AccessApi
-    ConfigurationTests --> ConfigurationApi
-    MediaTests --> MediaApi
-    AnalyticsTests --> AnalyticsApi
-    NotificationsTests --> NotificationsApi
-    SermonsTests --> SermonsApi
+    ApiTests --> PlatformApi & PlatformClient & Testing
+    GatewayTests --> AccountsGateway & Testing
+    AccountsApiTests --> AccountsApi & Testing
+    AccessTests --> AccessApi & Testing
+    ConfigurationTests --> ConfigurationApi & Testing
+    MediaTests --> MediaApi & Testing
+    AnalyticsTests --> AnalyticsApi & Testing
+    NotificationsTests --> NotificationsApi & Testing
+    SermonsTests --> SermonsApi & Testing
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -323,6 +325,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
+| `GSBC.ChurchApp.Testing` | What the tests share ([testing.md](testing.md)): `TestDatabase` gives each test its own database on one Postgres for the whole run, which every test project joins and which stops by itself once no test has used it for 30 seconds; `TestBuckets` gives each test its own buckets on one S3 server; `TestClock` is the time tests run at | No |
 
 Not .NET projects: `src/Hosts/App/shell` (the Capacitor iOS project) and `src/Hosts/App/native/data-layer`
 (the Capacitor plugin: `DataLayerCore` holds the gRPC-Web transport, GRDB store, sync engine and outbox,

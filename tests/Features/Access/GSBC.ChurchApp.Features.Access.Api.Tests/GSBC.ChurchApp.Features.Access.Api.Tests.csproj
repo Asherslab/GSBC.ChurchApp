@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\..\Testing\GSBC.ChurchApp.Testing\GSBC.ChurchApp.Testing.csproj" />
     <ProjectReference Include="..\..\..\..\src\Features\Access\GSBC.ChurchApp.Features.Access.Api\GSBC.ChurchApp.Features.Access.Api.csproj" />
   </ItemGroup>
   <ItemGroup>

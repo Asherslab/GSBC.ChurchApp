@@ -10,9 +10,8 @@ public sealed partial class SessionSecretRules
     [Fact]
     public void NothingThatRunsInTheWebViewHandlesTheSessionSecret()
     {
-        List<string> violations = Directory.EnumerateFiles(Path.Combine(RepoRoot.Path, "src"), "*", SearchOption.AllDirectories)
+        List<string> violations = RepoFiles.Under("src")
             .Select(path => Path.GetRelativePath(RepoRoot.Path, path).Replace(Path.DirectorySeparatorChar, '/'))
-            .Where(path => !path.Contains("/obj/") && !path.Contains("/bin/") && !path.Contains("/node_modules/"))
             .Where(path => WebViewCode.Contains(Path.GetExtension(path)) && RunsInTheWebView().IsMatch(path))
             .Where(path => HandlesTheSecret().IsMatch(File.ReadAllText(Path.Combine(RepoRoot.Path, path))))
             .ToList();
@@ -32,7 +31,7 @@ public sealed partial class SessionSecretRules
     [GeneratedRegex(@"^src/(Hosts/App/GSBC\.ChurchApp\.Hosts\.App|Platform/GSBC\.ChurchApp\.Platform\.(Client|Ui)|Features/[^/]+/GSBC\.ChurchApp\.Features\.[^/]+\.(App|Client))/")]
     private static partial Regex RunsInTheWebView();
 
-    [GeneratedRegex(@"X-Gsbc-Session|secret", RegexOptions.IgnoreCase)]
+    [GeneratedRegex("X-Gsbc-Session|secret", RegexOptions.IgnoreCase)]
     private static partial Regex HandlesTheSecret();
 
     [GeneratedRegex(@"vault\.read\(\)|SessionKeychain\(\)\.read", RegexOptions.IgnoreCase)]

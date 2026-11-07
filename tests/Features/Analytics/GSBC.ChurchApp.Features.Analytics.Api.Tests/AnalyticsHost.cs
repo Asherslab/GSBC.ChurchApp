@@ -6,21 +6,21 @@ using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Analytics.Api.Tests;
 
 internal sealed class AnalyticsHost : IAsyncDisposable
 {
-    public static readonly Guid Owner = Guid.NewGuid();
+    private static readonly Guid Owner = Guid.NewGuid();
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
 
-    public MovableClock Clock { get; } = new(new DateTimeOffset(2026, 11, 1, 23, 0, 0, TimeSpan.Zero));
+    public TestClock Clock { get; } = new(new DateTime(2026, 11, 1, 23, 0, 0, DateTimeKind.Utc));
 
     public RecordingEmail Email { get; } = new();
 
@@ -28,10 +28,10 @@ internal sealed class AnalyticsHost : IAsyncDisposable
 
     public async Task StartAsync(params ISubjectNames[] subjectNames)
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         IConfiguration configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
-            [$"ConnectionStrings:{Database.ConnectionStringName}"] = _postgres.GetConnectionString(),
+            [$"ConnectionStrings:{Database.ConnectionStringName}"] = _database.ConnectionString,
             ["Accounts:SiteUrl"] = "https://uat-app.baptist.com.au",
         }).Build();
 
@@ -78,7 +78,7 @@ internal sealed class AnalyticsHost : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     public static class Measures
@@ -89,15 +89,6 @@ internal sealed class AnalyticsHost : IAsyncDisposable
         public static readonly Platform.Contracts.Analytics.Measure Notifications =
             new("notifications.push", "Notifications", "Phones by whether notifications are on", OncePerPhone: true,
                 States: [new("on", "On"), new("off", "Turned off")]);
-    }
-
-    internal sealed class MovableClock(DateTimeOffset now) : TimeProvider
-    {
-        private DateTimeOffset _now = now;
-
-        public override DateTimeOffset GetUtcNow() => _now;
-
-        public void Advance(TimeSpan by) => _now += by;
     }
 
     internal sealed class RecordingEmail : IEmailSender

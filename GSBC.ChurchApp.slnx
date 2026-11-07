@@ -152,4 +152,7 @@
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Contracts.Tests/GSBC.ChurchApp.Platform.Contracts.Tests.csproj" />
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Permissions.Tests/GSBC.ChurchApp.Platform.Permissions.Tests.csproj" />
   </Folder>
+  <Folder Name="/tests/Testing/">
+    <Project Path="tests/Testing/GSBC.ChurchApp.Testing/GSBC.ChurchApp.Testing.csproj" />
+  </Folder>
 </Solution>

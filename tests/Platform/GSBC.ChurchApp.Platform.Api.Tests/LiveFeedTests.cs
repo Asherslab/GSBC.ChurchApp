@@ -9,12 +9,12 @@ using GSBC.ChurchApp.Platform.Client.Sessions;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using ProtoBuf.Grpc;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
@@ -24,7 +24,9 @@ public sealed class LiveFeedTests : IAsyncLifetime
     private static readonly Permission SeeLibrary = new("media.view", ScopeKind.Global, "See the media library");
     private static readonly TimeSpan Patience = TimeSpan.FromSeconds(10);
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
+
+    private readonly TestClock _clock = new();
     private readonly FeedChangeBroadcaster _broadcaster = new();
     private readonly Sessions _sessions = new();
     private readonly HashSet<string> _allowed = [];
@@ -32,8 +34,8 @@ public sealed class LiveFeedTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
-        _services = await DatabaseAsync(_postgres.GetConnectionString());
+        _database = await TestDatabase.CreateAsync();
+        _services = await DatabaseAsync(_database.ConnectionString);
     }
 
     private async Task<ServiceProvider> DatabaseAsync(string connection)
@@ -43,6 +45,7 @@ public sealed class LiveFeedTests : IAsyncLifetime
                 .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", connection)])
                 .Build())
             .AddSyncData()
+            .AddSingleton<TimeProvider>(_clock)
             .AddSingleton(new FeedRegistry([new FeedDefinition(Library, FeedAudience.Holding(SeeLibrary))]))
             .AddSingleton(_broadcaster)
             .AddSingleton<IAccessEvaluator>(new Allowed(_allowed))
@@ -58,7 +61,7 @@ public sealed class LiveFeedTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     [Fact]
@@ -109,8 +112,8 @@ public sealed class LiveFeedTests : IAsyncLifetime
         using Watching editor = Watch(Person(seesLibrary: true));
         await editor.ConnectedAsync();
         editor.Forget();
-        await using ServiceProvider rebuilt = await DatabaseAsync(
-            new Npgsql.NpgsqlConnectionStringBuilder(_postgres.GetConnectionString()) { Database = "rebuilt" }.ConnectionString);
+        await using TestDatabase rebuiltDatabase = await TestDatabase.CreateAsync();
+        await using ServiceProvider rebuilt = await DatabaseAsync(rebuiltDatabase.ConnectionString);
         await ChangeAsync("upload in the rebuilt database", rebuilt);
 
         editor.MoveTo(rebuilt);
@@ -156,7 +159,7 @@ public sealed class LiveFeedTests : IAsyncLifetime
     {
         await using AsyncServiceScope scope = (database ?? _services).CreateAsyncScope();
         SyncDbContext db = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
-        db.FeedChanges.Add(FeedChangeRecord.Marker(Library, recordId, DateTime.UtcNow));
+        db.FeedChanges.Add(FeedChangeRecord.Marker(Library, recordId, _clock.UtcNow));
         await db.SaveChangesAsync();
         _broadcaster.PublishChange(Library);
     }
@@ -233,7 +236,7 @@ public sealed class LiveFeedTests : IAsyncLifetime
 
         public bool Down
         {
-            get => field;
+            get;
             set
             {
                 field = value;

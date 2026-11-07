@@ -6,6 +6,7 @@ using Grpc.Net.Client.Web;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Hosting.Server;
@@ -14,22 +15,21 @@ using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 using static Grpc.Health.V1.HealthCheckResponse.Types;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
 public sealed class InstallProofTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private WebApplication _api = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.ConfigureKestrel(kestrel => kestrel.Listen(IPAddress.Loopback, 0, listen => listen.Protocols = HttpProtocols.Http1));
-        builder.Configuration.AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())]);
+        builder.Configuration.AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)]);
         builder.AddPlatformApi();
         _api = builder.Build();
         _api.UseGrpcWeb(new GrpcWebOptions { DefaultEnabled = true });
@@ -65,6 +65,6 @@ public sealed class InstallProofTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _api.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 }

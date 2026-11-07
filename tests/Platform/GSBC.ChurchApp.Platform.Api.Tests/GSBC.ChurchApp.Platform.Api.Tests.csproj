@@ -1,12 +1,12 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="xunit.v3" />
-    <PackageReference Include="Testcontainers.PostgreSql" />
     <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
     <PackageReference Include="Grpc.Net.Client" />
     <PackageReference Include="Grpc.Net.Client.Web" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\Testing\GSBC.ChurchApp.Testing\GSBC.ChurchApp.Testing.csproj" />
     <ProjectReference Include="..\..\..\src\Platform\GSBC.ChurchApp.Platform.Api\GSBC.ChurchApp.Platform.Api.csproj" />
     <ProjectReference Include="..\..\..\src\Platform\GSBC.ChurchApp.Platform.Client\GSBC.ChurchApp.Platform.Client.csproj" />
   </ItemGroup>

@@ -4,11 +4,11 @@ using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
@@ -16,7 +16,9 @@ public sealed class ReviewSignInTests : IAsyncLifetime
 {
     private const string Address = "203.0.113.7";
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
+
+    private readonly TestClock _clock = new();
     private readonly RoleHolders _roles = new();
     private readonly Grants _grants = new();
     private ServiceProvider _services = null!;
@@ -24,13 +26,13 @@ public sealed class ReviewSignInTests : IAsyncLifetime
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         ServiceCollection services = new();
         services
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
-            .AddSingleton(TimeProvider.System)
+            .AddSingleton<TimeProvider>(_clock)
             .AddLogging()
             .AddSingleton<IRoleAssignments>(_roles)
             .AddSingleton<IAccessEvaluator>(_grants)
@@ -67,7 +69,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
 
         string expiring = (await CreateCodeAsync(demo)).Code;
         await WithDbAsync(db => db.ReviewCodes.Where(candidate => candidate.Hash == ReviewCodes.HashOf(expiring))
-            .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.ExpiresAt, DateTime.UtcNow.AddMinutes(-1)), TestContext.Current.CancellationToken));
+            .ExecuteUpdateAsync(set => set.SetProperty(candidate => candidate.ExpiresAt, _clock.UtcNow.AddMinutes(-1)), TestContext.Current.CancellationToken));
         Assert.Equal(StatusCode.Unauthenticated, await RefusalAsync("review@example.com", expiring));
     }
 
@@ -119,7 +121,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
     {
         Guid demo = await NewDemoAccountAsync("kept@example.com");
         Guid abandoned = await NewAccountAsync("gone@example.com");
-        DateTime later = DateTime.UtcNow + AccountsCleanup.AbandonedAfter + TimeSpan.FromDays(1);
+        DateTime later = _clock.UtcNow + AccountsCleanup.AbandonedAfter + TimeSpan.FromDays(1);
 
         await WithAsync<AccountsDbContext>(db => AccountsCleanup.CleanAsync(db, later, [demo], TestContext.Current.CancellationToken));
 
@@ -157,7 +159,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         Guid id = Guid.CreateVersion7();
         await WithAsync<UserManager<AccountUser>>(async users => await users.CreateAsync(new AccountUser
         {
-            Id = id, UserName = id.ToString(), Email = email, DisplayName = email, CreatedAt = DateTime.UtcNow,
+            Id = id, UserName = id.ToString(), Email = email, DisplayName = email, CreatedAt = _clock.UtcNow,
         }));
         return id;
     }
@@ -168,7 +170,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         {
             UserId = userId,
             CredentialId = [1, 2, 3],
-            Data = new IdentityPasskeyData { PublicKey = [1], Transports = [], AttestationObject = [], ClientDataJson = [], CreatedAt = DateTimeOffset.UtcNow },
+            Data = new IdentityPasskeyData { PublicKey = [1], Transports = [], AttestationObject = [], ClientDataJson = [], CreatedAt = _clock.GetUtcNow() },
         });
         return await db.SaveChangesAsync(TestContext.Current.CancellationToken);
     });
@@ -193,7 +195,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     private sealed class RoleHolders : IRoleAssignments

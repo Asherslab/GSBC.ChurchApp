@@ -76,10 +76,12 @@ public sealed class PlacementEditorTests : ConfigurationHost
     {
         ClaimsPrincipal staff = Access.Person(ArrangesHub, PublishesHub);
         Placement bible = Assert.Single(await PublishNowAsync(staff, HubSurfaces.Area, null, LinkTile("Bible")));
+        Clock.Advance(TimeSpan.FromMinutes(1));
         await PublishNowAsync(staff, HubSurfaces.Area, null, Change(bible, (HubSurfaces.LinkTile.Title.Key, "Read the Bible")), LinkTile("Camp"));
 
         ChangeList history = await Placements(editor => editor.ListChangesAsync(staff, new AreaQuery { Area = HubSurfaces.Area.Key }, Cancel));
         Assert.Equal("A quick fix", history.Batches[0].DraftName);
+        Clock.Advance(TimeSpan.FromMinutes(1));
         await Placements(editor => editor.RollBackAsync(staff, new RollBackRequest { BatchId = history.Batches[0].Id }, Cancel));
 
         Placement restored = Assert.Single(await LiveAsync(staff, HubSurfaces.Area));
@@ -91,6 +93,7 @@ public sealed class PlacementEditorTests : ConfigurationHost
 
         PublishedDraft undone = (await Drafts(editor => editor.ListAsync(staff, Cancel))).Published[0];
         Assert.Equal(undo.Id, undone.UndoneBatchId);
+        Clock.Advance(TimeSpan.FromMinutes(1));
         await Placements(editor => editor.RollBackAsync(staff, new RollBackRequest { BatchId = undone.UndoneBatchId! }, Cancel));
 
         Assert.Equal(["Read the Bible", "Camp"], (await LiveAsync(staff, HubSurfaces.Area)).Select(tile => ValueOf(tile, HubSurfaces.LinkTile.Title.Key)).Order().Reverse());

@@ -4,10 +4,10 @@ using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
@@ -16,15 +16,15 @@ public sealed class FeedRetentionTests : IAsyncLifetime
     private const string Feed = "events";
     private static readonly DateTime Now = new(2026, 11, 1, 0, 0, 0, DateTimeKind.Utc);
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
             .AddSyncData()
             .BuildServiceProvider();
@@ -80,7 +80,8 @@ public sealed class FeedRetentionTests : IAsyncLifetime
             new FeedRegistry([new FeedDefinition(Feed, FeedAudience.Public)]),
             new NothingAllowed(),
             new FeedChangeBroadcaster(),
-            new LiveFeedTests.Sessions());
+            new LiveFeedTests.Sessions(),
+            new TestClock());
 
         PullReply reply = await sync.PullAsync(new PullRequest { Cursors = [new FeedCursor { Feed = Feed, Cursor = cursor }] });
         return reply.Feeds.SingleOrDefault() ?? new FeedBatch { Feed = Feed, Cursor = cursor };
@@ -89,7 +90,7 @@ public sealed class FeedRetentionTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     private sealed class NothingAllowed : IAccessEvaluator

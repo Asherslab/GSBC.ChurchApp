@@ -2,25 +2,25 @@ using Grpc.Health.V1;
 using Grpc.Net.Client;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
-using Testcontainers.PostgreSql;
 using static Grpc.Health.V1.HealthCheckResponse.Types;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
 public sealed class HealthProbeTests : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private WebApplication _api = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
         builder.WebHost.UseTestServer();
-        builder.Configuration.AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())]);
+        builder.Configuration.AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)]);
         builder.AddPlatformApi();
         _api = builder.Build();
         _api.MapPlatformApi();
@@ -40,7 +40,7 @@ public sealed class HealthProbeTests : IAsyncLifetime
         Assert.Equal(ServingStatus.Serving, (await health.CheckAsync(liveness, cancellationToken: cancellation)).Status);
         Assert.Equal(ServingStatus.Serving, (await health.CheckAsync(readiness, cancellationToken: cancellation)).Status);
 
-        await _postgres.StopAsync(cancellation);
+        await _database.DropAsync();
 
         Assert.Equal(ServingStatus.Serving, (await health.CheckAsync(liveness, cancellationToken: cancellation)).Status);
         Assert.Equal(ServingStatus.NotServing, (await health.CheckAsync(readiness, cancellationToken: cancellation)).Status);
@@ -49,6 +49,6 @@ public sealed class HealthProbeTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _api.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 }

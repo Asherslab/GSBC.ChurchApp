@@ -81,6 +81,14 @@ the diagram and table in the repo-layout doc's "The projects" section, and redra
 
 Tests guard rules and real behaviour. Don't write tests for coverage.
 
+# Tests
+
+How tests get a database, S3 buckets and the time, what they may not touch, and how to run a subset
+are in [testing.md](docs/architecture/testing.md). In short: each test gets its own database and
+buckets from `GSBC.ChurchApp.Testing` (never its own container), reads time from `TestClock`, and waits
+for the signal it expects, never for time to pass. **A flake is a bug:** find the cause and fix it,
+never retry, skip, lengthen a timeout or blame load. `TestRules` enforces what it can.
+
 # Components: reuse first, then generic
 
 Before writing any Blazor UI:

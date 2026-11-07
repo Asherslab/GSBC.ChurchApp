@@ -11,9 +11,9 @@ public sealed partial class LiveDataRules
     [Fact]
     public void ComponentsThatLoadDataRefreshThemselves()
     {
-        List<string> violations = Directory.EnumerateFiles(Path.Combine(RepoRoot.Path, "src"), "*.razor", SearchOption.AllDirectories)
+        List<string> violations = RepoFiles.Under("src", ".razor")
             .Select(path => (Path: Path.GetRelativePath(RepoRoot.Path, path).Replace(Path.DirectorySeparatorChar, '/'), Text: File.ReadAllText(path)))
-            .Where(file => !file.Path.Contains("/obj/") && !file.Path.Contains("/bin/") && !NotYetMigrated.Contains(file.Path))
+            .Where(file => !NotYetMigrated.Contains(file.Path))
             .Where(file => InjectsData().IsMatch(file.Text) && LoadsOnStart().IsMatch(file.Text) && !Refreshes().IsMatch(file.Text))
             .Select(file => file.Path)
             .ToList();

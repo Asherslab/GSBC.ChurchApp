@@ -4,11 +4,10 @@ using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Npgsql;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Platform.Api.Tests;
 
@@ -18,22 +17,25 @@ public sealed class SyncOriginTests : IAsyncLifetime
     private const string Events = "events";
     private static readonly FeedRegistry Feeds = new([new FeedDefinition(Series, FeedAudience.Public), new FeedDefinition(Events, FeedAudience.Public)]);
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _mainDatabase = null!;
+    private TestDatabase _rebuiltDatabase = null!;
     private ServiceProvider _main = null!;
     private ServiceProvider _rebuilt = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
-        _main = await DatabaseAsync("main");
-        _rebuilt = await DatabaseAsync("rebuilt");
+        _mainDatabase = await TestDatabase.CreateAsync();
+        _rebuiltDatabase = await TestDatabase.CreateAsync();
+        _main = await DatabaseAsync(_mainDatabase);
+        _rebuilt = await DatabaseAsync(_rebuiltDatabase);
     }
 
     public async ValueTask DisposeAsync()
     {
         await _main.DisposeAsync();
         await _rebuilt.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _mainDatabase.DisposeAsync();
+        await _rebuiltDatabase.DisposeAsync();
     }
 
     [Fact]
@@ -91,9 +93,9 @@ public sealed class SyncOriginTests : IAsyncLifetime
     {
         await AddAsync(_main, Series, "anchored");
         long seen = await AddAsync(_main, Series, "ten-commandments");
-        long expired = await AddAsync(_main, Events, "cancelled", deleted: true, committedAt: DateTime.UtcNow.AddDays(-200));
+        long expired = await AddAsync(_main, Events, "cancelled", deleted: true, committedAt: TestClock.Start.AddDays(-200));
         await using (AsyncServiceScope scope = _main.CreateAsyncScope())
-            await new FeedRetention(scope.ServiceProvider.GetRequiredService<SyncDbContext>()).PruneAsync(DateTime.UtcNow, TestContext.Current.CancellationToken);
+            await new FeedRetention(scope.ServiceProvider.GetRequiredService<SyncDbContext>()).PruneAsync(TestClock.Start, TestContext.Current.CancellationToken);
         string? origin = (await PullAsync(_main, null, [])).Origin;
 
         PullReply current = await PullAsync(_main, origin, new() { [Series] = seen, [Events] = expired });
@@ -105,12 +107,11 @@ public sealed class SyncOriginTests : IAsyncLifetime
         Assert.Equal(["ten-commandments"], caughtUp.Changes.Select(change => change.Id));
     }
 
-    private async Task<ServiceProvider> DatabaseAsync(string name)
+    private static async Task<ServiceProvider> DatabaseAsync(TestDatabase database)
     {
-        string connection = new NpgsqlConnectionStringBuilder(_postgres.GetConnectionString()) { Database = name }.ConnectionString;
         ServiceProvider services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", connection)])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", database.ConnectionString)])
                 .Build())
             .AddSyncData()
             .BuildServiceProvider();
@@ -125,7 +126,7 @@ public sealed class SyncOriginTests : IAsyncLifetime
         SyncDbContext db = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
         FeedChangeRecord change = new()
         {
-            Feed = feed, RecordId = id, Version = 1, Deleted = deleted, Payload = deleted ? [] : [1], CommittedAt = committedAt ?? DateTime.UtcNow,
+            Feed = feed, RecordId = id, Version = 1, Deleted = deleted, Payload = deleted ? [] : [1], CommittedAt = committedAt ?? TestClock.Start,
         };
         db.FeedChanges.Add(change);
         await db.SaveChangesAsync();
@@ -136,7 +137,7 @@ public sealed class SyncOriginTests : IAsyncLifetime
     {
         await using AsyncServiceScope scope = database.CreateAsyncScope();
         SyncService sync = new(
-            scope.ServiceProvider.GetRequiredService<SyncDbContext>(), Feeds, new NothingAllowed(), new FeedChangeBroadcaster(), new LiveFeedTests.Sessions());
+            scope.ServiceProvider.GetRequiredService<SyncDbContext>(), Feeds, new NothingAllowed(), new FeedChangeBroadcaster(), new LiveFeedTests.Sessions(), new TestClock());
         return await sync.PullAsync(new PullRequest
         {
             Origin = origin,

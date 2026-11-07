@@ -98,11 +98,11 @@ public sealed class RichTextTests
     [Fact]
     public void TextThatNeverClosesItsMarksStillParsesQuickly()
     {
-        string hostile = string.Concat(Enumerable.Repeat("[*_**(", 8_000));
+        string hostile = string.Concat(Enumerable.Repeat("[*_**(", 40_000));
 
         Stopwatch watch = Stopwatch.StartNew();
         RichTextParser.Parse(hostile);
 
-        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(1), $"Took {watch.Elapsed}.");
+        Assert.True(watch.Elapsed < TimeSpan.FromSeconds(5), $"Took {watch.Elapsed}.");
     }
 }

@@ -6,12 +6,13 @@ using System.Text;
 using GSBC.ChurchApp.Features.Accounts.Api.Installs;
 using GSBC.ChurchApp.Features.Accounts.Data;
 
+using GSBC.ChurchApp.Testing;
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
 public sealed class AppAttestTests : IDisposable
 {
     private const string AppId = "YNT9A4LGVA.au.com.baptist.app.dev";
-    private static readonly DateTime Now = DateTime.UtcNow;
+    private static readonly DateTime Now = TestClock.Start;
 
     private readonly ECDsa _rootKey = ECDsa.Create(ECCurve.NamedCurves.nistP384);
     private readonly ECDsa _intermediateKey = ECDsa.Create(ECCurve.NamedCurves.nistP384);
@@ -51,12 +52,12 @@ public sealed class AppAttestTests : IDisposable
     public void AnAssertionIsAcceptedOnlyForItsRequestAndOnlyOnce()
     {
         AttestedKey key = Verifier().VerifyAttestation(_device.KeyId, _challenge, Attestation(_challenge, AppId), Now)!;
-        byte[] request = Encoding.UTF8.GetBytes("/gsbc.notifications.Devices/Register\nbody");
+        byte[] request = "/gsbc.notifications.Devices/Register\nbody"u8.ToArray();
         byte[] assertion = _device.Assertion(request, counter: 1);
 
         Assert.Equal(1, AppAttest.VerifyAssertion(key.PublicKey, AppId, 0, assertion, request));
         Assert.Null(AppAttest.VerifyAssertion(key.PublicKey, AppId, 1, assertion, request));
-        Assert.Null(AppAttest.VerifyAssertion(key.PublicKey, AppId, 0, assertion, Encoding.UTF8.GetBytes("/gsbc.notifications.Devices/Register\nother")));
+        Assert.Null(AppAttest.VerifyAssertion(key.PublicKey, AppId, 0, assertion, "/gsbc.notifications.Devices/Register\nother"u8.ToArray()));
     }
 
     public void Dispose()

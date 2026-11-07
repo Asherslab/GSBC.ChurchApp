@@ -16,7 +16,7 @@ public sealed class TierRules
     [Fact]
     public void EveryServedMethodDeclaresExactlyOneTierWithAKnownPermission()
     {
-        using WebApplicationFactory<ApiHost::Program> api = new();
+        using RoutesOnly<ApiHost::Program> api = new();
         PermissionCatalog permissions = api.Services.GetRequiredService<PermissionCatalog>();
 
         List<string> violations = ServedOperations(api)
@@ -31,7 +31,7 @@ public sealed class TierRules
     [Fact]
     public void ThePhoneIsToldToSignEveryServedAppInstallMethodAndNothingElse()
     {
-        using WebApplicationFactory<ApiHost::Program> api = new();
+        using RoutesOnly<ApiHost::Program> api = new();
 
         IEnumerable<string> appInstallMethods = ServedOperations(api)
             .Where(operation => operation.Tiers is [AppInstallAttribute])

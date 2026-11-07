@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Storage;
+using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,13 +13,12 @@ using Microsoft.Extensions.Hosting.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 using SkiaSharp;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
 public abstract class SermonsHost : IAsyncLifetime
 {
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
 
     internal FakeWebsite Website { get; } = new();
@@ -26,17 +26,17 @@ public abstract class SermonsHost : IAsyncLifetime
     internal AnyMedia Media { get; } = new();
     internal RecordedNotifications Notifications { get; } = new();
     internal RecordedRoles Roles { get; } = new();
-    internal ManualClock Clock { get; } = new(ChurchTime.ToUtc(new DateTime(2026, 11, 4, 20, 0, 0)));
+    internal TestClock Clock { get; } = new(ChurchTime.ToUtc(new DateTime(2026, 11, 4, 20, 0, 0)));
 
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         ServiceCollection services = new();
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
             .AddInMemoryCollection([
-                new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString()),
+                new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString),
                 new($"{WebsiteOptions.Section}:BaseUrl", FakeWebsite.BaseUrl),
             ])
             .Build());
@@ -78,7 +78,7 @@ public abstract class SermonsHost : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     protected static string Sample(string name) => File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Samples", name));
@@ -109,7 +109,7 @@ public abstract class SermonsHost : IAsyncLifetime
         return await work(scope.ServiceProvider);
     }
 
-    protected Task WithAsync(Func<IServiceProvider, Task> work) => WithAsync<bool>(async provider =>
+    protected Task WithAsync(Func<IServiceProvider, Task> work) => WithAsync(async provider =>
     {
         await work(provider);
         return true;
@@ -130,14 +130,14 @@ public abstract class SermonsHost : IAsyncLifetime
 
     protected static byte[] ConstantBitrateMp3()
     {
-        const int frameBytes = 417;
-        byte[] audio = new byte[frameBytes * 4];
+        const int FrameBytes = 417;
+        byte[] audio = new byte[FrameBytes * 4];
         for (int frame = 0; frame < 4; frame++)
         {
-            audio[frame * frameBytes] = 0xFF;
-            audio[frame * frameBytes + 1] = 0xFB;
-            audio[frame * frameBytes + 2] = 0x90;
-            audio[frame * frameBytes + 3] = 0x00;
+            audio[frame * FrameBytes] = 0xFF;
+            audio[frame * FrameBytes + 1] = 0xFB;
+            audio[frame * FrameBytes + 2] = 0x90;
+            audio[frame * FrameBytes + 3] = 0x00;
         }
         return audio;
     }
@@ -150,11 +150,4 @@ public abstract class SermonsHost : IAsyncLifetime
         using SKData data = image.Encode(SKEncodedImageFormat.Png, 100);
         return data.ToArray();
     }
-}
-
-internal sealed class ManualClock(DateTime utcNow) : TimeProvider
-{
-    public DateTime UtcNow { get; set; } = utcNow;
-
-    public override DateTimeOffset GetUtcNow() => new(UtcNow, TimeSpan.Zero);
 }

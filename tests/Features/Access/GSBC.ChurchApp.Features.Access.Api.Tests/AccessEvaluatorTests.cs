@@ -7,13 +7,13 @@ using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 using ProtoBuf.Grpc;
-using Testcontainers.PostgreSql;
 
 namespace GSBC.ChurchApp.Features.Access.Api.Tests;
 
@@ -41,19 +41,21 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     private const string Music = "music";
     private const string Choir = "choir";
 
-    private readonly PostgreSqlContainer _postgres = new PostgreSqlBuilder("postgres:17").Build();
+    private TestDatabase _database = null!;
+
+    private readonly TestClock _clock = new();
     private ServiceProvider _services = null!;
     private PermissionCatalog _catalog = null!;
 
     public async ValueTask InitializeAsync()
     {
-        await _postgres.StartAsync();
+        _database = await TestDatabase.CreateAsync();
         _catalog = new PermissionCatalog([new PermissionSet([.. AccessPermissions.All, PostNews, ReadNews, EditRoster, ManageAccounts, ViewAccounts, ReceiveNotices])]);
         _services = new ServiceCollection()
             .AddSingleton<IConfiguration>(new ConfigurationBuilder()
-                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _postgres.GetConnectionString())])
+                .AddInMemoryCollection([new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString)])
                 .Build())
-            .AddSingleton(TimeProvider.System)
+            .AddSingleton<TimeProvider>(_clock)
             .AddSingleton(_catalog)
             .AddSingleton<GrantCache>()
             .AddHttpContextAccessor()
@@ -82,7 +84,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         AccessDbContext db = scope.ServiceProvider.GetRequiredService<AccessDbContext>();
         await db.Database.MigrateAsync();
         await new AccessReconciler(_services.GetRequiredService<IServiceScopeFactory>(), _catalog, SystemRoles,
-            [new SystemRolePatterns("member", ["ministries.notices.receive"])], TimeProvider.System,
+            [new SystemRolePatterns("member", ["ministries.notices.receive"])], _clock,
             NullLogger<AccessReconciler>.Instance).ReconcileAsync(db, TestContext.Current.CancellationToken);
     }
 
@@ -93,7 +95,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         Guid leader = await AddRoleAsync("Leader", ScopeKind.Ministry, ["ministries.*", "-ministries.roster.edit"], includes: [member]);
         Guid person = Guid.CreateVersion7();
         await AssignAsync(person, leader, scopeObjectId: "42");
-        await AssignAsync(person, await SystemRoleAsync(AccessService.OwnerKey), expiresAt: DateTime.UtcNow.AddDays(-1));
+        await AssignAsync(person, await SystemRoleAsync(AccessService.OwnerKey), expiresAt: _clock.UtcNow.AddDays(-1));
 
         GrantSet grants = await GrantsAsync(person);
 
@@ -175,7 +177,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     {
         Guid owner = await SystemRoleAsync(AccessService.OwnerKey);
         Assignment current = await AssignAsync(Guid.CreateVersion7(), owner);
-        Assignment lapsed = await AssignAsync(Guid.CreateVersion7(), owner, expiresAt: DateTime.UtcNow.AddDays(-1));
+        Assignment lapsed = await AssignAsync(Guid.CreateVersion7(), owner, expiresAt: _clock.UtcNow.AddDays(-1));
 
         Assert.True(await IsLastActiveOwnerAsync(current));
         Assert.False(await IsLastActiveOwnerAsync(lapsed));
@@ -208,7 +210,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
 
         PermissionHolders moved = await holders.HoldersAsync(ReceiveNotices, Music, cancellationToken);
         Assert.Empty(moved.Phones);
-        Assert.Equal(new HashSet<Guid> { leader, signsIn }, moved.People.ToHashSet());
+        Assert.Equal([leader, signsIn], moved.People.ToHashSet());
         Assert.Empty(await phones.HeldAsync(phone, cancellationToken));
     }
 
@@ -231,7 +233,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
 
         PermissionHolders moved = await holders.HoldersAsync(ReceiveNotices, Renamed, cancellationToken);
         Assert.Equal([phone], moved.Phones);
-        Assert.Equal(new HashSet<Guid> { follower, both }, moved.People.ToHashSet());
+        Assert.Equal([follower, both], moved.People.ToHashSet());
         Assert.Equal(2, (await roles.HoldersAsync("follower", Renamed, cancellationToken)).Count);
         Assert.Empty((await holders.HoldersAsync(ReceiveNotices, Music, cancellationToken)).People);
     }
@@ -341,7 +343,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
         FeedChange leaders = Assert.Single(leadersPhone.Changes);
         Assert.Equal(leader.ToString(), leaders.Id);
         Assert.Contains(Decode(leaders), grant => grant is { Pattern: "ministries.*", ObjectId: Music });
-        Assert.DoesNotContain(Decode(leaders), grant => grant.ObjectId == Choir && grant.Pattern == "ministries.news.read");
+        Assert.DoesNotContain(Decode(leaders), grant => grant is { ObjectId: Choir, Pattern: "ministries.news.read" });
         Assert.Equal([member.ToString()], (await PullGrantsAsync(Person(member), 0)).Changes.Select(change => change.Id));
 
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
@@ -409,7 +411,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         AccessDbContext db = scope.ServiceProvider.GetRequiredService<AccessDbContext>();
-        RoleRecord role = new() { Id = Guid.CreateVersion7(), Name = name, ScopeKind = kind.Name, CreatedAt = DateTime.UtcNow };
+        RoleRecord role = new() { Id = Guid.CreateVersion7(), Name = name, ScopeKind = kind.Name, CreatedAt = _clock.UtcNow };
         role.Patterns.AddRange(patterns.Select(pattern => new RolePattern { RoleId = role.Id, Pattern = pattern }));
         role.Includes.AddRange((includes ?? []).Select(id => new RoleInclude { RoleId = role.Id, IncludedRoleId = id }));
         db.Roles.Add(role);
@@ -435,7 +437,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
             RoleId = roleId,
             ScopeObjectId = scopeObjectId,
             ExpiresAt = expiresAt,
-            CreatedAt = DateTime.UtcNow,
+            CreatedAt = _clock.UtcNow,
         };
         db.Assignments.Add(assignment);
         await db.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -466,7 +468,7 @@ public sealed class AccessEvaluatorTests : IAsyncLifetime
     public async ValueTask DisposeAsync()
     {
         await _services.DisposeAsync();
-        await _postgres.DisposeAsync();
+        await _database.DisposeAsync();
     }
 
     private sealed class AlwaysSignedIn : ISignedInSessions
