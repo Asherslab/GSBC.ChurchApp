@@ -1,4 +1,3 @@
-using System.Net;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
@@ -29,7 +28,6 @@ public abstract class EventsHost : IAsyncLifetime
     internal Grants Access { get; } = new();
     internal RecordedNotifications Notifications { get; } = new();
     internal RecordedRoles Roles { get; } = new();
-    internal ICalAddress ICalSource { get; } = new();
 
     protected static CancellationToken Cancel => TestContext.Current.CancellationToken;
 
@@ -53,14 +51,9 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddScoped<CalendarFollowing>();
         services.AddSingleton<IRoleAssignments>(Roles);
         services.AddSingleton<IPhoneRoles>(Roles);
-        services.AddSingleton<IPermissionHolders, NoOrganisers>();
         services.AddScoped<CalendarLinkSecrets>();
         services.AddScoped<CalendarFiles>();
-        services.AddScoped<DetailsReminders>();
-        services.AddScoped<ICalCopier>();
-        services.AddSingleton(new ICalFetcher(new HttpClient(ICalSource)));
         services.AddSingleton(provider => new ICalSchedule(provider.GetRequiredService<IServiceScopeFactory>(), Microsoft.Extensions.Logging.Abstractions.NullLogger<ICalSchedule>.Instance));
-        services.AddLogging();
         services.AddSyncData();
         services.AddEventsData();
         _services = services.BuildServiceProvider();
@@ -174,7 +167,6 @@ internal sealed class Grants : IAccessEvaluator
 internal sealed class RecordedNotifications : INotifications
 {
     public List<Notification> Raised { get; } = [];
-    public List<string> Settled { get; } = [];
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
@@ -182,37 +174,7 @@ internal sealed class RecordedNotifications : INotifications
         return Task.CompletedTask;
     }
 
-    public Task SettleAsync(string subject, CancellationToken cancellationToken)
-    {
-        Settled.Add(subject);
-        return Task.CompletedTask;
-    }
-}
-
-internal sealed class NoOrganisers : IPermissionHolders
-{
-    public ValueTask<PermissionHolders> HoldersAsync(Permission permission, string? objectId, CancellationToken cancellationToken) =>
-        ValueTask.FromResult(PermissionHolders.None);
-}
-
-internal sealed class ICalAddress : HttpMessageHandler
-{
-    public string Calendar { get; set; } = "";
-    public string ETag { get; set; } = "\"1\"";
-    public HttpStatusCode? Failing { get; set; }
-    public List<HttpRequestMessage> Requests { get; } = [];
-
-    protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
-    {
-        Requests.Add(request);
-        if (Failing is { } status)
-            return Task.FromResult(new HttpResponseMessage(status));
-        if (request.Headers.IfNoneMatch.Any(tag => tag.Tag == ETag))
-            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.NotModified));
-        HttpResponseMessage response = new(HttpStatusCode.OK) { Content = new StringContent(Calendar, System.Text.Encoding.UTF8, "text/calendar") };
-        response.Headers.ETag = new System.Net.Http.Headers.EntityTagHeaderValue(ETag);
-        return Task.FromResult(response);
-    }
+    public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 internal sealed class RecordedRoles : IRoleAssignments, IPhoneRoles

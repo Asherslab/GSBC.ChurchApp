@@ -23,16 +23,14 @@ internal sealed class DetailsReminders(EventsDbContext db, INotifications notifi
             .ToDictionary(occurrence => occurrence.Id);
         List<DetailsReminderRecord> sent = await db.DetailsReminders.Where(reminder => reminder.SettledAt == null || reminder.Date >= today).ToListAsync(cancellationToken);
 
-        await SettleAsync(sent.Where(reminder => reminder.SettledAt is null && !StillMissing(upcoming.GetValueOrDefault(reminder.OccurrenceId))), now, cancellationToken);
+        await SettleAsync(sent.Where(reminder => reminder.SettledAt is null && Settles(upcoming.GetValueOrDefault(reminder.OccurrenceId))), now, cancellationToken);
 
         ILookup<string, int> already = sent.ToLookup(reminder => reminder.OccurrenceId, reminder => reminder.DaysBefore);
-        foreach (EventOccurrence occurrence in upcoming.Values.Where(StillMissing).OrderBy(occurrence => occurrence.StartsAt))
+        foreach (EventOccurrence occurrence in upcoming.Values.Where(occurrence => !Settles(occurrence)).OrderBy(occurrence => occurrence.StartsAt))
         {
             RegularEventRecord regular = regulars[Guid.Parse(occurrence.ItemId)];
             DateOnly date = EventDates.Parse(occurrence.Date)!.Value;
-            int daysToGo = date.DayNumber - today.DayNumber;
-            List<int> due = (regular.RemindDaysBefore.Count > 0 ? regular.RemindDaysBefore : DefaultDaysBefore)
-                .Where(days => daysToGo <= days && !already[occurrence.Id].Contains(days)).ToList();
+            IReadOnlyList<int> due = Due(regular.RemindDaysBefore, date.DayNumber - today.DayNumber, already[occurrence.Id]);
             if (due.Count == 0)
                 continue;
 
@@ -47,7 +45,10 @@ internal sealed class DetailsReminders(EventsDbContext db, INotifications notifi
 
     public static string Subject(string occurrenceId) => $"event/{occurrenceId}/details";
 
-    private static bool StillMissing(EventOccurrence? occurrence) => occurrence is { NotOn: false, Missing.Count: > 0 };
+    public static IReadOnlyList<int> Due(IReadOnlyList<int> remindDaysBefore, int daysToGo, IEnumerable<int> alreadySent) =>
+        (remindDaysBefore.Count > 0 ? remindDaysBefore : DefaultDaysBefore).Where(days => daysToGo <= days).Except(alreadySent).ToList();
+
+    public static bool Settles(EventOccurrence? upcoming) => upcoming is not { NotOn: false, Missing.Count: > 0 };
 
     private async Task SettleAsync(IEnumerable<DetailsReminderRecord> settled, DateTime now, CancellationToken cancellationToken)
     {
@@ -66,12 +67,13 @@ internal sealed class DetailsReminders(EventsDbContext db, INotifications notifi
         NotificationAudience audience = organisers.People.Count > 0
             ? NotificationAudience.Holding(EventsPermissions.Organise, regular.Id.ToString())
             : NotificationAudience.Holding(EventsPermissions.Edit, regular.CalendarId.ToString());
-        string when = date.ToString("dddd d MMMM", CultureInfo.GetCultureInfo("en-AU"));
-        return new Notification(EventsNotifications.DetailsNeeded, audience,
-            $"{occurrence.Fields.Title} on {when} needs {Words(occurrence.Missing)}",
+        return new Notification(EventsNotifications.DetailsNeeded, audience, Title(occurrence, date),
             "Add it in the calendar so people know before they come.",
             Link: $"/event/{occurrence.Id}", Subject: Subject(occurrence.Id), ScopeId: regular.CalendarId.ToString(), Action: "Add details");
     }
+
+    public static string Title(EventOccurrence occurrence, DateOnly date) =>
+        $"{occurrence.Fields.Title} on {date.ToString("dddd d MMMM", CultureInfo.GetCultureInfo("en-AU"))} needs {Words(occurrence.Missing)}";
 
     private static string Words(IReadOnlyList<string> missing)
     {

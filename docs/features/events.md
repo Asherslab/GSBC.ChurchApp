@@ -329,11 +329,12 @@ all four on 2026-11-08):
   workbench to look again.
 - **Reminders** (decisions 22-25): `events.details.needed` (inbox and push, per calendar), raised by `DetailsReminders`
   on the 15-minute schedule (one replica at a time).
-- **Tests** (`Events.Api.Tests`): a private calendar never served without a valid link of someone it's for (and not
-  after their role is taken away); a reset link refused; a reminder once at 7 and at 2 days and settled when the
-  place arrives; copying an iCal calendar (a weekly repeat with a skipped and a changed date, in another time zone,
-  an all-day camp, the ETag on the next read, a failure keeping what was copied). `EndpointRules` allows exactly the
-  four paths.
+- **Tests** (`Events.Api.Tests`). Unit, no I/O: reading an iCal calendar (a weekly repeat with a skipped and a changed
+  date, in another time zone, and an all-day camp) into dated events; the ETag on the next read; an address on a
+  private network never read; writing a calendar file (escaping, folding, all-day ends); a reminder due once at 7 and
+  once at 2 days, and when it settles. Against Postgres, because the secret links live there: a private calendar never
+  served without a valid link of someone it's for (nor after their role is taken away, nor to a signed-out phone
+  holding a stale *Calendar added*); a reset link refused. `EndpointRules` allows exactly the four paths.
 
 **Not built yet:** the phone's and admin panel's screens (the Subscribe buttons and the iCal status are theirs, on the
 calls above); the digest (decision 18).
@@ -428,6 +429,9 @@ calls above); the digest (decision 18).
   editors when it has none. **Settled** on the next run after the details arrive, the date is set as not on, or the
   date passes. Once a reminder has gone for a date, removing the details again doesn't send it again. Email follows
   when Notifications gains an email channel; nothing in Events needs to change for it.
+- **A failed read keeps what was copied** (the copier detaches its unsaved changes and records the problem). It has
+  no test of its own: it isn't a Postgres rule, and testing it without a database means splitting the copier further
+  than it's worth today.
 
 ## What the owner sets up
 
