@@ -194,6 +194,9 @@ public sealed class ShowingRequest
     [ProtoMember(4)] public string? RegularEventId { get; set; }
     [ProtoMember(5)] public string Title { get; set; } = "";
     [ProtoMember(6)] public DateTime AskedAt { get; set; }
+    [ProtoMember(7)] public bool Widens { get; set; }
+    [ProtoMember(8)] public string NewlyReaches { get; set; } = "";
+    [ProtoMember(9)] public List<string> NewlyReachesRoleIds { get; set; } = [];
 }
 
 [ProtoContract]

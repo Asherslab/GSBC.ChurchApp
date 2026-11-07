@@ -373,7 +373,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{calendar.Name} needs a publisher: save it for later and ask to publish."));
     }
 
-    private async Task MayChangeShownAsync(ClaimsPrincipal user, IShowable record, DateTime now, CancellationToken cancellationToken)
+    public async Task MayChangeShownAsync(ClaimsPrincipal user, IShowable record, DateTime now, CancellationToken cancellationToken)
     {
         if (!(EventsBook.IsShown(record, now) || record.Showing == Showing.ShownFrom))
             return;

@@ -160,6 +160,7 @@ internal sealed class EventEditingService(
         if (!Guid.TryParse(request.OtherCalendarId, out Guid otherId) || otherId == home.Id
             || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(calendar => calendar.Id == otherId, cancellationToken) is not { } other)
             throw Invalid("Choose another calendar to show it on.");
+        await writer.MayChangeShownAsync(UserOf(context), item, time.GetUtcNow().UtcDateTime, cancellationToken);
 
         Guid? eventId = item is EventRecord ? item.Id : null;
         Guid? regularId = item is RegularEventRecord ? item.Id : null;
@@ -284,9 +285,9 @@ internal sealed class EventEditingService(
         Platform.Contracts.Configuration.Audience audience = CalendarAudiences.Of(calendar.Audience);
         if (audience.IsForRoles)
             return audience.RoleIds.Select(role => NotificationAudience.Holding(Platform.Permissions.RoleMembership.Of(role)));
-        if (!calendar.ShownOnNewPhones)
-            return [NotificationAudience.Holding(EventsPermissions.Have, calendar.Id.ToString())];
-        return [audience == Platform.Contracts.Configuration.Audience.Everyone ? NotificationAudience.Everyone : NotificationAudience.SignedIn];
+        if (audience != Platform.Contracts.Configuration.Audience.Everyone)
+            return [NotificationAudience.SignedIn];
+        return [calendar.ShownOnNewPhones ? NotificationAudience.Everyone : NotificationAudience.Holding(EventsPermissions.Have, calendar.Id.ToString())];
     }
 
     private List<NeedsDetailsItem> NeedsDetails(EventsBook book, IReadOnlySet<Guid> editable)
@@ -307,6 +308,10 @@ internal sealed class EventEditingService(
             .Select(showing =>
             {
                 IShowable item = items[showing.EventId ?? showing.RegularEventId!.Value];
+                Widening widening = CalendarAudiences.Widening(
+                    CalendarAudiences.Union(book.AlsoOn(item.Id).Append(item.CalendarId).Where(book.Calendars.ContainsKey)
+                        .Select(id => CalendarAudiences.Of(book.Calendars[id].Audience))),
+                    book.Calendars.TryGetValue(showing.CalendarId, out CalendarRecord? other) ? CalendarAudiences.Of(other.Audience) : Platform.Contracts.Configuration.Audience.SignedIn);
                 return new ShowingRequest
                 {
                     CalendarId = showing.CalendarId.ToString(),
@@ -315,6 +320,9 @@ internal sealed class EventEditingService(
                     RegularEventId = showing.RegularEventId?.ToString(),
                     Title = item.Fields.Title,
                     AskedAt = showing.AskedAt,
+                    Widens = widening.Widens,
+                    NewlyReaches = widening.Words,
+                    NewlyReachesRoleIds = widening.NewRoleIds.Select(role => role.ToString()).ToList(),
                 };
             })
             .ToList();

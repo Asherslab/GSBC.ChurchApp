@@ -18,6 +18,7 @@ public sealed class SyncService(
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan AudienceMarkResolution = TimeSpan.FromDays(1);
+    private static readonly string AnyRoleMembership = RoleMembership.Prefix + "any";
 
     public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
     {
@@ -201,13 +202,14 @@ public sealed class SyncService(
 
     private async Task<List<FeedChangeRecord>> RowsForTheirAudienceAsync(List<FeedChangeRecord> rows, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
-        if (Caller.UserId(user) is not { } userId)
-            return rows.Where(row => row.Deleted).ToList();
-
-        GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
+        GrantSet grants = Caller.UserId(user) is { } userId ? await access.GrantsForAsync(userId, cancellationToken) : GrantSet.Empty;
         Viewer viewer = new(IsSignedIn(user), node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
-        return rows.Where(row => row.Deleted || (row.ScopeId is { } text && Audience.TryParse(text, out Audience? audience) && audience.Includes(viewer))).ToList();
+        return rows.Select(row => row.Deleted || (row.ScopeId is { } text && Audience.TryParse(text, out Audience? audience) && audience.Includes(viewer)) ? row : Gone(row))
+            .ToList();
     }
+
+    private static FeedChangeRecord Gone(FeedChangeRecord row) =>
+        new() { Cursor = row.Cursor, Feed = row.Feed, RecordId = row.RecordId, Version = row.Version, Deleted = true };
 
     private async Task<bool> AudienceChangedAsync(FeedDefinition feed, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
@@ -215,7 +217,9 @@ public sealed class SyncService(
             return false;
 
         GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
-        string fingerprint = feed.Audience is FeedAudience.PermissionAudience audience ? Fingerprint(grants, audience.Permission.Node) : Fingerprint(grants);
+        string fingerprint = feed.Audience is FeedAudience.PermissionAudience audience
+            ? Fingerprint(grants, grant => grant.Pattern.Matches(audience.Permission.Node))
+            : Fingerprint(grants, MayDecideRoleMembership);
         AudienceMark? mark = await db.AudienceMarks.FindAsync([session, feed.Name], cancellationToken);
         bool changed = mark is not null && mark.Fingerprint != fingerprint;
         DateTime now = DateTime.UtcNow;
@@ -230,9 +234,12 @@ public sealed class SyncService(
         return changed;
     }
 
-    private static string Fingerprint(GrantSet grants, string? node = null) =>
+    private static bool MayDecideRoleMembership(Grant grant) =>
+        grant.Pattern.Matches(AnyRoleMembership) || grant.Pattern.Text.TrimStart('-').StartsWith(RoleMembership.Prefix, StringComparison.Ordinal);
+
+    private static string Fingerprint(GrantSet grants, Func<Grant, bool> counts) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', grants.Grants
-            .Where(grant => node is null || grant.Pattern.Matches(node))
+            .Where(counts)
             .Select(grant => $"{grant.Pattern}@{grant.Scope}")
             .Order(StringComparer.Ordinal)))));
 
