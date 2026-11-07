@@ -1,7 +1,9 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
 
@@ -20,5 +22,14 @@ public static class EventsClientExtensions
         services
             .AddDestinations(EventsDestinations.All)
             .AddSingleton<CalendarDiary>()
-            .AddSingleton<CalendarEditing>();
+            .AddSingleton<CalendarEditing>()
+            .AddSingleton<CalendarSubscriptions>()
+            .AddHubTile<ComingUpTile>(EventsTiles.Week)
+            .AddCalendarLinkSeam();
+
+    private static IServiceCollection AddCalendarLinkSeam(this IServiceCollection services)
+    {
+        services.TryAddSingleton<IYourCalendarLink, NoCalendarLinkYet>();
+        return services;
+    }
 }

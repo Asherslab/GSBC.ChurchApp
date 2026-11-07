@@ -1,0 +1,21 @@
+@page "/event/new"
+@inject CalendarDiary Diary
+@inject NavigationManager Navigation
+@inject Shell Shell
+
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+    <ChildContent>
+        <EventEditor Target="EditTarget.New(Calendar ?? context.Value.Calendars.FirstOrDefault()?.Id ?? string.Empty)" Calendars="context.Value.Calendars"
+                     Closed="() => Shell.BackAsync(EventsPlaces.Week).AsTask()" Saved="Opened" />
+    </ChildContent>
+</LiveData>
+
+@code {
+    [SupplyParameterFromQuery(Name = "calendar")] public string? Calendar { get; set; }
+
+    private void Opened(string occurrenceId)
+    {
+        if (occurrenceId.Length > 0)
+            Navigation.NavigateTo(EventsPlaces.EventPath(occurrenceId), new NavigationOptions { ReplaceHistoryEntry = true });
+    }
+}

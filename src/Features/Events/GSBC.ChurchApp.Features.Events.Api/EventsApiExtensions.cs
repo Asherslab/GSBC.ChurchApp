@@ -47,6 +47,7 @@ public static class EventsApiExtensions
         services.AddSystemRole(new SystemRole(EventsPermissions.TurnedOffRole, "Calendar turned off",
             "Has turned off a calendar they'd see anyway", ScopeKind.Calendar, [EventsPermissions.TurnedOffNode], AssignableBy: [], PhoneHoldable: true));
 
+        services.AddSurfaces(EventsTiles.Surfaces);
         services.AddFeed(new FeedDefinition(EventsFeeds.Calendars, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(EventsFeeds.PrivateCalendars, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(EventsFeeds.Public, FeedAudience.Public));

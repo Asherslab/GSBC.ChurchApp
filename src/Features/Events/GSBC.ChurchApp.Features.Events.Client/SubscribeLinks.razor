@@ -1,0 +1,44 @@
+@inject CalendarSubscriptions Subscriptions
+@inject Shell Shell
+
+<div class="subscribe">
+    @if (_path is { } path)
+    {
+        <div class="subscribe__actions">
+            <Button Icon="calendar-plus" OnClick="() => Shell.OpenExternalAsync(Subscriptions.Subscribe(path)).AsTask()">@Action</Button>
+            <CopyField Label="Copy link" Value="@Subscriptions.Web(path)" ButtonOnly="true" />
+        </div>
+        <p class="hint">Your calendar app keeps itself up to date. Dates that aren't on are left out.</p>
+    }
+    else if (_loaded)
+    {
+        <p class="hint">@Waiting</p>
+    }
+</div>
+
+@code {
+    private string? _path;
+    private bool _loaded;
+
+    [Parameter] public CalendarInfo? Calendar { get; set; }
+    [Parameter] public bool Mine { get; set; }
+    [Parameter] public string Action { get; set; } = "Subscribe";
+
+    private string Waiting => Mine
+        ? "Your own link for calendar apps isn't ready on this phone yet. It holds everything in your week, private calendars included."
+        : "This calendar is private, so it's subscribed to through your own link, which isn't ready on this phone yet.";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Mine && Calendar is { } open && CalendarSubscriptions.IsForEveryone(open))
+            _path = CalendarSubscriptions.CalendarPath(open);
+        else if (!Mine && Calendar is null)
+            _path = CalendarSubscriptions.PublicPath;
+        else
+        {
+            string? secret = await Subscriptions.SecretAsync();
+            _path = secret is null ? null : Calendar is { } calendar ? CalendarSubscriptions.MinePath(secret, calendar) : CalendarSubscriptions.MinePath(secret);
+        }
+        _loaded = true;
+    }
+}
