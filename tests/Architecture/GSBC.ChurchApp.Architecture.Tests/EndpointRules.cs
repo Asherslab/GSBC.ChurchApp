@@ -23,6 +23,10 @@ public sealed class EndpointRules
         "/accounts/passkeys/register",
         "/accounts/passkeys/request-options",
         "/accounts/passkeys/sign-in",
+        "/calendars/{calendar}.ics",
+        "/calendars/public.ics",
+        "/calendars/mine/{secret}.ics",
+        "/calendars/mine/{secret}/{calendar}.ics",
     ];
 
     [Fact]

@@ -34,4 +34,7 @@ namespace GSBC.ChurchApp.Features.Events.Contracts;
 [ProtoSerializable(typeof(BreakInfo))]
 [ProtoSerializable(typeof(BreakList))]
 [ProtoSerializable(typeof(BreakRef))]
+[ProtoSerializable(typeof(CalendarFileRequest))]
+[ProtoSerializable(typeof(CalendarFile))]
+[ProtoSerializable(typeof(CalendarLink))]
 public partial class EventsContractsModel : TypeModel;

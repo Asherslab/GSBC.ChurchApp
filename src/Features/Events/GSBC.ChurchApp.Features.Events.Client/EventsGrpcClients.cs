@@ -7,4 +7,5 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 [ProtoService(typeof(IEventsService))]
 [ProtoService(typeof(IEventEditingService))]
 [ProtoService(typeof(ICalendarSetupService))]
+[ProtoService(typeof(ICalendarFilesService))]
 public sealed partial class EventsGrpcClients : ClientFactory;

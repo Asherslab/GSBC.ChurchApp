@@ -15,6 +15,9 @@ public sealed class CalendarRecord
     public string? ICalSource { get; set; }
     public DateTime? ICalReadAt { get; set; }
     public string? ICalProblem { get; set; }
+    public string? ICalETag { get; set; }
+    public string? ICalLastModified { get; set; }
+    public DateOnly? ICalCopiedTo { get; set; }
     public int Order { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -125,4 +128,22 @@ public sealed class PublishedRow
     public required string RecordId { get; set; }
     public required string Hash { get; set; }
     public string? Audience { get; set; }
+}
+
+public sealed class CalendarLinkRecord
+{
+    public required string Secret { get; set; }
+    public Guid? UserId { get; set; }
+    public Guid? InstallId { get; set; }
+    public DateTime CreatedAt { get; set; }
+}
+
+public sealed class DetailsReminderRecord
+{
+    public required string OccurrenceId { get; set; }
+    public int DaysBefore { get; set; }
+    public Guid RegularEventId { get; set; }
+    public DateOnly Date { get; set; }
+    public DateTime SentAt { get; set; }
+    public DateTime? SettledAt { get; set; }
 }

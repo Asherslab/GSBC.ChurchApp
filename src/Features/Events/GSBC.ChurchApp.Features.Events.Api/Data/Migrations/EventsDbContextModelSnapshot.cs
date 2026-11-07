@@ -61,6 +61,36 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                     b.ToTable("breaks", "events");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.CalendarLinkRecord", b =>
+                {
+                    b.Property<string>("Secret")
+                        .HasColumnType("text")
+                        .HasColumnName("secret");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("created_at");
+
+                    b.Property<Guid?>("InstallId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("install_id");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("user_id");
+
+                    b.HasKey("Secret")
+                        .HasName("pk_calendar_links");
+
+                    b.HasIndex("InstallId")
+                        .HasDatabaseName("ix_calendar_links_install_id");
+
+                    b.HasIndex("UserId")
+                        .HasDatabaseName("ix_calendar_links_user_id");
+
+                    b.ToTable("calendar_links", "events");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.CalendarRecord", b =>
                 {
                     b.Property<Guid>("Id")
@@ -81,6 +111,18 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("description");
+
+                    b.Property<DateOnly?>("ICalCopiedTo")
+                        .HasColumnType("date")
+                        .HasColumnName("i_cal_copied_to");
+
+                    b.Property<string>("ICalETag")
+                        .HasColumnType("text")
+                        .HasColumnName("i_cal_e_tag");
+
+                    b.Property<string>("ICalLastModified")
+                        .HasColumnType("text")
+                        .HasColumnName("i_cal_last_modified");
 
                     b.Property<string>("ICalProblem")
                         .HasColumnType("text")
@@ -132,6 +174,41 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasDatabaseName("ix_calendars_slug");
 
                     b.ToTable("calendars", "events");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.DetailsReminderRecord", b =>
+                {
+                    b.Property<string>("OccurrenceId")
+                        .HasColumnType("text")
+                        .HasColumnName("occurrence_id");
+
+                    b.Property<int>("DaysBefore")
+                        .HasColumnType("integer")
+                        .HasColumnName("days_before");
+
+                    b.Property<DateOnly>("Date")
+                        .HasColumnType("date")
+                        .HasColumnName("date");
+
+                    b.Property<Guid>("RegularEventId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("regular_event_id");
+
+                    b.Property<DateTime>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<DateTime?>("SettledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("settled_at");
+
+                    b.HasKey("OccurrenceId", "DaysBefore")
+                        .HasName("pk_details_reminders");
+
+                    b.HasIndex("SettledAt")
+                        .HasDatabaseName("ix_details_reminders_settled_at");
+
+                    b.ToTable("details_reminders", "events");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.EventRecord", b =>

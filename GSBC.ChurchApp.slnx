@@ -92,6 +92,7 @@
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.App/GSBC.ChurchApp.Features.Events.App.csproj" />
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Client/GSBC.ChurchApp.Features.Events.Client.csproj" />
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Contracts/GSBC.ChurchApp.Features.Events.Contracts.csproj" />
+    <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Gateway/GSBC.ChurchApp.Features.Events.Gateway.csproj" />
   </Folder>
   <Folder Name="/src/Features/Sermons/">
     <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/GSBC.ChurchApp.Features.Sermons.Admin.csproj" />

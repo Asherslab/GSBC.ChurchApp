@@ -51,6 +51,9 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddScoped<CalendarFollowing>();
         services.AddSingleton<IRoleAssignments>(Roles);
         services.AddSingleton<IPhoneRoles>(Roles);
+        services.AddScoped<CalendarLinkSecrets>();
+        services.AddScoped<CalendarFiles>();
+        services.AddSingleton(provider => new ICalSchedule(provider.GetRequiredService<IServiceScopeFactory>(), Microsoft.Extensions.Logging.Abstractions.NullLogger<ICalSchedule>.Instance));
         services.AddSyncData();
         services.AddEventsData();
         _services = services.BuildServiceProvider();
@@ -151,10 +154,14 @@ internal sealed class Grants : IAccessEvaluator
 
     public void Allow(Guid person, string node, string? calendarId) => _allowed.Add((person, node, calendarId));
 
+    public void Refuse(Guid person, string node, string? calendarId) => _allowed.Remove((person, node, calendarId));
+
     public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
         ValueTask.FromResult(Caller.UserId(user) is { } id && (_allowed.Contains((id, node, null)) || (scopeId is not null && _allowed.Contains((id, node, scopeId)))));
 
-    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(GrantSet.Empty);
+    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(new GrantSet(_allowed.Where(grant => grant.Item1 == userId && grant.Item3 is null)
+            .Select(grant => new Grant(PermissionPattern.Parse(grant.Item2), Scope.Global)).ToList()));
 }
 
 internal sealed class RecordedNotifications : INotifications

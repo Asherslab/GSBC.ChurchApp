@@ -7,7 +7,7 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher publisher, TimeProvider time) : ICalendarSetupService
+internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher publisher, ICalSchedule copying, TimeProvider time) : ICalendarSetupService
 {
     public const int LongestName = 60;
     public const int LongestDescription = 500;
@@ -60,12 +60,18 @@ internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher p
         calendar.ShownOnNewPhones = wanted.ShownOnNewPhones;
         calendar.NeedsPublisher = request.NeedsPublisher;
         calendar.MinistryId = ministry;
-        if (calendar.ICalSource != (source.Length > 0 ? source : null))
+        bool newSource = calendar.ICalSource != (source.Length > 0 ? source : null);
+        if (newSource)
+        {
             (calendar.ICalSource, calendar.ICalReadAt, calendar.ICalProblem) = (source.Length > 0 ? source : null, null, null);
+            (calendar.ICalETag, calendar.ICalLastModified, calendar.ICalCopiedTo) = (null, null, null);
+        }
         calendar.UpdatedAt = now;
         publisher.MarkAdmin(calendar.Id, calendar.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+        if (newSource && calendar.ICalSource is not null)
+            copying.CopySoon();
         return Settings(calendar);
     }
 
@@ -133,8 +139,7 @@ internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher p
         ICalProblem = calendar.ICalProblem ?? "",
     };
 
-    private static bool IsCalendarAddress(string text) =>
-        Uri.TryCreate(text, UriKind.Absolute, out Uri? uri) && uri.Scheme is "https" or "http" or "webcal";
+    private static bool IsCalendarAddress(string text) => ICalFetcher.AddressOf(text) is not null;
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 }
