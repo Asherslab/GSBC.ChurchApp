@@ -144,6 +144,8 @@ internal sealed class AccessService(
         string? scopeObjectId = string.IsNullOrWhiteSpace(request.ScopeObjectId) ? null : request.ScopeObjectId.Trim();
         if (AssignmentRules.ScopeProblem(kind, scopeObjectId) is { } problem)
             throw Invalid(problem);
+        if (await rules.UnknownPlaceAsync(kind, scopeObjectId, cancellationToken) is { } unknown)
+            throw Invalid(unknown);
         if (request.ExpiresAt is { } expires && expires <= Now)
             throw Invalid("The end date has to be in the future.");
         if (await rules.RefusalAsync(CallerId(context), role, scopeObjectId, cancellationToken) is { } refusal)

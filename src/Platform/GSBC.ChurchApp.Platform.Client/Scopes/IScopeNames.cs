@@ -7,7 +7,11 @@ public interface IScopeNames
     IReadOnlyCollection<string> Feeds { get; }
 
     Task<IReadOnlyDictionary<string, string>> NamesAsync(string scopeKind, IReadOnlyCollection<string> objectIds);
+
+    Task<IReadOnlyList<ScopeChoice>?> ChoicesAsync(string scopeKind);
 }
+
+public sealed record ScopeChoice(string Id, string Name);
 
 public interface IScopeNamer
 {
@@ -16,6 +20,8 @@ public interface IScopeNamer
     IReadOnlyCollection<string> Feeds { get; }
 
     Task<IReadOnlyDictionary<string, string>> NamesAsync(IReadOnlyCollection<string> objectIds);
+
+    Task<IReadOnlyList<ScopeChoice>> ChoicesAsync();
 }
 
 internal sealed class ScopeNames(IEnumerable<IScopeNamer> namers) : IScopeNames
@@ -33,4 +39,7 @@ internal sealed class ScopeNames(IEnumerable<IScopeNamer> namers) : IScopeNames
                     names[id] = name;
         return names;
     }
+
+    public async Task<IReadOnlyList<ScopeChoice>?> ChoicesAsync(string scopeKind) =>
+        _namers.FirstOrDefault(candidate => candidate.Kind.Name == scopeKind) is { } namer ? await namer.ChoicesAsync() : null;
 }

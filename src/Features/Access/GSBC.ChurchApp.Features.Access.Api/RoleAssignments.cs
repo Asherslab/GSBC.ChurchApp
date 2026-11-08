@@ -13,6 +13,9 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
         RoleRecord role = await SystemRoleAsync(roleKey, cancellationToken);
         if (await rules.RefusalAsync(actorId, role, objectId, cancellationToken) is { } refusal)
             return AssignmentOutcome.Refused(refusal);
+        ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
+        if (await rules.UnknownPlaceAsync(kind, objectId, cancellationToken) is { } unknown)
+            return AssignmentOutcome.Refused(unknown);
 
         await AddAsync(userId, role, objectId, expiresAt, AssignmentSource.Manual, actorId, cancellationToken);
         return AssignmentOutcome.Success;

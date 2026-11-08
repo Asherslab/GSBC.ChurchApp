@@ -49,12 +49,16 @@
 
             <section class="panel-section" aria-label="Give a role">
                 <div class="panel-form">
-                    <SelectField Label="Give a role" Options="RoleOptions(context.Value)" @bind-Value="_roleId" />
+                    <SelectField Label="Give a role" Options="RoleOptions(context.Value)" Value="@_roleId" ValueChanged="value => (_roleId, _scopeObjectId) = (value, null)" />
                     @if (context.Value.Roles.FirstOrDefault(role => role.Id == _roleId) is { } chosen)
                     {
-                        @if (chosen.ScopeKind != ScopeKind.Global.Name)
+                        @if (chosen.ScopeKind != ScopeKind.Global.Name && context.Value.Choices.GetValueOrDefault(chosen.ScopeKind) is { } choices)
                         {
-                            <TextField Label="@($"Which {chosen.ScopeKind}")" Value="@(_scopeObjectId ?? "")" ValueChanged="value => _scopeObjectId = value.Length == 0 ? null : value" />
+                            <SelectField Label="@WhichLabel(chosen)" Options="PlaceOptions(choices)" Value="@(_scopeObjectId ?? "")" ValueChanged="value => _scopeObjectId = value.Length == 0 ? null : value" />
+                        }
+                        else if (chosen.ScopeKind != ScopeKind.Global.Name)
+                        {
+                            <TextField Label="@WhichLabel(chosen)" Value="@(_scopeObjectId ?? "")" ValueChanged="value => _scopeObjectId = value.Length == 0 ? null : value" />
                         }
                         <TextField Label="Until" Type="date" Value="@(_ends ?? "")" ValueChanged="value => _ends = value.Length == 0 ? null : value" Hint="Leave it empty to keep the role." />
                         <div>
@@ -100,8 +104,13 @@
                 places.Add(objectId, kind.Key, names.GetValueOrDefault(objectId));
         }
 
+        Dictionary<string, IReadOnlyList<ScopeChoice>> choices = [];
+        foreach (string kind in allRoles.Select(role => role.ScopeKind).Where(kind => kind != ScopeKind.Global.Name).Distinct())
+            if (await ScopeNames.ChoicesAsync(kind) is { } known)
+                choices[kind] = known;
+
         PersonSummary found = (await person).FirstOrDefault() ?? new PersonSummary(UserId, "Someone", "", false);
-        return new PersonView(found, held, await abilities, places, allRoles, await catalog);
+        return new PersonView(found, held, await abilities, places, allRoles, await catalog, choices);
     }
 
     private static string FirstName(PersonSummary person) => person.Name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? person.Name;
@@ -110,6 +119,11 @@
         view.Places.Kinds.TryGetValue(objectId, out string? kind)
             ? AccessWords.PlaceOf(objectId, view.Places.Get(objectId)?.Name, kind, includesTeams)
             : AccessWords.PlaceOf(objectId, null, ScopeKind.Ministry.Name, includesTeams);
+
+    private static string WhichLabel(RoleInfo role) => $"Which {role.ScopeKind.Replace('-', ' ')}";
+
+    private static IReadOnlyList<FieldOption> PlaceOptions(IReadOnlyList<ScopeChoice> choices) =>
+        [new("", "Choose…"), .. choices.Select(choice => new FieldOption(choice.Id, choice.Name))];
 
     private static IReadOnlyList<FieldOption> RoleOptions(PersonView view) =>
         [new("", "Choose a role…"), .. view.Roles.Select(role => new FieldOption(role.Id, $"{role.Name} · {AccessWords.GivenWhere(role)}"))];
@@ -177,5 +191,5 @@
 
     private sealed record Place(string Name);
 
-    private sealed record PersonView(PersonSummary Person, List<AssignmentInfo> Assignments, PersonAbilities Abilities, Places Places, List<RoleInfo> Roles, Catalog Catalog);
+    private sealed record PersonView(PersonSummary Person, List<AssignmentInfo> Assignments, PersonAbilities Abilities, Places Places, List<RoleInfo> Roles, Catalog Catalog, IReadOnlyDictionary<string, IReadOnlyList<ScopeChoice>> Choices);
 }
