@@ -160,6 +160,7 @@ public sealed class DigestRecord
     public Guid? UpdatedBy { get; set; }
     public DateTime? SentAt { get; set; }
     public Guid? SentBy { get; set; }
+    public DateTime? NotifiedAt { get; set; }
 }
 
 public sealed class SentDigest

@@ -226,6 +226,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("entries");
 
+                    b.Property<DateTime?>("NotifiedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("notified_at");
+
                     b.Property<string>("Sent")
                         .IsRequired()
                         .HasColumnType("jsonb")

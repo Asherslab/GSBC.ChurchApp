@@ -32,6 +32,8 @@
     private DigestDraft? _draft;
     private ElementReference _emailFrame;
     private bool _emailFitted;
+    private bool _includePrivate;
+    private bool _notifyAgain;
     private string? _selected;
     private bool _email;
     private SaveState _save = SaveState.Saved;
@@ -146,6 +148,10 @@
                 {
                     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 }
+                @if (draft is { NotifiedAt: { } notified, SentAsItIs: false })
+                {
+                    <ToggleRow Title="Notify people again" Description="@($"People were told about this digest {Ago(notified)}.")" Checked="_notifyAgain" CheckedChanged="value => _notifyAgain = value" />
+                }
                 <div class="digest-desk__send">
                     <Button Variant="ButtonVariant.Quiet" Icon="copy" Busy="@(_busy == "copy")" Disabled="@(draft.Items.All(item => !item.Included))" OnClick="CopyForEmailAsync">Copy for email</Button>
                     <Button Icon="@(draft.SentAsItIs ? "check" : "send")" Busy="@(_busy == "send")" Disabled="@(draft.SentAsItIs || draft.Items.All(item => !item.Included))" OnClick="SendToAppAsync">@SendWords(draft)</Button>
@@ -153,7 +159,7 @@
                 <p class="digest-desk__reach" role="status">@(_told ?? ReachLine(draft))</p>
                 @if (PrivateInEmail(draft) is { } privateNote)
                 {
-                    <p class="digest-desk__reach">@privateNote</p>
+                    <ToggleRow Title="Put private calendars' things in the email" Description="@privateNote" Checked="_includePrivate" CheckedChanged="value => _includePrivate = value" />
                 }
                 @if (draft.SentAsItIs)
                 {
@@ -221,30 +227,41 @@
         };
     }
 
-    private static string SendWords(DigestDraft draft) =>
-        draft.SentAsItIs ? "Sent to the app" : draft.SentAt is null ? "Send to the app" : "Send again";
+    private string SendWords(DigestDraft draft) => draft switch
+    {
+        { SentAsItIs: true } => "Sent to the app",
+        { NotifiedAt: null } => "Send to the app and notify people",
+        _ when _notifyAgain => "Send again and notify people",
+        _ => "Send again without notifying",
+    };
 
-    private static string? PrivateInEmail(DigestDraft draft)
+    private string? PrivateInEmail(DigestDraft draft)
     {
         List<DigestItem> only = draft.Items.Where(item => item is { Included: true, ForEveryone: false }).ToList();
         if (only.Count == 0)
             return null;
         List<string> calendars = only.Select(item => item.CalendarName).Distinct().ToList();
         string names = calendars.Count == 1 ? calendars[0] : $"{string.Join(", ", calendars.Take(calendars.Count - 1))} and {calendars[^1]}";
-        return only.Count == 1
-            ? $"The email includes 1 thing only for {names}: untick it if the email goes to everyone."
-            : $"The email includes {only.Count} things only for {names}: untick them if the email goes to everyone.";
+        string things = only.Count == 1 ? "1 thing" : $"{only.Count} things";
+        return _includePrivate
+            ? $"The email includes {things} only for {names}. Send it only to people they're for."
+            : $"The email leaves out {things} only for {names}.";
     }
 
-    private static string ReachLine(DigestDraft draft)
+    private string ReachLine(DigestDraft draft)
     {
         if (draft.Items.All(item => !item.Included))
             return "Tick something to send it to the app or copy it for email.";
         int count = draft.Items.Count(item => item.Included);
         string things = count == 1 ? "1 thing" : $"{count} things";
-        return draft.SentAsItIs
-            ? "It's in the app as it is."
-            : $"Send to the app puts {things} on What's next. No notification goes out.";
+        return draft switch
+        {
+            { SentAsItIs: true, NotifiedAt: { } notified } => $"It's in the app as it is. People were notified {Ago(notified)}.",
+            { SentAsItIs: true } => "It's in the app as it is.",
+            { NotifiedAt: null } => $"Puts {things} on What's next and notifies everyone who'll see at least one of them. Quiet hours hold the buzz until morning.",
+            _ when _notifyAgain => $"Puts {things} on What's next and notifies everyone who'll see them again.",
+            _ => $"Puts {things} on What's next. Nobody is notified again.",
+        };
     }
 
     private WhatsNextDigest AppDigest(DigestDraft draft)
@@ -257,7 +274,8 @@
         return new WhatsNextDigest(new DigestShown { Start = draft.Start, End = draft.End }, items);
     }
 
-    private IReadOnlyList<EmailItem> EmailItems(DigestDraft draft) => draft.Items.Where(item => item.Included).Select(EmailItem.Of).ToList();
+    private IReadOnlyList<EmailItem> EmailItems(DigestDraft draft) =>
+        draft.Items.Where(item => item.Included && (item.ForEveryone || _includePrivate)).Select(EmailItem.Of).ToList();
 
     private string AllEventsLink => DestinationPaths.Shareable(new Uri(Navigation.BaseUri), EventsPlaces.Week);
 
@@ -397,9 +415,13 @@
         _busy = "send";
         try
         {
-            _draft = await Editing.Digest.SendToAppAsync(new DigestRef { Start = draft.Start });
+            bool notifies = draft.NotifiedAt is null || _notifyAgain;
+            _draft = await Editing.Digest.SendToAppAsync(new DigestRef { Start = draft.Start, NotifyAgain = _notifyAgain });
+            _notifyAgain = false;
             await Shell.HapticAsync();
-            _told = "Sent. It's on What's next in the app now; phones have it the next time they sync. No notification went out.";
+            _told = notifies
+                ? "Sent. It's on What's next, and everyone who'll see it is being notified (after quiet hours, if it's late)."
+                : "Sent. It's on What's next; nobody was notified again.";
         }
         catch (RpcException exception)
         {

@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
@@ -72,6 +73,8 @@ internal static partial class Digests
         return merged;
     }
 
+    public static bool Notifies(DigestRecord digest, bool again) => digest.NotifiedAt is null || again;
+
     public static List<DigestEntry> Kept(IReadOnlyList<DigestEntry> before, IReadOnlyList<DigestEntry> saved, IReadOnlySet<string> showing)
     {
         HashSet<string> savedKeys = saved.Select(entry => entry.Key).ToHashSet();
@@ -105,14 +108,31 @@ internal static partial class Digests
             ? Audience.Everyone
             : CalendarAudiences.Union(sent.CalendarIds.Select(id => book.Calendars.GetValueOrDefault(id)).OfType<CalendarRecord>().Select(calendar => CalendarAudiences.Of(calendar.Audience)));
 
-    public static Notification Notification(EventsBook book, SentDigest sent, NotificationAudience audience)
+    public static Notification Notification(EventsBook book, SentDigest sent, NotificationAudience audience) =>
+        Worded(sent.Items.Where(item => AudienceOf(book, item) == Audience.Everyone).Select(item => item.Item.Words.Title), audience, null);
+
+    public static List<Notification> ForEveryoneWhoSeesIt(EventsBook book, SentDigest sent, DateOnly start)
     {
-        List<string> titles = sent.Items.Where(item => AudienceOf(book, item) == Audience.Everyone)
-            .Select(item => item.Item.Words.Title).Where(title => title.Length > 0).ToList();
+        List<(string Title, Audience Audience)> items = sent.Items.Select(item => (item.Item.Words.Title, AudienceOf(book, item))).ToList();
+        List<(NotificationAudience Reader, Func<Audience, bool> Sees)> readers = [];
+        foreach (Guid role in items.Where(item => item.Audience.IsForRoles).SelectMany(item => item.Audience.RoleIds).Distinct())
+            readers.Add((NotificationAudience.Holding(RoleMembership.Of(role)), audience => !audience.IsForRoles || audience.RoleIds.Contains(role)));
+        if (items.Any(item => item.Audience != Audience.Everyone && !item.Audience.IsForRoles))
+            readers.Add((NotificationAudience.SignedIn, audience => !audience.IsForRoles));
+        if (items.Any(item => item.Audience == Audience.Everyone))
+            readers.Add((NotificationAudience.Everyone, audience => audience == Audience.Everyone));
+
+        string subject = $"events/digest/{EventDates.Format(start)}";
+        return readers.Select(reader => Worded(items.Where(item => reader.Sees(item.Audience)).Select(item => item.Title), reader.Reader, subject)).ToList();
+    }
+
+    private static Notification Worded(IEnumerable<string> shown, NotificationAudience audience, string? subject)
+    {
+        List<string> titles = shown.Where(title => title.Length > 0).ToList();
         string things = titles.Count == 1 ? "One thing" : $"{titles.Count} things";
         string named = Listed(titles.Count > 2 ? [.. titles.Take(2), "more"] : titles);
         return new Notification(EventsNotifications.DigestOut, audience, "What's next at Good Shepherd", $"{things} coming up: {named}.",
-            Link: EventsDestinations.WhatsNext.Path, Action: "Open");
+            Link: EventsDestinations.WhatsNext.Path, Subject: subject, Action: "Open");
     }
 
     public static string When(IReadOnlyList<DateOnly> dates, DateOnly start)

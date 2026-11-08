@@ -60,6 +60,12 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
             record.UpdatedAt = now;
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+        if (Digests.Notifies(record, request.NotifyAgain))
+        {
+            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, sent, start), cancellationToken);
+            record.NotifiedAt = now;
+            await db.SaveChangesAsync(cancellationToken);
+        }
         return await DraftAsync(start, record, cancellationToken);
     }
 
@@ -94,6 +100,7 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
             Items = items,
             SavedAt = record is { UpdatedAt: var saved } && saved != default ? saved : null,
             SentAt = record?.SentAt,
+            NotifiedAt = record?.NotifiedAt,
             SentAsItIs = record?.SentAt is not null && Same(Digests.ForApp(items, Digests.EndOf(start, weeks)), record.Sent),
             LastSent = latest is { SentAt: { } at } ? new DigestSent { Start = EventDates.Format(latest.Start), SentAt = at } : null,
         };
