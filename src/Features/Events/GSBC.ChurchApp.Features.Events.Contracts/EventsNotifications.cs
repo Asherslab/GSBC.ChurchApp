@@ -24,5 +24,8 @@ public static class EventsNotifications
         "events.details.needed", "A date of a regular event you organise is missing what it needs", "Calendar", PerScope: ScopeKind.Calendar,
         Waits: true);
 
-    public static readonly IReadOnlyList<NotificationKind> All = [Told, AskedToPublish, AskedToShow, AskedToShowElsewhere, DetailsNeeded];
+    public static readonly NotificationKind DigestOut = new(
+        "events.digest.out", "What's next, the weekly digest", "Calendar", For: EventsPermissions.Digest);
+
+    public static readonly IReadOnlyList<NotificationKind> All = [Told, AskedToPublish, AskedToShow, AskedToShowElsewhere, DetailsNeeded, DigestOut];
 }

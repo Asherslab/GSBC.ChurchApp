@@ -54,6 +54,9 @@ public static class EventsApiExtensions
             "Has added a calendar to their week", ScopeKind.Calendar, [EventsPermissions.HaveNode], AssignableBy: [], PhoneHoldable: true));
         services.AddSystemRole(new SystemRole(EventsPermissions.TurnedOffRole, "Calendar turned off",
             "Has turned off a calendar they'd see anyway", ScopeKind.Calendar, [EventsPermissions.TurnedOffNode], AssignableBy: [], PhoneHoldable: true));
+        services.AddSystemRole(new SystemRole(EventsPermissions.DigestMakerRole, "Digest maker",
+            "Makes the weekly digest from the calendar, copies it for email and sends it to the app", ScopeKind.Global,
+            [EventsPermissions.DigestNode]));
 
         services.AddSurfaces(EventsTiles.Surfaces);
         services.AddFeed(new FeedDefinition(EventsFeeds.Calendars, FeedAudience.Public));
@@ -62,6 +65,8 @@ public static class EventsApiExtensions
         services.AddFeed(new FeedDefinition(EventsFeeds.Private, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(EventsFeeds.Contacts, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(EventsFeeds.Admin, FeedAudience.Holding(EventsPermissions.Edit)));
+        services.AddFeed(new FeedDefinition(EventsFeeds.Digest, FeedAudience.Public));
+        services.AddFeed(new FeedDefinition(EventsFeeds.PrivateDigest, FeedAudience.EachRow));
         return services;
     }
 
@@ -71,6 +76,7 @@ public static class EventsApiExtensions
         endpoints.MapGrpcService<EventEditingService>();
         endpoints.MapGrpcService<CalendarSetupService>();
         endpoints.MapGrpcService<CalendarFilesService>();
+        endpoints.MapGrpcService<DigestService>();
         return endpoints;
     }
 }

@@ -21,6 +21,7 @@ public sealed class EventsDbContext(DbContextOptions<EventsDbContext> options) :
     public DbSet<PublishedRow> PublishedRows => Set<PublishedRow>();
     public DbSet<CalendarLinkRecord> CalendarLinks => Set<CalendarLinkRecord>();
     public DbSet<DetailsReminderRecord> DetailsReminders => Set<DetailsReminderRecord>();
+    public DbSet<DigestRecord> Digests => Set<DigestRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -91,6 +92,14 @@ public sealed class EventsDbContext(DbContextOptions<EventsDbContext> options) :
             entity.ToTable("details_reminders");
             entity.HasKey(reminder => new { reminder.OccurrenceId, reminder.DaysBefore });
             entity.HasIndex(reminder => reminder.SettledAt);
+        });
+        modelBuilder.Entity<DigestRecord>(entity =>
+        {
+            entity.ToTable("digests");
+            entity.HasKey(digest => digest.Start);
+            entity.HasIndex(digest => digest.SentAt);
+            Json(entity.Property(digest => digest.Entries));
+            Json(entity.Property(digest => digest.Sent));
         });
     }
 
