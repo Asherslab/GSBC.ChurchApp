@@ -6,7 +6,7 @@ namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 public static class TabBarSurfaces
 {
-    public const int MostChosenTabs = 4;
+    public const int MostChosenTabs = 3;
     public const int MostCharactersInAWord = 12;
 
     private const string EditNode = "config.tabs.edit";
@@ -19,7 +19,7 @@ public static class TabBarSurfaces
     public static readonly Permission Publish =
         new(PublishNode, ScopeKind.Global, "Put changes to the app's tabs out to everyone, or on for an event");
 
-    public static readonly SurfaceArea Area = new("app.tabs", "Tab bar", "The tabs along the foot of the app. More is always the last one", ScopeKind.Global, Edit, Publish);
+    public static readonly SurfaceArea Area = new("app.tabs", "Tab bar", "The tabs along the foot of the app. Home is always the first and More the last", ScopeKind.Global, Edit, Publish);
 
     public static readonly Surface Home = TabSettings.Declare("app.tab.home", new TabDefaults(ShellDestinations.Home.Path, "Home", "home"), defaultOrder: 100);
 
@@ -32,6 +32,8 @@ public static class TabBarSurfaces
     public static SurfaceSet All => new([Home, Sermons, Tab]);
 
     public static bool IsTab(Surface surface) => surface.Area.Key == Area.Key;
+
+    public static bool IsHome(Surface surface) => surface.Key == Home.Key;
 }
 
 public sealed record TabDefaults(string Opens, string Word, string Icon);
@@ -88,11 +90,19 @@ public static class TabBar
 {
     public static IReadOnlyList<AppTab> Starting => For(SurfaceLayout.Arrange(TabBarSurfaces.StartingTabs, []));
 
-    public static IReadOnlyList<AppTab> For(IEnumerable<ArrangedSurface> shown) =>
-        Candidates(shown).DistinctBy(tab => tab.Route, StringComparer.OrdinalIgnoreCase).Take(TabBarSurfaces.MostChosenTabs).ToList();
+    public static AppTab Home { get; } = Of(SurfaceLayout.Arrange([TabBarSurfaces.Home], [])[0]);
+
+    public static IReadOnlyList<AppTab> For(IEnumerable<ArrangedSurface> shown) => [Home, .. Chosen(shown)];
+
+    public static IReadOnlyList<AppTab> Chosen(IEnumerable<ArrangedSurface> shown) =>
+        Candidates(shown)
+            .Where(tab => !string.Equals(tab.Route, Home.Route, StringComparison.OrdinalIgnoreCase))
+            .DistinctBy(tab => tab.Route, StringComparer.OrdinalIgnoreCase)
+            .Take(TabBarSurfaces.MostChosenTabs)
+            .ToList();
 
     private static IReadOnlyList<AppTab> Candidates(IEnumerable<ArrangedSurface> shown) =>
-        shown.Where(entry => TabBarSurfaces.IsTab(entry.Surface) && entry.Surface.ProblemsWith(entry.Values.Raw).Count == 0)
+        shown.Where(entry => TabBarSurfaces.IsTab(entry.Surface) && !TabBarSurfaces.IsHome(entry.Surface) && entry.Surface.ProblemsWith(entry.Values.Raw).Count == 0)
             .Select(Of)
             .ToList();
 

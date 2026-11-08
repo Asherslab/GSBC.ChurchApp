@@ -10,7 +10,7 @@ there is no store of its own. Until staff publish a change, the tabs are what th
 
 | Who | Can |
 |---|---|
-| Everyone (the phone) | Use the tab bar as published: up to four tabs and More, each opening its place; offline and live |
+| Everyone (the phone) | Use the tab bar as published: Home, up to three chosen tabs and More, each opening its place; offline and live |
 | `config.tabs.edit` | In a draft: add tabs, choose the place each opens, its word and icon, move them, choose who sees each and when, take them off the bar |
 | `config.tabs.publish` | Publish the draft, or turn it on for an event |
 
@@ -20,12 +20,17 @@ The *App editor* role (`config.*`) holds both.
 
 1. **Any place can be a tab.** A tab is a link to a place in the app ([destinations.md](../architecture/destinations.md)),
    like any other link: a page (Home, Sermons, the calendar's week), or one thing (a sermon series).
-2. **Five tabs at most, More always last and always there.** Staff choose four.
+2. **Five tabs at most, More always last and always there.** Staff choose four. *Changed 2026-11-08 by decision 5:*
+   Home is the first of the five, so staff choose three.
 3. **Who sees which tabs can vary,** as Home's tiles do: everyone, people signed in, or people in roles, checked through
    Access ([permissions.md](../architecture/permissions.md)).
 4. **Taking a tab off the bar removes a link, not a page.** The page is still there and still reached from its other
    links (Home's tiles, More, search, notifications). A phone that is on that page when the change arrives stays on it;
    only the tab goes. Places that aren't tabs are listed in More, as now.
+5. **The app always opens on Home, and Home is always the first tab** (owner, 2026-11-08: "always home, and home must
+   always be a tab"). Like More, Home can't be taken off the bar, moved, dated, given to some people only, or made to
+   open somewhere else; staff choose the tabs between Home and More. This settles the open question of opening on the
+   first tab: the first tab is always Home.
 
 ## How it works
 
@@ -39,7 +44,13 @@ phone, history and undo all work on it unchanged.
 
 - **The two tabs the app starts with** are surfaces that exist without a placement (`app.tab.home` opening `/`, and
   `app.tab.sermons` opening `/sermons`), so a phone with nothing published draws Home, Sermons and More, as before.
-  Staff change them like any other tab; taking one off the bar hides it, and *Put back* shows it again.
+  Staff change Sermons like any other tab; taking it off the bar hides it, and *Put back* shows it again.
+- **Home is fixed** (decision 5). `TabBar.For` always draws Home first, from its own defaults, whatever is stored for
+  it, then up to three of the rest (`TabBar.Chosen`); a tab that opens Home again is dropped. On the server,
+  `PlacementRules` refuses any Home that isn't Home as it always is (on the bar, for everyone, no dates, its own place,
+  word and icon), refuses another tab that opens Home, and keeps every other tab's order after Home's. A draft or
+  published tab bar saved before this (Home hidden, moved or changed) still loads with Home first, and such a draft
+  still publishes: its change to Home is left out (tested in `TabBarTests` and `TabBarDraftTests`).
 - **Every tab added after** is a repeatable `app.tab` placement.
 
 ### What a tab may open
@@ -51,8 +62,8 @@ places everyone the tab is for can open, as for an announcement (`OpenableBy`).
 
 ### On the phone
 
-- **The tab bar** (`AppTabBar`, Platform.Ui) asks `ISurfaceLayout` for the area, as Home does, and draws the first
-  four tabs shown to this person in order (`TabBar.For`, Platform.Contracts), then More. Fewer than four is fine.
+- **The tab bar** (`AppTabBar`, Platform.Ui) asks `ISurfaceLayout` for the area, as Home does, and draws Home, then
+  the first three other tabs shown to this person in order (`TabBar.For`, Platform.Contracts), then More. Fewer is fine.
 - **More** lists every place the app's modules list (Account, Notification settings, What's new, Calendar …) that isn't
   a tab for this person right now. Taking Sermons off the bar puts Sermons into More; making the calendar a tab takes
   it out. `NavPlacement` is gone: a feature no longer says whether it's a tab.
@@ -69,12 +80,14 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
 `.impeccable/mocks/decision/app-tabs/`):
 
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);
-  More is drawn faded, as it can't be chosen.
+  Home and More are drawn faded, as they can't be chosen.
 - **Beside it,** a rail (`TabsCanvas`): *Add a tab*, *Show the tabs for* (a visitor, someone signed in, someone in a
-  role a tab is for), *Preview as on* (a date, to see dated tabs before they start), then **On the bar, in order**: each tab numbered, with an orange dot when this draft changed it
-  and *Move left* and *Move right*, and More last with a lock and "Always last". Under it, the tabs that aren't on the
+  role a tab is for), *Preview as on* (a date, to see dated tabs before they start), then **On the bar, in order**: Home
+  first with a lock and "Always first", each chosen tab numbered, with an orange dot when this draft changed it
+  and *Move left* and *Move right*, and More last with a lock and "Always last". On the phone, Home and More are drawn
+  faded, as they can't be chosen. Under it, the tabs that aren't on the
   bar for that person, each with why: off the bar, dated, for someone else, not finished, another tab already opens
-  that place, or past the fourth; and tabs taken off in this draft, with *Put back*.
+  that place (or it opens Home), or past the third; and tabs taken off in this draft, with *Put back*.
 - **The settings panel** for the chosen tab (`TabSettingsPanel`): Opens (the place field, offering only places a tab
   can open that no other tab already opens), its word and its icon (filled in from the place when one is chosen, then the staff's to change), who
   sees it and when, *On the bar*, and *Take it off the bar*. A tab added in this draft says what it still needs and
@@ -88,14 +101,13 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
   "changed for everyone" check, and reuses the tile editor's audience picker and the drafts machinery as they are.
 - **The starting tabs are surfaces without a placement,** so nothing has to be seeded and every phone already
   agrees on the defaults.
-- **More than four for one person:** the phone draws the first four and the rest aren't tabs for them; the editor
-  lists them as *Past the fourth*. Refusing a fifth wouldn't work, because who sees a tab varies.
+- **More than three chosen for one person:** the phone draws the first three after Home and the rest aren't tabs for
+  them; the editor lists them as *Past the third*. Refusing a fifth wouldn't work, because who sees a tab varies.
 - **The same place twice for one person:** the first one wins.
 - **Icons are the app's own, not uploaded SVGs.** A tab bar reads as one set of 24-point line icons; uploaded
   drawings vary in weight and fill. Tiles keep their uploads.
 - **The word is required and short** (12 characters). Longer words would be cut on a 375-point phone.
-- **The app still opens on Home,** even when Home isn't a tab (Home then heads More). Opening on the first tab would
-  change cold starts and links; not without the owner.
+- **The app still opens on Home.** Settled by decision 5: Home is always the first tab.
 - **Permissions of its own** (`config.tabs.edit`, `config.tabs.publish`), as Colours has, so the office can be given
   Home without the tab bar.
 - **Analytics** count taps on places already; there's no separate tab-tap measure.
@@ -109,9 +121,16 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
 - **A station can run its own backend beside the owner's** to check this: `Dev__PortOffset=100` moves the AppHost's
   fixed ports up by 100 (the gateway on 5400), skips the Cloudflare tunnel and gives the media store its own volume.
 
+## Decided with decision 5 (2026-11-08)
+
+- **Turning Home into a fixed tab keeps its surface,** so placements and draft changes stored for it still load; they
+  are ignored on the phone and left out when a draft publishes, which puts Home back first without anyone undoing
+  anything.
+- **A tab ordered before Home** (saved before this) is still drawn after Home; the next time it's saved its order is
+  moved after Home's.
+
 ## Open
 
-- Whether the app should open on the first tab when it isn't Home.
 - A place's *where it is* line ("More → What's new") is written by its feature and doesn't follow the tabs.
 - Tests: `TabBarTests` (Platform.Contracts.Tests), the tab rules in `PlacementRulesTests` (Configuration.Api.Tests),
   and the starting tabs' places in `DestinationRules` (Architecture.Tests).

@@ -253,6 +253,8 @@ internal sealed class DraftEditor(
                     removed.Add(record.Id);
                     continue;
                 }
+                if (TabBarSurfaces.IsHome(surface))
+                    continue;
 
                 StoredPlacement wanted = record is null ? patch.Created() : patch.ApplyTo(Stored(record));
                 PlacementState after = await rules.ValidatedAsync(surface, PlacementState.Of(wanted), cancellationToken);
@@ -289,7 +291,7 @@ internal sealed class DraftEditor(
             foreach (PlacementPatch patch in inArea.Select(Deserialize))
             {
                 Surface surface = rules.SurfaceIn(area, patch.Surface);
-                if (patch.Kind == PatchKind.Remove)
+                if (patch.Kind == PatchKind.Remove || TabBarSurfaces.IsHome(surface))
                     continue;
                 StoredPlacement wanted = existing.TryGetValue(ParseId(patch.PlacementId), out PlacementRecord? live)
                     ? patch.ApplyTo(Stored(live))

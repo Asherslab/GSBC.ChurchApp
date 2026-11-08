@@ -100,9 +100,10 @@ public sealed class PlacementRulesTests
     [Theory]
     [InlineData("https://baptist.com.au/give", "not a web page")]
     [InlineData("/more", "always the last tab")]
+    [InlineData("/", "always the first tab")]
     [InlineData("/prayer-wall", "doesn't have")]
     [InlineData("/files/123", "opens outside the app")]
-    public async Task ATabOpensAPlaceInsideTheAppOtherThanMore(string opens, string why)
+    public async Task ATabOpensAPlaceInsideTheAppOtherThanHomeOrMore(string opens, string why)
     {
         PlacementState tab = State(TabBarSurfaces.Tab, (TabSettings.Opens.Key, opens), (TabSettings.Word.Key, "Give"), (TabSettings.Icon.Key, "heart"));
 
@@ -117,6 +118,25 @@ public sealed class PlacementRulesTests
         await ValidatedAsync(State(TabBarSurfaces.Tab, (TabSettings.Opens.Key, "/series/advent"), (TabSettings.Word.Key, "Advent"), (TabSettings.Icon.Key, "sermons")));
         await ValidatedAsync(State(TabBarSurfaces.Home));
         await ValidatedAsync(State(TabBarSurfaces.Sermons) with { Hidden = true });
+    }
+
+    [Fact]
+    public async Task HomeIsAlwaysTheFirstTabForEveryoneAndEveryOtherTabComesAfterIt()
+    {
+        DateTime starts = new(2026, 11, 9, 0, 0, 0, DateTimeKind.Utc);
+        PlacementState[] changedHomes =
+        [
+            State(TabBarSurfaces.Home) with { Hidden = true },
+            State(TabBarSurfaces.Home) with { Audience = "signed-in" },
+            State(TabBarSurfaces.Home) with { StartsAt = starts },
+            State(TabBarSurfaces.Home, (TabSettings.Opens.Key, "/sermons")),
+            State(TabBarSurfaces.Home, (TabSettings.Word.Key, "Start")),
+        ];
+        foreach (PlacementState home in changedHomes)
+            Assert.Contains(PlacementRules.HomeIsFixed, (await Assert.ThrowsAsync<RpcException>(() => ValidatedAsync(home))).Status.Detail);
+
+        PlacementState beforeHome = State(TabBarSurfaces.Sermons) with { Order = TabBarSurfaces.Home.DefaultOrder - 50 };
+        Assert.True((await ValidatedAsync(beforeHome)).Order > TabBarSurfaces.Home.DefaultOrder);
     }
 
     [Fact]

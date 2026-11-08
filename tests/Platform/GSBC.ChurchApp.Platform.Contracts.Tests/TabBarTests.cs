@@ -15,7 +15,7 @@ public sealed class TabBarTests
     }
 
     [Fact]
-    public void ThePhoneDrawsTheFirstFourItsPersonSeesInOrder()
+    public void ThePhoneDrawsHomeThenTheFirstThreeItsPersonSeesInOrder()
     {
         StoredPlacement[] stored =
         [
@@ -42,6 +42,19 @@ public sealed class TabBarTests
 
         Assert.Equal(["Home"], Words(For(Visitor, stored)));
         Assert.Equal(["Home", "Groups"], Words(For(Member, stored)));
+    }
+
+    [Fact]
+    public void ATabBarSavedWithoutHomeFirstStillHasHomeFirst()
+    {
+        StoredPlacement[] stored =
+        [
+            Hidden(TabBarSurfaces.Home),
+            Tab("calendar", "/week", "Calendar", order: 10),
+            Tab("again", "/", "Start", order: 20),
+        ];
+
+        Assert.Equal(["Home", "Calendar", "Sermons"], Words(For(Visitor, stored)));
     }
 
     [Fact]
