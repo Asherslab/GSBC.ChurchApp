@@ -251,8 +251,9 @@ all four on 2026-11-08):
 - **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
   desk; `.impeccable/mocks/decision/events-admin/`). Three panes, as drafts' workbench: a sand column with *All
   your calendars*, *Needs details* and *Asked to publish* (each with its count, the latter only when a calendar
-  uses it), then each calendar you can edit with a switch and a settings button, *+ New calendar*, and *Breaks*;
-  the middle pane is Agenda | Month of the chosen calendars, in the phone's rows, with *+ New event*; the right
+  uses it), then each calendar you can edit, to pick and manage alone, with a settings button (and, under *All your
+  calendars*, a switch), *+ New calendar*, and *Breaks*; the middle pane is Agenda | Month of the picked calendar or
+  of all of them, in the phone's rows, with *+ New event*; the right
   pane is the chosen event in the same editor as the phone (*This date only | Every …*, *Save*, *Not on this
   date*).
 - **Calendar setup lives in the workbench too** (owner, 2026-11-08: "settings per calendar on the workbench, breaks
@@ -499,6 +500,31 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
 - **A failed read keeps what was copied** (the copier detaches its unsaved changes and records the problem). It has
   no test of its own: it isn't a Postgres rule, and testing it without a database means splitting the copier further
   than it's worth today.
+
+## Decided while polishing (2026-11-08, after the owner tried Events)
+
+- **A calendar is picked on the left to manage it** (owner: "managing by individual calendar will be simpler than
+  seeing the 'all'. all should still be offered"). Each calendar you can edit is a choice in the workbench's left
+  list: the middle shows only its Agenda | Month under its name, and *+ New event* adds to it. *All your calendars*
+  stays the first choice, merged as before. The choice is in the address (`calendar?calendar={slug}`, and
+  `?show=needs|asked|breaks` for the other lists), so a refresh or a link keeps it. The sliders beside a calendar
+  still open its settings on the right. **The switches show only under *All your calendars*:** they choose what's
+  merged there, and mean nothing when one calendar is picked.
+- **The month moves sideways** (owner: "the calendar month should be scrollable too, that's more natural based on
+  how iphone calendar works"). iPhone Calendar's month scrolls up and down, but there the months fill the screen;
+  here the grid sits in a page that scrolls, with the chosen day's events under it, so an up-and-down swipe on the
+  grid would fight the page. Swiping the grid left brings the next month and right the one before, following the
+  finger as iPhone Calendar's week strip does; up and down still scrolls the page, and the arrows stay. The pager
+  is Platform.Ui's `SwipePages` (any content that steps by page), and the month key sits outside it (`MonthKey`).
+  The admin panel's month keeps its arrows only.
+- **The header is solid whenever the masthead has gone from under it.** The top bar is see-through over a masthead
+  and turned solid only at `StuckAt` (90 on This week), but the week strip sticks under it at 64, so between the two
+  (and through the bar's 200 ms fade) the page showed through above the strip. The shell now makes the bar solid
+  as soon as the masthead's bottom is within 16 px of the bar's (every page with a masthead), with no fade; the week
+  strip also paints the masthead colour up behind the bar, so a frame's lag in the scroll handler can't show a gap.
+- **No zooming in the app:** the viewport stops pinch zoom (`maximum-scale=1, user-scalable=no`, which WKWebView
+  honours) and `touch-action: manipulation` stops double-tap zoom. Text already follows the phone's text size
+  (`font: -apple-system-body` on the root, with every size in rem). The admin panel still zooms.
 
 ## What the owner sets up
 

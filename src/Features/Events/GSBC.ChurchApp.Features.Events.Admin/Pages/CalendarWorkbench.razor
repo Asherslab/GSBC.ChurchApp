@@ -23,7 +23,7 @@
     private const int FirstWeeks = 6;
     private const int MoreWeeks = 6;
 
-    private enum Middle { All, NeedsDetails, Asked, Breaks }
+    private enum Middle { All, Calendar, NeedsDetails, Asked, Breaks }
 
     private abstract record Chosen;
     private sealed record ChosenEvent(EditTarget Target, string OccurrenceId) : Chosen;
@@ -35,6 +35,7 @@
 
     private LiveData<WorkbenchView>? _live;
     private Middle _middle = Middle.All;
+    private string? _calendarKey;
     private bool _month;
     private DateOnly? _monthFirst;
     private DateOnly? _monthDay;
@@ -46,6 +47,7 @@
     private bool _readUrl;
 
     [SupplyParameterFromQuery(Name = "show")] public string? Show { get; set; }
+    [SupplyParameterFromQuery(Name = "calendar")] public string? CalendarKey { get; set; }
     [SupplyParameterFromQuery(Name = "event")] public string? EventId { get; set; }
     [SupplyParameterFromQuery(Name = "settings")] public string? SettingsId { get; set; }
     [SupplyParameterFromQuery(Name = "break")] public string? BreakId { get; set; }
@@ -56,17 +58,29 @@
 
     private DateOnly MonthFirst => _monthFirst ?? new DateOnly(Today.Year, Today.Month, 1);
 
-    protected override void OnParametersSet()
+    protected override async Task OnParametersSetAsync()
     {
+        string? shownBefore = ShownCalendarKey;
         _middle = Show switch
         {
             CalendarWorkbenchLinks.NeedsDetails => Middle.NeedsDetails,
-            "asked" => Middle.Asked,
-            "breaks" => Middle.Breaks,
-            _ => _middle,
+            CalendarWorkbenchLinks.Asked => Middle.Asked,
+            CalendarWorkbenchLinks.Breaks => Middle.Breaks,
+            _ when CalendarKey is not null => Middle.Calendar,
+            _ => Middle.All,
         };
+        _calendarKey = CalendarKey;
         _readUrl = EventId is null && SettingsId is null && BreakId is null;
+        if (ShownCalendarKey != shownBefore)
+            await ReloadAsync();
     }
+
+    private string? ShownCalendarKey => _middle == Middle.Calendar ? _calendarKey : null;
+
+    private static DeskCalendar? Selectable(CalendarDesk desk, string? key) =>
+        key is null ? null : desk.Calendars.FirstOrDefault(calendar => calendar.CanEdit && (calendar.Settings.Calendar.Slug == key || calendar.Settings.Calendar.Id == key));
+
+    private DeskCalendar? SelectedCalendar(WorkbenchView view) => Selectable(view.Desk, ShownCalendarKey);
 
     private async Task<WorkbenchView> LoadAsync()
     {
@@ -76,8 +90,10 @@
         Task<BreakList> breaks = Editing.BreaksAsync().AsTask();
         await Task.WhenAll(desk, needs, asked, breaks);
         _hidden ??= [];
-        List<string> shown = desk.Result.Calendars.Where(calendar => calendar.CanEdit && !_hidden.Contains(calendar.Settings.Calendar.Id))
-            .Select(calendar => calendar.Settings.Calendar.Id).ToList();
+        List<string> shown = Selectable(desk.Result, ShownCalendarKey) is { } selected
+            ? [selected.Settings.Calendar.Id]
+            : desk.Result.Calendars.Where(calendar => calendar.CanEdit && !_hidden.Contains(calendar.Settings.Calendar.Id))
+                .Select(calendar => calendar.Settings.Calendar.Id).ToList();
         (DateOnly from, DateOnly to) = _month
             ? (EventWords.SundayOf(MonthFirst), EventWords.SundayOf(MonthFirst.AddMonths(1)).AddDays(6))
             : (Today, Today.AddDays(7 * _weeks));
@@ -103,7 +119,7 @@
             ?? view.Needs.Items.Select(item => item.Occurrence).FirstOrDefault(occurrence => occurrence.Id == EventId);
         if (found is not null)
             _chosen = new ChosenEvent(EditTarget.Of(found), found.Id);
-        else if (view.Desk.CanManage && view.Desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == SettingsId || calendar.Settings.Calendar.Slug == SettingsId) is { } calendar)
+        else if (view.Desk.CanManage && view.Desk.Calendars.FirstOrDefault(entry => entry.Settings.Calendar.Id == SettingsId || entry.Settings.Calendar.Slug == SettingsId) is { } calendar)
             _chosen = new ChosenCalendar(calendar);
         else if (view.Desk.CanManage && view.Breaks.Breaks.FirstOrDefault(entry => entry.Id == BreakId) is { } chosenBreak)
         {
@@ -135,7 +151,7 @@
         return @<div class="calendar-aside">
             <h1 class="calendar-aside__title">Calendar</h1>
             <nav class="calendar-aside__group" aria-label="What to show">
-                @AsideItem("All your calendars", null, _middle == Middle.All, () => Go(Middle.All))
+                @AsideItem("All your calendars", null, _middle == Middle.All || (_middle == Middle.Calendar && SelectedCalendar(view) is null), () => Go(Middle.All))
                 @AsideItem("Needs details", desk.NeedsDetails, _middle == Middle.NeedsDetails, () => Go(Middle.NeedsDetails))
                 @if (publishing)
                 {
@@ -147,26 +163,26 @@
                 {
                     CalendarInfo info = calendar.Settings.Calendar;
                     bool on = calendar.CanEdit && !_hidden!.Contains(info.Id);
-                    bool chosen = _chosen is ChosenCalendar { Calendar: { } open } && open.Settings.Calendar.Id == info.Id;
-                    <li class="calendar-aside__calendar @(chosen ? "is-chosen" : "")">
-                        <span class="calendar-aside__name">
-                            @info.Name
-                            @if (info.ReadOnly)
-                            {
-                                <small>Copied from iCal</small>
-                            }
-                            else if (calendar.Settings.NeedsPublisher)
-                            {
-                                <small>Needs a publisher</small>
-                            }
-                        </span>
+                    bool selected = SelectedCalendar(view)?.Settings.Calendar.Id == info.Id;
+                    bool settingsOpen = _chosen is ChosenCalendar { Calendar: { } open } && open.Settings.Calendar.Id == info.Id;
+                    <li class="calendar-aside__calendar @(selected ? "is-chosen" : "")">
+                        @if (calendar.CanEdit)
+                        {
+                            <button type="button" class="calendar-aside__name calendar-aside__name--pick" aria-current="@(selected ? "true" : null)" @onclick="() => GoToCalendar(calendar)">
+                                @CalendarName(calendar)
+                            </button>
+                        }
+                        else
+                        {
+                            <span class="calendar-aside__name">@CalendarName(calendar)</span>
+                        }
                         @if (desk.CanManage)
                         {
-                            <button type="button" class="icon-btn icon-btn--small" aria-label="@($"Settings for {info.Name}")" aria-pressed="@(chosen ? "true" : "false")" @onclick="() => Choose(new ChosenCalendar(calendar))">
+                            <button type="button" class="icon-btn icon-btn--small" aria-label="@($"Settings for {info.Name}")" aria-pressed="@(settingsOpen ? "true" : "false")" @onclick="() => Choose(new ChosenCalendar(calendar))">
                                 <Icon Name="sliders" Size="IconSize.Small" />
                             </button>
                         }
-                        @if (calendar.CanEdit)
+                        @if (calendar.CanEdit && _middle == Middle.All)
                         {
                             <label class="switch switch--small">
                                 <input type="checkbox" role="switch" checked="@on" aria-label="@($"Show {info.Name}")" @onchange="change => ToggleAsync(info.Id, change.Value is true)" />
@@ -186,6 +202,19 @@
         </div>;
     }
 
+    private static RenderFragment CalendarName(DeskCalendar calendar) =>
+        @<span>
+            @calendar.Settings.Calendar.Name
+            @if (calendar.Settings.Calendar.ReadOnly)
+            {
+                <small>Copied from iCal</small>
+            }
+            else if (calendar.Settings.NeedsPublisher)
+            {
+                <small>Needs a publisher</small>
+            }
+        </span>;
+
     private RenderFragment AsideItem(string label, int? count, bool current, Func<Task> go, bool quietCount = false) =>
         @<button type="button" class="calendar-aside__item" aria-current="@(current ? "true" : null)" @onclick="go">
             <span>@label</span>
@@ -200,7 +229,7 @@
         Middle.NeedsDetails => NeedsList(view),
         Middle.Asked => AskedLists(view),
         Middle.Breaks => BreaksList(view),
-        _ => AgendaOrMonth(view),
+        _ => AgendaOrMonth(view, SelectedCalendar(view)),
     };
 
     private RenderFragment MainHead(string title, string? lead, RenderFragment? actions = null) =>
@@ -215,42 +244,49 @@
             @actions
         </div>;
 
-    private RenderFragment AgendaOrMonth(WorkbenchView view)
+    private RenderFragment AgendaOrMonth(WorkbenchView view, DeskCalendar? selected)
     {
-        IReadOnlyList<DeskCalendar> editable = view.Desk.Calendars.Where(calendar => calendar.CanEdit && !calendar.Settings.Calendar.ReadOnly).ToList();
+        DeskCalendar? into = selected switch
+        {
+            null => view.Desk.Calendars.FirstOrDefault(calendar => calendar is { CanEdit: true, Settings.Calendar.ReadOnly: false }),
+            { Settings.Calendar.ReadOnly: true } => null,
+            _ => selected,
+        };
+        string title = selected?.Settings.Calendar.Name ?? "All your calendars";
+        string? lead = selected is { Settings.Calendar.ReadOnly: true } ? "Copied from its iCal address, so its events are changed there." : null;
         RenderFragment actions = @<div class="calendar-main__actions">
             <Segmented TValue="bool" Label="Agenda or month" Options="Views" Value="_month" ValueChanged="ShowMonthAsync" />
-            @if (editable.Count > 0)
+            @if (into is not null)
             {
-                <Button Icon="plus" OnClick="() => Choose(new NewEvent(editable[0].Settings.Calendar.Id, _month ? _monthDay : null))">New event</Button>
+                <Button Icon="plus" OnClick="() => Choose(new NewEvent(into.Settings.Calendar.Id, _month ? _monthDay : null))">New event</Button>
             }
         </div>;
         if (view.Desk.Calendars.Count == 0)
             return @<div>
-                @MainHead("All your calendars", null, actions)
+                @MainHead(title, null, actions)
                 <EmptyState Icon="calendar" Title="No calendars you can change" Body="Someone who looks after the calendars can make you a Calendar editor of one." />
             </div>;
         return @<div>
-            @MainHead("All your calendars", null, actions)
+            @MainHead(title, lead, actions)
             <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             @if (_month)
             {
-                @Month(view)
+                @Month(view, selected)
             }
             else
             {
-                @Agenda(view)
+                @Agenda(view, selected)
             }
         </div>;
     }
 
-    private RenderFragment Agenda(WorkbenchView view)
+    private RenderFragment Agenda(WorkbenchView view, DeskCalendar? selected)
     {
         List<IGrouping<DateOnly, EventOccurrence>> days = view.Agenda.GroupBy(EventWords.DayOf).OrderBy(day => day.Key).ToList();
         return @<div class="calendar-agenda">
             @if (days.Count == 0)
             {
-                <EmptyState Icon="calendar" Title="Nothing in the next few weeks" Body="Turn on more calendars on the left, or add an event." />
+                <EmptyState Icon="calendar" Title="Nothing in the next few weeks" Body="@(selected is null ? "Turn on more calendars on the left, or add an event." : $"Nothing is on in {selected.Settings.Calendar.Name} in these weeks.")" />
             }
             @foreach (IGrouping<DateOnly, EventOccurrence> day in days)
             {
@@ -276,7 +312,7 @@
                         NewChange="@(occurrence.ChangedAt is not null)" Selected="@(_chosen is ChosenEvent chosen && chosen.OccurrenceId == occurrence.Id)"
                         OnClick="() => Choose(new ChosenEvent(EditTarget.Of(occurrence), occurrence.Id))" />;
 
-    private RenderFragment Month(WorkbenchView view)
+    private RenderFragment Month(WorkbenchView view, DeskCalendar? calendar)
     {
         DateOnly selected = _monthDay ?? (MonthFirst.Month == Today.Month && MonthFirst.Year == Today.Year ? Today : MonthFirst);
         List<EventOccurrence> onDay = view.Agenda.Where(occurrence => EventWords.DayOf(occurrence) == selected).ToList();
@@ -287,11 +323,12 @@
                 <button type="button" class="icon-btn" aria-label="Next month" @onclick="() => StepMonthAsync(1)"><Icon Name="chevron-right" /></button>
             </div>
             <MonthGrid First="MonthFirst" Today="Today" Occurrences="view.Agenda" Selected="selected" Picked="day => _monthDay = day" />
+            <MonthKey />
             <section class="calendar-day">
                 <h3 class="calendar-day__head">@EventWords.LongDate(selected)</h3>
                 @if (onDay.Count == 0)
                 {
-                    <p class="hint">Nothing on in the calendars you've turned on.</p>
+                    <p class="hint">@(calendar is null ? "Nothing on in the calendars you've turned on." : $"Nothing on in {calendar.Settings.Calendar.Name}.")</p>
                 }
                 else
                 {
@@ -437,8 +474,22 @@
 
     private async Task Go(Middle middle)
     {
-        _middle = middle;
         _problem = null;
+        Navigation.NavigateTo(CalendarWorkbenchLinks.Showing(middle switch
+        {
+            Middle.NeedsDetails => CalendarWorkbenchLinks.NeedsDetails,
+            Middle.Asked => CalendarWorkbenchLinks.Asked,
+            Middle.Breaks => CalendarWorkbenchLinks.Breaks,
+            _ => null,
+        }), new NavigationOptions { ReplaceHistoryEntry = true });
+        await Shell.HapticAsync();
+    }
+
+    private async Task GoToCalendar(DeskCalendar calendar)
+    {
+        _problem = null;
+        _monthDay = null;
+        Navigation.NavigateTo(CalendarWorkbenchLinks.Calendar(calendar.Settings.Calendar.Slug), new NavigationOptions { ReplaceHistoryEntry = true });
         await Shell.HapticAsync();
     }
 

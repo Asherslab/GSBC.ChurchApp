@@ -6,9 +6,7 @@ namespace GSBC.ChurchApp.Platform.Ui;
 public enum Haptic
 {
     Light,
-    Medium,
     Success,
-    Warning,
 }
 
 public sealed class Shell(IJSRuntime js) : IDisposable
@@ -74,4 +72,7 @@ public sealed class Shell(IJSRuntime js) : IDisposable
 
     internal ValueTask<IJSObjectReference> PullToRefreshAsync(ElementReference host, DotNetObjectReference<PullToRefresh> receiver) =>
         js.InvokeAsync<IJSObjectReference>("gsbcShell.pullToRefresh", host, receiver);
+
+    internal ValueTask<IJSObjectReference> SwipePagesAsync(ElementReference host, DotNetObjectReference<SwipePages> receiver) =>
+        js.InvokeAsync<IJSObjectReference>("gsbcShell.swipePages", host, receiver);
 }
