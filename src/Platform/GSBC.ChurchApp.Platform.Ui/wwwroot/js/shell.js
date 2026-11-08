@@ -1,18 +1,10 @@
 window.gsbcShell = (() => {
-  const root = document.documentElement;
   const cap = () => window.Capacitor;
   const isNative = () => !!cap()?.isNativePlatform?.();
   const plugin = (name) => (isNative() && cap().isPluginAvailable?.(name) ? cap().Plugins[name] : null);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const scroller = () => document.querySelector('.page-scroll');
   const mastheadLead = 16;
-
-  const pushState = history.pushState;
-  history.pushState = function (...args) {
-    root.dataset.nav = 'forward';
-    return pushState.apply(this, args);
-  };
-  addEventListener('popstate', () => { root.dataset.nav = 'back'; });
 
   const back = (fallback) => {
     if (history.state?._index > 0) history.back();

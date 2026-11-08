@@ -6,7 +6,7 @@
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
 
-<LiveData @ref="_live" TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData @ref="_live" TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="This week" StuckAt="90">

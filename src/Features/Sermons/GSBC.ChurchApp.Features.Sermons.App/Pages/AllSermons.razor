@@ -2,7 +2,7 @@
 @implements IDisposable
 @inject SermonLibrary Library
 
-<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" Remember="@SermonLibrary.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>
         <Page Title="All sermons" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
             @foreach (IGrouping<string, Sermon> month in context.Value.Shelf.Sermons.Take(_shown).GroupBy(sermon => SermonText.Month(sermon.PreachedAt)))

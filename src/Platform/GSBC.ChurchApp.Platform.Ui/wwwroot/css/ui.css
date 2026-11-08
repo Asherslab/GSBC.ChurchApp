@@ -26,11 +26,7 @@
   scrollbar-width: none;
 }
 .page-scroll::-webkit-scrollbar { display: none; }
-.page { min-height: 100%; background: var(--page); animation: page-in 220ms var(--ease-out) both; }
-.page--push { animation-name: page-push; }
-:root[data-nav="back"] .page { animation-name: page-in; }
-@keyframes page-in { from { opacity: 0.4; } }
-@keyframes page-push { from { opacity: 0; transform: translateX(20px); } }
+.page { min-height: 100%; background: var(--page); }
 .page [id] { scroll-margin-top: calc(var(--sat) + 100px); }
 
 .topbar {
@@ -397,7 +393,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .segmented button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 8px; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink-2); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; transition: background 180ms, color 180ms; }
 .segmented button[aria-checked="true"] { background: var(--segment-on); color: var(--ink); box-shadow: var(--segment-shadow); }
 
-.skeleton { display: grid; gap: 0; }
+.skeleton { display: grid; gap: 0; animation: fade 160ms 150ms both; }
 .skeleton i { display: block; border-radius: 6px; background: var(--sand); animation: breathe 1.4s ease-in-out infinite; }
 .skeleton__row { display: flex; align-items: center; gap: 14px; min-height: var(--row); padding: 12px 0; border-bottom: 1px solid var(--line); }
 .skeleton__row .skeleton__tile { width: 34px; height: 34px; flex: none; border-radius: var(--radius-tile); }

@@ -16,6 +16,8 @@ public sealed class Inbox : IInboxCount, IDisposable
     public const string Route = "notifications";
     public const string MarkReadMethod = "/gsbc.notifications.Notifications/MarkRead";
     public static readonly IReadOnlyList<string> Feeds = [NotificationsFeeds.Inbox, NotificationsFeeds.Public];
+
+    public const string Remembered = "notifications.inbox";
     private const int MostShown = 100;
     private const string ReadOnThisPhone = "notifications.read";
 

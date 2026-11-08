@@ -6,7 +6,7 @@
 @inject TimeProvider Clock
 @inject Shell Shell
 
-<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Calendar" BackHref="@EventsPlaces.Calendars" BackLabel="Calendars">

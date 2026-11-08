@@ -33,6 +33,8 @@ public sealed class CalendarDiary(IServiceProvider services)
     public static readonly IReadOnlyList<string> Feeds =
         [EventsFeeds.Calendars, EventsFeeds.PrivateCalendars, EventsFeeds.Public, EventsFeeds.Private, EventsFeeds.Contacts];
 
+    public const string Remembered = "events.diary";
+
     public bool IsOnThisDevice => _feeds?.IsAvailable == true;
 
     public async Task<Diary> LoadAsync()

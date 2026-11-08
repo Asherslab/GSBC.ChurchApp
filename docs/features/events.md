@@ -526,6 +526,17 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   honours) and `touch-action: manipulation` stops double-tap zoom. Text already follows the phone's text size
   (`font: -apple-system-body` on the root, with every size in rem). The admin panel still zooms.
 
+## Decided while polishing again (2026-11-08, after the owner tried it on the phone)
+
+- **No flicker between screens, everywhere in the app** (owner: "take note of the flickering when i change between this
+  week and clicking on the entry. fix it"; the same on Home → a sermon). Two causes, both in the shared shell. Every page
+  faded in from 40% over the scroller's background, which is navy for its top half (for the overscroll), so the page's
+  content showed a grey veil for 220 ms; and every screen drew its loading placeholder first, because it read the
+  phone's store again when it opened, and then faded in a second time when the data came. Pages now appear at once (no
+  entry fade or slide; the edge swipe back stays), `LiveData` takes a `Remember` key so a screen opened again draws its
+  last answer at once and reloads in place (`RememberedValues`, forgotten on sign-in, sign-out and access changes), and
+  a skeleton only shows once loading has taken 150 ms. The calendar, Sermons, the inbox, Home and its tiles remember.
+
 ## What the owner sets up
 
 - **Nothing new in Cloudflare for dev.** For production, the zone's Browser Cache TTL set to *Respect existing headers*

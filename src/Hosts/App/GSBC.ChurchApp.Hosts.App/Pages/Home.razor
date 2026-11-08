@@ -4,22 +4,29 @@
 @implements IDisposable
 @inject TimeProvider Clock
 @inject ISurfaceLayout Layout
+@inject RememberedValues Remembered
 
 <Page Title="Good Shepherd" StuckAt="44">
     <HomeScreen Shown="_tiles" At="Clock.GetUtcNow().UtcDateTime" Live="true" />
 </Page>
 
 @code {
+    private const string RememberedTiles = "home.tiles";
     private IReadOnlyList<ArrangedSurface> _tiles = [];
 
     protected override async Task OnInitializedAsync()
     {
         Layout.Changed += OnLayoutChanged;
+        if (Remembered.TryGet(RememberedTiles, out IReadOnlyList<ArrangedSurface> remembered))
+            _tiles = remembered;
         await LoadTilesAsync();
     }
 
-    private async Task LoadTilesAsync() =>
+    private async Task LoadTilesAsync()
+    {
         _tiles = await Layout.ShownAsync(HubSurfaces.Area);
+        Remembered.Keep(RememberedTiles, _tiles);
+    }
 
     private void OnLayoutChanged() => InvokeAsync(async () =>
     {

@@ -838,7 +838,7 @@ The admin panel keeps the 17px root (there is no iOS body style on a desk) and t
 
 A single scrolling column per screen inside a fixed shell; the page scroller hides its scrollbar and contains overscroll. Content sits on a 20px side gutter. Sections are separated by 30px (22px for the first after the masthead), section heads by 12px, and stacks inside a section by 14px (22px for looser stacks). The page reserves the tab bar's height plus the bottom safe area plus 32px at its foot.
 
-Every screen is built from the same frame: a 48px top bar (plus the top safe area) laid over the masthead, the masthead itself pulled up under the bar so its navy reaches the top of the screen, then optional sticky section tabs that stop under the top bar, then sections. Tab roots carry the bell in the top bar; pushed detail pages carry a back button labelled with the parent and slide in 20px from the right.
+Every screen is built from the same frame: a 48px top bar (plus the top safe area) laid over the masthead, the masthead itself pulled up under the bar so its navy reaches the top of the screen, then optional sticky section tabs that stop under the top bar, then sections. Tab roots carry the bell in the top bar; pushed detail pages carry a back button labelled with the parent. A page appears at once, with no fade or slide: fading a page in let the masthead's navy, which sits behind every page for the overscroll, show through its content as a grey veil, and a page replaced by its loaded self played it twice.
 
 Rows are at least 56px tall, interactive targets at least 44px. The tab bar is a fixed five-column grid with 48px items above the bottom safe area. Section anchors keep a scroll margin of the top safe area plus 100px so a jumped-to heading lands below the sticky bars.
 
@@ -1172,7 +1172,7 @@ The tab bar arranged on the desk, in the same world as the Hub canvas: the draft
 - **Width:** the rail is 180 to 200px and the settings column at most 400px, so the phone, and its tab bar, are drawn as large as the window allows.
 
 ### Motion
-One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets, the section-tab underline and page entry. Tab roots fade in from 40% (220ms); pushed pages fade and slide 20px from the right. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. In the admin panel the sidebar's marker bar scales in over 240ms, hovers and fills ease over 160ms (120ms for table rows), and sort arrows fade over 160ms. Week-rail days fill over 160ms and month-grid days over 140ms; the rich text toolbar's buttons ease their fill over 140ms. Going back fades rather than slides, and a swipe from the left edge of a pushed page drags it away and goes back. On the Hub canvas tiles glide to new places over 220ms on `cubic-bezier(0.2, 0.8, 0.2, 1)` (a curve of their own), and a dropped tile settles on a gentle `linear()` spring. Reduced motion collapses every animation and transition to 1ms, in the app and the admin panel alike; on the Hub canvas the drag still works but tiles move without gliding or lifting.
+One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets and the section-tab underline. Pages appear at once (no entry fade or slide), and a screen opened again draws the data it last showed at once (`LiveData`'s `Remember`), refreshing it in place. Presses scale (0.94 to 0.98). The live dot pulses on a 1.6s cycle. A paged sheet slides a new page 14px in from the side it comes from (260ms), and the current page dot widens over 240ms. In the admin panel the sidebar's marker bar scales in over 240ms, hovers and fills ease over 160ms (120ms for table rows), and sort arrows fade over 160ms. Week-rail days fill over 160ms and month-grid days over 140ms; the rich text toolbar's buttons ease their fill over 140ms. A swipe from the left edge of a pushed page drags it away and goes back. On the Hub canvas tiles glide to new places over 220ms on `cubic-bezier(0.2, 0.8, 0.2, 1)` (a curve of their own), and a dropped tile settles on a gentle `linear()` spring. Reduced motion collapses every animation and transition to 1ms, in the app and the admin panel alike; on the Hub canvas the drag still works but tiles move without gliding or lifting.
 
 ## Implementation
 
@@ -1194,7 +1194,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 
 | Design | Component | Notes |
 |---|---|---|
-| Screen frame, top bar, back | `Page` | `BackHref` makes it a pushed page (slide in, back button, edge swipe); `OnBack` gives the back button its own action; `Actions` fills the top bar's end |
+| Screen frame, top bar, back | `Page` | `BackHref` makes it a pushed page (back button, edge swipe); `OnBack` gives the back button its own action; `Actions` fills the top bar's end |
 | Masthead | `Masthead` | Title, note, a slot for the live element, `Beside` for a control on the title's row, and a `Class` |
 | Section and section head | `Section` | Title, lead, a "see all" link, a trailing slot |
 | Callout, picture card, navy card | `Card` | `CardTone.Callout`, `Raised` (only where a picture leads, via `Media`), `Masthead` |
@@ -1211,7 +1211,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Buttons | `Button` | Primary, Quiet, On masthead, Ghost on masthead, Live, Danger; block, small, icon-only, busy |
 | Fields | `TextField`, `SelectField`, `ToggleRow`, `Segmented` | Labels tied to inputs; hint and problem lines are described-by; a `SegmentOption` can carry a `Count` |
 | Copy a value | `CopyField` | Label, read-only value, Copy that turns to Copied, a polite status line; `ButtonOnly` is the copy button alone |
-| Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes |
+| Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes; `Remember` draws the last value at once when the screen is opened again (forgotten on sign-in, sign-out and access changes) |
 | Loading | `Skeleton` | Rows, lines or a block, with a status for screen readers |
 | Tab bar and More | `AppTabBar`, `MoreList`, `PhoneTabs` | The phone's tab bar draws the first four published tabs the person sees (`TabBar.For`), then More; More lists every module entry that isn't a tab now. Tabs are placements in the Tab bar area, chosen by staff in a draft |
 | Admin sidebar | `ModuleNav` | Grouped by `NavEntry.Group` (`NavGroups`: Content, People, The app, You, with You always last), with `Counts` for the orange capsules |

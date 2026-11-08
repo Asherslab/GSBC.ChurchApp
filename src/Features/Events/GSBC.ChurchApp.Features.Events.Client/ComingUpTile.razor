@@ -6,7 +6,7 @@
 @inject TimeProvider Clock
 @inject IServiceProvider Services
 
-<LiveData @ref="_live" TValue="IReadOnlyList<EventOccurrence>" Load="LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData @ref="_live" TValue="IReadOnlyList<EventOccurrence>" Load="LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@($"events.coming-up.{Entry.Placement?.Id}.{Wanted}")">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>@Drawn([])</Loading>
     <Failed>@Drawn([])</Failed>

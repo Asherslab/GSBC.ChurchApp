@@ -5,7 +5,7 @@
 @inject Shell Shell
 @inject IAccess Access
 
-<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Calendars" BackHref="@EventsPlaces.Week" BackLabel="This week">

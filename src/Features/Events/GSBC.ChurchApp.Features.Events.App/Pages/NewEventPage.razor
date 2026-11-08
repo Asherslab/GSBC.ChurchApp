@@ -3,7 +3,7 @@
 @inject NavigationManager Navigation
 @inject Shell Shell
 
-<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>
         <EventEditor Target="EditTarget.New(Calendar ?? context.Value.Calendars.FirstOrDefault()?.Id ?? string.Empty)" Calendars="context.Value.Calendars"
                      Closed="() => Shell.BackAsync(EventsPlaces.Week).AsTask()" Saved="Opened" />
