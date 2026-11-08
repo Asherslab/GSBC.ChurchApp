@@ -131,8 +131,11 @@ events, specials and breaks, and some arrive before their details ("full details
 
     **Built as a real thing** (owner, 2026-11-08: "for weekly digest, build an actual thing, real. doesn't have to be
     sendable, but a real example"), on real calendar data, following the mocks: the admin panel's *Weekly digest*, *Copy
-    for email*, *Send to the app* and the app's *What's next*. *Send to the app* doesn't notify anyone; *Send to my phone*
-    is a test to yourself. See *Decided while building (the weekly digest)* below.
+    for email*, *Send to the app* and the app's *What's next*. See *Decided while building (the weekly digest)* below.
+
+    **The owner's answers (2026-11-08):** *Copy for email* leaves out things from private calendars by default ("yes"),
+    with a way to include them; *Send to the app* also notifies everyone who'll see it ("yes"), once per digest unless
+    staff choose to notify again.
 
 ### What an event carries (owner, 2026-11-07)
 
@@ -697,23 +700,31 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   when line, words, place and contacts' names; its title opens the event and *Add to calendar* saves it when the phone has
   it; *Register* opens the link. A date that's not on is a sand callout. Nothing sent, or everything passed: an empty state
   that opens the calendar. It's a place in Places in the app, so Home or an announcement can link to it.
-- **No notification to everyone.** The notification couldn't be tested without reaching real people (dev's phones are the
-  owner's and testers'), and telling the church is a conscious act (decision 31): an announcement can link to What's next.
-  *Send to my phone* raises `events.digest.out` to the caller alone, marked Test, opening `/whats-next`; it needs the digest
-  sent first, since it opens what the app has. The kind is declared for holders of `events.digest` until a church-wide
-  send is decided. Its words count and name only the items for everyone ("4 things coming up: Kids camp, No Impact
-  Kids and more."), so the same notification could go to the church without naming a private calendar's events.
+- **Send to the app notifies everyone who'll see it** (owner, 2026-11-08: "yes"; first built without a notification,
+  since it couldn't be tested without reaching real people). One notification per person, `events.digest.out` (*What's
+  next, the weekly digest*, Calendar, on by default and anyone can turn it off), opening `/whats-next`, raised with
+  `RaiseOneOfAsync` most specific first: holders of each role a private item's calendar is for, then everyone signed in
+  (when an item is for anyone signed in), then everyone, signed-out phones included through the public notifications
+  (when an item is for everyone). Nobody is notified who would see nothing. Each counts and names what that audience will
+  see ("6 things coming up: …" signed in, "4 things coming up: Kids camp, No Impact Kids and more." for everyone); they
+  share the subject `events/digest/{monday}`, so a phone shows one. Not urgent, so quiet hours hold the buzz until
+  morning. **Once per digest:** the fortnight records when people were notified (`NotifiedAt`); sending again after a
+  change doesn't notify unless staff turn on *Notify people again*. The button says what it does: *Send to the app and
+  notify people*, then *Send again without notifying* or *Send again and notify people*. *Send to my phone* still raises
+  a test to the caller alone, naming only the items for everyone. Checked on a backend copy with every device row
+  removed: the first send raised the signed-in and everyone notifications, the second none, and nothing was delivered.
 - **Copy for email** puts the email on the clipboard as HTML (and plain text), so pasting into an email editor keeps the
   headings, pictures and buttons. Pictures are their public media addresses; a private picture is left out. *See all
   events* is the app host's shared link to This week (`/open/week`), which opens the app or says how to get it.
-  **The email doesn't know who it goes to,** so it keeps every ticked item, a private calendar's too (the AGM for
-  Church members); under *Copy for email* the page says how many it includes and for whom, so the office can untick them
-  when the email goes to everyone. Whether to leave them out by default is in *Open*.
+  **Private calendars' things are left out of the email by default** (owner, 2026-11-08: "yes"): the email doesn't know
+  who it goes to. Under *Copy for email* the page says how many it leaves out and for whom ("The email leaves out 2 things
+  only for Kids team and Church members."), with a switch, *Put private calendars' things in the email*, for an email to
+  the people they're for. The switch isn't saved: each copy starts without them.
 - **The admin page** follows the approved mock in Platform.Ui's `SplitView`: the list (grip, tick, picture, label, title
   with pills: *Reworded*, *New on the calendar*, *Needs details*, *Register link*, *Only for Kids team*; place and contact;
   the when line and time) and, on the right, the chosen item's words, *In the app | Email*, the preview, *Copy for email*
   and *Send to the app* in a footer that stays in view, with failures shown beside it. A reworded field has an aqua ring.
-  Once the app has it as it is, the button reads *Sent to the app*; a change makes it *Send again*. The email preview is
+  Once the app has it as it is, the button reads *Sent to the app*. The email preview is
   the email at its real width, scaled to the column. It saves as you change it. Arrow buttons move a row too, for the
   keyboard. Finish-reviewed (verdict: ship after fixes; the fixes are in).
 
@@ -731,9 +742,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   production for `public, max-age=900` on the public links and `private, no-store` with no `cf-cache-status: HIT` on
   a secret link.
 - **The weekly digest** (decision 18): built; to show staff. Still to decide: which tool sends *What's next* today
-  (Pinned for later), whether *Send to the app* should also tell everyone (an announcement can link to What's next
-  meanwhile), who gets *Digest maker*, and whether *Copy for email* should leave out items from calendars that aren't for
-  everyone by default (today it keeps them and says so).
+  (Pinned for later) and who gets *Digest maker*.
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.

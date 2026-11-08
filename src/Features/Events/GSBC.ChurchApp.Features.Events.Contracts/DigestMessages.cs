@@ -111,6 +111,7 @@ public sealed class DigestDraft
     [ProtoMember(8)] public DateTime? SentAt { get; set; }
     [ProtoMember(9)] public bool SentAsItIs { get; set; }
     [ProtoMember(10)] public DigestSent? LastSent { get; set; }
+    [ProtoMember(11)] public DateTime? NotifiedAt { get; set; }
 }
 
 [ProtoContract]
@@ -142,6 +143,7 @@ public sealed class DigestSave
 public sealed class DigestRef
 {
     [ProtoMember(1)] public string Start { get; set; } = "";
+    [ProtoMember(2)] public bool NotifyAgain { get; set; }
 }
 
 [ProtoContract]

@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
@@ -122,6 +123,41 @@ public sealed class DigestTests
         Assert.Equal(3, rows.Count(row => row.Feed == EventsFeeds.Digest));
         Assert.Equal("2 things coming up: Calendar words and Cleaning bee.",
             Digests.Notification(new EventsBook([_services, _members], [], [], [], [], [], []), digest.Sent, NotificationAudience.SignedIn).Body);
+    }
+
+    [Fact]
+    public void SendingNotifiesEachPersonOnceWithWhatTheyWillSeeAndNobodyForWhatTheyCannot()
+    {
+        Guid membersRole = CalendarAudiences.Of(_members.Audience).RoleIds.Single();
+        CalendarRecord kidsTeam = Calendar("Kids team", Audience.SignedIn);
+        DigestItem agm = Item("event:agm", "2026-11-12");
+        agm.CalendarIds = [_members.Id.ToString()];
+        DigestItem helpers = Item("event:helpers", "2026-11-11");
+        helpers.CalendarIds = [kidsTeam.Id.ToString()];
+        DigestItem camp = Item("event:camp", "2026-11-13");
+        camp.CalendarIds = [_kids.Id.ToString()];
+        EventsBook book = new([_kids, _members, kidsTeam], [], [], [], [], [], []);
+
+        List<Notification> everyone = Digests.ForEveryoneWhoSeesIt(book, Digests.ForApp([agm, helpers, camp], Digests.EndOf(Start, 2)), Start);
+        List<Notification> membersOnly = Digests.ForEveryoneWhoSeesIt(book, Digests.ForApp([agm], Digests.EndOf(Start, 2)), Start);
+
+        Assert.Equal([NotificationAudience.Holding(RoleMembership.Of(membersRole)), NotificationAudience.SignedIn, NotificationAudience.Everyone], everyone.Select(notification => notification.Audience));
+        Assert.Equal(["3 things coming up: Calendar words, Calendar words and more.", "2 things coming up: Calendar words and Calendar words.", "One thing coming up: Calendar words."],
+            everyone.Select(notification => notification.Body));
+        Assert.Single(everyone.Select(notification => notification.Subject).Distinct());
+        Assert.Equal(NotificationAudience.Holding(RoleMembership.Of(membersRole)), Assert.Single(membersOnly).Audience);
+    }
+
+    [Fact]
+    public void ADigestNotifiesOnceUnlessStaffChooseToNotifyAgain()
+    {
+        DigestRecord digest = new() { Start = Start };
+        Assert.True(Digests.Notifies(digest, again: false));
+
+        digest.NotifiedAt = Now;
+
+        Assert.False(Digests.Notifies(digest, again: false));
+        Assert.True(Digests.Notifies(digest, again: true));
     }
 
     private static List<DigestItem> Candidates(EventsBook book) =>
