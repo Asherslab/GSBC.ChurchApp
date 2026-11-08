@@ -1,6 +1,8 @@
 @using System.Globalization
 
 <div class="repeat-editor">
+@if (Shows(RepeatPart.Pattern))
+{
     <SelectField Label="Repeats" Options="Kinds" Value="@Draft.Pattern.Repeats.ToString()" ValueChanged="Choose" />
     @switch (Draft.Pattern.Repeats)
     {
@@ -43,8 +45,14 @@
             <TextField Label="Until (optional)" Type="date" Value="@Draft.Pattern.EndDate" Min="@Draft.Pattern.StartDate" ValueChanged="value => Draft.Pattern.EndDate = value" />
         </div>
     }
+}
+@if (Shows(RepeatPart.Breaks))
+{
+    @if (Part == RepeatPart.All)
+    {
+        <h3 class="repeat-editor__head">Breaks</h3>
+    }
 
-    <h3 class="repeat-editor__head">Breaks</h3>
     @if (Breaks.Breaks.Count > 0)
     {
         <div class="field">
@@ -65,8 +73,13 @@
         </div>
     }
     <button type="button" class="add-row" @onclick="() => Draft.OwnBreaks.Add(new BreakInfo())"><Icon Name="plus" Size="IconSize.Small" />Add a break just for this</button>
-
-    <h3 class="repeat-editor__head">What each date needs</h3>
+}
+@if (Shows(RepeatPart.Needs))
+{
+    @if (Part == RepeatPart.All)
+    {
+        <h3 class="repeat-editor__head">What each date needs</h3>
+    }
     <ToggleChips TValue="string" Label="What each date needs" Chips="NeedChips" Toggled="ToggleNeed" Class="toggle-chips--wrap" />
     <span class="field__hint">@NeedsHint</span>
     @if (Draft.Needs.Count > 0)
@@ -76,6 +89,7 @@
             <ToggleChips TValue="int" Label="Days before to remind" Chips="ReminderChips" Toggled="ToggleReminder" Class="toggle-chips--wrap" />
         </div>
     }
+}
 </div>
 
 @code {
@@ -99,6 +113,9 @@
 
     [Parameter, EditorRequired] public required EventDraft Draft { get; set; }
     [Parameter] public BreakList Breaks { get; set; } = new();
+    [Parameter] public RepeatPart Part { get; set; } = RepeatPart.All;
+
+    private bool Shows(RepeatPart part) => Part == RepeatPart.All || Part == part;
 
     private IReadOnlyList<ToggleChip<DayOfWeek>> DayChips =>
         Week.Select(day => new ToggleChip<DayOfWeek>(day, English.DateTimeFormat.GetAbbreviatedDayName(day), Draft.Pattern.Days.Contains(day))).ToList();

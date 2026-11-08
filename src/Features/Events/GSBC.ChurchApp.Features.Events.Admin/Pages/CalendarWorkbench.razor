@@ -46,6 +46,7 @@
     private DateOnly? _monthFirst;
     private DateOnly? _monthDay;
     private int _weeks = FirstWeeks;
+    private int _datesVersion;
     private HashSet<string>? _hidden;
     private Chosen? _chosen;
     private string? _problem;
@@ -170,7 +171,7 @@
         @<div class="calendar-regular">
             <button type="button" class="calendar-regular__back" @onclick="BackToRegularList"><Icon Name="chevron-left" Size="IconSize.Small" />Regular events</button>
             <RegularEventEditor @key="@(chosen.RegularEventId ?? $"new-{chosen.CalendarId}")" CalendarId="@chosen.CalendarId" RegularEventId="@chosen.RegularEventId" InPanel="true"
-                                SelectedDate="@chosen.Date?.Date" Saved="id => RegularSavedAsync(chosen, id)" Closed="BackToRegularList"
+                                SelectedDate="@chosen.Date?.Date" DatesVersion="_datesVersion" Saved="id => RegularSavedAsync(chosen, id)" Closed="BackToRegularList"
                                 DatePicked="date => _chosen = chosen with { Date = date }" />
         </div>;
 
@@ -283,15 +284,18 @@
             _ => selected,
         };
         string title = selected?.Settings.Calendar.Name ?? "All your calendars";
-        string? lead = selected is { Settings.Calendar.ReadOnly: true } ? "Copied from its iCal address, so its events are changed there." : null;
+        string? lead = selected is { Settings.Calendar.ReadOnly: true } ? "Copied from its iCal address, so its events are changed there."
+            : _view == View.Regular && selected is not null ? "Things on every week or month, such as services and groups. Choose one to change every date, or a date in it to change only that date."
+            : null;
         RenderFragment actions = @<div class="calendar-main__actions">
             <Segmented TValue="View" Label="What to show" Options="@(selected is { Settings.Calendar.ReadOnly: false } ? CalendarViews : AllViews)" Value="_view" ValueChanged="ShowViewAsync" />
             @if (into is not null)
             {
-                <div class="new-event-menu">
-                    <Button Icon="plus" OnClick="() => _newMenu = !_newMenu">New event</Button>
+                <div class="new-event-menu" @onkeydown="CloseMenuOnEscape">
+                    <Button Icon="plus" Expanded="_newMenu" OnClick="() => _newMenu = !_newMenu">New event</Button>
                     @if (_newMenu)
                     {
+                        <button type="button" class="new-event-menu__away" aria-label="Close" tabindex="-1" @onclick="() => _newMenu = false"></button>
                         <div class="new-event-menu__panel">
                             <OnceOrRegularly Once="() => NewOnce(into)" Regularly="() => NewRegular(into)" />
                         </div>
@@ -493,7 +497,7 @@
                                           Saved="SavedAsync" Closed="CloseDetail" OpenRegular="() => Choose(new ChosenRegular(chosen.CalendarId, chosen.RegularEventId))" />,
         ChosenRegular { Date: { } date } chosen when EventDates.Parse(date.Date) is { } day =>
             @<DateEditor @key="date.OccurrenceId" CalendarId="@chosen.CalendarId" RegularEventId="@(chosen.RegularEventId ?? string.Empty)" Date="day" InPanel="true"
-                         Saved="_ => ReloadAsync()" Closed="() => _chosen = chosen with { Date = null }" OpenRegular="() => _chosen = chosen with { Date = null }" />,
+                         Saved="_ => DateSavedAsync()" Closed="() => _chosen = chosen with { Date = null }" OpenRegular="() => _chosen = chosen with { Date = null }" />,
         NewEvent fresh => @<EventEditor @key="@($"new-{fresh.CalendarId}")" Target="EditTarget.New(fresh.CalendarId)" NewOn="fresh.On" InPanel="true" Saved="SavedNewAsync" Closed="CloseDetail" />,
         ChosenCalendar calendar => @<CalendarSettingsPanel @key="@(calendar.Calendar?.Settings.Calendar.Id ?? "new")" Calendar="calendar.Calendar" Saved="ReloadAsync" Closed="CloseDetail" />,
         ChosenBreak chosen => @<BreakPanel @key="@(chosen.Break?.Id ?? "new")" Break="chosen.Break" RegularEvents="RegularTitles(view)" Saved="ReloadAsync" Closed="CloseDetail" />,
@@ -515,6 +519,12 @@
         _chosen = chosen;
     }
 
+    private void CloseMenuOnEscape(KeyboardEventArgs key)
+    {
+        if (key.Key == "Escape")
+            _newMenu = false;
+    }
+
     private void NewOnce(DeskCalendar into) => Choose(new NewEvent(into.Settings.Calendar.Id, ShowingMonth ? _monthDay : null));
 
     private void NewRegular(DeskCalendar into) => Choose(new ChosenRegular(into.Settings.Calendar.Id, null));
@@ -524,6 +534,12 @@
         _chosen = null;
         if (ShownCalendarKey is not null)
             await ShowViewAsync(View.Regular);
+    }
+
+    private async Task DateSavedAsync()
+    {
+        _datesVersion++;
+        await ReloadAsync();
     }
 
     private async Task RegularSavedAsync(ChosenRegular chosen, string regularEventId)

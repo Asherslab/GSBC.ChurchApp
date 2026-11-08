@@ -29,9 +29,15 @@
 @if (Dates.Count > 0)
 {
     <p class="date-strip__key">
-        @foreach (string line in KeyLines)
+        @foreach ((string? swatch, string line) in KeyLines)
         {
-            <span>@line</span>
+            <span>
+                @if (swatch is not null)
+                {
+                    <i class="date-strip__swatch date-strip__swatch--@swatch" aria-hidden="true"></i>
+                }
+                @line
+            </span>
         }
     </p>
 }
@@ -47,16 +53,16 @@
     [Parameter] public string Empty { get; set; } = "Its dates show here once it's saved.";
     [Parameter] public EventCallback<RegularDate> Picked { get; set; }
 
-    private IEnumerable<string> KeyLines
+    private IEnumerable<(string? Swatch, string Line)> KeyLines
     {
         get
         {
             List<RegularDate> shown = Dates.Take(_shown).ToList();
             if (shown.FirstOrDefault(date => date.Changed && !date.NotOn) is { } changed)
-                yield return $"{Short(changed)} is changed: {EventWords.Join(changed.Title, EventDates.Times(changed.StartMinute, changed.EndMinute))}";
+                yield return ("changed", $"{Short(changed)} is changed: {EventWords.Join(changed.Title, EventDates.Times(changed.StartMinute, changed.EndMinute))}");
             if (shown.FirstOrDefault(date => date.NotOn) is { } off)
-                yield return off.NotOnReason.Length > 0 ? $"{Short(off)} isn't on: {off.NotOnReason}" : $"{Short(off)} isn't on";
-            yield return "Choose a date to change only that date";
+                yield return ("off", off.NotOnReason is { Length: > 0 } reason and not EventDraft.NotOnNote ? $"{Short(off)} isn't on: {reason}" : $"{Short(off)} isn't on");
+            yield return (null, "Choose a date to change only that date");
         }
     }
 
@@ -69,7 +75,7 @@
 
     private static string Spoken(RegularDate date, DateOnly day) => EventWords.Join(
         EventWords.LongDate(day),
-        date.NotOn ? (date.NotOnReason.Length > 0 ? $"not on, {date.NotOnReason}" : "not on") : null,
+        date.NotOn ? (date.NotOnReason is { Length: > 0 } reason and not EventDraft.NotOnNote ? $"not on, {reason}" : "not on") : null,
         date.Changed && !date.NotOn ? $"changed: {date.Title}" : null);
 
     private static string Short(RegularDate date) => EventDates.Parse(date.Date) is { } day ? EventWords.Date(day) : date.Date;

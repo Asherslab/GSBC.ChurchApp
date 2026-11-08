@@ -6,7 +6,7 @@
 }
 else
 {
-    <button type="@Type" class="@Classes" disabled="@(Disabled || Busy)" aria-busy="@(Busy ? "true" : null)" aria-label="@AriaLabel" title="@Tooltip" @onclick="ClickAsync">@Body</button>
+    <button type="@Type" class="@Classes" disabled="@(Disabled || Busy)" aria-busy="@(Busy ? "true" : null)" aria-expanded="@(Expanded is { } open ? (open ? "true" : "false") : null)" aria-label="@AriaLabel" title="@Tooltip" @onclick="ClickAsync">@Body</button>
 }
 
 @code {
@@ -20,6 +20,7 @@ else
     [Parameter] public bool Busy { get; set; }
     [Parameter] public string? AriaLabel { get; set; }
     [Parameter] public string? Tooltip { get; set; }
+    [Parameter] public bool? Expanded { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 

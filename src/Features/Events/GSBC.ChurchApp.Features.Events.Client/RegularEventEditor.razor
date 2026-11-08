@@ -22,6 +22,31 @@ else
     <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
 </Sheet>
 
+<Sheet Open="_sheet == EditorSheet.Repeats" OpenChanged="SheetToggled" Title="How it repeats">
+    <ChildContent>@if (_draft is { } draft) { <RepeatEditor Draft="draft" Breaks="_breaks" Part="RepeatPart.Pattern" /> }</ChildContent>
+    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
+</Sheet>
+
+<Sheet Open="_sheet == EditorSheet.Breaks" OpenChanged="SheetToggled" Title="Breaks" Lead="Dates it isn't on. People see the first two weeks of a break as not on.">
+    <ChildContent>@if (_draft is { } draft) { <RepeatEditor Draft="draft" Breaks="_breaks" Part="RepeatPart.Breaks" /> }</ChildContent>
+    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
+</Sheet>
+
+<Sheet Open="_sheet == EditorSheet.Needs" OpenChanged="SheetToggled" Title="What each date needs">
+    <ChildContent>@if (_draft is { } draft) { <RepeatEditor Draft="draft" Breaks="_breaks" Part="RepeatPart.Needs" /> }</ChildContent>
+    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
+</Sheet>
+
+<Sheet Open="_sheet == EditorSheet.AlsoOn" OpenChanged="SheetToggled" Title="Also shown on">
+    <ChildContent>@if (_draft is { } draft) { <ShownOnEditor Draft="draft" Desk="_desk" /> }</ChildContent>
+    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
+</Sheet>
+
+<Sheet Open="_sheet == EditorSheet.Showing" OpenChanged="SheetToggled" Title="Shown in the app">
+    <ChildContent>@if (_draft is { } draft) { <ShowingEditor Draft="draft" MustAsk="MustAsk" CalendarName="@CalendarName" /> }</ChildContent>
+    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
+</Sheet>
+
 <Sheet Open="_sheet == EditorSheet.KeepOwn" OpenChanged="SheetToggled" Title="Some dates keep their own" Lead="These dates were changed on their own, so they keep what they have:">
     <ChildContent>
         <ul class="kept-list">
@@ -49,7 +74,7 @@ else
 </Sheet>
 
 @code {
-    private enum EditorSheet { None, Title, KeepOwn, Tell, Delete }
+    private enum EditorSheet { None, Title, Repeats, Breaks, Needs, AlsoOn, Showing, KeepOwn, Tell, Delete }
 
     private EventDraft? _draft;
     private IReadOnlyList<RegularDate> _dates = [];
@@ -65,12 +90,14 @@ else
     private string _tellBody = "";
     private string? _done;
     private (string, string?)? _loadedFor;
+    private int _datesVersion;
 
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
     [Parameter] public string? RegularEventId { get; set; }
     [Parameter] public bool InPanel { get; set; }
     [Parameter] public string? SelectedDate { get; set; }
     [Parameter] public string BackLabel { get; set; } = "Back";
+    [Parameter] public int DatesVersion { get; set; }
     [Parameter] public EventCallback Closed { get; set; }
     [Parameter] public EventCallback<string> Saved { get; set; }
     [Parameter] public EventCallback<RegularDate> DatePicked { get; set; }
@@ -94,7 +121,12 @@ else
     protected override async Task OnParametersSetAsync()
     {
         if (_draft is not null && _loadedFor == (CalendarId, RegularEventId))
+        {
+            if (DatesVersion != _datesVersion)
+                await RefreshDatesAsync();
             return;
+        }
+        _datesVersion = DatesVersion;
         _loadedFor = (CalendarId, RegularEventId);
         _draft = null;
         _loadFailure = null;
@@ -109,12 +141,28 @@ else
                 _dates = [];
                 if (MustAsk)
                     _draft.Showing = Showing.SavedForLater;
+                _sheet = EditorSheet.Title;
             }
             _ = LoadSideAsync();
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
             _loadFailure = exception;
+        }
+    }
+
+    private async Task RefreshDatesAsync()
+    {
+        _datesVersion = DatesVersion;
+        if (_draft?.RegularEventId is not { } regularId)
+            return;
+        try
+        {
+            _dates = (await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = _draft.CalendarId, RegularEventId = regularId })).Dates;
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
         }
     }
 
@@ -158,6 +206,17 @@ else
         else
         {
             <div class="regular-head">
+                @if (InPanel)
+                {
+                    <div class="regular-head__actions">
+                        <span class="regular-head__state">@ShowingWords(draft)</span>
+                        @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
+                        {
+                            <Button Variant="ButtonVariant.GhostOnMasthead" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
+                        }
+                        @SaveButton(draft)
+                    </div>
+                }
                 <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@Fields.Title" Compact="InPanel" Editing="true" OnTitle="() => OpenAsync(EditorSheet.Title)">
                     <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
                 </EventHead>
@@ -168,6 +227,10 @@ else
                 @if (_done is not null)
                 {
                     <p class="event-saved regular-body__wide" role="status"><Icon Name="check" Size="IconSize.Small" />@_done</p>
+                }
+                @if (InPanel && _problem is not null)
+                {
+                    <div class="regular-body__wide"><Notice Tone="NoticeTone.Warning" Text="@_problem" /></div>
                 }
                 <section class="regular-col" aria-labelledby="regular-every">
                     <h2 class="regular-col__head" id="regular-every">Every date</h2>
@@ -182,30 +245,78 @@ else
                 <section class="regular-col" aria-labelledby="regular-runs">
                     <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
                     <p class="regular-col__lead">How it repeats, its breaks, and what each date needs before it's on.</p>
-                    <RepeatEditor Draft="draft" Breaks="_breaks" />
-                    <h3 class="repeat-editor__head">Where it shows</h3>
-                    <ShownOnEditor Draft="draft" Desk="_desk" />
-                    <ShowingEditor Draft="draft" MustAsk="MustAsk" CalendarName="@CalendarName" />
+                    <div class="list regular-runs">
+                        <ListRow Title="Repeats" Trailing="@RepeatsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Repeats)" />
+                        <ListRow Title="Breaks" Trailing="@BreaksLine(draft)" OnClick="() => OpenAsync(EditorSheet.Breaks)" />
+                        <ListRow Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
+                        <ListRow Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
+                        <ListRow Title="Shown in the app" Trailing="@ShowingWords(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
+                    </div>
+                    @if (InPanel && !draft.IsNew)
+                    {
+                        <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>
+                    }
                 </section>
             </div>
-            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
-                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                <div class="editor-foot__actions">
-                    <Button Block="true" Busy="_saving" Disabled="@(Fields.Title.Trim().Length == 0)" OnClick="() => SaveAsync(keepOwnConfirmed: false)">
-                        @(draft.IsNew ? "Add the regular event" : "Save every date")
-                    </Button>
+            @if (!InPanel)
+            {
+                <div class="editor-foot">
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                    <div class="editor-foot__actions">@SaveButton(draft)</div>
+                    @if (Fields.Title.Trim().Length == 0)
+                    {
+                        <span class="field__hint">Give it a title to add it.</span>
+                    }
+                    @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
+                    }
+                    @if (!draft.IsNew)
+                    {
+                        <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>
+                    }
                 </div>
-                @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
-                {
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
-                }
-                @if (!draft.IsNew)
-                {
-                    <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>
-                }
-            </div>
+            }
         }
     </text>;
+
+    private RenderFragment SaveButton(EventDraft draft) =>
+        @<Button Block="@(!InPanel)" Variant="@(InPanel ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="_saving"
+                 Disabled="@(Fields.Title.Trim().Length == 0)" Tooltip="@(Fields.Title.Trim().Length == 0 ? "Give it a title to add it" : null)"
+                 OnClick="() => SaveAsync(keepOwnConfirmed: false)">@(draft.IsNew ? "Add the regular event" : "Save every date")</Button>;
+
+    private static string RepeatsLine(EventDraft draft)
+    {
+        string from = EventDates.Parse(draft.Pattern.StartDate) is { } start && draft.Pattern.Repeats != Repeats.OnDates ? $"from {EventWords.Date(start)} {start.Year}" : "";
+        string until = EventDates.Parse(draft.Pattern.EndDate) is { } end ? $"until {EventWords.Date(end)} {end.Year}" : "";
+        return EventWords.Join(Capital(draft.RepeatsNow), from, until);
+    }
+
+    private string BreaksLine(EventDraft draft)
+    {
+        List<string> names = _breaks.Breaks.Where(entry => draft.BreakIds.Contains(entry.Id)).Select(entry => entry.Name)
+            .Concat(draft.OwnBreaks.Select(entry => entry.Name).Where(name => name.Length > 0)).ToList();
+        return names.Count == 0 ? "None" : string.Join(", ", names);
+    }
+
+    private static string NeedsLine(EventDraft draft) => draft.Needs.Count == 0
+        ? "Nothing"
+        : EventWords.Join(Capital(string.Join(", ", draft.Needs.Select(EventWords.Need))),
+            draft.RemindDaysBefore.Count == 0 ? "nobody reminded" : $"reminded {string.Join(" and ", draft.RemindDaysBefore.OrderDescending())} days before");
+
+    private string AlsoOnLine(EventDraft draft)
+    {
+        List<string> names = draft.AlsoOn.Select(showing => _desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == showing.CalendarId)?.Settings.Calendar.Name)
+            .OfType<string>().ToList();
+        return names.Count == 0 ? $"Only {CalendarName}" : string.Join(", ", names);
+    }
+
+    private static string ShowingWords(EventDraft draft) => draft.Showing switch
+    {
+        Showing.Shown => "Shown",
+        Showing.ShownFrom when draft.ShowFrom is { } from => $"Shown from {EventWords.Date(GSBC.ChurchApp.Platform.Common.ChurchTime.DayOf(from))}",
+        _ => "Not shown yet",
+    };
 
     private static string Pattern(EventDraft draft) => EventWords.Join(Capital(draft.RepeatsNow), EventDates.Times(draft.Every.StartMinute, draft.Every.EndMinute));
 

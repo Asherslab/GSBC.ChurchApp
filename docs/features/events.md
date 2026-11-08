@@ -575,6 +575,12 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
 - **The admin panel:** a picked calendar's middle pane has *Agenda | Month | Regular events*. A regular event opens
   across the middle and right panes; choosing a date in its strip opens that date on the right beside it. A date chosen
   in the agenda opens on the right, and *Edit the regular event ›* opens the regular event.
+- **After the finish review:** *How it runs* is rows that say their value (Repeats, Breaks, Each date needs, Also shown
+  on, Shown in the app), each opening a sheet with just that part, as the title does. In the admin panel *Save every
+  date* sits at the right of the navy head with whether it's shown; on the phone it stays in the foot bar. The strip is
+  one row that scrolls (a thin scrollbar with a mouse), its key shows the changed dot and the not-on ring, and it
+  updates when a date beside it is saved. A date's head says "· this date only". A new regular event opens on its
+  title.
 - **A date in a break** opens like any other but says it's in the break and that breaks are changed on the regular
   event.
 - **Checked** with a backend of its own beside the owner's (`Dev__PortOffset=200`, the main database copied in with

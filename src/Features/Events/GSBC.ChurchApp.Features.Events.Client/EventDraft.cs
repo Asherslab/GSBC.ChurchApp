@@ -31,6 +31,7 @@ public sealed class EventDraft
 {
     public const int DefaultStart = 10 * 60;
     public const int DefaultLength = 60;
+    public const string NotOnNote = "Not on this date";
 
     public string CalendarId { get; set; } = "";
     public string? EventId { get; private init; }
@@ -212,7 +213,7 @@ public sealed class EventDraft
         StartMinute = ThisDate.StartMinute,
         EndMinute = ThisDate.StartMinute is null ? null : ThisDate.EndMinute,
         NotOn = notOn,
-        NotOnNote = notOn ? "Not on this date" : "",
+        NotOnNote = notOn ? NotOnNote : "",
     };
 
     public string OccurrenceId(RegularEventDetail? saved = null)
