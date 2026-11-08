@@ -1,8 +1,9 @@
 # The weekly digest: proof of concept
 
-A quick, throwaway proof of concept to show church staff what "send the digest" from the calendar could look
-like (events.md, decision 18). Static HTML only, with made-up events, people and places; no product code. It may
-be scrapped quickly, so nothing here is settled design.
+The approved direction for the weekly digest (events.md, decision 18): first made on 2026-11-08 as a quick proof of
+concept to show church staff, then built as real code from these mocks (owner, 2026-11-08: "build an actual thing,
+real"). Static HTML only, with made-up events, people and places; the built pages are DigestDesk (admin panel) and
+WhatsNextView (the app). The email's "GOOD SHEPHERD" line above the heading was dropped when it was built.
 
 - **admin.html** (1440×900): the admin panel's *Weekly digest* page, under Calendar. It's pre-filled from the
   calendar's next two weeks of one-off events, specials and breaks. Staff tick or untick items, drag to reorder,

@@ -8,8 +8,8 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 
 public static class EventsClientExtensions
 {
-    public static readonly IReadOnlyList<string> Feeds = [EventsFeeds.Calendars, EventsFeeds.Public];
-    public static readonly IReadOnlyList<string> PrivateFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts];
+    public static readonly IReadOnlyList<string> Feeds = [EventsFeeds.Calendars, EventsFeeds.Public, EventsFeeds.Digest];
+    public static readonly IReadOnlyList<string> PrivateFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest];
 
     public static IServiceCollection AddEventsOnPhone(this IServiceCollection services) =>
         services
@@ -22,6 +22,7 @@ public static class EventsClientExtensions
         services
             .AddDestinations(EventsDestinations.All)
             .AddSingleton<CalendarDiary>()
+            .AddSingleton<DigestReader>()
             .AddSingleton<CalendarEditing>()
             .AddSingleton<CalendarSubscriptions>()
             .AddSingleton<WideningWords>()

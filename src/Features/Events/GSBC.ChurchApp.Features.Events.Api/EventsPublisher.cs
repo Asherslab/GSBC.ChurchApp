@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
@@ -11,8 +12,9 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
 {
     private const long AdvisoryLockKey = 0x6576_656e_7473_7075;
 
-    public static readonly IReadOnlyList<string> EachRowFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts];
-    private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public];
+    public static readonly IReadOnlyList<string> EachRowFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest];
+    private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public, EventsFeeds.Digest];
+    private const string DigestHeader = "digest";
 
     internal sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience, DateTime? StartsAt = null, DateTime? EndsAt = null, string? SortKey = null, string? GroupKey = null);
 
@@ -23,7 +25,8 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        Dictionary<(string, string), Row> wanted = Rows(book, now).ToDictionary(row => (row.Feed, row.RecordId));
+        DigestRecord? digest = await db.Digests.AsNoTracking().Where(sent => sent.SentAt != null).OrderByDescending(sent => sent.SentAt).FirstOrDefaultAsync(cancellationToken);
+        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, digest)).ToDictionary(row => (row.Feed, row.RecordId));
         Dictionary<(string, string), PublishedRow> published = await db.PublishedRows
             .Where(row => Published.Contains(row.Feed)).ToDictionaryAsync(row => (row.Feed, row.RecordId), cancellationToken);
 
@@ -96,6 +99,25 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
                 yield return new Row(EventsFeeds.Contacts, occurrence.Id,
                     EventsPayloads.Encode(new OccurrenceContacts { OccurrenceId = occurrence.Id, Contacts = contacts }),
                     CalendarAudiences.SignedInPart(audience).Text, occurrence.StartsAt, occurrence.EndsAt, sortKey, occurrence.CalendarId);
+        }
+    }
+
+    public static IEnumerable<Row> DigestRows(EventsBook book, DigestRecord? digest)
+    {
+        if (digest is not { SentAt: { } sentAt })
+            yield break;
+        string start = EventDates.Format(digest.Start);
+        yield return new Row(EventsFeeds.Digest, DigestHeader,
+            EventsPayloads.Encode(new DigestShown { Start = start, End = EventDates.Format(digest.Sent.End), SentAt = sentAt }), null);
+        foreach (SentDigestItem sent in digest.Sent.Items)
+        {
+            Audience audience = Digests.AudienceOf(book, sent);
+            string recordId = $"{start}/{sent.Item.Key}";
+            byte[] payload = EventsPayloads.Encode(sent.Item);
+            string sortKey = sent.Item.Order.ToString("D4", CultureInfo.InvariantCulture);
+            yield return audience == Audience.Everyone
+                ? new Row(EventsFeeds.Digest, recordId, payload, null, SortKey: sortKey)
+                : new Row(EventsFeeds.PrivateDigest, recordId, payload, audience.Text, SortKey: sortKey);
         }
     }
 

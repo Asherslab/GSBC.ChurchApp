@@ -44,4 +44,10 @@ namespace GSBC.ChurchApp.Features.Events.Contracts;
 [ProtoSerializable(typeof(CalendarFileRequest))]
 [ProtoSerializable(typeof(CalendarFile))]
 [ProtoSerializable(typeof(CalendarLink))]
+[ProtoSerializable(typeof(DigestQuery))]
+[ProtoSerializable(typeof(DigestDraft))]
+[ProtoSerializable(typeof(DigestSave))]
+[ProtoSerializable(typeof(DigestRef))]
+[ProtoSerializable(typeof(DigestShown))]
+[ProtoSerializable(typeof(DigestShownItem))]
 public partial class EventsContractsModel : TypeModel;

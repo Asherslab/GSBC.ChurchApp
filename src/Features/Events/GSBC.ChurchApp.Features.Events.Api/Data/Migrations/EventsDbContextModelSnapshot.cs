@@ -211,6 +211,55 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                     b.ToTable("details_reminders", "events");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.DigestRecord", b =>
+                {
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date")
+                        .HasColumnName("start");
+
+                    b.PrimitiveCollection<List<Guid>>("CalendarIds")
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("calendar_ids");
+
+                    b.Property<string>("Entries")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("entries");
+
+                    b.Property<string>("Sent")
+                        .IsRequired()
+                        .HasColumnType("jsonb")
+                        .HasColumnName("sent");
+
+                    b.Property<DateTime?>("SentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("sent_at");
+
+                    b.Property<Guid?>("SentBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("sent_by");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("updated_at");
+
+                    b.Property<Guid?>("UpdatedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("updated_by");
+
+                    b.Property<int>("Weeks")
+                        .HasColumnType("integer")
+                        .HasColumnName("weeks");
+
+                    b.HasKey("Start")
+                        .HasName("pk_digests");
+
+                    b.HasIndex("SentAt")
+                        .HasDatabaseName("ix_digests_sent_at");
+
+                    b.ToTable("digests", "events");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.EventRecord", b =>
                 {
                     b.Property<Guid>("Id")

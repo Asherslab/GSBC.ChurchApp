@@ -148,3 +148,28 @@ public sealed class DetailsReminderRecord
     public DateTime SentAt { get; set; }
     public DateTime? SettledAt { get; set; }
 }
+
+public sealed class DigestRecord
+{
+    public DateOnly Start { get; init; }
+    public int Weeks { get; set; }
+    public List<Guid>? CalendarIds { get; set; }
+    public List<DigestEntry> Entries { get; set; } = [];
+    public SentDigest Sent { get; set; } = new();
+    public DateTime UpdatedAt { get; set; }
+    public Guid? UpdatedBy { get; set; }
+    public DateTime? SentAt { get; set; }
+    public Guid? SentBy { get; set; }
+}
+
+public sealed class SentDigest
+{
+    public DateOnly End { get; init; }
+    public List<SentDigestItem> Items { get; init; } = [];
+}
+
+public sealed class SentDigestItem
+{
+    public DigestShownItem Item { get; init; } = new();
+    public List<Guid> CalendarIds { get; init; } = [];
+}

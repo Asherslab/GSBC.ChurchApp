@@ -10,6 +10,7 @@ public static class EventsPermissions
     public const string OrganiseNode = "events.organise";
     public const string HaveNode = "events.calendar.have";
     public const string TurnedOffNode = "events.calendar.off";
+    public const string DigestNode = "events.digest";
 
     public const string EditorRole = "events-calendar-editor";
     public const string PublisherRole = "events-calendar-publisher";
@@ -17,6 +18,7 @@ public static class EventsPermissions
     public const string OrganiserRole = "events-organiser";
     public const string AdderRole = "events-calendar-adder";
     public const string TurnedOffRole = "events-calendar-turned-off";
+    public const string DigestMakerRole = "events-digest-maker";
 
     public static readonly Permission Edit =
         new(EditNode, ScopeKind.Calendar, "Add and change events and regular events in a calendar", area: "Calendar");
@@ -36,5 +38,8 @@ public static class EventsPermissions
     public static readonly Permission TurnedOff =
         new(TurnedOffNode, ScopeKind.Calendar, "Has turned off a calendar they'd see anyway", area: "Calendar");
 
-    public static readonly IReadOnlyList<Permission> All = [Edit, Publish, Manage, Organise, Have, TurnedOff];
+    public static readonly Permission Digest =
+        new(DigestNode, ScopeKind.Global, "Make the weekly digest from the calendar, copy it for email and send it to the app", area: "Calendar");
+
+    public static readonly IReadOnlyList<Permission> All = [Edit, Publish, Manage, Organise, Have, TurnedOff, Digest];
 }

@@ -55,3 +55,8 @@ public static class CalendarWorkbenchLinks
     public static string Event(string occurrenceId, string? show = null) =>
         show is null ? $"{Page}?event={Uri.EscapeDataString(occurrenceId)}" : $"{Page}?show={show}&event={Uri.EscapeDataString(occurrenceId)}";
 }
+
+public static class DigestPlaces
+{
+    public const string Desk = "digest";
+}
