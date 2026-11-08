@@ -339,7 +339,7 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   open their sheets; the place searches places used before; contacts, About, Register, links and a picture; how a
   regular event repeats, its breaks, what each date needs and when organisers are reminded; *This date only | Every …*;
   *Not on this date*; *Tell people* after saving something already shown; *Ask to publish*; *Also shown on* with the
-  widening sentence; delete. On the phone for holders of `events.edit` at the calendar.
+  widening sentence; delete. *Show an event from another calendar* (`ShowFromElsewhere`), from your calendar's side. On the phone for holders of `events.edit` at the calendar.
 - **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars with switches and settings, Needs
   details, Asked to publish with *Asked to show on your calendar* and its widening sentence, + New calendar, Breaks;
   Agenda | Month; the editor, a calendar's settings or a break on the right). Its Needs details and Asked to publish
@@ -545,6 +545,21 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   scrolling). The top bar turned solid only once the whole masthead had scrolled under it, so the title slid under a
   see-through bar and Back sat on it. The shell now turns the bar solid as soon as the masthead's title reaches it, and
   shows the bar's small title once the big one is fully under (or at the page's `StuckAt`, whichever comes first).
+- **Showing another calendar's event on yours, from your side** (owner asked 2026-11-08: "how do i post/link an event from
+  another calendar onto mine?"; until now only the event's home calendar could do it, through *Also shown on*). From your
+  calendar (the workbench's *From another calendar* with a calendar picked, and *Show an event from another calendar* on
+  the calendar's page in the app, for its editors) you find an event or a regular event that's still coming up on a
+  calendar you can see (its audience includes you, or you edit it; not iCal copies) and ask for it. The rules are the
+  existing ones in reverse: if you also edit its home calendar it's shown at once (through its publisher rule);
+  otherwise the home calendar's editors are asked (*Asked to show your events on another calendar* under *Asked to
+  publish*, and a notification, `events.showing.requested`), and agree or say no there or by turning it on in the
+  editor's *Also shown on*. It shows only while the home event is published, and the widening sentence shows before
+  asking and before agreeing. A showing records which side asked (`AskedByOther`); the side that asked can't agree to
+  its own request (`AnswerShowing` refuses it). Who may do what is Access: `events.edit` at your calendar to ask
+  (`Editing.Showable`, `ShowHere`), at the home calendar to answer (`AnswerAskToShow`). gRPC only.
+- **Events' admin notifications link to a calendar in the app.** Notifications refuses one with a subject and no in-app
+  link, so *waiting to publish* and *asked to show on your calendar* had been failing when raised (the tests' fake
+  notifications didn't apply the rule; now they do). Each links to the calendar it's about (`/calendar/{id}`).
 
 ## What the owner sets up
 

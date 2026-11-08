@@ -16,9 +16,13 @@ public static class EventsNotifications
         "events.showing.asked", "Another calendar asks to show one of its events on yours", "Calendar", PerScope: ScopeKind.Calendar,
         For: EventsPermissions.Edit, InAdminPanel: true);
 
+    public static readonly NotificationKind AskedToShowElsewhere = new(
+        "events.showing.requested", "Another calendar asks to show one of your events on it", "Calendar", PerScope: ScopeKind.Calendar,
+        For: EventsPermissions.Edit, InAdminPanel: true);
+
     public static readonly NotificationKind DetailsNeeded = new(
         "events.details.needed", "A date of a regular event you organise is missing what it needs", "Calendar", PerScope: ScopeKind.Calendar,
         Waits: true);
 
-    public static readonly IReadOnlyList<NotificationKind> All = [Told, AskedToPublish, AskedToShow, DetailsNeeded];
+    public static readonly IReadOnlyList<NotificationKind> All = [Told, AskedToPublish, AskedToShow, AskedToShowElsewhere, DetailsNeeded];
 }

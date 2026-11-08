@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
 
@@ -14,8 +15,8 @@ internal sealed class EventEditingService(
     EventsDbContext db, EventsPublisher publisher, EventWriter writer, IAccessEvaluator access, INotifications notifications, TimeProvider time)
     : IEventEditingService
 {
-    public const int NeedsDetailsDays = 60;
-    public const int LongestAgendaDays = 400;
+    private const int NeedsDetailsDays = 60;
+    private const int LongestAgendaDays = 400;
     private const int MostPlacesUsed = 50;
 
     public async ValueTask<CalendarDesk> DeskAsync(Done request, CallContext context = default)
@@ -112,7 +113,7 @@ internal sealed class EventEditingService(
         await db.SaveChangesAsync(cancellationToken);
         await notifications.RaiseAsync(new Notification(EventsNotifications.AskedToPublish,
             NotificationAudience.Holding(EventsPermissions.Publish, calendar.Id.ToString()),
-            $"Waiting to publish: {item.Fields.Title}", $"In {calendar.Name}", Subject: AskedSubject(item.Id), ScopeId: calendar.Id.ToString(),
+            $"Waiting to publish: {item.Fields.Title}", $"In {calendar.Name}", Link: CalendarLink(calendar.Id), Subject: AskedSubject(item.Id), ScopeId: calendar.Id.ToString(),
             Action: "Look"), cancellationToken);
         return new Done();
     }
@@ -183,6 +184,11 @@ internal sealed class EventEditingService(
             };
             db.Showings.Add(showing);
         }
+        else if (showing is { AskedByOther: true, AgreedAt: null })
+        {
+            showing.AgreedAt = now;
+            showing.AgreedBy = Caller.UserId(user);
+        }
 
         publisher.MarkAdmin(home.Id, item.Id);
         publisher.MarkAdmin(otherId, item.Id);
@@ -192,7 +198,7 @@ internal sealed class EventEditingService(
             await notifications.RaiseAsync(new Notification(EventsNotifications.AskedToShow,
                 NotificationAudience.Holding(EventsPermissions.Edit, otherId.ToString()),
                 $"Show “{item.Fields.Title}” on {other.Name}?", $"{home.Name} asks to show it on your calendar too",
-                Subject: ShowingSubject(otherId, item.Id), ScopeId: otherId.ToString(), Action: "Look"), cancellationToken);
+                Link: CalendarLink(otherId), Subject: ShowingSubject(otherId, item.Id), ScopeId: otherId.ToString(), Action: "Look"), cancellationToken);
         else
             await notifications.SettleAsync(ShowingSubject(otherId, item.Id), cancellationToken);
         return new Done();
@@ -208,6 +214,8 @@ internal sealed class EventEditingService(
                 showing => showing.CalendarId == calendarId && showing.EventId == eventId && showing.RegularEventId == regularId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "Nobody asks to show that here any more."));
 
+        if (request.Agree && showing.AskedByOther)
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "Your calendar asked for this, so its own calendar's editors decide."));
         if (request.Agree)
         {
             showing.AgreedAt = time.GetUtcNow().UtcDateTime;
@@ -219,6 +227,128 @@ internal sealed class EventEditingService(
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
         await notifications.SettleAsync(ShowingSubject(calendarId, eventId ?? regularId!.Value), cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<ShowableList> ShowableAsync(ShowableQuery request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid yours = CalendarIdOf(request.CalendarId);
+        ClaimsPrincipal user = UserOf(context);
+        EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
+        if (!book.Calendars.TryGetValue(yours, out CalendarRecord? calendar))
+            throw Invalid("Choose one of your calendars.");
+        Viewer viewer = await CalendarFollowing.ViewerAsync(access, Caller.UserId(user), cancellationToken);
+        HashSet<Guid> editable = await EditableAsync(user, cancellationToken);
+        bool CanSee(CalendarRecord home) => editable.Contains(home.Id) || CalendarAudiences.Of(home.Audience).Includes(viewer);
+
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        return new ShowableList
+        {
+            Items = ShowableEvents.Offer(book, yours, CanSee, ChurchTime.Today(time), request.Search).Select(offered =>
+            {
+                Widening widening = WideningOf(book, offered.Item, calendar);
+                return new ShowableItem
+                {
+                    HomeCalendarId = offered.Home.Id.ToString(),
+                    HomeCalendarName = offered.Home.Name,
+                    EventId = offered.Item is EventRecord ? offered.Item.Id.ToString() : null,
+                    RegularEventId = offered.Item is RegularEventRecord ? offered.Item.Id.ToString() : null,
+                    Title = offered.Item.Fields.Title,
+                    When = ShowableEvents.When(offered.Item, offered.Next),
+                    Published = EventsBook.IsShown(offered.Item, now),
+                    Asked = offered.Asked,
+                    AgreesAtOnce = editable.Contains(offered.Home.Id),
+                    Widens = widening.Widens,
+                    NewlyReaches = widening.Words,
+                    NewlyReachesRoleIds = widening.NewRoleIds.Select(role => role.ToString()).ToList(),
+                };
+            }).ToList(),
+        };
+    }
+
+    public async ValueTask<ShowHereResult> ShowHereAsync(ShowHereRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid yours = CalendarIdOf(request.CalendarId);
+        ClaimsPrincipal user = UserOf(context);
+        (IShowable item, CalendarRecord home) = await writer.ItemInAsync(new ItemRef { CalendarId = request.HomeCalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId }, cancellationToken);
+        if (home.Id == yours || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(found => found.Id == yours, cancellationToken) is not { } calendar)
+            throw Invalid("Choose an event from another calendar.");
+        if (home.ICalSource is { Length: > 0 })
+            throw Invalid($"{home.Name} is copied from its iCal address, so its events can't be shown elsewhere.");
+        bool editsHome = await CanAsync(user, EventsPermissions.EditNode, home.Id, cancellationToken);
+        Viewer viewer = await CalendarFollowing.ViewerAsync(access, Caller.UserId(user), cancellationToken);
+        if (!editsHome && !CalendarAudiences.Of(home.Audience).Includes(viewer))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You can only ask for events on calendars you can see."));
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        if (editsHome && request.Show)
+            await writer.MayChangeShownAsync(user, item, now, cancellationToken);
+
+        Guid? eventId = item is EventRecord ? item.Id : null;
+        Guid? regularId = item is RegularEventRecord ? item.Id : null;
+        ShowingRecord? showing = await db.Showings.SingleOrDefaultAsync(
+            showing => showing.CalendarId == yours && showing.EventId == eventId && showing.RegularEventId == regularId, cancellationToken);
+        if (!request.Show)
+        {
+            if (showing is not null)
+                db.Showings.Remove(showing);
+        }
+        else if (showing is null)
+        {
+            showing = new ShowingRecord
+            {
+                Id = Guid.CreateVersion7(), CalendarId = yours, EventId = eventId, RegularEventId = regularId, AskedAt = now, AskedBy = Caller.UserId(user),
+                AgreedAt = editsHome ? now : null, AgreedBy = editsHome ? Caller.UserId(user) : null, AskedByOther = !editsHome,
+            };
+            db.Showings.Add(showing);
+        }
+        else if (showing.AgreedAt is null && (editsHome || !showing.AskedByOther))
+        {
+            showing.AgreedAt = now;
+            showing.AgreedBy = Caller.UserId(user);
+        }
+
+        publisher.MarkAdmin(home.Id, item.Id);
+        publisher.MarkAdmin(yours, item.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        await publisher.PublishAsync(cancellationToken);
+        if (request.Show && showing is { AgreedAt: null, AskedByOther: true })
+            await notifications.RaiseAsync(new Notification(EventsNotifications.AskedToShowElsewhere,
+                NotificationAudience.Holding(EventsPermissions.Edit, home.Id.ToString()),
+                $"Show “{item.Fields.Title}” on {calendar.Name}?", $"{calendar.Name} asks to show it on their calendar too",
+                Link: CalendarLink(home.Id), Subject: ShowingSubject(yours, item.Id), ScopeId: home.Id.ToString(), Action: "Look"), cancellationToken);
+        else
+            await notifications.SettleAsync(ShowingSubject(yours, item.Id), cancellationToken);
+        return new ShowHereResult { Agreed = showing?.AgreedAt is not null && request.Show };
+    }
+
+    public async ValueTask<Done> AnswerAskToShowAsync(AskToShowAnswer request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        (IShowable item, CalendarRecord home) = await writer.ItemInAsync(new ItemRef { CalendarId = request.CalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId }, cancellationToken);
+        Guid otherId = CalendarIdOf(request.OtherCalendarId);
+        Guid? eventId = item is EventRecord ? item.Id : null;
+        Guid? regularId = item is RegularEventRecord ? item.Id : null;
+        ShowingRecord showing = await db.Showings.SingleOrDefaultAsync(
+                showing => showing.CalendarId == otherId && showing.EventId == eventId && showing.RegularEventId == regularId && showing.AskedByOther && showing.AgreedAt == null, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "Nobody asks to show that any more."));
+
+        ClaimsPrincipal user = UserOf(context);
+        if (request.Agree)
+        {
+            DateTime now = time.GetUtcNow().UtcDateTime;
+            await writer.MayChangeShownAsync(user, item, now, cancellationToken);
+            showing.AgreedAt = now;
+            showing.AgreedBy = Caller.UserId(user);
+        }
+        else
+            db.Showings.Remove(showing);
+        publisher.MarkAdmin(home.Id, item.Id);
+        publisher.MarkAdmin(otherId, item.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        await publisher.PublishAsync(cancellationToken);
+        await notifications.SettleAsync(ShowingSubject(otherId, item.Id), cancellationToken);
         return new Done();
     }
 
@@ -282,10 +412,10 @@ internal sealed class EventEditingService(
 
     public static IEnumerable<NotificationAudience> Tellable(CalendarRecord calendar)
     {
-        Platform.Contracts.Configuration.Audience audience = CalendarAudiences.Of(calendar.Audience);
+        Audience audience = CalendarAudiences.Of(calendar.Audience);
         if (audience.IsForRoles)
             return audience.RoleIds.Select(role => NotificationAudience.Holding(Platform.Permissions.RoleMembership.Of(role)));
-        if (audience != Platform.Contracts.Configuration.Audience.Everyone)
+        if (audience != Audience.Everyone)
             return [NotificationAudience.SignedIn];
         return [calendar.ShownOnNewPhones ? NotificationAudience.Everyone : NotificationAudience.Holding(EventsPermissions.Have, calendar.Id.ToString())];
     }
@@ -294,7 +424,7 @@ internal sealed class EventEditingService(
     {
         DateOnly today = ChurchTime.Today(time);
         return book.Occurrences(today, today.AddDays(NeedsDetailsDays), item => editable.Contains(item.CalendarId))
-            .Where(occurrence => !occurrence.NotOn && occurrence.Missing.Count > 0)
+            .Where(occurrence => occurrence is { NotOn: false, Missing.Count: > 0 })
             .OrderBy(occurrence => occurrence.StartsAt)
             .Select(occurrence => new NeedsDetailsItem { Occurrence = occurrence, DaysToGo = EventDates.Parse(occurrence.Date)!.Value.DayNumber - today.DayNumber })
             .ToList();
@@ -304,14 +434,13 @@ internal sealed class EventEditingService(
     {
         List<ShowingRecord> waiting = await db.Showings.AsNoTracking().Where(showing => showing.AgreedAt == null).OrderBy(showing => showing.AskedAt).ToListAsync(cancellationToken);
         Dictionary<Guid, IShowable> items = book.Events.Cast<IShowable>().Concat(book.RegularEvents).ToDictionary(item => item.Id);
-        return waiting.Where(showing => editable.Contains(showing.CalendarId) && items.ContainsKey(showing.EventId ?? showing.RegularEventId ?? Guid.Empty))
+        return waiting.Where(showing => items.TryGetValue(showing.EventId ?? showing.RegularEventId ?? Guid.Empty, out IShowable? item)
+                && editable.Contains(showing.AskedByOther ? item.CalendarId : showing.CalendarId))
             .Select(showing =>
             {
                 IShowable item = items[showing.EventId ?? showing.RegularEventId!.Value];
-                Widening widening = CalendarAudiences.Widening(
-                    CalendarAudiences.Union(book.AlsoOn(item.Id).Append(item.CalendarId).Where(book.Calendars.ContainsKey)
-                        .Select(id => CalendarAudiences.Of(book.Calendars[id].Audience))),
-                    book.Calendars.TryGetValue(showing.CalendarId, out CalendarRecord? other) ? CalendarAudiences.Of(other.Audience) : Platform.Contracts.Configuration.Audience.SignedIn);
+                book.Calendars.TryGetValue(showing.CalendarId, out CalendarRecord? other);
+                Widening widening = WideningOf(book, item, other);
                 return new ShowingRequest
                 {
                     CalendarId = showing.CalendarId.ToString(),
@@ -323,10 +452,21 @@ internal sealed class EventEditingService(
                     Widens = widening.Widens,
                     NewlyReaches = widening.Words,
                     NewlyReachesRoleIds = widening.NewRoleIds.Select(role => role.ToString()).ToList(),
+                    AskedByOther = showing.AskedByOther,
+                    CalendarName = other?.Name ?? "",
+                    HomeCalendarName = book.Calendars.TryGetValue(item.CalendarId, out CalendarRecord? home) ? home.Name : "",
                 };
             })
             .ToList();
     }
+
+    private static Widening WideningOf(EventsBook book, IShowable item, CalendarRecord? other) =>
+        CalendarAudiences.Widening(
+            CalendarAudiences.Union(book.AlsoOn(item.Id).Append(item.CalendarId).Where(book.Calendars.ContainsKey)
+                .Select(id => CalendarAudiences.Of(book.Calendars[id].Audience))),
+            other is not null ? CalendarAudiences.Of(other.Audience) : Audience.SignedIn);
+
+    private static Guid CalendarIdOf(string id) => Guid.TryParse(id, out Guid calendarId) ? calendarId : throw Invalid("Choose a calendar.");
 
     private async Task<HashSet<Guid>> EditableAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
     {
@@ -348,6 +488,8 @@ internal sealed class EventEditingService(
     }
 
     private static string AskedSubject(Guid itemId) => $"events/asked/{itemId:N}";
+
+    private static string CalendarLink(Guid calendarId) => EventsDestinations.Calendar.PathOf(calendarId.ToString());
 
     private static string ShowingSubject(Guid calendarId, Guid itemId) => $"events/showing/{calendarId:N}/{itemId:N}";
 

@@ -20,6 +20,7 @@
     private const int NextShown = 8;
     private string? _problem;
     private bool _busy;
+    private bool _showingHere;
 
     [Parameter] public string Id { get; set; } = "";
 
@@ -74,6 +75,18 @@
                     </div>
                 }
             </Section>
+            @if (canAdd)
+            {
+                <Section Title="From other calendars" Lead="@($"Show an event from another calendar on {calendar.Name} too. Its own calendar's editors agree first, unless you edit it as well.")">
+                    <Button Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => _showingHere = true">Show an event from another calendar</Button>
+                </Section>
+                <Sheet @bind-Open="_showingHere" Title="Show an event from another calendar" Lead="@($"On {calendar.Name}")" Wide="true">
+                    @if (_showingHere)
+                    {
+                        <ShowFromElsewhere Calendar="calendar" />
+                    }
+                </Sheet>
+            }
             <Section Title="In your phone's calendar" Lead="@($"Subscribe to {calendar.Name} on its own in your calendar app.")">
                 <SubscribeLinks Calendar="calendar" />
             </Section>

@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
 
@@ -29,6 +30,8 @@ internal sealed class RecordedNotifications : INotifications
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
+        if (notification.Subject is not null && LinkTargets.InAppRoute(notification.Link ?? "") is null)
+            throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(notification));
         Raised.Add(notification);
         return Task.CompletedTask;
     }
