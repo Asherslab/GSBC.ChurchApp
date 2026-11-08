@@ -1,0 +1,67 @@
+@inject CalendarEditing Editor
+
+<Sheet Open="Open" OpenChanged="ToggledAsync" Title="Tell people?" Lead="@($"A notification to everyone who has {CalendarName}, opening the event.")">
+    <ChildContent>
+        <TextField Label="Notification" Value="@_title" ValueChanged="value => _title = value" MaxLength="80" />
+        <TextField Label="More" Value="@_body" ValueChanged="value => _body = value" Multiline="true" MaxLength="240" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Icon="send" Busy="_telling" OnClick="TellAsync">Tell people</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Done.InvokeAsync(SavedWords)">Not now</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    public const string SavedWords = "Saved.";
+
+    private string _title = "";
+    private string _body = "";
+    private string? _problem;
+    private bool _telling;
+    private bool _wasOpen;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter, EditorRequired] public required string CalendarId { get; set; }
+    [Parameter, EditorRequired] public required string CalendarName { get; set; }
+    [Parameter, EditorRequired] public required string OccurrenceId { get; set; }
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Body { get; set; } = "";
+    [Parameter] public EventCallback<string> Done { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_wasOpen)
+        {
+            _title = Title;
+            _body = Body;
+            _problem = null;
+        }
+        _wasOpen = Open;
+    }
+
+    private async Task ToggledAsync(bool open)
+    {
+        if (!open)
+            await Done.InvokeAsync(SavedWords);
+    }
+
+    private async Task TellAsync()
+    {
+        _telling = true;
+        _problem = null;
+        try
+        {
+            await Editor.Editing.TellPeopleAsync(new TellPeople { CalendarId = CalendarId, OccurrenceId = OccurrenceId, Title = _title.Trim(), Body = _body.Trim() });
+            await Done.InvokeAsync("Saved, and people have been told.");
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _telling = false;
+        }
+    }
+}

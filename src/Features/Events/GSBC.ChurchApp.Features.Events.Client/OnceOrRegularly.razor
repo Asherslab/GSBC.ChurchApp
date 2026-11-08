@@ -1,0 +1,21 @@
+<div class="once-or-regularly" role="group" aria-label="How often it's on">
+    <button type="button" class="once-or-regularly__choice" @onclick="Once">
+        <span class="once-or-regularly__icon" aria-hidden="true"><Icon Name="calendar" /></span>
+        <span class="once-or-regularly__words">
+            <strong>Once</strong>
+            <span>One date, or a few days in a row like a camp</span>
+        </span>
+    </button>
+    <button type="button" class="once-or-regularly__choice" @onclick="Regularly">
+        <span class="once-or-regularly__icon" aria-hidden="true"><Icon Name="repeat" /></span>
+        <span class="once-or-regularly__words">
+            <strong>Regularly</strong>
+            <span>Every week, every second week, monthly, or on dates you choose</span>
+        </span>
+    </button>
+</div>
+
+@code {
+    [Parameter] public EventCallback Once { get; set; }
+    [Parameter] public EventCallback Regularly { get; set; }
+}

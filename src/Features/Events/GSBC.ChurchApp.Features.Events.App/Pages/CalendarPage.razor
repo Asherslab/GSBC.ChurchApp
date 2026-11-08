@@ -74,6 +74,15 @@
                     </div>
                 }
             </Section>
+            @if (canAdd)
+            {
+                <Section Title="Regular events" Lead="Things on every week or month. Only the calendar's editors see this list.">
+                    <RegularEventsList CalendarId="@calendar.Id" Href="regular => EventsPlaces.RegularPath(calendar.Id, regular.Id)" />
+                    <div class="calendar-regular__add">
+                        <Button Variant="ButtonVariant.Quiet" Icon="plus" Href="@EventsPlaces.NewRegularIn(calendar.Id)">New regular event</Button>
+                    </div>
+                </Section>
+            }
             <Section Title="In your phone's calendar" Lead="@($"Subscribe to {calendar.Name} on its own in your calendar app.")">
                 <SubscribeLinks Calendar="calendar" />
             </Section>

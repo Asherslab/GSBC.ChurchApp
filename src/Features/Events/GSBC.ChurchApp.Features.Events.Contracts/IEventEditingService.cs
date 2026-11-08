@@ -23,6 +23,9 @@ public interface IEventEditingService
     ValueTask<Done> DeleteEventAsync(EventRef request, CallContext context = default);
 
     [Requires(EventsPermissions.EditNode)]
+    ValueTask<RegularEventList> RegularEventsAsync(CalendarRef request, CallContext context = default);
+
+    [Requires(EventsPermissions.EditNode)]
     ValueTask<RegularEventDetail> RegularEventAsync(RegularRef request, CallContext context = default);
 
     [Requires(EventsPermissions.EditNode)]

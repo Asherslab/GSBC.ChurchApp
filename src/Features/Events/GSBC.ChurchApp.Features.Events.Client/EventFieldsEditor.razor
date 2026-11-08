@@ -1,0 +1,58 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject IServiceProvider Services
+
+<PlaceEditor Place="Fields.Place" PlaceChanged="place => Fields.Place = place" Used="PlacesUsed" Missing="@(Needs.Contains(EventFieldKeys.Place))" />
+<ContactsEditor Contacts="Fields.Contacts" />
+<div class="field">
+    <span class="field__label" aria-hidden="true">About</span>
+    <RichTextEditor Label="About" Value="@(Fields.Description ?? new RichText())" ValueChanged="text => Fields.Description = text" Rows="5"
+                    Placeholder="What it is, who it's for, what to bring" />
+</div>
+<AddableField Label="Register link" Adding="Register link" Shown="Fields.RegisterLink.Length > 0">
+    <TextField Label="Register link" Type="url" Value="@Fields.RegisterLink" ValueChanged="value => Fields.RegisterLink = value.Trim()"
+               Placeholder="https://" Hint="Opens in the app's browser. The app never counts registrations." />
+</AddableField>
+<LinksEditor Links="Fields.Links" />
+<div class="field">
+    <span class="field__label">Picture</span>
+    @if (Fields.Picture is { } picture)
+    {
+        <div class="event-picture-field">
+            <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Class="media-thumbnail" />
+            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Fields.Picture = null">Remove</Button>
+            @if (MediaChooser.IsAvailable(Services))
+            {
+                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _choosingPicture = true">Change</Button>
+            }
+        </div>
+    }
+    else if (MediaChooser.IsAvailable(Services))
+    {
+        <button type="button" class="add-row" @onclick="() => _choosingPicture = true"><Icon Name="image" Size="IconSize.Small" />Add a picture</button>
+    }
+    else
+    {
+        <span class="field__hint">Pictures are added in the admin panel.</span>
+    }
+</div>
+
+@if (_choosingPicture)
+{
+    <MediaChooser ImagesOnly="true" Size="MediaSizeName.ForPhones" OnChosen="ChosePicture" OnCancel="() => _choosingPicture = false" />
+}
+
+@code {
+    private bool _choosingPicture;
+
+    [Parameter, EditorRequired] public required EventFields Fields { get; set; }
+    [Parameter] public IReadOnlyList<EventPlace> PlacesUsed { get; set; } = [];
+    [Parameter] public IReadOnlyList<string> Needs { get; set; } = [];
+
+    private void ChosePicture(MediaRef picture)
+    {
+        Fields.Picture = picture;
+        _choosingPicture = false;
+    }
+}

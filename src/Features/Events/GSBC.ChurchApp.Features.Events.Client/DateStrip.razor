@@ -1,0 +1,76 @@
+@using System.Globalization
+
+<div class="date-strip">
+    @if (Dates.Count == 0)
+    {
+        <p class="date-strip__empty">@Empty</p>
+    }
+    else
+    {
+        <ul class="date-strip__dates" aria-label="Its dates">
+            @foreach (RegularDate date in Dates.Take(_shown))
+            {
+                DateOnly day = EventDates.Parse(date.Date) ?? Today;
+                <li>
+                    <button type="button" class="@Classes(date, day)" aria-pressed="@(date.Date == Selected ? "true" : "false")" aria-label="@Spoken(date, day)" @onclick="() => Picked.InvokeAsync(date)">
+                        <span class="date-strip__weekday" aria-hidden="true">@day.ToString("ddd", English).ToUpperInvariant()</span>
+                        <span class="date-strip__day" aria-hidden="true">@day.Day</span>
+                        <span class="date-strip__month" aria-hidden="true">@day.ToString("MMM", English).ToUpperInvariant()</span>
+                    </button>
+                </li>
+            }
+            @if (Dates.Count > _shown)
+            {
+                <li><button type="button" class="date-strip__more" @onclick="() => _shown += PageSize">More dates</button></li>
+            }
+        </ul>
+    }
+</div>
+@if (Dates.Count > 0)
+{
+    <p class="date-strip__key">
+        @foreach (string line in KeyLines)
+        {
+            <span>@line</span>
+        }
+    </p>
+}
+
+@code {
+    private const int PageSize = 13;
+    private static readonly CultureInfo English = CultureInfo.InvariantCulture;
+    private int _shown = PageSize;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<RegularDate> Dates { get; set; }
+    [Parameter] public DateOnly Today { get; set; }
+    [Parameter] public string? Selected { get; set; }
+    [Parameter] public string Empty { get; set; } = "Its dates show here once it's saved.";
+    [Parameter] public EventCallback<RegularDate> Picked { get; set; }
+
+    private IEnumerable<string> KeyLines
+    {
+        get
+        {
+            List<RegularDate> shown = Dates.Take(_shown).ToList();
+            if (shown.FirstOrDefault(date => date.Changed && !date.NotOn) is { } changed)
+                yield return $"{Short(changed)} is changed: {EventWords.Join(changed.Title, EventDates.Times(changed.StartMinute, changed.EndMinute))}";
+            if (shown.FirstOrDefault(date => date.NotOn) is { } off)
+                yield return off.NotOnReason.Length > 0 ? $"{Short(off)} isn't on: {off.NotOnReason}" : $"{Short(off)} isn't on";
+            yield return "Choose a date to change only that date";
+        }
+    }
+
+    private string Classes(RegularDate date, DateOnly day) => string.Join(" ", new[]
+    {
+        "date-strip__date",
+        date.NotOn ? "date-strip__date--off" : date.Changed ? "date-strip__date--changed" : null,
+        day == Today ? "date-strip__date--today" : null,
+    }.OfType<string>());
+
+    private static string Spoken(RegularDate date, DateOnly day) => EventWords.Join(
+        EventWords.LongDate(day),
+        date.NotOn ? (date.NotOnReason.Length > 0 ? $"not on, {date.NotOnReason}" : "not on") : null,
+        date.Changed && !date.NotOn ? $"changed: {date.Title}" : null);
+
+    private static string Short(RegularDate date) => EventDates.Parse(date.Date) is { } day ? EventWords.Date(day) : date.Date;
+}

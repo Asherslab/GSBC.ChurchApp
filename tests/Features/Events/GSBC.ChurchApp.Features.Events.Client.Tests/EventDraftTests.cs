@@ -55,4 +55,27 @@ public sealed class EventDraftTests
         Assert.Equal("Carols by candlelight", draft.ToDateSave(notOn: false).Fields.Title);
         Assert.Equal("Evening service", draft.ToRegularSave(keepOwnConfirmed: false).Fields.Title);
     }
+
+    [Fact]
+    public void ADateSaysWhatDiffersFromTheRegularEventAndPuttingItBackSendsTheRegularEventsValue()
+    {
+        RegularEventDetail sundays = new()
+        {
+            Id = Guid.NewGuid().ToString(), CalendarId = Guid.NewGuid().ToString(),
+            Fields = new EventFields { Title = "Morning service", Place = new EventPlace { Name = "Auditorium" } },
+            Pattern = new RegularPattern { Repeats = Repeats.Weekly, Days = [DayOfWeek.Sunday], StartDate = "2026-01-04" },
+            StartMinute = 630, EndMinute = 720,
+            Specials = [new SpecialInfo { Date = EventDates.Format(Anniversary), Changed = [EventFieldKeys.Time], StartMinute = 540, EndMinute = 720 }],
+        };
+        EventDraft draft = EventDraft.From(sundays, Anniversary, Now);
+
+        Assert.True(draft.DateDiffers(EventFieldKeys.Time));
+        Assert.False(draft.DateDiffers(EventFieldKeys.Title));
+        Assert.False(draft.DateDiffers(EventFieldKeys.Place));
+
+        draft.PutBack(EventFieldKeys.Time);
+
+        Assert.False(draft.DateDiffers(EventFieldKeys.Time));
+        Assert.Equal(630, draft.ToDateSave(notOn: false).StartMinute);
+    }
 }

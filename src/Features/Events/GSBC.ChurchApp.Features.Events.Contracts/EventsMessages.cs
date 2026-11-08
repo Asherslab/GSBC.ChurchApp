@@ -309,7 +309,50 @@ public sealed class RegularEventDetail
     [ProtoMember(17)] public string ChangeNote { get; set; } = "";
     [ProtoMember(18)] public DateTime? ChangedAt { get; set; }
     [ProtoMember(19)] public DateTime UpdatedAt { get; set; }
-    [ProtoMember(20)] public List<string> NextDates { get; set; } = [];
+    [ProtoMember(21)] public List<RegularDate> Dates { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class RegularDate
+{
+    [ProtoMember(1)] public string Date { get; set; } = "";
+    [ProtoMember(2)] public string OccurrenceId { get; set; } = "";
+    [ProtoMember(3)] public string Title { get; set; } = "";
+    [ProtoMember(4)] public int? StartMinute { get; set; }
+    [ProtoMember(5)] public int? EndMinute { get; set; }
+    [ProtoMember(6)] public bool Changed { get; set; }
+    [ProtoMember(7)] public bool NotOn { get; set; }
+    [ProtoMember(8)] public string NotOnReason { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class CalendarRef : IScopedRequest
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
+
+    public string ScopeId => CalendarId;
+}
+
+[ProtoContract]
+public sealed class RegularEventSummary
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string CalendarId { get; set; } = "";
+    [ProtoMember(3)] public string Title { get; set; } = "";
+    [ProtoMember(4)] public string Repeats { get; set; } = "";
+    [ProtoMember(5)] public int? StartMinute { get; set; }
+    [ProtoMember(6)] public int? EndMinute { get; set; }
+    [ProtoMember(7)] public string NextDate { get; set; } = "";
+    [ProtoMember(8)] public int ChangedDates { get; set; }
+    [ProtoMember(9)] public Showing Showing { get; set; }
+    [ProtoMember(10)] public bool Asked { get; set; }
+    [ProtoMember(11)] public bool Ended { get; set; }
+}
+
+[ProtoContract]
+public sealed class RegularEventList
+{
+    [ProtoMember(1)] public List<RegularEventSummary> RegularEvents { get; set; } = [];
 }
 
 [ProtoContract]

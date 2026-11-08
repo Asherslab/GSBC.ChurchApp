@@ -1,0 +1,32 @@
+@using GSBC.ChurchApp.Platform.Common
+
+<div class="field">
+    <span class="field__label">Shown in the app</span>
+    @if (MustAsk)
+    {
+        <span class="field__hint">@CalendarName needs a publisher. Save it, then ask to publish.</span>
+    }
+    else
+    {
+        <Segmented TValue="Showing" Label="Shown in the app" Options="Showings" Value="Draft.Showing" ValueChanged="showing => Draft.Showing = showing" />
+        @if (Draft.Showing == Showing.ShownFrom)
+        {
+            <TextField Label="Show from" Type="date" Value="@(Draft.ShowFrom is { } from ? EventDates.Format(ChurchTime.DayOf(from)) : "")" ValueChanged="ShowFromChanged" />
+        }
+    }
+</div>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<Showing>> Showings =
+        [new(Showing.Shown, "Show now"), new(Showing.SavedForLater, "Save for later"), new(Showing.ShownFrom, "Show from a date")];
+
+    [Parameter, EditorRequired] public required EventDraft Draft { get; set; }
+    [Parameter] public bool MustAsk { get; set; }
+    [Parameter] public string CalendarName { get; set; } = "";
+
+    private void ShowFromChanged(string value)
+    {
+        if (EventDates.Parse(value) is { } day)
+            Draft.ShowFrom = ChurchTime.ToUtc(day.ToDateTime(TimeOnly.MinValue));
+    }
+}

@@ -6,6 +6,7 @@
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject IJSRuntime Js
+@inject NavigationManager Navigation
 
 <LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
     <ChildContent>@Drawn(context.Value)</ChildContent>
@@ -48,6 +49,9 @@
         CalendarInfo? calendar = diary.Calendar(occurrence.CalendarId);
         bool canEdit = calendar is { ReadOnly: false } && Access.Can(EventsPermissions.Edit, occurrence.CalendarId);
 
+        if (_editing && canEdit && occurrence.Kind != OccurrenceKind.OneOff)
+            return @<DateEditor CalendarId="@occurrence.CalendarId" RegularEventId="@occurrence.ItemId" Date="EventWords.DayOf(occurrence)" Closed="() => _editing = false"
+                                OpenRegular="() => Navigation.NavigateTo(EventsPlaces.RegularPath(occurrence.CalendarId, occurrence.ItemId))" />;
         if (_editing && canEdit)
             return @<EventEditor Target="EditTarget.Of(occurrence)" Calendars="EditableCalendars(diary)" Closed="() => _editing = false" />;
 

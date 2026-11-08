@@ -1,0 +1,30 @@
+@page "/calendar/{CalendarId}/regular/new"
+@page "/calendar/{CalendarId}/regular/{RegularId}"
+@page "/calendar/{CalendarId}/regular/{RegularId}/{Date}"
+@inject NavigationManager Navigation
+@inject Shell Shell
+
+@if (RegularId is { } regularId && EventDates.Parse(Date ?? "") is { } day)
+{
+    <DateEditor CalendarId="@CalendarId" RegularEventId="@regularId" Date="day" Closed="BackAsync"
+                OpenRegular="() => Navigation.NavigateTo(EventsPlaces.RegularPath(CalendarId, regularId), new NavigationOptions { ReplaceHistoryEntry = true })" />
+}
+else
+{
+    <RegularEventEditor CalendarId="@CalendarId" RegularEventId="@RegularId" BackLabel="@(RegularId is null ? "Cancel" : "Back")" Closed="BackAsync"
+                        Saved="Opened" DatePicked="date => Navigation.NavigateTo(EventsPlaces.RegularDatePath(CalendarId, RegularId ?? string.Empty, date.Date))" />
+}
+
+@code {
+    [Parameter] public string CalendarId { get; set; } = "";
+    [Parameter] public string? RegularId { get; set; }
+    [Parameter] public string? Date { get; set; }
+
+    private Task BackAsync() => Shell.BackAsync(EventsPlaces.CalendarById(CalendarId)).AsTask();
+
+    private void Opened(string regularEventId)
+    {
+        if (RegularId is null && regularEventId.Length > 0)
+            Navigation.NavigateTo(EventsPlaces.RegularPath(CalendarId, regularEventId), new NavigationOptions { ReplaceHistoryEntry = true });
+    }
+}

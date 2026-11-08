@@ -1,0 +1,330 @@
+@inject CalendarEditing Editor
+@inject TimeProvider Clock
+@inject Shell Shell
+
+@if (InPanel)
+{
+    <div class="regular-page regular-page--panel">@Body</div>
+}
+else
+{
+    <Page Title="@(RegularEventId is null ? "New regular event" : "Regular event")" OnBack="Closed" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
+        <ChildContent><div class="regular-page">@Body</div></ChildContent>
+    </Page>
+}
+
+<Sheet Open="_sheet == EditorSheet.Title" OpenChanged="SheetToggled" Title="Title" Lead="What people see in the calendar on every date.">
+    <ChildContent>
+        <TextField Label="Title" Value="@Fields.Title" ValueChanged="value => Fields.Title = value" MaxLength="120" Required="true" />
+        <TextField Label="Label" Value="@Fields.Label" ValueChanged="value => Fields.Label = value" MaxLength="40"
+                   Hint="@($"Shown above the title. Leave it empty to show the calendar's name ({CalendarName}).")" />
+    </ChildContent>
+    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
+</Sheet>
+
+<Sheet Open="_sheet == EditorSheet.KeepOwn" OpenChanged="SheetToggled" Title="Some dates keep their own" Lead="These dates were changed on their own, so they keep what they have:">
+    <ChildContent>
+        <ul class="kept-list">
+            @foreach (KeptValue kept in _keepOwn)
+            {
+                <li>@kept.Title on @EventWords.Date(EventDates.Parse(kept.Date) ?? Today) keeps its own @kept.Field, @kept.Value</li>
+            }
+        </ul>
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_saving" OnClick="() => SaveAsync(keepOwnConfirmed: true)">Save every date</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Go back</Button>
+    </Actions>
+</Sheet>
+
+<TellPeopleSheet Open="_sheet == EditorSheet.Tell" CalendarId="@(_draft?.CalendarId ?? "")" CalendarName="@CalendarName" OccurrenceId="@_tellOccurrenceId"
+                 Title="@($"Changed: {Fields.Title}")" Body="@_tellBody" Done="FinishAsync" />
+
+<Sheet Open="_sheet == EditorSheet.Delete" OpenChanged="SheetToggled" Title="@($"Delete every date of {Fields.Title}?")"
+       Lead="The regular event and all its dates come off every phone and calendar app. This can't be undone.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_saving" OnClick="DeleteAsync">Delete the regular event</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="CloseSheet">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private enum EditorSheet { None, Title, KeepOwn, Tell, Delete }
+
+    private EventDraft? _draft;
+    private IReadOnlyList<RegularDate> _dates = [];
+    private CalendarDesk _desk = new();
+    private BreakList _breaks = new();
+    private IReadOnlyList<EventPlace> _placesUsed = [];
+    private Exception? _loadFailure;
+    private string? _problem;
+    private bool _saving;
+    private EditorSheet _sheet;
+    private List<KeptValue> _keepOwn = [];
+    private string _tellOccurrenceId = "";
+    private string _tellBody = "";
+    private string? _done;
+    private (string, string?)? _loadedFor;
+
+    [Parameter, EditorRequired] public required string CalendarId { get; set; }
+    [Parameter] public string? RegularEventId { get; set; }
+    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public string? SelectedDate { get; set; }
+    [Parameter] public string BackLabel { get; set; } = "Back";
+    [Parameter] public EventCallback Closed { get; set; }
+    [Parameter] public EventCallback<string> Saved { get; set; }
+    [Parameter] public EventCallback<RegularDate> DatePicked { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateOnly Today => EventWords.Today(Now);
+
+    private EventFields Fields => _draft?.Every.Fields ?? new EventFields();
+
+    private DeskCalendar? DeskCalendar => _desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == _draft?.CalendarId);
+
+    private string CalendarName => DeskCalendar?.Settings.Calendar.Name ?? "the calendar";
+
+    private bool MustAsk => DeskCalendar is { Settings.NeedsPublisher: true, CanPublish: false };
+
+    private IReadOnlyList<DeskCalendar> Editable => _desk.Calendars.Where(calendar => calendar.CanEdit && !calendar.Settings.Calendar.ReadOnly).ToList();
+
+    private IReadOnlyList<FieldOption> CalendarOptions => Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_draft is not null && _loadedFor == (CalendarId, RegularEventId))
+            return;
+        _loadedFor = (CalendarId, RegularEventId);
+        _draft = null;
+        _loadFailure = null;
+        try
+        {
+            _desk = await Editor.DeskAsync();
+            if (RegularEventId is { } regularId)
+                Show(await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = CalendarId, RegularEventId = regularId }));
+            else
+            {
+                _draft = EventDraft.NewRegular(StartingCalendar(), Today);
+                _dates = [];
+                if (MustAsk)
+                    _draft.Showing = Showing.SavedForLater;
+            }
+            _ = LoadSideAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _loadFailure = exception;
+        }
+    }
+
+    private void Show(RegularEventDetail detail)
+    {
+        _draft = EventDraft.From(detail, null, Now);
+        _dates = detail.Dates;
+    }
+
+    private string StartingCalendar() =>
+        Editable.Any(calendar => calendar.Settings.Calendar.Id == CalendarId) ? CalendarId : Editable.FirstOrDefault()?.Settings.Calendar.Id ?? CalendarId;
+
+    private async Task LoadSideAsync()
+    {
+        try
+        {
+            Task<BreakList> breaks = Editor.BreaksAsync().AsTask();
+            Task<PlacesUsed> places = Editor.PlacesUsedAsync().AsTask();
+            await Task.WhenAll(breaks, places);
+            _breaks = breaks.Result;
+            _placesUsed = places.Result.Places;
+            StateHasChanged();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+        }
+    }
+
+    private RenderFragment Body => @<text>
+        @if (_loadFailure is not null)
+        {
+            <EmptyState Icon="cloud-off" Title="Can't open this regular event" Body="@CalendarEditing.Problem(_loadFailure)">
+                <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
+            </EmptyState>
+        }
+        else if (_draft is not { } draft)
+        {
+            <EventHead Title="" Compact="InPanel" />
+            <div class="event-body"><Skeleton Shape="SkeletonShape.Lines" Count="6" /></div>
+        }
+        else
+        {
+            <div class="regular-head">
+                <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@Fields.Title" Compact="InPanel" Editing="true" OnTitle="() => OpenAsync(EditorSheet.Title)">
+                    <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
+                </EventHead>
+                <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync"
+                           Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
+            </div>
+            <div class="regular-body">
+                @if (_done is not null)
+                {
+                    <p class="event-saved regular-body__wide" role="status"><Icon Name="check" Size="IconSize.Small" />@_done</p>
+                }
+                <section class="regular-col" aria-labelledby="regular-every">
+                    <h2 class="regular-col__head" id="regular-every">Every date</h2>
+                    <p class="regular-col__lead">What each date has, unless that date is changed on its own.</p>
+                    @if (draft.IsNew)
+                    {
+                        <SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />
+                    }
+                    <TimesEditor Timed="draft.Every" />
+                    <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" Needs="draft.Needs" />
+                </section>
+                <section class="regular-col" aria-labelledby="regular-runs">
+                    <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
+                    <p class="regular-col__lead">How it repeats, its breaks, and what each date needs before it's on.</p>
+                    <RepeatEditor Draft="draft" Breaks="_breaks" />
+                    <h3 class="repeat-editor__head">Where it shows</h3>
+                    <ShownOnEditor Draft="draft" Desk="_desk" />
+                    <ShowingEditor Draft="draft" MustAsk="MustAsk" CalendarName="@CalendarName" />
+                </section>
+            </div>
+            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <div class="editor-foot__actions">
+                    <Button Block="true" Busy="_saving" Disabled="@(Fields.Title.Trim().Length == 0)" OnClick="() => SaveAsync(keepOwnConfirmed: false)">
+                        @(draft.IsNew ? "Add the regular event" : "Save every date")
+                    </Button>
+                </div>
+                @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
+                }
+                @if (!draft.IsNew)
+                {
+                    <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>
+                }
+            </div>
+        }
+    </text>;
+
+    private static string Pattern(EventDraft draft) => EventWords.Join(Capital(draft.RepeatsNow), EventDates.Times(draft.Every.StartMinute, draft.Every.EndMinute));
+
+    private static string Capital(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
+
+    private void ChooseCalendar(string calendarId)
+    {
+        if (_draft is null)
+            return;
+        _draft.CalendarId = calendarId;
+        if (MustAsk)
+            _draft.Showing = Showing.SavedForLater;
+    }
+
+    private async Task PickAsync(RegularDate date)
+    {
+        await Shell.HapticAsync();
+        await DatePicked.InvokeAsync(date);
+    }
+
+    private async Task OpenAsync(EditorSheet sheet)
+    {
+        await Shell.HapticAsync();
+        _sheet = sheet;
+    }
+
+    private void CloseSheet() => _sheet = EditorSheet.None;
+
+    private Task SheetToggled(bool open)
+    {
+        if (!open)
+            _sheet = EditorSheet.None;
+        return Task.CompletedTask;
+    }
+
+    private async Task SaveAsync(bool keepOwnConfirmed)
+    {
+        if (_draft is not { } draft || _saving)
+            return;
+        _saving = true;
+        _problem = null;
+        try
+        {
+            bool wasShown = draft.WasShown && !draft.IsNew;
+            RegularEventSaved result = await Editor.Editing.SaveRegularEventAsync(draft.ToRegularSave(keepOwnConfirmed));
+            if (!result.Saved && result.KeepOwn.Count > 0)
+            {
+                _keepOwn = result.KeepOwn;
+                _sheet = EditorSheet.KeepOwn;
+                return;
+            }
+            if (result.Detail is not { } detail)
+                return;
+            await Shell.HapticAsync(Haptic.Success);
+            Show(detail);
+            _loadedFor = (detail.CalendarId, detail.Id);
+            _tellOccurrenceId = _draft!.OccurrenceId(detail);
+            if (wasShown && _tellOccurrenceId.Length > 0)
+            {
+                _tellBody = detail.ChangeNote;
+                _sheet = EditorSheet.Tell;
+                return;
+            }
+            await FinishAsync(TellPeopleSheet.SavedWords);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+            _sheet = EditorSheet.None;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task FinishAsync(string done)
+    {
+        _sheet = EditorSheet.None;
+        _done = done;
+        await Saved.InvokeAsync(_draft?.RegularEventId ?? "");
+    }
+
+    private async Task AskAsync()
+    {
+        if (_draft is null)
+            return;
+        try
+        {
+            await Editor.Editing.AskToPublishAsync(new ItemRef { CalendarId = _draft.CalendarId, RegularEventId = _draft.RegularEventId });
+            _draft.Asked = true;
+            _done = "Asked. The calendar's publishers have been told.";
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (_draft?.RegularEventId is not { } regularId)
+            return;
+        _saving = true;
+        try
+        {
+            await Editor.Editing.DeleteRegularEventAsync(new RegularRef { CalendarId = _draft.CalendarId, RegularEventId = regularId });
+            _sheet = EditorSheet.None;
+            await Saved.InvokeAsync("");
+            await Closed.InvokeAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+            _sheet = EditorSheet.None;
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+}

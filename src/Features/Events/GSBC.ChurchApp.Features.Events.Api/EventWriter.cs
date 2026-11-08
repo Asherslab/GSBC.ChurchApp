@@ -15,7 +15,6 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
 {
     public const int LongestTitle = 120;
     private const int LongestLabel = 40;
-    private const int NextDatesShown = 8;
     public const int MostRemindDays = 60;
     private static readonly IReadOnlyList<int> DefaultRemindDays = [7, 2];
 
@@ -262,6 +261,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         List<SpecialRecord> specials = await db.Specials.AsNoTracking().Where(special => special.RegularEventId == record.Id).OrderBy(special => special.Date).ToListAsync(cancellationToken);
         List<Guid> named = await db.RegularEventBreaks.AsNoTracking().Where(link => link.RegularEventId == record.Id).Select(link => link.BreakId).ToListAsync(cancellationToken);
         List<BreakRecord> own = await db.Breaks.AsNoTracking().Where(stop => stop.RegularEventId == record.Id).OrderBy(stop => stop.StartDate).ToListAsync(cancellationToken);
+        List<BreakRecord> namedBreaks = await db.Breaks.AsNoTracking().Where(stop => named.Contains(stop.Id)).ToListAsync(cancellationToken);
         List<ShowingRecord> showings = await db.Showings.AsNoTracking().Where(showing => showing.RegularEventId == record.Id).ToListAsync(cancellationToken);
         DateOnly today = ChurchTime.Today(time);
         return new RegularEventDetail
@@ -285,7 +285,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             ChangeNote = record.ChangeNote,
             ChangedAt = record.ChangedAt,
             UpdatedAt = record.UpdatedAt,
-            NextDates = Expansion.DatesOf(record.Pattern, today, today.AddMonths(EventsFeeds.MonthsAhead)).Take(NextDatesShown).Select(EventDates.Format).ToList(),
+            Dates = Expansion.RunOf(record, specials.ToDictionary(special => special.Date), [.. namedBreaks, .. own], today, today.AddMonths(EventsFeeds.MonthsAhead)).ToList(),
         };
     }
 

@@ -75,6 +75,13 @@ public sealed class EventDraft
         Showing = Showing.Shown,
     };
 
+    public static EventDraft NewRegular(string calendarId, DateOnly day)
+    {
+        EventDraft draft = New(calendarId, day);
+        draft.Repeating = true;
+        return draft;
+    }
+
     public static EventDraft From(EventDetail detail, DateTime nowUtc) => new()
     {
         CalendarId = detail.CalendarId,
@@ -137,6 +144,30 @@ public sealed class EventDraft
         }
     }
 
+    public bool DateDiffers(string key) => key switch
+    {
+        EventFieldKeys.Title => ThisDate.Fields.Title.Trim() != Every.Fields.Title.Trim(),
+        EventFieldKeys.Time => ThisDate.StartMinute != Every.StartMinute || (ThisDate.StartMinute is not null && ThisDate.EndMinute != Every.EndMinute),
+        EventFieldKeys.Place => !SamePlace(ThisDate.Fields.Place, Every.Fields.Place),
+        EventFieldKeys.Description => (ThisDate.Fields.Description?.Markdown ?? "").Trim() != (Every.Fields.Description?.Markdown ?? "").Trim(),
+        _ => false,
+    };
+
+    public void PutBack(string key)
+    {
+        EventFields usual = Copy(Every.Fields);
+        switch (key)
+        {
+            case EventFieldKeys.Title: ThisDate.Fields.Title = usual.Title; break;
+            case EventFieldKeys.Place: ThisDate.Fields.Place = usual.Place; break;
+            case EventFieldKeys.Description: ThisDate.Fields.Description = usual.Description; break;
+            case EventFieldKeys.Time:
+                ThisDate.StartMinute = Every.StartMinute;
+                ThisDate.EndMinute = Every.EndMinute;
+                break;
+        }
+    }
+
     public EventSave ToEventSave() => new()
     {
         CalendarId = CalendarId,
@@ -193,7 +224,7 @@ public sealed class EventDraft
             return EventDates.OccurrenceId(id);
         if (Guid.TryParse(saved?.Id ?? RegularEventId, out Guid regular))
         {
-            DateOnly day = Date ?? (saved?.NextDates.Select(EventDates.Parse).FirstOrDefault(found => found is not null) ?? StartDate);
+            DateOnly day = Date ?? (saved?.Dates.Where(date => !date.NotOn).Select(date => EventDates.Parse(date.Date)).FirstOrDefault(found => found is not null) ?? StartDate);
             return EventDates.OccurrenceId(regular, day);
         }
         return "";
@@ -226,6 +257,9 @@ public sealed class EventDraft
             EndMinute = timeChanged ? special.EndMinute : detail.EndMinute,
         };
     }
+
+    private static bool SamePlace(EventPlace? one, EventPlace? other) =>
+        (one?.PlaceId ?? "", one?.Name.Trim() ?? "", one?.Address.Trim() ?? "") == (other?.PlaceId ?? "", other?.Name.Trim() ?? "", other?.Address.Trim() ?? "");
 
     private static bool IsShown(Showing showing, DateTime? showFrom, DateTime nowUtc) =>
         showing == Showing.Shown || (showing == Showing.ShownFrom && showFrom is { } from && from <= nowUtc);
