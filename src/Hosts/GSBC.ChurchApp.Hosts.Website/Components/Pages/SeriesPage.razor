@@ -1,0 +1,47 @@
+@inject PublicFeeds Feeds
+
+@if (Series is null)
+{
+    <PageMeta Title="Series not found" Description="This sermon series isn't here any more." />
+    <Missing Heading="This series isn't here" Words="It may have been renamed or merged with another." Back="/sermons/series" BackWords="See every series" />
+}
+else
+{
+    <PageMeta Title="@Series.Name" Description="@(Series.Description.Length > 0 ? Series.Description : $"{SeriesWords.CountAndMonths(Series)} at Good Shepherd Baptist Church.")" Image="@Series.Artwork?.At(MediaSizeName.ForPhones).Url" />
+
+    <a class="text-link back" href="/sermons/series"><SiteIcon Name="back" /> All series</a>
+    <div class="page-head">
+        @if (Series.Artwork is { IsImage: true } artwork)
+        {
+            <MediaImage Media="artwork" Alt="" Class="lead-art" />
+        }
+        <div>
+            <h1>@Series.Name</h1>
+            @if (Series.Description.Length > 0)
+            {
+                <p>@Series.Description</p>
+            }
+            <p class="count-line">@SeriesWords.CountAndMonths(Series)</p>
+        </div>
+    </div>
+    <ul class="sermons">
+        @foreach (Sermon sermon in Sermons)
+        {
+            <SermonItem Sermon="sermon" InSeries="true" />
+        }
+    </ul>
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private SeriesInfo? Series;
+    private IReadOnlyList<Sermon> Sermons = [];
+
+    protected override void OnParametersSet()
+    {
+        SermonShelf shelf = Feeds.Current.Sermons;
+        Series = shelf.FindSeries(Id);
+        Sermons = Series is null ? [] : shelf.InSeries(Series.Id).Reverse().ToList();
+    }
+}

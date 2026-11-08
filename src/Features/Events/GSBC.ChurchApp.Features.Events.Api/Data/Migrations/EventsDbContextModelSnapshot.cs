@@ -441,6 +441,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("fields");
 
+                    b.Property<bool>("ListEveryDate")
+                        .HasColumnType("boolean")
+                        .HasColumnName("list_every_date");
+
                     b.PrimitiveCollection<List<string>>("Needs")
                         .IsRequired()
                         .HasColumnType("text[]")

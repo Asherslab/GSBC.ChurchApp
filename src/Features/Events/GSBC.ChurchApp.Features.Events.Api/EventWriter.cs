@@ -163,6 +163,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             (record.AskedAt, record.AskedBy) = (null, null);
         record.Needs = needs;
         record.RemindDaysBefore = remind;
+        record.ListEveryDate = request.ListEveryDate;
         record.UpdatedAt = now;
 
         db.RegularEventBreaks.RemoveRange(db.RegularEventBreaks.Where(link => link.RegularEventId == record.Id));
@@ -277,6 +278,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             Asked = record.AskedAt is not null,
             Needs = record.Needs,
             RemindDaysBefore = record.RemindDaysBefore,
+            ListEveryDate = record.ListEveryDate,
             BreakIds = named.Select(id => id.ToString()).ToList(),
             OwnBreaks = own.Select(stop => CalendarSetupService.Info(stop, [])).ToList(),
             Specials = specials.Select(Info).ToList(),

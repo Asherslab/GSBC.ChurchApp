@@ -7,7 +7,7 @@ root="$(cd "$(dirname "$0")/../.." && pwd)"
 tags="${1:?usage: publish.sh <tag>[;<tag>…] [registry]   (no registry: the local Docker daemon)}"
 registry="${2:-}"
 
-for host in Api Gateway Migrator; do
+for host in Api Gateway Migrator Website; do
   echo "== $host"
   dotnet publish "$root/src/Hosts/GSBC.ChurchApp.Hosts.$host" -c Release -t:PublishContainer -nologo \
     -p:ContainerRuntimeIdentifier=linux-arm64 \

@@ -1,0 +1,16 @@
+<span class="@Classes" aria-hidden="true">
+    <span class="tile-day">@Date.ToString("ddd", English)</span>
+    <span class="tile-num">@Date.Day</span>
+    <span class="tile-month">@Date.ToString("MMM", English)</span>
+</span>
+
+@code {
+    private static readonly System.Globalization.CultureInfo English = System.Globalization.CultureInfo.InvariantCulture;
+
+    [Parameter, EditorRequired] public DateOnly Date { get; set; }
+    [Parameter] public bool Today { get; set; }
+    [Parameter] public bool Large { get; set; }
+    [Parameter] public bool NotOn { get; set; }
+
+    private string Classes => string.Join(' ', new[] { "tile", Today ? "tile-today" : null, Large ? "tile-large" : null, NotOn ? "not-on-tile" : null }.Where(part => part is not null));
+}

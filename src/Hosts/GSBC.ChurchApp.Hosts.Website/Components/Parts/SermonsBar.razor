@@ -1,0 +1,21 @@
+@inject WebsiteLinks Links
+
+<div class="bar">
+    <form class="search" role="search" action="/sermons" method="get">
+        <label class="visually-hidden" for="sermon-search">Search sermons</label>
+        <span class="search-field"><SiteIcon Name="search" /><input id="sermon-search" name="q" type="search" value="@Query" placeholder="Search titles, series, speakers" /></span>
+        <button class="button button-quiet" type="submit">Search</button>
+    </form>
+    <div class="bar-end browse">
+        <a class="text-link" href="/sermons/series">All series</a>
+        <a class="text-link" href="/sermons/speakers">Speakers</a>
+        @if (Links.Podcast.Length > 0)
+        {
+            <a class="text-link" href="@Links.Podcast" target="_blank" rel="noopener"><SiteIcon Name="headphones" /> Podcast</a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public string? Query { get; set; }
+}

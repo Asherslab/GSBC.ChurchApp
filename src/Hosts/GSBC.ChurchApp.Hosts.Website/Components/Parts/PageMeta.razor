@@ -1,0 +1,26 @@
+@inject NavigationManager Navigation
+
+<PageTitle>@Title · Good Shepherd Baptist Church</PageTitle>
+<HeadContent>
+    <meta name="description" content="@Description" />
+    <link rel="canonical" href="@Canonical" />
+    <meta property="og:site_name" content="Good Shepherd Baptist Church" />
+    <meta property="og:type" content="@Kind" />
+    <meta property="og:title" content="@Title" />
+    <meta property="og:description" content="@Description" />
+    <meta property="og:url" content="@Canonical" />
+    @if (Image is { Length: > 0 })
+    {
+        <meta property="og:image" content="@Image" />
+        <meta name="twitter:card" content="summary_large_image" />
+    }
+</HeadContent>
+
+@code {
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter, EditorRequired] public required string Description { get; set; }
+    [Parameter] public string? Image { get; set; }
+    [Parameter] public string Kind { get; set; } = "website";
+
+    private string Canonical => Navigation.Uri;
+}

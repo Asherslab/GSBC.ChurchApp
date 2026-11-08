@@ -342,8 +342,12 @@ feels confusing". So there is one way to edit, everywhere in Events:
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
 
 - **The website shows the app's calendar** (owner, 2026-11-07): replace the website's events page with an
-  embed from the app. To discuss another time. Whatever it serves will need the same care as iCal out (an
-  HTTP path needs the owner's yes; a static file may not).
+  embed from the app. Designed and built on 2026-11-08: [website.md](website.md).
+- **List every date on the website** (owner, 2026-11-08): the website lists one-off events and specials by date, as
+  the old site did (Outreach, not Sunday mornings); unchanged dates of a regular event appear once under *Regular
+  gatherings*. A regular event's switch *List every date on the website* (off by default, under *How it runs*, in the
+  admin panel and on the phone) lists all its dates. It travels on each dated row as `ListEveryDate`, and the rule
+  shared with the digest is `OccurrenceListing` (Events.Contracts).
 
 ## Status
 

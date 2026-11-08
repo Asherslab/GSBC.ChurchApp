@@ -30,7 +30,7 @@ internal static partial class Digests
         book.Calendars.Values.Where(calendar => calendar.ICalSource is not { Length: > 0 }).Select(calendar => calendar.Id).ToHashSet();
 
     private static bool Worth(EventOccurrence occurrence) =>
-        occurrence.Kind != OccurrenceKind.Regular || occurrence.NotOn || occurrence.Missing.Count > 0;
+        OccurrenceListing.IsOneOffOrSpecial(occurrence) || occurrence.NotOn || occurrence.Missing.Count > 0;
 
     public static List<DigestItem> Candidates(EventsBook book, DateOnly start, int weeks, IReadOnlySet<Guid> calendars, DateTime now)
     {

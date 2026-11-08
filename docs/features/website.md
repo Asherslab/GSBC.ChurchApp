@@ -33,7 +33,15 @@ research, the design and each decision, then what was built.
    sermon. No banners or pop-ups.
 7. **Events show every public calendar by default, with a filter.** An embed can be limited to chosen calendars
    (`?calendar=kids`, or several: `?calendar=kids,youth`) for other pages of the website.
-8. **Build it overnight on the recommendation,** and pick the look; the decision page keeps the alternatives so the
+8. **Proper events by date, day-to-day ones once** (owner, 2026-11-08). The old website listed Outreach but not
+   Sunday morning and night. So the list shows one-off events and changed dates of regular events (specials, such as
+   *Anniversary Sunday Service*); unchanged dates of a regular event are left out, by the same rule the weekly digest
+   uses (`OccurrenceListing.IsOneOffOrSpecial`, Events.Contracts). Each regular event has a staff switch, **List every
+   date on the website** (off by default; Events data, on the regular event's page under *How it runs*, in the admin
+   panel and on the phone), and with it on every date is listed (Outreach). Regular events not listed date by date
+   appear once under **Regular gatherings**: title, how it repeats and its time, place, a link to its next date, and
+   its next date that's not on, with the break's name and when it's back.
+9. **Build it overnight on the recommendation,** and pick the look; the decision page keeps the alternatives so the
    owner can change it in the morning.
 
 ### Where it lives: one host, `Hosts.Website`
@@ -110,9 +118,9 @@ grows to its content), keeps the app's calendar decisions, and is closest to the
 surface brief with its direction contract is `.impeccable/surfaces/src-hosts-gsbc-churchapp-hosts-website.md`.
 
 - **Events** (`/events`): calendar chips (*All calendars* and each public calendar) and *Subscribe in your calendar
-  app*; then *This week*, *Next week*, *Week of 22 November*, each day a date tile (green weekday band, serif day,
-  month; today tinted) beside its events. Regular events are quiet single lines with a repeat mark; one-offs and
-  specials are full rows (title, time, place, calendar or label, picture on the right). A date that's not on keeps its
+  app*; *Regular gatherings* (answer 8 above) in a grey panel; then *This week*, *Next week*, *Week of 22 November*,
+  each day a date tile (green weekday band, serif day, month; today tinted) beside its events. Dates of a regular
+  event listed every date are quiet single lines with a repeat mark; one-offs and specials are full rows (title, time, place, calendar or label, picture on the right). A date that's not on keeps its
   line, struck through, with "Not on this week · back on 29 November". *Changed* marks a recent change. Eight weeks at
   first, then *Show the next 8 weeks* (up to the twelve months the feed holds).
 - **An event** (`/events/{id}`): *All events*, a large date tile beside the title and the when line, the repeat line
@@ -234,9 +242,11 @@ any.
 
 **Built (2026-11-08, overnight):** `Hosts.Website` with every page above, `PublicFeeds` over `Sync.Watch`, the two
 scripts, the caching and framing headers, health with a `ready` check, the AppHost (port 5320 plus the offset; it waits
-for the API), `publish.sh`, the project map, AGENTS.md's approved paths and `EndpointRules`' allowlist. Tests
-(`Hosts.Website.Tests`, unit, no I/O): applying feed batches (a delete or reset removes rows), events limited to chosen
-calendars (an event shown on another calendar included), the website's share address for each page, the caching per
+for the API), `publish.sh`, the project map, AGENTS.md's approved paths and `EndpointRules`' allowlist. Events gained *List every
+date on the website* (a column on `events.regular_events`, `ListEveryDate` on the regular event and on each dated row
+it publishes). Tests (`Hosts.Website.Tests`, unit, no I/O): applying feed batches (a delete or reset removes rows),
+events limited to chosen calendars (an event shown on another calendar included), which dates are listed and which
+gathered once with their next break, the website's share address for each page, the caching per
 response, and framing.
 
 ## Open

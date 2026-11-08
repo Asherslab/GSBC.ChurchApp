@@ -25,6 +25,7 @@ cloudflared tunnel login                       # pick the baptist.com.au zone
 cloudflared tunnel create gsbc-dev             # prints the tunnel id and writes its credentials file
 cloudflared tunnel route dns gsbc-dev dev-app.baptist.com.au
 cloudflared tunnel route dns gsbc-dev dev-media.baptist.com.au
+cloudflared tunnel route dns gsbc-dev dev-embed.baptist.com.au   # the website embeds (docs/features/website.md)
 ```
 
 Copy `cloudflared.yml` to `~/.cloudflared/config.yml` and fill in:

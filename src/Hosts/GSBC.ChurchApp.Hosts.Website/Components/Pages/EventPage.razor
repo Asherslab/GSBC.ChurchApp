@@ -1,0 +1,160 @@
+@inject PublicFeeds Feeds
+@inject TimeProvider Time
+@inject WebsiteLinks Links
+@inject NavigationManager Navigation
+
+@if (Occurrence is null)
+{
+    <PageMeta Title="Event not found" Description="This event isn't on the church calendar any more." />
+    <Missing Heading="This event isn't on the calendar" Words="It may have finished, moved or been taken off the calendar." Back="@BackHref" BackWords="See what's on" />
+}
+else
+{
+    <PageMeta Title="@Occurrence.Fields.Title" Description="@Summary" Image="@Occurrence.Fields.Picture?.At(MediaSizeName.ForPhones).Url" Kind="article" />
+
+    <a class="text-link back" href="@BackHref"><SiteIcon Name="back" /> All events</a>
+    <div class="event-head">
+        <DateTile Date="Day" Large="true" Today="Day == Today" NotOn="Occurrence.NotOn" />
+        <div>
+            <h1>@Occurrence.Fields.Title</h1>
+            <p class="when">@EventWords.LongDate(Day)@(Occurrence.NotOn ? "" : $" · {EventWords.Times(Occurrence)}")</p>
+            @if (Occurrence.Kind != OccurrenceKind.OneOff && Occurrence.Repeats.Length > 0)
+            {
+                <span class="repeat-line"><SiteIcon Name="repeat" /> @Occurrence.Repeats</span>
+            }
+        </div>
+    </div>
+
+    @if (Occurrence.NotOn)
+    {
+        <p class="change-note">@EventWords.NotOnLine(Occurrence)</p>
+    }
+    else if (Occurrence.ChangedAt is not null && Occurrence.ChangeNote.Length > 0)
+    {
+        <p class="change-note">@Occurrence.ChangeNote</p>
+    }
+
+    <div class="event-body">
+        <div class="event-main">
+            @if (Occurrence.Fields.Picture is { IsImage: true } picture)
+            {
+                <MediaImage Media="picture" Alt="" Class="picture" />
+            }
+            @if (!Occurrence.NotOn)
+            {
+                <div class="actions">
+                    @if (Occurrence.Fields.RegisterLink is { Length: > 0 } register)
+                    {
+                        <a class="button button-primary" href="@register" target="_blank" rel="noopener">Register <SiteIcon Name="external" /></a>
+                    }
+                    <a class="button button-quiet" href="@EventLinks.GoogleCalendar(Occurrence, Links.OnWebsite(PathAndQuery))" target="_blank" rel="noopener"><SiteIcon Name="calendar" /> Add to Google Calendar</a>
+                    <ShareButton />
+                </div>
+            }
+            @if (Occurrence.Fields.Description is { IsEmpty: false } description)
+            {
+                <RichTextView Content="description" />
+            }
+            @foreach (EventLink link in Occurrence.Fields.Links.Where(link => link.Url.StartsWith("https://", StringComparison.Ordinal)))
+            {
+                <p><a class="text-link" href="@link.Url" target="_blank" rel="noopener"><SiteIcon Name="external" /> @(link.Title.Length > 0 ? link.Title : link.Url)</a></p>
+            }
+            @if (OtherDates.Count > 0)
+            {
+                <section>
+                    <h2 class="section-title">Other dates</h2>
+                    <ul class="dates">
+                        @foreach (EventOccurrence other in OtherDates)
+                        {
+                            <li><a href="@Href(other)" aria-label="@DateLabel(other)"><DateTile Date="EventWords.DayOf(other)" NotOn="other.NotOn" /></a></li>
+                        }
+                    </ul>
+                </section>
+            }
+        </div>
+        <aside>
+            <dl class="facts">
+                <div>
+                    <dt><SiteIcon Name="clock" /> When</dt>
+                    <dd>@EventWords.LongDate(Day)<br />@(Occurrence.NotOn ? "Not on" : EventWords.Times(Occurrence))</dd>
+                </div>
+                <div>
+                    <dt><SiteIcon Name="pin" /> Where</dt>
+                    @if (Occurrence.Fields.Place is { } place && (place.Name.Length > 0 || place.Address.Length > 0))
+                    {
+                        <dd>
+                            @(place.Name.Length > 0 ? place.Name : place.Address)
+                            @if (place.Name.Length > 0 && place.Address.Length > 0)
+                            {
+                                <br />@place.Address
+                            }
+                            @if (EventLinks.Maps(Occurrence) is { } maps)
+                            {
+                                <br /><a href="@maps" target="_blank" rel="noopener">Open in Maps</a>
+                            }
+                        </dd>
+                    }
+                    else if (Occurrence.Missing.Contains(EventFieldKeys.Place))
+                    {
+                        <dd class="missing">@EventFieldKeys.Missing(EventFieldKeys.Place)</dd>
+                    }
+                    else
+                    {
+                        <dd>Good Shepherd Baptist Church</dd>
+                    }
+                </div>
+                @if (Occurrence.Fields.Contacts.Where(contact => contact.Name.Length > 0).Select(contact => contact.Name).ToList() is { Count: > 0 } names)
+                {
+                    <div>
+                        <dt><SiteIcon Name="person" /> Contact</dt>
+                        <dd>@string.Join(", ", names)</dd>
+                    </div>
+                }
+                @if (Calendar is not null)
+                {
+                    <div>
+                        <dt><SiteIcon Name="calendar" /> Calendar</dt>
+                        <dd>@Calendar.Name<br /><a href="@Links.Subscribe(Calendar.Slug)">Subscribe to this calendar</a></dd>
+                    </div>
+                }
+            </dl>
+            <p class="listen-links"><a class="text-link" href="@Links.InApp($"event/{Occurrence.Id}")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Open in the app</a></p>
+        </aside>
+    </div>
+}
+
+@code {
+    private const int OtherDatesShown = 8;
+
+    [Parameter] public string Id { get; set; } = "";
+    [SupplyParameterFromQuery(Name = "calendar")] public string? Limit { get; set; }
+
+    private EventOccurrence? Occurrence;
+    private CalendarInfo? Calendar;
+    private IReadOnlyList<EventOccurrence> OtherDates = [];
+    private DateOnly Day;
+    private DateOnly Today;
+
+    protected override void OnParametersSet()
+    {
+        WebsiteData data = Feeds.Current;
+        DateTime now = Time.GetUtcNow().UtcDateTime;
+        Today = ChurchTime.DayOf(now);
+        Occurrence = data.Event(Id);
+        if (Occurrence is null)
+            return;
+        Day = EventWords.DayOf(Occurrence);
+        Calendar = data.Calendar(Occurrence.CalendarId) ?? Occurrence.AlsoOn.Select(data.Calendar).FirstOrDefault(calendar => calendar is not null);
+        OtherDates = EventListing.OtherDates(data.Events, Occurrence, now, OtherDatesShown);
+    }
+
+    private string PathAndQuery => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+
+    private string BackHref => Limit is { Length: > 0 } ? $"/events?calendar={Uri.EscapeDataString(Limit)}" : "/events";
+
+    private string Href(EventOccurrence other) => Limit is { Length: > 0 } ? $"/events/{Uri.EscapeDataString(other.Id)}?calendar={Uri.EscapeDataString(Limit)}" : $"/events/{Uri.EscapeDataString(other.Id)}";
+
+    private static string DateLabel(EventOccurrence other) => other.NotOn ? $"{EventWords.LongDate(EventWords.DayOf(other))}, not on" : EventWords.LongDate(EventWords.DayOf(other));
+
+    private string Summary => Occurrence is null ? "" : EventWords.Join(EventWords.LongDate(Day), EventWords.Times(Occurrence), EventWords.PlaceLine(Occurrence));
+}

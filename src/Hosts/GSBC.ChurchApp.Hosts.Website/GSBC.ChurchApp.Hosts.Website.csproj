@@ -1,0 +1,14 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+  <PropertyGroup>
+    <ContainerRepository>asherslab/gsbc-churchapp-website</ContainerRepository>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Grpc.Net.Client" />
+    <PackageReference Include="Grpc.AspNetCore.HealthChecks" />
+    <PackageReference Include="protobuf-net.Grpc" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\Features\Sermons\GSBC.ChurchApp.Features.Sermons.Client\GSBC.ChurchApp.Features.Sermons.Client.csproj" />
+    <ProjectReference Include="..\..\Features\Events\GSBC.ChurchApp.Features.Events.Client\GSBC.ChurchApp.Features.Events.Client.csproj" />
+  </ItemGroup>
+</Project>

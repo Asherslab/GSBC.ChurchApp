@@ -92,7 +92,10 @@ internal sealed class EventsBook
         {
             Dictionary<DateOnly, SpecialRecord> specials = _specials[regular.Id].ToDictionary(special => special.Date);
             foreach (EventOccurrence occurrence in Expansion.OccurrencesOf(regular, specials, BreaksOf(regular.Id), from, to))
+            {
+                occurrence.ListEveryDate = regular.ListEveryDate;
                 yield return Stamped(occurrence, regular);
+            }
         }
 
         foreach (EventRecord record in Events.Where(record => Calendars.ContainsKey(record.CalendarId) && include(record)

@@ -73,7 +73,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push the API, gateway and migrator (linux/arm64)
+      - name: Build and push the API, gateway, migrator and website embeds (linux/arm64)
         run: tools/containers/publish.sh "sha-$SHA" ghcr.io
 
       - name: Note this build's fingerprinted runtime, to tell when it is live
@@ -106,7 +106,7 @@ jobs:
 
       - name: Move the uat tag to these images, now that CI has passed
         run: |
-          for image in api gateway migrator; do
+          for image in api gateway migrator website; do
             docker buildx imagetools create -t "ghcr.io/asherslab/gsbc-churchapp-$image:uat" "ghcr.io/asherslab/gsbc-churchapp-$image:sha-$SHA"
           done
 

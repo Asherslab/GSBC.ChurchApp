@@ -1,0 +1,25 @@
+@inject PublicFeeds Feeds
+
+@if (Sermon.SpeakerName.Length > 0)
+{
+    <p class="speaker">
+        @if (Speaker?.Photo is { IsImage: true } photo)
+        {
+            <MediaImage Media="photo" Size="MediaSizeName.Thumbnail" Alt="" Class="avatar" />
+        }
+        @if (Sermon.SpeakerId.Length > 0)
+        {
+            <a href="/sermons/speakers/@Uri.EscapeDataString(Sermon.SpeakerId)">@Sermon.SpeakerName</a>
+        }
+        else
+        {
+            <span>@Sermon.SpeakerName</span>
+        }
+    </p>
+}
+
+@code {
+    [Parameter, EditorRequired] public required Sermon Sermon { get; set; }
+
+    private SpeakerInfo? Speaker => Sermon.SpeakerId.Length > 0 ? Feeds.Current.Sermons.FindSpeaker(Sermon.SpeakerId) : null;
+}

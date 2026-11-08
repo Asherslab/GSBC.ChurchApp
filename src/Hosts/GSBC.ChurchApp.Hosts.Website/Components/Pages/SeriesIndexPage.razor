@@ -1,0 +1,38 @@
+@inject PublicFeeds Feeds
+
+<PageMeta Title="Sermon series" Description="Every sermon series at Good Shepherd Baptist Church." />
+
+<a class="text-link back" href="/sermons"><SiteIcon Name="back" /> All sermons</a>
+<div class="week-head heading-gap"><h1 class="section-heading">Series</h1></div>
+@if (Series.Count == 0)
+{
+    <section class="empty"><h2>No series yet</h2><p>Series appear here as sermons are added to them.</p></section>
+}
+else
+{
+    <ul class="series-grid">
+        @foreach (SeriesInfo series in Series)
+        {
+            <li>
+                <a href="/sermons/series/@Uri.EscapeDataString(series.Id)">
+                    @if (series.Artwork is { IsImage: true } artwork)
+                    {
+                        <MediaImage Media="artwork" Size="MediaSizeName.Thumbnail" Alt="" />
+                    }
+                    else
+                    {
+                        <span class="art-blank"></span>
+                    }
+                    <span class="series-name">@series.Name</span>
+                    <span class="count-line">@SeriesWords.CountAndMonths(series)</span>
+                </a>
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    private IReadOnlyList<SeriesInfo> Series = [];
+
+    protected override void OnParametersSet() => Series = Feeds.Current.Sermons.Series;
+}

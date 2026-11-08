@@ -57,6 +57,15 @@ IResourceBuilder<ProjectResource> gateway = builder
     .WithExternalHttpEndpoints()
     .WaitFor(api);
 
+builder
+    .AddProject<Projects.GSBC_ChurchApp_Hosts_Website>("website", launchProfileName: null)
+    .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
+    .WithHttpEndpoint(port: 5320 + portOffset, name: "web", env: "Ports__Web", isProxied: false)
+    .WithHttpEndpoint(port: 5321 + portOffset, name: "grpc", env: "Ports__Grpc", isProxied: false)
+    .WithEnvironment("Api__Address", api.GetEndpoint("grpc"))
+    .WithExternalHttpEndpoints()
+    .WaitFor(api);
+
 string teamFile = Path.Combine(builder.AppHostDirectory, "..", "App", "shell", ".team");
 if (File.Exists(teamFile) && File.ReadAllText(teamFile).Trim() is { Length: > 0 } teamId)
 {

@@ -1,0 +1,100 @@
+@inject PublicFeeds Feeds
+
+<PageMeta Title="@(Searching ? $"Sermons about “{Q}”" : "Sermons")" Description="Listen to and watch Good Shepherd Baptist Church's sermons, by date, series and speaker." Image="@Latest?.Artwork?.At(MediaSizeName.ForPhones).Url" />
+
+@if (!Feeds.HasRead)
+{
+    <section class="empty"><h2>The sermons are on their way</h2><p>They're being read from the app. Try again in a minute.</p></section>
+}
+else
+{
+    @if (Latest is not null && !Searching && PageNumber == 1)
+    {
+        <section class="lead">
+            <a href="@SermonHref(Latest)" tabindex="-1" aria-hidden="true">
+                @if (Latest.Artwork is { IsImage: true } artwork)
+                {
+                    <MediaImage Media="artwork" Alt="" Class="lead-art" />
+                }
+            </a>
+            <div>
+                <span class="lead-label">Latest sermon</span>
+                <h2><a href="@SermonHref(Latest)">@Latest.Title</a></h2>
+                @if (Latest.SeriesId is { Length: > 0 } seriesId && Latest.SeriesName is { Length: > 0 } seriesName)
+                {
+                    <p class="series-line"><a href="/sermons/series/@Uri.EscapeDataString(seriesId)">@seriesName</a>@(Latest.Part > 0 ? $" · Part {Latest.Part}" : "")</p>
+                }
+                <SpeakerLine Sermon="Latest" />
+                <ul class="meta"><li>@SermonText.When(Latest)</li><li>@SermonText.Length(Latest.DurationSeconds)</li></ul>
+                <div class="actions">
+                    <a class="button button-primary" href="@SermonHref(Latest)"><SiteIcon Name="play" /> Listen</a>
+                    @if (Latest.YouTubeId is { Length: > 0 })
+                    {
+                        <a class="button button-quiet" href="@SermonHref(Latest)"><SiteIcon Name="video" /> Watch</a>
+                    }
+                </div>
+            </div>
+        </section>
+    }
+
+    <SermonsBar Query="@Q" />
+
+    @if (Searching)
+    {
+        <p class="found">@(Matches.Count == 0 ? $"No sermons match “{Q}”." : $"{SermonText.Sermons(Matches.Count)} match “{Q}”.") <a href="/sermons">All sermons</a></p>
+    }
+
+    <SermonMonths Sermons="Shown" />
+
+    @if (PageNumber > 1 || HasOlder)
+    {
+        <nav class="pager" aria-label="More sermons">
+            @if (PageNumber > 1)
+            {
+                <a class="button button-quiet" href="@PageHref(PageNumber - 1)"><SiteIcon Name="back" /> Newer sermons</a>
+            }
+            else
+            {
+                <span></span>
+            }
+            @if (HasOlder)
+            {
+                <a class="button button-quiet" href="@PageHref(PageNumber + 1)">Older sermons <SiteIcon Name="next" /></a>
+            }
+        </nav>
+    }
+}
+
+@code {
+    private const int PageSize = 20;
+
+    [SupplyParameterFromQuery(Name = "q")] public string? Q { get; set; }
+    [SupplyParameterFromQuery(Name = "page")] public int? PageAsked { get; set; }
+
+    private Sermon? Latest;
+    private IReadOnlyList<Sermon> Matches = [];
+    private IReadOnlyList<Sermon> Shown = [];
+    private bool HasOlder;
+
+    private bool Searching => !string.IsNullOrWhiteSpace(Q);
+
+    private int PageNumber => Math.Max(1, PageAsked ?? 1);
+
+    protected override void OnParametersSet()
+    {
+        SermonShelf shelf = Feeds.Current.Sermons;
+        Latest = shelf.Sermons.FirstOrDefault();
+        IReadOnlyList<Sermon> pool = Searching ? shelf.Search(Q!) : shelf.Sermons.Skip(1).ToList();
+        Matches = pool;
+        Shown = pool.Skip((PageNumber - 1) * PageSize).Take(PageSize).ToList();
+        HasOlder = pool.Count > PageNumber * PageSize;
+    }
+
+    private static string SermonHref(Sermon sermon) => $"/sermons/{Uri.EscapeDataString(sermon.Id)}";
+
+    private string PageHref(int page) => Microsoft.AspNetCore.WebUtilities.QueryHelpers.AddQueryString("/sermons", new Dictionary<string, string?>
+    {
+        ["q"] = Searching ? Q : null,
+        ["page"] = page > 1 ? page.ToString(System.Globalization.CultureInfo.InvariantCulture) : null,
+    }.Where(pair => pair.Value is not null));
+}

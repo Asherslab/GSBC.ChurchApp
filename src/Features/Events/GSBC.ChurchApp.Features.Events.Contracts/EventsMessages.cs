@@ -127,6 +127,7 @@ public sealed class EventOccurrence
     [ProtoMember(19)] public Showing Showing { get; set; }
     [ProtoMember(20)] public DateTime? ShowFrom { get; set; }
     [ProtoMember(21)] public bool Asked { get; set; }
+    [ProtoMember(22)] public bool ListEveryDate { get; set; }
 }
 
 [ProtoContract]
@@ -314,6 +315,7 @@ public sealed class RegularEventDetail
     [ProtoMember(18)] public DateTime? ChangedAt { get; set; }
     [ProtoMember(19)] public DateTime UpdatedAt { get; set; }
     [ProtoMember(21)] public List<RegularDate> Dates { get; set; } = [];
+    [ProtoMember(22)] public bool ListEveryDate { get; set; }
 }
 
 [ProtoContract]
@@ -375,6 +377,7 @@ public sealed class RegularEventSave : IScopedRequest
     [ProtoMember(11)] public List<string> BreakIds { get; set; } = [];
     [ProtoMember(12)] public List<BreakInfo> OwnBreaks { get; set; } = [];
     [ProtoMember(13)] public bool KeepOwnConfirmed { get; set; }
+    [ProtoMember(14)] public bool ListEveryDate { get; set; }
 
     public string ScopeId => CalendarId;
 }

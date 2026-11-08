@@ -1,0 +1,16 @@
+@foreach (IGrouping<string, Sermon> month in Sermons.GroupBy(sermon => ChurchTime.ToChurch(sermon.PreachedAt).ToString("MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)))
+{
+    <section class="month">
+        <h2>@month.Key</h2>
+        <ul class="sermons">
+            @foreach (Sermon sermon in month)
+            {
+                <SermonItem Sermon="sermon" />
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<Sermon> Sermons { get; set; }
+}
