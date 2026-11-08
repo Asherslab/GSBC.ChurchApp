@@ -23,6 +23,8 @@ public sealed class InboxItem
     [ProtoMember(13)] public bool Waiting { get; set; }
     [ProtoMember(14)] public string? Action { get; set; }
     [ProtoMember(15)] public bool InAdminPanel { get; set; }
+    [ProtoMember(16)] public string? OneOf { get; set; }
+    [ProtoMember(17)] public int Rank { get; set; }
 }
 
 [ProtoContract]

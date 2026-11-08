@@ -305,9 +305,17 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("link");
 
+                    b.Property<Guid?>("OneOf")
+                        .HasColumnType("uuid")
+                        .HasColumnName("one_of");
+
                     b.Property<DateTime>("RaisedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("raised_at");
+
+                    b.Property<int>("Rank")
+                        .HasColumnType("integer")
+                        .HasColumnName("rank");
 
                     b.Property<string>("ScopeId")
                         .HasColumnType("text")

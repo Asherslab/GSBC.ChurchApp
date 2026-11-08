@@ -14,44 +14,46 @@ internal sealed class NotificationRaiser(
 {
     public async Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => await RaisedAsync(notification, cancellationToken);
 
-    public async Task<Guid> RaisedAsync(Notification notification, CancellationToken cancellationToken)
+    public async Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) =>
+        await RaisedAsync(mostSpecificFirst, cancellationToken);
+
+    public async Task<Guid> RaisedAsync(Notification notification, CancellationToken cancellationToken) =>
+        (await RaisedAsync([notification], cancellationToken))[0];
+
+    private async Task<IReadOnlyList<Guid>> RaisedAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
     {
-        NotificationKind kind = NotificationRules.Validated(kinds, notification);
         DateTime now = time.GetUtcNow().UtcDateTime;
-        Recipients recipients = await NotificationRules.RecipientsAsync(notification, holders, people, cancellationToken);
-
-        NotificationRecord record = new()
+        Guid? oneOf = mostSpecificFirst.Count > 1 ? Guid.CreateVersion7() : null;
+        List<Raised> raised = [];
+        foreach ((int rank, Notification notification) in mostSpecificFirst.Index())
         {
-            Id = Guid.CreateVersion7(),
-            Kind = kind.Key,
-            Area = kind.Area,
-            Title = notification.Title,
-            Body = notification.Body,
-            Link = notification.Link,
-            Subject = notification.Subject,
-            Urgent = notification.Urgent,
-            ScopeId = notification.ScopeId,
-            Test = notification.Test,
-            Waits = kind.Waits,
-            InAdminPanel = kind.InAdminPanel,
-            Action = notification.Action,
-            RaisedAt = now,
-        };
-        db.Notifications.Add(record);
-
-        foreach (Guid person in recipients.People)
-        {
-            InboxEntry entry = new() { Id = Guid.CreateVersion7(), NotificationId = record.Id, UserId = person };
-            db.Inbox.Add(entry);
-            db.FeedChanges.Add(InboxPayloads.InboxRow(entry, record, version: 1));
+            NotificationKind kind = NotificationRules.Validated(kinds, notification);
+            Recipients recipients = await NotificationRules.RecipientsAsync(notification, holders, people, cancellationToken);
+            NotificationRecord record = RecordOf(kind, notification, now, oneOf, rank);
+            db.Notifications.Add(record);
+            if (recipients.Public)
+                db.FeedChanges.Add(InboxPayloads.PublicRow(record));
+            raised.Add(new Raised(kind, notification, record, recipients));
         }
-        if (recipients.Public)
-            db.FeedChanges.Add(InboxPayloads.PublicRow(record));
 
-        await QueuePushesAsync(kind, notification, record, recipients, now, cancellationToken);
+        Recipients everyone = Recipients.Together(raised.Select(each => each.Recipients).ToList());
+        List<Device> devices = await DevicesAsync(everyone, cancellationToken);
+        List<Preference> preferences = await PreferencesAsync(raised, everyone, devices, cancellationToken);
+
+        foreach (Guid person in everyone.People)
+        {
+            if (OneNotification.Choose(raised, each => each.Recipients.Reach(person),
+                    each => NotificationRules.PushWantedBy(each.Kind, each.Notification.ScopeId, person, preferences)) is not { } chosen)
+                continue;
+            InboxEntry entry = new() { Id = Guid.CreateVersion7(), NotificationId = chosen.Chosen.Record.Id, UserId = person };
+            db.Inbox.Add(entry);
+            db.FeedChanges.Add(InboxPayloads.InboxRow(entry, chosen.Chosen.Record, version: 1));
+        }
+
+        await QueuePushesAsync(raised, devices, preferences, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         signal.Wake();
-        return record.Id;
+        return raised.Select(each => each.Record.Id).ToList();
     }
 
     public async Task SettleAsync(string subject, CancellationToken cancellationToken)
@@ -93,43 +95,64 @@ internal sealed class NotificationRaiser(
     }
 
     private async Task QueuePushesAsync(
-        NotificationKind kind, Notification notification, NotificationRecord record, Recipients recipients, DateTime now, CancellationToken cancellationToken)
+        List<Raised> raised, List<Device> devices, List<Preference> preferences, DateTime now, CancellationToken cancellationToken)
     {
-        List<Guid> peopleIds = [.. recipients.People];
-        List<Device> devices = await DevicesAsync(recipients, cancellationToken);
-        if (devices.Count == 0)
-            return;
-
-        List<Guid> installIds = devices.Select(device => device.InstallId).ToList();
-        List<Preference> preferences = await db.Preferences.AsNoTracking()
-            .Where(preference => preference.Kind == kind.Key && (preference.ScopeId == null || preference.ScopeId == notification.ScopeId))
-            .Where(preference => (preference.UserId != null && peopleIds.Contains(preference.UserId.Value))
-                || (preference.InstallId != null && installIds.Contains(preference.InstallId.Value)))
-            .ToListAsync(cancellationToken);
-
-        string pacingGroup = $"{kind.Key}|{notification.ScopeId}";
-        Dictionary<Guid, int> recent = kind.Pacing is { } pacing
-            ? await RecentPushesAsync(devices.Select(device => device.Id).ToList(), pacingGroup, now - pacing.Per, cancellationToken)
-            : [];
+        Dictionary<string, Dictionary<Guid, int>> recent = [];
+        foreach (Raised each in raised.Where(each => each.Kind.Pacing is not null).DistinctBy(each => each.PacingGroup))
+            recent[each.PacingGroup] = await RecentPushesAsync(devices.Select(device => device.Id).ToList(), each.PacingGroup, now - each.Kind.Pacing!.Per, cancellationToken);
 
         foreach (Device device in devices)
         {
-            if (!NotificationRules.PushWanted(kind, notification.ScopeId, device, preferences))
+            if (OneNotification.Choose(raised, each => each.Recipients.Reach(device),
+                    each => NotificationRules.PushWanted(each.Kind, each.Notification.ScopeId, device, preferences)) is not { Push: true, Chosen: var chosen })
                 continue;
-            (bool summarised, DateTime due) = NotificationRules.Scheduled(kind, notification, recent.GetValueOrDefault(device.Id), now);
+            int recentPushes = recent.GetValueOrDefault(chosen.PacingGroup)?.GetValueOrDefault(device.Id) ?? 0;
+            (bool summarised, DateTime due) = NotificationRules.Scheduled(chosen.Kind, chosen.Notification, recentPushes, now);
             db.Deliveries.Add(new Delivery
             {
                 DeviceId = device.Id,
-                NotificationId = record.Id,
+                NotificationId = chosen.Record.Id,
                 UserId = device.UserId,
                 Kind = DeliveryKind.Visible,
-                PacingGroup = pacingGroup,
+                PacingGroup = chosen.PacingGroup,
                 Summarised = summarised,
                 CreatedAt = now,
                 DueAt = due,
             });
         }
     }
+
+    private async Task<List<Preference>> PreferencesAsync(List<Raised> raised, Recipients everyone, List<Device> devices, CancellationToken cancellationToken)
+    {
+        List<string> kindKeys = raised.Select(each => each.Kind.Key).Distinct().ToList();
+        List<Guid> peopleIds = [.. everyone.People];
+        List<Guid> installIds = devices.Where(device => device.UserId is null).Select(device => device.InstallId).ToList();
+        return await db.Preferences.AsNoTracking()
+            .Where(preference => kindKeys.Contains(preference.Kind))
+            .Where(preference => (preference.UserId != null && peopleIds.Contains(preference.UserId.Value))
+                || (preference.InstallId != null && installIds.Contains(preference.InstallId.Value)))
+            .ToListAsync(cancellationToken);
+    }
+
+    private static NotificationRecord RecordOf(NotificationKind kind, Notification notification, DateTime now, Guid? oneOf, int rank) => new()
+    {
+        Id = Guid.CreateVersion7(),
+        Kind = kind.Key,
+        Area = kind.Area,
+        Title = notification.Title,
+        Body = notification.Body,
+        Link = notification.Link,
+        Subject = notification.Subject,
+        Urgent = notification.Urgent,
+        ScopeId = notification.ScopeId,
+        Test = notification.Test,
+        Waits = kind.Waits,
+        InAdminPanel = kind.InAdminPanel,
+        Action = notification.Action,
+        RaisedAt = now,
+        OneOf = oneOf,
+        Rank = rank,
+    };
 
     private Task<List<Device>> DevicesAsync(Recipients recipients, CancellationToken cancellationToken) =>
         db.Devices.AsNoTracking().Where(recipients.Devices()).ToListAsync(cancellationToken);
@@ -140,4 +163,9 @@ internal sealed class NotificationRaiser(
             .GroupBy(delivery => delivery.DeviceId)
             .Select(group => new { group.Key, Count = group.Count() })
             .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
+
+    private sealed record Raised(NotificationKind Kind, Notification Notification, NotificationRecord Record, Recipients Recipients)
+    {
+        public string PacingGroup => $"{Kind.Key}|{Notification.ScopeId}";
+    }
 }
