@@ -38,6 +38,26 @@ public sealed class WebsitePagesTests
     }
 
     [Fact]
+    public void TheTeamPageGivesOnePhotoForEachPersonAndLeavesOutCouplesAndNamesWithTwoPhotos()
+    {
+        TeamPhotos team = TeamPage.Read(SampleFiles.Text("team.html"));
+
+        Assert.Equal(["Ari Moss", "Jo Ellery", "Pat Quinn"], team.ByName.Keys.Order());
+        Assert.Equal("https://files.example/team/Ellery-J_SQUARE.jpg", team.ByName["Jo Ellery"]);
+        Assert.Equal(["Jo & Kim Ellery", "Sam Rivers"], team.LeftOut);
+    }
+
+    [Fact]
+    public void ATeamPhotoWinsOverASeriesPagePhotoOfTheSameSpeakerAndTheSeriesOneIsTheFallback()
+    {
+        IReadOnlyDictionary<string, string> photos = Speakers.Preferring(
+            new Dictionary<string, string> { ["Jo  Ellery"] = "team/jo.jpg" },
+            new Dictionary<string, string> { ["Jo Ellery"] = "series/jo.jpg", ["Lee Varga"] = "series/lee.jpg" });
+
+        Assert.Equal(new Dictionary<string, string> { ["jo ellery"] = "team/jo.jpg", ["lee varga"] = "series/lee.jpg" }, photos);
+    }
+
+    [Fact]
     public void ASermonShowsTheWholeGraphicFromItsPageRatherThanTheFeedsSquareCrop()
     {
         const string Whole = "https://files.example/2026/11/01/art/harbour-4-wide.png";

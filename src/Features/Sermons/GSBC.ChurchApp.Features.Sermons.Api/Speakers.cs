@@ -31,18 +31,40 @@ internal sealed class Speakers(SermonsDbContext db, Artwork artwork, TimeProvide
         return speaker;
     }
 
-    public async Task TakePhotosAsync(IReadOnlyDictionary<string, string> photosByName, CancellationToken cancellationToken)
+    public static Dictionary<string, string> ByAlias(IReadOnlyDictionary<string, string> byName)
     {
-        foreach ((string name, string url) in photosByName)
+        Dictionary<string, string> byAlias = new(StringComparer.Ordinal);
+        foreach ((string name, string url) in byName)
+            byAlias.TryAdd(AliasOf(name), url);
+        return byAlias;
+    }
+
+    public static IReadOnlyDictionary<string, string> Preferring(IReadOnlyDictionary<string, string> better, IReadOnlyDictionary<string, string> fallback)
+    {
+        Dictionary<string, string> byAlias = ByAlias(fallback);
+        foreach ((string name, string url) in better)
+            byAlias[AliasOf(name)] = url;
+        return byAlias;
+    }
+
+    public async Task<IReadOnlyList<string>> TakePhotosAsync(IReadOnlyDictionary<string, string> photosByAlias, bool onlyWithout, CancellationToken cancellationToken)
+    {
+        List<string> unmatched = [];
+        foreach ((string alias, string url) in photosByAlias)
         {
-            string alias = AliasOf(name);
             Guid? id = await db.SpeakerAliases.Where(known => known.Alias == alias).Select(known => (Guid?)known.SpeakerId).SingleOrDefaultAsync(cancellationToken);
-            if (id is null || await db.Speakers.FindAsync([id.Value], cancellationToken) is not { } speaker || speaker.PhotoSourceUrl == url)
+            if (id is null || await db.Speakers.FindAsync([id.Value], cancellationToken) is not { } speaker)
+            {
+                unmatched.Add(alias);
+                continue;
+            }
+            if (speaker.PhotoSourceUrl == url || (onlyWithout && speaker.PhotoSourceUrl is not null))
                 continue;
             speaker.PhotoSourceUrl = url;
             speaker.PhotoHash = null;
             speaker.Photo = null;
         }
+        return unmatched;
     }
 
     public async Task FillInPhotosAsync(CancellationToken cancellationToken)
