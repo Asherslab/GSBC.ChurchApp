@@ -7,7 +7,7 @@
 @inject IJSRuntime Js
 @inject IAccess Access
 
-<LiveData @ref="_live" TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="This week" StuckAt="90">
@@ -22,7 +22,6 @@
     private const int MoreWeeks = 4;
     private static readonly System.Globalization.CultureInfo English = System.Globalization.CultureInfo.InvariantCulture;
 
-    private LiveData<Diary>? _live;
     private DotNetObjectReference<WeekPage>? _self;
     private bool _following;
     private int _weeks = FirstWeeks;
@@ -89,7 +88,7 @@
             .GroupBy(EventWords.DayOf).OrderBy(day => day.Key).ToList();
         bool more = shown.Any(occurrence => EventWords.DayOf(occurrence) > last);
         HashSet<DateOnly> marked = shown.Select(EventWords.DayOf).ToHashSet();
-        IReadOnlyList<RailDay> rail = Enumerable.Range(0, 7).Select(offset => weekStart.AddDays(offset)).Select(day => new RailDay(day, marked.Contains(day))).ToList();
+        IReadOnlyList<RailDay> rail = Enumerable.Range(0, 7).Select(weekStart.AddDays).Select(day => new RailDay(day, marked.Contains(day))).ToList();
 
         return @<Page Title="This week" StuckAt="90" Actions="NewEvent(diary)">
             <Masthead Title="This week" Beside="Switch" Class="masthead--week" />

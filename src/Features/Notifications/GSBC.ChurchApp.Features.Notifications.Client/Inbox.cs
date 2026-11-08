@@ -13,8 +13,8 @@ public sealed record InboxEntry(InboxItem Item, bool Unread);
 
 public sealed class Inbox : IInboxCount, IDisposable
 {
-    public const string Route = "notifications";
-    public const string MarkReadMethod = "/gsbc.notifications.Notifications/MarkRead";
+    private const string Route = "notifications";
+    private const string MarkReadMethod = "/gsbc.notifications.Notifications/MarkRead";
     public static readonly IReadOnlyList<string> Feeds = [NotificationsFeeds.Inbox, NotificationsFeeds.Public];
 
     public const string Remembered = "notifications.inbox";
