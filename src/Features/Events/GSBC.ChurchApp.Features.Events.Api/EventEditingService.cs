@@ -14,8 +14,8 @@ internal sealed class EventEditingService(
     EventsDbContext db, EventsPublisher publisher, EventWriter writer, IAccessEvaluator access, INotifications notifications, TimeProvider time)
     : IEventEditingService
 {
-    public const int NeedsDetailsDays = 60;
-    public const int LongestAgendaDays = 400;
+    private const int NeedsDetailsDays = 60;
+    private const int LongestAgendaDays = 400;
     private const int MostPlacesUsed = 50;
 
     public async ValueTask<CalendarDesk> DeskAsync(Done request, CallContext context = default)
@@ -245,10 +245,9 @@ internal sealed class EventEditingService(
         string title = request.Title.Trim() is { Length: > 0 } given ? given : occurrence.Fields.Title;
         string body = request.Body.Trim() is { Length: > 0 } words ? words
             : occurrence.NotOn ? "Not on" : occurrence.ChangeNote.Length > 0 ? occurrence.ChangeNote : WhenWords(occurrence);
-        foreach (NotificationAudience audience in Tellable(calendar))
-            await notifications.RaiseAsync(new Notification(EventsNotifications.Told, audience, title, body,
-                Link: EventsDestinations.Event.PathOf(occurrence.Id), Subject: $"events/told/{occurrence.Id}/{now.Ticks}", ScopeId: calendar.Id.ToString(),
-                Action: "Open"), cancellationToken);
+        await notifications.RaiseOneOfAsync(Tellable(calendar).Select(audience => new Notification(EventsNotifications.Told, audience, title, body,
+            Link: EventsDestinations.Event.PathOf(occurrence.Id), Subject: $"events/told/{occurrence.Id}/{now.Ticks}", ScopeId: calendar.Id.ToString(),
+            Action: "Open")).ToList(), cancellationToken);
         return new Done();
     }
 
@@ -294,7 +293,7 @@ internal sealed class EventEditingService(
     {
         DateOnly today = ChurchTime.Today(time);
         return book.Occurrences(today, today.AddDays(NeedsDetailsDays), item => editable.Contains(item.CalendarId))
-            .Where(occurrence => !occurrence.NotOn && occurrence.Missing.Count > 0)
+            .Where(occurrence => occurrence is { NotOn: false, Missing.Count: > 0 })
             .OrderBy(occurrence => occurrence.StartsAt)
             .Select(occurrence => new NeedsDetailsItem { Occurrence = occurrence, DaysToGo = EventDates.Parse(occurrence.Date)!.Value.DayNumber - today.DayNumber })
             .ToList();

@@ -21,5 +21,15 @@ internal static class TestKinds
 
     public static readonly NotificationKind RosterSwap = new("ministries.roster.swap", "Someone asks you to swap a roster", "Ministries", Waits: true);
 
-    public static NotificationKindCatalog Catalog => new([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, .. AnnouncementNotifications.All])]);
+    public static readonly Permission HearNew = new("sermons.new.receive", ScopeKind.Global, "Hear of new sermons");
+
+    public static readonly Permission HearSeries = new("sermons.series.receive", ScopeKind.SermonSeries, "Hear of new sermons in a series");
+
+    public static readonly NotificationKind NewSermon = new("sermons.new", "A new sermon is out", "Sermons", For: HearNew);
+
+    public static readonly NotificationKind NewInSeries = new("sermons.series.new", "A series you follow has a new sermon", "Sermons",
+        PerScope: ScopeKind.SermonSeries, For: HearSeries);
+
+    public static NotificationKindCatalog Catalog =>
+        new([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, NewSermon, NewInSeries, .. AnnouncementNotifications.All])]);
 }

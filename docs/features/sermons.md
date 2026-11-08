@@ -359,8 +359,11 @@ picture-in-picture and fullscreen (iOS's own video controls). In production the 
   series. They are opt-in in the true sense: only holders get them, inbox included. A signed-out phone's inbox shows
   only what it follows: the public rows carry a scope (`sermons`, or the series' id) and Notifications' inbox now
   includes rows whose scope a feature says this phone follows (`IFollowedScopes`, Platform.Client; one filter line in
-  Notifications.Client). Someone following both all sermons and a series hears twice for that series' sermons. Roles
-  with every permission (the Owner's `*`) hold these too, so the Owner hears of every sermon.
+  Notifications.Client). The two are raised as one (`RaiseOneOfAsync`, series first): someone following both all
+  sermons and a series hears once, as "New in <series>: …" (owner, 2026-11-08: two for one sermon is a double up; see
+  notifications.md, *One notification per thing*). Roles with every permission (the Owner's `*`) hold these too, so the
+  Owner hears of every sermon, once. A sermon is announced once, when it first appears: giving it a series later doesn't
+  announce it again (`AnnouncedAt`).
 
 ## Permissions
 
