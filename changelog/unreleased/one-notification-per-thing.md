@@ -3,6 +3,7 @@ title: One notification for each new sermon
 audience: everyone
 icon: bell
 area: Notifications
+added: 2026-11-08
 ---
 If you follow a series and every new sermon, a new sermon in that series now reaches you once, not twice.
 
