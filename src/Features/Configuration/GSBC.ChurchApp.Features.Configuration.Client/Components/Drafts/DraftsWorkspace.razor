@@ -441,7 +441,7 @@ else
         {
             <div class="detail-pane__head">
                 <h3>The tab bar</h3>
-                <span>Up to four tabs, then More. Click a tab on the phone to change what it opens, its word and its icon, or add one.</span>
+                <span>Home first, up to three tabs you choose, then More. Click a tab on the phone to change what it opens, its word and its icon, or add one.</span>
             </div>
             <p class="detail-pane__hint">A place that isn't a tab is still in the app: it's listed in More, and reached from Home's tiles, links and notifications.</p>
         }
@@ -527,8 +527,8 @@ else
 
     private bool IsCanvas => IsHub || IsTabs;
 
-    private IReadOnlyCollection<string> OtherTabRoutes => _session is null ? []
-        : _session.Arranged(TabBarSurfaces.Area, null).Where(entry => !entry.Hidden && KeyOf(entry) != _selectedKey).Select(entry => TabBar.Of(entry).Route).ToList();
+    private IReadOnlyCollection<string> OtherTabRoutes => _session is null ? [TabBar.Home.Route]
+        : [TabBar.Home.Route, .. _session.Arranged(TabBarSurfaces.Area, null).Where(entry => !entry.Hidden && KeyOf(entry) != _selectedKey).Select(entry => TabBar.Of(entry).Route)];
 
     private static string RemoveWords(PlacementDraft form) =>
         TabBarSurfaces.IsTab(form.Surface) ? "Take it off the bar" : form.Surface.Repeatable ? "Take it out" : "Back to how the app starts";

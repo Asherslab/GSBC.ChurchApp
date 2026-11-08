@@ -84,17 +84,31 @@ internal sealed class PlacementRules(SurfaceCatalog surfaces, PermissionCatalog 
             problems.Add($"No permission '{node}' exists to choose an audience by.");
         if (state is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
             problems.Add($"'{surface.Title}' has to end after it starts.");
-        if (problems.Count == 0 && TabBarSurfaces.IsTab(surface) && TabProblem(OpensOf(surface, state)) is { } tab)
+        if (problems.Count == 0 && TabBarSurfaces.IsTab(surface) && TabProblem(surface, state, audience!) is { } tab)
             problems.Add(tab);
 
         return problems.Count == 0 ? state with { Audience = audience!.Text } : throw Invalid(string.Join(" ", problems));
     }
 
+    public const string HomeIsFixed = "Home is always the first tab, for everyone, so it can't be moved, changed or taken off the bar.";
+
+    private static bool IsHomeAsItAlwaysIs(PlacementState state, Audience audience) =>
+        state is { Hidden: false, StartsAt: null, EndsAt: null }
+        && audience.Text == Audience.Everyone.Text
+        && TabBarSurfaces.Home.Settings.All(setting => state.Values.GetValueOrDefault(setting.Key, setting.DefaultText) == setting.DefaultText);
+
     private static string OpensOf(Surface surface, PlacementState state) =>
         state.Values.GetValueOrDefault(TabSettings.Opens.Key) ?? surface.Settings.First(setting => setting.Key == TabSettings.Opens.Key).DefaultText;
 
+    private string? TabProblem(Surface surface, PlacementState state, Audience audience) =>
+        TabBarSurfaces.IsHome(surface)
+            ? IsHomeAsItAlwaysIs(state, audience) ? null : HomeIsFixed
+            : TabProblem(OpensOf(surface, state));
+
     private string? TabProblem(string opens) => destinations.Resolve(opens) switch
     {
+        _ when string.Equals(DestinationPaths.RouteOf(opens), TabBar.Home.Route, StringComparison.OrdinalIgnoreCase) =>
+            "Home is always the first tab, so another tab can't open it.",
         null => "That tab opens a place the app doesn't have. Choose another place.",
         ResolvedItem { Kind.OpensOutside: true } item => $"A {item.Kind.Noun.ToLowerInvariant()} opens outside the app, so it can't be a tab.",
         _ => null,
@@ -105,6 +119,9 @@ internal sealed class PlacementRules(SurfaceCatalog surfaces, PermissionCatalog 
         SortedDictionary<string, string> values = new(state.Values);
         foreach (Setting setting in surface.Settings.Where(setting => setting is INormalises && values.ContainsKey(setting.Key)))
             values[setting.Key] = ((INormalises)setting).Normalise(values[setting.Key]);
-        return state with { Values = values };
+        return state with { Values = values, Order = AfterHome(surface, state.Order) };
     }
+
+    private static int AfterHome(Surface surface, int order) =>
+        TabBarSurfaces.IsTab(surface) && !TabBarSurfaces.IsHome(surface) ? Math.Max(order, TabBarSurfaces.Home.DefaultOrder + 1) : order;
 }

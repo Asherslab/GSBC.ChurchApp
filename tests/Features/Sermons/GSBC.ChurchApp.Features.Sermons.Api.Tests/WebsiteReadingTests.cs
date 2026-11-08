@@ -1,6 +1,9 @@
 using System.Net;
+using GSBC.ChurchApp.Features.Sermons.Api.Data;
+using GSBC.ChurchApp.Features.Sermons.Api.Website;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
@@ -63,6 +66,29 @@ public sealed class WebsiteReadingTests : SermonsHost
         await WithAsync(provider => provider.GetRequiredService<SermonLibraryService>().CorrectAsync(new SermonCorrection { Id = walking.Sermon.Id, Checked = true }).AsTask());
         Assert.Equal(0, (await QueueAsync()).Total);
     }
+
+    [Fact]
+    public async Task ASpeakerTakesTheTeamPagesLargerPhotoOnTheNextReadAndKeepsItWhenThatPageFails()
+    {
+        const string TeamPhoto = "https://files.example/team/Ellery-J_SQUARE.jpg";
+        await ReadTheWebsiteAsync();
+        Assert.Equal("https://files.example/people/ellery.jpg", (await SpeakerAsync("Jo Ellery")).PhotoSourceUrl);
+
+        Website.ServeText($"{FakeWebsite.BaseUrl}{TeamPage.Path}", Sample("team.html"));
+        Website.ServeBytes(TeamPhoto, SampleFiles.Picture(240, 240));
+        await ReadTheWebsiteAsync(force: true);
+        SpeakerRecord jo = await SpeakerAsync("Jo Ellery");
+        Assert.Equal(TeamPhoto, jo.PhotoSourceUrl);
+        Assert.NotNull(jo.Photo);
+        Assert.Null((await SpeakerAsync("Sam Rivers")).PhotoSourceUrl);
+
+        Website.Fail($"{FakeWebsite.BaseUrl}{TeamPage.Path}", HttpStatusCode.InternalServerError);
+        await ReadTheWebsiteAsync(force: true);
+        Assert.Equal(TeamPhoto, (await SpeakerAsync("Jo Ellery")).PhotoSourceUrl);
+    }
+
+    private Task<SpeakerRecord> SpeakerAsync(string name) => WithAsync(provider =>
+        provider.GetRequiredService<SermonsDbContext>().Speakers.AsNoTracking().SingleAsync(speaker => speaker.Name == name, Cancel));
 
     private Task<SermonList> QueueAsync() => WithAsync(provider =>
         provider.GetRequiredService<SermonLibraryService>().ListAsync(new SermonQuery { Filter = SermonLibraryService.Filters.NeedsALook }).AsTask());

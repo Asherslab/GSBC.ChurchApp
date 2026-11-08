@@ -74,15 +74,15 @@ internal static class NotificationRules
         }
     }
 
-    public static bool PushWanted(NotificationKind kind, string? scopeId, Device device, IReadOnlyCollection<Preference> preferences) =>
+    public static bool Wanted(NotificationKind kind, string? scopeId, Device device, IReadOnlyCollection<Preference> preferences) =>
         device.UserId is { } userId
-            ? PushWantedBy(kind, scopeId, userId, preferences)
-            : PushWanted(kind, scopeId, preference => preference.InstallId == device.InstallId, preferences);
+            ? WantedBy(kind, scopeId, userId, preferences)
+            : Wanted(kind, scopeId, preference => preference.InstallId == device.InstallId, preferences);
 
-    public static bool PushWantedBy(NotificationKind kind, string? scopeId, Guid userId, IReadOnlyCollection<Preference> preferences) =>
-        PushWanted(kind, scopeId, preference => preference.UserId == userId, preferences);
+    public static bool WantedBy(NotificationKind kind, string? scopeId, Guid userId, IReadOnlyCollection<Preference> preferences) =>
+        Wanted(kind, scopeId, preference => preference.UserId == userId, preferences);
 
-    private static bool PushWanted(NotificationKind kind, string? scopeId, Func<Preference, bool> mine, IReadOnlyCollection<Preference> preferences)
+    private static bool Wanted(NotificationKind kind, string? scopeId, Func<Preference, bool> mine, IReadOnlyCollection<Preference> preferences)
     {
         if (kind.Mandatory)
             return true;

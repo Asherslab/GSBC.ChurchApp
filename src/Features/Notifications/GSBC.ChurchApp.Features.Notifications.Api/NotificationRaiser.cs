@@ -42,12 +42,11 @@ internal sealed class NotificationRaiser(
 
         foreach (Guid person in everyone.People)
         {
-            if (OneNotification.Choose(raised, each => each.Recipients.Reach(person),
-                    each => NotificationRules.PushWantedBy(each.Kind, each.Notification.ScopeId, person, preferences)) is not { } chosen)
+            if (OneNotification.Choose(raised, each => each.Recipients.Reach(person), each => each.WantedBy(person, preferences)) is not { } chosen)
                 continue;
-            InboxEntry entry = new() { Id = Guid.CreateVersion7(), NotificationId = chosen.Chosen.Record.Id, UserId = person };
+            InboxEntry entry = new() { Id = Guid.CreateVersion7(), NotificationId = chosen.Record.Id, UserId = person };
             db.Inbox.Add(entry);
-            db.FeedChanges.Add(InboxPayloads.InboxRow(entry, chosen.Chosen.Record, version: 1));
+            db.FeedChanges.Add(InboxPayloads.InboxRow(entry, chosen.Record, version: 1));
         }
 
         await QueuePushesAsync(raised, devices, preferences, now, cancellationToken);
@@ -103,8 +102,7 @@ internal sealed class NotificationRaiser(
 
         foreach (Device device in devices)
         {
-            if (OneNotification.Choose(raised, each => each.Recipients.Reach(device),
-                    each => NotificationRules.PushWanted(each.Kind, each.Notification.ScopeId, device, preferences)) is not { Push: true, Chosen: var chosen })
+            if (OneNotification.Choose(raised, each => each.Recipients.Reach(device), each => each.WantedOn(device, preferences)) is not { } chosen)
                 continue;
             int recentPushes = recent.GetValueOrDefault(chosen.PacingGroup)?.GetValueOrDefault(device.Id) ?? 0;
             (bool summarised, DateTime due) = NotificationRules.Scheduled(chosen.Kind, chosen.Notification, recentPushes, now);
@@ -167,5 +165,11 @@ internal sealed class NotificationRaiser(
     private sealed record Raised(NotificationKind Kind, Notification Notification, NotificationRecord Record, Recipients Recipients)
     {
         public string PacingGroup => $"{Kind.Key}|{Notification.ScopeId}";
+
+        public bool WantedBy(Guid person, IReadOnlyCollection<Preference> preferences) =>
+            Notification.Test || NotificationRules.WantedBy(Kind, Notification.ScopeId, person, preferences);
+
+        public bool WantedOn(Device device, IReadOnlyCollection<Preference> preferences) =>
+            Notification.Test || NotificationRules.Wanted(Kind, Notification.ScopeId, device, preferences);
     }
 }

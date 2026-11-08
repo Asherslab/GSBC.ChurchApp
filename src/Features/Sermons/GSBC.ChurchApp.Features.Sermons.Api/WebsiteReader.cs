@@ -173,7 +173,7 @@ internal sealed class WebsiteReader(
             foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.Origin == Origin).ToListAsync(cancellationToken))
                 sermon.SourceSeriesId = sermon.WebLink is not null && seriesOfLink.TryGetValue(sermon.WebLink, out Guid seriesId) ? seriesId : null;
 
-            await speakers.TakePhotosAsync(photos, cancellationToken);
+            await TakeSpeakerPhotosAsync(photos, cancellationToken);
             state.SeriesCheckedAt = now;
             state.SeriesProblem = null;
         }
@@ -184,6 +184,36 @@ internal sealed class WebsiteReader(
             state.SeriesProblem = Problem(exception);
         }
         await db.SaveChangesAsync(cancellationToken);
+    }
+
+    private async Task TakeSpeakerPhotosAsync(IReadOnlyDictionary<string, string> fromSeriesPages, CancellationToken cancellationToken)
+    {
+        if (await TeamPhotosAsync(cancellationToken) is not { } team)
+        {
+            await speakers.TakePhotosAsync(Speakers.ByAlias(fromSeriesPages), onlyWithout: true, cancellationToken);
+            return;
+        }
+
+        IReadOnlyList<string> unmatched = await speakers.TakePhotosAsync(Speakers.Preferring(team.ByName, fromSeriesPages), onlyWithout: false, cancellationToken);
+        List<string> notSpeakers = team.ByName.Keys.Where(name => unmatched.Contains(Speakers.AliasOf(name))).ToList();
+        logger.LogInformation("Team page photos: {Matched} matched a speaker; not speakers: {NotSpeakers}; left out: {LeftOut}",
+            team.ByName.Count - notSpeakers.Count, string.Join(", ", notSpeakers), string.Join(", ", team.LeftOut));
+    }
+
+    private async Task<TeamPhotos?> TeamPhotosAsync(CancellationToken cancellationToken)
+    {
+        try
+        {
+            TeamPhotos team = TeamPage.Read(await website.PageAsync(TeamPage.Path, cancellationToken));
+            if (team.ByName.Count > 0)
+                return team;
+            logger.LogWarning("The website's team page shows no photos; giving only speakers without a photo one from the series pages");
+        }
+        catch (Exception exception) when (exception is HttpRequestException or TaskCanceledException && !cancellationToken.IsCancellationRequested)
+        {
+            logger.LogWarning(exception, "Reading the website's team page failed; giving only speakers without a photo one from the series pages");
+        }
+        return null;
     }
 
     internal static void Take(SeriesRecord series, SeriesLink link, SeriesPage page)

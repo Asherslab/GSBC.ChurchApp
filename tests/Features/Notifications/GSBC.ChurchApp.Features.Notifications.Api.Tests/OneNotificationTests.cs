@@ -10,16 +10,16 @@ public sealed class OneNotificationTests
     [Fact]
     public void SomeoneWithSeveralReasonsGetsTheMostSpecificOnce()
     {
-        Assert.Equal(new ChosenNotification<string>(InSeries, Push: true), Choose(follows: [InSeries, AnySermon], muted: []));
-        Assert.Equal(new ChosenNotification<string>(AnySermon, Push: true), Choose(follows: [AnySermon], muted: []));
+        Assert.Equal(InSeries, Choose(follows: [InSeries, AnySermon], muted: []));
+        Assert.Equal(AnySermon, Choose(follows: [AnySermon], muted: []));
         Assert.Null(Choose(follows: [], muted: []));
     }
 
     [Fact]
-    public void MutingTheMostSpecificFallsBackToTheNextAndMutingEveryReasonLeavesItInTheInboxWithoutAPush()
+    public void TurningOffTheMostSpecificFallsBackToTheNextAndTurningOffEveryReasonSendsNothing()
     {
-        Assert.Equal(new ChosenNotification<string>(AnySermon, Push: true), Choose(follows: [InSeries, AnySermon], muted: [InSeries]));
-        Assert.Equal(new ChosenNotification<string>(InSeries, Push: false), Choose(follows: [InSeries, AnySermon], muted: [InSeries, AnySermon]));
+        Assert.Equal(AnySermon, Choose(follows: [InSeries, AnySermon], muted: [InSeries]));
+        Assert.Null(Choose(follows: [InSeries, AnySermon], muted: [InSeries, AnySermon]));
     }
 
     [Fact]
@@ -35,8 +35,9 @@ public sealed class OneNotificationTests
 
         Assert.Equal(["b", "c"], OneNotification.OnePerThing(reached, _ => true).Select(item => item.Id));
         Assert.Equal(["a", "c"], OneNotification.OnePerThing(reached, kind => kind != InSeries).Select(item => item.Id));
+        Assert.Empty(OneNotification.OnePerThing(reached, _ => false));
     }
 
-    private static ChosenNotification<string>? Choose(string[] follows, string[] muted) =>
+    private static string? Choose(string[] follows, string[] muted) =>
         OneNotification.Choose(MostSpecificFirst, follows.Contains, kind => !muted.Contains(kind));
 }

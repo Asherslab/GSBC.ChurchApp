@@ -36,7 +36,7 @@ public sealed class NotificationRulesTests
     }
 
     [Fact]
-    public void TurningAKindOffStopsItsPushButSafetyNoticesAlwaysPush()
+    public void TurningAKindOffStopsItButSafetyNoticesAlwaysArrive()
     {
         Guid person = Guid.CreateVersion7();
         Device phone = Phone(Guid.CreateVersion7(), person);
@@ -46,8 +46,8 @@ public sealed class NotificationRulesTests
             new() { UserId = person, Kind = TestKinds.NewPasskey.Key, Push = false },
         ];
 
-        Assert.False(NotificationRules.PushWanted(TestKinds.ChatMessage, TestKinds.Music, phone, preferences));
-        Assert.True(NotificationRules.PushWanted(TestKinds.NewPasskey, null, phone, preferences));
+        Assert.False(NotificationRules.Wanted(TestKinds.ChatMessage, TestKinds.Music, phone, preferences));
+        Assert.True(NotificationRules.Wanted(TestKinds.NewPasskey, null, phone, preferences));
     }
 
     [Fact]

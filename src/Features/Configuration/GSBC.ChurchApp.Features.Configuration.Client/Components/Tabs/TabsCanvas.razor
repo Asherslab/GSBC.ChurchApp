@@ -24,6 +24,7 @@
         <section class="tabs-canvas__order" aria-labelledby="tabs-order">
             <h3 id="tabs-order">On the bar, in order</h3>
             <ol class="tabs-canvas__list">
+                @FixedRow(TabBar.Home.Icon, TabBar.Home.Word, "Always first")
                 @for (int index = 0; index < OnBar.Count; index++)
                 {
                     int position = index;
@@ -42,10 +43,7 @@
                         <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-right" Disabled="@(position == OnBar.Count - 1)" AriaLabel="@($"Move {name} right")" Tooltip="Move right" OnClick="() => SwapAsync(position, position + 1)" />
                     </li>
                 }
-                <li class="tabs-canvas__row tabs-canvas__row--fixed">
-                    <span class="tabs-canvas__name"><Icon Name="more" Size="IconSize.Small" /><span>More</span></span>
-                    <span class="tabs-canvas__always" title="Always last"><Icon Name="lock" Size="IconSize.Small" /><span class="visually-hidden">Always last</span></span>
-                </li>
+                @FixedRow("more", "More", "Always last")
             </ol>
         </section>
         @if (NotOnBar.Count > 0 || Removed.Count > 0)
@@ -77,17 +75,21 @@
             </ChildContent>
             <TabBarContent>
                 <nav class="tabbar tabs-canvas__bar" aria-label="The tab bar in this draft">
+                    <span class="tabbar__item tabs-canvas__fixed active" title="Home is always the first tab">
+                        <Icon Name="@TabBar.Home.Icon" />
+                        <span>@TabBar.Home.Word</span>
+                    </span>
                     @foreach (ArrangedSurface entry in OnBar)
                     {
                         AppTab tab = TabBar.Of(entry);
                         bool selected = KeyOf(entry) == SelectedKey;
-                        <button type="button" class="tabbar__item tabs-canvas__tab @(selected ? "tabs-canvas__tab--on" : "") @(tab.Route.Length == 0 ? "active" : "")"
+                        <button type="button" class="tabbar__item tabs-canvas__tab @(selected ? "tabs-canvas__tab--on" : "")"
                                 aria-pressed="@(selected ? "true" : "false")" @onclick="() => OnChoose.InvokeAsync(entry)">
                             <Icon Name="@tab.Icon" />
                             <span>@tab.Word</span>
                         </button>
                     }
-                    <span class="tabbar__item tabs-canvas__more" title="More is always the last tab">
+                    <span class="tabbar__item tabs-canvas__fixed" title="More is always the last tab">
                         <Icon Name="more" />
                         <span>More</span>
                     </span>
@@ -148,14 +150,16 @@
         _ => Guid.TryParse(_viewer, out Guid role) ? $"someone who's {RoleNames.GetValueOrDefault(role, "in that role")}" : "a visitor",
     };
 
-    private List<ArrangedSurface> ShownToViewer => Tabs.Where(entry => entry.IsShownTo(Viewer, At)).ToList();
+    private List<ArrangedSurface> Chosen => Tabs.Where(entry => !TabBarSurfaces.IsHome(entry.Surface)).ToList();
+
+    private List<ArrangedSurface> ShownToViewer => Chosen.Where(entry => entry.IsShownTo(Viewer, At)).ToList();
 
     private List<ArrangedSurface> OnBar
     {
         get
         {
-            List<string> keys = TabBar.For(ShownToViewer).Select(tab => tab.Key).ToList();
-            return Tabs.Where(entry => keys.Contains(KeyOf(entry))).ToList();
+            List<string> keys = TabBar.Chosen(ShownToViewer).Select(tab => tab.Key).ToList();
+            return Chosen.Where(entry => keys.Contains(KeyOf(entry))).ToList();
         }
     }
 
@@ -164,7 +168,7 @@
         get
         {
             List<ArrangedSurface> onBar = OnBar;
-            return Tabs.Where(entry => !onBar.Contains(entry)).Select(entry => (entry, WhyNot(entry))).ToList();
+            return Chosen.Where(entry => !onBar.Contains(entry)).Select(entry => (entry, WhyNot(entry))).ToList();
         }
     }
 
@@ -181,9 +185,11 @@
         if (entry.Surface.ProblemsWith(entry.Values.Raw).Count > 0)
             return "Not finished: it needs a place, a word and an icon";
         AppTab tab = TabBar.Of(entry);
+        if (string.Equals(tab.Route, TabBar.Home.Route, StringComparison.OrdinalIgnoreCase))
+            return "Home is already the first tab";
         return ShownToViewer.TakeWhile(other => other != entry).Any(other => string.Equals(TabBar.Of(other).Route, tab.Route, StringComparison.OrdinalIgnoreCase))
             ? "Another tab already opens this place"
-            : "Past the fourth: only four tabs fit beside More";
+            : "Past the third: only three tabs fit between Home and More";
     }
 
     private List<ArrangedSurface> HomeShown => Hub.Where(entry => HubSurfaces.IsArrangement(entry.Surface) || entry.IsShownTo(Viewer, At)).ToList();
@@ -191,16 +197,24 @@
     private AppearanceSurfaces.ChosenTheme Palette =>
         AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, At)));
 
+    private static RenderFragment FixedRow(string icon, string word, string where) => __builder =>
+    {
+        <li class="tabs-canvas__row tabs-canvas__row--fixed">
+            <span class="tabs-canvas__name"><Icon Name="@icon" Size="IconSize.Small" /><span>@word</span></span>
+            <span class="tabs-canvas__always" title="@where"><Icon Name="lock" Size="IconSize.Small" /><span class="visually-hidden">@where</span></span>
+        </li>
+    };
+
     private static string KeyOf(ArrangedSurface entry) => entry.Placement?.Id ?? entry.Surface.Key;
 
     private async Task SwapAsync(int from, int to)
     {
         List<ArrangedSurface> onBar = OnBar;
-        List<ArrangedSurface> all = [.. Tabs];
+        List<ArrangedSurface> all = [.. Chosen];
         int one = all.IndexOf(onBar[from]);
         int other = all.IndexOf(onBar[to]);
         (all[one], all[other]) = (all[other], all[one]);
-        await OnMove.InvokeAsync(all);
-        _announced = $"Moved {DraftWords.NameOf(onBar[from])} to tab {to + 1} of {onBar.Count}.";
+        await OnMove.InvokeAsync([.. Tabs.Where(entry => TabBarSurfaces.IsHome(entry.Surface)), .. all]);
+        _announced = $"Moved {DraftWords.NameOf(onBar[from])} to tab {to + 2} of {onBar.Count + 1}, after Home.";
     }
 }

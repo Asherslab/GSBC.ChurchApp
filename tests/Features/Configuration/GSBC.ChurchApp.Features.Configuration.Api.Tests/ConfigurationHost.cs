@@ -84,13 +84,15 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
     private protected Task<T> Placements<T>(Func<PlacementEditor, Task<T>> action) => Use(action);
 
+    private protected Task<T> WithDbAsync<T>(Func<ConfigurationDbContext, Task<T>> action) => Use(action);
+
     protected Task<Draft> NewDraftAsync(ClaimsPrincipal caller, string name = "Christmas 2026") =>
         Drafts(editor => editor.CreateAsync(caller, new NewDraftRequest { Name = name }, Cancel));
 
     protected Task<Draft> SaveAsync(ClaimsPrincipal caller, Draft draft, params PatchMessage[] patches) =>
         Drafts(editor => editor.SaveAsync(caller, new SaveDraftRequest { DraftId = draft.Id, Set = [.. patches] }, Cancel));
 
-    private Task<PublishReply> PublishAsync(ClaimsPrincipal caller, Draft draft) =>
+    protected Task<PublishReply> PublishAsync(ClaimsPrincipal caller, Draft draft) =>
         Drafts(editor => editor.PublishAsync(caller, new DraftQuery { DraftId = draft.Id }, Cancel));
 
     protected async Task<List<Placement>> PublishNowAsync(ClaimsPrincipal caller, SurfaceArea area, string? scopeId, params PatchMessage[] patches)

@@ -118,6 +118,27 @@ help centre documents only the RSS feed and a sermon importer), so we read the p
   in the API's log, so a website redesign is noticed and nothing goes missing. (App health hears only about
   failed gRPC calls, not background work; a feature reporting its own problems there would be a change to
   Analytics.)
+- **Speakers' photos: the team page's, where there is one (owner, 2026-11-08: "sure, whatever is higher res").** The
+  series pages show each speaker's photo at 45 × 45 (`img.rounded-circle` with the speaker's name as `alt`); the
+  website's `/pages/our-team` shows the same people at 240 × 240, under other addresses and without `alt`: each
+  `div#user_N` holds the photo and the name in its `.lead`. With every series read (when the feed changed, and once a
+  day) the reader also reads the team page (`TeamPage.Read`, one page) and a speaker's team photo wins over their series
+  one (`Speakers.Preferring`); a speaker not on it keeps the series photo. A staff-chosen photo (`ChosenPhoto`) still
+  wins over both.
+  - **Matching is careful:** a team name matches a speaker only through `speaker_aliases`, exactly as it's normalised
+    (spaces collapsed, lower case), so a spelling staff added under *other spellings* counts and nothing is guessed:
+    two similar names on the team page (a full name and its short form) are treated as different people. Entries for
+    more than one person (a couple) are left out, and so is a name shown with two different photos. Each read logs how
+    many matched, the team names that aren't speakers and what was left out.
+  - **What matched on 2026-11-08** (the live team page against dev's 23 speakers): five speakers, three of whom had no
+    photo before. Six team members aren't speakers. Eight entries were couples and were left out, so two speakers who
+    appear only as half of a couple still have no photo (staff can choose one), and one keeps the series photo.
+  - **Existing speakers change on the next read:** a new photo address resets the speaker's photo and it's fetched
+    like any picture, through `artwork_sources` and Media's content-key dedupe, so a picture already kept is never
+    stored twice.
+  - **If the team page can't be read** (or shows no photos), nobody's photo is replaced: only speakers without a photo
+    take one from the series pages, so a bad day never swaps a sharp photo for a blurry one. Tests: `WebsitePagesTests`
+    (the page and the preference) and `WebsiteReadingTests` (the switch on the next read, and a failing page).
 - **Suggestions** for sermons in no series: titles like "Anchored: Part 4 - Anchored In Hope" or
   "Cross Words - Part 7: …" suggest "Anchored" or "Cross Words" in the admin panel; staff accept or ignore.
   Never applied by themselves ("Commandment 6" belongs to "The Ten Commandments in Modernity").

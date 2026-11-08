@@ -15,7 +15,7 @@ public sealed class TabBarTests
     }
 
     [Fact]
-    public void ThePhoneDrawsTheFirstFourItsPersonSeesInOrder()
+    public void ThePhoneDrawsHomeThenTheFirstThreeItsPersonSeesInOrder()
     {
         StoredPlacement[] stored =
         [
@@ -45,9 +45,22 @@ public sealed class TabBarTests
     }
 
     [Fact]
+    public void ATabBarSavedWithoutHomeFirstStillHasHomeFirst()
+    {
+        StoredPlacement[] stored =
+        [
+            Hidden(TabBarSurfaces.Home),
+            Tab("calendar", "/week", "Calendar", order: 10),
+            Tab("again", "/", "Start", order: 20),
+        ];
+
+        Assert.Equal(["Home", "Calendar", "Sermons"], Words(For(Visitor, stored)));
+    }
+
+    [Fact]
     public void ThePlaceTwiceForOnePersonIsOneTab()
     {
-        Assert.Equal(["Home", "Sermons"], Words(For(Visitor, [Tab("again", "/sermons", "Listen", order: 300)])));
+        Assert.Equal(["Home", "Sermons"], Words(For(Visitor, Tab("again", "/sermons", "Listen", order: 300))));
     }
 
     private static IReadOnlyList<AppTab> For(Viewer viewer, params StoredPlacement[] stored) =>
