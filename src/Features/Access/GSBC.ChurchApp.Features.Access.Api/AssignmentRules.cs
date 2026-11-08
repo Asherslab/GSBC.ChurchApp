@@ -24,7 +24,7 @@ internal sealed class AssignmentRules(
 
     public static async Task<string?> UnknownPlaceAsync(
         IEnumerable<IScopeObjects> known, ScopeKind kind, string? objectId, CancellationToken cancellationToken) =>
-        objectId is not null && known.FirstOrDefault(objects => objects.Kind == kind) is { } objects && !await objects.ExistsAsync(objectId, cancellationToken)
+        objectId is not null && known.FirstOrDefault(candidate => candidate.Kind == kind) is { } objects && !await objects.ExistsAsync(objectId, cancellationToken)
             ? $"That {kind.Name.Replace('-', ' ')} isn't here. Choose one from the list."
             : null;
 
