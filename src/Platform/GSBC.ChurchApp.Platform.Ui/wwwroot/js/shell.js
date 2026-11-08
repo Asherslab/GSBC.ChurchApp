@@ -16,10 +16,12 @@ window.gsbcShell = (() => {
     if (!(page instanceof Element) || !page.matches('.page-scroll, .phone-frame__screen')) return;
     const topbar = page.querySelector('.topbar');
     if (!topbar) return;
-    topbar.classList.toggle('is-stuck', page.scrollTop > Number(page.dataset.stuckAt ?? 44));
     const masthead = page.querySelector('.masthead');
     const bottom = topbar.getBoundingClientRect().bottom;
-    topbar.classList.toggle('is-solid', !!masthead && masthead.getBoundingClientRect().bottom < bottom + mastheadLead);
+    const title = masthead?.querySelector('h1')?.getBoundingClientRect();
+    const titleGone = !!title && title.bottom <= bottom;
+    topbar.classList.toggle('is-stuck', titleGone || page.scrollTop > Number(page.dataset.stuckAt ?? 44));
+    topbar.classList.toggle('is-solid', !!masthead && (masthead.getBoundingClientRect().bottom < bottom + mastheadLead || (!!title && title.top < bottom)));
   }, { capture: true, passive: true });
 
   const edgeSwipe = () => {

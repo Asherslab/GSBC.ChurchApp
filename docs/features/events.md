@@ -541,6 +541,10 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   bell, as iPhone Calendar has it, shown to anyone who holds `events.edit` at one of the calendars on the phone (through
   `IAccess`, as the calendar page's button). It opens the editor with the calendar choice limited to the calendars they
   edit, on the only one when there's one (`Diary.EditableBy`). The calendar page keeps its own *New event*.
+- **A big title never runs under Back** (owner: on Notifications "the masthead's Back link overlaps the big title" while
+  scrolling). The top bar turned solid only once the whole masthead had scrolled under it, so the title slid under a
+  see-through bar and Back sat on it. The shell now turns the bar solid as soon as the masthead's title reaches it, and
+  shows the bar's small title once the big one is fully under (or at the page's `StuckAt`, whichever comes first).
 
 ## What the owner sets up
 
