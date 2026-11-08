@@ -32,7 +32,10 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         DigestRecord record = await RecordAsync(start, cancellationToken);
         record.Weeks = Math.Clamp(request.Weeks, 1, Digests.MostWeeks);
         record.CalendarIds = request.CalendarIds.Select(id => Guid.TryParse(id, out Guid calendarId) ? calendarId : Guid.Empty).Where(id => id != Guid.Empty).Distinct().ToList();
-        record.Entries = entries;
+        EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
+        IReadOnlySet<string> showing = Digests.Candidates(book, start, record.Weeks, CalendarsOf(book, record), time.GetUtcNow().UtcDateTime)
+            .Select(item => item.Key).ToHashSet();
+        record.Entries = Digests.Kept(record.Entries, entries, showing);
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
         record.UpdatedBy = Caller.UserId(UserOf(context));
         await db.SaveChangesAsync(cancellationToken);
@@ -70,7 +73,8 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         if (Caller.UserId(UserOf(context)) is not { } me)
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in to send it to your phone."));
 
-        await notifications.RaiseAsync(Digests.Notification(latest.Sent, NotificationAudience.Person(me)) with { Test = true }, cancellationToken);
+        EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
+        await notifications.RaiseAsync(Digests.Notification(book, latest.Sent, NotificationAudience.Person(me)) with { Test = true }, cancellationToken);
         return new Done();
     }
 

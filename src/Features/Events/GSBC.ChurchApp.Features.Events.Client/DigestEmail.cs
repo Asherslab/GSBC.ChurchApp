@@ -33,8 +33,7 @@ public static class DigestEmail
         html.Append($"""<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:{Sand};font-family:{Font};color:{Ink}"><tr><td align="center" style="padding:28px 12px">""");
         html.Append("""<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:100%;background:#ffffff;border-radius:14px;overflow:hidden">""");
         html.Append($"""<tr><td style="background:{Navy};padding:30px 32px 26px;color:#ffffff">""");
-        html.Append($"""<div style="font-size:13px;font-weight:600;color:{Beige};letter-spacing:.04em">GOOD SHEPHERD</div>""");
-        html.Append($"""<div style="font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1;margin-top:6px">{Heading}</div>""");
+        html.Append($"""<div style="font-size:32px;font-weight:700;letter-spacing:-.02em;line-height:1.1">{Heading}</div>""");
         html.Append($"""<div style="font-size:15px;font-weight:600;color:{Beige};margin-top:8px">{Encode(range)}</div></td></tr>""");
 
         for (int index = 0; index < items.Count; index++)

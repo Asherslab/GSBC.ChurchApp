@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
@@ -92,6 +93,18 @@ public sealed class DigestTests
     }
 
     [Fact]
+    public void ChoicesForSomethingAChipOrTheWeeksHideComeBackWithIt()
+    {
+        DigestEntry reworded = new() { Key = "event:high-tea", Included = true, Changed = [DigestFields.Title], Words = new DigestWords { Title = "High tea" } };
+        DigestEntry removedByStaff = new() { Key = "own:bee", Own = true, Included = true, Words = new DigestWords { Title = "Cleaning bee" } };
+        DigestEntry agm = new() { Key = "event:agm", Included = true };
+
+        List<DigestEntry> kept = Digests.Kept([agm, reworded, removedByStaff], [agm], new HashSet<string> { "event:agm" });
+
+        Assert.Equal(["event:agm", "event:high-tea"], kept.Select(entry => entry.Key));
+    }
+
+    [Fact]
     public void ThingsFromAPrivateCalendarReachTheAppOnlyThroughThePrivateFeedWithTheCalendarsAudience()
     {
         DigestItem agm = Item("event:agm", "2026-11-12");
@@ -107,6 +120,8 @@ public sealed class DigestTests
         Assert.Equal(_members.Audience, membersOnly.Audience);
         Assert.Equal("event:agm", EventsPayloads.Decode<DigestShownItem>(membersOnly.Payload).Key);
         Assert.Equal(3, rows.Count(row => row.Feed == EventsFeeds.Digest));
+        Assert.Equal("2 things coming up: Calendar words and Cleaning bee.",
+            Digests.Notification(new EventsBook([_services, _members], [], [], [], [], [], []), digest.Sent, NotificationAudience.SignedIn).Body);
     }
 
     private static List<DigestItem> Candidates(EventsBook book) =>

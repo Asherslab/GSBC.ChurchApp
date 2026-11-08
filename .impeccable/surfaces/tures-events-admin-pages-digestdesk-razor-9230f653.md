@@ -41,6 +41,6 @@ range; calendar chips; the rows (grip, tick, picture, label, title with pills, d
 words, In the app | Email, the phone preview, Copy for email | Send to the app, the reach line.
 
 FORM: SplitView (shared list + sticky detail), as the mock lays it out. Signature move: the preview is the real app
-screen, so what staff see is what phones get.
+screen, so what staff see is what phones get. seed: none (no concept roll: the direction is the owner-approved mock, 2026-11-08).
 
 FINISH: unreviewed is unfinished; this build ends with the detector and the finish review.

@@ -701,14 +701,21 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   owner's and testers'), and telling the church is a conscious act (decision 31): an announcement can link to What's next.
   *Send to my phone* raises `events.digest.out` to the caller alone, marked Test, opening `/whats-next`; it needs the digest
   sent first, since it opens what the app has. The kind is declared for holders of `events.digest` until a church-wide
-  send is decided.
+  send is decided. Its words count and name only the items for everyone ("4 things coming up: Kids camp, No Impact
+  Kids and more."), so the same notification could go to the church without naming a private calendar's events.
 - **Copy for email** puts the email on the clipboard as HTML (and plain text), so pasting into an email editor keeps the
   headings, pictures and buttons. Pictures are their public media addresses; a private picture is left out. *See all
   events* is the app host's shared link to This week (`/open/week`), which opens the app or says how to get it.
+  **The email doesn't know who it goes to,** so it keeps every ticked item, a private calendar's too (the AGM for
+  Church members); under *Copy for email* the page says how many it includes and for whom, so the office can untick them
+  when the email goes to everyone. Whether to leave them out by default is in *Open*.
 - **The admin page** follows the approved mock in Platform.Ui's `SplitView`: the list (grip, tick, picture, label, title
   with pills: *Reworded*, *New on the calendar*, *Needs details*, *Register link*, *Only for Kids team*; place and contact;
   the when line and time) and, on the right, the chosen item's words, *In the app | Email*, the preview, *Copy for email*
-  and *Send to the app*. It saves as you change it. Arrow buttons move a row too, for the keyboard.
+  and *Send to the app* in a footer that stays in view, with failures shown beside it. A reworded field has an aqua ring.
+  Once the app has it as it is, the button reads *Sent to the app*; a change makes it *Send again*. The email preview is
+  the email at its real width, scaled to the column. It saves as you change it. Arrow buttons move a row too, for the
+  keyboard. Finish-reviewed (verdict: ship after fixes; the fixes are in).
 
 ## What the owner sets up
 
@@ -725,7 +732,8 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   a secret link.
 - **The weekly digest** (decision 18): built; to show staff. Still to decide: which tool sends *What's next* today
   (Pinned for later), whether *Send to the app* should also tell everyone (an announcement can link to What's next
-  meanwhile), and who gets *Digest maker*.
+  meanwhile), who gets *Digest maker*, and whether *Copy for email* should leave out items from calendars that aren't for
+  everyone by default (today it keeps them and says so).
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.

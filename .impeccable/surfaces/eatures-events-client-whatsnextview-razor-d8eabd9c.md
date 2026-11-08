@@ -35,6 +35,6 @@ morning on Saturday, and adds the high tea to their calendar.
 FIRST VIEWPORT: Masthead (title, range, "Six things coming up…"), This week with its range, the first card.
 
 FORM: The app's pushed page with masthead, as the event page and This week are. Signature move: the week headings
-move with the days, so the digest stays right all fortnight.
+move with the days, so the digest stays right all fortnight. seed: none (no concept roll: the direction is the owner-approved mock, 2026-11-08).
 
 FINISH: unreviewed is unfinished; this build ends with the detector and the finish review.

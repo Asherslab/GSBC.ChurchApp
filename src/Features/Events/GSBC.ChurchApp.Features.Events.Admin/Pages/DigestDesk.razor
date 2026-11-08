@@ -6,6 +6,7 @@
 @using GSBC.ChurchApp.Platform.Ui.Surfaces
 @implements IDisposable
 @inject CalendarEditing Editing
+@inject IAccess Access
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject Shell Shell
@@ -14,7 +15,7 @@
 <LiveData TValue="DigestDraft" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't make the digest right now">
     <ChildContent>@Drawn()</ChildContent>
     <Loading>
-        <TitleBand Title="Weekly digest" BackHref="calendar" BackText="Calendar" />
+        <TitleBand Title="Weekly digest" BackHref="@CalendarBack" BackText="Calendar" />
         <Skeleton Shape="SkeletonShape.Lines" Count="8" />
     </Loading>
 </LiveData>
@@ -25,7 +26,12 @@
     private static readonly IReadOnlyList<SegmentOption<bool>> PreviewOptions = [new(false, "In the app"), new(true, "Email")];
     private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(700);
 
+    private const int EmailWidth = 640;
+    private const int EmailHeight = 1000;
+
     private DigestDraft? _draft;
+    private ElementReference _emailFrame;
+    private bool _emailFitted;
     private string? _selected;
     private bool _email;
     private SaveState _save = SaveState.Saved;
@@ -34,6 +40,8 @@
     private string? _told;
     private string? _busy;
     private string? _dragging;
+
+    private string? CalendarBack => Access.CanSomewhere(EventsPermissions.Edit) ? CalendarWorkbenchLinks.Page : null;
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
@@ -48,7 +56,7 @@
     }
 
     private RenderFragment Drawn() => _draft is not { } draft ? @<text></text> : @<text>
-        <TitleBand Title="Weekly digest" BackHref="calendar" BackText="Calendar"
+        <TitleBand Title="Weekly digest" BackHref="@CalendarBack" BackText="Calendar"
                    Lead="What's next at Good Shepherd, made from the calendar: its one-off events, specials and breaks. Untick what you'd leave out, drag to reorder and reword anything for the digest. The calendar itself doesn't change." />
         <SplitView DetailLabel="The chosen item and the preview">
         <ChildContent>
@@ -59,11 +67,6 @@
                 <span class="digest-desk__range">@RangeOf(draft)</span>
             </div>
             <ToggleChips TValue="string" Label="Calendars in the digest" Chips="Chips(draft)" Toggled="ToggleCalendarAsync" Class="digest-desk__calendars" />
-
-            @if (_problem is not null)
-            {
-                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-            }
 
             @if (draft.Items.Count == 0)
             {
@@ -79,7 +82,7 @@
                         <li class="digest-row @(item.Key == _selected ? "digest-row--chosen" : "") @(item.Included ? "" : "digest-row--left-out") @(item.Key == _dragging ? "digest-row--dragging" : "")"
                             draggable="true" @ondragstart="() => _dragging = item.Key" @ondragend="() => _dragging = null"
                             @ondragover:preventDefault="true" @ondrop="() => Drop(at)">
-                            <span class="digest-row__grip" aria-hidden="true"><Icon Name="grid" Size="IconSize.Small" /></span>
+                            <span class="digest-row__grip" aria-hidden="true"><Icon Name="grip" Size="IconSize.Small" /></span>
                             <input type="checkbox" class="digest-row__tick" checked="@item.Included" aria-label="@($"Put {item.Shown.Title} in the digest")"
                                    @onchange="() => Change(() => item.Included = !item.Included)" />
                             <span class="digest-row__thumb">
@@ -125,28 +128,41 @@
             <Segmented TValue="bool" Label="Preview" Options="PreviewOptions" Value="_email" ValueChanged="value => _email = value" Class="digest-desk__preview-switch" />
             @if (_email)
             {
-                <iframe class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox=""></iframe>
+                <div class="digest-desk__email" data-fit-height>
+                    <iframe @ref="_emailFrame" class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox=""
+                            width="@EmailWidth" height="@EmailHeight"></iframe>
+                </div>
             }
             else
             {
-                <div class="digest-desk__phone" data-fit-height>
+                <div class="digest-desk__phone @(_selected is null ? "" : "digest-desk__phone--small")" data-fit-height>
                     <PhoneFrame Label="What's next in the app, as it looks once sent" Title="What's next" Bell="true" OnRoute="@EventsPlaces.Week">
                         <WhatsNextView Digest="AppDigest(draft)" Today="Today" Preview="true" />
                     </PhoneFrame>
                 </div>
             }
-            <div class="digest-desk__send">
-                <Button Variant="ButtonVariant.Quiet" Icon="copy" Busy="@(_busy == "copy")" OnClick="CopyForEmailAsync">Copy for email</Button>
-                <Button Icon="send" Busy="@(_busy == "send")" Disabled="@(draft.SentAsItIs || draft.Items.All(item => !item.Included))" OnClick="SendToAppAsync">@(draft.SentAt is null ? "Send to the app" : "Send again")</Button>
-            </div>
-            <p class="digest-desk__reach" role="status">@(_told ?? ReachLine(draft))</p>
-            @if (draft.SentAsItIs)
-            {
-                <div class="digest-desk__test">
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="smartphone" Busy="@(_busy == "phone")" OnClick="SendToMyPhoneAsync">Send to my phone</Button>
-                    <span>A test notification to you alone that opens What's next. Nobody else is told.</span>
+            <div class="digest-desk__foot">
+                @if (_problem is not null)
+                {
+                    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                }
+                <div class="digest-desk__send">
+                    <Button Variant="ButtonVariant.Quiet" Icon="copy" Busy="@(_busy == "copy")" Disabled="@(draft.Items.All(item => !item.Included))" OnClick="CopyForEmailAsync">Copy for email</Button>
+                    <Button Icon="@(draft.SentAsItIs ? "check" : "send")" Busy="@(_busy == "send")" Disabled="@(draft.SentAsItIs || draft.Items.All(item => !item.Included))" OnClick="SendToAppAsync">@SendWords(draft)</Button>
                 </div>
-            }
+                <p class="digest-desk__reach" role="status">@(_told ?? ReachLine(draft))</p>
+                @if (PrivateInEmail(draft) is { } privateNote)
+                {
+                    <p class="digest-desk__reach">@privateNote</p>
+                }
+                @if (draft.SentAsItIs)
+                {
+                    <div class="digest-desk__test">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="smartphone" Busy="@(_busy == "phone")" OnClick="SendToMyPhoneAsync">Send to my phone</Button>
+                        <span>A test notification to you alone that opens What's next. Nobody else is told.</span>
+                    </div>
+                }
+            </div>
         </Detail>
         </SplitView>
     </text>;
@@ -205,13 +221,30 @@
         };
     }
 
+    private static string SendWords(DigestDraft draft) =>
+        draft.SentAsItIs ? "Sent to the app" : draft.SentAt is null ? "Send to the app" : "Send again";
+
+    private static string? PrivateInEmail(DigestDraft draft)
+    {
+        List<DigestItem> only = draft.Items.Where(item => item is { Included: true, ForEveryone: false }).ToList();
+        if (only.Count == 0)
+            return null;
+        List<string> calendars = only.Select(item => item.CalendarName).Distinct().ToList();
+        string names = calendars.Count == 1 ? calendars[0] : $"{string.Join(", ", calendars.Take(calendars.Count - 1))} and {calendars[^1]}";
+        return only.Count == 1
+            ? $"The email includes 1 thing only for {names}: untick it if the email goes to everyone."
+            : $"The email includes {only.Count} things only for {names}: untick them if the email goes to everyone.";
+    }
+
     private static string ReachLine(DigestDraft draft)
     {
+        if (draft.Items.All(item => !item.Included))
+            return "Tick something to send it to the app or copy it for email.";
         int count = draft.Items.Count(item => item.Included);
-        int narrower = draft.Items.Count(item => item is { Included: true, ForEveryone: false });
         string things = count == 1 ? "1 thing" : $"{count} things";
-        string sending = draft.SentAsItIs ? "It's in the app as it is." : $"Send to the app puts {things} on What's next in the app.";
-        return narrower == 0 ? $"{sending} No notification goes out." : $"{sending} {narrower} only show to the people their calendar is for. No notification goes out.";
+        return draft.SentAsItIs
+            ? "It's in the app as it is."
+            : $"Send to the app puts {things} on What's next. No notification goes out.";
     }
 
     private WhatsNextDigest AppDigest(DigestDraft draft)
@@ -338,7 +371,15 @@
             return;
         _busy = "copy";
         string range = RangeOf(draft);
-        bool copied = await Js.InvokeAsync<bool>("gsbcEvents.copyHtml", DigestEmail.Html(range, EmailItems(draft), AllEventsLink), DigestEmail.Text(range, EmailItems(draft), AllEventsLink));
+        bool copied;
+        try
+        {
+            copied = await Js.InvokeAsync<bool>("gsbcEvents.copyHtml", DigestEmail.Html(range, EmailItems(draft), AllEventsLink), DigestEmail.Text(range, EmailItems(draft), AllEventsLink));
+        }
+        catch (JSException)
+        {
+            copied = false;
+        }
         _busy = null;
         _told = copied
             ? "Copied. Paste it into a new email: the pictures, headings and buttons come with it."
@@ -382,6 +423,15 @@
             _problem = CalendarEditing.Problem(exception);
         }
         _busy = null;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_email == _emailFitted)
+            return;
+        _emailFitted = _email;
+        if (_email)
+            await Shell.FitToSpaceAsync(_emailFrame, EmailWidth, EmailHeight);
     }
 
     public void Dispose() => _settling?.Cancel();

@@ -1,12 +1,14 @@
 <section class="digest-words" aria-labelledby="digest-words-title">
     <header class="digest-words__head">
-        <h2 id="digest-words-title">@(Item.Shown.Title.Length > 0 ? Item.Shown.Title : "Something new")</h2>
-        <span class="digest-words__note">@(Own ? "Not on the calendar" : "For the digest")</span>
+        <div class="digest-words__heading">
+            <h2 id="digest-words-title">@(Item.Shown.Title.Length > 0 ? Item.Shown.Title : "Something new")</h2>
+            <span class="digest-words__note">@(Own ? "Not on the calendar, in the digest only" : "Words for the digest only")</span>
+        </div>
         <button type="button" class="icon-btn" aria-label="Close" @onclick="Closed"><Icon Name="x" Size="IconSize.Small" /></button>
     </header>
     @foreach ((string field, string label, string? hint, bool multiline) in Fields)
     {
-        <div class="digest-words__field">
+        <div class="digest-words__field @(!Own && Item.Changed.Contains(field) ? "digest-words__field--reworded" : "") digest-words__field--@field">
             <TextField Label="@label" Value="@Item.Shown[field]" ValueChanged="value => Set(field, value)" Multiline="multiline" Hint="@hint"
                        MaxLength="@(multiline ? 2000 : 200)" Type="@(field == DigestFields.Register ? "url" : "text")" />
             @if (!Own && Item.Changed.Contains(field))
@@ -35,10 +37,10 @@
 
     private IEnumerable<(string, string, string?, bool)> Fields =>
     [
-        (DigestFields.Label, "Label", "Small, above the title: the ministry or kind", false),
+        (DigestFields.Label, "Label", null, false),
         (DigestFields.Title, "Title", null, false),
         (DigestFields.When, "When it says", Own ? "In words: \"This Saturday 14 November\"" : null, false),
-        (DigestFields.Time, "Time", "Leave it empty for a whole day", false),
+        (DigestFields.Time, "Time", null, false),
         (DigestFields.Description, "What it says", "Plain words. A blank line starts a new paragraph.", true),
         (DigestFields.Register, "Register link", "Shows a Register button", false),
     ];

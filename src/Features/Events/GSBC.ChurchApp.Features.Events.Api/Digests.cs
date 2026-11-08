@@ -72,6 +72,12 @@ internal static partial class Digests
         return merged;
     }
 
+    public static List<DigestEntry> Kept(IReadOnlyList<DigestEntry> before, IReadOnlyList<DigestEntry> saved, IReadOnlySet<string> showing)
+    {
+        HashSet<string> savedKeys = saved.Select(entry => entry.Key).ToHashSet();
+        return [.. saved, .. before.Where(entry => !entry.Own && !savedKeys.Contains(entry.Key) && !showing.Contains(entry.Key))];
+    }
+
     public static SentDigest ForApp(IReadOnlyList<DigestItem> items, DateOnly end) => new()
     {
         End = end,
@@ -99,9 +105,10 @@ internal static partial class Digests
             ? Audience.Everyone
             : CalendarAudiences.Union(sent.CalendarIds.Select(id => book.Calendars.GetValueOrDefault(id)).OfType<CalendarRecord>().Select(calendar => CalendarAudiences.Of(calendar.Audience)));
 
-    public static Notification Notification(SentDigest sent, NotificationAudience audience)
+    public static Notification Notification(EventsBook book, SentDigest sent, NotificationAudience audience)
     {
-        List<string> titles = sent.Items.Select(item => item.Item.Words.Title).Where(title => title.Length > 0).ToList();
+        List<string> titles = sent.Items.Where(item => AudienceOf(book, item) == Audience.Everyone)
+            .Select(item => item.Item.Words.Title).Where(title => title.Length > 0).ToList();
         string things = titles.Count == 1 ? "One thing" : $"{titles.Count} things";
         string named = Listed(titles.Count > 2 ? [.. titles.Take(2), "more"] : titles);
         return new Notification(EventsNotifications.DigestOut, audience, "What's next at Good Shepherd", $"{things} coming up: {named}.",

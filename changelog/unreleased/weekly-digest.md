@@ -1,5 +1,6 @@
 ---
 title: What's next, made from the calendar
+audience: everyone
 added: 2026-11-08
 icon: megaphone
 area: Calendar
