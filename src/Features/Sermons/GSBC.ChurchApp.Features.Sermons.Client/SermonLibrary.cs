@@ -22,6 +22,8 @@ public sealed class SermonLibrary(SermonCatalogue catalogue, Listening listening
 {
     public static readonly IReadOnlyList<string> Feeds = [.. SermonCatalogue.Feeds, .. Listening.Feeds];
 
+    public const string Remembered = "sermons.library";
+
     public IAudioDownloads Downloads => downloads;
 
     public async Task<SermonView> LoadAsync() => new(await catalogue.LoadAsync(), await listening.LoadAsync(), await downloads.ListAsync());

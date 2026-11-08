@@ -3,7 +3,7 @@
 @inject Platform.Ui.Destinations.LinkOpener Links
 @inject TimeProvider Clock
 
-<LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData TValue="IReadOnlyList<InboxEntry>" Load="Inbox.LoadAsync" Feeds="Inbox.Feeds" Remember="@Inbox.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     @{ List<InboxEntry> waiting = context.Value.Where(entry => entry.Item.Waiting).ToList(); }
     @if (context.Value.Count == 0)
     {

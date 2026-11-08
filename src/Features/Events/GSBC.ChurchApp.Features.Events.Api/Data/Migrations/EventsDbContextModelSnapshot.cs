@@ -451,6 +451,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("asked_by");
 
+                    b.Property<bool>("AskedByOther")
+                        .HasColumnType("boolean")
+                        .HasColumnName("asked_by_other");
+
                     b.Property<Guid>("CalendarId")
                         .HasColumnType("uuid")
                         .HasColumnName("calendar_id");

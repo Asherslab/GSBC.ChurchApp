@@ -113,6 +113,8 @@
 .widening--ask { flex-direction: column; gap: 10px; padding: 11px 14px; border-radius: var(--radius-field); background: color-mix(in srgb, var(--marker) 18%, transparent); }
 .widening--ask > span:first-child { display: flex; gap: 6px; }
 .widening__actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.show-elsewhere { display: grid; gap: 12px; }
+.show-elsewhere .hint { margin: 0; }
 .hub-list__entry--off .hub-list__what { color: var(--tile-ink-2, var(--ink-2)); font-weight: 400; }
 
 .calendar-workbench { min-height: 100vh; }
@@ -140,7 +142,7 @@
 .calendar-main__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; margin-bottom: 8px; }
 .calendar-main__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; }
 .calendar-main__lead { margin: 6px 0 0; max-width: 72ch; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
-.calendar-main__actions { display: flex; align-items: center; gap: 12px; }
+.calendar-main__actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; min-width: 0; }
 .calendar-main__actions .segmented { min-width: 13rem; }
 .calendar-day { margin-top: 18px; }
 .calendar-day__head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 4px; font-size: var(--text-label); font-weight: 700; }

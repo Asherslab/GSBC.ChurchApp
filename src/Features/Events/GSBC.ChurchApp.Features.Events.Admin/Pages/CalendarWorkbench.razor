@@ -30,6 +30,7 @@
     private sealed record NewEvent(string CalendarId, DateOnly? On) : Chosen;
     private sealed record ChosenCalendar(DeskCalendar? Calendar) : Chosen;
     private sealed record ChosenBreak(BreakInfo? Break) : Chosen;
+    private sealed record ShowingHere(CalendarInfo Calendar) : Chosen;
 
     private sealed record WorkbenchView(CalendarDesk Desk, IReadOnlyList<EventOccurrence> Agenda, NeedsDetailsList Needs, AskedList Asked, BreakList Breaks, IReadOnlyDictionary<ShowingRequest, string?> Widens);
 
@@ -101,7 +102,7 @@
         Dictionary<ShowingRequest, string?> widens = [];
         foreach (ShowingRequest request in desk.Result.AskedToShow)
         {
-            string home = desk.Result.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == request.HomeCalendarId)?.Settings.Calendar.Name ?? "its own calendar";
+            string home = request.HomeCalendarName.Length > 0 ? request.HomeCalendarName : "its own calendar";
             widens[request] = await Widening.SentenceAsync(request.Widens, request.NewlyReaches, request.NewlyReachesRoleIds, home);
         }
         WorkbenchView view = new(desk.Result, agenda, needs.Result, asked.Result, breaks.Result, widens);
@@ -141,6 +142,7 @@
     {
         ChosenCalendar => "Calendar settings",
         ChosenBreak => "Break",
+        ShowingHere => "Show an event from another calendar",
         _ => "Event",
     };
 
@@ -258,6 +260,10 @@
             <Segmented TValue="bool" Label="Agenda or month" Options="Views" Value="_month" ValueChanged="ShowMonthAsync" />
             @if (into is not null)
             {
+                @if (selected is not null)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Icon="calendar-plus" OnClick="() => Choose(new ShowingHere(into.Settings.Calendar))">From another calendar</Button>
+                }
                 <Button Icon="plus" OnClick="() => Choose(new NewEvent(into.Settings.Calendar.Id, _month ? _monthDay : null))">New event</Button>
             }
         </div>;
@@ -388,13 +394,19 @@
                     }
                 </div>
             }
-            @if (view.Desk.AskedToShow.Count > 0)
+            @AskedToShow(view, view.Desk.AskedToShow.Where(request => !request.AskedByOther).ToList(), "Asked to show on your calendar")
+            @AskedToShow(view, view.Desk.AskedToShow.Where(request => request.AskedByOther).ToList(), "Asked to show your events on another calendar")
+        </div>;
+
+    private RenderFragment AskedToShow(WorkbenchView view, IReadOnlyList<ShowingRequest> requests, string heading) =>
+        @<div>
+            @if (requests.Count > 0)
             {
-                <h3 class="calendar-subhead">Asked to show on your calendar</h3>
+                <h3 class="calendar-subhead">@heading</h3>
                 <div class="list">
-                    @foreach (ShowingRequest request in view.Desk.AskedToShow)
+                    @foreach (ShowingRequest request in requests)
                     {
-                        <ListRow Title="@request.Title" Subtitle="@($"From {CalendarOf(view, request.HomeCalendarId)?.Name ?? "another calendar"}, to show on {CalendarOf(view, request.CalendarId)?.Name ?? "yours"}")">
+                        <ListRow Title="@request.Title" Subtitle="@(request.AskedByOther ? $"{request.CalendarName} asks to show it from {request.HomeCalendarName}" : $"From {request.HomeCalendarName}, to show on {request.CalendarName}")">
                             <Below>
                                 @if (view.Widens.GetValueOrDefault(request) is { } sentence)
                                 {
@@ -402,8 +414,8 @@
                                 }
                             </Below>
                             <TrailingContent>
-                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => AnswerAsync(request, false)">Not on ours</Button>
-                                <Button Small="true" Busy="@(_busy == request.Title)" OnClick="() => AnswerAsync(request, true)">Show it</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => AnswerAsync(request, false)">@(request.AskedByOther ? "Not there" : "Not on ours")</Button>
+                                <Button Small="true" Busy="@(_busy == request.Title)" OnClick="() => AnswerAsync(request, true)">@(request.AskedByOther ? "Show it there" : "Show it")</Button>
                             </TrailingContent>
                         </ListRow>
                     }
@@ -449,6 +461,15 @@
         ChosenEvent chosen => @<EventEditor @key="chosen.OccurrenceId" Target="chosen.Target" InPanel="true" Saved="SavedAsync" Closed="CloseDetail" />,
         NewEvent fresh => @<EventEditor @key="@($"new-{fresh.CalendarId}")" Target="EditTarget.New(fresh.CalendarId)" NewOn="fresh.On" InPanel="true" Saved="SavedNewAsync" Closed="CloseDetail" />,
         ChosenCalendar calendar => @<CalendarSettingsPanel @key="@(calendar.Calendar?.Settings.Calendar.Id ?? "new")" Calendar="calendar.Calendar" Saved="ReloadAsync" Closed="CloseDetail" />,
+        ShowingHere here => @<div class="event-panel" @key="@($"show-{here.Calendar.Id}")">
+            <EventHead Title="Show an event from another calendar" Label="@here.Calendar.Name" Compact="true" />
+            <div class="event-body">
+                <ShowFromElsewhere Calendar="here.Calendar" Changed="ReloadAsync" />
+            </div>
+            <div class="editor-foot editor-foot--panel">
+                <div class="editor-foot__actions"><Button Variant="ButtonVariant.Quiet" OnClick="CloseDetail">Close</Button></div>
+            </div>
+        </div>,
         ChosenBreak chosen => @<BreakPanel @key="@(chosen.Break?.Id ?? "new")" Break="chosen.Break" RegularEvents="RegularTitles(view)" Saved="ReloadAsync" Closed="CloseDetail" />,
         _ => @<div class="calendar-detail-empty">
             <EmptyState Icon="calendar" Title="Choose an event" Body="It opens here to change, in the same editor as the phone." />
@@ -559,7 +580,13 @@
         _problem = null;
         try
         {
-            await Editing.Editing.AnswerShowingAsync(new ShowingAnswer { CalendarId = request.CalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId, Agree = agree });
+            if (request.AskedByOther)
+                await Editing.Editing.AnswerAskToShowAsync(new AskToShowAnswer
+                {
+                    CalendarId = request.HomeCalendarId, OtherCalendarId = request.CalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId, Agree = agree,
+                });
+            else
+                await Editing.Editing.AnswerShowingAsync(new ShowingAnswer { CalendarId = request.CalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId, Agree = agree });
             await ReloadAsync();
         }
         catch (Exception exception) when (exception is not OperationCanceledException)

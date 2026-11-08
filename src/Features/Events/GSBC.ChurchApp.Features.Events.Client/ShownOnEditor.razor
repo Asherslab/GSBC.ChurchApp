@@ -49,14 +49,21 @@
     private IReadOnlyList<ToggleChip<string>> Chips => Others.Select(calendar =>
     {
         ShowingOn? on = Draft.AlsoOn.FirstOrDefault(showing => showing.CalendarId == calendar.Settings.Calendar.Id);
-        return new ToggleChip<string>(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name, on is not null);
+        return new ToggleChip<string>(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name, on is not null && !IsAskingUs(on));
     }).ToList();
 
-    private string Hint => _note.Length > 0 ? _note : Waiting.Count > 0
-        ? $"Waiting for {string.Join(" and ", Waiting)} to agree. A calendar you don't edit is asked first."
+    private string Hint => _note.Length > 0 ? _note
+        : Asking.Count > 0 ? $"{string.Join(" and ", Asking)} {(Asking.Count == 1 ? "asks" : "ask")} to show it too: turn {(Asking.Count == 1 ? "it" : "them")} on to agree."
+        : Waiting.Count > 0 ? $"Waiting for {string.Join(" and ", Waiting)} to agree. A calendar you don't edit is asked first."
         : "A calendar you don't edit is asked first; its editors decide.";
 
-    private IReadOnlyList<string> Waiting => Draft.AlsoOn.Where(showing => !showing.Agreed)
+    private static bool IsAskingUs(ShowingOn showing) => showing is { AskedByOther: true, Agreed: false };
+
+    private IReadOnlyList<string> Asking => Draft.AlsoOn.Where(IsAskingUs)
+        .Select(showing => Others.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == showing.CalendarId)?.Settings.Calendar.Name)
+        .OfType<string>().ToList();
+
+    private IReadOnlyList<string> Waiting => Draft.AlsoOn.Where(showing => showing is { Agreed: false, AskedByOther: false })
         .Select(showing => Others.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == showing.CalendarId)?.Settings.Calendar.Name)
         .OfType<string>().Select(name => $"{name}'s editors").ToList();
 
@@ -70,7 +77,7 @@
             await ShowAsync(other.Settings, false);
             return;
         }
-        if (other.CanEdit)
+        if (other.CanEdit || Draft.AlsoOn.Any(showing => showing.CalendarId == chip.Value && IsAskingUs(showing)))
         {
             Audience current = CalendarAudiences.Union(Draft.AlsoOn.Where(showing => showing.Agreed)
                 .Select(showing => Desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == showing.CalendarId)?.Settings.Calendar.Audience)
@@ -97,8 +104,9 @@
             {
                 CalendarId = Draft.CalendarId, EventId = Draft.EventId, RegularEventId = Draft.RegularEventId, OtherCalendarId = otherId, Show = show,
             });
+            bool theyAsked = Draft.AlsoOn.Any(showing => showing.CalendarId == otherId && IsAskingUs(showing));
             Draft.AlsoOn.RemoveAll(showing => showing.CalendarId == otherId);
-            bool agreed = Desk.Calendars.Any(calendar => calendar.Settings.Calendar.Id == otherId && calendar.CanEdit);
+            bool agreed = theyAsked || Desk.Calendars.Any(calendar => calendar.Settings.Calendar.Id == otherId && calendar.CanEdit);
             if (show)
                 Draft.AlsoOn.Add(new ShowingOn { CalendarId = otherId, Agreed = agreed });
             _note = !show ? $"Taken off {other.Calendar.Name}."

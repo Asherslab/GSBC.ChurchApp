@@ -6,7 +6,7 @@
     <div class="sermon-search">
         <SearchField Label="Search sermons" Placeholder="Title, series, speaker or day" @bind-Value="_text" SettleMilliseconds="150" AutoFocus="true" />
     </div>
-    <LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" Remember="@SermonLibrary.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
         <ChildContent>@Results(context.Value)</ChildContent>
         <Loading><Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="4" /></Section></Loading>
     </LiveData>

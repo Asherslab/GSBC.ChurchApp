@@ -1,6 +1,7 @@
 @typeparam TValue
 @implements IDisposable
 @inject ClientSignals Signals
+@inject RememberedValues Remembered
 
 @if (_loaded)
 {
@@ -43,6 +44,7 @@ else
     [Parameter] public RenderFragment? Loading { get; set; }
     [Parameter] public RenderFragment<Exception>? Failed { get; set; }
     [Parameter] public string FailedTitle { get; set; } = "Can't load this right now";
+    [Parameter] public string? Remember { get; set; }
 
     private bool Stale => _refreshFailed || !Signals.Online;
 
@@ -51,6 +53,11 @@ else
     protected override async Task OnInitializedAsync()
     {
         Signals.Changed += OnChanged;
+        if (Remember is not null && Remembered.TryGet(Remember, out TValue remembered))
+        {
+            _value = remembered;
+            _loaded = true;
+        }
         await ReloadAsync();
     }
 
@@ -72,6 +79,8 @@ else
             {
                 _value = await Load();
                 _loaded = true;
+                if (Remember is not null && _value is not null)
+                    Remembered.Keep(Remember, _value);
                 _failure = null;
                 _refreshFailed = false;
             }

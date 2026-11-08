@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
 
@@ -31,6 +32,9 @@ internal sealed class RecordedNotifications : INotifications
 
     public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
     {
+        foreach (Notification notification in mostSpecificFirst)
+            if (notification.Subject is not null && LinkTargets.InAppRoute(notification.Link ?? "") is null)
+                throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(mostSpecificFirst));
         Raised.AddRange(mostSpecificFirst);
         return Task.CompletedTask;
     }

@@ -120,6 +120,7 @@ public sealed class ShowingRecord
     public Guid? AskedBy { get; set; }
     public DateTime? AgreedAt { get; set; }
     public Guid? AgreedBy { get; set; }
+    public bool AskedByOther { get; set; }
 }
 
 public sealed class PublishedRow

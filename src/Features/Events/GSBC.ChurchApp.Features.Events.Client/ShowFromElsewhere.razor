@@ -1,0 +1,129 @@
+@inject CalendarEditing Editing
+@inject WideningWords Words
+
+<div class="show-elsewhere">
+    <p class="hint">Find an event or a regular event on a calendar you can see. If you edit its calendar too, it shows here at once; otherwise its calendar's editors are asked. It shows here only while it's shown on its own calendar.</p>
+    <SearchField Label="Find an event" Placeholder="An event or a calendar" Value="@_search" ValueChanged="SearchAsync" />
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    @if (_note is not null)
+    {
+        <p class="hint" role="status">@_note</p>
+    }
+    <LiveData @ref="_live" TValue="ShowableList" Load="LoadAsync" Feeds="ShowableFeeds" FailedTitle="Can't find events right now">
+        <ChildContent>
+            @if (context.Value.Items.Count == 0)
+            {
+                <p class="hint">@(_search.Length > 0 ? $"Nothing coming up matches “{_search}”." : "Nothing coming up on other calendars you can see.")</p>
+            }
+            else
+            {
+                <div class="list">
+                    @foreach (ShowableItem item in context.Value.Items)
+                    {
+                        <ListRow @key="KeyOf(item)" Icon="@(item.RegularEventId is null ? "calendar" : "rotate-cw")" IconTone="RowTone.Quiet" Title="@item.Title" Subtitle="@SubtitleOf(item)">
+                            <TrailingContent>
+                                @if (item.Asked)
+                                {
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy == KeyOf(item)" OnClick="() => AskAsync(item, false)">Withdraw</Button>
+                                    @if (item.AgreesAtOnce)
+                                    {
+                                        <Button Small="true" Busy="_busy == KeyOf(item)" OnClick="() => ChooseAsync(item)">Show here</Button>
+                                    }
+                                }
+                                else
+                                {
+                                    <Button Small="true" Busy="_busy == KeyOf(item)" OnClick="() => ChooseAsync(item)">@(item.AgreesAtOnce ? "Show here" : "Ask")</Button>
+                                }
+                            </TrailingContent>
+                            <Below>
+                                @if (_confirming == KeyOf(item) && _sentence is { } sentence)
+                                {
+                                    <div class="widening widening--ask" role="alert">
+                                        <span><Icon Name="users" Size="IconSize.Small" />@sentence</span>
+                                        <span class="widening__actions">
+                                            <Button Small="true" Busy="_busy == KeyOf(item)" OnClick="() => AskAsync(item, true)">@(item.AgreesAtOnce ? "Show it here" : "Ask anyway")</Button>
+                                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _confirming = null">Not now</Button>
+                                        </span>
+                                    </div>
+                                }
+                            </Below>
+                        </ListRow>
+                    }
+                </div>
+            }
+        </ChildContent>
+    </LiveData>
+</div>
+
+@code {
+    private static readonly IReadOnlyList<string> ShowableFeeds = [EventsFeeds.Admin];
+
+    private LiveData<ShowableList>? _live;
+    private string _search = "";
+    private string? _confirming;
+    private string? _sentence;
+    private string? _busy;
+    private string? _note;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required CalendarInfo Calendar { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private Task<ShowableList> LoadAsync() =>
+        Editing.Editing.ShowableAsync(new ShowableQuery { CalendarId = Calendar.Id, Search = _search }).AsTask();
+
+    private async Task SearchAsync(string search)
+    {
+        _search = search.Trim();
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private static string KeyOf(ShowableItem item) => item.EventId ?? item.RegularEventId ?? "";
+
+    private static string SubtitleOf(ShowableItem item)
+    {
+        string state = item.Asked ? " · Asked, waiting for its editors" : item.Published ? "" : " · Not shown yet on its own calendar";
+        return $"{item.HomeCalendarName} · {item.When}{state}";
+    }
+
+    private async Task ChooseAsync(ShowableItem item)
+    {
+        _sentence = await Words.SentenceAsync(item.Widens, item.NewlyReaches, item.NewlyReachesRoleIds, item.HomeCalendarName);
+        if (_sentence is not null)
+        {
+            _confirming = KeyOf(item);
+            return;
+        }
+        await AskAsync(item, true);
+    }
+
+    private async Task AskAsync(ShowableItem item, bool show)
+    {
+        _busy = KeyOf(item);
+        _problem = null;
+        try
+        {
+            ShowHereResult result = await Editing.Editing.ShowHereAsync(new ShowHereRequest
+            {
+                CalendarId = Calendar.Id, HomeCalendarId = item.HomeCalendarId, EventId = item.EventId, RegularEventId = item.RegularEventId, Show = show,
+            });
+            _note = !show ? $"No longer asking for “{item.Title}”."
+                : !result.Agreed ? $"{item.HomeCalendarName}'s editors have been asked to show “{item.Title}” on {Calendar.Name}."
+                : item.Published ? $"“{item.Title}” shows on {Calendar.Name} now."
+                : $"“{item.Title}” will show on {Calendar.Name} once it's shown on {item.HomeCalendarName}.";
+            _confirming = null;
+            if (_live is not null)
+                await _live.ReloadAsync();
+            await Changed.InvokeAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

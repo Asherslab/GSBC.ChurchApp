@@ -47,7 +47,10 @@ changed, the outbox changed. Components say what they depend on and the platform
 - **`LiveData<T>`** (Platform.Ui) is the default for anything loaded: it takes the load, the feeds it
   reads and the kinds of change that matter (by default reconnecting, the session and access), and
   reloads by itself, coalescing bursts. Offline it keeps the last answer and marks it stale; with no
-  answer yet it shows a failure that retries by itself once back online.
+  answer yet it shows a failure that retries by itself once back online. With `Remember` (a key, such
+  as `CalendarDiary.Remembered`) a screen opened again draws its last answer at once and reloads in
+  place, so moving between screens never flashes a skeleton (`RememberedValues`, Platform.Client). The
+  remembered answers are forgotten whenever someone signs in or out or their access changes.
 - **`RefreshOn`** gives an imperative screen (an editor holding drafts) the same triggers.
 - Services keep their own `Changed` events (`ISurfaceLayout`, `IAccess`); a component may subscribe
   to those directly.
