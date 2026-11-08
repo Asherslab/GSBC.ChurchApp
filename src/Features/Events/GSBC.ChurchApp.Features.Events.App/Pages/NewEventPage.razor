@@ -2,10 +2,11 @@
 @inject CalendarDiary Diary
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject IAccess Access
 
 <LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>
-        <EventEditor Target="EditTarget.New(Calendar ?? context.Value.Calendars.FirstOrDefault()?.Id ?? string.Empty)" Calendars="context.Value.Calendars"
+        <EventEditor Target="EditTarget.New(Calendar ?? context.Value.EditableBy(Access).FirstOrDefault()?.Id ?? string.Empty)" Calendars="context.Value.EditableBy(Access)"
                      Closed="() => Shell.BackAsync(EventsPlaces.Week).AsTask()" Saved="Opened" />
     </ChildContent>
 </LiveData>

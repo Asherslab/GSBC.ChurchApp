@@ -536,6 +536,11 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   entry fade or slide; the edge swipe back stays), `LiveData` takes a `Remember` key so a screen opened again draws its
   last answer at once and reloads in place (`RememberedValues`, forgotten on sign-in, sign-out and access changes), and
   a skeleton only shows once loading has taken 150 ms. The calendar, Sermons, the inbox, Home and its tiles remember.
+- **New event from the week and the month** (owner: "how am i adding events onto the calendar in app? doesn't appear to be
+  an option"; it was only on a calendar's own page). A **+** in the top bar of This week and of the month, beside the
+  bell, as iPhone Calendar has it, shown to anyone who holds `events.edit` at one of the calendars on the phone (through
+  `IAccess`, as the calendar page's button). It opens the editor with the calendar choice limited to the calendars they
+  edit, on the only one when there's one (`Diary.EditableBy`). The calendar page keeps its own *New event*.
 
 ## What the owner sets up
 

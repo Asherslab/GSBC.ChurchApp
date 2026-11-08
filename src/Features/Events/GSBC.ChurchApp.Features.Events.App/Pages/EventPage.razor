@@ -49,7 +49,7 @@
         bool canEdit = calendar is { ReadOnly: false } && Access.Can(EventsPermissions.Edit, occurrence.CalendarId);
 
         if (_editing && canEdit)
-            return @<EventEditor Target="EditTarget.Of(occurrence)" Calendars="EditableCalendars(diary)" Closed="() => _editing = false" />;
+            return @<EventEditor Target="EditTarget.Of(occurrence)" Calendars="diary.EditableBy(Access)" Closed="() => _editing = false" />;
 
         return @<Page Title="@occurrence.Fields.Title" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
             <Actions>
@@ -86,9 +86,6 @@
             </ChildContent>
         </Page>;
     }
-
-    private IReadOnlyList<CalendarInfo> EditableCalendars(Diary diary) =>
-        diary.Calendars.Where(calendar => !calendar.ReadOnly && Access.Can(EventsPermissions.Edit, calendar.Id)).ToList();
 
     private async Task MarkSeenAsync(EventOccurrence occurrence)
     {
