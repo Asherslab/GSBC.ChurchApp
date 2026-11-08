@@ -27,7 +27,7 @@
                    MaxLength="TabBarSurfaces.MostCharactersInAWord" Hint="@($"Up to {TabBarSurfaces.MostCharactersInAWord.ToString(CultureInfo.InvariantCulture)} letters, so it fits under the icon")"
                    Problem="@(Opens.Length == 0 ? null : TabSettings.Word.ProblemWith(Draft.Values[TabSettings.Word.Key]))" />
         <span class="field__label">Icon</span>
-        <IconPicker Value="@Draft.Values[TabSettings.Icon.Key]" ValueChanged="value => SetAsync(TabSettings.Icon.Key, value)" AllowsNone="false" />
+        <IconPicker Value="@Draft.Values[TabSettings.Icon.Key]" ValueChanged="value => SetAsync(TabSettings.Icon.Key, value)" AllowsNone="false" Unchosen="Comes with the place you choose" />
     </fieldset>
 
     <fieldset class="tile-settings__group">
@@ -50,10 +50,12 @@
     [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
     [Parameter] public RenderFragment? Notices { get; set; }
     [Parameter] public bool Unfinished { get; set; }
+    [Parameter] public IReadOnlyCollection<string> OtherTabs { get; set; } = [];
     [Parameter] public EventCallback Changed { get; set; }
 
     private bool CanBeATab(Destination place) =>
-        TabSettings.Opens.ProblemWith(place.Path) is null && Places.KindByKey(place.Kind) is not { OpensOutside: true };
+        TabSettings.Opens.ProblemWith(place.Path) is null && Places.KindByKey(place.Kind) is not { OpensOutside: true }
+        && !OtherTabs.Contains(DestinationPaths.RouteOf(place.Path) ?? place.Path, StringComparer.OrdinalIgnoreCase);
 
     private string Opens => Draft.Values[TabSettings.Opens.Key];
 

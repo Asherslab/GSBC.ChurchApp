@@ -71,12 +71,12 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);
   More is drawn faded, as it can't be chosen.
 - **Beside it,** a rail (`TabsCanvas`): *Add a tab*, *Show the tabs for* (a visitor, someone signed in, someone in a
-  role a tab is for), then **On the bar, in order**: each tab numbered, with an orange dot when this draft changed it
+  role a tab is for), *Preview as on* (a date, to see dated tabs before they start), then **On the bar, in order**: each tab numbered, with an orange dot when this draft changed it
   and *Move left* and *Move right*, and More last with a lock and "Always last". Under it, the tabs that aren't on the
   bar for that person, each with why: off the bar, dated, for someone else, not finished, another tab already opens
   that place, or past the fourth; and tabs taken off in this draft, with *Put back*.
 - **The settings panel** for the chosen tab (`TabSettingsPanel`): Opens (the place field, offering only places a tab
-  can open), its word and its icon (filled in from the place when one is chosen, then the staff's to change), who
+  can open that no other tab already opens), its word and its icon (filled in from the place when one is chosen, then the staff's to change), who
   sees it and when, *On the bar*, and *Take it off the bar*. A tab added in this draft says what it still needs and
   joins the bar once it has a place, a word and an icon.
 - **Every phone preview** in the admin panel (the Hub canvas, the draft's phone preview) draws the draft's tabs now,

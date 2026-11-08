@@ -123,6 +123,9 @@
 .hub-canvas__hidden { display: grid; gap: 6px; max-height: 40vh; overflow: auto; }
 .hub-canvas__hidden h3 { margin: 10px 0 0; font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }
 
+.hub-canvas.tabs-canvas { grid-template-columns: minmax(180px, 200px) minmax(0, 1fr); gap: 0 20px; }
+.workbench--canvas:has(.tabs-canvas) { grid-template-columns: minmax(260px, 300px) minmax(0, 1fr) minmax(320px, 400px); }
+.icon-current__name--quiet { color: var(--ink-3); }
 .tabs-canvas .hub-canvas__bar, .tabs-canvas__order, .tabs-canvas__list, .tabs-canvas__row { min-width: 0; }
 .tabs-canvas__order { display: grid; gap: 8px; }
 .tabs-canvas__order h3 { margin: 0; font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }

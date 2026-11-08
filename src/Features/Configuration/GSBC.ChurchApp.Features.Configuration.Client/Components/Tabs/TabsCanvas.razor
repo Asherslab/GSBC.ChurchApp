@@ -1,3 +1,4 @@
+@using System.Globalization
 @inject TimeProvider Clock
 
 <div class="hub-canvas tabs-canvas">
@@ -12,6 +13,14 @@
                 }
             </select>
         </label>
+        <label class="hub-canvas__control">
+            <span>Preview as on</span>
+            <input class="hub-canvas__select hub-canvas__date" type="date" value="@Iso(_on ?? Today)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
+        </label>
+        @if (_on is not null && _on != Today)
+        {
+            <button type="button" class="link hub-canvas__today" @onclick="() => _on = null">Back to today</button>
+        }
         <section class="tabs-canvas__order" aria-labelledby="tabs-order">
             <h3 id="tabs-order">On the bar, in order</h3>
             <ol class="tabs-canvas__list">
@@ -35,7 +44,7 @@
                 }
                 <li class="tabs-canvas__row tabs-canvas__row--fixed">
                     <span class="tabs-canvas__name"><Icon Name="more" Size="IconSize.Small" /><span>More</span></span>
-                    <span class="tabs-canvas__always"><Icon Name="lock" Size="IconSize.Small" /> Always last</span>
+                    <span class="tabs-canvas__always" title="Always last"><Icon Name="lock" Size="IconSize.Small" /><span class="visually-hidden">Always last</span></span>
                 </li>
             </ol>
         </section>
@@ -95,6 +104,7 @@
 
     private string _viewer = Visitor;
     private string _announced = "";
+    private DateOnly? _on;
 
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Tabs { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
@@ -108,7 +118,14 @@
     [Parameter] public EventCallback OnAdd { get; set; }
     [Parameter] public EventCallback<string> OnPutBack { get; set; }
 
-    private DateTime At => Clock.GetUtcNow().UtcDateTime;
+    private DateOnly Today => DateOnly.FromDateTime(ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime));
+
+    private DateTime At => _on is { } day ? ChurchTime.ToUtc(day.ToDateTime(new TimeOnly(9, 0))) : Clock.GetUtcNow().UtcDateTime;
+
+    private static string Iso(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
 
     private Viewer Viewer => _viewer switch
     {
@@ -154,7 +171,7 @@
     private string WhyNot(ArrangedSurface entry)
     {
         if (entry.Hidden)
-            return "Off the bar: Shown is off";
+            return "Taken off the bar: On the bar is off";
         if (entry.StartsAt is { } starts && At < starts)
             return $"On the bar from {DraftWords.Day(starts)}";
         if (entry.EndsAt is { } ends && At >= ends)

@@ -434,7 +434,7 @@ else
         if (_form is not null && TabBarSurfaces.IsTab(_form.Surface))
         {
             @ChangedWhileEditing
-            <TabSettingsPanel Draft="_form" Changed="FormChangedAsync" Notices="@SettleNotice" Unfinished="@(_form is { IsNew: true, Surface.Repeatable: true } && _session?.PatchFor(_formId) is null)" />
+            <TabSettingsPanel Draft="_form" Changed="FormChangedAsync" Notices="@SettleNotice" OtherTabs="@OtherTabRoutes" Unfinished="@(_form is { IsNew: true, Surface.Repeatable: true } && _session?.PatchFor(_formId) is null)" />
             <div class="ui-actions tile-settings__actions">@FormActions</div>
         }
         else
@@ -526,6 +526,9 @@ else
     private bool IsTabs => _area.Area == TabBarSurfaces.Area.Key;
 
     private bool IsCanvas => IsHub || IsTabs;
+
+    private IReadOnlyCollection<string> OtherTabRoutes => _session is null ? []
+        : _session.Arranged(TabBarSurfaces.Area, null).Where(entry => !entry.Hidden && KeyOf(entry) != _selectedKey).Select(entry => TabBar.Of(entry).Route).ToList();
 
     private static string RemoveWords(PlacementDraft form) =>
         TabBarSurfaces.IsTab(form.Surface) ? "Take it off the bar" : form.Surface.Repeatable ? "Take it out" : "Back to how the app starts";

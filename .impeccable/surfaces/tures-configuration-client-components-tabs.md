@@ -28,6 +28,6 @@ STORY: I open my draft on Tab bar, click Add a tab, choose This week, see it app
 Home, check it as a visitor and as someone signed in, and publish.
 
 FORM: structure 1 of 3 on `.impeccable/mocks/decision/app-tabs/` (the phone is the canvas), with the ordered list
-raised from structure 2.
+raised from structure 2; seed: none (unavailable): the three structures were dealt by hand, no concept-seed roll ran.
 
 FINISH: finish review at the end of the build.
