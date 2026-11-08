@@ -60,7 +60,7 @@ public sealed class TabBarTests
     [Fact]
     public void ThePlaceTwiceForOnePersonIsOneTab()
     {
-        Assert.Equal(["Home", "Sermons"], Words(For(Visitor, [Tab("again", "/sermons", "Listen", order: 300)])));
+        Assert.Equal(["Home", "Sermons"], Words(For(Visitor, Tab("again", "/sermons", "Listen", order: 300))));
     }
 
     private static IReadOnlyList<AppTab> For(Viewer viewer, params StoredPlacement[] stored) =>
