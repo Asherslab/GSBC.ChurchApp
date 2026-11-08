@@ -9,12 +9,12 @@ public static class TabBarSurfaces
     public const int MostChosenTabs = 4;
     public const int MostCharactersInAWord = 12;
 
-    public const string EditNode = "config.tabs.edit";
+    private const string EditNode = "config.tabs.edit";
 
     public static readonly Permission Edit =
         new(EditNode, ScopeKind.Global, "Choose the app's tabs: which places are tabs, in what order, for whom and when");
 
-    public const string PublishNode = "config.tabs.publish";
+    private const string PublishNode = "config.tabs.publish";
 
     public static readonly Permission Publish =
         new(PublishNode, ScopeKind.Global, "Put changes to the app's tabs out to everyone, or on for an event");
@@ -91,7 +91,7 @@ public static class TabBar
     public static IReadOnlyList<AppTab> For(IEnumerable<ArrangedSurface> shown) =>
         Candidates(shown).DistinctBy(tab => tab.Route, StringComparer.OrdinalIgnoreCase).Take(TabBarSurfaces.MostChosenTabs).ToList();
 
-    public static IReadOnlyList<AppTab> Candidates(IEnumerable<ArrangedSurface> shown) =>
+    private static IReadOnlyList<AppTab> Candidates(IEnumerable<ArrangedSurface> shown) =>
         shown.Where(entry => TabBarSurfaces.IsTab(entry.Surface) && entry.Surface.ProblemsWith(entry.Values.Raw).Count == 0)
             .Select(Of)
             .ToList();

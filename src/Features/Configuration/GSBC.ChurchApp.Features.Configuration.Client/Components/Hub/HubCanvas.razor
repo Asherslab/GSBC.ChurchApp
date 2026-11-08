@@ -48,7 +48,7 @@
     }
 
     <div class="hub-canvas__stage" data-fit-least="0.6">
-        <PhoneFrame Title="Good Shepherd" Bell="true" Scheme="_scheme" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
+        <PhoneFrame Title="Good Shepherd" Bell="true" Tabs="ShownTabs" Scheme="_scheme" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
             <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
         </PhoneFrame>
     </div>
@@ -77,6 +77,7 @@
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
     [Parameter] public IReadOnlyList<PlacementPatch> Removed { get; set; } = [];
+    [Parameter] public IReadOnlyList<ArrangedSurface> Tabs { get; set; } = [];
     [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
     [Parameter] public string? SelectedKey { get; set; }
     [Parameter] public IReadOnlyDictionary<string, string> Marks { get; set; } = new Dictionary<string, string>();
@@ -132,6 +133,9 @@
     };
 
     private bool InDates(ArrangedSurface entry) => (entry.StartsAt is null || At >= entry.StartsAt) && (entry.EndsAt is null || At < entry.EndsAt);
+
+    private IReadOnlyList<AppTab> ShownTabs => Tabs.Count == 0 ? TabBar.Starting
+        : TabBar.For(Tabs.Where(entry => _viewer == EveryTile ? !entry.Hidden && InDates(entry) : entry.IsShownTo(ViewerFor(_viewer), At)));
 
     private List<ArrangedSurface> Shown => Hub.Where(entry => HubSurfaces.IsArrangement(entry.Surface) || ShownNow(entry)).ToList();
 

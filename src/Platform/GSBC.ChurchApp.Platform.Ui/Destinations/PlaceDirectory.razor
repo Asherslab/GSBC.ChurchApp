@@ -12,17 +12,17 @@
         <p class="place-directory__hint">@Hint</p>
     }
     <LiveData @ref="_live" TValue="DestinationResults" Load="LoadAsync" Feeds="Destinations.Feeds">
-        @if (context.Value.Groups.All(group => group.Destinations.Count == 0))
+        @if (context.Value.Groups.All(group => !group.Destinations.Any(Offered)))
         {
             <EmptyState Icon="search" Title="@(_text.Trim().Length > 0 ? $"Nothing called “{_text.Trim()}”" : "Nothing here yet")"
                         Body="@(_text.Trim().Length > 0 ? "Try fewer letters, or look under another area." : "Places show here as they're added to the app.")" />
         }
-        @foreach (DestinationGroup group in context.Value.Groups.Where(group => group.Destinations.Count > 0))
+        @foreach (DestinationGroup group in context.Value.Groups.Where(group => group.Destinations.Any(Offered)))
         {
             <section class="place-directory__group" aria-label="@group.Title">
                 <h3 class="place-directory__head">@group.Title</h3>
                 <div class="place-directory__rows">
-                    @foreach (Destination place in group.Destinations)
+                    @foreach (Destination place in group.Destinations.Where(Offered))
                     {
                         <ListRow Title="@place.Title" Subtitle="@PlaceWords.Subtitle(place, Now)" Icon="@place.Icon" IconTone="@(place.Area == DestinationAreas.Pages.Key ? RowTone.Primary : RowTone.Accent)"
                                  Trailing="@PlaceWords.Short(place)" Class="@(place.Path == Chosen ? "row--selected" : null)" OnClick="() => OnChoose.InvokeAsync(place)" />
@@ -52,6 +52,9 @@
     [Parameter] public string? OpenableBy { get; set; }
     [Parameter] public string? Hint { get; set; }
     [Parameter] public EventCallback<Destination> OnChoose { get; set; }
+    [Parameter] public Func<Destination, bool>? Offers { get; set; }
+
+    private bool Offered(Destination place) => Offers?.Invoke(place) ?? true;
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 

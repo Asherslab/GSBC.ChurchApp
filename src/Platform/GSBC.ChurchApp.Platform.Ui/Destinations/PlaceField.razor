@@ -31,7 +31,7 @@
 </div>
 
 <Sheet Open="_choosing" OpenChanged="open => _choosing = open" Wide="true" Title="@SheetTitle" Lead="@SheetLead">
-    <PlaceDirectory Chosen="@Value" OpenableBy="@OpenableBy" OnChoose="ChooseAsync" />
+    <PlaceDirectory Chosen="@Value" OpenableBy="@OpenableBy" Offers="Offers" OnChoose="ChooseAsync" />
 </Sheet>
 
 @code {
@@ -39,6 +39,8 @@
 
     [Parameter] public string? Value { get; set; }
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+    [Parameter] public EventCallback<Destination> OnChosen { get; set; }
+    [Parameter] public Func<Destination, bool>? Offers { get; set; }
     [Parameter] public string? OpenableBy { get; set; }
     [Parameter] public string ChooseLabel { get; set; } = "Choose a place in the app";
     [Parameter] public string SheetTitle { get; set; } = "Choose a place in the app";
@@ -49,5 +51,6 @@
     {
         _choosing = false;
         await ValueChanged.InvokeAsync(place.Path);
+        await OnChosen.InvokeAsync(place);
     }
 }

@@ -1,0 +1,189 @@
+@inject TimeProvider Clock
+
+<div class="hub-canvas tabs-canvas">
+    <div class="hub-canvas__bar">
+        <Button Icon="plus" Block="true" OnClick="OnAdd">Add a tab</Button>
+        <label class="hub-canvas__control">
+            <span>Show the tabs for</span>
+            <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? Visitor">
+                @foreach (FieldOption option in ViewerChoices)
+                {
+                    <option value="@option.Value">@option.Label</option>
+                }
+            </select>
+        </label>
+        <section class="tabs-canvas__order" aria-labelledby="tabs-order">
+            <h3 id="tabs-order">On the bar, in order</h3>
+            <ol class="tabs-canvas__list">
+                @for (int index = 0; index < OnBar.Count; index++)
+                {
+                    int position = index;
+                    ArrangedSurface entry = OnBar[position];
+                    string name = DraftWords.NameOf(entry);
+                    <li class="tabs-canvas__row @(KeyOf(entry) == SelectedKey ? "tabs-canvas__row--on" : "")">
+                        <button type="button" class="tabs-canvas__name" @onclick="() => OnChoose.InvokeAsync(entry)">
+                            <Icon Name="@TabBar.Of(entry).Icon" Size="IconSize.Small" />
+                            <span>@name</span>
+                            @if (Marks.GetValueOrDefault(KeyOf(entry)) is { } mark)
+                            {
+                                <span class="tabs-canvas__changed" title="@($"{mark} in this draft")"><span class="visually-hidden">@mark in this draft</span></span>
+                            }
+                        </button>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-left" Disabled="@(position == 0)" AriaLabel="@($"Move {name} left")" Tooltip="Move left" OnClick="() => SwapAsync(position, position - 1)" />
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-right" Disabled="@(position == OnBar.Count - 1)" AriaLabel="@($"Move {name} right")" Tooltip="Move right" OnClick="() => SwapAsync(position, position + 1)" />
+                    </li>
+                }
+                <li class="tabs-canvas__row tabs-canvas__row--fixed">
+                    <span class="tabs-canvas__name"><Icon Name="more" Size="IconSize.Small" /><span>More</span></span>
+                    <span class="tabs-canvas__always"><Icon Name="lock" Size="IconSize.Small" /> Always last</span>
+                </li>
+            </ol>
+        </section>
+        @if (NotOnBar.Count > 0 || Removed.Count > 0)
+        {
+            <section class="hub-canvas__hidden tabs-canvas__hidden" aria-labelledby="tabs-hidden">
+                <h3 id="tabs-hidden">Not on the bar for @ViewerWords</h3>
+                <ListGroup>
+                    @foreach ((ArrangedSurface entry, string why) in NotOnBar)
+                    {
+                        <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@why" Icon="eye-off" IconTone="RowTone.Quiet"
+                                 Class="@(KeyOf(entry) == SelectedKey ? "row--selected" : null)" OnClick="() => OnChoose.InvokeAsync(entry)" />
+                    }
+                    @foreach (PlacementPatch removed in Removed)
+                    {
+                        <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(TabSettings.Word.Key) ?? "A tab")" Subtitle="Taken off in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                            <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                        </ListRow>
+                    }
+                </ListGroup>
+            </section>
+        }
+        <p class="hub-canvas__keys">Click a tab on the phone to change it. A tab taken off the bar leaves its page in the app, reached from Home, More and links.</p>
+    </div>
+
+    <div class="hub-canvas__stage" data-fit-least="0.6">
+        <PhoneFrame Title="Good Shepherd" Bell="true" Interactive="true" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"The tab bar as {ViewerWords} sees it, with this draft")">
+            <ChildContent>
+                <HomeScreen Shown="HomeShown" At="At" />
+            </ChildContent>
+            <TabBarContent>
+                <nav class="tabbar tabs-canvas__bar" aria-label="The tab bar in this draft">
+                    @foreach (ArrangedSurface entry in OnBar)
+                    {
+                        AppTab tab = TabBar.Of(entry);
+                        bool selected = KeyOf(entry) == SelectedKey;
+                        <button type="button" class="tabbar__item tabs-canvas__tab @(selected ? "tabs-canvas__tab--on" : "") @(tab.Route.Length == 0 ? "active" : "")"
+                                aria-pressed="@(selected ? "true" : "false")" @onclick="() => OnChoose.InvokeAsync(entry)">
+                            <Icon Name="@tab.Icon" />
+                            <span>@tab.Word</span>
+                        </button>
+                    }
+                    <span class="tabbar__item tabs-canvas__more" title="More is always the last tab">
+                        <Icon Name="more" />
+                        <span>More</span>
+                    </span>
+                </nav>
+            </TabBarContent>
+        </PhoneFrame>
+    </div>
+    <p class="visually-hidden" aria-live="polite">@_announced</p>
+</div>
+
+@code {
+    private const string Visitor = "visitor";
+    private const string SignedIn = "signed-in";
+
+    private string _viewer = Visitor;
+    private string _announced = "";
+
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Tabs { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
+    [Parameter] public IReadOnlyList<PlacementPatch> Removed { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
+    [Parameter] public string? SelectedKey { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> Marks { get; set; } = new Dictionary<string, string>();
+    [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<ArrangedSurface>> OnMove { get; set; }
+    [Parameter] public EventCallback OnAdd { get; set; }
+    [Parameter] public EventCallback<string> OnPutBack { get; set; }
+
+    private DateTime At => Clock.GetUtcNow().UtcDateTime;
+
+    private Viewer Viewer => _viewer switch
+    {
+        SignedIn => new Viewer(true, _ => false),
+        _ when Guid.TryParse(_viewer, out Guid role) => new Viewer(true, node => node == RoleMembership.NodeOf(role)),
+        _ => Viewer.Anonymous,
+    };
+
+    private IReadOnlyList<FieldOption> ViewerChoices =>
+    [
+        new(Visitor, "A visitor, not signed in"),
+        new(SignedIn, "Someone signed in"),
+        .. Tabs.SelectMany(entry => entry.Audience.RoleIds).Distinct().Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
+    ];
+
+    private string ViewerWords => _viewer switch
+    {
+        Visitor => "a visitor",
+        SignedIn => "someone signed in",
+        _ => Guid.TryParse(_viewer, out Guid role) ? $"someone who's {RoleNames.GetValueOrDefault(role, "in that role")}" : "a visitor",
+    };
+
+    private List<ArrangedSurface> ShownToViewer => Tabs.Where(entry => entry.IsShownTo(Viewer, At)).ToList();
+
+    private List<ArrangedSurface> OnBar
+    {
+        get
+        {
+            List<string> keys = TabBar.For(ShownToViewer).Select(tab => tab.Key).ToList();
+            return Tabs.Where(entry => keys.Contains(KeyOf(entry))).ToList();
+        }
+    }
+
+    private List<(ArrangedSurface Entry, string Why)> NotOnBar
+    {
+        get
+        {
+            List<ArrangedSurface> onBar = OnBar;
+            return Tabs.Where(entry => !onBar.Contains(entry)).Select(entry => (entry, WhyNot(entry))).ToList();
+        }
+    }
+
+    private string WhyNot(ArrangedSurface entry)
+    {
+        if (entry.Hidden)
+            return "Off the bar: Shown is off";
+        if (entry.StartsAt is { } starts && At < starts)
+            return $"On the bar from {DraftWords.Day(starts)}";
+        if (entry.EndsAt is { } ends && At >= ends)
+            return $"Ended {DraftWords.Day(ends.AddTicks(-1))}";
+        if (!entry.Audience.Includes(Viewer))
+            return entry.Audience.IsForRoles ? $"Only for {RoleWords.List(entry.Audience.RoleIds, RoleNames)}" : "Only for people who are signed in";
+        if (entry.Surface.ProblemsWith(entry.Values.Raw).Count > 0)
+            return "Not finished: it needs a place, a word and an icon";
+        AppTab tab = TabBar.Of(entry);
+        return ShownToViewer.TakeWhile(other => other != entry).Any(other => string.Equals(TabBar.Of(other).Route, tab.Route, StringComparison.OrdinalIgnoreCase))
+            ? "Another tab already opens this place"
+            : "Past the fourth: only four tabs fit beside More";
+    }
+
+    private List<ArrangedSurface> HomeShown => Hub.Where(entry => HubSurfaces.IsArrangement(entry.Surface) || entry.IsShownTo(Viewer, At)).ToList();
+
+    private AppearanceSurfaces.ChosenTheme Palette =>
+        AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, At)));
+
+    private static string KeyOf(ArrangedSurface entry) => entry.Placement?.Id ?? entry.Surface.Key;
+
+    private async Task SwapAsync(int from, int to)
+    {
+        List<ArrangedSurface> onBar = OnBar;
+        List<ArrangedSurface> all = [.. Tabs];
+        int one = all.IndexOf(onBar[from]);
+        int other = all.IndexOf(onBar[to]);
+        (all[one], all[other]) = (all[other], all[one]);
+        await OnMove.InvokeAsync(all);
+        _announced = $"Moved {DraftWords.NameOf(onBar[from])} to tab {to + 1} of {onBar.Count}.";
+    }
+}

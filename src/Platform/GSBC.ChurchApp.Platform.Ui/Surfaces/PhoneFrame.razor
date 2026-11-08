@@ -1,4 +1,4 @@
-<div @ref="_frame" class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@(Theme is null ? Palette : PreviewPalette)" data-preview-scheme="@Scheme?.ToString().ToLowerInvariant()" role="img" aria-label="@Label"
+<div @ref="_frame" class="phone-frame phone-frame--@Device.Cutout.ToString().ToLowerInvariant()" data-palette="@(Theme is null ? Palette : PreviewPalette)" data-preview-scheme="@Scheme?.ToString().ToLowerInvariant()" role="@(Interactive ? "group" : "img")" aria-label="@Label"
      style="@($"width: {Device.Width}px; height: {Device.Height}px; --sat: {Device.TopInset}px; --sab: {Device.BottomInset}px")">
     @if (Theme is not null)
     {
@@ -23,12 +23,20 @@
             <svg viewBox="0 0 27 13"><rect x="0.5" y="0.5" width="23" height="12" rx="3.5" fill="none" stroke="currentColor" opacity="0.4" /><rect x="2" y="2" width="20" height="9" rx="2" /><rect x="25" y="4.5" width="1.5" height="4" rx="0.75" opacity="0.4" /></svg>
         </span>
     </div>
-    <nav class="tabbar" aria-hidden="true">
-        @foreach ((string title, string icon) in Tabs)
-        {
-            <span class="tabbar__item @(title == Tabs[0].Title ? "active" : "")"><Icon Name="@icon" /><span>@title</span></span>
-        }
-    </nav>
+    @if (TabBarContent is not null)
+    {
+        @TabBarContent
+    }
+    else
+    {
+        <nav class="tabbar" aria-hidden="true">
+            @foreach (AppTab tab in Tabs)
+            {
+                <span class="tabbar__item @(tab.Route == OnRoute ? "active" : "")"><Icon Name="@tab.Icon" /><span>@tab.Word</span></span>
+            }
+            <span class="tabbar__item @(OnRoute == "more" ? "active" : "")"><Icon Name="more" /><span>More</span></span>
+        </nav>
+    }
 </div>
 
 @inject Shell Shell
@@ -63,7 +71,10 @@
     [Parameter] public ThemeSpec? Theme { get; set; }
     [Parameter] public ThemeScheme? Scheme { get; set; }
     [Parameter] public PhoneDevice Device { get; set; } = PhoneDevice.IPhone15Pro;
-    [Parameter] public IReadOnlyList<(string Title, string Icon)> Tabs { get; set; } = [("Home", "home"), ("More", "more")];
+    [Parameter] public IReadOnlyList<AppTab> Tabs { get; set; } = TabBar.Starting;
+    [Parameter] public string? OnRoute { get; set; } = "";
+    [Parameter] public RenderFragment? TabBarContent { get; set; }
+    [Parameter] public bool Interactive { get; set; }
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public string? Title { get; set; }
     [Parameter] public bool Bell { get; set; }

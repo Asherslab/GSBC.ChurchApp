@@ -279,7 +279,7 @@ all four on 2026-11-08):
 ### Pinned for later
 
 - **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
-  drafts. Not part of Events; Configuration's to design.
+  drafts. Built in Configuration: [app-tabs.md](app-tabs.md).
 
 - **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
 

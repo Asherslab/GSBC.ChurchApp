@@ -18,8 +18,8 @@ internal static class TestSurfaces
     public static readonly PermissionCatalog Permissions = new([new PermissionSet(
         [HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, TabBarSurfaces.Edit, TabBarSurfaces.Publish, EditModules, PublishModules, ConfigurationPermissions.PreviewDraft])]);
 
-    public static readonly DestinationKind Files = new("files", new DestinationArea("files", "Files", "file", 50), "File", "file", "files", OpensOutside: true);
-    public static readonly DestinationKind Series = new("series", new DestinationArea("sermons", "Sermons", "sermons", 20), "Series", "sermons", "series");
+    private static readonly DestinationKind Files = new("files", new DestinationArea("files", "Files", "file", 50), "File", "file", "files", OpensOutside: true);
+    private static readonly DestinationKind Series = new("series", new DestinationArea("sermons", "Sermons", "sermons", 20), "Series", "sermons", "series");
 
     public static DestinationCatalog Places => new([ShellDestinations.All,
         new DestinationSet([new DestinationPage("/sermons", "Sermons", "sermons", DestinationAreas.Pages, "A tab", Audience.Everyone)], [Files, Series])]);

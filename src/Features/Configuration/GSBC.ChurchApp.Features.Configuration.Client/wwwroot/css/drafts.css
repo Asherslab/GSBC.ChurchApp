@@ -123,6 +123,26 @@
 .hub-canvas__hidden { display: grid; gap: 6px; max-height: 40vh; overflow: auto; }
 .hub-canvas__hidden h3 { margin: 10px 0 0; font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }
 
+.tabs-canvas .hub-canvas__bar, .tabs-canvas__order, .tabs-canvas__list, .tabs-canvas__row { min-width: 0; }
+.tabs-canvas__order { display: grid; gap: 8px; }
+.tabs-canvas__order h3 { margin: 0; font-size: var(--text-label); font-weight: 700; color: var(--ink-2); }
+.tabs-canvas__list { display: grid; gap: 4px; margin: 0; padding: 0; list-style: none; counter-reset: tab; }
+.tabs-canvas__row { display: flex; align-items: center; gap: 2px; min-height: 44px; padding-right: 2px; border-radius: var(--radius-field); background: var(--sand); counter-increment: tab; }
+.tabs-canvas__row--on { background: var(--surface); box-shadow: inset 0 0 0 2px var(--marker); }
+.tabs-canvas__name { display: flex; flex: 1; align-items: center; gap: 8px; min-width: 0; min-height: 44px; padding: 0 10px; border: 0; border-radius: var(--radius-field); background: none; color: var(--ink); font: inherit; font-size: var(--text-caption); font-weight: 600; text-align: left; cursor: pointer; }
+.tabs-canvas__name::before { content: counter(tab); min-width: 1ch; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.tabs-canvas__name > span:not(.tabs-canvas__changed) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tabs-canvas__name:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs-canvas__row--fixed { background: none; box-shadow: inset 0 0 0 1px var(--line); }
+.tabs-canvas__row--fixed .tabs-canvas__name { cursor: default; color: var(--ink-2); }
+.tabs-canvas__always { display: inline-flex; align-items: center; gap: 4px; padding-right: 10px; font-size: var(--text-caption); color: var(--ink-3); white-space: nowrap; }
+.phone-frame .tabs-canvas__tab { border: 0; border-radius: var(--radius-field); background: none; font: inherit; font-size: var(--text-micro); font-weight: 600; cursor: pointer; pointer-events: auto; transition: box-shadow 160ms var(--ease-out), color 150ms; }
+.phone-frame .tabs-canvas__tab:hover { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--marker) 60%, transparent); }
+.phone-frame .tabs-canvas__tab--on, .phone-frame .tabs-canvas__tab--on:hover { box-shadow: inset 0 0 0 2px var(--marker); }
+.phone-frame .tabs-canvas__tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tabs-canvas__changed { flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--marker); }
+.tabs-canvas__more { opacity: 0.6; cursor: not-allowed; }
+
 .hub-arrange { position: absolute; inset: 0; z-index: 3; border-radius: var(--radius); cursor: grab; touch-action: none; transition: box-shadow 160ms var(--ease-out); }
 .hub-arrange:hover { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--marker) 60%, transparent); }
 .hub-arrange:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }

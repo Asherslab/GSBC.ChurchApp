@@ -68,32 +68,7 @@
 
     <fieldset class="tile-settings__group">
         <legend>Icon</legend>
-        <div class="icon-current">
-            <span class="icon-current__shown">@ChosenIcon</span>
-            <span class="icon-current__name">@ChosenIconName</span>
-            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _choosingIcon = !_choosingIcon">@(_choosingIcon ? "Done" : "Change icon")</Button>
-        </div>
-        @if (_choosingIcon)
-        {
-        <div class="icon-picker" role="radiogroup" aria-label="Icon">
-            <button type="button" role="radio" aria-checked="@(Look.Icon.Length == 0 ? "true" : "false")" class="icon-picker__choice @(Look.Icon.Length == 0 ? "icon-picker__choice--on" : "")" title="No icon" aria-label="No icon" @onclick="() => SetAsync(Kind.Tile.Icon, string.Empty)">
-                <Icon Name="x" Size="IconSize.Small" />
-            </button>
-            @foreach (string name in BuiltInIcons)
-            {
-                <button type="button" role="radio" aria-checked="@(Look.Icon == name ? "true" : "false")" class="icon-picker__choice @(Look.Icon == name ? "icon-picker__choice--on" : "")" title="@IconWords(name)" aria-label="@IconWords(name)" @onclick="() => SetAsync(Kind.Tile.Icon, name)">
-                    <Icon Name="@name" Size="IconSize.Small" />
-                </button>
-            }
-            @foreach ((string key, CustomIcon icon) in Icons)
-            {
-                <button type="button" role="radio" aria-checked="@(Look.Icon == key ? "true" : "false")" class="icon-picker__choice @(Look.Icon == key ? "icon-picker__choice--on" : "")" title="@icon.Name" aria-label="@icon.Name" @onclick="() => SetAsync(Kind.Tile.Icon, key)">
-                    <SvgIcon Drawing="@icon.Drawing" />
-                </button>
-            }
-        </div>
-        <IconUpload OnAdd="AddIconAsync" />
-        }
+        <IconPicker Value="@Look.Icon" ValueChanged="value => SetAsync(Kind.Tile.Icon, value)" Custom="Icons" OnUpload="AddIconAsync" />
         @if (Look.Icon.Length > 0)
         {
             <SelectField Label="Icon colour" Options="IconColours" Value="@Look.IconTone" ValueChanged="value => SetAsync(Kind.Tile.IconTone, value)" />
@@ -165,7 +140,6 @@
 
 @code {
     private static readonly string[] Schemes = ["light", "dark"];
-    private bool _choosingIcon;
     private Dictionary<string, double> _contrast = [];
     private string _measuredFor = "";
     private bool? _web;
@@ -179,14 +153,6 @@
     [Parameter] public EventCallback Changed { get; set; }
     [Parameter] public Func<string, string, string>? AddIcon { get; set; }
 
-    public static readonly IReadOnlyList<string> BuiltInIcons =
-    [
-        "sparkles", "bulletin", "sermons", "play", "headphones", "calendar", "calendar-plus", "clock", "bell", "megaphone",
-        "prayer", "heart", "book-open", "scroll-text", "notebook-pen", "users", "user", "smile", "music", "mic", "video",
-        "radio", "coffee", "home", "door-open", "map-pin", "map", "footprints", "flag", "globe", "phone", "mail",
-        "message-square", "camera", "image", "file", "link", "store", "zap", "shield-check",
-    ];
-
     private static readonly IReadOnlyList<FocalPoint> FocalPoints =
         [new(0, 0), new(50, 0), new(100, 0), new(0, 50), new(50, 50), new(100, 50), new(0, 100), new(50, 100), new(100, 100)];
 
@@ -199,25 +165,6 @@
     private string Heading => Kind.IsPlain ? Look.Title.Length > 0 ? Look.Title : Kind.Surface.Title : Kind.Surface.Title;
 
     private const double EasyToRead = 4.5;
-
-    private RenderFragment ChosenIcon =>
-        @<text>
-        @if (Look.Icon.Length == 0)
-        {
-            <Icon Name="x" Size="IconSize.Small" />
-        }
-        else if (Icons.TryGetValue(Look.Icon, out CustomIcon? custom))
-        {
-            <SvgIcon Drawing="@custom.Drawing" />
-        }
-        else
-        {
-            <Icon Name="@Look.Icon" Size="IconSize.Small" />
-        }
-        </text>;
-
-    private string ChosenIconName => Look.Icon.Length == 0 ? "No icon"
-        : Icons.TryGetValue(Look.Icon, out CustomIcon? custom) ? custom.Name : IconWords(Look.Icon);
 
     private string? WhyNot(TileVariant variant) => variant switch
     {
@@ -240,17 +187,6 @@
             };
         }
     }
-
-    private static string IconWords(string name) => name switch
-    {
-        "sparkles" => "Sparkles",
-        "scroll-text" => "Scroll",
-        "notebook-pen" => "Notebook",
-        "message-square" => "Message",
-        "shield-check" => "Shield",
-        "zap" => "Lightning",
-        _ => string.Concat(char.ToUpperInvariant(name[0]), name[1..].Replace('-', ' ')),
-    };
 
     private ArrangedSurface ProofEntry
     {

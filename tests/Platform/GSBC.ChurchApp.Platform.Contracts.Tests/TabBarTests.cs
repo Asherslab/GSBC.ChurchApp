@@ -27,7 +27,7 @@ public sealed class TabBarTests
 
         Assert.Equal(["Home", "Calendar", "Sermons", "Give"], Words(For(Visitor, stored)));
         Assert.Equal(["Home", "Calendar", "Sermons", "Give"], Words(For(Member, stored)));
-        Assert.Equal(["Home", "Calendar", "Sermons", "Prayer"], Words(For(Visitor, [.. stored[..1], stored[3]])));
+        Assert.Equal(["Home", "Calendar", "Sermons", "Prayer"], Words(For(Visitor, stored[0], stored[3])));
     }
 
     [Fact]

@@ -28,7 +28,9 @@ public static class DraftWords
     }
 
     public static string NameOf(ArrangedSurface entry) =>
-        entry.Surface.Repeatable && entry.Surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title
+        TabBarSurfaces.IsTab(entry.Surface)
+            ? entry.Values.Get(TabSettings.Word) is { Length: > 0 } word ? word : "A new tab"
+            : entry.Surface.Repeatable && entry.Surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title
             ? entry.Values.Get(title)
             : entry.Surface.Title;
 

@@ -80,7 +80,7 @@
     private IReadOnlyList<FieldOption> IconOptions =>
     [
         new("", "No icon"),
-        .. Hub.TileSettings.BuiltInIcons.Select(name => new FieldOption(name, name)),
+        .. IconPicker.BuiltIn.Select(name => new FieldOption(name, IconPicker.Words(name))),
         .. IconSetting.IsCustom(Value, out _) ? [new FieldOption(Value, "An uploaded icon")] : Array.Empty<FieldOption>(),
     ];
 

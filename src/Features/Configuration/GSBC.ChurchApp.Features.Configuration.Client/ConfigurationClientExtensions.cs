@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Features.Configuration.Client.Components.Tiles;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
+using GSBC.ChurchApp.Platform.Ui.Tabs;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -30,6 +31,7 @@ public static class ConfigurationClientExtensions
         return services
             .AddSingleton<IPreviewMode, DraftPreview>()
             .AddSingleton<ISurfaceLayout, LocalSurfaceLayout>()
+            .AddSingleton<PhoneTabs>()
             .AddMediaPrefetch(provider => PlacementMedia.Prefetch(provider.GetRequiredService<SurfaceCatalog>()));
     }
 }

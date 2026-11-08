@@ -14,7 +14,7 @@
     else
     {
         <h1 class="preview-window__title">@_session.Draft.Name</h1>
-        <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
+        <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Tabs="@_session.Arranged(TabBarSurfaces.Area, null)" />
     }
 </div>
 
@@ -46,14 +46,26 @@
         try
         {
             DraftSession session = new(await Drafts.GetAsync(DraftId), Surfaces);
-            foreach (SurfaceArea area in new[] { HubSurfaces.Area, AppearanceSurfaces.Area })
-                session.UseLive(new AreaKey(area.Key, null), (await Configuration.GetAreaAsync(area, null)).Placements.Select(placement => placement.ToStored()));
+            foreach (SurfaceArea area in new[] { HubSurfaces.Area, AppearanceSurfaces.Area, TabBarSurfaces.Area })
+                session.UseLive(new AreaKey(area.Key, null), await LiveOfAsync(area));
             _session = session;
             _problem = null;
         }
         catch (RpcException exception)
         {
             _problem = exception.StatusCode == StatusCode.NotFound ? "This draft was published or deleted." : exception.Status.Detail;
+        }
+    }
+
+    private async Task<IEnumerable<StoredPlacement>> LiveOfAsync(SurfaceArea area)
+    {
+        try
+        {
+            return (await Configuration.GetAreaAsync(area, null)).Placements.Select(placement => placement.ToStored());
+        }
+        catch (RpcException exception) when (exception.StatusCode == StatusCode.PermissionDenied && area != HubSurfaces.Area)
+        {
+            return [];
         }
     }
 

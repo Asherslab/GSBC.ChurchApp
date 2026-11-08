@@ -1,0 +1,70 @@
+<div class="icon-current">
+    <span class="icon-current__shown">@Chosen</span>
+    <span class="icon-current__name">@ChosenName</span>
+    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _choosing = !_choosing">@(_choosing ? "Done" : "Change icon")</Button>
+</div>
+@if (_choosing)
+{
+    <div class="icon-picker" role="radiogroup" aria-label="Icon">
+        @if (AllowsNone)
+        {
+            @Choice("", "No icon", @<Icon Name="x" Size="IconSize.Small" />)
+        }
+        @foreach (string name in BuiltIn)
+        {
+            @Choice(name, Words(name), @<Icon Name="@name" Size="IconSize.Small" />)
+        }
+        @foreach ((string key, CustomIcon icon) in Custom)
+        {
+            @Choice(key, icon.Name, @<SvgIcon Drawing="@icon.Drawing" />)
+        }
+    </div>
+    @if (OnUpload.HasDelegate)
+    {
+        <IconUpload OnAdd="OnUpload" />
+    }
+}
+
+@code {
+    private bool _choosing;
+
+    [Parameter, EditorRequired] public required string Value { get; set; }
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, CustomIcon> Custom { get; set; } = new Dictionary<string, CustomIcon>();
+    [Parameter] public EventCallback<(string Name, string Drawing)> OnUpload { get; set; }
+    [Parameter] public bool AllowsNone { get; set; } = true;
+
+    public static readonly IReadOnlyList<string> BuiltIn =
+    [
+        "sparkles", "bulletin", "sermons", "play", "headphones", "calendar", "calendar-plus", "clock", "bell", "megaphone",
+        "prayer", "heart", "book-open", "scroll-text", "notebook-pen", "users", "user", "smile", "music", "mic", "video",
+        "radio", "coffee", "home", "door-open", "map-pin", "map", "footprints", "flag", "globe", "phone", "mail",
+        "message-square", "camera", "image", "file", "link", "store", "zap", "shield-check",
+    ];
+
+    public static string Words(string name) => name switch
+    {
+        "" => "No icon",
+        "sparkles" => "Sparkles",
+        "scroll-text" => "Scroll",
+        "notebook-pen" => "Notebook",
+        "message-square" => "Message",
+        "shield-check" => "Shield",
+        "zap" => "Lightning",
+        _ => string.Concat(char.ToUpperInvariant(name[0]), name[1..].Replace('-', ' ')),
+    };
+
+    private RenderFragment Chosen => Value.Length == 0
+        ? @<Icon Name="x" Size="IconSize.Small" />
+        : Custom.TryGetValue(Value, out CustomIcon? custom) ? @<SvgIcon Drawing="@custom.Drawing" /> : @<Icon Name="@Value" Size="IconSize.Small" />;
+
+    private string ChosenName => Custom.TryGetValue(Value, out CustomIcon? custom) ? custom.Name : Words(Value);
+
+    private RenderFragment Choice(string key, string label, RenderFragment drawing) => __builder =>
+    {
+        bool on = Value == key;
+        <button type="button" role="radio" aria-checked="@(on ? "true" : "false")" class="icon-picker__choice @(on ? "icon-picker__choice--on" : "")" title="@label" aria-label="@label" @onclick="() => ValueChanged.InvokeAsync(key)">
+            @drawing
+        </button>
+    };
+}

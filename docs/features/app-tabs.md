@@ -69,14 +69,16 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
 `.impeccable/mocks/decision/app-tabs/`):
 
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);
-  More is drawn locked, with a lock and "Always last".
-- **Beside it,** a rail: *Add a tab* (off when four are already on the bar for everyone), *Show it as* (a visitor,
-  someone signed in, someone in a role a tab is for), and under it the tabs that aren't on the bar for that person,
-  each with why: hidden, dated, for someone else, or past the fourth. The phone's own tabs are listed there too, in
-  order, with *Move left* and *Move right*, so the order can be changed with the keyboard as well as by eye.
-- **The settings panel** for the chosen tab: Opens (the place field), its word and its icon (filled in from the place
-  when one is chosen, then the staff's to change), who sees it and when, *Shown*, and *Take it off the bar*. A plain
-  note says what taking it off does: "The page stays in the app, reached from Home, More and links."
+  More is drawn faded, as it can't be chosen.
+- **Beside it,** a rail (`TabsCanvas`): *Add a tab*, *Show the tabs for* (a visitor, someone signed in, someone in a
+  role a tab is for), then **On the bar, in order**: each tab numbered, with an orange dot when this draft changed it
+  and *Move left* and *Move right*, and More last with a lock and "Always last". Under it, the tabs that aren't on the
+  bar for that person, each with why: off the bar, dated, for someone else, not finished, another tab already opens
+  that place, or past the fourth; and tabs taken off in this draft, with *Put back*.
+- **The settings panel** for the chosen tab (`TabSettingsPanel`): Opens (the place field, offering only places a tab
+  can open), its word and its icon (filled in from the place when one is chosen, then the staff's to change), who
+  sees it and when, *On the bar*, and *Take it off the bar*. A tab added in this draft says what it still needs and
+  joins the bar once it has a place, a word and an icon.
 - **Every phone preview** in the admin panel (the Hub canvas, the draft's phone preview) draws the draft's tabs now,
   not a fixed Home and More.
 
@@ -97,6 +99,15 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
 - **Permissions of its own** (`config.tabs.edit`, `config.tabs.publish`), as Colours has, so the office can be given
   Home without the tab bar.
 - **Analytics** count taps on places already; there's no separate tab-tap measure.
+- **Moving tabs is by buttons, not dragging.** Five cells on a true-size phone are small targets for a drag, and the
+  rail's numbered list with *Move left* and *Move right* works the same with the mouse and the keyboard. Moving a tab
+  changes only the tabs that moved, so the rest aren't marked as changed.
+- **Taking off a starting tab** turns *On the bar* off (it has no placement to remove); taking off an added one
+  removes it, with *Put back*.
+- **Every phone preview in the admin panel draws the draft's tabs** (the Hub canvas, the phone preview, the pop-out),
+  for the person it's showing.
+- **A station can run its own backend beside the owner's** to check this: `Dev__PortOffset=100` moves the AppHost's
+  fixed ports up by 100 (the gateway on 5400), skips the Cloudflare tunnel and gives the media store its own volume.
 
 ## Open
 

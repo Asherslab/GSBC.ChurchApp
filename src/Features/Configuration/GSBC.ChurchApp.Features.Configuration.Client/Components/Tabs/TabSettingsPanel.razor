@@ -1,0 +1,90 @@
+@using System.Globalization
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Ui.Destinations
+@inject DestinationCatalog Places
+
+<div class="tile-settings">
+    <header class="tile-settings__head">
+        <h3>@Heading</h3>
+        <span>@(Draft.Surface.Repeatable ? "A place in the app, as a tab" : "One of the tabs the app starts with")</span>
+    </header>
+    @Notices
+    @if (Unfinished)
+    {
+        <Notice Text="Choose the place it opens. It joins the bar once it has a place, a word and an icon." />
+    }
+
+    <fieldset class="tile-settings__group">
+        <legend>Opens</legend>
+        <PlaceField Value="@NullIfEmpty(Opens)" ValueChanged="value => SetAsync(TabSettings.Opens.Key, value ?? string.Empty)" OnChosen="TakeNameAsync" Offers="CanBeATab"
+                    OpenableBy="@Draft.Audience" ChooseLabel="Choose the place this tab opens" SheetTitle="Choose the place this tab opens"
+                    SheetLead="Any page in the app, or one thing in it. Its name and icon fill in the tab; change them after." />
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>On the tab</legend>
+        <TextField Label="@TabSettings.Word.Label" Value="@Draft.Values[TabSettings.Word.Key]" ValueChanged="value => SetAsync(TabSettings.Word.Key, value)"
+                   MaxLength="TabBarSurfaces.MostCharactersInAWord" Hint="@($"Up to {TabBarSurfaces.MostCharactersInAWord.ToString(CultureInfo.InvariantCulture)} letters, so it fits under the icon")"
+                   Problem="@(Opens.Length == 0 ? null : TabSettings.Word.ProblemWith(Draft.Values[TabSettings.Word.Key]))" />
+        <span class="field__label">Icon</span>
+        <IconPicker Value="@Draft.Values[TabSettings.Icon.Key]" ValueChanged="value => SetAsync(TabSettings.Icon.Key, value)" AllowsNone="false" />
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>Who sees it, and when</legend>
+        <AudiencePicker Value="@Draft.Audience" ValueChanged="value => ChangeAsync(() => Draft.Audience = value)" />
+        <div class="ui-pair">
+            <TextField Label="First day on the bar" Hint="Empty: from now" Type="date" Value="@Iso(Draft.ShowFrom)" ValueChanged="value => ChangeAsync(() => Draft.ShowFrom = FromIso(value))" />
+            <TextField Label="Last day on the bar" Hint="Empty: no end" Type="date" Value="@Iso(Draft.ShowUntil)" ValueChanged="value => ChangeAsync(() => Draft.ShowUntil = FromIso(value))" />
+        </div>
+        <ToggleRow Title="On the bar" Description="Turn off to take it off the bar without losing its settings" Checked="!Draft.Hidden" CheckedChanged="shown => ChangeAsync(() => Draft.Hidden = !shown)" />
+    </fieldset>
+
+    @foreach (string problem in Opens.Length == 0 ? [] : Draft.Problems.Where(problem => problem != TabSettings.Word.ProblemWith(Draft.Values[TabSettings.Word.Key])))
+    {
+        <Notice Tone="NoticeTone.Warning" Text="@problem" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
+    [Parameter] public RenderFragment? Notices { get; set; }
+    [Parameter] public bool Unfinished { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private bool CanBeATab(Destination place) =>
+        TabSettings.Opens.ProblemWith(place.Path) is null && Places.KindByKey(place.Kind) is not { OpensOutside: true };
+
+    private string Opens => Draft.Values[TabSettings.Opens.Key];
+
+    private string Heading => Draft.Values[TabSettings.Word.Key] is { Length: > 0 } word ? word : "New tab";
+
+    private Task TakeNameAsync(Destination place) => ChangeAsync(() =>
+    {
+        Draft.Values[TabSettings.Opens.Key] = place.Path;
+        if (WordFor(place.Title) is { } word)
+            Draft.Values[TabSettings.Word.Key] = word;
+        if (place.Icon.Length > 0)
+            Draft.Values[TabSettings.Icon.Key] = place.Icon;
+    });
+
+    private static string? WordFor(string title) =>
+        title.Length <= TabBarSurfaces.MostCharactersInAWord ? title
+        : title.Split(' ')[0] is { Length: > 0 and <= TabBarSurfaces.MostCharactersInAWord } first ? first
+        : null;
+
+    private Task SetAsync(string key, string value) => ChangeAsync(() => Draft.Values[key] = value);
+
+    private Task ChangeAsync(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+
+    private static string? NullIfEmpty(string text) => text.Length == 0 ? null : text;
+
+    private static string Iso(DateOnly? date) => date?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "";
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
+}

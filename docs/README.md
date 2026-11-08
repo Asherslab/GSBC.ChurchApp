@@ -31,6 +31,7 @@ One doc per feature in [features/](features/), written before its code.
 | [access.md](features/access.md) | Built: roles, assignments, the evaluator, staff-friendly screens, the grants feed on the phone |
 | [configuration.md](features/configuration.md) | Built: surfaces, settings, placements, drafts, themes |
 | [home.md](features/home.md) | Built: the Hub the church arranges |
+| [app-tabs.md](features/app-tabs.md) | Built: the tab bar the church chooses, through drafts |
 | [media.md](features/media.md) | Built: uploads, folders, private media, the phone's file cache, fonts |
 | [analytics.md](features/analytics.md) | Built: errors, App health, usage and Insights; Sermons, Events and the rest add their measures as they arrive |
 | [events.md](features/events.md) | Built: calendars, regular events, specials and breaks, feeds, every screen on the phone and in the admin panel, iCal links, copying iCal calendars in, and reminders; the digest proof of concept next |

@@ -21,7 +21,7 @@ else if (_list is null)
 }
 else
 {
-    <Workbench Narrow="Narrow" Class="@(!Narrow && _session is not null && IsHub && _view == View.Drafts ? "workbench--canvas" : null)" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
+    <Workbench Narrow="Narrow" Class="@(!Narrow && _session is not null && IsCanvas && _view == View.Drafts ? "workbench--canvas" : null)" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
         <Aside>
             <div class="drafts-column">
                 <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
@@ -141,7 +141,7 @@ else
     private IReadOnlyDictionary<Guid, string> _roleNames = new Dictionary<Guid, string>();
     private DraftList? _list;
     private string? _loadProblem;
-    private Dictionary<string, string> _names = [];
+    private readonly Dictionary<string, string> _names = [];
     private DraftSession? _session;
     private AreaKey _area;
     private View _view;
@@ -205,7 +205,7 @@ else
             {
                 <button type="button" class="draft-pane__back" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> Drafts</button>
             }
-            else if (IsHub)
+            else if (IsCanvas)
             {
                 <button type="button" class="draft-pane__back draft-pane__back--folded" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> All drafts</button>
             }
@@ -296,7 +296,14 @@ else
                     <HubCanvas Hub="@session.Arranged(area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)" SelectedKey="@_selectedKey"
                                Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()"
                                RoleNames="_roleNames" OnChoose="Select" OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
-                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" />
+                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" Tabs="@session.Arranged(TabBarSurfaces.Area, null)" />
+                }
+                else if (!Narrow && IsTabs)
+                {
+                    <TabsCanvas Tabs="@session.Arranged(area, null)" Hub="@session.Arranged(HubSurfaces.Area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)"
+                                SelectedKey="@_selectedKey" RoleNames="_roleNames" Marks="@MarksIn(session, TabBarSurfaces.Area)" OnChoose="Select" OnMove="SetOrdersAsync"
+                                OnAdd="() => Add(TabBarSurfaces.Tab, session.Arranged(area, null))" OnPutBack="UndoAsync"
+                                Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()" />
                 }
                 else
                 {
@@ -376,11 +383,15 @@ else
                     <h3>@(theme.Name.Length > 0 ? theme.Name : "This theme"), live</h3>
                     <span>As you change it, in @(_themeScheme == ThemeScheme.Light ? "light" : "dark") mode. Phones previewing this draft follow once it saves.</span>
                 </div>
-                <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Theme="theme" Scheme="_themeScheme" />
+                <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Tabs="@_session.Arranged(TabBarSurfaces.Area, null)" Theme="theme" Scheme="_themeScheme" />
             }
             else if (_session is not null && IsHub)
             {
                 @HubDetail
+            }
+            else if (_session is not null && IsTabs)
+            {
+                @TabsDetail
             }
             else
             {
@@ -418,6 +429,24 @@ else
         }
     };
 
+    private RenderFragment TabsDetail => __builder =>
+    {
+        if (_form is not null && TabBarSurfaces.IsTab(_form.Surface))
+        {
+            @ChangedWhileEditing
+            <TabSettingsPanel Draft="_form" Changed="FormChangedAsync" Notices="@SettleNotice" Unfinished="@(_form is { IsNew: true, Surface.Repeatable: true } && _session?.PatchFor(_formId) is null)" />
+            <div class="ui-actions tile-settings__actions">@FormActions</div>
+        }
+        else
+        {
+            <div class="detail-pane__head">
+                <h3>The tab bar</h3>
+                <span>Up to four tabs, then More. Click a tab on the phone to change what it opens, its word and its icon, or add one.</span>
+            </div>
+            <p class="detail-pane__hint">A place that isn't a tab is still in the app: it's listed in More, and reached from Home's tiles, links and notifications.</p>
+        }
+    };
+
     private RenderFragment? SettleNotice => _formId is not null && _session?.ChangedFor(_formId) is { } changed && _form is not null
         ? __builder =>
         {
@@ -441,7 +470,7 @@ else
         else if (_preview)
         {
             <div class="ui-actions"><Button Variant="ButtonVariant.Quiet" Small="true" Icon="external-link" OnClick="PopOutAsync">Pop out</Button></div>
-            <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" />
+            <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Tabs="@_session.Arranged(TabBarSurfaces.Area, null)" />
         }
         else if (_form is null)
         {
@@ -487,12 +516,19 @@ else
             }
             if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
             {
-                <Button Variant="ButtonVariant.Danger" Small="@(!Narrow)" Block="Narrow" OnClick="RemoveSelectedAsync">@(_form.Surface.Repeatable ? "Take it out" : "Back to how the app starts")</Button>
+                <Button Variant="ButtonVariant.Danger" Small="@(!Narrow)" Block="Narrow" OnClick="RemoveSelectedAsync">@RemoveWords(_form)</Button>
             }
         }
     };
 
     private bool IsHub => _area.Area == HubSurfaces.Area.Key && _area.ScopeId is null;
+
+    private bool IsTabs => _area.Area == TabBarSurfaces.Area.Key;
+
+    private bool IsCanvas => IsHub || IsTabs;
+
+    private static string RemoveWords(PlacementDraft form) =>
+        TabBarSurfaces.IsTab(form.Surface) ? "Take it off the bar" : form.Surface.Repeatable ? "Take it out" : "Back to how the app starts";
 
     private HubTileKind? TileKind => _form is null ? null : TileKinds.FirstOrDefault(kind => kind.Surface == _form.Surface);
 
@@ -511,9 +547,11 @@ else
         ? []
         : _session.Arranged(HubSurfaces.Area, null).Where(entry => TileKinds.Any(kind => kind.Surface == entry.Surface) || entry.Surface == HubSurfaces.LinkTile.Surface).ToList();
 
-    private static IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => session.Patches
-        .Where(patch => patch.Kind != PatchKind.Remove && patch.Touches(HubSurfaces.Area.Key, null))
-        .ToDictionary(patch => patch.PlacementId, patch => patch.Kind == PatchKind.Add ? "Added" : "Changed");
+    private IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => MarksIn(session, HubSurfaces.Area);
+
+    private IReadOnlyDictionary<string, string> MarksIn(DraftSession session, SurfaceArea area) => session.Patches
+        .Where(patch => patch.Kind != PatchKind.Remove && patch.Touches(area.Key, null))
+        .ToDictionary(patch => patch.PlacementId, patch => patch.Kind == PatchKind.Add && Surfaces.ByKey.GetValueOrDefault(patch.Surface)?.Repeatable != false ? "Added" : "Changed");
 
     private IReadOnlyList<ArrangedSurface> SavedTiles => _session is null
         ? []
@@ -700,7 +738,8 @@ else
                 .Select(area => new TabOption<AreaKey>(area, Surfaces.Areas[area.Area].Title, _session.CountIn(area)))
                 .ToList();
 
-    private string FormTitle => _form is null ? "" : _form.IsNew && _form.Surface.Repeatable && _session?.PatchFor(_formId) is null
+    private string FormTitle => _form is null ? "" : TabBarSurfaces.IsTab(_form.Surface) ? _form.Values[TabSettings.Word.Key] is { Length: > 0 } word ? word : "New tab"
+        : _form.IsNew && _form.Surface.Repeatable && _session?.PatchFor(_formId) is null
         ? $"New {_form.Surface.Title.ToLowerInvariant()}"
         : _form.Surface.Repeatable && _form.Surface.Settings.OfType<TextSetting>().FirstOrDefault() is { } title ? _form.Values[title.Key] : _form.Surface.Title;
 
@@ -892,7 +931,7 @@ else
             await LoadLiveAsync(area);
     }
 
-    private static readonly AreaKey[] PreviewAreas = [new(HubSurfaces.Area.Key, null), new(AppearanceSurfaces.Area.Key, null)];
+    private static readonly AreaKey[] PreviewAreas = [new(HubSurfaces.Area.Key, null), new(AppearanceSurfaces.Area.Key, null), new(TabBarSurfaces.Area.Key, null)];
 
     private async Task LoadLiveAsync(AreaKey area)
     {
@@ -970,12 +1009,27 @@ else
     {
         List<ArrangedSurface> reordered = [.. arranged];
         (reordered[position], reordered[position + by]) = (reordered[position + by], reordered[position]);
-        for (int index = 0; index < reordered.Count; index++)
+        return SetOrdersAsync(reordered);
+    }
+
+    private Task SetOrdersAsync(IReadOnlyList<ArrangedSurface> reordered)
+    {
+        int? before = null;
+        foreach (ArrangedSurface entry in reordered)
         {
-            ArrangedSurface entry = reordered[index];
-            int order = index * 10;
-            if (entry.Order == order && entry.Placement is not null)
+            if (before is null || entry.Order > before)
+            {
+                before = entry.Order;
                 continue;
+            }
+            int order = before.Value + 1;
+            before = order;
+            if (_form is not null && KeyOf(entry) == _selectedKey)
+            {
+                _form.Order = order;
+                _session!.Set(_area, _form.ToStored(_formId!));
+                continue;
+            }
             PlacementDraft moved = PlacementDraft.Of(entry);
             moved.Order = order;
             _session!.Set(_area, moved.ToStored(entry.Placement?.Id ?? Guid.CreateVersion7().ToString()));
@@ -988,6 +1042,16 @@ else
     {
         if (_session is null || _formId is null)
             return Task.CompletedTask;
+        if (TabBarSurfaces.IsTab(_form!.Surface) && !_form.Surface.Repeatable)
+        {
+            string word = FormTitle;
+            _form.Hidden = true;
+            _session.Set(_area, _form.ToStored(_formId));
+            Deselect();
+            Tell($"Took “{word}” off the bar. Its page is still in the app.", offersRedo: false);
+            SaveSoon();
+            return Task.CompletedTask;
+        }
         StoredPlacement? live = _session.LiveOf(_area, _formId);
         string note = _form!.Surface.Repeatable ? $"Took out “{FormTitle}”." : $"Put “{FormTitle}” back to how the app starts.";
         if (live is null)
@@ -1298,7 +1362,8 @@ else
 
     public async ValueTask DisposeAsync()
     {
-        _pending?.Cancel();
+        if (_pending is not null)
+            await _pending.CancelAsync();
         if (_undoKeys is not null)
             await _undoKeys.DisposeAsync();
     }

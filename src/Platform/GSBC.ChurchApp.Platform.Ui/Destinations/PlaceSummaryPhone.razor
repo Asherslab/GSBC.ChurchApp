@@ -1,6 +1,6 @@
 @using GSBC.ChurchApp.Platform.Contracts.Destinations
 
-<PhoneFrame Label="@($"{Destination.Title}, as it opens in the app")">
+<PhoneFrame OnRoute="@DestinationPaths.RouteOf(Destination.Path)" Label="@($"{Destination.Title}, as it opens in the app")">
     <div class="place-phone">
         <Masthead Title="@Destination.Title" Note="@Destination.Where" />
     </div>
