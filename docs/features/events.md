@@ -334,6 +334,28 @@ feels confusing". So there is one way to edit, everywhere in Events:
 43. **A row that opens a sheet looks like one:** the shared row with a chevron (*How it runs*, and a calendar's
     Regular events in the admin panel).
 
+### Removing a calendar (owner, 2026-11-08)
+
+The owner asked for removing a calendar (calendars could be made, renamed and changed, but not removed) and chose,
+over moving its events to another calendar first or keeping it 30 days to put back:
+
+44. **A removed calendar takes everything in it, permanently.** Its events, its regular events with every date
+    (specials included), their own breaks, its *Also shown on* links both ways, and any pending *Asked to publish* or
+    *asked to show* requests from or to it. Its events come off the other calendars they were shown on; events from
+    other calendars that were only shown on it stay on their own. Named breaks are the office's and stay.
+45. **Who and where:** holders of `events.calendars.manage`, from the calendar's settings in the admin panel's
+    workbench (*Remove this calendar*). Not on the phone: calendar setup stays in the admin panel (decision 35).
+46. **The confirmation says what goes:** how many events and regular events, how many are also shown elsewhere and
+    how many shown here stay, how many people and phones have added it, whether it's shown on every new phone, that
+    calendar apps subscribed to its link stop getting it, and that it can't be undone. The button names it ("Remove
+    Kids and its events"); *Keep it* closes.
+47. **Nothing is left behind:** phones are sent a deletion for the calendar and each of its dates, so it leaves the
+    phone's store when it next connects; its iCal link answers 404 and it leaves *All my calendars* and *All public
+    calendars*; reminders already scheduled for its regular events stop; its pictures are released; every role held
+    at the calendar or at one of its regular events goes (Calendar editor, Calendar publisher, Event organiser, and
+    *Calendar added* and *Calendar turned off* on phones and people); the weekly digest drops it from its chosen
+    calendars, and a sent digest stops showing what came from it.
+
 ### Pinned for later
 
 - **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
@@ -728,6 +750,28 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   the email at its real width, scaled to the column. It saves as you change it. Arrow buttons move a row too, for the
   keyboard. Finish-reviewed (verdict: ship after fixes; the fixes are in).
 
+## Decided while building (removing a calendar, 2026-11-08)
+
+- **Contracts:** `Setup.Removal` (what goes, for the confirmation) and `Setup.RemoveCalendar`, both
+  `[Requires(events.calendars.manage)]`. gRPC only. `CalendarRemover` does the work: the rows go in one transaction,
+  then the publisher writes the deletions, then pictures and roles are released.
+- **Access gained two calls** for features (`IRoleAssignments`): `HoldingCountAsync` (people and phones holding a role
+  at a place, for "27 people and phones have added it") and `ForgetScopeAsync` (every role of a scope kind given at
+  those places, people's and phones', goes; grants are announced so phones and feeds update). Permissions stay in Access:
+  Events keeps no list of who added a calendar.
+- **A sent digest keeps its snapshot,** but an item whose home calendar is gone isn't published or named in the
+  notification (`Digests.Standing`). Without that, an item from a removed private calendar would have fallen back to
+  "anyone signed in", since its audience could no longer be read.
+- **An iCal copy in progress** while its calendar is removed stops quietly: the copier skips a calendar that's gone.
+- **Deleting a regular event** now also releases its dates' own pictures (it released only the regular event's).
+- **Roles at a place that exists** (the owner, 2026-11-08: "Which calendar" in *Who can do what* took free text and
+  saved it as the role's scope, so the role applied to no calendar): a feature says which of its places exist
+  (`IScopeObjects`: Events for calendars and regular events), and Access refuses a role given anywhere else. In the
+  admin panel the place is chosen from a list wherever a feature can name them (`IScopeNamer.ChoicesAsync`: calendars
+  and drafts); a kind no feature names yet (ministries, regular events) keeps the text field.
+- **Left as they are:** inbox notifications that linked to the calendar open its page, which says it isn't here; a
+  person's mute for *News about an event* on that calendar stays in Notifications and does nothing.
+
 ## What the owner sets up
 
 - **Nothing new in Cloudflare for dev.** For production, the zone's Browser Cache TTL set to *Respect existing headers*
@@ -749,7 +793,6 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 - **A calendar for a role a phone can hold** (such as *Calendar added*) would let *Tell people* reach phones and be
   written as a public notification. Nobody would choose one, but the calendar settings don't refuse it yet; that
   needs Access to say which roles are phone-holdable.
-- **Removing a calendar** isn't built (calendars can be renamed and changed).
 - **Who can edit a calendar** can't be listed on its settings yet: it needs a Platform lookup of who holds a role at a
   scope, which Access would provide. Until then the settings link to *Who can do what*.
 - **Choosing site-map places** in the editor's Where waits for the site map; the place search offers places used before.

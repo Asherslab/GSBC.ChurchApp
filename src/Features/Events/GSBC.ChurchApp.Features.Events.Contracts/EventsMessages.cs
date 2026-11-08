@@ -566,3 +566,22 @@ public sealed class PlacesUsed
 {
     [ProtoMember(1)] public List<EventPlace> Places { get; set; } = [];
 }
+
+[ProtoContract]
+public sealed class CalendarToRemove
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class CalendarRemoval
+{
+    [ProtoMember(1)] public string Name { get; set; } = "";
+    [ProtoMember(2)] public int Events { get; set; }
+    [ProtoMember(3)] public int RegularEvents { get; set; }
+    [ProtoMember(4)] public int ShownElsewhere { get; set; }
+    [ProtoMember(5)] public int FromElsewhere { get; set; }
+    [ProtoMember(6)] public int AddedBy { get; set; }
+    [ProtoMember(7)] public bool ShownOnNewPhones { get; set; }
+    [ProtoMember(8)] public bool ForEveryone { get; set; }
+}

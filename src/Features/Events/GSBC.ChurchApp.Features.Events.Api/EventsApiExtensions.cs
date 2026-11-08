@@ -19,6 +19,7 @@ public static class EventsApiExtensions
         services.AddScoped<EventsPublisher>();
         services.AddScoped<EventWriter>();
         services.AddScoped<CalendarFollowing>();
+        services.AddScoped<CalendarRemover>();
         services.AddScoped<CalendarLinkSecrets>();
         services.AddScoped<CalendarFiles>();
         services.AddScoped<EventPictures>();

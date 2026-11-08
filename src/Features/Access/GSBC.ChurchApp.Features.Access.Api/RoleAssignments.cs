@@ -81,6 +81,31 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
             await changes.AnnounceAsync(cancellationToken);
     }
 
+    public async ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken)
+    {
+        RoleRecord role = await SystemRoleAsync(roleKey, cancellationToken);
+        DateTime now = Now;
+        int people = await db.ActiveAssignments(now).Where(assignment => assignment.RoleId == role.Id && assignment.ScopeObjectId == objectId)
+            .Select(assignment => assignment.UserId).Distinct().CountAsync(cancellationToken);
+        int phones = await db.PhoneAssignments.Where(assignment => assignment.RoleId == role.Id && assignment.ScopeObjectId == objectId
+                && (assignment.ExpiresAt == null || assignment.ExpiresAt > now))
+            .Select(assignment => assignment.InstallId).Distinct().CountAsync(cancellationToken);
+        return people + phones;
+    }
+
+    public async ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken)
+    {
+        if (objectIds.Count == 0)
+            return;
+        List<Guid> roles = await db.Roles.Where(role => role.ScopeKind == kind.Name).Select(role => role.Id).ToListAsync(cancellationToken);
+        int people = await db.Assignments.Where(assignment => roles.Contains(assignment.RoleId) && objectIds.Contains(assignment.ScopeObjectId!))
+            .ExecuteDeleteAsync(cancellationToken);
+        int phones = await db.PhoneAssignments.Where(assignment => roles.Contains(assignment.RoleId) && objectIds.Contains(assignment.ScopeObjectId!))
+            .ExecuteDeleteAsync(cancellationToken);
+        if (people + phones > 0)
+            await changes.AnnounceAsync(cancellationToken);
+    }
+
     async ValueTask IPhoneRoles.GiveAsync(Guid installId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
     {
         RoleRecord role = await PhoneRoleAsync(roleKey, objectId, cancellationToken);

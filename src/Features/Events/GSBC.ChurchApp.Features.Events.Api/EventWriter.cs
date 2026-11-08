@@ -192,6 +192,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         RegularEventRecord record = await RegularInAsync(request.CalendarId, request.RegularEventId, cancellationToken);
         await WritableCalendarAsync(request.CalendarId, cancellationToken);
         await MayChangeShownAsync(user, record, time.GetUtcNow().UtcDateTime, cancellationToken);
+        List<DateOnly> specialDates = await db.Specials.Where(special => special.RegularEventId == record.Id).Select(special => special.Date).ToListAsync(cancellationToken);
         db.Specials.RemoveRange(db.Specials.Where(special => special.RegularEventId == record.Id));
         db.Breaks.RemoveRange(db.Breaks.Where(stop => stop.RegularEventId == record.Id));
         db.RegularEventBreaks.RemoveRange(db.RegularEventBreaks.Where(link => link.RegularEventId == record.Id));
@@ -199,6 +200,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         db.RegularEvents.Remove(record);
         publisher.MarkAdmin(record.CalendarId, record.Id);
         await media.UseAsync(RegularOwner(record.Id), [], cancellationToken);
+        foreach (DateOnly date in specialDates)
+            await media.UseAsync(SpecialOwner(record.Id, date), [], cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
     }
@@ -313,11 +316,11 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         ReadOnly = calendar.ICalSource is { Length: > 0 },
     };
 
-    private static string EventOwner(Guid id) => $"events/event/{id}";
+    internal static string EventOwner(Guid id) => $"events/event/{id}";
 
-    private static string RegularOwner(Guid id) => $"events/regular/{id}";
+    internal static string RegularOwner(Guid id) => $"events/regular/{id}";
 
-    private static string SpecialOwner(Guid regularEventId, DateOnly date) => $"events/regular/{regularEventId}/{EventDates.Format(date)}";
+    internal static string SpecialOwner(Guid regularEventId, DateOnly date) => $"events/regular/{regularEventId}/{EventDates.Format(date)}";
 
     private static Timed Effective(RegularEventRecord regular, SpecialRecord special)
     {

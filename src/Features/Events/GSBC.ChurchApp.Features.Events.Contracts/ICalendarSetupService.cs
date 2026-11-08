@@ -11,6 +11,12 @@ public interface ICalendarSetupService
     ValueTask<CalendarSettings> SaveCalendarAsync(CalendarSettings request, CallContext context = default);
 
     [Requires(EventsPermissions.ManageNode)]
+    ValueTask<CalendarRemoval> RemovalAsync(CalendarToRemove request, CallContext context = default);
+
+    [Requires(EventsPermissions.ManageNode)]
+    ValueTask<Done> RemoveCalendarAsync(CalendarToRemove request, CallContext context = default);
+
+    [Requires(EventsPermissions.ManageNode)]
     ValueTask<BreakInfo> SaveBreakAsync(BreakInfo request, CallContext context = default);
 
     [Requires(EventsPermissions.ManageNode)]

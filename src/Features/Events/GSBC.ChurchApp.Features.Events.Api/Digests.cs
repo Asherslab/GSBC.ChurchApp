@@ -103,17 +103,20 @@ internal static partial class Digests
         }).ToList(),
     };
 
+    public static IEnumerable<SentDigestItem> Standing(EventsBook book, SentDigest sent) =>
+        sent.Items.Where(item => item.CalendarIds.Count == 0 || book.Calendars.ContainsKey(item.CalendarIds[0]));
+
     public static Audience AudienceOf(EventsBook book, SentDigestItem sent) =>
         sent.CalendarIds.Count == 0
             ? Audience.Everyone
             : CalendarAudiences.Union(sent.CalendarIds.Select(id => book.Calendars.GetValueOrDefault(id)).OfType<CalendarRecord>().Select(calendar => CalendarAudiences.Of(calendar.Audience)));
 
     public static Notification Notification(EventsBook book, SentDigest sent, NotificationAudience audience) =>
-        Worded(sent.Items.Where(item => AudienceOf(book, item) == Audience.Everyone).Select(item => item.Item.Words.Title), audience, null);
+        Worded(Standing(book, sent).Where(item => AudienceOf(book, item) == Audience.Everyone).Select(item => item.Item.Words.Title), audience, null);
 
     public static List<Notification> ForEveryoneWhoSeesIt(EventsBook book, SentDigest sent, DateOnly start)
     {
-        List<(string Title, Audience Audience)> items = sent.Items.Select(item => (item.Item.Words.Title, AudienceOf(book, item))).ToList();
+        List<(string Title, Audience Audience)> items = Standing(book, sent).Select(item => (item.Item.Words.Title, AudienceOf(book, item))).ToList();
         List<(NotificationAudience Reader, Func<Audience, bool> Sees)> readers = [];
         foreach (Guid role in items.Where(item => item.Audience.IsForRoles).SelectMany(item => item.Audience.RoleIds).Distinct())
             readers.Add((NotificationAudience.Holding(RoleMembership.Of(role)), audience => !audience.IsForRoles || audience.RoleIds.Contains(role)));

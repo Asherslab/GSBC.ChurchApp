@@ -184,6 +184,10 @@ public sealed class ReviewSignInTests : IAsyncLifetime
         public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class NoGrants : IAccessEvaluator

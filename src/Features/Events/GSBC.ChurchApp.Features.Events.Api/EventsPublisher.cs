@@ -109,7 +109,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
         string start = EventDates.Format(digest.Start);
         yield return new Row(EventsFeeds.Digest, DigestHeader,
             EventsPayloads.Encode(new DigestShown { Start = start, End = EventDates.Format(digest.Sent.End), SentAt = sentAt }), null);
-        foreach (SentDigestItem sent in digest.Sent.Items)
+        foreach (SentDigestItem sent in Digests.Standing(book, digest.Sent))
         {
             Audience audience = Digests.AudienceOf(book, sent);
             string recordId = $"{start}/{sent.Item.Key}";
