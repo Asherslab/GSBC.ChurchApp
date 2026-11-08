@@ -1,6 +1,7 @@
 ---
 title: Undo and redo in drafts, and a safer undo for publishes
 audience: staff
+added: 2026-11-04
 icon: undo
 area: Admin panel
 ---

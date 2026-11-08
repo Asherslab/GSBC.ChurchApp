@@ -7,9 +7,10 @@ One file per change people would notice, written with the change. The design is 
 ---
 title: Sign in without a password          # a few words
 audience: everyone                   # everyone, or staff for staff-only changes (admin screens, tools)
+added: 2026-10-26                    # the day you wrote it: What's new lists the newest first
 highlight: true                      # optional: shown once after the update, in What's new
 icon: key                            # optional: an icon name from Platform.Ui's IconPaths
-link: account                        # optional: the app screen "Show me" opens
+link: /account                       # optional: the app screen "Show me" opens
 image: passkeys.webp                 # optional: a 16:9 picture in changelog/images/
 area: Account                        # optional: where in the app, shown beside the note
 ---

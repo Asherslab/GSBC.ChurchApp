@@ -1,6 +1,7 @@
 ---
 title: Sermon pictures in the right size
 audience: staff
+added: 2026-11-06
 icon: sermons
 link: sermons
 area: Sermons

@@ -1,6 +1,7 @@
 ---
 title: Sign-in codes for Apple's reviewers
 audience: staff
+added: 2026-11-03
 icon: key
 area: Admin panel
 ---

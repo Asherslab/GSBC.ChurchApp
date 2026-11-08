@@ -1,6 +1,7 @@
 ---
 title: Sermons, in your pocket
 audience: everyone
+added: 2026-11-05
 highlight: true
 icon: sermons
 link: sermons

@@ -1,6 +1,7 @@
 ---
 title: Announcements say when quiet hours hold them
 audience: staff
+added: 2026-11-04
 icon: bell
 area: Admin panel
 ---

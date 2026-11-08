@@ -1,6 +1,7 @@
 ---
 title: See who hasn't accepted their invitation
 audience: staff
+added: 2026-11-04
 icon: send
 area: Admin panel
 ---

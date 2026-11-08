@@ -1,6 +1,7 @@
 ---
 title: Folders in Media
 audience: staff
+added: 2026-11-04
 icon: folder
 area: Media
 highlight: true

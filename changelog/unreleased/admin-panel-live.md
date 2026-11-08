@@ -1,6 +1,7 @@
 ---
 title: The admin panel keeps up by itself
 audience: staff
+added: 2026-11-03
 icon: refresh
 area: Admin panel
 ---

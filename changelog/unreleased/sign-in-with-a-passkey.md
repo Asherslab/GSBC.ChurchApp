@@ -1,6 +1,7 @@
 ---
 title: Sign in without a password
 audience: everyone
+added: 2026-11-03
 highlight: true
 icon: key
 link: account

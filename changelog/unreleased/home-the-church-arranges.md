@@ -1,6 +1,7 @@
 ---
 title: A Home screen the church arranges
 audience: everyone
+added: 2026-11-04
 highlight: true
 icon: home
 area: Home

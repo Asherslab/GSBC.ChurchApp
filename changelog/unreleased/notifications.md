@@ -1,6 +1,7 @@
 ---
 title: Notifications from the church
 audience: everyone
+added: 2026-11-03
 highlight: true
 icon: bell
 link: notifications/settings

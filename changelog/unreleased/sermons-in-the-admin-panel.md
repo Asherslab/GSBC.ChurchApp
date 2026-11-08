@@ -1,6 +1,7 @@
 ---
 title: Check, fix and upload sermons
 audience: staff
+added: 2026-11-05
 icon: sermons
 area: Admin panel
 ---

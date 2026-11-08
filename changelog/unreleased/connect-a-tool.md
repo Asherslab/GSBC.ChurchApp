@@ -1,6 +1,7 @@
 ---
 title: Connect a tool to your account
 audience: staff
+added: 2026-11-03
 icon: terminal
 area: Account
 ---

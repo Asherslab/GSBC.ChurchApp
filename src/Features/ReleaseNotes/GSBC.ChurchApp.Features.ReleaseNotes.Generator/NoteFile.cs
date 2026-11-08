@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.RegularExpressions;
 
 namespace GSBC.ChurchApp.Features.ReleaseNotes.Generator;
@@ -10,6 +11,7 @@ public static class NoteFile
 
     private static readonly Regex VersionFolder = new(@"^\d+\.\d+(\.\d+)?$");
     private static readonly Regex Slug = new(@"^[a-z0-9]+(-[a-z0-9]+)*$");
+    private static readonly Regex Day = new(@"^\d{4}-\d{2}-\d{2}$");
     private static readonly string[] StaffLabels = ["Changed", "Where", "Try"];
 
     public static Note Parse(string folder, string fileName, string text)
@@ -43,9 +45,10 @@ public static class NoteFile
             folder == UnreleasedFolder ? null : folder,
             Required(front, "title"),
             Audience(Required(front, "audience")),
+            Added(Required(front, "added")),
             Flag(front, "highlight"),
             Optional(front, "icon"),
-            Optional(front, "link")?.TrimStart('/'),
+            Optional(front, "link") is { } link ? "/" + link.TrimStart('/') : null,
             Optional(front, "image"),
             Optional(front, "area"),
             summary,
@@ -70,7 +73,7 @@ public static class NoteFile
         return values;
     }
 
-    private static readonly string[] Known = ["title", "audience", "highlight", "icon", "link", "image", "area"];
+    private static readonly string[] Known = ["title", "audience", "added", "highlight", "icon", "link", "image", "area"];
 
     private static Dictionary<string, string> StaffSection(IEnumerable<string> lines)
     {
@@ -110,6 +113,11 @@ public static class NoteFile
             "true" => true,
             { } other => throw new NoteException($"\"{key}\" is true or false (not \"{other}\")"),
         };
+
+    private static string Added(string value) =>
+        Day.IsMatch(value) && DateTime.TryParseExact(value, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _)
+            ? value
+            : throw new NoteException($"\"added\" is the day the note was written, like 2026-11-08 (not \"{value}\")");
 
     private static NoteAudience Audience(string value) =>
         value switch

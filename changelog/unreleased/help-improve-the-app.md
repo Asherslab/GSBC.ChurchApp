@@ -1,6 +1,7 @@
 ---
 title: Help improve the app
 audience: everyone
+added: 2026-11-03
 icon: heart
 link: help-improve
 area: More

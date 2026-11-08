@@ -1,6 +1,7 @@
 ---
 title: Sermon pictures kept once
 audience: staff
+added: 2026-11-05
 icon: image
 area: Sermons
 ---

@@ -1,6 +1,7 @@
 ---
 title: Reminders for missing event details, and calendars copied from elsewhere
 audience: staff
+added: 2026-11-08
 icon: bell
 area: Calendar
 ---

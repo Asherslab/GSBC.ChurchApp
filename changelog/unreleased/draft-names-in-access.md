@@ -1,6 +1,7 @@
 ---
 title: Roles name the draft they were given for
 audience: staff
+added: 2026-11-04
 icon: key
 area: Admin panel
 ---

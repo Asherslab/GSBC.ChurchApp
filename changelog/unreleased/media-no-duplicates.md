@@ -1,6 +1,7 @@
 ---
 title: Media spots a file it already has
 audience: staff
+added: 2026-11-05
 icon: image
 area: Media
 ---
