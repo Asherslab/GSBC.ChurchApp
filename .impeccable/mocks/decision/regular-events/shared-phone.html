@@ -1,0 +1,42 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Regular events on the phone: the parts shared by every option</title><style>
+:root{--navy:#2A3D5E;--beige:#D5C9B7;--aqua:#006b62;--orange:#E7AE74;--oink:#9a5a1c;--sand:#F3EFE8;--sand2:#E6DFD3;--ink:#1F2A3C;--ink2:#4a5568;--ink3:#5f6877;--line:#E7E2DA}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font-family:Montserrat,-apple-system,system-ui,sans-serif;color:var(--ink);background:#E9E4DB;font-variant-numeric:tabular-nums;position:relative}
+.ph{position:absolute;top:20px;width:390px;height:844px;transform:scale(.9);transform-origin:0 0;background:#fff;border-radius:40px;overflow:hidden;box-shadow:0 20px 50px -24px rgb(24 35 58/.5);font-size:16px}
+.cap{position:absolute;top:792px;width:390px;font-size:13.5px;color:var(--ink2);line-height:1.45}
+.top{height:95px;background:var(--navy);display:flex;align-items:flex-end;justify-content:space-between;padding:0 16px 8px;color:#fff;font-weight:600;font-size:15px}
+.head{background:var(--navy);color:#fff;padding:6px 20px 20px;display:flex;gap:16px}.db{width:78px;flex:none;background:#fff;color:var(--navy);border-radius:14px;text-align:center;padding:8px 0 9px}.db b{display:block;font-size:11px;font-weight:700;color:var(--ink3)}.db strong{display:block;font-size:34px;line-height:1.05}.db span{font-size:12px;font-weight:700}
+.head .l{color:var(--beige);font-size:12.5px;font-weight:700}.head h1{font-size:25px;letter-spacing:-.02em;line-height:1.15}.head .t{color:var(--beige);font-weight:600;font-size:14.5px;margin-top:6px}
+.of{display:flex;gap:10px;align-items:flex-start;background:var(--sand);padding:12px 20px;font-size:14.5px;line-height:1.4}.of a{color:var(--aqua);font-weight:700;white-space:nowrap}.rp{display:inline-block;width:14px;height:14px;border:2px solid var(--ink2);border-radius:50%;border-right-color:transparent;flex:none;margin-top:3px}
+.b{padding:0 20px}label{display:block;font-size:14px;font-weight:600;color:var(--ink2);margin:14px 0 6px}.f{background:var(--sand);border-radius:12px;padding:12px 14px;font-size:16px}.h{font-size:13px;color:var(--ink2);margin-top:6px}.h a{color:var(--aqua);font-weight:600}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.foot{position:absolute;left:0;right:0;bottom:0;border-top:1px solid var(--line);background:#fff;padding:12px 20px 30px;display:grid;gap:8px}.btn{height:52px;border-radius:14px;background:var(--navy);color:#fff;font-weight:600;display:flex;align-items:center;justify-content:center}.btn.q{background:var(--sand);color:var(--ink)}
+.dim{position:absolute;inset:0;background:rgba(20,28,44,.42)}.sheet{position:absolute;left:0;right:0;bottom:0;background:#fff;border-radius:22px 22px 0 0;padding:10px 20px 34px}.grab{width:40px;height:5px;border-radius:3px;background:var(--sand2);margin:0 auto 14px}.sheet h2{font-size:21px}.sheet p.lead{color:var(--ink2);font-size:14.5px;margin:4px 0 12px}
+.ch{display:flex;gap:14px;align-items:center;border:1.5px solid var(--line);border-radius:16px;padding:14px;margin-top:10px}.ch i{width:44px;height:44px;border-radius:12px;background:var(--sand);display:grid;place-items:center;font-style:normal;font-weight:700;color:var(--navy);flex:none}.ch strong{display:block;font-size:17px}.ch span{font-size:14px;color:var(--ink2)}
+.wk{background:#fff}.mh{background:var(--navy);color:#fff;padding:4px 20px 18px}.mh .l{color:var(--beige);font-size:12.5px;font-weight:700}.mh h1{font-size:27px}.mh p{color:var(--beige);font-size:14px;margin-top:4px}
+.sec{display:flex;justify-content:space-between;align-items:baseline;padding:16px 20px 4px}.sec h3{font-size:16px}.sec a{color:var(--aqua);font-weight:600;font-size:14px}
+.re{display:flex;gap:12px;align-items:center;border-top:1px solid var(--line);margin:0 20px;padding:11px 0}.re i{width:34px;height:34px;border-radius:10px;background:var(--sand);display:grid;place-items:center;font-style:normal;color:var(--navy);font-weight:700;flex:none}.re strong{display:block;font-size:15.5px}.re span{font-size:13.5px;color:var(--ink2)}.pill{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(231,174,116,.3);color:var(--oink);margin-left:6px}
+.ar{display:flex;margin:0 20px;border-top:1px solid var(--line);padding:9px 0;align-items:center;font-size:15px}.ar .t{width:72px;color:var(--ink3);font-weight:600}.ar .n{color:var(--ink2)}.ar .mk{margin-left:auto;color:var(--ink3);font-size:13px}
+</style></head><body>
+<div class="ph" style="left:40px"><div class="top"><span>Cancel</span><span>This date</span><span style="opacity:0">x</span></div>
+<div class="head"><div class="db"><b>SUN</b><strong>15</strong><span>NOV</span></div><div><span class="l">Sunday services</span><h1>Anniversary Sunday Service</h1><p class="t">9:00am–12pm</p></div></div>
+<div class="of"><span class="rp"></span><span>One of the Morning service, every Sunday. <a>Edit the regular event ›</a></span></div>
+<div class="b"><label>Title on this date</label><div class="f">Anniversary Sunday Service</div><p class="h">Usually Morning service. <a>Put it back</a></p>
+<div class="pair"><div><label>Starts</label><div class="f">9:00am</div></div><div><label>Ends</label><div class="f">12:00pm</div></div></div><p class="h">Usually 10:30am. <a>Put it back</a></p>
+<label>Where</label><div class="f">Auditorium</div><label>A note for this date</label><div class="f" style="color:var(--ink3)">Lunch together afterwards</div></div>
+<div class="foot"><div class="btn">Save this date</div><div class="btn q">Not on this date</div></div></div>
+<p class="cap" style="left:40px"><b>A date is only that date.</b> Everything here changes Sunday 15 November alone; what differs from the regular event says so, with Put it back. No switch. The regular event is one tap away at the top.</p>
+<div class="ph" style="left:525px"><div class="wk"><div class="top"><span>‹ This week</span><span></span><span>+ New</span></div><div class="mh"><span class="l">Calendar</span><h1>Sunday services</h1><p>Sunday mornings and evenings at the church</p></div>
+<div class="sec"><h3>Coming up</h3></div><div class="ar"><span class="t">Sun 15</span><span class="n">Anniversary Sunday Service</span></div><div class="ar"><span class="t">Sun 22</span><span class="n">Morning service</span><span class="mk">↻</span></div></div>
+<div class="dim"></div><div class="sheet"><div class="grab"></div><h2>New event in Sunday services</h2><p class="lead">Is it on once, or regularly?</p>
+<div class="ch"><i>15</i><div><strong>Once</strong><span>One date, or a few days in a row like a camp</span></div></div>
+<div class="ch"><i>↻</i><div><strong>Regularly</strong><span>Every week, every second week, monthly, or on a list of dates</span></div></div></div></div>
+<p class="cap" style="left:525px"><b>New event asks first.</b> Once opens the event editor you know; Regularly opens the regular event's page, empty, starting on its title and how it repeats. The admin panel's + New event asks the same in a small menu.</p>
+<div class="ph" style="left:1010px"><div class="top"><span>‹ Browse</span><span></span><span>+ New</span></div><div class="mh"><span class="l">Calendar</span><h1>Sunday services</h1><p>Sunday mornings and evenings at the church</p></div>
+<div class="sec"><h3>Regular events</h3><a>For editors</a></div>
+<div class="re"><i>↻</i><div><strong>LIFE Groups</strong><span>Every Sunday · 9am</span></div></div>
+<div class="re"><i>↻</i><div><strong>Morning service<span class="pill">Changed 15 Nov</span></strong><span>Every Sunday · 10:30am</span></div></div>
+<div class="re"><i>↻</i><div><strong>Evening service</strong><span>Every Sunday · 6pm · Christmas break from 20 Dec</span></div></div>
+<div class="sec"><h3>Coming up</h3></div><div class="ar"><span class="t">Sun 15</span><span class="n">Anniversary Sunday Service</span><span class="mk">↻ Changed</span></div><div class="ar"><span class="t">Sun 15</span><span class="n">Evening service</span><span class="mk">↻</span></div><div class="ar"><span class="t">Sat 21</span><span class="n">Combined prayer night</span></div></div>
+<p class="cap" style="left:1010px"><b>Regular events, visible.</b> A calendar's page lists its regular events for its editors. Dates of a regular event carry a small repeat mark in lists; a changed one keeps Changed.</p>
+</body></html>

@@ -1,0 +1,46 @@
+{
+  "title": "The church calendar: a regular event's own page",
+  "question": "A regular event gets its own page (Morning service · Every Sunday 10:30am · Sunday services), and a date is only that date. Three ways to lay out the regular event's page, each sketched in the admin panel (left) and on the phone (right). The single date, New event's Once / Regularly and the Regular events list are the same under all three: see shared-admin.html and shared-phone.html beside this page. My recommendation: The run of dates. Lock one, steer it, or re-roll.",
+  "options": [
+    {
+      "id": "run",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The run of dates",
+      "lineage": "a timetable's row of dates, under the event page's navy head",
+      "thesis": "The page opens on the regular event's dates as a strip: ordinary dates plain, changed ones marked, dates not on as open rings, so you see what a regular event is before you read a field.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["navy head with the pattern line", "a strip of date tiles", "two columns: every date, and how it runs"],
+      "viewport": "Navy head: Sunday services, Morning service, Every Sunday · 10:30am–12pm. Under it the next twelve Sundays as tiles (15 Nov orange, Anniversary; 27 Dec an open ring). Then Every date (time, place, about, contacts) beside How it runs (repeats, breaks, each date needs, reminders, also shown on). Delete the regular event at the foot.",
+      "risk": "The strip needs care at twelve months of dates: it shows the next three months and scrolls sideways for more.",
+      "html": ".impeccable/mocks/decision/regular-events/run.html"
+    },
+    {
+      "id": "rows",
+      "kind": "dealt",
+      "label": "Settings rows",
+      "lineage": "iPhone Settings' grouped rows, each opening its own sheet",
+      "thesis": "The regular event is a short list of grouped rows, each saying its value (Repeats: every Sunday; Place: Auditorium), and tapping one opens just that; its dates are the last group.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["grouped list rows with values", "a sheet per row", "dates as the last group"],
+      "viewport": "Admin: the calendar's Regular events in the middle, Morning service picked; the right pane is its rows: Repeats, Time, Place, About, Contacts; Breaks, Each date needs, Reminders, Also shown on; Upcoming dates; Delete. Phone: the same rows under a plain title.",
+      "risk": "Familiar and tidy, but every change is a tap away and the page looks like settings, not like the event people see.",
+      "html": ".impeccable/mocks/decision/regular-events/rows.html"
+    },
+    {
+      "id": "block",
+      "kind": "dealt",
+      "label": "The repeat block",
+      "lineage": "the event page's date block, turned into a pattern block",
+      "thesis": "The regular event's page is the event page you know, with a repeat block (EVERY / SUN / 10:30) where a date's block would be, edited in place; its dates follow as Other dates.",
+      "palette": ["#2A3D5E", "#FFFFFF", "#F3EFE8", "#E7AE74", "#007A70"],
+      "materials": ["the white block on navy, showing a pattern", "facts that become fields", "Other dates as rows"],
+      "viewport": "Navy head with a white EVERY SUN 10:30 block beside Sunday services, Morning service and Every Sunday from 4 January 2026. Then Where, Contact, About as fields; How it runs (breaks, each date needs, reminders, also shown on); Dates with Changed and Not on marked.",
+      "risk": "So close to a single date's page that the two can still be mistaken for each other, which is the problem being fixed.",
+      "html": ".impeccable/mocks/decision/regular-events/block.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": {"value": "code"}
+}
