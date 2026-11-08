@@ -1,6 +1,7 @@
 ---
 title: The church chooses the app's tabs
 audience: everyone
+added: 2026-11-08
 icon: layout
 area: Tab bar
 ---

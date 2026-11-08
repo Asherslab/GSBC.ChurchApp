@@ -1,6 +1,7 @@
 ---
 title: See how the app is used
 audience: staff
+added: 2026-11-03
 highlight: true
 icon: sparkles
 area: Insights

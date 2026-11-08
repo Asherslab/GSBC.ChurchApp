@@ -1,6 +1,7 @@
 ---
 title: Sermons, easier to handle
 audience: everyone
+added: 2026-11-06
 icon: sermons
 link: sermons
 area: Sermons

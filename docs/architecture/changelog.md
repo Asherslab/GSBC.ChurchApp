@@ -22,9 +22,10 @@ parallel branches never conflict:
 ---
 title: Sign in without a password
 audience: everyone          # or staff: never in the production notes
+added: 2026-10-26           # the day the note was written: What's new lists newest first
 highlight: true             # shown in What's new after the update
 icon: key                   # an icon from Platform.Ui's IconPaths
-link: account               # the screen "Show me" opens
+link: /account              # the screen "Show me" opens
 image: passkeys.webp        # a 16:9 picture in changelog/images/
 area: Account
 ---
@@ -36,7 +37,7 @@ Where: More → Account
 Try: Sign in, completely close the app, open it again…
 ```
 
-- `title` and `audience` are required; the rest is optional. The file name is the note's id (lower-case
+- `title`, `audience` and `added` are required; the rest is optional. The file name is the note's id (lower-case
   words and hyphens), so a note keeps its id when it moves into a version folder.
 - The line under the front matter is everyone's: one sentence, 160 characters at most.
 - `## For staff` holds labelled parts (`Changed:`, `Where:`, `Try:`), each optional, each a line or a
@@ -66,7 +67,7 @@ The notes describe the code in the build, so they travel with it: there is no se
 
 - `Features.ReleaseNotes.Generator` is a Roslyn source generator. The App project hands it
   `changelog/*/*.md` and `changelog/images/*` as additional files, and it writes `BundledReleaseNotes` as
-  plain C# (AOT-safe, SPEC §9: no reflection, no JSON), newest version first, highlights first.
+  plain C# (AOT-safe, SPEC §9: no reflection, no JSON), newest version first, and within a version the newest note first (`added`, then title; owner, 2026-11-08: it was alphabetical).
 - **Which notes a build carries** is the MSBuild property `GsbcReleaseNotes`:
   - `staff` (every note, with the staff parts) by default for Debug, so dev builds behave like UAT;
   - `everyone` (only `audience: everyone`, only the line for everyone) by default for Release;

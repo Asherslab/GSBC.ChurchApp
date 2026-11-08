@@ -1,6 +1,7 @@
 ---
 title: See app errors in one place
 audience: staff
+added: 2026-11-03
 icon: shield-check
 area: Admin panel
 ---

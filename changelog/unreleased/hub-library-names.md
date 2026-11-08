@@ -1,6 +1,7 @@
 ---
 title: Name, rename and tidy your saved tiles
 audience: staff
+added: 2026-11-04
 icon: bookmark
 area: Admin panel
 ---

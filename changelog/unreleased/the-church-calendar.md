@@ -1,6 +1,7 @@
 ---
 title: The church calendar
 audience: everyone
+added: 2026-11-08
 highlight: true
 icon: calendar
 area: Calendar

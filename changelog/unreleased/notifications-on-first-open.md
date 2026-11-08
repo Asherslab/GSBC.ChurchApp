@@ -1,6 +1,7 @@
 ---
 title: Notifications from the first open
 audience: everyone
+added: 2026-11-03
 highlight: false
 icon: bell
 area: Notifications

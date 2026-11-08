@@ -7,7 +7,7 @@ public static class BuildNotes
             .Where(note => build == NoteAudience.Staff || note.Audience == NoteAudience.Everyone)
             .Select(note => build == NoteAudience.Staff ? note : note.ForEveryone())
             .OrderByDescending(note => VersionKey(note.Version))
-            .ThenByDescending(note => note.Highlight)
+            .ThenByDescending(note => note.Added, StringComparer.Ordinal)
             .ThenBy(note => note.Title, StringComparer.Ordinal)
             .ToList();
 

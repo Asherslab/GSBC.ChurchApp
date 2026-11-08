@@ -1,6 +1,7 @@
 ---
 title: Any Home tile can have a picture
 audience: staff
+added: 2026-11-04
 icon: image
 area: Admin panel
 ---

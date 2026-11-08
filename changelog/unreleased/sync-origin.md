@@ -1,6 +1,7 @@
 ---
 title: The app puts itself right after a server restore
 audience: everyone
+added: 2026-11-06
 icon: refresh
 area: Testing
 ---

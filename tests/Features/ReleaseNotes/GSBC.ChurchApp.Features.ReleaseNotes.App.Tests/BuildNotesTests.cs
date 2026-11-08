@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.ReleaseNotes.Generator;
+using GSBC.ChurchApp.Platform.Contracts.Content;
 
 namespace GSBC.ChurchApp.Features.ReleaseNotes.App.Tests;
 
@@ -8,6 +9,7 @@ public sealed class BuildNotesTests
         ---
         title: A new admin screen
         audience: staff
+        added: 2026-11-02
         ---
         Staff can arrange the Home tiles from the admin panel.
         """;
@@ -16,7 +18,9 @@ public sealed class BuildNotesTests
         ---
         title: Sign in with Face ID
         audience: everyone
+        added: 2026-11-01
         highlight: true
+        link: account
         ---
         Sign in with Face ID or Touch ID.
 
@@ -36,6 +40,22 @@ public sealed class BuildNotesTests
         Assert.Null(only.Where);
         Assert.Null(only.Try);
         Assert.Equal(2, BuildNotes.For(BuildNotes.AudienceOf("staff"), notes).Count);
+    }
+
+    [Fact]
+    public void WhatsNewListsTheNewestNoteFirst()
+    {
+        Note[] notes = [NoteFile.Parse("unreleased", "passkeys.md", Passkeys), NoteFile.Parse("unreleased", "admin-screen.md", AdminScreen)];
+
+        Assert.Equal(["admin-screen", "passkeys"], BuildNotes.For(BuildNotes.AudienceOf("staff"), notes).Select(note => note.Id));
+    }
+
+    [Fact]
+    public void ShowMeOpensAScreenInTheApp()
+    {
+        Note note = NoteFile.Parse("unreleased", "passkeys.md", Passkeys);
+
+        Assert.Equal(LinkKind.InApp, LinkTargets.KindOf(note.Link!));
     }
 
     [Fact]

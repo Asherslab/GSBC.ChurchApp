@@ -1,6 +1,7 @@
 ---
 title: Arrange Home on a phone, in a draft
 audience: staff
+added: 2026-11-04
 icon: layout
 area: Admin panel
 ---

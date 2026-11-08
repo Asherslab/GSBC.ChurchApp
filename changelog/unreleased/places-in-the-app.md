@@ -1,6 +1,7 @@
 ---
 title: Every place in the app, with its link
 audience: staff
+added: 2026-11-03
 highlight: true
 icon: map-pin
 area: Admin panel

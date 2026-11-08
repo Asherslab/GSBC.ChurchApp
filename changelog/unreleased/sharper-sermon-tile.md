@@ -1,6 +1,7 @@
 ---
 title: A sharper sermon picture on Home
 audience: everyone
+added: 2026-11-08
 icon: image
 area: Home
 ---

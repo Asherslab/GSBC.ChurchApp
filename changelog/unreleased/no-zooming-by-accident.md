@@ -1,6 +1,7 @@
 ---
 title: The app no longer zooms in by accident
 audience: everyone
+added: 2026-11-08
 icon: smartphone
 area: App
 ---

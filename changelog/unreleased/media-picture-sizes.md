@@ -1,6 +1,7 @@
 ---
 title: Pictures come in sizes for phones
 audience: staff
+added: 2026-11-06
 icon: image
 area: Media
 ---

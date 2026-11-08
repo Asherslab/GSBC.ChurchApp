@@ -1,6 +1,7 @@
 ---
 title: Picture tiles show they can be tapped
 audience: everyone
+added: 2026-11-04
 icon: image
 area: Home
 ---

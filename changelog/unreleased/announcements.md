@@ -1,6 +1,7 @@
 ---
 title: Send an announcement to everyone's phone
 audience: staff
+added: 2026-11-03
 icon: send
 area: Admin panel
 ---

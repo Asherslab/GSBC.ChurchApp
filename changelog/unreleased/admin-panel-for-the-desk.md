@@ -1,6 +1,7 @@
 ---
 title: A new admin panel, made for a computer
 audience: staff
+added: 2026-11-03
 icon: layout
 area: Admin panel
 ---

@@ -1,6 +1,7 @@
 ---
 title: Links from the church open the app
 audience: everyone
+added: 2026-11-03
 icon: link
 ---
 A link from the church opens the right place in the app, and tells you kindly if it isn't there for you.

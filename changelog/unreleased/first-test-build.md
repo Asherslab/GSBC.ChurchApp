@@ -1,6 +1,7 @@
 ---
 title: The first test build
 audience: staff
+added: 2026-11-03
 icon: smartphone
 area: Testing
 ---
