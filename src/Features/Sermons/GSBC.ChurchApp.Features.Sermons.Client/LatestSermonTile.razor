@@ -58,7 +58,7 @@
             return @<HubTile Look="look" Title="@look.Title" PlacementId="@Entry.Placement?.Id" />;
 
         string? href = look.Link == SermonsDestinations.Listen.Path ? SermonsDestinations.Sermon.PathOf(sermon.Id) : null;
-        RenderFragment cover = Cover(sermon);
+        RenderFragment cover = Cover(sermon, Span.Columns > 1 ? MediaSizeName.ForPhones : MediaSizeName.Thumbnail);
         RenderFragment play = Play(sermon);
         string id = Entry.Placement?.Id ?? "";
         return Variant.Key switch
@@ -77,8 +77,8 @@
         };
     }
 
-    private static RenderFragment Cover(Sermon sermon) => sermon.Artwork is { } artwork
-        ? @<span class="hub-cover"><MediaImage Media="artwork" Size="MediaSizeName.Thumbnail" Alt="" /></span>
+    private static RenderFragment Cover(Sermon sermon, MediaSizeName size) => sermon.Artwork is { } artwork
+        ? @<span class="hub-cover"><MediaImage Media="artwork" Size="size" Alt="" /></span>
         : @<span class="hub-cover"><BrandMark Decorative="true" /></span>;
 
     private RenderFragment Play(Sermon sermon)
