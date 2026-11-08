@@ -136,6 +136,14 @@ mounted read-only and isn't changed; the owner's accounts, roles and passkeys co
 is already shared. Start empty only for an explicit reason (testing first-run set-up, a migration
 from scratch), and say so.
 
+To run a worktree's backend **beside** the owner's instead of stopping it, start the AppHost with
+`Dev__PortOffset=100`: its fixed ports move up by 100 (the gateway on 5400), it starts no Cloudflare tunnel and
+its media store gets its own volume. The copy script needs the main database stopped, so copy with `pg_dump`
+from the main Postgres container instead (read-only), and give the copy a new `sync.origin`. Give it its own
+dashboard ports too (`ASPNETCORE_URLS`, `ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL`, `ASPIRE_RESOURCE_SERVICE_ENDPOINT_URL`),
+and to sign in on `http://localhost:5400` set `Accounts__Passkeys__RelyingPartyId=localhost` and
+`Accounts__Passkeys__AllowedOrigins__0=http://localhost:5400`. Stop it by its own process id, never by pattern.
+
 # Release notes: part of every change people would notice
 
 A change someone would notice in the app or the admin panel adds one file to `changelog/unreleased/`

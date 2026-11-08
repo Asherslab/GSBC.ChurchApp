@@ -25,7 +25,8 @@ IResourceBuilder<ProjectResource> api = builder
     .WithEnvironment("Accounts__Tokens__PublicKey", tokenKey.ExportSubjectPublicKeyInfoPem())
     .WaitForCompletion(migrator);
 
-DevTunnel? tunnel = DevTunnel.Find();
+int portOffset = builder.Configuration.GetValue("Dev:PortOffset", 0);
+DevTunnel? tunnel = portOffset == 0 ? DevTunnel.Find() : null;
 
 IConfigurationSection blobs = builder.Configuration.GetSection("Storage:Blobs");
 if (blobs.Exists())
@@ -35,7 +36,7 @@ if (blobs.Exists())
 }
 else
 {
-    builder.AddDevMediaStore(api, tunnel);
+    builder.AddDevMediaStore(api, tunnel, portOffset);
 }
 
 foreach (IConfigurationSection setting in builder.Configuration.GetSection("Email:Graph").GetChildren())
@@ -47,8 +48,8 @@ foreach (IConfigurationSection setting in builder.Configuration.GetSection("Noti
 IResourceBuilder<ProjectResource> gateway = builder
     .AddProject<Projects.GSBC_ChurchApp_Hosts_Gateway>("gateway", launchProfileName: null)
     .WithEnvironment("ASPNETCORE_ENVIRONMENT", builder.Environment.EnvironmentName)
-    .WithHttpEndpoint(port: 5300, name: "web", env: "Ports__Web", isProxied: false)
-    .WithHttpEndpoint(port: 5301, name: "grpc", env: "Ports__Grpc", isProxied: false)
+    .WithHttpEndpoint(port: 5300 + portOffset, name: "web", env: "Ports__Web", isProxied: false)
+    .WithHttpEndpoint(port: 5301 + portOffset, name: "grpc", env: "Ports__Grpc", isProxied: false)
     .WithReference(database)
     .WithEnvironment("Accounts__Tokens__SigningKey", tokenKey.ExportPkcs8PrivateKeyPem())
     .WithEnvironment("ReverseProxy__Clusters__api-web__Destinations__api__Address", api.GetEndpoint("web"))
