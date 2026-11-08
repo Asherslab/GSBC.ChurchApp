@@ -39,7 +39,7 @@
             }
             @if (Access.SignedIn)
             {
-                <Button Variant="ButtonVariant.Quiet" Icon="map-pin" Href="@($"places?at={Uri.EscapeDataString(PlacePath)}")">See it in Places in the app</Button>
+                <Button Variant="ButtonVariant.Quiet" Icon="link" Href="@($"places?at={Uri.EscapeDataString(PlacePath)}")">See it in Places in the app</Button>
             }
         </LiveData>
     </div>
