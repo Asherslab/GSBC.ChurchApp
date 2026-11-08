@@ -12,7 +12,10 @@
     </Masthead>
     <div class="week-chips">@Chips</div>
     <div class="month-body">
-        <MonthGrid First="First" Today="Today" Occurrences="Shown" Selected="Selected" IsChanged="Yours.IsNewChange" Picked="Pick" />
+        <SwipePages Class="month-swipe" CanGoBack="@(First > Earliest)" CanGoOn="@(First < Latest)" Stepped="Step">
+            <MonthGrid First="First.AddMonths(context)" Today="Today" Occurrences="Shown" Selected="@(context == 0 ? Selected : null)" IsChanged="Yours.IsNewChange" Picked="Pick" />
+        </SwipePages>
+        <MonthKey />
     </div>
     @{ IReadOnlyList<EventOccurrence> onDay = Shown.Where(occurrence => EventWords.DayOf(occurrence) == Selected).ToList(); }
     <section class="week-day" aria-live="polite">

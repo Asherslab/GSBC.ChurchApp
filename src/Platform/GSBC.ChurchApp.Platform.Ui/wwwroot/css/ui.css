@@ -47,6 +47,7 @@
   transition: background 200ms;
 }
 .topbar--solid, .topbar.is-stuck { background: var(--masthead); }
+.topbar.is-solid { background: var(--masthead); transition: none; }
 .topbar__title {
   font-size: var(--text-body);
   font-weight: 700;
@@ -1185,3 +1186,9 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .switch--small span::after { width: 18px; height: 18px; }
 .switch--small input:checked + span::after { transform: translateX(14px); }
 .topbar__text-btn { min-height: var(--touch); padding: 0 12px; border: 0; background: none; color: var(--on-masthead); font: inherit; font-size: var(--text-body); font-weight: 600; cursor: pointer; }
+
+.swipe-pages { overflow: hidden; touch-action: pan-y; }
+.swipe-pages__track { position: relative; }
+.swipe-pages__page--before, .swipe-pages__page--after { position: absolute; top: 0; width: 100%; }
+.swipe-pages__page--before { right: 100%; }
+.swipe-pages__page--after { left: 100%; }

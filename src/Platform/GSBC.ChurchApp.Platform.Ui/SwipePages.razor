@@ -1,0 +1,60 @@
+@implements IAsyncDisposable
+@inject Shell Shell
+
+<div class="swipe-pages @Class" @ref="_host">
+    <div class="swipe-pages__track">
+        @if (CanGoBack)
+        {
+            <div class="swipe-pages__page swipe-pages__page--before" aria-hidden="true" inert>@ChildContent(-1)</div>
+        }
+        <div class="swipe-pages__page">@ChildContent(0)</div>
+        @if (CanGoOn)
+        {
+            <div class="swipe-pages__page swipe-pages__page--after" aria-hidden="true" inert>@ChildContent(1)</div>
+        }
+    </div>
+</div>
+
+@code {
+    private ElementReference _host;
+    private DotNetObjectReference<SwipePages>? _receiver;
+    private IJSObjectReference? _gesture;
+
+    [Parameter, EditorRequired] public required RenderFragment<int> ChildContent { get; set; }
+    [Parameter] public bool CanGoBack { get; set; } = true;
+    [Parameter] public bool CanGoOn { get; set; } = true;
+    [Parameter] public EventCallback<int> Stepped { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _receiver = DotNetObjectReference.Create(this);
+        _gesture = await Shell.SwipePagesAsync(_host, _receiver);
+    }
+
+    [JSInvokable]
+    public async Task Step(int direction)
+    {
+        await Stepped.InvokeAsync(direction);
+        StateHasChanged();
+        await Shell.HapticAsync();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_gesture is not null)
+            {
+                await _gesture.InvokeVoidAsync("dispose");
+                await _gesture.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _receiver?.Dispose();
+    }
+}

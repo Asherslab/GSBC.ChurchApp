@@ -44,7 +44,13 @@ public static class CalendarWorkbenchLinks
 {
     public const string Page = "calendar";
     public const string NeedsDetails = "needs";
-    public const string AskedToPublish = "calendar?show=asked";
+    public const string Asked = "asked";
+    public const string Breaks = "breaks";
+    public const string AskedToPublish = $"{Page}?show={Asked}";
+
+    public static string Showing(string? show) => show is null ? Page : $"{Page}?show={show}";
+
+    public static string Calendar(string slug) => $"{Page}?calendar={Uri.EscapeDataString(slug)}";
 
     public static string Event(string occurrenceId, string? show = null) =>
         show is null ? $"{Page}?event={Uri.EscapeDataString(occurrenceId)}" : $"{Page}?show={show}&event={Uri.EscapeDataString(occurrenceId)}";

@@ -5,6 +5,7 @@ window.gsbcShell = (() => {
   const plugin = (name) => (isNative() && cap().isPluginAvailable?.(name) ? cap().Plugins[name] : null);
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const scroller = () => document.querySelector('.page-scroll');
+  const mastheadLead = 16;
 
   const pushState = history.pushState;
   history.pushState = function (...args) {
@@ -21,7 +22,12 @@ window.gsbcShell = (() => {
   document.addEventListener('scroll', (event) => {
     const page = event.target;
     if (!(page instanceof Element) || !page.matches('.page-scroll, .phone-frame__screen')) return;
-    page.querySelector('.topbar')?.classList.toggle('is-stuck', page.scrollTop > Number(page.dataset.stuckAt ?? 44));
+    const topbar = page.querySelector('.topbar');
+    if (!topbar) return;
+    topbar.classList.toggle('is-stuck', page.scrollTop > Number(page.dataset.stuckAt ?? 44));
+    const masthead = page.querySelector('.masthead');
+    const bottom = topbar.getBoundingClientRect().bottom;
+    topbar.classList.toggle('is-solid', !!masthead && masthead.getBoundingClientRect().bottom < bottom + mastheadLead);
   }, { capture: true, passive: true });
 
   const edgeSwipe = () => {
@@ -305,6 +311,86 @@ window.gsbcShell = (() => {
           sheet.removeEventListener('touchmove', onMove);
           sheet.removeEventListener('touchend', onEnd);
           sheet.removeEventListener('touchcancel', onCancel);
+        },
+      };
+    },
+
+    swipePages(host, receiver) {
+      const track = host.querySelector('.swipe-pages__track');
+      if (!track) return { dispose() { } };
+      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
+      const lockAfter = 8;
+      const tapGuard = 400;
+      let start = null;
+      let settling = false;
+      let draggedAt = -Infinity;
+
+      const place = (dx) => { track.style.transform = dx ? `translateX(${dx}px)` : ''; };
+      const opens = (direction) => !!track.querySelector(direction > 0 ? '.swipe-pages__page--after' : '.swipe-pages__page--before');
+      const glide = (dx, duration) => {
+        track.style.transition = duration ? `transform ${duration}ms ${ease}` : 'none';
+        place(dx);
+        return new Promise((done) => setTimeout(done, duration));
+      };
+
+      const onStart = (event) => {
+        start = !settling && event.touches.length === 1
+          ? { x: event.touches[0].clientX, y: event.touches[0].clientY, at: event.timeStamp, dx: 0, sideways: null }
+          : null;
+      };
+      const onMove = (event) => {
+        if (!start) return;
+        if (event.touches.length > 1) { start = null; place(0); return; }
+        const dx = event.touches[0].clientX - start.x;
+        const dy = event.touches[0].clientY - start.y;
+        if (start.sideways === null) {
+          if (Math.hypot(dx, dy) < lockAfter) return;
+          start.sideways = Math.abs(dx) > Math.abs(dy);
+          if (!start.sideways) { start = null; return; }
+          track.style.transition = 'none';
+        }
+        event.preventDefault();
+        start.dx = opens(dx < 0 ? 1 : -1) ? dx : dx / 4;
+        place(start.dx);
+      };
+      const onEnd = async (event) => {
+        if (!start?.sideways) { start = null; return; }
+        const { dx, at } = start;
+        start = null;
+        draggedAt = event.timeStamp;
+        const width = host.offsetWidth;
+        const direction = dx < 0 ? 1 : -1;
+        const fast = Math.abs(dx) / Math.max(1, event.timeStamp - at) > 0.5 && Math.abs(dx) > 30;
+        const duration = reducedMotion.matches ? 0 : 260;
+        if (!opens(direction) || (Math.abs(dx) < width * 0.25 && !fast)) {
+          await glide(0, duration);
+          track.style.transition = '';
+          return;
+        }
+        settling = true;
+        await glide(-direction * width, duration);
+        try { await receiver.invokeMethodAsync('Step', direction); } catch { }
+        await glide(0, 0);
+        track.style.transition = '';
+        settling = false;
+      };
+      const onCancel = () => { if (start?.sideways) { glide(0, 0); } start = null; };
+      const onClick = (event) => {
+        if (event.timeStamp - draggedAt < tapGuard) { event.preventDefault(); event.stopPropagation(); }
+      };
+
+      host.addEventListener('touchstart', onStart, { passive: true });
+      host.addEventListener('touchmove', onMove, { passive: false });
+      host.addEventListener('touchend', onEnd);
+      host.addEventListener('touchcancel', onCancel);
+      host.addEventListener('click', onClick, { capture: true });
+      return {
+        dispose() {
+          host.removeEventListener('touchstart', onStart);
+          host.removeEventListener('touchmove', onMove);
+          host.removeEventListener('touchend', onEnd);
+          host.removeEventListener('touchcancel', onCancel);
+          host.removeEventListener('click', onClick, { capture: true });
         },
       };
     },
