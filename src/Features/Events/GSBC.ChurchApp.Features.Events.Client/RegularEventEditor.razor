@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Common
 @inject CalendarEditing Editor
 @inject TimeProvider Clock
 @inject Shell Shell
@@ -12,15 +13,6 @@ else
         <ChildContent><div class="regular-page">@Body</div></ChildContent>
     </Page>
 }
-
-<Sheet Open="_sheet == EditorSheet.Title" OpenChanged="SheetToggled" Title="Title" Lead="What people see in the calendar on every date.">
-    <ChildContent>
-        <TextField Label="Title" Value="@Fields.Title" ValueChanged="value => Fields.Title = value" MaxLength="120" Required="true" />
-        <TextField Label="Label" Value="@Fields.Label" ValueChanged="value => Fields.Label = value" MaxLength="40"
-                   Hint="@($"Shown above the title. Leave it empty to show the calendar's name ({CalendarName}).")" />
-    </ChildContent>
-    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
-</Sheet>
 
 <Sheet Open="_sheet == EditorSheet.Repeats" OpenChanged="SheetToggled" Title="How it repeats">
     <ChildContent>@if (_draft is { } draft) { <RepeatEditor Draft="draft" Breaks="_breaks" Part="RepeatPart.Pattern" /> }</ChildContent>
@@ -74,7 +66,7 @@ else
 </Sheet>
 
 @code {
-    private enum EditorSheet { None, Title, Repeats, Breaks, Needs, AlsoOn, Showing, KeepOwn, Tell, Delete }
+    private enum EditorSheet { None, Repeats, Breaks, Needs, AlsoOn, Showing, KeepOwn, Tell, Delete }
 
     private EventDraft? _draft;
     private IReadOnlyList<RegularDate> _dates = [];
@@ -141,7 +133,6 @@ else
                 _dates = [];
                 if (MustAsk)
                     _draft.Showing = Showing.SavedForLater;
-                _sheet = EditorSheet.Title;
             }
             _ = LoadSideAsync();
         }
@@ -217,7 +208,7 @@ else
                         @SaveButton(draft)
                     </div>
                 }
-                <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@Fields.Title" Compact="InPanel" Editing="true" OnTitle="() => OpenAsync(EditorSheet.Title)">
+                <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel">
                     <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
                 </EventHead>
                 <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync"
@@ -239,6 +230,7 @@ else
                     {
                         <SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />
                     }
+                    <TitleFields Fields="Fields" CalendarName="@CalendarName" Placeholder="Morning service" />
                     <TimesEditor Timed="draft.Every" />
                     <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" Needs="draft.Needs" />
                 </section>
@@ -246,11 +238,11 @@ else
                     <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
                     <p class="regular-col__lead">How it repeats, its breaks, and what each date needs before it's on.</p>
                     <div class="list regular-runs">
-                        <ListRow Title="Repeats" Trailing="@RepeatsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Repeats)" />
-                        <ListRow Title="Breaks" Trailing="@BreaksLine(draft)" OnClick="() => OpenAsync(EditorSheet.Breaks)" />
-                        <ListRow Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
-                        <ListRow Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
-                        <ListRow Title="Shown in the app" Trailing="@ShowingWords(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
+                        <ListRow Chevron="true" Title="Repeats" Trailing="@RepeatsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Repeats)" />
+                        <ListRow Chevron="true" Title="Breaks" Trailing="@BreaksLine(draft)" OnClick="() => OpenAsync(EditorSheet.Breaks)" />
+                        <ListRow Chevron="true" Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
+                        <ListRow Chevron="true" Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
+                        <ListRow Chevron="true" Title="Shown in the app" Trailing="@ShowingWords(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
                     </div>
                     @if (InPanel && !draft.IsNew)
                     {
@@ -314,7 +306,7 @@ else
     private static string ShowingWords(EventDraft draft) => draft.Showing switch
     {
         Showing.Shown => "Shown",
-        Showing.ShownFrom when draft.ShowFrom is { } from => $"Shown from {EventWords.Date(GSBC.ChurchApp.Platform.Common.ChurchTime.DayOf(from))}",
+        Showing.ShownFrom when draft.ShowFrom is { } from => $"Shown from {EventWords.Date(ChurchTime.DayOf(from))}",
         _ => "Not shown yet",
     };
 

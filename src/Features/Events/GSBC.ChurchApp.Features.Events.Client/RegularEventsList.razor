@@ -18,7 +18,7 @@
                     }
                     else
                     {
-                        <ListRow @key="regular.Id" Title="@regular.Title" Subtitle="@Line(regular)" Icon="repeat" OnClick="() => OnPick.InvokeAsync(regular)" Class="@Classes(regular)" TitleExtra="@Extra(regular)" />
+                        <ListRow @key="regular.Id" Title="@regular.Title" Subtitle="@Line(regular)" Icon="repeat" Chevron="true" OnClick="() => OnPick.InvokeAsync(regular)" Class="@Classes(regular)" TitleExtra="@Extra(regular)" />
                     }
                 }
             </div>

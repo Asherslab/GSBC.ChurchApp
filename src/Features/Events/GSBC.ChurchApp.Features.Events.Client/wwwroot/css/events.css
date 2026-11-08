@@ -49,9 +49,6 @@
 .event-head__title { margin: 0; color: var(--on-masthead); font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; text-wrap: balance; }
 .event-head__title:focus { outline: none; }
 .event-head__when { margin: 0; color: var(--masthead-note); font-size: var(--text-label); font-weight: 600; font-variant-numeric: tabular-nums; }
-.event-head__editable { justify-self: start; max-width: 100%; padding: 0; margin: 0; border: 0; border-radius: var(--radius-inner); outline: 2px dashed color-mix(in srgb, var(--on-masthead) 45%, transparent); outline-offset: 4px; background: none; font-family: inherit; text-align: left; cursor: pointer; }
-.event-head__editable:hover { background: var(--masthead-chip); }
-.event-head__editable:focus-visible { outline-style: solid; outline-color: var(--marker); }
 .event-head--compact { gap: 12px; padding: 16px; }
 .event-head--compact .event-head__title { font-size: var(--text-title); }
 .event-head--compact .date-block { width: 62px; padding: 6px 0; border-radius: var(--radius-field); }
@@ -61,8 +58,6 @@
 .date-block__weekday { color: var(--ink-3); font-size: var(--text-micro); font-weight: 700; letter-spacing: 0.06em; }
 .date-block__day { font-size: 2rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.05; }
 .date-block__month { font-size: var(--text-pill); font-weight: 700; }
-.date-block--editable { outline: 2px dashed color-mix(in srgb, var(--on-masthead) 50%, transparent); outline-offset: 3px; cursor: pointer; }
-.date-block--editable:focus-visible { outline-style: solid; outline-color: var(--marker); }
 
 .event-picture .media-cover { width: 100%; border-radius: 0; }
 .event-body { display: grid; gap: 14px; padding: 16px var(--gutter) 8px; }
@@ -165,7 +160,6 @@
 }
 .calendar-subhead { margin: 24px 0 4px; font-size: var(--text-label); font-weight: 700; }
 .calendar-editors { margin: 0; }
-.event-head--editing .event-head__words { gap: 14px; padding-right: 6px; }
 .contact-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--row); padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .contact-row:hover .row__title { color: var(--accent); }
 .calendar-next .week-day { padding: 0; }
@@ -256,3 +250,4 @@
 .calendar-regular .event-head--compact { padding: 22px var(--gutter) 14px; }
 .regular-list__ended .row__title { color: var(--ink-3); font-weight: 400; }
 .calendar-regular__add { display: flex; padding-top: 8px; }
+.title-fields { display: grid; gap: 8px; }

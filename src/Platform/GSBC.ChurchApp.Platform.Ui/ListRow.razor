@@ -30,10 +30,11 @@ else
     [Parameter] public RenderFragment? TitleExtra { get; set; }
     [Parameter] public bool Reading { get; set; }
     [Parameter] public bool? Unread { get; set; }
+    [Parameter] public bool Chevron { get; set; }
 
     private string ReadingClass => string.Join(" ", new[] { Reading ? "row--reading" : null, Unread switch { true => "row--unread", false => "row--read", _ => null } }.OfType<string>());
 
-    private bool Navigates => !Disabled && Href is not null;
+    private bool Navigates => !Disabled && (Href is not null || Chevron);
 
     private string ToneClass => IconTone switch
     {

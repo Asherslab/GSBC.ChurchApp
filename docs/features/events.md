@@ -241,10 +241,10 @@ all four on 2026-11-08):
   Missing details read in plain words where they'd be (*Place to be announced*).
 - **Changing an event: *Edit where you read it*** (owner, 2026-11-08, over a step-by-step flow and an editable
   sentence; `.impeccable/mocks/decision/events-edit/`). *Edit* on the event page turns it into its editing state:
-  the date block, title and time line are outlined and open their pickers when tapped; the facts become fields (the
-  place is a search over site-map places and addresses used before); fields the page hides when empty (Register,
+  the head stays at the top as a live preview, and everything is a field below it (*The head is a preview*, below);
+  the place is a search over site-map places and addresses used before; fields the page hides when empty (Register,
   picture, links, contacts) appear as *Add…* rows. A foot bar holds *Save*; saving a shown event offers *Tell
-  people*. A new event opens the same page empty, starting on its calendar and title. One component (Events.Client),
+  people*. A new event opens the same page empty, starting on its calendar and title fields. One component (Events.Client),
   on the phone and in the admin panel. A regular event and a date of one have editors of their own (*Regular events
   have their own page*, below), which replaced the *This date only | Every …* switch this page first had.
 - **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
@@ -311,6 +311,21 @@ the switch, and nobody could tell what a regular event was. The direction the ow
   second week, monthly, or on dates you choose): a page on the phone, a small menu under *New event* in the admin
   panel.
 
+### The head is a preview (owner, 2026-11-08)
+
+The owner, looking at the editors on the phone and in the admin panel: "i don't like the mish mash between having
+proper fields to edit, and the dotted outline items on the actual events themselves. it doesn't feel intuitive, it
+feels confusing". So there is one way to edit, everywhere in Events:
+
+41. **The navy head is a live preview only.** In the event editor, a regular event's page and a date of a regular
+    event, on the phone and in the admin panel, the head shows what people will see and nothing in it can be tapped;
+    the dashed outlines and the sheets they opened are gone.
+42. **Everything is a field in the form.** Title and Label (with its hint) are the first fields; a one-off event's date
+    and *Until* sit with its times; a date of a regular event keeps *Title on this date*; a new regular event starts
+    on its title field, not a sheet over the page.
+43. **A row that opens a sheet looks like one:** the shared row with a chevron (*How it runs*, and a calendar's
+    Regular events in the admin panel).
+
 ### Pinned for later
 
 - **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
@@ -370,8 +385,8 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   About, Other dates, missing details in plain words); `/week/calendars` is Browse (in your week, more calendars,
   subscribe to all yours or everything public); `/calendar/{id}` is a calendar's page with its own Subscribe;
   `/event/new` starts a new event.
-- **Editing** (`Events.Client`, shared): *Edit where you read it* (`EventEditor`): the date block, title and time line
-  open their sheets; the place searches places used before; contacts, About, Register, links and a picture; how a
+- **Editing** (`Events.Client`, shared): *Edit where you read it* (`EventEditor`): the head previews the event; title,
+  label, dates and times are fields at the top of the form; the place searches places used before; contacts, About, Register, links and a picture; how a
   regular event repeats, its breaks, what each date needs and when organisers are reminded; *Not on this date*; *Tell
   people* after saving something already shown; *Ask to publish*; *Also shown on* with the widening sentence; delete.
   *Show an event from another calendar* (`ShowFromElsewhere`), from your calendar's side. On the phone for holders of
@@ -579,11 +594,10 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   across the middle and right panes; choosing a date in its strip opens that date on the right beside it. A date chosen
   in the agenda opens on the right, and *Edit the regular event ›* opens the regular event.
 - **After the finish review:** *How it runs* is rows that say their value (Repeats, Breaks, Each date needs, Also shown
-  on, Shown in the app), each opening a sheet with just that part, as the title does. In the admin panel *Save every
+  on, Shown in the app), each opening a sheet with just that part. In the admin panel *Save every
   date* sits at the right of the navy head with whether it's shown; on the phone it stays in the foot bar. The strip is
   one row that scrolls (a thin scrollbar with a mouse), its key shows the changed dot and the not-on ring, and it
-  updates when a date beside it is saved. A date's head says "· this date only". A new regular event opens on its
-  title.
+  updates when a date beside it is saved. A date's head says "· this date only".
 - **A date in a break** opens like any other but says it's in the break and that breaks are changed on the regular
   event.
 - **Checked** with a backend of its own beside the owner's (`Dev__PortOffset=200`, the main database copied in with

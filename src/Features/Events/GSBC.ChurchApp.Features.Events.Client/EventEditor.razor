@@ -13,30 +13,6 @@ else
     </Page>
 }
 
-<Sheet Open="_sheet == EditorSheet.Title" OpenChanged="SheetToggled" Title="Title" Lead="What people see in the calendar.">
-    <ChildContent>
-        <TextField Label="Title" Value="@Fields.Title" ValueChanged="value => Fields.Title = value" MaxLength="120" Required="true" />
-        <TextField Label="Label" Value="@Fields.Label" ValueChanged="value => Fields.Label = value" MaxLength="40"
-                   Hint="@($"Shown above the title. Leave it empty to show the calendar's name ({CalendarName}).")" />
-    </ChildContent>
-    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
-</Sheet>
-
-<Sheet Open="_sheet == EditorSheet.When" OpenChanged="SheetToggled" Title="When">
-    <ChildContent>
-        @if (_draft is { } draft)
-        {
-            <div class="ui-pair">
-                <TextField Label="Date" Type="date" Value="@EventDates.Format(draft.StartDate)" ValueChanged="value => draft.StartDate = EventDates.Parse(value) ?? draft.StartDate" />
-                <TextField Label="Until (for several days)" Type="date" Value="@(draft.EndDate is { } end ? EventDates.Format(end) : "")" Min="@EventDates.Format(draft.StartDate)"
-                           ValueChanged="value => draft.EndDate = EventDates.Parse(value)" />
-            </div>
-            <TimesEditor Timed="draft.Every" />
-        }
-    </ChildContent>
-    <Actions><Button Block="true" OnClick="CloseSheet">Done</Button></Actions>
-</Sheet>
-
 <TellPeopleSheet Open="_sheet == EditorSheet.Tell" CalendarId="@(_draft?.CalendarId ?? "")" CalendarName="@CalendarName" OccurrenceId="@_savedOccurrenceId"
                  Title="@_tellTitle" Body="@_tellBody" Done="done => FinishAsync(done)" />
 
@@ -48,7 +24,7 @@ else
 </Sheet>
 
 @code {
-    private enum EditorSheet { None, Title, When, Tell, Delete }
+    private enum EditorSheet { None, Tell, Delete }
 
     private EventDraft? _draft;
     private CalendarDesk _desk = new();
@@ -139,8 +115,8 @@ else
         }
         else
         {
-            <EventHead Day="draft.ShownDay" Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@Fields.Title" When="@draft.WhenLine"
-                       Compact="InPanel" Editing="true" OnDate="() => OpenAsync(EditorSheet.When)" OnTitle="() => OpenAsync(EditorSheet.Title)" OnWhen="() => OpenAsync(EditorSheet.When)" />
+            <EventHead Day="draft.ShownDay" Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New event")" When="@draft.WhenLine"
+                       Compact="InPanel" />
             <div class="event-body event-body--editing">
                 @if (_done is not null)
                 {
@@ -150,6 +126,13 @@ else
                 {
                     <SelectField Label="Calendar" Options="CalendarOptions" Value="@draft.CalendarId" ValueChanged="ChooseCalendar" />
                 }
+                <TitleFields Fields="Fields" CalendarName="@CalendarName" />
+                <div class="ui-pair">
+                    <TextField Label="Date" Type="date" Value="@EventDates.Format(draft.StartDate)" ValueChanged="value => draft.StartDate = EventDates.Parse(value) ?? draft.StartDate" />
+                    <TextField Label="Until (for several days)" Type="date" Value="@(draft.EndDate is { } end ? EventDates.Format(end) : "")" Min="@EventDates.Format(draft.StartDate)"
+                               ValueChanged="value => draft.EndDate = EventDates.Parse(value)" />
+                </div>
+                <TimesEditor Timed="draft.Every" />
                 @if (draft.NotOnThisDate)
                 {
                     <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date</p>

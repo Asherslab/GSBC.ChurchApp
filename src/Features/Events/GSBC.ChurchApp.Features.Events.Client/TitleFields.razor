@@ -1,0 +1,12 @@
+<div class="title-fields">
+    <TextField Label="@TitleLabel" Value="@Fields.Title" ValueChanged="value => Fields.Title = value" MaxLength="120" Required="true" Placeholder="@Placeholder" />
+    <TextField Label="Label" Value="@Fields.Label" ValueChanged="value => Fields.Label = value" MaxLength="40"
+               Hint="@($"Shown above the title. Leave it empty to show the calendar's name ({CalendarName}).")" />
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required EventFields Fields { get; set; }
+    [Parameter] public string CalendarName { get; set; } = "";
+    [Parameter] public string TitleLabel { get; set; } = "Title";
+    [Parameter] public string? Placeholder { get; set; }
+}
