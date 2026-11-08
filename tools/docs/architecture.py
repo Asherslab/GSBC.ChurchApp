@@ -20,6 +20,7 @@ HOSTS = {
     "Hosts.Gateway": "YARP · passkeys · serves admin",
     "Hosts.Api": "gRPC services · Sync · tiers",
     "Hosts.Migrator": "applies every feature's migrations",
+    "Hosts.Website": "website embeds · public feeds",
 }
 APP_PLATFORM = {"Platform.Common", "Platform.Permissions", "Platform.Contracts", "Platform.Client", "Platform.Ui"}
 APP_PARTS = (".Contracts", ".Client", ".App", ".Admin")
@@ -110,7 +111,7 @@ class Svg:
 
 def main():
     names = projects()
-    unknown_hosts = [n for n in names if n.startswith("Hosts.") and n not in HOSTS]
+    unknown_hosts = [n for n in names if n.startswith("Hosts.") and not is_test(n) and n not in HOSTS]
     if unknown_hosts:
         sys.exit(f"New host(s) {unknown_hosts}: give them a place in tools/docs/architecture.py first.")
 
@@ -134,7 +135,7 @@ def main():
     svg.text(890, y + 140, "deploy.sh puts dev builds on the phone.", size=11, fill=MUTED)
 
     sy = 300
-    svg.panel(40, sy, 1160, 190, "Server · gsbc.argo cluster, behind Cloudflare", title_at_bottom=True)
+    svg.panel(40, sy, 1160, 260, "Server · gsbc.argo cluster, behind Cloudflare", title_at_bottom=True)
     svg.box(70, sy + 56, 250, 70, "Hosts.Gateway", HOSTS["Hosts.Gateway"], "server", PREFIX + "Hosts.Gateway")
     svg.box(400, sy + 56, 250, 70, "Hosts.Api", HOSTS["Hosts.Api"], "server", PREFIX + "Hosts.Api")
     svg.cylinder(730, sy + 46, 180, 92, "Postgres", "schema per feature")
@@ -149,8 +150,10 @@ def main():
     svg.arrow([(728, sy + 108), (652, sy + 108)], "NOTIFY", (664, sy + 126), dashed=True, colour=AQUA)
     svg.arrow([(968, sy + 91), (912, sy + 91)], "migrate", (918, sy + 82))
     svg.arrow([(1160, y + 112), (1160, sy - 2)], "runs locally", (1080, y + 200), dashed=True, colour=ORANGE)
+    svg.box(70, sy + 150, 250, 70, "Hosts.Website", HOSTS["Hosts.Website"], "server", PREFIX + "Hosts.Website")
+    svg.arrow([(322, sy + 185), (370, sy + 185), (370, sy + 115), (398, sy + 115)], "Sync.Watch", (330, sy + 205))
 
-    cy = sy + 230
+    cy = sy + 300
     features = {}
     for n in names:
         if n.startswith("Features."):

@@ -1,0 +1,30 @@
+@inherits LayoutComponentBase
+@inject WebsiteLinks Links
+@inject NavigationManager Navigation
+
+<header class="standalone">
+    <div class="standalone-inner">
+        <span class="standalone-name">Good Shepherd Baptist Church</span>
+        <a class="standalone-link" href="@Links.OnWebsite(PathAndQuery)" target="_top">@(IsEvents ? "Events" : "Sermons") on the church website</a>
+    </div>
+</header>
+<main class="embed">
+    @Body
+    <p class="app-note">
+        @if (IsEvents)
+        {
+            <a href="@Links.InApp("week")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Get the Good Shepherd app</a>
+            <a href="@Links.Subscribe(null)"><SiteIcon Name="calendar" /> Add the church calendar to yours</a>
+        }
+        else
+        {
+            <a href="@Links.InApp("sermons")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Listen in the Good Shepherd app</a>
+        }
+    </p>
+</main>
+
+@code {
+    private string PathAndQuery => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+
+    private bool IsEvents => PathAndQuery.StartsWith("/events", StringComparison.Ordinal);
+}

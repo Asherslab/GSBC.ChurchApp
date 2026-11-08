@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Split reader (sketch)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Montserrat:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="../../../src/Hosts/GSBC.ChurchApp.Hosts.Website/wwwroot/tokens.css"><link rel="stylesheet" href="../../../src/Hosts/GSBC.ChurchApp.Hosts.Website/wwwroot/website.css">
+<style>
+.split { display: grid; grid-template-columns: 22rem minmax(0, 1fr); gap: 0; border: 1px solid var(--site-line); border-radius: 4px; margin-top: 1.5rem; min-height: 34rem; }
+.split-list { border-right: 1px solid var(--site-line); margin: 0; padding: 0; list-style: none; }
+.split-list li { padding: 0.875rem 1rem; border-bottom: 1px solid var(--site-line); font-family: var(--site-sans); }
+.split-list li[aria-current] { background: var(--site-sage-wash); box-shadow: inset 2px 0 0 var(--site-green); }
+.split-list b { display: block; font-weight: 400; color: var(--site-sage-ink); font-size: 1.0625rem; }
+.split-list span { font-size: 0.8125rem; color: var(--site-ink-2); }
+.split-open { padding: 1.5rem; }
+.split-open h2 { font-size: 2rem; color: var(--site-green-ink); margin: 1rem 0 0.25rem; }
+h1.section { font-size: 1.75rem; color: var(--site-green-ink); margin-top: 2rem; }
+</style></head><body><main class="embed">
+<h1 class="section">Events</h1>
+<div class="split"><ul class="split-list">
+<li><b>Morning service</b><span>Sun 8 Nov · 10:30am · every week</span></li>
+<li aria-current="true"><b>Community Morning</b><span>Sat 14 Nov · 8:30am · Riverside Park</span></li>
+<li><b>Women’s Breakfast</b><span>Sat 21 Nov · 8:00am · Changed</span></li>
+<li><b>Anniversary Sunday Service</b><span>Sun 22 Nov · 10:00am</span></li>
+<li><b>Carols Night</b><span>Sat 12 Dec · 6:30pm</span></li></ul>
+<div class="split-open"><img class="picture" src="art/outreach.svg" alt=""><h2>Community Morning</h2><p class="when">Saturday 14 November · 8:30 – 11:30am</p><ul class="meta"><li>Riverside Park</li><li>Outreach</li></ul><div class="actions" style="margin-top:1rem"><a class="button button-primary" href="#">Add to Google Calendar</a><a class="button button-quiet" href="#">Share</a></div></div></div>
+<h1 class="section">Sermons</h1>
+<div class="split"><ul class="split-list">
+<li aria-current="true"><b>Bearing Fruit</b><span>Rooted · Part 5 · 8 Nov</span></li>
+<li><b>When the Road Is Long</b><span>Psalms for the Road · 4 Nov</span></li>
+<li><b>Held Together</b><span>Rooted · Part 4 · 1 Nov</span></li>
+<li><b>A Faith That Works</b><span>1 Nov · Sunday night</span></li>
+<li><b>The Lord Is My Keeper</b><span>Psalms for the Road · 28 Oct</span></li></ul>
+<div class="split-open"><img class="picture" src="art/rooted.svg" alt=""><h2 style="font-family:var(--site-sans);font-weight:300">Bearing Fruit</h2><p class="series-line">Rooted · Part 5 · Daniel Reed</p><div class="listen"><audio controls preload="none"></audio></div></div></div>
+</main></body></html>

@@ -11,5 +11,6 @@
     <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Api\GSBC.ChurchApp.Hosts.Api.csproj" />
     <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Gateway\GSBC.ChurchApp.Hosts.Gateway.csproj" />
     <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Migrator\GSBC.ChurchApp.Hosts.Migrator.csproj" />
+    <ProjectReference Include="..\GSBC.ChurchApp.Hosts.Website\GSBC.ChurchApp.Hosts.Website.csproj" />
   </ItemGroup>
 </Project>

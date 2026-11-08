@@ -1,0 +1,31 @@
+@inject PublicFeeds Feeds
+
+<li class="sermon">
+    <a href="@Href" tabindex="-1" aria-hidden="true">
+        @if (Sermon.Artwork is { IsImage: true } artwork)
+        {
+            <MediaImage Media="artwork" Size="MediaSizeName.Thumbnail" Alt="" Class="sermon-art" />
+        }
+        else
+        {
+            <span class="sermon-art"></span>
+        }
+    </a>
+    <div>
+        <h3 class="sermon-title"><a href="@Href">@(InSeries ? SermonText.ShortTitle(Sermon) : Sermon.Title)</a></h3>
+        @if (Sermon.SeriesId is { Length: > 0 } seriesId && Sermon.SeriesName is { Length: > 0 } seriesName)
+        {
+            <p class="series-line"><a href="/sermons/series/@Uri.EscapeDataString(seriesId)">@seriesName</a>@(Sermon.Part > 0 ? $" · Part {Sermon.Part}" : "")</p>
+        }
+        <SpeakerLine Sermon="Sermon" />
+        <ul class="meta"><li>@SermonText.When(Sermon)</li></ul>
+    </div>
+    <span class="length">@SermonText.Length(Sermon.DurationSeconds)</span>
+</li>
+
+@code {
+    [Parameter, EditorRequired] public required Sermon Sermon { get; set; }
+    [Parameter] public bool InSeries { get; set; }
+
+    private string Href => $"/sermons/{Uri.EscapeDataString(Sermon.Id)}";
+}

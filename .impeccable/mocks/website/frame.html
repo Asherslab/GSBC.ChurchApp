@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Website frame (a copy, for mocks)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Montserrat:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="../../../src/Hosts/GSBC.ChurchApp.Hosts.Website/wwwroot/tokens.css">
+<style>
+body { margin: 0; font-family: var(--site-serif); color: var(--site-ink); background: var(--site-white); }
+.nav { background: var(--site-green); color: var(--site-white); font-family: var(--site-sans); font-weight: 500; font-size: 0.9375rem; letter-spacing: 0.02em; }
+.nav-inner { max-width: 72.5rem; margin: 0 auto; padding: 1.75rem 0.625rem; display: flex; justify-content: center; gap: 2.25rem; align-items: center; flex-wrap: wrap; }
+.mark { width: 3rem; height: 3rem; border: 3px solid var(--site-white); border-radius: 50%; }
+.band { background: var(--site-sage); color: var(--site-white); }
+.band-inner { max-width: 72.5rem; margin: 0 auto; padding: 3.5rem 0.625rem; }
+.band h1 { margin: 0; font-weight: 400; font-size: 4rem; line-height: 1.1; }
+.band p { margin: 0.5rem 0 0; font-family: var(--site-sans); font-weight: 300; font-size: 1.125rem; }
+.content { max-width: 72.5rem; margin: 0 auto; padding: 0 0.625rem; }
+iframe { display: block; width: 100%; border: 0; }
+footer { margin-top: 3rem; background: var(--site-footer); color: var(--site-panel); }
+.footer-inner { max-width: 72.5rem; margin: 0 auto; padding: 3rem 0.625rem; font-size: 0.9375rem; }
+.footer-inner p { margin: 0 0 0.5rem; }
+@media (max-width: 767.98px) { .nav-inner { gap: 1rem; padding: 1rem 0.625rem; font-size: 0.8125rem; } .band h1 { font-size: 2.75rem; } .band-inner { padding: 2rem 0.625rem; } }
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner"><span>ABOUT</span><span>CONNECT</span><span>EVENTS</span><span>LIVE</span><span class="mark" aria-hidden="true"></span><span>MEDIA</span><span>GIVE</span><span>HEAVEN</span></div></nav>
+<header class="band"><div class="band-inner"><h1 id="heading">Sermons</h1><p id="lede">A copy of the website's frame, for mocks only.</p></div></header>
+<main class="content" id="content"></main>
+<footer><div class="footer-inner"><p>The website's footer: the church's name, address and contact details.</p></div></footer>
+<script>
+const params = new URLSearchParams(location.search);
+const pageName = params.get("page") || "sermons.html";
+const heading = pageName.startsWith("event") ? "Events" : "Sermons";
+document.getElementById("heading").textContent = heading;
+document.getElementById("lede").textContent = heading === "Events" ? "What's on at Good Shepherd." : "Listen to and watch Sunday's sermons.";
+const frame = document.createElement("iframe");
+frame.src = new URL(pageName, location.href).href;
+frame.title = heading;
+frame.dataset.gsbcEmbed = "";
+document.getElementById("content").append(frame);
+const script = document.createElement("script");
+script.src = "../../../src/Hosts/GSBC.ChurchApp.Hosts.Website/wwwroot/embed.js";
+document.body.append(script);
+</script>
+</body>
+</html>

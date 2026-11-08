@@ -1,0 +1,27 @@
+:root {
+    --site-green: #4a7355;
+    --site-green-deep: #36543e;
+    --site-green-ink: #2c4433;
+    --site-sage: #84a87d;
+    --site-sage-ink: #5e8257;
+    --site-sage-wash: #eef3ec;
+    --site-cream: #fffef0;
+    --site-ink: #222222;
+    --site-ink-2: #555555;
+    --site-ink-3: #6b6b6b;
+    --site-panel: #f0f0f0;
+    --site-panel-2: #f7f7f7;
+    --site-line: #e6e6e6;
+    --site-line-strong: #d8d8d8;
+    --site-white: #ffffff;
+    --site-footer: #333333;
+    --site-marker: #9a4f12;
+    --site-marker-wash: #fbf1e6;
+    --site-focus: #4a7355;
+    --site-shadow: rgba(34, 34, 34, 0.08);
+    --site-shadow-strong: rgba(34, 34, 34, 0.16);
+    --site-scrim: rgba(255, 255, 255, 0.15);
+
+    --site-serif: "DM Serif Text", Georgia, "Times New Roman", serif;
+    --site-sans: "Montserrat", "Helvetica Neue", Arial, sans-serif;
+}

@@ -48,6 +48,7 @@ public sealed class EventDraft
     public RegularPattern Pattern { get; set; } = new();
     public List<string> Needs { get; set; } = [];
     public List<int> RemindDaysBefore { get; set; } = [7, 2];
+    public bool ListEveryDate { get; set; }
     public List<string> BreakIds { get; set; } = [];
     public List<BreakInfo> OwnBreaks { get; set; } = [];
     public Showing Showing { get; set; } = Showing.Shown;
@@ -113,6 +114,7 @@ public sealed class EventDraft
             Pattern = Copy(detail.Pattern),
             Needs = [.. detail.Needs],
             RemindDaysBefore = [.. detail.RemindDaysBefore],
+            ListEveryDate = detail.ListEveryDate,
             BreakIds = [.. detail.BreakIds],
             OwnBreaks = detail.OwnBreaks.Select(Copy).ToList(),
             Showing = detail.Showing,
@@ -198,6 +200,7 @@ public sealed class EventDraft
             ShowFrom = Showing == Showing.ShownFrom ? ShowFrom : null,
             Needs = Needs,
             RemindDaysBefore = RemindDaysBefore,
+            ListEveryDate = ListEveryDate,
             BreakIds = BreakIds,
             OwnBreaks = OwnBreaks,
             KeepOwnConfirmed = keepOwnConfirmed,

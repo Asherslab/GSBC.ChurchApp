@@ -47,7 +47,7 @@ tests/                         mirrors src/
 
 tools/access/                  make-owner.sh makes the first Owner (access.md)
 tools/aot-warnings/            check.sh publishes the app and checks its warning baseline (SPEC §9)
-tools/containers/              publish.sh builds the API, gateway and migrator images (environments.md)
+tools/containers/              publish.sh builds the API, gateway, migrator and website images (environments.md)
 tools/dev/                     copy-main-db.sh copies the main checkout's database into a worktree; feed.sh
 tools/dev-proxy/               the dev tunnel and check-caching.sh (offline-and-caching.md)
 tools/docs/                    architecture.py redraws the picture below; check-links.py checks the docs' links and paths
@@ -81,6 +81,7 @@ flowchart LR
         HostsGateway["Hosts.Gateway"]
         HostsApi["Hosts.Api"]
         HostsMigrator["Hosts.Migrator"]
+        HostsWebsite["Hosts.Website"]
         HostsAppHost["Hosts.AppHost"]
     end
 
@@ -181,10 +182,12 @@ flowchart LR
         EventsTests["Features.Events.Api.Tests"]
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
+        WebsiteTests["Hosts.Website.Tests"]
         Testing["Testing"]
     end
 
-    HostsAppHost --> HostsApi & HostsGateway & HostsMigrator
+    HostsAppHost --> HostsApi & HostsGateway & HostsMigrator & HostsWebsite
+    HostsWebsite --> SermonsClient & EventsClient
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
     HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
     HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & EventsAdmin
@@ -245,7 +248,7 @@ flowchart LR
     PlatformApi --> PlatformContracts & PlatformData
     PlatformContracts --> PlatformPermissions
 
-    ArchitectureTests --> HostsApi & HostsGateway & PlatformUi
+    ArchitectureTests --> HostsApi & HostsGateway & HostsWebsite & PlatformUi
     PermissionsTests --> PlatformPermissions
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi & PlatformClient & Testing
@@ -259,6 +262,7 @@ flowchart LR
     SermonsTests --> SermonsApi & Testing
     EventsTests --> EventsApi & Testing
     EventsClientTests --> EventsClient
+    WebsiteTests --> HostsWebsite
     ReleaseNotesTests --> ReleaseNotesApp & ReleaseNotesGenerator
 ```
 
@@ -337,6 +341,7 @@ flowchart LR
 | `GSBC.ChurchApp.Hosts.Gateway` | The only public entry: proxies gRPC and gRPC-Web to the API with a short-lived token, serves the admin panel, hosts the passkey ceremonies | No |
 | `GSBC.ChurchApp.Hosts.Api` | The cluster-internal gRPC API: maps every feature's services | No |
 | `GSBC.ChurchApp.Hosts.Migrator` | Applies every feature's migrations, then exits | No |
+| `GSBC.ChurchApp.Hosts.Website` | The website embeds at `embed.baptist.com.au` (approved non-gRPC pages): events and sermons for the church website's iframes, rendered on the server from the public feeds it watches over `Sync.Watch` ([website.md](../features/website.md)) | No |
 | `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, a SeaweedFS S3 store for media, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |
 | `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
@@ -352,6 +357,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
+| `GSBC.ChurchApp.Hosts.Website.Tests` | Unit tests, no I/O: an event or calendar the API takes away leaves the website, a reset feed forgets what it held, ready only after the first full read; an embed limited to calendars includes events shown on them; weeks and what's still ahead; each page's share address on the website; caching and framing headers | No |
 | `GSBC.ChurchApp.Platform.Contracts.Tests` | Sync's wire format, pinned as bytes the Swift codec's tests decode too; how the phone composes an area from defaults, placements, dates and audience; rich text refuses unsafe links and foreign images, and HTML is only text | No |
 | `GSBC.ChurchApp.Testing` | What the tests share ([testing.md](testing.md)): `TestDatabase` gives each test its own database on one Postgres for the whole run, which every test project joins and which stops by itself once no test has used it for 30 seconds; `TestBuckets` gives each test its own buckets on one S3 server; `TestClock` is the time tests run at | No |
 
@@ -411,7 +417,8 @@ roots every `.App` module the app host references for the trimmer, and every `.C
 
 The API and the gateway each listen on two ports, because h2c can't share one with HTTP/1.1
 (SPEC §10): `Ports:Web` (HTTP/1.1 + HTTP/2, gRPC-Web and the admin panel) and `Ports:Grpc` (HTTP/2
-only, native gRPC). Containers use 8080/8081; locally the gateway is 5300/5301. The gateway sends
+only, native gRPC). Containers use 8080/8081; locally the gateway is 5300/5301 and the website embeds
+5320/5321. The gateway sends
 `/gsbc.{service}/{method}` to the API by content type, gRPC-Web to its web port and gRPC to its gRPC
 port, and nothing else.
 

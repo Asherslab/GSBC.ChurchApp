@@ -1,0 +1,18 @@
+<section class="empty">
+    <h2>@Heading</h2>
+    <p>@Words <a href="@Back">@BackWords</a></p>
+</section>
+
+@code {
+    [CascadingParameter] public HttpContext? Http { get; set; }
+    [Parameter, EditorRequired] public required string Heading { get; set; }
+    [Parameter, EditorRequired] public required string Words { get; set; }
+    [Parameter, EditorRequired] public required string Back { get; set; }
+    [Parameter, EditorRequired] public required string BackWords { get; set; }
+
+    protected override void OnInitialized()
+    {
+        if (Http is { Response.HasStarted: false })
+            Http.Response.StatusCode = StatusCodes.Status404NotFound;
+    }
+}

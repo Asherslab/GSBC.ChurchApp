@@ -169,6 +169,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
             Missing = occurrence.Missing,
             ChangedAt = recentlyChanged ? occurrence.ChangedAt : null,
             ChangeNote = recentlyChanged ? occurrence.ChangeNote : "",
+            ListEveryDate = occurrence.ListEveryDate,
         };
     }
 

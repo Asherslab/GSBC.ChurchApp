@@ -1,0 +1,12 @@
+@inject WebsiteLinks Links
+@inject NavigationManager Navigation
+
+<button class="@Class" type="button" data-share-embed="@Navigation.Uri" data-share-website="@Links.OnWebsite(PathAndQuery)" hidden>
+    <SiteIcon Name="share" /><span data-share-label>Share</span>
+</button>
+
+@code {
+    [Parameter] public string Class { get; set; } = "button button-quiet";
+
+    private string PathAndQuery => "/" + Navigation.ToBaseRelativePath(Navigation.Uri);
+}

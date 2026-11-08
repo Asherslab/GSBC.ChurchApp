@@ -1,0 +1,111 @@
+@inject PublicFeeds Feeds
+@inject WebsiteLinks Links
+
+@if (Sermon is null)
+{
+    <PageMeta Title="Sermon not found" Description="This sermon isn't here any more." />
+    <Missing Heading="This sermon isn't here" Words="It may have been moved or taken down." Back="/sermons" BackWords="See the latest sermons" />
+}
+else
+{
+    <PageMeta Title="@Sermon.Title" Description="@Description" Image="@Sermon.Artwork?.At(MediaSizeName.ForPhones).Url" Kind="article" />
+
+    <a class="text-link back" href="/sermons"><SiteIcon Name="back" /> All sermons</a>
+    <div class="sermon-page">
+        <div>
+            @if (Sermon.YouTubeId is { Length: > 0 } video)
+            {
+                <div class="video">
+                    <iframe src="https://www.youtube.com/embed/@Uri.EscapeDataString(video)?rel=0&amp;playsinline=1" title="@Sermon.Title on YouTube" loading="lazy" referrerpolicy="strict-origin-when-cross-origin" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen></iframe>
+                </div>
+            }
+            else if (Sermon.Artwork is { IsImage: true } artwork)
+            {
+                <MediaImage Media="artwork" Alt="" Class="lead-art" />
+            }
+            <h1>@Sermon.Title</h1>
+            @if (Series is not null)
+            {
+                <p class="series-line"><a href="/sermons/series/@Uri.EscapeDataString(Series.Id)">@Series.Name</a>@(Sermon.Part > 0 ? $" · Part {Sermon.Part}" : "")</p>
+            }
+            <SpeakerLine Sermon="Sermon" />
+            <ul class="meta"><li>@SermonText.When(Sermon)</li><li>@SermonText.Length(Sermon.DurationSeconds)</li></ul>
+            <div class="listen">
+                @if (Sermon.AudioUrl.Length > 0)
+                {
+                    <audio controls preload="none" src="@Sermon.AudioUrl" data-title="@Sermon.Title" data-artist="@Sermon.SpeakerName" data-album="@(Sermon.SeriesName ?? "Good Shepherd Baptist Church")" data-artwork="@Sermon.Artwork?.At(MediaSizeName.ForPhones).Url"></audio>
+                }
+                <div class="listen-links">
+                    <a class="text-link" href="@Links.InApp($"sermon/{Sermon.Id}")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Listen in the app</a>
+                    @if (Sermon.AudioUrl.Length > 0)
+                    {
+                        <a class="text-link" href="@Sermon.AudioUrl" download><SiteIcon Name="download" /> Download</a>
+                    }
+                    @if (Sermon.YouTubeId is { Length: > 0 } watch)
+                    {
+                        <a class="text-link" href="@YouTubeIds.WatchUrl(watch)" target="_blank" rel="noopener"><SiteIcon Name="external" /> Watch on YouTube</a>
+                    }
+                    <ShareButton Class="text-link link-button" />
+                </div>
+            </div>
+        </div>
+        @if (Series is not null && InSeries.Count > 1)
+        {
+            <aside>
+                <h2 class="aside-title">More in @Series.Name</h2>
+                @if (Series.Artwork is { IsImage: true } seriesArt)
+                {
+                    <MediaImage Media="seriesArt" Size="MediaSizeName.Thumbnail" Alt="" Class="aside-art" />
+                }
+                <ol class="series-list">
+                    @foreach (Sermon other in InSeries)
+                    {
+                        <li>
+                            <a href="/sermons/@Uri.EscapeDataString(other.Id)" aria-current="@(other.Id == Sermon.Id ? "page" : null)">@SermonText.ShortTitle(other)</a>
+                            <small>@SermonText.Join(other.Part > 0 ? $"Part {other.Part}" : null, SermonText.Day(other.PreachedAt))</small>
+                        </li>
+                    }
+                </ol>
+                <p><a class="text-link" href="/sermons/series/@Uri.EscapeDataString(Series.Id)">The whole series <SiteIcon Name="next" /></a></p>
+            </aside>
+        }
+        else if (Others.Count > 0)
+        {
+            <aside>
+                <h2 class="aside-title">More from @Sermon.SpeakerName</h2>
+                <ol class="series-list">
+                    @foreach (Sermon other in Others)
+                    {
+                        <li>
+                            <a href="/sermons/@Uri.EscapeDataString(other.Id)">@other.Title</a>
+                            <small>@SermonText.Join(other.SeriesName, SermonText.Day(other.PreachedAt))</small>
+                        </li>
+                    }
+                </ol>
+                <p><a class="text-link" href="/sermons/speakers/@Uri.EscapeDataString(Sermon.SpeakerId)">Every sermon by @Sermon.SpeakerName <SiteIcon Name="next" /></a></p>
+            </aside>
+        }
+    </div>
+}
+
+@code {
+    private const int SeriesShown = 8;
+
+    [Parameter] public string Id { get; set; } = "";
+
+    private Sermon? Sermon;
+    private SeriesInfo? Series;
+    private IReadOnlyList<Sermon> InSeries = [];
+    private IReadOnlyList<Sermon> Others = [];
+
+    protected override void OnParametersSet()
+    {
+        SermonShelf shelf = Feeds.Current.Sermons;
+        Sermon = shelf.Find(Id);
+        Series = Sermon?.SeriesId is { Length: > 0 } seriesId ? shelf.FindSeries(seriesId) : null;
+        InSeries = Series is null ? [] : shelf.InSeries(Series.Id).Reverse().Take(SeriesShown).ToList();
+        Others = Sermon is null || Sermon.SpeakerId.Length == 0 ? [] : shelf.BySpeaker(Sermon.SpeakerId).Where(other => other.Id != Sermon.Id).Take(SeriesShown).ToList();
+    }
+
+    private string Description => Sermon is null ? "" : SermonText.Join(Sermon.SeriesName, Sermon.SpeakerName, SermonText.When(Sermon));
+}

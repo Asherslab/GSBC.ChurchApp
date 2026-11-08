@@ -243,6 +243,7 @@ else
                         <ListRow Chevron="true" Title="Each date needs" Trailing="@NeedsLine(draft)" OnClick="() => OpenAsync(EditorSheet.Needs)" />
                         <ListRow Chevron="true" Title="Also shown on" Trailing="@AlsoOnLine(draft)" OnClick="() => OpenAsync(EditorSheet.AlsoOn)" />
                         <ListRow Chevron="true" Title="Shown in the app" Trailing="@ShowingWords(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
+                        <ToggleRow Title="List every date on the website" Description="Off: the website lists it once under Every week, with its changed dates." Checked="draft.ListEveryDate" CheckedChanged="listed => draft.ListEveryDate = listed" />
                     </div>
                     @if (InPanel && !draft.IsNew)
                     {

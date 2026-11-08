@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Shelves (sketch)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Montserrat:wght@300;400;500;600&display=swap">
+<link rel="stylesheet" href="../../../src/Hosts/GSBC.ChurchApp.Hosts.Website/wwwroot/tokens.css"><link rel="stylesheet" href="../../../src/Hosts/GSBC.ChurchApp.Hosts.Website/wwwroot/website.css">
+<style>
+h1.section { font-size: 1.75rem; color: var(--site-green-ink); margin-top: 2rem; }
+.shelf-head { display: flex; justify-content: space-between; align-items: baseline; margin-top: 1.75rem; }
+.shelf-head h2 { font-size: 1.375rem; color: var(--site-green-ink); }
+.shelf { display: grid; grid-auto-flow: column; grid-auto-columns: 15rem; gap: 1.25rem; overflow-x: auto; padding: 0.75rem 0 1rem; margin: 0; list-style: none; }
+.shelf img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 4px; }
+.shelf b { display: block; margin-top: 0.5rem; font-family: var(--site-sans); font-weight: 300; font-size: 1.125rem; color: var(--site-sage-ink); }
+.shelf span { font-family: var(--site-sans); font-size: 0.8125rem; color: var(--site-ink-2); }
+.posters { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.25rem; margin: 0.75rem 0 0; padding: 0; list-style: none; }
+.posters li { border: 1px solid var(--site-line); border-radius: 4px; overflow: hidden; }
+.posters img { width: 100%; aspect-ratio: 16/9; object-fit: cover; }
+.posters div { padding: 0.875rem 1rem; }
+.posters b { display: block; font-family: var(--site-sans); font-weight: 300; font-size: 1.25rem; color: var(--site-sage-ink); }
+.posters .blank { aspect-ratio: 16/9; background: var(--site-sage-wash); display: grid; place-items: center; font-family: var(--site-serif); font-size: 2.5rem; color: var(--site-green); }
+</style></head><body><main class="embed">
+<h1 class="section">Events</h1>
+<div class="shelf-head"><h2>November</h2></div>
+<ul class="posters">
+<li><img src="art/outreach.svg" alt=""><div><b>Community Morning</b><span class="count-line">Sat 14 Nov · 8:30am</span></div></li>
+<li><div class="blank">21</div><div><b>Women’s Breakfast</b><span class="count-line">Sat 21 Nov · 8:00am</span></div></li>
+<li><div class="blank">22</div><div><b>Anniversary Sunday</b><span class="count-line">Sun 22 Nov · 10:00am</span></div></li></ul>
+<div class="shelf-head"><h2>December</h2></div>
+<ul class="posters"><li><img src="art/carols.svg" alt=""><div><b>Carols Night</b><span class="count-line">Sat 12 Dec · 6:30pm</span></div></li></ul>
+<h1 class="section">Sermons</h1>
+<div class="shelf-head"><h2>Latest</h2><a class="text-link" href="#">All sermons</a></div>
+<ul class="shelf"><li><img src="art/rooted.svg" alt=""><b>Bearing Fruit</b><span>Rooted · 8 Nov</span></li><li><img src="art/psalms.svg" alt=""><b>When the Road Is Long</b><span>4 Nov</span></li><li><img src="art/rooted.svg" alt=""><b>Held Together</b><span>1 Nov</span></li><li><img src="art/default.svg" alt=""><b>A Faith That Works</b><span>1 Nov</span></li><li><img src="art/psalms.svg" alt=""><b>The Lord Is My Keeper</b><span>28 Oct</span></li></ul>
+<div class="shelf-head"><h2>Rooted</h2><a class="text-link" href="#">The whole series</a></div>
+<ul class="shelf"><li><img src="art/rooted.svg" alt=""><b>Part 5: Bearing Fruit</b></li><li><img src="art/rooted.svg" alt=""><b>Part 4: Held Together</b></li><li><img src="art/rooted.svg" alt=""><b>Part 3: Grounded in Grace</b></li></ul>
+<div class="shelf-head"><h2>Psalms for the Road</h2><a class="text-link" href="#">The whole series</a></div>
+<ul class="shelf"><li><img src="art/psalms.svg" alt=""><b>Part 3: When the Road Is Long</b></li><li><img src="art/psalms.svg" alt=""><b>Part 2: The Lord Is My Keeper</b></li></ul>
+</main></body></html>

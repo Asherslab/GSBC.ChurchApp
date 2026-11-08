@@ -1,0 +1,38 @@
+@inject PublicFeeds Feeds
+
+@if (Speaker is null)
+{
+    <PageMeta Title="Speaker not found" Description="This speaker isn't here any more." />
+    <Missing Heading="This speaker isn't here" Words="Their name may have been joined with another spelling." Back="/sermons/speakers" BackWords="See every speaker" />
+}
+else
+{
+    <PageMeta Title="@Speaker.Name" Description="@($"Sermons by {Speaker.Name} at Good Shepherd Baptist Church.")" Image="@Speaker.Photo?.At(MediaSizeName.ForPhones).Url" />
+
+    <a class="text-link back" href="/sermons/speakers"><SiteIcon Name="back" /> All speakers</a>
+    <div class="page-head page-head-plain">
+        @if (Speaker.Photo is { IsImage: true } photo)
+        {
+            <MediaImage Media="photo" Size="MediaSizeName.Thumbnail" Alt="" Class="avatar avatar-large" />
+        }
+        <div>
+            <h1>@Speaker.Name</h1>
+            <p class="count-line">@SermonText.Sermons(Sermons.Count)</p>
+        </div>
+    </div>
+    <SermonMonths Sermons="Sermons" />
+}
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+
+    private SpeakerInfo? Speaker;
+    private IReadOnlyList<Sermon> Sermons = [];
+
+    protected override void OnParametersSet()
+    {
+        SermonShelf shelf = Feeds.Current.Sermons;
+        Speaker = shelf.FindSpeaker(Id);
+        Sermons = Speaker is null ? [] : shelf.BySpeaker(Speaker.Id);
+    }
+}

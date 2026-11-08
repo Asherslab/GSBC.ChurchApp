@@ -1,0 +1,12 @@
+@inject PublicFeeds Feeds
+
+<PageMeta Title="Speakers" Description="Everyone who has preached at Good Shepherd Baptist Church, with their sermons." />
+
+<a class="text-link back" href="/sermons"><SiteIcon Name="back" /> All sermons</a>
+<div class="week-head heading-gap"><h1 class="section-heading">Speakers</h1></div>
+<ul class="speaker-list">
+    @foreach (SpeakerInfo speaker in Feeds.Current.Sermons.Speakers.Where(speaker => speaker.Count > 0))
+    {
+        <li><a href="/sermons/speakers/@Uri.EscapeDataString(speaker.Id)">@speaker.Name</a><span class="length">@SermonText.Sermons(speaker.Count)</span></li>
+    }
+</ul>

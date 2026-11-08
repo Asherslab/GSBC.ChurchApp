@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <base href="/" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Text&family=Montserrat:wght@300;400;500;600&display=swap" />
+    <link rel="stylesheet" href="@Assets["tokens.css"]" />
+    <link rel="stylesheet" href="@Assets["website.css"]" />
+    <HeadOutlet />
+</head>
+<body>
+    <LayoutView Layout="typeof(EmbedLayout)">
+        <DynamicComponent Type="Page" Parameters="Parameters" />
+    </LayoutView>
+    <script src="@Assets["frame.js"]"></script>
+</body>
+</html>
+
+@code {
+    [Parameter, EditorRequired] public required Type Page { get; set; }
+    [Parameter] public IDictionary<string, object> Parameters { get; set; } = new Dictionary<string, object>();
+}

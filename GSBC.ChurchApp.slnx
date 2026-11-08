@@ -111,6 +111,7 @@
     <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.AppHost/GSBC.ChurchApp.Hosts.AppHost.csproj" />
     <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Gateway/GSBC.ChurchApp.Hosts.Gateway.csproj" />
     <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Migrator/GSBC.ChurchApp.Hosts.Migrator.csproj" />
+    <Project Path="src/Hosts/GSBC.ChurchApp.Hosts.Website/GSBC.ChurchApp.Hosts.Website.csproj" />
   </Folder>
   <Folder Name="/src/Hosts/App/">
     <Project Path="src/Hosts/App/GSBC.ChurchApp.Hosts.App/GSBC.ChurchApp.Hosts.App.csproj" />
@@ -158,6 +159,9 @@
   </Folder>
   <Folder Name="/tests/Features/ReleaseNotes/">
     <Project Path="tests/Features/ReleaseNotes/GSBC.ChurchApp.Features.ReleaseNotes.App.Tests/GSBC.ChurchApp.Features.ReleaseNotes.App.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Hosts/">
+    <Project Path="tests/Hosts/GSBC.ChurchApp.Hosts.Website.Tests/GSBC.ChurchApp.Hosts.Website.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Platform/">
     <Project Path="tests/Platform/GSBC.ChurchApp.Platform.Api.Tests/GSBC.ChurchApp.Platform.Api.Tests.csproj" />

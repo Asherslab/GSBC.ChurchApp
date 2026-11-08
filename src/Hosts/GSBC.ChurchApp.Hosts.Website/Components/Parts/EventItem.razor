@@ -1,0 +1,57 @@
+@if (EventListing.IsQuiet(Occurrence))
+{
+    <li class="event-quiet@(Occurrence.NotOn ? " not-on" : "")">
+        <span class="time">@EventWords.TimeOf(Occurrence)</span>
+        @if (Occurrence.NotOn)
+        {
+            <span class="event-title-quiet">@Occurrence.Fields.Title</span>
+            <span class="not-on-line"><SiteIcon Name="paused" /> @EventWords.NotOnLine(Occurrence)</span>
+        }
+        else
+        {
+            <a href="@Href">@Occurrence.Fields.Title</a>
+            <SiteIcon Name="repeat" /><span class="visually-hidden">@Occurrence.Repeats</span>
+            @if (Changed)
+            {
+                <span class="tag tag-changed">Changed</span>
+            }
+        }
+    </li>
+}
+else
+{
+    <li class="event">
+        <div>
+            <h3 class="event-title">
+                <a href="@Href">@Occurrence.Fields.Title</a>
+                @if (Changed)
+                {
+                    <span class="tag tag-changed">Changed</span>
+                }
+            </h3>
+            <ul class="meta">
+                <li><SiteIcon Name="clock" /> @EventWords.Times(Occurrence)</li>
+                @if (EventWords.PlaceLine(Occurrence) is { } place)
+                {
+                    <li><SiteIcon Name="pin" /> @place</li>
+                }
+                @if (EventWords.LabelOf(Occurrence, Calendar) is { Length: > 0 } label)
+                {
+                    <li><SiteIcon Name="calendar" /> @label</li>
+                }
+            </ul>
+        </div>
+        @if (Occurrence.Fields.Picture is { IsImage: true } picture)
+        {
+            <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" Class="event-picture" />
+        }
+    </li>
+}
+
+@code {
+    [Parameter, EditorRequired] public required EventOccurrence Occurrence { get; set; }
+    [Parameter] public CalendarInfo? Calendar { get; set; }
+    [Parameter, EditorRequired] public required string Href { get; set; }
+
+    private bool Changed => Occurrence.ChangedAt is not null;
+}

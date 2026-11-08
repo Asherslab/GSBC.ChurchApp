@@ -1,5 +1,6 @@
 extern alias ApiHost;
 extern alias GatewayHost;
+extern alias WebsiteHost;
 
 using Grpc.AspNetCore.Server;
 using Microsoft.AspNetCore.Http;
@@ -26,6 +27,14 @@ public sealed class EndpointRules
         "/calendars/public.ics",
         "/calendars/mine/{secret}.ics",
         "/calendars/mine/{secret}/{calendar}.ics",
+        "/events",
+        "/events/{Id}",
+        "/sermons",
+        "/sermons/series",
+        "/sermons/series/{Id}",
+        "/sermons/speakers",
+        "/sermons/speakers/{Id}",
+        "/sermons/{Id}",
     ];
 
     [Fact]
@@ -40,6 +49,13 @@ public sealed class EndpointRules
     {
         using RoutesOnly<GatewayHost::Program> gateway = new();
         Assert.Empty(Violations(gateway.Services));
+    }
+
+    [Fact]
+    public void EveryWebsiteEndpointIsAnApprovedPageOrStaticFile()
+    {
+        using RoutesOnly<WebsiteHost::Program> website = new();
+        Assert.Empty(Violations(website.Services));
     }
 
     private static List<string> Violations(IServiceProvider services)

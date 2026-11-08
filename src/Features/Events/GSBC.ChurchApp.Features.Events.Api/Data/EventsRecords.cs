@@ -73,6 +73,7 @@ public sealed class RegularEventRecord : IShowable
     public Guid? AskedBy { get; set; }
     public List<string> Needs { get; set; } = [];
     public List<int> RemindDaysBefore { get; set; } = [];
+    public bool ListEveryDate { get; set; }
     public string ChangeNote { get; set; } = "";
     public DateTime? ChangedAt { get; set; }
     public DateTime CreatedAt { get; set; }

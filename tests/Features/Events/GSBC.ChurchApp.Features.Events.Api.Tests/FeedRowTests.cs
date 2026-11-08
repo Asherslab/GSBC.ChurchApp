@@ -57,6 +57,20 @@ public sealed class FeedRowTests
         Assert.Equivalent(new[] { Audience.SignedIn.Text, kidsTeam.Text }, rows.Where(row => row.Feed == EventsFeeds.Contacts).Select(row => row.Audience).Distinct().ToList(), strict: true);
     }
 
+    [Fact]
+    public void ListingEveryDateOnTheWebsiteTravelsWithEachDateOfThatRegularEventOnly()
+    {
+        CalendarRecord outreach = Calendar("Outreach", Audience.Everyone);
+        RegularEventRecord saturdays = Regular(outreach, "Outreach Saturday", Today);
+        RegularEventRecord prayer = Regular(outreach, "Prayer before outreach", Today);
+        saturdays.ListEveryDate = true;
+
+        List<EventOccurrence> rows = Occurrences(Rows(Book([outreach], [saturdays, prayer]), EventsFeeds.Public));
+
+        Assert.All(rows.Where(occurrence => occurrence.Fields.Title == "Outreach Saturday"), occurrence => Assert.True(OccurrenceListing.IsListedOnTheWebsite(occurrence)));
+        Assert.All(rows.Where(occurrence => occurrence.Fields.Title == "Prayer before outreach"), occurrence => Assert.False(OccurrenceListing.IsListedOnTheWebsite(occurrence)));
+    }
+
     private static string Title(EventsPublisher.Row row) =>
         row.Feed is EventsFeeds.Calendars or EventsFeeds.PrivateCalendars
             ? EventsPayloads.Decode<CalendarInfo>(row.Payload).Name

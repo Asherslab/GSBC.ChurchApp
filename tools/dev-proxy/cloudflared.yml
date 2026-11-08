@@ -10,4 +10,6 @@ ingress:
       disableChunkedEncoding: false
   - hostname: dev-media.baptist.com.au
     service: http://localhost:5310
+  - hostname: dev-embed.baptist.com.au
+    service: http://DEV-MAC.local:5320
   - service: http_status:404
