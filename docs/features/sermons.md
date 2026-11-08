@@ -401,7 +401,8 @@ pictures, never duplicated by a re-read (`LastingIdTests`).
   tab bar in the app's layout; an `AudioItem` carries a link back to its sermon.
 - **Swiping the mini-player away (owner, 2026-11-06)** hides it and nothing else: the sermon keeps playing and the lock
   screen controls stay. It comes back when playback starts again (play from anywhere, or another sermon), and on the
-  Sermons tab or the playing sermon's page (`NowPlayingBar`). The player sheet's *Hide the player* does the same for
+  playing sermon's page (`NowPlayingBar`); browsing the Sermons tab or other sermons doesn't bring it back (owner,
+  2026-11-08). The player sheet's *Hide the player* does the same for
   anyone who can't swipe (VoiceOver, Switch Control). Every `Sheet` can be pulled down by its top like a native
   sheet: it follows the finger and closes past a third of its height or on a quick flick, otherwise it springs back.
 - **The admin panel plays audio** with the browser's own audio element on the sermon being checked; it has no
