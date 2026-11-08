@@ -243,19 +243,18 @@ all four on 2026-11-08):
   sentence; `.impeccable/mocks/decision/events-edit/`). *Edit* on the event page turns it into its editing state:
   the date block, title and time line are outlined and open their pickers when tapped; the facts become fields (the
   place is a search over site-map places and addresses used before); fields the page hides when empty (Register,
-  picture, links, contacts) appear as *Add…* rows. A foot bar holds, for a date of a regular event, *This date
-  only | Every …* (the regular event's own words), and *Save*; saving a shown event offers *Tell people*. A new
-  event opens the same page empty, starting on its calendar and title. Tapping the time line of a regular event
-  opens how it repeats, its breaks and what each date needs. One component (Events.Client), on the phone and in the
-  admin panel.
+  picture, links, contacts) appear as *Add…* rows. A foot bar holds *Save*; saving a shown event offers *Tell
+  people*. A new event opens the same page empty, starting on its calendar and title. One component (Events.Client),
+  on the phone and in the admin panel. A regular event and a date of one have editors of their own (*Regular events
+  have their own page*, below), which replaced the *This date only | Every …* switch this page first had.
 - **The admin panel's Calendar page: *Workbench*** (owner, 2026-11-08, over lanes by calendar and a needs-you
   desk; `.impeccable/mocks/decision/events-admin/`). Three panes, as drafts' workbench: a sand column with *All
   your calendars*, *Needs details* and *Asked to publish* (each with its count, the latter only when a calendar
   uses it), then each calendar you can edit, to pick and manage alone, with a settings button (and, under *All your
   calendars*, a switch), *+ New calendar*, and *Breaks*; the middle pane is Agenda | Month of the picked calendar or
   of all of them, in the phone's rows, with *+ New event*; the right
-  pane is the chosen event in the same editor as the phone (*This date only | Every …*, *Save*, *Not on this
-  date*).
+  pane is the chosen event in the same editor as the phone (*Save*, *Not on this date*), or a date of a regular
+  event in the date's editor.
 - **Calendar setup lives in the workbench too** (owner, 2026-11-08: "settings per calendar on the workbench, breaks
   & etc"; `workbench-settings.html`), not on a page of its own. A calendar's settings button opens them in the right
   pane: description, who it's for (Hub tiles' picker), *Shown on new phones*, *Needs a publisher*, who can edit it
@@ -273,8 +272,44 @@ all four on 2026-11-08):
   what's next in it, and its own *Subscribe*.
 
 - **Surface briefs** with their direction contracts, for whoever builds Events:
+  `.impeccable/surfaces/es-events-client-regulareventeditor-razor-c571ae1f.md` (a regular event and a date of one),
   `.impeccable/surfaces/events-gsbc-churchapp-features-events-app-76ed283e.md` (the phone) and
   `.impeccable/surfaces/ents-gsbc-churchapp-features-events-admin-755b7618.md` (the admin panel).
+
+### Regular events have their own page (owner, 2026-11-08)
+
+The owner tried Events and called the regular-events editing "trash": one editor did both a single date and the whole
+regular event, switched by *This date only | Every …*, so delete, *Also shown on* and other fields came and went with
+the switch, and nobody could tell what a regular event was. The direction the owner approved ("go ahead"):
+
+37. **A regular event is its own thing with its own page** (*Morning service · Every Sunday 10:30am · Sunday
+    services*). Everything about the whole series lives there: how it repeats; its usual time, place, description and
+    contacts; what each date needs and who's reminded; breaks; *Also shown on*; its dates, changed ones marked;
+    *Delete the regular event*.
+38. **A date is just that date.** Opening Sunday 15 November is that Sunday only: changing it (time, place, a title
+    such as *Anniversary Sunday Service*, its About) always affects only that day, and *Not on this date* is there;
+    a line at the top says "One of the Morning service, every Sunday. Edit the regular event ›". The *This date only |
+    Every …* switch is gone.
+39. **Regular events are visible as such:** each calendar has a **Regular events** list (the admin panel's workbench,
+    and a calendar's page in the app for its editors); dates of a regular event carry a small repeat mark in lists;
+    changed dates keep *Changed*.
+40. **New event asks *Once* or *Regularly* first**, then opens the matching editor.
+
+- **The regular event's page: *The run of dates*** (owner, 2026-11-08, on the decision page over settings rows and a
+  repeat block; `.impeccable/mocks/decision/regular-events/`). Under the event page's navy head (calendar, title, and
+  the pattern with a repeat mark: "Every Sunday · 10:30am–12pm") a strip of its dates as white tiles: a changed date
+  tinted orange with a dot, a date that isn't on as an open ring (a break's dates included), today underlined; a line
+  under it names the first changed date and the first that isn't on. Choosing a tile opens that date alone. Then
+  *Every date* (time, place, contacts, About, Register, links, picture) beside *How it runs* (how it repeats, breaks,
+  what each date needs and the reminders, *Also shown on*, *Shown in the app*) on a computer, one under the other on
+  the phone; *Save every date*, and *Delete the regular event* last.
+- **A date of a regular event** (the shared sketches on the same decision page): the event page's head with the
+  date block, the line back to the regular event, then the title, time, place and About for that date. Whatever
+  differs from the regular event says so in plain words with *Put it back* ("Usually 10:30am–12pm. Put it back").
+  *Save this date* and *Not on this date*; *Tell people* after saving one already shown.
+- **New event**: two choices, *Once* (one date, or a few days in a row like a camp) and *Regularly* (every week, every
+  second week, monthly, or on dates you choose): a page on the phone, a small menu under *New event* in the admin
+  panel.
 
 ### Pinned for later
 
@@ -337,9 +372,10 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   `/event/new` starts a new event.
 - **Editing** (`Events.Client`, shared): *Edit where you read it* (`EventEditor`): the date block, title and time line
   open their sheets; the place searches places used before; contacts, About, Register, links and a picture; how a
-  regular event repeats, its breaks, what each date needs and when organisers are reminded; *This date only | Every …*;
-  *Not on this date*; *Tell people* after saving something already shown; *Ask to publish*; *Also shown on* with the
-  widening sentence; delete. *Show an event from another calendar* (`ShowFromElsewhere`), from your calendar's side. On the phone for holders of `events.edit` at the calendar.
+  regular event repeats, its breaks, what each date needs and when organisers are reminded; *Not on this date*; *Tell
+  people* after saving something already shown; *Ask to publish*; *Also shown on* with the widening sentence; delete.
+  *Show an event from another calendar* (`ShowFromElsewhere`), from your calendar's side. On the phone for holders of
+  `events.edit` at the calendar.
 - **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars with switches and settings, Needs
   details, Asked to publish with *Asked to show on your calendar* and its widening sentence, + New calendar, Breaks;
   Agenda | Month; the editor, a calendar's settings or a break on the right). Its Needs details and Asked to publish
@@ -418,9 +454,9 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   told and can mute *News about an event* for that calendar), otherwise those who added it.
 - **Ask to publish:** on a calendar that needs a publisher, an editor without `events.publish` saves for later and
   asks; once it's shown, only a publisher changes or deletes it.
-- **This date only** sends the date's whole values; the server keeps only what differs from the regular event, so a
+- **Saving a date** sends the date's whole values; the server keeps only what differs from the regular event, so a
   field put back to the regular event's value keeps in step again, and a date that matches in everything goes back to
-  being an ordinary date. **Every date** first returns what the specials keep (*Anniversary Sunday keeps its own time,
+  being an ordinary date. **Saving the regular event** first returns what the specials keep (*Anniversary Sunday keeps its own time,
   9am–12pm*) and saves when confirmed.
 - **Changed** stays on a row for 7 days with its note ("Now at Teralba Park"); the phone shows it until it's opened.
   Notes are only made for an event that was already shown.
@@ -453,8 +489,6 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   *Make a new link* resets it; offline, the screen says the link needs a connection instead of showing a broken button.
 - **Who can edit it** in a calendar's settings explains and links to Access's *Who can do what*, where Calendar editor
   is given at the calendar. Listing its holders there needs a Platform lookup of who holds a role at a scope (Open).
-- **This date only | Every …** keeps two working copies: switching shows that scope's own values, so a special's title
-  never leaks into every date by accident.
 - **The editor reads the calendar's publishing rules from the desk** (`Editing.Desk`), on the phone too, so an editor
   of a calendar that needs a publisher saves for later and gets *Ask to publish*.
 - **Home's tile on the admin canvas** reads the default calendars through `Editing.Agenda` (staff are signed in), so
@@ -525,6 +559,36 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
 - **No zooming in the app:** the viewport stops pinch zoom (`maximum-scale=1, user-scalable=no`, which WKWebView
   honours) and `touch-action: manipulation` stops double-tap zoom. Text already follows the phone's text size
   (`font: -apple-system-body` on the root, with every size in rem). The admin panel still zooms.
+
+## Decided while building (regular events, 2026-11-08)
+
+- **Three editors, not one:** `EventEditor` is a one-off event only; `RegularEventEditor` is a regular event's page;
+  `DateEditor` is one date of a regular event. They share `EventFieldsEditor` (place, contacts, About, Register, links,
+  picture), `TimesEditor`, `ShowingEditor` and `TellPeopleSheet`. `EventDraft` keeps both copies (every date and this
+  date) so a date can say what differs and put a field back (`DateDiffers`, `PutBack`).
+- **Contracts:** `RegularEventDetail.Dates` (each date from today to 12 months ahead, with its own title and time,
+  whether it's changed, and whether it's not on and why) replaces `NextDates`. A break's dates are all there as not
+  on, not only its first 14 days as on the phone's calendar, because the strip is where breaks are checked.
+  `Editing.RegularEvents` (`[Requires(events.edit)]` at the calendar) lists a calendar's regular events with how each
+  repeats, its next date and how many dates are changed. The server model is unchanged.
+- **The phone:** `/calendar/{id}/regular/{regular}` is a regular event's page, `/calendar/{id}/regular/new` a new one
+  and `/calendar/{id}/regular/{regular}/{yyyy-MM-dd}` one of its dates; *Edit* on a date of a regular event opens that
+  date's editor. `/event/new` asks *Once* or *Regularly* unless `how=once` is given, so every *New event* button asks. That includes the
+  + on This week and Month; after the choice, both editors offer only the calendars you edit.
+- **The admin panel:** a picked calendar's middle pane has *Agenda | Month | Regular events*. A regular event opens
+  across the middle and right panes; choosing a date in its strip opens that date on the right beside it. A date chosen
+  in the agenda opens on the right, and *Edit the regular event ›* opens the regular event.
+- **After the finish review:** *How it runs* is rows that say their value (Repeats, Breaks, Each date needs, Also shown
+  on, Shown in the app), each opening a sheet with just that part, as the title does. In the admin panel *Save every
+  date* sits at the right of the navy head with whether it's shown; on the phone it stays in the foot bar. The strip is
+  one row that scrolls (a thin scrollbar with a mouse), its key shows the changed dot and the not-on ring, and it
+  updates when a date beside it is saved. A date's head says "· this date only". A new regular event opens on its
+  title.
+- **A date in a break** opens like any other but says it's in the break and that breaks are changed on the regular
+  event.
+- **Checked** with a backend of its own beside the owner's (`Dev__PortOffset=200`, the main database copied in with
+  pg_dump), in the admin panel with a signed-in test account and on the iPhone Simulator with an App review code for a
+  demo account given Calendar editor on Sunday services.
 
 ## Decided while polishing again (2026-11-08, after the owner tried it on the phone)
 

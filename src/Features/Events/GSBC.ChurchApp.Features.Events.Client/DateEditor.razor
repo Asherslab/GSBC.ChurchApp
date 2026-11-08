@@ -1,0 +1,202 @@
+@using GSBC.ChurchApp.Platform.Contracts.Content
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject CalendarEditing Editor
+@inject TimeProvider Clock
+@inject Shell Shell
+
+@if (InPanel)
+{
+    <div class="event-panel">@Body</div>
+}
+else
+{
+    <Page Title="This date" OnBack="Closed" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
+        <ChildContent>@Body</ChildContent>
+    </Page>
+}
+
+<TellPeopleSheet Open="_telling" CalendarId="@CalendarId" CalendarName="@CalendarName" OccurrenceId="@_savedOccurrenceId"
+                 Title="@_tellTitle" Body="@_tellBody" Done="FinishAsync" />
+
+@code {
+    private EventDraft? _draft;
+    private CalendarDesk _desk = new();
+    private IReadOnlyList<EventPlace> _placesUsed = [];
+    private Exception? _loadFailure;
+    private string? _problem;
+    private bool _saving;
+    private bool _telling;
+    private string _tellTitle = "";
+    private string _tellBody = "";
+    private string _savedOccurrenceId = "";
+    private string? _done;
+    private int _aboutVersion;
+    private string? _inBreak;
+    private (string, DateOnly)? _loadedFor;
+
+    [Parameter, EditorRequired] public required string CalendarId { get; set; }
+    [Parameter, EditorRequired] public required string RegularEventId { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Date { get; set; }
+    [Parameter] public bool InPanel { get; set; }
+    [Parameter] public EventCallback Closed { get; set; }
+    [Parameter] public EventCallback<string> Saved { get; set; }
+    [Parameter] public EventCallback OpenRegular { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private TimedFields OnDate => _draft?.ThisDate ?? new TimedFields();
+
+    private string CalendarName => _desk.Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == CalendarId)?.Settings.Calendar.Name ?? "the calendar";
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_draft is not null && _loadedFor == (RegularEventId, Date))
+            return;
+        _loadedFor = (RegularEventId, Date);
+        _draft = null;
+        _loadFailure = null;
+        _done = null;
+        try
+        {
+            _desk = await Editor.DeskAsync();
+            RegularEventDetail detail = await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = CalendarId, RegularEventId = RegularEventId });
+            _draft = EventDraft.From(detail, Date, Now);
+            _inBreak = detail.Dates.FirstOrDefault(entry => entry.Date == EventDates.Format(Date) && entry.NotOn && !_draft.NotOnThisDate)?.NotOnReason;
+            _ = LoadPlacesAsync();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _loadFailure = exception;
+        }
+    }
+
+    private async Task LoadPlacesAsync()
+    {
+        try
+        {
+            _placesUsed = (await Editor.PlacesUsedAsync()).Places;
+            StateHasChanged();
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+        }
+    }
+
+    private RenderFragment Body => @<text>
+        @if (_loadFailure is not null)
+        {
+            <EmptyState Icon="cloud-off" Title="Can't open this date" Body="@CalendarEditing.Problem(_loadFailure)">
+                <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
+            </EmptyState>
+        }
+        else if (_draft is not { } draft)
+        {
+            <EventHead Day="Date" Title="" Compact="InPanel" />
+            <div class="event-body"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></div>
+        }
+        else
+        {
+            <EventHead Day="Date" Label="@(OnDate.Fields.Label.Length > 0 ? OnDate.Fields.Label : CalendarName)" Title="@OnDate.Fields.Title"
+                       When="@(draft.NotOnThisDate ? "Not on this date" : EventWords.Join(EventDates.Times(OnDate.StartMinute, OnDate.EndMinute), "this date only"))" Compact="InPanel" />
+            <div class="date-of">
+                <Icon Name="repeat" Size="IconSize.Small" />
+                <p>
+                    One of the @draft.Every.Fields.Title, @draft.RepeatWords.
+                    <button type="button" class="date-of__link" @onclick="OpenRegular">Edit the regular event ›</button>
+                </p>
+            </div>
+            <div class="event-body event-body--editing">
+                @if (_done is not null)
+                {
+                    <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />@_done</p>
+                }
+                @if (draft.NotOnThisDate)
+                {
+                    <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date. People see it as not on, and calendar apps leave it out.</p>
+                }
+                else if (_inBreak is not null)
+                {
+                    <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on: it's in @(_inBreak.Length > 0 ? _inBreak : "a break"). Breaks are changed on the regular event.</p>
+                }
+                <TextField Label="Title on this date" Value="@OnDate.Fields.Title" ValueChanged="value => OnDate.Fields.Title = value" MaxLength="120" Required="true"
+                           Placeholder="@draft.Every.Fields.Title" />
+                @Usual(draft, EventFieldKeys.Title, $"Usually “{draft.Every.Fields.Title}”.")
+                <div class="field">
+                    <span class="field__label">Time on this date</span>
+                    <TimesEditor Timed="OnDate" />
+                </div>
+                @Usual(draft, EventFieldKeys.Time, $"Usually {UsualTime(draft)}.")
+                <PlaceEditor Place="OnDate.Fields.Place" PlaceChanged="place => OnDate.Fields.Place = place" Used="_placesUsed" Missing="@(draft.Needs.Contains(EventFieldKeys.Place))" />
+                @Usual(draft, EventFieldKeys.Place, draft.Every.Fields.Place is { } usual ? $"Usually at {PlaceName(usual)}." : "Usually no place.")
+                <div class="field">
+                    <span class="field__label" aria-hidden="true">About this date</span>
+                    <RichTextEditor @key="_aboutVersion" Label="About this date" Value="@(OnDate.Fields.Description ?? new RichText())" ValueChanged="text => OnDate.Fields.Description = text" Rows="4"
+                                    Placeholder="What's different this time" />
+                </div>
+                @Usual(draft, EventFieldKeys.Description, "This date has its own About.")
+            </div>
+            <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <div class="editor-foot__actions">
+                    <Button Block="true" Busy="_saving" Disabled="@(OnDate.Fields.Title.Trim().Length == 0)" OnClick="() => SaveAsync(draft.NotOnThisDate)">Save this date</Button>
+                    <Button Variant="ButtonVariant.Quiet" Busy="_saving" OnClick="() => SaveAsync(!draft.NotOnThisDate)">@(draft.NotOnThisDate ? "On again" : "Not on this date")</Button>
+                </div>
+            </div>
+        }
+    </text>;
+
+    private RenderFragment? Usual(EventDraft draft, string key, string words) => !draft.DateDiffers(key) ? null :
+        @<p class="usual-line">@words <button type="button" class="usual-line__back" @onclick="() => PutBack(draft, key)">Put it back</button></p>;
+
+    private static string UsualTime(EventDraft draft) => draft.Every.StartMinute is null ? "all day" : EventDates.Times(draft.Every.StartMinute, draft.Every.EndMinute);
+
+    private static string PlaceName(EventPlace place) => place.Name.Length > 0 ? place.Name : place.Address;
+
+    private void PutBack(EventDraft draft, string key)
+    {
+        draft.PutBack(key);
+        if (key == EventFieldKeys.Description)
+            _aboutVersion++;
+    }
+
+    private async Task SaveAsync(bool notOn)
+    {
+        if (_draft is not { } draft || _saving)
+            return;
+        _saving = true;
+        _problem = null;
+        try
+        {
+            bool wasShown = draft.WasShown;
+            RegularEventDetail saved = await Editor.Editing.SaveDateAsync(draft.ToDateSave(notOn));
+            draft.NotOnThisDate = notOn;
+            await Shell.HapticAsync(Haptic.Success);
+            _savedOccurrenceId = draft.OccurrenceId(saved);
+            if (wasShown && _savedOccurrenceId.Length > 0)
+            {
+                _tellTitle = notOn ? $"{OnDate.Fields.Title} isn't on" : $"Changed: {OnDate.Fields.Title}";
+                _tellBody = notOn ? $"{EventWords.LongDate(Date)}." : saved.Specials.FirstOrDefault(special => special.Date == EventDates.Format(Date))?.ChangeNote ?? "";
+                _telling = true;
+                return;
+            }
+            await FinishAsync(TellPeopleSheet.SavedWords);
+        }
+        catch (Exception exception) when (exception is not OperationCanceledException)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        finally
+        {
+            _saving = false;
+        }
+    }
+
+    private async Task FinishAsync(string done)
+    {
+        _telling = false;
+        _done = done;
+        await Saved.InvokeAsync(_savedOccurrenceId);
+        if (!InPanel)
+            await Closed.InvokeAsync();
+    }
+}

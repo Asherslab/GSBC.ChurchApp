@@ -1,0 +1,25 @@
+@using System.Globalization
+
+<ToggleRow Title="All day" Checked="Timed.StartMinute is null" CheckedChanged="AllDay" />
+@if (Timed.StartMinute is { } start)
+{
+    <div class="ui-pair">
+        <TextField Label="Starts" Type="time" Value="@Clock24(start)" ValueChanged="value => Timed.StartMinute = Minutes(value) ?? start" />
+        <TextField Label="Ends" Type="time" Value="@(Timed.EndMinute is { } end ? Clock24(end) : "")" ValueChanged="value => Timed.EndMinute = Minutes(value)" />
+    </div>
+}
+
+@code {
+    [Parameter, EditorRequired] public required TimedFields Timed { get; set; }
+
+    private void AllDay(bool allDay)
+    {
+        Timed.StartMinute = allDay ? null : EventDraft.DefaultStart;
+        Timed.EndMinute = allDay ? null : EventDraft.DefaultStart + EventDraft.DefaultLength;
+    }
+
+    private static string Clock24(int minutes) => $"{minutes / 60 % 24:00}:{minutes % 60:00}";
+
+    private static int? Minutes(string value) =>
+        TimeOnly.TryParse(value, CultureInfo.InvariantCulture, out TimeOnly time) ? time.Hour * 60 + time.Minute : null;
+}

@@ -5,14 +5,32 @@
 @inject IAccess Access
 
 <LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
-    <ChildContent>
-        <EventEditor Target="EditTarget.New(Calendar ?? context.Value.EditableBy(Access).FirstOrDefault()?.Id ?? string.Empty)" Calendars="context.Value.EditableBy(Access)"
-                     Closed="() => Shell.BackAsync(EventsPlaces.Week).AsTask()" Saved="Opened" />
-    </ChildContent>
+    <ChildContent>@Drawn(context.Value, Calendar ?? context.Value.EditableBy(Access).FirstOrDefault()?.Id ?? string.Empty)</ChildContent>
 </LiveData>
 
 @code {
+    private const string Once = "once";
+
     [SupplyParameterFromQuery(Name = "calendar")] public string? Calendar { get; set; }
+    [SupplyParameterFromQuery(Name = "how")] public string? How { get; set; }
+
+    private RenderFragment Drawn(Diary diary, string calendarId)
+    {
+        if (How == Once)
+            return @<EventEditor Target="EditTarget.New(calendarId)" Calendars="diary.EditableBy(Access)" Closed="BackAsync" Saved="Opened" />;
+
+        string? name = diary.Calendar(calendarId)?.Name;
+        return @<Page Title="New event" OnBack="BackAsync" BackLabel="Cancel">
+            <Masthead Title="New event" Note="@(name is null ? "Is it on once, or regularly?" : $"In {name}. Is it on once, or regularly?")" />
+            <Section First="true">
+                <OnceOrRegularly Once="() => Go(EventsPlaces.OnceIn(calendarId))" Regularly="() => Go(EventsPlaces.NewRegularIn(calendarId))" />
+            </Section>
+        </Page>;
+    }
+
+    private Task BackAsync() => Shell.BackAsync(EventsPlaces.Week).AsTask();
+
+    private void Go(string path) => Navigation.NavigateTo(path, new NavigationOptions { ReplaceHistoryEntry = true });
 
     private void Opened(string occurrenceId)
     {

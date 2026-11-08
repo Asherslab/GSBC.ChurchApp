@@ -37,7 +37,7 @@ internal static class Expansion
         foreach (DateOnly date in DatesOf(regular.Pattern, from, to))
         {
             SpecialRecord? special = specials.GetValueOrDefault(date);
-            BreakRecord? inBreak = breaks.Where(stop => stop.StartDate <= date && date <= stop.EndDate).MinBy(stop => stop.StartDate);
+            BreakRecord? inBreak = BreakOn(breaks, date);
             if (inBreak is not null && date.DayNumber - inBreak.StartDate.DayNumber >= EventsFeeds.NotOnShownForDays)
                 continue;
 
@@ -64,6 +64,28 @@ internal static class Expansion
             Time(occurrence, date, date, startMinute, endMinute);
             (occurrence.ChangedAt, occurrence.ChangeNote) = Latest((regular.ChangedAt, regular.ChangeNote), (special?.ChangedAt, special?.ChangeNote ?? ""));
             yield return occurrence;
+        }
+    }
+
+    public static IEnumerable<RegularDate> RunOf(
+        RegularEventRecord regular, IReadOnlyDictionary<DateOnly, SpecialRecord> specials, IReadOnlyList<BreakRecord> breaks, DateOnly from, DateOnly to)
+    {
+        foreach (DateOnly date in DatesOf(regular.Pattern, from, to))
+        {
+            SpecialRecord? special = specials.GetValueOrDefault(date);
+            BreakRecord? inBreak = BreakOn(breaks, date);
+            bool ownTime = special is not null && special.Changed.Contains(EventFieldKeys.Time);
+            yield return new RegularDate
+            {
+                Date = EventDates.Format(date),
+                OccurrenceId = EventDates.OccurrenceId(regular.Id, date),
+                Title = special is not null && special.Changed.Contains(EventFieldKeys.Title) ? special.Fields.Title : regular.Fields.Title,
+                StartMinute = ownTime ? special!.StartMinute : regular.StartMinute,
+                EndMinute = ownTime ? special!.EndMinute : regular.EndMinute,
+                Changed = special is { Changed.Count: > 0 },
+                NotOn = inBreak is not null || special?.NotOn == true,
+                NotOnReason = inBreak?.Name ?? (special?.NotOn == true ? special.NotOnNote : ""),
+            };
         }
     }
 
@@ -110,6 +132,9 @@ internal static class Expansion
             .FirstOrDefault(next => specials.GetValueOrDefault(next)?.NotOn != true && !breaks.Any(stop => stop.StartDate <= next && next <= stop.EndDate)) is { } back && back != default
             ? EventDates.Format(back)
             : "";
+
+    private static BreakRecord? BreakOn(IReadOnlyList<BreakRecord> breaks, DateOnly date) =>
+        breaks.Where(stop => stop.StartDate <= date && date <= stop.EndDate).MinBy(stop => stop.StartDate);
 
     private static (DateTime?, string) Latest((DateTime? At, string Note) first, (DateTime? At, string Note) second) =>
         second.At is { } secondAt && (first.At is null || secondAt > first.At) ? second : first;

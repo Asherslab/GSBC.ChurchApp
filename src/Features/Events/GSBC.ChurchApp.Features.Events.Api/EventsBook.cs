@@ -66,6 +66,26 @@ internal sealed class EventsBook
             .OfType<CalendarRecord>()
             .Select(calendar => CalendarAudiences.Of(calendar.Audience)));
 
+    public RegularEventSummary SummaryOf(RegularEventRecord regular, DateOnly today)
+    {
+        List<RegularDate> run = Expansion.RunOf(regular, _specials[regular.Id].ToDictionary(special => special.Date), BreaksOf(regular.Id),
+            today, today.AddMonths(EventsFeeds.MonthsAhead)).ToList();
+        return new RegularEventSummary
+        {
+            Id = regular.Id.ToString(),
+            CalendarId = regular.CalendarId.ToString(),
+            Title = regular.Fields.Title,
+            Repeats = RepeatWords.Of(regular.Pattern),
+            StartMinute = regular.StartMinute,
+            EndMinute = regular.EndMinute,
+            NextDate = run.FirstOrDefault(date => !date.NotOn)?.Date ?? "",
+            ChangedDates = run.Count(date => date.Changed),
+            Showing = regular.Showing,
+            Asked = regular.AskedAt is not null,
+            Ended = run.Count == 0,
+        };
+    }
+
     public IEnumerable<EventOccurrence> Occurrences(DateOnly from, DateOnly to, Func<IShowable, bool> include)
     {
         foreach (RegularEventRecord regular in RegularEvents.Where(regular => Calendars.ContainsKey(regular.CalendarId) && include(regular)))

@@ -24,6 +24,8 @@ else
     [Parameter] public bool Selected { get; set; }
     [Parameter] public bool Warn { get; set; }
     [Parameter] public RenderFragment? TitleExtra { get; set; }
+    [Parameter] public string? TitleIcon { get; set; }
+    [Parameter] public string? TitleIconLabel { get; set; }
     [Parameter] public string? Href { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
     [Parameter] public string? Class { get; set; }
@@ -46,6 +48,10 @@ else
             }
             <span class="row__title">
                 @Title
+                @if (TitleIcon is not null)
+                {
+                    <span class="agenda-row__title-icon" role="img" aria-label="@TitleIconLabel"><Icon Name="@TitleIcon" Size="IconSize.Small" /></span>
+                }
                 @if (TitleExtra is not null)
                 {
                     <span class="row__title-extra">@TitleExtra</span>

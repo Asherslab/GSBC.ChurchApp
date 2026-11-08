@@ -1,0 +1,58 @@
+@inject CalendarEditing Editor
+@inject TimeProvider Clock
+
+<LiveData @key="CalendarId" TValue="RegularEventList" Load="LoadAsync" Feeds="ListFeeds" FailedTitle="Can't load the regular events right now">
+    <ChildContent>
+        @if (context.Value.RegularEvents.Count == 0)
+        {
+            <EmptyState Icon="repeat" Title="No regular events yet" Body="Things on every week or month, such as services and groups, go here." />
+        }
+        else
+        {
+            <div class="list regular-list">
+                @foreach (RegularEventSummary regular in context.Value.RegularEvents)
+                {
+                    @if (Href is not null)
+                    {
+                        <ListRow @key="regular.Id" Title="@regular.Title" Subtitle="@Line(regular)" Icon="repeat" Href="@Href(regular)" Class="@Classes(regular)" TitleExtra="@Extra(regular)" />
+                    }
+                    else
+                    {
+                        <ListRow @key="regular.Id" Title="@regular.Title" Subtitle="@Line(regular)" Icon="repeat" OnClick="() => OnPick.InvokeAsync(regular)" Class="@Classes(regular)" TitleExtra="@Extra(regular)" />
+                    }
+                }
+            </div>
+        }
+    </ChildContent>
+    <Loading><Skeleton Shape="SkeletonShape.Lines" Count="3" /></Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> ListFeeds = [EventsFeeds.Admin, EventsFeeds.Public, EventsFeeds.Private];
+
+    [Parameter, EditorRequired] public required string CalendarId { get; set; }
+    [Parameter] public string? SelectedId { get; set; }
+    [Parameter] public Func<RegularEventSummary, string>? Href { get; set; }
+    [Parameter] public EventCallback<RegularEventSummary> OnPick { get; set; }
+
+    private string? Classes(RegularEventSummary regular) => regular.Id == SelectedId ? "row--selected" : regular.Ended ? "regular-list__ended" : null;
+
+    private DateOnly Today => EventWords.Today(Clock.GetUtcNow().UtcDateTime);
+
+    private async Task<RegularEventList> LoadAsync() => await Editor.Editing.RegularEventsAsync(new CalendarRef { CalendarId = CalendarId });
+
+    private string Line(RegularEventSummary regular) => EventWords.Join(
+        Capital(regular.Repeats),
+        EventDates.Times(regular.StartMinute, regular.EndMinute),
+        regular.Ended ? "No more dates" : EventDates.Parse(regular.NextDate) is { } next ? (next == Today ? "On today" : $"Next on {EventWords.Date(next)}") : null);
+
+    private static RenderFragment? Extra(RegularEventSummary regular) => (regular.Asked, regular.Showing != Showing.Shown, regular.ChangedDates) switch
+    {
+        (true, _, _) => @<Pill Tone="PillTone.Quiet">Asked to publish</Pill>,
+        (_, true, _) => @<Pill Tone="PillTone.Quiet">@(regular.Showing == Showing.ShownFrom ? "Shown later" : "Not shown yet")</Pill>,
+        (_, _, > 0) => @<Pill>@(regular.ChangedDates == 1 ? "1 date changed" : $"{regular.ChangedDates} dates changed")</Pill>,
+        _ => null,
+    };
+
+    private static string Capital(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
+}

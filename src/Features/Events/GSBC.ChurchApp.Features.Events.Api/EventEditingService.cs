@@ -80,6 +80,20 @@ internal sealed class EventEditingService(
         return new Done();
     }
 
+    public async ValueTask<RegularEventList> RegularEventsAsync(CalendarRef request, CallContext context = default)
+    {
+        if (!Guid.TryParse(request.CalendarId, out Guid calendarId))
+            throw Invalid("Choose a calendar.");
+        EventsBook book = await EventsBook.LoadAsync(db, context.CancellationToken);
+        DateOnly today = ChurchTime.Today(time);
+        return new RegularEventList
+        {
+            RegularEvents = book.RegularEvents.Where(regular => regular.CalendarId == calendarId).Select(regular => book.SummaryOf(regular, today))
+                .OrderBy(summary => summary.Ended).ThenBy(summary => summary.NextDate).ThenBy(summary => summary.StartMinute ?? -1).ThenBy(summary => summary.Title)
+                .ToList(),
+        };
+    }
+
     public async ValueTask<RegularEventDetail> RegularEventAsync(RegularRef request, CallContext context = default)
     {
         RegularEventRecord record = await writer.RegularInAsync(request.CalendarId, request.RegularEventId, context.CancellationToken);

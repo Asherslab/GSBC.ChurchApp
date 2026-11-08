@@ -64,6 +64,26 @@ public sealed class ExpansionTests
         Assert.Equal(9, Platform.Common.ChurchTime.ToChurch(special.StartsAt).Hour);
     }
 
+    [Fact]
+    public void ARegularEventsRunHasEveryDateOfABreakAsNotOnAndEachChangedDateWithItsOwnTitleAndTime()
+    {
+        RegularEventRecord evening = Regular("Evening service", Weekly(DayOfWeek.Sunday));
+        BreakRecord christmas = new() { Name = "Christmas break", StartDate = new DateOnly(2026, 12, 21), EndDate = new DateOnly(2027, 1, 25) };
+        SpecialRecord carols = new()
+        {
+            RegularEventId = evening.Id, Date = new DateOnly(2026, 12, 20), Changed = [EventFieldKeys.Title, EventFieldKeys.Time],
+            Fields = new EventFields { Title = "Carols by candlelight" }, StartMinute = 19 * 60,
+        };
+
+        List<RegularDate> run = Expansion.RunOf(evening, new Dictionary<DateOnly, SpecialRecord> { [carols.Date] = carols }, [christmas],
+            new DateOnly(2026, 12, 20), new DateOnly(2027, 1, 31)).ToList();
+
+        Assert.Equal(("Carols by candlelight", 19 * 60, true, false), (run[0].Title, run[0].StartMinute, run[0].Changed, run[0].NotOn));
+        Assert.Equal(["2026-12-27", "2027-01-03", "2027-01-10", "2027-01-17", "2027-01-24"], run.Where(date => date.NotOn).Select(date => date.Date));
+        Assert.All(run.Where(date => date.NotOn), date => Assert.Equal("Christmas break", date.NotOnReason));
+        Assert.Equal(("Evening service", 18 * 60, false), (run[^1].Title, run[^1].StartMinute, run[^1].NotOn));
+    }
+
     private static RegularPattern Weekly(DayOfWeek day) => new() { Repeats = Repeats.Weekly, Days = [day], StartDate = "2026-01-04" };
 
     private static RegularEventRecord Regular(string title, RegularPattern pattern) => new()

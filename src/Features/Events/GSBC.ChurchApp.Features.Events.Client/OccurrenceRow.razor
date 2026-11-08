@@ -1,6 +1,7 @@
 <AgendaRow Time="@EventWords.TimeOf(Occurrence)" Title="@Occurrence.Fields.Title" Label="@Label" Subtitle="@Subtitle" Warn="@(Subtitle is not null && Subtitle == Needs)"
            NotOn="@(Occurrence.NotOn ? EventWords.NotOnLine(Occurrence) : null)" Quiet="@Quiet" Past="@Past" Selected="Selected"
-           Href="@(OnClick.HasDelegate ? null : EventsPlaces.EventPath(Occurrence.Id))" OnClick="OnClick" TitleExtra="@Extra" />
+           Href="@(OnClick.HasDelegate ? null : EventsPlaces.EventPath(Occurrence.Id))" OnClick="OnClick" TitleExtra="@Extra"
+           TitleIcon="@(Occurrence.Kind == OccurrenceKind.OneOff ? null : "repeat")" TitleIconLabel="@(Occurrence.Kind == OccurrenceKind.OneOff ? null : $"Repeats {Occurrence.Repeats}")" />
 
 @code {
     [Parameter, EditorRequired] public required EventOccurrence Occurrence { get; set; }
