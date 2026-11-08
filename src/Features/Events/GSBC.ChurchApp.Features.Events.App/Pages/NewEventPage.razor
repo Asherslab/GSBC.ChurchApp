@@ -2,9 +2,10 @@
 @inject CalendarDiary Diary
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject IAccess Access
 
-<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
-    <ChildContent>@Drawn(context.Value, Calendar ?? context.Value.Calendars.FirstOrDefault()?.Id ?? string.Empty)</ChildContent>
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
+    <ChildContent>@Drawn(context.Value, Calendar ?? context.Value.EditableBy(Access).FirstOrDefault()?.Id ?? string.Empty)</ChildContent>
 </LiveData>
 
 @code {
@@ -16,7 +17,7 @@
     private RenderFragment Drawn(Diary diary, string calendarId)
     {
         if (How == Once)
-            return @<EventEditor Target="EditTarget.New(calendarId)" Calendars="diary.Calendars" Closed="BackAsync" Saved="Opened" />;
+            return @<EventEditor Target="EditTarget.New(calendarId)" Calendars="diary.EditableBy(Access)" Closed="BackAsync" Saved="Opened" />;
 
         string? name = diary.Calendar(calendarId)?.Name;
         return @<Page Title="New event" OnBack="BackAsync" BackLabel="Cancel">

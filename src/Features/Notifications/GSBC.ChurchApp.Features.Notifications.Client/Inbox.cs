@@ -13,9 +13,11 @@ public sealed record InboxEntry(InboxItem Item, bool Unread);
 
 public sealed class Inbox : IInboxCount, IDisposable
 {
-    public const string Route = "notifications";
-    public const string MarkReadMethod = "/gsbc.notifications.Notifications/MarkRead";
+    private const string Route = "notifications";
+    private const string MarkReadMethod = "/gsbc.notifications.Notifications/MarkRead";
     public static readonly IReadOnlyList<string> Feeds = [NotificationsFeeds.Inbox, NotificationsFeeds.Public];
+
+    public const string Remembered = "notifications.inbox";
     private const int MostShown = 100;
     private const string ReadOnThisPhone = "notifications.read";
 
@@ -26,12 +28,14 @@ public sealed class Inbox : IInboxCount, IDisposable
     private readonly NativeBridge _bridge;
     private readonly ClientSignals _signals;
     private readonly IEnumerable<IFollowedScopes> _followed;
+    private readonly NotificationPreferences _pushes;
     private readonly HashSet<string> _readHere = [];
 
     public Inbox(ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences preferences, NativeBridge bridge, ClientSignals signals,
-        IEnumerable<IFollowedScopes> followed)
+        IEnumerable<IFollowedScopes> followed, NotificationPreferences pushes)
     {
         _followed = followed;
+        _pushes = pushes;
         _feeds = feeds;
         _access = access;
         _outbox = outbox;
@@ -59,8 +63,10 @@ public sealed class Inbox : IInboxCount, IDisposable
         else
         {
             await LoadReadHereAsync();
-            entries = (await ReadAsync(NotificationsFeeds.Public))
+            List<InboxItem> followed = (await ReadAsync(NotificationsFeeds.Public))
                 .Where(item => item.ScopeId is null || _followed.Any(follows => follows.Scopes.Contains(item.ScopeId)))
+                .ToList();
+            entries = OneNotification.OnePerThing(followed, await _pushes.PushesOnThisPhoneAsync())
                 .Select(item => new InboxEntry(item, !_readHere.Contains(item.Id)))
                 .ToList();
         }

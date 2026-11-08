@@ -18,6 +18,7 @@ public static class ClientServiceCollectionExtensions
     {
         services.AddSingleton<SessionSignal>();
         services.AddSingleton<ClientSignals>();
+        services.AddSingleton<RememberedValues>();
         services.AddSingleton<GrantedAccess>();
         services.AddSingleton<IAccess>(provider => provider.GetRequiredService<GrantedAccess>());
         services.TryAddSingleton<IScopeNames, ScopeNames>();

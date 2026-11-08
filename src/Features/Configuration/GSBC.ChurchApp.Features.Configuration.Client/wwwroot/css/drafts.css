@@ -272,7 +272,7 @@
 .workbench--canvas .workbench__detail { z-index: 2; scrollbar-gutter: stable; }
 .workbench--canvas .workbench__main { display: flex; flex-direction: column; overflow: hidden; padding-bottom: 0; }
 .workbench--canvas .workbench__main > .draft-pane { display: flex; flex: 1; flex-direction: column; min-height: 0; }
-.workbench--canvas .draft-pane > .hub-canvas { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; padding: 4px 0 20px; }
+.workbench--canvas .draft-pane > .hub-canvas { flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; margin-inline: -4px; padding: 4px 4px 20px; }
 @media (max-width: 1648px) {
   .workbench.workbench--canvas.workbench--canvas { grid-template-columns: minmax(0, 1fr) minmax(320px, 380px); }
   .workbench.workbench--canvas.workbench--canvas .workbench__aside { display: none; }

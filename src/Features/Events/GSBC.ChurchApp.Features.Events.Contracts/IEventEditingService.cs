@@ -53,6 +53,15 @@ public interface IEventEditingService
     ValueTask<Done> AnswerShowingAsync(ShowingAnswer request, CallContext context = default);
 
     [Requires(EventsPermissions.EditNode)]
+    ValueTask<ShowableList> ShowableAsync(ShowableQuery request, CallContext context = default);
+
+    [Requires(EventsPermissions.EditNode)]
+    ValueTask<ShowHereResult> ShowHereAsync(ShowHereRequest request, CallContext context = default);
+
+    [Requires(EventsPermissions.EditNode)]
+    ValueTask<Done> AnswerAskToShowAsync(AskToShowAnswer request, CallContext context = default);
+
+    [Requires(EventsPermissions.EditNode)]
     ValueTask<Done> TellPeopleAsync(TellPeople request, CallContext context = default);
 
     [SignedIn]

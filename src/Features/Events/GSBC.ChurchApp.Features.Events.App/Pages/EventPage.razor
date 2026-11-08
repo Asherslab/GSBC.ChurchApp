@@ -8,7 +8,7 @@
 @inject IJSRuntime Js
 @inject NavigationManager Navigation
 
-<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Event" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
@@ -53,7 +53,7 @@
             return @<DateEditor CalendarId="@occurrence.CalendarId" RegularEventId="@occurrence.ItemId" Date="EventWords.DayOf(occurrence)" Closed="() => _editing = false"
                                 OpenRegular="() => Navigation.NavigateTo(EventsPlaces.RegularPath(occurrence.CalendarId, occurrence.ItemId))" />;
         if (_editing && canEdit)
-            return @<EventEditor Target="EditTarget.Of(occurrence)" Calendars="EditableCalendars(diary)" Closed="() => _editing = false" />;
+            return @<EventEditor Target="EditTarget.Of(occurrence)" Calendars="diary.EditableBy(Access)" Closed="() => _editing = false" />;
 
         return @<Page Title="@occurrence.Fields.Title" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
             <Actions>
@@ -90,9 +90,6 @@
             </ChildContent>
         </Page>;
     }
-
-    private IReadOnlyList<CalendarInfo> EditableCalendars(Diary diary) =>
-        diary.Calendars.Where(calendar => !calendar.ReadOnly && Access.Can(EventsPermissions.Edit, calendar.Id)).ToList();
 
     private async Task MarkSeenAsync(EventOccurrence occurrence)
     {

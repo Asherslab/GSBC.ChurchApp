@@ -16,7 +16,7 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
         if (!Guid.TryParse(choice.CalendarId, out Guid calendarId) || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(found => found.Id == calendarId, cancellationToken) is not { } calendar)
             throw new RpcException(new Status(StatusCode.InvalidArgument, "That calendar isn't here any more."));
         Guid? userId = user.Identity?.IsAuthenticated == true ? Caller.UserId(user) : null;
-        if (choice.InYourWeek && WhyNotAdd(calendar, userId is not null, await ViewerAsync(userId, cancellationToken)) is { } refused)
+        if (choice.InYourWeek && WhyNotAdd(calendar, userId is not null, await ViewerAsync(access, userId, cancellationToken)) is { } refused)
             throw new RpcException(refused);
 
         bool shownAnyway = calendar.ShownOnNewPhones || CalendarAudiences.Of(calendar.Audience).IsForRoles;
@@ -61,7 +61,7 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
         : signedIn ? new Status(StatusCode.PermissionDenied, $"{calendar.Name} isn't for you.")
         : new Status(StatusCode.Unauthenticated, $"Sign in to add {calendar.Name}.");
 
-    private async Task<Viewer> ViewerAsync(Guid? userId, CancellationToken cancellationToken)
+    public static async Task<Viewer> ViewerAsync(IAccessEvaluator access, Guid? userId, CancellationToken cancellationToken)
     {
         if (userId is not { } person)
             return Viewer.Anonymous;

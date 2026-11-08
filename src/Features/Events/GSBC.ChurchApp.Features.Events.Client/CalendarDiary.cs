@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Common;
 
@@ -10,6 +11,9 @@ public sealed record Diary(IReadOnlyList<CalendarInfo> Calendars, IReadOnlyList<
     public static readonly Diary Empty = new([], [], new Dictionary<string, List<EventContact>>());
 
     public CalendarInfo? Calendar(string id) => Calendars.FirstOrDefault(calendar => calendar.Id == id || calendar.Slug == id);
+
+    public IReadOnlyList<CalendarInfo> EditableBy(IAccess access) =>
+        Calendars.Where(calendar => !calendar.ReadOnly && access.Can(EventsPermissions.Edit, calendar.Id)).ToList();
 
     public EventOccurrence? Find(string id) => Occurrences.FirstOrDefault(occurrence => occurrence.Id == id);
 
@@ -32,6 +36,8 @@ public sealed class CalendarDiary(IServiceProvider services)
 
     public static readonly IReadOnlyList<string> Feeds =
         [EventsFeeds.Calendars, EventsFeeds.PrivateCalendars, EventsFeeds.Public, EventsFeeds.Private, EventsFeeds.Contacts];
+
+    public const string Remembered = "events.diary";
 
     public bool IsOnThisDevice => _feeds?.IsAvailable == true;
 

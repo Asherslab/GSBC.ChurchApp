@@ -4,7 +4,7 @@
 
 @if (Services.GetService(typeof(Inbox)) is Inbox inbox)
 {
-    <LiveData TValue="IReadOnlyList<InboxEntry>" Load="inbox.LoadAsync" Feeds="Inbox.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+    <LiveData TValue="IReadOnlyList<InboxEntry>" Load="inbox.LoadAsync" Feeds="Inbox.Feeds" Remember="@Inbox.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
         <ChildContent>@Drawn(context.Value)</ChildContent>
         <Loading>@Drawn([])</Loading>
         <Failed>@Drawn([])</Failed>

@@ -26,7 +26,7 @@ internal static class InboxPayloads
         Payload = Encode(Item(notification.Id.ToString(), notification, null)),
     };
 
-    public static InboxItem Item(string id, NotificationRecord notification, DateTime? readAt) => new()
+    private static InboxItem Item(string id, NotificationRecord notification, DateTime? readAt) => new()
     {
         Id = id,
         Kind = notification.Kind,
@@ -40,9 +40,11 @@ internal static class InboxPayloads
         ReadAt = readAt,
         ScopeId = notification.ScopeId,
         Test = notification.Test,
-        Waiting = notification.Waits && notification.SettledAt is null,
+        Waiting = notification is { Waits: true, SettledAt: null },
         Action = notification.Action,
         InAdminPanel = notification.InAdminPanel,
+        OneOf = notification.OneOf?.ToString(),
+        Rank = notification.Rank,
     };
 
     public static byte[] Encode<T>(T message)

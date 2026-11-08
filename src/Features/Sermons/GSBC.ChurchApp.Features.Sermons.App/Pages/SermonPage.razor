@@ -5,7 +5,7 @@
 @inject Shell Shell
 @inject NowPlayingBar Bar
 
-<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" Remember="@SermonLibrary.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="Sermon" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">

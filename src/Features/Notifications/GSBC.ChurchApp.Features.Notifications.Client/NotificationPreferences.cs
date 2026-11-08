@@ -16,7 +16,7 @@ public sealed record KindChoice(KindInfo Kind, bool Push);
 public sealed class NotificationPreferences(
     ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences local, NativeBridge bridge, ChannelBase channel)
 {
-    public const string SetMethod = "/gsbc.notifications.Notifications/SetPreference";
+    private const string SetMethod = "/gsbc.notifications.Notifications/SetPreference";
     public static readonly IReadOnlyList<string> Feeds = [NotificationsFeeds.Kinds, NotificationsFeeds.Preferences];
     private const string OnThisPhone = "notifications.push.";
     private const int MostKinds = 200;
@@ -59,6 +59,16 @@ public sealed class NotificationPreferences(
             {
             }
         }
+    }
+
+    public async Task<Func<string, bool>> PushesOnThisPhoneAsync()
+    {
+        List<KindInfo> kinds = (await feeds.ReadPageAsync(new FeedPageQuery(NotificationsFeeds.Kinds, Limit: MostKinds)))
+            .Select(record => Decode<KindInfo>(record.Payload))
+            .ToList();
+        Dictionary<string, bool> chosen = await OnPhoneAsync(kinds);
+        Dictionary<string, bool> pushes = kinds.ToDictionary(kind => kind.Key, kind => kind.Mandatory || chosen.GetValueOrDefault(kind.Key, kind.DefaultPush));
+        return kind => pushes.GetValueOrDefault(kind, true);
     }
 
     private bool MayReceive(KindInfo kind) =>

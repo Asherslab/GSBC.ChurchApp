@@ -4,7 +4,7 @@
 @inject SermonCatalogue Catalogue
 @inject IServiceProvider Services
 
-<LiveData TValue="Shown" Load="LoadAsync" Feeds="TileFeeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData TValue="Shown" Load="LoadAsync" Feeds="TileFeeds" Remember="@($"sermons.tile.{Entry.Placement?.Id}.{Variant.Key}")" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>@Drawn(Shown.Nothing)</Loading>
     <Failed>@Drawn(Shown.Nothing)</Failed>

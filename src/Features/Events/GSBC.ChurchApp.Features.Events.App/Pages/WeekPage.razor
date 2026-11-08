@@ -5,8 +5,9 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject IJSRuntime Js
+@inject IAccess Access
 
-<LiveData @ref="_live" TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds">
+<LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>
         <Page Title="This week" StuckAt="90">
@@ -21,7 +22,6 @@
     private const int MoreWeeks = 4;
     private static readonly System.Globalization.CultureInfo English = System.Globalization.CultureInfo.InvariantCulture;
 
-    private LiveData<Diary>? _live;
     private DotNetObjectReference<WeekPage>? _self;
     private bool _following;
     private int _weeks = FirstWeeks;
@@ -78,7 +78,7 @@
         IReadOnlySet<string> showing = Yours.Showing(diary.Calendars);
         IReadOnlyList<EventOccurrence> shown = diary.In(showing);
         if (Month)
-            return @<MonthView Diary="diary" Shown="shown" NowUtc="Now" Switch="Switch" Chips="Chips(diary)" />;
+            return @<MonthView Diary="diary" Shown="shown" NowUtc="Now" Switch="Switch" Chips="Chips(diary)" Actions="NewEvent(diary)" />;
 
         DateOnly today = Today;
         DateOnly weekStart = EventWords.SundayOf(_here ?? today);
@@ -88,9 +88,9 @@
             .GroupBy(EventWords.DayOf).OrderBy(day => day.Key).ToList();
         bool more = shown.Any(occurrence => EventWords.DayOf(occurrence) > last);
         HashSet<DateOnly> marked = shown.Select(EventWords.DayOf).ToHashSet();
-        IReadOnlyList<RailDay> rail = Enumerable.Range(0, 7).Select(offset => weekStart.AddDays(offset)).Select(day => new RailDay(day, marked.Contains(day))).ToList();
+        IReadOnlyList<RailDay> rail = Enumerable.Range(0, 7).Select(weekStart.AddDays).Select(day => new RailDay(day, marked.Contains(day))).ToList();
 
-        return @<Page Title="This week" StuckAt="90">
+        return @<Page Title="This week" StuckAt="90" Actions="NewEvent(diary)">
             <Masthead Title="This week" Beside="Switch" Class="masthead--week" />
             <div class="week-band">
                 <p class="week-band__range">@EventWords.Range(weekStart, weekStart.AddDays(6))</p>
@@ -144,6 +144,15 @@
                 }
             }
         </Page>;
+    }
+
+    private RenderFragment? NewEvent(Diary diary)
+    {
+        IReadOnlyList<CalendarInfo> editable = diary.EditableBy(Access);
+        if (editable.Count == 0)
+            return null;
+        string href = editable.Count == 1 ? EventsPlaces.NewEventIn(editable[0].Id) : EventsPlaces.NewEvent;
+        return @<a class="icon-btn" href="@href" aria-label="New event"><Icon Name="plus" /></a>;
     }
 
     private RenderFragment Chips(Diary diary)

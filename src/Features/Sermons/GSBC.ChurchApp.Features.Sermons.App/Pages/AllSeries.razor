@@ -1,7 +1,7 @@
 @page "/sermons/series"
 @inject SermonLibrary Library
 
-<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
+<LiveData TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" Remember="@SermonLibrary.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>
         <Page Title="Series" BackHref="sermons" BackLabel="Sermons" TopBar="TopBarStyle.Solid">
             <Section First="true">

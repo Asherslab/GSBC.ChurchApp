@@ -20,6 +20,19 @@ internal sealed record Recipients(IReadOnlyList<Guid> People, IReadOnlyList<Guid
         return device => (device.UserId != null && peopleIds.Contains(device.UserId.Value))
             || (device.UserId == null && (everyPhone || phoneIds.Contains(device.InstallId)));
     }
+
+    private HashSet<Guid>? _people;
+    private HashSet<Guid>? _phones;
+
+    public bool Reach(Guid person) => (_people ??= [.. People]).Contains(person);
+
+    public bool Reach(Device device) => device.UserId is { } userId ? Reach(userId) : EveryPhone || (_phones ??= [.. Phones]).Contains(device.InstallId);
+
+    public static Recipients Together(IReadOnlyCollection<Recipients> each) => new(
+        each.SelectMany(recipients => recipients.People).Distinct().ToList(),
+        each.SelectMany(recipients => recipients.Phones).Distinct().ToList(),
+        each.Any(recipients => recipients.EveryPhone),
+        each.Any(recipients => recipients.Public));
 }
 
 internal static class NotificationRules
@@ -61,14 +74,19 @@ internal static class NotificationRules
         }
     }
 
-    public static bool PushWanted(NotificationKind kind, string? scopeId, Device device, IReadOnlyCollection<Preference> preferences)
+    public static bool PushWanted(NotificationKind kind, string? scopeId, Device device, IReadOnlyCollection<Preference> preferences) =>
+        device.UserId is { } userId
+            ? PushWantedBy(kind, scopeId, userId, preferences)
+            : PushWanted(kind, scopeId, preference => preference.InstallId == device.InstallId, preferences);
+
+    public static bool PushWantedBy(NotificationKind kind, string? scopeId, Guid userId, IReadOnlyCollection<Preference> preferences) =>
+        PushWanted(kind, scopeId, preference => preference.UserId == userId, preferences);
+
+    private static bool PushWanted(NotificationKind kind, string? scopeId, Func<Preference, bool> mine, IReadOnlyCollection<Preference> preferences)
     {
         if (kind.Mandatory)
             return true;
-        IEnumerable<Preference> mine = device.UserId is { } userId
-            ? preferences.Where(preference => preference.UserId == userId)
-            : preferences.Where(preference => preference.InstallId == device.InstallId);
-        List<Preference> list = mine.ToList();
+        List<Preference> list = preferences.Where(preference => preference.Kind == kind.Key && mine(preference)).ToList();
         Preference? chosen = list.FirstOrDefault(preference => scopeId is not null && preference.ScopeId == scopeId)
             ?? list.FirstOrDefault(preference => preference.ScopeId is null);
         return chosen?.Push ?? kind.DefaultPush;

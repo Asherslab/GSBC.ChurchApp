@@ -372,8 +372,10 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   `/event/new` starts a new event.
 - **Editing** (`Events.Client`, shared): *Edit where you read it* (`EventEditor`): the date block, title and time line
   open their sheets; the place searches places used before; contacts, About, Register, links and a picture; how a
-  regular event repeats, its breaks, what each date needs and when organisers are reminded; *Not on this date*; *Tell people* after saving something already shown; *Ask to publish*; *Also shown on* with the
-  widening sentence; delete. On the phone for holders of `events.edit` at the calendar.
+  regular event repeats, its breaks, what each date needs and when organisers are reminded; *Not on this date*; *Tell
+  people* after saving something already shown; *Ask to publish*; *Also shown on* with the widening sentence; delete.
+  *Show an event from another calendar* (`ShowFromElsewhere`), from your calendar's side. On the phone for holders of
+  `events.edit` at the calendar.
 - **The admin panel** (`Events.Admin`): Calendar is the workbench (your calendars with switches and settings, Needs
   details, Asked to publish with *Asked to show on your calendar* and its widening sentence, + New calendar, Breaks;
   Agenda | Month; the editor, a calendar's settings or a break on the right). Its Needs details and Asked to publish
@@ -571,7 +573,8 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   repeats, its next date and how many dates are changed. The server model is unchanged.
 - **The phone:** `/calendar/{id}/regular/{regular}` is a regular event's page, `/calendar/{id}/regular/new` a new one
   and `/calendar/{id}/regular/{regular}/{yyyy-MM-dd}` one of its dates; *Edit* on a date of a regular event opens that
-  date's editor. `/event/new` asks *Once* or *Regularly* unless `how=once` is given, so every *New event* button asks.
+  date's editor. `/event/new` asks *Once* or *Regularly* unless `how=once` is given, so every *New event* button asks. That includes the
+  + on This week and Month; after the choice, both editors offer only the calendars you edit.
 - **The admin panel:** a picked calendar's middle pane has *Agenda | Month | Regular events*. A regular event opens
   across the middle and right panes; choosing a date in its strip opens that date on the right beside it. A date chosen
   in the agenda opens on the right, and *Edit the regular event ›* opens the regular event.
@@ -586,6 +589,41 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
 - **Checked** with a backend of its own beside the owner's (`Dev__PortOffset=200`, the main database copied in with
   pg_dump), in the admin panel with a signed-in test account and on the iPhone Simulator with an App review code for a
   demo account given Calendar editor on Sunday services.
+
+## Decided while polishing again (2026-11-08, after the owner tried it on the phone)
+
+- **No flicker between screens, everywhere in the app** (owner: "take note of the flickering when i change between this
+  week and clicking on the entry. fix it"; the same on Home → a sermon). Two causes, both in the shared shell. Every page
+  faded in from 40% over the scroller's background, which is navy for its top half (for the overscroll), so the page's
+  content showed a grey veil for 220 ms; and every screen drew its loading placeholder first, because it read the
+  phone's store again when it opened, and then faded in a second time when the data came. Pages now appear at once (no
+  entry fade or slide; the edge swipe back stays), `LiveData` takes a `Remember` key so a screen opened again draws its
+  last answer at once and reloads in place (`RememberedValues`, forgotten on sign-in, sign-out and access changes), and
+  a skeleton only shows once loading has taken 150 ms. The calendar, Sermons, the inbox, Home and its tiles remember.
+- **New event from the week and the month** (owner: "how am i adding events onto the calendar in app? doesn't appear to be
+  an option"; it was only on a calendar's own page). A **+** in the top bar of This week and of the month, beside the
+  bell, as iPhone Calendar has it, shown to anyone who holds `events.edit` at one of the calendars on the phone (through
+  `IAccess`, as the calendar page's button). It opens the editor with the calendar choice limited to the calendars they
+  edit, on the only one when there's one (`Diary.EditableBy`). The calendar page keeps its own *New event*.
+- **A big title never runs under Back** (owner: on Notifications "the masthead's Back link overlaps the big title" while
+  scrolling). The top bar turned solid only once the whole masthead had scrolled under it, so the title slid under a
+  see-through bar and Back sat on it. The shell now turns the bar solid as soon as the masthead's title reaches it, and
+  shows the bar's small title once the big one is fully under (or at the page's `StuckAt`, whichever comes first).
+- **Showing another calendar's event on yours, from your side** (owner asked 2026-11-08: "how do i post/link an event from
+  another calendar onto mine?"; until now only the event's home calendar could do it, through *Also shown on*). From your
+  calendar (the workbench's *From another calendar* with a calendar picked, and *Show an event from another calendar* on
+  the calendar's page in the app, for its editors) you find an event or a regular event that's still coming up on a
+  calendar you can see (its audience includes you, or you edit it; not iCal copies) and ask for it. The rules are the
+  existing ones in reverse: if you also edit its home calendar it's shown at once (through its publisher rule);
+  otherwise the home calendar's editors are asked (*Asked to show your events on another calendar* under *Asked to
+  publish*, and a notification, `events.showing.requested`), and agree or say no there or by turning it on in the
+  editor's *Also shown on*. It shows only while the home event is published, and the widening sentence shows before
+  asking and before agreeing. A showing records which side asked (`AskedByOther`); the side that asked can't agree to
+  its own request (`AnswerShowing` refuses it). Who may do what is Access: `events.edit` at your calendar to ask
+  (`Editing.Showable`, `ShowHere`), at the home calendar to answer (`AnswerAskToShow`). gRPC only.
+- **Events' admin notifications link to a calendar in the app.** Notifications refuses one with a subject and no in-app
+  link, so *waiting to publish* and *asked to show on your calendar* had been failing when raised (the tests' fake
+  notifications didn't apply the rule; now they do). Each links to the calendar it's about (`/calendar/{id}`).
 
 ## What the owner sets up
 

@@ -183,6 +183,7 @@ public sealed class ShowingOn
 {
     [ProtoMember(1)] public string CalendarId { get; set; } = "";
     [ProtoMember(2)] public bool Agreed { get; set; }
+    [ProtoMember(3)] public bool AskedByOther { get; set; }
 }
 
 [ProtoContract]
@@ -197,6 +198,9 @@ public sealed class ShowingRequest
     [ProtoMember(7)] public bool Widens { get; set; }
     [ProtoMember(8)] public string NewlyReaches { get; set; } = "";
     [ProtoMember(9)] public List<string> NewlyReachesRoleIds { get; set; } = [];
+    [ProtoMember(10)] public bool AskedByOther { get; set; }
+    [ProtoMember(11)] public string CalendarName { get; set; } = "";
+    [ProtoMember(12)] public string HomeCalendarName { get; set; } = "";
 }
 
 [ProtoContract]
@@ -425,6 +429,68 @@ public sealed class ShowOnRequest : IScopedRequest
     [ProtoMember(3)] public string? RegularEventId { get; set; }
     [ProtoMember(4)] public string OtherCalendarId { get; set; } = "";
     [ProtoMember(5)] public bool Show { get; set; }
+
+    public string ScopeId => CalendarId;
+}
+
+[ProtoContract]
+public sealed class ShowableQuery : IScopedRequest
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
+    [ProtoMember(2)] public string Search { get; set; } = "";
+
+    public string ScopeId => CalendarId;
+}
+
+[ProtoContract]
+public sealed class ShowableItem
+{
+    [ProtoMember(1)] public string HomeCalendarId { get; set; } = "";
+    [ProtoMember(2)] public string HomeCalendarName { get; set; } = "";
+    [ProtoMember(3)] public string? EventId { get; set; }
+    [ProtoMember(4)] public string? RegularEventId { get; set; }
+    [ProtoMember(5)] public string Title { get; set; } = "";
+    [ProtoMember(6)] public string When { get; set; } = "";
+    [ProtoMember(7)] public bool Published { get; set; }
+    [ProtoMember(8)] public bool Asked { get; set; }
+    [ProtoMember(9)] public bool AgreesAtOnce { get; set; }
+    [ProtoMember(10)] public bool Widens { get; set; }
+    [ProtoMember(11)] public string NewlyReaches { get; set; } = "";
+    [ProtoMember(12)] public List<string> NewlyReachesRoleIds { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ShowableList
+{
+    [ProtoMember(1)] public List<ShowableItem> Items { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ShowHereRequest : IScopedRequest
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
+    [ProtoMember(2)] public string HomeCalendarId { get; set; } = "";
+    [ProtoMember(3)] public string? EventId { get; set; }
+    [ProtoMember(4)] public string? RegularEventId { get; set; }
+    [ProtoMember(5)] public bool Show { get; set; }
+
+    public string ScopeId => CalendarId;
+}
+
+[ProtoContract]
+public sealed class ShowHereResult
+{
+    [ProtoMember(1)] public bool Agreed { get; set; }
+}
+
+[ProtoContract]
+public sealed class AskToShowAnswer : IScopedRequest
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
+    [ProtoMember(2)] public string OtherCalendarId { get; set; } = "";
+    [ProtoMember(3)] public string? EventId { get; set; }
+    [ProtoMember(4)] public string? RegularEventId { get; set; }
+    [ProtoMember(5)] public bool Agree { get; set; }
 
     public string ScopeId => CalendarId;
 }

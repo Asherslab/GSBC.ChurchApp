@@ -1,7 +1,7 @@
 @using System.Globalization
 @inject YourCalendars Yours
 
-<Page Title="@First.ToString("MMMM", English)" StuckAt="90">
+<Page Title="@First.ToString("MMMM", English)" StuckAt="90" Actions="Actions">
     <Masthead Title="@First.ToString("MMMM", English)" Class="masthead--week">
         <div class="month-steps">
             <span class="month-steps__year">@First.Year</span>
@@ -46,6 +46,7 @@
     [Parameter, EditorRequired] public required DateTime NowUtc { get; set; }
     [Parameter, EditorRequired] public required RenderFragment Switch { get; set; }
     [Parameter, EditorRequired] public required RenderFragment Chips { get; set; }
+    [Parameter] public RenderFragment? Actions { get; set; }
 
     private DateOnly Today => EventWords.Today(NowUtc);
 

@@ -33,6 +33,10 @@ decided before anything raises one.
    ministry chat"). Each kind declares its own pacing. A chat message pushes every time, as a
    messaging app does, grouped by chat in Notification Centre, and a chat can be muted. Kinds that
    staff or leaders raise (notices, announcements) are the ones with a limit.
+10. **One notification per thing** (owner, 2026-11-08, from a sermon that arrived twice: "New sermon: …" and
+    "New in Summer Fit: …"). A person, or a signed-out phone, gets at most one notification, in the inbox and as a
+    push, for one thing. When several reasons apply, the most specific wins; muting falls back to the next reason
+    (see *One notification per thing* below).
 
 ## The pieces
 
@@ -108,6 +112,18 @@ await notifications.RaiseAsync(new Notification(
   tests to check it.
 - **Raised after commit,** like email: `RaiseAsync` writes a row and returns; delivery is in the
   background. A failure to deliver never fails the feature's call.
+- **One notification per thing (decision 10).** When a feature has several notifications about the same thing for
+  audiences that overlap (a sermon for followers of its series and for followers of every sermon; *Tell people* for
+  each role an event is shown to), it raises them together, most specific first:
+  `INotifications.RaiseOneOfAsync([inSeries, anySermon])`. Each is still its own record, and they share a `OneOf` id
+  and a `Rank` (0 is most specific). For each person and each phone the raiser picks one, with
+  `OneNotification.Choose` (Notifications.Contracts): the most specific they're in the audience of **and** whose push
+  they haven't turned off; if they turned off every one they qualify for, the most specific goes to the inbox
+  without a push (the inbox always gets what's addressed to you). Only the chosen one gets an inbox row and a push, so
+  unread counts, the badge and "N new" count it once. Public rows carry `OneOf` and `Rank`, and a signed-out phone's
+  inbox applies the same rule to the rows it follows, using the push choices kept on the phone
+  (`OneNotification.OnePerThing`), offline. Separate raises are separate things, even with the same subject.
+  Tested in `OneNotificationTests` (the rule) and `OneNotificationDeliveryTests` (rows and pushes).
 - On start-up the server reconciles every registered kind into the public **`notifications.kinds`**
   feed, as Access does with the permission catalogue, so the phone's preferences list them without
   knowing the features.
