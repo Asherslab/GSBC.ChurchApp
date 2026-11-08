@@ -6,8 +6,9 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AssignmentRules(
-    AccessDbContext db, IAccessEvaluator evaluator, PermissionCatalog catalog, IScopeHierarchy hierarchy, ToolCallers tools, TimeProvider time)
+    AccessDbContext db, IAccessEvaluator evaluator, PermissionCatalog catalog, IScopeHierarchy hierarchy, ToolCallers tools, IEnumerable<IScopeObjects> scopeObjects, TimeProvider time)
 {
+    private readonly IReadOnlyList<IScopeObjects> _scopeObjects = scopeObjects.ToList();
     private readonly AssignmentPolicy _policy = new(hierarchy, catalog);
 
     public static string? ScopeProblem(ScopeKind kind, string? objectId) =>
@@ -17,6 +18,15 @@ internal sealed class AssignmentRules(
             (false, true) => $"Choose which {kind.Name} this role is for.",
             _ => null,
         };
+
+    public Task<string?> UnknownPlaceAsync(ScopeKind kind, string? objectId, CancellationToken cancellationToken) =>
+        UnknownPlaceAsync(_scopeObjects, kind, objectId, cancellationToken);
+
+    public static async Task<string?> UnknownPlaceAsync(
+        IEnumerable<IScopeObjects> known, ScopeKind kind, string? objectId, CancellationToken cancellationToken) =>
+        objectId is not null && known.FirstOrDefault(objects => objects.Kind == kind) is { } objects && !await objects.ExistsAsync(objectId, cancellationToken)
+            ? $"That {kind.Name.Replace('-', ' ')} isn't here. Choose one from the list."
+            : null;
 
     public async Task<string?> RefusalAsync(Guid actorId, RoleRecord role, string? objectId, CancellationToken cancellationToken)
     {

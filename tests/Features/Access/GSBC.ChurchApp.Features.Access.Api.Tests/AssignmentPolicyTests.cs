@@ -1,4 +1,6 @@
 using GSBC.ChurchApp.Features.Access.Api.Data;
+using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Permissions;
 using static GSBC.ChurchApp.Features.Access.Api.Tests.TestChurch;
 
 namespace GSBC.ChurchApp.Features.Access.Api.Tests;
@@ -49,5 +51,24 @@ public sealed class AssignmentPolicyTests
 
         Assert.Null(AssignmentPolicy.LastOwner(owner, [current], [current, second], _church.Now));
         Assert.Null(AssignmentPolicy.LastOwner(owner, [second], [current, second], _church.Now));
+    }
+
+    [Fact]
+    public async Task ARoleIsOnlyGivenAtAPlaceThatExists()
+    {
+        IScopeObjects calendars = new KnownPlaces(ScopeKind.Calendar, "sunday-services");
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+
+        Assert.Null(await AssignmentRules.UnknownPlaceAsync([calendars], ScopeKind.Calendar, "sunday-services", cancellationToken));
+        Assert.Equal("That calendar isn't here. Choose one from the list.",
+            await AssignmentRules.UnknownPlaceAsync([calendars], ScopeKind.Calendar, "Sunday services", cancellationToken));
+        Assert.Null(await AssignmentRules.UnknownPlaceAsync([calendars], ScopeKind.Ministry, "music", cancellationToken));
+    }
+
+    private sealed class KnownPlaces(ScopeKind kind, params string[] ids) : IScopeObjects
+    {
+        public ScopeKind Kind => kind;
+
+        public ValueTask<bool> ExistsAsync(string objectId, CancellationToken cancellationToken) => ValueTask.FromResult(ids.Contains(objectId));
     }
 }

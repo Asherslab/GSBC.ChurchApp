@@ -23,6 +23,8 @@ public static class EventsApiExtensions
         services.AddScoped<CalendarFiles>();
         services.AddScoped<EventPictures>();
         services.AddScoped<IMediaHolder>(provider => provider.GetRequiredService<EventPictures>());
+        services.AddScoped<IScopeObjects, CalendarScopeObjects>();
+        services.AddScoped<IScopeObjects, RegularEventScopeObjects>();
         services.AddHostedService<EventsSchedule>();
         services.AddScoped<DetailsReminders>();
         services.AddScoped<ICalCopier>();
