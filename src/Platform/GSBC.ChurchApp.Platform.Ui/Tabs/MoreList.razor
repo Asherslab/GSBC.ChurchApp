@@ -1,0 +1,27 @@
+@implements IDisposable
+@inject PhoneTabs Tabs
+
+<ListGroup>
+    @foreach (NavEntry entry in Tabs.InMore(_tabs))
+    {
+        <ListRow Title="@entry.Title" Icon="@entry.Icon" Href="@entry.Href" />
+    }
+</ListGroup>
+
+@code {
+    private IReadOnlyList<AppTab> _tabs = TabBar.Starting;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tabs.Changed += OnTabsChanged;
+        _tabs = await Tabs.CurrentAsync();
+    }
+
+    private void OnTabsChanged() => InvokeAsync(async () =>
+    {
+        _tabs = await Tabs.CurrentAsync();
+        StateHasChanged();
+    });
+
+    public void Dispose() => Tabs.Changed -= OnTabsChanged;
+}

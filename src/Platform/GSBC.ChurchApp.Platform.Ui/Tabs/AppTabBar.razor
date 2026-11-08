@@ -1,0 +1,51 @@
+@implements IDisposable
+@inject PhoneTabs Tabs
+@inject NavigationManager Navigation
+@inject Shell Shell
+
+<nav class="tabbar" aria-label="Main">
+    @foreach (AppTab tab in _tabs)
+    {
+        @Tab(tab.Word, tab.Opens.TrimStart('/'), tab.Icon, Tabs.IsOn(tab, Path))
+    }
+    @Tab("More", PhoneTabs.MoreRoute, "more", Tabs.MoreIsOn(_tabs, Path))
+</nav>
+
+@code {
+    private IReadOnlyList<AppTab> _tabs = TabBar.Starting;
+
+    private string Path => Navigation.ToBaseRelativePath(Navigation.Uri);
+
+    private RenderFragment Tab(string word, string href, string icon, bool on) => @<a class="tabbar__item @(on ? "active" : "")" href="@href" aria-current="@(on ? "page" : null)" @onclick="() => SelectAsync(on)">
+        <Icon Name="@icon" />
+        <span>@word</span>
+    </a>;
+
+    protected override async Task OnInitializedAsync()
+    {
+        Tabs.Changed += OnTabsChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+        _tabs = await Tabs.CurrentAsync();
+    }
+
+    private async Task SelectAsync(bool on)
+    {
+        await Shell.HapticAsync();
+        if (on)
+            await Shell.ScrollToTopAsync();
+    }
+
+    private void OnTabsChanged() => InvokeAsync(async () =>
+    {
+        _tabs = await Tabs.CurrentAsync();
+        StateHasChanged();
+    });
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => InvokeAsync(StateHasChanged);
+
+    public void Dispose()
+    {
+        Tabs.Changed -= OnTabsChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
+    }
+}

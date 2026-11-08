@@ -97,6 +97,28 @@ public sealed class PlacementRulesTests
         Assert.False(PlacementState.Same(placed, current));
     }
 
+    [Theory]
+    [InlineData("https://baptist.com.au/give", "not a web page")]
+    [InlineData("/more", "always the last tab")]
+    [InlineData("/prayer-wall", "doesn't have")]
+    [InlineData("/files/123", "opens outside the app")]
+    public async Task ATabOpensAPlaceInsideTheAppOtherThanMore(string opens, string why)
+    {
+        PlacementState tab = State(TabBarSurfaces.Tab, (TabSettings.Opens.Key, opens), (TabSettings.Word.Key, "Give"), (TabSettings.Icon.Key, "heart"));
+
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => ValidatedAsync(tab));
+
+        Assert.Contains(why, refused.Status.Detail);
+    }
+
+    [Fact]
+    public async Task ATabMayOpenAPageOrOneThingAndTheStartingTabsNeedNothingSet()
+    {
+        await ValidatedAsync(State(TabBarSurfaces.Tab, (TabSettings.Opens.Key, "/series/advent"), (TabSettings.Word.Key, "Advent"), (TabSettings.Icon.Key, "sermons")));
+        await ValidatedAsync(State(TabBarSurfaces.Home));
+        await ValidatedAsync(State(TabBarSurfaces.Sermons) with { Hidden = true });
+    }
+
     [Fact]
     public void ADraftHoldsEachPictureItPlacesOnce()
     {
@@ -107,7 +129,7 @@ public sealed class PlacementRulesTests
         Assert.Equal([photo.Id], held.Select(media => media.Id));
     }
 
-    private PlacementRules Rules => new(TestSurfaces.Catalog, TestSurfaces.Permissions, _library);
+    private PlacementRules Rules => new(TestSurfaces.Catalog, TestSurfaces.Permissions, _library, TestSurfaces.Places);
 
     private bool May(GrantSet grants, string areaKey, string? scopeId, bool publishing)
     {

@@ -2,13 +2,14 @@ using Grpc.Core;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
 using static GSBC.ChurchApp.Features.Configuration.Api.PlacementEditor;
 
 namespace GSBC.ChurchApp.Features.Configuration.Api;
 
-internal sealed class PlacementRules(SurfaceCatalog surfaces, PermissionCatalog permissions, IMediaReferences media)
+internal sealed class PlacementRules(SurfaceCatalog surfaces, PermissionCatalog permissions, IMediaReferences media, DestinationCatalog destinations)
 {
     public (SurfaceArea Area, string? ScopeId, Permission Needed) Required(string areaKey, string? requestedScope, bool publishing)
     {
@@ -83,9 +84,21 @@ internal sealed class PlacementRules(SurfaceCatalog surfaces, PermissionCatalog 
             problems.Add($"No permission '{node}' exists to choose an audience by.");
         if (state is { StartsAt: { } starts, EndsAt: { } ends } && ends <= starts)
             problems.Add($"'{surface.Title}' has to end after it starts.");
+        if (problems.Count == 0 && TabBarSurfaces.IsTab(surface) && TabProblem(OpensOf(surface, state)) is { } tab)
+            problems.Add(tab);
 
         return problems.Count == 0 ? state with { Audience = audience!.Text } : throw Invalid(string.Join(" ", problems));
     }
+
+    private static string OpensOf(Surface surface, PlacementState state) =>
+        state.Values.GetValueOrDefault(TabSettings.Opens.Key) ?? surface.Settings.First(setting => setting.Key == TabSettings.Opens.Key).DefaultText;
+
+    private string? TabProblem(string opens) => destinations.Resolve(opens) switch
+    {
+        null => "That tab opens a place the app doesn't have. Choose another place.",
+        ResolvedItem { Kind.OpensOutside: true } item => $"A {item.Kind.Noun.ToLowerInvariant()} opens outside the app, so it can't be a tab.",
+        _ => null,
+    };
 
     private static PlacementState Normalised(Surface surface, PlacementState state)
     {

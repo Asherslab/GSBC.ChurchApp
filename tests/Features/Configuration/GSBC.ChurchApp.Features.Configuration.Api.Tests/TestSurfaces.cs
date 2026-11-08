@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Configuration.Api.Tests;
@@ -15,7 +16,13 @@ internal static class TestSurfaces
     public static readonly Surface Welcome = new("ministry.welcome", Modules, "Welcome", "", [About]);
 
     public static readonly PermissionCatalog Permissions = new([new PermissionSet(
-        [HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, EditModules, PublishModules, ConfigurationPermissions.PreviewDraft])]);
+        [HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, TabBarSurfaces.Edit, TabBarSurfaces.Publish, EditModules, PublishModules, ConfigurationPermissions.PreviewDraft])]);
 
-    public static SurfaceCatalog Catalog => new([HubSurfaces.All, AppearanceSurfaces.All, new SurfaceSet([News, Welcome]), WaitingTiles.Surfaces]);
+    public static readonly DestinationKind Files = new("files", new DestinationArea("files", "Files", "file", 50), "File", "file", "files", OpensOutside: true);
+    public static readonly DestinationKind Series = new("series", new DestinationArea("sermons", "Sermons", "sermons", 20), "Series", "sermons", "series");
+
+    public static DestinationCatalog Places => new([ShellDestinations.All,
+        new DestinationSet([new DestinationPage("/sermons", "Sermons", "sermons", DestinationAreas.Pages, "A tab", Audience.Everyone)], [Files, Series])]);
+
+    public static SurfaceCatalog Catalog => new([HubSurfaces.All, AppearanceSurfaces.All, TabBarSurfaces.All, new SurfaceSet([News, Welcome]), WaitingTiles.Surfaces]);
 }

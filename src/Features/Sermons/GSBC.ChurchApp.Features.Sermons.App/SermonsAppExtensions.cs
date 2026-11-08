@@ -10,7 +10,7 @@ public static class SermonsAppExtensions
     public static IServiceCollection AddSermonsApp(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Sermons", typeof(SermonsAppExtensions).Assembly,
-            [new NavEntry("Sermons", "sermons", "sermons", Placement: NavPlacement.Tab,
+            [new NavEntry("Sermons", "sermons", "sermons",
                 AlsoUnder: [SermonsDestinations.Sermon.PathPrefix, SermonsDestinations.Series.PathPrefix, SermonsDestinations.Speaker.PathPrefix])],
             SermonCatalogue.Feeds,
             Listening.Feeds));

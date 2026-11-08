@@ -9,7 +9,7 @@ public sealed class HubTileTests
 {
     private const string Hostile = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" onload="alert(1)"><script>alert(2)</script><path d="M2 12 12 2 22 12z" fill="#2a3d5e"/></svg>""";
     private static readonly DateTime Now = new(2026, 11, 4, 0, 0, 0, DateTimeKind.Utc);
-    private readonly PlacementRules _rules = new(TestSurfaces.Catalog, TestSurfaces.Permissions, new Library());
+    private readonly PlacementRules _rules = new(TestSurfaces.Catalog, TestSurfaces.Permissions, new Library(), TestSurfaces.Places);
 
     [Fact]
     public async Task ATileKeepsItsSizeColourIconAndAudienceAndAnUploadedIconIsCleaned()

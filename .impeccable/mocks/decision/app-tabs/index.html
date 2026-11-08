@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>App tabs, the editor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --navy: #2a3d5e; --sand: #f4efe7; --sand-2: #e9e1d4; --ink: #1d2433; --ink-2: #5b6474; --ink-3: #8a919c; --aqua: #00776d; --orange: #e7ae74; --line: #e4ddd2; --surface: #fff; --page: #fbf8f3; }
+* { box-sizing: border-box; }
+body { margin: 0; padding: 32px 24px 64px; background: var(--page); color: var(--ink); font: 15px/1.5 Montserrat, sans-serif; }
+h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: -0.02em; }
+h2 { margin: 40px 0 4px; font-size: 20px; }
+p.q { margin: 0 0 16px; color: var(--ink-2); max-width: 60rem; }
+.opts { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; }
+.opt { padding: 16px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(29,36,51,.06), 0 8px 24px rgba(29,36,51,.06); }
+.opt--chosen { outline: 2px solid var(--orange); }
+.kicker { font-size: 11px; font-weight: 700; letter-spacing: .08em; color: var(--ink-3); }
+.opt h3 { margin: 2px 0 6px; font-size: 16px; }
+.opt p { margin: 0 0 12px; font-size: 13px; color: var(--ink-2); }
+.chosen { display: inline-block; margin-bottom: 8px; padding: 2px 8px; border-radius: 99px; background: var(--orange); font-size: 11px; font-weight: 700; }
+.stage { position: relative; height: 300px; padding: 12px; border-radius: 12px; background: var(--sand); overflow: hidden; display: flex; gap: 10px; }
+.phone { position: relative; width: 132px; flex: none; border-radius: 18px; background: #fff; box-shadow: 0 8px 20px rgba(29,36,51,.14); overflow: hidden; }
+.mast { height: 54px; background: var(--navy); }
+.tiles { padding: 8px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+.tiles i { height: 34px; border-radius: 6px; background: var(--sand); }
+.bar { position: absolute; left: 0; right: 0; bottom: 0; height: 34px; display: grid; grid-template-columns: repeat(5, 1fr); border-top: 1px solid var(--line); background: rgba(255,255,255,.92); }
+.bar span { display: grid; place-items: center; font-size: 7px; font-weight: 600; color: var(--ink-3); }
+.bar span b { display: block; width: 10px; height: 10px; border-radius: 3px; background: currentColor; margin: 0 auto 2px; opacity: .7; }
+.bar span.on { color: var(--aqua); outline: 2px solid var(--orange); outline-offset: -2px; border-radius: 6px; }
+.bar span.lock { color: var(--ink-3); opacity: .7; }
+.panel { flex: 1; padding: 10px; border-radius: 10px; background: #fff; display: grid; align-content: start; gap: 6px; font-size: 11px; }
+.field { height: 22px; border-radius: 6px; background: var(--sand); }
+.lbl { font-weight: 700; font-size: 11px; }
+.row { display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 6px; border-radius: 6px; background: var(--sand); font-size: 11px; font-weight: 600; }
+.row--on { background: #fff; outline: 2px solid var(--orange); }
+.row small { margin-left: auto; color: var(--ink-3); font-weight: 400; }
+.row--muted { opacity: .55; }
+.btn { display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 99px; background: var(--sand-2); font-weight: 600; font-size: 11px; }
+.btn--p { background: var(--navy); color: #fff; }
+.strip { flex: 1; display: grid; align-content: start; gap: 10px; }
+.bigbar { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 10px; border-radius: 12px; background: #fff; }
+.bigbar span { height: 56px; border-radius: 8px; background: var(--sand); display: grid; place-items: center; font-size: 10px; font-weight: 600; }
+.bigbar span.on { outline: 2px solid var(--orange); background: #fff; }
+.why { margin-top: 16px; font-size: 13px; color: var(--ink-2); max-width: 60rem; }
+</style>
+</head>
+<body>
+<h1>App tabs: where staff choose them</h1>
+<p class="q">Drafts → a draft → Tab bar. Staff choose up to four tabs (each a place in the app, its word and its icon, and who sees it); More is always the fifth. Three structures, dealt from the Hub canvas's world. Decided by the build (owner, 2026-11-08: "your call" on small questions); the reasons are under the cards.</p>
+
+<div class="opts">
+  <div class="opt opt--chosen">
+    <span class="chosen">Chosen</span>
+    <div class="kicker">1 · THE PHONE IS THE CANVAS</div>
+    <h3>Click a tab on the phone</h3>
+    <p>The draft's Home on the phone, with the real tab bar. Click a tab to choose it; drag it along the bar to move it. Beside the phone, a short rail: Add a tab, Show it as, and the tabs not on the bar now. The chosen tab's settings fill the right-hand panel.</p>
+    <div class="stage">
+      <div class="phone"><div class="mast"></div><div class="tiles"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="bar"><span><b></b>Home</span><span class="on"><b></b>Sermons</span><span><b></b>Calendar</span><span><b></b>Give</span><span class="lock"><b></b>More</span></div></div>
+      <div class="panel"><span class="lbl">Sermons</span><span class="lbl">Opens</span><div class="row">Sermons <small>Change</small></div><span class="lbl">Word under the icon</span><div class="field"></div><span class="lbl">Icon</span><div class="field"></div><span class="lbl">Who sees it</span><div class="field"></div><span><span class="btn">Take it off the bar</span></span></div>
+    </div>
+  </div>
+
+  <div class="opt">
+    <div class="kicker">2 · FOUR SLOTS</div>
+    <h3>A numbered list beside a preview</h3>
+    <p>Rows 1 to 4 and a locked More row, with up and down arrows, beside a phone preview that only shows. Familiar, but the editing and the picture are apart, which the Hub canvas brief refused.</p>
+    <div class="stage">
+      <div class="strip">
+        <div class="row">1 · Home</div><div class="row row--on">2 · Sermons</div><div class="row">3 · Calendar</div><div class="row">4 · Give</div><div class="row row--muted">5 · More <small>always last</small></div>
+        <span><span class="btn btn--p">Add a tab</span></span>
+      </div>
+      <div class="phone"><div class="mast"></div><div class="tiles"><i></i><i></i><i></i><i></i></div>
+        <div class="bar"><span><b></b>Home</span><span><b></b>Sermons</span><span><b></b>Calendar</span><span><b></b>Give</span><span class="lock"><b></b>More</span></div></div>
+    </div>
+  </div>
+
+  <div class="opt">
+    <div class="kicker">3 · THE BAR, ENLARGED</div>
+    <h3>The tab bar drawn big across the work area</h3>
+    <p>Five large cells to click and drag, settings under them. Easy to aim at, but it isn't how the bar looks, so staff judge words and icons at the wrong size.</p>
+    <div class="stage">
+      <div class="strip">
+        <div class="bigbar"><span>Home</span><span class="on">Sermons</span><span>Calendar</span><span>Give</span><span>More</span></div>
+        <div class="panel"><span class="lbl">Opens</span><div class="field"></div><span class="lbl">Word</span><div class="field"></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="why"><b>Why 1:</b> it is the Hub canvas's own world, so staff who arrange Home already know it (choose on the phone, settings beside, orange marker on the chosen thing), and the tab's word and icon are judged at the size people see them. <b>Raised from 2:</b> the tabs that aren't on the bar for the person shown (for another audience, dated, hidden, or past the fourth) are listed as rows beside the phone, with the reason, since the bar can't draw them; and keyboard users move a tab with arrow buttons. <b>From 3:</b> nothing; the tab cells on a true-size phone are 78 by 48 points, which is enough to click.</p>
+</body>
+</html>

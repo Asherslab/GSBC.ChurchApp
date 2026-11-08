@@ -42,6 +42,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
             .AddSingleton<TimeProvider>(Clock)
             .AddSingleton(TestSurfaces.Catalog)
             .AddSingleton(TestSurfaces.Permissions)
+            .AddSingleton(TestSurfaces.Places)
             .AddSingleton<IAccessEvaluator>(Access)
             .AddSingleton<IRoleAssignments>(Access)
             .AddSingleton<IMediaReferences>(new Library())

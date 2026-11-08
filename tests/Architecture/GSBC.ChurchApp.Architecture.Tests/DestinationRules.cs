@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using GSBC.ChurchApp.Platform.Contracts.Configuration;
 
 namespace GSBC.ChurchApp.Architecture.Tests;
 
@@ -7,10 +8,7 @@ public sealed partial class DestinationRules
     [Fact]
     public void EveryPageDeclaredAsAPlaceIsARouteInTheApp()
     {
-        HashSet<string> routes = Files(".razor")
-            .Where(path => path.Contains("/Hosts/App/") || AppProject().IsMatch(path))
-            .SelectMany(path => PageRoute().Matches(File.ReadAllText(path)).Select(match => match.Groups[1].Value))
-            .ToHashSet();
+        HashSet<string> routes = AppRoutes();
 
         List<(string File, string Route)> declared = Files("Destinations.cs")
             .SelectMany(path => DeclaredPage().Matches(File.ReadAllText(path)).Select(match => (Path.GetFileName(path), match.Groups[1].Value)))
@@ -18,6 +16,16 @@ public sealed partial class DestinationRules
         List<string> missing = declared.Where(page => !routes.Contains(page.Route)).Select(page => $"{page.File}: {page.Route}").ToList();
 
         Assert.NotEmpty(declared);
+        Assert.Empty(missing);
+    }
+
+    [Fact]
+    public void TheTabsTheAppStartsWithOpenPagesInTheApp()
+    {
+        HashSet<string> routes = AppRoutes();
+
+        List<string> missing = TabBarSurfaces.StartingTabs.Select(tab => tab.Defaults.Get(TabSettings.Opens)).Where(opens => !routes.Contains(opens)).ToList();
+
         Assert.Empty(missing);
     }
 
@@ -34,6 +42,11 @@ public sealed partial class DestinationRules
 
         Assert.Empty(clashes);
     }
+
+    private static HashSet<string> AppRoutes() => Files(".razor")
+        .Where(path => path.Contains("/Hosts/App/") || AppProject().IsMatch(path))
+        .SelectMany(path => PageRoute().Matches(File.ReadAllText(path)).Select(match => match.Groups[1].Value))
+        .ToHashSet();
 
     private static IEnumerable<string> Files(string suffix) =>
         RepoFiles.Under("src", suffix).Select(path => path.Replace(Path.DirectorySeparatorChar, '/'));
