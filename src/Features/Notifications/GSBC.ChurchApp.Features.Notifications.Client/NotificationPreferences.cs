@@ -61,7 +61,7 @@ public sealed class NotificationPreferences(
         }
     }
 
-    public async Task<Func<string, bool>> PushesOnThisPhoneAsync()
+    public async Task<Func<string, bool>> WantedOnThisPhoneAsync()
     {
         List<KindInfo> kinds = (await feeds.ReadPageAsync(new FeedPageQuery(NotificationsFeeds.Kinds, Limit: MostKinds)))
             .Select(record => Decode<KindInfo>(record.Payload))

@@ -28,14 +28,14 @@ public sealed class Inbox : IInboxCount, IDisposable
     private readonly NativeBridge _bridge;
     private readonly ClientSignals _signals;
     private readonly IEnumerable<IFollowedScopes> _followed;
-    private readonly NotificationPreferences _pushes;
+    private readonly NotificationPreferences _choices;
     private readonly HashSet<string> _readHere = [];
 
     public Inbox(ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences preferences, NativeBridge bridge, ClientSignals signals,
-        IEnumerable<IFollowedScopes> followed, NotificationPreferences pushes)
+        IEnumerable<IFollowedScopes> followed, NotificationPreferences choices)
     {
         _followed = followed;
-        _pushes = pushes;
+        _choices = choices;
         _feeds = feeds;
         _access = access;
         _outbox = outbox;
@@ -66,7 +66,7 @@ public sealed class Inbox : IInboxCount, IDisposable
             List<InboxItem> followed = (await ReadAsync(NotificationsFeeds.Public))
                 .Where(item => item.ScopeId is null || _followed.Any(follows => follows.Scopes.Contains(item.ScopeId)))
                 .ToList();
-            entries = OneNotification.OnePerThing(followed, await _pushes.PushesOnThisPhoneAsync())
+            entries = OneNotification.OnePerThing(followed, await _choices.WantedOnThisPhoneAsync())
                 .Select(item => new InboxEntry(item, !_readHere.Contains(item.Id)))
                 .ToList();
         }

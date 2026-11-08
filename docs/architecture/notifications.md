@@ -37,6 +37,10 @@ decided before anything raises one.
     "New in Summer Fit: …"). A person, or a signed-out phone, gets at most one notification, in the inbox and as a
     push, for one thing. When several reasons apply, the most specific wins; muting falls back to the next reason
     (see *One notification per thing* below).
+11. **Turned off means not in the inbox either** (owner, 2026-11-08: "nothing. inbox is for notifications"). A kind
+    someone has turned off reaches neither their inbox nor their phone; with several related ones, they get the most
+    specific one they haven't turned off, and if they've turned off all of them, nothing. Kinds that can't be turned
+    off (`Mandatory`) always arrive. Turning a kind off applies from then on (see *People's control*).
 
 ## The pieces
 
@@ -78,7 +82,7 @@ A kind has:
 | Part | Means |
 |---|---|
 | Key, description, area | Shown in preferences, grouped by area, in the same voice as abilities ("Can …" becomes "Tell me when …") |
-| `defaultPush` | Whether it pushes for someone who hasn't chosen. The inbox always gets it |
+| `defaultPush` | Whether it's on (inbox and push) for someone who hasn't chosen (decision 11) |
 | `Mandatory` | Can't be turned off (security). Implies push |
 | `PerScope` | `null`, or a scope kind such as `Ministry`: the switch is then per ministry ("Music: notices") |
 | `MayBeUrgent` | Whether a raise may be urgent (skips quiet hours, time-sensitive on iOS) |
@@ -117,13 +121,13 @@ await notifications.RaiseAsync(new Notification(
   each role an event is shown to), it raises them together, most specific first:
   `INotifications.RaiseOneOfAsync([inSeries, anySermon])`. Each is still its own record, and they share a `OneOf` id
   and a `Rank` (0 is most specific). For each person and each phone the raiser picks one, with
-  `OneNotification.Choose` (Notifications.Contracts): the most specific they're in the audience of **and** whose push
-  they haven't turned off; if they turned off every one they qualify for, the most specific goes to the inbox
-  without a push (the inbox always gets what's addressed to you). Only the chosen one gets an inbox row and a push, so
+  `OneNotification.Choose` (Notifications.Contracts): the most specific they're in the audience of **and** haven't
+  turned off; if they turned off every one they qualify for, nothing (decision 11). Only the chosen one gets an inbox row and a push, so
   unread counts, the badge and "N new" count it once. Public rows carry `OneOf` and `Rank`, and a signed-out phone's
-  inbox applies the same rule to the rows it follows, using the push choices kept on the phone
+  inbox applies the same rule to the rows it follows, using the choices kept on the phone
   (`OneNotification.OnePerThing`), offline. Separate raises are separate things, even with the same subject.
-  Tested in `OneNotificationTests` (the rule) and `OneNotificationDeliveryTests` (rows and pushes).
+  Tested in `OneNotificationTests` (the rule) and `OneNotificationDeliveryTests` (rows and pushes, and nothing when
+  every reason is turned off).
 - On start-up the server reconciles every registered kind into the public **`notifications.kinds`**
   feed, as Access does with the permission catalogue, so the phone's preferences list them without
   knowing the features.
@@ -324,7 +328,7 @@ by construction, public content: Follower only covers public notices. Neither fe
 
 ## People's control
 
-- **More → Notification settings** on the phone (also from the inbox's top bar): each area's kinds with a push switch, per ministry where
+- **More → Notification settings** on the phone (also from the inbox's top bar): each area's kinds with a switch (inbox and push), per ministry where
   the kind is per ministry ("Music: notices" beside Follow), mandatory ones shown on and locked with
   "Always on: it's about your account's safety". If iOS's permission has been refused the screen
   says so and opens Settings.
@@ -335,7 +339,14 @@ by construction, public content: Follower only covers public notices. Neither fe
 - **Stored per person** (`notifications.preferences`, synced through an own-records feed), or per
   phone when signed out (sent with the device registration). Signing in keeps the person's; the
   phone's are dropped, like its follows moving over.
-- The inbox always gets everything addressed to you; preferences only stop the push.
+- **A switch turned off stops that kind reaching you at all** (decision 11): no inbox row and no push. Mandatory
+  kinds always arrive, and so does a staff member's own test of an announcement (they asked for it). Unread counts,
+  the badge and "N new" count only the rows you got, so they need nothing extra.
+- **Turning a kind off applies from then on** (chosen 2026-11-08, the simplest rule): rows already in a signed-in
+  inbox stay, as read or unread as they were, and turning it back on doesn't bring back what was raised while it was
+  off (it was never written). A signed-out phone's inbox is worked out on the phone from the public rows it follows,
+  so there a kind turned off also hides the rows already shown, and turning it on shows them again, as unfollowing a
+  ministry already does.
 
 ## The first-open sheet
 
