@@ -78,5 +78,21 @@ window.gsbcEvents = (() => {
     }
   }
 
-  return { follow, unfollow, scrollToDay, saveCalendarFile, share };
+  async function copyHtml(html, text) {
+    try {
+      if (window.ClipboardItem && navigator.clipboard?.write) {
+        await navigator.clipboard.write([new ClipboardItem({
+          'text/html': new Blob([html], { type: 'text/html' }),
+          'text/plain': new Blob([text], { type: 'text/plain' }),
+        })]);
+        return true;
+      }
+      await navigator.clipboard.writeText(html);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  return { follow, unfollow, scrollToDay, saveCalendarFile, share, copyHtml };
 })();

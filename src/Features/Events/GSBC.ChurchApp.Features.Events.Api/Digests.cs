@@ -28,7 +28,7 @@ internal static partial class Digests
     public static IReadOnlySet<Guid> DefaultCalendars(EventsBook book) =>
         book.Calendars.Values.Where(calendar => calendar.ICalSource is not { Length: > 0 }).Select(calendar => calendar.Id).ToHashSet();
 
-    public static bool Worth(EventOccurrence occurrence) =>
+    private static bool Worth(EventOccurrence occurrence) =>
         occurrence.Kind != OccurrenceKind.Regular || occurrence.NotOn || occurrence.Missing.Count > 0;
 
     public static List<DigestItem> Candidates(EventsBook book, DateOnly start, int weeks, IReadOnlySet<Guid> calendars, DateTime now)
@@ -133,7 +133,7 @@ internal static partial class Digests
         return first <= start.AddDays(6) ? $"This {span}" : span;
     }
 
-    public static string PlainText(string? markdown)
+    private static string PlainText(string? markdown)
     {
         if (string.IsNullOrWhiteSpace(markdown))
             return "";

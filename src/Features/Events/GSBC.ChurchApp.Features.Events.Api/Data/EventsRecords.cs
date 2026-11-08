@@ -151,7 +151,7 @@ public sealed class DetailsReminderRecord
 
 public sealed class DigestRecord
 {
-    public DateOnly Start { get; set; }
+    public DateOnly Start { get; init; }
     public int Weeks { get; set; }
     public List<Guid>? CalendarIds { get; set; }
     public List<DigestEntry> Entries { get; set; } = [];
@@ -164,12 +164,12 @@ public sealed class DigestRecord
 
 public sealed class SentDigest
 {
-    public DateOnly End { get; set; }
-    public List<SentDigestItem> Items { get; set; } = [];
+    public DateOnly End { get; init; }
+    public List<SentDigestItem> Items { get; init; } = [];
 }
 
 public sealed class SentDigestItem
 {
-    public DigestShownItem Item { get; set; } = new();
-    public List<Guid> CalendarIds { get; set; } = [];
+    public DigestShownItem Item { get; init; } = new();
+    public List<Guid> CalendarIds { get; init; } = [];
 }

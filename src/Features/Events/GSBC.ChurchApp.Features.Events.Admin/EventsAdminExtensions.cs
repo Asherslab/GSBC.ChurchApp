@@ -11,7 +11,9 @@ public static class EventsAdminExtensions
     {
         modules.Add(new ClientModule("Events", typeof(EventsAdminExtensions).Assembly,
             [new NavEntry("Calendar", CalendarWorkbenchLinks.Page, "calendar", EventsPermissions.Edit, Group: NavGroups.Content,
-                Summary: "The church calendar: events, regular events, breaks and calendars")]));
+                Summary: "The church calendar: events, regular events, breaks and calendars"),
+             new NavEntry("Weekly digest", DigestPlaces.Desk, "megaphone", EventsPermissions.Digest, Group: NavGroups.Content,
+                Summary: "What's next at Good Shepherd, made from the calendar, for email and the app")]));
         return services.AddEventsClient().AddSingleton<IYourCalendarLink, PersonCalendarLink>().AddSingleton<IOfficeWeekSource, EventsOfficeWeek>();
     }
 }

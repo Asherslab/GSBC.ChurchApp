@@ -11,7 +11,7 @@ public static class EventsAppExtensions
     {
         modules.Add(new ClientModule("Events", typeof(EventsAppExtensions).Assembly,
             [new NavEntry("Calendar", EventsDestinations.Week.Route, "calendar",
-                AlsoUnder: [EventsDestinations.Event.PathPrefix, EventsDestinations.Calendar.PathPrefix])],
+                AlsoUnder: [EventsDestinations.Event.PathPrefix, EventsDestinations.Calendar.PathPrefix, EventsDestinations.WhatsNext.Path.TrimStart('/')])],
             EventsClientExtensions.Feeds,
             EventsClientExtensions.PrivateFeeds));
         return services.AddEventsOnPhone();

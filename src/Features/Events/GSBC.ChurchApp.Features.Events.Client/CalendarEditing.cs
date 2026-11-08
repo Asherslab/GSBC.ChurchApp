@@ -7,11 +7,12 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 public sealed class CalendarEditing(ChannelBase channel)
 {
     private readonly IEventEditingService _editing = channel.CreateGrpcService<IEventEditingService>();
-    private readonly ICalendarSetupService _setup = channel.CreateGrpcService<ICalendarSetupService>();
 
     public IEventEditingService Editing => _editing;
 
-    public ICalendarSetupService Setup => _setup;
+    public ICalendarSetupService Setup { get; } = channel.CreateGrpcService<ICalendarSetupService>();
+
+    public IDigestService Digest { get; } = channel.CreateGrpcService<IDigestService>();
 
     public ValueTask<CalendarDesk> DeskAsync() => _editing.DeskAsync(new Done());
 

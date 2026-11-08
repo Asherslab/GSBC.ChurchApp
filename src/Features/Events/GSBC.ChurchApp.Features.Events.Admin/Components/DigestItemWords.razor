@@ -1,0 +1,65 @@
+<section class="digest-words" aria-labelledby="digest-words-title">
+    <header class="digest-words__head">
+        <h2 id="digest-words-title">@(Item.Shown.Title.Length > 0 ? Item.Shown.Title : "Something new")</h2>
+        <span class="digest-words__note">@(Own ? "Not on the calendar" : "For the digest")</span>
+        <button type="button" class="icon-btn" aria-label="Close" @onclick="Closed"><Icon Name="x" Size="IconSize.Small" /></button>
+    </header>
+    @foreach ((string field, string label, string? hint, bool multiline) in Fields)
+    {
+        <div class="digest-words__field">
+            <TextField Label="@label" Value="@Item.Shown[field]" ValueChanged="value => Set(field, value)" Multiline="multiline" Hint="@hint"
+                       MaxLength="@(multiline ? 2000 : 200)" Type="@(field == DigestFields.Register ? "url" : "text")" />
+            @if (!Own && Item.Changed.Contains(field))
+            {
+                <button type="button" class="digest-words__back" @onclick="() => PutBack(field)">@(field == DigestFields.Description ? "Back to the calendar's words" : "Use the calendar's")</button>
+            }
+        </div>
+    }
+    @if (Own)
+    {
+        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="Removed">Take it out of the digest</Button>
+    }
+    else if (Item.Missing.Count > 0)
+    {
+        <p class="digest-words__missing">The calendar still needs @string.Join(" and ", Item.Missing.Select(EventWords.Need)) for this. The digest says so until it's set, unless you reword it.</p>
+    }
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required DigestItem Item { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+    [Parameter] public EventCallback Removed { get; set; }
+    [Parameter] public EventCallback Closed { get; set; }
+
+    private bool Own => Item.Kind == DigestItemKind.Own;
+
+    private IEnumerable<(string, string, string?, bool)> Fields =>
+    [
+        (DigestFields.Label, "Label", "Small, above the title: the ministry or kind", false),
+        (DigestFields.Title, "Title", null, false),
+        (DigestFields.When, "When it says", Own ? "In words: \"This Saturday 14 November\"" : null, false),
+        (DigestFields.Time, "Time", "Leave it empty for a whole day", false),
+        (DigestFields.Description, "What it says", "Plain words. A blank line starts a new paragraph.", true),
+        (DigestFields.Register, "Register link", "Shows a Register button", false),
+    ];
+
+    private Task Set(string field, string value)
+    {
+        Item.Words = Item.Words.With(field, value);
+        if (Own || value != Item.CalendarWords[field])
+        {
+            if (!Item.Changed.Contains(field))
+                Item.Changed.Add(field);
+        }
+        else
+            Item.Changed.Remove(field);
+        return Changed.InvokeAsync();
+    }
+
+    private Task PutBack(string field)
+    {
+        Item.Changed.Remove(field);
+        Item.Words = Item.Words.With(field, "");
+        return Changed.InvokeAsync();
+    }
+}

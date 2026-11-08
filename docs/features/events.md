@@ -129,6 +129,11 @@ events, specials and breaks, and some arrive before their details ("full details
     (owner, 2026-11-08): today's What's Next already puts a stock church photo related to each item between them,
     so the digest's picture cards are what people know, unlike the calendar, which stays text first.
 
+    **Built as a real thing** (owner, 2026-11-08: "for weekly digest, build an actual thing, real. doesn't have to be
+    sendable, but a real example"), on real calendar data, following the mocks: the admin panel's *Weekly digest*, *Copy
+    for email*, *Send to the app* and the app's *What's next*. *Send to the app* doesn't notify anyone; *Send to my phone*
+    is a test to yourself. See *Decided while building (the weekly digest)* below.
+
 ### What an event carries (owner, 2026-11-07)
 
 19. **Title, calendar and when** (start and end, all day, or several days for a camp), and optionally: a short
@@ -427,7 +432,29 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   served without a valid link of someone it's for (nor after their role is taken away, nor to a signed-out phone
   holding a stale *Calendar added*); a reset link refused. `EndpointRules` allows exactly the four paths.
 
-**Not built yet:** the digest (decision 18).
+**The weekly digest (2026-11-08, decision 18):** real code on the calendar's data, built with impeccable from the
+approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-digestdesk-razor-9230f653.md` and
+`.impeccable/surfaces/eatures-events-client-whatsnextview-razor-d8eabd9c.md`).
+
+- **Contracts:** the `Digest` service (`gsbc.events.Digest`, every method `[Requires(events.digest)]`): `Open` (the
+  digest for a fortnight, pre-filled and merged with what staff chose), `Save`, `SendToApp`, `SendToMyPhone`. The new
+  global permission `events.digest` and the *Digest maker* system role. Feeds `events.digest` (public) and
+  `events.digest.private` (each row carries its audience). The place `/whats-next` (*What's next*, Places in the app) and
+  the notification kind `events.digest.out`.
+- **Storage:** `events.digests`, one row per fortnight (keyed by its Monday): weeks, the calendars chosen, staff's entries
+  (ticked, order, reworded fields, things not on the calendar) and the snapshot last sent.
+- **Rules** (`Digests`, pure): what's in it, grouping, the when lines, merging staff choices with the calendar, what goes
+  to the app. `EventsPublisher.DigestRows` publishes the latest sent digest on every publish.
+- **The admin panel:** *Weekly digest* (`/digest`, in the sidebar under Content for holders of `events.digest`):
+  `DigestDesk` and `DigestItemWords`, with the app's own `WhatsNextView` in a `PhoneFrame` and the email in a frame.
+- **The phone:** `WhatsNextPage` (`/whats-next`) over `WhatsNextView` (Events.Client), read from the feeds by
+  `DigestReader`, through `LiveData` with `Remember`.
+- **Email:** `DigestEmail` (Events.Client) writes the email as table-based HTML with inline styles, plus a plain-text copy.
+- **Tests:** `Events.Api.Tests/DigestTests` (unit): what it's made of, the when lines, staff choices outliving the
+  calendar, private items only in the private feed; `Events.Client.Tests/DigestTests` (unit): the email escapes staff
+  words and only links a web address, the app drops what's passed and heads weeks from today.
+- **Checked** on a backend of its own (`Dev__PortOffset=200`, main's database copied with pg_dump) with a test account
+  holding only *Digest maker*: pre-filled from the sample calendar, reworded, previewed in the app and as email, sent.
 
 ## Decided while building (Station 1, 2026-11-08)
 
@@ -639,6 +666,50 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   link, so *waiting to publish* and *asked to show on your calendar* had been failing when raised (the tests' fake
   notifications didn't apply the rule; now they do). Each links to the calendar it's about (`/calendar/{id}`).
 
+## Decided while building (the weekly digest, 2026-11-08)
+
+- **What's in it:** the shown one-off events, specials, dates that aren't on (a break's, or one cancelled) and dates of a
+  regular event that still need their details, in the chosen calendars over one, two (the default) or three weeks from the
+  Monday after today. A regular event that needs details on each date (outreach Saturdays) is exactly the kind of thing the
+  digest announces, so its dates are in while they're missing something. Ordinary regular dates never are. Calendars copied
+  from iCal start unticked.
+- **One item per thing, not per date:** dates of the same regular event with the same title, place and time are one item
+  ("The next two Saturdays"); a break's dates for one regular event are one item, *No Impact Kids*, labelled "Kids on break"
+  ("Not on" when it isn't a break), saying when it's back.
+- **The when line** is fixed words from the fortnight's Monday: "This Thursday 12 November" in the first week, "Friday 20
+  November" after, "The next two Sundays", "Sundays 22 and 29 November", "This Friday 13 to Sunday 15 November" for a camp.
+  The time sits apart ("7:30pm"): the email joins them with "@", the app with "·", as today's What's Next and the app do.
+- **Staff choices outlive the calendar:** saved per fortnight as entries (ticked, order, which fields are reworded and to
+  what). Each time it opens, the calendar is read again: an event that's gone drops out, a new one slots in after the last
+  item dated on or before it and is marked *New on the calendar*, and a field not reworded follows the calendar. Typing a
+  field back to the calendar's words keeps it in step again; *Use the calendar's* puts it back.
+- **Things not on the calendar** (*Add something not on the calendar*): every field is staff's; for everyone in the app.
+- **Who:** `events.digest`, a global permission, and a *Digest maker* role (Owner includes it). Not given to Calendars
+  manager automatically: the office chooses who makes the digest.
+- **How it reaches the app: Events' own feeds**, not drafts: the digest is the calendar's own words, already published
+  with the calendar's audiences, and a draft would add a publish step for something staff have just checked. *Send to the
+  app* stores a snapshot of the ticked items in order with their words; the publisher writes it to `events.digest`, or to
+  `events.digest.private` with the union of the item's calendars' audiences, recomputed on every publish (so a calendar
+  made private later takes its item with it). Only the latest sent digest is in the feeds. Changing it after sending shows
+  *changed since it went to the app* and *Send again*.
+- **What the app shows:** `/whats-next`, the latest digest, with what has passed dropped and the weeks headed from today
+  (*This week* is the digest's first week until it starts). Each event is a raised card with its picture, label, title,
+  when line, words, place and contacts' names; its title opens the event and *Add to calendar* saves it when the phone has
+  it; *Register* opens the link. A date that's not on is a sand callout. Nothing sent, or everything passed: an empty state
+  that opens the calendar. It's a place in Places in the app, so Home or an announcement can link to it.
+- **No notification to everyone.** The notification couldn't be tested without reaching real people (dev's phones are the
+  owner's and testers'), and telling the church is a conscious act (decision 31): an announcement can link to What's next.
+  *Send to my phone* raises `events.digest.out` to the caller alone, marked Test, opening `/whats-next`; it needs the digest
+  sent first, since it opens what the app has. The kind is declared for holders of `events.digest` until a church-wide
+  send is decided.
+- **Copy for email** puts the email on the clipboard as HTML (and plain text), so pasting into an email editor keeps the
+  headings, pictures and buttons. Pictures are their public media addresses; a private picture is left out. *See all
+  events* is the app host's shared link to This week (`/open/week`), which opens the app or says how to get it.
+- **The admin page** follows the approved mock in Platform.Ui's `SplitView`: the list (grip, tick, picture, label, title
+  with pills: *Reworded*, *New on the calendar*, *Needs details*, *Register link*, *Only for Kids team*; place and contact;
+  the when line and time) and, on the right, the chosen item's words, *In the app | Email*, the preview, *Copy for email*
+  and *Send to the app*. It saves as you change it. Arrow buttons move a row too, for the keyboard.
+
 ## What the owner sets up
 
 - **Nothing new in Cloudflare for dev.** For production, the zone's Browser Cache TTL set to *Respect existing headers*
@@ -652,7 +723,9 @@ the locked sketches and finish-reviewed (`.impeccable/review/events/`).
   `curl -sD - -o /dev/null https://dev-app.baptist.com.au/calendars/public.ics` for `no-store` on dev, and on
   production for `public, max-age=900` on the public links and `private, no-store` with no `cf-cache-status: HIT` on
   a secret link.
-- **The digest proof of concept** (decision 18): mocks made (`.impeccable/mocks/digest/`); to show staff.
+- **The weekly digest** (decision 18): built; to show staff. Still to decide: which tool sends *What's next* today
+  (Pinned for later), whether *Send to the app* should also tell everyone (an announcement can link to What's next
+  meanwhile), and who gets *Digest maker*.
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.

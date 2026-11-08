@@ -1,0 +1,388 @@
+@page "/digest"
+@using Grpc.Core
+@using GSBC.ChurchApp.Platform.Common
+@using GSBC.ChurchApp.Platform.Contracts.Destinations
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@implements IDisposable
+@inject CalendarEditing Editing
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+@inject Shell Shell
+@inject IJSRuntime Js
+
+<LiveData TValue="DigestDraft" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't make the digest right now">
+    <ChildContent>@Drawn()</ChildContent>
+    <Loading>
+        <TitleBand Title="Weekly digest" BackHref="calendar" BackText="Calendar" />
+        <Skeleton Shape="SkeletonShape.Lines" Count="8" />
+    </Loading>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> DeskFeeds = [EventsFeeds.Public, EventsFeeds.Digest];
+    private static readonly IReadOnlyList<SegmentOption<int>> WeekOptions = [new(1, "One week"), new(2, "Two weeks"), new(3, "Three weeks")];
+    private static readonly IReadOnlyList<SegmentOption<bool>> PreviewOptions = [new(false, "In the app"), new(true, "Email")];
+    private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(700);
+
+    private DigestDraft? _draft;
+    private string? _selected;
+    private bool _email;
+    private SaveState _save = SaveState.Saved;
+    private CancellationTokenSource? _settling;
+    private string? _problem;
+    private string? _told;
+    private string? _busy;
+    private string? _dragging;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateOnly Today => EventWords.Today(Now);
+
+    private async Task<DigestDraft> LoadAsync()
+    {
+        DigestDraft fresh = await Editing.Digest.OpenAsync(new DigestQuery { Start = _draft?.Start ?? "" });
+        if (_draft is null || _save == SaveState.Saved)
+            _draft = fresh;
+        return fresh;
+    }
+
+    private RenderFragment Drawn() => _draft is not { } draft ? @<text></text> : @<text>
+        <TitleBand Title="Weekly digest" BackHref="calendar" BackText="Calendar"
+                   Lead="What's next at Good Shepherd, made from the calendar: its one-off events, specials and breaks. Untick what you'd leave out, drag to reorder and reword anything for the digest. The calendar itself doesn't change." />
+        <SplitView DetailLabel="The chosen item and the preview">
+        <ChildContent>
+            <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
+
+            <div class="digest-desk__choices">
+                <Segmented TValue="int" Label="How many weeks" Options="WeekOptions" Value="draft.Weeks" ValueChanged="ChooseWeeksAsync" />
+                <span class="digest-desk__range">@RangeOf(draft)</span>
+            </div>
+            <ToggleChips TValue="string" Label="Calendars in the digest" Chips="Chips(draft)" Toggled="ToggleCalendarAsync" Class="digest-desk__calendars" />
+
+            @if (_problem is not null)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            }
+
+            @if (draft.Items.Count == 0)
+            {
+                <EmptyState Icon="calendar" Title="Nothing special on these weeks" Body="No one-off events, specials or breaks in the calendars you chose. Add something not on the calendar, or choose more weeks." />
+            }
+            else
+            {
+                <ol class="digest-list" aria-label="What's in the digest">
+                    @for (int index = 0; index < draft.Items.Count; index++)
+                    {
+                        DigestItem item = draft.Items[index];
+                        int at = index;
+                        <li class="digest-row @(item.Key == _selected ? "digest-row--chosen" : "") @(item.Included ? "" : "digest-row--left-out") @(item.Key == _dragging ? "digest-row--dragging" : "")"
+                            draggable="true" @ondragstart="() => _dragging = item.Key" @ondragend="() => _dragging = null"
+                            @ondragover:preventDefault="true" @ondrop="() => Drop(at)">
+                            <span class="digest-row__grip" aria-hidden="true"><Icon Name="grid" Size="IconSize.Small" /></span>
+                            <input type="checkbox" class="digest-row__tick" checked="@item.Included" aria-label="@($"Put {item.Shown.Title} in the digest")"
+                                   @onchange="() => Change(() => item.Included = !item.Included)" />
+                            <span class="digest-row__thumb">
+                                @if (item.Picture is { } picture)
+                                {
+                                    <MediaImage Media="picture" Size="MediaSizeName.Thumbnail" Alt="" />
+                                }
+                                else
+                                {
+                                    <span class="digest-row__no-picture">@(item.Kind == DigestItemKind.NotOn ? "Not on" : "No picture")</span>
+                                }
+                            </span>
+                            <button type="button" class="digest-row__body" aria-pressed="@(item.Key == _selected ? "true" : "false")" @onclick="() => _selected = item.Key">
+                                <span class="digest-row__label @(item.Kind == DigestItemKind.NotOn ? "digest-row__label--off" : "")">@item.Shown.Label</span>
+                                <span class="digest-row__title">
+                                    @(item.Shown.Title.Length > 0 ? item.Shown.Title : "Untitled")
+                                    @foreach ((string words, PillTone tone) in PillsOf(item))
+                                    {
+                                        <Pill Tone="tone">@words</Pill>
+                                    }
+                                </span>
+                                <span class="digest-row__detail">@DetailOf(item)</span>
+                            </button>
+                            <span class="digest-row__when">@item.Shown.When<small>@item.Shown.Time</small></span>
+                            <span class="digest-row__moves">
+                                <button type="button" class="icon-btn" aria-label="@($"Move {item.Shown.Title} up")" disabled="@(index == 0)" @onclick="() => Move(at, at - 1)"><Icon Name="arrow-up" Size="IconSize.Small" /></button>
+                                <button type="button" class="icon-btn" aria-label="@($"Move {item.Shown.Title} down")" disabled="@(index == draft.Items.Count - 1)" @onclick="() => Move(at, at + 1)"><Icon Name="arrow-down" Size="IconSize.Small" /></button>
+                            </span>
+                        </li>
+                    }
+                </ol>
+            }
+            <div class="digest-desk__add">
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="AddOwn">Add something not on the calendar</Button>
+            </div>
+            <p class="digest-desk__hint">Regular events aren't listed unless a date is different, isn't on or still needs its details. <strong>Rewording</strong> changes the digest only; the event in the calendar keeps its own words.</p>
+        </ChildContent>
+        <Detail>
+            @if (Chosen(draft) is { } chosen)
+            {
+                <DigestItemWords Item="chosen" Changed="() => Change(() => { })" Removed="() => Remove(chosen)" Closed="() => _selected = null" />
+            }
+            <Segmented TValue="bool" Label="Preview" Options="PreviewOptions" Value="_email" ValueChanged="value => _email = value" Class="digest-desk__preview-switch" />
+            @if (_email)
+            {
+                <iframe class="digest-email" title="The email, as Copy for email gives it" srcdoc="@EmailPage(draft)" sandbox=""></iframe>
+            }
+            else
+            {
+                <div class="digest-desk__phone" data-fit-height>
+                    <PhoneFrame Label="What's next in the app, as it looks once sent" Title="What's next" Bell="true" OnRoute="@EventsPlaces.Week">
+                        <WhatsNextView Digest="AppDigest(draft)" Today="Today" Preview="true" />
+                    </PhoneFrame>
+                </div>
+            }
+            <div class="digest-desk__send">
+                <Button Variant="ButtonVariant.Quiet" Icon="copy" Busy="@(_busy == "copy")" OnClick="CopyForEmailAsync">Copy for email</Button>
+                <Button Icon="send" Busy="@(_busy == "send")" Disabled="@(draft.SentAsItIs || draft.Items.All(item => !item.Included))" OnClick="SendToAppAsync">@(draft.SentAt is null ? "Send to the app" : "Send again")</Button>
+            </div>
+            <p class="digest-desk__reach" role="status">@(_told ?? ReachLine(draft))</p>
+            @if (draft.SentAsItIs)
+            {
+                <div class="digest-desk__test">
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="smartphone" Busy="@(_busy == "phone")" OnClick="SendToMyPhoneAsync">Send to my phone</Button>
+                    <span>A test notification to you alone that opens What's next. Nobody else is told.</span>
+                </div>
+            }
+        </Detail>
+        </SplitView>
+    </text>;
+
+    private DigestItem? Chosen(DigestDraft draft) => draft.Items.FirstOrDefault(item => item.Key == _selected);
+
+    private static IReadOnlyList<ToggleChip<string>> Chips(DigestDraft draft) =>
+        draft.Calendars.Select(calendar => new ToggleChip<string>(calendar.Id, calendar.Name, draft.CalendarIds.Contains(calendar.Id))).ToList();
+
+    private static string RangeOf(DigestDraft draft) =>
+        EventDates.Parse(draft.Start) is { } start && EventDates.Parse(draft.End) is { } end ? EventWords.Range(start, end) : "";
+
+    private static IEnumerable<(string, PillTone)> PillsOf(DigestItem item)
+    {
+        if (item.Kind == DigestItemKind.Own)
+            yield return ("Not on the calendar", PillTone.Quiet);
+        if (item.Reworded)
+            yield return ("Reworded", PillTone.Marker);
+        if (item.IsNew)
+            yield return ("New on the calendar", PillTone.Accent);
+        if (item is { ForEveryone: false, Kind: not DigestItemKind.Own })
+            yield return ($"Only for {item.CalendarName}", PillTone.Quiet);
+        if (item.Missing.Count > 0)
+            yield return ("Needs details", PillTone.Marker);
+        if (item.Shown.RegisterLink.Length > 0)
+            yield return ("Register link", PillTone.Accent);
+    }
+
+    private static string DetailOf(DigestItem item)
+    {
+        if (!item.Included)
+            return "Left out of this digest";
+        return EventWords.Join(item.Place, item.Contacts.Length > 0 ? $"contact {item.Contacts}" : null) is { Length: > 0 } detail
+            ? detail
+            : item.Kind == DigestItemKind.NotOn ? "A date that isn't on" : "";
+    }
+
+    private string SentLine(DigestDraft draft)
+    {
+        if (draft.SentAt is { } sent)
+            return draft.SentAsItIs ? $"sent to the app {Ago(sent)}" : $"changed since it went to the app {Ago(sent)}";
+        return draft.LastSent is { } last && EventDates.Parse(last.Start) is { } start
+            ? $"the one for {EventWords.Date(start)} went to the app {Ago(last.SentAt)}"
+            : "not sent to the app yet";
+    }
+
+    private string Ago(DateTime utc)
+    {
+        DateTime at = ChurchTime.ToChurch(utc);
+        DateOnly day = DateOnly.FromDateTime(at);
+        return (Today.DayNumber - day.DayNumber) switch
+        {
+            0 => $"today at {ChurchDates.Time(at)}",
+            1 => $"yesterday at {ChurchDates.Time(at)}",
+            _ => $"on {EventWords.LongDate(day)}",
+        };
+    }
+
+    private static string ReachLine(DigestDraft draft)
+    {
+        int count = draft.Items.Count(item => item.Included);
+        int narrower = draft.Items.Count(item => item is { Included: true, ForEveryone: false });
+        string things = count == 1 ? "1 thing" : $"{count} things";
+        string sending = draft.SentAsItIs ? "It's in the app as it is." : $"Send to the app puts {things} on What's next in the app.";
+        return narrower == 0 ? $"{sending} No notification goes out." : $"{sending} {narrower} only show to the people their calendar is for. No notification goes out.";
+    }
+
+    private WhatsNextDigest AppDigest(DigestDraft draft)
+    {
+        List<DigestShownItem> items = draft.Items.Where(item => item.Included).Select((item, order) => new DigestShownItem
+        {
+            Key = item.Key, Order = order, Kind = item.Kind, Words = item.Shown, Picture = item.Picture, Place = item.Place, Contacts = item.Contacts,
+            OccurrenceId = item.OccurrenceIds.FirstOrDefault() ?? "", FirstDate = item.FirstDate.Length > 0 ? item.FirstDate : draft.Start, LastDate = item.LastDate.Length > 0 ? item.LastDate : draft.End,
+        }).ToList();
+        return new WhatsNextDigest(new DigestShown { Start = draft.Start, End = draft.End }, items);
+    }
+
+    private IReadOnlyList<EmailItem> EmailItems(DigestDraft draft) => draft.Items.Where(item => item.Included).Select(EmailItem.Of).ToList();
+
+    private string AllEventsLink => DestinationPaths.Shareable(new Uri(Navigation.BaseUri), EventsPlaces.Week);
+
+    private string EmailPage(DigestDraft draft) =>
+        $"<!doctype html><html><head><meta charset=\"utf-8\"><base target=\"_blank\"></head><body style=\"margin:0\">{DigestEmail.Html(RangeOf(draft), EmailItems(draft), AllEventsLink)}</body></html>";
+
+    private Task ChooseWeeksAsync(int weeks)
+    {
+        if (_draft is null)
+            return Task.CompletedTask;
+        _draft.Weeks = weeks;
+        return SaveNowAsync();
+    }
+
+    private Task ToggleCalendarAsync(ToggleChip<string> chip)
+    {
+        if (_draft is null)
+            return Task.CompletedTask;
+        if (!_draft.CalendarIds.Remove(chip.Value))
+            _draft.CalendarIds.Add(chip.Value);
+        return SaveNowAsync();
+    }
+
+    private void Move(int from, int to)
+    {
+        if (_draft is null || to < 0 || to >= _draft.Items.Count)
+            return;
+        DigestItem item = _draft.Items[from];
+        _draft.Items.RemoveAt(from);
+        _draft.Items.Insert(to, item);
+        Change(() => { });
+    }
+
+    private void Drop(int at)
+    {
+        if (_draft is null || _dragging is null)
+            return;
+        int from = _draft.Items.FindIndex(item => item.Key == _dragging);
+        _dragging = null;
+        if (from >= 0 && from != at)
+            Move(from, at);
+    }
+
+    private void AddOwn()
+    {
+        if (_draft is null)
+            return;
+        DigestItem own = new()
+        {
+            Key = $"{OwnPrefix}{Guid.NewGuid():N}", Kind = DigestItemKind.Own, Included = true, ForEveryone = true, Changed = [.. DigestFields.All],
+            Words = new DigestWords { Title = "Something new", When = "" },
+        };
+        _draft.Items.Add(own);
+        _selected = own.Key;
+        Change(() => { });
+    }
+
+    private void Remove(DigestItem item)
+    {
+        _draft?.Items.Remove(item);
+        _selected = null;
+        Change(() => { });
+    }
+
+    private const string OwnPrefix = "own:";
+
+    private void Change(Action change)
+    {
+        change();
+        _told = null;
+        _problem = null;
+        _save = SaveState.Waiting;
+        _settling?.Cancel();
+        _settling = new CancellationTokenSource();
+        CancellationToken settling = _settling.Token;
+        _ = Task.Delay(SettleTime, settling).ContinueWith(_ => InvokeAsync(SaveNowAsync), settling, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
+    }
+
+    private async Task SaveNowAsync()
+    {
+        if (_draft is not { } draft)
+            return;
+        if (_settling is { } settling)
+            await settling.CancelAsync();
+        _save = SaveState.Saving;
+        StateHasChanged();
+        try
+        {
+            DigestDraft saved = await Editing.Digest.SaveAsync(new DigestSave
+            {
+                Start = draft.Start, Weeks = draft.Weeks, CalendarIds = draft.CalendarIds,
+                Entries = draft.Items.Select(item => new DigestEntry { Key = item.Key, Included = item.Included, Changed = item.Changed, Words = item.Words, Own = item.Kind == DigestItemKind.Own }).ToList(),
+            });
+            if (_save == SaveState.Saving)
+            {
+                _draft = saved;
+                _save = SaveState.Saved;
+            }
+        }
+        catch (RpcException exception)
+        {
+            _save = SaveState.Failed;
+            _problem = CalendarEditing.Problem(exception);
+        }
+        StateHasChanged();
+    }
+
+    private async Task CopyForEmailAsync()
+    {
+        if (_draft is not { } draft)
+            return;
+        _busy = "copy";
+        string range = RangeOf(draft);
+        bool copied = await Js.InvokeAsync<bool>("gsbcEvents.copyHtml", DigestEmail.Html(range, EmailItems(draft), AllEventsLink), DigestEmail.Text(range, EmailItems(draft), AllEventsLink));
+        _busy = null;
+        _told = copied
+            ? "Copied. Paste it into a new email: the pictures, headings and buttons come with it."
+            : "Couldn't copy here. Open Email above, select it all and copy.";
+    }
+
+    private async Task SendToAppAsync()
+    {
+        if (_draft is null)
+            return;
+        if (_save != SaveState.Saved)
+            await SaveNowAsync();
+        if (_save != SaveState.Saved || _draft is not { } draft)
+            return;
+        _busy = "send";
+        try
+        {
+            _draft = await Editing.Digest.SendToAppAsync(new DigestRef { Start = draft.Start });
+            await Shell.HapticAsync();
+            _told = "Sent. It's on What's next in the app now; phones have it the next time they sync. No notification went out.";
+        }
+        catch (RpcException exception)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        _busy = null;
+    }
+
+    private async Task SendToMyPhoneAsync()
+    {
+        if (_draft is not { } draft)
+            return;
+        _busy = "phone";
+        try
+        {
+            await Editing.Digest.SendToMyPhoneAsync(new DigestRef { Start = draft.Start });
+            _told = "Sent to your phone, marked Test. Tap it to open What's next.";
+        }
+        catch (RpcException exception)
+        {
+            _problem = CalendarEditing.Problem(exception);
+        }
+        _busy = null;
+    }
+
+    public void Dispose() => _settling?.Cancel();
+}

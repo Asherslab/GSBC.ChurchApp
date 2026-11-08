@@ -1,0 +1,43 @@
+@page "/whats-next"
+@inject DigestReader Reader
+@inject CalendarDiary Diary
+@inject TimeProvider Clock
+@inject Shell Shell
+@inject IJSRuntime Js
+
+<LiveData TValue="WhatsNextScreen" Load="LoadAsync" Feeds="ScreenFeeds" Remember="@DigestReader.Remembered">
+    <ChildContent>
+        <Page Title="What's next" BackHref="@EventsPlaces.Week" BackLabel="This week" StuckAt="130">
+            <WhatsNextView Digest="context.Value.Digest" Today="Today" HasEvent="item => context.Value.Diary.Find(item.OccurrenceId) is not null"
+                           OnAdd="item => AddToCalendarAsync(context.Value.Diary, item)" OnRegister="RegisterAsync" />
+        </Page>
+    </ChildContent>
+    <Loading>
+        <Page Title="What's next" BackHref="@EventsPlaces.Week" BackLabel="This week">
+            <Masthead Title="What's next" />
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private sealed record WhatsNextScreen(WhatsNextDigest Digest, Diary Diary);
+
+    private static readonly IReadOnlyList<string> ScreenFeeds = [.. DigestReader.Feeds, .. CalendarDiary.Feeds];
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateOnly Today => EventWords.Today(Now);
+
+    private async Task<WhatsNextScreen> LoadAsync() => new(await Reader.LoadAsync(), await Diary.LoadAsync());
+
+    private async Task AddToCalendarAsync(Diary diary, DigestShownItem item)
+    {
+        if (diary.Find(item.OccurrenceId) is not { } occurrence)
+            return;
+        await Shell.HapticAsync();
+        await Js.InvokeVoidAsync("gsbcEvents.saveCalendarFile", EventFile.NameOf(occurrence), EventFile.Of(occurrence, Now));
+    }
+
+    private async Task RegisterAsync(string link) => await Shell.OpenExternalAsync(link);
+}
