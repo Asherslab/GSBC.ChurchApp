@@ -17,7 +17,7 @@ Decision page: `.impeccable/mocks/website/index.html` (Split reader, Shelves, Ag
 
 ## Direction contract
 
-seed: ea8fb824f9ad2ae1c68f249533af49ad (surface, read; dealt 7, 5, 3; built 3)
+seed: seed:2e6865572863ee5c (surface, read; dealt 7, 5, 3; built 3)
 
 THESIS: the church's week, read top to bottom. Events by week with one date tile per day, regular services as quiet lines and one-offs in full; sermons lead with the latest, then by month. Refuses the poster grid and the empty "List | Calendar" switcher.
 
@@ -25,7 +25,7 @@ OWN-WORLD: the website itself: DM Serif Text for reading and headings, Montserra
 
 STORY: what's on this week and what's coming, then one tap to an event's facts or a sermon's player; the website's address follows so it can be shared.
 
-FIRST VIEWPORT: events: calendar chips and Subscribe, then This week with today's tile tinted. Sermons: the latest sermon with Listen and Watch, then search.
+FIRST VIEWPORT: events: calendar chips and Subscribe, then the next dated events; Regular gatherings follow them. Sermons: the latest sermon with Listen and Watch, then search.
 
 SIGNATURE: the date tile (green weekday band, serif day number) anchoring each day and heading an event's page; the iframe that grows to its content and keeps the website's address in step.
 

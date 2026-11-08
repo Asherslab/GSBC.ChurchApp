@@ -15,8 +15,7 @@ h1 { font-family: var(--site-serif); font-weight: 400; font-size: 2.5rem; color:
 .card { background: var(--site-white); border: 1px solid var(--site-line); border-radius: 6px; padding: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem; }
 .card[data-chosen] { border-color: var(--site-green); box-shadow: 0 6px 20px var(--site-shadow); }
 .card h2 { font-family: var(--site-serif); font-weight: 400; font-size: 1.5rem; margin: 0; color: var(--site-green-ink); }
-.roll { font-weight: 600; font-size: 0.75rem; letter-spacing: 0.08em; color: var(--site-ink-3); }
-.chosen { align-self: start; padding: 0.125rem 0.625rem; border-radius: 999px; background: var(--site-green); color: var(--site-white); font-weight: 600; font-size: 0.8125rem; }
+.chosen { display: inline-block; vertical-align: middle; margin-left: 0.5rem; font-family: var(--site-sans); padding: 0.125rem 0.625rem; border-radius: 999px; background: var(--site-green); color: var(--site-white); font-weight: 600; font-size: 0.8125rem; }
 .view { position: relative; height: 26rem; overflow: hidden; border: 1px solid var(--site-line); border-radius: 4px; }
 .view iframe { position: absolute; top: 0; left: 0; width: 250%; height: 250%; transform: scale(0.4); transform-origin: 0 0; border: 0; pointer-events: none; }
 .card p { margin: 0; font-size: 0.9375rem; }
@@ -37,7 +36,6 @@ h1 { font-family: var(--site-serif); font-weight: 400; font-size: 2.5rem; color:
 
 <div class="cards">
 <section class="card">
-<span class="roll">THE ROLL</span>
 <h2>Split reader</h2>
 <div class="view"><iframe src="split.html" title="Split reader sketch" tabindex="-1"></iframe></div>
 <p>A list on the left and the chosen event or sermon open beside it, like a mail app.</p>
@@ -54,10 +52,9 @@ h1 { font-family: var(--site-serif); font-weight: 400; font-size: 2.5rem; color:
 </section>
 
 <section class="card" data-chosen>
-<span class="chosen">Built overnight</span>
-<h2>Agenda</h2>
+<h2>Agenda <span class="chosen">built overnight</span></h2>
 <div class="view"><iframe src="agenda.html" title="Agenda sketch" tabindex="-1"></iframe></div>
-<p>Events by week, each day anchored by a date tile; regular services as quiet single lines, one-offs and specials in full. Sermons lead with the latest, then by month in the website's own rows.</p>
+<p>Events by week, each day anchored by a date tile; one-offs and specials in full, day-to-day services once under Regular gatherings. Sermons lead with the latest, then by month in the website's own rows.</p>
 <ul><li>Reads the same on a phone and a computer, top to bottom, which suits a resizing iframe.</li><li>Keeps the app's calendar decisions (regular events in the background, "Not on this week").</li><li>Closest to the pages people know, made clearer.</li></ul>
 <a href="events.html">Open the events</a>
 </section>

@@ -30,29 +30,6 @@ else if (WeekList.Count == 0 && Gatherings.Count == 0)
 }
 else
 {
-    @if (Gatherings.Count > 0)
-    {
-        <section class="regulars" aria-labelledby="regulars">
-            <h2 class="regulars-head" id="regulars">Regular gatherings</h2>
-            <ul class="regular-list">
-                @foreach (RegularGathering gathering in Gatherings)
-                {
-                    <li>
-                        <a href="@EventHref(gathering.Next)">@gathering.Next.Fields.Title</a>
-                        <span class="regular-when"><SiteIcon Name="repeat" /> @gathering.When</span>
-                        @if (gathering.Place is { } place)
-                        {
-                            <span class="regular-where"><SiteIcon Name="pin" /> @place</span>
-                        }
-                        @if (gathering.NotOn is { } off)
-                        {
-                            <span class="not-on-line"><SiteIcon Name="paused" /> @off</span>
-                        }
-                    </li>
-                }
-            </ul>
-        </section>
-    }
     @if (WeekList.Count == 0)
     {
         <section class="empty"><h2>No special events coming up</h2><p>Anything special@(Showing is null ? "" : $" in {Showing.Name}") appears here as soon as it's added in the app.</p></section>
@@ -79,6 +56,29 @@ else
     @if (EventListing.HasLater(Ahead, Today, Weeks))
     {
         <div class="more"><a class="button button-quiet" href="@ListHref(Showing?.Slug, Weeks + EventListing.FirstWeeks)">Show the next @EventListing.FirstWeeks weeks</a></div>
+    }
+    @if (Gatherings.Count > 0)
+    {
+        <section class="regulars" aria-labelledby="regulars">
+            <h2 class="regulars-head" id="regulars">Regular gatherings</h2>
+            <ul class="regular-list">
+                @foreach (RegularGathering gathering in Gatherings)
+                {
+                    <li>
+                        <a href="@EventHref(gathering.Next)">@gathering.Next.Fields.Title</a>
+                        <span class="regular-when"><SiteIcon Name="repeat" /> @gathering.When</span>
+                        @if (gathering.Place is { } place)
+                        {
+                            <span class="regular-where"><SiteIcon Name="pin" /> @place</span>
+                        }
+                        @if (gathering.NotOn is { } off)
+                        {
+                            <span class="not-on-line"><SiteIcon Name="paused" /> @off</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </section>
     }
 }
 

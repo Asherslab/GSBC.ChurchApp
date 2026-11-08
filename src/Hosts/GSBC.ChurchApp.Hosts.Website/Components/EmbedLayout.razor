@@ -11,8 +11,15 @@
 <main class="embed">
     @Body
     <p class="app-note">
-        <a href="@Links.InApp(IsEvents ? "week" : "sermons")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Get the Good Shepherd app</a>
-        <a href="@Links.Subscribe(null)"><SiteIcon Name="calendar" /> Add the church calendar to yours</a>
+        @if (IsEvents)
+        {
+            <a href="@Links.InApp("week")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Get the Good Shepherd app</a>
+            <a href="@Links.Subscribe(null)"><SiteIcon Name="calendar" /> Add the church calendar to yours</a>
+        }
+        else
+        {
+            <a href="@Links.InApp("sermons")" target="_blank" rel="noopener"><SiteIcon Name="phone" /> Listen in the Good Shepherd app</a>
+        }
     </p>
 </main>
 

@@ -69,6 +69,22 @@ else
                 <p><a class="text-link" href="/sermons/series/@Uri.EscapeDataString(Series.Id)">The whole series <SiteIcon Name="next" /></a></p>
             </aside>
         }
+        else if (Others.Count > 0)
+        {
+            <aside>
+                <h2 class="aside-title">More from @Sermon.SpeakerName</h2>
+                <ol class="series-list">
+                    @foreach (Sermon other in Others)
+                    {
+                        <li>
+                            <a href="/sermons/@Uri.EscapeDataString(other.Id)">@other.Title</a>
+                            <small>@SermonText.Join(other.SeriesName, SermonText.Day(other.PreachedAt))</small>
+                        </li>
+                    }
+                </ol>
+                <p><a class="text-link" href="/sermons/speakers/@Uri.EscapeDataString(Sermon.SpeakerId)">Every sermon by @Sermon.SpeakerName <SiteIcon Name="next" /></a></p>
+            </aside>
+        }
     </div>
 }
 
@@ -80,6 +96,7 @@ else
     private Sermon? Sermon;
     private SeriesInfo? Series;
     private IReadOnlyList<Sermon> InSeries = [];
+    private IReadOnlyList<Sermon> Others = [];
 
     protected override void OnParametersSet()
     {
@@ -87,6 +104,7 @@ else
         Sermon = shelf.Find(Id);
         Series = Sermon?.SeriesId is { Length: > 0 } seriesId ? shelf.FindSeries(seriesId) : null;
         InSeries = Series is null ? [] : shelf.InSeries(Series.Id).Reverse().Take(SeriesShown).ToList();
+        Others = Sermon is null || Sermon.SpeakerId.Length == 0 ? [] : shelf.BySpeaker(Sermon.SpeakerId).Where(other => other.Id != Sermon.Id).Take(SeriesShown).ToList();
     }
 
     private string Description => Sermon is null ? "" : SermonText.Join(Sermon.SeriesName, Sermon.SpeakerName, SermonText.When(Sermon));

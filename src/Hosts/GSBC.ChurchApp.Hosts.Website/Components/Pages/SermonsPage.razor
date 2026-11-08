@@ -18,7 +18,6 @@ else
                 }
             </a>
             <div>
-                <span class="lead-label">Latest sermon</span>
                 <h2><a href="@SermonHref(Latest)">@Latest.Title</a></h2>
                 @if (Latest.SeriesId is { Length: > 0 } seriesId && Latest.SeriesName is { Length: > 0 } seriesName)
                 {
