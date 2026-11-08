@@ -7,7 +7,8 @@ using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher publisher, ICalSchedule copying, TimeProvider time) : ICalendarSetupService
+internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher publisher, ICalSchedule copying, CalendarRemover remover, TimeProvider time)
+    : ICalendarSetupService
 {
     public const int LongestName = 60;
     public const int LongestDescription = 500;
@@ -73,6 +74,15 @@ internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher p
         if (newSource && calendar.ICalSource is not null)
             copying.CopySoon();
         return Settings(calendar);
+    }
+
+    public async ValueTask<CalendarRemoval> RemovalAsync(CalendarToRemove request, CallContext context = default) =>
+        await remover.WhatGoesAsync(request.CalendarId, context.CancellationToken);
+
+    public async ValueTask<Done> RemoveCalendarAsync(CalendarToRemove request, CallContext context = default)
+    {
+        await remover.RemoveAsync(request.CalendarId, context.CancellationToken);
+        return new Done();
     }
 
     public async ValueTask<BreakInfo> SaveBreakAsync(BreakInfo request, CallContext context = default)

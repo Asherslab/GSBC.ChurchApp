@@ -511,7 +511,7 @@
             @<DateEditor @key="date.OccurrenceId" CalendarId="@chosen.CalendarId" RegularEventId="@(chosen.RegularEventId ?? string.Empty)" Date="day" InPanel="true"
                          Saved="_ => DateSavedAsync()" Closed="() => _chosen = chosen with { Date = null }" OpenRegular="() => _chosen = chosen with { Date = null }" />,
         NewEvent fresh => @<EventEditor @key="@($"new-{fresh.CalendarId}")" Target="EditTarget.New(fresh.CalendarId)" NewOn="fresh.On" InPanel="true" Saved="SavedNewAsync" Closed="CloseDetail" />,
-        ChosenCalendar calendar => @<CalendarSettingsPanel @key="@(calendar.Calendar?.Settings.Calendar.Id ?? "new")" Calendar="calendar.Calendar" Saved="ReloadAsync" Closed="CloseDetail" />,
+        ChosenCalendar calendar => @<CalendarSettingsPanel @key="@(calendar.Calendar?.Settings.Calendar.Id ?? "new")" Calendar="calendar.Calendar" Saved="ReloadAsync" Closed="CloseDetail" Removed="RemovedAsync" />,
         ShowingHere here => @<div class="event-panel" @key="@($"show-{here.Calendar.Id}")">
             <EventHead Title="Show an event from another calendar" Label="@here.Calendar.Name" Compact="true" />
             <div class="event-body">
@@ -579,6 +579,14 @@
     }
 
     private void CloseDetail() => _chosen = null;
+
+    private async Task RemovedAsync()
+    {
+        _chosen = null;
+        _monthDay = null;
+        Navigation.NavigateTo(CalendarWorkbenchLinks.Page, new NavigationOptions { ReplaceHistoryEntry = true });
+        await ReloadAsync();
+    }
 
     private async Task Go(Middle middle)
     {

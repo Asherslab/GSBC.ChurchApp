@@ -100,6 +100,9 @@ internal static partial class Digests
         }).ToList(),
     };
 
+    public static IEnumerable<SentDigestItem> Standing(EventsBook book, SentDigest sent) =>
+        sent.Items.Where(item => item.CalendarIds.Count == 0 || book.Calendars.ContainsKey(item.CalendarIds[0]));
+
     public static Audience AudienceOf(EventsBook book, SentDigestItem sent) =>
         sent.CalendarIds.Count == 0
             ? Audience.Everyone
@@ -107,7 +110,7 @@ internal static partial class Digests
 
     public static Notification Notification(EventsBook book, SentDigest sent, NotificationAudience audience)
     {
-        List<string> titles = sent.Items.Where(item => AudienceOf(book, item) == Audience.Everyone)
+        List<string> titles = Standing(book, sent).Where(item => AudienceOf(book, item) == Audience.Everyone)
             .Select(item => item.Item.Words.Title).Where(title => title.Length > 0).ToList();
         string things = titles.Count == 1 ? "One thing" : $"{titles.Count} things";
         string named = Listed(titles.Count > 2 ? [.. titles.Take(2), "more"] : titles);

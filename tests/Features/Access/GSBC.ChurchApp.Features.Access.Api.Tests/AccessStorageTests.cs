@@ -122,6 +122,27 @@ public sealed class AccessStorageTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task WhenAScopedThingIsRemovedNoOneHoldsARoleThereAnyMoreAndOtherPlacesKeepTheirs()
+    {
+        Guid phone = Guid.CreateVersion7(), follower = Guid.CreateVersion7(), elsewhere = Guid.CreateVersion7();
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        IPhoneRoles phones = scope.ServiceProvider.GetRequiredService<IPhoneRoles>();
+        IRoleAssignments roles = scope.ServiceProvider.GetRequiredService<IRoleAssignments>();
+        CancellationToken cancellationToken = TestContext.Current.CancellationToken;
+        await phones.GiveAsync(phone, "follower", Music, null, cancellationToken);
+        await roles.GiveAsFeatureAsync(follower, "follower", Music, null, cancellationToken);
+        await roles.GiveAsFeatureAsync(elsewhere, "follower", Choir, null, cancellationToken);
+        int before = await roles.HoldingCountAsync("follower", Music, cancellationToken);
+
+        await roles.ForgetScopeAsync(ScopeKind.Ministry, [Music], cancellationToken);
+
+        Assert.Equal(2, before);
+        Assert.Equal(0, await roles.HoldingCountAsync("follower", Music, cancellationToken));
+        Assert.Empty(await phones.HeldAsync(phone, cancellationToken));
+        Assert.Equal([new RoleHolder(elsewhere)], await roles.HoldersAsync("follower", Choir, cancellationToken));
+    }
+
+    [Fact]
     public async Task APhoneReceivesOnlyItsOwnPersonsGrantsAndHearsWhenTheyChange()
     {
         Guid staff = Guid.CreateVersion7(), leader = Guid.CreateVersion7(), member = Guid.CreateVersion7();

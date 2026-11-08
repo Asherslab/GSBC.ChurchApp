@@ -19,6 +19,8 @@ namespace GSBC.ChurchApp.Features.Events.Contracts;
 [ProtoSerializable(typeof(EventSave))]
 [ProtoSerializable(typeof(RegularRef))]
 [ProtoSerializable(typeof(CalendarRef))]
+[ProtoSerializable(typeof(CalendarToRemove))]
+[ProtoSerializable(typeof(CalendarRemoval))]
 [ProtoSerializable(typeof(RegularEventList))]
 [ProtoSerializable(typeof(RegularEventDetail))]
 [ProtoSerializable(typeof(RegularEventSave))]

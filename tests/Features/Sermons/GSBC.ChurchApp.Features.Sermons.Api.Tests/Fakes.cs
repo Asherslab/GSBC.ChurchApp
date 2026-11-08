@@ -74,4 +74,8 @@ internal sealed class RecordedRoles : IRoleAssignments, IPhoneRoles
         }
         return ValueTask.CompletedTask;
     }
+
+    public ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken) => ValueTask.FromResult(0);
+
+    public ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken) => ValueTask.CompletedTask;
 }

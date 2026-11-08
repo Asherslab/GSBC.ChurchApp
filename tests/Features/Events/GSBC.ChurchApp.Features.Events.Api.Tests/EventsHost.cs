@@ -47,6 +47,7 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddScoped<EventEditingService>();
         services.AddScoped<CalendarSetupService>();
         services.AddScoped<CalendarFollowing>();
+        services.AddScoped<CalendarRemover>();
         services.AddSingleton<IRoleAssignments>(Roles);
         services.AddSingleton<IPhoneRoles>(Roles);
         services.AddScoped<CalendarLinkSecrets>();

@@ -19,6 +19,10 @@ public interface IRoleAssignments
     ValueTask ScopesChangedAsync(CancellationToken cancellationToken);
 
     ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken);
+
+    ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken);
+
+    ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken);
 }
 
 public sealed record AssignmentOutcome(bool Done, string? Refusal)

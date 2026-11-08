@@ -62,6 +62,13 @@ Group round) and a source:
 kind moves to the new id, and someone who already held it there keeps one. Sermons uses it when a series moves to
 its lasting id, so its followers keep following ([sermons.md](../features/sermons.md), *Lasting ids*).
 
+**When a scope object is removed** (2026-11-08), its feature calls `IRoleAssignments.ForgetScopeAsync(kind, ids)`:
+every person's and phone's assignment of a role of that kind at those places goes, and grants are announced.
+`HoldingCountAsync(role, place)` counts the people and phones holding a role there (Events uses both when a calendar
+is removed, [events.md](../features/events.md), *Removing a calendar*). **A role is only given at a place that
+exists:** a feature registers an `IScopeObjects` (Platform.Api) for each scope kind it owns, and Access refuses a
+manual assignment, or a feature's `GiveAsync` for someone, at any other id.
+
 **Holding a role** (2026-11-04). Compiling someone's grants also gives them a global
 `roles.held.<role id>` grant for each role they hold and each role it includes (`RoleMembership`), so
 "people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't

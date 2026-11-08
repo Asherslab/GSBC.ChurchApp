@@ -25,7 +25,8 @@ internal sealed class ICalCopier(EventsDbContext db, ICalFetcher fetcher, Events
 
     private async Task CopyAsync(Guid calendarId, CancellationToken cancellationToken)
     {
-        CalendarRecord calendar = await db.Calendars.SingleAsync(found => found.Id == calendarId, cancellationToken);
+        if (await db.Calendars.SingleOrDefaultAsync(found => found.Id == calendarId, cancellationToken) is not { } calendar)
+            return;
         DateTime now = time.GetUtcNow().UtcDateTime;
         (DateOnly from, DateOnly to) = EventsBook.Window(time);
         bool windowMoved = calendar.ICalCopiedTo != to;

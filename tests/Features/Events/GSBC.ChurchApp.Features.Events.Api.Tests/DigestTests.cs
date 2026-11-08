@@ -124,6 +124,24 @@ public sealed class DigestTests
             Digests.Notification(new EventsBook([_services, _members], [], [], [], [], [], []), digest.Sent, NotificationAudience.SignedIn).Body);
     }
 
+    [Fact]
+    public void ThingsFromARemovedCalendarLeaveTheSentDigestInsteadOfReachingAnyoneSignedIn()
+    {
+        CalendarRecord kidsTeam = Calendar("Kids team", Audience.HoldingRole(Guid.CreateVersion7()));
+        DigestItem rosterNight = Item("event:roster-night", "2026-11-12");
+        rosterNight.CalendarIds = [kidsTeam.Id.ToString(), _services.Id.ToString()];
+        DigestItem anniversary = Item("date:anniversary", "2026-11-15");
+        anniversary.CalendarIds = [_services.Id.ToString(), kidsTeam.Id.ToString()];
+        DigestRecord digest = new() { Start = Start, Weeks = 2, SentAt = Now, Sent = Digests.ForApp([rosterNight, anniversary], Digests.EndOf(Start, 2)) };
+        EventsBook afterRemoving = new([_services], [], [], [], [], [], []);
+
+        List<EventsPublisher.Row> rows = EventsPublisher.DigestRows(afterRemoving, digest).ToList();
+
+        Assert.DoesNotContain(rows, row => row.Feed == EventsFeeds.PrivateDigest);
+        Assert.Equal(["digest", "2026-11-09/date:anniversary"], rows.Select(row => row.RecordId));
+        Assert.Equal("One thing coming up: Calendar words.", Digests.Notification(afterRemoving, digest.Sent, NotificationAudience.SignedIn).Body);
+    }
+
     private static List<DigestItem> Candidates(EventsBook book) =>
         Digests.Candidates(book, Start, 2, book.Calendars.Keys.ToHashSet(), Now);
 
