@@ -44,7 +44,7 @@
     private string Line(RegularEventSummary regular) => EventWords.Join(
         Capital(regular.Repeats),
         EventDates.Times(regular.StartMinute, regular.EndMinute),
-        regular.Ended ? "No more dates" : EventDates.Parse(regular.NextDate) is { } next ? $"next {(next == Today ? "today" : EventWords.Date(next))}" : null);
+        regular.Ended ? "No more dates" : EventDates.Parse(regular.NextDate) is { } next ? (next == Today ? "On today" : $"Next on {EventWords.Date(next)}") : null);
 
     private static RenderFragment? Extra(RegularEventSummary regular) => (regular.Asked, regular.Showing != Showing.Shown, regular.ChangedDates) switch
     {

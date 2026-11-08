@@ -141,7 +141,7 @@
 .calendar-main__title { margin: 0; font-size: var(--text-headline); font-weight: 700; letter-spacing: -0.02em; }
 .calendar-main__lead { margin: 6px 0 0; max-width: 72ch; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 .calendar-main__actions { display: flex; align-items: center; gap: 12px; }
-.calendar-main__actions .segmented { min-width: 13rem; }
+.calendar-main__actions .segmented { min-width: 13rem; white-space: nowrap; }
 .calendar-day { margin-top: 18px; }
 .calendar-day__head { display: flex; align-items: baseline; gap: 8px; margin: 0 0 4px; font-size: var(--text-label); font-weight: 700; }
 .calendar-day__head span { color: var(--ink-3); font-weight: 400; }
@@ -173,7 +173,7 @@
 .regular-head .event-head { padding-bottom: 16px; }
 .regular-head__pattern { display: flex; align-items: center; gap: 6px; }
 .regular-head__pattern .icon { flex: none; }
-.date-strip { padding: 0 var(--gutter) 16px; }
+.date-strip { padding: 0 var(--gutter) 12px; }
 .date-strip__dates { display: flex; gap: 8px; margin: 0; padding: 2px 0 4px; list-style: none; overflow-x: auto; scroll-snap-type: x proximity; scrollbar-width: none; }
 .date-strip__dates::-webkit-scrollbar { display: none; }
 .date-strip__dates > li { flex: none; scroll-snap-align: start; }
@@ -193,7 +193,7 @@
 .date-strip__date--off .date-strip__weekday { color: var(--masthead-note); }
 .date-strip__more { display: grid; place-items: center; height: 100%; min-height: 62px; padding: 0 14px; border: 0; border-radius: var(--radius-field); background: var(--masthead-chip); color: var(--on-masthead); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; }
 .date-strip__empty { margin: 0; color: var(--masthead-note); font-size: var(--text-caption); }
-.date-strip__key { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 10px var(--gutter) 0; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.4; }
+.date-strip__key { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; padding: 0 var(--gutter) 18px; color: var(--masthead-note); font-size: var(--text-caption); line-height: 1.4; }
 
 .regular-body { display: grid; gap: 8px 40px; padding: 8px var(--gutter) 24px; }
 .regular-body__wide { grid-column: 1 / -1; margin-top: 8px; }

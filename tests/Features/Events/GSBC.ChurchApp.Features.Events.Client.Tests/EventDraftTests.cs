@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Features.Events.Client;
 using GSBC.ChurchApp.Features.Events.Contracts;
 
 namespace GSBC.ChurchApp.Features.Events.Client.Tests;
