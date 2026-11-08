@@ -63,7 +63,7 @@ public sealed partial class TestRules
         {
             HashSet<string> types = reaching.SelectMany(path => DeclaredType().Matches(texts[path]).Select(match => match.Groups[1].Value)).ToHashSet();
             List<string> more = texts
-                .Where(file => !reaching.Contains(file.Key) && Words().Matches(file.Value).Any(word => types.Contains(word.Value)))
+                .Where(file => !reaching.Contains(file.Key) && Words().Matches(UsingDirective().Replace(file.Value, "")).Any(word => types.Contains(word.Value)))
                 .Select(file => file.Key)
                 .ToList();
             if (more.Count == 0)
@@ -93,6 +93,9 @@ public sealed partial class TestRules
 
     [GeneratedRegex(@"\w+")]
     private static partial Regex Words();
+
+    [GeneratedRegex(@"^\s*(?:global\s+)?using\s+(?:static\s+|\w+\s*=\s*)?[\w.]+\s*;", RegexOptions.Multiline)]
+    private static partial Regex UsingDirective();
 
     [GeneratedRegex(@"^\s*\[(Fact|Theory)\b", RegexOptions.Multiline)]
     private static partial Regex TestMethod();
