@@ -21,11 +21,18 @@
     </SplitView>
 </LiveData>
 
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {_editing?.Name}?")" Lead="Everyone who has it loses it, and roles that include it stop including it. This can't be undone.">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private LiveData<ToolData>? _live;
     private RoleInfo? _editing;
     private string _patterns = "";
-    private bool _busy;
+    private bool _busy, _deleting;
     private string? _message;
 
     private static readonly IReadOnlyList<TableColumn<PermissionInfo>> PermissionColumns =
@@ -78,7 +85,7 @@
                         <Button Type="submit" Busy="_busy">Save</Button>
                         @if (!string.IsNullOrEmpty(editing.Id))
                         {
-                            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete</Button>
+                            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _deleting = true">Delete…</Button>
                         }
                     </div>
                 </Can>
@@ -127,6 +134,7 @@
     private Task DeleteAsync() => RunAsync(async () =>
     {
         await Access.DeleteRoleAsync(_editing!.Id);
+        _deleting = false;
         _editing = null;
         _message = "Deleted, and taken away from everyone who had it.";
     });

@@ -129,7 +129,7 @@
                     <div class="announcement-desk__actions">
                         @if (_editing.Id.Length > 0)
                         {
-                            <Button Variant="ButtonVariant.Danger" Small="true" Busy="_busy" OnClick="DeleteAsync">Delete</Button>
+                            <Button Variant="ButtonVariant.Danger" Small="true" Busy="_busy" OnClick="() => _deleting = true">Delete…</Button>
                         }
                         <span class="announcement-desk__spacer"></span>
                         <Button Variant="ButtonVariant.Quiet" Icon="smartphone" Busy="_busy" Disabled="@(!Ready)" OnClick="SendToMeAsync">Send to my phone</Button>
@@ -179,6 +179,13 @@
         </Section>
     }
 </LiveData>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this announcement?" Lead="It hasn't been sent, so nobody has seen it. This can't be undone.">
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
 
 <Sheet Open="_confirming" OpenChanged="open => _confirming = open" Title="@ConfirmTitle" Lead="@ConfirmLead">
     <ChildContent>
@@ -253,6 +260,7 @@
     private CancellationTokenSource? _settling;
     private bool _busy;
     private bool _confirming;
+    private bool _deleting;
     private string? _told;
     private string? _problem;
 
@@ -532,6 +540,7 @@
     private Task DeleteAsync() => RunAsync(async () =>
     {
         await Announcements.DeleteAsync(_editing.Id);
+        _deleting = false;
         Navigation.NavigateTo("announcements/new");
     });
 
