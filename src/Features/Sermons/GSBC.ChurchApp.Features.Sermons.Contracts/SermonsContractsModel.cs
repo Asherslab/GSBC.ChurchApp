@@ -24,6 +24,8 @@ namespace GSBC.ChurchApp.Features.Sermons.Contracts;
 [ProtoSerializable(typeof(SeriesList))]
 [ProtoSerializable(typeof(SpeakerDetail))]
 [ProtoSerializable(typeof(SpeakerList))]
+[ProtoSerializable(typeof(ServiceChoice))]
+[ProtoSerializable(typeof(ServiceList))]
 [ProtoSerializable(typeof(SourceStatus))]
 [ProtoSerializable(typeof(CopyProgress))]
 [ProtoSerializable(typeof(CopyItem))]

@@ -12,7 +12,7 @@ current as it's built.
 | Everyone (the phone) | Browse the latest sermons, series and speakers; search; play audio in the background, with lock-screen, Control Center, AirPods and car controls; watch the video; pick up where they left off, offline too |
 | Everyone, signed in | The same, with their listening history on every phone they sign in on |
 | `sermons.upload` | In the admin panel: add a sermon by uploading its audio, when sermons come from uploads (the AV team's first pass) |
-| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one; manage series (name, picture, description) and speakers (name, other spellings, joining two) |
+| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one; manage series (name, picture, description) and speakers (name, photo); choose each sermon's service from the standard ones or add one |
 | `sermons.source` | Choose where new sermons come from (the website, or uploads) |
 
 The **Sermons editor** system role holds `sermons.edit` and `sermons.upload`; the **Sermon uploader** role (the AV team)
@@ -55,8 +55,9 @@ speaker, and "Watch at: https://youtu.be/…" (112 of 155). No series, no durati
 - **Never deleted because the feed dropped it.** The feed keeps a year; we keep everything we've read
   (owner, 2026-11-04: keep from now on, no archive backfill; the website holds about 890 back to 1998, which
   a one-off import could bring in later).
-- **What's parsed:** the service label (before " - " or "Watch at"), normalised for display ("Sun AM" →
-  *Sunday morning*, "Wed PM" → *Wednesday night*, "Wed" → *Wednesday*, anything else kept as written); the
+- **What's parsed:** the service label (before " - " or "Watch at"), put onto a standard service where it clearly is one
+  ("Sun AM" → *Sunday Morning*, "Sun PM" → *Sunday Evening*, "Wed PM" and "Wed" → *Wednesday Night*; see *Services*),
+  anything else kept as written ("Tue 2nd Session - Youth" → *Tuesday 2nd Session · Youth*, "Christmas Day"); the
   YouTube id from any `youtu.be/…`, `youtube.com/watch?v=…`, `/live/…` or `/embed/…` link; the original
   artwork (the resizer's job names the CloudFront original, 1920 × 1080); the duration, read from the mp3's
   first few kilobytes (a ranged request: the Xing/VBRI header, or the bitrate for constant-bitrate files).
@@ -125,9 +126,9 @@ help centre documents only the RSS feed and a sermon importer), so we read the p
   day) the reader also reads the team page (`TeamPage.Read`, one page) and a speaker's team photo wins over their series
   one (`Speakers.Preferring`); a speaker not on it keeps the series photo. A staff-chosen photo (`ChosenPhoto`) still
   wins over both.
-  - **Matching is careful:** a team name matches a speaker only through `speaker_aliases`, exactly as it's normalised
-    (spaces collapsed, lower case), so a spelling staff added under *other spellings* counts and nothing is guessed:
-    two similar names on the team page (a full name and its short form) are treated as different people. Entries for
+  - **Matching is careful:** a team name matches a speaker only by a name exactly as it's normalised (spaces collapsed,
+    lower case): a name the website's sermons use for them, or their name in the list (see *Speakers*). Nothing is
+    guessed: two similar names on the team page (a full name and its short form) are treated as different people. Entries for
     more than one person (a couple) are left out, and so is a name shown with two different photos. Each read logs how
     many matched, the team names that aren't speakers and what was left out.
   - **What matched on 2026-11-08** (the live team page against dev's 23 speakers): five speakers, three of whom had no
@@ -149,20 +150,20 @@ The owner saw each series three times on their phone after dev's backend moved b
 notices a different database (`SyncOrigin`), but the flaw behind it was that every database gave the same website
 sermon its own random id. Now **a record read from the website has an id derived from where it came from**
 (`SourceIds`, UUIDv5 over a fixed namespace): a sermon from its feed item's `guid`, a series from its page's slug, a
-speaker from their name as the feed writes it (`speaker_aliases`' normalised form). Reading the same website into
+speaker from their name as the feed writes it (normalised: spaces collapsed, lower case). Reading the same website into
 any empty database gives the same ids, and a re-read finds the same records. Uploaded sermons and series or
 speakers added on the admin panel keep random ids. If a derived id is somehow taken, the record gets a random one.
 
 **Moving existing records (`SourceIdMove`, at the start of each website read, under its lock):** every website
 sermon, series and speaker whose id isn't its lasting one moves to it in one transaction, with everything in
-Sermons that points at it (series and speaker of each sermon, speaker aliases, listening progress). The feeds get a
+Sermons that points at it (series and speaker of each sermon, listening progress). The feeds get a
 deletion for the old id and the record under its new one, and listening progress is republished. Then, outside
 that transaction and retried until done (`former_ids.settled`), the Media uses move to the new owner strings and
 follows move with `IRoleAssignments.MoveScopeAsync` (people's and phones'). A speaker counts as from the website
 when a website sermon names them; their id comes from their own name if the feed uses it, otherwise from the
 name the feed uses most.
 
-**Old ids keep working (`former_ids`):** each move, and each speaker merge, records the old id. The server maps
+**Old ids keep working (`former_ids`):** each move, and each speaker merge made while joining speakers existed (until 2026-11-09), records the old id. The server maps
 old ids when progress is sent and when following a series, and the destination sources find a place by an old
 id (so Hub links and announcements made before still resolve in the editor). Each payload carries its
 `FormerIds`, and the app's lookups (`SermonShelf.Find*`, a sermon's progress and download, the loaded sermon)
@@ -174,9 +175,57 @@ raised and Hub tiles keep their old links, which resolve as above.
 
 Every field a source fills is kept as the source's value, beside staff's correction (null until made). What
 the app shows is the correction, else the source's value. Re-reading the website updates only the source's
-values, so a correction is never overwritten; *Use the website's* clears it. Speakers have other spellings
-(`speaker_aliases`): "Ps Peter Mordh" and "Peter Mordh" are one speaker once staff say so. Not drafts:
+values, so a correction is never overwritten; *Use the website's* clears it. Not drafts:
 sermons are a feature's own records (drafts.md, decision 1); a correction is live when saved.
+
+### Services (owner, 2026-11-09)
+
+A sermon's service is a choice, not free text: "Sunday evening", "Sun PM" and "Sunday night" were three names for one
+service. The **standard services** are *Sunday Life Groups*, *Sunday Morning*, *Sunday Evening* and *Wednesday Night*
+(`SermonServices`, Sermons.Contracts, so the app, the admin panel and the server use the same names). "But we need custom
+options as well, e.g. during conference week, we have that on weekdays and such": the picker on a sermon and on the upload
+form (`ServicePicker`, on Platform.Ui's `SearchPicker`) offers the standard four, then every other service a sermon uses,
+the most recent first, and *Add "…" as a service*. A service added once is offered next time because a sermon uses it
+(`Library.ListServices`); there's no separate list to keep, and one no sermon uses any more drops out.
+
+- **Spellings land on one name.** What staff type or the website sends goes through `SermonServices.Named`: a clear
+  spelling of a standard one becomes it ("sunday night" → *Sunday Evening*, "Wed" → *Wednesday Night*), and anything else
+  that matches a service already used, ignoring case and spaces, takes that service's spelling, so "conference, tuesday
+  NIGHT" joins *Conference, Tuesday night*. Tests: `FeedTextTests`, `SpeakersAndServicesTests`.
+- **What the website sends** is mapped the same way when it's read. A label whose first part is a standard service is
+  just that service: "Sun PM - Kit Ward" (a second speaker) is *Sunday Evening*. "Wed" alone is taken as Wednesday Night,
+  the only Wednesday service (24 of dev's sermons on 2026-11-09). Conference sessions ("Wed 2nd Session - Youth"),
+  "Sun 9AM - Adults Session", "Mon PM" and the like stay as written, as custom services.
+- **Existing sermons** are mapped by the migration `StandardServicesNoSpeakerAliases` (the website's values and staff's
+  corrections alike, by the same spellings; a correction that now equals the website's value is cleared). Previewed on
+  dev's 196 sermons on 2026-11-09: 54 Sunday Morning, 43 Sunday Evening, 41 Wednesday Night, 1 Sunday Life Groups, and 17
+  kept as custom services (2 have none). Every screen shows the sermon's `Service` from the feed, so phones get the new
+  names when the API republishes at its next start.
+
+### Speakers: the list staff manage (owner, 2026-11-09)
+
+*Other spellings* and *Or join them with* are gone, with what was behind them (the `speaker_aliases` table and merging):
+"remove that and its functionality completely. no need. being superseded by managing the list fully in app." A speaker is
+a name and a photo in the list on *Series and speakers*. No two speakers can have the same name (ignoring case and
+spaces), and a sermon credited to the wrong person is corrected on the sermon.
+
+**How a name from the website's feed lands on a speaker** (`Speakers.ResolveAsync`), in order:
+
+1. **The speaker that name's sermons already belong to:** the speaker the most recent sermon read under that name was
+   given (its website speaker, not a correction staff made to one sermon). So renaming a speaker ("Jo Ellery" → "Ps Jo
+   Ellery") keeps the website's sermons under "Jo Ellery" on them, and speakers joined before this change stay joined.
+   Once staff have moved *every* sermon off that speaker, the name follows them instead: it lands on whoever the most
+   recent sermon under it is credited to.
+2. **A speaker with that name in the list** (ignoring case and spaces).
+3. Otherwise **a new speaker** with the name as the feed writes it, on its lasting id (*Lasting ids*); the sermon shows
+   *New speaker* in *Needs a look*.
+
+So a one-off correction (the feed credited the wrong person on one sermon) never moves the other sermons under that
+name, and a new spelling for someone ("Ps Lee Varga" for Lee Varga) is fixed once: its first sermon makes a new speaker,
+staff correct that sermon to the right person, and later sermons under the spelling land on them. The speaker left with
+no sermons isn't shown in the app (the speakers feed holds only speakers with sermons) but stays in the admin panel's
+list. Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
+`SpeakersAndServicesTests`.
 
 ### Uploads (the R2 version)
 

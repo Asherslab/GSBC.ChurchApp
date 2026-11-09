@@ -12,10 +12,9 @@ namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed class SermonLibraryService(
     SermonsDbContext db, SermonPublisher publisher, IMediaReferences media, WebsiteSchedule schedule, SermonUploads uploads,
-    PodcastFeedWriter podcast, AudioCopier copier, TimeProvider time) : ISermonLibraryService
+    PodcastFeedWriter podcast, AudioCopier copier, ServiceNames services, TimeProvider time) : ISermonLibraryService
 {
     public const int TitleLimit = 160;
-    private const int ServiceLimit = 80;
     public const int NameLimit = 80;
     private const int DescriptionLimit = 600;
 
@@ -94,6 +93,8 @@ internal sealed class SermonLibraryService(
             && await db.Speakers.AnyAsync(speaker => speaker.Id == speakerId, cancellationToken);
         bool seriesExists = !request.UseSource.Contains(Fields.Series) && Guid.TryParse(request.SeriesId, out Guid seriesId)
             && await db.Series.AnyAsync(series => series.Id == seriesId, cancellationToken);
+        if (request.Service is { } service && !request.UseSource.Contains(Fields.Service))
+            request.Service = await services.NameAsync(service, cancellationToken);
         Correct(sermon, request, speakerExists, seriesExists);
 
         if (request.Checked is { } isChecked)
@@ -139,7 +140,7 @@ internal sealed class SermonLibraryService(
         if (useSource.Contains(Fields.Service))
             sermon.Service = null;
         else if (request.Service is { } service)
-            sermon.Service = service.Trim().Length <= ServiceLimit ? UnlessSource(service.Trim(), sermon.SourceService) : throw Invalid($"Keep the service to {ServiceLimit} characters.");
+            sermon.Service = service.Trim().Length <= SermonServices.NameLimit ? UnlessSource(service.Trim(), sermon.SourceService) : throw Invalid($"Keep the service to {SermonServices.NameLimit} characters.");
 
         if (useSource.Contains(Fields.YouTube))
             (sermon.YouTubeCorrected, sermon.YouTubeId) = (false, null);
@@ -212,9 +213,8 @@ internal sealed class SermonLibraryService(
         CancellationToken cancellationToken = context.CancellationToken;
         List<SermonRecord> sermons = await db.Sermons.AsNoTracking().Where(sermon => !sermon.Hidden).ToListAsync(cancellationToken);
         ILookup<Guid?, SermonRecord> bySpeaker = sermons.ToLookup(sermon => sermon.EffectiveSpeakerId);
-        ILookup<Guid, string> aliases = (await db.SpeakerAliases.AsNoTracking().ToListAsync(cancellationToken)).ToLookup(alias => alias.SpeakerId, alias => alias.Alias);
         List<SpeakerRecord> speakers = await db.Speakers.AsNoTracking().OrderBy(speaker => speaker.Name).ToListAsync(cancellationToken);
-        return new SpeakerList { Speakers = speakers.Select(speaker => SpeakerDetail(speaker, aliases[speaker.Id], bySpeaker[speaker.Id].Count())).ToList() };
+        return new SpeakerList { Speakers = speakers.Select(speaker => SpeakerDetail(speaker, bySpeaker[speaker.Id].Count())).ToList() };
     }
 
     public async ValueTask<SpeakerDetail> SaveSpeakerAsync(SpeakerDetail request, CallContext context = default)
@@ -224,11 +224,11 @@ internal sealed class SermonLibraryService(
             ? new SpeakerRecord { Id = Guid.CreateVersion7(), Name = "", CreatedAt = time.GetUtcNow().UtcDateTime }
             : await db.Speakers.FindAsync([ParseId(request.Id, "speaker")], cancellationToken) ?? throw NotFound("That speaker");
 
-        if (request.MergeInto is { Length: > 0 } mergeInto)
-            return await MergeAsync(speaker, ParseId(mergeInto, "speaker"), cancellationToken);
-
         if (request.Name.Trim() is not { Length: > 0 and <= NameLimit } name)
             throw Invalid($"Give the speaker a name of up to {NameLimit} characters.");
+        string key = Speakers.KeyOf(name);
+        if ((await db.Speakers.Where(other => other.Id != speaker.Id).Select(other => other.Name).ToListAsync(cancellationToken)).Any(other => Speakers.KeyOf(other) == key))
+            throw Invalid($"There's already a speaker called “{name}”.");
         bool isNew = db.Entry(speaker).State == EntityState.Detached;
         MayMake(await SourceStates.SourceAsync(db, cancellationToken), isNew, "speakers");
         if (isNew)
@@ -236,21 +236,13 @@ internal sealed class SermonLibraryService(
         speaker.Name = name;
         speaker.ChosenPhoto = await VerifiedAsync(request.PhotoChosen ? request.Photo : null, Artwork.ChosenPhotoOwner(speaker.Id), cancellationToken);
 
-        HashSet<string> wanted = request.Aliases.Append(name).Select(Speakers.AliasOf).Where(alias => alias.Length > 0).ToHashSet();
-        List<SpeakerAlias> taken = await db.SpeakerAliases.Where(alias => wanted.Contains(alias.Alias) && alias.SpeakerId != speaker.Id).ToListAsync(cancellationToken);
-        if (taken.FirstOrDefault() is { } clash)
-            throw Invalid($"“{clash.Alias}” is another speaker's name. Merge the two instead.");
-        List<SpeakerAlias> current = await db.SpeakerAliases.Where(alias => alias.SpeakerId == speaker.Id).ToListAsync(cancellationToken);
-        db.SpeakerAliases.RemoveRange(current.Where(alias => !wanted.Contains(alias.Alias)));
-        foreach (string alias in wanted.Except(current.Select(alias => alias.Alias)))
-            db.SpeakerAliases.Add(new SpeakerAlias { Alias = alias, SpeakerId = speaker.Id });
-        await ReattachAsync(speaker.Id, wanted, cancellationToken);
-
         publisher.MarkAdmin(speaker.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
-        return SpeakerDetail(speaker, wanted, await CountForAsync(speaker.Id, cancellationToken));
+        return SpeakerDetail(speaker, await CountForAsync(speaker.Id, cancellationToken));
     }
+
+    public async ValueTask<ServiceList> ListServicesAsync(Done request, CallContext context = default) => await services.ListAsync(context.CancellationToken);
 
     public async ValueTask<SourceStatus> StatusAsync(Done request, CallContext context = default) => await StatusAsync(context.CancellationToken);
 
@@ -330,44 +322,6 @@ internal sealed class SermonLibraryService(
         CopiedBytes = sermon.AudioCopiedFrom is not null ? sermon.AudioBytes : sermon.CopiedBytes,
         Problem = sermon.AudioCopiedFrom is null ? sermon.CopyProblem : null,
     };
-
-    private async Task<SpeakerDetail> MergeAsync(SpeakerRecord from, Guid intoId, CancellationToken cancellationToken)
-    {
-        if (from.Id == intoId)
-            throw Invalid("Choose another speaker to merge into.");
-        SpeakerRecord into = await db.Speakers.FindAsync([intoId], cancellationToken) ?? throw NotFound("That speaker");
-        await db.SpeakerAliases.Where(alias => alias.SpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(alias => alias.SpeakerId, into.Id), cancellationToken);
-        await db.Sermons.Where(sermon => sermon.SourceSpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.SourceSpeakerId, into.Id), cancellationToken);
-        await db.Sermons.Where(sermon => sermon.SpeakerId == from.Id).ExecuteUpdateAsync(set => set.SetProperty(sermon => sermon.SpeakerId, into.Id), cancellationToken);
-        bool takesChosen = into.ChosenPhoto is null && from.ChosenPhoto is not null;
-        into.ChosenPhoto ??= from.ChosenPhoto;
-        into.PhotoSourceUrl ??= from.PhotoSourceUrl;
-        if (into.Photo is null && from.Photo is not null)
-            (into.Photo, into.PhotoHash) = (from.Photo, null);
-        await SourceIdMove.RememberAsync(db, from.Id, into.Id, FormerId.Speaker, time.GetUtcNow().UtcDateTime, settled: true, cancellationToken);
-        from.Photo = from.ChosenPhoto = null;
-        from.PhotoSourceUrl = from.PhotoHash = null;
-        publisher.MarkAdmin(into.Id);
-        await db.SaveChangesAsync(cancellationToken);
-        await publisher.PublishAsync(cancellationToken);
-        await media.UseAsync(Artwork.SpeakerOwner(from.Id), [], cancellationToken);
-        await media.UseAsync(Artwork.ChosenPhotoOwner(from.Id), [], cancellationToken);
-        if (takesChosen)
-            await media.UseAsync(Artwork.ChosenPhotoOwner(into.Id), [into.ChosenPhoto!], cancellationToken);
-        db.Speakers.Remove(from);
-        if (from.PublishedHash is not null)
-            db.FeedChanges.Add(new Platform.Data.FeedChangeRecord { Feed = SermonsFeeds.Speakers, RecordId = from.Id.ToString(), Version = time.GetUtcNow().UtcDateTime.Ticks, Deleted = true });
-        await db.SaveChangesAsync(cancellationToken);
-        List<string> aliases = await db.SpeakerAliases.Where(alias => alias.SpeakerId == into.Id).Select(alias => alias.Alias).ToListAsync(cancellationToken);
-        return SpeakerDetail(into, aliases, await CountForAsync(into.Id, cancellationToken));
-    }
-
-    private async Task ReattachAsync(Guid speakerId, IReadOnlySet<string> aliases, CancellationToken cancellationToken)
-    {
-        foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.SourceSpeaker != "").ToListAsync(cancellationToken))
-            if (aliases.Contains(Speakers.AliasOf(sermon.SourceSpeaker)))
-                sermon.SourceSpeakerId = speakerId;
-    }
 
     private async Task<int> CountForAsync(Guid speakerId, CancellationToken cancellationToken) =>
         await db.Sermons.CountAsync(sermon => !sermon.Hidden && (sermon.SpeakerId ?? sermon.SourceSpeakerId) == speakerId, cancellationToken);
@@ -449,13 +403,12 @@ internal sealed class SermonLibraryService(
         FromWebsite = series.Slug is not null,
     };
 
-    private static SpeakerDetail SpeakerDetail(SpeakerRecord speaker, IEnumerable<string> aliases, int count) => new()
+    private static SpeakerDetail SpeakerDetail(SpeakerRecord speaker, int count) => new()
     {
         Id = speaker.Id.ToString(),
         Name = speaker.Name,
         Photo = speaker.ChosenPhoto ?? speaker.Photo,
         PhotoChosen = speaker.ChosenPhoto is not null,
-        Aliases = aliases.Where(alias => alias != Speakers.AliasOf(speaker.Name)).Order().ToList(),
         Count = count,
     };
 

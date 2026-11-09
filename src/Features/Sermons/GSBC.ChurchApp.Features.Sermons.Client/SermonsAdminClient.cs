@@ -20,6 +20,8 @@ public sealed class SermonsAdminClient(ChannelBase channel)
 
     public ValueTask<SpeakerDetail> SaveSpeakerAsync(SpeakerDetail speaker) => _library.SaveSpeakerAsync(speaker);
 
+    public ValueTask<ServiceList> ServicesAsync() => _library.ListServicesAsync(new Done());
+
     public ValueTask<SourceStatus> StatusAsync() => _library.StatusAsync(new Done());
 
     public ValueTask<CopyProgress> CopyingAsync() => _library.CopyingAsync(new Done());

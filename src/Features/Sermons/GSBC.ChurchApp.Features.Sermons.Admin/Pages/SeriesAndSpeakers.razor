@@ -50,17 +50,17 @@
             </div>
             <SearchField Label="Find a speaker" Placeholder="Find a speaker" Value="@_speakerQuery" ValueChanged="query => _speakerQuery = query" />
             <div class="series-desk__list">
-                @foreach (SpeakerDetail speaker in Matching(context.Value.Speakers, _speakerQuery, one => string.Join(' ', [one.Name, .. one.Aliases])))
+                @foreach (SpeakerDetail speaker in Matching(context.Value.Speakers, _speakerQuery, SpeakerName))
                 {
                     <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id && _speaker.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSpeaker(speaker)">
                         <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="40" />
                         <span class="sermon-pick__words">
                             <strong>@speaker.Name</strong>
-                            <span>@SermonText.Join(SermonText.Sermons(speaker.Count), speaker.Aliases.Count > 0 ? $"also “{string.Join("”, “", speaker.Aliases)}”" : null)</span>
+                            <span>@SermonText.Sermons(speaker.Count)</span>
                         </span>
                     </button>
                 }
-                @if (_speakerQuery.Length > 0 && !Matching(context.Value.Speakers, _speakerQuery, one => string.Join(' ', [one.Name, .. one.Aliases])).Any())
+                @if (_speakerQuery.Length > 0 && !Matching(context.Value.Speakers, _speakerQuery, SpeakerName).Any())
                 {
                     <p class="series-desk__none">No speaker called “@_speakerQuery”.</p>
                 }
@@ -116,16 +116,9 @@
                         </span>
                     </span>
                 </div>
-                @if (speaker.Id.Length > 0)
-                {
-                    <TextField Label="Other spellings" @bind-Value="_aliases" Hint="Names the website uses for them too, separated by commas. Sermons under any of them are theirs." />
-                    <SearchPicker TItem="SpeakerDetail" Label="Or join them with" Items="Others(context.Value.Speakers, speaker)" Text="SpeakerName" Value="MergeTarget(context.Value.Speakers)"
-                                  ValueChanged="other => _mergeInto = other?.Id ?? string.Empty" NoneText="Keep them apart" Placeholder="Find the other name"
-                                  Hint="When two names are one person: their sermons move across and this name becomes another spelling." />
-                }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(_mergeInto.Length > 0 ? "Join them" : speaker.Id.Length == 0 ? "Add the speaker" : "Save")</Button>
+                    <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")</Button>
                     <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
                 </div>
             }
@@ -150,7 +143,7 @@
     private LiveData<Lists>? _live;
     private SeriesDetail? _series;
     private SpeakerDetail? _speaker;
-    private string _name = "", _description = "", _aliases = "", _mergeInto = "", _seriesQuery = "", _speakerQuery = "";
+    private string _name = "", _description = "", _seriesQuery = "", _speakerQuery = "";
     private MediaRef? _picture;
     private bool _busy, _choosing, _useSource;
     private string? _problem;
@@ -166,11 +159,6 @@
 
     private static IEnumerable<T> Matching<T>(IEnumerable<T> items, string query, Func<T, string> text) =>
         query.Trim() is { Length: > 0 } wanted ? items.Where(item => text(item).Contains(wanted, StringComparison.CurrentCultureIgnoreCase)) : items;
-
-    private static IReadOnlyList<SpeakerDetail> Others(IReadOnlyList<SpeakerDetail> speakers, SpeakerDetail speaker) =>
-        speakers.Where(other => other.Id != speaker.Id).ToList();
-
-    private SpeakerDetail? MergeTarget(IReadOnlyList<SpeakerDetail> speakers) => speakers.FirstOrDefault(other => other.Id == _mergeInto);
 
     private static string SpeakerName(SpeakerDetail speaker) => speaker.Name;
 
@@ -195,7 +183,6 @@
         Close();
         _speaker = speaker;
         _name = speaker.Name;
-        _aliases = string.Join(", ", speaker.Aliases);
     }
 
     private void Chose(MediaRef picture)
@@ -218,7 +205,6 @@
         _picture = null;
         _useSource = false;
         _choosing = false;
-        _mergeInto = "";
         _problem = null;
     }
 
@@ -240,8 +226,6 @@
             Name = _name,
             Photo = photo,
             PhotoChosen = chosen,
-            Aliases = _aliases.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).ToList(),
-            MergeInto = _mergeInto.Length > 0 ? _mergeInto : null,
         }));
     });
 

@@ -26,6 +26,9 @@ public interface ISermonLibraryService
     ValueTask<SpeakerDetail> SaveSpeakerAsync(SpeakerDetail request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<ServiceList> ListServicesAsync(Done request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<SourceStatus> StatusAsync(Done request, CallContext context = default);
 
     [Requires(SermonsPermissions.EditNode)]

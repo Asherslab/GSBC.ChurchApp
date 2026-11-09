@@ -17,15 +17,15 @@ public sealed class WebsitePagesTests
         Assert.Equal(4, sermons.Count);
 
         SermonRecord hope = sermons["Safe Harbour: Part 4 - Harbour Of Hope"];
-        Assert.Equal(("Sunday morning", "AbCdEfGhIj0", "Jo Ellery"), (hope.SourceService, hope.SourceYouTubeId, hope.SourceSpeaker));
+        Assert.Equal(("Sunday Morning", "AbCdEfGhIj0", "Jo Ellery"), (hope.SourceService, hope.SourceYouTubeId, hope.SourceSpeaker));
         Assert.Equal("https://files.example/2026/11/01/art/harbour-4.png", hope.ArtworkSourceUrl);
         Assert.Equal(4, TitleParts.PartOf(hope.EffectiveTitle));
 
         SermonRecord mercy = sermons["Mercy Before Judgement"];
-        Assert.Equal(("Sunday evening", "Zz9Yy8Xx7Ww"), (mercy.SourceService, mercy.SourceYouTubeId));
+        Assert.Equal(("Sunday Evening", "Zz9Yy8Xx7Ww"), (mercy.SourceService, mercy.SourceYouTubeId));
 
         SermonRecord walking = sermons["Walking In The Light"];
-        Assert.Equal(("Wednesday", null), (walking.SourceService, walking.SourceYouTubeId));
+        Assert.Equal(("Wednesday Night", null), (walking.SourceService, walking.SourceYouTubeId));
         Assert.Equal(1000, Mp3Duration.Seconds(SampleFiles.ConstantBitrateMp3(), walking.AudioBytes));
 
         Assert.Equal(["Safe Harbour", "Fruit Of The Spirit", "Older Days & Ways"], SeriesPages.ReadIndex(SampleFiles.Text("media.html")).Select(link => link.Name));
