@@ -1,6 +1,5 @@
 using GSBC.ChurchApp.Features.Access.Api.Data;
 using GSBC.ChurchApp.Platform.Api.Access;
-using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -127,8 +126,8 @@ internal sealed class AccessReconciler(
         role.Patterns.RemoveAll(existing => wanted.All(pattern => pattern.Pattern != existing.Pattern));
         foreach (RolePattern pattern in wanted)
         {
-            if (role.Patterns.Find(existing => existing.Pattern == pattern.Pattern) is { } existing)
-                existing.Everywhere = pattern.Everywhere;
+            if (role.Patterns.Find(stored => stored.Pattern == pattern.Pattern) is { } kept)
+                kept.Everywhere = pattern.Everywhere;
             else
                 role.Patterns.Add(pattern);
         }

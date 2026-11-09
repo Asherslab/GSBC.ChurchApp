@@ -5,7 +5,7 @@ namespace GSBC.ChurchApp.Features.Access.Client;
 
 public static class AccessWords
 {
-    public static string Place(string? placeName, bool includesTeams) =>
+    private static string Place(string? placeName, bool includesTeams) =>
         placeName is null ? "Everywhere" : includesTeams ? $"In {placeName} and its teams" : $"In {placeName}";
 
     public static string PlaceOf(string objectId, string? name, string scopeKind, bool includesTeams) =>
@@ -28,11 +28,6 @@ public static class AccessWords
         return all.Count <= 1 ? string.Concat(all) : $"{string.Join(", ", all[..^1])} and {all[^1]}";
     }
 
-    public static string GivenWhere(RoleInfo role) =>
-        role.ScopeKind == ScopeKind.Global.Name ? "Everywhere"
-        : role.AppliesToChildren ? $"For one {role.ScopeKind}, and its teams"
-        : $"For one {role.ScopeKind}";
-
     public static string GivenBy(RoleInfo role, IReadOnlyList<RoleInfo> roles)
     {
         List<string> names = role.AssignableByRoleIds
@@ -42,13 +37,6 @@ public static class AccessWords
             .ToList();
         return names.Count == 0 ? "People who manage access" : $"{string.Join(", ", names)}, and people who manage access";
     }
-
-    public static string Holders(int count) => count switch
-    {
-        0 => "Nobody yet",
-        1 => "1 person",
-        _ => $"{count} people",
-    };
 
     public static string? Added(AssignmentInfo? assignment, TimeProvider time) =>
         assignment is null ? null

@@ -26,14 +26,14 @@
 
             <section class="person-roles__one" aria-labelledby="one-thing">
                 <h3 class="person-roles__head" id="one-thing">For one thing</h3>
-                @if (context.Value.OneThing.Count == 0)
+                @if (context.Value.Things.Count == 0)
                 {
                     <p class="panel-hint">Nothing for a single calendar, event or draft. Those are given on the thing itself, with its People button.</p>
                 }
                 else
                 {
                     <ul class="person-roles__things">
-                        @foreach (OneThing thing in context.Value.OneThing)
+                        @foreach (Thing thing in context.Value.Things)
                         {
                             <li>
                                 <span class="cell-strong">@thing.Line</span>
@@ -71,28 +71,28 @@
 
     private async Task<RolesView> LoadAsync()
     {
-        Task<PlacePeople> everywhere = Access.ListPlaceAsync(ScopeKind.Global.Name, null).AsTask();
+        Task<PlacePeople> listing = Access.ListPlaceAsync(ScopeKind.Global.Name, null).AsTask();
         Task<AssignmentList> theirs = Access.ListAssignmentsAsync(Person.Id).AsTask();
         Task<RoleList> roles = Access.ListRolesAsync().AsTask();
-        PlacePeople place = await everywhere;
+        PlacePeople everywhere = await listing;
         List<AssignmentInfo> held = (await theirs).Assignments;
         List<RoleInfo> allRoles = (await roles).Roles;
 
-        List<OneThing> oneThing = [];
+        List<Thing> things = [];
         foreach (IGrouping<string, AssignmentInfo> kind in held.Where(assignment => assignment.ScopeObjectId is not null)
                      .GroupBy(assignment => allRoles.FirstOrDefault(role => role.Id == assignment.RoleId)?.ScopeKind ?? ""))
         {
             IReadOnlyDictionary<string, ScopeChoice> places = await ScopeNames.PlacesAsync(kind.Key, kind.Select(assignment => assignment.ScopeObjectId!).ToList());
-            oneThing.AddRange(kind.GroupBy(assignment => assignment.ScopeObjectId!).Select(place => places[place.Key] is var named
-                ? new OneThing(AccessWords.OneThing(AccessWords.And(place.Select(assignment => assignment.RoleName).Distinct()), kind.Key, named.Name == named.Id ? null : named.Name), named.Href)
-                : null).OfType<OneThing>());
+            things.AddRange(kind.GroupBy(assignment => assignment.ScopeObjectId!).Select(place => places[place.Key] is var named
+                ? new Thing(AccessWords.OneThing(AccessWords.And(place.Select(assignment => assignment.RoleName).Distinct()), kind.Key, named.Name == named.Id ? null : named.Name), named.Href)
+                : null).OfType<Thing>());
         }
 
         return new RolesView(
-            place.Roles.Select(role => RoleAbilities.View(role, place.Abilities)).ToList(),
+            everywhere.Roles.Select(role => RoleAbilities.View(role, everywhere.Abilities)).ToList(),
             allRoles.Where(role => role.ScopeKind == ScopeKind.Global.Name).ToDictionary(role => role.Id, role => role.Feature),
             held.Where(assignment => assignment.ScopeObjectId is null).GroupBy(assignment => assignment.RoleId).ToDictionary(group => group.Key, group => group.First()),
-            oneThing.OrderBy(thing => thing.Line, StringComparer.CurrentCulture).ToList());
+            things.OrderBy(thing => thing.Line, StringComparer.CurrentCulture).ToList());
     }
 
     private static bool Holds(RolesView view, string roleName) =>
@@ -132,8 +132,8 @@
         }
     }
 
-    private sealed record OneThing(string Line, string? Href);
+    private sealed record Thing(string Line, string? Href);
 
     private sealed record RolesView(
-        IReadOnlyList<PlaceRoleView> Roles, IReadOnlyDictionary<string, string?> Features, IReadOnlyDictionary<string, AssignmentInfo> Held, IReadOnlyList<OneThing> OneThing);
+        IReadOnlyList<PlaceRoleView> Roles, IReadOnlyDictionary<string, string?> Features, IReadOnlyDictionary<string, AssignmentInfo> Held, IReadOnlyList<Thing> Things);
 }

@@ -10,8 +10,6 @@
     private static readonly PlaceRoleView Reviewer = new(ReviewerRole, "Reviewer", "Preview this draft on their phone",
         [new AbilityGroup("App", ["Preview this draft on their phone, and watch it change as it's edited"])], null);
 
-    private DraftPeople? _reviewers;
-
     [Parameter, EditorRequired] public required Draft Draft { get; set; }
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
@@ -19,7 +17,7 @@
     [Parameter] public EventCallback<string> OnShare { get; set; }
     [Parameter] public EventCallback<string> OnUnshare { get; set; }
 
-    private DraftPeople Reviewers => _reviewers ??= new DraftPeople(this);
+    private DraftPeople Reviewers => field ??= new DraftPeople(this);
 
     private PlacePeopleView View => new([Reviewer],
         Draft.SharedWith.Select(id => new PlacePersonView(id, Names.GetValueOrDefault(id, "Someone"), null, [ReviewerRole])).ToList());

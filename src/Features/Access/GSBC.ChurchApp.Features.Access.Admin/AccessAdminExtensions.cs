@@ -9,8 +9,8 @@ namespace GSBC.ChurchApp.Features.Access.Admin;
 
 public static class AccessAdminExtensions
 {
-    public const string RolesTab = "roles";
-    public const string AbilitiesTab = "can-do";
+    private const string RolesTab = "roles";
+    private const string AbilitiesTab = "can-do";
 
     public static IServiceCollection AddAccessAdmin(this IServiceCollection services, ClientModules modules)
     {

@@ -1,5 +1,4 @@
 using GSBC.ChurchApp.Features.Access.Contracts;
-using GSBC.ChurchApp.Platform.Permissions;
 using static GSBC.ChurchApp.Features.Access.Api.Tests.TestChurch;
 
 namespace GSBC.ChurchApp.Features.Access.Api.Tests;

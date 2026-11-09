@@ -12,9 +12,6 @@ internal sealed class CalendarScopeNames(CalendarEditing editing) : IScopeNamer
 
     public IReadOnlyCollection<string> Feeds { get; } = [EventsFeeds.Calendars, EventsFeeds.Admin];
 
-    public async Task<IReadOnlyDictionary<string, string>> NamesAsync(IReadOnlyCollection<string> objectIds) =>
-        (await ChoicesAsync()).Where(calendar => objectIds.Contains(calendar.Id)).ToDictionary(calendar => calendar.Id, calendar => calendar.Name);
-
     public async Task<IReadOnlyList<ScopeChoice>> ChoicesAsync()
     {
         try
