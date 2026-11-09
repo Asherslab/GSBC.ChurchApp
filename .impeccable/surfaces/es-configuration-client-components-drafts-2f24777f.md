@@ -2,46 +2,48 @@
 version: 1
 slug: "es-configuration-client-components-drafts-2f24777f"
 primary_target: "src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Drafts"
-related_targets: ["src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Admin/Pages","src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.App/Pages"]
+related_targets: ["src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Admin/Pages","src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Hub","src/Features/Configuration/GSBC.ChurchApp.Features.Configuration.Client/Components/Tabs"]
 ---
 
-# GSBC app: Drafts workspace
+# GSBC app: App styling (was Drafts)
 
-Scope: the drafts workspace in the admin panel (`/drafts`, desktop first) and its one-column form in the app (More →
-Drafts): the event layer, the drafts list, the church-year view, editing a draft, sharing, publishing and turning a
-draft on for an event. Also the read-only "What everyone sees" pages for each area (Home screen, Colours), whose
-*Change it* starts or continues a draft. Mode: operate.
+Scope: the admin panel's App styling page (`/app-styling`, old `/drafts` links still work), desktop first: the
+app as everyone sees it, changing Colours, Home screen and Tab bar, the drafts that carry changes, publishing,
+turning a draft on for an event, publishing on a date, undoing a publish. Admin panel only. Mode: operate.
 
-Audience: mostly office staff, every few weeks rather than weekly (sermons and similar arrive automatically), on a
-desktop; each return must make sense without remembering how it works. Pastors and leaders preview and approve on
-their phones. Owner, 2026-11-02: it must not feel like Git (no branches, diffs, merges, conflicts, revisions) and
-must not feel like ceremony (a typo fix is edit, then Publish now). The owner chose both ways of seeing a draft: an optional phone preview beside the editor, and the real phone.
+Audience: office staff, every few weeks. Mostly two jobs (owner, 2026-11-09): **preparing a season** (next
+year's theme published on 1 January, a conference's Home and tabs on between dates) and **quick fixes** (a
+tile's words, published the same day). Owner: "drafts shouldn't be the front and center feature of it, the
+intent is to view & modify the styling, drafts is a vehicle". A year-long theme changes yearly; events make
+brief changes. Words: "What everyone sees" (never "Live"); no branches, diffs or conflicts.
 
-The model is in docs/architecture/drafts.md. Words on screen: "What everyone sees" (never "Live" where staff read
-it), "Changed for everyone since you edited it" with *Keep mine* / *Use everyone's* (never "conflict").
+Decided with the owner, 2026-11-09: landing shows the app as everyone sees it; *Change it* (or clicking the
+phone) carries on in your one open draft, starts one named after what you change when you have none, or asks
+which when you have several; Church year folds into *Coming up* (clicking one shows that day on the phone and
+opens its draft); the name is App styling.
 
 ## Direction contract
 
-THESIS: One workbench for the whole job: drafts on the left, the chosen draft in the middle, its row's settings or
-a phone preview on the right, with what everyone sees right now always stated at the top. It refuses the list page
-that sends you to a separate editor and back, and every version-control idiom.
+THESIS: The page is the app, described in one sentence and shown on a phone; drafts are how a change travels,
+reached from one chip. It refuses the three-pane drafts workbench (list, editor, detail) and any layout that
+changes shape between areas.
 
-OWN-WORLD: The app's bulletin system (DESIGN.md): navy for the event-layer band and primary actions, a sand drafts
-column beside a white work area, a lifted white settings panel, hairline rows, orange pills for "changed in this
-draft" and for "changed for everyone since", aqua-deep for actions, Montserrat 400/600/700.
+OWN-WORLD: The bulletin system (DESIGN.md) at its quietest: white page, title band, one ink sentence with the
+facts at 600, the phone frame as the only object with weight, sand chips for preview choices and drafts, a
+hairline list of the app's parts, orange only for what's chosen or changed, navy for the one primary action.
 
-STORY: I come back after three weeks, see at the top what everyone sees now (and any event layer), find my draft or
-start one, change a tile, watch it update in the preview and on my phone, then Publish now or Ask to publish.
+STORY: I open App styling and read what everyone sees and what's coming. I click the Bible tile, press Change
+it, fix its words, and Publish now. Or I open my 2027 theme draft from Your drafts, choose its colours, and set
+it to publish on 1 January.
 
-FIRST VIEWPORT: Admin top navigation. Left column (about 340px, sand): Drafts / Church year switch; the event-layer
-band (on, scheduled, none); Waiting to publish; Open (+ New); Published recently with Undo. Middle: draft name,
-save state, Share, More, Publish now; area tabs with counts; rows with changes marked and the "changed for everyone"
-note on its row. Right (about 400px): Settings / Phone preview switch, the selected row's form. Church year opens
-the event layer and dated tiles across the coming eight weeks, full width.
+FIRST VIEWPORT: Title band "App styling", the sentence beneath (theme, tiles, tabs, next dated change), "Your
+drafts (n)" chip at the top right. Below, two fixed columns: the phone (true size, scaled to the window) with
+preview chips under it (as whom, light or dark, phone, day), and a 400px column: What everyone sees (Colours,
+Home screen, Tab bar as hairline rows), Coming up. In a draft the sentence becomes the draft's name and save
+line, with Undo, Redo, Share, More, Publish now; the column holds the chosen part's settings. Nothing moves
+between areas.
 
-FORM: the owner's steer after one dealt round: the three-pane workbench (dealt structure 1) as the main workspace,
-with the church-year timeline (the dealt lead) as an optional view; raises from the gate-board challenger (a row
-changed for everyone stays marked until seen) and the signage challenger (the event layer as one band);
-seed:ccfdd5c4ad633b2e.
+FORM: dealt lead of the re-rolled hand after the owner's steer ("one stage, three areas, but quieter"):
+"A sentence, the phone, one panel", position 7 on the round-two list; seed:b1b04867c98ae322.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

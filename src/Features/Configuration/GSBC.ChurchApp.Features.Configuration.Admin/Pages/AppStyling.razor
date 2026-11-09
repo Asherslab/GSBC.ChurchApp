@@ -1,8 +1,9 @@
+@page "/app-styling"
+@page "/app-styling/{DraftId}"
 @page "/drafts"
 @page "/drafts/{DraftId}"
 
-<h1 class="visually-hidden">Drafts</h1>
-<DraftsWorkspace DraftId="@DraftId" AreaKey="@Area" />
+<StylingWorkspace DraftId="@DraftId" AreaKey="@Area" />
 
 @code {
     [Parameter] public string? DraftId { get; set; }

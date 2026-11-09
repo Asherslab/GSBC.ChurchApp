@@ -1,0 +1,55 @@
+@using System.Globalization
+@inject TimeProvider Clock
+
+<div class="preview-chips" role="group" aria-label="Preview choices">
+    <span>Preview as</span>
+    <select class="preview-chips__chip" aria-label="Preview as" value="@Value.Who" @onchange="change => SetAsync(Value with { Who = change.Value?.ToString() ?? StylingPreview.Visitor })">
+        @foreach (FieldOption option in Whom)
+        {
+            <option value="@option.Value">@option.Label</option>
+        }
+    </select>
+    <span>in</span>
+    <select class="preview-chips__chip" aria-label="Preview in light or dark" value="@Value.Scheme" @onchange="change => SetAsync(Value with { Scheme = Enum.Parse<ThemeScheme>(change.Value?.ToString() ?? nameof(ThemeScheme.Light)) })">
+        <option value="@ThemeScheme.Light">light mode</option>
+        <option value="@ThemeScheme.Dark">dark mode</option>
+    </select>
+    <span>on</span>
+    <select class="preview-chips__chip" aria-label="Preview on the phone" value="@Value.Device.Name" @onchange="change => SetAsync(Value with { Device = PhoneDevice.All.Single(device => device.Name == change.Value?.ToString()) })">
+        @foreach (PhoneDevice device in PhoneDevice.All)
+        {
+            <option value="@device.Name">an @device.Name</option>
+        }
+    </select>
+    <span>on</span>
+    <input class="preview-chips__chip preview-chips__day" type="date" aria-label="Preview the app on" value="@Iso(Value.Day ?? Today)"
+           @onchange="change => SetAsync(Value with { Day = FromIso(change.Value?.ToString() ?? string.Empty) is { } day && day != Today ? day : null })" />
+    @if (Value.Day is not null)
+    {
+        <button type="button" class="link preview-chips__today" @onclick="() => SetAsync(Value with { Day = null })">Back to today</button>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required StylingPreview Value { get; set; }
+    [Parameter] public EventCallback<StylingPreview> ValueChanged { get; set; }
+    [Parameter] public IEnumerable<Guid> Roles { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
+
+    private DateOnly Today => DateOnly.FromDateTime(ChurchTime.ToChurch(Clock.GetUtcNow().UtcDateTime));
+
+    private IReadOnlyList<FieldOption> Whom =>
+    [
+        new(StylingPreview.Visitor, "a visitor"),
+        new(StylingPreview.SignedIn, "someone signed in"),
+        .. Roles.Distinct().Select(role => new FieldOption(role.ToString(), $"someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
+        new(StylingPreview.Anyone, "anyone, with every tile"),
+    ];
+
+    private Task SetAsync(StylingPreview changed) => ValueChanged.InvokeAsync(changed);
+
+    private static string Iso(DateOnly date) => date.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+    private static DateOnly? FromIso(string text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly date) ? date : null;
+}
