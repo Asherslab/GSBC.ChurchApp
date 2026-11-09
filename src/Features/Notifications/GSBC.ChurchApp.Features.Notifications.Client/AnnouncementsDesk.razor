@@ -177,11 +177,14 @@
                 <LockScreenProof Title="@_editing.Title" Body="@_editing.Body" TimeSensitive="_editing.Urgent" Date="@Today.ToString("dddd d MMMM", CultureInfo.InvariantCulture)">
                     Tapping it opens @OpensWords.
                 </LockScreenProof>
-                <p class="announcement-desk__label">In the app's notifications</p>
-                <ListGroup>
-                    <ListRow Title="@(_editing.Title.Length > 0 ? _editing.Title : "The title goes here")" Subtitle="@(_editing.Body.Length > 0 ? _editing.Body : null)"
-                             Icon="@(_editing.Urgent ? "alert" : "bell")" IconTone="RowTone.Quiet" Unread="true" Trailing="now" Reading="true" />
-                </ListGroup>
+                @if (_editing.State != Recalled)
+                {
+                    <p class="announcement-desk__label">In the app's notifications</p>
+                    <ListGroup>
+                        <ListRow Title="@(_editing.Title.Length > 0 ? _editing.Title : "The title goes here")" Subtitle="@(_editing.Body.Length > 0 ? _editing.Body : null)"
+                                 Icon="@(_editing.Urgent ? "alert" : "bell")" IconTone="RowTone.Quiet" Unread="true" Trailing="now" Reading="true" />
+                    </ListGroup>
+                }
             </aside>
         </div>
     }
