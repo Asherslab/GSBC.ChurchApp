@@ -29,8 +29,8 @@ internal static partial class Digests
 
     public static Expression<Func<DigestRecord, bool>> Current(DateOnly today)
     {
-        DateOnly thisWeek = ChurchTime.WeekStart(today);
-        return digest => digest.Start >= thisWeek || (digest.SentAt == null && digest.End >= today);
+        DateTime thisWeek = ChurchTime.ToUtc(ChurchTime.WeekStart(today).ToDateTime(TimeOnly.MinValue));
+        return digest => digest.UpdatedAt >= thisWeek && digest.End >= today;
     }
 
     public static IReadOnlySet<Guid> DefaultCalendars(EventsBook book) =>

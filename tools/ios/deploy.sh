@@ -55,8 +55,10 @@ if [ "$target" = device ]; then
     exit 1
   fi
 else
-  device="$(find_simulator)"
-  if [ -z "$device" ]; then
+  device="${GSBC_SIMULATOR:-$(find_simulator)}"
+  if [ -n "${GSBC_SIMULATOR:-}" ]; then
+    xcrun simctl boot "$device" 2>/dev/null || true
+  elif [ -z "$device" ]; then
     device="$(xcrun simctl list devices available -j | python3 -I -c 'import json,sys; d=[x for r in json.load(sys.stdin)["devices"].values() for x in r if x["name"].startswith("iPhone")]; print(d[-1]["udid"])')"
     xcrun simctl boot "$device"
   fi

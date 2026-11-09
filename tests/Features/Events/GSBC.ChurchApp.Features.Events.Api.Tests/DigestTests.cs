@@ -54,15 +54,16 @@ public sealed class DigestTests
     }
 
     [Fact]
-    public void TheDeskOpensThisWeeksDigestOrOneStillBeingMadeAndStartsAfreshEachWeek()
+    public void TheDeskReopensTheDigestWorkedOnThisWeekUntilItEndsAndStartsAfreshEachWeek()
     {
         DateOnly monday = new(2026, 11, 16);
+        DateTime mondayMorning = ChurchTime.ToUtc(new DateTime(2026, 11, 16, 9, 0, 0));
+        DateTime lastSunday = ChurchTime.ToUtc(new DateTime(2026, 11, 15, 20, 0, 0));
         Func<DigestRecord, bool> current = Digests.Current(monday).Compile();
 
-        Assert.True(current(new DigestRecord { Start = monday, End = monday.AddDays(13), SentAt = Now }));
-        Assert.True(current(new DigestRecord { Start = new DateOnly(2026, 11, 12), End = new DateOnly(2026, 11, 25) }));
-        Assert.False(current(new DigestRecord { Start = new DateOnly(2026, 11, 9), End = new DateOnly(2026, 11, 22), SentAt = Now }));
-        Assert.False(current(new DigestRecord { Start = new DateOnly(2026, 11, 1), End = new DateOnly(2026, 11, 14) }));
+        Assert.True(current(new DigestRecord { Start = monday, End = monday.AddDays(13), UpdatedAt = mondayMorning, SentAt = mondayMorning }));
+        Assert.False(current(new DigestRecord { Start = monday.AddDays(7), End = monday.AddDays(27), UpdatedAt = lastSunday }));
+        Assert.False(current(new DigestRecord { Start = monday.AddDays(-14), End = monday.AddDays(-1), UpdatedAt = mondayMorning }));
     }
 
     [Fact]

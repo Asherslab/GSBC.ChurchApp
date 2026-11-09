@@ -1151,7 +1151,8 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .agenda-row__warn { color: var(--marker-ink); font-weight: 600; }
 .agenda-row__title-icon { display: inline-flex; margin-left: 6px; color: var(--ink-3); vertical-align: -2px; }
 .agenda-row--past { opacity: 0.55; }
-.agenda-row--highlight { margin: 2px -12px; padding-left: 12px; padding-right: 12px; border-radius: var(--radius-field); border-bottom-color: transparent; background: color-mix(in srgb, var(--marker) 14%, transparent); }
+.agenda-row--highlight { margin: 2px -12px; padding-left: 12px; padding-right: 12px; width: calc(100% + 24px); border-radius: var(--radius-field); background: color-mix(in srgb, var(--marker) 14%, transparent); }
+.row.agenda-row.agenda-row--highlight, .agenda-row--highlight + .row.agenda-row { border-color: transparent; }
 .agenda-row.row--selected { margin: 0 -12px; padding-left: 12px; padding-right: 12px; border-radius: var(--radius-field); border-bottom-color: transparent; background: var(--selected-fill); }
 
 .week-rail { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
