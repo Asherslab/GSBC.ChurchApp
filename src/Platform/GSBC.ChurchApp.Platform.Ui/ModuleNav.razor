@@ -1,44 +1,199 @@
-@implements IDisposable
+@implements IAsyncDisposable
 @inject ClientModules Modules
 @inject IAccess Access
+@inject SidebarPins Pins
+@inject NavigationManager Navigation
+@inject Shell Shell
 
 <nav class="module-nav" aria-label="Main">
-    @foreach (IGrouping<string?, NavEntry> group in Permitted.GroupBy(entry => entry.Group).OrderBy(group => group.Key == NavGroups.You))
+    <button type="button" class="module-nav__jump" aria-keyshortcuts="Meta+K Control+K" @ref="_first" @onclick="() => _jumping = true">
+        <Icon Name="search" Size="IconSize.Small" />
+        <span>Jump to…</span>
+        <kbd>@(_commandKey ? "⌘K" : "Ctrl K")</kbd>
+    </button>
+
+    @if (Plan.Top.Count > 0)
     {
         <div class="module-nav__group">
-            @if (group.Key is not null)
+            @foreach (NavEntry entry in Plan.Top)
             {
-                <span class="module-nav__label">@group.Key</span>
+                @Link(entry, marksHere: true)
             }
-            @foreach (NavEntry entry in group)
+        </div>
+    }
+
+    @if (Plan.Pinned.Count > 0)
+    {
+        <div class="module-nav__group">
+            <span class="module-nav__label">Pinned</span>
+            @foreach (NavEntry entry in Plan.Pinned)
             {
-                <NavLink class="module-nav__link" href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">
-                    <Icon Name="@entry.Icon" Size="IconSize.Small" />
-                    <span>@entry.Title</span>
-                    @if (Counts?.GetValueOrDefault(entry.Href) is > 0 and var count)
-                    {
-                        <span class="module-nav__count" aria-label="@($"{count} waiting")">@count</span>
-                    }
-                </NavLink>
+                @Link(entry, marksHere: true)
+            }
+        </div>
+    }
+
+    @if (Pins.SaveFailed)
+    {
+        <p class="module-nav__problem" role="status">
+            <span>Couldn't save your pins.</span>
+            <button type="button" @onclick="Pins.RetryAsync">Try now</button>
+        </p>
+    }
+
+    @if (Plan.Areas.Count > 0)
+    {
+        <div class="module-nav__group">
+            @if (Plan.Pinned.Count > 0)
+            {
+                <span class="module-nav__label">Everything</span>
+            }
+            @foreach (SidebarArea area in Plan.Areas)
+            {
+                string id = AreaId(area.Area);
+                <div class="module-nav__area @(area.Open ? "module-nav__area--open" : "")">
+                    <button type="button" class="module-nav__area-head" aria-expanded="@(area.Open ? "true" : "false")" aria-controls="@id" @onclick="() => FoldAsync(area.Area, !area.Open)">
+                        <Icon Name="chevron-right" Size="IconSize.Small" Class="module-nav__chevron" />
+                        <span>@area.Area.Title</span>
+                        @if (area is { Open: false, Waiting: > 0 })
+                        {
+                            <span class="module-nav__count">@area.Waiting<span class="visually-hidden"> waiting</span></span>
+                        }
+                        else
+                        {
+                            <span class="module-nav__pages">@area.Entries.Count<span class="visually-hidden"> pages</span></span>
+                        }
+                    </button>
+                    <div class="module-nav__area-pages" id="@id" hidden="@(!area.Open)">
+                        @if (area.Open)
+                        {
+                            @foreach (NavEntry entry in area.Entries)
+                            {
+                                @Link(entry, marksHere: !Pins.IsPinned(entry.Href))
+                            }
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    @if (Plan.Foot.Count > 0)
+    {
+        <div class="module-nav__group module-nav__foot">
+            @foreach (NavEntry entry in Plan.Foot)
+            {
+                @Link(entry, marksHere: true)
             }
         </div>
     }
 </nav>
+<RefreshOn Feeds="Pins.Feeds" Changed="Pins.LoadAsync" />
+<JumpTo @bind-Open="_jumping" Entries="Permitted" />
 
 @code {
+    private const string FoldsKey = "admin-nav-areas";
+    private const char Opened = '+';
+    private const char Folded = '-';
+    private Dictionary<string, bool> _folds = [];
+    private NavArea? _here;
+    private ElementReference _first;
+    private WindowChannel? _jumpKey;
+    private bool _commandKey = true;
+    private bool _jumping;
+
     [Parameter] public IReadOnlyDictionary<string, int>? Counts { get; set; }
 
-    private IEnumerable<NavEntry> Permitted => Modules.Navigation.Where(entry => entry.Requires is null || Access.CanSomewhere(entry.Requires));
+    private IReadOnlyList<NavEntry> Permitted => SidebarPlan.InOrder(Modules.Navigation.Where(entry => entry.Requires is null || Access.CanSomewhere(entry.Requires)));
 
-    protected override void OnInitialized()
+    private SidebarPlan Plan => SidebarPlan.Of(Permitted, Pins.Hrefs, _folds, _here, Counts);
+
+    private RenderFragment Link(NavEntry entry, bool marksHere) => @<div class="module-nav__row">
+        @if (marksHere)
+        {
+            <NavLink class="module-nav__link" href="@entry.Href" Match="@(entry.Href == "" ? NavLinkMatch.All : NavLinkMatch.Prefix)">@LinkContent(entry)</NavLink>
+        }
+        else
+        {
+            <a class="module-nav__link" href="@entry.Href">@LinkContent(entry)</a>
+        }
+        @if (Pins.Available && SidebarPlan.Pinnable(entry))
+        {
+            bool pinned = Pins.IsPinned(entry.Href);
+            <button type="button" class="module-nav__pin @(pinned ? "module-nav__pin--on" : "")" aria-pressed="@(pinned ? "true" : "false")"
+                    aria-label="@($"Pin {entry.Title}")" title="@(pinned ? "Unpin from the top" : "Pin to the top")" @onclick="() => Pins.SetAsync(entry.Href, !pinned)">
+                <Icon Name="pin" Size="IconSize.Small" />
+            </button>
+        }
+    </div>;
+
+    private RenderFragment LinkContent(NavEntry entry) => @<text>
+        <Icon Name="@entry.Icon" Size="IconSize.Small" />
+        <span class="module-nav__title">@entry.Title</span>
+        @if (Counts?.GetValueOrDefault(entry.Href) is > 0 and var count)
+        {
+            <span class="module-nav__count">@count<span class="visually-hidden"> waiting</span></span>
+        }
+    </text>;
+
+    private static string AreaId(NavArea area) => "nav-area-" + string.Concat(area.Title.Where(char.IsLetter)).ToLowerInvariant();
+
+    public ValueTask FocusAsync() => _first.FocusAsync();
+
+    protected override async Task OnInitializedAsync()
     {
-        Access.Changed += OnChanged;
+        Access.Changed += OnAccessChanged;
+        Pins.Changed += OnPinsChanged;
+        Navigation.LocationChanged += OnLocationChanged;
+        _commandKey = await Shell.UsesCommandKeyAsync();
+        _folds = Read(await Shell.RecallAsync(FoldsKey));
+        _jumpKey = await Shell.HearJumpKeyAsync(_ => InvokeAsync(() =>
+        {
+            _jumping = !_jumping;
+            StateHasChanged();
+        }));
+        await Pins.LoadAsync();
+        FindHere();
     }
 
-    private void OnChanged() => InvokeAsync(StateHasChanged);
-
-    public void Dispose()
+    private async Task FoldAsync(NavArea area, bool open)
     {
-        Access.Changed -= OnChanged;
+        _folds[area.Title] = open;
+        if (!open && area == _here)
+            _here = null;
+        await Shell.RememberAsync(FoldsKey, string.Join('\n', _folds.Select(fold => (fold.Value ? Opened : Folded) + fold.Key)));
+    }
+
+    private void FindHere()
+    {
+        string path = Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0];
+        NavEntry? here = Permitted
+            .Where(entry => SidebarPlan.Pinnable(entry) && entry.Href.Length > 0 && (path == entry.Href || path.StartsWith(entry.Href + "/", StringComparison.Ordinal)))
+            .MaxBy(entry => entry.Href.Length);
+        _here = here is null || Pins.IsPinned(here.Href) ? null : here.Area;
+    }
+
+    private static Dictionary<string, bool> Read(string? stored) => (stored ?? "")
+        .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+        .Where(line => line[0] is Opened or Folded)
+        .ToDictionary(line => line[1..], line => line[0] == Opened);
+
+    private void OnAccessChanged() => InvokeAsync(Pins.LoadAsync);
+
+    private void OnPinsChanged() => InvokeAsync(StateHasChanged);
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => InvokeAsync(() =>
+    {
+        FindHere();
+        StateHasChanged();
+    });
+
+    public async ValueTask DisposeAsync()
+    {
+        Access.Changed -= OnAccessChanged;
+        Pins.Changed -= OnPinsChanged;
+        Navigation.LocationChanged -= OnLocationChanged;
+        if (_jumpKey is not null)
+            await _jumpKey.DisposeAsync();
     }
 }

@@ -9,12 +9,24 @@
 @inject TimeProvider Clock
 
 <div class="admin-shell">
-    <aside class="admin-sidebar">
-        <a class="admin-brand" href="">
-            <BrandMark Decorative="true" />
-            <span>Good Shepherd</span>
-        </a>
-        <ModuleNav Counts="_waiting" />
+    @if (_menuOpen)
+    {
+        <div class="admin-menu-scrim" @onclick="CloseMenuAsync"></div>
+    }
+    <aside class="admin-sidebar @(_menuOpen ? "admin-sidebar--open" : "")" @onkeydown="MenuKeyAsync">
+        <div class="admin-sidebar__head">
+            <a class="admin-brand" href="">
+                <BrandMark Decorative="true" />
+                <span>Good Shepherd</span>
+            </a>
+            <button type="button" class="admin-menu" aria-expanded="@(_menuOpen ? "true" : "false")" aria-controls="admin-nav" @ref="_menuButton" @onclick="ToggleMenuAsync">
+                <Icon Name="@(_menuOpen ? "x" : "menu")" Size="IconSize.Small" />
+                <span>@(_menuOpen ? "Close" : "Menu")</span>
+            </button>
+        </div>
+        <div class="admin-sidebar__nav" id="admin-nav">
+            <ModuleNav @ref="_nav" Counts="_waiting" />
+        </div>
         <RefreshOn Feeds="Feeds" Changed="CountAsync" />
     </aside>
     <main class="admin-main">
@@ -51,6 +63,10 @@
 @code {
     private ErrorBoundary? _boundary;
     private IReadOnlyDictionary<string, int>? _waiting;
+    private bool _menuOpen;
+    private bool _focusMenu;
+    private ModuleNav? _nav;
+    private ElementReference _menuButton;
 
     private IReadOnlyCollection<string> Feeds => Sources.SelectMany(source => source.Feeds).ToHashSet();
 
@@ -88,6 +104,33 @@
         }
     }
 
+    private async Task ToggleMenuAsync()
+    {
+        if (_menuOpen)
+        {
+            await CloseMenuAsync();
+            return;
+        }
+        _menuOpen = true;
+        _focusMenu = true;
+    }
+
+    private async Task CloseMenuAsync()
+    {
+        _menuOpen = false;
+        await _menuButton.FocusAsync();
+    }
+
+    private Task MenuKeyAsync(KeyboardEventArgs key) => _menuOpen && key.Key == "Escape" ? CloseMenuAsync() : Task.CompletedTask;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!_focusMenu || _nav is null)
+            return;
+        _focusMenu = false;
+        await _nav.FocusAsync();
+    }
+
     protected override void OnParametersSet() => _boundary?.Recover();
 
     private void Recover() => _boundary?.Recover();
@@ -98,7 +141,11 @@
         StateHasChanged();
     });
 
-    private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => OnAccessChanged();
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs args)
+    {
+        _menuOpen = false;
+        OnAccessChanged();
+    }
 
     public void Dispose()
     {

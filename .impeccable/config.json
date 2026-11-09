@@ -160,6 +160,24 @@
         ],
         "createdAt": "2026-11-08T05:01:21.457Z",
         "reason": "Claude: decision-page sketches draw a phone at miniature scale on purpose; not shipping UI"
+      },
+      {
+        "rule": "skipped-heading",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/sidebar-rail.html"
+        ],
+        "createdAt": "2026-11-09T11:21:52.839Z",
+        "reason": "Claude: unchosen decision-round sketch (owner picked the pinned option 2026-11-09); never ships"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          ".impeccable/mocks/decision/sidebar-rail.html"
+        ],
+        "createdAt": "2026-11-09T11:21:52.900Z",
+        "reason": "Claude: unchosen decision-round sketch (owner picked the pinned option 2026-11-09); never ships"
       }
     ]
   }

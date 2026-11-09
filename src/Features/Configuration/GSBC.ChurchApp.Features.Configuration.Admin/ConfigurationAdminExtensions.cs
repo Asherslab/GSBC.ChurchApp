@@ -15,7 +15,7 @@ public static class ConfigurationAdminExtensions
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAdminExtensions).Assembly,
             [
-                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit, Group: NavGroups.Content, Summary: "Change the app's home screen, colours and fonts, then publish"),
+                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit, Area: NavAreas.TheApp, Summary: "Change the app's home screen, colours and fonts, then publish"),
             ]));
         return services.AddConfigurationClient().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>().AddSingleton<IScopeNamer, DraftScopeNames>()
             .AddPlacePreview<HomePlacePreview>(place => place.Path == ShellDestinations.Home.Path)

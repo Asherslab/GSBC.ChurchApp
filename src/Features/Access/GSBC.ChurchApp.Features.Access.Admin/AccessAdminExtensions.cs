@@ -11,8 +11,8 @@ public static class AccessAdminExtensions
     {
         modules.Add(new ClientModule("Access", typeof(AccessAdminExtensions).Assembly,
         [
-            new NavEntry("Roles", "access/roles", "shield", AccessPermissions.View, Group: NavGroups.People, Summary: "What each role lets people see and change"),
-            new NavEntry("Who can do what", "access/people", "key", AccessPermissions.View, Group: NavGroups.People, Summary: "Find someone and see or change what they can do"),
+            new NavEntry("Roles", "access/roles", "shield", AccessPermissions.View, Area: NavAreas.People, Summary: "What each role lets people see and change"),
+            new NavEntry("Who can do what", "access/people", "key", AccessPermissions.View, Area: NavAreas.People, Summary: "Find someone and see or change what they can do"),
         ]));
         return services.AddAccessClient();
     }

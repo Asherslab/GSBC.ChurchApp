@@ -395,6 +395,31 @@ needs a desk: wide tables, bulk edits, configuration. So:
 - moving a component from Admin to the phone is a page change, not a rewrite;
 - the server enforces every permission; hiding UI is a courtesy.
 
+### The admin sidebar
+
+Each feature's Admin part declares its own sidebar entries (`NavEntry` in its `ClientModule`): a title, the page, an
+icon, the permission that shows it, a one-line `Summary` for Home's *Your areas*, and the **area** it belongs in
+(`NavArea`, from `NavAreas` in Platform.Client). The host adds nothing per feature; `ModuleNav` builds the sidebar from
+what the person's permissions allow.
+
+Areas are cut by the job staff are doing (owner, 2026-11-09): **Sundays & sermons** (Sermons, Weekly digest),
+**Calendar & news** (Calendar, Announcements), **The app** (Drafts, Media, Places in the app, Insights, App health, App
+review), **People** (People, Roles, Who can do what), and **You** (Account) at the foot. *Church life* (Ministries, Life
+Groups, prayer) joins `NavAreas` with its first page. A new area is a new `NavAreas` entry with its place in the order.
+
+How it behaves (owner's pick, 2026-11-09, "your pages pinned, then areas folded"):
+
+- **Pinned** at the top: the pages someone pins, in the order they pinned them, kept with their account so they follow
+  them to any computer ([accounts.md](../features/accounts.md), *Pinned pages*). A pinned page their role no longer
+  allows isn't shown.
+- **Everything else in areas that fold.** Each area's head folds and unfolds it, and the choice is remembered on that
+  computer (browser storage). An area starts open when the person sees 8 pages or fewer, folded otherwise; the area of
+  the page you're on opens by itself. A folded area shows the orange count of what's waiting inside it, or how many
+  pages it has. Pages in an area are in alphabetical order.
+- **Jump to** (⌘K or Ctrl K, or the field at the top) finds any page the person can open by its name, area or summary.
+- **On a narrow window** (900px and under) the sidebar is a strip with the mark and a Menu button that opens the same
+  sidebar over the page.
+
 ## Rules, enforced by `Architecture.Tests`
 
 - Features never reference each other, only Platform. Cross-feature display goes through a small

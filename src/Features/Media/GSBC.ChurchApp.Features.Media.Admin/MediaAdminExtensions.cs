@@ -11,7 +11,7 @@ public static class MediaAdminExtensions
     public static IServiceCollection AddMediaAdmin(this IServiceCollection services, ClientModules modules)
     {
         modules.Add(new ClientModule("Media", typeof(MediaAdminExtensions).Assembly,
-            [new NavEntry("Media", "media", "image", MediaPermissions.View, Group: NavGroups.Content, Summary: "Pictures for the app's tiles and pages")]));
+            [new NavEntry("Media", "media", "image", MediaPermissions.View, Area: NavAreas.TheApp, Summary: "Pictures for the app's tiles and pages")]));
         return services.AddMediaClient()
             .AddPlaceAction(new PlaceAction("Open in Media", "image", place => place.Kind == MediaDestinations.File.Key ? "media" : null, MediaPermissions.View, Leads: true));
     }
