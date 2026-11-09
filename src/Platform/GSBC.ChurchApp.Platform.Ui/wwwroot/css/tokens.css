@@ -4,7 +4,12 @@
 @font-face { font-family: "DM Serif Text"; font-weight: 400; font-display: swap; src: url("../fonts/dm-serif-text-latin-400-normal.woff2") format("woff2"); }
 
 :root,
-[data-preview-scheme="light"] {
+[data-palette],
+[data-preview-scheme] {
+  --tile-soft-mix: 24%;
+  --tile-warm-base: var(--page);
+  --tile-soft-ink: 78%;
+  --tile-warm-go: var(--marker-ink);
   --device-bezel: #000000;
   --selected-fill: var(--sand);
   --fill-on-surface: var(--sand);
@@ -108,6 +113,7 @@
 }
 
 :root[data-scheme="dark"],
+:root[data-scheme="dark"] [data-palette]:not([data-preview-scheme="light"]),
 [data-preview-scheme="dark"] {
   --tile-soft-mix: 40%;
   --tile-warm-base: var(--on-marker);
@@ -143,7 +149,7 @@
 }
 
 :root[data-theme="year-2026"][data-scheme="dark"],
-:root[data-scheme="dark"] [data-palette="year-2026"],
+:root[data-scheme="dark"] [data-palette="year-2026"]:not([data-preview-scheme="light"]),
 [data-palette="year-2026"][data-preview-scheme="dark"] {
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
