@@ -6,7 +6,7 @@
     <div class="list">
         @foreach (EventOccurrence occurrence in Occurrences)
         {
-            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" NewChange="IsNewChange(occurrence)" />
+            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="IsNewChange(occurrence)" />
         }
     </div>
 </section>

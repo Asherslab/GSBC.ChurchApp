@@ -29,7 +29,7 @@
             <div class="list">
                 @foreach (EventOccurrence occurrence in onDay)
                 {
-                    <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" NewChange="Yours.IsNewChange(occurrence)" />
+                    <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="Yours.IsNewChange(occurrence)" />
                 }
             </div>
         }

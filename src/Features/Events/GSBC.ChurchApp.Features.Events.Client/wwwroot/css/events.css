@@ -80,8 +80,6 @@
 .editor-list__item .field__input { background: var(--surface); }
 .editor-list__item > .btn { justify-self: start; }
 .editor-list__line { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 0; border-bottom: 1px solid var(--line); font-size: var(--text-row); }
-.event-picture-field { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.event-picture-field .media-thumbnail { width: 112px; border-radius: 8px; }
 .kept-list { display: grid; gap: 6px; margin: 0; padding-left: 18px; color: var(--ink-2); font-size: var(--text-row); line-height: 1.45; }
 .repeat-editor { display: grid; gap: 8px; }
 .repeat-editor__head { margin: 16px 0 0; padding-top: 14px; border-top: 1px solid var(--line); font-size: var(--text-row); font-weight: 700; }
@@ -270,8 +268,10 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .whats-next-off__when { padding-left: 24px; color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
 .whats-next-off__about { padding-left: 24px; color: var(--ink-2); font-size: var(--text-caption); line-height: 1.45; }
 
-.digest-desk__choices { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin: 18px 0 12px; }
-.digest-desk__choices .segmented { min-width: 320px; }
+.digest-desk__choices { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 16px; margin: 18px 0 12px; }
+.digest-desk__choices .segmented { min-width: 360px; }
+.digest-desk__dates { display: flex; gap: 12px; }
+.digest-desk__dates .field { margin: 0; width: 11rem; }
 .digest-desk__range { color: var(--primary); font-size: var(--text-row); font-weight: 600; font-variant-numeric: tabular-nums; }
 .digest-desk__calendars { margin-bottom: 14px; }
 .digest-list { margin: 8px 0 0; padding: 0; list-style: none; border-bottom: 1px solid var(--line); }

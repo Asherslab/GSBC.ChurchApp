@@ -139,16 +139,3 @@
     align-items: center;
     gap: 8px;
 }
-
-.media-setting__shown {
-    flex: 1 1 0;
-    min-width: 0;
-    overflow-wrap: anywhere;
-}
-
-.media-setting .media-thumbnail {
-    width: 96px;
-    height: 64px;
-    object-fit: cover;
-    border-radius: var(--radius-inner);
-}
