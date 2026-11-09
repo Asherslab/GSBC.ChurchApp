@@ -89,8 +89,8 @@ health from the terminal*). It's a third kind of session, not an API key (decide
 2026-11-03):
 
 - **Who:** people holding `accounts.tools.connect` (sensitive): the Developer role (Accounts adds it to
-  Analytics' role with `AddToSystemRole`) and Owner. Account managers hold `accounts.view`, `.manage` and
-  `.review.manage` by name, so not this.
+  Analytics' role with `AddToSystemRole`) and Owner. People Managers and App Review Managers hold their
+  nodes by name, so not this.
 - **Connecting** is `Accounts.ConnectTool(name)` in the admin panel's Account page; the secret is shown once.
   The phone's native layer refuses the method, so the WebView never receives one.
 - **It acts as its account but never with anything sensitive.** The gateway marks the API token
@@ -136,7 +136,7 @@ is in [environments.md](environments.md), *Sign-in for Apple's reviewers*.
 
 - **A demo account is an ordinary account holding the App reviewer system role** (`app-reviewer`,
   declared by Accounts, granting nothing). There's no flag on the account: Access says who is a demo
-  account, as for everything else. Staff with `accounts.review.manage` (sensitive; Account managers hold
+  account, as for everything else. Staff with `accounts.review.manage` (sensitive; App Review Managers hold
   it) make one in the admin panel, and Accounts gives it the role as a feature.
 - **A code only ever reaches a demo account:** it must hold the role, have no passkey (a passkey means
   a real person) and hold nothing sensitive (so giving it Owner by mistake stops its codes rather than

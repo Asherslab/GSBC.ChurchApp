@@ -1,0 +1,44 @@
+{
+  "title": "Roles: choose how a person's roles are shown",
+  "question": "The admin panel's look stays as it is; this decides how People and a person's roles fit together. All three use the same roles by feature, independent ticks with an (i) on each, and nothing for one calendar or event (that goes on the thing). The review, the proposed roles and how today's holders carry across are in proposal.html, beside these sketches. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "grid",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Everyone at a glance",
+      "thesis": "People becomes a table of everyone by feature: each square shows their roles there, and clicking it opens that feature's ticks.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["data table", "level capsules", "popover tick list"],
+      "viewport": "Title band, search and Has a role / Everyone / Invited, then rows of people with a column per feature. A chosen square opens its ticks and the (i) explanation in place; a Roles button on each row opens all of them.",
+      "risk": "Seven feature columns are wide: under about 1300px the table scrolls sideways, and with 200 people most squares are dashes, so it opens filtered to Has a role.",
+      "html": ".impeccable/mocks/decision/roles/grid.html"
+    },
+    {
+      "id": "rows",
+      "kind": "dealt",
+      "label": "A person beside the list",
+      "thesis": "People keeps its list. The chosen person's Roles tab has one line per feature, with its levels as toggle capsules beside it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["split view", "toggle capsules", "tabs: Roles, Account, Activity"],
+      "viewport": "List of people on the left; on the right the person, tabs, and a feature-by-feature list of capsules (filled when held), each with an (i) that opens what it lets them do. 'What can Sam do, and why?' at the foot.",
+      "risk": "Capsules are compact, but a role's full name (Sermons Uploader) only shows in its (i) and on the list, not in the capsule.",
+      "html": ".impeccable/mocks/decision/roles/rows.html"
+    },
+    {
+      "id": "page",
+      "kind": "dealt",
+      "label": "A page for each person",
+      "thesis": "Each person gets their own page; Roles is a plain tick list of every role by feature, with what the chosen one does always open beside it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["full page", "tick list in two columns", "sand explanation panel"],
+      "viewport": "Back to People, the person's name with account actions, tabs (Roles, What they can do, Account, Activity), the tick list in two columns, roles for single things underneath with links, and a sand panel explaining the role you're on.",
+      "risk": "One more click than the others: People is the list, and each person opens as a page, so going through several people means back and forth.",
+      "html": ".impeccable/mocks/decision/roles/page.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" },
+  "followup": true
+}

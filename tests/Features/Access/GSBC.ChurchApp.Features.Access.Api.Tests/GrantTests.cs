@@ -25,7 +25,20 @@ public sealed class GrantTests
         Assert.True(grants.IsAllowed(ReadNews, "42"));
         Assert.False(grants.IsAllowed(EditRoster, "42"));
         Assert.False(grants.IsAllowed(PostNews, "7"));
-        Assert.False(grants.IsAllowed(AccessPermissions.EditRoles));
+        Assert.False(grants.IsAllowed(AccessPermissions.View));
+    }
+
+    [Fact]
+    public async Task ARoleForOneThingBringsWhatItsJobNeedsFromElsewhereEverywhere()
+    {
+        Guid person = Guid.CreateVersion7();
+        _church.Assign(person, _church.SystemRole("publicity").Id, scopeObjectId: Music);
+
+        GrantSet grants = await _church.GrantsAsync(person);
+
+        Assert.True(grants.IsAllowed(PostNews, Music));
+        Assert.False(grants.IsAllowed(PostNews, "youth"));
+        Assert.True(grants.IsAllowed(SeePictures));
     }
 
     [Fact]

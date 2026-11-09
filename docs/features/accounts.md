@@ -42,7 +42,7 @@ when the link stops working (expired ones stay listed until the cleanup removes 
 `Accounts.ResendInvitation` (`accounts.manage`) replaces the link with a new 7-day one and emails it;
 `Accounts.WithdrawInvitation` (`accounts.manage`) stops the link and deletes the account that was never
 set up, as the cleanup would a week later. The admin panel's People shows them under the *Invited*
-filter, with both actions on the person's panel, and an invitation still waiting after two days, or
+filter, with both actions on the person's page (Account tab), and an invitation still waiting after two days, or
 expired, reaches Home's *Needs you* (`InvitationsOfficeWeek`, for holders of `accounts.manage`).
 
 **Review sign-in.** In the app, signed out: **Have a sign-in code?** → email and code →
@@ -58,7 +58,7 @@ doesn't reveal who has an account) emails a code when allowed. Staff can issue o
 Recovering never removes existing passkeys; the person removes lost ones afterwards.
 
 **Deleting an account** (owner, 2026-11-09: "yes staff can delete, also let people delete their own account? no reason
-not to"). `Accounts.DeleteAccount(userId)` (`accounts.manage`, from the person's panel on People, never your own) and
+not to"). `Accounts.DeleteAccount(userId)` (`accounts.manage`, from the person's page on People (Account tab), never your own) and
 `Accounts.DeleteMyAccount` (signed in, at the end of the Account page in the app and the admin panel). Both ask first and
 say it can't be undone (`AccountDeletionWords`).
 
@@ -78,6 +78,14 @@ say it can't be undone (`AccountDeletionWords`).
   Owner assignment ("Make someone else an Owner first").
 - Phones held roles of their own (calendars added, follows) stay with the phone, as when someone signs out.
 - Tests: `AccountDeletionTests`, `InvitationTests`, `AssignmentPolicyTests`.
+
+## A person's page (2026-11-09)
+
+People lists everyone; choosing someone opens their page (`/people/{id}`): their email, account state and
+whether they have a passkey and joined date, and tabs. Accounts owns the page, its **Account** tab (recovery link,
+invitation, turning the account off, deleting it) and **Activity** (`accounts.manage`, as before); other features add tabs through `PersonTab`
+(Platform.Client): Access adds **Roles** and **What they can do** ([access.md](access.md#admin-screens)).
+`/people?person={id}` (the office week's links) goes to the page.
 
 ## Sessions and tokens
 

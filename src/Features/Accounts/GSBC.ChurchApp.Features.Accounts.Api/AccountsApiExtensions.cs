@@ -26,9 +26,15 @@ public static class AccountsApiExtensions
         services
             .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
             .AddEntityFrameworkStores<AccountsDbContext>();
-        services.AddSystemRole(new SystemRole("account-manager", "Account manager",
-            "Invite people, help them back in, disable accounts, read the audit log", ScopeKind.Global,
-            [AccountsPermissions.ViewNode, AccountsPermissions.ManageNode, AccountsPermissions.ReviewAccessNode]));
+        services.AddRoleKit(new RoleKit(RoleKits.PeopleNames, [AccountsPermissions.ViewNode]));
+        services.AddSystemRole(new SystemRole("people-viewer", "People Viewer", "See everyone's name and email", ScopeKind.Global,
+            [AccountsPermissions.ViewNode], Feature: RoleFeatures.People));
+        services.AddSystemRole(new SystemRole("people-manager", "People Manager",
+            "Invite people, help them back in, turn accounts off, delete accounts and read the activity log", ScopeKind.Global,
+            [AccountsPermissions.ViewNode, AccountsPermissions.ManageNode], Feature: RoleFeatures.People, Replaces: ["account-manager"]));
+        services.AddSystemRole(new SystemRole("app-review-manager", "App Review Manager",
+            "Make demo accounts and sign-in codes for Apple's app reviewers", ScopeKind.Global,
+            [AccountsPermissions.ReviewAccessNode], Feature: RoleFeatures.People, StartsWithHoldersOf: ["account-manager"]));
         services.AddSystemRole(DemoAccounts.Role);
         services.AddToSystemRole(DeveloperRole, AccountsPermissions.ConnectToolNode);
         services.AddScoped<DemoAccounts>().AddScoped<ReviewSignIns>().AddScoped<Invitations>().AddScoped<AccountDeletion>();

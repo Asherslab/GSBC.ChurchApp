@@ -26,10 +26,16 @@ public static class ConfigurationApiExtensions
         services.AddScoped<IMediaHolder, PlacementMediaHolder>();
         services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All);
         services.AddPermissions(HubSurfaces.Edit, HubSurfaces.Publish, AppearanceSurfaces.Edit, AppearanceSurfaces.Publish, TabBarSurfaces.Edit, TabBarSurfaces.Publish, ConfigurationPermissions.PreviewDraft);
-        services.AddSystemRole(new SystemRole(ConfigurationPermissions.DraftReviewerRole, "Draft reviewer",
-            "Sees a draft on their phone before it's published", ScopeKind.Draft, [ConfigurationPermissions.PreviewDraft.Node], AssignableBy: []));
-        services.AddSystemRole(new SystemRole("app-editor", "App editor",
-            "Arranges the app's Home screen, tabs and colours, sees every draft, and publishes", ScopeKind.Global, ["config.*"]));
+        services.AddSystemRole(new SystemRole(ConfigurationPermissions.DraftReviewerRole, "Reviewer",
+            "Preview this draft on their phone before it's published", ScopeKind.Draft, [ConfigurationPermissions.PreviewDraft.Node], AssignableBy: []));
+        services.AddSystemRole(new SystemRole("app-draft-editor", "App Editor",
+            "Change the app's Home screen, tabs and colours in drafts, and see every draft", ScopeKind.Global,
+            [HubSurfaces.Edit.Node, AppearanceSurfaces.Edit.Node, TabBarSurfaces.Edit.Node, ConfigurationPermissions.PreviewDraft.Node],
+            Feature: RoleFeatures.App, Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole("app-publisher", "App Publisher",
+            "Everything an App Editor can, and put drafts out to everyone", ScopeKind.Global, ["config.*"],
+            Feature: RoleFeatures.App, Kits: [RoleKits.Pictures], Replaces: ["app-editor"]));
+        services.AddScoped<IRoleUses, ConfigurationRoleUses>();
         services.AddNotificationKinds(DraftNotifications.All);
         services.AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All).AddSurfaces(TabBarSurfaces.All).AddSurfaces(WaitingTiles.Surfaces);
         services.AddMeasures(HubSurfaces.TileTapped);

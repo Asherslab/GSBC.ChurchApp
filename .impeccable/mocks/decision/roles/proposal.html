@@ -1,0 +1,100 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Roles, redone</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#18233a;font:400 15.5px/1.6 Montserrat,sans-serif}
+main{max-width:1060px;margin:0 auto;padding:40px 24px 80px}
+h1{font-size:30px;letter-spacing:-.02em;margin:0 0 6px}h2{font-size:21px;margin:44px 0 10px;padding-top:18px;border-top:1px solid #e5e0d6}h3{font-size:16px;margin:24px 0 6px}
+p.lead{color:#545e70;max-width:72ch;margin:0}
+ul{padding-left:20px}li{margin:3px 0}
+table{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}th{text-align:left;font-size:12.5px;color:#6b7384;font-weight:600;padding:8px;border-bottom:1px solid #e5e0d6}td{padding:8px;border-bottom:1px solid #f0ebe2;vertical-align:top}
+td b{font-weight:600}.g td{background:#f4efe7;font-weight:700;font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#545e70}
+.also{color:#00675e}.gain{color:#8a5422;font-weight:600}.q{color:#6b7384}
+.callout{background:#f4efe7;border-radius:14px;padding:16px 20px;margin-top:14px}
+.mock{border:1px solid #e5e0d6;border-radius:14px;padding:20px 22px;max-width:520px;margin-top:12px;box-shadow:0 8px 24px rgba(24,35,58,.06)}
+.mock .h{font-weight:600;color:#545e70;font-size:14px;margin-bottom:2px}.mock .hint{font-size:12.5px;color:#6b7384;margin-bottom:8px}
+.pp{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid #f0ebe2;font-size:14px}.pp .n{flex:1;font-weight:600}.pp .n small{display:block;font-weight:400;color:#6b7384;font-size:12px}
+.tag{height:26px;border-radius:13px;padding:0 10px;display:inline-flex;align-items:center;background:rgba(0,156,143,.13);color:#00675e;font-size:12px;font-weight:600}
+.btn{height:30px;border-radius:15px;padding:0 12px;display:inline-flex;align-items:center;background:#f4efe7;font-weight:600;font-size:12.5px}
+.add{margin-top:10px;height:40px;border-radius:12px;background:#f4efe7;display:flex;align-items:center;padding:0 14px;color:#6b7384;font-size:14px}
+code{font-size:12.5px;background:#f4efe7;border-radius:5px;padding:1px 5px}
+</style></head><body><main>
+<h1>Roles, redone</h1>
+<p class="lead">What's there today, the roles I propose (one set per feature, with levels), how roles for one thing move onto the thing, and how today's holders carry across. The People page sketches are on the decision page; pick one there. Your answers so far: tick boxes can be ticked independently, roles are built in only, and the Roles page goes.</p>
+
+<h2>What's there today</h2>
+<ul>
+<li><b>36 permissions, 21 built-in roles</b> plus one made here (“Test Role”, nobody holds it). All of them sit in one list, named the way each feature happened to name them: “Announcer”, “App editor”, “Calendars manager”, “Digest maker”.</li>
+<li><b>Six of the 21 are bookkeeping, never given by hand:</b> Sermon follower, Series follower, Calendar added, Calendar turned off (what a phone follows or has added), App reviewer (marks Apple's demo account) and Draft reviewer (given when a draft is shared). They still show on Roles and in the <i>Give a role</i> picker.</li>
+<li><b>Roles don't bring what the job needs.</b> A Sermons editor, App editor or calendar editor can't pick or upload a picture unless someone also makes them a Media editor. Nothing on screen says so.</li>
+<li><b>Giving a role is out of the way.</b> People → a person → “See what they can do” → <i>Who can do what</i>, past a long “What can X do?” list, to a small picker at the side. People and Who can do what are two pages for the same person.</li>
+<li><b>Roles for one thing are given far from the thing.</b> A calendar's settings say “given in Who can do what: choose someone, then give them Calendar editor at this calendar”. An event's organisers have no screen of their own at all. Drafts are the one exception: <i>Share</i> already adds people on the draft itself.</li>
+<li><b>Making roles</b> (copy, tick abilities, check what changes) works, but nobody has used it, and it's most of what the Roles page carries.</li>
+</ul>
+
+<h2>The roles I propose</h2>
+<p class="lead">Named <i>Feature Level</i>. Each one lists what it gives; <span class="also">green</span> is what it brings from another part so the job works. Everything else stays as it is today.</p>
+<table>
+<tr><th style="width:24%">Role</th><th>Lets them</th><th style="width:26%">Today</th></tr>
+<tr class="g"><td colspan="3">Sermons (with the Sermons station's changes once merged)</td></tr>
+<tr><td><b>Sermons Uploader</b></td><td>Add sermons by uploading their audio. <span class="also">Media: see the library, upload pictures.</span></td><td>Sermon uploader <span class="gain">+ Media</span></td></tr>
+<tr><td><b>Sermons Editor</b></td><td>Everything an Uploader can, plus correct sermons and look after series and speakers. <span class="also">Media: see, upload.</span></td><td>Sermons editor <span class="gain">+ Media</span></td></tr>
+<tr class="g"><td colspan="3">Calendar</td></tr>
+<tr><td><b>Calendar Editor</b></td><td>Add and change events in every calendar. <span class="also">Media: see, upload.</span></td><td>New (today only per calendar)</td></tr>
+<tr><td><b>Calendar Publisher</b></td><td>Edit and publish in every calendar. <span class="also">Media: see, upload.</span></td><td>New (today only per calendar)</td></tr>
+<tr><td><b>Calendar Manager</b></td><td>Make and remove calendars, choose who each is for, keep the named breaks, edit and publish everywhere. <span class="also">Media.</span></td><td>Calendars manager <span class="gain">+ Media</span></td></tr>
+<tr><td><b>Digest Maker</b></td><td>Make the weekly digest, copy it for email, send it to the app.</td><td>Digest maker</td></tr>
+<tr class="g"><td colspan="3">Announcements</td></tr>
+<tr><td><b>Announcements Writer</b></td><td>Write announcements, try them on their own phone, ask for them to be sent.</td><td>New</td></tr>
+<tr><td><b>Announcements Sender</b></td><td>Write, send and schedule to everyone.</td><td>Announcer</td></tr>
+<tr class="g"><td colspan="3">App (Home, tabs, colours, drafts)</td></tr>
+<tr><td><b>App Editor</b></td><td>Change Home, tabs and colours in drafts; see every draft. <span class="also">Media: see, upload.</span></td><td>New</td></tr>
+<tr><td><b>App Publisher</b></td><td>Everything an App Editor can, and put drafts out to everyone. <span class="also">Media.</span></td><td>App editor <span class="gain">+ Media</span></td></tr>
+<tr class="g"><td colspan="3">Media</td></tr>
+<tr><td><b>Media Viewer</b></td><td>See the media library.</td><td>New</td></tr>
+<tr><td><b>Media Editor</b></td><td>See, upload, make folders and move files, delete what nothing uses.</td><td>Media editor</td></tr>
+<tr><td><b>Media Manager</b></td><td>Everything a Media Editor can, and upload licensed font files.</td><td>New (fonts were Owner only)</td></tr>
+<tr class="g"><td colspan="3">People</td></tr>
+<tr><td><b>People Viewer</b></td><td>See everyone's name and email.</td><td>New</td></tr>
+<tr><td><b>People Manager</b></td><td>Invite people, help them back in, turn accounts off, delete accounts, read the activity log.</td><td>Account manager (part)</td></tr>
+<tr><td><b>Roles Manager</b></td><td>Give people roles and take them away (only roles whose abilities they have themselves). <span class="also">People: see names and emails.</span></td><td>Access manager, minus making roles</td></tr>
+<tr><td><b>App Review Manager</b></td><td>Make demo accounts and sign-in codes for Apple's reviewers.</td><td>Account manager (part)</td></tr>
+<tr class="g"><td colspan="3">Insights and app health</td></tr>
+<tr><td><b>Insights Viewer</b></td><td>See how the app is used, as totals.</td><td>Insights viewer</td></tr>
+<tr><td><b>Developer</b></td><td>See app errors and failed calls, get emails about new ones, connect a tool such as Claude.</td><td>Developer</td></tr>
+<tr class="g"><td colspan="3">Everything</td></tr>
+<tr><td><b>Owner</b></td><td>Everything, including making other Owners.</td><td>Owner</td></tr>
+</table>
+<p class="q">No “Viewer” level for Sermons, Calendar, Announcements or App yet: those admin pages have no look-only mode today, so a viewer role would show pages whose buttons all refuse. I'd add one per feature when someone needs it, as a small change each.</p>
+
+<h3>Roles for one thing (given on the thing, never in the tick list)</h3>
+<table>
+<tr><th style="width:24%">On</th><th>Roles there</th><th style="width:26%">Who adds people</th></tr>
+<tr><td><b>A calendar</b></td><td><b>Editor</b> (add and change its events, with Media's see and upload) · <b>Publisher</b> (also publish)</td><td>Its Editors add Editors; Calendar Managers add either</td></tr>
+<tr><td><b>A regular event</b></td><td><b>Organiser</b> (reminded when a date is missing what it needs)</td><td>Editors of its calendar</td></tr>
+<tr><td><b>A draft</b></td><td><b>Reviewer</b> (preview it on their phone): today's Share, moved onto the shared component</td><td>Whoever may change the draft</td></tr>
+<tr><td><b>A ministry</b> (later)</td><td>Member · Leader · Admin, as already designed</td><td>As designed</td></tr>
+</table>
+<p>One shared <b>People</b> section, the same on every thing. As it would sit in a calendar's settings:</p>
+<div class="mock"><div class="h">People on the Kids calendar</div><div class="hint">Calendar Managers and Owners can change every calendar and aren't listed.</div>
+<div class="pp"><span class="n">Ruth (kids)<small>Added by Office: Jenny, 3 Oct</small></span><span class="tag">Editor</span><span class="btn">Change</span><span class="btn">Take off</span></div>
+<div class="pp"><span class="n">Ben<small>Added by Ruth, 28 Oct</small></span><span class="tag">Editor</span><span class="tag">Publisher</span><span class="btn">Change</span><span class="btn">Take off</span></div>
+<div class="add">+ Add someone: find by name</div></div>
+<p class="q">Choosing someone shows the roles for this thing as ticks, each with the same (i) as the person's page. A person's own page lists their roles for single things with a link to each thing. Sample names.</p>
+
+<h2>Bookkeeping roles</h2>
+<p>Sermon follower, Series follower, Calendar added, Calendar turned off and App reviewer stay in the engine (they're how follows and the demo account work) but are marked <i>hidden</i>: they never show on People, in a tick list, or in “what can they do”.</p>
+
+<h2>Carrying today's holders across</h2>
+<ul>
+<li>Every role keeps its record and id, so each assignment, and each Home tile or announcement aimed at “people in this role”, follows it. Account manager is the one split: its holders get both People Manager and App Review Manager, and anything aimed at it is aimed at People Manager.</li>
+<li>Access managers lose “make and change roles”, because nobody makes roles any more. Holders of the roles marked <span class="gain">+ Media</span> gain seeing the library and uploading pictures, which the job already needed. Nobody else gains or loses anything. The mapping goes in access.md.</li>
+<li>Roles made here (only “Test Role” in development, held by nobody) are removed. If a Home tile or announcement is aimed at one, it's listed first and nothing is removed until it's aimed elsewhere.</li>
+</ul>
+
+<h2>What goes, what stays</h2>
+<ul>
+<li><b>Goes:</b> the Roles page, the role copy editor, <i>Who can do what</i>, and “See what they can do” on People.</li>
+<li><b>Moves:</b> “What can they do, and why?” becomes something you open from the person: abilities by place, each with the role that gives it.</li>
+<li><b>Stays:</b> the engine (permissions, scopes, the checks on every call, the rules on who may give what, the last-Owner guard) and the developer tool, for you only.</li>
+</ul>
+</main></body></html>

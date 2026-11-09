@@ -93,6 +93,7 @@ else
     [Parameter] public EventCallback Closed { get; set; }
     [Parameter] public EventCallback<string> Saved { get; set; }
     [Parameter] public EventCallback<RegularDate> DatePicked { get; set; }
+    [Parameter] public RenderFragment<string>? Organisers { get; set; }
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
@@ -245,6 +246,10 @@ else
                         <ListRow Chevron="true" Title="Shown in the app" Trailing="@ShowingWords(draft)" OnClick="() => OpenAsync(EditorSheet.Showing)" />
                         <ToggleRow Title="List every date on the website" Description="Off: the website lists it once under Every week, with its changed dates." Checked="draft.ListEveryDate" CheckedChanged="listed => draft.ListEveryDate = listed" />
                     </div>
+                    @if (!draft.IsNew && RegularEventId is { } regularEventId && Organisers is not null)
+                    {
+                        @Organisers(regularEventId)
+                    }
                     @if (InPanel && !draft.IsNew)
                     {
                         <button type="button" class="editor-foot__delete" @onclick="() => OpenAsync(EditorSheet.Delete)">Delete the regular event</button>

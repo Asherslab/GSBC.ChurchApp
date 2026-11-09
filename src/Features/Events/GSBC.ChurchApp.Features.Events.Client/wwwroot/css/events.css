@@ -157,7 +157,6 @@
   .calendar-workbench .workbench__detail { border-left: 0; }
 }
 .calendar-subhead { margin: 24px 0 4px; font-size: var(--text-label); font-weight: 700; }
-.calendar-editors { margin: 0; }
 .contact-row { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--row); padding: 10px 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
 .contact-row:hover .row__title { color: var(--accent); }
 .calendar-next .week-day { padding: 0; }

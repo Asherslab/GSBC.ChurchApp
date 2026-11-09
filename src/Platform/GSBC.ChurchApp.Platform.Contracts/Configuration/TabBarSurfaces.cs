@@ -12,12 +12,12 @@ public static class TabBarSurfaces
     private const string EditNode = "config.tabs.edit";
 
     public static readonly Permission Edit =
-        new(EditNode, ScopeKind.Global, "Choose the app's tabs: which places are tabs, in what order, for whom and when");
+        new(EditNode, ScopeKind.Global, "Choose the app's tabs: which places are tabs, in what order, for whom and when", area: "App");
 
     private const string PublishNode = "config.tabs.publish";
 
     public static readonly Permission Publish =
-        new(PublishNode, ScopeKind.Global, "Put changes to the app's tabs out to everyone, or on for an event");
+        new(PublishNode, ScopeKind.Global, "Put changes to the app's tabs out to everyone, or on for an event", area: "App");
 
     public static readonly SurfaceArea Area = new("app.tabs", "Tab bar", "The tabs along the foot of the app. Home is always the first and More the last", ScopeKind.Global, Edit, Publish);
 

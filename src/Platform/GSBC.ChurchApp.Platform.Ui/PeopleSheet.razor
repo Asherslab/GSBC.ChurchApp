@@ -1,0 +1,153 @@
+@using Grpc.Core
+@using GSBC.ChurchApp.Platform.Client.People
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@Title" Lead="@Lead" Wide="true">
+    <ChildContent>
+        @if (View.MayAdd)
+        {
+            <SearchField Label="Add someone" Placeholder="Add someone: find them by name" Value="@_query" ValueChanged="SearchAsync" />
+            @if (_found.Count > 0)
+            {
+                <ul class="people-sheet__found" aria-label="People found">
+                    @foreach (PersonChoice person in _found)
+                    {
+                        <li class="people-sheet__found-row">
+                            <span class="people-sheet__who"><span class="people-sheet__name">@person.Name</span><span class="people-sheet__detail">@person.Detail</span></span>
+                            <Button Small="true" Busy="@(_busy == person.Id)" OnClick="() => AddAsync(person)">Add as @FirstGivable!.Name</Button>
+                        </li>
+                    }
+                </ul>
+            }
+            else if (_query.Trim().Length >= ShortestSearch && !_searching)
+            {
+                <p class="people-sheet__note">No one matches “@_query.Trim()”.</p>
+            }
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        @if (View.People.Count == 0)
+        {
+            <p class="people-sheet__note">@Empty</p>
+        }
+        else
+        {
+            <ul class="people-sheet__people" aria-label="@Title">
+                @foreach (PlacePersonView person in View.People)
+                {
+                    <li class="people-sheet__person">
+                        <div class="people-sheet__person-head">
+                            <span class="people-sheet__who"><span class="people-sheet__name">@person.Name</span>@if (person.Detail is { } detail) {<span class="people-sheet__detail">@detail</span>}</span>
+                            @if (person.RoleIds.All(roleId => View.Roles.FirstOrDefault(role => role.Id == roleId)?.Refusal is null))
+                            {
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Busy="@(_busy == person.Id)" OnClick="() => TakeOffAsync(person)">Take off</Button>
+                            }
+                        </div>
+                        <div class="people-sheet__ticks">
+                            @foreach (PlaceRoleView role in View.Roles)
+                            {
+                                <RoleTick Name="@role.Name" Checked="@person.RoleIds.Contains(role.Id)" Refusal="@role.Refusal" Busy="@(_busy == person.Id)"
+                                          Chosen="@(_explaining == (person.Id, role.Id))" OnExplain="() => Explain(person.Id, role.Id)"
+                                          CheckedChanged="ticked => TickAsync(person, role, ticked)" />
+                            }
+                        </div>
+                        @if (_explaining is { } explaining && explaining.PersonId == person.Id && View.Roles.FirstOrDefault(role => role.Id == explaining.RoleId) is { } explained)
+                        {
+                            <RoleGives Role="explained" Who="@FirstName(person.Name)" />
+                        }
+                    </li>
+                }
+            </ul>
+        }
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Done</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const int ShortestSearch = 2;
+    private string _query = "";
+    private bool _searching;
+    private IReadOnlyList<PersonChoice> _found = [];
+    private string? _busy;
+    private string? _problem;
+    private (string PersonId, string RoleId)? _explaining;
+
+    [Parameter, EditorRequired] public required IPlacePeople Source { get; set; }
+    [Parameter, EditorRequired] public required PlacePeopleView View { get; set; }
+    [Parameter, EditorRequired] public required string Title { get; set; }
+    [Parameter] public string? Lead { get; set; }
+    [Parameter] public string Empty { get; set; } = "No one yet.";
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private PlaceRoleView? FirstGivable => View.Roles.FirstOrDefault(role => role.Refusal is null);
+
+    private static string FirstName(string name) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name;
+
+    private void Explain(string personId, string roleId) =>
+        _explaining = _explaining == (personId, roleId) ? null : (personId, roleId);
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query;
+        _problem = null;
+        if (query.Trim().Length < ShortestSearch)
+        {
+            _found = [];
+            return;
+        }
+
+        _searching = true;
+        try
+        {
+            IReadOnlyList<PersonChoice> found = await Source.FindAsync(query.Trim());
+            if (_query == query)
+                _found = found.Where(person => View.People.All(already => already.Id != person.Id)).ToList();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _searching = false;
+        }
+    }
+
+    private Task AddAsync(PersonChoice person) => RunAsync(person.Id, async () =>
+    {
+        await Source.GiveAsync(person.Id, FirstGivable!.Id);
+        _query = "";
+        _found = [];
+    });
+
+    private Task TickAsync(PlacePersonView person, PlaceRoleView role, bool ticked) => RunAsync(person.Id, () =>
+        ticked ? Source.GiveAsync(person.Id, role.Id) : Source.TakeAwayAsync(person.Id, role.Id));
+
+    private Task TakeOffAsync(PlacePersonView person) => RunAsync(person.Id, async () =>
+    {
+        foreach (string roleId in person.RoleIds)
+            await Source.TakeAwayAsync(person.Id, roleId);
+    });
+
+    private async Task RunAsync(string personId, Func<Task> action)
+    {
+        _busy = personId;
+        _problem = null;
+        try
+        {
+            await action();
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+            await OnChanged.InvokeAsync();
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

@@ -10,6 +10,19 @@ public sealed record SystemRole(
     IReadOnlyList<string> Patterns,
     IReadOnlyList<string>? AssignableBy = null,
     bool AppliesToChildren = false,
-    bool PhoneHoldable = false);
+    bool PhoneHoldable = false,
+    string? Feature = null,
+    bool Hidden = false,
+    IReadOnlyList<string>? Kits = null,
+    IReadOnlyList<string>? Replaces = null,
+    IReadOnlyList<string>? StartsWithHoldersOf = null);
 
 public sealed record SystemRolePatterns(string RoleKey, IReadOnlyList<string> Patterns);
+
+public sealed record RoleKit(string Name, IReadOnlyList<string> Patterns);
+
+public static class RoleKits
+{
+    public const string Pictures = "pictures";
+    public const string PeopleNames = "people-names";
+}

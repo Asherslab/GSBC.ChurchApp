@@ -1,6 +1,7 @@
 @using GSBC.ChurchApp.Platform.Ui.Content
 @inject CalendarEditing Editing
 @inject CalendarSubscriptions Subscriptions
+@inject IPlacePeopleSource People
 
 <div class="event-panel">
     <EventHead Title="@(_name.Length > 0 ? _name : "New calendar")" Compact="true" />
@@ -12,13 +13,12 @@
         <ToggleRow Title="Needs a publisher" Description="Editors without the publisher role save events and ask to publish" Checked="_needsPublisher" CheckedChanged="value => _needsPublisher = value" />
         <TextField Label="Copy from an iCal address (optional)" Type="url" Value="@_icalSource" ValueChanged="value => _icalSource = value.Trim()" Placeholder="https://"
                    Hint="@IcalHint" Problem="@(Calendar?.Settings.ICalProblem is { Length: > 0 } problem ? problem : null)" />
-        <div class="field">
-            <span class="field__label">Who can edit it</span>
-            <p class="field__hint calendar-editors">Calendar editors of @(_name.Length > 0 ? _name : "this calendar"), given in Who can do what: choose someone, then give them Calendar editor at this calendar. Its editors can give it to others.</p>
-            <TextLink Href="access/people">Open Who can do what</TextLink>
-        </div>
         @if (Calendar is { } existing)
         {
+            <PeopleRow @key="existing.Settings.Calendar.Id" Source="People.For(ScopeKind.Calendar, existing.Settings.Calendar.Id)"
+                       SheetTitle="@($"People on the {existing.Settings.Calendar.Name} calendar")"
+                       SheetLead="Editors add and change its events; Publishers also publish them. Calendar Managers and Owners can change every calendar and aren't listed."
+                       Empty="No one is on it yet." />
             <CopyField Label="Link for calendar apps" Value="@LinkFor(existing.Settings.Calendar)"
                        Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "A private calendar: people subscribe through their own link in the app.")" />
         }

@@ -1,5 +1,6 @@
 @page "/calendar"
 @inject CalendarEditing Editing
+@inject IPlacePeopleSource People
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject Shell Shell
@@ -174,8 +175,12 @@
             <button type="button" class="calendar-regular__back" @onclick="BackToRegularList"><Icon Name="chevron-left" Size="IconSize.Small" />Regular events</button>
             <RegularEventEditor @key="@(chosen.RegularEventId ?? $"new-{chosen.CalendarId}")" CalendarId="@chosen.CalendarId" RegularEventId="@chosen.RegularEventId" InPanel="true"
                                 SelectedDate="@chosen.Date?.Date" DatesVersion="_datesVersion" Saved="id => RegularSavedAsync(chosen, id)" Closed="BackToRegularList"
-                                DatePicked="date => _chosen = chosen with { Date = date }" />
+                                DatePicked="date => _chosen = chosen with { Date = date }" Organisers="Organisers" />
         </div>;
+
+    private RenderFragment<string> Organisers => regularEventId =>
+        @<PeopleRow @key="regularEventId" Source="People.For(ScopeKind.RegularEvent, regularEventId)" Label="Organisers"
+                    SheetTitle="Organisers" SheetLead="Organisers are reminded when a date is missing what it needs." Empty="No one is reminded yet." />;
 
     private RenderFragment Aside(WorkbenchView view)
     {

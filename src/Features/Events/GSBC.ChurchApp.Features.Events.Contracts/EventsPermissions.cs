@@ -19,6 +19,8 @@ public static class EventsPermissions
     public const string AdderRole = "events-calendar-adder";
     public const string TurnedOffRole = "events-calendar-turned-off";
     public const string DigestMakerRole = "events-digest-maker";
+    public const string EveryCalendarEditorRole = "events-every-calendar-editor";
+    public const string EveryCalendarPublisherRole = "events-every-calendar-publisher";
 
     public static readonly Permission Edit =
         new(EditNode, ScopeKind.Calendar, "Add and change events and regular events in a calendar", area: "Calendar");

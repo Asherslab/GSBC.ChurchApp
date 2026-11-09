@@ -1,0 +1,93 @@
+@page "/people/{Id}"
+@using GSBC.ChurchApp.Platform.Client.Access
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject AccountsClient Accounts
+@inject IAccess Access
+@inject NavigationManager Navigation
+@inject IEnumerable<PersonTab> ContributedTabs
+
+<LiveData @ref="_live" TValue="PersonView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load this person right now">
+    @if (context.Value.Person is not { } person)
+    {
+        <TitleBand Title="Not here" BackHref="people" BackText="People" />
+        <EmptyState Icon="users" Title="This person isn't here any more" Body="Their account may have been deleted. Go back to People to find someone else." />
+    }
+    else
+    {
+        <TitleBand Title="@person.DisplayName" BackHref="people" BackText="People">
+            <LeadContent>
+                <p class="person-page__lead">
+                    <span>@person.Email</span>
+                    <span><PersonState Person="person" Invitation="context.Value.Invitation" /></span>
+                    @if (context.Value.Invitation is null)
+                    {
+                        <span>@(person.HasPasskey ? "Has a passkey" : "No passkey yet")</span>
+                        <span>Joined <DateLine At="person.CreatedAt" Style="DateLineStyle.Short" /></span>
+                    }
+                </p>
+            </LeadContent>
+        </TitleBand>
+
+        <TabStrip TValue="string" Label="@($"About {person.DisplayName}")" Options="Tabs.Select(tab => new TabOption<string>(tab.Slug, tab.Title)).ToList()"
+                  Value="@Shown.Slug" ValueChanged="ShowTab" />
+
+        <div class="person-page__tab" role="tabpanel">
+            @if (Shown.Slug == AccountTab)
+            {
+                <div class="person-page__account">
+                    <PersonDetail @key="person.Id" Person="person" Invitation="context.Value.Invitation" OnChanged="ReloadAsync" OnRemoved="Removed" />
+                </div>
+            }
+            else if (Shown.Slug == ActivityTab)
+            {
+                <PersonActivity @key="person.Id" Person="person" />
+            }
+            else
+            {
+                @Shown.Content(new PersonOnPage(person.Id, person.DisplayName))
+            }
+        </div>
+    }
+</LiveData>
+
+@code {
+    private const string AccountTab = "account";
+    private const string ActivityTab = "activity";
+    private static readonly RenderFragment<PersonOnPage> NoContent = _ => _ => { };
+
+    private LiveData<PersonView>? _live;
+
+    [Parameter] public string Id { get; set; } = "";
+    [SupplyParameterFromQuery(Name = "tab")] public string? Tab { get; set; }
+
+    private IReadOnlyList<PersonTab> Tabs =>
+        ContributedTabs.Where(tab => tab.Requires is null || Access.Can(tab.Requires))
+            .Append(new PersonTab(AccountTab, "Account", 2, NoContent))
+            .Concat(Access.Can(AccountsPermissions.Manage) ? [new PersonTab(ActivityTab, "Activity", 3, NoContent)] : [])
+            .OrderBy(tab => tab.Order)
+            .ToList();
+
+    private PersonTab Shown => Tabs.FirstOrDefault(tab => tab.Slug == Tab) ?? Tabs[0];
+
+    private async Task<PersonView> LoadAsync()
+    {
+        Task<PeopleList> people = Accounts.GetPeopleAsync([Id]).AsTask();
+        Task<InvitationList> invitations = Accounts.ListInvitationsAsync().AsTask();
+        PersonInfo? person = (await people).People.FirstOrDefault(found => !found.Deleted);
+        InvitationInfo? invitation = (await invitations).Invitations.FirstOrDefault(found => found.UserId == Id);
+        return new PersonView(person, invitation);
+    }
+
+    private void ShowTab(string slug) =>
+        Navigation.NavigateTo(Navigation.GetUriWithQueryParameter("tab", slug), new NavigationOptions { ReplaceHistoryEntry = true });
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private void Removed() => Navigation.NavigateTo("people");
+
+    private sealed record PersonView(PersonInfo? Person, InvitationInfo? Invitation);
+}

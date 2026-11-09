@@ -1,0 +1,139 @@
+@inject AccessClient Access
+@inject IScopeNames ScopeNames
+
+<LiveData @ref="_live" TValue="RolesView" Feeds="[AccessFeeds.Roles, .. ScopeNames.Feeds]" Load="LoadAsync" FailedTitle="Can't load their roles right now">
+    <div class="person-roles">
+        <div class="person-roles__main">
+            @if (Holds(context.Value, AccessFeatures.Owner))
+            {
+                <Notice Text="@($"{Person.FirstName} is an Owner, so they can already do everything. The other ticks add nothing while that's ticked.")" />
+            }
+            <div class="person-roles__features">
+                @foreach (IGrouping<string, PlaceRoleView> feature in AccessFeatures.Grouped(context.Value.Roles, context.Value.Features))
+                {
+                    <section class="person-roles__feature" aria-label="@feature.Key">
+                        <h3 class="person-roles__head">@feature.Key</h3>
+                        @foreach (PlaceRoleView role in feature)
+                        {
+                            <RoleTick Name="@role.Name" Checked="@context.Value.Held.ContainsKey(role.Id)" Refusal="@role.Refusal" Busy="@(_busy == role.Id)"
+                                      Chosen="@(Chosen(context.Value)?.Id == role.Id)" OnExplain="() => _chosen = role.Id"
+                                      CheckedChanged="ticked => TickAsync(context.Value, role, ticked)" />
+                        }
+                    </section>
+                }
+            </div>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+            <section class="person-roles__one" aria-labelledby="one-thing">
+                <h3 class="person-roles__head" id="one-thing">For one thing</h3>
+                @if (context.Value.Things.Count == 0)
+                {
+                    <p class="panel-hint">Nothing for a single calendar, event or draft. Those are given on the thing itself, with its People button.</p>
+                }
+                else
+                {
+                    <ul class="person-roles__things">
+                        @foreach (Thing thing in context.Value.Things)
+                        {
+                            <li>
+                                <span class="cell-strong">@thing.Line</span>
+                                @if (thing.Href is { } href)
+                                {
+                                    <TextLink Href="@href">Change it there</TextLink>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </section>
+        </div>
+
+        @if (Chosen(context.Value) is { } chosen)
+        {
+            <aside class="person-roles__why" aria-live="polite" aria-label="What the role lets them do">
+                <h3 class="person-roles__why-title">@chosen.Name</h3>
+                <RoleGives Role="chosen" Who="@Person.FirstName" />
+                <p class="person-roles__given">@Given(context.Value, chosen)</p>
+            </aside>
+        }
+    </div>
+</LiveData>
+
+@code {
+    private LiveData<RolesView>? _live;
+    private string? _chosen;
+    private string? _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+
+    [Inject] private TimeProvider Time { get; set; } = null!;
+
+    private async Task<RolesView> LoadAsync()
+    {
+        Task<PlacePeople> listing = Access.ListPlaceAsync(ScopeKind.Global.Name, null).AsTask();
+        Task<AssignmentList> theirs = Access.ListAssignmentsAsync(Person.Id).AsTask();
+        Task<RoleList> roles = Access.ListRolesAsync().AsTask();
+        PlacePeople everywhere = await listing;
+        List<AssignmentInfo> held = (await theirs).Assignments;
+        List<RoleInfo> allRoles = (await roles).Roles;
+
+        List<Thing> things = [];
+        foreach (IGrouping<string, AssignmentInfo> kind in held.Where(assignment => assignment.ScopeObjectId is not null)
+                     .GroupBy(assignment => allRoles.FirstOrDefault(role => role.Id == assignment.RoleId)?.ScopeKind ?? ""))
+        {
+            IReadOnlyDictionary<string, ScopeChoice> places = await ScopeNames.PlacesAsync(kind.Key, kind.Select(assignment => assignment.ScopeObjectId!).ToList());
+            things.AddRange(kind.GroupBy(assignment => assignment.ScopeObjectId!).Select(place => places[place.Key] is var named
+                ? new Thing(AccessWords.OneThing(AccessWords.And(place.Select(assignment => assignment.RoleName).Distinct()), kind.Key, named.Name == named.Id ? null : named.Name), named.Href)
+                : null).OfType<Thing>());
+        }
+
+        return new RolesView(
+            everywhere.Roles.Select(role => RoleAbilities.View(role, everywhere.Abilities)).ToList(),
+            allRoles.Where(role => role.ScopeKind == ScopeKind.Global.Name).ToDictionary(role => role.Id, role => role.Feature),
+            held.Where(assignment => assignment.ScopeObjectId is null).GroupBy(assignment => assignment.RoleId).ToDictionary(group => group.Key, group => group.First()),
+            things.OrderBy(thing => thing.Line, StringComparer.CurrentCulture).ToList());
+    }
+
+    private static bool Holds(RolesView view, string roleName) =>
+        view.Roles.Any(role => role.Name == roleName && view.Held.ContainsKey(role.Id));
+
+    private PlaceRoleView? Chosen(RolesView view) =>
+        view.Roles.FirstOrDefault(role => role.Id == _chosen)
+        ?? view.Roles.FirstOrDefault(role => view.Held.ContainsKey(role.Id))
+        ?? view.Roles.FirstOrDefault();
+
+    private string Given(RolesView view, PlaceRoleView role) =>
+        view.Held.TryGetValue(role.Id, out AssignmentInfo? held)
+            ? $"{AccessWords.Added(held, Time)}{(held.ExpiresAt is null ? "" : $", {AccessWords.Until(held.ExpiresAt)}")}."
+            : $"{Person.FirstName} doesn't have this role.";
+
+    private async Task TickAsync(RolesView view, PlaceRoleView role, bool ticked)
+    {
+        _busy = role.Id;
+        _chosen = role.Id;
+        _problem = null;
+        try
+        {
+            if (ticked)
+                await Access.AssignAsync(new AssignRequest { UserId = Person.Id, RoleId = role.Id });
+            else if (view.Held.TryGetValue(role.Id, out AssignmentInfo? held))
+                await Access.UnassignAsync(held.Id);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = null;
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+    }
+
+    private sealed record Thing(string Line, string? Href);
+
+    private sealed record RolesView(
+        IReadOnlyList<PlaceRoleView> Roles, IReadOnlyDictionary<string, string?> Features, IReadOnlyDictionary<string, AssignmentInfo> Held, IReadOnlyList<Thing> Things);
+}
