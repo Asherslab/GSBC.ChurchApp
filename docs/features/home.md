@@ -72,12 +72,34 @@ one concept-seed round per kind with sketches at 1 × 1, 2 × 1, 1 × 2 and 2 ×
 A tile's colour is a **tone**, a pair of theme roles (`TileTones`), named for staff by where the colour
 shows (owner, 2026-11-04, note 9: no design-token words): Soft (sand on ink), Card (surface with `--tile-lift`: in light a soft ambient halo on all sides as well as the lift below, so a white card shows on the white page without a drawn border; in dark the usual lift; a Card tile with a picture gets only the lift, no edge. Owner notes 11 and 15: a hairline looked wrong, a tinted page hid the Soft tiles), Top
 of Home (masthead), Buttons (primary), Pale accent, Accent (live), Pale highlight, Highlight (marker). Each
-swatch shows its name. In dark mode the pale highlight mixes 34% of the marker, not 24%, so it doesn't
+swatch shows its name, drawn in **the draft's theme**, in light or dark as the phone preview is set (owner,
+2026-11-09: in a draft with an orange masthead the swatches showed the published navy). Each chip carries the
+phone's palette and scheme (`data-palette`, `data-preview-scheme`), and a draft's own theme is written for it by
+`ThemeStyle` (Platform.Ui, shared with `PhoneFrame`), so the swatches change as the draft's colours change. The
+canvas's *Preview in* switch is the workspace's, so the swatches and the phone always agree. The hidden contrast
+proof uses the same theme, so the warning now measures a custom theme too. In dark mode the pale highlight mixes 34% of the marker, not 24%, so it doesn't
 turn muddy. The text colour is the
 role the theme pairs with the background (`on-masthead`, `on-primary`, …), which the theme already
 keeps readable, so staff can't make unreadable text. The settings panel shows the tile in light and
 dark and reads the contrast off the render. Icon colours are *Goes with the tile*, Main colour, Links
 and live, Marker, Quiet, or (for uploaded icons) *Its own colours*.
+
+### The fade over a picture
+
+A tile whose words sit over its picture (*Picture behind*) fades a colour over the picture so the words read.
+It was always the masthead's; staff now choose it (owner, 2026-11-09) from the same theme colours as the tile
+(`TileSettings.Fade`, key `fade`, default *Top of Home*, so every tile made before keeps its look). The words
+take that colour's paired text colour. The choice shows under Picture only while the words are over the
+picture, and the phone shows it live; it's a tile setting, so drafts, copies and the library carry it.
+
+### The top of Home
+
+The masthead's title and the line under it are a Hub surface of their own, **Top of Home** (`hub.top`, one per
+Home, an arrangement like the grid) (owner, 2026-11-09). The title is the staff's words (40 characters,
+"Good Shepherd" to start, also the top bar's title once Home scrolls); the line under it is *Today's date* (as
+before), *Your own words* (80 characters; left empty, nothing shows) or *Nothing*. `HubSurfaces.Top.In`
+reads it for `HomeScreen`, so the app, the canvas and every preview draw the same. A title longer than 16
+characters may wrap, balanced, instead of running off the phone. On the canvas, click the masthead to change it.
 
 ### Uploaded SVG icons
 
@@ -147,9 +169,10 @@ church days, as for every placement.
 
 Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the list editor):
 
-- **Toolbar:** Columns (2, 3, 4), **Show it as** (every tile, a visitor, someone signed in, someone in a
-  role a tile is for), **Preview** Light or Dark (the phone only; the admin panel keeps its own mode, and the
-  switch starts on it), a date, and Add a tile. Below it, a toggle lists tiles not on
+- **Toolbar:** Columns (2, 3, 4), **Preview the draft as** (anyone with all tiles, a visitor, someone
+  signed in, someone in a role a tile is for), **Preview in** Light or Dark (the phone only; the admin panel keeps its own mode, and the
+  switch starts on it), **Preview the draft on** a date, and Add a tile. These are worded as previews (owner, 2026-11-09)
+  because "Show Home for: Everyone" read as if it decided who sees Home. Below it, a toggle lists tiles not on
   the phone now (hidden, dated, for another audience, or taken out in this draft, with *Put back*).
 - **Width:** in canvas mode the drafts column folds away below 1648 px (an *All drafts* link takes its
   place), so the phone and the settings always sit side by side. The settings column scrolls on its own
@@ -268,7 +291,6 @@ declaring one path fail at start-up, so it can't be forgotten.
 
 ## Open
 
-- A custom theme's colours in the contrast warning (it measures the built-in palette).
 - Outreach's live state ("Outreach is on till 3pm") waits for Outreach.
 - Tests: `HubGridTests`, `SvgIconTests` (Platform.Contracts.Tests), `HubTileTests`
   (Configuration.Api.Tests), the role membership test in `AccessEvaluatorTests`, `PreviewRules`.

@@ -39,15 +39,12 @@ public sealed class LinkSetting(string key, string label, string defaultValue = 
 public sealed class IconSetting(string key, string label, string defaultValue = "", string help = "")
     : Setting<string>(key, label, defaultValue, help)
 {
-    public const string CustomPrefix = "custom:";
+    private const string CustomPrefix = "custom:";
 
     public static string Custom(string placementId) => CustomPrefix + placementId;
 
-    public static bool IsCustom(string value, out string placementId)
-    {
-        placementId = value.StartsWith(CustomPrefix, StringComparison.Ordinal) ? value[CustomPrefix.Length..] : "";
-        return Guid.TryParse(placementId, out _);
-    }
+    public static bool IsCustom(string value) =>
+        value.StartsWith(CustomPrefix, StringComparison.Ordinal) && Guid.TryParse(value[CustomPrefix.Length..], out _);
 
     public override bool TryParse(string text, out string value)
     {
@@ -58,7 +55,7 @@ public sealed class IconSetting(string key, string label, string defaultValue = 
     public override string Format(string value) => value;
 
     public override string? ProblemWith(string text) =>
-        text.Length == 0 || IsCustom(text, out _) || (text.Length <= 40 && text.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-'))
+        text.Length == 0 || IsCustom(text) || (text.Length <= 40 && text.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-'))
             ? null
             : $"{Label} isn't an icon.";
 }
@@ -124,9 +121,9 @@ public static class TileTones
     public static readonly TileTone Masthead = new("masthead", "Top of Home", "masthead", "on-masthead", true);
     public static readonly TileTone Primary = new("primary", "Buttons", "primary", "on-primary", true);
     public static readonly TileTone LiveSoft = new("live-soft", "Pale accent", "live", "ink", false);
-    public static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
+    private static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
     public static readonly TileTone MarkerSoft = new("marker-soft", "Pale highlight", "marker", "ink", false);
-    public static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
+    private static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
 
     public static readonly IReadOnlyList<TileTone> All = [Sand, Raised, Masthead, Primary, LiveSoft, Live, MarkerSoft, Marker];
 
@@ -177,9 +174,10 @@ public sealed record TileSettings(
     MediaSetting Image,
     FocusSetting Focus,
     LinkSetting Link,
-    ChoiceSetting Layout)
+    ChoiceSetting Layout,
+    ColourSetting Fade)
 {
-    public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout];
+    public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout, Fade];
 
     public static TileSettings For(TileDefaults defaults, IReadOnlyList<TileVariant> variants) => new(
         new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "How many columns across"),
@@ -193,7 +191,9 @@ public sealed record TileSettings(
         new FocusSetting(HubTileKeys.Focus, "Keep in view"),
         new LinkSetting(HubTileKeys.Link, "Opens", defaults.Link),
         new ChoiceSetting(HubTileKeys.Layout, "Layout",
-            [new Choice(TileVariant.Automatic, "Best for this size"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic));
+            [new Choice(TileVariant.Automatic, "Best for this size"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic),
+        new ColourSetting(HubTileKeys.Fade, "Fade over the picture", TileTones.Choices, TileTones.Masthead.Value,
+            help: "The colour that fades over the picture behind the words"));
 }
 
 public static class HubTileKeys
@@ -209,6 +209,7 @@ public static class HubTileKeys
     public const string Focus = "focus";
     public const string Link = "link";
     public const string Layout = "layout";
+    public const string Fade = "fade";
 }
 
 public sealed class HubTileKind
@@ -229,8 +230,6 @@ public sealed class HubTileKind
     public TileSettings Tile { get; }
     public IReadOnlyList<TileVariant> Variants { get; }
     public bool Offered { get; }
-
-    public IReadOnlyList<TileVariant> VariantsFor(TileSpan span) => Variants.Where(variant => variant.Suits(span)).ToList();
 
     public bool UsesPicture => Variants.Any(variant => variant.UsesPicture);
 
@@ -253,8 +252,10 @@ public sealed class HubTileKind
 }
 
 public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon, string IconTone, string Title, string Text,
-    Media.MediaRef? Image, FocalPoint Focus, string Link, string Layout = TileVariant.Automatic)
+    Media.MediaRef? Image, FocalPoint Focus, string Link, string Layout = TileVariant.Automatic, TileTone? Fade = null)
 {
+    public TileTone FadeTone => Fade ?? TileTones.Masthead;
+
     public static TileLook Of(HubTileKind kind, SettingValues values) => new(
         values.Get(kind.Tile.Columns),
         values.Get(kind.Tile.Rows),
@@ -266,7 +267,8 @@ public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon,
         values.Get(kind.Tile.Image),
         values.Get(kind.Tile.Focus),
         values.Get(kind.Tile.Link),
-        values.Get(kind.Tile.Layout));
+        values.Get(kind.Tile.Layout),
+        TileTones.Of(values.Get(kind.Tile.Fade)));
 }
 
 public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault,
@@ -319,7 +321,7 @@ public static class TileVariants
 public sealed class TemplateSetting(string key, string label, string help = "")
     : Setting<IReadOnlyDictionary<string, string>>(key, label, new Dictionary<string, string>(), help)
 {
-    public const int MostCharacters = 8_000;
+    private const int MostCharacters = 8_000;
 
     public override bool TryParse(string text, out IReadOnlyDictionary<string, string> value)
     {

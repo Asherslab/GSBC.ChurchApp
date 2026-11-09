@@ -73,7 +73,7 @@
         Kinds.FirstOrDefault(known => known.Surface.Key == saved.Values.Get(HubSurfaces.Saved.Kind));
 
     private static string IconOf(HubTileKind? kind, IReadOnlyDictionary<string, string> values) =>
-        values.GetValueOrDefault(HubTileKeys.Icon) is { Length: > 0 } icon && !IconSetting.IsCustom(icon, out _) ? icon
+        values.GetValueOrDefault(HubTileKeys.Icon) is { Length: > 0 } icon && !IconSetting.IsCustom(icon) ? icon
         : kind?.Defaults.Icon is { Length: > 0 } fallback ? fallback : "layout";
 
     private static TileSpan SpanOf(HubTileKind kind, IReadOnlyDictionary<string, string> values) => new(

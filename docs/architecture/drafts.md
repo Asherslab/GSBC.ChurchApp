@@ -93,6 +93,10 @@ permission for every area touched.
 - The preview can also show **as someone else**: *as a visitor* (not signed in), *as a member*, and
   **on a date** (to see a scheduled event layer, or tiles with dates, before they start). These change
   only what the phone composes; they grant nothing.
+- **Preview controls say they preview** (owner, 2026-11-09, after a meeting with staff: "Show Home for:
+  Everyone" read as if it decided who sees Home). Every control that changes only what a preview shows is
+  worded as previewing: *Preview the draft as*, *Preview in* (light or dark), *Preview the draft on*, *Preview
+  on* (the phone model), and on the phone *Preview it as* and *Preview on a date*. Never "Show … for".
 
 ## How it's built
 
@@ -150,7 +154,7 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
 - **See it two ways** (owner): the optional phone preview beside the editor, and your real phone. The
   preview draws Home through the app's own `HomeScreen`, and other areas' surfaces generically.
 - **The phone** gets More → Previews (*What
-  everyone sees* or a draft; *Show it as* Me, A visitor, A member; *On a date*), and the banner, docked to
+  everyone sees* or a draft; *Preview it as* Me, A visitor, A member; *Preview on a date*), and the banner, docked to
   the top of the tab bar on every screen: *Previewing "X" · as a visitor · date · Exit*.
 - **Drafts are made and edited in the admin panel only;** the app has no Drafts screen (owner,
   2026-11-03: admin work stays in the admin panel).
@@ -192,7 +196,7 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   app's own Home on a chosen iPhone, true size, scaled to fit, with a pop-out window at
   `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
   draft.
-- **App:** More → Previews (a draft or what everyone sees, *Show it as*, *On a date*), the banner
+- **App:** More → Previews (a draft or what everyone sees, *Preview it as*, *Preview on a date*), the banner
   (hideable until the app next comes to the foreground), and Home as the Hub's tiles
   ([home.md](../features/home.md)). The phone previews from the signed-in account.
 
