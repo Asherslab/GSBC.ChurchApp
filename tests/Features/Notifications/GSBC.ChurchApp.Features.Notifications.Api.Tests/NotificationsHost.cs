@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Http;
@@ -42,6 +43,9 @@ public abstract class NotificationsHost : IAsyncLifetime
             .AddScoped<NotificationRaiser>()
             .AddScoped<PushDispatcher>()
             .AddScoped<NotificationsService>()
+            .AddScoped<AnnouncementsService>()
+            .AddSingleton(new PermissionCatalog([]))
+            .AddSingleton(new DestinationCatalog([]))
             .AddSingleton(typeof(Microsoft.Extensions.Logging.ILogger<>), typeof(NullLogger<>))
             .AddSyncData()
             .AddNotificationsData()

@@ -30,4 +30,7 @@ public interface IAnnouncementsService
 
     [Requires(NotificationsPermissions.SendNode)]
     ValueTask<Announcement> CancelAsync(AnnouncementRequest request, CallContext context = default);
+
+    [Requires(NotificationsPermissions.SendNode)]
+    ValueTask<Announcement> RecallAsync(AnnouncementRequest request, CallContext context = default);
 }

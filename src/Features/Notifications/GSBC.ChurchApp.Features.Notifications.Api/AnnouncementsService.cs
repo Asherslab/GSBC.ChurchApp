@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Notifications.Api.Data;
 using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using GSBC.ChurchApp.Platform.Data;
@@ -13,7 +14,8 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Features.Notifications.Api;
 
 internal sealed class AnnouncementsService(
-    NotificationsDbContext db, NotificationRaiser raiser, PermissionCatalog permissions, DestinationCatalog destinations, TimeProvider time) : IAnnouncementsService
+    NotificationsDbContext db, NotificationRaiser raiser, PermissionCatalog permissions, DestinationCatalog destinations, IPeopleIndex people, TimeProvider time)
+    : IAnnouncementsService
 {
     public const int TitleLimit = 80;
     public const int BodyLimit = 600;
@@ -27,14 +29,14 @@ internal sealed class AnnouncementsService(
         List<AnnouncementRecord> records = await db.Announcements.AsNoTracking()
             .OrderByDescending(announcement => announcement.UpdatedAt).Take(200).ToListAsync(context.CancellationToken);
         List<Guid> sent = records.Where(record => record.NotificationId is not null).Select(record => record.NotificationId!.Value).ToList();
-        Dictionary<Guid, int> readBy = await db.Inbox.AsNoTracking()
-            .Where(entry => sent.Contains(entry.NotificationId) && entry.ReadAt != null)
-            .GroupBy(entry => entry.NotificationId)
-            .Select(group => new { group.Key, Count = group.Count() })
-            .ToDictionaryAsync(group => group.Key, group => group.Count, context.CancellationToken);
+        Dictionary<Guid, int> readBy = await ReadByAsync(sent, context.CancellationToken);
+        IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(
+            records.Where(record => record.RecalledById is not null).Select(record => record.RecalledById!.Value).Distinct().ToList(), context.CancellationToken);
         return new AnnouncementList
         {
-            Announcements = records.Select(record => Message(record, record.NotificationId is { } id ? readBy.GetValueOrDefault(id) : 0)).ToList(),
+            Announcements = records.Select(record => Message(record,
+                record.State == AnnouncementState.Recalled ? record.ReadByWhenRecalled : record.NotificationId is { } id ? readBy.GetValueOrDefault(id) : 0,
+                record.RecalledById is { } recaller ? names.GetValueOrDefault(recaller) : null)).ToList(),
         };
     }
 
@@ -58,11 +60,11 @@ internal sealed class AnnouncementsService(
             record = new AnnouncementRecord { Id = Guid.CreateVersion7(), Title = title, AudienceKind = Everyone, AuthorId = author };
             db.Announcements.Add(record);
         }
-        else if (record.State is AnnouncementState.Sent or AnnouncementState.Scheduled)
+        else if (record.State is AnnouncementState.Sent or AnnouncementState.Scheduled or AnnouncementState.Recalled)
         {
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, record.State == AnnouncementState.Sent
-                ? "It's been sent, so it can't change."
-                : "It's scheduled. Cancel it first to change it."));
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, record.State == AnnouncementState.Scheduled
+                ? "It's scheduled. Cancel it first to change it."
+                : "It's been sent, so it can't change. Copy it into a new announcement instead."));
         }
 
         record.Title = title;
@@ -83,7 +85,7 @@ internal sealed class AnnouncementsService(
     public async ValueTask<Done> DeleteAsync(AnnouncementRequest request, CallContext context = default)
     {
         AnnouncementRecord record = await FindAsync(request, context.CancellationToken);
-        if (record.State == AnnouncementState.Sent)
+        if (record.State is AnnouncementState.Sent or AnnouncementState.Recalled)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's been sent, so it stays in the history."));
         db.Announcements.Remove(record);
         Mark(record, deleted: true);
@@ -95,6 +97,8 @@ internal sealed class AnnouncementsService(
     public async ValueTask<Done> SendToMeAsync(AnnouncementRequest request, CallContext context = default)
     {
         AnnouncementRecord record = await FindAsync(request, context.CancellationToken);
+        if (record.State == AnnouncementState.Recalled)
+            throw Recalled();
         await raiser.RaiseAsync(Notification(record, NotificationAudience.Person(Actor(context))) with { Test = true }, context.CancellationToken);
         return new Done();
     }
@@ -127,6 +131,8 @@ internal sealed class AnnouncementsService(
     public async ValueTask<Announcement> SendAsync(AnnouncementRequest request, CallContext context = default)
     {
         AnnouncementRecord record = await FindAsync(request, context.CancellationToken);
+        if (record.State == AnnouncementState.Recalled)
+            throw Recalled();
         if (record.State is AnnouncementState.Sent or AnnouncementState.Scheduled)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "It's already sent or scheduled."));
 
@@ -159,6 +165,27 @@ internal sealed class AnnouncementsService(
         return Message(record);
     }
 
+    public async ValueTask<Announcement> RecallAsync(AnnouncementRequest request, CallContext context = default)
+    {
+        Guid recaller = Actor(context);
+        AnnouncementRecord record = await FindAsync(request, context.CancellationToken);
+        if (record.State == AnnouncementState.Recalled)
+            return await MessageAsync(record, context.CancellationToken);
+        if (record is not { State: AnnouncementState.Sent, NotificationId: { } notificationId })
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Only a sent announcement can be recalled. One that hasn't gone yet can be changed or cancelled."));
+
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        record.ReadByWhenRecalled = (await ReadByAsync([notificationId], context.CancellationToken)).GetValueOrDefault(notificationId);
+        record.State = AnnouncementState.Recalled;
+        record.RecalledAt = now;
+        record.RecalledById = recaller;
+        record.UpdatedAt = now;
+        Mark(record);
+        await raiser.RecallAsync(notificationId, context.CancellationToken);
+        await db.SaveChangesAsync(context.CancellationToken);
+        return await MessageAsync(record, context.CancellationToken);
+    }
+
     public async Task SendNowAsync(AnnouncementRecord record, CancellationToken cancellationToken)
     {
         NotificationAudience audience = AudienceOf(record);
@@ -173,6 +200,20 @@ internal sealed class AnnouncementsService(
         await db.SaveChangesAsync(cancellationToken);
         await raiser.SettleAsync(Subject(record), cancellationToken);
     }
+
+    private async Task<Dictionary<Guid, int>> ReadByAsync(List<Guid> notificationIds, CancellationToken cancellationToken) =>
+        await db.Inbox.AsNoTracking()
+            .Where(entry => notificationIds.Contains(entry.NotificationId) && entry.ReadAt != null)
+            .GroupBy(entry => entry.NotificationId)
+            .Select(group => new { group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
+
+    private async Task<Announcement> MessageAsync(AnnouncementRecord record, CancellationToken cancellationToken) =>
+        Message(record, record.ReadByWhenRecalled,
+            record.RecalledById is { } recaller ? (await people.NamesAsync([recaller], cancellationToken)).GetValueOrDefault(recaller) : null);
+
+    private static RpcException Recalled() =>
+        new(new Status(StatusCode.FailedPrecondition, "It's been recalled. Copy it into a new announcement to send it again."));
 
     private static string Subject(AnnouncementRecord record) => $"announcement/{record.Id}";
 
@@ -206,9 +247,9 @@ internal sealed class AnnouncementsService(
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 
-    private static Announcement Message(AnnouncementRecord record) => Message(record, readBy: 0);
+    private static Announcement Message(AnnouncementRecord record) => Message(record, readBy: 0, recalledBy: null);
 
-    private static Announcement Message(AnnouncementRecord record, int readBy) => new()
+    private static Announcement Message(AnnouncementRecord record, int readBy, string? recalledBy) => new()
     {
         Id = record.Id.ToString(),
         Title = record.Title,
@@ -227,5 +268,7 @@ internal sealed class AnnouncementsService(
         ReachedPeople = record.ReachedPeople,
         ReachedPhones = record.ReachedPhones,
         ReadBy = readBy,
+        RecalledAt = record.RecalledAt,
+        RecalledBy = recalledBy,
     };
 }

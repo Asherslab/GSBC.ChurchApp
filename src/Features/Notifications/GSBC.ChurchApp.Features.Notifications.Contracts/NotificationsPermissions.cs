@@ -13,7 +13,7 @@ public static class NotificationsPermissions
         new(WriteNode, ScopeKind.Global, "Write announcements, try them on their own phone, and ask for them to be sent", area: "Announcements");
 
     public static readonly Permission Send =
-        new(SendNode, ScopeKind.Global, "Send and schedule announcements to everyone", area: "Announcements");
+        new(SendNode, ScopeKind.Global, "Send, schedule and recall announcements to everyone", area: "Announcements");
 
     public static readonly IReadOnlyList<Permission> All = [Write, Send];
 }

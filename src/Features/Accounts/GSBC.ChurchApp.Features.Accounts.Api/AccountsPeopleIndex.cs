@@ -26,4 +26,7 @@ internal sealed class AccountsPeopleIndex(AccountsDbContext db) : IPeopleIndex
             .Where(user => ids.Contains(user.Id))
             .Select(user => new IndexedPerson(user.Id, user.DisplayName, user.Email ?? "", user.Disabled))
             .ToListAsync(cancellationToken);
+
+    public async ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
+        await db.Users.AsNoTracking().Where(user => people.Contains(user.Id)).ToDictionaryAsync(user => user.Id, user => user.DisplayName, cancellationToken);
 }

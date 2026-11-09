@@ -25,8 +25,10 @@ internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport t
         if (leased.Count == 0)
             return 0;
 
-        List<Delivery> due = await db.Deliveries.Include(delivery => delivery.Notification)
+        List<Delivery> leasedDeliveries = await db.Deliveries.Include(delivery => delivery.Notification)
             .Where(delivery => leased.Contains(delivery.Id)).OrderBy(delivery => delivery.Id).ToListAsync(cancellationToken);
+        List<Delivery> due = leasedDeliveries.Where(delivery => delivery.Notification?.RecalledAt is null).ToList();
+        PushRules.Record(leasedDeliveries.Except(due).ToList(), PushResult.Recalled, now);
         List<Guid> deviceIds = due.Select(delivery => delivery.DeviceId).Distinct().ToList();
         Dictionary<Guid, Device> devices = await db.Devices.Where(device => deviceIds.Contains(device.Id)).ToDictionaryAsync(device => device.Id, cancellationToken);
         Dictionary<Guid, int> unread = await UnreadAsync(due, cancellationToken);
