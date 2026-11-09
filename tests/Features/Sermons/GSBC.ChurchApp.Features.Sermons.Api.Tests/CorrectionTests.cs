@@ -21,15 +21,15 @@ public sealed class CorrectionTests
         SermonRecord sermon = new() { Origin = SermonSources.Website, SourceSeriesId = fruit };
         WebsiteReader.Take(sermon, Mercy, null, "files.example", Now);
 
-        SermonLibraryService.Correct(sermon, new SermonCorrection { Title = "Mercy Comes First", SeriesId = "", Service = "Sunday night" }, false, false);
+        SermonLibraryService.Correct(sermon, new SermonCorrection { Title = "Mercy Comes First", SeriesId = "", Service = "Conference, Tuesday night" }, false, false);
         WebsiteReader.Take(sermon, Mercy with { Title = "Mercy Before Judgment" }, null, "files.example", Now);
 
-        Assert.Equal(("Mercy Comes First", null, "Sunday night"), (sermon.EffectiveTitle, sermon.EffectiveSeriesId, sermon.EffectiveService));
+        Assert.Equal(("Mercy Comes First", null, "Conference, Tuesday night"), (sermon.EffectiveTitle, sermon.EffectiveSeriesId, sermon.EffectiveService));
         Assert.Equal("Mercy Before Judgment", sermon.SourceTitle);
         Assert.Equal([Fields.Title, Fields.Series, Fields.Service], SermonLibraryService.CorrectedFields(sermon));
 
         SermonLibraryService.Correct(sermon, new SermonCorrection { UseSource = [Fields.Title, Fields.Series] }, false, false);
-        Assert.Equal(("Mercy Before Judgment", fruit, "Sunday night"), (sermon.EffectiveTitle, sermon.EffectiveSeriesId, sermon.EffectiveService));
+        Assert.Equal(("Mercy Before Judgment", fruit, "Conference, Tuesday night"), (sermon.EffectiveTitle, sermon.EffectiveSeriesId, sermon.EffectiveService));
     }
 
     [Fact]

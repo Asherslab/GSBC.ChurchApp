@@ -54,11 +54,11 @@
         <section class="sermons-desk__record" aria-label="@(_uploading ? "Upload a sermon" : "The sermon")">
             @if (_uploading)
             {
-                <UploadSermon Sermons="Sermons" Status="context.Value.Status" Series="context.Value.Series" Speakers="context.Value.Speakers" Added="AddedAsync" Cancelled="() => _uploading = false" />
+                <UploadSermon Sermons="Sermons" Status="context.Value.Status" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Added="AddedAsync" Cancelled="() => _uploading = false" />
             }
             else if (Selected(context.Value) is { } selected)
             {
-                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers"
+                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services"
                              OursToAdd="context.Value.Status.Source == SermonSources.Uploads" Saved="SavedAsync" />
             }
             else
@@ -87,15 +87,16 @@
         Task<SourceStatus> status = Sermons.StatusAsync().AsTask();
         Task<SeriesList> series = Sermons.SeriesAsync().AsTask();
         Task<SpeakerList> speakers = Sermons.SpeakersAsync().AsTask();
+        Task<ServiceList> services = Sermons.ServicesAsync().AsTask();
         Task<SermonList> first = Sermons.ListAsync(new SermonQuery { Filter = _filter, Text = _query, Take = _take }).AsTask();
-        await Task.WhenAll(status, series, speakers, first);
+        await Task.WhenAll(status, series, speakers, services, first);
         SermonList list = await first;
         if (!_chosenFilter && _filter == SermonFilters.NeedsALook && list.Total == 0 && _query.Length == 0)
         {
             _filter = SermonFilters.All;
             list = await Sermons.ListAsync(new SermonQuery { Filter = _filter, Take = _take });
         }
-        _view = new DeskView(list, await status, (await series).Series, (await speakers).Speakers);
+        _view = new DeskView(list, await status, (await series).Series, (await speakers).Speakers, (await services).Services);
         return _view;
     }
 

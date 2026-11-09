@@ -16,7 +16,7 @@ internal static partial class TeamPage
             .Where(person => person.Name.Length > 0 && person.Photo.StartsWith("https://", StringComparison.Ordinal))
             .ToList();
         List<IGrouping<string, (string Name, string Photo)>> individuals = people.Where(person => !IsMoreThanOnePerson(person.Name))
-            .GroupBy(person => Speakers.AliasOf(person.Name))
+            .GroupBy(person => Speakers.KeyOf(person.Name))
             .ToList();
         bool OnePhoto(IGrouping<string, (string Name, string Photo)> named) => named.Select(person => person.Photo).Distinct().Count() == 1;
 

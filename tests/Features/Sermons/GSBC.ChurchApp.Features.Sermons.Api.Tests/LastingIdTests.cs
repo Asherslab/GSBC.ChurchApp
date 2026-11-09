@@ -78,7 +78,6 @@ public sealed class LastingIdTests : SermonsHost
         await db.Database.ExecuteSqlAsync($"UPDATE sermons.series SET id = {seriesWas} WHERE id = {series}", Cancel);
         await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET source_series_id = {seriesWas} WHERE source_series_id = {series}", Cancel);
         await db.Database.ExecuteSqlAsync($"UPDATE sermons.speakers SET id = {speakerWas} WHERE id = {speaker}", Cancel);
-        await db.Database.ExecuteSqlAsync($"UPDATE sermons.speaker_aliases SET speaker_id = {speakerWas} WHERE speaker_id = {speaker}", Cancel);
         await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET source_speaker_id = {speakerWas} WHERE source_speaker_id = {speaker}", Cancel);
         await provider.GetRequiredService<SermonPublisher>().PublishAsync(Cancel);
     });

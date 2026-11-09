@@ -48,6 +48,7 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddHttpClient<WebsiteClient>().ConfigurePrimaryHttpMessageHandler(() => Website);
         services.AddScoped<Artwork>();
         services.AddScoped<Speakers>();
+        services.AddScoped<ServiceNames>();
         services.AddScoped<SermonPublisher>();
         services.AddScoped<WebsiteReader>();
         services.AddScoped<SourceIdMove>();

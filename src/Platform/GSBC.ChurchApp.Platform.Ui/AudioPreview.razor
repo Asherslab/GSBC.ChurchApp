@@ -6,10 +6,10 @@
     <button type="button" class="audio-preview__toggle" aria-label="@(Playing ? $"Pause {Item.Title}" : $"Play {Item.Title}")" @onclick="ToggleAsync">
         <Icon Name="@(Playing ? "pause" : "play")" />
     </button>
-    <span class="audio-preview__time">@NowPlaying.Clock(Position)</span>
+    <span class="audio-preview__time">@AudioControls.Clock(Position)</span>
     <input type="range" min="0" max="@Math.Max(1, Duration).ToString("0")" step="1" value="@Position.ToString("0")" aria-label="Position"
            style="--filled: @(Duration > 0 ? Math.Clamp(Position / Duration * 100, 0, 100) : 0)%" disabled="@(!Loaded)" @onchange="SeekAsync" />
-    <span class="audio-preview__time">@(Duration > 0 ? NowPlaying.Clock(Duration) : "–:––")</span>
+    <span class="audio-preview__time">@(Duration > 0 ? AudioControls.Clock(Duration) : "–:––")</span>
 </div>
 
 @code {

@@ -190,12 +190,12 @@ internal sealed class WebsiteReader(
     {
         if (await TeamPhotosAsync(cancellationToken) is not { } team)
         {
-            await speakers.TakePhotosAsync(Speakers.ByAlias(fromSeriesPages), onlyWithout: true, cancellationToken);
+            await speakers.TakePhotosAsync(Speakers.ByKey(fromSeriesPages), onlyWithout: true, cancellationToken);
             return;
         }
 
         IReadOnlyList<string> unmatched = await speakers.TakePhotosAsync(Speakers.Preferring(team.ByName, fromSeriesPages), onlyWithout: false, cancellationToken);
-        List<string> notSpeakers = team.ByName.Keys.Where(name => unmatched.Contains(Speakers.AliasOf(name))).ToList();
+        List<string> notSpeakers = team.ByName.Keys.Where(name => unmatched.Contains(Speakers.KeyOf(name))).ToList();
         logger.LogInformation("Team page photos: {Matched} matched a speaker; not speakers: {NotSpeakers}; left out: {LeftOut}",
             team.ByName.Count - notSpeakers.Count, string.Join(", ", notSpeakers), string.Join(", ", team.LeftOut));
     }

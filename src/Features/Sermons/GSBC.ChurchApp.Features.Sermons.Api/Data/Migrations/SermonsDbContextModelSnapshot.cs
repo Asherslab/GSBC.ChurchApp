@@ -442,25 +442,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.ToTable("source_state", "sermons");
                 });
 
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.SpeakerAlias", b =>
-                {
-                    b.Property<string>("Alias")
-                        .HasColumnType("text")
-                        .HasColumnName("alias");
-
-                    b.Property<Guid>("SpeakerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("speaker_id");
-
-                    b.HasKey("Alias")
-                        .HasName("pk_speaker_aliases");
-
-                    b.HasIndex("SpeakerId")
-                        .HasDatabaseName("ix_speaker_aliases_speaker_id");
-
-                    b.ToTable("speaker_aliases", "sermons");
-                });
-
             modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.SpeakerRecord", b =>
                 {
                     b.Property<Guid>("Id")

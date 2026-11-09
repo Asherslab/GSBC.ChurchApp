@@ -25,6 +25,7 @@ public static class SermonsApiExtensions
         services.AddMediaSystemArea(Artwork.Area);
         services.AddMediaSystemArea(AudioCopier.Area);
         services.AddScoped<Speakers>();
+        services.AddScoped<ServiceNames>();
         services.AddScoped<SermonPictures>();
         services.AddScoped<IMediaHolder>(provider => provider.GetRequiredService<SermonPictures>());
         services.AddScoped<SermonPublisher>();

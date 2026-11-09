@@ -1,0 +1,35 @@
+<SearchPicker TItem="ServiceChoice" Label="Service" Items="Choices" Text="NameOf" Detail="CountOf" Value="Chosen" ValueChanged="ChooseAsync"
+              NoneText="No service given" Placeholder="Find or add a service" CreateText="@(name => $"Add “{name}” as a service")" OnCreate="AddAsync"
+              Hint="A service you add is offered next time too." />
+
+@code {
+    private readonly List<ServiceChoice> _added = [];
+
+    [Parameter, EditorRequired] public required IReadOnlyList<ServiceChoice> Services { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    protected override void OnParametersSet()
+    {
+        if (Value.Length > 0 && Choices.All(choice => choice.Name != Value))
+            _added.Add(new ServiceChoice { Name = Value });
+    }
+
+    private IReadOnlyList<ServiceChoice> Choices => [.. Services, .. _added.Where(added => Services.All(service => service.Name != added.Name))];
+
+    private ServiceChoice? Chosen => Choices.FirstOrDefault(choice => choice.Name == Value);
+
+    private static string NameOf(ServiceChoice service) => service.Name;
+
+    private static string CountOf(ServiceChoice service) => service.Count > 0 ? SermonText.Sermons(service.Count) : service.Standard ? "" : "New";
+
+    private Task ChooseAsync(ServiceChoice? service) => ValueChanged.InvokeAsync(service?.Name ?? "");
+
+    private Task AddAsync(string name)
+    {
+        string named = SermonServices.Named(name, Choices.Select(choice => choice.Name));
+        if (Choices.All(choice => choice.Name != named))
+            _added.Add(new ServiceChoice { Name = named });
+        return ValueChanged.InvokeAsync(named);
+    }
+}
