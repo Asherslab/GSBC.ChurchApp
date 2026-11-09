@@ -254,6 +254,10 @@ components:
     textColor: "{colors.ink-2}"
     rounded: "{rounded.full}"
     padding: "3px 9px"
+  pill-danger:
+    textColor: "{colors.danger}"
+    rounded: "{rounded.full}"
+    padding: "3px 9px"
   segmented:
     backgroundColor: "{colors.sand}"
     rounded: "{rounded.field}"
@@ -748,6 +752,61 @@ components:
     rounded: "{rounded.field}"
     padding: "13px 14px"
     typography: "{typography.body}"
+  blue-card:
+    backgroundColor: "{colors.navy}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.card}"
+    padding: "16px 18px 14px"
+  blue-card-kind:
+    textColor: "{colors.beige}"
+    typography: "{typography.pill}"
+  blue-card-number:
+    textColor: "{colors.white}"
+    typography: "{typography.title-lg}"
+  blue-card-status-current:
+    backgroundColor: "{colors.aqua}"
+    textColor: "{colors.white}"
+    rounded: "{rounded.full}"
+    height: "24px"
+    padding: "0 10px"
+    typography: "{typography.pill}"
+  blue-card-status-soon:
+    backgroundColor: "{colors.orange}"
+    textColor: "{colors.on-marker}"
+    rounded: "{rounded.full}"
+    height: "24px"
+    padding: "0 10px"
+    typography: "{typography.pill}"
+  blue-card-status-run-out:
+    backgroundColor: "{colors.white}"
+    textColor: "{colors.danger}"
+    rounded: "{rounded.full}"
+    height: "24px"
+    padding: "0 10px"
+    typography: "{typography.pill}"
+  sign-in-code:
+    textColor: "{colors.ink}"
+    typography: "{typography.headline}"
+  person-tab-panel:
+    backgroundColor: "{colors.sand}"
+    textColor: "{colors.ink-2}"
+    rounded: "{rounded.card}"
+    padding: "20px 22px"
+    typography: "{typography.caption}"
+  person-tab-head:
+    textColor: "{colors.ink-3}"
+    typography: "{typography.pill}"
+  safeguarding-flag:
+    textColor: "{colors.orange-ink}"
+    rounded: "{rounded.card}"
+    padding: "13px 16px"
+    typography: "{typography.row-title}"
+  safeguarding-flag-run-out:
+    textColor: "{colors.danger}"
+  person-finder-row:
+    textColor: "{colors.ink}"
+    height: "52px"
+    typography: "{typography.row-title}"
 ---
 
 # Design System: GSBC Church App
@@ -802,7 +861,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 - **Sand** (sand) and **Strong Sand** (sand-strong): the bulletin's shaded boxes. Callouts, the sermon head, the player, fields and notes, quiet buttons, chips, the segmented track, row-icon tiles; strong sand for image placeholders, progress tracks, the switch off-state and disabled buttons.
 - **Ink** (ink), **Ink 2** (ink-2), **Ink 3** (ink-3): headings and titles, then body prose and subtitles, then inactive tabs, hints and trailing metadata. Ink 3 is also a trend chart's comparison series, always dashed.
 - **Hairline** (line): row dividers, the section-tab bar's bottom edge, the tab bar's top edge, pressed-row fill.
-- **Danger** (danger): the failing status word on the device check; nowhere else.
+- **Danger** (danger): something that has failed or run out. The failing status word on the device check, and a safeguarding item that has run out (2026-11-10, Claude's default while the owner slept): the Danger pill ("Run out" on the Safeguarding list, "Overdue" on the phone's training row), the flag notice on a person's Safeguarding tab (danger at 12% with danger text), and the blue card's status capsule (danger text on white). It is also the text of danger actions and a field's problem line, as Components describe. Due soon stays the marker (orange, or orange-ink text), so only what has already run out is red.
 - **Selected Fill** (selected-fill): the chosen row in a list on the page, a tonal step (sand in light) rather than a shadow. Inside the workbench's sand list column the step goes the other way, to the segment colour (white in light), so the selected row still stands off its ground.
 - **Fill on Surface** (fill-on-surface): fields, quiet buttons and the segmented track inside the white settings panel; sand in light, strong sand in dark, so a sand fill never vanishes into a raised navy panel. Also the quiet pill and the copy field.
 - **Device Bezel** (device-bezel): the black ring and cutout of the phone frame; device hardware, never a UI colour.
@@ -882,7 +941,7 @@ A two-column shell: a 248px navy sidebar, sticky at the full window height and s
 - **App styling:** capped at 1440px. A title band held at 72px whatever it shows: the title on one line, cut off with an ellipsis, over one lead line 1.6rem tall; its actions never wrap. Under it two columns with a 48px gap: the phone column, sticky 16px from the top and as tall as the window less 150px (at least 520px), holding the phone with its preview chips 14px below; and the 400px panel, its parts 14px apart and 32px clear at its foot, scrolling with the page.
 - **Media:** above 900px the title band keeps its search (180 to 210px), New folder and Upload on the title row. Under it, a wrapping bar (12 by 20px gaps, 16px below): the shelf switch on the left, the type filter chips and the Grid/List switch on the right. Then the path row (at least 36px: breadcrumbs, with the open folder's actions at its end) and, on the app's shelf, its note. The bar, the path row and the note span above the split view, so opening a file's detail never moves the grid at any depth. Inside the list: folder tiles auto-filling at least 210px wide (10px gaps), 16px, then the picture grid auto-filling at least 168px wide (20 by 14px gaps).
 - **Split view:** a list beside a detail column of 340 to 440px with a 32px gap, capped at 1600px; the detail is sticky 24px from the top and scrolls within the window height. Between 1201 and 1440px the detail narrows to 300 to 360px with a 24px gap. Under 1200px it drops beneath the list. A table inside the list hides its optional columns once the list is narrower than 760px.
-- **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the three-pane workbench narrows its outer panes at 1648px and drops the detail under the work area at 1428px; the office week stacks its columns and lets the seven-day rail scroll sideways (days at least 84px) at 1228px, where the announcements desk also drops its proof under the writing column (static, up to 360px); the fortnight rail always keeps days at least 56px and scrolls sideways when they don't fit; a person's Roles tab drops its explanation panel under the ticks (no longer sticky) at 1328px; the Places explorer drops its phone column under the directory at 1100px (static, up to 420px, a hairline above, 24px of space), and so does App styling its panel under the phone (28px of space, the phone column static and 640px tall); at 760px App styling's title band wraps and grows to fit.
+- **Breakpoints allow for the sidebar.** The work area's breakpoints are window media queries offset by the 248px sidebar: the three-pane workbench narrows its outer panes at 1648px and drops the detail under the work area at 1428px; the office week stacks its columns and lets the seven-day rail scroll sideways (days at least 84px) at 1228px, where the announcements desk also drops its proof under the writing column (static, up to 360px); the fortnight rail always keeps days at least 56px and scrolls sideways when they don't fit; a person's Roles tab drops its explanation panel under the ticks (no longer sticky) at 1328px; a person's Family and Safeguarding tabs narrow their panel to 260 to 340px (28px gap) at 1328px and drop it under the rows (static, the record's fields one column) at 928px; the Places explorer drops its phone column under the directory at 1100px (static, up to 420px, a hairline above, 24px of space), and so does App styling its panel under the phone (28px of space, the phone column static and 640px tall); at 760px App styling's title band wraps and grows to fit.
 - **Calendar workbench:** the workbench at full window height: the sand column (24 by 18px padding, 32px at its foot) holding the calendar's items and calendars; the middle pane opening on its own head (a headline title, a caption lead up to 72ch, then the Agenda and Month switch at least 13rem wide beside New event, wrapping) over the agenda as day sections 18px apart, or the month grid capped at 640px; and the detail pane ruled off by a hairline on its left (24px padding, 20px at 1648px; the rule goes at 1428px when the detail drops below), holding the event, a calendar's settings or a break as a lifted panel that clips its navy head to the 14px radius.
 - **Narrow (900px and under):** the sidebar becomes a sticky top strip (8 by 12px padding) with the mark and "Good Shepherd" at one end and a Menu button at the other: a 38px capsule on the masthead tint, label size at 600 in white, with a menu icon that turns to an x and "Close" while the menu is open. The menu opens the same sidebar under the strip as a navy panel up to 320px wide (12 by 14px padding, 20px at the foot, scrolling on its own, a 0 18px 32px shadow in the scrim colour) over the scrim. Escape, a click outside or opening a page closes it; opening moves focus to Jump to, and closing returns it to Menu. The work area padding drops to 20px top, 16px sides and 48px foot.
 
@@ -908,13 +967,13 @@ Mostly flat and tonal. Depth comes from colour steps (navy masthead over white p
 - **Drag lift** (`filter: drop-shadow(0 18px 26px` ink at 30%`)`, with the tile scaled to 1.04 while it moves): a Home tile while it is being moved or resized on the admin canvas, nowhere else.
 
 ### Named Rules
-**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Card tone (`raised`) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel, the selection tray (docked over a list that scrolls beneath it) and the Drafts menu's popover; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
+**The Flat Page Rule.** Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card, a Home tile in the Card tone (`raised`) or the age question on Account (a white card asked once, above Your family, until it is answered) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel, the selection tray (docked over a list that scrolls beneath it) and the Drafts menu's popover; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current "Not sent yet" chip, is a 2px marker outline at a 2px offset.
 
 **The Tonal Selection Rule.** A selected row is marked by a fill one tonal step off its ground (Selected Fill, rounded to the field radius and widened 12px into the gutter on each side, its hairline hidden), never by a shadow or a border. A sand leading tile on a selected row takes the page colour (white in light, night in dark) so it still reads as a tile; an accent tile keeps its tint.
 
 ## Shapes
 
-Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles. The calendar's date block is a 78px tile at the 14px radius (62px at 12px when compact); week-rail days and month-grid days round at 12px; month marks are 5px dots, and "not on" is a 6px open ring. Home tiles take the 14px radius and clip what they hold (a picture, the bleeding mark); their icons sit in the 34px, 10px-radius row tile.
+Soft, rounded, never sharp. The working radius is 14px for anything box-shaped (callouts, sermon head, player, notes, boxed lists, feature cards, series covers, full-width buttons); 12px for the smaller boxes (status strip, fields, segmented track, now-playing art); 10px for tiles inside rows (row icons and thumbnails); 9px for a selected segment inside its track. Anything sized to a touch target is a capsule: buttons at 44px tall with a 22px radius, chips, passage chips, the pray button, pills, round icon buttons and the play toggle. Sheets round only their top corners at 22px and carry a 38 by 5px grabber. Speaker photos are circles. The calendar's date block is a 78px tile at the 14px radius (62px at 12px when compact); week-rail days and month-grid days round at 12px; month marks are 5px dots, and "not on" is a 6px open ring. Home tiles take the 14px radius and clip what they hold (a picture, the bleeding mark); their icons sit in the 34px, 10px-radius row tile. The blue card takes the 14px radius and clips a ring at its top right: a 150px circle drawn as an 18px stroke of the masthead chip colour, set 44px out past the top and right edges; its status is a 24px capsule.
 
 The admin panel uses the same scale: sidebar links, area heads, pin buttons and the Jump to field, Jump to's rows, sortable header buttons and office-week capsules at 9px; the rail's day columns at 10px inside its 14px sand track; fields, the search field and the chosen-place token at 12px; filter chips and count capsules as capsules; media thumbnails at 8px, like the app's. A dashed line means "you can change this": the upload drop zone (1.5px of ink-3 at 45% on fill-on-surface at the 14px radius, turning deep aqua on hover or focus). The event head is never outlined: it previews, and fields edit (owner, 2026-11-08). Folder tiles and the media grid's thumbnails take the 12px field radius (folder tiles with a hairline border, their icon tile at 9px); breadcrumbs and folder-picker rows round at 9px; the selection tray takes the 14px radius.
 
@@ -941,7 +1000,7 @@ Capsules with a firm press: they scale to 0.96 on press with an ease-out curve, 
 - **Pill:** a small (0.7059rem, 700) capsule of orange at 28% with orange-ink text, for status such as "Later release".
 - **Pray button:** a 36px sand capsule that turns aqua when you are praying.
 - **Chosen chips (chip picker):** for choosing several from a long list, such as the roles a tile is shown to. Each choice is a 32px primary capsule with on-primary caption text at 600 and a 28px round remove button (on-primary at 16% on hover, spoken as "Remove" and the name). Under them a 44px fill-on-surface search at the field radius (leading search icon, row-size text, deep-aqua caret, the 2px inset deep-aqua ring on focus) opens a listbox of matches on the surface, ringed by a hairline and lifted, up to 18rem tall: names starting with what's typed come first, each the name at row size and 600 over a caption in ink-2, the active one on sand. Arrows move through it, Enter adds, Backspace on an empty search removes the last chip, Escape clears the search.
-- **Pill tones:** Marker (the default, orange as above) for "changed in this draft" and "changed for everyone since"; Accent (aqua at 12% with deep-aqua text) for a calm state, and "Test" on a test notification; Masthead (solid masthead colour with white text) for the event layer; Quiet (fill-on-surface with ink-2 text) for a state that no longer matters, such as an expired or turned-off code, and the "Crash" mark in App health. An optional small icon leads the label.
+- **Pill tones:** Marker (the default, orange as above) for "changed in this draft" and "changed for everyone since"; Accent (aqua at 12% with deep-aqua text) for a calm state, and "Test" on a test notification; Masthead (solid masthead colour with white text) for the event layer; Quiet (fill-on-surface with ink-2 text) for a state that no longer matters, such as an expired or turned-off code, the "Crash" mark in App health, and "Not recorded" on the Safeguarding list; Danger (danger at 12% with danger text) for a safeguarding item that has run out ("Run out", "Overdue"), and nothing else. Due soon and a young person without a parent stay Marker. An optional small icon leads the label.
 
 ### Segmented control
 A sand track (12px radius, 3px inset) of equal segments; the selected segment is a white tile (9px radius) with the segment shadow. Used for Automatic, Light, Dark, the inbox's Waiting and Everything, and an announcement's Now and Later. A segment can carry a count in the same orange capsule as the tab strip's (shown only above zero). It is a radio group: one Tab stop on the chosen segment, and the arrow keys, Home and End move the choice.
@@ -975,7 +1034,7 @@ The workhorse. A row is a full-width line at least 56px tall: optional leading t
 - **Rich text:** a wrapping toolbar of 36px fill-on-surface buttons 4px apart at the 9px radius (caption at 600, ink-2, ink on hover, primary with on-primary when pressed), over the text as a field: fill-on-surface at the 12px radius, 13 by 14px padding, body size at 1.5, deep-aqua caret, the 2px inset deep-aqua ring on focus, resizing vertically. Under it the preview, "How it looks", is a plain caption at 600 in ink-2 over the rendered text.
 - **Search field (admin):** a 40px fill-on-surface field at the 12px radius, up to 420px wide, with a leading search icon in ink-3, row-size text, an ink-2 placeholder and a deep-aqua caret; focus is the 2px inset deep-aqua ring on the whole field. It settles 250ms after typing stops before it searches.
 - **Copy field:** a labelled, read-only 40px field in fill-on-surface at the 12px radius (row-size tabular text, a little tracking), with a small quiet Copy button beside it that turns to "Copied" with a check, and a polite caption status line beneath (a hint, or how to copy by hand if copying fails). Used for sign-in codes and recovery links; selecting the field selects the whole value.
-- **Copy button:** the copy field without its field, where the value is already shown beside it: a small quiet capsule with a link icon ("Copy link") that turns to "Copied" with a check, or "Couldn't copy: select the address" with an alert icon, spoken politely. In Places in the app it sits between the primary action and the quiet ones.
+- **Copy button:** the copy field without its field, where the value is already shown beside it: a small quiet capsule with a link icon ("Copy link"), or the copy icon when the value isn't a link ("Copy the code" beside a sign-in code), that turns to "Copied" with a check, or "Couldn't copy: select the address" with an alert icon, spoken politely. In Places in the app it sits between the primary action and the quiet ones.
 - **Who sees it (audience picker):** a segmented Everyone, Signed in and Roles (a fourth "Set up specially" appears only for an audience the three can't express), and under Roles the chip picker of roles ("Find a role") with a hint line; one audience can name several roles.
 - **Picture field** (`PictureField`, Platform.Ui): the one way to choose a picture in a form (an event, a Home tile, an announcement). Empty, it is an add row ("Add a picture", "Choose a picture"). Chosen, the picture is shown as people will see it, up to 240px wide (at least 160px) at the field radius: in the app's 16:9 frame when the form's surface uses one (an event: a picture far from 16:9 shown whole on the masthead colour, as the event page does), otherwise in its own proportions up to 200px tall on sand. Beside it, wrapping under it when narrow, how the app shows it in caption ink-2 ("The app shows a 1280×1707 copy · 256 KB") over Change and Remove as small quiet buttons with their icons. A file that isn't a picture shows its name with the file icon.
 - **Media chooser:** choosing a picture or file opens a wide sheet titled "Choose a picture" with Media's own picker. It opens on the last folder used. On top, a search ("Find a picture in every folder", or "Find a file in every folder") and a quiet Upload; then the folder breadcrumbs (Library first) and the open folder's subfolders as compact folder tiles (at least 180px wide, 8px gaps, 50px tall with a 32px icon tile); then an auto-filling grid of items at least 150px wide (14 by 12px gaps, up to 52vh or 560px tall, scrolling on its own), each a 4:3 thumbnail on strong sand at the field radius over its name in caption at 600 (one line, ellipsis) and where it's used in caption ink-3 ("Not used yet", "Used in 3 places"). Searching looks in every folder: the breadcrumbs and tiles give way to "Results for “…” in every folder" at 600 in ink-2, and each item says which folder it's in ("In Sermons › 2026 series"). An empty folder is an empty state ("No pictures in this folder"). Hover rings the thumbnail 2px in marker at 55%; the chosen one is ringed 3px in marker with a 26px marker tick disc in its top-right corner; focus is the deep-aqua outline 4px out. A hairline-ruled foot holds the chosen name (or "Nothing chosen yet") in caption ink-2, Cancel (quiet) and Choose (primary, disabled until something is chosen). Double-clicking an item chooses it. Opening it moves focus into the sheet without scrolling the page behind.
@@ -1114,9 +1173,41 @@ People opens each person on their own page (`/people/{id}`): a title band with a
 - **Roles:** two columns, the ticks (capped with the panel at 1280px) beside a 300 to 400px sand explanation panel at the 14px radius (20 by 22px padding), sticky 24px from the top, 40px apart; from 1328px down the ticks are one column and the panel narrows to 260 to 340px (28px apart) so it stays beside the role being explained, and only under 680px does it drop below them. The ticks flow in two CSS columns (at least 280px, 32px apart), one block per feature that never breaks: an uppercase pill-size head in ink-3 at 600 (+0.06em), then role ticks on hairline rows. Under them, a hairline and *For one thing*: hairline rows with the role and place at 600 and a deep-aqua "Change it there" link.
 - **Role tick:** a 40px row: an 18px checkbox in deep aqua, the role name at row size and 600, and a 32px round (i) button in deep aqua that fills sand on hover. The chosen row takes deep aqua at 9% on the surface and its (i) gains a 2px deep-aqua ring, so having the role (the tick) stays the stronger mark. A tick the viewer can't give is disabled, its name in ink-3, with the reason as its title and in the explanation.
 - **Explanation:** the role's name in title type at 700, then caption-size groups: a 600 ink-2 lead ("Announcements Writer lets Ruth:"), a bulleted list, and for a kit "Also, from Media, because the job needs it:"; a hairline in sand-strong above who gave it and when.
+- **Family and Safeguarding tabs:** laid out as the Roles tab is: the rows or fields beside a sand panel at the 14px radius (20 by 22px padding, caption size in ink-2, a title-size ink heading, a bulleted list at 1.7), sticky 24px from the top, 300 to 380px wide at a 40px gap, capped together at 1280px; the panel narrows to 260 to 340px (28px gap) at 1328px window width and drops under them, no longer sticky, at 928px. Groups are 28px apart, each under an uppercase pill-size head at 600 (+0.06em) in ink-3 ("Waiting", "Children Chris looks after · 2", "Chris's parents and guardians").
+- **Family:** the birth date as a quiet-tile row with a small quiet Change that opens the field inline (Cancel, Clear it, Save); how ministries reach a young person (Segmented, with a hint); Waiting asks on the warm tile with small Take it back and Link them; children and parents led by their Avatar with small quiet Open and Unlink; "No parent linked yet" on the warm tile while a young person has none; and an accent add row ("Link a child", "Link a parent") that opens the person finder in place (and, for a child, an inline name and birth date to add one who isn't in the app), closed with a small quiet Done. The panel says what linking does.
+- **Safeguarding:** any flag first, as a notice at the 14px radius (13 by 16px, row size at 600, an alert icon): due soon in marker at 22% with marker-ink text, run out in danger at 12% with danger text. Then *Blue card* and *Safe Ministry training*, each a pill-size head over its fields two to a row (12 by 28px gaps; one column at 928px), and a primary Save beside quiet "Remove the blue card" and "Remove the training"; a hint says who recorded it and when. The panel says the record is entered by hand and never blocks anyone, and shows the blue card as the person sees it.
 
 ### People on a thing
-The shared way to put people on one thing (a calendar, a regular event, a draft). In the thing's panel a **People row**: a hairline above, a 600 label in ink-2 over the names on one line (cut off with an ellipsis) and a caption count in ink-2 ("2 people"), and a small quiet *People* button with a people icon. It opens the wide **People sheet**: the lead says what each role there does; a search field ("Add someone: find them by name") whose results are hairline rows with a small primary "Add as Editor"; then each person as a hairline block: name at 600 over a caption "Added by …, 9 Nov", a small quiet *Take off* at the end, and their roles for this thing as role ticks in a wrapping row. The (i) opens the explanation inline in a sand box at the field radius under that person. Done closes it.
+The shared way to put people on one thing (a calendar, a regular event, a draft). In the thing's panel a **People row**: a hairline above, a 600 label in ink-2 over the names on one line (cut off with an ellipsis) and a caption count in ink-2 ("2 people"), and a small quiet *People* button with a people icon. It opens the wide **People sheet**: the lead says what each role there does; the person finder ("Add someone: find them by name"), whose results are hairline rows with a small primary "Add as Editor"; then each person as a hairline block: name at 600 over a caption "Added by …, 9 Nov", a small quiet *Take off* at the end, and their roles for this thing as role ticks in a wrapping row. The (i) opens the explanation inline in a sand box at the field radius under that person. Done closes it.
+
+### Safeguarding page
+Who to follow up (`/safeguarding`, People area): a title band whose lead says nothing here stops anyone serving, then a data table. Its toolbar holds filter chips with counts (Everything, Run out, Due in 60 days, Not recorded, Young people without a parent). Columns: the person at 600, what it is, a status pill (Danger for run out, Marker for due soon and without a parent, Quiet for not recorded), and when in tabular ink-2, soonest first. Choosing a row opens the person's Safeguarding tab, or their Family tab for a young person without a parent. With nothing flagged, a shield-check empty state ("Nothing to follow up"). Run-out items and young people without a parent are the Needs-you items: they become rows in the office week's Needs you ("Record the new one", "Link a parent"), and the sidebar's orange count on Safeguarding counts those alone, not every flagged row; due soon and not recorded wait on the page.
+
+### Person finder
+The shared way to find someone and do one thing to them (`PersonFinder`, Platform.Ui): the People sheet's "Add someone", and linking a child or a parent on a person's Family tab. The shared search field (its label and placeholder say who: "Find their parent or guardian by name"), searching from two letters, then the matches as hairline rows at least 52px tall (6px above and below): the name at row size and 600 over a caption detail in ink-2 cut with an ellipsis, and a small primary button that names the act ("Link as their child", "Add as Editor"). People already there are left out. With no match, one caption line in ink-2: "No one matches “…”."
+
+### Your family (Account)
+The phone's Account page (and the admin panel's Account page) keeps a family as rows you act on, under a *Your family* section whose lead says what it is for ("Children you look after in the app.", or for a young person "Your parents see your details in the app while you're under 18."). One hairline list, in this order:
+- **Asks of you** first, as rows on the warm tile with a people icon (who asks, and the child's age and when), with Below actions: a quiet "Not mine" (or "Not my child") and a small primary "Yes, link us".
+- **Children** you look after, each led by their `Avatar` (a 40px sand circle, initials in primary at 700) instead of a tile: the name, a subtitle with their age and how they're reached, and a chevron that opens the child sheet.
+- **Parents**, led by their Avatar, "Your parent · linked …", with a small quiet Unlink for an adult.
+- **Your own asks** on the quiet tile with a clock ("Waiting for …"), with a small quiet *Take back*.
+- **The add row** on the accent tile: "Add a child" for an adult, "Ask a parent to link to you" for a young person; each opens a sheet with one or two fields, a block primary that names the result ("Add Leo") and a quiet Not now.
+- **The birth date** last, on the quiet tile with a calendar icon ("Born 4 March 2011") and who sees it.
+
+Under the list, for a young person with a parent, a hint saying how they're reached. Until someone has answered, the **age question** sits above the list: a raised card (white, lifted, 14px radius) titled "How old are you?", a line on why the church asks, a birth date field, and a quiet "I'm 18 or older" beside a primary Save. Then *Blue card and training*, for anyone with either recorded: the blue card, and Safe Ministry training as a row (accent tile with a shield check when current; warm tile with an alert and a pill when not: Marker "Due in 12 days", Danger "Overdue").
+
+### Child sheet
+Tapping a child opens a sheet titled with their name. In order:
+- **Sign-in code:** a sand card ("Sign in on their own phone", or "A new sign-in for their phone"). Before a code: one line on when to make one and a small primary "Make a sign-in code". After: the code at headline size and 700, tabular, tracked 0.08em in ink (spoken digit by digit), with the button-only copy, using the copy icon, at the other end of its row (wrapping when tight), and a caption hint beneath on how long it lasts.
+- **How to reach them:** a section with a Segmented choice (Directly, Through you, Both) once the child can sign in, its lead saying what each means.
+- **Details:** name (for a child the family added who can't sign in yet) and birth date, with a small quiet *Save details*.
+- **Another parent:** waiting asks as quiet clock rows with *Take back*, then an email field and a small quiet *Ask them*.
+- **Remove:** a small quiet "Remove …" or "Stop looking after …" that confirms inline: a warning notice saying what happens, then a small quiet Keep beside the small Danger action.
+- Done (primary, block) closes it.
+
+### Blue card (signature)
+A Queensland blue card drawn as the card in your pocket (`BlueCard`): masthead navy with on-masthead text at the 14px radius, padded 16px, 18px at the sides and 14px at the foot, the ring at its top right (see Shapes). Its head row carries "QLD blue card" in uppercase pill type at 600 (+0.06em) in the masthead note colour, and the status capsule at the other end (pill type at 700): **current** in the live colour with on-live text ("Current"), **due soon** in the marker with on-marker text ("Expires in 12 days"), **run out** white with danger text ("Expired", or the status the office recorded, such as "Suspended"). Then the number at title-large size and 700, tracked 0.04em, tabular, 8px under the head and 12px over a facts row: caption-size pairs (Expires, Checked), each label in on-masthead at 76% beside its value at 600 in tabular figures, wrapping 8 by 24px apart. It shows on the person's own Account page and, as "How Chris sees it", in the Safeguarding tab's sand panel.
 
 ### Breadcrumbs
 Where you are inside something nested, as a row of crumbs (a navigation landmark named "Where you are"). Crumbs sit 2px apart with a small chevron in ink-3 between them; each is 34px tall, 8px at the sides, at the 9px radius, row size at 600, with an optional small leading icon (an image for the Library, a folder, a lock for what the app owns). Earlier crumbs are deep-aqua buttons that fill with sand on hover and take the 2px deep-aqua outline on focus; the last is the current place in ink. A crumb can take a drop: only the crumb under the drag lights, with a 12% deep-aqua tint and a 2px inset deep-aqua ring. Placed at the start of a row, the crumbs pull 8px left so their text lines up with the content below.
@@ -1248,7 +1339,7 @@ One curve, `cubic-bezier(0.22, 1, 0.36, 1)`, for presses, sheets and the section
 ## Implementation
 
 The system ships in `src/Platform/GSBC.ChurchApp.Platform.Ui`, and both hosts link it: the app in full,
-the admin panel for tokens, type and the shared components. The admin shell, the office week's columns and admin-only page styles live in the admin host's `wwwroot/css/admin.css`; the day rail is shared and lives in `ui.css`. A feature's own screens are styled in its Client's `wwwroot/css` (the announcements desk and the inbox in `notifications.css`, the calendar in Events Client's `events.css`). The agenda row, the week rail, the toggle chips and the masthead's Beside row are shared and live at the end of `ui.css`; the rich text editor is styled in `rich-text.css`.
+the admin panel for tokens, type and the shared components. The admin shell, the office week's columns and admin-only page styles live in the admin host's `wwwroot/css/admin.css`; the day rail is shared and lives in `ui.css`. A feature's own screens are styled in its Client's `wwwroot/css` (the announcements desk and the inbox in `notifications.css`, the calendar in Events Client's `events.css`, families, the blue card and a person's Family and Safeguarding tabs in People Client's `people.css`). The agenda row, the week rail, the toggle chips and the masthead's Beside row are shared and live at the end of `ui.css`; the rich text editor is styled in `rich-text.css`.
 
 - **Tokens:** `wwwroot/css/tokens.css` holds every literal colour: the semantic roles, redefined per
   `data-theme` and `data-scheme`, plus the palette-picker swatches. `ui.css` styles the components from
@@ -1281,7 +1372,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Live/sync | `SyncIndicator` | Up to date, catching up, offline; plain or on the masthead |
 | Buttons | `Button` | Primary, Quiet, On masthead, Ghost on masthead, Live, Danger; block, small, icon-only, busy |
 | Fields | `TextField`, `SelectField`, `ToggleRow`, `Segmented` | Labels tied to inputs; hint and problem lines are described-by; a `SegmentOption` can carry a `Count` |
-| Copy a value | `CopyField` | Label, read-only value, Copy that turns to Copied, a polite status line; `ButtonOnly` is the copy button alone |
+| Copy a value | `CopyField` | Label, read-only value, Copy that turns to Copied, a polite status line; `ButtonOnly` is the copy button alone, `ButtonIcon` its icon (`link` by default, `copy` for a value that isn't a link) |
 | Loaded data | `LiveData` | Loading, failure and stale states; reloads itself when what it depends on changes; `Remember` draws the last value at once when the screen is opened again (forgotten on sign-in, sign-out and access changes) |
 | Loading | `Skeleton` | Rows, lines or a block, with a status for screen readers |
 | Tab bar and More | `AppTabBar`, `MoreList`, `PhoneTabs` | The phone's tab bar draws the first four published tabs the person sees (`TabBar.For`), then More; More lists every module entry that isn't a tab now. Tabs are placements in the Tab bar area, chosen by staff in a draft |
@@ -1296,7 +1387,7 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Office week | `IOfficeWeekSource`, `OfficeWeek` | Features contribute tasks and dated spans (`Everyone`, `Layer`, `Draft`); `NavEntry.Summary` is an area's one-line purpose on the home page |
 | Day rail | `DayRail` | `First`, `Today`, `Days` (7, or 14 for a fortnight), the spans, a hidden heading, the quiet line, a `Legend` of kinds and words, and the `Selected` href; a span whose end equals its start is a moment |
 | Admin workbench | `Workbench` | Aside, main and detail panes; `Narrow` makes it the one-column form; `Showing` picks the pane in one column |
-| Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, `Quiet`, with an optional icon |
+| Pill | `Pill` | `PillTone.Marker`, `Accent`, `Masthead`, `Quiet`, `Danger` (run out only), with an optional icon |
 | Charts | `StatTile`, `TrendLine` | `Quiet` for a value too small to show; a main and an optional comparison series, a table of every number, an `Empty` line under two points |
 | Ranked list | `RankedList`, `RankedItem` | Title, explanation, label and value items, an `Empty` line; `Numbered` (default true) shows the rank |
 | Save state | `SaveStatus` | Saved, waiting, saving, failed with a retry; an optional detail |
@@ -1312,6 +1403,8 @@ the admin panel for tokens, type and the shared components. The admin shell, the
 | Who sees it | `AudiencePicker` (Content) | Everyone, Signed in, or several roles through `ChipPicker`; an audience it can't express shows as "Set up specially" |
 | Choose a picture or file | `MediaChooser` (Content) | A wide `Sheet` around the registered `MediaPicker` (Media's `MediaChoice`); `ImagesOnly`; opens on the last folder used |
 | Breadcrumbs | `Breadcrumbs`, `Crumb` | `Label`, a `Trail` of crumbs (label, key, icon), `OnOpen`; `CanDrop` and `OnDrop` make crumbs drop targets |
+| Find someone | `PersonFinder` | `Find`, `ActionText`, `OnChosen`, `Leave` (ids to leave out), `Label`, `Placeholder`, `Busy` (the id being acted on), `AutoFocus`; the People sheet and the Family tab use it |
+| Families and safeguarding | `AccountPeople`, `BlueCard`, `YourSafeguarding`, `ChildSheet`, `AddChildSheet`, `AskParentSheet`, `BirthDateAsk` (People Client); `PersonFamilyTab`, `PersonSafeguardingTab`, `Safeguarding` (People Admin) | Your family and the blue card on Account; a person's Family and Safeguarding tabs (`PersonTab`); the Safeguarding page, whose Needs-you items come from `SafeguardingOfficeWeek` |
 | Act on several | `SelectionTray` | `Label`, `Count` (hidden at 0), `One` and `Many` nouns, `OnClear`, the actions as child content |
 | Media library | `MediaLibrary`, `FolderTiles`, `MoveToSheet` (Media Client) | The shelves, path row, tiles, grid or list, tray and folder sheets; `FolderTiles` has a `Compact` form for the chooser; `MoveToSheet` takes `Current`, `Suggested`, `Blocked` and an `Action` label |
 | Places in the app | `PlaceDirectory`, `PlaceExplorer`, `PlacePhone`, `PlaceField` | Search, area chips and grouped rows; the directory beside the phone column with `PlaceAction`s (one `Leads`); a `PlacePreview` a feature registers, else the masthead summary; the picker field in a wide sheet. A holder with `data-fit-height` fits the phone frame to its height |
@@ -1343,6 +1436,7 @@ A development build has More → Design gallery, which shows every block in the 
 - **Do** keep a regular event quiet in the agenda and let only a special, a change or a date that isn't on speak, with a date not on said in a line under its title.
 - **Do** edit an event where it is read: the same head as a live preview, every change in a field below it, and the save in a foot bar; edit a regular event on its own page, from its run of dates.
 - **Do** mark whatever the app owns with the lock glyph and one plain caption, and keep a page's bars and path row above its split view so choosing an item never moves the list.
+- **Do** show a safeguarding item that has run out in danger and one due soon in the marker, and never let either block anyone.
 - **Do** keep a page that shows one thing at a time in one frame (the Still Frame Rule), and put a phone preview's choices under it as one sentence of sand chips that change only the phone.
 
 ### Don't:
