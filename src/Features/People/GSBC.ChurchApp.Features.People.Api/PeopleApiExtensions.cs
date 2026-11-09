@@ -18,18 +18,20 @@ public static class PeopleApiExtensions
         services.AddPeopleData();
         services.AddScoped<Families>().AddScoped<FamilyViews>();
         services.AddScoped<IPersonData, PeoplePersonData>();
+        services.AddScoped<IFamilies, PeopleFamilies>();
         services.AddPermissions(PeoplePermissions.All);
         services.AddNotificationKinds(PeopleNotifications.All);
 
         services.AddSystemRole(new SystemRole(PeoplePermissions.ParentRole, "Parent or guardian",
-            "Looks after this young person in the app: sees and changes their details, and makes them a sign-in code", ScopeKind.Person,
-            [PeoplePermissions.FamilyViewNode, PeoplePermissions.FamilyEditNode, PeoplePermissions.SignInCodeNode], AssignableBy: [], Hidden: true));
+            "Looks after this young person in the app: sees and changes their details, makes them a sign-in code, and acts for them", ScopeKind.Person,
+            [PeoplePermissions.FamilyViewNode, PeoplePermissions.FamilyEditNode, PeoplePermissions.SignInCodeNode, PeoplePermissions.ActForNode],
+            AssignableBy: [], Hidden: true));
         services.AddSystemRole(new SystemRole(PeoplePermissions.SafeguardingViewerRole, "Safeguarding Viewer",
             "See everyone's birth dates, families, blue cards and Safe Ministry training, and who's flagged", ScopeKind.Global,
             [PeoplePermissions.FamilyViewNode, PeoplePermissions.SafeguardingViewNode], Feature: RoleFeatures.People, Kits: [RoleKits.PeopleNames]));
         services.AddSystemRole(new SystemRole(PeoplePermissions.SafeguardingManagerRole, "Safeguarding Manager",
             "Everything a Safeguarding Viewer can, and link families, add children for a parent, make sign-in codes and record blue cards and training",
-            ScopeKind.Global, ["people.*"], Feature: RoleFeatures.People, Kits: [RoleKits.PeopleNames]));
+            ScopeKind.Global, ["people.*", $"-{PeoplePermissions.ActForNode}"], Feature: RoleFeatures.People, Kits: [RoleKits.PeopleNames]));
 
         services.AddFeed(new FeedDefinition(PeopleFeeds.Mine, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(PeopleFeeds.Family, FeedAudience.Holding(PeoplePermissions.FamilyView)));

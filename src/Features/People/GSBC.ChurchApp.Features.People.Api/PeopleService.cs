@@ -182,6 +182,16 @@ internal sealed class PeopleService(
         if (request.Name is { } name)
             await accounts.RenameAsync(personId, name, me, cancellationToken);
 
+        if (request.Reach is { } reach)
+        {
+            if (!Contracts.Reach.Valid(reach))
+                throw Invalid("Choose how to reach them from the list.");
+            PersonRecord person = await db.People.SingleOrDefaultAsync(found => found.UserId == personId, cancellationToken)
+                ?? db.People.Add(new PersonRecord { UserId = personId }).Entity;
+            person.Reach = reach;
+            person.UpdatedAt = Now;
+        }
+
         if (request.BirthDate is not null || request.ClearBirthDate)
         {
             PersonRecord person = await db.People.SingleOrDefaultAsync(found => found.UserId == personId, cancellationToken)

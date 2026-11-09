@@ -34,6 +34,9 @@ public sealed class PeopleClient(ChannelBase channel)
     public ValueTask<Done> SetBirthDateAsync(string personId, DateOnly? born) =>
         _people.UpdatePersonAsync(new UpdatePersonRequest { PersonId = personId, BirthDate = WireDates.ToWire(born), ClearBirthDate = born is null });
 
+    public ValueTask<Done> SetReachAsync(string personId, string reach) =>
+        _people.UpdatePersonAsync(new UpdatePersonRequest { PersonId = personId, Reach = reach });
+
     public ValueTask<Done> RemoveChildAsync(string personId) => _people.RemoveChildAsync(new PersonRequest { PersonId = personId });
 
     public ValueTask<SignInCodeReply> MakeSignInCodeAsync(string personId) => _people.MakeSignInCodeAsync(new PersonRequest { PersonId = personId });

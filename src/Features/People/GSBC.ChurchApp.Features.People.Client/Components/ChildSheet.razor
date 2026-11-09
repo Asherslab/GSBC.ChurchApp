@@ -20,6 +20,14 @@
                 }
             </Card>
 
+            <Section Title="@($"How to reach {child.Name}")" Lead="@ReachLead(child)">
+                @if (child.CanSignIn)
+                {
+                    <Segmented TValue="string" Label="@($"How to reach {child.Name}")" Options="ReachOptions" Value="@PeopleWords.EffectiveReach(child, Today)"
+                               ValueChanged="reach => RunAsync(() => People.SetReachAsync(child.Id, reach).AsTask())" />
+                }
+            </Section>
+
             <Section Title="Details">
                 @if (child.AddedByFamily && !child.CanSignIn)
                 {
@@ -93,6 +101,17 @@
     private string? _message;
 
     private string? Lead => Child is { } child ? PeopleWords.ChildLine(child, Today) : null;
+
+    private static readonly IReadOnlyList<SegmentOption<string>> ReachOptions =
+    [
+        new(Reach.Directly, "Directly"),
+        new(Reach.ThroughParents, "Through you"),
+        new(Reach.Both, "Both"),
+    ];
+
+    private string ReachLead(PersonCard child) => child.CanSignIn
+        ? $"Roster requests, reminders and messages for {child.Name} from their ministries. Through you, they're labelled “For {child.Name}”, and you can answer for them."
+        : $"{child.Name} can't sign in yet, so ministries reach them through you, labelled “For {child.Name}”, and you answer for them.";
 
     private static bool Removes(PersonCard child) => child.AddedByFamily && !child.CanSignIn;
 

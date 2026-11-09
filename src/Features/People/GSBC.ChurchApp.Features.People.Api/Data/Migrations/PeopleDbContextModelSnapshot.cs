@@ -101,6 +101,10 @@ namespace GSBC.ChurchApp.Features.People.Api.Data.Migrations
                         .HasColumnType("date")
                         .HasColumnName("birth_date");
 
+                    b.Property<string>("Reach")
+                        .HasColumnType("text")
+                        .HasColumnName("reach");
+
                     b.Property<bool>("SaysAdult")
                         .HasColumnType("boolean")
                         .HasColumnName("says_adult");

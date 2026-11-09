@@ -31,7 +31,7 @@
             }
             @foreach (PersonCard child in me.Children)
             {
-                <ListRow @key="child.Id" Title="@child.Name" Subtitle="@PeopleWords.ChildLine(child, today)" Chevron="true" OnClick="() => _child = child.Id">
+                <ListRow @key="child.Id" Title="@child.Name" Subtitle="@($"{PeopleWords.ChildLine(child, today)} · {PeopleWords.ReachForParent(child, today)}")" Chevron="true" OnClick="() => _child = child.Id">
                     <Leading><Avatar Name="@child.Name" /></Leading>
                 </ListRow>
             }

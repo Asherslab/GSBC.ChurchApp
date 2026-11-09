@@ -5,6 +5,7 @@ public sealed class PersonRecord
     public Guid UserId { get; set; }
     public DateOnly? BirthDate { get; set; }
     public bool SaysAdult { get; set; }
+    public string? Reach { get; set; }
     public DateTime UpdatedAt { get; set; }
 }
 

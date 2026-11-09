@@ -31,6 +31,7 @@ public sealed class PersonFamily
     [ProtoMember(10)] public SafeguardingRecord? Safeguarding { get; set; }
     [ProtoMember(11)] public bool SafeguardingShown { get; set; }
     [ProtoMember(12)] public List<LinkAsk> AskedOfThem { get; set; } = [];
+    [ProtoMember(13)] public string Reach { get; set; } = "";
 }
 
 [ProtoContract]
@@ -44,6 +45,7 @@ public sealed class PersonCard
     [ProtoMember(6)] public DateTime LinkedAt { get; set; }
     [ProtoMember(7), DefaultValue(LinkHow.Office)] public string How { get; set; } = LinkHow.Office;
     [ProtoMember(8)] public string? LinkedBy { get; set; }
+    [ProtoMember(9)] public string Reach { get; set; } = "";
 }
 
 public static class LinkHow
@@ -148,6 +150,7 @@ public sealed class UpdatePersonRequest : IScopedRequest
     [ProtoMember(2)] public string? Name { get; set; }
     [ProtoMember(3)] public DateTime? BirthDate { get; set; }
     [ProtoMember(4)] public bool ClearBirthDate { get; set; }
+    [ProtoMember(5)] public string? Reach { get; set; }
 
     public string ScopeId => PersonId;
 }

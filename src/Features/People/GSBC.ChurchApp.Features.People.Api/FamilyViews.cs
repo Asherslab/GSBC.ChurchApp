@@ -30,6 +30,7 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
             Name = account?.Name ?? "",
             BirthDate = WireDates.ToWire(record?.BirthDate),
             SaysAdult = record?.SaysAdult ?? false,
+            Reach = record?.Reach ?? "",
             CanSignIn = account?.CanSignIn ?? false,
             AddedByFamily = account?.AddedByFamily ?? false,
             Parents = Cards(links.Where(link => link.ChildId == personId), link => link.ParentId, people, records),
@@ -142,6 +143,7 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
                     LinkedAt = link.LinkedAt,
                     How = link.How,
                     LinkedBy = link.LinkedBy is { } by ? people.GetValueOrDefault(by)?.Name : null,
+                    Reach = records.GetValueOrDefault(person.Id)?.Reach ?? "",
                 };
             })
             .OrderBy(card => card.BirthDate ?? DateTime.MaxValue)

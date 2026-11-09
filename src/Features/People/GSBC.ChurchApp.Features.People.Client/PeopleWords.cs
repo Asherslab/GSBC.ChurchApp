@@ -13,6 +13,16 @@ public static class PeopleWords
 
     public static string ChildLine(PersonCard child, DateOnly today) => $"{Age(child.BirthDate, today)} · {SignIn(child.CanSignIn)}";
 
+    public static string EffectiveReach(PersonCard child, DateOnly today) =>
+        Reach.Effective(child.Reach, Ages.IsMinor(WireDates.FromWire(child.BirthDate), today), child.CanSignIn, hasParents: true);
+
+    public static string ReachForParent(PersonCard child, DateOnly today) => EffectiveReach(child, today) switch
+    {
+        Reach.ThroughParents => "reached through you",
+        Reach.Both => "reached directly and through you",
+        _ => "reached directly",
+    };
+
     public static string Day(DateTime? day) => day is { } value ? $"{value:d MMM yyyy}" : "";
 
     public static string When(DateTime at) => $"{at.ToLocalTime():d MMM yyyy}";

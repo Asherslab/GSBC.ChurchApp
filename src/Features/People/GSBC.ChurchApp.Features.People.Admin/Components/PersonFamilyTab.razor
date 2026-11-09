@@ -39,6 +39,20 @@
                 }
             </div>
 
+            @if (minor && family.Parents.Count > 0)
+            {
+                <div class="people-tab__group">
+                    <h2 class="people-tab__head">How ministries reach @Person.FirstName</h2>
+                    @if (family.CanSignIn && mayEdit)
+                    {
+                        <Segmented TValue="string" Label="@($"How ministries reach {Person.FirstName}")" Options="ReachOptions"
+                                   Value="@Reach.Effective(family.Reach, minor, family.CanSignIn, hasParents: true)"
+                                   ValueChanged="reach => RunAsync(() => People.SetReachAsync(family.Id, reach).AsTask())" />
+                    }
+                    <p class="hint">@ReachLine(family, minor)</p>
+                </div>
+            }
+
             @if (family.AskedOfThem.Count > 0 || theirAsks.Count > 0)
             {
                 <div class="people-tab__group">
@@ -188,6 +202,21 @@
     private string _born = "", _childName = "", _childBorn = "";
 
     [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+
+    private static readonly IReadOnlyList<SegmentOption<string>> ReachOptions =
+    [
+        new(Reach.Directly, "Directly"),
+        new(Reach.ThroughParents, "Through their parents"),
+        new(Reach.Both, "Both"),
+    ];
+
+    private static string ReachLine(PersonFamily family, bool minor) => Reach.Effective(family.Reach, minor, family.CanSignIn, hasParents: true) switch
+    {
+        Reach.ThroughParents when !family.CanSignIn => $"{family.Name} can't sign in yet, so roster requests and messages go to their parents, who can answer for them.",
+        Reach.ThroughParents => "Roster requests and messages go to their parents, who can answer for them. The family chose this.",
+        Reach.Both => "Roster requests and messages reach them and their parents; either can answer.",
+        _ => "Roster requests and messages reach them directly; their parents still see their details.",
+    };
 
     private static string BornTitle(PersonFamily family) => family.BirthDate is { } born ? $"Born {born:d MMMM yyyy}" : "No birth date";
 
