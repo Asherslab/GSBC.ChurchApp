@@ -36,14 +36,14 @@ public sealed class WebsitePageTests
         WebsiteSermon sermon = SermonPages.Read("/media/2019-05-25-bro-kit-ward-hope-in-a-storm", SampleFiles.Text("sermon-storm.html"))!;
 
         Assert.Equal((null, "", "", null), (sermon.Speaker, sermon.ServiceLabel, sermon.Description, sermon.Series));
-        Assert.Equal(new CreditedTitle("Hope In A Storm", "Kit Ward", "Bro"), GuestTitles.Split(sermon.Title));
+        Assert.Equal(new CreditedTitle("Hope In A Storm", "Sam Sample", "Bro"), GuestTitles.Split(sermon.Title));
     }
 
     [Theory]
     [InlineData("Pastor Lee Varga - A Higher Perspective", "A Higher Perspective", "Lee Varga", "Pastor")]
     [InlineData("Missonary Tom Rook - Partakers Of His Nature", "Partakers Of His Nature", "Tom Rook", "Missionary")]
-    [InlineData("Bro Kit Ward - Strengthening the Home - Part 7c - The Empty Nest", "Strengthening the Home - Part 7c - The Empty Nest", "Kit Ward", "Bro")]
-    [InlineData("Things I've learned from John - Bro Kit Ward", "Things I've learned from John", "Kit Ward", "Bro")]
+    [InlineData("Bro Sam Sample - Strengthening the Home - Part 7c - The Empty Nest", "Strengthening the Home - Part 7c - The Empty Nest", "Sam Sample", "Bro")]
+    [InlineData("Things I've learned from John - Bro Sam Sample", "Things I've learned from John", "Sam Sample", "Bro")]
     [InlineData("Dr Ann Chalmers Jnr - Doers Of The Word", "Doers Of The Word", "Ann Chalmers Jnr", "Dr")]
     [InlineData("Bro Piet van Rooyen - The Sixteenth Verse", "The Sixteenth Verse", "Piet van Rooyen", "Bro")]
     public void AGuestSpeakersNameAndHonorificComeOutOfTheTitle(string title, string rest, string speaker, string honorific) =>
@@ -51,7 +51,7 @@ public sealed class WebsitePageTests
 
     [Theory]
     [InlineData("Missions Panel")]
-    [InlineData("Kit Ward - Fun Facts, Fossils and Faith")]
+    [InlineData("Sam Sample - Fun Facts, Fossils and Faith")]
     [InlineData("Q & A With A Legal Panel")]
     public void ATitleWithoutAnHonorificKeepsItsWords(string title) => Assert.Null(GuestTitles.Split(title));
 

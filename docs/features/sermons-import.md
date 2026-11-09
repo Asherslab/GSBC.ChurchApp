@@ -36,7 +36,7 @@ items). The site's own pages hold everything:
 - **What's there (2026-11-09):** 887 sermons from 1998 to 2026 (most from 2021 on), every one with mp3 audio; 34
   series covering 249 sermons; 129 with a YouTube video, 118 with a passage. 661 name their speaker (30 people); 226
   older ones (mostly 2016–2021, imported into Tithe.ly from SoundCloud) say "Guest Speaker" and put the preacher in the
-  title ("Bro Kit Ward - Hope In A Storm"). With those split out there are 75 speakers. The audio comes
+  title ("Bro Sam Sample - Hope In A Storm"). With those split out there are 75 speakers. The audio comes
   to about **49 GB** (887 mp3s, the largest 114 MB; measured from the files' sizes on 2026-11-09).
 - **Read politely:** one request at a time, a second between pages, and a User-Agent naming the app.
 
@@ -47,9 +47,9 @@ items). The site's own pages hold everything:
 | Title | The title; a guest speaker's name is taken out of it (below) |
 | The day | The day preached (midnight in church time, as the RSS feed had it) |
 | Speaker | Lands on the speaker with that name (ignoring case and spaces), or a new one, with the photo the page shows |
-| *Guest Speaker* with "Bro Kit Ward - Hope In A Storm" | Speaker *Kit Ward*, title *Hope In A Storm*, and the speaker's **honorific** *Bro* stored on the speaker (`speakers.honorific`, not shown anywhere yet). Honorifics: Bro, Brother, Pastor, Ps, Evangelist, Missionary, Mrs, Mr, Dr, Sis, Sister, Rev; the name can come first or last ("Things I've learned from John - Bro Kit Ward"). On 2026-11-09, 209 of the 226 split; the other 17 ("Missions Panel", or a name with no honorific before the dash) keep their title and have no speaker |
+| *Guest Speaker* with "Bro Sam Sample - Hope In A Storm" | Speaker *Sam Sample*, title *Hope In A Storm*, and the speaker's **honorific** *Bro* stored on the speaker (`speakers.honorific`, not shown anywhere yet). Honorifics: Bro, Brother, Pastor, Ps, Evangelist, Missionary, Mrs, Mr, Dr, Sis, Sister, Rev; the name can come first or last ("Things I've learned from John - Bro Sam Sample"). On 2026-11-09, 209 of the 226 split; the other 17 ("Missions Panel", or a name with no honorific before the dash) keep their title and have no speaker |
 | Series | Lands on the series with the website's id or name, or a new one, with its picture and description |
-| Service label | The same rules the website reader had (`ServiceLabels`): "Sun AM" is *Sunday Morning*, "Sun PM - Kit Ward" *Sunday Evening*, conference sessions stay as written. Old labels map by their day: "Morning Service" on a Sunday is *Sunday Morning*, "Evening Service" or "#Sundaynight" on a Sunday *Sunday Evening*, "Midweek Service" on a Wednesday *Wednesday Night* |
+| Service label | The same rules the website reader had (`ServiceLabels`): "Sun AM" is *Sunday Morning*, "Sun PM - Sam Sample" *Sunday Evening*, conference sessions stay as written. Old labels map by their day: "Morning Service" on a Sunday is *Sunday Morning*, "Evening Service" or "#Sundaynight" on a Sunday *Sunday Evening*, "Midweek Service" on a Wednesday *Wednesday Night* |
 | Reference | The Bible passage |
 | Notes under the picture | *About this sermon*, unless it only repeats the service or is SoundCloud's "… by Good Shepherd Baptist Church" |
 | YouTube embed | The video |

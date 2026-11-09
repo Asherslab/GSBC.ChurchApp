@@ -87,11 +87,11 @@ public sealed class ReRunTests : IAsyncLifetime
         Assert.All(sermons, sermon => Assert.NotNull(sermon.AnnouncedAt));
         SermonRecord harbour = sermons.Single(sermon => sermon.Title.Contains("Harbour", StringComparison.Ordinal));
         Assert.Equal(("Psalm 107:23-30", "Sunday Morning", "AbCdEfGhIj0"), (harbour.Passage, harbour.Service, harbour.YouTubeId));
-        SpeakerRecord kit = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Speakers.SingleAsync(speaker => speaker.Name == "Kit Ward", Cancel));
+        SpeakerRecord kit = await WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Speakers.SingleAsync(speaker => speaker.Name == "Sam Sample", Cancel));
         Assert.Equal("Bro", kit.Honorific);
 
         _website.ServeText($"{FakeWebsite.BaseUrl}/podcasts{Soil}", SampleFiles.Text("sermon-storm.html")
-            .Replace("Bro Kit Ward - Hope In A Storm", "The Good Soil", StringComparison.Ordinal).Replace("May 25, 2019", "October 29, 2026", StringComparison.Ordinal)
+            .Replace("Bro Sam Sample - Hope In A Storm", "The Good Soil", StringComparison.Ordinal).Replace("May 25, 2019", "October 29, 2026", StringComparison.Ordinal)
             .Replace("2019/05/storm.mp3", "2026/10/soil.mp3", StringComparison.Ordinal));
         _website.Requested.Clear();
         ImportProgress second = await RunAsync();
@@ -126,7 +126,7 @@ public sealed class ReRunTests : IAsyncLifetime
         _website.ServeText($"{FakeWebsite.BaseUrl}/podcasts/media?page=2", SampleFiles.Text("listing-2.html"));
         _website.ServeText($"{FakeWebsite.BaseUrl}/podcasts{Harbour}", SampleFiles.Text("sermon-harbour.html"));
         _website.ServeText($"{FakeWebsite.BaseUrl}/podcasts{Soil}", SampleFiles.Text("sermon-storm.html")
-            .Replace("Bro Kit Ward - Hope In A Storm", "The Good Soil", StringComparison.Ordinal).Replace("2019/05/storm.mp3", "2026/10/soil.mp3", StringComparison.Ordinal));
+            .Replace("Bro Sam Sample - Hope In A Storm", "The Good Soil", StringComparison.Ordinal).Replace("2019/05/storm.mp3", "2026/10/soil.mp3", StringComparison.Ordinal));
         _website.ServeText($"{FakeWebsite.BaseUrl}/podcasts{Storm}", SampleFiles.Text("sermon-storm.html"));
         _website.ServeText($"{FakeWebsite.BaseUrl}/series/safe-harbour", SampleFiles.Text("series-safe-harbour.html"));
         _website.ServeBytes("https://files.example/2026/11/01/harbour-4.mp3", SampleFiles.Mp3(1));
