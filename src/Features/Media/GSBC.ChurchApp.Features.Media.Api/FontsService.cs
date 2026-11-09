@@ -12,8 +12,8 @@ internal sealed class FontsService(GoogleFonts google, IMediaSystemFolders folde
     private const string Woff2 = "font/woff2";
 
     public static readonly MediaSystemArea Area = new("fonts", "Fonts from Google",
-        "Fonts fetched from Google Fonts for the themes staff make. Each is kept once, however many themes use it, and a theme using it keeps it.",
-        MediaPermissions.View);
+        "Fonts fetched from Google Fonts for the themes staff make. Each is kept once, however many themes use it, and a theme using it keeps it. One no theme uses can be deleted, and is fetched again if it's chosen.",
+        MediaPermissions.View, StaffDeleteUnused: true);
 
     public async ValueTask<FontFamilies> SearchAsync(FontSearch request, CallContext context = default)
     {

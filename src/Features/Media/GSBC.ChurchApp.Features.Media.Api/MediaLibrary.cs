@@ -344,8 +344,8 @@ internal sealed class MediaLibrary(
         MediaItem item = await db.Items.SingleOrDefaultAsync(item => item.Id == mediaId, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "No such media."));
 
-        HashSet<Guid> systemFolders = [.. await db.Folders.AsNoTracking().Where(folder => folder.SystemArea != null).Select(folder => folder.Id).ToListAsync(cancellationToken)];
-        CheckDeletable(item, systemFolders, await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken));
+        List<MediaFolder> systemFolders = await db.Folders.AsNoTracking().Where(folder => folder.SystemArea != null).ToListAsync(cancellationToken);
+        CheckDeletable(item, KeptFolders(systemFolders, folders.StaffDeleteUnusedAreas()), await db.Uses.CountAsync(use => use.MediaId == mediaId, cancellationToken));
 
         List<string> keys = [item.Key, .. await db.Renditions.Where(rendition => rendition.MediaId == mediaId).Select(rendition => rendition.Key).ToListAsync(cancellationToken)];
         db.Items.Remove(item);
@@ -361,6 +361,9 @@ internal sealed class MediaLibrary(
 
         await DeleteUnlistedAsync(item.IsPrivate, keys, cancellationToken);
     }
+
+    internal static HashSet<Guid> KeptFolders(IEnumerable<MediaFolder> systemFolders, IReadOnlySet<string> staffDeleteUnused) =>
+        [.. systemFolders.Where(folder => folder.SystemArea is { } area && !staffDeleteUnused.Contains(area)).Select(folder => folder.Id)];
 
     internal static void CheckDeletable(MediaItem item, IReadOnlySet<Guid> systemFolders, int uses)
     {

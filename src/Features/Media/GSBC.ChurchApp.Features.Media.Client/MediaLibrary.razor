@@ -41,7 +41,7 @@
                 {
                     <p class="media-library__system-note">
                         <Icon Name="lock" Size="IconSize.Small" />
-                        @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") They stay where the app put them: they can't be moved, renamed or deleted here.
+                        @(SystemRoot(map)?.Caption is { Length: > 0 } caption ? caption : "Files people share through the app, in folders the app makes for them.") @(SystemRoot(map) is { UnusedDeletable: true } ? "They stay where the app put them: they can't be moved or renamed here." : "They stay where the app put them: they can't be moved, renamed or deleted here.")
                     </p>
                 }
             }
@@ -327,7 +327,7 @@
                       <a class="btn btn--quiet" href="@media.Url" target="_blank" rel="noopener"><Icon Name="external-link" Size="IconSize.Small" />Open</a>
                   }
               </div>
-              @if (map.Find(selected.FolderId) is { IsSystem: true })
+              @if (map.Find(selected.FolderId) is { IsSystem: true, UnusedDeletable: false })
               {
                   <p class="panel-hint">The app keeps this file where it put it.</p>
               }

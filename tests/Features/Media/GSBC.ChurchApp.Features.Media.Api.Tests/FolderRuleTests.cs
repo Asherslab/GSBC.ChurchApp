@@ -51,6 +51,20 @@ public sealed class FolderRuleTests
     }
 
     [Fact]
+    public void AFontFetchedFromGoogleThatNothingUsesCanBeDeletedButOtherFilesTheAppKeepsCanNot()
+    {
+        MediaFolder chats = new() { Id = Guid.CreateVersion7(), Name = "Chats", SystemArea = Chats.Key };
+        MediaFolder fonts = new() { Id = Guid.CreateVersion7(), Name = FontsService.Area.Name, SystemArea = FontsService.Area.Key };
+        HashSet<Guid> kept = MediaLibrary.KeptFolders([chats, fonts], new HashSet<string> { FontsService.Area.Key });
+        MediaItem lobster = File(fonts.Id), campPhoto = File(chats.Id);
+
+        MediaLibrary.CheckDeletable(lobster, kept, uses: 0);
+        Assert.Equal(StatusCode.FailedPrecondition, Assert.Throws<RpcException>(() => MediaLibrary.CheckDeletable(lobster, kept, uses: 1)).StatusCode);
+        Assert.Equal(StatusCode.FailedPrecondition, Assert.Throws<RpcException>(() => MediaLibrary.CheckDeletable(campPhoto, kept, uses: 0)).StatusCode);
+        Assert.True(FontsService.Area.StaffDeleteUnused);
+    }
+
+    [Fact]
     public async Task OnlyAFoldersAudienceOrSomeoneOverseeingSystemFoldersSeesInside()
     {
         ClaimsPrincipal staff = Person(), member = Person(), pastor = Person();

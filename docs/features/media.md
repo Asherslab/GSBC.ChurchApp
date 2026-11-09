@@ -101,6 +101,9 @@ on the phone, and held by the draft or theme that uses it, so it can't be delete
   are stored once, and the theme or draft using it holds it. The migration `GoogleFontsMadeByTheApp`
   moved the ones already in the Library: public `font/woff2` files named the way imports name them
   (`<Family> <400|700|400 700>.woff2`), from any staff folder; a font staff uploaded keeps its place.
+- **A fetched font nothing uses can be deleted** (2026-11-09, AGENTS.md *Create means delete*): *Fonts from Google* is
+  the one system folder whose unused files staff with `media.delete` may delete (`MediaSystemArea.StaffDeleteUnused`);
+  they still can't be moved or renamed, and one a theme or draft uses can't go. Choosing it again fetches it again.
 - **The church's own font is chosen from Media** (owner, 2026-11-09), with the same picker as photos
   (`MediaChooser` with `FontsOnly`, which lists `MediaFilter.Fonts`): staff upload the font file to Media
   (or from the picker), then choose it. The font picker no longer uploads by itself. Choosing needs

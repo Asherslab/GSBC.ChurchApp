@@ -45,6 +45,7 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
                     Caption = folder is { IsSystem: true, ParentId: null } ? AreaOf(folder)?.Caption ?? MadeByTheApp : "",
                     Files = hidden.Contains(folder.Id) ? 0 : files.GetValueOrDefault(folder.Id),
                     CanOpen = !hidden.Contains(folder.Id),
+                    UnusedDeletable = folder.IsSystem && AreaOf(folder) is { StaffDeleteUnused: true },
                 })
                 .ToList(),
         };
@@ -286,6 +287,8 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
     }
 
     private MediaSystemArea? AreaOf(MediaFolder folder) => AreaOf(_areas, folder);
+
+    public HashSet<string> StaffDeleteUnusedAreas() => [.. _areas.Values.Where(area => area.StaffDeleteUnused).Select(area => area.Key)];
 
     private static MediaSystemArea? AreaOf(IReadOnlyDictionary<string, MediaSystemArea> areas, MediaFolder folder) =>
         folder.SystemArea is { } key ? areas.GetValueOrDefault(key) : null;
