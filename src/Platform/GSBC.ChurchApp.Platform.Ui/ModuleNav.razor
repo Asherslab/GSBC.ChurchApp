@@ -121,7 +121,7 @@
         {
             bool pinned = Pins.IsPinned(entry.Href);
             <button type="button" class="module-nav__pin @(pinned ? "module-nav__pin--on" : "")" aria-pressed="@(pinned ? "true" : "false")"
-                    aria-label="@($"Pin {entry.Title}")" title="@(pinned ? "Unpin from the top" : "Pin to the top")" @onclick="() => Pins.SetAsync(entry.Href, !pinned)">
+                    aria-label="@($"Pin {entry.Title}")" title="@(pinned ? "Unpin from the sidebar" : "Pin to the sidebar")" @onclick="() => Pins.SetAsync(entry.Href, !pinned)">
                 <Icon Name="pin" Size="IconSize.Small" />
             </button>
         }
