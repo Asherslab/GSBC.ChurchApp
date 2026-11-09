@@ -351,6 +351,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("source_you_tube_id");
 
+                    b.Property<bool>("SpeakerCorrected")
+                        .HasColumnType("boolean")
+                        .HasColumnName("speaker_corrected");
+
                     b.Property<Guid?>("SpeakerId")
                         .HasColumnType("uuid")
                         .HasColumnName("speaker_id");

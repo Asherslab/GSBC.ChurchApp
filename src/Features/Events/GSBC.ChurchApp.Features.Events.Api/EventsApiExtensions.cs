@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
@@ -17,6 +18,7 @@ public static class EventsApiExtensions
     {
         services.AddEventsData();
         services.AddScoped<EventsPublisher>();
+        services.AddScoped<IPersonData, EventsPersonData>();
         services.AddScoped<EventWriter>();
         services.AddScoped<CalendarFollowing>();
         services.AddScoped<CalendarRemover>();

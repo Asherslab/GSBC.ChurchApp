@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Testing;
@@ -19,6 +20,7 @@ public sealed class InvitationTests : IAsyncLifetime
     private TestDatabase _database = null!;
     private readonly TestClock _clock = new();
     private readonly SentEmails _sent = new();
+    private readonly RecordedPersonData _forgotten = new();
     private ServiceProvider _services = null!;
     private Guid _staff;
 
@@ -38,6 +40,8 @@ public sealed class InvitationTests : IAsyncLifetime
             .AddSingleton<IEmailSender>(_sent)
             .AddScoped<DemoAccounts>()
             .AddScoped<Invitations>()
+            .AddScoped<AccountDeletion>()
+            .AddSingleton<IPersonData>(_forgotten)
             .AddAccountsData()
             .AddSyncData()
             .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
@@ -88,6 +92,7 @@ public sealed class InvitationTests : IAsyncLifetime
 
         Assert.Empty(await ListAsync());
         Assert.Null(await FindAsync(_sent.LastLink));
+        Assert.Equal([invitee], _forgotten.Forgotten);
         Assert.False(await WithAsync<AccountsDbContext, bool>(db => db.Users.AnyAsync(user => user.Id == invitee, TestContext.Current.CancellationToken)));
     }
 

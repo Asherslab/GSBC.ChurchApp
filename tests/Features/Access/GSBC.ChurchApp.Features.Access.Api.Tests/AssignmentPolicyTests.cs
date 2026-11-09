@@ -54,6 +54,18 @@ public sealed class AssignmentPolicyTests
     }
 
     [Fact]
+    public void AnAccountHoldingEveryOwnerAssignmentIsKeptUntilSomeoneElseIsAnOwner()
+    {
+        RoleRecord owner = _church.SystemRole(AccessService.OwnerKey);
+        Guid ruth = Guid.CreateVersion7(), naomi = Guid.CreateVersion7();
+        Assignment ruthsOwnership = _church.Assign(ruth, owner.Id);
+
+        Assert.True(AssignmentPolicy.OnlyOwner([ruthsOwnership], ruth));
+        Assert.False(AssignmentPolicy.OnlyOwner([ruthsOwnership], naomi));
+        Assert.False(AssignmentPolicy.OnlyOwner([ruthsOwnership, _church.Assign(naomi, owner.Id)], ruth));
+    }
+
+    [Fact]
     public async Task ARoleIsOnlyGivenAtAPlaceThatExists()
     {
         IScopeObjects calendars = new KnownPlaces(ScopeKind.Calendar, "sunday-services");

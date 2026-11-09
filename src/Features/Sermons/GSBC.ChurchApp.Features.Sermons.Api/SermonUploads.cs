@@ -74,7 +74,7 @@ internal sealed partial class SermonUploads(
         };
         db.Sermons.Add(sermon);
         if (artwork is not null)
-            await media.UseAsync($"sermons/sermon/{sermon.Id}", [artwork], cancellationToken);
+            await media.UseAsync(ArtworkOwner(sermon.Id), [artwork], cancellationToken);
         publisher.MarkAdmin(sermon.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
@@ -82,6 +82,8 @@ internal sealed partial class SermonUploads(
         await announcer.AnnounceAsync(cancellationToken);
         return sermon;
     }
+
+    internal static string ArtworkOwner(Guid id) => $"sermons/sermon/{id}";
 
     internal static BlobInfo Arrived(BlobInfo? audio) =>
         audio is { Bytes: > 0 } ? audio : throw Invalid("The audio hasn't finished uploading. Try again in a moment.");
@@ -135,5 +137,5 @@ internal sealed partial class SermonUploads(
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 
     [GeneratedRegex("^sermons/audio/[0-9a-f]{32}\\.(mp3|m4a)$")]
-    private static partial Regex AudioKey();
+    internal static partial Regex AudioKey();
 }

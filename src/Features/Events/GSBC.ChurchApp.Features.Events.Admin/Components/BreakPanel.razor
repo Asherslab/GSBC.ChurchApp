@@ -30,22 +30,37 @@
         </div>
         @if (Break is not null)
         {
-            <button type="button" class="editor-foot__delete" @onclick="DeleteAsync">Delete this break</button>
+            <button type="button" class="editor-foot__delete" @onclick="() => _deleting = true">Delete this break</button>
         }
     </div>
 </div>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {Break?.Name}?")"
+       Lead="@DeleteLead">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_saving" OnClick="DeleteAsync">Delete the break</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
 
 @code {
     private string _name = "";
     private string _start = "";
     private string _end = "";
     private string? _problem;
-    private bool _saving;
+    private bool _saving, _deleting;
 
     [Parameter] public BreakInfo? Break { get; set; }
     [Parameter] public IReadOnlyDictionary<string, string> RegularEvents { get; set; } = new Dictionary<string, string>();
     [Parameter] public EventCallback Saved { get; set; }
     [Parameter] public EventCallback Closed { get; set; }
+
+    private string DeleteLead => (Break?.UsedBy.Count ?? 0) switch
+    {
+        0 => "No regular event uses it. This can't be undone.",
+        1 => "The regular event that pauses for it is on again on those dates. This can't be undone.",
+        var count => $"The {count} regular events that pause for it are on again on those dates. This can't be undone.",
+    };
 
     private bool Valid => _name.Trim().Length > 0 && EventDates.Parse(_start) is { } start && EventDates.Parse(_end) is { } end && end >= start;
 
@@ -76,6 +91,7 @@
         await RunAsync(async () =>
         {
             await Editing.Setup.DeleteBreakAsync(new BreakRef { Id = Break.Id });
+            _deleting = false;
             await Saved.InvokeAsync();
             await Closed.InvokeAsync();
         });

@@ -55,6 +55,7 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddScoped<SermonsService>();
         services.AddScoped<SermonLibraryService>();
         services.AddScoped<SermonUploads>();
+        services.AddScoped<SermonDeletion>();
         services.AddScoped<SermonAnnouncer>();
         services.AddScoped<SermonFollowing>();
         services.AddSingleton<GSBC.ChurchApp.Platform.Api.Notifications.INotifications>(Notifications);

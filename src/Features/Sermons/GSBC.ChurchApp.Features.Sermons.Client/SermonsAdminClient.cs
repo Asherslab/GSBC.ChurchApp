@@ -20,6 +20,14 @@ public sealed class SermonsAdminClient(ChannelBase channel)
 
     public ValueTask<SpeakerDetail> SaveSpeakerAsync(SpeakerDetail speaker) => _library.SaveSpeakerAsync(speaker);
 
+    public ValueTask<Done> DeleteSpeakerAsync(string id, string? moveTo) => _library.DeleteSpeakerAsync(new DeleteRequest { Id = id, MoveTo = moveTo });
+
+    public ValueTask<SeriesDeletion> SeriesDeletionAsync(string id) => _library.SeriesDeletionAsync(new DeleteRequest { Id = id });
+
+    public ValueTask<Done> DeleteSeriesAsync(string id, string? moveTo) => _library.DeleteSeriesAsync(new DeleteRequest { Id = id, MoveTo = moveTo });
+
+    public ValueTask<Done> DeleteSermonAsync(string id) => _library.DeleteSermonAsync(new DeleteRequest { Id = id });
+
     public ValueTask<ServiceList> ServicesAsync() => _library.ListServicesAsync(new Done());
 
     public ValueTask<SourceStatus> StatusAsync() => _library.StatusAsync(new Done());

@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Platform.Storage;
@@ -32,6 +33,8 @@ public static class SermonsApiExtensions
         services.AddScoped<WebsiteReader>();
         services.AddScoped<SourceIdMove>();
         services.AddScoped<SermonUploads>();
+        services.AddScoped<SermonDeletion>();
+        services.AddScoped<IPersonData, SermonsPersonData>();
         services.AddScoped<SermonFollowing>();
         services.AddScoped<SermonAnnouncer>();
         services.AddNotificationKinds(SermonsNotifications.All);

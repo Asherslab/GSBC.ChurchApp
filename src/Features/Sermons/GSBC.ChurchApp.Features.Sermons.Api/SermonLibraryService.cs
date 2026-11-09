@@ -12,7 +12,7 @@ namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed class SermonLibraryService(
     SermonsDbContext db, SermonPublisher publisher, IMediaReferences media, WebsiteSchedule schedule, SermonUploads uploads,
-    PodcastFeedWriter podcast, AudioCopier copier, ServiceNames services, TimeProvider time) : ISermonLibraryService
+    PodcastFeedWriter podcast, AudioCopier copier, ServiceNames services, SermonDeletion deletion, TimeProvider time) : ISermonLibraryService
 {
     public const int TitleLimit = 160;
     public const int NameLimit = 80;
@@ -54,7 +54,7 @@ internal sealed class SermonLibraryService(
             List<Guid> seriesIds = await db.Series.Where(series => EF.Functions.ILike(series.Name, pattern)).Select(series => series.Id).ToListAsync(cancellationToken);
             matching = matching.Where(sermon => EF.Functions.ILike(sermon.Title ?? sermon.SourceTitle, pattern)
                 || EF.Functions.ILike(sermon.Service ?? sermon.SourceService, pattern)
-                || speakerIds.Contains(sermon.SpeakerId ?? sermon.SourceSpeakerId ?? Guid.Empty)
+                || speakerIds.Contains((sermon.SpeakerCorrected ? sermon.SpeakerId : sermon.SourceSpeakerId) ?? Guid.Empty)
                 || seriesIds.Contains((sermon.SeriesCorrected ? sermon.SeriesId : sermon.SourceSeriesId) ?? Guid.Empty));
         }
 
@@ -121,11 +121,12 @@ internal sealed class SermonLibraryService(
             sermon.Title = title.Trim() is { Length: > 0 and <= TitleLimit } trimmed ? UnlessSource(trimmed, sermon.SourceTitle) : throw Invalid($"Give it a title of up to {TitleLimit} characters.");
 
         if (useSource.Contains(Fields.Speaker))
-            sermon.SpeakerId = null;
+            (sermon.SpeakerCorrected, sermon.SpeakerId) = (false, null);
         else if (request.SpeakerId is { } speakerId)
-            sermon.SpeakerId = Guid.TryParse(speakerId, out Guid id) && speakerExists
-                ? (id == sermon.SourceSpeakerId ? null : id)
-                : throw Invalid("Choose a speaker from the list.");
+        {
+            Guid chosen = Guid.TryParse(speakerId, out Guid id) && speakerExists ? id : throw Invalid("Choose a speaker from the list.");
+            (sermon.SpeakerCorrected, sermon.SpeakerId) = chosen == sermon.SourceSpeakerId ? (false, (Guid?)null) : (true, chosen);
+        }
 
         if (useSource.Contains(Fields.Series))
             (sermon.SeriesCorrected, sermon.SeriesId) = (false, null);
@@ -242,6 +243,29 @@ internal sealed class SermonLibraryService(
         return SpeakerDetail(speaker, await CountForAsync(speaker.Id, cancellationToken));
     }
 
+    public async ValueTask<Done> DeleteSpeakerAsync(DeleteRequest request, CallContext context = default)
+    {
+        await deletion.DeleteSpeakerAsync(ParseId(request.Id, "speaker"), MoveTo(request, "speaker"), context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<SeriesDeletion> SeriesDeletionAsync(DeleteRequest request, CallContext context = default) =>
+        await deletion.SeriesDeletionAsync(ParseId(request.Id, "series"), context.CancellationToken);
+
+    public async ValueTask<Done> DeleteSeriesAsync(DeleteRequest request, CallContext context = default)
+    {
+        await deletion.DeleteSeriesAsync(ParseId(request.Id, "series"), MoveTo(request, "series"), context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> DeleteSermonAsync(DeleteRequest request, CallContext context = default)
+    {
+        await deletion.DeleteSermonAsync(ParseId(request.Id, "sermon"), context.CancellationToken);
+        return new Done();
+    }
+
+    private static Guid? MoveTo(DeleteRequest request, string what) => string.IsNullOrEmpty(request.MoveTo) ? null : ParseId(request.MoveTo, what);
+
     public async ValueTask<ServiceList> ListServicesAsync(Done request, CallContext context = default) => await services.ListAsync(context.CancellationToken);
 
     public async ValueTask<SourceStatus> StatusAsync(Done request, CallContext context = default) => await StatusAsync(context.CancellationToken);
@@ -324,7 +348,7 @@ internal sealed class SermonLibraryService(
     };
 
     private async Task<int> CountForAsync(Guid speakerId, CancellationToken cancellationToken) =>
-        await db.Sermons.CountAsync(sermon => !sermon.Hidden && (sermon.SpeakerId ?? sermon.SourceSpeakerId) == speakerId, cancellationToken);
+        await db.Sermons.CountAsync(sermon => !sermon.Hidden && (sermon.SpeakerCorrected ? sermon.SpeakerId : sermon.SourceSpeakerId) == speakerId, cancellationToken);
 
     private async Task<MediaRef?> VerifiedAsync(MediaRef? claimed, string owner, CancellationToken cancellationToken)
     {
@@ -336,7 +360,7 @@ internal sealed class SermonLibraryService(
     private sealed record Lookups(Dictionary<Guid, SeriesRecord> Series, Dictionary<Guid, SpeakerRecord> Speakers, IReadOnlyDictionary<Guid, int>? SpeakerCounts = null);
 
     private async Task<IReadOnlyDictionary<Guid, int>> SpeakerCountsAsync(CancellationToken cancellationToken) =>
-        (await db.Sermons.AsNoTracking().Where(sermon => !sermon.Hidden).Select(sermon => sermon.SpeakerId ?? sermon.SourceSpeakerId).ToListAsync(cancellationToken))
+        (await db.Sermons.AsNoTracking().Where(sermon => !sermon.Hidden).Select(sermon => sermon.SpeakerCorrected ? sermon.SpeakerId : sermon.SourceSpeakerId).ToListAsync(cancellationToken))
             .Where(id => id is not null).GroupBy(id => id!.Value).ToDictionary(group => group.Key, group => group.Count());
 
     private async Task<Lookups> LookupsAsync(CancellationToken cancellationToken) => new(
@@ -372,7 +396,7 @@ internal sealed class SermonLibraryService(
     {
         List<string> corrected = [];
         if (sermon.Title is not null) corrected.Add(Fields.Title);
-        if (sermon.SpeakerId is not null) corrected.Add(Fields.Speaker);
+        if (sermon.SpeakerCorrected) corrected.Add(Fields.Speaker);
         if (sermon.SeriesCorrected) corrected.Add(Fields.Series);
         if (sermon.Service is not null) corrected.Add(Fields.Service);
         if (sermon.YouTubeCorrected) corrected.Add(Fields.YouTube);
@@ -413,7 +437,7 @@ internal sealed class SermonLibraryService(
     };
 
     private static IQueryable<SermonRecord> WithCorrections(IQueryable<SermonRecord> sermons) =>
-        sermons.Where(sermon => sermon.Title != null || sermon.SpeakerId != null || sermon.SeriesCorrected || sermon.Service != null || sermon.YouTubeCorrected);
+        sermons.Where(sermon => sermon.Title != null || sermon.SpeakerCorrected || sermon.SeriesCorrected || sermon.Service != null || sermon.YouTubeCorrected);
 
     private static string? UnlessSource(string value, string fromSource) => value == fromSource ? null : value;
 

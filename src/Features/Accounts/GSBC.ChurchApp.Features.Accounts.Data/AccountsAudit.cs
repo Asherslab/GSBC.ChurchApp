@@ -46,4 +46,5 @@ public static class AuditActions
     public const string ReviewCodeUsed = "review-code-used";
     public const string ReviewCodeRefused = "review-code-refused";
     public const string ToolConnected = "tool-connected";
+    public const string Deleted = "deleted";
 }

@@ -23,7 +23,13 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
             {
                 await using AsyncServiceScope scope = scopes.CreateAsyncScope();
                 IReadOnlyList<Guid> demoAccounts = await scope.ServiceProvider.GetRequiredService<DemoAccounts>().AllAsync(stoppingToken);
-                await CleanAsync(scope.ServiceProvider.GetRequiredService<AccountsDbContext>(), time.GetUtcNow().UtcDateTime, demoAccounts, stoppingToken);
+                AccountDeletion deletion = scope.ServiceProvider.GetRequiredService<AccountDeletion>();
+                AccountsDbContext db = scope.ServiceProvider.GetRequiredService<AccountsDbContext>();
+                DateTime now = time.GetUtcNow().UtcDateTime;
+                foreach (Guid abandoned in await Abandoned(db, now, demoAccounts).Select(user => user.Id).ToListAsync(stoppingToken))
+                    await deletion.ForgetEverywhereAsync(abandoned, stoppingToken);
+                await CleanAsync(db, now, demoAccounts, stoppingToken);
+                await deletion.FinishAsync(stoppingToken);
             }
             catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
             {
@@ -33,19 +39,23 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
+    private static IQueryable<AccountUser> Abandoned(AccountsDbContext db, DateTime now, IReadOnlyList<Guid> demoAccounts)
+    {
+        DateTime abandoned = now - AbandonedAfter;
+        return db.Users.Where(user => user.CreatedAt < abandoned
+            && user.DeletedAt == null
+            && !demoAccounts.Contains(user.Id)
+            && !db.Set<IdentityUserPasskey<Guid>>().Any(passkey => passkey.UserId == user.Id)
+            && !db.Codes.Any(code => code.UserId == user.Id && code.UsedAt == null && code.ExpiresAt > now
+                && (code.Purpose == CodePurpose.Invitation || code.Purpose == CodePurpose.RegisterPasskey)));
+    }
+
     public static async Task CleanAsync(AccountsDbContext db, DateTime now, IReadOnlyList<Guid> demoAccounts, CancellationToken cancellationToken)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.Database.ExecuteSqlAsync($"SELECT pg_advisory_xact_lock({AdvisoryLockKey})", cancellationToken);
 
-        DateTime abandoned = now - AbandonedAfter;
-        await db.Users
-            .Where(user => user.CreatedAt < abandoned
-                && !demoAccounts.Contains(user.Id)
-                && !db.Set<IdentityUserPasskey<Guid>>().Any(passkey => passkey.UserId == user.Id)
-                && !db.Codes.Any(code => code.UserId == user.Id && code.UsedAt == null && code.ExpiresAt > now
-                    && (code.Purpose == CodePurpose.Invitation || code.Purpose == CodePurpose.RegisterPasskey)))
-            .ExecuteDeleteAsync(cancellationToken);
+        await Abandoned(db, now, demoAccounts).ExecuteDeleteAsync(cancellationToken);
 
         await db.Codes.Where(code => code.ExpiresAt < now - CodesKeptFor).ExecuteDeleteAsync(cancellationToken);
         await db.Sessions.Where(session => session.ExpiresAt < now).ExecuteDeleteAsync(cancellationToken);

@@ -21,6 +21,7 @@ public sealed class FolderInfo
     [ProtoMember(5)] public string Caption { get; set; } = "";
     [ProtoMember(6)] public int Files { get; set; }
     [ProtoMember(7)] public bool CanOpen { get; set; }
+    [ProtoMember(8)] public bool UnusedDeletable { get; set; }
 }
 
 [ProtoContract]

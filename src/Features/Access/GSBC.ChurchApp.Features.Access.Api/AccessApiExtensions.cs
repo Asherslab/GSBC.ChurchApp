@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Access.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
@@ -21,6 +22,7 @@ public static class AccessApiExtensions
         services.AddScoped<IAccessEvaluator, AccessEvaluator>();
         services.AddScoped<GrantsFeed>();
         services.AddScoped<AccessChanges>();
+        services.AddScoped<IPersonData, AccessPersonData>();
         services.AddHostedService<GrantsFeedSweep>();
         services.AddFeed(new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(AccessFeeds.Roles, FeedAudience.Holding(AccessPermissions.View)));

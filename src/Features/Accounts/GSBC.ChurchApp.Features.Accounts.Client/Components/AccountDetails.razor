@@ -75,7 +75,27 @@
     </Section>
 
     @AfterSessions?.Invoke(ReloadAsync)
+
+    <Section Title="Delete your account" Lead="For good. Signing out is enough to stop using it on this device.">
+        <div class="ui-actions">
+            <Button Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="() => _deleting = true">Delete my account…</Button>
+        </div>
+    </Section>
 </LiveData>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete your account?">
+    <ChildContent>
+        @foreach (string line in AccountDeletionWords.Lines(yours: true))
+        {
+            <p class="sheet__lead">@line</p>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_deleteProblem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete my account</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
 
 @if (_message is not null)
 {
@@ -88,7 +108,8 @@
     private LiveData<AccountView>? _live;
     private string? _name;
     private string _code = "";
-    private bool _busy;
+    private bool _busy, _deleting;
+    private string? _deleteProblem;
     private string? _message;
     private NoticeTone _messageTone = NoticeTone.Info;
 
@@ -152,6 +173,25 @@
         await Accounts.EndSessionAsync(id);
         Tell("Signed out of that device.");
     });
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        _deleteProblem = null;
+        try
+        {
+            await Accounts.DeleteMyAccountAsync();
+            _deleting = false;
+        }
+        catch (RpcException exception)
+        {
+            _deleteProblem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 
     private void Tell(string message)
     {

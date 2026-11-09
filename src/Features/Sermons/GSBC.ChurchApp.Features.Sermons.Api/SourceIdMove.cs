@@ -140,7 +140,7 @@ internal sealed class SourceIdMove(
         _ => SermonsFeeds.Speakers,
     };
 
-    private async Task SettleAsync(CancellationToken cancellationToken)
+    public async Task SettleAsync(CancellationToken cancellationToken)
     {
         foreach (FormerId former in await db.FormerIds.Where(former => !former.Settled).ToListAsync(cancellationToken))
         {

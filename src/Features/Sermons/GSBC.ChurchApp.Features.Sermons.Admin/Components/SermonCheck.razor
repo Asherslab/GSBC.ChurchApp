@@ -67,8 +67,23 @@
             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Undo changes</Button>
         }
         <Button Variant="ButtonVariant.Quiet" Icon="@(Detail.Hidden ? "eye" : "eye-off")" Disabled="_busy" OnClick="ToggleHiddenAsync">@(Detail.Hidden ? "Show in the app" : "Hide from the app")</Button>
+        @if (Detail is { Hidden: true, Origin: SermonSources.Uploads })
+        {
+            <Button Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="() => _deleting = true">Delete for good…</Button>
+        }
     </div>
 </div>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete “{Detail.Sermon.Title}” for good?")"
+       Lead="Its audio file is deleted, and so is everyone's listening progress on it. It comes off every phone the next time it connects. This can't be undone.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
 
 @code {
     private static class Fields
@@ -81,7 +96,7 @@
     }
 
     private string _title = "", _speakerId = "", _seriesId = "", _service = "", _youTube = "";
-    private bool _busy;
+    private bool _busy, _deleting;
     private string? _problem;
     private readonly List<SpeakerDetail> _addedSpeakers = [];
     private readonly List<SeriesDetail> _addedSeries = [];
@@ -93,6 +108,7 @@
     [Parameter, EditorRequired] public required IReadOnlyList<ServiceChoice> Services { get; set; }
     [Parameter] public bool OursToAdd { get; set; }
     [Parameter] public EventCallback<SermonSaved> Saved { get; set; }
+    [Parameter] public EventCallback Deleted { get; set; }
 
     protected override void OnInitialized() => Reset();
 
@@ -178,6 +194,26 @@
     private Task UseSourceAsync(string field) => SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, UseSource = [field] }, next: false);
 
     private Task ToggleHiddenAsync() => SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, Hidden = !Detail.Hidden }, next: false);
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await Sermons.DeleteSermonAsync(Detail.Sermon.Id);
+            _deleting = false;
+            await Deleted.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
 
     private async Task PutInSeriesAsync(string name)
     {

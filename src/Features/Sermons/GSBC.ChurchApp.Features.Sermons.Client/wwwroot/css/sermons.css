@@ -126,6 +126,7 @@
 .series-desk__list { display: grid; gap: 2px; margin: 10px -8px 0; }
 .series-desk__none { margin: 8px; color: var(--ink-2); font-size: var(--text-caption); }
 .series-desk__photo { display: flex; align-items: center; gap: 16px; }
+.series-desk__delete { margin-top: 28px; padding-top: 16px; border-top: 1px solid var(--line); }
 .series-desk__picture-actions { display: flex; flex-wrap: wrap; gap: 4px 8px; }
 .sermon-picture__side { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; min-width: 0; }
 .sermon-picture { display: grid; justify-items: start; gap: 6px; }

@@ -43,6 +43,9 @@ internal sealed class AssignmentPolicy(IScopeHierarchy hierarchy, PermissionCata
             : "This is the church's last Owner. Make someone else an Owner first.";
     }
 
+    public static bool OnlyOwner(IReadOnlyCollection<Assignment> activeOwners, Guid userId) =>
+        activeOwners.Count > 0 && activeOwners.All(owner => owner.UserId == userId);
+
     private async Task<bool> HoldsAssignerRoleAsync(
         Assigner actor, RoleRecord role, ScopeKind kind, string? objectId, IReadOnlyDictionary<Guid, RoleRecord> roles, CancellationToken cancellationToken)
     {

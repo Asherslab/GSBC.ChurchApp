@@ -12,7 +12,7 @@ current as it's built.
 | Everyone (the phone) | Browse the latest sermons, series and speakers; search; play audio in the background, with lock-screen, Control Center, AirPods and car controls; watch the video; pick up where they left off, offline too |
 | Everyone, signed in | The same, with their listening history on every phone they sign in on |
 | `sermons.upload` | In the admin panel: add a sermon by uploading its audio, when sermons come from uploads (the AV team's first pass) |
-| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one; manage series (name, picture, description) and speakers (name, photo); choose each sermon's service from the standard ones or add one |
+| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one, and delete an uploaded one once it's hidden; manage series (name, picture, description) and speakers (name, photo), and delete them; choose each sermon's service from the standard ones or add one |
 | `sermons.source` | Choose where new sermons come from (the website, or uploads) |
 
 The **Sermons editor** system role holds `sermons.edit` and `sermons.upload`; the **Sermon uploader** role (the AV team)
@@ -224,8 +224,36 @@ So a one-off correction (the feed credited the wrong person on one sermon) never
 name, and a new spelling for someone ("Ps Lee Varga" for Lee Varga) is fixed once: its first sermon makes a new speaker,
 staff correct that sermon to the right person, and later sermons under the spelling land on them. The speaker left with
 no sermons isn't shown in the app (the speakers feed holds only speakers with sermons) but stays in the admin panel's
-list. Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
+list until staff delete it (*Deleting*, below). Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
 `SpeakersAndServicesTests`.
+
+### Deleting a speaker, a series or an uploaded sermon (owner, 2026-11-09)
+
+"If I can create something, I should be able to delete it" (AGENTS.md, *Create means delete*). Holders of
+`sermons.edit` delete from the admin panel (`Library.DeleteSpeaker`, `DeleteSeries`, `DeleteSermon`; `SermonDeletion`).
+Every delete asks first, says what happens, and says it can't be undone. Kept simple on purpose (owner, 2026-11-09):
+sermons are moving to live only in the app, so nothing here decides what a later website read does.
+
+- **A speaker or a series with sermons:** the dialog says how many and offers one picker, *Where their sermons go*:
+  another speaker (series), or *Leave them without a speaker* (*not in a series*). A speaker or series with none just
+  goes. Hidden sermons go the same way as the rest.
+- **Moving them** puts every sermon credited to it (its own value and staff's corrections) on the one chosen; a
+  correction that now matches the sermon's own value is cleared. The deleted id is kept as a former id of the one chosen
+  (*Lasting ids*), so links to it (Hub tiles, announcements, notifications already sent) open the one it moved into, and
+  series followers follow it (`MoveScopeAsync`).
+- **Leaving them:** the sermons show no speaker, or no series. A sermon staff had credited to the deleted speaker is
+  *corrected to no speaker* (`speaker_corrected`, like `series_corrected`). Series followers stop following
+  (`ForgetScopeAsync`).
+- **What goes with it:** the speaker's photos or the series' pictures (their Media uses are released; a picture stays
+  in *Sermon artwork* like any unused one), its description, and its row in the speakers or series feed, so it leaves
+  every phone when it next connects.
+- **An uploaded sermon, only once it's hidden** (owner, 2026-11-09: "only delete after it's hidden"). Deleting removes
+  the sermon, its audio file in R2, its artwork use and everyone's listening progress on it (deleted from the progress
+  feed), and rewrites the podcast feed. Notifications already sent about it open nothing.
+- **Custom services need no delete** (owner, 2026-11-09): one drops out of the picker once no sermon uses it
+  (*Services*).
+- Tests: `DeletingRules` (what moves where, unit) and `DeletingTests` (feeds, followers, pictures; an uploaded sermon's
+  audio and progress).
 
 ### Uploads (the R2 version)
 
