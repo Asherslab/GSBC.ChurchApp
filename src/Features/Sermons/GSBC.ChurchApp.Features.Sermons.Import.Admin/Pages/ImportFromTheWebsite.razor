@@ -1,4 +1,4 @@
-@page "/sermons/import"
+@page "/sermons-import"
 @inject SermonsImportClient Import
 
 <TitleBand Title="Import from the website" BackHref="sermons" BackText="Sermons"
@@ -13,14 +13,6 @@
             <StatTile Value="@Count(progress.Skipped)" Label="already here, skipped" />
             <StatTile Value="@Count(progress.Failed)" Label="couldn't be brought across" Quiet="progress.Failed == 0" />
         </div>
-        @if (Running(progress))
-        {
-            <ProgressTrack Fraction="Overall(progress)" Label="How far the import has got" />
-            @if (progress.Current is { } current)
-            {
-                <p aria-live="polite">Now: @current.Title@(current.Bytes > 0 ? $" · {Megabytes(current.CopiedBytes)} of {Megabytes(current.Bytes)}" : "")</p>
-            }
-        }
         <Notice Tone="NoticeTone.Warning" Text="@progress.Problem" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         @if (!Running(progress))
@@ -30,6 +22,13 @@
             </div>
         }
     </Section>
+
+    @if (Running(progress))
+    {
+        <Section Title="Now" Lead="@Now(progress)">
+            <ProgressTrack Fraction="Overall(progress)" Label="How far the import has got" />
+        </Section>
+    }
 
     @if (progress.Failures.Count > 0)
     {
@@ -63,7 +62,7 @@
         ImportStates.Waiting => "Starting…",
         ImportStates.Finding => "Finding the website's sermons…",
         ImportStates.Importing => "Bringing sermons across…",
-        _ => progress.Failed == 0 && progress.Problem is null ? "Done" : "Finished, with some left to bring across",
+        _ => progress is { Failed: 0, Problem: null } ? "Done" : "Finished, with some left to bring across",
     };
 
     private static string? Summary(ImportProgress progress) => progress.State switch
@@ -86,6 +85,10 @@
         double current = progress.Current is { Bytes: > 0 } now ? Math.Clamp((double)now.CopiedBytes / now.Bytes, 0, 1) : 0;
         return Math.Clamp((total - progress.Waiting + current) / total, 0, 1);
     }
+
+    private static string Now(ImportProgress progress) => progress.Current is { } current
+        ? current.Title + (current.Bytes > 0 ? $" · {Megabytes(current.CopiedBytes)} of {Megabytes(current.Bytes)}" : "")
+        : "Getting the next one ready.";
 
     private static string Count(int count) => count.ToString("N0");
 

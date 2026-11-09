@@ -10,7 +10,7 @@ internal sealed class ServiceNames(SermonsDbContext db)
     public async Task<ServiceList> ListAsync(CancellationToken cancellationToken)
     {
         var used = await db.Sermons.AsNoTracking().Where(sermon => !sermon.Hidden)
-            .Select(sermon => new { Service = sermon.Service, sermon.PreachedAt }).ToListAsync(cancellationToken);
+            .Select(sermon => new { sermon.Service, sermon.PreachedAt }).ToListAsync(cancellationToken);
         ILookup<string, DateTime> byName = used.Where(sermon => sermon.Service.Length > 0).ToLookup(sermon => sermon.Service, sermon => sermon.PreachedAt);
         IEnumerable<ServiceChoice> standard = SermonServices.Standard.Select(name => new ServiceChoice { Name = name, Standard = true, Count = byName[name].Count() });
         IEnumerable<ServiceChoice> custom = byName.Where(group => !SermonServices.IsStandard(group.Key)).OrderByDescending(group => group.Max())

@@ -81,7 +81,7 @@ internal sealed partial class SermonUploads(
     internal static string Passage(string? passage) =>
         passage?.Trim() is not { Length: > 0 } trimmed ? "" : trimmed.Length <= SermonLibraryService.PassageLimit ? trimmed : throw Invalid($"Keep the passage to {SermonLibraryService.PassageLimit} characters.");
 
-    internal static BlobInfo Arrived(BlobInfo? audio) =>
+    private static BlobInfo Arrived(BlobInfo? audio) =>
         audio is { Bytes: > 0 } ? audio : throw Invalid("The audio hasn't finished uploading. Try again in a moment.");
 
     private async Task<SpeakerRecord> SpeakerAsync(SermonUpload request, CancellationToken cancellationToken)

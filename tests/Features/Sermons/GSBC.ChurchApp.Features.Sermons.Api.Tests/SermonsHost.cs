@@ -22,7 +22,6 @@ public abstract class SermonsHost : IAsyncLifetime
 
     internal MemoryBlobs Blobs { get; } = new();
     internal AnyMedia Media { get; } = new();
-    internal RecordedNotifications Notifications { get; } = new();
     internal RecordedRoles Roles { get; } = new();
     internal TestClock Clock { get; } = new(ChurchTime.ToUtc(new DateTime(2026, 11, 4, 20, 0, 0)));
 
@@ -51,7 +50,7 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddScoped<SermonDeletion>();
         services.AddScoped<SermonAnnouncer>();
         services.AddScoped<SermonFollowing>();
-        services.AddSingleton<GSBC.ChurchApp.Platform.Api.Notifications.INotifications>(Notifications);
+        services.AddSingleton<GSBC.ChurchApp.Platform.Api.Notifications.INotifications>(new QuietNotifications());
         services.AddSingleton<GSBC.ChurchApp.Platform.Api.Access.IRoleAssignments>(Roles);
         services.AddSingleton<GSBC.ChurchApp.Platform.Api.Access.IPhoneRoles>(Roles);
         services.AddScoped<PodcastFeedWriter>();

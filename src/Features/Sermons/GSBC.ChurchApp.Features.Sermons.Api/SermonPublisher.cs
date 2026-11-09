@@ -16,7 +16,7 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
         Dictionary<Guid, SeriesRecord> series = await db.Series.ToDictionaryAsync(record => record.Id, cancellationToken);
         Dictionary<Guid, SpeakerRecord> speakers = await db.Speakers.ToDictionaryAsync(record => record.Id, cancellationToken);
 
-        List<SermonRecord> window = sermons.Where(sermon => !sermon.Hidden && sermon.AudioUrl.Length > 0).Take(SermonsFeeds.CatalogueWindow).ToList();
+        List<SermonRecord> window = sermons.Where(sermon => sermon is { Hidden: false, AudioUrl.Length: > 0 }).Take(SermonsFeeds.CatalogueWindow).ToList();
         HashSet<Guid> inWindow = window.Select(sermon => sermon.Id).ToHashSet();
         Dictionary<Guid, List<SermonRecord>> bySeries = window.Where(sermon => sermon.SeriesId is { } id && series.ContainsKey(id))
             .GroupBy(sermon => sermon.SeriesId!.Value).ToDictionary(group => group.Key, group => group.OrderBy(sermon => sermon.PreachedAt).ToList());

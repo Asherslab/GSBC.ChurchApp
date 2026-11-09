@@ -9,7 +9,7 @@ internal sealed class PageGate
 
 internal sealed class ArchiveClient(HttpClient http, IOptions<ImportOptions> options, PageGate gate, TimeProvider time)
 {
-    public const string UserAgent = "GSBC-ChurchApp/1.0 (+https://app.baptist.com.au; importing the church's sermons)";
+    private const string UserAgent = "GSBC-ChurchApp/1.0 (+https://app.baptist.com.au; importing the church's sermons)";
 
     public string WebsiteUrl => options.Value.WebsiteUrl.TrimEnd('/');
 

@@ -19,7 +19,7 @@ internal sealed class SermonLibraryService(
     private const int DescriptionLimit = 600;
     private const int SummaryLimit = 4000;
 
-    public static class Filters
+    private static class Filters
     {
         public const string All = "";
         public const string Hidden = "hidden";

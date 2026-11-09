@@ -27,7 +27,7 @@ internal static class Mp3Duration
         return tag < read ? Seconds(head.AsSpan(tag, read - tag), bytes - tag) : null;
     }
 
-    public static int TagBytes(ReadOnlySpan<byte> start) =>
+    private static int TagBytes(ReadOnlySpan<byte> start) =>
         start.Length >= 10 && start[0] == 'I' && start[1] == 'D' && start[2] == '3'
             ? 10 + (start[6] << 21 | start[7] << 14 | start[8] << 7 | start[9]) + ((start[5] & 0x10) != 0 ? 10 : 0)
             : 0;
@@ -44,7 +44,7 @@ internal static class Mp3Duration
                 && (audio[offset + header.FrameBytes] != 0xFF || (audio[offset + header.FrameBytes + 1] & 0xE0) != 0xE0))
                 continue;
 
-            if (FramesFromXing(audio[offset..], header) is { } frames && frames > 0)
+            if (FramesFromXing(audio[offset..], header) is { } frames and > 0)
                 return (int)Math.Round((double)frames * header.SamplesPerFrame / header.SampleRate);
             if (header.Bitrate > 0)
                 return (int)Math.Round((audioBytes - offset) * 8d / (header.Bitrate * 1000d));
@@ -83,9 +83,9 @@ internal static class Mp3Duration
             int flags = BigEndian(frame[(xing + 4)..]);
             return (flags & 1) != 0 ? BigEndian(frame[(xing + 8)..]) : null;
         }
-        const int vbri = 4 + 32;
-        if (frame.Length >= vbri + 18 && frame[vbri..(vbri + 4)].SequenceEqual("VBRI"u8))
-            return BigEndian(frame[(vbri + 14)..]);
+        const int Vbri = 4 + 32;
+        if (frame.Length >= Vbri + 18 && frame[Vbri..(Vbri + 4)].SequenceEqual("VBRI"u8))
+            return BigEndian(frame[(Vbri + 14)..]);
         return null;
     }
 

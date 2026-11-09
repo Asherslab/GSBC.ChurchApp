@@ -23,7 +23,7 @@ internal sealed record WebsiteSermon(
 
 internal static partial class SermonPages
 {
-    public const string GuestSpeaker = "Guest Speaker";
+    private const string GuestSpeaker = "Guest Speaker";
     private const string SoundCloudCaption = " by Good Shepherd Baptist Church";
 
     public static string PathOf(string listedPath) => $"/podcasts{listedPath}";
@@ -75,13 +75,13 @@ internal static partial class SermonPages
             .Select(node => Html.Text(node.Groups["text"].Value)).Where(text => text.Length > 0).ToList();
         DateOnly? day = words.Count > 0 && DayOf(words[^1]) is { } last ? last : null;
         string? name = photoTag is not null ? Html.Attribute(photoTag, "alt") : words.Count > 1 ? words[0] : null;
-        if (name is null || name.Length == 0 || string.Equals(name, GuestSpeaker, StringComparison.OrdinalIgnoreCase))
+        if (string.IsNullOrEmpty(name) || string.Equals(name, GuestSpeaker, StringComparison.OrdinalIgnoreCase))
             return (null, null, day);
         string? photo = photoTag is not null ? Html.Attribute(photoTag, "src") : null;
         return (name, photo is not null && photo.StartsWith("https://", StringComparison.Ordinal) ? photo : null, day);
     }
 
-    public static DateOnly? DayOf(string text) =>
+    private static DateOnly? DayOf(string text) =>
         DateOnly.TryParseExact(Html.Text(text), "MMMM d, yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day) ? day : null;
 
     private static string Description(string html)

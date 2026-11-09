@@ -37,7 +37,7 @@ items). The site's own pages hold everything:
   series covering 249 sermons; 129 with a YouTube video, 118 with a passage. 661 name their speaker (30 people); 226
   older ones (mostly 2016–2021, imported into Tithe.ly from SoundCloud) say "Guest Speaker" and put the preacher in the
   title ("Bro Kit Ward - Hope In A Storm"). With those split out there are 75 speakers. The audio comes
-  to about AUDIO_TOTAL.
+  to about **49 GB** (887 mp3s, the largest 114 MB; measured from the files' sizes on 2026-11-09).
 - **Read politely:** one request at a time, a second between pages, and a User-Agent naming the app.
 
 ## What comes across
@@ -82,6 +82,14 @@ what went wrong. Sermons knows nothing of the website.
   a time); closing the page doesn't stop it, and an API restart carries on where it was.
 - Progress is the `sermons.import` feed (a marker, about once a second while audio downloads), audience
   `sermons.import`; the page is `LiveData` on it.
+
+## Time and storage
+
+- **It takes a few hours:** about 7 to 10 seconds a sermon (mostly the audio download), so around two and a half hours
+  for 887, longer on a slow connection. Leave it running; it carries on after an API restart.
+- **Storage:** the audio adds about 49 GB to the public bucket (R2: $0.015/GB-month past the free 10 GB, so about $0.60
+  a month; Cloudflare's price list, checked 2026-11-04). Pictures are small and kept once.
+- **In development** the media store is SeaweedFS on the Mac, so the import puts about 49 GB on its disk.
 
 ## Permission
 

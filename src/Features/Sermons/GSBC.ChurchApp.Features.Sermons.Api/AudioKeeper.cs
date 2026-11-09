@@ -32,7 +32,7 @@ internal sealed class AudioKeeper(IServiceScopeFactory scopes, ILogger<AudioKeep
         while (await timer.WaitForNextTickAsync(stoppingToken));
     }
 
-    public static IQueryable<SermonRecord> Unkept(SermonsDbContext db) =>
+    private static IQueryable<SermonRecord> Unkept(SermonsDbContext db) =>
         db.Sermons.Where(sermon => sermon.AudioMedia == null && sermon.AudioUrl != "").OrderByDescending(sermon => sermon.PreachedAt);
 
     public async Task RunAsync(CancellationToken cancellationToken)
@@ -83,6 +83,6 @@ internal sealed class AudioKeeper(IServiceScopeFactory scopes, ILogger<AudioKeep
         return true;
     }
 
-    public static string FileNameOf(SermonRecord sermon) =>
+    private static string FileNameOf(SermonRecord sermon) =>
         $"{sermon.PreachedAt:yyyy-MM-dd} {sermon.Title}.{(sermon.AudioType == "audio/mp4" ? "m4a" : "mp3")}";
 }

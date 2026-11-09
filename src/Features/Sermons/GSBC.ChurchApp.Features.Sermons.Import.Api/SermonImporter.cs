@@ -151,7 +151,7 @@ internal sealed class SermonImporter(
         return kept;
     }
 
-    internal static (byte[] Bytes, KeptFile File)? Picture(byte[] bytes, string url)
+    private static (byte[] Bytes, KeptFile File)? Picture(byte[] bytes, string url)
     {
         using SKCodec? codec = SKCodec.Create(new SKMemoryStream(bytes));
         if (codec is null)

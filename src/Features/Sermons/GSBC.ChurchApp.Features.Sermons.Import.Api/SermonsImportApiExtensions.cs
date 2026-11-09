@@ -1,6 +1,5 @@
 using GSBC.ChurchApp.Features.Sermons.Import.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Import.Contracts;
-using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using Microsoft.AspNetCore.Builder;

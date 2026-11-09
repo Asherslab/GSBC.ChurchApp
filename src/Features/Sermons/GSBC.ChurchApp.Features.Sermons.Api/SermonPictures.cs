@@ -3,7 +3,6 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api;

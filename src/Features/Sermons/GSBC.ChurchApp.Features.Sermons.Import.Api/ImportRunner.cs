@@ -134,7 +134,7 @@ internal sealed class ImportRunner(IServiceScopeFactory scopes, TimeProvider tim
         await podcastScope.ServiceProvider.GetRequiredService<PodcastFeedWriter>().WriteAsync(cancellationToken);
     }
 
-    internal static string? ProblemOf(Exception exception, CancellationToken cancellationToken) => exception switch
+    private static string? ProblemOf(Exception exception, CancellationToken cancellationToken) => exception switch
     {
         ImportProblem problem => problem.Message,
         HttpRequestException { StatusCode: { } status } => $"The website answered {(int)status}.",
@@ -146,7 +146,7 @@ internal sealed class ImportRunner(IServiceScopeFactory scopes, TimeProvider tim
         _ => "Something went wrong bringing it across. Try it again.",
     };
 
-    internal static DateOnly? DayOf(string websitePath) =>
+    private static DateOnly? DayOf(string websitePath) =>
         DateOnly.TryParseExact(websitePath.Length >= 17 ? websitePath[7..17] : "", "yyyy-MM-dd", out DateOnly day) ? day : null;
 
     private async Task SaveAsync(SermonsImportDbContext db, CancellationToken cancellationToken)

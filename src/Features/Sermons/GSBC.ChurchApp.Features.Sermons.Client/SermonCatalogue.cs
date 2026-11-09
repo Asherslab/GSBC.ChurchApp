@@ -43,7 +43,7 @@ public sealed class SermonCatalogue(IServiceProvider services)
     public static readonly IReadOnlyList<string> Feeds = [SermonsFeeds.Catalogue, SermonsFeeds.Series, SermonsFeeds.Speakers];
     private const int Page = 200;
 
-    public bool IsOnThisDevice => _feeds?.IsAvailable == true;
+    private bool IsOnThisDevice => _feeds?.IsAvailable == true;
 
     public async Task<IReadOnlyList<Sermon>> LatestAsync(int count)
     {

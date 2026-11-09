@@ -119,7 +119,7 @@ Every delete asks first, says what happens, and says it can't be undone.
   subscribers when the old feed redirects (301) or carries `itunes:new-feed-url`; whether Tithe.ly can do either is to
   be checked with them. Our feed holds **every** sermon. The admin panel's Sermons page shows its address.
 - **Storage:** R2 is $0.015/GB-month with free egress (Cloudflare's price list, checked 2026-11-04). About 3 sermons a
-  week at ~50 MB is ~7.8 GB a year; the website's archive the import brings across is far larger (see
+  week at ~50 MB is ~7.8 GB a year; the website's archive the import brings across is about 49 GB (see
   [sermons-import.md](sermons-import.md)).
 
 ## The app

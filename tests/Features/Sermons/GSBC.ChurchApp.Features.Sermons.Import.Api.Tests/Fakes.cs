@@ -68,8 +68,6 @@ internal sealed class KeptMedia : IMediaReferences, IMediaSystemFolders
 {
     private readonly Dictionary<string, MediaRef> _byContent = [];
 
-    public Dictionary<string, List<string>> Uses { get; } = [];
-
     public int Kept => _byContent.Count;
 
     public Task FileAsync(MediaSystemArea area, string? scopeId, string scopeName, IReadOnlyCollection<MediaRef> media, CancellationToken cancellationToken) => Task.CompletedTask;
@@ -85,11 +83,7 @@ internal sealed class KeptMedia : IMediaReferences, IMediaSystemFolders
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
 
-    public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
-    {
-        Uses[owner] = verified.Select(media => media.Id).ToList();
-        return Task.CompletedTask;
-    }
+    public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken) => Task.CompletedTask;
 
     private MediaRef Keep(string sha256, string extension, string contentType, long bytes)
     {

@@ -7,7 +7,7 @@ internal sealed class Speakers(SermonsDbContext db, TimeProvider time)
 {
     public static string KeyOf(string name) => string.Join(' ', name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 
-    public async Task<SpeakerRecord?> NamedAsync(string name, CancellationToken cancellationToken)
+    private async Task<SpeakerRecord?> NamedAsync(string name, CancellationToken cancellationToken)
     {
         string key = KeyOf(name);
         return db.Speakers.Local.FirstOrDefault(speaker => KeyOf(speaker.Name) == key)
