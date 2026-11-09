@@ -791,6 +791,13 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   event page and the website's. A date changed only in time or place keeps them. One rule, `OccurrenceListing.OtherDates`
   (Events.Contracts): a special has its own title when a plain date of the same regular event has a different title, so
   no contract change was needed.
+- **The digest desk, reviewed again** (owner, 2026-11-09: "needs a proper impeccable review"; the when line ran past the
+  list, the arrows sat on it, the when column moved per row, the controls were loosely stacked and the chips shouted):
+  impeccable's critique (design review and detector, 27/40, snapshot in `.impeccable/critique/`), then a polish pass and
+  the finish review. Rows are a grid with a when column that wraps and ends at the same place in every row, arrows
+  always shown; From, How long and To in one row with the range under them; the calendars as Platform.Ui's new quiet
+  toggle chips under a label. Keyboard: moving a row keeps focus on it and says where it went, and Platform.Ui's
+  Segmented now moves with the arrow keys (every segmented control). DESIGN.md has *Weekly digest desk*.
 - **Checked** on a backend of its own (`Dev__PortOffset=1000`, main's database copied with pg_dump): the migration on
   the owner's two unsent digests; the desk from today with *Two weeks* (the AGM, Kids camp and Anniversary Sunday Service
   in); the editor with a portrait picture (pictures stubbed, as the dev media tunnel was down); on a Simulator of its own

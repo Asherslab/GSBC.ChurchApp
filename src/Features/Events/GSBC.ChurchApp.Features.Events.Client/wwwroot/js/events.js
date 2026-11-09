@@ -94,5 +94,9 @@ window.gsbcEvents = (() => {
     }
   }
 
-  return { follow, unfollow, scrollToDay, saveCalendarFile, share, copyHtml };
+  function focus(id) {
+    document.getElementById(id)?.focus();
+  }
+
+  return { follow, unfollow, scrollToDay, saveCalendarFile, share, copyHtml, focus };
 })();
