@@ -33,6 +33,8 @@ else
                 {
                     <div class="styling__line">
                         <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(session.Draft)" Retry="SaveNowAsync" />
+                        <span class="styling__dot" aria-hidden="true">·</span>
+                        <button type="button" class="link styling__leave" @onclick="BackToEveryoneAsync">Back to what everyone sees</button>
                         <span class="draft-pane__step-slot">
                             @if (_stepNote is not null && session.Edits == _stepNoteAt)
                             {
@@ -42,7 +44,6 @@ else
                                 </span>
                             }
                         </span>
-                        <button type="button" class="link styling__leave" @onclick="BackToEveryoneAsync">Back to what everyone sees</button>
                     </div>
                 }
                 else
@@ -59,14 +60,6 @@ else
                             <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z, or Ctrl+Shift+Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
                         </span>
                     }
-                    <DraftsMenu List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" PublishedNote="_publishedNote" TriggerClass="btn btn--quiet"
-                                OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync">
-                        <span>Drafts</span>
-                        @if (_list.Drafts.Count > 0)
-                        {
-                            <span class="drafts-menu__count">@_list.Drafts.Count</span>
-                        }
-                    </DraftsMenu>
                     @if (_session is { } drafting)
                     {
                         <Button Variant="ButtonVariant.Quiet" Icon="share" AriaLabel="Share" Tooltip="Share" OnClick="() => _sharing = true"><span class="draft-pane__label">Share</span></Button>
@@ -84,6 +77,14 @@ else
                             <Button Busy="_busy" Disabled="@(!drafting.Patches.Any())" OnClick="AskToPublishAsync">Ask to publish</Button>
                         }
                     }
+                    <DraftsMenu List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" PublishedNote="_publishedNote" TriggerClass="btn btn--quiet"
+                                OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync">
+                        <span>Drafts</span>
+                        @if (_list.Drafts.Count > 0)
+                        {
+                            <span class="drafts-menu__count">@_list.Drafts.Count</span>
+                        }
+                    </DraftsMenu>
                 </div>
             </Actions>
         </TitleBand>
@@ -284,13 +285,12 @@ else
         IReadOnlyList<ArrangedSurface> appearance = now.Arranged(AppearanceSurfaces.Area, null);
         int tiles = HubTiles.TilesIn(now.Arranged(HubSurfaces.Area, null), Views).Count(entry => entry.IsShownTo(Viewer.Anonymous, Now));
         int tabs = TabBar.For(now.Arranged(TabBarSurfaces.Area, null).Where(entry => entry.IsShownTo(Viewer.Anonymous, Now))).Count + 1;
-        if (Layer is { } layer && now.Draft.Id == layer.Id)
-        {
-            <span><b>“@layer.Name”</b> is on for everyone@(layer.LayerEndsAt is { } ends ? $" until {DraftWords.Day(ends)}" : "").</span>
-            @(" ")
-        }
-        <span>Everyone sees <b>@ThemeNames.Chosen(appearance, Viewer.Anonymous, Now)</b>, <b>@tiles tiles</b> on Home and <b>@tabs tabs</b>.</span>
+        <span>@LayerLead(now)Everyone sees <b>@ThemeNames.Chosen(appearance, Viewer.Anonymous, Now)</b>, <b>@tiles tiles</b> on Home and <b>@tabs tabs</b>.</span>
     };
+
+    private string LayerLead(DraftSession now) => Layer is { } layer && now.Draft.Id == layer.Id
+        ? $"“{layer.Name}” is on for everyone{(layer.LayerEndsAt is { } ends ? $" until {DraftWords.Day(ends)}" : "")}. "
+        : "";
 
     private RenderFragment Notices => __builder =>
     {
@@ -372,7 +372,7 @@ else
         {
             DraftSession everyone = EveryoneOn(Now);
             <StylingOverview List="_list!" Hub="@everyone.Arranged(HubSurfaces.Area, null)" Appearance="@everyone.Arranged(AppearanceSurfaces.Area, null)"
-                             Tabs="@everyone.Arranged(TabBarSurfaces.Area, null)" OnPart="area => ChangeAsync(area, null)" OnComingUp="ComingUpAsync" />
+                             Tabs="@everyone.Arranged(TabBarSurfaces.Area, null)" OnPart="part => ChangeAsync(part, null)" OnComingUp="ComingUpAsync" />
             return;
         }
         if (_overview || CurrentArea is not { } area)
@@ -759,8 +759,8 @@ else
     }
 
     private string NameOfPatch(PlacementPatch patch) =>
-        _session?.Arranged(Surfaces.Areas[patch.Area], patch.ScopeId).FirstOrDefault(entry => entry.Placement?.Id == patch.PlacementId) is { } entry
-            ? DraftWords.NameOf(entry)
+        _session?.Arranged(Surfaces.Areas[patch.Area], patch.ScopeId).FirstOrDefault(entry => entry.Placement?.Id == patch.PlacementId) is { } found
+            ? DraftWords.NameOf(found)
             : RemovedTitle(patch);
 
     private bool IsHub => _area.Area == HubSurfaces.Area.Key && _area.ScopeId is null;
@@ -968,14 +968,6 @@ else
             .Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
             .Select(entry => new Choice(ThemeChoiceSetting.Custom(entry.Placement!.Id), $"{entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)}: made here"))
             .ToList();
-
-    private IReadOnlyList<TabOption<AreaKey>> AreaTabs =>
-        _session is null
-            ? []
-            : _session.TouchedAreas.Append(_area).Distinct()
-                .Where(area => Surfaces.Areas.ContainsKey(area.Area))
-                .Select(area => new TabOption<AreaKey>(area, Surfaces.Areas[area.Area].Title, _session.CountIn(area)))
-                .ToList();
 
     private string FormTitle => _form is null ? "" : TabBarSurfaces.IsTab(_form.Surface) ? _form.Values[TabSettings.Word.Key] is { Length: > 0 } word ? word : "New tab"
         : _form.IsNew && _form.Surface.Repeatable && _session?.PatchFor(_formId) is null
@@ -1214,14 +1206,6 @@ else
     {
         Navigation.NavigateTo($"{BasePath}/{draftId}");
         return Task.CompletedTask;
-    }
-
-    private async Task SelectAreaAsync(AreaKey area)
-    {
-        Deselect();
-        _area = area;
-        if (_session is not null && !_session.Knows(area))
-            await LoadLiveAsync(area);
     }
 
     private void Select(ArrangedSurface entry)
@@ -1574,15 +1558,6 @@ else
         if (_session?.Draft.Id == layer.Id)
             _session.Accept(await Drafts.GetAsync(layer.Id));
     });
-
-    private Task ChangeDatesAsync(Draft layer)
-    {
-        if (_session?.Draft.Id == layer.Id)
-            ChooseForEveryone(ForEveryoneWay.TryNow);
-        else
-            Navigation.NavigateTo($"{BasePath}/{layer.Id}");
-        return Task.CompletedTask;
-    }
 
     private Task UndoAsync(PublishedDraft published) => RollBackAsync(published.BatchId,
         $"Undid “{published.Name}”. Phones show it within a few seconds; open it here to publish it again.");

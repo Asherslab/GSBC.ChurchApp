@@ -306,7 +306,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Admin` | The Roles and Who-holds-what pages | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Contracts` | The `Configuration` service, its messages and the placements feed | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Api` | Placements and their audit (schema `config`): validates against descriptors, checks each area's permission, writes the feed, rolls back | No |
-| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store (`LocalSurfaceLayout`), the drafts workbench (`DraftsWorkspace`), the Hub canvas and its settings (`HubCanvas`, `TileSettings`), and the generic setting inputs | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store (`LocalSurfaceLayout`), App styling (`StylingWorkspace`), the phone canvas and its settings (`StylingPhone`, `TileSettings`), and the generic setting inputs | Yes |
 | `GSBC.ChurchApp.Features.Configuration.App` | The phone's Previews page (More → Previews) and the *coming soon* page | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Admin` | The admin panel's Drafts workbench and its pop-out phone preview, and the drafts waiting for Home's week | Yes |
 | `GSBC.ChurchApp.Features.Media.Contracts` | The `Media` service, its messages, the accepted file types and the `media.*` permission nodes | Yes |

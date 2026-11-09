@@ -20,6 +20,7 @@
         }
         else
         {
+            <p class="styling-overview__quiet">Click one to see the app on that day.</p>
             <ol class="coming-up">
                 @foreach (ComingUp item in context.Value.Take(_all ? int.MaxValue : Shown))
                 {
@@ -37,7 +38,7 @@
             }
         }
     </LiveData>
-    <p class="styling-overview__quiet">Click a part of the phone, or one of these, to change it. Click something coming up to see the app on that day.</p>
+    <p class="styling-overview__quiet">Click a part of the phone, or one of these, to change it.</p>
 </section>
 
 @code {

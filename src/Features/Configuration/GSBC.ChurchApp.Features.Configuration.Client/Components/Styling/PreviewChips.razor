@@ -2,28 +2,36 @@
 @inject TimeProvider Clock
 
 <div class="preview-chips" role="group" aria-label="Preview choices">
-    <span>Preview as</span>
-    <select class="preview-chips__chip" aria-label="Preview as" value="@Value.Who" @onchange="change => SetAsync(Value with { Who = change.Value?.ToString() ?? StylingPreview.Visitor })">
-        @foreach (FieldOption option in Whom)
-        {
-            <option value="@option.Value">@option.Label</option>
-        }
-    </select>
-    <span>in</span>
-    <select class="preview-chips__chip" aria-label="Preview in light or dark" value="@Value.Scheme" @onchange="change => SetAsync(Value with { Scheme = Enum.Parse<ThemeScheme>(change.Value?.ToString() ?? nameof(ThemeScheme.Light)) })">
-        <option value="@ThemeScheme.Light">light mode</option>
-        <option value="@ThemeScheme.Dark">dark mode</option>
-    </select>
-    <span>on</span>
-    <select class="preview-chips__chip" aria-label="Preview on the phone" value="@Value.Device.Name" @onchange="change => SetAsync(Value with { Device = PhoneDevice.All.Single(device => device.Name == change.Value?.ToString()) })">
-        @foreach (PhoneDevice device in PhoneDevice.All)
-        {
-            <option value="@device.Name">an @device.Name</option>
-        }
-    </select>
-    <span>on</span>
-    <input class="preview-chips__chip preview-chips__day" type="date" aria-label="Preview the app on" value="@Iso(Value.Day ?? Today)"
-           @onchange="change => SetAsync(Value with { Day = FromIso(change.Value?.ToString() ?? string.Empty) is { } day && day != Today ? day : null })" />
+    <span class="preview-chips__part">
+        <span>Preview as</span>
+        <select class="preview-chips__chip" aria-label="Preview as" value="@Value.Who" @onchange="change => SetAsync(Value with { Who = change.Value?.ToString() ?? StylingPreview.Visitor })">
+            @foreach (FieldOption option in Whom)
+            {
+                <option value="@option.Value">@option.Label</option>
+            }
+        </select>
+        <span>in</span>
+        <select class="preview-chips__chip" aria-label="Preview in light or dark" value="@Value.Scheme" @onchange="change => SetAsync(Value with { Scheme = Enum.Parse<ThemeScheme>(change.Value?.ToString() ?? nameof(ThemeScheme.Light)) })">
+            <option value="@ThemeScheme.Light">light</option>
+            <option value="@ThemeScheme.Dark">dark</option>
+        </select>
+        <span>mode,</span>
+    </span>
+    <span class="preview-chips__part">
+        <span>on an</span>
+        <select class="preview-chips__chip" aria-label="Preview on the phone" value="@Value.Device.Name" @onchange="change => SetAsync(Value with { Device = PhoneDevice.All.Single(device => device.Name == change.Value?.ToString()) })">
+            @foreach (PhoneDevice device in PhoneDevice.All)
+            {
+                <option value="@device.Name">@device.Name</option>
+            }
+        </select>
+        <span>for</span>
+        <label class="preview-chips__chip preview-chips__day">
+            <span>@DayWords</span>
+            <input type="date" aria-label="Preview the app on" value="@Iso(Value.Day ?? Today)"
+                   @onchange="change => SetAsync(Value with { Day = FromIso(change.Value?.ToString() ?? string.Empty) is { } day && day != Today ? day : null })" />
+        </label>
+    </span>
     @if (Value.Day is not null)
     {
         <button type="button" class="link preview-chips__today" @onclick="() => SetAsync(Value with { Day = null })">Back to today</button>
@@ -45,6 +53,8 @@
         .. Roles.Distinct().Select(role => new FieldOption(role.ToString(), $"someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
         new(StylingPreview.Anyone, "anyone, with every tile"),
     ];
+
+    private string DayWords => Value.Day is { } day ? day.ToString("ddd d MMM", CultureInfo.InvariantCulture) : "today";
 
     private Task SetAsync(StylingPreview changed) => ValueChanged.InvokeAsync(changed);
 

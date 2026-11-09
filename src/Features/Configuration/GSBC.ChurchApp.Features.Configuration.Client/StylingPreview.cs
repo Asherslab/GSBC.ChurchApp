@@ -19,7 +19,7 @@ public sealed record StylingPreview(string Who, ThemeScheme Scheme, DateOnly? Da
         ? !entry.Hidden && InDates(entry, At(now))
         : entry.IsShownTo(Viewer, At(now));
 
-    public Viewer Viewer => Who switch
+    private Viewer Viewer => Who switch
     {
         SignedIn => new Viewer(true, _ => false),
         _ when Guid.TryParse(Who, out Guid role) => new Viewer(true, node => node == RoleMembership.NodeOf(role)),

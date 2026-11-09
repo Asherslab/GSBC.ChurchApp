@@ -76,7 +76,7 @@ places everyone the tab is for can open, as for an announcement (`OpenableBy`).
 
 ### In the admin panel
 
-Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's parts (*The phone is the canvas*, chosen on
+App styling → **Tab bar** (in a draft; it was Drafts → a draft → Tab bar until 2026-11-09), desktop first, built from the Hub canvas's parts (*The phone is the canvas*, chosen on
 `.impeccable/mocks/decision/app-tabs/`):
 
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);

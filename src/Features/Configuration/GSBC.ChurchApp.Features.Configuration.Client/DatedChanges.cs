@@ -7,7 +7,7 @@ namespace GSBC.ChurchApp.Features.Configuration.Client;
 
 public sealed class DatedChanges(ConfigurationClient configuration, SurfaceCatalog surfaces, IAccess access)
 {
-    public const string EventLayer = "Event layer";
+    private const string EventLayer = "Event layer";
 
     public async Task<IReadOnlyList<DatedLane>> LanesAsync(DraftList list, DateTime from, DateTime until)
     {
