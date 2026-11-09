@@ -1,7 +1,6 @@
 using System.Text.RegularExpressions;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
-using GSBC.ChurchApp.Features.Sermons.Api.Website;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Common;
@@ -16,11 +15,9 @@ internal sealed partial class SermonUploads(
     SermonAnnouncer announcer, TimeProvider time)
 {
     private static readonly TimeSpan UploadWindow = TimeSpan.FromHours(2);
-    private const int HeadBytes = 64 * 1024;
 
     public async Task<AudioUploadTicket> BeginAsync(AudioUploadRequest request, CancellationToken cancellationToken)
     {
-        await RequireUploadsAsync(cancellationToken);
         if (!SermonAudio.TryGetExtension(request.ContentType, out string extension))
             throw Invalid("Choose an mp3 or m4a file.");
         if (request.Bytes is <= 0 or > SermonAudio.LargestBytes)
@@ -32,7 +29,6 @@ internal sealed partial class SermonUploads(
 
     public async Task<SermonRecord> AddAsync(SermonUpload request, CancellationToken cancellationToken)
     {
-        await RequireUploadsAsync(cancellationToken);
         if (!AudioKey().IsMatch(request.AudioKey))
             throw Invalid("Upload the audio first.");
         if (await db.Sermons.AnyAsync(sermon => sermon.AudioUrl == blobs.PublicUrlOf(request.AudioKey).ToString(), cancellationToken))
@@ -55,16 +51,15 @@ internal sealed partial class SermonUploads(
         SermonRecord sermon = new()
         {
             Id = Guid.CreateVersion7(),
-            Origin = SermonSources.Uploads,
             PreachedAt = ChurchTime.ToUtc(DateOnly.FromDateTime(request.PreachedOn).ToDateTime(TimeOnly.MinValue)),
             AddedAt = now,
             UpdatedAt = now,
-            SourceTitle = title,
-            SourceSpeaker = speaker.Name,
-            SourceSpeakerId = speaker.Id,
-            SourceSeriesId = seriesId,
-            SourceService = service,
-            SourceYouTubeId = youTube,
+            Title = title,
+            SpeakerId = speaker.Id,
+            SeriesId = seriesId,
+            Service = service,
+            YouTubeId = youTube,
+            Passage = Passage(request.Passage),
             Summary = request.Summary.Trim(),
             AudioUrl = blobs.PublicUrlOf(request.AudioKey).ToString(),
             AudioType = SermonAudio.TypeOf(extension),
@@ -74,7 +69,7 @@ internal sealed partial class SermonUploads(
         };
         db.Sermons.Add(sermon);
         if (artwork is not null)
-            await media.UseAsync(ArtworkOwner(sermon.Id), [artwork], cancellationToken);
+            await media.UseAsync(SermonMedia.SermonOwner(sermon.Id), [artwork], cancellationToken);
         publisher.MarkAdmin(sermon.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
@@ -83,9 +78,10 @@ internal sealed partial class SermonUploads(
         return sermon;
     }
 
-    internal static string ArtworkOwner(Guid id) => $"sermons/sermon/{id}";
+    internal static string Passage(string? passage) =>
+        passage?.Trim() is not { Length: > 0 } trimmed ? "" : trimmed.Length <= SermonLibraryService.PassageLimit ? trimmed : throw Invalid($"Keep the passage to {SermonLibraryService.PassageLimit} characters.");
 
-    internal static BlobInfo Arrived(BlobInfo? audio) =>
+    private static BlobInfo Arrived(BlobInfo? audio) =>
         audio is { Bytes: > 0 } ? audio : throw Invalid("The audio hasn't finished uploading. Try again in a moment.");
 
     private async Task<SpeakerRecord> SpeakerAsync(SermonUpload request, CancellationToken cancellationToken)
@@ -117,21 +113,7 @@ internal sealed partial class SermonUploads(
         if (extension != "mp3")
             return Math.Max(0, request.DurationSeconds);
         await using Stream audio = await blobs.OpenAsync(BlobBucket.Public, request.AudioKey, cancellationToken);
-        byte[] head = new byte[HeadBytes];
-        int read = await audio.ReadAtLeastAsync(head, HeadBytes, throwOnEndOfStream: false, cancellationToken);
-        int tag = Mp3Duration.TagBytes(head.AsSpan(0, read));
-        if (tag > 0 && tag < read)
-            return Mp3Duration.Seconds(head.AsSpan(tag, read - tag), bytes - tag) ?? Math.Max(0, request.DurationSeconds);
-        return tag == 0 ? Mp3Duration.Seconds(head.AsSpan(0, read), bytes) ?? Math.Max(0, request.DurationSeconds) : Math.Max(0, request.DurationSeconds);
-    }
-
-    private async Task RequireUploadsAsync(CancellationToken cancellationToken) =>
-        RequireUploads(await SourceStates.GetAsync(db, cancellationToken));
-
-    internal static void RequireUploads(SourceState state)
-    {
-        if (state.Source != SermonSources.Uploads)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Sermons come from the website at the moment. Switch Where new sermons come from to uploads first."));
+        return await Mp3Duration.ReadAsync(audio, bytes, cancellationToken) ?? Math.Max(0, request.DurationSeconds);
     }
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));

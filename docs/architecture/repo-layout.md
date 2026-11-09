@@ -139,6 +139,9 @@ flowchart LR
         SermonsClient["Features.Sermons.Client"]
         SermonsApi["Features.Sermons.Api"]
         SermonsContracts["Features.Sermons.Contracts"]
+        SermonsImportAdmin["Features.Sermons.Import.Admin"]
+        SermonsImportApi["Features.Sermons.Import.Api"]
+        SermonsImportContracts["Features.Sermons.Import.Contracts"]
     end
 
     subgraph Events["Features / Events"]
@@ -179,6 +182,7 @@ flowchart LR
         AnalyticsTests["Features.Analytics.Api.Tests"]
         NotificationsTests["Features.Notifications.Api.Tests"]
         SermonsTests["Features.Sermons.Api.Tests"]
+        SermonsImportTests["Features.Sermons.Import.Api.Tests"]
         EventsTests["Features.Events.Api.Tests"]
         EventsClientTests["Features.Events.Client.Tests"]
         ReleaseNotesTests["Features.ReleaseNotes.App.Tests"]
@@ -190,9 +194,9 @@ flowchart LR
     HostsWebsite --> SermonsClient & EventsClient
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
     HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & EventsAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & EventsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & EventsApi
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
+    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -233,6 +237,9 @@ flowchart LR
     SermonsClient --> SermonsContracts & PlatformClient & PlatformUi & PlatformCommon
     SermonsApi --> SermonsContracts & PlatformApi & PlatformCommon & PlatformStorage
     SermonsContracts --> PlatformContracts
+    SermonsImportAdmin --> SermonsImportContracts & PlatformClient & PlatformUi
+    SermonsImportApi --> SermonsImportContracts & SermonsApi
+    SermonsImportContracts --> PlatformContracts
 
     EventsApp --> EventsClient
     EventsAdmin --> EventsClient
@@ -260,6 +267,7 @@ flowchart LR
     AnalyticsTests --> AnalyticsApi & Testing
     NotificationsTests --> NotificationsApi & Testing
     SermonsTests --> SermonsApi & Testing
+    SermonsImportTests --> SermonsImportApi & Testing
     EventsTests --> EventsApi & Testing
     EventsClientTests --> EventsClient
     WebsiteTests --> HostsWebsite
@@ -324,16 +332,19 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.App` | The phone's Notifications list (from the bell) and More → Notifications | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Contracts` | The `Sermons` and `Library` services, the sermon, series, speaker and listening messages, the progress merge rule (`ListeningProgress`), YouTube links, feeds, places and the `sermons.*` permission nodes | Yes |
-| `GSBC.ChurchApp.Features.Sermons.Api` | Sermons from the website's feed and series pages (hourly) or uploads, staff corrections that survive re-reading, artwork made into small copies in R2, the catalogue, series and speaker feeds, and listening history merged per person (schema `sermons`) | No |
+| `GSBC.ChurchApp.Features.Sermons.Api` | Sermons uploaded in the admin panel, with their audio and pictures kept in Media, the catalogue, series and speaker feeds, the podcast feed, and listening history merged per person (schema `sermons`) | No |
 | `GSBC.ChurchApp.Features.Sermons.Client` | The catalogue read from the phone's store (`SermonCatalogue`), listening history from the native journal and the account's feed, sent through the outbox (`Listening`), the sermon player over `IAudioPlayer`, and the Home tile *Latest sermon* | Yes |
 | `GSBC.ChurchApp.Features.Sermons.App` | The phone's Sermons tab: the latest and what you're part-way through, series, speakers, search, a sermon with its audio and video | Yes |
+| `GSBC.ChurchApp.Features.Sermons.Import.Contracts` | **Temporary, removed after go-live** ([sermons-import.md](../features/sermons-import.md)): the `Import` service, its progress messages, its feed and the `sermons.import` permission | Yes |
+| `GSBC.ChurchApp.Features.Sermons.Import.Api` | **Temporary:** reads every sermon off the old website (its listing pages, each sermon's page and its series pages), copies the audio and pictures into our storage and adds the sermons through Sermons.Api, skipping what it brought across before (schema `sermons_import`) | No |
+| `GSBC.ChurchApp.Features.Sermons.Import.Admin` | **Temporary:** the admin panel's *Import from the website* page: start, live progress, failures to try again | Yes |
 | `GSBC.ChurchApp.Features.Events.Contracts` | The `Events`, `Editing`, `Setup` and `CalendarFiles` services, the iCal link paths, calendars, events, regular events and their patterns, specials, breaks, the dated rows phones hold, the *in your week* rule (`CalendarChoices`), feeds, places and the `events.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Events.Api` | Calendars, one-off and regular events, specials, breaks and showing on other calendars (schema `events`); each regular event worked out into dated rows for 30 days back and 12 months ahead, public calendars' rows in a public feed and the rest in per-row-audience feeds; Ask to publish, *Tell people* and *Needs details*; iCal files for calendar apps and their secret links, calendars copied from an iCal address, and reminders to organisers for missing details | No |
 | `GSBC.ChurchApp.Features.Events.Gateway` | The four iCal links (approved non-gRPC paths): each asks the API's `CalendarFiles` service for the file and sets its caching | No |
 | `GSBC.ChurchApp.Features.Events.Client` | The Events gRPC clients and places, for the phone and the admin panel | Yes |
 | `GSBC.ChurchApp.Features.Events.App` | The phone's calendar: *This week* (`/week`), an event and a calendar (a placeholder until the screens are built) | Yes |
 | `GSBC.ChurchApp.Features.Events.Admin` | The admin panel's Calendar workbench (empty until the screens are built) | Yes |
-| `GSBC.ChurchApp.Features.Sermons.Admin` | The admin panel's Sermons page: correcting what the website says, series and speakers, uploading, and where sermons come from | Yes |
+| `GSBC.ChurchApp.Features.Sermons.Admin` | The admin panel's Sermons page: checking and correcting sermons, series and speakers, uploading | Yes |
 | `GSBC.ChurchApp.Features.ReleaseNotes.Generator` | Build time only: a source generator that reads `changelog/`, checks every note, and writes the notes for this build's audience (staff for dev and UAT, everyone for Release) into the app as C# ([changelog.md](changelog.md)) | No (runs in the compiler) |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App` | What's new: the highlights shown once after an update, and the What's new page under More, from the notes built into the app | Yes |
 | `GSBC.ChurchApp.Hosts.App` | The phone app: Blazor WASM, AOT in Release, packaged by `shell/` with `native/data-layer` | Yes |
@@ -354,7 +365,8 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.Events.Api.Tests` | Unit: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them; only a publisher shows an event on a calendar that needs one or changes it once shown; this date only vs every date; a calendar for signed-in people can't be added or told to a signed-out phone; reading iCal (repeats, skipped and changed dates, other time zones) and asking with its ETag; addresses on private networks never read; writing calendar files; reminders due at 7 and 2 days and when they settle. Against Postgres: publishing sends a date leaving the window, or a calendar turning private, as deletes; Ask to publish reaches the publishers and publishing shows it; an editor can't reach another calendar's events; a copy on another calendar follows the home event; a private calendar's iCal file only through a valid link of someone it's for (not after their role goes, nor to a signed-out phone with a stale *Calendar added*); a reset link refused | No |
-| `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres, with an anonymised website: the feed and series pages make the catalogue; corrections survive the next read; a sermon the website drops stays; a failing series page keeps what was known; phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person | No |
+| `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
+| `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |
 | `GSBC.ChurchApp.Features.ReleaseNotes.App.Tests` | Highlights show once after an update and never on a fresh install; a production build carries no staff notes or staff wording | No |
 | `GSBC.ChurchApp.Hosts.Website.Tests` | Unit tests, no I/O: an event or calendar the API takes away leaves the website, a reset feed forgets what it held, ready only after the first full read; an embed limited to calendars includes events shown on them; weeks and what's still ahead; each page's share address on the website; caching and framing headers | No |

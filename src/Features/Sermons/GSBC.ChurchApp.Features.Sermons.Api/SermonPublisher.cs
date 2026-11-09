@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
-using GSBC.ChurchApp.Features.Sermons.Api.Website;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
@@ -16,30 +15,26 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
         List<SermonRecord> sermons = await db.Sermons.OrderByDescending(sermon => sermon.PreachedAt).ThenBy(sermon => sermon.Id).ToListAsync(cancellationToken);
         Dictionary<Guid, SeriesRecord> series = await db.Series.ToDictionaryAsync(record => record.Id, cancellationToken);
         Dictionary<Guid, SpeakerRecord> speakers = await db.Speakers.ToDictionaryAsync(record => record.Id, cancellationToken);
-        ILookup<Guid, string> formerIds = (await db.FormerIds.AsNoTracking().ToListAsync(cancellationToken))
-            .OrderBy(former => former.MovedAt).ToLookup(former => former.CurrentId, former => former.Id.ToString());
 
-        List<SermonRecord> window = sermons.Where(sermon => !sermon.Hidden && sermon.AudioUrl.Length > 0).Take(SermonsFeeds.CatalogueWindow).ToList();
+        List<SermonRecord> window = sermons.Where(sermon => sermon is { Hidden: false, AudioUrl.Length: > 0 }).Take(SermonsFeeds.CatalogueWindow).ToList();
         HashSet<Guid> inWindow = window.Select(sermon => sermon.Id).ToHashSet();
-        Dictionary<Guid, List<SermonRecord>> bySeries = window.Where(sermon => sermon.EffectiveSeriesId is { } id && series.ContainsKey(id))
-            .GroupBy(sermon => sermon.EffectiveSeriesId!.Value).ToDictionary(group => group.Key, group => group.OrderBy(sermon => sermon.PreachedAt).ToList());
-        Dictionary<Guid, List<SermonRecord>> bySpeaker = window.Where(sermon => sermon.EffectiveSpeakerId is { } id && speakers.ContainsKey(id))
-            .GroupBy(sermon => sermon.EffectiveSpeakerId!.Value).ToDictionary(group => group.Key, group => group.ToList());
+        Dictionary<Guid, List<SermonRecord>> bySeries = window.Where(sermon => sermon.SeriesId is { } id && series.ContainsKey(id))
+            .GroupBy(sermon => sermon.SeriesId!.Value).ToDictionary(group => group.Key, group => group.OrderBy(sermon => sermon.PreachedAt).ToList());
+        Dictionary<Guid, List<SermonRecord>> bySpeaker = window.Where(sermon => sermon.SpeakerId is { } id && speakers.ContainsKey(id))
+            .GroupBy(sermon => sermon.SpeakerId!.Value).ToDictionary(group => group.Key, group => group.ToList());
 
         long version = time.GetUtcNow().UtcDateTime.Ticks;
         foreach (SermonRecord sermon in sermons)
         {
             Sermon? payload = inWindow.Contains(sermon.Id) ? Payload(sermon, series, speakers, bySeries) : null;
-            payload?.FormerIds = [.. formerIds[sermon.Id]];
             if (Publish(SermonsFeeds.Catalogue, sermon.Id, payload, sermon.PublishedHash, version, out string? hash,
-                    row => { row.SortKey = SortKey(sermon); row.StartsAt = sermon.PreachedAt; row.GroupKey = sermon.EffectiveSeriesId?.ToString(); }))
+                    row => { row.SortKey = SortKey(sermon); row.StartsAt = sermon.PreachedAt; row.GroupKey = sermon.SeriesId?.ToString(); }))
                 sermon.PublishedHash = hash;
         }
 
         foreach (SeriesRecord record in series.Values)
         {
             SeriesInfo? payload = bySeries.TryGetValue(record.Id, out List<SermonRecord>? its) ? SeriesPayload(record, its) : null;
-            payload?.FormerIds = [.. formerIds[record.Id]];
             if (Publish(SermonsFeeds.Series, record.Id, payload, record.PublishedHash, version, out string? hash,
                     row => row.SortKey = payload?.LastAt.ToString("O")))
                 record.PublishedHash = hash;
@@ -48,7 +43,6 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
         foreach (SpeakerRecord record in speakers.Values)
         {
             SpeakerInfo? payload = bySpeaker.TryGetValue(record.Id, out List<SermonRecord>? its) ? SpeakerPayload(record, its) : null;
-            payload?.FormerIds = [.. formerIds[record.Id]];
             if (Publish(SermonsFeeds.Speakers, record.Id, payload, record.PublishedHash, version, out string? hash,
                     row => row.SortKey = record.Name))
                 record.PublishedHash = hash;
@@ -63,19 +57,19 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
     public static Sermon Payload(SermonRecord sermon, IReadOnlyDictionary<Guid, SeriesRecord> series, IReadOnlyDictionary<Guid, SpeakerRecord> speakers,
         IReadOnlyDictionary<Guid, List<SermonRecord>>? bySeries = null)
     {
-        SeriesRecord? its = sermon.EffectiveSeriesId is { } seriesId ? series.GetValueOrDefault(seriesId) : null;
-        SpeakerRecord? speaker = sermon.EffectiveSpeakerId is { } speakerId ? speakers.GetValueOrDefault(speakerId) : null;
-        int part = TitleParts.PartOf(sermon.EffectiveTitle);
+        SeriesRecord? its = sermon.SeriesId is { } seriesId ? series.GetValueOrDefault(seriesId) : null;
+        SpeakerRecord? speaker = sermon.SpeakerId is { } speakerId ? speakers.GetValueOrDefault(speakerId) : null;
+        int part = TitleParts.PartOf(sermon.Title);
         if (part == 0 && its is not null && bySeries?.GetValueOrDefault(its.Id) is { } inOrder)
             part = inOrder.FindIndex(other => other.Id == sermon.Id) + 1;
         return new Sermon
         {
             Id = sermon.Id.ToString(),
-            Title = sermon.EffectiveTitle,
+            Title = sermon.Title,
             PreachedAt = sermon.PreachedAt,
-            Service = sermon.EffectiveService,
+            Service = sermon.Service,
             SpeakerId = speaker?.Id.ToString() ?? "",
-            SpeakerName = speaker?.Name ?? (sermon.SourceSpeaker.Length > 0 ? sermon.SourceSpeaker : Unknown),
+            SpeakerName = speaker?.Name ?? Unknown,
             SeriesId = its?.Id.ToString(),
             SeriesName = its?.Name,
             Part = its is null ? 0 : part,
@@ -83,10 +77,10 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
             AudioType = sermon.AudioType,
             AudioBytes = sermon.AudioBytes,
             DurationSeconds = sermon.DurationSeconds,
-            YouTubeId = sermon.EffectiveYouTubeId,
-            Artwork = Wide(sermon.Artwork) ? sermon.Artwork : its?.ChosenArtwork ?? its?.Artwork ?? sermon.Artwork,
-            Summary = sermon.Origin == SermonSources.Uploads ? sermon.Summary : "",
-            WebLink = sermon.WebLink,
+            YouTubeId = sermon.YouTubeId,
+            Artwork = Wide(sermon.Artwork) ? sermon.Artwork : its?.Artwork ?? sermon.Artwork,
+            Summary = sermon.Summary,
+            Passage = sermon.Passage,
         };
     }
 
@@ -98,7 +92,7 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
         Id = record.Id.ToString(),
         Name = record.Name,
         Description = record.Description,
-        Artwork = record.ChosenArtwork ?? record.Artwork,
+        Artwork = record.Artwork,
         Count = sermons.Count,
         FirstAt = sermons[0].PreachedAt,
         LastAt = sermons[^1].PreachedAt,
@@ -108,7 +102,7 @@ internal sealed class SermonPublisher(SermonsDbContext db, TimeProvider time)
     {
         Id = record.Id.ToString(),
         Name = record.Name,
-        Photo = record.ChosenPhoto ?? record.Photo,
+        Photo = record.Photo,
         Count = sermons.Count,
         LatestAt = sermons.Max(sermon => sermon.PreachedAt),
     };

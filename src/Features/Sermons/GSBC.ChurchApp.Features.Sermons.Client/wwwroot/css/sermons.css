@@ -3,6 +3,8 @@
 
 .sermon-head { display: grid; gap: 12px; padding: 18px var(--gutter) 4px; }
 .sermon-head__series { justify-self: start; color: var(--accent); font-size: var(--text-label); font-weight: 600; text-decoration: none; }
+.sermon-head__passage { margin: 0; color: var(--ink-2); font-size: var(--text-label); }
+.sermon-about { white-space: pre-line; }
 .sermon-head__title { margin: 0; font-size: var(--text-headline); font-weight: 700; line-height: 1.15; letter-spacing: -0.02em; text-wrap: balance; }
 .sermon-head__facts { margin: -4px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
 .sermon-head__speaker { display: flex; align-items: center; gap: 12px; min-height: var(--touch); color: inherit; text-decoration: none; }
@@ -83,14 +85,6 @@
 .sermon-pick__words > span { color: var(--ink-2); font-size: var(--text-caption); }
 .sermon-pick__pills { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
 
-.source-strip { display: grid; gap: 12px; padding: 12px 16px; border-radius: var(--radius); background: var(--sand); }
-.source-strip__row { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; font-size: var(--text-caption); }
-.source-strip__row strong { font-size: var(--text-row); }
-.source-strip__row .segmented { min-width: 16rem; }
-.source-strip__state { color: var(--ink-2); }
-.source-strip__row .btn { margin-left: auto; }
-.source-strip__uploads { display: grid; grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr)); gap: 12px 24px; align-items: start; }
-.source-strip__copy { display: grid; gap: 6px; font-size: var(--text-caption); }
 
 .sermon-check { display: grid; gap: 22px; }
 .sermon-check__head { display: grid; grid-template-columns: minmax(220px, 320px) minmax(0, 1fr); gap: 20px; align-items: start; }
@@ -104,9 +98,6 @@
 .sermon-check__field { display: grid; gap: 6px; align-content: start; }
 .sermon-check__field--wide { grid-column: 1 / -1; }
 .sermon-check__field .text-link { justify-self: start; min-height: 32px; }
-.use-source { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
-.use-source q { color: var(--ink); }
-.use-source .text-link { min-height: 28px; }
 
 .sermon-upload { display: grid; gap: 18px; }
 .sermon-upload h2 { margin: 0; font-size: var(--text-title, 1.1765rem); font-weight: 700; }
@@ -132,14 +123,11 @@
 .sermon-picture { display: grid; justify-items: start; gap: 6px; }
 .series-desk__edit { position: sticky; top: 24px; display: grid; gap: 14px; padding-left: 32px; border-left: 1px solid var(--line); }
 @media (max-width: 1228px) { .series-desk { grid-template-columns: 1fr 1fr; } .series-desk__edit { grid-column: 1 / -1; position: static; padding-left: 0; border-left: 0; } }
-.source-strip .segmented { background: var(--page); }
 .sermons-desk__list { grid-auto-rows: max-content; }
 
 .sermon-head__series { justify-self: start; min-height: 32px; margin-top: -6px; }
 .speaker-strip__item { align-content: start; }
 .sermon-feature__actions .btn:first-child .icon, .sermon-head__actions .btn:first-child .icon { fill: currentColor; }
-.source-strip__state { flex: 1 1 18rem; }
-.source-strip__row .btn { margin-left: 0; }
 .sermon-head--tight { padding-top: 0; }
 .sermon-download { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .sermon-download .progress-track { flex: 1 1 100%; }
@@ -148,15 +136,3 @@
 .sermon-download .text-link:last-child { margin-left: auto; }
 .sermon-download .text-link:only-child { margin-left: 0; }
 .sermon-pick__thumb.media-cover--whole, .sermon-row__thumb.media-cover--whole { background: var(--sand-strong); }
-.copying { display: grid; gap: 8px; }
-.copying__summary { margin: 0; }
-.copying__now { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: baseline; padding: 10px 12px; border-radius: var(--radius-field); background: var(--fill-on-surface); }
-.copying__now .progress-track { grid-column: 1 / -1; }
-.copying__now.is-failed .copying__state { color: var(--danger); }
-.copying__title { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-weight: 600; }
-.copying__state { color: var(--ink-2); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
-.copying__each summary { cursor: pointer; color: var(--accent); font-size: var(--text-label); font-weight: 600; }
-.copying__each ul { display: grid; gap: 2px; max-height: 16rem; margin: 8px 0 0; padding: 0; overflow-y: auto; list-style: none; }
-.copying__row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 6px 4px; border-bottom: 1px solid var(--line); }
-.copying__row .copying__title { font-weight: 500; }
-.copying__row.is-copied .copying__state { color: var(--ink-3); }

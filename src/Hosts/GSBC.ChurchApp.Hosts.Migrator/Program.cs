@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
+using GSBC.ChurchApp.Features.Sermons.Import.Api.Data;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -22,6 +23,7 @@ builder.Services.AddMediaData();
 builder.Services.AddAnalyticsData();
 builder.Services.AddNotificationsData();
 builder.Services.AddSermonsData();
+builder.Services.AddSermonsImportData();
 builder.Services.AddEventsData();
 
 using IHost host = builder.Build();

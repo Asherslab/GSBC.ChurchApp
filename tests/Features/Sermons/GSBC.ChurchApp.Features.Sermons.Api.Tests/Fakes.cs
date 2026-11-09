@@ -4,17 +4,11 @@ using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
-internal sealed class RecordedNotifications : INotifications
+internal sealed class QuietNotifications : INotifications
 {
-    public List<Notification> Raised { get; } = [];
+    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.CompletedTask;
 
-    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => RaiseOneOfAsync([notification], cancellationToken);
-
-    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
-    {
-        Raised.AddRange(mostSpecificFirst);
-        return Task.CompletedTask;
-    }
+    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
 }

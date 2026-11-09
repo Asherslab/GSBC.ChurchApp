@@ -43,7 +43,6 @@ internal sealed class AnyMedia : IMediaReferences, IMediaSystemFolders
 {
     private readonly Dictionary<string, MediaRef> _kept = [];
 
-    public List<KeptFile> Kept { get; } = [];
     public Dictionary<string, List<string>> Uses { get; } = [];
 
     public Task FileAsync(MediaSystemArea area, string? scopeId, string scopeName, IReadOnlyCollection<MediaRef> media, CancellationToken cancellationToken) =>
@@ -53,10 +52,7 @@ internal sealed class AnyMedia : IMediaReferences, IMediaSystemFolders
     {
         string key = $"{Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(file.Bytes))}.{file.Extension}";
         if (!_kept.TryGetValue(key, out MediaRef? kept))
-        {
-            Kept.Add(file);
             kept = _kept[key] = new MediaRef { Id = Guid.CreateVersion7().ToString(), Key = key, ContentType = file.ContentType, Width = file.Width, Height = file.Height };
-        }
         return Task.FromResult(kept);
     }
 
@@ -72,13 +68,7 @@ internal sealed class AnyMedia : IMediaReferences, IMediaSystemFolders
         return Task.FromResult(kept);
     }
 
-    public Dictionary<string, string> Named { get; } = [];
-
-    public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken)
-    {
-        Named[mediaId] = fileName;
-        return Task.CompletedTask;
-    }
+    public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());

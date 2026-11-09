@@ -11,7 +11,7 @@ public sealed class ProgressTests : SermonsHost
     [Fact]
     public async Task ProgressIsMergedWithWhatIsStoredAndReachesOnlyThatPersonsPhones()
     {
-        await ReadTheWebsiteAsync();
+        await SeedLibraryAsync();
         string sermon = (await CatalogueAsync()).First().Id;
         Guid person = Guid.CreateVersion7(), someoneElse = Guid.CreateVersion7();
         DateTime now = Clock.UtcNow;

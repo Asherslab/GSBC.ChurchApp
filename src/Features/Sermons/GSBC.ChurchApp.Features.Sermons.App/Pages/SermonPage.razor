@@ -76,13 +76,30 @@
                 {
                     <a class="text-link sermon-head__series" href="@SermonsDestinations.Series.PathOf(seriesLink).TrimStart('/')">@(sermon.Part > 0 ? $"Part {sermon.Part} of {sermon.SeriesName}" : sermon.SeriesName)<Icon Name="chevron-right" Size="IconSize.Small" /></a>
                 }
-                <a class="sermon-head__speaker" href="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
-                    <Avatar Name="@sermon.SpeakerName" Photo="speaker?.Photo" Size="44" />
-                    <span>
-                        <strong>@sermon.SpeakerName</strong>
-                        <span>@SermonText.When(sermon)</span>
-                    </span>
-                </a>
+                @if (sermon.Passage.Length > 0)
+                {
+                    <p class="sermon-head__passage selectable">@sermon.Passage</p>
+                }
+                @if (sermon.SpeakerId.Length > 0)
+                {
+                    <a class="sermon-head__speaker" href="@SermonsDestinations.Speaker.PathOf(sermon.SpeakerId).TrimStart('/')">
+                        <Avatar Name="@sermon.SpeakerName" Photo="speaker?.Photo" Size="44" />
+                        <span>
+                            <strong>@sermon.SpeakerName</strong>
+                            <span>@SermonText.When(sermon)</span>
+                        </span>
+                    </a>
+                }
+                else
+                {
+                    <div class="sermon-head__speaker">
+                        <Avatar Name="@sermon.SpeakerName" Size="44" />
+                        <span>
+                            <strong>@sermon.SpeakerName</strong>
+                            <span>@SermonText.When(sermon)</span>
+                        </span>
+                    </div>
+                }
 
                 <div class="sermon-head__actions">
                     <Button Icon="@(Player.IsPlaying(sermon) ? "pause" : "play")" OnClick="() => ListenAsync(sermon)">@ListenLabel(sermon, progress)</Button>
@@ -116,7 +133,7 @@
             @if (sermon.Summary.Length > 0)
             {
                 <Section Title="About this sermon">
-                    <p class="prose selectable">@sermon.Summary</p>
+                    <p class="prose selectable sermon-about">@sermon.Summary</p>
                 </Section>
             }
 

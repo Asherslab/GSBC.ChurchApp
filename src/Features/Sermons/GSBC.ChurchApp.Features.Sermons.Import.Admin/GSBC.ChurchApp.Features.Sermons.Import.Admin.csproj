@@ -1,0 +1,10 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <ItemGroup>
+    <SupportedPlatform Include="browser" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\GSBC.ChurchApp.Features.Sermons.Import.Contracts\GSBC.ChurchApp.Features.Sermons.Import.Contracts.csproj" />
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Client\GSBC.ChurchApp.Platform.Client.csproj" />
+    <ProjectReference Include="..\..\..\Platform\GSBC.ChurchApp.Platform.Ui\GSBC.ChurchApp.Platform.Ui.csproj" />
+  </ItemGroup>
+</Project>

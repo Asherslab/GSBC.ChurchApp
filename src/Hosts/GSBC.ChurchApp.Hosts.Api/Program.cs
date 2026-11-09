@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Features.Events.Api;
 using GSBC.ChurchApp.Features.Media.Api;
 using GSBC.ChurchApp.Features.Notifications.Api;
 using GSBC.ChurchApp.Features.Sermons.Api;
+using GSBC.ChurchApp.Features.Sermons.Import.Api;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
@@ -21,6 +22,7 @@ builder.Services.AddMediaApi(builder.Configuration);
 builder.Services.AddAnalyticsApi();
 builder.Services.AddNotificationsApi(builder.Configuration);
 builder.Services.AddSermonsApi(builder.Configuration);
+builder.Services.AddSermonsImportApi(builder.Configuration);
 builder.Services.AddEventsApi();
 
 if (builder.Environment.IsDevelopment())
@@ -39,6 +41,7 @@ app.MapMediaApi();
 app.MapAnalyticsApi();
 app.MapNotificationsApi();
 app.MapSermonsApi();
+app.MapSermonsImportApi();
 app.MapEventsApi();
 
 app.Run();

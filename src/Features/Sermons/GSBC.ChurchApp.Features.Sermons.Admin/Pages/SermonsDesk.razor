@@ -1,7 +1,7 @@
 @page "/sermons"
 @inject SermonsAdminClient Sermons
 
-<TitleBand Title="Sermons" Lead="New sermons arrive from the website or the AV team's uploads. Give each one a look; what you correct stays put when the website changes.">
+<TitleBand Title="Sermons" Lead="The AV team uploads each sermon here, and the office gives it a look. What you save is on phones and the website at once.">
     <Actions>
         <Button Variant="ButtonVariant.Quiet" Icon="layers" Href="sermons/series-and-speakers">Series and speakers</Button>
         <Can Permission="SermonsPermissions.Upload">
@@ -11,7 +11,10 @@
 </TitleBand>
 
 <LiveData @ref="_live" TValue="DeskView" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load sermons right now">
-    <SourceStrip Status="context.Value.Status" Changed="ReloadAsync" />
+    @if (context.Value.Sermons.PodcastFeedUrl is { } feed)
+    {
+        <CopyField Label="Podcast feed" Value="@feed" Hint="Give this address to Apple Podcasts and Spotify. It updates within five minutes of a change." />
+    }
     <div class="sermons-desk">
         <section class="sermons-desk__queue" aria-label="Sermons">
             <FilterChips TValue="string" Label="Show" Options="Filters(context.Value.Sermons)" Value="_filter" ValueChanged="FilterAsync" />
@@ -54,12 +57,11 @@
         <section class="sermons-desk__record" aria-label="@(_uploading ? "Upload a sermon" : "The sermon")">
             @if (_uploading)
             {
-                <UploadSermon Sermons="Sermons" Status="context.Value.Status" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Added="AddedAsync" Cancelled="() => _uploading = false" />
+                <UploadSermon Sermons="Sermons" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Added="AddedAsync" Cancelled="() => _uploading = false" />
             }
             else if (Selected(context.Value) is { } selected)
             {
-                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services"
-                             OursToAdd="context.Value.Status.Source == SermonSources.Uploads" Saved="SavedAsync" Deleted="DeletedAsync" />
+                <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Saved="SavedAsync" Deleted="DeletedAsync" />
             }
             else
             {
@@ -84,19 +86,18 @@
 
     private async Task<DeskView> LoadAsync()
     {
-        Task<SourceStatus> status = Sermons.StatusAsync().AsTask();
         Task<SeriesList> series = Sermons.SeriesAsync().AsTask();
         Task<SpeakerList> speakers = Sermons.SpeakersAsync().AsTask();
         Task<ServiceList> services = Sermons.ServicesAsync().AsTask();
         Task<SermonList> first = Sermons.ListAsync(new SermonQuery { Filter = _filter, Text = _query, Take = _take }).AsTask();
-        await Task.WhenAll(status, series, speakers, services, first);
+        await Task.WhenAll(series, speakers, services, first);
         SermonList list = await first;
         if (!_chosenFilter && _filter == SermonFilters.NeedsALook && list.Total == 0 && _query.Length == 0)
         {
             _filter = SermonFilters.All;
             list = await Sermons.ListAsync(new SermonQuery { Filter = _filter, Take = _take });
         }
-        _view = new DeskView(list, await status, (await series).Series, (await speakers).Speakers, (await services).Services);
+        _view = new DeskView(list, (await series).Series, (await speakers).Speakers, (await services).Services);
         return _view;
     }
 

@@ -42,10 +42,9 @@ public sealed class CatalogueWindowTests : SermonsHost
     private static SermonRecord Uploaded(DateTime preachedAt, string title) => new()
     {
         Id = Guid.CreateVersion7(),
-        Origin = SermonSources.Uploads,
         PreachedAt = preachedAt,
         AddedAt = preachedAt,
-        SourceTitle = title,
+        Title = title,
         AudioUrl = $"https://media.example/sermons/{title}.mp3",
     };
 }
