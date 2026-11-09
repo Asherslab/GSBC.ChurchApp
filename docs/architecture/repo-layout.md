@@ -403,8 +403,8 @@ icon, the permission that shows it, a one-line `Summary` for Home's *Your areas*
 what the person's permissions allow.
 
 Areas are cut by the job staff are doing (owner, 2026-11-09): **Sundays & sermons** (Sermons, Weekly digest),
-**Calendar & news** (Calendar, Announcements), **The app** (App styling, Media, Places in the app, Insights, App health, App
-review), **People** (People, where roles are given too), and **You** (Account) at the foot. *Church life* (Ministries, Life
+**Calendar & news** (Calendar, Announcements), **The app** (App styling, Media, Places in the app, Insights), **People** (People, where roles are given
+too), **Technical** (App health, App review: developer-facing, owner 2026-11-09), and **You** (Account) at the foot. *Church life* (Ministries, Life
 Groups, prayer) joins `NavAreas` with its first page. A new area is a new `NavAreas` entry with its place in the order.
 
 How it behaves (owner's pick, 2026-11-09, "your pages pinned, then areas folded"):

@@ -11,7 +11,7 @@ public static class AnalyticsAdminExtensions
     {
         modules.Add(new ClientModule("Analytics", typeof(AnalyticsAdminExtensions).Assembly,
             [new NavEntry("Insights", "insights", "sparkles", AnalyticsPermissions.View, Area: NavAreas.TheApp, Summary: "How many phones open the app, and what's popular"),
-             new NavEntry("App health", "health", "shield-check", AnalyticsPermissions.HealthView, Area: NavAreas.TheApp, Summary: "Errors from phones, the admin panel and the server")]));
+             new NavEntry("App health", "health", "shield-check", AnalyticsPermissions.HealthView, Area: NavAreas.Technical, Summary: "Errors from phones, the admin panel and the server")]));
         return services.AddAnalyticsClient(ReportOrigin.Admin);
     }
 }

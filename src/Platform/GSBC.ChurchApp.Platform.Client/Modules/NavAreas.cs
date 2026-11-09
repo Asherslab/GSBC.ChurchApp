@@ -6,5 +6,6 @@ public static class NavAreas
     public static readonly NavArea CalendarAndNews = new("Calendar & news", 2);
     public static readonly NavArea TheApp = new("The app", 3);
     public static readonly NavArea People = new("People", 4);
+    public static readonly NavArea Technical = new("Technical", 5);
     public static readonly NavArea You = new("You", 9, AtFoot: true);
 }
