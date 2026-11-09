@@ -79,7 +79,7 @@ public static class EventListing
 
     public static bool IsQuiet(EventOccurrence occurrence) => occurrence.NotOn || occurrence.Kind == OccurrenceKind.Regular;
 
-    private static string Sentence(string words) => words.Length > 0 ? char.ToUpperInvariant(words[0]) + words[1..] : words;
+    public static string Sentence(string words) => words.Length > 0 ? char.ToUpperInvariant(words[0]) + words[1..] : words;
 
     public static string WeekHeading(DateOnly start, DateOnly thisWeek) => (start.DayNumber - thisWeek.DayNumber) switch
     {

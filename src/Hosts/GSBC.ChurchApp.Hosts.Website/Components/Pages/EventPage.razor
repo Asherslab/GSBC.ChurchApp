@@ -20,7 +20,7 @@ else
             <p class="when">@EventWords.LongDate(Day)@(Occurrence.NotOn ? "" : $" · {EventWords.Times(Occurrence)}")</p>
             @if (Occurrence.Kind != OccurrenceKind.OneOff && Occurrence.Repeats.Length > 0)
             {
-                <span class="repeat-line"><SiteIcon Name="repeat" /> @Occurrence.Repeats</span>
+                <span class="repeat-line"><SiteIcon Name="repeat" /> @EventListing.Sentence(Occurrence.Repeats)</span>
             }
         </div>
     </div>
