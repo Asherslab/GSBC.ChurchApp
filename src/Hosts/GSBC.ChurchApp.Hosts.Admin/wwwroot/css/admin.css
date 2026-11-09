@@ -258,16 +258,7 @@ a { color: var(--accent); }
 .activity li:last-child { border-bottom: 0; }
 
 .role-name { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.holders { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); font-size: var(--text-caption); }
-.holders li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 12px; min-height: 44px; padding: 6px 0; border-bottom: 1px solid var(--line); }
-.holders li > span { display: grid; gap: 2px; }
-.holders a { color: var(--ink); font-weight: 600; text-decoration: none; }
-.holders a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .panel-confirm { padding: 16px; border: 0; border-radius: var(--radius-field); background: color-mix(in srgb, var(--danger) 7%, var(--surface)); }
-.effect-list { display: grid; gap: 10px; margin: 10px 0 0; padding: 0; list-style: none; font-size: var(--text-caption); }
-.effect-list li { display: grid; gap: 2px; }
-.effect-list__gains { color: var(--accent); }
-.effect-list__losses { color: var(--danger); }
 
 .editor-section { max-width: 760px; margin-bottom: 34px; }
 .editor-fields { display: grid; gap: 14px; margin-top: 12px; }
@@ -275,30 +266,11 @@ a { color: var(--accent); }
 .choice { display: flex; align-items: flex-start; gap: 10px; font-size: var(--text-row); line-height: 1.4; cursor: pointer; }
 .choice input { width: 18px; height: 18px; margin: 1px 0 0; flex: none; accent-color: var(--live); }
 .choice input:disabled + span { color: var(--ink-3); }
-.choice__note { display: block; margin-top: 2px; color: var(--ink-3); font-size: var(--text-caption); }
-.choice-list { display: grid; margin: 0; padding: 0; list-style: none; border-top: 1px solid var(--line); }
-.choice-list li { padding: 10px 0; border-bottom: 1px solid var(--line); }
-.choice-group { display: grid; gap: 8px; margin: 0; padding: 0; border: 0; }
 .grouped-list .choice { margin: 0; }
 code, .patterns { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: var(--text-caption); }
 
-.workbench__heading { margin: 4px 4px 12px; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; }
-.workbench__aside .search-field { max-width: none; margin-bottom: 8px; background: var(--surface); }
-.data-table--list .data-table__table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
-.data-table--list .data-table__table td { padding: 10px 12px; border-bottom: 0; border-radius: var(--radius-field); }
-.data-table--list .data-table__row--selected { background: var(--segment-on); }
-.person-cell { display: grid; gap: 1px; }
-.person-cell .quiet { overflow: hidden; text-overflow: ellipsis; }
 
-.access-columns { display: grid; grid-template-columns: minmax(0, 1fr) minmax(320px, 420px); align-items: start; gap: 32px; max-width: 1440px; }
 .access-place { margin-top: 18px; }
-.access-roles { position: sticky; top: 24px; }
-.access-roles .holders { border-top: 0; }
-.access-roles .holders li:last-child { border-bottom: 0; }
-@media (max-width: 1328px) {
-    .access-columns { grid-template-columns: minmax(0, 1fr); }
-    .access-roles { position: static; order: -1; padding: 0 0 24px; border-left: 0; border-bottom: 1px solid var(--line); }
-}
 
 @media (min-width: 1201px) and (max-width: 1440px) {
     .admin-main .split-view { grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); gap: 24px; }
@@ -555,9 +527,6 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .section { padding: 0; }
 .link-code { margin: 18px 0 6px; font-size: var(--text-display); font-weight: 700; letter-spacing: 0.12em; font-variant-numeric: tabular-nums; }
 
-.person-head { margin: 0 0 22px; padding-bottom: 16px; border-bottom: 1px solid var(--line); }
-.person-head__name { margin: 0; font-size: var(--text-title-lg); font-weight: 700; letter-spacing: -0.02em; }
-.person-head__email { margin: 2px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
 
 .module-nav__count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; margin-left: auto; padding: 0 6px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; font-variant-numeric: tabular-nums; }
 
@@ -589,3 +558,28 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .open-card__title:focus { outline: none; }
 .open-card__where { display: block; color: var(--ink-2); font-size: var(--text-caption); }
 .open-card__body { max-width: 52ch; margin: 0; color: var(--ink-2); }
+
+.person-page__lead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
+.person-page__tab { margin-top: 24px; }
+.person-page__account { max-width: 640px; }
+
+.person-roles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); align-items: start; gap: 40px; max-width: 1280px; }
+.person-roles__main { display: grid; gap: 12px; min-width: 0; }
+.person-roles__features { columns: 2 280px; column-gap: 32px; }
+.person-roles__feature { margin: 0 0 20px; break-inside: avoid; }
+.person-roles__head { margin: 0 0 2px; padding: 0 8px; color: var(--ink-3); font-size: var(--text-pill); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.person-roles__feature .role-tick { border-bottom: 1px solid var(--line); border-radius: 0; }
+.person-roles__one { padding-top: 18px; border-top: 1px solid var(--line); }
+.person-roles__things { display: grid; margin: 0; padding: 0; list-style: none; }
+.person-roles__things li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; min-height: 44px; padding: 6px 8px; border-bottom: 1px solid var(--line); }
+.person-roles__why { position: sticky; top: 24px; padding: 20px 22px; border-radius: var(--radius); background: var(--sand); }
+.person-roles__why-title { margin: 0 0 10px; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.01em; }
+.person-roles__given { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--sand-strong); color: var(--ink-2); font-size: var(--text-caption); }
+@media (max-width: 1328px) {
+    .person-roles { grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 28px; }
+    .person-roles__features { columns: 1; }
+}
+@media (max-width: 680px) {
+    .person-roles { grid-template-columns: minmax(0, 1fr); }
+    .person-roles__why { position: static; }
+}

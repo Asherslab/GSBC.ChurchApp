@@ -306,7 +306,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Access.Admin` | The Roles and Who-holds-what pages | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Contracts` | The `Configuration` service, its messages and the placements feed | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Api` | Placements and their audit (schema `config`): validates against descriptors, checks each area's permission, writes the feed, rolls back | No |
-| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store (`LocalSurfaceLayout`), the drafts workbench (`DraftsWorkspace`), the Hub canvas and its settings (`HubCanvas`, `TileSettings`), and the generic setting inputs | Yes |
+| `GSBC.ChurchApp.Features.Configuration.Client` | The gRPC proxies, `ISurfaceLayout` over the phone's store (`LocalSurfaceLayout`), App styling (`StylingWorkspace`), the phone canvas and its settings (`StylingPhone`, `TileSettings`), and the generic setting inputs | Yes |
 | `GSBC.ChurchApp.Features.Configuration.App` | The phone's Previews page (More → Previews) and the *coming soon* page | Yes |
 | `GSBC.ChurchApp.Features.Configuration.Admin` | The admin panel's Drafts workbench and its pop-out phone preview, and the drafts waiting for Home's week | Yes |
 | `GSBC.ChurchApp.Features.Media.Contracts` | The `Media` service, its messages, the accepted file types and the `media.*` permission nodes | Yes |
@@ -403,8 +403,8 @@ icon, the permission that shows it, a one-line `Summary` for Home's *Your areas*
 what the person's permissions allow.
 
 Areas are cut by the job staff are doing (owner, 2026-11-09): **Sundays & sermons** (Sermons, Weekly digest),
-**Calendar & news** (Calendar, Announcements), **The app** (Drafts, Media, Places in the app, Insights, App health, App
-review), **People** (People, Roles, Who can do what), and **You** (Account) at the foot. *Church life* (Ministries, Life
+**Calendar & news** (Calendar, Announcements), **The app** (App styling, Media, Places in the app, Insights, App health, App
+review), **People** (People, where roles are given too), and **You** (Account) at the foot. *Church life* (Ministries, Life
 Groups, prayer) joins `NavAreas` with its first page. A new area is a new `NavAreas` entry with its place in the order.
 
 How it behaves (owner's pick, 2026-11-09, "your pages pinned, then areas folded"):

@@ -22,9 +22,10 @@ internal sealed class AssignmentPolicy(IScopeHierarchy hierarchy, PermissionCata
             return NotAnAssigner(role, roles);
 
         List<string> patterns = RoleGrants.PatternsOf(roles[role.Id], roles);
+        List<string> everywhere = RoleGrants.EverywhereOf(roles[role.Id], roles);
         List<Permission> notHeld = [];
         foreach (string? scope in await RoleGrants.ScopesAsync(role, kind, objectId, hierarchy, cancellationToken))
-            notHeld.AddRange(RoleGrants.NotHeld(actor.Grants, patterns, kind, scope, catalog));
+            notHeld.AddRange(RoleGrants.NotHeld(actor.Grants, patterns, kind, scope, catalog, everywhere));
 
         return notHeld.Count == 0
             ? null

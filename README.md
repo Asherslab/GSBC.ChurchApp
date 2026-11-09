@@ -59,7 +59,7 @@ there to queue a send that succeeds and one that fails, for the outbox. Store bu
 
 Accounts: sign up or sign in at https://dev-app.baptist.com.au/account (the admin panel) with a real
 passkey. To make yourself the first owner (once per environment): `tools/access/make-owner.sh <your email>`;
-the admin panel then shows People, Roles and Who can do what. In development, emails such as confirmation codes and recovery links go to the API's log in
+the admin panel then shows People, where each person's page gives them roles. In development, emails such as confirmation codes and recovery links go to the API's log in
 the Aspire dashboard instead of being sent.
 
 How it reaches the Mac: app calls go through the native plugin (Swift, `URLSession`, gRPC-Web) to

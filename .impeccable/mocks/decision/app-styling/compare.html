@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>Side by side</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=DM+Serif+Text&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--sand:#f4efe7;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7;--g:#4a7355;--gd:#2f5139;--cream:#f3eee2;--red:#9b2c2c;--redp:#f6e3d8}
+*{box-sizing:border-box}html,body{margin:0;width:1440px;height:900px;overflow:hidden}
+body{font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink);background:#fff;display:grid;grid-template-columns:248px 270px minmax(0,1fr) 340px}
+.nav{background:var(--navy);color:rgb(255 255 255/.76);padding:24px 14px;font-size:14px;font-weight:600}
+.nav b{display:block;color:#fff;font-size:17px;margin:0 10px 26px}.nav i{display:block;font-style:normal;color:var(--beige);font-size:11px;letter-spacing:.06em;margin:18px 10px 6px}
+.nav span{display:block;padding:9px 10px;border-radius:9px}.nav .on{background:rgb(255 255 255/.12);color:#fff}
+.col{background:var(--sand);padding:24px 16px;border-right:1px solid var(--line)}
+.col h2{font-size:22px;margin:0 6px 4px;letter-spacing:-.02em}.col p{font-size:12.5px;color:var(--ink2);margin:0 6px 18px}
+.lh{display:flex;justify-content:space-between;font-size:12.5px;font-weight:700;color:var(--ink2);margin:18px 6px 6px}.lh a{color:var(--aqua)}
+.it{padding:10px 12px;border-radius:10px;font-size:13px}.it b{display:block;font-size:14px;font-weight:600}.it span{color:var(--ink2)}
+.it.on{background:#fff;box-shadow:0 1px 2px rgb(24 35 58/.08)}
+.pill{display:inline-block;margin-top:4px;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:700;background:rgb(231 174 116/.45);color:var(--oink)}
+.closed{margin:18px 6px 0;padding-top:12px;border-top:1px solid var(--line);font-size:13px;font-weight:600;color:var(--ink2)}
+.work{padding:24px 28px;display:flex;flex-direction:column}
+.hd{display:flex;justify-content:space-between;align-items:flex-start}
+h1{margin:0;font-size:24px;letter-spacing:-.02em}.saved{font-size:13px;color:var(--ink2);font-weight:600}
+.acts{display:flex;gap:8px}.btn{display:inline-flex;align-items:center;height:38px;padding:0 16px;border-radius:99px;font-weight:600;font-size:13.5px;background:var(--sand)}.btn.p{background:var(--navy);color:#fff}
+.tabs{display:flex;gap:24px;margin-top:16px;border-bottom:1px solid var(--line);font-size:14px;font-weight:600;color:var(--ink3)}.tabs span{padding:10px 0}.tabs .on{color:var(--ink);box-shadow:inset 0 -3px 0 var(--orange)}
+.cnt{display:inline-block;line-height:18px;margin-left:6px;padding:0 6px;border-radius:99px;background:rgb(231 174 116/.45);color:var(--oink);font-size:11px}
+.pair{display:flex;justify-content:center;gap:34px;margin-top:18px}
+.lab{text-align:center;font-size:13px;font-weight:700;color:var(--ink2);margin-bottom:8px}.lab.d{color:var(--oink)}
+.phone{width:262px;height:540px;border-radius:40px;background:#111;padding:9px;box-shadow:0 14px 34px rgb(24 35 58/.16)}
+.scr{height:100%;border-radius:32px;overflow:hidden;background:#fff;position:relative}
+.mast{padding:40px 16px 14px;color:#fff}.mast b{font:400 24px/1 "DM Serif Text",serif}.mast small{display:block;font-size:10px;margin-top:5px;opacity:.85}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:10px}
+.t{border-radius:11px;padding:9px;font-size:10px;font-weight:700;min-height:74px;position:relative}
+.t.w{grid-column:span 2;min-height:60px}
+.mark{outline:2px solid var(--orange);outline-offset:2px}.cap{position:absolute;top:-8px;right:8px;background:var(--orange);color:#2b1a08;font-size:8.5px;padding:1px 6px;border-radius:99px}
+.bar{position:absolute;bottom:0;left:0;right:0;height:50px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);font-size:8.5px;font-weight:600;color:var(--ink3);text-align:center;padding-top:9px;background:#fff}
+.side{padding:24px 24px 0 0;min-width:0}
+.panel{border-radius:14px;box-shadow:0 1px 3px rgb(24 35 58/.1),0 8px 24px rgb(24 35 58/.06);padding:20px}
+.panel h3{margin:0;font-size:20px}.panel .sub{font-size:13px;color:var(--ink2);margin-bottom:12px}
+.f{margin-top:12px}.f label{display:block;font-size:13px;font-weight:600;color:var(--ink2);margin-bottom:5px}.f div{height:42px;border-radius:11px;background:var(--sand);padding:10px 12px;font-size:14px}
+.sw{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:6px}.sw i{height:38px;border-radius:10px;display:block}
+.sw .c{outline:2px solid var(--orange);outline-offset:2px}
+.diff{margin-top:16px;padding:12px;border-radius:12px;background:var(--sand);font-size:12.5px;color:var(--ink2)}.diff b{color:var(--ink)}
+</style></head><body>
+<nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><span>App review</span><i>CONTENT</i><span>Media</span><span>Announcements</span><span>Sermons</span><span>Calendar</span><i>PEOPLE</i><span>People</span><span>Roles</span></nav>
+<aside class="col">
+ <h2>App styling</h2><p>Everyone sees the 2026 theme, Almighty God.</p>
+ <div class="it"><b>What everyone sees</b><span>Published · Sun 8 Nov</span></div>
+ <div class="lh"><span>Your changes</span><a>+ New</a></div>
+ <div class="it on"><b>Christmas 2026</b><span>You · Colours, Home screen</span><br><span class="pill">publishes Mon 1 Dec</span></div>
+ <div class="it"><b>Fix the Bible tile</b><span>Jo Nguyen · asked to publish</span></div>
+ <div class="lh"><span>Coming up</span></div>
+ <div class="it"><b>Conference 2027</b><span>Sam Taylor</span><br><span class="pill">on Thu 12 to Sun 15 Mar</span></div>
+ <div class="it"><b>2027 theme</b><span>You · Colours</span><br><span class="pill">publishes Fri 1 Jan</span></div>
+ <div class="closed">▸ Published recently (8)</div>
+</aside>
+<section class="work">
+ <div class="hd"><div><h1>Christmas 2026</h1><div class="saved">✓ Saved · shared with Pastor Mark</div></div><div class="acts"><span class="btn">Share</span><span class="btn">More</span><span class="btn p">Publish now</span></div></div>
+ <div class="tabs"><span class="on">Colours<span class="cnt">1</span></span><span>Home screen<span class="cnt">3</span></span><span>Tab bar</span></div>
+ <div class="pair">
+  <div><div class="lab">What everyone sees</div><div class="phone"><div class="scr">
+   <div class="mast" style="background:var(--g)"><b>Good Shepherd</b><small>Monday 1 December</small></div>
+   <div class="grid"><div class="t w" style="background:var(--gd);color:#fff">This Sunday · 10:30am and 6pm</div><div class="t" style="background:var(--cream);color:var(--gd)">Sunday services</div><div class="t" style="background:#dfe8dc;color:var(--gd)">Pray with us</div><div class="t" style="background:#dfe8dc;color:var(--gd)">Give</div><div class="t" style="background:var(--cream);color:var(--gd)">Life Groups</div></div>
+   <div class="bar"><span>Home</span><span>Sermons</span><span>Calendar</span><span>More</span></div></div></div></div>
+  <div><div class="lab d">With Christmas 2026</div><div class="phone"><div class="scr">
+   <div class="mast mark" style="background:var(--red);outline-offset:-3px"><b>Good Shepherd</b><small>Monday 1 December</small></div>
+   <div class="grid"><div class="t w mark" style="background:#6b1e1e;color:#fff"><span class="cap">Added</span>Christmas services · 24 and 25 Dec</div><div class="t" style="background:var(--redp);color:#6b1e1e">Sunday services</div><div class="t mark" style="background:#f2dccf;color:#6b1e1e"><span class="cap">Changed</span>Carols in the park</div><div class="t" style="background:#f2dccf;color:#6b1e1e">Give</div><div class="t" style="background:var(--redp);color:#6b1e1e">Life Groups</div></div>
+   <div class="bar"><span>Home</span><span>Sermons</span><span>Calendar</span><span>More</span></div></div></div></div>
+ </div>
+</section>
+<aside class="side"><div class="panel">
+ <h3>The app's colours</h3><div class="sub">In this draft: Christmas red, from a theme you made</div>
+ <div class="f"><label>Colours</label><div class="sw"><i style="background:#2a3d5e"></i><i style="background:#4a7355"></i><i class="c" style="background:#9b2c2c"></i><i style="background:var(--sand);border:1px dashed var(--ink3)"></i></div></div>
+ <div class="f"><label>Masthead font</label><div>DM Serif Text</div></div>
+ <div class="diff"><b>Different from what everyone sees:</b> the masthead and every tile's colour. Marked on the right-hand phone.</div>
+</div></aside>
+</body></html>

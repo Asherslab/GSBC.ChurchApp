@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>App styling: states</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=DM+Serif+Text&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7;--g:#4a7355;--gd:#2f5139;--cream:#f3eee2;--r:#8e2a2a;--rp:#f6e3d8}
+*{box-sizing:border-box}body{margin:0;background:#d9d4cc;font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink)}
+.cap{width:1440px;margin:28px auto 8px;font-size:15px;font-weight:700;color:#3a3f4a}
+.f{width:1440px;height:900px;margin:0 auto 20px;overflow:hidden;background:#fff;display:grid;grid-template-columns:248px 1fr;position:relative}
+.nav{background:var(--navy);color:rgb(255 255 255/.76);padding:24px 14px;font-size:14px;font-weight:600}
+.nav b{display:block;color:#fff;font-size:17px;margin:0 10px 26px}.nav i{display:block;font-style:normal;color:var(--beige);font-size:11px;letter-spacing:.06em;margin:18px 10px 6px}
+.nav span{display:block;padding:9px 10px;border-radius:9px}.nav .on{background:rgb(255 255 255/.12);color:#fff}
+main{padding:30px 40px 0;position:relative}
+.top{display:flex;justify-content:space-between;align-items:flex-start;height:78px}
+h1{margin:0;font-size:27px;letter-spacing:-.02em}.lead{font-size:15px;color:var(--ink2);margin-top:6px}.lead b{color:var(--ink);font-weight:600}
+.draft{display:flex;align-items:center;gap:10px}.draft h1{display:flex;align-items:center;gap:8px}.draft h1 small{font-size:14px;color:var(--ink3)}
+.saved{font-size:13px;font-weight:600;color:var(--ink2);margin-top:6px}.saved b{color:var(--aqua)}
+.acts{display:flex;gap:8px;align-items:center}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:40px;padding:0 18px;border-radius:99px;font-weight:600;font-size:14px;background:var(--navy);color:#fff;white-space:nowrap}
+.btn.q{background:var(--sand);color:var(--ink)}.btn.i{width:40px;padding:0}
+.chip{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border-radius:99px;background:var(--sand);font-size:13.5px;font-weight:600}
+.n{display:inline-block;min-width:20px;height:20px;line-height:20px;text-align:center;border-radius:99px;background:var(--orange);color:#2b1a08;font-size:11px}
+.desk{display:grid;grid-template-columns:1fr 400px;gap:48px;margin-top:22px}
+.left{display:flex;flex-direction:column;align-items:center;gap:16px}
+.phone{width:316px;height:650px;border-radius:46px;background:#111;padding:10px;box-shadow:0 18px 40px rgb(24 35 58/.16)}
+.scr{height:100%;border-radius:37px;overflow:hidden;background:#fff;position:relative}
+.mast{color:#fff;padding:46px 18px 16px}.mast b{font:400 28px/1 "DM Serif Text",serif}.mast small{display:block;font-size:12px;margin-top:6px;opacity:.85}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px}
+.t{border-radius:12px;padding:11px;font-size:12px;font-weight:700;min-height:92px;position:relative}.t.w{grid-column:span 2;min-height:72px}
+.ring{outline:2px solid var(--orange);outline-offset:2px}.tag{position:absolute;top:-9px;right:10px;background:var(--orange);color:#2b1a08;font-size:10px;padding:1px 7px;border-radius:99px}
+.grip{position:absolute;right:-8px;bottom:-8px;width:16px;height:16px;border-radius:5px;background:var(--orange);border:3px solid #fff}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:58px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);font-size:11px;font-weight:600;color:var(--ink3);text-align:center;padding-top:11px;background:#fff}
+.quiet{display:flex;gap:6px;font-size:13px;font-weight:600;color:var(--ink2)}.quiet span{padding:7px 12px;border-radius:99px;background:var(--sand)}
+.back{font-size:14px;font-weight:600;color:var(--aqua);margin:4px 0 10px}
+.ph h2{margin:0;font-size:20px;letter-spacing:-.015em}.ph p{margin:2px 0 14px;font-size:13px;color:var(--ink2)}
+fieldset{border:0;border-top:1px solid var(--line);margin:0;padding:12px 0}legend{font-size:14px;font-weight:700;padding:0 0 8px}
+.step{display:flex;align-items:center;gap:10px;font-size:14px}.step i{width:34px;height:34px;border-radius:50%;background:var(--sand);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-weight:700}
+.sws{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.sw{height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px}.sw.on{outline:2px solid var(--orange);outline-offset:2px}
+.fld{height:42px;border-radius:11px;background:var(--sand);padding:10px 12px;font-size:14px;margin-bottom:8px}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.th{border-radius:14px;padding:14px;background:var(--sand);font-size:13px}.th.on{background:#fff;box-shadow:inset 0 0 0 2px var(--orange)}
+.dots{display:flex;gap:4px;margin-bottom:8px}.dots i{width:18px;height:18px;border-radius:50%}
+.th b{display:block;font-size:14px}.th small{color:var(--ink2)}.th em{font-style:normal;font-size:11.5px;font-weight:700;color:var(--oink)}
+.note{margin-top:14px;padding:14px;border-radius:12px;background:var(--sand);font-size:13px;color:var(--ink2)}
+.pop{position:absolute;right:40px;top:80px;width:460px;border-radius:16px;background:#fff;box-shadow:0 2px 6px rgb(24 35 58/.1),0 18px 44px rgb(24 35 58/.18);padding:18px 20px}
+.pop h3{font-size:12.5px;font-weight:700;color:var(--ink2);margin:14px 0 4px}.pop h3:first-child{margin-top:0}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line);font-size:13px}.row b{display:block;font-size:14.5px;font-weight:600}.row span{color:var(--ink2)}
+.pill{margin-left:auto;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:700;background:rgb(231 174 116/.45);color:var(--oink);white-space:nowrap}.pill.a{background:rgb(0 119 109/.14);color:var(--aqua)}
+.fold{padding:12px 0 2px;font-size:13.5px;font-weight:600;color:var(--ink2)}
+.dim{position:absolute;inset:0;background:rgb(24 35 58/.04)}
+</style></head><body>
+<div class="cap">1 · Changing Home, in your draft. The sentence makes way for the draft's name and actions; everything else stays where it was.</div>
+<div class="f"><nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><i>CONTENT</i><span>Media</span><span>Sermons</span></nav>
+<main><div class="top"><div><div class="draft"><h1>Christmas 2026 <small>▾</small></h1></div><div class="saved"><b>✓ Saved</b> · only you see it · <span style="color:var(--aqua)">Back to what everyone sees</span></div></div>
+<div class="acts"><span class="btn q i">↶</span><span class="btn q i">↷</span><span class="btn q">Share</span><span class="btn q">More</span><span class="btn">Publish now</span></div></div>
+<div class="desk"><div class="left"><div class="phone"><div class="scr"><div class="mast" style="background:var(--g)"><b>Good Shepherd</b><small>Monday 9 November</small></div>
+<div class="grid"><div class="t w ring" style="background:var(--gd);color:#fff"><span class="tag">2 wide, 1 tall</span>Christmas services<br><span style="font-weight:400">24 and 25 December</span><span class="grip"></span></div><div class="t" style="background:var(--cream);color:var(--gd)">Sunday services</div><div class="t" style="background:#dfe8dc;color:var(--gd)"><span class="tag">Changed</span>Pray with us</div><div class="t" style="background:#dfe8dc;color:var(--gd)">Give</div><div class="t" style="background:var(--cream);color:var(--gd)">Life Groups</div></div>
+<div class="tabbar"><span style="color:var(--g)">Home</span><span>Sermons</span><span>Calendar</span><span>More</span></div></div></div>
+<div class="quiet"><span>As a visitor ▾</span><span>Light ▾</span><span>iPhone 15 Pro ▾</span><span>Mon 1 Dec ▾</span></div></div>
+<div><div class="back">‹ Home screen</div><div class="ph"><h2>Christmas services</h2><p>A tile added in this draft. Drag it on the phone to move it, or its corner to resize it.</p></div>
+<fieldset><legend>Size</legend><div class="step"><i>−</i> 2 wide <i>+</i> &nbsp; <i>−</i> 1 tall <i>+</i></div></fieldset>
+<fieldset><legend>Colour</legend><div class="sws"><span class="sw on" style="background:var(--gd);color:#fff">Aa</span><span class="sw" style="background:var(--cream);color:var(--gd)">Aa</span><span class="sw" style="background:#dfe8dc;color:var(--gd)">Aa</span><span class="sw" style="background:var(--orange);color:#2b1a08">Aa</span></div></fieldset>
+<fieldset><legend>Words</legend><div class="fld">Christmas services</div><div class="fld">24 and 25 December</div></fieldset>
+<fieldset><legend>Who sees it and when</legend><div class="fld">Everyone · from Mon 1 Dec to Fri 26 Dec</div></fieldset></div></div></main></div>
+
+<div class="cap">2 · Colours. Plain words: the theme the app uses all year, and themes made here. Events change colours in a draft that's on for their dates.</div>
+<div class="f"><nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><i>CONTENT</i><span>Media</span><span>Sermons</span></nav>
+<main><div class="top"><div><h1>2027 theme <small style="font-size:14px;color:var(--ink3)">▾</small></h1><div class="saved"><b>✓ Saved</b> · shared with Pastor Mark · publishes Fri 1 Jan 2027, 12am</div></div>
+<div class="acts"><span class="btn q i">↶</span><span class="btn q i">↷</span><span class="btn q">Share</span><span class="btn q">More</span><span class="btn">Publish now</span></div></div>
+<div class="desk"><div class="left"><div class="phone"><div class="scr"><div class="mast" style="background:#7a4b2a"><b>Good Shepherd</b><small>Friday 1 January</small></div>
+<div class="grid"><div class="t w" style="background:#5b371f;color:#fff">This Sunday · 10:30am and 6pm</div><div class="t" style="background:#f6efe4;color:#5b371f">Sunday services</div><div class="t" style="background:#ecdcc6;color:#5b371f">Pray with us</div><div class="t" style="background:#ecdcc6;color:#5b371f">Give</div><div class="t" style="background:#f6efe4;color:#5b371f">Life Groups</div></div>
+<div class="tabbar"><span style="color:#7a4b2a">Home</span><span>Sermons</span><span>Calendar</span><span>More</span></div></div></div>
+<div class="quiet"><span>As a visitor ▾</span><span>Light ▾</span><span>iPhone 15 Pro ▾</span><span>Fri 1 Jan ▾</span></div></div>
+<div><div class="back">‹ What this draft changes</div><div class="ph"><h2>The app's colours</h2><p>The theme the app uses all year, for everyone.</p></div>
+<div class="themes">
+<div class="th"><div class="dots"><i style="background:#2a3d5e"></i><i style="background:#009c8f"></i><i style="background:#e7ae74"></i></div><b>The church's brand</b><small>Navy and aqua</small></div>
+<div class="th"><div class="dots"><i style="background:#4a7355"></i><i style="background:#84a87d"></i><i style="background:#f3eee2;box-shadow:inset 0 0 0 1px var(--line)"></i></div><b>2026 theme</b><small>Almighty God · everyone sees it now</small></div>
+<div class="th on"><div class="dots"><i style="background:#7a4b2a"></i><i style="background:#c98b4e"></i><i style="background:#f6efe4;box-shadow:inset 0 0 0 1px var(--line)"></i></div><b>2027 theme</b><small>Made here · <span style="color:var(--aqua);font-weight:600">Edit</span></small><br><em>Chosen in this draft</em></div>
+<div class="th" style="background:#fff;box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;font-weight:600;color:var(--aqua)">+ Make a theme</div></div>
+<div class="note">For a few days, like the conference, choose colours in a draft and turn it on for those dates; afterwards everyone is back to the theme above.</div></div></div></main></div>
+
+<div class="cap">3 · Your drafts. One chip at the top right opens everything in progress; what was published lately stays folded until you open it.</div>
+<div class="f"><nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><i>CONTENT</i><span>Media</span><span>Sermons</span></nav>
+<main><div class="top"><div><h1>App styling</h1><div class="lead">Everyone sees the <b>2026 theme, Almighty God</b>, nine tiles on Home and four tabs.</div></div><span class="chip">Your drafts <span class="n">3</span> ▴</span></div>
+<div class="dim"></div>
+<div class="pop">
+<h3>ON FOR EVERYONE, OR ON A DATE</h3>
+<div class="row"><div><b>Conference 2027</b><span>Sam Taylor · Home screen, Tab bar</span></div><span class="pill a">on Thu 12 to Sun 15 Mar</span></div>
+<div class="row"><div><b>2027 theme</b><span>You · Colours</span></div><span class="pill">publishes Fri 1 Jan</span></div>
+<h3>WAITING TO PUBLISH</h3>
+<div class="row"><div><b>Fix the Bible tile</b><span>Jo Nguyen · Home screen</span></div><span class="pill">asked Sat 7 Nov</span></div>
+<h3>OPEN</h3>
+<div class="row"><div><b>Christmas 2026</b><span>You · Home screen · 3 changes</span></div></div>
+<div class="row" style="border:0"><span class="btn q" style="height:36px">+ New draft</span></div>
+<div class="fold">▸ Published recently (8)</div>
+</div></main></div>
+</body></html>

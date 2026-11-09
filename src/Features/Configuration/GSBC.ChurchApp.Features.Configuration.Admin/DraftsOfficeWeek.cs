@@ -23,8 +23,8 @@ internal sealed class DraftsOfficeWeek(DraftsClient drafts, DatedChanges dated, 
 
     private static IEnumerable<OfficeTask> TasksFor(Draft draft, bool seesEveryDraft)
     {
-        string href = $"drafts/{draft.Id}";
-        if (draft.Mine && draft.ToCheck > 0)
+        string href = $"app-styling/{draft.Id}";
+        if (draft is { Mine: true, ToCheck: > 0 })
             yield return new OfficeTask(draft.Name, "Changed for everyone since you edited it", href, "Check", draft.UpdatedAt);
         else if (draft.Status == DraftStatus.WaitingToPublish)
             yield return new OfficeTask(draft.Name, draft.Mine ? "You asked to publish it" : "Waiting to publish", href, "Open", draft.UpdatedAt);
@@ -32,7 +32,7 @@ internal sealed class DraftsOfficeWeek(DraftsClient drafts, DatedChanges dated, 
             yield return new OfficeTask(draft.Name, "Shared with you to look over", $"{href}/preview", "Preview", draft.UpdatedAt);
     }
 
-    private static OfficeSpan ToOffice(DatedSpan span) => new(span.Title, span.StartsAt, span.EndsAt, span.DraftId is null ? "drafts" : $"drafts/{span.DraftId}", span.Kind switch
+    private static OfficeSpan ToOffice(DatedSpan span) => new(span.Title, span.StartsAt, span.EndsAt, span.DraftId is null ? "app-styling" : $"app-styling/{span.DraftId}", span.Kind switch
     {
         DatedKind.Layer => OfficeSpanKind.Layer,
         DatedKind.Draft => OfficeSpanKind.Draft,

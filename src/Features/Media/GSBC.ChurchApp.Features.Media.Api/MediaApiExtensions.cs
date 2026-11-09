@@ -30,8 +30,17 @@ public static class MediaApiExtensions
         services.AddDestinationSource<MediaDestinationSource>();
         services.AddPermissions(MediaPermissions.All);
         services.AddFeed(new FeedDefinition(MediaFeeds.Library, FeedAudience.Holding(MediaPermissions.View)));
-        services.AddSystemRole(new SystemRole("media-editor", "Media editor", "Upload images and files, keep them in folders, and see the media library",
-            ScopeKind.Global, [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode, MediaPermissions.OrganiseNode]));
+        services.AddRoleKit(new RoleKit(RoleKits.Pictures, [MediaPermissions.ViewNode, MediaPermissions.UploadNode]));
+        services.AddSystemRole(new SystemRole("media-viewer", "Media Viewer", "See the media library: every uploaded picture and file",
+            ScopeKind.Global, [MediaPermissions.ViewNode], Feature: RoleFeatures.Media));
+        services.AddSystemRole(new SystemRole("media-editor", "Media Editor",
+            "See the media library, upload pictures and files, keep them in folders, and delete what nothing uses",
+            ScopeKind.Global, [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode, MediaPermissions.OrganiseNode],
+            Feature: RoleFeatures.Media));
+        services.AddSystemRole(new SystemRole("media-manager", "Media Manager", "Everything a Media Editor can, and upload licensed font files",
+            ScopeKind.Global,
+            [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode, MediaPermissions.OrganiseNode, MediaPermissions.UploadFontsNode],
+            Feature: RoleFeatures.Media));
         services.AddHttpClient<GoogleFonts>(client => client.DefaultRequestHeaders.UserAgent.ParseAdd(GoogleFonts.BrowserAgent));
         services.AddScoped<FontsService>();
         services.AddMediaSystemArea(FontsService.Area);

@@ -1,0 +1,80 @@
+<div class="colours-panel">
+    <div class="styling-panel__head">
+        <h2>The app's colours</h2>
+        <p>The theme the app uses all year, for everyone. Choose one, and the phone shows it straight away.</p>
+    </div>
+    <div class="theme-cards" role="radiogroup" aria-label="The app's theme">
+        @foreach (Card card in Cards)
+        {
+            bool chosen = card.Value == ChosenValue;
+            <div class="theme-card @(chosen ? "theme-card--on" : "")">
+                <button type="button" class="theme-card__pick" role="radio" aria-checked="@(chosen ? "true" : "false")" disabled="@(!MayChange)" @onclick="() => OnChoose.InvokeAsync(card.Value)">
+                    <ThemeSwatches Palette="@card.Palette" Made="card.Made" />
+                    <b>@card.Name</b>
+                    <small>@card.Note</small>
+                    @if (card.Value == EveryoneValue && !chosen)
+                    {
+                        <span class="theme-card__state">Everyone sees it now</span>
+                    }
+                    else if (chosen && Drafting && card.Value != EveryoneValue)
+                    {
+                        <span class="theme-card__state theme-card__state--changed">Chosen in this draft</span>
+                    }
+                </button>
+                @if (card.Entry is { } made && MayChange)
+                {
+                    <button type="button" class="link theme-card__edit" @onclick="() => OnEdit.InvokeAsync(made)">Change it</button>
+                }
+            </div>
+        }
+        @if (MayChange)
+        {
+            <button type="button" class="theme-card theme-card--new" @onclick="OnMake"><Icon Name="plus" Size="IconSize.Small" /> Make a theme</button>
+        }
+    </div>
+    @if (Theme is { } theme && (theme.StartsAt is not null || theme.EndsAt is not null))
+    {
+        <Notice>
+            <span>@DatesWords(theme) Outside those dates the app uses the church's brand.</span>
+            @if (MayChange)
+            {
+                <span class="ui-actions"><Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => OnDates.InvokeAsync(theme)">Change the dates</Button></span>
+            }
+        </Notice>
+    }
+    <p class="styling-panel__note">For a few days, like the conference, change the colours in a draft and turn it on for those dates. Afterwards everyone is back to the theme chosen here.</p>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
+    [Parameter] public string EveryoneValue { get; set; } = AppearanceSurfaces.Brand;
+    [Parameter] public bool Drafting { get; set; }
+    [Parameter] public bool MayChange { get; set; }
+    [Parameter] public EventCallback<string> OnChoose { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnEdit { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnDates { get; set; }
+    [Parameter] public EventCallback OnMake { get; set; }
+
+    private sealed record Card(string Value, string Palette, string Name, string Note, ThemeSpec? Made, ArrangedSurface? Entry);
+
+    private ArrangedSurface? Theme => Appearance.FirstOrDefault(entry => entry.Surface == AppearanceSurfaces.Theme.Surface);
+
+    private string ChosenValue => Theme?.Values.Get(AppearanceSurfaces.Theme.Palette) ?? AppearanceSurfaces.Brand;
+
+    private IEnumerable<Card> Cards =>
+    [
+        new(AppearanceSurfaces.Brand, AppearanceSurfaces.Brand, "The church's brand", "Navy and aqua", null, null),
+        new(AppearanceSurfaces.Year2026, AppearanceSurfaces.Year2026, "2026 theme", "Almighty God: greens", null, null),
+        .. Appearance.Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
+            .Select(entry => new Card(ThemeChoiceSetting.Custom(entry.Placement!.Id), AppearanceSurfaces.CustomPalette, entry.Values.Get(AppearanceSurfaces.CustomTheme.Name),
+                "Made here", AppearanceSurfaces.CustomTheme.SpecOf(entry.Values), entry)),
+    ];
+
+    private static string DatesWords(ArrangedSurface theme) => (theme.StartsAt, theme.EndsAt) switch
+    {
+        ({ } starts, { } ends) => $"This theme is chosen from {DraftWords.Day(starts)} until {DraftWords.Day(ends.AddTicks(-1))}.",
+        ({ } starts, null) => $"This theme is chosen from {DraftWords.Day(starts)}.",
+        (null, { } ends) => $"This theme is chosen until {DraftWords.Day(ends.AddTicks(-1))}.",
+        _ => "",
+    };
+}

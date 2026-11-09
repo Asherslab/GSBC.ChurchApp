@@ -387,8 +387,8 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
   can …* (an ability, from the catalogue), *One person*. The composer shows "About 410 phones" from
   the same resolver before sending.
 - **Permissions:** `notifications.announcements.write` (write, test, ask to send) and
-  `notifications.announcements.send` (send now, schedule, cancel a scheduled one, recall a sent one). A system role
-  *Announcer* holds both; App editor and Staff can include it.
+  `notifications.announcements.send` (send now, schedule, cancel a scheduled one, recall a sent one). *Announcements
+  Writer* holds the first and *Announcements Sender* both (2026-11-09; until then one *Announcer* role).
 - **Send to my phone** sends it to you alone, marked *Test*, so you see the lock screen and the
   inbox before anyone else does.
 - **Scheduling** in church time; a scheduled announcement can be changed or cancelled until it goes.

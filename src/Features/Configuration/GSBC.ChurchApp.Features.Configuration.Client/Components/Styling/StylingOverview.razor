@@ -1,0 +1,85 @@
+@inject DatedChanges Dated
+@inject TimeProvider Clock
+@inject SurfaceViews Views
+
+<section class="styling-overview" aria-labelledby="styling-everyone">
+    <h2 id="styling-everyone" class="styling-panel__label">What everyone sees</h2>
+    <ListGroup>
+        <ListRow Title="Colours" Subtitle="@Upper(ThemeName)" Chevron="true" OnClick="() => OnPart.InvokeAsync(AppearanceSurfaces.Area.Key)">
+            <Leading><ThemeSwatches Palette="@Chosen.Palette" Made="Chosen.Custom" /></Leading>
+        </ListRow>
+        <ListRow Title="Home screen" Subtitle="@TilesWords" Icon="home" Chevron="true" OnClick="() => OnPart.InvokeAsync(HubSurfaces.Area.Key)" />
+        <ListRow Title="Tab bar" Subtitle="@TabWords" Icon="smartphone" Chevron="true" OnClick="() => OnPart.InvokeAsync(TabBarSurfaces.Area.Key)" />
+    </ListGroup>
+
+    <h2 class="styling-panel__label">Coming up</h2>
+    <LiveData TValue="IReadOnlyList<ComingUp>" Load="LoadAsync" Feeds="[ConfigurationFeeds.Placements, ConfigurationFeeds.Drafts]">
+        @if (context.Value.Count == 0)
+        {
+            <p class="styling-overview__quiet">Nothing is set to change in the next six months.</p>
+        }
+        else
+        {
+            <p class="styling-overview__quiet">Click one to see the app on that day.</p>
+            <ol class="coming-up">
+                @foreach (ComingUp item in context.Value.Take(_all ? int.MaxValue : Shown))
+                {
+                    <li>
+                        <button type="button" class="coming-up__item" @onclick="() => OnComingUp.InvokeAsync(item)">
+                            <span class="coming-up__day">@DraftWords.Day(item.At)</span>
+                            <span class="coming-up__words">@item.Words</span>
+                        </button>
+                    </li>
+                }
+            </ol>
+            @if (context.Value.Count > Shown && !_all)
+            {
+                <button type="button" class="link styling-overview__more" @onclick="() => _all = true">Show all @context.Value.Count</button>
+            }
+        }
+    </LiveData>
+    <p class="styling-overview__quiet">Click a part of the phone, or one of these, to change it.</p>
+</section>
+
+@code {
+    private const int Shown = 5;
+    private static readonly TimeSpan Ahead = TimeSpan.FromDays(183);
+
+    private bool _all;
+
+    [Parameter, EditorRequired] public required DraftList List { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Tabs { get; set; }
+    [Parameter] public EventCallback<string> OnPart { get; set; }
+    [Parameter] public EventCallback<ComingUp> OnComingUp { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private AppearanceSurfaces.ChosenTheme Chosen => AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now)));
+
+    private string ThemeName => ThemeNames.Chosen(Appearance, Viewer.Anonymous, Now);
+
+    private string TilesWords
+    {
+        get
+        {
+            int count = HubTiles.TilesIn(Hub, Views).Count(entry => entry.IsShownTo(Viewer.Anonymous, Now));
+            int columns = HubSurfaces.Grid.ColumnsIn(Hub);
+            return $"{(count == 1 ? "1 tile" : $"{count} tiles")} in {columns} columns";
+        }
+    }
+
+    private string TabWords
+    {
+        get
+        {
+            IEnumerable<string> words = TabBar.For(Tabs.Where(entry => entry.IsShownTo(Viewer.Anonymous, Now))).Select(tab => tab.Word);
+            return $"{string.Join(", ", words)} and More";
+        }
+    }
+
+    private static string Upper(string words) => words.Length == 0 ? words : char.ToUpperInvariant(words[0]) + words[1..];
+
+    private Task<IReadOnlyList<ComingUp>> LoadAsync() => Dated.ComingUpAsync(List, Now, Now + Ahead);
+}

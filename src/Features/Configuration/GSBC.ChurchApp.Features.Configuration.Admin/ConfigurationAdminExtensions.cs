@@ -15,10 +15,10 @@ public static class ConfigurationAdminExtensions
     {
         modules.Add(new ClientModule("Configuration", typeof(ConfigurationAdminExtensions).Assembly,
             [
-                new NavEntry("Drafts", "drafts", "pencil", HubSurfaces.Edit, Area: NavAreas.TheApp, Summary: "Change the app's home screen, colours and fonts, then publish"),
+                new NavEntry("App styling", "app-styling", "pencil", HubSurfaces.Edit, Area: NavAreas.TheApp, Summary: "Change the app's home screen, colours and fonts, then publish"),
             ]));
         return services.AddConfigurationClient().AddSingleton<IOfficeWeekSource, DraftsOfficeWeek>().AddSingleton<IScopeNamer, DraftScopeNames>()
             .AddPlacePreview<HomePlacePreview>(place => place.Path == ShellDestinations.Home.Path)
-            .AddPlaceAction(new PlaceAction("Change it in a draft", "pencil", place => place.Path == ShellDestinations.Home.Path ? "drafts" : null, HubSurfaces.Edit, Leads: true));
+            .AddPlaceAction(new PlaceAction("Change it in a draft", "pencil", place => place.Path == ShellDestinations.Home.Path ? $"app-styling?area={HubSurfaces.Area.Key}" : null, HubSurfaces.Edit, Leads: true));
     }
 }

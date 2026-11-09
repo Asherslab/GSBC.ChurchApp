@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>The year ahead</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=DM+Serif+Text&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--sand:#f4efe7;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7;--g:#4a7355;--gd:#2f5139;--cream:#f3eee2;--n27:#7a4b2a}
+*{box-sizing:border-box}html,body{margin:0;width:1440px;height:900px;overflow:hidden}
+body{font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink);background:#fff;display:grid;grid-template-columns:248px 1fr}
+.nav{background:var(--navy);color:rgb(255 255 255/.76);padding:24px 14px;font-size:14px;font-weight:600}
+.nav b{display:block;color:#fff;font-size:17px;margin:0 10px 26px}.nav i{display:block;font-style:normal;color:var(--beige);font-size:11px;letter-spacing:.06em;margin:18px 10px 6px}
+.nav span{display:block;padding:9px 10px;border-radius:9px}.nav .on{background:rgb(255 255 255/.12);color:#fff}
+main{display:grid;grid-template-rows:auto auto 1fr}
+.band{display:flex;justify-content:space-between;align-items:flex-end;padding:26px 40px 0}
+h1{margin:0;font-size:27px;letter-spacing:-.02em}.lead{font-size:14px;color:var(--ink2);margin-top:4px}
+.btn{display:inline-flex;align-items:center;height:40px;padding:0 18px;border-radius:99px;font-weight:600;font-size:14px;background:var(--sand)}.btn.p{background:var(--navy);color:#fff}
+.rail{margin:18px 40px 0;padding:14px 18px 16px;border-radius:14px;background:var(--sand);position:relative}
+.months{display:grid;grid-template-columns:repeat(12,1fr);font-size:11.5px;font-weight:600;color:var(--ink3);letter-spacing:.02em}
+.months span{border-left:1px solid var(--line);padding-left:6px}
+.lane{position:relative;height:30px;margin-top:8px}
+.seg{position:absolute;top:0;height:28px;border-radius:9px;padding:5px 8px;font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden}
+.ev{background:rgb(0 119 109/.16);color:var(--aqua)}.dr{background:rgb(231 174 116/.4);color:var(--oink)}
+.line{position:relative;height:56px;margin-top:22px}
+.ln{position:absolute;top:12px;height:10px;border-radius:5px}
+.lnl{position:absolute;top:-20px;font-size:12px;font-weight:700}
+.stop{position:absolute;top:7px;width:20px;height:20px;border-radius:50%;background:#fff;border:4px solid var(--n27)}
+.today{position:absolute;top:6px;bottom:-4px;width:2px;background:var(--navy)}
+.today b{position:absolute;bottom:-8px;left:6px;font-size:11px;color:#fff;background:var(--navy);padding:2px 8px;border-radius:99px;white-space:nowrap}
+.handle{position:absolute;top:-6px;bottom:0;width:2px;background:var(--orange)}
+.handle b{position:absolute;bottom:-8px;left:-56px;width:112px;text-align:center;font-size:11px;font-weight:700;color:#2b1a08;background:var(--orange);padding:2px 0;border-radius:99px}
+.shelf{position:absolute;right:18px;top:14px;font-size:12px;color:var(--ink2);text-align:right}
+.body{display:grid;grid-template-columns:300px 1fr 360px;padding:18px 40px 0;gap:0}
+.inf h3{font-size:13px;font-weight:700;color:var(--ink2);margin:0 0 6px}
+.row{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.ic{width:34px;height:34px;border-radius:10px;background:var(--sand);flex:none}.ic.a{background:rgb(0 119 109/.16)}
+.row b{display:block;font-size:14.5px;font-weight:600}.row span{font-size:12.5px;color:var(--ink2)}
+.past{margin-top:14px;font-size:13px;font-weight:600;color:var(--ink2)}
+.stage{display:flex;justify-content:center}
+.phone{width:280px;height:560px;border-radius:42px;background:#111;padding:9px;box-shadow:0 16px 36px rgb(24 35 58/.16)}
+.scr{height:100%;border-radius:34px;overflow:hidden;background:#fff;position:relative}
+.mast{background:#2a3d5e;color:#fff;padding:42px 16px 14px}.mast b{font:700 22px/1 Montserrat}.mast small{display:block;font-size:10.5px;margin-top:6px;color:var(--beige)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:10px}
+.t{border-radius:11px;padding:9px;font-size:10.5px;font-weight:700;min-height:78px;background:#e8eef6;color:var(--navy)}.t.w{grid-column:span 2;min-height:64px;background:var(--navy);color:#fff}
+.bar{position:absolute;bottom:0;left:0;right:0;height:52px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(5,1fr);font-size:8.5px;font-weight:600;color:var(--ink3);text-align:center;padding-top:9px;background:#fff}
+.panel{border-radius:14px;box-shadow:0 1px 3px rgb(24 35 58/.1),0 8px 24px rgb(24 35 58/.06);padding:20px;align-self:start}
+.panel h3{margin:0;font-size:20px}.panel .sub{font-size:13px;color:var(--ink2);margin:2px 0 12px}
+.fact{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:10px 0;font-size:13.5px}.fact span{color:var(--ink2)}
+.acts{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+</style></head><body>
+<nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><span>App review</span><i>CONTENT</i><span>Media</span><span>Announcements</span><span>Sermons</span><span>Calendar</span><i>PEOPLE</i><span>People</span><span>Roles</span></nav>
+<main>
+<div class="band"><div><h1>App styling</h1><div class="lead">How the app looks for everyone, today and in the months ahead. Drag along the year to see any day.</div></div><div style="display:flex;gap:8px"><span class="btn">Drafts not dated yet (2)</span><span class="btn p">+ Plan a change</span></div></div>
+<div class="rail">
+ <div class="months"><span>Nov</span><span>Dec</span><span>Jan 2027</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span></div>
+ <div class="lane"><span class="seg dr" style="left:9.5%;width:10%">Christmas services</span><span class="seg ev" style="left:34%;width:8%">Conference</span><span class="seg ev" style="left:43%;width:8%">Easter 2027</span></div>
+ <div class="line">
+  <span class="ln" style="left:0;width:16.7%;background:var(--g)"></span><span class="lnl" style="left:0;color:var(--gd)">2026 theme, Almighty God</span>
+  <span class="ln" style="left:16.7%;right:0;background:var(--n27)"></span><span class="lnl" style="left:18.5%;color:var(--n27)">2027 theme · publishes Fri 1 Jan</span>
+  <span class="stop" style="left:calc(16.7% - 10px)"></span>
+  <span class="today" style="left:2.5%"><b>Today</b></span>
+  <span class="handle" style="left:37%"><b>Sat 13 Mar</b></span>
+ </div>
+</div>
+<div class="body">
+ <div class="inf">
+  <h3>On Sat 13 March 2027</h3>
+  <div class="row"><span class="ic"></span><div><b>Colours</b><span>2027 theme, from 1 Jan</span></div></div>
+  <div class="row"><span class="ic a"></span><div><b>Home screen</b><span>Conference 2027 is on: 3 changes</span></div></div>
+  <div class="row"><span class="ic a"></span><div><b>Tab bar</b><span>Conference 2027: Site map added</span></div></div>
+  <div class="past">▸ Published before today (8)</div>
+ </div>
+ <div class="stage"><div class="phone"><div class="scr">
+  <div class="mast"><b>Conference 2027</b><small>Saturday 13 March · Day 2</small></div>
+  <div class="grid"><div class="t w">Now: Session 3 · Main hall</div><div class="t">Site map</div><div class="t">Today's sessions</div><div class="t">Speakers</div><div class="t">Give</div></div>
+  <div class="bar"><span>Home</span><span>Site map</span><span>Sermons</span><span>Calendar</span><span>More</span></div>
+ </div></div></div>
+ <div class="panel">
+  <h3>Conference 2027</h3><div class="sub">Sam Taylor's draft, on for everyone from Thu 12 to Sun 15 March</div>
+  <div class="fact"><span>Changes</span><b>Home screen, Tab bar</b></div>
+  <div class="fact"><span>Shared with</span><b>Conference team</b></div>
+  <div class="fact"><span>Afterwards</span><b>Back to everyday</b></div>
+  <div class="acts"><span class="btn p">Open the draft</span><span class="btn">Change dates</span><span class="btn">Make a copy</span></div>
+ </div>
+</div>
+</main>
+</body></html>

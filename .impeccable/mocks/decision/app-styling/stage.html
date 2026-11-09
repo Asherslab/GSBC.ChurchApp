@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en-AU"><head><meta charset="utf-8"><title>One stage</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&family=DM+Serif+Text&display=swap" rel="stylesheet">
+<style>
+:root{--navy:#2a3d5e;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7;--g:#4a7355;--gd:#2f5139;--cream:#f3eee2}
+*{box-sizing:border-box}html,body{margin:0;width:1440px;height:900px;overflow:hidden}
+body{font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink);background:#fff;display:grid;grid-template-columns:248px 1fr}
+.nav{background:var(--navy);color:rgb(255 255 255/.76);padding:24px 14px;font-size:14px;font-weight:600}
+.nav b{display:block;color:#fff;font-size:17px;margin:0 10px 26px}.nav i{display:block;font-style:normal;color:var(--beige);font-size:11px;letter-spacing:.06em;margin:18px 10px 6px}
+.nav span{display:block;padding:9px 10px;border-radius:9px}.nav .on{background:rgb(255 255 255/.12);color:#fff;box-shadow:inset 3px 0 0 var(--orange)}
+main{position:relative;display:grid;grid-template-rows:auto auto 1fr;height:900px}
+.band{display:flex;justify-content:space-between;align-items:flex-end;padding:26px 40px 0}
+h1{margin:0;font-size:27px;letter-spacing:-.02em}
+.now{margin-top:6px;font-size:14px;color:var(--ink2)}.now b{color:var(--ink);font-weight:600}.now .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--aqua);margin-right:6px}
+.showing{display:flex;align-items:center;gap:10px;font-size:13px;font-weight:600;color:var(--ink2)}
+.sel{display:flex;align-items:center;gap:10px;height:42px;padding:0 14px;border-radius:12px;background:var(--sand);color:var(--ink);font-size:14px;min-width:260px;justify-content:space-between}
+.tabs{display:flex;gap:26px;margin:18px 40px 0;border-bottom:1px solid var(--line);font-size:14.5px;font-weight:600;color:var(--ink3)}
+.tabs span{padding:12px 0}.tabs .on{color:var(--ink);box-shadow:inset 0 -3px 0 var(--orange)}
+.frame{display:grid;grid-template-columns:220px 1fr 360px;gap:0;min-height:0}
+.ctl{padding:22px 0 0 40px;font-size:13px}
+.ctl label{display:block;font-weight:600;color:var(--ink2);margin:0 0 6px}.ctl .f{height:38px;border-radius:10px;background:var(--sand);padding:9px 12px;margin-bottom:16px;font-weight:600;font-size:13.5px}
+.seg{display:grid;grid-template-columns:1fr 1fr;padding:3px;border-radius:11px;background:var(--sand);font-weight:600;text-align:center;margin-bottom:16px}.seg span{padding:7px}.seg .on{background:#fff;border-radius:8px;box-shadow:0 1px 3px rgb(0 0 0/.12)}
+.hint{color:var(--ink3);line-height:1.45;margin-top:18px;border-top:1px solid var(--line);padding-top:14px}
+.stage{display:flex;justify-content:center;padding-top:20px}
+.phone{width:300px;height:620px;border-radius:46px;background:#111;padding:10px;box-shadow:0 18px 40px rgb(24 35 58/.18)}
+.scr{height:100%;border-radius:37px;overflow:hidden;background:#fff;position:relative}
+.mast{background:var(--g);color:#fff;padding:44px 18px 16px}.mast b{font:400 27px/1 "DM Serif Text",serif}.mast small{display:block;color:var(--cream);font-size:11px;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:12px}
+.t{border-radius:12px;padding:10px;font-size:11px;font-weight:700;min-height:86px;background:var(--cream);color:var(--gd)}
+.t.w{grid-column:span 2;min-height:70px;background:var(--gd);color:#fff}.t.s{background:#dfe8dc}
+.t.pick{outline:2px solid var(--orange);outline-offset:2px;position:relative}
+.cap{position:absolute;top:-9px;right:10px;background:var(--orange);color:#2b1a08;font-size:9px;padding:2px 7px;border-radius:99px}
+.bar{position:absolute;bottom:0;left:0;right:0;height:56px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);font-size:9px;font-weight:600;color:var(--ink3);text-align:center;padding-top:10px;background:#fff}
+.bar span:first-child{color:var(--g)}
+.insp{padding:22px 40px 0 0}
+.panel{border-radius:14px;box-shadow:0 1px 3px rgb(24 35 58/.1),0 8px 24px rgb(24 35 58/.06);padding:22px}
+.panel h3{margin:0;font-size:20px;letter-spacing:-.015em}.panel .sub{font-size:13px;color:var(--ink2);margin:2px 0 16px}
+.fact{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:11px 0;font-size:13.5px}.fact span{color:var(--ink2)}.fact b{font-weight:600}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 20px;border-radius:99px;font-weight:600;font-size:14px;background:var(--navy);color:#fff;width:100%;margin-top:14px}
+.note{font-size:12.5px;color:var(--ink3);margin-top:10px;line-height:1.45}
+.tray{position:absolute;left:40px;right:40px;bottom:16px;height:52px;border-radius:14px;background:var(--sand);display:flex;align-items:center;gap:22px;padding:0 18px;font-size:13.5px}
+.tray b{font-weight:700}.tray .pill{padding:3px 9px;border-radius:99px;font-size:11.5px;font-weight:700;background:rgb(231 174 116/.45);color:var(--oink)}
+.tray .end{margin-left:auto;color:var(--aqua);font-weight:600}
+</style></head><body>
+<nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><span>App review</span><span>Insights</span><i>CONTENT</i><span>Media</span><span>Announcements</span><span>Sermons</span><span>Calendar</span><i>PEOPLE</i><span>People</span><span>Roles</span></nav>
+<main>
+<div class="band">
+ <div><h1>App styling</h1><div class="now"><span class="dot"></span><b>Now:</b> 2026 theme, Almighty God, for everyone &nbsp;·&nbsp; <b>Next:</b> Christmas services tile from Mon 1 Dec</div></div>
+ <div class="showing">The phone shows<div class="sel"><span>What everyone sees</span><span>▾</span></div></div>
+</div>
+<div class="tabs"><span>Colours</span><span class="on">Home screen</span><span>Tab bar</span></div>
+<div class="frame">
+ <div class="ctl">
+  <label>Preview as</label><div class="f">A visitor, not signed in ▾</div>
+  <label>Preview in</label><div class="seg"><span class="on">Light</span><span>Dark</span></div>
+  <label>Preview on</label><div class="f">iPhone 15 Pro ▾</div>
+  <label>Preview the app on</label><div class="f">Today, Mon 9 Nov</div>
+  <div class="hint">Click any part of the phone to see what it is and change it.</div>
+ </div>
+ <div class="stage"><div class="phone"><div class="scr">
+  <div class="mast"><b>Good Shepherd</b><small>Monday 9 November</small></div>
+  <div class="grid">
+   <div class="t w">This Sunday · 10:30am and 6pm<br><span style="font-weight:400">Job 33:4 · Almighty God</span></div>
+   <div class="t pick"><span class="cap">2 wide, 1 tall</span>Sunday services</div><div class="t s">How can we pray for you?</div>
+   <div class="t s">Give</div><div class="t">Life Groups</div>
+   <div class="t">Bible</div><div class="t s">What's next</div>
+  </div>
+  <div class="bar"><span>Home</span><span>Sermons</span><span>Calendar</span><span>More</span></div>
+ </div></div></div>
+ <div class="insp"><div class="panel">
+  <h3>Sunday services</h3><div class="sub">A tile on Home, as everyone sees it today</div>
+  <div class="fact"><span>Size</span><b>2 wide, 1 tall</b></div>
+  <div class="fact"><span>Colour</span><b>Pale theme</b></div>
+  <div class="fact"><span>Opens</span><b>Sunday</b></div>
+  <div class="fact"><span>Who sees it</span><b>Everyone</b></div>
+  <span class="btn">Change it</span>
+  <div class="note">Your change goes into a draft of your own, "Home screen, 9 Nov". Only you see it until you publish it.</div>
+ </div></div>
+</div>
+<div class="tray"><b>Drafts</b><span>Christmas 2026 · <span class="pill">publishes Mon 1 Dec</span></span><span>Conference 2027 · <span class="pill">on 12–14 Mar</span></span><span>Fix the Bible tile · Jo</span><span class="end">Open drafts and history ▴</span></div>
+</main>
+</body></html>

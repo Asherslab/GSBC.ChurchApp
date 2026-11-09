@@ -17,6 +17,9 @@ internal sealed class TestChurch
     public static readonly Permission ManageAccounts = new("accounts.manage", ScopeKind.Global, "Manage accounts", isSensitive: true);
     private static readonly Permission ViewAccounts = new("accounts.view", ScopeKind.Global, "View accounts", isSensitive: true);
     public static readonly Permission ReceiveNotices = new("ministries.notices.receive", ScopeKind.Ministry, "Get notices");
+    public static readonly Permission SeePictures = new("media.view", ScopeKind.Global, "See the media library");
+
+    public static readonly RoleKit[] Kits = [new(RoleKits.Pictures, ["media.view"])];
 
     public static readonly SystemRole[] SystemRoles =
     [
@@ -28,12 +31,13 @@ internal sealed class TestChurch
         new("admin", "Admin", "", ScopeKind.Ministry, ["ministries.*"], AssignableBy: ["staff"], AppliesToChildren: true),
         new("staff", "Staff", "", ScopeKind.Global, ["ministries.*"], AssignableBy: []),
         new("follower", "Follower", "", ScopeKind.Ministry, ["ministries.notices.receive"], PhoneHoldable: true),
+        new("publicity", "Publicity", "", ScopeKind.Ministry, ["ministries.news.post"], AssignableBy: ["leader", "staff"], Kits: [RoleKits.Pictures]),
     ];
 
     public static readonly SystemRolePatterns[] Additions = [new("member", ["ministries.notices.receive"])];
 
     public static PermissionCatalog NewCatalog() =>
-        new([new PermissionSet([.. AccessPermissions.All, PostNews, ReadNews, EditRoster, ManageAccounts, ViewAccounts, ReceiveNotices])]);
+        new([new PermissionSet([.. AccessPermissions.All, PostNews, ReadNews, EditRoster, ManageAccounts, ViewAccounts, ReceiveNotices, SeePictures])]);
 
     private readonly TestClock _clock = new();
     private readonly List<Assignment> _assignments = [];
@@ -53,7 +57,7 @@ internal sealed class TestChurch
                 ScopeKind = role.ScopeKind.Name,
                 AppliesToChildren = role.AppliesToChildren,
                 PhoneHoldable = role.PhoneHoldable,
-                Patterns = role.Patterns.Select(pattern => new RolePattern { RoleId = id, Pattern = pattern }).ToList(),
+                Patterns = AccessReconciler.PatternsFor(id, role, Kits.ToDictionary(kit => kit.Name)),
                 Assigners = (role.AssignableBy ?? []).Select(key => new RoleAssigner { RoleId = id, AssignerRoleId = ids[key] }).ToList(),
             };
         }

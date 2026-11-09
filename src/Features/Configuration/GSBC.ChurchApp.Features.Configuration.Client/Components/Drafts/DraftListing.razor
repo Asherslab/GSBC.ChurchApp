@@ -1,13 +1,16 @@
 @inject SurfaceCatalog Surfaces
+@inject TimeProvider Clock
 
 @if (Dated.Count > 0)
 {
-    <h2 class="draft-list__head">Publishing on a date</h2>
+    <h2 class="draft-list__head">On for everyone, or on a date</h2>
     <ListGroup>
         @foreach (Draft draft in Dated)
         {
-            <ListRow Title="@draft.Name" Subtitle="@DatedLine(draft)" Icon="@(draft.NotPublished is null ? "send" : "alert")"
-                     IconTone="@(draft.NotPublished is null ? RowTone.Accent : RowTone.Warm)" Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)" />
+            <ListRow Title="@draft.Name" Subtitle="@($"{Author(draft)} · {DraftWords.Touches(draft, Surfaces)}")" Icon="@(draft.NotPublished is null ? draft.LayerOn ? "calendar" : "send" : "alert")"
+                     IconTone="@(draft.NotPublished is null ? RowTone.Accent : RowTone.Warm)" Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)">
+                <Below><Pill>@DatedWords(draft)</Pill></Below>
+            </ListRow>
         }
     </ListGroup>
 }
@@ -30,15 +33,15 @@
 </h2>
 @if (Open.Count == 0)
 {
-    <p class="draft-list__empty">A draft is a set of changes to the app that only you, and people you share it with, can see until it's published.</p>
+    <p class="draft-list__empty">Nothing open. Changing something on the phone starts a draft of your own, which only you, and people you share it with, see until it's published.</p>
 }
 else
 {
     <ListGroup>
         @foreach (Draft draft in Open)
         {
-            <ListRow Title="@draft.Name" Subtitle="@($"{Author(draft)} · {DraftWords.Touches(draft, Surfaces)}")" Icon="@(draft.LayerOn ? "calendar" : "pencil")"
-                     IconTone="@(draft.LayerOn ? RowTone.Accent : RowTone.Primary)" Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)">
+            <ListRow Title="@draft.Name" Subtitle="@($"{Author(draft)} · {DraftWords.Touches(draft, Surfaces)}")" Icon="pencil"
+                     IconTone="RowTone.Primary" Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)">
                 <Below>
                     @if (ToCheck(draft) is > 0 and var count)
                     {
@@ -56,25 +59,31 @@ else
 
 @if (List.Published.Count > 0)
 {
-    <h2 class="draft-list__head">Published recently</h2>
+    <button type="button" class="draft-list__fold" aria-expanded="@(_history ? "true" : "false")" @onclick="() => _history = !_history">
+        <Icon Name="@(_history ? "chevron-down" : "chevron-right")" Size="IconSize.Small" />
+        Published recently <span class="draft-list__count">@List.Published.Count</span>
+    </button>
     @if (PublishedNote is { } note)
     {
         <Notice Tone="@(note.Warns ? NoticeTone.Warning : NoticeTone.Info)" Text="@note.Text" />
     }
-    <ListGroup>
-        @foreach (PublishedDraft published in List.Published)
-        {
-            <ListRow Title="@published.Name" Subtitle="@($"{string.Join(", ", published.Areas)} · {Names.GetValueOrDefault(published.By, "Someone")} · {DraftWords.Day(published.At)}")"
-                     Icon="@(published.UndoneBatchId is null ? "check" : "undo")" IconTone="RowTone.Quiet" OnClick="() => _looking = published">
-                <Below>
-                    @if (published.UndoneBatchId is not null)
-                    {
-                        <Pill>Undone</Pill>
-                    }
-                </Below>
-            </ListRow>
-        }
-    </ListGroup>
+    @if (_history)
+    {
+        <ListGroup>
+            @foreach (PublishedDraft published in List.Published)
+            {
+                <ListRow Title="@published.Name" Subtitle="@($"{string.Join(", ", published.Areas)} · {Names.GetValueOrDefault(published.By, "Someone")} · {DraftWords.Day(published.At)}")"
+                         Icon="@(published.UndoneBatchId is null ? "check" : "undo")" IconTone="RowTone.Quiet" OnClick="() => _looking = published">
+                    <Below>
+                        @if (published.UndoneBatchId is not null)
+                        {
+                            <Pill>Undone</Pill>
+                        }
+                    </Below>
+                </ListRow>
+            }
+        </ListGroup>
+    }
 }
 
 <Sheet Open="_looking is not null" OpenChanged="open => { if (!open) _looking = null; }" Title="@_looking?.Name" Lead="@PublishedLead">
@@ -127,6 +136,7 @@ else
     public sealed record Note(string Text, bool Warns);
 
     private PublishedDraft? _looking;
+    private bool _history;
 
     private string? PublishedLead => _looking is { } published
         ? $"Published by {(Names.GetValueOrDefault(published.By, "someone"))} on {DraftWords.Day(published.At)} · {(published.Changes == 1 ? "1 change" : $"{published.Changes} changes")}"
@@ -141,14 +151,22 @@ else
         await action.InvokeAsync(published);
     }
 
-    private List<Draft> Dated => List.Drafts.Where(draft => draft.PublishAt is not null).OrderBy(draft => draft.PublishAt).ToList();
+    private List<Draft> Dated => List.Drafts.Where(draft => draft.LayerOn || draft.PublishAt is not null)
+        .OrderBy(draft => draft.PublishAt ?? draft.LayerStartsAt ?? DateTime.MinValue).ToList();
 
-    private List<Draft> Waiting => List.Drafts.Where(draft => draft.PublishAt is null && draft.Status == DraftStatus.WaitingToPublish).ToList();
+    private List<Draft> Waiting => List.Drafts.Where(draft => draft is { LayerOn: false, PublishAt: null, Status: DraftStatus.WaitingToPublish }).ToList();
 
-    private List<Draft> Open => List.Drafts.Where(draft => draft.PublishAt is null && draft.Status == DraftStatus.Open).ToList();
+    private List<Draft> Open => List.Drafts.Where(draft => draft is { LayerOn: false, PublishAt: null, Status: DraftStatus.Open }).ToList();
 
-    private string DatedLine(Draft draft) =>
-        $"{(draft.NotPublished is null ? "Publishes on" : "Didn't publish on")} {DraftWords.Moment(draft.PublishAt!.Value)} · {Author(draft)}";
+    private string DatedWords(Draft draft) => draft switch
+    {
+        { PublishAt: { } at, NotPublished: null } => $"Publishes {DraftWords.When(at)}",
+        { PublishAt: { } missed } => $"Didn't publish on {DraftWords.Day(missed)}",
+        { LayerStartsAt: { } starts, LayerEndsAt: { } ends } when starts > Clock.GetUtcNow().UtcDateTime => $"On {DraftWords.Day(starts)} to {DraftWords.Day(ends)}",
+        { LayerEndsAt: { } ends } => $"On for everyone until {DraftWords.Day(ends)}",
+        { LayerStartsAt: { } starts } when starts > Clock.GetUtcNow().UtcDateTime => $"On from {DraftWords.Day(starts)}",
+        _ => "On for everyone",
+    };
 
     private string Author(Draft draft) => draft.Mine ? "You" : Names.GetValueOrDefault(draft.AuthorId, "Someone");
 

@@ -1,0 +1,56 @@
+@inject AccountsClient Accounts
+
+<section class="person-page__account" aria-label="@($"What happened on {Person.DisplayName}'s account")">
+    <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
+        @if (context.Value.Count == 0)
+        {
+            <p class="panel-hint">Nothing yet.</p>
+        }
+        else
+        {
+            <ol class="activity">
+                @foreach (AuditInfo entry in context.Value)
+                {
+                    <li>
+                        <span>@Words(entry.Action)@(entry.ActorId is { Length: > 0 } actor && actor != Person.Id ? " by staff" : "")</span>
+                        <DateLine At="entry.At" Style="DateLineStyle.Short" WithTime="true" Class="quiet" />
+                    </li>
+                }
+            </ol>
+        }
+    </LiveData>
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required PersonInfo Person { get; set; }
+
+    private async Task<List<AuditInfo>> LoadAuditAsync() => (await Accounts.ListAuditAsync(Person.Id)).Entries;
+
+    private static string Words(string action) => action switch
+    {
+        "signed-up" => "Made their account",
+        "signed-in" => "Signed in",
+        "passkey-added" => "Added a passkey",
+        "passkey-removed" => "Removed a passkey",
+        "email-confirmed" => "Confirmed their email",
+        "recovery-requested" => "Asked for a recovery email",
+        "recovery-issued" => "Recovery link made",
+        "code-redeemed" => "Used a link",
+        "invited" => "Invited",
+        "invitation-resent" => "Invitation sent again",
+        "invitation-withdrawn" => "Invitation withdrawn",
+        "session-ended" => "Signed out on a device",
+        "signed-out-everywhere" => "Signed out everywhere",
+        "name-changed" => "Changed their name",
+        "disabled" => "Account turned off",
+        "enabled" => "Account turned back on",
+        "demo-account-created" => "Made as a demo account",
+        "review-code-created" => "Sign-in code made",
+        "review-code-turned-off" => "Sign-in code turned off",
+        "review-code-used" => "Signed in with a code",
+        "review-code-refused" => "A sign-in code was refused",
+        "tool-connected" => "Connected a tool",
+        "deleted" => "Account deleted",
+        _ => action,
+    };
+}

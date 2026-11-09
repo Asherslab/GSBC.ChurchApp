@@ -118,7 +118,7 @@ On top of Configuration, with no new feature project:
   - `config.drafts` (new, private): each draft and its changes, scoped to that draft, so a phone
     receives only drafts its user may see.
 - **Sharing uses Access,** not a list of its own. A new scope kind `draft`, a permission
-  `config.drafts.preview` at that scope, and a system role *Draft reviewer* that Configuration gives
+  `config.drafts.preview` at that scope, and a system role *Reviewer* (of a draft) that Configuration gives
   and takes away through `IRoleAssignments` when a draft is shared or unshared. Sync's per-scope
   feed filtering then does the rest, and removing someone takes the draft off their phone.
 - **Permissions:** the area's existing edit permission (`config.hub.edit` and so on) to change it in
@@ -144,7 +144,7 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   revisions. Staff read "What everyone sees" (not "Live"), and a field changed underneath a draft is
   "Changed for everyone since you edited it" with *Keep mine* / *Use everyone's*. A typo fix is edit, then
   *Publish now*.
-- **The admin panel's drafts page is a three-pane workbench** (owner's choice): drafts down the left (the
+- **Until 2026-11-09 the admin panel's drafts page was a three-pane workbench** (owner's choice then; replaced by *App styling*, below): drafts down the left (the
   event layer as one navy band at the top, then *Waiting to publish*, *Open*, *Published recently*, each
   opening a sheet to undo it or publish it again), the chosen draft in the middle (its name, "Saved a moment ago", *Share*, *More*, *Publish now*
   or *Ask to publish*, area tabs, rows with its changes marked), and on the right the chosen row's settings
@@ -163,6 +163,45 @@ and previews on the phone); the dealt sketches are in `.impeccable/mocks/decisio
   ([home.md](../features/home.md), *The admin canvas*).
 - **Home screen and Colours** in the admin panel become read-only views of what everyone sees; *Change it*
   starts a draft, or carries on your open one.
+
+## App styling (owner, 2026-11-09)
+
+The owner, after using the workbench: "drafts is incredibly overwhelming", the page jumped around between Colours,
+Home screen and Tab bar, *Published recently* filled the column, Church year "feels out of the way or useless", and
+there was no way to "simply, quickly, look at the existing preview of what it is now". Direction: "drafts shouldn't
+be the front and center feature of it, the intent is to view & modify the styling, drafts is a vehicle". Shaped with
+the impeccable process: an interview, two dealt rounds (the owner steered the first: "one stage, three areas, but it
+still feels very similar to the current version, which could still be a bit busy?"), and the states confirmed. The
+sketches are in `.impeccable/mocks/decision/app-styling/`; the direction contract in the drafts surface brief.
+
+- **The page is App styling** (`/app-styling`; `/drafts` links still work). It opens on the app as everyone sees it:
+  a sentence ("Everyone sees the church's brand, 11 tiles on Home and 4 tabs", with the event layer first when one is
+  on), the phone drawn by the app's own `HomeScreen`, and one 400px column: *What everyone sees* (Colours, Home screen,
+  Tab bar) and *Coming up*.
+- **One layout that never moves:** the phone on the left with its preview choices under it, the column on the right.
+  Choosing a part swaps what's in the column; the header keeps its height and its buttons stay where they are.
+- **Changing starts from the app, not from a draft** (owner's pick of the recommended option): clicking a part of the
+  phone, or a part in the column, carries on in your one open draft, starts one named after what you change ("Home
+  screen, Mon 9 Nov") when you have none, or asks which when you have several. A draft started that way and left with
+  nothing in it is deleted when you leave it, so looking around leaves nothing behind. Inside a draft the phone is the
+  Home canvas (drag and resize tiles; click a tab to change it), and *Back to what everyone sees* leaves the draft
+  saved.
+- **Drafts are behind one menu** at the top right: on for an event or publishing on a date, waiting to publish, open
+  (+ New draft), then *Published recently*, folded until opened (undo and publish again as before).
+- **Church year is folded into Coming up** (owner's pick): a dated list of what changes in the next six months (an
+  event layer going on or off, a draft publishing for good, a tile or tab with dates, a theme with dates). Clicking one
+  shows the app on that day on the phone, and opens its draft if it's in one. The phone's own *Preview the app on* shows
+  any day.
+- **Colours in plain words:** "The app's colours: the theme the app uses all year, for everyone", as cards (the
+  church's brand, the 2026 theme, and each theme made here, with *Change it*), plus *Make a theme*. The owner
+  (2026-11-09): "we'll likely do a year long theme colours, changing yearly. with many a brief change for events", so
+  the year's theme is the everyday choice (set up in a draft and published on 1 January), and an event's colours go in a
+  draft turned on between dates. A theme choice that still has dates says so, with *Change the dates*.
+- **Preview choices read as a sentence** under the phone: "Preview as a visitor in light mode on an iPhone 15 Pro on
+  (day)". They change only the phone.
+- **Kept as they were:** saving, undo and redo, sharing, *Publish now* / *Ask to publish*, turning on for everyone or
+  publishing on a date, settling "changed for everyone" (now a notice at the top of the column, with *Keep mine* and
+  *Use everyone's* per item), the pop-out preview window (under More), and phones previewing a draft live.
 
 ## Signing in on the phone for previews
 
@@ -186,13 +225,14 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   (`config.hub.publish`, `config.appearance.publish`). The direct `Configuration.Save` is gone: every
   edit is made in a draft. Tested by `DraftEditorTests` and the reworked `PlacementEditorTests`.
 - **Access:** a `draft` scope kind, `config.drafts.preview` (held at a draft: preview it; held
-  everywhere: see every draft), the system roles *Draft reviewer* (given and taken by Configuration
-  when a draft is shared or unshared, and to its author) and *App editor* (`config.*`).
+  everywhere: see every draft), the system roles *Reviewer* (given and taken by Configuration
+  when a draft is shared or unshared, and to its author; Share is the shared People sheet since 2026-11-09),
+  *App Editor* (edit and see every draft) and *App Publisher* (`config.*`).
 - **Sync:** a private feed resets for a session whose grants for it changed (`sync.audience_marks`),
   so unsharing takes a draft off that phone. Tested end to end in `DraftEditorTests`.
 - **Feeds:** `config.drafts` (private, per draft) and the event layer as the `event-layer` record in
   `config.placements`, with its dates.
-- **Admin panel:** the drafts workbench (`/drafts`), the church-year view, the phone preview (the
+- **Admin panel:** the drafts workbench (`/drafts`, App styling since 2026-11-09), the church-year view (now *Coming up*), the phone preview (the
   app's own Home on a chosen iPhone, true size, scaled to fit, with a pop-out window at
   `/drafts/{id}/preview`), and read-only Home screen and Colours pages whose *Change it* starts a
   draft.
@@ -293,7 +333,7 @@ gets a conflict and finds nothing next time. Tested by `ScheduledPublishTests` o
 
 ## Open
 
-- **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.
+- **Scoped areas** (a ministry's page) work in the model; App styling lists global areas only.
 - Whether a draft can also hold changes for a ministry leader's own ministry page, previewed by that
   leader: yes in the model; check the screens make sense for leaders.
 - Drafts for feature records (events, sermons): not now, by decision 1.

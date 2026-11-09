@@ -1,0 +1,51 @@
+<div class="drafts-menu @Class">
+    <button type="button" class="drafts-menu__trigger @TriggerClass" aria-expanded="@(_open ? "true" : "false")" aria-haspopup="dialog" @onclick="() => _open = !_open">
+        @ChildContent
+        <Icon Name="@(_open ? "chevron-up" : "chevron-down")" Size="IconSize.Small" />
+    </button>
+    @if (_open)
+    {
+        <button type="button" class="drafts-menu__backdrop" aria-label="Close the drafts" tabindex="-1" @onclick="Close"></button>
+        <div class="drafts-menu__pop" role="dialog" aria-label="Drafts" @onkeydown="OnKey">
+            <DraftListing List="List" Names="Names" SelectedId="@SelectedId" MayUndo="MayUndo" PublishedNote="PublishedNote"
+                          OnOpen="OpenAsync" OnNew="NewAsync" OnUndo="OnUndo" OnPublishAgain="OnPublishAgain" />
+        </div>
+    }
+</div>
+
+@code {
+    private bool _open;
+
+    [Parameter, EditorRequired] public required DraftList List { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> Names { get; set; } = new Dictionary<string, string>();
+    [Parameter] public string? SelectedId { get; set; }
+    [Parameter] public bool MayUndo { get; set; }
+    [Parameter] public DraftListing.Note? PublishedNote { get; set; }
+    [Parameter] public EventCallback<Draft> OnOpen { get; set; }
+    [Parameter] public EventCallback OnNew { get; set; }
+    [Parameter] public EventCallback<PublishedDraft> OnUndo { get; set; }
+    [Parameter] public EventCallback<PublishedDraft> OnPublishAgain { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? TriggerClass { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment ChildContent { get; set; }
+
+    private void Close() => _open = false;
+
+    private Task OpenAsync(Draft draft)
+    {
+        _open = false;
+        return OnOpen.InvokeAsync(draft);
+    }
+
+    private Task NewAsync()
+    {
+        _open = false;
+        return OnNew.InvokeAsync();
+    }
+
+    private void OnKey(KeyboardEventArgs key)
+    {
+        if (key.Key == "Escape")
+            _open = false;
+    }
+}

@@ -1,0 +1,55 @@
+<!doctype html><html><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+.side{background:#2a3d5e;color:rgba(255,255,255,.76);padding:22px 14px}
+.brand{display:flex;gap:10px;align-items:center;color:#fff;font-weight:700;font-size:17px;padding:0 10px 22px}
+.dot{width:30px;height:30px;border-radius:50%;border:3px solid #d5c9b7}
+.grp{color:#d5c9b7;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;padding:14px 10px 6px}
+.lnk{height:38px;display:flex;align-items:center;padding:0 10px;border-radius:9px;font-weight:600;font-size:14.5px;position:relative}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff}.lnk.on:before{content:"";position:absolute;left:-14px;top:8px;bottom:8px;width:3px;background:#e7ae74;border-radius:0 3px 3px 0}
+.work{padding:28px 40px;min-width:0}
+.tb{display:flex;justify-content:space-between;align-items:end;gap:20px}.tb h1{font-size:27px;letter-spacing:-.02em}.tb p{color:#545e70;font-size:14px;max-width:72ch}
+.back{color:#00776d;font-weight:600;font-size:14px;margin-bottom:4px}
+.b{height:40px;border-radius:20px;padding:0 16px;display:inline-flex;align-items:center;gap:6px;font-weight:600;font-size:14px;white-space:nowrap}
+.q{background:#f4efe7}.p{background:#2a3d5e;color:#fff}.s{height:32px;padding:0 12px;font-size:13px}
+.search{height:40px;border-radius:12px;background:#f4efe7;padding:0 14px;display:flex;align-items:center;color:#6b7384;font-size:14px}
+.chips{display:flex;gap:8px}.chip{height:32px;border-radius:16px;padding:0 12px;display:inline-flex;align-items:center;font-size:13px;font-weight:600;background:#f4efe7;color:#545e70}.chip.on{background:#2a3d5e;color:#fff}
+.quiet{color:#545e70;font-size:13px}.ink3{color:#6b7384}
+.micro{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7384}
+.box{width:18px;height:18px;border-radius:5px;border:2px solid #9aa2b1;flex:none;display:inline-grid;place-items:center}
+.box.on{background:#00776d;border-color:#00776d}.box.on:after{content:"";width:8px;height:4px;border:2px solid #fff;border-top:0;border-right:0;transform:rotate(-45deg) translate(1px,-1px)}
+.i{width:20px;height:20px;border-radius:50%;border:1.5px solid #00776d;color:#00776d;font:700 11px/17px Georgia,serif;text-align:center;flex:none}
+.pop{position:absolute;background:#fff;border-radius:14px;box-shadow:0 12px 32px rgba(24,35,58,.18),0 0 0 1px rgba(24,35,58,.06);padding:16px 18px;z-index:5}
+.pop h4{font-size:14px;margin-bottom:6px}.pop ul{padding-left:18px;font-size:13px;line-height:1.6}.pop .also{margin-top:8px;font-size:12.5px;color:#545e70}
+.note{position:absolute;right:16px;bottom:12px;font-size:11px;color:#9aa2b1}
+
+.work{padding:0;display:grid;grid-template-columns:280px minmax(0,1fr) 440px;height:900px}
+.col{background:#f4efe7;padding:24px 18px;border-right:1px solid #e5dccb}
+.col h3{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:#6b7384;margin:18px 6px 8px}
+.cal{display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border-radius:10px;font-weight:600;font-size:14px}
+.cal i{width:10px;height:10px;border-radius:3px;flex:none}.cal .grow{flex:1}.cal.on{background:#fff}
+.cnt{display:inline-flex;align-items:center;gap:4px;height:26px;padding:0 8px;border-radius:13px;background:rgba(0,119,109,.12);color:#00675e;font-size:12px;font-weight:600}
+.mid{padding:24px 32px;overflow:hidden}.mid h1{font-size:24px}.mid p{color:#545e70;font-size:13.5px}
+.day{margin-top:18px}.day .micro{margin-bottom:6px}.ev{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid #eee9df;font-size:14px}.ev b{font-weight:600}.ev span{color:#6b7384;width:70px}
+.det{border-left:1px solid #e5e0d6;padding:20px;background:#fbfaf7;overflow:hidden;position:relative}
+.panel{background:#fff;border-radius:14px;box-shadow:0 6px 20px rgba(24,35,58,.08);overflow:hidden}
+.ph{background:#2a3d5e;color:#fff;padding:16px 20px;font-weight:700;font-size:18px}
+.pb{padding:16px 20px}
+.f{margin-bottom:12px}.f label{display:block;font-size:13px;font-weight:600;color:#545e70;margin-bottom:4px}.in{background:#f4efe7;border-radius:10px;padding:10px 12px;font-size:14px}
+.sec{border-top:1px solid #eee9df;padding-top:12px;margin-top:4px}.sec h4{font-size:14.5px;margin-bottom:2px}.sec .hint{font-size:12.5px;color:#6b7384;margin-bottom:6px}
+.pp{display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid #f0ebe2;font-size:14px}.pp .n{flex:1;font-weight:600}.pp .n small{display:block;font-weight:400;color:#6b7384;font-size:12px}
+.tag{height:24px;border-radius:12px;padding:0 9px;display:inline-flex;align-items:center;background:rgba(0,156,143,.13);color:#00675e;font-size:12px;font-weight:600}
+.sb{height:28px;border-radius:14px;padding:0 10px;display:inline-flex;align-items:center;background:#f4efe7;font-weight:600;font-size:12px}
+.add{margin-top:10px;height:38px;border-radius:10px;background:#f4efe7;display:flex;align-items:center;padding:0 12px;color:#6b7384;font-size:13.5px}
+.rk{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin-right:12px}
+.ticks{display:flex;flex-wrap:wrap;gap:4px 0;margin-top:4px}
+.tabs{display:flex;gap:20px;border-bottom:1px solid #e5e0d6;margin:-4px 0 12px}.tabs span{height:38px;display:flex;align-items:center;font-weight:600;font-size:14px;color:#6b7384}.tabs .on{color:#18233a;box-shadow:inset 0 -3px #e7ae74}
+.scrim{position:absolute;inset:0;background:rgba(24,35,58,.35)}
+.sheet{position:absolute;left:50%;top:90px;transform:translateX(-50%);width:560px;background:#fff;border-radius:16px;box-shadow:0 24px 60px rgba(24,35,58,.3);padding:22px 24px;z-index:3}
+.sheet h2{font-size:20px}.sheet p.l{color:#545e70;font-size:13.5px;margin:4px 0 12px}
+.row2{display:flex;align-items:center;gap:8px;padding:6px 0;font-size:14px;font-weight:600}
+</style></head><body><aside class="side"><div class="brand"><span class="dot"></span>Good Shepherd</div><div class="grp">Content</div><div class="lnk">Drafts</div><div class="lnk on">Calendar</div><div class="lnk">Sermons</div><div class="lnk">Announcements</div><div class="lnk">Media</div><div class="grp">People</div><div class="lnk">People</div><div class="lnk">App review</div><div class="grp">The app</div><div class="lnk">Insights</div><div class="lnk">App health</div></aside>
+<main class="work"><aside class="col"><div class="search">Find</div><h3>Calendars</h3><div class="cal"><i style="background:#2a3d5e"></i><span class="grow">Church</span></div><div class="cal on"><i style="background:#e7ae74"></i><span class="grow">Kids</span></div><div class="cal"><i style="background:#009c8f"></i><span class="grow">Youth</span></div><div class="cal"><i style="background:#84a87d"></i><span class="grow">Life Groups</span></div><h3>Needs details</h3><div class="cal">Kids Club · 27 Nov</div></aside><section class="mid"><h1>Kids calendar</h1><p>Agenda · next 4 weeks</p>
+<div class="day"><div class="micro">Friday 13 November</div><div class="ev"><span>6:00pm</span><b>Kids Club</b></div></div>
+<div class="day"><div class="micro">Sunday 15 November</div><div class="ev"><span>10:30am</span><b>Impact Kids</b></div><div class="ev"><span>12:00pm</span><b>Kids leaders lunch</b></div></div>
+<div class="day"><div class="micro">Friday 20 November</div><div class="ev"><span>6:00pm</span><b>Kids Club</b></div></div>
+<div class="day"><div class="micro">Sunday 22 November</div><div class="ev"><span>10:30am</span><b>Impact Kids</b></div></div></section><section class="det"><div class="panel"><div class="ph">Kids</div><div class="pb"><div class="f"><label>Name</label><div class="in">Kids</div></div><div class="f"><label>Who it's for</label><div class="in">Everyone</div></div><div class="sec"><h4>People</h4><div class="pp"><span class="n">Ruth (kids) and Ben<small>2 people can edit this calendar</small></span><span class="sb">People ›</span></div></div></div></div></section><div class="scrim"></div><div class="sheet"><h2>People on the Kids calendar</h2><p class="l">Tick what each person may do here. Calendar Managers and Owners can change every calendar.</p><div class="add" style="margin:0 0 10px">+ Add someone: find by name</div><div class="pp"><span class="n">Ruth (kids)<small>Added by Office: Jenny, 3 Oct</small><span class="ticks"><span class="rk"><span class="box on"></span>Editor <span class="i">i</span></span><span class="rk"><span class="box"></span>Publisher <span class="i">i</span></span></span></span><span class="sb">Take off</span></div><div class="pp"><span class="n">Ben<small>Added by Ruth, 28 Oct</small><span class="ticks"><span class="rk"><span class="box on"></span>Editor <span class="i">i</span></span><span class="rk"><span class="box on"></span>Publisher <span class="i">i</span></span></span></span><span class="sb">Take off</span></div><div style="display:flex;justify-content:flex-end;margin-top:14px"><span class="b q">Done</span></div></div></main><span class="note">Sample names, for the sketch</span></body></html>

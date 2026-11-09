@@ -1,0 +1,45 @@
+@inject AccessClient Access
+@inject IScopeNames ScopeNames
+
+<LiveData TValue="AbilitiesView" Feeds="[AccessFeeds.Roles, .. ScopeNames.Feeds]" Load="LoadAsync" FailedTitle="Can't load what they can do">
+    <section class="person-abilities" aria-label="@($"What {Person.FirstName} can do")">
+        <p class="panel-lead">Everything @Person.FirstName's roles let them do, by place, and which role gives it.</p>
+        @if (context.Value.Abilities.Places.Count == 0)
+        {
+            <p class="panel-hint">@AccessWords.Nothing</p>
+        }
+        @foreach (PlaceAbilities place in context.Value.Abilities.Places)
+        {
+            <div class="access-place">
+                <h3 class="panel-subtitle">@PlaceLine(context.Value, place)</h3>
+                <p class="panel-hint">Because they're @string.Join(" and ", place.Because.Select(Reason)).</p>
+                <AbilityList Nodes="place.Nodes" Catalog="context.Value.Catalog" EveryMinistry="place.ObjectId is null" />
+            </div>
+        }
+    </section>
+</LiveData>
+
+@code {
+    [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+
+    private async Task<AbilitiesView> LoadAsync()
+    {
+        Task<PersonAbilities> abilities = Access.ExplainAsync(Person.Id).AsTask();
+        Task<Catalog> catalog = Access.ListCatalogAsync().AsTask();
+        PersonAbilities explained = await abilities;
+        Dictionary<string, string> names = [];
+        foreach (IGrouping<string, PlaceAbilities> kind in explained.Places.Where(place => place.ObjectId is not null).GroupBy(place => place.ScopeKind))
+            foreach ((string id, ScopeChoice choice) in await ScopeNames.PlacesAsync(kind.Key, kind.Select(place => place.ObjectId!).ToList()))
+                if (choice.Name != id)
+                    names[id] = choice.Name;
+        return new AbilitiesView(explained, await catalog, names);
+    }
+
+    private static string PlaceLine(AbilitiesView view, PlaceAbilities place) =>
+        place.ObjectId is null ? "Everywhere" : AccessWords.PlaceOf(place.ObjectId, view.Names.GetValueOrDefault(place.ObjectId), place.ScopeKind, place.IncludesTeams);
+
+    private static string Reason(PlaceReason reason) =>
+        $"{(reason.RoleName.Length > 0 && "AEIOU".Contains(reason.RoleName[0]) ? "an" : "a")} {reason.RoleName}{(reason.ExpiresAt is null ? "" : $" ({AccessWords.Until(reason.ExpiresAt)})")}";
+
+    private sealed record AbilitiesView(PersonAbilities Abilities, Catalog Catalog, IReadOnlyDictionary<string, string> Names);
+}

@@ -14,7 +14,7 @@ there is no store of its own. Until staff publish a change, the tabs are what th
 | `config.tabs.edit` | In a draft: add tabs, choose the place each opens, its word and icon, move them, choose who sees each and when, take them off the bar |
 | `config.tabs.publish` | Publish the draft, or turn it on for an event |
 
-The *App editor* role (`config.*`) holds both.
+The *App Publisher* role (`config.*`) holds both; *App Editor* holds edit (2026-11-09).
 
 ## Decided (owner, 2026-11-08)
 
@@ -76,7 +76,7 @@ places everyone the tab is for can open, as for an announcement (`OpenableBy`).
 
 ### In the admin panel
 
-Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's parts (*The phone is the canvas*, chosen on
+App styling → **Tab bar** (in a draft; it was Drafts → a draft → Tab bar until 2026-11-09), desktop first, built from the Hub canvas's parts (*The phone is the canvas*, chosen on
 `.impeccable/mocks/decision/app-tabs/`):
 
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);

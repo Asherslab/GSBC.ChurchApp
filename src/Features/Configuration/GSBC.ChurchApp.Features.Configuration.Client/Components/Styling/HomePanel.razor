@@ -1,0 +1,69 @@
+@using System.Globalization
+@inject TimeProvider Clock
+@inject SurfaceViews Views
+
+<div class="home-panel">
+    <div class="styling-panel__head">
+        <h2>Home screen</h2>
+        <p>Click a tile on the phone to change it. Drag a tile to move it, or its corner to resize it; with the keyboard, Tab to a tile, then arrows move it and Shift with arrows resizes it.</p>
+    </div>
+    <div class="home-panel__controls">
+        <Button Icon="plus" OnClick="OnAdd">Add a tile</Button>
+        <div class="home-panel__columns">
+            <span id="home-columns">Columns</span>
+            <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="HubSurfaces.Grid.ColumnsIn(Hub)" ValueChanged="OnColumns" />
+        </div>
+    </div>
+    @if (NotShown.Count > 0 || Removed.Count > 0)
+    {
+        <section class="hub-canvas__hidden" aria-labelledby="home-hidden">
+            <h3 id="home-hidden">Not on the phone for @Preview.Words(RoleNames)</h3>
+            <ListGroup>
+                @foreach ((ArrangedSurface entry, string why) in NotShown)
+                {
+                    <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@why" Icon="eye-off" IconTone="RowTone.Quiet" OnClick="() => OnChoose.InvokeAsync(entry)" />
+                }
+                @foreach (PlacementPatch removed in Removed)
+                {
+                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(HubTileKeys.Title) ?? "A tile")" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                        <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        </section>
+    }
+    @ChildContent
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required StylingPreview Preview { get; set; }
+    [Parameter] public IReadOnlyList<PlacementPatch> Removed { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
+    [Parameter] public EventCallback OnAdd { get; set; }
+    [Parameter] public EventCallback<int> OnColumns { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
+    [Parameter] public EventCallback<string> OnPutBack { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private static readonly IReadOnlyList<SegmentOption<int>> ColumnChoices =
+        Enumerable.Range(HubGrid.FewestColumns, HubGrid.MostColumns - HubGrid.FewestColumns + 1).Select(count => new SegmentOption<int>(count, count.ToString(CultureInfo.InvariantCulture))).ToList();
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateTime At => Preview.At(Now);
+
+    private List<(ArrangedSurface Entry, string Why)> NotShown =>
+        HubTiles.TilesIn(Hub, Views).Where(entry => !Preview.Shows(entry, Now)).Select(entry => (entry, WhyHidden(entry))).ToList();
+
+    private string WhyHidden(ArrangedSurface entry)
+    {
+        if (entry.Hidden)
+            return "Hidden: Shown is off";
+        if (entry.StartsAt is { } starts && At < starts)
+            return $"Shows from {DraftWords.Day(starts)}";
+        if (entry.EndsAt is { } ends && At >= ends)
+            return $"Ended {DraftWords.Day(ends.AddTicks(-1))}";
+        return entry.Audience.IsForRoles ? $"Only for {RoleWords.List(entry.Audience.RoleIds, RoleNames)}" : "Only for people who are signed in";
+    }
+}

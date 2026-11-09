@@ -18,9 +18,11 @@ signed links from gRPC; [offline-and-caching.md](../architecture/offline-and-cac
 | Anyone signed in | Get a link to a private file, **if they hold its audience right now** |
 | Anyone | See public media: it's a plain URL on the media host |
 
-The **Media editor** system role holds `media.view`, `media.upload`, `media.delete` and
+The **Media Editor** system role holds `media.view`, `media.upload`, `media.delete` and
 `media.organise`. It doesn't hold `media.system.view` (owner, 2026-11-04), nor `media.fonts.upload`: a
-font file's licence is a separate judgement, given on its own (owner, 2026-11-03). The library page is in the admin panel; the upload
+font file's licence is a separate judgement, given on its own (owner, 2026-11-03), now as the **Media Manager**
+level above it (2026-11-09). **Media Viewer** holds `media.view`, and Media declares the `pictures` kit (see and
+upload) that editing roles in other features bring. The library page is in the admin panel; the upload
 and library components live in Media.Client, so a phone page is a page change, not a rewrite.
 
 ## Folders (owner, 2026-11-04)

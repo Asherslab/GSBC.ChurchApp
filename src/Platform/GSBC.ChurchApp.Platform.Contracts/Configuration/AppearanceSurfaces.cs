@@ -9,12 +9,12 @@ public static class AppearanceSurfaces
     public const string Year2026 = "year-2026";
 
     public static readonly Permission Edit =
-        new(EditNode, ScopeKind.Global, "Choose the app's colours for everyone: the church's brand or this year's theme");
+        new(EditNode, ScopeKind.Global, "Choose the app's colours for everyone: the church's brand or this year's theme", area: "App");
 
     public const string PublishNode = "config.appearance.publish";
 
     public static readonly Permission Publish =
-        new(PublishNode, ScopeKind.Global, "Put a change of colours out to everyone, or on for an event");
+        new(PublishNode, ScopeKind.Global, "Put a change of colours out to everyone, or on for an event", area: "App");
 
     public static readonly SurfaceArea Area = new("app.appearance", "Colours", "The colours everyone sees in the app", ScopeKind.Global, Edit, Publish, Ordered: false);
 
