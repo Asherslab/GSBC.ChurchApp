@@ -42,7 +42,7 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
         };
     }
 
-    public async Task<List<LinkAsk>> AsksAsync(IReadOnlyCollection<LinkAskRecord> asks, CancellationToken cancellationToken)
+    private async Task<List<LinkAsk>> AsksAsync(IReadOnlyCollection<LinkAskRecord> asks, CancellationToken cancellationToken)
     {
         List<Guid> ids = asks.SelectMany(ask => new[] { ask.ChildId, ask.AskedBy }).Distinct().ToList();
         IReadOnlyDictionary<Guid, PersonAccount> people = await accounts.GetAsync(ids, cancellationToken);
@@ -112,7 +112,7 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
         return record;
     }
 
-    internal static SafeguardingRecord Record(SafeguardingEntry entry) => new()
+    private static SafeguardingRecord Record(SafeguardingEntry entry) => new()
     {
         CardNumber = entry.CardNumber ?? "",
         CardStatus = entry.CardStatus ?? "",

@@ -184,7 +184,7 @@ internal sealed class PeopleService(
 
         if (request.Reach is { } reach)
         {
-            if (!Contracts.Reach.Valid(reach))
+            if (!Reach.Valid(reach))
                 throw Invalid("Choose how to reach them from the list.");
             PersonRecord person = await db.People.SingleOrDefaultAsync(found => found.UserId == personId, cancellationToken)
                 ?? db.People.Add(new PersonRecord { UserId = personId }).Entity;
@@ -247,7 +247,7 @@ internal sealed class PeopleService(
         SafeguardingRecord record = request.Record;
         SafeguardingEntry? entry = await db.Safeguarding.SingleOrDefaultAsync(found => found.UserId == personId, cancellationToken);
 
-        if (!record.HasCard && !record.HasTraining)
+        if (record is { HasCard: false, HasTraining: false })
         {
             if (entry is not null)
                 db.Safeguarding.Remove(entry);

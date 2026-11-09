@@ -30,7 +30,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = exception.Status.Detail;
+            _problem = PeopleWords.Problem(exception);
         }
         finally
         {

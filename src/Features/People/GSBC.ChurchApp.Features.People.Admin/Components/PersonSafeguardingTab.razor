@@ -15,7 +15,7 @@
             {
                 <div class="people-flag @(flag.RunOut ? "people-flag--run-out" : "")"><Icon Name="alert" /> @flag.Words</div>
             }
-            @if (!saved.HasCard && !saved.HasTraining)
+            @if (saved is { HasCard: false, HasTraining: false })
             {
                 <Notice Text="@($"Nothing recorded for {Person.FirstName} yet. Record a blue card or training below when they serve with children or young people.")" />
             }
@@ -72,7 +72,7 @@
 
 @code {
     private static readonly IReadOnlyList<FieldOption> Statuses =
-        [new FieldOption("", "Not recorded"), .. BlueCards.Statuses.Select(status => new FieldOption(status.Value, status.Words))];
+        [new("", "Not recorded"), .. BlueCards.Statuses.Select(status => new FieldOption(status.Value, status.Words))];
 
     private LiveData<PersonFamily>? _live;
     private SafeguardingRecord _draft = new();
@@ -134,7 +134,7 @@
         }
         catch (RpcException exception)
         {
-            _message = exception.Status.Detail;
+            _message = PeopleWords.Problem(exception);
         }
         finally
         {

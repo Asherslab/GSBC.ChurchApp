@@ -6,4 +6,5 @@ public enum PillTone
     Accent,
     Masthead,
     Quiet,
+    Danger,
 }

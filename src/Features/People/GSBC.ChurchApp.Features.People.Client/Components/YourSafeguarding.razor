@@ -10,7 +10,7 @@
                 <TrailingContent>
                     @if (TrainingFlag is { } flag)
                     {
-                        <Pill Tone="PillTone.Marker">@(flag.RunOut ? "Overdue" : $"Due {SafeguardingFlags.DaysWords(flag.When!.Value, Today)}")</Pill>
+                        <Pill Tone="@(flag.RunOut ? PillTone.Danger : PillTone.Marker)">@(flag.RunOut ? "Overdue" : $"Due {SafeguardingFlags.DaysWords(flag.When!.Value, Today)}")</Pill>
                     }
                 </TrailingContent>
             </ListRow>
@@ -27,7 +27,7 @@
     [Parameter, EditorRequired] public required DateOnly Today { get; set; }
 
     private SafeguardingFlag? TrainingFlag =>
-        SafeguardingFlags.For(Record, Today).FirstOrDefault(flag => flag.Subject == FlagSubject.Training && flag.When is not null);
+        SafeguardingFlags.For(Record, Today).FirstOrDefault(flag => flag is { Subject: FlagSubject.Training, When: not null });
 
     private string TrainingLine =>
         string.Join(" · ", new[]

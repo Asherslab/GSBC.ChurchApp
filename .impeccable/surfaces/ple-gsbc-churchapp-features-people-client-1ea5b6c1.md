@@ -34,7 +34,7 @@ FIRST VIEWPORT: Phone: masthead, You (name, birth date), Your family (waiting fi
 blue card card and the training row. Admin tab: birth date row, Waiting, Children, Parents, sand panel at 380px.
 Safeguarding page: title band, four counts that filter, then one list soonest first.
 
-FORM: phone 6 of 7 ("the card in your pocket"); admin 4 of 7 ("groups and a record");
-flagged 6 of 7 ("counts that filter one list"). seed: none (unavailable).
+FORM: phone 6 of 7 ("the card in your pocket"), seed:b5c1307d69151be6; admin 4 of 7 ("groups and a record"),
+seed:d543b3ac84827317; flagged 6 of 7 ("counts that filter one list"), seed:b459338fda25a221.
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

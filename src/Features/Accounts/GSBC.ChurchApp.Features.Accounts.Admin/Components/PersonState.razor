@@ -8,7 +8,7 @@ else if (Invitation is not null)
 {
     <Pill Tone="@(Expired ? PillTone.Quiet : PillTone.Marker)" Icon="send">@(Expired ? "Invitation expired" : "Invited")</Pill>
 }
-else if (!Person.HasPasskey && Person.AddedByFamily)
+else if (Person is { HasPasskey: false, AddedByFamily: true })
 {
     <Pill Icon="users">Looked after by a parent</Pill>
 }

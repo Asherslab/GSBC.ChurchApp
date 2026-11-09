@@ -14,10 +14,6 @@
             <BirthDateAsk OnSaved="ReloadAsync" />
         }
         <ListGroup>
-            @if (me.BirthDate is { } born)
-            {
-                <ListRow Title="@($"Born {born:d MMMM yyyy}")" Subtitle="@PeopleWords.WhoSees" Icon="calendar" IconTone="RowTone.Quiet" />
-            }
             @foreach (LinkAsk ask in me.AskedOfThem)
             {
                 <ListRow @key="ask.Id" Title="@PeopleWords.AskTitle(ask)" Subtitle="@AskLine(ask, today)" Icon="users" IconTone="RowTone.Warm">
@@ -35,44 +31,44 @@
                     <Leading><Avatar Name="@child.Name" /></Leading>
                 </ListRow>
             }
-            @if (!minor)
+            @foreach (PersonCard parent in me.Parents)
+            {
+                <ListRow @key="parent.Id" Title="@parent.Name" Subtitle="@($"Your parent · linked {PeopleWords.When(parent.LinkedAt)}")">
+                    <Leading><Avatar Name="@parent.Name" /></Leading>
+                    <TrailingContent>
+                        @if (!minor)
+                        {
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(parent.Id, me.Id).AsTask())">Unlink</Button>
+                        }
+                    </TrailingContent>
+                </ListRow>
+            }
+            @foreach (LinkAsk ask in myAsks)
+            {
+                <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}. They say yes on their Account page.")" Icon="clock" IconTone="RowTone.Quiet">
+                    <TrailingContent>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
+                    </TrailingContent>
+                </ListRow>
+            }
+            @if (minor)
+            {
+                <ListRow Title="Ask a parent to link to you" Subtitle="With the email they use for the app" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _askingParent = true" />
+            }
+            else
             {
                 <ListRow Title="Add a child" Subtitle="A child in your care, under 18" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
             }
+            @if (me.BirthDate is { } born)
+            {
+                <ListRow Title="@($"Born {born:d MMMM yyyy}")" Subtitle="@PeopleWords.WhoSees" Icon="calendar" IconTone="RowTone.Quiet" />
+            }
         </ListGroup>
+        @if (minor && me.Parents.Count > 0)
+        {
+            <p class="hint">@PeopleWords.ReachForChild(me, today)</p>
+        }
     </Section>
-
-    @if (minor || me.Parents.Count > 0 || myAsks.Count > 0)
-    {
-        <Section Title="Your parents">
-            <ListGroup>
-                @foreach (PersonCard parent in me.Parents)
-                {
-                    <ListRow @key="parent.Id" Title="@parent.Name" Subtitle="@($"Linked {PeopleWords.When(parent.LinkedAt)}")">
-                        <Leading><Avatar Name="@parent.Name" /></Leading>
-                        <TrailingContent>
-                            @if (!minor)
-                            {
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(parent.Id, me.Id).AsTask())">Unlink</Button>
-                            }
-                        </TrailingContent>
-                    </ListRow>
-                }
-                @foreach (LinkAsk ask in myAsks)
-                {
-                    <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}. They say yes on their Account page.")" Icon="clock" IconTone="RowTone.Quiet">
-                        <TrailingContent>
-                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
-                        </TrailingContent>
-                    </ListRow>
-                }
-                @if (minor)
-                {
-                    <ListRow Title="Ask a parent to link to you" Subtitle="With the email they use for the app" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _askingParent = true" />
-                }
-            </ListGroup>
-        </Section>
-    }
 
     @if (me.Safeguarding is { } record && (record.HasCard || record.HasTraining))
     {
@@ -123,7 +119,7 @@
         }
         catch (RpcException exception)
         {
-            _message = exception.Status.Detail;
+            _message = PeopleWords.Problem(exception);
         }
         finally
         {

@@ -17,7 +17,7 @@ internal sealed class SafeguardingOfficeWeek(PeopleClient people, IAccess access
         DateTime now = clock.GetUtcNow().UtcDateTime;
         List<OfficeTask> tasks = (await people.GetFlaggedAsync())
             .Where(flagged => flagged.Kind is FlagKinds.RunOut or FlagKinds.NoParent)
-            .Select(flagged => new OfficeTask(flagged.Name, flagged.Words, SafeguardingHref.For(flagged),
+            .Select(flagged => new OfficeTask(flagged.Name, flagged.Words, "safeguarding",
                 flagged.Kind == FlagKinds.NoParent ? "Link a parent" : "Record the new one", flagged.When ?? now))
             .ToList();
         return new OfficeWeek(tasks, []);

@@ -56,7 +56,7 @@
 
     private static PillTone Tone(string kind) => kind switch
     {
-        FlagKinds.RunOut => PillTone.Masthead,
+        FlagKinds.RunOut => PillTone.Danger,
         FlagKinds.NotRecorded => PillTone.Quiet,
         _ => PillTone.Marker,
     };

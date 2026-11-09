@@ -286,7 +286,7 @@
         }
         catch (RpcException exception)
         {
-            _message = exception.Status.Detail;
+            _message = PeopleWords.Problem(exception);
         }
         finally
         {

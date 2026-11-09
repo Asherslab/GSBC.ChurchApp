@@ -74,7 +74,24 @@
 
 .people-ask__actions { margin-top: 8px; }
 
-.people-code .copy-field { margin-top: 4px; }
+.people-code__shown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+
+.people-code__value {
+  color: var(--ink);
+  font-size: var(--text-headline);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.people-code__hint { margin-top: 8px; font-size: var(--text-caption); }
 
 .people-tab {
   display: grid;

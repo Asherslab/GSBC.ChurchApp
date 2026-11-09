@@ -467,6 +467,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .pill--accent { background: color-mix(in srgb, var(--live) 12%, transparent); color: var(--accent); }
 .pill--masthead { background: var(--masthead); color: var(--on-masthead); }
 .pill--quiet { background: var(--fill-on-surface); color: var(--ink-2); }
+.pill--danger { background: color-mix(in srgb, var(--danger) 12%, transparent); color: var(--danger); }
 .media-shown-at { color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
 .media-shown-at__part + .media-shown-at__part { white-space: nowrap; }
 

@@ -4,10 +4,14 @@
     <ChildContent>
         @if (Child is { } child)
         {
-            <Card Tone="CardTone.Raised" Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
+            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
                 @if (_code is { } made)
                 {
-                    <CopyField Label="Sign-in code" Value="@made.Code" Hint="@CodeHint(made)" />
+                    <div class="people-code__shown">
+                        <span class="people-code__value" aria-label="@($"Sign-in code {string.Join(' ', made.Code.ToCharArray())}")">@made.Code</span>
+                        <CopyField Label="Copy the code" Value="@made.Code" ButtonOnly="true" />
+                    </div>
+                    <p class="people-code__hint">@CodeHint(made)</p>
                 }
                 else
                 {
@@ -29,7 +33,7 @@
             </Section>
 
             <Section Title="Details">
-                @if (child.AddedByFamily && !child.CanSignIn)
+                @if (child is { AddedByFamily: true, CanSignIn: false })
                 {
                     <TextField Label="Name" Value="@(_name ?? child.Name)" ValueChanged="value => _name = value" AutoComplete="off" />
                 }
@@ -113,7 +117,7 @@
         ? $"Roster requests, reminders and messages for {child.Name} from their ministries. Through you, they're labelled “For {child.Name}”, and you can answer for them."
         : $"{child.Name} can't sign in yet, so ministries reach them through you, labelled “For {child.Name}”, and you answer for them.";
 
-    private static bool Removes(PersonCard child) => child.AddedByFamily && !child.CanSignIn;
+    private static bool Removes(PersonCard child) => child is { AddedByFamily: true, CanSignIn: false };
 
     private static string RemoveLabel(PersonCard child) => Removes(child) ? $"Remove {child.Name} from the app" : $"Stop looking after {child.Name}";
 
@@ -165,7 +169,7 @@
         }
         catch (RpcException exception)
         {
-            _message = exception.Status.Detail;
+            _message = PeopleWords.Problem(exception);
         }
         finally
         {
