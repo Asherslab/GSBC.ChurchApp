@@ -89,7 +89,12 @@ what went wrong. Sermons knows nothing of the website.
   for 887, longer on a slow connection. Leave it running; it carries on after an API restart.
 - **Storage:** the audio adds about 49 GB to the public bucket (R2: $0.015/GB-month past the free 10 GB, so about $0.60
   a month; Cloudflare's price list, checked 2026-11-04). Pictures are small and kept once.
-- **In development** the media store is SeaweedFS on the Mac, so the import puts about 49 GB on its disk.
+- **In development** the media store is SeaweedFS in Docker, so the import needs about 50 GB free on Docker Desktop's
+  disk. When it runs out, every sermon after that fails with *Something went wrong*; free space and *Run it again*.
+- **The trial run (2026-11-09, a copy of dev's database):** found 887; brought across 887 (884 sermons, since 3 were
+  recordings already there, plus 34 series and 75 speakers); 0 failed in the end. About 2¾ hours of importing in all
+  (the newest ~500 at about 6 a minute, the older ~390 at about 14 a minute), with 45 GiB in the media store. Running it
+  again took 3 minutes: 887 found, 0 brought across, 887 skipped.
 
 ## Permission
 
