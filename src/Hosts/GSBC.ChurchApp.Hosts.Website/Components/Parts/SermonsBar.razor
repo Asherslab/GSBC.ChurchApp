@@ -1,6 +1,6 @@
 @inject WebsiteLinks Links
 
-<div class="bar">
+<div class="bar @Class">
     <form class="search" role="search" action="/sermons" method="get">
         <label class="visually-hidden" for="sermon-search">Search sermons</label>
         <span class="search-field"><SiteIcon Name="search" /><input id="sermon-search" name="q" type="search" value="@Query" placeholder="Search titles, series, speakers" /></span>
@@ -18,4 +18,5 @@
 
 @code {
     [Parameter] public string? Query { get; set; }
+    [Parameter] public string? Class { get; set; }
 }
