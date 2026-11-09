@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Admin: one table of relations</title><link rel="stylesheet" href="sketch.css">
+<style>
+.bar { display: flex; justify-content: space-between; align-items: center; margin: 22px 0 10px; }
+.wrap { max-width: 1280px; }
+.safe { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; margin-top: 30px; border-top: 1px solid var(--line); }
+.safe div { padding: 14px 16px 14px 0; border-bottom: 1px solid var(--line); }
+.safe span { display: block; font-size: var(--text-caption); color: var(--ink-3); }
+.safe b { font-weight: 600; }
+</style></head>
+<body class="admin">
+<aside class="side"><div class="brand"><i></i>Good Shepherd</div><div class="grp">People</div><div class="lnk on">People</div><div class="lnk">Safeguarding <span class="cnt">6</span></div></aside>
+<main class="work"><div class="wrap">
+  <div class="back">‹ People</div>
+  <div class="band"><div><h1>Alex Sample</h1><p><span>alex@example.com</span><span>Born 4 June 1984 (42)</span><span>Joined 3 Oct 2026</span></p></div></div>
+  <div class="tabs"><span>Roles</span><span>What they can do</span><span class="on">Family and safeguarding</span><span>Account</span><span>Activity</span></div>
+  <div class="bar"><span class="micro">Family</span><span class="btn sm">+ Link someone</span></div>
+  <table>
+    <tr><th>Name</th><th>Is Alex's</th><th class="num">Age</th><th>Own sign-in</th><th>Linked</th><th></th></tr>
+    <tr><td><b>Jordan Sample</b></td><td><span class="pill flag">Asking: child</span></td><td class="num">15</td><td class="sub">Yes</td><td class="sub">Asked 8 Nov</td><td><span class="btn sm">Link</span></td></tr>
+    <tr><td><b>Mia Sample</b></td><td>Child</td><td class="num">8</td><td class="sub">No</td><td class="sub">By Alex, 3 Oct</td><td><span class="btn sm q">Unlink</span></td></tr>
+    <tr><td><b>Leo Sample</b></td><td>Child</td><td class="num">13</td><td class="sub">Yes</td><td class="sub">By the office, 5 Oct</td><td><span class="btn sm q">Unlink</span></td></tr>
+  </table>
+  <div class="bar" style="margin-top:34px"><span class="micro">Safeguarding</span><span class="btn sm q">Edit</span></div>
+  <div class="safe">
+    <div><span>Blue card</span><b class="tab-num">1234567/2</b></div><div><span>Status</span><b>Current</b></div><div><span>Expires</span><b class="tab-num">12 Mar 2028</b></div><div><span>Checked</span><b class="tab-num">3 Oct 2026</b></div>
+    <div><span>Safe Ministry training</span><b class="tab-num">20 Nov 2023</b></div><div><span>Due again</span><b class="tab-num">20 Nov 2026 <span class="pill flag">10 days</span></b></div><div></div><div></div>
+  </div>
+  <span class="note">Sketch · sample names</span>
+</div></main></body></html>

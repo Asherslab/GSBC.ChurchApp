@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>People: sketches and choices</title><link rel="stylesheet" href="sketch.css">
+<style>
+body { max-width: 1500px; margin: 0 auto; padding: 32px 24px 64px; background: var(--page); }
+h1 { font-size: var(--text-headline); letter-spacing: -0.02em; }
+.intro { color: var(--ink-2); max-width: 80ch; margin-top: 8px; }
+.intro p + p { margin-top: 8px; }
+h2 { font-size: var(--text-title-lg); margin: 46px 0 6px; letter-spacing: -0.02em; }
+.why { max-width: 90ch; color: var(--ink-2); font-size: var(--text-caption); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 18px; }
+.card { border-radius: 14px; background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.built { box-shadow: inset 0 0 0 2px var(--accent); background: rgb(0 156 143 / 0.08); }
+.card h3 { font-size: var(--text-row); font-weight: 700; }
+.card .tag { font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.card.built .tag { color: var(--accent); }
+.card p { font-size: var(--text-caption); color: var(--ink-2); }
+.frame { position: relative; overflow: hidden; border-radius: 10px; background: var(--page); box-shadow: 0 0 0 1px var(--line); }
+.frame iframe { border: 0; transform-origin: 0 0; position: absolute; left: 0; top: 0; pointer-events: none; }
+.frame.phone { height: 520px; }
+.frame.phone iframe { width: 390px; height: 1300px; transform: scale(0.8); left: calc(50% - 156px); }
+.frame.desk { height: 330px; }
+.frame.desk iframe { width: 1440px; height: 1100px; transform: none; zoom: 0.3; }
+.card a { color: var(--accent); font-weight: 600; font-size: var(--text-caption); }
+.declined { margin-top: 18px; font-size: var(--text-caption); color: var(--ink-2); }
+.declined li { margin: 4px 0 0 18px; }
+@media (max-width: 1000px) { .cards { grid-template-columns: 1fr; } }
+</style></head>
+<body>
+<h1>People (Stage 1 of Ministries): sketches and what was built</h1>
+<div class="intro">
+  <p>Three sketches for each of the three new places: your family and blue card on the phone's Account page, the Family and Safeguarding tabs on a person's page in the admin panel, and where staff see who's flagged. The one with the aqua border is what's built tonight; the others are here so you can choose another in the morning. Every sketch uses the app's real colours and type; names are made up.</p>
+  <p>Chosen by Claude on 2026-11-10 while the owner slept, as asked. To switch, say which sketch you'd like instead; the data underneath is the same for all three, so swapping is screen work only.</p>
+</div>
+
+<h2>1. Your family, blue card and training, on the phone</h2>
+<p class="why">Account page in the app (and the same component on the admin panel's Account page). Who uses it: parents adding a child or making a sign-in code; young people asking a parent; volunteers checking their own card.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Built</span><h3>The card in your pocket</h3>
+    <div class="frame phone"><iframe src="phone-card.html" title="The card in your pocket"></iframe></div>
+    <p>Family as the Account page's usual rows, a waiting request first on the warm tile (as the inbox does), then your blue card drawn as a card in the masthead's navy with its number, status and expiry, and training as a row with a flag when it's due.</p>
+    <p><b>Why:</b> volunteers know their blue card as a physical card, so "is mine current?" is a glance; everything else stays rows, like the rest of Account. From the household sketch it keeps the sheet for one child (the sign-in code shown big, ready to read out).</p>
+    <a href="phone-card.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Household, and a sheet per person</h3>
+    <div class="frame phone"><iframe src="phone-household.html" title="Household"></iframe></div>
+    <p>A strip of everyone in your household as circles; tapping one opens a sheet with their details and actions (the sign-in code, stop looking after).</p>
+    <p><b>Not chosen:</b> without photos the circles are just initials, and every action is a tap deeper. Its sheet is used in the built version.</p>
+    <a href="phone-household.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Plain rows</h3>
+    <div class="frame phone"><iframe src="phone-rows.html" title="Plain rows"></iframe></div>
+    <p>Everything as label-and-value rows, with Add a child and Make a sign-in code as buttons under the list.</p>
+    <p><b>Not chosen:</b> the closest to what's there, but it hides which child a code is for and the approve buttons sit apart from the request.</p>
+    <a href="phone-rows.html">Open full size</a></div>
+</div>
+
+<h2>2. A person's page in the admin panel: Family and Safeguarding</h2>
+<p class="why">Two new tabs on People › a person, beside Roles and Account. Who uses it: office staff linking a parent, adding a child for a family, recording a blue card from the card or Safe Ministry Check. Ministry leaders get the same from their team lists in Stage 2.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Built</span><h3>Family in groups, safeguarding as a record</h3>
+    <div class="frame desk"><iframe src="admin-groups.html" title="Groups"></iframe></div>
+    <p>Family: the birth date, then what's waiting, then the children they look after and their own parents as groups of rows, each with an add row; a sand panel beside says what linking does. Safeguarding: a flag line when something's due, then the blue card and training as fields, with Save and a Remove for each.</p>
+    <p><b>Why:</b> it reads like the Roles tab next to it (rows beside a sand explanation), each group says in words what the link means, and what's waiting comes first.</p>
+    <a href="admin-groups.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>One table of relations</h3>
+    <div class="frame desk"><iframe src="admin-table.html" title="Table"></iframe></div>
+    <p>One tab for both: the family as a table (relation, age, sign-in, who linked them), then safeguarding as a strip of facts with Edit.</p>
+    <p><b>Not chosen:</b> dense, but a family is two or three people, not a table's worth, and "Is Alex's: Child" makes staff read the relation backwards.</p>
+    <a href="admin-table.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A family tree</h3>
+    <div class="frame desk"><iframe src="admin-tree.html" title="Tree"></iframe></div>
+    <p>Parents above, the person in navy, children below, add slots in each row.</p>
+    <p><b>Not chosen:</b> clear at a glance, but it spends the whole width on three boxes and gets cramped with blended families.</p>
+    <a href="admin-tree.html">Open full size</a></div>
+</div>
+
+<h2>3. Who's flagged</h2>
+<p class="why">Blue cards and training that have run out or are due, people with training but no card recorded, and young people no parent has linked. Never blocks anyone; it's a list to chase.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Built</span><h3>Counts that filter one list, soonest first</h3>
+    <div class="frame desk"><iframe src="flagged-tiles.html" title="Counts and list"></iframe></div>
+    <p>A Safeguarding page under People: four counts that are also the filters, then one list ordered by when things run out, each opening the person's Safeguarding tab. Plus a line in Home's Needs you when anything has run out.</p>
+    <p><b>Why:</b> one place to work through, in the order it matters; the counts answer "how are we going?" without a report. Home's Needs you comes from the second sketch.</p>
+    <a href="flagged-tiles.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Only in Needs you, and a People filter</h3>
+    <div class="frame desk"><iframe src="flagged-office-week.html" title="Needs you"></iframe></div>
+    <p>No page of its own: Home's Needs you says what's run out and due, and opens People with a "Safeguarding to check" filter and a column.</p>
+    <p><b>Not chosen as the whole answer:</b> People belongs to Accounts, which can't show safeguarding without a new hook, and a filter hides why someone's there. Its Needs you lines are built.</p>
+    <a href="flagged-office-week.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A rail of what runs out when</h3>
+    <div class="frame desk"><iframe src="flagged-rail.html" title="Rail"></iframe></div>
+    <p>Twelve weeks across, blue cards and training as two lanes, what's run out in the first column; anything without a date listed under it.</p>
+    <p><b>Not chosen:</b> lovely for planning reminders, but half the flags (no card recorded, a young person on their own) have no date and fall off the rail.</p>
+    <a href="flagged-rail.html">Open full size</a></div>
+</div>
+
+<div class="declined"><b>Also weighed and declined</b> (the design process deals a few outside ideas each round; none fit an established design on a working screen):
+  <ul>
+    <li>A boarding pass and gate board: declined, but its rule kept: a flag holds its colour until it's fixed, and the list is ordered by when things run out.</li>
+    <li>Metro tiles, a dance-notation score, a vertical video feed, a zoo map, a type specimen, an annual's plate section, a grid specimen, an acetate tab board, a ticket wallet: each would replace the app's look rather than serve this task.</li>
+  </ul>
+</div>
+</body></html>

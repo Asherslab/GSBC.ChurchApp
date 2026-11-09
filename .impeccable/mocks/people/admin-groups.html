@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Admin: family in groups, safeguarding as a record</title><link rel="stylesheet" href="sketch.css">
+<style>
+.cols { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 40px; margin-top: 24px; max-width: 1280px; }
+.grp-h { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 6px; }
+.blk { margin-bottom: 26px; }
+.row .t b { font-size: var(--text-row); }
+.row .acts { display: flex; gap: 8px; }
+.status { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 14px; background: rgb(231 174 116 / 0.22); color: var(--marker-ink); font-weight: 600; font-size: var(--text-row); margin-bottom: 18px; }
+.status.ok { background: rgb(0 156 143 / 0.1); color: var(--accent); }
+.rec { display: grid; grid-template-columns: 1fr 1fr; gap: 0 28px; }
+.rec .field .in { background: var(--sand); }
+h2.h { font-size: var(--text-title); margin: 34px 0 6px; }
+.divider { border: 0; border-top: 1px dashed var(--line); margin: 40px 0 0; }
+</style></head>
+<body class="admin">
+<aside class="side"><div class="brand"><i></i>Good Shepherd</div><div class="grp">People</div><div class="lnk on">People</div><div class="lnk">Safeguarding <span class="cnt">6</span></div><div class="grp">Calendar &amp; news</div><div class="lnk">Calendar</div><div class="lnk">Announcements</div></aside>
+<main class="work">
+  <div class="back">‹ People</div>
+  <div class="band"><div><h1>Alex Sample</h1><p><span>alex@example.com</span><span>Active</span><span>Has a passkey</span><span>Joined 3 Oct 2026</span></p></div></div>
+  <div class="tabs"><span>Roles</span><span>What they can do</span><span class="on">Family</span><span>Safeguarding</span><span>Account</span><span>Activity</span></div>
+  <div class="cols">
+    <div>
+      <div class="list" style="border:0">
+        <div class="row" style="border-top:1px solid var(--line)"><div class="t"><b>Born 4 June 1984</b><span class="s">42 · an adult</span></div><span class="btn sm q">Change</span></div>
+      </div>
+      <h2 class="h">Waiting for Alex</h2>
+      <div class="list blk"><div class="row"><div class="tile warm">J</div><div class="t"><b>Jordan Sample asked Alex to be their parent</b><span class="s">8 Nov · Jordan is 15 and isn't linked to anyone yet</span></div><div class="acts"><span class="btn sm q">Take it back</span><span class="btn sm">Link them</span></div></div></div>
+      <div class="grp-h"><span class="micro">Children Alex looks after · 2</span></div>
+      <div class="list blk">
+        <div class="row"><div class="tile">M</div><div class="t"><b>Mia Sample</b><span class="s">8 · no sign-in of her own · added by Alex, 3 Oct</span></div><div class="acts"><span class="btn sm q">Open</span><span class="btn sm q">Unlink</span></div></div>
+        <div class="row"><div class="tile">L</div><div class="t"><b>Leo Sample</b><span class="s">13 · signs in · linked by the office, 5 Oct</span></div><div class="acts"><span class="btn sm q">Open</span><span class="btn sm q">Unlink</span></div></div>
+        <div class="row"><div class="tile act">+</div><div class="t"><b class="add">Link a child</b><span class="s">Find someone, or add a child who isn't in the app</span></div></div>
+      </div>
+      <div class="grp-h"><span class="micro">Alex's parents and guardians</span></div>
+      <div class="list blk"><div class="row"><div class="tile act">+</div><div class="t"><b class="add">Link a parent</b><span class="s">Only matters while someone is under 18</span></div></div></div>
+    </div>
+    <aside class="panel"><h3>What linking does</h3><p>A parent or guardian, while their child is under 18:</p><ul><li>sees and changes the child's details in the app</li><li>makes them a sign-in code for their own phone</li><li>later: reads the chats their child is in, and approves new ones</li></ul><p style="margin-top:12px">A young person no one has linked shows on Safeguarding until someone does.</p></aside>
+  </div>
+  <hr class="divider">
+  <div class="tabs"><span>Roles</span><span>What they can do</span><span>Family</span><span class="on">Safeguarding</span><span>Account</span><span>Activity</span></div>
+  <div class="cols">
+    <div>
+      <div class="status">! Safe Ministry training is due in 10 days</div>
+      <span class="micro">Blue card</span>
+      <div class="rec"><div class="field"><label>Number</label><div class="in tab-num">1234567/2</div></div><div class="field"><label>Status</label><div class="in">Current</div></div><div class="field"><label>Expires</label><div class="in tab-num">12 Mar 2028</div></div><div class="field"><label>Checked by the office</label><div class="in tab-num">3 Oct 2026</div></div></div>
+      <div style="margin:26px 0 0"><span class="micro">Safe Ministry training</span></div>
+      <div class="rec"><div class="field"><label>Done</label><div class="in tab-num">20 Nov 2023</div></div><div class="field"><label>Due again</label><div class="in tab-num">20 Nov 2026</div></div></div>
+      <div class="actions"><span class="btn">Save</span><span class="btn q">Remove the blue card</span><span class="btn q">Remove the training</span></div>
+    </div>
+    <aside class="panel"><h3>Entered by hand, for now</h3><p>From the card itself or Safe Ministry Check. Alex sees these on their phone. Nothing is ever blocked: a missing or expiring card or training is flagged for you and for Alex.</p></aside>
+  </div>
+  <span class="note">Sketch · sample names</span>
+</main></body></html>

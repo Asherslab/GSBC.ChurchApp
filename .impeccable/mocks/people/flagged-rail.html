@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Flagged: a rail of what runs out when</title><link rel="stylesheet" href="sketch.css">
+<style>
+.wrap { max-width: 1280px; }
+.rail { display: grid; grid-template-columns: 150px repeat(12, 1fr); margin-top: 28px; border-top: 1px solid var(--line); }
+.rail > div { min-height: 64px; border-bottom: 1px solid var(--line); border-left: 1px solid var(--line); padding: 8px 6px; font-size: var(--text-caption); }
+.rail .h { min-height: 0; font-size: var(--text-pill); font-weight: 600; color: var(--ink-3); text-transform: uppercase; letter-spacing: 0.04em; }
+.rail .lab { border-left: 0; font-weight: 600; color: var(--ink-2); }
+.rail .past { background: rgb(180 55 47 / 0.06); }
+.cap { display: block; border-radius: 8px; padding: 4px 6px; margin-bottom: 4px; font-weight: 600; background: rgb(231 174 116 / 0.3); color: var(--marker-ink); }
+.cap.bad { background: rgb(180 55 47 / 0.12); color: var(--danger); }
+.cap.card { background: rgb(0 156 143 / 0.14); color: var(--accent); }
+.loose { margin-top: 30px; }
+</style></head>
+<body class="admin">
+<aside class="side"><div class="brand"><i></i>Good Shepherd</div><div class="grp">People</div><div class="lnk">People</div><div class="lnk on">Safeguarding <span class="cnt">6</span></div></aside>
+<main class="work"><div class="wrap">
+  <div class="band"><div><h1>Safeguarding</h1><p>What runs out when, over the next twelve weeks. Run-out ones sit in the first column until someone records a new date.</p></div></div>
+  <div class="rail">
+    <div class="h lab"></div><div class="h">Run out</div><div class="h">16 Nov</div><div class="h">23 Nov</div><div class="h">30 Nov</div><div class="h">7 Dec</div><div class="h">14 Dec</div><div class="h">21 Dec</div><div class="h">28 Dec</div><div class="h">4 Jan</div><div class="h">11 Jan</div><div class="h">18 Jan</div><div class="h">25 Jan</div>
+    <div class="lab">Blue cards</div><div class="past"><span class="cap bad">Chris</span></div><div></div><div></div><div></div><div></div><div><span class="cap">Sam</span></div><div></div><div></div><div></div><div></div><div></div><div></div>
+    <div class="lab">Training</div><div class="past"><span class="cap bad">Pat</span></div><div><span class="cap">Alex</span></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div><span class="cap">Kim</span></div><div></div><div></div>
+  </div>
+  <div class="loose"><span class="micro">Not on the rail</span>
+    <div class="list" style="margin-top:6px">
+      <div class="row"><div class="tile quiet">?</div><div class="t"><b>Robin Sample has training but no blue card recorded</b></div><span class="chev">›</span></div>
+      <div class="row"><div class="tile warm">J</div><div class="t"><b>Jordan Sample, 15, has no parent linked</b><span class="s">Asked a parent 8 Nov</span></div><span class="chev">›</span></div>
+    </div>
+  </div>
+  <span class="note">Sketch · sample names</span>
+</div></main></body></html>

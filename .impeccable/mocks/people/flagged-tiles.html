@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Flagged: counts that filter one list, soonest first</title><link rel="stylesheet" href="sketch.css">
+<style>
+.wrap { max-width: 1280px; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; margin: 26px 0 22px; }
+.stat { border-top: 1px solid var(--line); padding-top: 12px; }
+.stat.on { border-top: 3px solid var(--marker); padding-top: 10px; }
+.stat b { display: block; font-size: var(--text-display); font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.stat span { display: block; font-weight: 600; font-size: var(--text-row); margin-top: 6px; }
+.stat em { display: block; font-style: normal; font-size: var(--text-caption); color: var(--ink-3); }
+.bar { display: flex; gap: 14px; align-items: center; margin-bottom: 8px; }
+td a { color: var(--accent); font-weight: 600; text-decoration: none; }
+</style></head>
+<body class="admin">
+<aside class="side"><div class="brand"><i></i>Good Shepherd</div><div class="grp">People</div><div class="lnk">People</div><div class="lnk on">Safeguarding <span class="cnt">6</span></div></aside>
+<main class="work"><div class="wrap">
+  <div class="band"><div><h1>Safeguarding</h1><p>Blue cards and Safe Ministry training that have run out or are about to, and young people no parent has linked yet. Nothing here stops anyone serving; it's what to chase.</p></div><span class="btn q">Record a blue card</span></div>
+  <div class="stats">
+    <div class="stat on"><b>6</b><span>Needs a look</span><em>Everything below, soonest first</em></div>
+    <div class="stat"><b>2</b><span>Run out</span><em>A card or training past its date</em></div>
+    <div class="stat"><b>3</b><span>Due in 60 days</span><em>Time to remind them</em></div>
+    <div class="stat"><b>1</b><span>Young person on their own</span><em>Asked a parent who hasn't answered</em></div>
+  </div>
+  <div class="bar"><div class="search">Find someone</div></div>
+  <table>
+    <tr><th>Person</th><th>What</th><th>Since or due</th><th class="num">Days</th><th></th></tr>
+    <tr><td><b>Chris Sample</b></td><td>Blue card <span class="pill bad">Run out</span></td><td class="sub tab-num">Expired 2 Nov 2026</td><td class="num">−8</td><td><a href="#">Open ›</a></td></tr>
+    <tr><td><b>Pat Sample</b></td><td>Safe Ministry training <span class="pill bad">Run out</span></td><td class="sub tab-num">Was due 1 Nov 2026</td><td class="num">−9</td><td><a href="#">Open ›</a></td></tr>
+    <tr><td><b>Alex Sample</b></td><td>Safe Ministry training <span class="pill flag">Due soon</span></td><td class="sub tab-num">Due 20 Nov 2026</td><td class="num">10</td><td><a href="#">Open ›</a></td></tr>
+    <tr><td><b>Sam Sample</b></td><td>Blue card <span class="pill flag">Due soon</span></td><td class="sub tab-num">Expires 14 Dec 2026</td><td class="num">34</td><td><a href="#">Open ›</a></td></tr>
+    <tr><td><b>Robin Sample</b></td><td>Blue card <span class="pill">Not recorded</span></td><td class="sub">Has training, no card</td><td class="num">—</td><td><a href="#">Open ›</a></td></tr>
+    <tr><td><b>Jordan Sample</b></td><td>Young person, no parent linked</td><td class="sub tab-num">Asked a parent 8 Nov 2026</td><td class="num">—</td><td><a href="#">Open ›</a></td></tr>
+  </table>
+  <span class="note">Sketch · sample names</span>
+</div></main></body></html>
