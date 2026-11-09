@@ -63,7 +63,8 @@ the most recent first, and *Add "…" as a service*. A service added once is off
 a name and a photo in the list on *Series and speakers*. No two speakers can have the same name (ignoring case and
 spaces), and a sermon credited to the wrong person is corrected on the sermon. A new speaker typed on the upload form
 lands on the speaker with that name if there is one (`Speakers.ResolveAsync`). A sermon can have no speaker; it shows
-*Guest speaker*. A speaker with no sermons isn't shown in the app (the speakers feed holds only speakers with sermons)
+*Guest speaker*. A speaker can carry an **honorific** (*Bro*, *Pastor*…; owner, 2026-11-09: stored for later, not shown
+yet), which only the import fills in. A speaker with no sermons isn't shown in the app (the speakers feed holds only speakers with sermons)
 but stays in the admin panel's list until staff delete it. Tests: `SpeakersAndServicesTests`.
 
 ### Deleting a speaker, a series or a sermon (owner, 2026-11-09)

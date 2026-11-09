@@ -9,6 +9,8 @@
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Sermons.Api.Tests" />
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Sermons.Import.Api" />
+    <InternalsVisibleTo Include="GSBC.ChurchApp.Features.Sermons.Import.Api.Tests" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\GSBC.ChurchApp.Features.Sermons.Contracts\GSBC.ChurchApp.Features.Sermons.Contracts.csproj" />

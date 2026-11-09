@@ -219,6 +219,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<string>("Honorific")
+                        .HasColumnType("text")
+                        .HasColumnName("honorific");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")

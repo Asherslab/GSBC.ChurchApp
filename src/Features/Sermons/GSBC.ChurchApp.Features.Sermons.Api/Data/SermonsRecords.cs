@@ -45,6 +45,7 @@ public sealed class SpeakerRecord
 {
     public Guid Id { get; set; }
     public required string Name { get; set; }
+    public string? Honorific { get; set; }
     public MediaRef? Photo { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PublishedHash { get; set; }

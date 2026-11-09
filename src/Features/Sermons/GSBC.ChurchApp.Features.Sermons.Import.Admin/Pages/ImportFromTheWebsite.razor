@@ -1,0 +1,120 @@
+@page "/sermons/import"
+@inject SermonsImportClient Import
+
+<TitleBand Title="Import from the website" BackHref="sermons" BackText="Sermons"
+           Lead="Brings every sermon on the old website into the app: its audio, pictures, series, speaker, passage and video. It runs on the server, so you can close this page. Running it again skips what's already here." />
+
+<LiveData @ref="_live" TValue="ImportProgress" Feeds="ProgressFeeds" Load="() => Import.ProgressAsync().AsTask()" FailedTitle="Can't show the import right now">
+    @{ ImportProgress progress = context.Value; }
+    <Section First="true" Title="@Heading(progress)" Lead="@Summary(progress)">
+        <div class="stat-tiles">
+            <StatTile Value="@Count(progress.Found)" Label="found on the website" Explanation="@WebsiteSays(progress)" />
+            <StatTile Value="@Count(progress.Copied)" Label="brought across this time" />
+            <StatTile Value="@Count(progress.Skipped)" Label="already here, skipped" />
+            <StatTile Value="@Count(progress.Failed)" Label="couldn't be brought across" Quiet="progress.Failed == 0" />
+        </div>
+        @if (Running(progress))
+        {
+            <ProgressTrack Fraction="Overall(progress)" Label="How far the import has got" />
+            @if (progress.Current is { } current)
+            {
+                <p aria-live="polite">Now: @current.Title@(current.Bytes > 0 ? $" · {Megabytes(current.CopiedBytes)} of {Megabytes(current.Bytes)}" : "")</p>
+            }
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@progress.Problem" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        @if (!Running(progress))
+        {
+            <div class="panel-actions">
+                <Button Icon="@(progress.State == ImportStates.NotStarted ? "arrow-down" : "refresh")" Busy="_busy" OnClick="StartAsync">@(progress.State == ImportStates.NotStarted ? "Start import" : "Run it again")</Button>
+            </div>
+        }
+    </Section>
+
+    @if (progress.Failures.Count > 0)
+    {
+        <Section Title="Couldn't be brought across" Lead="Each is tried again when you run the import again, or try one now.">
+            <ListGroup Boxed="true">
+                @foreach (ImportItem failure in progress.Failures)
+                {
+                    <ListRow Title="@failure.Title" Subtitle="@Line(failure)">
+                        <TrailingContent>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RetryAsync(failure.WebsitePath)">Try again</Button>
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        </Section>
+    }
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<string> ProgressFeeds = [SermonsImportFeeds.Progress];
+
+    private LiveData<ImportProgress>? _live;
+    private bool _busy;
+    private string? _problem;
+
+    private static bool Running(ImportProgress progress) => progress.State is ImportStates.Waiting or ImportStates.Finding or ImportStates.Importing;
+
+    private static string Heading(ImportProgress progress) => progress.State switch
+    {
+        ImportStates.NotStarted => "Not run yet",
+        ImportStates.Waiting => "Starting…",
+        ImportStates.Finding => "Finding the website's sermons…",
+        ImportStates.Importing => "Bringing sermons across…",
+        _ => progress.Failed == 0 && progress.Problem is null ? "Done" : "Finished, with some left to bring across",
+    };
+
+    private static string? Summary(ImportProgress progress) => progress.State switch
+    {
+        ImportStates.NotStarted => "Nothing has been brought across yet. Phones won't be told about the sermons it brings: they arrive as already out.",
+        ImportStates.Finding => $"Reading the website's list of sermons: {progress.ListingPages} pages so far.",
+        ImportStates.Importing => $"{progress.Waiting} still to go. Each sermon's audio is copied into the church's own storage, so this takes a while.",
+        ImportStates.Finished when progress.FinishedAt is { } finished => $"Finished {ChurchTime.ToChurch(finished):d MMMM 'at' h:mm tt}.",
+        _ => null,
+    };
+
+    private static string? WebsiteSays(ImportProgress progress) =>
+        progress.WebsiteCount > 0 ? $"The website lists {progress.WebsiteCount} sermons in all." : null;
+
+    private static double Overall(ImportProgress progress)
+    {
+        int total = progress.Found;
+        if (total == 0)
+            return 0;
+        double current = progress.Current is { Bytes: > 0 } now ? Math.Clamp((double)now.CopiedBytes / now.Bytes, 0, 1) : 0;
+        return Math.Clamp((total - progress.Waiting + current) / total, 0, 1);
+    }
+
+    private static string Count(int count) => count.ToString("N0");
+
+    private static string Megabytes(long bytes) => $"{bytes / 1024d / 1024d:0.0} MB";
+
+    private static string Line(ImportItem item) =>
+        string.Join(" · ", new[] { item.PreachedOn?.ToString("d MMMM yyyy"), item.Problem }.Where(part => !string.IsNullOrEmpty(part)));
+
+    private Task StartAsync() => RunAsync(() => Import.StartAsync().AsTask());
+
+    private Task RetryAsync(string websitePath) => RunAsync(() => Import.RetryAsync(websitePath).AsTask());
+
+    private async Task RunAsync(Func<Task<ImportProgress>> work)
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await work();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
