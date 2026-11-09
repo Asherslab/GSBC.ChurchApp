@@ -1,7 +1,9 @@
-namespace GSBC.ChurchApp.Features.Sermons.Api.Website;
+namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal static class Mp3Duration
 {
+    private const int HeadBytes = 64 * 1024;
+
     private static readonly int[,] Bitrates =
     {
         { 0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0 },
@@ -14,6 +16,16 @@ internal static class Mp3Duration
         { 22050, 24000, 16000 },
         { 11025, 12000, 8000 },
     };
+
+    public static async Task<int?> ReadAsync(Stream audio, long bytes, CancellationToken cancellationToken)
+    {
+        byte[] head = new byte[HeadBytes];
+        int read = await audio.ReadAtLeastAsync(head, HeadBytes, throwOnEndOfStream: false, cancellationToken);
+        int tag = TagBytes(head.AsSpan(0, read));
+        if (tag == 0)
+            return Seconds(head.AsSpan(0, read), bytes);
+        return tag < read ? Seconds(head.AsSpan(tag, read - tag), bytes - tag) : null;
+    }
 
     public static int TagBytes(ReadOnlySpan<byte> start) =>
         start.Length >= 10 && start[0] == 'I' && start[1] == 'D' && start[2] == '3'

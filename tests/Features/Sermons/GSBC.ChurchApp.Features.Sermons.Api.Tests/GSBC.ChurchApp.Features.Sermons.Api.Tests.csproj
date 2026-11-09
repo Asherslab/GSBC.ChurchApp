@@ -8,6 +8,5 @@
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
-    <None Include="Samples\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

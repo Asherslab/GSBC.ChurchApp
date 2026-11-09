@@ -335,6 +335,7 @@ span.sermon-art { display: block; }
 .series-line { margin: 0.25rem 0 0; font-family: var(--site-serif); font-size: 0.9375rem; color: var(--site-ink); }
 .series-line a { color: var(--site-ink); text-decoration: none; }
 .series-line a:hover { color: var(--site-green); text-decoration: underline; }
+.summary { margin: 1rem 0 0; font-family: var(--site-serif); font-size: 1.0625rem; line-height: 1.6; white-space: pre-line; color: var(--site-ink); }
 .length { font-family: var(--site-sans); font-size: 0.875rem; color: var(--site-ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 .speaker { display: inline-flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; font-family: var(--site-serif); font-size: 0.9375rem; }

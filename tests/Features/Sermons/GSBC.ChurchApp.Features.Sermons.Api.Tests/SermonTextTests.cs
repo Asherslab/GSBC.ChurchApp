@@ -1,25 +1,9 @@
-using GSBC.ChurchApp.Features.Sermons.Api.Website;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 
-public sealed class FeedTextTests
+public sealed class SermonTextTests
 {
-    [Theory]
-    [InlineData("Sun AM - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday Morning")]
-    [InlineData("SUN PM - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday Evening")]
-    [InlineData("Wed PM", "Jo Ellery", "Wednesday Night")]
-    [InlineData("Wed", "Jo Ellery", "Wednesday Night")]
-    [InlineData("Sun AM - Ps Lee Varga - Watch at: https://youtu.be/AbCdEfGhIj0", "Lee Varga", "Sunday Morning")]
-    [InlineData("Sun PM - Kit Ward - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday Evening")]
-    [InlineData("Mon PM", "Jo Ellery", "Monday evening")]
-    [InlineData("Sun 9AM - Adults Session - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday 9am · Adults Session")]
-    [InlineData("Wed 2nd Session - Youth", "Jo Ellery", "Wednesday 2nd Session · Youth")]
-    [InlineData("Christmas Day - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Christmas Day")]
-    [InlineData("Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "")]
-    public void TheServiceIsReadFromTheSummary(string summary, string speaker, string service) =>
-        Assert.Equal(service, ServiceLabels.FromSummary(summary, speaker));
-
     [Theory]
     [InlineData("Watch at: https://youtu.be/AbCdEfGhIj0", "AbCdEfGhIj0")]
     [InlineData("https://www.youtube.com/watch?v=AbCdEfGhIj0&t=30", "AbCdEfGhIj0")]
@@ -40,14 +24,6 @@ public sealed class FeedTextTests
     {
         Assert.Equal(series, TitleParts.SuggestedSeries(title));
         Assert.Equal(part, TitleParts.PartOf(title));
-    }
-
-    [Fact]
-    public void ResizedArtworkLeadsBackToTheOriginal()
-    {
-        string job = Convert.ToBase64String("""[["f","2026/11/04/abc/42140.png"],["p","podcast","1400x1400#"]]"""u8).TrimEnd('=').Replace('+', '-').Replace('/', '_');
-        Assert.Equal("https://files.example/2026/11/04/abc/42140.png",
-            TithelyArtwork.OriginalOf($"https://church.example/df_media/{job}/42140.jpg?sha=1", "files.example"));
     }
 
     [Fact]

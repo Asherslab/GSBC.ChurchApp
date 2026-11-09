@@ -29,7 +29,17 @@ else
                 <p class="series-line"><a href="/sermons/series/@Uri.EscapeDataString(Series.Id)">@Series.Name</a>@(Sermon.Part > 0 ? $" · Part {Sermon.Part}" : "")</p>
             }
             <SpeakerLine Sermon="Sermon" />
-            <ul class="meta"><li>@SermonText.When(Sermon)</li><li>@SermonText.Length(Sermon.DurationSeconds)</li></ul>
+            <ul class="meta">
+                @if (Sermon.Passage.Length > 0)
+                {
+                    <li>@Sermon.Passage</li>
+                }
+                <li>@SermonText.When(Sermon)</li><li>@SermonText.Length(Sermon.DurationSeconds)</li>
+            </ul>
+            @if (Sermon.Summary.Length > 0)
+            {
+                <p class="summary">@Sermon.Summary</p>
+            }
             <div class="listen">
                 @if (Sermon.AudioUrl.Length > 0)
                 {

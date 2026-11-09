@@ -10,11 +10,11 @@ public sealed record SermonShelf(IReadOnlyList<Sermon> Sermons, IReadOnlyList<Se
 {
     public static readonly SermonShelf Empty = new([], [], []);
 
-    public Sermon? Find(string id) => Sermons.FirstOrDefault(sermon => sermon.Id == id) ?? Sermons.FirstOrDefault(sermon => sermon.FormerIds.Contains(id));
+    public Sermon? Find(string id) => Sermons.FirstOrDefault(sermon => sermon.Id == id);
 
-    public SeriesInfo? FindSeries(string id) => Series.FirstOrDefault(series => series.Id == id) ?? Series.FirstOrDefault(series => series.FormerIds.Contains(id));
+    public SeriesInfo? FindSeries(string id) => Series.FirstOrDefault(series => series.Id == id);
 
-    public SpeakerInfo? FindSpeaker(string id) => Speakers.FirstOrDefault(speaker => speaker.Id == id) ?? Speakers.FirstOrDefault(speaker => speaker.FormerIds.Contains(id));
+    public SpeakerInfo? FindSpeaker(string id) => Speakers.FirstOrDefault(speaker => speaker.Id == id);
 
     public IReadOnlyList<Sermon> InSeries(string seriesId) =>
         Sermons.Where(sermon => sermon.SeriesId == seriesId).OrderBy(sermon => sermon.PreachedAt).ThenBy(sermon => sermon.Part).ToList();

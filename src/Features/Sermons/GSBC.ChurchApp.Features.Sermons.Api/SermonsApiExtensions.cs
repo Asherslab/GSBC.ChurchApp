@@ -20,18 +20,13 @@ public static class SermonsApiExtensions
     {
         services.AddSermonsData();
         services.AddBlobStore(configuration);
-        services.Configure<WebsiteOptions>(configuration.GetSection(WebsiteOptions.Section));
-        services.AddHttpClient<WebsiteClient>(client => client.Timeout = TimeSpan.FromMinutes(2));
-        services.AddScoped<Artwork>();
-        services.AddMediaSystemArea(Artwork.Area);
-        services.AddMediaSystemArea(AudioCopier.Area);
+        services.AddMediaSystemArea(SermonMedia.Pictures);
+        services.AddMediaSystemArea(SermonMedia.Audio);
         services.AddScoped<Speakers>();
         services.AddScoped<ServiceNames>();
         services.AddScoped<SermonPictures>();
         services.AddScoped<IMediaHolder>(provider => provider.GetRequiredService<SermonPictures>());
         services.AddScoped<SermonPublisher>();
-        services.AddScoped<WebsiteReader>();
-        services.AddScoped<SourceIdMove>();
         services.AddScoped<SermonUploads>();
         services.AddScoped<SermonDeletion>();
         services.AddScoped<IPersonData, SermonsPersonData>();
@@ -44,10 +39,8 @@ public static class SermonsApiExtensions
             "Hears when a series has a new sermon", ScopeKind.SermonSeries, [SermonsPermissions.HearSeriesNode], PhoneHoldable: true));
         services.AddScoped<PodcastFeedWriter>();
         services.Configure<PodcastOptions>(configuration.GetSection(PodcastOptions.Section));
-        services.AddSingleton<AudioCopier>();
-        services.AddHostedService(provider => provider.GetRequiredService<AudioCopier>());
-        services.AddSingleton<WebsiteSchedule>();
-        services.AddHostedService(provider => provider.GetRequiredService<WebsiteSchedule>());
+        services.AddSingleton<AudioKeeper>();
+        services.AddHostedService(provider => provider.GetRequiredService<AudioKeeper>());
 
         services.AddPermissions(SermonsPermissions.All);
         services.AddDestinations(SermonsDestinations.All);
@@ -65,7 +58,6 @@ public static class SermonsApiExtensions
         services.AddFeed(new FeedDefinition(SermonsFeeds.Speakers, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Progress, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Admin, FeedAudience.Holding(SermonsPermissions.Edit)));
-        services.AddFeed(new FeedDefinition(SermonsFeeds.Copying, FeedAudience.Holding(SermonsPermissions.Edit)));
         return services;
     }
 

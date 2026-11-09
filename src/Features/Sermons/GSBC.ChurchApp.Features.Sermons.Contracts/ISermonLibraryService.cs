@@ -40,21 +40,11 @@ public interface ISermonLibraryService
     [SignedIn]
     ValueTask<ServiceList> ListServicesAsync(Done request, CallContext context = default);
 
-    [SignedIn]
-    ValueTask<SourceStatus> StatusAsync(Done request, CallContext context = default);
 
-    [Requires(SermonsPermissions.EditNode)]
-    ValueTask<CopyProgress> CopyingAsync(Done request, CallContext context = default);
-
-    [Requires(SermonsPermissions.SourceNode)]
-    ValueTask<SourceStatus> ChooseSourceAsync(SourceChoice request, CallContext context = default);
 
     [Requires(SermonsPermissions.UploadNode)]
     ValueTask<AudioUploadTicket> BeginAudioUploadAsync(AudioUploadRequest request, CallContext context = default);
 
     [Requires(SermonsPermissions.UploadNode)]
     ValueTask<SermonDetail> AddUploadAsync(SermonUpload request, CallContext context = default);
-
-    [Requires(SermonsPermissions.EditNode)]
-    ValueTask<SourceStatus> CheckNowAsync(Done request, CallContext context = default);
 }

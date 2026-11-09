@@ -13,9 +13,9 @@ internal sealed class SermonFollowing(SermonsDbContext db, IRoleAssignments role
         string? seriesId = string.IsNullOrEmpty(request.SeriesId) ? null : request.SeriesId;
         if (seriesId is not null)
         {
-            if (!Guid.TryParse(seriesId, out Guid id) || await SourceIdMove.CurrentAsync(db, id, cancellationToken) is var current && !await db.Series.AnyAsync(series => series.Id == current, cancellationToken))
+            if (!Guid.TryParse(seriesId, out Guid id) || !await db.Series.AnyAsync(series => series.Id == id, cancellationToken))
                 throw new RpcException(new Status(StatusCode.InvalidArgument, "That series isn't here any more."));
-            seriesId = current.ToString();
+            seriesId = id.ToString();
         }
         string role = seriesId is null ? SermonsPermissions.FollowerRole : SermonsPermissions.SeriesFollowerRole;
 

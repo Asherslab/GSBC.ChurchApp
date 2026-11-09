@@ -4,7 +4,7 @@
         <MediaCover Media="Detail.Sermon.Artwork" FallbackTitle="@Detail.Sermon.Title" Class="sermon-check__art" />
         <div class="sermon-check__intro">
             <h2>@Detail.Sermon.Title</h2>
-            <p>@SermonText.Join(SermonText.LongDay(Detail.Sermon.PreachedAt), SermonText.Length(Detail.Sermon.DurationSeconds), Origin)</p>
+            <p>@SermonText.Join(SermonText.LongDay(Detail.Sermon.PreachedAt), SermonText.Length(Detail.Sermon.DurationSeconds))</p>
             @if (Detail.CheckedAt is null && !Detail.Hidden)
             {
                 <p class="sermon-check__reasons">@foreach (string reason in Detail.NeedsALook)
@@ -13,41 +13,38 @@
                 }</p>
             }
             <AudioPreview Item="SermonPlayer.Item(Detail.Sermon)" />
-            @if (Detail.Sermon.WebLink is { } link)
-            {
-                <a class="text-link" href="@link" target="_blank" rel="noopener">Open on the website<Icon Name="external-link" Size="IconSize.Small" /></a>
-            }
         </div>
     </div>
 
     <div class="sermon-check__fields">
         <div class="sermon-check__field">
             <TextField Label="Title" @bind-Value="_title" MaxLength="160" />
-            <UseSource Show="Corrected(Fields.Title)" Value="@Detail.FromSource.Title" OnUse="() => UseSourceAsync(Fields.Title)" />
         </div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="AllSpeakers" Text="SpeakerName" Detail="SermonCount" Value="SpeakerOf(_speakerId)"
                           ValueChanged="speaker => _speakerId = speaker?.Id ?? _speakerId" Placeholder="Find a speaker"
-                          CreateText="@(OursToAdd ? name => $"Add “{name}” as a new speaker" : null)" OnCreate="AddSpeakerAsync" />
-            <UseSource Show="Corrected(Fields.Speaker)" Value="@Detail.FromSource.Speaker" OnUse="() => UseSourceAsync(Fields.Speaker)" />
+                          CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="AddSpeakerAsync" />
         </div>
         <div class="sermon-check__field">
             <SearchPicker TItem="SeriesDetail" Label="Series" Items="AllSeries" Text="SeriesTitle" Detail="SeriesCount" Value="SeriesOf(_seriesId)"
                           ValueChanged="series => _seriesId = series?.Id ?? string.Empty" NoneText="Not in a series" Placeholder="Find a series"
-                          CreateText="@(OursToAdd ? name => $"Start a new series called “{name}”" : null)" OnCreate="AddSeriesAsync" />
+                          CreateText="@(name => $"Start a new series called “{name}”")" OnCreate="AddSeriesAsync" />
             @if (_seriesId.Length == 0 && Detail.SuggestedSeries is { } suggested)
             {
                 <button type="button" class="text-link" @onclick="() => PutInSeriesAsync(suggested)">Put it in “@suggested”</button>
             }
-            <UseSource Show="Corrected(Fields.Series)" Value="@SeriesName(Detail.FromSource.SeriesId)" OnUse="() => UseSourceAsync(Fields.Series)" />
         </div>
         <div class="sermon-check__field">
             <ServicePicker Services="Services" @bind-Value="_service" />
-            <UseSource Show="Corrected(Fields.Service)" Value="@Detail.FromSource.Service" OnUse="() => UseSourceAsync(Fields.Service)" />
+        </div>
+        <div class="sermon-check__field">
+            <TextField Label="Bible passage" Placeholder="John 3:16-21" @bind-Value="_passage" MaxLength="120" />
+        </div>
+        <div class="sermon-check__field">
+            <TextField Label="Video" Placeholder="A YouTube link" Hint="Paste the video's address; leave empty when there's no video." @bind-Value="_youTube" />
         </div>
         <div class="sermon-check__field sermon-check__field--wide">
-            <TextField Label="Video" Placeholder="A YouTube link" Hint="Paste the video's address; leave empty when there's no video." @bind-Value="_youTube" />
-            <UseSource Show="Corrected(Fields.YouTube)" Value="@(Detail.FromSource.YouTubeId is { } video ? YouTubeIds.WatchUrl(video) : "No video")" OnUse="() => UseSourceAsync(Fields.YouTube)" />
+            <TextField Label="About this sermon" Multiline="true" Hint="Optional: shown under the sermon in the app and on the website." @bind-Value="_summary" MaxLength="4000" />
         </div>
     </div>
 
@@ -67,7 +64,7 @@
             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Undo changes</Button>
         }
         <Button Variant="ButtonVariant.Quiet" Icon="@(Detail.Hidden ? "eye" : "eye-off")" Disabled="_busy" OnClick="ToggleHiddenAsync">@(Detail.Hidden ? "Show in the app" : "Hide from the app")</Button>
-        @if (Detail is { Hidden: true, Origin: SermonSources.Uploads })
+        @if (Detail.Hidden)
         {
             <Button Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="() => _deleting = true">Delete for good…</Button>
         }
@@ -86,16 +83,7 @@
 </Sheet>
 
 @code {
-    private static class Fields
-    {
-        public const string Title = "title";
-        public const string Speaker = "speaker";
-        public const string Series = "series";
-        public const string Service = "service";
-        public const string YouTube = "youtube";
-    }
-
-    private string _title = "", _speakerId = "", _seriesId = "", _service = "", _youTube = "";
+    private string _title = "", _speakerId = "", _seriesId = "", _service = "", _youTube = "", _passage = "", _summary = "";
     private bool _busy, _deleting;
     private string? _problem;
     private readonly List<SpeakerDetail> _addedSpeakers = [];
@@ -106,19 +94,15 @@
     [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<ServiceChoice> Services { get; set; }
-    [Parameter] public bool OursToAdd { get; set; }
     [Parameter] public EventCallback<SermonSaved> Saved { get; set; }
     [Parameter] public EventCallback Deleted { get; set; }
 
     protected override void OnInitialized() => Reset();
 
-    private string Origin => Detail.Origin == SermonSources.Uploads ? "uploaded" : "from the website";
-
-    private bool Corrected(string field) => Detail.Corrected.Contains(field);
-
     private bool Dirty =>
         _title.Trim() != Detail.Sermon.Title || _speakerId != Detail.Sermon.SpeakerId || _seriesId != (Detail.Sermon.SeriesId ?? "")
-        || _service.Trim() != Detail.Sermon.Service || YouTubeIds.Find(_youTube) != Detail.Sermon.YouTubeId;
+        || _service.Trim() != Detail.Sermon.Service || YouTubeIds.Find(_youTube) != Detail.Sermon.YouTubeId
+        || _passage.Trim() != Detail.Sermon.Passage || _summary.Trim() != Detail.Sermon.Summary;
 
     private IReadOnlyList<SpeakerDetail> AllSpeakers => [.. Speakers, .. _addedSpeakers.Where(added => Speakers.All(speaker => speaker.Id != added.Id))];
 
@@ -135,8 +119,6 @@
     private static string SermonCount(SpeakerDetail speaker) => SermonText.Sermons(speaker.Count);
 
     private static string SeriesCount(SeriesDetail series) => SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null);
-
-    private string SeriesName(string? id) => id is null ? "Not in a series" : Series.FirstOrDefault(series => series.Id == id)?.Name ?? "Not in a series";
 
     private async Task AddSpeakerAsync(string name)
     {
@@ -177,6 +159,8 @@
         _seriesId = Detail.Sermon.SeriesId ?? "";
         _service = Detail.Sermon.Service;
         _youTube = Detail.Sermon.YouTubeId is { } video ? YouTubeIds.WatchUrl(video) : "";
+        _passage = Detail.Sermon.Passage;
+        _summary = Detail.Sermon.Summary;
         _problem = null;
     }
 
@@ -188,10 +172,10 @@
         SeriesId = _seriesId != (Detail.Sermon.SeriesId ?? "") ? _seriesId : null,
         Service = _service.Trim() != Detail.Sermon.Service ? _service : null,
         YouTube = YouTubeIds.Find(_youTube) != Detail.Sermon.YouTubeId ? _youTube : null,
+        Passage = _passage.Trim() != Detail.Sermon.Passage ? _passage : null,
+        Summary = _summary.Trim() != Detail.Sermon.Summary ? _summary : null,
         Checked = check ? true : null,
     }, next: check);
-
-    private Task UseSourceAsync(string field) => SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, UseSource = [field] }, next: false);
 
     private Task ToggleHiddenAsync() => SendAsync(new SermonCorrection { Id = Detail.Sermon.Id, Hidden = !Detail.Hidden }, next: false);
 

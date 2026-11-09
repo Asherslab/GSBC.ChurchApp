@@ -5,15 +5,13 @@ namespace GSBC.ChurchApp.Features.Sermons.Client;
 
 public sealed record SermonView(SermonShelf Shelf, IReadOnlyDictionary<string, ListeningEntry> Progress, IReadOnlyDictionary<string, AudioDownload> Downloads)
 {
-    public AudioDownload? DownloadOf(Sermon sermon) => IdsOf(sermon).Select(Downloads.GetValueOrDefault).FirstOrDefault(download => download is not null);
+    public AudioDownload? DownloadOf(Sermon sermon) => Downloads.GetValueOrDefault(sermon.Id);
 
     public bool Downloaded(Sermon sermon) => DownloadOf(sermon)?.State == DownloadState.Done;
 
-    public ListeningEntry? ProgressOf(Sermon sermon) => IdsOf(sermon).Select(Progress.GetValueOrDefault).Aggregate((ListeningEntry?)null, ListeningProgress.MergeEither);
+    public ListeningEntry? ProgressOf(Sermon sermon) => Progress.GetValueOrDefault(sermon.Id);
 
     public bool Heard(Sermon sermon) => ProgressOf(sermon) is { } entry && ListeningProgress.IsFinished(entry);
-
-    private static IEnumerable<string> IdsOf(Sermon sermon) => [sermon.Id, .. sermon.FormerIds];
 
     public Underway? KeepGoing(DateTime nowUtc) => Client.KeepGoing.Pick(Shelf, Progress, nowUtc);
 }

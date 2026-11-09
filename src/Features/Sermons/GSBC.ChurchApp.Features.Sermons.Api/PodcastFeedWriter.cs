@@ -65,9 +65,7 @@ internal sealed class PodcastFeedWriter(SermonsDbContext db, IBlobStore blobs, I
                 .Where(part => !string.IsNullOrEmpty(part)));
             channel.Add(new XElement("item",
                 new XElement("title", payload.Title),
-                new XElement("guid", new XAttribute("isPermaLink", sermon.ExternalId is not null && sermon.ExternalId.StartsWith("http", StringComparison.Ordinal) ? "true" : "false"),
-                    sermon.ExternalId ?? sermon.Id.ToString()),
-                sermon.WebLink is { } link ? new XElement("link", link) : null,
+                new XElement("guid", new XAttribute("isPermaLink", "false"), sermon.Id.ToString()),
                 new XElement("enclosure", new XAttribute("url", sermon.AudioUrl), new XAttribute("length", sermon.AudioBytes), new XAttribute("type", sermon.AudioType)),
                 new XElement("pubDate", sermon.PreachedAt.ToString("r", CultureInfo.InvariantCulture)),
                 new XElement(Itunes + "author", payload.SpeakerName),

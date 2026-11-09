@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace GSBC.ChurchApp.Features.Sermons.Api.Website;
+namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal static partial class TitleParts
 {

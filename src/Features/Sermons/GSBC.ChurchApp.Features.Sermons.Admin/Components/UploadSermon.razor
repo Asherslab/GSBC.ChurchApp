@@ -6,78 +6,71 @@
 
 <div class="sermon-upload">
     <h2>Upload a sermon</h2>
-    @if (Status.Source != SermonSources.Uploads)
-    {
-        <Notice Tone="NoticeTone.Info">Sermons come from the website at the moment. Switch <strong>Where new sermons come from</strong> to uploads to add them here.</Notice>
-        <div class="panel-actions"><Button Variant="ButtonVariant.Quiet" OnClick="Cancelled">Close</Button></div>
-    }
-    else
-    {
-        <label class="sermon-upload__drop @(_file is null ? "" : "has-file")">
-            <Icon Name="music" />
-            @if (_file is { } file)
+    <label class="sermon-upload__drop @(_file is null ? "" : "has-file")">
+        <Icon Name="music" />
+        @if (_file is { } file)
+        {
+            <span class="sermon-upload__name">@file.Name</span>
+            <span class="sermon-upload__hint">@SermonText.Join($"{file.Size / 1024d / 1024d:0.#} MB", file.Duration > 0 ? SermonText.Length(file.Duration) : null, "choose another")</span>
+        }
+        else
+        {
+            <span class="sermon-upload__name">Choose the sermon's audio</span>
+            <span class="sermon-upload__hint">An mp3 or m4a, up to 300 MB</span>
+        }
+        <input @ref="_input" type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" class="visually-hidden" disabled="@_busy" @onchange="ChosenAsync" />
+    </label>
+
+    <div class="sermon-check__fields">
+        <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
+        <div class="sermon-check__field">
+            <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="Popular" Text="SpeakerName" Detail="SpeakerCount" Value="SpeakerOf(_speakerId)"
+                          ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Who preached?"
+                          CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="NewSpeaker" />
+        </div>
+        <div class="sermon-check__field"><TextField Label="Day" Type="date" @bind-Value="_day" /></div>
+        <div class="sermon-check__field">
+            <SearchPicker TItem="SeriesDetail" Label="Series" Items="Series" Text="SeriesName" Value="SeriesOf(_seriesId)" NoneText="Not in a series"
+                          ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"
+                          CreateText="@(name => $"Start a new series called “{name}”")" OnCreate="NewSeries" />
+        </div>
+        <div class="sermon-check__field"><ServicePicker Services="Services" @bind-Value="_service" /></div>
+        <div class="sermon-check__field"><TextField Label="Bible passage" Placeholder="John 3:16-21" @bind-Value="_passage" MaxLength="120" /></div>
+        <div class="sermon-check__field"><TextField Label="Video" Placeholder="A YouTube link, if there is one" @bind-Value="_youTube" /></div>
+        <div class="sermon-check__field sermon-check__field--wide"><TextField Label="About this sermon" Multiline="true" Hint="Optional: a line or two shown under the sermon in the app." @bind-Value="_summary" MaxLength="600" /></div>
+        <div class="sermon-check__field sermon-check__field--wide">
+            <span class="field__label">Picture</span>
+            @if (_artwork is { } artwork)
             {
-                <span class="sermon-upload__name">@file.Name</span>
-                <span class="sermon-upload__hint">@SermonText.Join($"{file.Size / 1024d / 1024d:0.#} MB", file.Duration > 0 ? SermonText.Length(file.Duration) : null, "choose another")</span>
+                <div class="sermon-picture">
+                    <div class="sermon-upload__art">
+                        <MediaCover Media="artwork" Size="MediaSizeName.Thumbnail" />
+                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button>
+                    </div>
+                    <MediaShownAt Media="artwork" Size="MediaSizeName.ForPhones" />
+                </div>
             }
             else
             {
-                <span class="sermon-upload__name">Choose the sermon's audio</span>
-                <span class="sermon-upload__hint">An mp3 or m4a, up to 300 MB</span>
+                <Button Variant="ButtonVariant.Quiet" Icon="image" OnClick="() => _choosing = true">Choose a picture</Button>
+                <span class="hint">Leave it to use the series' picture.</span>
             }
-            <input @ref="_input" type="file" accept=".mp3,.m4a,audio/mpeg,audio/mp4,audio/x-m4a" class="visually-hidden" disabled="@_busy" @onchange="ChosenAsync" />
-        </label>
-
-        <div class="sermon-check__fields">
-            <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Title" @bind-Value="_title" MaxLength="160" Required="true" /></div>
-            <div class="sermon-check__field">
-                <SearchPicker TItem="SpeakerDetail" Label="Speaker" Items="Popular" Text="SpeakerName" Detail="SpeakerCount" Value="SpeakerOf(_speakerId)"
-                              ValueChanged="ChooseSpeaker" Pending="@(_speakerId == NewOne ? $"{_newSpeaker} (new)" : null)" Placeholder="Who preached?"
-                              CreateText="@(name => $"Add “{name}” as a new speaker")" OnCreate="NewSpeaker" />
-            </div>
-            <div class="sermon-check__field"><TextField Label="Day" Type="date" @bind-Value="_day" /></div>
-            <div class="sermon-check__field">
-                <SearchPicker TItem="SeriesDetail" Label="Series" Items="Series" Text="SeriesName" Value="SeriesOf(_seriesId)" NoneText="Not in a series"
-                              ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"
-                              CreateText="@(name => $"Start a new series called “{name}”")" OnCreate="NewSeries" />
-            </div>
-            <div class="sermon-check__field"><ServicePicker Services="Services" @bind-Value="_service" /></div>
-            <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Video" Placeholder="A YouTube link, if there is one" @bind-Value="_youTube" /></div>
-            <div class="sermon-check__field sermon-check__field--wide"><TextField Label="About this sermon" Multiline="true" Hint="Optional: a line or two shown under the sermon in the app." @bind-Value="_summary" MaxLength="600" /></div>
-            <div class="sermon-check__field sermon-check__field--wide">
-                <span class="field__label">Picture</span>
-                @if (_artwork is { } artwork)
-                {
-                    <div class="sermon-picture">
-                        <div class="sermon-upload__art">
-                            <MediaCover Media="artwork" Size="MediaSizeName.Thumbnail" />
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _artwork = null">Use the series' picture</Button>
-                        </div>
-                        <MediaShownAt Media="artwork" Size="MediaSizeName.ForPhones" />
-                    </div>
-                }
-                else
-                {
-                    <Button Variant="ButtonVariant.Quiet" Icon="image" OnClick="() => _choosing = true">Choose a picture</Button>
-                    <span class="hint">Leave it to use the series' picture.</span>
-                }
-            </div>
         </div>
+    </div>
 
-        @if (_progress is { } progress)
-        {
-            <div class="sermon-upload__progress"><ProgressTrack Fraction="progress" Label="Uploading" /><span>@(progress >= 1 ? "Adding it to the app…" : $"Uploading… {progress:P0}")</span></div>
-        }
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        <div class="panel-actions">
-            <Button Icon="arrow-up" Busy="_busy" Disabled="!Ready" OnClick="UploadAsync">Add to the app</Button>
-            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Cancelled">Cancel</Button>
-        </div>
-        <p class="hint">It's on everyone's phone as soon as it's added. Staff can tidy the details afterwards.</p>
-        @if (_choosing)
-        {
-            <MediaChooser ImagesOnly="true" Size="MediaSizeName.ForPhones" OnChosen="Chose" OnCancel="() => _choosing = false" />
-        }
+    @if (_progress is { } progress)
+    {
+        <div class="sermon-upload__progress"><ProgressTrack Fraction="progress" Label="Uploading" /><span>@(progress >= 1 ? "Adding it to the app…" : $"Uploading… {progress:P0}")</span></div>
+    }
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    <div class="panel-actions">
+        <Button Icon="arrow-up" Busy="_busy" Disabled="!Ready" OnClick="UploadAsync">Add to the app</Button>
+        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Cancelled">Cancel</Button>
+    </div>
+    <p class="hint">It's on everyone's phone as soon as it's added. Staff can tidy the details afterwards.</p>
+    @if (_choosing)
+    {
+        <MediaChooser ImagesOnly="true" Size="MediaSizeName.ForPhones" OnChosen="Chose" OnCancel="() => _choosing = false" />
     }
 </div>
 
@@ -87,14 +80,13 @@
     private IJSObjectReference? _module;
     private DotNetObjectReference<UploadSermon>? _receiver;
     private ChosenFile? _file;
-    private string _title = "", _speakerId = "", _newSpeaker = "", _seriesId = "", _newSeries = "", _service = "", _youTube = "", _summary = "", _day = "";
+    private string _title = "", _speakerId = "", _newSpeaker = "", _seriesId = "", _newSeries = "", _service = "", _youTube = "", _passage = "", _summary = "", _day = "";
     private MediaRef? _artwork;
     private bool _busy, _choosing;
     private double? _progress;
     private string? _problem;
 
     [Parameter, EditorRequired] public required SermonsAdminClient Sermons { get; set; }
-    [Parameter, EditorRequired] public required SourceStatus Status { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<ServiceChoice> Services { get; set; }
@@ -180,6 +172,7 @@
                 YouTube = _youTube,
                 Artwork = _artwork,
                 Summary = _summary,
+                Passage = _passage,
                 DurationSeconds = file.Duration,
             });
             await Added.InvokeAsync(added);

@@ -8,7 +8,7 @@ public sealed class SermonPlayer(IAudioPlayer player, Listening listening, Sermo
 {
     public IAudioPlayer Audio => player;
 
-    private bool IsLoaded(Sermon sermon) => player.State.Item?.Id is { } id && (id == sermon.Id || sermon.FormerIds.Contains(id));
+    private bool IsLoaded(Sermon sermon) => player.State.Item?.Id is { } id && id == sermon.Id;
 
     public bool IsPlaying(Sermon sermon) => IsLoaded(sermon) && player.State.Playing;
 

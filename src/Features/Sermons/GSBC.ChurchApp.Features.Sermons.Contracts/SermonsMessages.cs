@@ -25,8 +25,7 @@ public sealed class Sermon
     [ProtoMember(14)] public string? YouTubeId { get; set; }
     [ProtoMember(15)] public MediaRef? Artwork { get; set; }
     [ProtoMember(17)] public string Summary { get; set; } = "";
-    [ProtoMember(18)] public string? WebLink { get; set; }
-    [ProtoMember(19)] public List<string> FormerIds { get; set; } = [];
+    [ProtoMember(20)] public string Passage { get; set; } = "";
 }
 
 [ProtoContract]
@@ -39,7 +38,6 @@ public sealed class SeriesInfo
     [ProtoMember(6)] public int Count { get; set; }
     [ProtoMember(7)] public DateTime FirstAt { get; set; }
     [ProtoMember(8)] public DateTime LastAt { get; set; }
-    [ProtoMember(9)] public List<string> FormerIds { get; set; } = [];
 }
 
 [ProtoContract]
@@ -50,7 +48,6 @@ public sealed class SpeakerInfo
     [ProtoMember(3)] public MediaRef? Photo { get; set; }
     [ProtoMember(4)] public int Count { get; set; }
     [ProtoMember(5)] public DateTime LatestAt { get; set; }
-    [ProtoMember(6)] public List<string> FormerIds { get; set; } = [];
 }
 
 [ProtoContract]
@@ -112,30 +109,18 @@ public sealed class SermonList
     [ProtoMember(1)] public List<SermonDetail> Sermons { get; set; } = [];
     [ProtoMember(2)] public int Total { get; set; }
     [ProtoMember(3)] public Dictionary<string, int> Counts { get; set; } = [];
+    [ProtoMember(4)] public string? PodcastFeedUrl { get; set; }
 }
 
 [ProtoContract]
 public sealed class SermonDetail
 {
     [ProtoMember(1, IsRequired = true)] public Sermon Sermon { get; set; } = new();
-    [ProtoMember(2)] public string Origin { get; set; } = "";
     [ProtoMember(3)] public bool Hidden { get; set; }
-    [ProtoMember(4)] public List<string> Corrected { get; set; } = [];
-    [ProtoMember(5, IsRequired = true)] public SermonFields FromSource { get; set; } = new();
     [ProtoMember(6)] public string? SuggestedSeries { get; set; }
     [ProtoMember(7)] public DateTime AddedAt { get; set; }
     [ProtoMember(8)] public DateTime? CheckedAt { get; set; }
     [ProtoMember(9)] public List<string> NeedsALook { get; set; } = [];
-}
-
-[ProtoContract]
-public sealed class SermonFields
-{
-    [ProtoMember(1)] public string Title { get; set; } = "";
-    [ProtoMember(2)] public string Speaker { get; set; } = "";
-    [ProtoMember(3)] public string? SeriesId { get; set; }
-    [ProtoMember(4)] public string Service { get; set; } = "";
-    [ProtoMember(5)] public string? YouTubeId { get; set; }
 }
 
 [ProtoContract]
@@ -148,8 +133,9 @@ public sealed class SermonCorrection
     [ProtoMember(5)] public string? Service { get; set; }
     [ProtoMember(6)] public string? YouTube { get; set; }
     [ProtoMember(7)] public bool? Hidden { get; set; }
-    [ProtoMember(8)] public List<string> UseSource { get; set; } = [];
     [ProtoMember(9)] public bool? Checked { get; set; }
+    [ProtoMember(10)] public string? Passage { get; set; }
+    [ProtoMember(11)] public string? Summary { get; set; }
 }
 
 [ProtoContract]
@@ -161,8 +147,6 @@ public sealed class SeriesDetail
     [ProtoMember(4)] public MediaRef? Artwork { get; set; }
     [ProtoMember(5)] public int Count { get; set; }
     [ProtoMember(6)] public DateTime? LastAt { get; set; }
-    [ProtoMember(7)] public bool FromWebsite { get; set; }
-    [ProtoMember(8)] public bool ArtworkChosen { get; set; }
 }
 
 [ProtoContract]
@@ -178,7 +162,6 @@ public sealed class SpeakerDetail
     [ProtoMember(2)] public string Name { get; set; } = "";
     [ProtoMember(3)] public MediaRef? Photo { get; set; }
     [ProtoMember(5)] public int Count { get; set; }
-    [ProtoMember(7)] public bool PhotoChosen { get; set; }
 }
 
 [ProtoContract]
@@ -216,47 +199,6 @@ public sealed class ServiceList
 }
 
 [ProtoContract]
-public sealed class SourceStatus
-{
-    [ProtoMember(1)] public string Source { get; set; } = "";
-    [ProtoMember(2)] public DateTime? CheckedAt { get; set; }
-    [ProtoMember(3)] public DateTime? ChangedAt { get; set; }
-    [ProtoMember(4)] public string? Problem { get; set; }
-    [ProtoMember(5)] public int Sermons { get; set; }
-    [ProtoMember(8)] public string? PodcastFeedUrl { get; set; }
-    [ProtoMember(9)] public DateTime? SeriesCheckedAt { get; set; }
-}
-
-[ProtoContract]
-public sealed class CopyProgress
-{
-    [ProtoMember(1)] public List<CopyItem> Items { get; set; } = [];
-    [ProtoMember(2)] public int Copied { get; set; }
-    [ProtoMember(3)] public int Total { get; set; }
-    [ProtoMember(4)] public string? Note { get; set; }
-}
-
-[ProtoContract]
-public sealed class CopyItem
-{
-    [ProtoMember(1)] public string SermonId { get; set; } = "";
-    [ProtoMember(2)] public string Title { get; set; } = "";
-    [ProtoMember(3)] public DateTime PreachedAt { get; set; }
-    [ProtoMember(4)] public string State { get; set; } = "";
-    [ProtoMember(5)] public long Bytes { get; set; }
-    [ProtoMember(6)] public long CopiedBytes { get; set; }
-    [ProtoMember(7)] public string? Problem { get; set; }
-}
-
-public static class CopyStates
-{
-    public const string Waiting = "waiting";
-    public const string Copying = "copying";
-    public const string Copied = "copied";
-    public const string Failed = "failed";
-}
-
-[ProtoContract]
 public sealed class AudioUploadRequest
 {
     [ProtoMember(1)] public string FileName { get; set; } = "";
@@ -288,10 +230,6 @@ public sealed class SermonUpload
     [ProtoMember(10)] public MediaRef? Artwork { get; set; }
     [ProtoMember(11)] public string Summary { get; set; } = "";
     [ProtoMember(12)] public int DurationSeconds { get; set; }
+    [ProtoMember(13)] public string Passage { get; set; } = "";
 }
 
-[ProtoContract]
-public sealed class SourceChoice
-{
-    [ProtoMember(1)] public string Source { get; set; } = "";
-}

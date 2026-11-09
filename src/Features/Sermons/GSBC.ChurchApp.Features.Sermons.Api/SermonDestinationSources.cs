@@ -16,23 +16,26 @@ internal sealed class SermonDestinationSource(SermonsDbContext db) : IDestinatio
         string pattern = Patterns.Like(text);
         var found = await db.Sermons.AsNoTracking()
             .Where(sermon => !sermon.Hidden && sermon.PublishedHash != null)
-            .Where(sermon => text.Length == 0 || EF.Functions.ILike(sermon.Title ?? sermon.SourceTitle, pattern) || EF.Functions.ILike(sermon.SourceSpeaker, pattern))
+            .Select(sermon => new { sermon.Id, sermon.Title, sermon.PreachedAt, Speaker = db.Speakers.Where(speaker => speaker.Id == sermon.SpeakerId).Select(speaker => speaker.Name).FirstOrDefault() })
+            .Where(sermon => text.Length == 0 || EF.Functions.ILike(sermon.Title, pattern) || EF.Functions.ILike(sermon.Speaker ?? "", pattern))
             .OrderByDescending(sermon => sermon.PreachedAt)
             .Take(take)
-            .Select(sermon => new { sermon.Id, Title = sermon.Title ?? sermon.SourceTitle, sermon.PreachedAt, sermon.SourceSpeaker })
             .ToListAsync(cancellationToken);
-        return found.Select(sermon => Place(sermon.Id, sermon.Title, sermon.SourceSpeaker, sermon.PreachedAt)).ToList();
+        return found.Select(sermon => Place(sermon.Id, sermon.Title, sermon.Speaker, sermon.PreachedAt)).ToList();
     }
 
-    public async Task<FoundPlace?> FindAsync(string id, CancellationToken cancellationToken) =>
-        Guid.TryParse(id, out Guid sermonId) && await SourceIdMove.CurrentAsync(db, sermonId, cancellationToken) is var current && await db.Sermons.AsNoTracking().SingleOrDefaultAsync(sermon => sermon.Id == current && !sermon.Hidden, cancellationToken) is { } found
-            ? Place(found.Id, found.EffectiveTitle, found.SourceSpeaker, found.PreachedAt)
-            : null;
+    public async Task<FoundPlace?> FindAsync(string id, CancellationToken cancellationToken)
+    {
+        if (!Guid.TryParse(id, out Guid sermonId) || await db.Sermons.AsNoTracking().SingleOrDefaultAsync(sermon => sermon.Id == sermonId && !sermon.Hidden, cancellationToken) is not { } found)
+            return null;
+        string? speaker = await db.Speakers.Where(record => record.Id == found.SpeakerId).Select(record => record.Name).FirstOrDefaultAsync(cancellationToken);
+        return Place(found.Id, found.Title, speaker, found.PreachedAt);
+    }
 
     public Task<string?> OpenUrlAsync(string id, CancellationToken cancellationToken) => Task.FromResult<string?>(null);
 
-    private static FoundPlace Place(Guid id, string title, string speaker, DateTime preachedAt) =>
-        new(id.ToString(), title, speaker.Length > 0 ? $"Sermon · {speaker}" : "Sermon", Audience.Everyone, When: preachedAt);
+    private static FoundPlace Place(Guid id, string title, string? speaker, DateTime preachedAt) =>
+        new(id.ToString(), title, speaker is { Length: > 0 } ? $"Sermon · {speaker}" : "Sermon", Audience.Everyone, When: preachedAt);
 }
 
 internal sealed class SeriesDestinationSource(SermonsDbContext db) : IDestinationSource
@@ -49,7 +52,7 @@ internal sealed class SeriesDestinationSource(SermonsDbContext db) : IDestinatio
     }
 
     public async Task<FoundPlace?> FindAsync(string id, CancellationToken cancellationToken) =>
-        Guid.TryParse(id, out Guid seriesId) && await SourceIdMove.CurrentAsync(db, seriesId, cancellationToken) is var current && await db.Series.AsNoTracking().SingleOrDefaultAsync(series => series.Id == current, cancellationToken) is { } found
+        Guid.TryParse(id, out Guid seriesId) && await db.Series.AsNoTracking().SingleOrDefaultAsync(series => series.Id == seriesId, cancellationToken) is { } found
             ? Place(found)
             : null;
 
@@ -72,7 +75,7 @@ internal sealed class SpeakerDestinationSource(SermonsDbContext db) : IDestinati
     }
 
     public async Task<FoundPlace?> FindAsync(string id, CancellationToken cancellationToken) =>
-        Guid.TryParse(id, out Guid speakerId) && await SourceIdMove.CurrentAsync(db, speakerId, cancellationToken) is var current && await db.Speakers.AsNoTracking().SingleOrDefaultAsync(speaker => speaker.Id == current, cancellationToken) is { } found
+        Guid.TryParse(id, out Guid speakerId) && await db.Speakers.AsNoTracking().SingleOrDefaultAsync(speaker => speaker.Id == speakerId, cancellationToken) is { } found
             ? Place(found)
             : null;
 

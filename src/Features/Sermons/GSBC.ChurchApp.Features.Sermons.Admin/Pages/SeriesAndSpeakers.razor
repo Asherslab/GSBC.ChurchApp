@@ -5,20 +5,13 @@
            Lead="Name a series, give it a picture and a line about it; keep the list of speakers, with their names and photos." />
 
 <LiveData @ref="_live" TValue="Lists" Feeds="ListFeeds" Load="LoadAsync" FailedTitle="Can't load series and speakers right now">
-    @if (!context.Value.Ours)
-    {
-        <Notice Tone="NoticeTone.Info">While sermons come from the website, so do series and speakers: new ones appear when the website has them. A name, picture or description you set here stays when the website changes.</Notice>
-    }
     <div class="series-desk">
         <section aria-label="Series">
             <div class="series-desk__head">
                 <h2>Series</h2>
-                @if (context.Value.Ours)
-                {
-                    <Can Permission="SermonsPermissions.Edit">
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSeries">New series</Button>
-                    </Can>
-                }
+                <Can Permission="SermonsPermissions.Edit">
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSeries">New series</Button>
+                </Can>
             </div>
             <SearchField Label="Find a series" Placeholder="Find a series" Value="@_seriesQuery" ValueChanged="query => _seriesQuery = query" />
             <div class="series-desk__list">
@@ -28,7 +21,7 @@
                         <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
                         <span class="sermon-pick__words">
                             <strong>@series.Name</strong>
-                            <span>@SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null, series.FromWebsite ? "from the website" : null)</span>
+                            <span>@SermonText.Join(SermonText.Sermons(series.Count), series.LastAt is { } last ? SermonText.Month(last) : null)</span>
                         </span>
                     </button>
                 }
@@ -41,12 +34,9 @@
         <section aria-label="Speakers">
             <div class="series-desk__head">
                 <h2>Speakers</h2>
-                @if (context.Value.Ours)
-                {
-                    <Can Permission="SermonsPermissions.Edit">
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSpeaker">New speaker</Button>
-                    </Can>
-                }
+                <Can Permission="SermonsPermissions.Edit">
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSpeaker">New speaker</Button>
+                </Can>
             </div>
             <SearchField Label="Find a speaker" Placeholder="Find a speaker" Value="@_speakerQuery" ValueChanged="query => _speakerQuery = query" />
             <div class="series-desk__list">
@@ -70,7 +60,7 @@
             @if (_series is { } editing)
             {
                 <h2>@(editing.Id.Length == 0 ? "A new series" : editing.Name)</h2>
-                <TextField Label="Name" @bind-Value="_name" MaxLength="80" Hint="@(editing.FromWebsite ? "A name you give it here stays when the website changes." : null)" />
+                <TextField Label="Name" @bind-Value="_name" MaxLength="80" />
                 <TextField Label="About the series" Multiline="true" Hint="Optional: shown on the series in the app." @bind-Value="_description" MaxLength="600" />
                 <span class="field__label">Picture</span>
                 <div class="sermon-picture">
@@ -78,9 +68,9 @@
                         <MediaCover Media="ShownArtwork(editing)" Size="MediaSizeName.Thumbnail" FallbackTitle="@_name" />
                         <span class="series-desk__picture-actions">
                             <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownArtwork(editing) is null ? "Choose a picture" : "Use another picture")</Button>
-                            @if (editing.FromWebsite && (_picture is not null || editing.ArtworkChosen && !_useSource))
+                            @if (ShownArtwork(editing) is not null)
                             {
-                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Use the website's picture</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="RemovePicture">Remove the picture</Button>
                             }
                         </span>
                     </div>
@@ -115,9 +105,9 @@
                         }
                         <span class="series-desk__picture-actions">
                             <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">@(ShownPhoto(speaker) is null ? "Choose a photo" : "Use another photo")</Button>
-                            @if (_picture is not null || speaker.PhotoChosen && !_useSource)
+                            @if (ShownPhoto(speaker) is not null)
                             {
-                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="UseWebsitePicture">Remove the chosen photo</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="RemovePicture">Remove the photo</Button>
                             }
                         </span>
                     </span>
@@ -185,14 +175,14 @@
     private static readonly IReadOnlyList<string> ListFeeds = [SermonsFeeds.Admin, SermonsFeeds.Series, SermonsFeeds.Speakers];
     private const MediaSizeName SeriesSize = MediaSizeName.ForPhones;
 
-    private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers, bool Ours);
+    private sealed record Lists(IReadOnlyList<SeriesDetail> Series, IReadOnlyList<SpeakerDetail> Speakers);
 
     private LiveData<Lists>? _live;
     private SeriesDetail? _series;
     private SpeakerDetail? _speaker;
     private string _name = "", _description = "", _seriesQuery = "", _speakerQuery = "";
     private MediaRef? _picture;
-    private bool _busy, _choosing, _useSource, _deleting;
+    private bool _busy, _choosing, _removed, _deleting;
     private SpeakerDetail? _moveSpeakerTo;
     private SeriesDetail? _moveSeriesTo;
     private SeriesDeletion? _seriesDeletion;
@@ -201,10 +191,9 @@
     private async Task<Lists> LoadAsync()
     {
         Task<SpeakerList> speakers = Sermons.SpeakersAsync().AsTask();
-        Task<SourceStatus> status = Sermons.StatusAsync().AsTask();
         Task<SeriesList> series = Sermons.SeriesAsync().AsTask();
-        await Task.WhenAll(speakers, status, series);
-        return new Lists((await series).Series, (await speakers).Speakers, (await status).Source == SermonSources.Uploads);
+        await Task.WhenAll(speakers, series);
+        return new Lists((await series).Series, (await speakers).Speakers);
     }
 
     private static IEnumerable<T> Matching<T>(IEnumerable<T> items, string query, Func<T, string> text) =>
@@ -231,9 +220,9 @@
         _ => "Delete",
     };
 
-    private MediaRef? ShownArtwork(SeriesDetail series) => _picture ?? (_useSource && series.ArtworkChosen ? null : series.Artwork);
+    private MediaRef? ShownArtwork(SeriesDetail series) => _picture ?? (_removed ? null : series.Artwork);
 
-    private MediaRef? ShownPhoto(SpeakerDetail speaker) => _picture ?? (_useSource && speaker.PhotoChosen ? null : speaker.Photo);
+    private MediaRef? ShownPhoto(SpeakerDetail speaker) => _picture ?? (_removed ? null : speaker.Photo);
 
     private void NewSeries() => EditSeries(new SeriesDetail());
 
@@ -257,14 +246,14 @@
     private void Chose(MediaRef picture)
     {
         _picture = picture;
-        _useSource = false;
+        _removed = false;
         _choosing = false;
     }
 
-    private void UseWebsitePicture()
+    private void RemovePicture()
     {
         _picture = null;
-        _useSource = true;
+        _removed = true;
     }
 
     private Task AskToDeleteSeriesAsync() => RunAsync(async () =>
@@ -298,30 +287,19 @@
         _series = null;
         _speaker = null;
         _picture = null;
-        _useSource = false;
+        _removed = false;
         _choosing = false;
         _problem = null;
     }
 
-    private (MediaRef? Picture, bool Chosen) PictureToSave(MediaRef? current, bool chosen) =>
-        _picture is not null ? (_picture, true) : _useSource ? (null, false) : (chosen ? current : null, chosen);
-
     private Task SaveSeriesAsync() => RunAsync(async () =>
     {
-        (MediaRef? artwork, bool chosen) = PictureToSave(_series!.Artwork, _series.ArtworkChosen);
-        EditSeries(await Sermons.SaveSeriesAsync(new SeriesDetail { Id = _series.Id, Name = _name, Description = _description, Artwork = artwork, ArtworkChosen = chosen }));
+        EditSeries(await Sermons.SaveSeriesAsync(new SeriesDetail { Id = _series!.Id, Name = _name, Description = _description, Artwork = ShownArtwork(_series) }));
     });
 
     private Task SaveSpeakerAsync() => RunAsync(async () =>
     {
-        (MediaRef? photo, bool chosen) = PictureToSave(_speaker!.Photo, _speaker.PhotoChosen);
-        EditSpeaker(await Sermons.SaveSpeakerAsync(new SpeakerDetail
-        {
-            Id = _speaker.Id,
-            Name = _name,
-            Photo = photo,
-            PhotoChosen = chosen,
-        }));
+        EditSpeaker(await Sermons.SaveSpeakerAsync(new SpeakerDetail { Id = _speaker!.Id, Name = _name, Photo = ShownPhoto(_speaker) }));
     });
 
     private async Task RunAsync(Func<Task> work, bool reload = true)

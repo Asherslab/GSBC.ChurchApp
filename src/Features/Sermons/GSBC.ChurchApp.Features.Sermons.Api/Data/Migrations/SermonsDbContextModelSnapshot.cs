@@ -23,90 +23,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ArtworkAddress", b =>
-                {
-                    b.Property<string>("Url")
-                        .HasColumnType("text")
-                        .HasColumnName("url");
-
-                    b.Property<string>("ETag")
-                        .HasColumnType("text")
-                        .HasColumnName("e_tag");
-
-                    b.Property<DateTime>("FetchedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("fetched_at");
-
-                    b.Property<string>("Hash")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("hash");
-
-                    b.Property<string>("LastModified")
-                        .HasColumnType("text")
-                        .HasColumnName("last_modified");
-
-                    b.HasKey("Url")
-                        .HasName("pk_artwork_addresses");
-
-                    b.HasIndex("Hash")
-                        .HasDatabaseName("ix_artwork_addresses_hash");
-
-                    b.ToTable("artwork_addresses", "sermons");
-                });
-
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ArtworkSource", b =>
-                {
-                    b.Property<string>("Hash")
-                        .HasColumnType("text")
-                        .HasColumnName("hash");
-
-                    b.Property<DateTime>("AddedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("added_at");
-
-                    b.Property<string>("Picture")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("picture");
-
-                    b.HasKey("Hash")
-                        .HasName("pk_artwork_sources");
-
-                    b.ToTable("artwork_sources", "sermons");
-                });
-
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.FormerId", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .HasColumnType("uuid")
-                        .HasColumnName("id");
-
-                    b.Property<Guid>("CurrentId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("current_id");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("kind");
-
-                    b.Property<DateTime>("MovedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("moved_at");
-
-                    b.Property<bool>("Settled")
-                        .HasColumnType("boolean")
-                        .HasColumnName("settled");
-
-                    b.HasKey("Id")
-                        .HasName("pk_former_ids");
-
-                    b.HasIndex("CurrentId")
-                        .HasDatabaseName("ix_former_ids_current_id");
-
-                    b.ToTable("former_ids", "sermons");
-                });
-
             modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.ProgressRecord", b =>
                 {
                     b.Property<Guid>("UserId")
@@ -162,18 +78,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("artwork");
 
-                    b.Property<string>("ArtworkHash")
-                        .HasColumnType("text")
-                        .HasColumnName("artwork_hash");
-
-                    b.Property<string>("ArtworkSourceUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("artwork_source_url");
-
-                    b.Property<string>("ChosenArtwork")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("chosen_artwork");
-
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
@@ -192,20 +96,8 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("published_hash");
 
-                    b.Property<string>("Slug")
-                        .HasColumnType("text")
-                        .HasColumnName("slug");
-
-                    b.Property<string>("SourceName")
-                        .HasColumnType("text")
-                        .HasColumnName("source_name");
-
                     b.HasKey("Id")
                         .HasName("pk_series");
-
-                    b.HasIndex("Slug")
-                        .IsUnique()
-                        .HasDatabaseName("ix_series_slug");
 
                     b.ToTable("series", "sermons");
                 });
@@ -229,21 +121,9 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("artwork");
 
-                    b.Property<string>("ArtworkHash")
-                        .HasColumnType("text")
-                        .HasColumnName("artwork_hash");
-
-                    b.Property<string>("ArtworkSourceUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("artwork_source_url");
-
                     b.Property<long>("AudioBytes")
                         .HasColumnType("bigint")
                         .HasColumnName("audio_bytes");
-
-                    b.Property<string>("AudioCopiedFrom")
-                        .HasColumnType("text")
-                        .HasColumnName("audio_copied_from");
 
                     b.Property<string>("AudioMedia")
                         .HasColumnType("jsonb")
@@ -267,42 +147,18 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("checked_by");
 
-                    b.Property<long>("CopiedBytes")
-                        .HasColumnType("bigint")
-                        .HasColumnName("copied_bytes");
-
-                    b.Property<string>("CopyProblem")
-                        .HasColumnType("text")
-                        .HasColumnName("copy_problem");
-
-                    b.Property<DateTime?>("CopyStartedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("copy_started_at");
-
                     b.Property<int>("DurationSeconds")
                         .HasColumnType("integer")
                         .HasColumnName("duration_seconds");
-
-                    b.Property<string>("ExternalId")
-                        .HasColumnType("text")
-                        .HasColumnName("external_id");
-
-                    b.Property<string>("FeedArtworkUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("feed_artwork_url");
 
                     b.Property<bool>("Hidden")
                         .HasColumnType("boolean")
                         .HasColumnName("hidden");
 
-                    b.Property<string>("Origin")
+                    b.Property<string>("Passage")
                         .IsRequired()
                         .HasColumnType("text")
-                        .HasColumnName("origin");
-
-                    b.Property<DateTime?>("PageReadAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("page_read_at");
+                        .HasColumnName("passage");
 
                     b.Property<DateTime>("PreachedAt")
                         .HasColumnType("timestamp with time zone")
@@ -312,48 +168,14 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("published_hash");
 
-                    b.Property<bool>("SeriesCorrected")
-                        .HasColumnType("boolean")
-                        .HasColumnName("series_corrected");
-
                     b.Property<Guid?>("SeriesId")
                         .HasColumnType("uuid")
                         .HasColumnName("series_id");
 
                     b.Property<string>("Service")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("service");
-
-                    b.Property<Guid?>("SourceSeriesId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("source_series_id");
-
-                    b.Property<string>("SourceService")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("source_service");
-
-                    b.Property<string>("SourceSpeaker")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("source_speaker");
-
-                    b.Property<Guid?>("SourceSpeakerId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("source_speaker_id");
-
-                    b.Property<string>("SourceTitle")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("source_title");
-
-                    b.Property<string>("SourceYouTubeId")
-                        .HasColumnType("text")
-                        .HasColumnName("source_you_tube_id");
-
-                    b.Property<bool>("SpeakerCorrected")
-                        .HasColumnType("boolean")
-                        .HasColumnName("speaker_corrected");
 
                     b.Property<Guid?>("SpeakerId")
                         .HasColumnType("uuid")
@@ -365,20 +187,13 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .HasColumnName("summary");
 
                     b.Property<string>("Title")
+                        .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("title");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
-
-                    b.Property<string>("WebLink")
-                        .HasColumnType("text")
-                        .HasColumnName("web_link");
-
-                    b.Property<bool>("YouTubeCorrected")
-                        .HasColumnType("boolean")
-                        .HasColumnName("you_tube_corrected");
 
                     b.Property<string>("YouTubeId")
                         .HasColumnType("text")
@@ -387,63 +202,10 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.HasKey("Id")
                         .HasName("pk_sermons");
 
-                    b.HasIndex("ExternalId")
-                        .IsUnique()
-                        .HasDatabaseName("ix_sermons_external_id");
-
                     b.HasIndex("PreachedAt")
                         .HasDatabaseName("ix_sermons_preached_at");
 
                     b.ToTable("sermons", "sermons");
-                });
-
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.SourceState", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("integer")
-                        .HasColumnName("id");
-
-                    b.Property<DateTime?>("ChangedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("changed_at");
-
-                    b.Property<DateTime?>("CheckedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("checked_at");
-
-                    b.Property<string>("ETag")
-                        .HasColumnType("text")
-                        .HasColumnName("e_tag");
-
-                    b.Property<bool>("HasReadOnce")
-                        .HasColumnType("boolean")
-                        .HasColumnName("has_read_once");
-
-                    b.Property<string>("LastModified")
-                        .HasColumnType("text")
-                        .HasColumnName("last_modified");
-
-                    b.Property<string>("Problem")
-                        .HasColumnType("text")
-                        .HasColumnName("problem");
-
-                    b.Property<DateTime?>("SeriesCheckedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("series_checked_at");
-
-                    b.Property<string>("SeriesProblem")
-                        .HasColumnType("text")
-                        .HasColumnName("series_problem");
-
-                    b.Property<string>("Source")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("source");
-
-                    b.HasKey("Id")
-                        .HasName("pk_source_state");
-
-                    b.ToTable("source_state", "sermons");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.SpeakerRecord", b =>
@@ -452,10 +214,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid")
                         .HasColumnName("id");
-
-                    b.Property<string>("ChosenPhoto")
-                        .HasColumnType("jsonb")
-                        .HasColumnName("chosen_photo");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone")
@@ -469,14 +227,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.Property<string>("Photo")
                         .HasColumnType("jsonb")
                         .HasColumnName("photo");
-
-                    b.Property<string>("PhotoHash")
-                        .HasColumnType("text")
-                        .HasColumnName("photo_hash");
-
-                    b.Property<string>("PhotoSourceUrl")
-                        .HasColumnType("text")
-                        .HasColumnName("photo_source_url");
 
                     b.Property<string>("PublishedHash")
                         .HasColumnType("text")

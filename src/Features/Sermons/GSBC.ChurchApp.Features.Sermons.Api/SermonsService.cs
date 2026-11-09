@@ -51,13 +51,10 @@ internal sealed class SermonsService(SermonsDbContext db, SermonFollowing follow
 
         DateTime now = time.GetUtcNow().UtcDateTime;
         Dictionary<Guid, ListeningEntry> incoming = [];
-        Dictionary<Guid, Guid> current = await SourceIdMove.CurrentOfAsync(db,
-            entries.Select(entry => Guid.TryParse(entry.SermonId, out Guid id) ? id : Guid.Empty).ToHashSet(), cancellationToken);
         foreach (ListeningEntry entry in entries)
         {
             if (!Guid.TryParse(entry.SermonId, out Guid sermonId) || !double.IsFinite(entry.Position) || !double.IsFinite(entry.Duration))
                 continue;
-            sermonId = current.GetValueOrDefault(sermonId, sermonId);
             ListeningEntry clamped = Clamped(entry, now);
             incoming[sermonId] = incoming.TryGetValue(sermonId, out ListeningEntry? earlier) ? ListeningProgress.Merge(earlier, clamped) : clamped;
         }

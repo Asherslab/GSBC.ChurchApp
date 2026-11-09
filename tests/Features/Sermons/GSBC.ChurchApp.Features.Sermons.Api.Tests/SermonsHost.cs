@@ -20,7 +20,6 @@ public abstract class SermonsHost : IAsyncLifetime
     private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
 
-    internal FakeWebsite Website { get; } = new();
     internal MemoryBlobs Blobs { get; } = new();
     internal AnyMedia Media { get; } = new();
     internal RecordedNotifications Notifications { get; } = new();
@@ -36,7 +35,6 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
             .AddInMemoryCollection([
                 new($"ConnectionStrings:{Database.ConnectionStringName}", _database.ConnectionString),
-                new($"{WebsiteOptions.Section}:BaseUrl", FakeWebsite.BaseUrl),
             ])
             .Build());
         services.AddSingleton<TimeProvider>(Clock);
@@ -44,14 +42,9 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddSingleton<IMediaReferences>(Media);
         services.AddSingleton<IMediaSystemFolders>(Media);
         services.AddSingleton(typeof(ILogger<>), typeof(NullLogger<>));
-        services.AddOptions<WebsiteOptions>().Configure(options => options.BaseUrl = FakeWebsite.BaseUrl);
-        services.AddHttpClient<WebsiteClient>().ConfigurePrimaryHttpMessageHandler(() => Website);
-        services.AddScoped<Artwork>();
         services.AddScoped<Speakers>();
         services.AddScoped<ServiceNames>();
         services.AddScoped<SermonPublisher>();
-        services.AddScoped<WebsiteReader>();
-        services.AddScoped<SourceIdMove>();
         services.AddScoped<SermonsService>();
         services.AddScoped<SermonLibraryService>();
         services.AddScoped<SermonUploads>();
@@ -64,8 +57,7 @@ public abstract class SermonsHost : IAsyncLifetime
         services.AddScoped<PodcastFeedWriter>();
         services.AddOptions<PodcastOptions>();
         services.AddSingleton<IHostEnvironment>(new HostingEnvironment { EnvironmentName = Environments.Production });
-        services.AddSingleton<AudioCopier>();
-        services.AddSingleton<WebsiteSchedule>();
+        services.AddSingleton<AudioKeeper>();
         services.AddSyncData();
         services.AddSermonsData();
         _services = services.BuildServiceProvider();
@@ -73,7 +65,6 @@ public abstract class SermonsHost : IAsyncLifetime
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         await scope.ServiceProvider.GetRequiredService<SermonsDbContext>().Database.MigrateAsync();
-        ServeTheSampleSite();
     }
 
     public async ValueTask DisposeAsync()
@@ -82,27 +73,40 @@ public abstract class SermonsHost : IAsyncLifetime
         await _database.DisposeAsync();
     }
 
-    protected static string Sample(string name) => SampleFiles.Text(name);
-
-    private void ServeTheSampleSite()
+    protected Task SeedLibraryAsync() => WithAsync(async provider =>
     {
-        Website.ServeFeed(Sample("feed.rss"));
-        Website.ServeText($"{FakeWebsite.BaseUrl}/podcasts/media", Sample("media.html"));
-        foreach (string slug in new[] { "safe-harbour", "fruit-of-the-spirit", "older-days" })
-            Website.ServeText($"{FakeWebsite.BaseUrl}/podcasts/media/series/{slug}", Sample($"series-{slug}.html"));
-        foreach (string mp3 in new[] { "2026/11/04/walking-in-the-light.mp3", "2026/11/01/harbour-4.mp3", "2026/11/01/mercy.mp3", "2026/10/25/harbour-3.mp3" })
-            Website.ServeBytes($"https://files.example/{mp3}", ConstantBitrateMp3());
-        foreach (string picture in new[] { "2026/11/01/art/harbour-4.png", "2026/10/25/art/harbour-3.png", "2026/10/series/safe-harbour.png", "2025/series/fruit.png", "2019/series/older.png" })
-            Website.ServeBytes($"https://files.example/{picture}", Picture(1920, 1080));
-        foreach (string person in new[] { "people/ellery.jpg", "people/varga.jpg" })
-            Website.ServeBytes($"https://files.example/{person}", Picture(300, 400));
-    }
+        SermonsDbContext db = provider.GetRequiredService<SermonsDbContext>();
+        DateTime now = Clock.GetUtcNow().UtcDateTime;
+        SpeakerRecord jo = Speaker("Jo Ellery"), lee = Speaker("Ps Lee Varga"), sam = Speaker("Sam Rivers");
+        SeriesRecord harbour = new() { Id = Guid.CreateVersion7(), Name = "Safe Harbour", CreatedAt = now };
+        SeriesRecord fruit = new() { Id = Guid.CreateVersion7(), Name = "Fruit Of The Spirit", CreatedAt = now };
+        db.Speakers.AddRange(jo, lee, sam);
+        db.Series.AddRange(harbour, fruit);
+        db.Sermons.AddRange(
+            Sermon("Safe Harbour: Part 3 - Harbour Of Rest", new DateTime(2026, 10, 25), jo, harbour, SermonServices.SundayMorning),
+            Sermon("Safe Harbour: Part 4 - Harbour Of Hope", new DateTime(2026, 11, 1), jo, harbour, SermonServices.SundayMorning),
+            Sermon("Walking In The Light", new DateTime(2026, 11, 4), lee, fruit, "Wednesday Night"),
+            Sermon("Mercy Before Judgement", new DateTime(2026, 11, 1), sam, null, SermonServices.SundayEvening));
+        await db.SaveChangesAsync(Cancel);
+        await provider.GetRequiredService<SermonPublisher>().PublishAsync(Cancel);
 
-    protected async Task ReadTheWebsiteAsync(bool force = false)
-    {
-        await using AsyncServiceScope scope = _services.CreateAsyncScope();
-        await scope.ServiceProvider.GetRequiredService<WebsiteReader>().ReadAsync(force, Cancel);
-    }
+        SpeakerRecord Speaker(string name) => new() { Id = Guid.CreateVersion7(), Name = name, CreatedAt = now };
+
+        SermonRecord Sermon(string title, DateTime day, SpeakerRecord speaker, SeriesRecord? series, string service) => new()
+        {
+            Id = Guid.CreateVersion7(),
+            Title = title,
+            PreachedAt = ChurchTime.ToUtc(day),
+            AddedAt = now,
+            UpdatedAt = now,
+            SpeakerId = speaker.Id,
+            SeriesId = series?.Id,
+            Service = service,
+            AudioUrl = $"https://media.example/{Guid.CreateVersion7():N}.mp3",
+            AnnouncedAt = now,
+            CheckedAt = now,
+        };
+    });
 
     protected async Task<T> WithAsync<T>(Func<IServiceProvider, Task<T>> work)
     {
@@ -128,8 +132,4 @@ public abstract class SermonsHost : IAsyncLifetime
 
     protected async Task<List<Sermon>> CatalogueAsync() =>
         (await LiveRowsAsync(SermonsFeeds.Catalogue)).Select(row => SermonsPayloads.Decode<Sermon>(row.Payload)).ToList();
-
-    private static byte[] ConstantBitrateMp3() => SampleFiles.ConstantBitrateMp3();
-
-    protected static byte[] Picture(int width, int height, uint colour = 0xFF2A3D5E) => SampleFiles.Picture(width, height, colour);
 }
