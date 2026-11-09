@@ -71,6 +71,12 @@ public interface IAccountsService
     ValueTask<Done> SetDisabledAsync(SetDisabledRequest request, CallContext context = default);
 
     [Requires(AccountsPermissions.ManageNode)]
+    ValueTask<Done> DeleteAccountAsync(InvitationRequest request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<Done> DeleteMyAccountAsync(Nothing request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ManageNode)]
     ValueTask<AuditList> ListAuditAsync(AuditQuery request, CallContext context = default);
 
     [Requires(AccountsPermissions.ManageNode)]

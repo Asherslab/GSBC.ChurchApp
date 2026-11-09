@@ -9,9 +9,9 @@ built. Permissions (who may do what) are the Access feature ([access.md](access.
 | Who | Can |
 |---|---|
 | Anyone | Sign up with a name, an email and a passkey; sign in; confirm their email |
-| Signed in | See and remove their passkeys, add another, see and end their sessions, sign out everywhere, change their name |
+| Signed in | See and remove their passkeys, add another, see and end their sessions, sign out everywhere, change their name, delete their account |
 | Forgot / lost device | Ask for a recovery code by email (confirmed email, no sensitive permissions) and register a new passkey |
-| Staff with `accounts.manage` | Invite someone by email; give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account |
+| Staff with `accounts.manage` | Invite someone by email; give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account; delete an account |
 | Staff with `accounts.review.manage` | Make a demo account and sign-in codes for Apple's reviewers; turn a code off ([identity.md](../architecture/identity.md), *Review sign-in codes*) |
 | Apple's reviewers | Sign in to a demo account with its email and a sign-in code, in the app |
 | Staff with `accounts.tools.connect` (Developer, Owner) | Connect a tool, such as Claude on a computer, to their own account ([identity.md](../architecture/identity.md), *Connected tools*) |
@@ -56,6 +56,28 @@ started with one names it (`sessions.review_code_id`).
 doesn't reveal who has an account) emails a code when allowed. Staff can issue one with
 `Accounts.IssueRecoveryCode(userId)`. Either way, `Accounts.Redeem(code)` and the ceremony, as above.
 Recovering never removes existing passkeys; the person removes lost ones afterwards.
+
+**Deleting an account** (owner, 2026-11-09: "yes staff can delete, also let people delete their own account? no reason
+not to"). `Accounts.DeleteAccount(userId)` (`accounts.manage`, from the person's panel on People, never your own) and
+`Accounts.DeleteMyAccount` (signed in, at the end of the Account page in the app and the admin panel). Both ask first and
+say it can't be undone (`AccountDeletionWords`).
+
+- **Only the name stays** (`AccountDeletion`): the account's row is kept with its display name, so the history of what
+  they did still names them (draft changes, Live history, the People activity log). Its email, user name and phone are
+  cleared (the email is free to sign up again, and the audit details that were the email are cleared), it's marked
+  `deleted_at` and disabled, and its passkeys, Identity claims, logins and tokens, sessions, codes and review codes are
+  deleted in one transaction, so it can't sign in and every device is signed out. People and the people picker no
+  longer list it; `GetPeople` still answers its name, with `Deleted`. The abandoned-account clean-up never removes it.
+- **Every feature forgets its part** through `IPersonData` (Platform.Api, registered by each feature's API like
+  `IMediaHolder`): Access deletes their role assignments; Sermons their listening progress (deletions on the progress
+  feed); Notifications their inbox, preferences and pending pushes, and their phones stay registered as signed-out
+  phones; Events their private calendar link, and takes them off any event, regular event or date they're a contact
+  for. A feature that fails is asked again by the clean-up (every 6 hours) until `forgotten_at` is set. Withdrawing an
+  invitation and the clean-up of abandoned sign-ups forget the same way before the account goes.
+- **A feature can say no** (`IPersonData.WhyKeepAsync`): Access refuses while the account holds the church's last
+  Owner assignment ("Make someone else an Owner first").
+- Phones held roles of their own (calendars added, follows) stay with the phone, as when someone signs out.
+- Tests: `AccountDeletionTests`, `InvitationTests`, `AssignmentPolicyTests`.
 
 ## Sessions and tokens
 

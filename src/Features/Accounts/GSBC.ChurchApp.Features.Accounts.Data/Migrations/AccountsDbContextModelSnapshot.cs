@@ -104,6 +104,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("created_at");
 
+                    b.Property<DateTime?>("DeletedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("deleted_at");
+
                     b.Property<bool>("Disabled")
                         .HasColumnType("boolean")
                         .HasColumnName("disabled");
@@ -121,6 +125,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                     b.Property<bool>("EmailConfirmed")
                         .HasColumnType("boolean")
                         .HasColumnName("email_confirmed");
+
+                    b.Property<DateTime?>("ForgottenAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("forgotten_at");
 
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean")

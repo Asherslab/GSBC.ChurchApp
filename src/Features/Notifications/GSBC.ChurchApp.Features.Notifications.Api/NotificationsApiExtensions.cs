@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
@@ -24,6 +25,7 @@ public static class NotificationsApiExtensions
         services.AddScoped<NotificationRaiser>();
         services.AddScoped<INotifications>(provider => provider.GetRequiredService<NotificationRaiser>());
         services.AddScoped<AnnouncementsService>();
+        services.AddScoped<IPersonData, NotificationsPersonData>();
         services.AddScoped<PushDispatcher>();
 
         ApnsOptions apns = configuration.GetSection(ApnsOptions.Section).Get<ApnsOptions>() ?? new ApnsOptions();

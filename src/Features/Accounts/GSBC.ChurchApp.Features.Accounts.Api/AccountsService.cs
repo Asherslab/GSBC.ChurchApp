@@ -24,6 +24,7 @@ internal sealed class AccountsService(
     DemoAccounts demo,
     ReviewSignIns reviews,
     Invitations invitations,
+    AccountDeletion deletion,
     TimeProvider time) : IAccountsService
 {
     private const int MaximumNameLength = 80;
@@ -276,7 +277,7 @@ internal sealed class AccountsService(
         const int MaximumResults = 50;
         string query = request.Query.Trim().ToUpperInvariant();
         List<AccountUser> found = await db.Users.AsNoTracking()
-            .Where(user => query.Length == 0 || user.NormalizedEmail!.Contains(query) || user.DisplayName.ToUpper().Contains(query))
+            .Where(user => user.DeletedAt == null && (query.Length == 0 || user.NormalizedEmail!.Contains(query) || user.DisplayName.ToUpper().Contains(query)))
             .OrderBy(user => user.DisplayName)
             .Take(MaximumResults)
             .ToListAsync(context.CancellationToken);
@@ -303,6 +304,23 @@ internal sealed class AccountsService(
             await db.Sessions.Where(session => session.UserId == user.Id).ExecuteDeleteAsync(context.CancellationToken);
         audit.Record(request.Disabled ? AuditActions.Disabled : AuditActions.Enabled, user.Id, actorId);
         await db.SaveChangesAsync(context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> DeleteAccountAsync(InvitationRequest request, CallContext context = default)
+    {
+        Guid actorId = Caller(context).UserId;
+        Guid userId = Guid.TryParse(request.UserId, out Guid id) ? id : throw new RpcException(new Status(StatusCode.NotFound, "No such account."));
+        if (userId == actorId)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Delete your own account from your Account page."));
+        await deletion.DeleteAsync(userId, actorId, context.CancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> DeleteMyAccountAsync(Nothing request, CallContext context = default)
+    {
+        Guid userId = Caller(context).UserId;
+        await deletion.DeleteAsync(userId, userId, context.CancellationToken);
         return new Done();
     }
 
@@ -371,6 +389,7 @@ internal sealed class AccountsService(
                 Disabled = user.Disabled,
                 HasPasskey = withPasskeys.Contains(user.Id),
                 CreatedAt = user.CreatedAt,
+                Deleted = user.DeletedAt is not null,
             }).ToList(),
         };
     }

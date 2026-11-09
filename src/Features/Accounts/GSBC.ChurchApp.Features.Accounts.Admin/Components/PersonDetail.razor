@@ -78,6 +78,12 @@
             <p class="panel-lead">@(Person.Disabled ? "They can't sign in. Turning it back on lets them use their passkey again." : "They're signed out everywhere and can't sign in until it's turned back on. Nothing they made is deleted.")</p>
             <Button Variant="@(Person.Disabled ? ButtonVariant.Quiet : ButtonVariant.Danger)" Busy="_busy" OnClick="ToggleAsync">@(Person.Disabled ? "Turn it back on" : "Turn the account off")</Button>
         </section>
+
+        <section class="panel-section" aria-labelledby="delete-@Person.Id">
+            <h3 class="panel-subtitle" id="delete-@Person.Id">Delete the account</h3>
+            <p class="panel-lead">For good: they can't sign in with it again. Turning it off is the way to pause it.</p>
+            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _deleting = true">Delete the account…</Button>
+        </section>
     }
 
     <section class="panel-section" aria-labelledby="activity-@Person.Id">
@@ -113,6 +119,20 @@
     </Actions>
 </Sheet>
 
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {Person.DisplayName}'s account?")">
+    <ChildContent>
+        @foreach (string line in AccountDeletionWords.Lines(yours: false))
+        {
+            <p class="sheet__lead">@line</p>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete the account</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private CodeReply? _link;
     private bool _busy;
@@ -125,6 +145,7 @@
 
     private bool _resent;
     private bool _withdrawing;
+    private bool _deleting;
 
     private bool InvitationExpired => Invitation is { } invitation && invitation.ExpiresAt <= Clock.GetUtcNow().UtcDateTime;
 
@@ -139,6 +160,13 @@
     {
         await Accounts.WithdrawInvitationAsync(Person.Id);
         _withdrawing = false;
+        await OnRemoved.InvokeAsync();
+    });
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        await Accounts.DeleteAccountAsync(Person.Id);
+        _deleting = false;
         await OnRemoved.InvokeAsync();
     });
 
@@ -195,6 +223,7 @@
         "review-code-used" => "Signed in with a code",
         "review-code-refused" => "A sign-in code was refused",
         "tool-connected" => "Connected a tool",
+        "deleted" => "Account deleted",
         _ => action,
     };
 }

@@ -85,6 +85,15 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal, ID
 
     public ValueTask<Done> TurnOffReviewCodeAsync(string id) => _accounts.TurnOffReviewCodeAsync(new TurnOffReviewCodeRequest { Id = id });
 
+    public ValueTask<Done> DeleteAccountAsync(string userId) => _accounts.DeleteAccountAsync(new InvitationRequest { UserId = userId });
+
+    public async Task DeleteMyAccountAsync()
+    {
+        await _accounts.DeleteMyAccountAsync(new Nothing());
+        await device.ForgetAsync();
+        await NotifySessionChangedAsync();
+    }
+
     public ValueTask<Done> SetDisabledAsync(string userId, bool disabled) =>
         _accounts.SetDisabledAsync(new SetDisabledRequest { UserId = userId, Disabled = disabled });
 

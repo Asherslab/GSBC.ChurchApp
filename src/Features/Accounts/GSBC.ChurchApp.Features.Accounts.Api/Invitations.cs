@@ -15,7 +15,8 @@ internal sealed class Invitations(
     AccountsAudit audit,
     IEmailSender email,
     IOptions<AccountsOptions> options,
-    DemoAccounts demo)
+    DemoAccounts demo,
+    AccountDeletion deletion)
 {
     private const string NotOpen = "That invitation was already accepted or withdrawn.";
     private static readonly string[] InvitingActions = [AuditActions.Invited, AuditActions.InvitationResent];
@@ -72,6 +73,7 @@ internal sealed class Invitations(
         await db.Codes.Where(code => code.UserId == user.Id && code.UsedAt == null).ExecuteDeleteAsync(cancellationToken);
         audit.Record(AuditActions.InvitationWithdrawn, user.Id, actorId, detail: user.Email);
         await db.SaveChangesAsync(cancellationToken);
+        await deletion.ForgetEverywhereAsync(user.Id, cancellationToken);
         IdentityResult deleted = await users.DeleteAsync(user);
         if (!deleted.Succeeded)
             throw new RpcException(new Status(StatusCode.Internal, string.Join(" ", deleted.Errors.Select(error => error.Description))));
