@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Features.Accounts.Data;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
+using GSBC.ChurchApp.Platform.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.AspNetCore.WebUtilities;
@@ -28,6 +29,8 @@ internal sealed class AccountsService(
     TimeProvider time) : IAccountsService
 {
     private const int MaximumNameLength = 80;
+    private const int MostPins = 12;
+    private const int LongestPin = 200;
     private const string DemoAccountsUseCodes = "This is a demo account for app reviewers. It signs in with a sign-in code, never a passkey.";
     private static readonly CodePurpose[] RedeemablePurposes = [CodePurpose.Invitation, CodePurpose.Recovery];
 
@@ -106,6 +109,27 @@ internal sealed class AccountsService(
             EmailConfirmed = user.EmailConfirmed,
             DemoAccount = await demo.IsDemoAsync(user.Id, context.CancellationToken),
         };
+    }
+
+    public async ValueTask<PinnedPages> GetPinnedPagesAsync(Nothing request, CallContext context = default)
+    {
+        AccountUser user = await CurrentUserAsync(context);
+        return new PinnedPages { Hrefs = user.PinnedPages };
+    }
+
+    public async ValueTask<Done> SetPinnedPagesAsync(PinnedPages request, CallContext context = default)
+    {
+        AccountUser user = await CurrentUserAsync(context);
+        user.PinnedPages = ValidPins(request.Hrefs);
+        db.FeedChanges.Add(new FeedChangeRecord
+        {
+            Feed = AccountsFeeds.Pins,
+            RecordId = user.Id.ToString(),
+            ScopeId = user.Id.ToString(),
+            Version = time.GetUtcNow().UtcDateTime.Ticks,
+        });
+        await db.SaveChangesAsync(context.CancellationToken);
+        return new Done();
     }
 
     public async ValueTask<Done> UpdateNameAsync(UpdateNameRequest request, CallContext context = default)
@@ -418,6 +442,16 @@ internal sealed class AccountsService(
         if (!created.Succeeded)
             throw new RpcException(new Status(StatusCode.InvalidArgument, string.Join(" ", created.Errors.Select(error => error.Description))));
         return user;
+    }
+
+    private static List<string> ValidPins(List<string> hrefs)
+    {
+        List<string> pins = hrefs.Select(href => href.Trim()).Distinct(StringComparer.Ordinal).ToList();
+        if (pins.Any(pin => pin.Length is 0 or > LongestPin))
+            throw new RpcException(new Status(StatusCode.InvalidArgument, "That isn't a page in the admin panel."));
+        if (pins.Count > MostPins)
+            throw new RpcException(new Status(StatusCode.InvalidArgument, $"Pin up to {MostPins} pages. Unpin one to make room."));
+        return pins;
     }
 
     private async Task<AccountUser> CurrentUserAsync(CallContext context) =>

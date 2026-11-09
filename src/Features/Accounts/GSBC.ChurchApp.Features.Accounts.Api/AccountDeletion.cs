@@ -67,6 +67,7 @@ internal sealed class AccountDeletion(AccountsDbContext db, IEnumerable<IPersonD
         user.UserName = placeholder;
         user.NormalizedUserName = placeholder.ToUpperInvariant();
         user.PhoneNumber = null;
+        user.PinnedPages = [];
         user.PasswordHash = null;
         user.SecurityStamp = Guid.NewGuid().ToString("N");
         user.Disabled = true;
