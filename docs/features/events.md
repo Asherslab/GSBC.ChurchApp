@@ -785,6 +785,12 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   `PictureField`, moved out of Configuration's own markup. The event editor shows the picture in the event page's 16:9
   frame (a picture far from 16:9 whole, on the masthead colour), up to 240px wide, with how the app shows it and
   Change and Remove beside it; Home's settings show it in its own proportions.
+- **Other dates on a date with its own title** (owner, 2026-11-09: "Other Dates under a special event version of a repeat
+  date (e.g. Anniversary Sunday) doesn't make a lot of sense … let's hide them if the event title is different than
+  normal"): a date of a regular event whose title differs from the regular event's shows no Other dates, on the app's
+  event page and the website's. A date changed only in time or place keeps them. One rule, `OccurrenceListing.OtherDates`
+  (Events.Contracts): a special has its own title when a plain date of the same regular event has a different title, so
+  no contract change was needed.
 - **Checked** on a backend of its own (`Dev__PortOffset=1000`, main's database copied with pg_dump): the migration on
   the owner's two unsent digests; the desk from today with *Two weeks* (the AGM, Kids camp and Anniversary Sunday Service
   in); the editor with a portrait picture (pictures stubbed, as the dev media tunnel was down); on a Simulator of its own

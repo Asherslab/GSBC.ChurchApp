@@ -72,9 +72,7 @@ public static class EventListing
         ahead.Any(occurrence => EventWords.DayOf(occurrence) >= EventWords.SundayOf(today).AddDays(7 * Math.Clamp(weeks, 1, MostWeeks)));
 
     public static IReadOnlyList<EventOccurrence> OtherDates(IEnumerable<EventOccurrence> events, EventOccurrence occurrence, DateTime nowUtc, int count) =>
-        occurrence.Kind == OccurrenceKind.OneOff
-            ? []
-            : Ahead(events, nowUtc).Where(other => other.ItemId == occurrence.ItemId && other.Kind != OccurrenceKind.OneOff && other.Id != occurrence.Id).Take(count).ToList();
+        OccurrenceListing.OtherDates(occurrence, Ahead(events, nowUtc)).Take(count).ToList();
 
     public static bool IsQuiet(EventOccurrence occurrence) => occurrence.NotOn || occurrence.Kind == OccurrenceKind.Regular;
 
