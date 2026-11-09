@@ -3,7 +3,7 @@
 @if (ButtonOnly)
 {
     <span role="status" aria-live="polite">
-        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@(_copied ? "check" : _failed ? "alert" : "link")" OnClick="CopyAsync">@(_copied ? "Copied" : _failed ? "Couldn't copy: select the address" : Label)</Button>
+        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="@(_copied ? "check" : _failed ? "alert" : ButtonIcon)" OnClick="CopyAsync">@(_copied ? "Copied" : _failed ? "Couldn't copy: select the address" : Label)</Button>
     </span>
 }
 else
@@ -28,6 +28,7 @@ else
     [Parameter, EditorRequired] public required string Value { get; set; }
     [Parameter] public string? Hint { get; set; }
     [Parameter] public bool ButtonOnly { get; set; }
+    [Parameter] public string ButtonIcon { get; set; } = "link";
 
     private async Task CopyAsync()
     {

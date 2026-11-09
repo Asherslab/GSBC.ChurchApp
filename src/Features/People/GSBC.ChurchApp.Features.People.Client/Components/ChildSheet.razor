@@ -9,7 +9,7 @@
                 {
                     <div class="people-code__shown">
                         <span class="people-code__value" aria-label="@($"Sign-in code {string.Join(' ', made.Code.ToCharArray())}")">@made.Code</span>
-                        <CopyField Label="Copy the code" Value="@made.Code" ButtonOnly="true" />
+                        <CopyField Label="Copy the code" Value="@made.Code" ButtonOnly="true" ButtonIcon="copy" />
                     </div>
                     <p class="people-code__hint">@CodeHint(made)</p>
                 }
