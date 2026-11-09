@@ -9,7 +9,7 @@ public sealed record EventDay(DateOnly Date, IReadOnlyList<EventOccurrence> Even
 
 public sealed record EventWeek(DateOnly Start, string Heading, string Range, IReadOnlyList<EventDay> Days);
 
-public sealed record RegularGathering(EventOccurrence Next, string When, string? Place, string? NotOn);
+public sealed record WeekDay(DateOnly Date, string Heading, IReadOnlyList<EventOccurrence> Events);
 
 public static class EventListing
 {
@@ -39,19 +39,18 @@ public static class EventListing
 
     public static IEnumerable<EventOccurrence> Listed(IEnumerable<EventOccurrence> ahead) => ahead.Where(OccurrenceListing.IsListedOnTheWebsite);
 
-    public static IReadOnlyList<RegularGathering> Gatherings(IEnumerable<EventOccurrence> ahead) => ahead
-        .Where(occurrence => !OccurrenceListing.IsListedOnTheWebsite(occurrence))
-        .GroupBy(occurrence => occurrence.ItemId)
-        .Select(dates => (Next: dates.FirstOrDefault(date => !date.NotOn), Off: dates.FirstOrDefault(date => date.NotOn)))
-        .Where(regular => regular.Next is not null)
-        .Select(regular => new RegularGathering(
-            regular.Next!,
-            EventWords.Join(Sentence(regular.Next!.Repeats), EventWords.Times(regular.Next)),
-            EventWords.PlaceLine(regular.Next),
-            regular.Off is { } off ? $"Not on {EventWords.Date(EventWords.DayOf(off))}{(EventDates.Parse(off.BackOn) is { } back ? $", back on {EventWords.Date(back)}" : "")}{(off.NotOnReason.Length > 0 ? $" ({off.NotOnReason})" : "")}" : null))
-        .OrderBy(regular => ChurchTime.ToChurch(regular.Next.StartsAt).DayOfWeek)
-        .ThenBy(regular => ChurchTime.ToChurch(regular.Next.StartsAt).TimeOfDay)
+    public static IReadOnlyList<WeekDay> ThisWeek(IEnumerable<EventOccurrence> ahead, DateOnly today) => ahead
+        .Where(occurrence => EventWords.DayOf(occurrence) < today.AddDays(7))
+        .GroupBy(EventWords.DayOf)
+        .OrderBy(day => day.Key)
+        .Select(day => new WeekDay(day.Key, DayHeading(day.Key, today), day.OrderBy(occurrence => occurrence.StartsAt).ToList()))
         .ToList();
+
+    public static string DayHeading(DateOnly day, DateOnly today) =>
+        day.DayNumber - today.DayNumber is 0 or 1 ? EventWords.DayHeading(day, today) : day.ToString("dddd d MMMM", English);
+
+    public static string NotOnThisWeek(EventOccurrence occurrence) =>
+        occurrence.NotOnReason.Length > 0 ? $"not on this week ({occurrence.NotOnReason})" : "not on this week";
 
     public static IReadOnlyList<EventWeek> Weeks(IEnumerable<EventOccurrence> ahead, DateOnly today, int weeks)
     {

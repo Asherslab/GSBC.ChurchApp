@@ -24,7 +24,7 @@
 {
     <section class="empty"><h2>The calendar is on its way</h2><p>It's being read from the app. Try again in a minute.</p></section>
 }
-else if (WeekList.Count == 0 && Gatherings.Count == 0)
+else if (WeekList.Count == 0 && Days.Count == 0)
 {
     <section class="empty"><h2>Nothing on the calendar yet</h2><p>There's nothing coming up@(Showing is null ? "" : $" in {Showing.Name}"). New events appear here as soon as they're added in the app.</p></section>
 }
@@ -60,27 +60,32 @@ else
         <div class="more"><a class="button button-quiet" href="@ListHref(Showing?.Slug, Weeks + EventListing.FirstWeeks)">Show the next @EventListing.FirstWeeks weeks</a></div>
     }
     </div>
-    @if (Gatherings.Count > 0)
+    @if (Days.Count > 0)
     {
-        <section class="regulars side" aria-labelledby="regulars">
-            <h2 class="regulars-head" id="regulars">Regular gatherings</h2>
-            <ul class="regular-list">
-                @foreach (RegularGathering gathering in Gatherings)
-                {
-                    <li>
-                        <a href="@EventHref(gathering.Next)">@gathering.Next.Fields.Title</a>
-                        <span class="regular-when"><SiteIcon Name="repeat" /> @gathering.When</span>
-                        @if (gathering.Place is { } place)
-                        {
-                            <span class="regular-where"><SiteIcon Name="pin" /> @place</span>
-                        }
-                        @if (gathering.NotOn is { } off)
-                        {
-                            <span class="not-on-line"><SiteIcon Name="paused" /> @off</span>
-                        }
-                    </li>
-                }
-            </ul>
+        <section class="this-week side" aria-labelledby="this-week">
+            <h2 class="this-week-head" id="this-week">This week</h2>
+            @foreach (WeekDay day in Days)
+            {
+                <h3 class="this-week-day">@day.Heading</h3>
+                <ul class="this-week-list">
+                    @foreach (EventOccurrence occurrence in day.Events)
+                    {
+                        <li class="@(occurrence.NotOn ? "not-on" : null)">
+                            <span class="time">@EventWords.TimeOf(occurrence)</span>
+                            <span>
+                                <a href="@EventHref(occurrence)">@occurrence.Fields.Title</a>@if (occurrence.NotOn)
+                                {
+                                    <span class="this-week-off">, @EventListing.NotOnThisWeek(occurrence)</span>
+                                }
+                                else if (occurrence.ChangedAt is not null)
+                                {
+                                    <span class="tag tag-changed">Changed</span>
+                                }
+                            </span>
+                        </li>
+                    }
+                </ul>
+            }
         </section>
     }
     </div>
@@ -96,7 +101,7 @@ else
     private CalendarInfo? Showing;
     private IReadOnlyList<EventOccurrence> Ahead = [];
     private IReadOnlyList<EventWeek> WeekList = [];
-    private IReadOnlyList<RegularGathering> Gatherings = [];
+    private IReadOnlyList<WeekDay> Days = [];
     private DateOnly Today;
 
     private int Weeks => Math.Clamp(WeeksAsked ?? EventListing.FirstWeeks, 1, EventListing.MostWeeks);
@@ -110,7 +115,7 @@ else
         Showing = Offered.FirstOrDefault(calendar => string.Equals(calendar.Slug, Show, StringComparison.OrdinalIgnoreCase));
         List<EventOccurrence> ahead = EventListing.Ahead(EventListing.On(Data.Events, Showing is null ? Offered : [Showing]), now).ToList();
         Ahead = EventListing.Listed(ahead).ToList();
-        Gatherings = EventListing.Gatherings(ahead);
+        Days = EventListing.ThisWeek(ahead, Today);
         WeekList = EventListing.Weeks(Ahead, Today, Weeks);
     }
 
