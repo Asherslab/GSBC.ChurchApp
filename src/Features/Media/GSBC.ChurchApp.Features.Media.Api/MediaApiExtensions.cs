@@ -34,6 +34,7 @@ public static class MediaApiExtensions
             ScopeKind.Global, [MediaPermissions.ViewNode, MediaPermissions.UploadNode, MediaPermissions.DeleteNode, MediaPermissions.OrganiseNode]));
         services.AddHttpClient<GoogleFonts>(client => client.DefaultRequestHeaders.UserAgent.ParseAdd(GoogleFonts.BrowserAgent));
         services.AddScoped<FontsService>();
+        services.AddMediaSystemArea(FontsService.Area);
         return services;
     }
 

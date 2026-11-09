@@ -112,7 +112,7 @@
                     else
                     {
                         <DataTable TItem="MediaItemInfo" Label="Files" Items="context.Value.Items" Columns="Columns(map)" Key="item => item.Media!.Id"
-                                   Selected="Single" SelectedChanged="item => ChooseOnly(item)" RowClass="item => _chosen.Contains(item.Media!.Id) ? MultiChosen : null" SortColumn="3" SortDescending="true" />
+                                   Selected="Single" SelectedChanged="ChooseOnly" RowClass="item => _chosen.Contains(item.Media!.Id) ? MultiChosen : null" SortColumn="3" SortDescending="true" />
                     }
                     @if (context.Value.HasMore)
                     {
@@ -374,6 +374,9 @@
         new(MediaFilter.All, "All", counts?.All),
         new(MediaFilter.Pictures, "Pictures", counts?.Pictures),
         new(MediaFilter.Documents, "PDFs and files", counts?.Documents),
+        .. counts?.Fonts > 0 || _filter == MediaFilter.Fonts
+            ? [new FilterOption<MediaFilter>(MediaFilter.Fonts, "Fonts", counts?.Fonts)]
+            : Array.Empty<FilterOption<MediaFilter>>(),
         new(MediaFilter.Unused, "Not used", counts?.Unused),
         .. counts?.LargeOriginals > 0 || _filter == MediaFilter.LargeOriginals
             ? [new FilterOption<MediaFilter>(MediaFilter.LargeOriginals, "Large originals", counts?.LargeOriginals)]

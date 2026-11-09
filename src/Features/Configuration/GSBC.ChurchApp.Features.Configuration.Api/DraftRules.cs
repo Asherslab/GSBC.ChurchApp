@@ -69,6 +69,18 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
         Subject: Subject(draft),
         Action: "Preview it");
 
+    public static string NotPublished(string reason) =>
+        reason.Length <= ConfigurationDbContext.MaximumNotPublished ? reason : reason[..(ConfigurationDbContext.MaximumNotPublished - 1)] + "…";
+
+    public static Notification DidNotPublish(DraftRecord draft, Guid scheduledBy) => new(
+        DraftNotifications.NotPublished,
+        NotificationAudience.Person(scheduledBy),
+        $"“{draft.Name}” didn't publish",
+        $"{draft.NotPublished} Open it in the admin panel's Drafts to settle it, then publish it or schedule it again.",
+        Link: PreviewLink(draft),
+        Subject: Subject(draft),
+        Action: "Preview it");
+
     public static string Subject(DraftRecord draft) => $"draft/{draft.Id}";
 
     private static string PreviewLink(DraftRecord draft) => $"/previews?draft={draft.Id}";

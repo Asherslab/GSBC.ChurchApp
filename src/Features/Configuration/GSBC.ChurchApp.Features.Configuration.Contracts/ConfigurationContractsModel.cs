@@ -21,6 +21,7 @@ namespace GSBC.ChurchApp.Features.Configuration.Contracts;
 [ProtoSerializable(typeof(SaveDraftRequest))]
 [ProtoSerializable(typeof(SettleRequest))]
 [ProtoSerializable(typeof(EventLayerRequest))]
+[ProtoSerializable(typeof(SchedulePublishRequest))]
 [ProtoSerializable(typeof(ShareRequest))]
 [ProtoSerializable(typeof(PublishReply))]
 [ProtoSerializable(typeof(DraftsDone))]

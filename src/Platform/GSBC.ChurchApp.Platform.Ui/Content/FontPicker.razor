@@ -1,7 +1,6 @@
 @using GSBC.ChurchApp.Platform.Client.Media
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using Grpc.Core
-@using Microsoft.AspNetCore.Components.Forms
 @implements IDisposable
 @inject IServiceProvider Services
 
@@ -36,7 +35,7 @@
         @if (Library is { MayChooseFromGoogle: true } library)
         {
             <TextField Label="Search Google Fonts" Placeholder="Playfair Display, Lora, Nunito…" Value="@_query" ValueChanged="SearchSoon"
-                       Hint="Free to use in the app. The font is copied into the media library." />
+                       Hint="Free to use in the app. Media keeps a copy under Made by the app." />
             @if (_results.Count > 0)
             {
                 <div class="font-picker__results" role="list" aria-label="Google Fonts">
@@ -54,14 +53,14 @@
                 <p class="font-picker__note">Nothing on Google Fonts is called that.</p>
             }
 
-            @if (library.MayUploadFiles)
-            {
-                <div class="font-picker__upload">
-                    <span class="field__label">Or upload a font file</span>
-                    <InputFile OnChange="args => UploadAsync(library, args)" accept=".woff2,.woff,.ttf,.otf" disabled="@(_busy is not null)" />
-                    <span class="field__hint">Only a font the church is licensed to use in an app (an "app" or "embedding" licence; a desktop licence isn't enough).</span>
-                </div>
-            }
+        }
+        @if (Library is { MayChooseFiles: true } && MediaChooser.IsAvailable(Services))
+        {
+            <div class="font-picker__upload">
+                <span class="field__label">Or the church's own font</span>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="folder" OnClick="() => _choosingFile = true">Choose a font file from Media</Button>
+                <span class="field__hint">Upload it to Media first, or from here. Only a font the church is licensed to use in an app (an "app" or "embedding" licence; a desktop licence isn't enough).</span>
+            </div>
         }
         @if (_problem is not null)
         {
@@ -69,11 +68,16 @@
         }
     </div>
 }
+@if (_choosingFile)
+{
+    <MediaChooser FontsOnly="true" OnChosen="ChoseFileAsync" OnCancel="() => _choosingFile = false" />
+}
 
 @code {
     private static readonly TimeSpan SearchAfter = TimeSpan.FromMilliseconds(300);
 
     private bool _open;
+    private bool _choosingFile;
     private string _query = "";
     private bool _searching;
     private string? _busy;
@@ -150,30 +154,20 @@
         }
     }
 
-    private async Task UploadAsync(IFontLibrary library, InputFileChangeEventArgs args)
+    private Task ChoseFileAsync(MediaRef file)
     {
-        _busy = args.File.Name;
-        _problem = null;
-        try
+        _choosingFile = false;
+        if (!file.IsFont)
         {
-            await using Stream content = args.File.OpenReadStream(maxAllowedSize: MostFontBytes);
-            await ChooseAsync(ThemeFont.Of(await library.UploadAsync(args.File.Name, args.File.Size, content)));
+            _problem = $"{file.FileName} isn't a font file. Choose a .woff2, .woff, .ttf or .otf.";
+            return Task.CompletedTask;
         }
-        catch (RpcException exception)
+        return ChooseAsync(ThemeFont.Of(new CustomFont
         {
-            _problem = exception.Status.Detail;
-        }
-        catch (IOException)
-        {
-            _problem = "That file is too big for a font. Use a .woff2 under 2 MB.";
-        }
-        finally
-        {
-            _busy = null;
-        }
+            Family = Path.GetFileNameWithoutExtension(file.FileName) is { Length: > 0 } name ? name : "The church's font",
+            Files = [new FontFile { Media = file, Weight = FontFile.RegularToBold }],
+        }));
     }
-
-    private const long MostFontBytes = 2 * 1024 * 1024;
 
     public void Dispose() => _pending?.Cancel();
 }

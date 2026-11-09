@@ -251,45 +251,6 @@ internal sealed class MediaLibrary(
         FolderId = item.FolderId?.ToString(),
     };
 
-    public async Task<MediaRef> StoreAsync(ClaimsPrincipal user, byte[] bytes, string contentType, string fileName, CancellationToken cancellationToken)
-    {
-        using MemoryStream content = new(bytes);
-        InspectedContent inspected = await MediaInspector.InspectAsync(content, contentType, cancellationToken);
-        if (!inspected.MatchesType)
-            throw new RpcException(new Status(StatusCode.Unavailable, $"That download isn't really {contentType}."));
-
-        MediaTypes.TryGetExtension(contentType, out string extension);
-        string key = ContentAddress.KeyFor(inspected.Sha256, extension);
-        if (await db.Items.AsNoTracking()
-                .Where(item => item.Sha256 == inspected.Sha256 && item.ContentType == contentType && item.AudiencePermission == null)
-                .OrderBy(item => item.UploadedAt)
-                .FirstOrDefaultAsync(cancellationToken) is { } existing)
-            return await MediaRefs.OfAsync(db, existing, blobs, cancellationToken);
-
-        if (await blobs.FindAsync(BlobBucket.Public, key, cancellationToken) is null)
-        {
-            content.Position = 0;
-            await blobs.PutAsync(BlobBucket.Public, key, content, new BlobHeaders(contentType, ContentAddress.ImmutableCacheControl), cancellationToken);
-        }
-
-        MediaItem item = new()
-        {
-            Id = Guid.CreateVersion7(),
-            Key = key,
-            Sha256 = inspected.Sha256,
-            ContentType = contentType,
-            Bytes = inspected.Bytes,
-            FileName = fileName,
-            UploadedBy = CallerId(user),
-            UploadedAt = Now,
-        };
-        await sizer.SizeAsync(item, _ => Task.FromResult(bytes), cancellationToken);
-        db.Items.Add(item);
-        Mark(item.Id);
-        await db.SaveChangesAsync(cancellationToken);
-        return await MediaRefs.OfAsync(db, item, blobs, cancellationToken);
-    }
-
     public async Task<MediaLink> GetLinkAsync(ClaimsPrincipal user, LinkRequest request, CancellationToken cancellationToken)
     {
         Guid mediaId = await MediaAliases.ResolveAsync(db, ParseId(request.Id), cancellationToken);
@@ -322,6 +283,7 @@ internal sealed class MediaLibrary(
             Documents = await Filtered(scope, MediaFilter.Documents).CountAsync(cancellationToken),
             Unused = await Filtered(scope, MediaFilter.Unused).CountAsync(cancellationToken),
             LargeOriginals = await Filtered(scope, MediaFilter.LargeOriginals).CountAsync(cancellationToken),
+            Fonts = await Filtered(scope, MediaFilter.Fonts).CountAsync(cancellationToken),
         };
 
         List<Listed> items = await Filtered(scope, query.Filter)
@@ -369,6 +331,7 @@ internal sealed class MediaLibrary(
     {
         MediaFilter.Pictures => items.Where(item => item.ContentType.StartsWith("image/")),
         MediaFilter.Documents => items.Where(item => !item.ContentType.StartsWith("image/")),
+        MediaFilter.Fonts => items.Where(item => item.ContentType.StartsWith("font/")),
         MediaFilter.Unused => items.Where(item => !db.Uses.Any(use => use.MediaId == item.Id)),
         MediaFilter.LargeOriginals => items.Where(item => item.OriginalRemovedAt == null && item.Bytes > MediaTypes.LargeOriginalBytes
             && db.Renditions.Any(rendition => rendition.MediaId == item.Id)),

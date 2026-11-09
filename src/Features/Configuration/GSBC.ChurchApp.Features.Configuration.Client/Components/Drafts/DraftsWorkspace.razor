@@ -56,8 +56,8 @@ else
         <AddTileSheet Open="_addingTile" OpenChanged="open => _addingTile = open" OnChosen="AddTile" Saved="SavedTiles" Library="Library" />
         <SaveToLibrarySheet Open="_savingTile" OpenChanged="open => _savingTile = open" Suggested="@SuggestedLibraryName" Saved="SavedTiles" OnSave="SaveTile" OnReplace="ReplaceSaved" />
         <ShareSheet Draft="_session.Draft" Open="_sharing" OpenChanged="open => _sharing = open" Names="_names" OnShare="ShareAsync" OnUnshare="UnshareAsync" />
-        <EventLayerSheet Draft="_session.Draft" Open="_turningOn" OpenChanged="open => _turningOn = open" Busy="_busy" Problem="@_problem"
-                         Replacing="@(Layer is { } layer && layer.Id != _session.Draft.Id ? layer.Name : null)" OnTurnOn="TurnOnAsync" />
+        <ForEveryoneSheet Draft="_session.Draft" Open="_turningOn" OpenChanged="open => _turningOn = open" Starting="_startingWay" Busy="_busy" Problem="@_problem"
+                          Replacing="@(Layer is { } layer && layer.Id != _session.Draft.Id ? layer.Name : null)" OnTurnOn="TurnOnAsync" OnSchedulePublish="SchedulePublishAsync" />
         <Sheet Open="_more" OpenChanged="open => _more = open" Title="@_session.Draft.Name">
             <ChildContent>
                 <TextField Label="Name" Value="@_rename" ValueChanged="value => _rename = value" MaxLength="80" />
@@ -74,7 +74,11 @@ else
                         }
                         else
                         {
-                            <ListRow Title="Turn on for an event" Subtitle="Everyone sees it now, or between dates; turn it off after" Icon="calendar" OnClick="() => { _more = false; _turningOn = true; }" />
+                            <ListRow Title="Turn on for everyone, or publish on a date" Subtitle="Now or between two dates, then off again; or published for good at a time you choose" Icon="calendar" OnClick="() => ChooseForEveryone(ForEveryoneWay.TryNow)" />
+                        }
+                        @if (_session.Draft.PublishAt is not null)
+                        {
+                            <ListRow Title="Don't publish it on a date" Subtitle="@($"Cancels publishing it on {DraftWords.Moment(_session.Draft.PublishAt.Value)}")" Icon="x" OnClick="CancelScheduledPublishAsync" />
                         }
                     }
                     <ListRow Title="Make a copy" Subtitle="Next year's version, starting from this one" Icon="plus" OnClick="CopyAsync" />
@@ -162,6 +166,7 @@ else
     private bool _busy;
     private bool _sharing;
     private bool _turningOn;
+    private ForEveryoneWay _startingWay;
     private bool _more;
     private bool _naming;
     private bool _confirmDelete;
@@ -264,6 +269,32 @@ else
             else if (draft.Status == DraftStatus.WaitingToPublish)
             {
                 <Notice Text="Waiting for someone who can publish. If you change it, you'll need to ask again." />
+            }
+            @if (draft is { PublishAt: { } publishAt, NotPublished: null })
+            {
+                <Notice>
+                    <span>Publishes on @DraftWords.Moment(publishAt), for good. What you save before then is published too.</span>
+                    @if (MayPublishDraft)
+                    {
+                        <span class="ui-actions">
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Change the time</Button>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Don't publish it then</Button>
+                        </span>
+                    }
+                </Notice>
+            }
+            else if (draft is { PublishAt: { } missed, NotPublished: { } reason })
+            {
+                <Notice Tone="NoticeTone.Warning">
+                    <span>It didn't publish on @DraftWords.Moment(missed). @reason</span>
+                    <span class="ui-actions">
+                        @if (MayPublishDraft)
+                        {
+                            <Button Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Choose a new time</Button>
+                        }
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Dismiss</Button>
+                    </span>
+                </Notice>
             }
 
             <TabStrip TValue="AreaKey" Label="What this draft changes" Options="AreaTabs" Value="_area" ValueChanged="SelectAreaAsync">
@@ -1303,6 +1334,27 @@ else
         _list = await LoadListAsync();
     });
 
+    private void ChooseForEveryone(ForEveryoneWay way)
+    {
+        _startingWay = _session?.Draft is { LayerOn: true, LayerStartsAt: not null } && way == ForEveryoneWay.TryNow ? ForEveryoneWay.BetweenDates : way;
+        _problem = null;
+        _more = false;
+        _turningOn = true;
+    }
+
+    private Task SchedulePublishAsync(DateTime at) => RunAsync(async () =>
+    {
+        await SaveNowAsync();
+        Accept(await Drafts.SchedulePublishAsync(_session!.Draft.Id, at));
+        _turningOn = false;
+    });
+
+    private Task CancelScheduledPublishAsync() => RunAsync(async () =>
+    {
+        Accept(await Drafts.CancelScheduledPublishAsync(_session!.Draft.Id));
+        _more = false;
+    });
+
     private Task TurnOffAsync(Draft layer) => RunAsync(async () =>
     {
         await Drafts.TurnOffAsync(layer.Id);
@@ -1315,7 +1367,7 @@ else
     private Task ChangeDatesAsync(Draft layer)
     {
         if (_session?.Draft.Id == layer.Id)
-            _turningOn = true;
+            ChooseForEveryone(ForEveryoneWay.TryNow);
         else
             Navigation.NavigateTo($"{BasePath}/{layer.Id}");
         return Task.CompletedTask;

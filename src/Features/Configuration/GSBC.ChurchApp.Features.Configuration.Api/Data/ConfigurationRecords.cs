@@ -51,6 +51,9 @@ public sealed class DraftRecord
     public DateTime? LayerStartsAt { get; set; }
     public DateTime? LayerEndsAt { get; set; }
     public List<string> DroppedFromLayer { get; set; } = [];
+    public DateTime? PublishAt { get; set; }
+    public Guid? PublishScheduledBy { get; set; }
+    public string? NotPublished { get; set; }
     public long Revision { get; set; }
 }
 

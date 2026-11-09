@@ -6,7 +6,7 @@
         <Icon Name="image" />
         <span class="media-upload__label">@Label</span>
         <span class="media-upload__hint">@(_file is null ? "Click to choose a file from this computer" : _checking ? $"{_file.Name}: checking the library…" : _file.Name)</span>
-        <InputFile @ref="_picker" OnChange="ChooseAsync" accept="@string.Join(",", MediaTypes.Accepted)" disabled="@_busy" class="visually-hidden" />
+        <InputFile @ref="_picker" OnChange="ChooseAsync" accept="@MediaTypes.AcceptedFiles(FontsOnly)" disabled="@_busy" class="visually-hidden" />
     </label>
     @if (_file is not null && _match is { Media: { } existing } match)
     {
@@ -54,12 +54,12 @@
     else if (_file is not null)
     {
         <TextField Label="Description" Hint="For people using screen readers: what the picture shows." @bind-Value="_altText" />
-        @if (MediaTypes.WarnsWhenLarge(_file.ContentType, _file.Size))
+        @if (MediaTypes.WarnsWhenLarge(ContentTypeOf(_file), _file.Size))
         {
             <Notice Tone="NoticeTone.Warning">@_file.Name is @Megabytes(_file.Size). Everyone who sees it downloads all of that, often on mobile data. Shrink it first if you can.</Notice>
         }
         <div class="panel-actions">
-            <Button Icon="arrow-up" Busy="_busy" Disabled="_checking" OnClick="UploadAsync">@(_addAgain ? (_asNewPicture ? "Add as a new picture" : "Add a second copy") : MediaTypes.WarnsWhenLarge(_file.ContentType, _file.Size) ? "Upload anyway" : "Upload")</Button>
+            <Button Icon="arrow-up" Busy="_busy" Disabled="_checking" OnClick="UploadAsync">@(_addAgain ? (_asNewPicture ? "Add as a new picture" : "Add a second copy") : MediaTypes.WarnsWhenLarge(ContentTypeOf(_file), _file.Size) ? "Upload anyway" : "Upload")</Button>
             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Choose another</Button>
         </div>
     }
@@ -85,13 +85,22 @@
     [Parameter] public MediaAudience? PrivateTo { get; set; }
     [Parameter] public string? FolderId { get; set; }
     [Parameter] public EventCallback<UploadedMedia> OnUploaded { get; set; }
+    [Parameter] public bool FontsOnly { get; set; }
+
+    private static string ContentTypeOf(IBrowserFile file) => MediaTypes.ContentTypeOf(file.Name, file.ContentType);
 
     private async Task ChooseAsync(InputFileChangeEventArgs args)
     {
         Reset();
-        if (!MediaTypes.TryGetExtension(args.File.ContentType, out _))
+        string contentType = MediaTypes.ContentTypeOf(args.File.Name, args.File.ContentType);
+        if (FontsOnly && !MediaTypes.IsFont(contentType))
         {
-            _error = $"{args.File.Name} isn't an image or PDF this app can show.";
+            _error = $"{args.File.Name} isn't a font file. Use .woff2, .woff, .ttf or .otf.";
+            return;
+        }
+        if (!MediaTypes.TryGetExtension(contentType, out _))
+        {
+            _error = $"{args.File.Name} isn't a picture, PDF or font file this app can use.";
             return;
         }
 
@@ -142,7 +151,7 @@
         if (_picker?.Element is not { } input)
             return null;
         await using IJSObjectReference module = await ImportAsync();
-        return await module.InvokeAsync<string?>("sha256", input) is { } sha256 ? await Media.FindAsync(sha256, file.ContentType, PrivateTo) : null;
+        return await module.InvokeAsync<string?>("sha256", input) is { } sha256 ? await Media.FindAsync(sha256, ContentTypeOf(file), PrivateTo) : null;
     }
 
     private async Task UseExistingAsync()
@@ -178,7 +187,7 @@
             UploadedMedia uploaded = await Media.UploadAsync(new BeginUploadRequest
             {
                 FileName = _file.Name,
-                ContentType = _file.ContentType,
+                ContentType = ContentTypeOf(_file),
                 Bytes = _file.Size,
                 AltText = _altText,
                 PrivateTo = PrivateTo,

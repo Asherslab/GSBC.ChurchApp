@@ -392,6 +392,12 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .segmented { display: grid; grid-auto-columns: 1fr; grid-auto-flow: column; padding: 3px; border-radius: var(--radius-field); background: var(--sand); }
 .segmented button { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 36px; padding: 0 8px; border: 0; border-radius: var(--radius-inner); background: none; color: var(--ink-2); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; transition: background 180ms, color 180ms; }
 .segmented button[aria-checked="true"] { background: var(--segment-on); color: var(--ink); box-shadow: var(--segment-shadow); }
+.segmented--stacked { grid-auto-flow: row; gap: 2px; }
+.segmented--stacked button { justify-content: flex-start; align-items: flex-start; gap: 12px; min-height: var(--touch); padding: 12px 14px; text-align: left; }
+.segmented--stacked button .icon { flex: none; margin-top: 2px; }
+.segmented__text { display: grid; gap: 2px; }
+.segmented__label { color: var(--ink); font-size: var(--text-row); }
+.segmented__detail { color: var(--ink-2); font-weight: 400; line-height: 1.4; }
 
 .skeleton { display: grid; gap: 0; animation: fade 160ms 150ms both; }
 .skeleton i { display: block; border-radius: 6px; background: var(--sand); animation: breathe 1.4s ease-in-out infinite; }

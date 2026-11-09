@@ -12,5 +12,9 @@ public static class DraftNotifications
         "config.drafts.shared", "Someone shares a draft with you", "Drafts", Waits: true,
         For: ConfigurationPermissions.PreviewDraft);
 
-    public static readonly IReadOnlyList<NotificationKind> All = [WaitingToPublish, SharedWithYou];
+    public static readonly NotificationKind NotPublished = new(
+        "config.drafts.not-published", "A draft you scheduled to publish couldn't be published", "Drafts", Waits: true,
+        For: ConfigurationPermissions.PreviewDraft);
+
+    public static readonly IReadOnlyList<NotificationKind> All = [WaitingToPublish, SharedWithYou, NotPublished];
 }

@@ -1,7 +1,7 @@
 @typeparam TValue
 @inject Shell Shell
 
-<div class="segmented @Class" role="radiogroup" aria-label="@Label">
+<div class="segmented @(Stacked ? "segmented--stacked" : "") @Class" role="radiogroup" aria-label="@Label">
     @foreach (SegmentOption<TValue> option in Options)
     {
         bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
@@ -10,7 +10,20 @@
             {
                 <Icon Name="@option.Icon" Size="IconSize.Small" />
             }
-            @option.Label
+            @if (Stacked)
+            {
+                <span class="segmented__text">
+                    <span class="segmented__label">@option.Label</span>
+                    @if (option.Detail is not null)
+                    {
+                        <span class="segmented__detail">@option.Detail</span>
+                    }
+                </span>
+            }
+            else
+            {
+                @option.Label
+            }
             @if (option.Count is > 0)
             {
                 <span class="segmented__count">@option.Count</span>
@@ -25,6 +38,7 @@
     [Parameter] public TValue Value { get; set; } = default!;
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public string? Class { get; set; }
+    [Parameter] public bool Stacked { get; set; }
 
     private async Task SelectAsync(TValue value)
     {

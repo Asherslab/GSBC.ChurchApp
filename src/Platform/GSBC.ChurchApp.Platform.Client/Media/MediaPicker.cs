@@ -5,6 +5,7 @@ namespace GSBC.ChurchApp.Platform.Client.Media;
 public sealed class MediaPicker([DynamicallyAccessedMembers(MediaPicker.ComponentMembers)] Type component)
 {
     public const string ImagesOnlyParameter = "ImagesOnly";
+    public const string FontsOnlyParameter = "FontsOnly";
     public const string OnPickParameter = "OnPick";
     public const string OnCancelParameter = "OnCancel";
     public const string SizeParameter = "Size";

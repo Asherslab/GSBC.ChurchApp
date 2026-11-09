@@ -1,0 +1,117 @@
+@using System.Globalization
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"\"{Draft.Name}\" for everyone")" Lead="Choose how everyone gets this draft's changes.">
+    <ChildContent>
+        <Segmented TValue="ForEveryoneWay" Label="How everyone gets it" Stacked="true" Options="Ways" Value="_way" ValueChanged="way => _way = way" />
+        @switch (_way)
+        {
+            case ForEveryoneWay.TryNow:
+                <TextField Label="Turn it off by itself (optional)" Type="datetime-local" Value="@_ends" ValueChanged="value => _ends = value"
+                           Hint="Leave it empty to keep it on until someone turns it off." />
+                break;
+            case ForEveryoneWay.BetweenDates:
+                <div class="ui-pair">
+                    <TextField Label="Turns on" Type="datetime-local" Value="@_starts" ValueChanged="value => _starts = value" />
+                    <TextField Label="Turns off" Type="datetime-local" Value="@_ends" ValueChanged="value => _ends = value" />
+                </div>
+                <p class="field__hint">Phones get it ahead of time and switch by themselves, even without signal.</p>
+                break;
+            default:
+                <TextField Label="Publishes on" Type="datetime-local" Value="@_publishAt" ValueChanged="value => _publishAt = value"
+                           Hint="The server publishes it at that moment, even if nobody has the admin panel open. Changes you save before then are published too." />
+                @if (PublishAt is { } at)
+                {
+                    <p class="field__hint">Publishes on @DraftWords.Moment(at).</p>
+                }
+                break;
+        }
+        @if (Replacing is not null && _way != ForEveryoneWay.PublishOn)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@($"\"{Replacing}\" is on for everyone now. This replaces it.")" />
+        }
+        @if (Problem is not null)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@Problem" />
+        }
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="Busy" Disabled="!Ready" OnClick="GoAsync">@Action</Button>
+        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => OpenChanged.InvokeAsync(false)">Cancel</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const string LocalFormat = "yyyy-MM-ddTHH:mm";
+    private static readonly string[] LocalFormats = [LocalFormat, "yyyy-MM-ddTHH:mm:ss"];
+
+    private static readonly IReadOnlyList<SegmentOption<ForEveryoneWay>> Ways =
+    [
+        new(ForEveryoneWay.TryNow, "Turn it on now", "sun",
+            Detail: "Everyone sees it from now until it's turned off. It isn't published, so turning it off puts the app back as it was."),
+        new(ForEveryoneWay.BetweenDates, "Turn it on between two dates", "calendar",
+            Detail: "Everyone sees it between the two times, then the app goes back by itself. It isn't published."),
+        new(ForEveryoneWay.PublishOn, "Publish it on a date", "send",
+            Detail: "At that moment it's published for good, just like Publish now. There's nothing to turn off afterwards."),
+    ];
+
+    [Parameter, EditorRequired] public required Draft Draft { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public ForEveryoneWay Starting { get; set; }
+    [Parameter] public string? Replacing { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<(DateTime? StartsAt, DateTime? EndsAt)> OnTurnOn { get; set; }
+    [Parameter] public EventCallback<DateTime> OnSchedulePublish { get; set; }
+
+    private ForEveryoneWay _way;
+    private string _starts = "";
+    private string _ends = "";
+    private string _publishAt = "";
+
+    private bool _wasOpen;
+
+    protected override void OnParametersSet()
+    {
+        bool opening = Open && !_wasOpen;
+        _wasOpen = Open;
+        if (!opening)
+            return;
+        _way = Starting;
+        _starts = Local(Draft.LayerStartsAt);
+        _ends = Local(Draft.LayerEndsAt);
+        _publishAt = Local(Draft.PublishAt);
+    }
+
+    private DateTime? Starts => Utc(_starts);
+
+    private DateTime? Ends => Utc(_ends);
+
+    private DateTime? PublishAt => Utc(_publishAt);
+
+    private bool Ready => _way switch
+    {
+        ForEveryoneWay.TryNow => true,
+        ForEveryoneWay.BetweenDates => Starts is not null && Ends is not null,
+        _ => PublishAt is not null,
+    };
+
+    private string Action => _way switch
+    {
+        ForEveryoneWay.TryNow => "Turn on now",
+        ForEveryoneWay.BetweenDates => "Turn on between these dates",
+        _ => "Publish on this date",
+    };
+
+    private Task GoAsync() => _way switch
+    {
+        ForEveryoneWay.TryNow => OnTurnOn.InvokeAsync((null, Ends)),
+        ForEveryoneWay.BetweenDates => OnTurnOn.InvokeAsync((Starts, Ends)),
+        _ => OnSchedulePublish.InvokeAsync(PublishAt!.Value),
+    };
+
+    private static string Local(DateTime? utc) => utc is { } value ? ChurchTime.ToChurch(value).ToString(LocalFormat, CultureInfo.InvariantCulture) : "";
+
+    private static DateTime? Utc(string text) =>
+        DateTime.TryParseExact(text, LocalFormats, CultureInfo.InvariantCulture, DateTimeStyles.None, out DateTime local) ? ChurchTime.ToUtc(local) : null;
+}

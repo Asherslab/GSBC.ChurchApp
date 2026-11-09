@@ -92,6 +92,7 @@ public enum MediaFilter
     Documents = 2,
     Unused = 3,
     LargeOriginals = 4,
+    Fonts = 5,
 }
 
 [ProtoContract]
@@ -110,6 +111,7 @@ public sealed class MediaCounts
     [ProtoMember(3)] public int Documents { get; set; }
     [ProtoMember(4)] public int Unused { get; set; }
     [ProtoMember(5)] public int LargeOriginals { get; set; }
+    [ProtoMember(6)] public int Fonts { get; set; }
 }
 
 [ProtoContract]
