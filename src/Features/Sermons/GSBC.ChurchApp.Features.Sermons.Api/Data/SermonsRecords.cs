@@ -84,12 +84,6 @@ public sealed class SpeakerRecord
     public string? PublishedHash { get; set; }
 }
 
-public sealed class SpeakerAlias
-{
-    public required string Alias { get; set; }
-    public Guid SpeakerId { get; set; }
-}
-
 public sealed class ProgressRecord
 {
     public Guid UserId { get; set; }

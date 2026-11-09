@@ -38,54 +38,29 @@
             </Page>;
 
         AudioState audio = Player.Audio.State;
-        Sermon? loaded = audio.Item is { } playing ? view.Shelf.Find(playing.Id) : null;
-        Underway? underway = loaded is not null
-            ? new Underway(loaded, ListeningProgress.Heard(loaded.Id, audio.Position, audio.Duration, DateTime.UtcNow))
-            : view.KeepGoing(DateTime.UtcNow);
+        AudioItem? current = audio.Item;
+        DateTime now = DateTime.UtcNow;
+        Underway? underway = current is null ? view.KeepGoing(now) : null;
         Sermon featured = underway?.Sermon ?? view.Shelf.Sermons[0];
-        List<Underway> others = KeepGoing.All(view.Shelf, view.Progress).Where(item => item.Sermon.Id != featured.Id).Take(3).ToList();
-        List<Sermon> latest = view.Shelf.Sermons.Where(sermon => sermon.Id != featured.Id).Take(LatestShown).ToList();
+        string shownId = current is null ? featured.Id : view.Shelf.Find(current.Id)?.Id ?? current.Id;
+        List<Underway> others = KeepGoing.All(view.Shelf, view.Progress).Where(item => item.Sermon.Id != shownId).Take(3).ToList();
+        List<Sermon> latest = view.Shelf.Sermons.Where(sermon => sermon.Id != shownId).Take(LatestShown).ToList();
         List<SpeakerInfo> speakers = view.Shelf.Speakers.OrderByDescending(speaker => speaker.Count).ThenByDescending(speaker => speaker.LatestAt).ToList();
-        string note = loaded is not null && underway is { } current
-            ? $"{(audio.Playing ? "Playing" : "Paused")} · {SermonText.Left(current.Progress)}"
+        string note = current is not null
+            ? PlayerNote(audio, current, now)
             : underway is { } going
             ? $"Keep going · {SermonText.Left(going.Progress)}"
             : SermonText.Join("Latest", SermonText.Day(featured.PreachedAt), featured.Service);
 
         return @<Page Title="Sermons" StuckAt="260">
             <Masthead Title="Sermons" Note="@note">
-                <a class="sermon-feature" href="@SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')">
-                    <MediaCover Media="featured.Artwork" Class="sermon-feature__art" />
-                    <span class="sermon-feature__words">
-                        <strong>@featured.Title</strong>
-                        <span>@SermonText.Join(featured.SpeakerName, underway is null ? SermonText.Length(featured.DurationSeconds) : null)</span>
-                    </span>
-                </a>
-                @if (underway is { } progress)
+                @if (current is not null)
                 {
-                    <ProgressTrack Fraction="ListeningProgress.Fraction(progress.Progress)" Class="sermon-feature__progress" />
-                }
-                @if (loaded is not null)
-                {
-                    <div class="sermon-transport">
-                        <span class="sermon-transport__time">@SermonText.Clock(audio.Position)</span>
-                        <button type="button" class="sermon-transport__skip" aria-label="Back 15 seconds" @onclick="() => Player.Audio.SkipAsync(-15)"><Icon Name="rotate-ccw" /><span>15</span></button>
-                        <button type="button" class="sermon-transport__play" aria-label="@(audio.Playing ? "Pause" : "Play")" @onclick="() => ListenAsync(featured)"><Icon Name="@(audio.Playing ? "pause" : "play")" /></button>
-                        <button type="button" class="sermon-transport__skip" aria-label="Forward 30 seconds" @onclick="() => Player.Audio.SkipAsync(30)"><Icon Name="rotate-cw" /><span>30</span></button>
-                        <span class="sermon-transport__time">-@SermonText.Clock(audio.Remaining)</span>
-                    </div>
+                    @Playing(view, current)
                 }
                 else
                 {
-                <div class="sermon-feature__actions">
-                    <Button Variant="ButtonVariant.OnMasthead" Icon="@(Player.IsPlaying(featured) ? "pause" : "play")" OnClick="() => ListenAsync(featured)">
-                        @(Player.IsPlaying(featured) ? "Pause" : underway is not null ? "Keep listening" : "Listen")
-                    </Button>
-                    @if (featured.YouTubeId is not null)
-                    {
-                        <Button Variant="ButtonVariant.GhostOnMasthead" Icon="video" Href="@($"{SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')}?watch=true")">Watch</Button>
-                    }
-                </div>
+                    @Feature(featured, underway)
                 }
             </Masthead>
 
@@ -167,6 +142,56 @@
             }
         </Page>;
     }
+
+    private static RenderFragment Playing(SermonView view, AudioItem item)
+    {
+        Sermon? sermon = view.Shelf.Find(item.Id);
+        string href = sermon is not null ? SermonsDestinations.Sermon.PathOf(sermon.Id) : item.Link ?? SermonsAppExtensions.Route;
+        return @<text>
+            <a class="sermon-feature" href="@href.TrimStart('/')" aria-label="@($"{sermon?.Title ?? item.Title}. Open the sermon")">
+                @if (sermon is not null)
+                {
+                    <MediaCover Media="sermon.Artwork" Class="sermon-feature__art" />
+                }
+                else
+                {
+                    <AudioArt Item="item" Class="sermon-feature__art" />
+                }
+                <span class="sermon-feature__words">
+                    <strong>@(sermon?.Title ?? item.Title)</strong>
+                    <span>@item.Artist</span>
+                </span>
+            </a>
+            <AudioControls Class="sermon-feature__controls" />
+        </text>;
+    }
+
+    private RenderFragment Feature(Sermon featured, Underway? underway) => @<text>
+        <a class="sermon-feature" href="@SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')">
+            <MediaCover Media="featured.Artwork" Class="sermon-feature__art" />
+            <span class="sermon-feature__words">
+                <strong>@featured.Title</strong>
+                <span>@SermonText.Join(featured.SpeakerName, underway is null ? SermonText.Length(featured.DurationSeconds) : null)</span>
+            </span>
+        </a>
+        @if (underway is { } progress)
+        {
+            <ProgressTrack Fraction="ListeningProgress.Fraction(progress.Progress)" Class="sermon-feature__progress" />
+        }
+        <div class="sermon-feature__actions">
+            <Button Variant="ButtonVariant.OnMasthead" Icon="play" OnClick="() => ListenAsync(featured)">
+                @(underway is not null ? "Keep listening" : "Listen")
+            </Button>
+            @if (featured.YouTubeId is not null)
+            {
+                <Button Variant="ButtonVariant.GhostOnMasthead" Icon="video" Href="@($"{SermonsDestinations.Sermon.PathOf(featured.Id).TrimStart('/')}?watch=true")">Watch</Button>
+            }
+        </div>
+    </text>;
+
+    private static string PlayerNote(AudioState audio, AudioItem item, DateTime now) =>
+        audio.Ended ? "Finished"
+        : $"{(audio.Playing ? "Playing" : "Paused")} · {SermonText.Left(ListeningProgress.Heard(item.Id, audio.Position, audio.Duration, now))}";
 
     private static List<Sermon> Downloaded(SermonView view) =>
         view.Shelf.Sermons.Where(view.Downloaded).Take(6).ToList();

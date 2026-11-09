@@ -42,13 +42,13 @@ internal sealed class SourceIdMove(
             .Select(sermon => new { SpeakerId = sermon.SourceSpeakerId!.Value, sermon.SourceSpeaker }).ToListAsync(cancellationToken);
         foreach (SpeakerRecord speaker in await db.Speakers.AsNoTracking().ToListAsync(cancellationToken))
         {
-            List<string> names = sourceNames.Where(name => name.SpeakerId == speaker.Id).Select(name => Speakers.AliasOf(name.SourceSpeaker)).ToList();
+            List<string> names = sourceNames.Where(name => name.SpeakerId == speaker.Id).Select(name => Speakers.KeyOf(name.SourceSpeaker)).ToList();
             if (names.Count == 0)
                 continue;
-            string alias = names.Contains(Speakers.AliasOf(speaker.Name))
-                ? Speakers.AliasOf(speaker.Name)
+            string key = names.Contains(Speakers.KeyOf(speaker.Name))
+                ? Speakers.KeyOf(speaker.Name)
                 : names.GroupBy(name => name).OrderByDescending(group => group.Count()).ThenBy(group => group.Key, StringComparer.Ordinal).First().Key;
-            moves.Add(new Move(FormerId.Speaker, speaker.Id, SourceIds.Speaker(alias)));
+            moves.Add(new Move(FormerId.Speaker, speaker.Id, SourceIds.Speaker(key)));
         }
 
         moves.RemoveAll(move => move.From == move.To);
@@ -78,7 +78,6 @@ internal sealed class SourceIdMove(
                     await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET series_id = {move.To} WHERE series_id = {move.From}", cancellationToken);
                     break;
                 default:
-                    await db.Database.ExecuteSqlAsync($"UPDATE sermons.speaker_aliases SET speaker_id = {move.To} WHERE speaker_id = {move.From}", cancellationToken);
                     await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET source_speaker_id = {move.To} WHERE source_speaker_id = {move.From}", cancellationToken);
                     await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET speaker_id = {move.To} WHERE speaker_id = {move.From}", cancellationToken);
                     break;

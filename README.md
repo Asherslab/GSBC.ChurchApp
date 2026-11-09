@@ -43,7 +43,7 @@ They install beside TestFlight's **GSBC UAT** and the store app: see
 The script finds the phone, writes your team and this Mac's address (`<LocalHostName>.local:5300`) into
 `ios/local.xcconfig` (gitignored, so nothing machine-specific is committed), then builds, installs and
 launches. The masthead's sync indicator shows whether the app reached the server. Override with `GSBC_GATEWAY=host:port` or
-`GSBC_DEVICE=<udid>` (a phone) or `GSBC_SIMULATOR=<udid>` (a Simulator of your own).
+`GSBC_DEVICE=<udid>`.
 
 To see sync working: open **Storage** in the app (it lists what's stored, the sync state and anything
 waiting to send), then change the development feed from the Mac and watch it arrive:

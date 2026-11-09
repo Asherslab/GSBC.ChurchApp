@@ -13,7 +13,6 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
     public DbSet<SermonRecord> Sermons => Set<SermonRecord>();
     public DbSet<SeriesRecord> Series => Set<SeriesRecord>();
     public DbSet<SpeakerRecord> Speakers => Set<SpeakerRecord>();
-    public DbSet<SpeakerAlias> SpeakerAliases => Set<SpeakerAlias>();
     public DbSet<ProgressRecord> Progress => Set<ProgressRecord>();
     public DbSet<SourceState> SourceStates => Set<SourceState>();
     public DbSet<ArtworkSource> ArtworkSources => Set<ArtworkSource>();
@@ -54,12 +53,6 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
             entity.HasKey(speaker => speaker.Id);
             Media(entity.Property(speaker => speaker.Photo));
             Media(entity.Property(speaker => speaker.ChosenPhoto));
-        });
-        modelBuilder.Entity<SpeakerAlias>(entity =>
-        {
-            entity.ToTable("speaker_aliases");
-            entity.HasKey(alias => alias.Alias);
-            entity.HasIndex(alias => alias.SpeakerId);
         });
         modelBuilder.Entity<ProgressRecord>(entity =>
         {

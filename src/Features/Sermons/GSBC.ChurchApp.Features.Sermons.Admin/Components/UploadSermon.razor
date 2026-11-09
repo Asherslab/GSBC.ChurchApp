@@ -41,7 +41,7 @@
                               ValueChanged="ChooseSeries" Pending="@(_seriesId == NewOne ? $"{_newSeries} (new)" : null)" Placeholder="Find a series"
                               CreateText="@(name => $"Start a new series called “{name}”")" OnCreate="NewSeries" />
             </div>
-            <div class="sermon-check__field"><TextField Label="Service" Placeholder="Sunday morning" @bind-Value="_service" MaxLength="80" /></div>
+            <div class="sermon-check__field"><ServicePicker Services="Services" @bind-Value="_service" /></div>
             <div class="sermon-check__field sermon-check__field--wide"><TextField Label="Video" Placeholder="A YouTube link, if there is one" @bind-Value="_youTube" /></div>
             <div class="sermon-check__field sermon-check__field--wide"><TextField Label="About this sermon" Multiline="true" Hint="Optional: a line or two shown under the sermon in the app." @bind-Value="_summary" MaxLength="600" /></div>
             <div class="sermon-check__field sermon-check__field--wide">
@@ -97,6 +97,7 @@
     [Parameter, EditorRequired] public required SourceStatus Status { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ServiceChoice> Services { get; set; }
     [Parameter] public EventCallback<SermonDetail> Added { get; set; }
     [Parameter] public EventCallback Cancelled { get; set; }
 
@@ -106,7 +107,7 @@
     {
         DateOnly today = ChurchTime.Today(Clock);
         _day = today.AddDays(-(int)today.DayOfWeek).ToString("yyyy-MM-dd");
-        _service = "Sunday morning";
+        _service = SermonServices.SundayMorning;
     }
 
     private bool Ready => _file is not null && _title.Trim().Length > 0 && _day.Length > 0

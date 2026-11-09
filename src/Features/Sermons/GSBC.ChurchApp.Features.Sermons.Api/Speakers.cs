@@ -6,56 +6,69 @@ namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed class Speakers(SermonsDbContext db, Artwork artwork, TimeProvider time, ILogger<Speakers> logger)
 {
-    private readonly Dictionary<string, SpeakerRecord> _resolved = new(StringComparer.Ordinal);
+    private Dictionary<string, Guid>? _byName;
 
-    public static string AliasOf(string name) => string.Join(' ', name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
+    public static string KeyOf(string name) => string.Join(' ', name.Split(' ', StringSplitOptions.RemoveEmptyEntries)).ToLowerInvariant();
 
     public async Task<SpeakerRecord> ResolveAsync(string name, CancellationToken cancellationToken)
     {
-        string alias = AliasOf(name);
-        if (_resolved.TryGetValue(alias, out SpeakerRecord? cached))
-            return cached;
+        Dictionary<string, Guid> byName = await ByNameAsync(cancellationToken);
+        string key = KeyOf(name);
+        if (byName.TryGetValue(key, out Guid known) && await db.Speakers.FindAsync([known], cancellationToken) is { } speaker)
+            return speaker;
 
-        SpeakerRecord? speaker = await db.SpeakerAliases.Where(known => known.Alias == alias)
-            .Join(db.Speakers, known => known.SpeakerId, record => record.Id, (_, record) => record)
-            .SingleOrDefaultAsync(cancellationToken);
-        if (speaker is null)
-        {
-            Guid lasting = SourceIds.Speaker(alias);
-            Guid id = await db.Speakers.AnyAsync(known => known.Id == lasting, cancellationToken) || db.Speakers.Local.Any(known => known.Id == lasting) ? Guid.CreateVersion7() : lasting;
-            speaker = new SpeakerRecord { Id = id, Name = name.Trim(), CreatedAt = time.GetUtcNow().UtcDateTime };
-            db.Speakers.Add(speaker);
-            db.SpeakerAliases.Add(new SpeakerAlias { Alias = alias, SpeakerId = speaker.Id });
-        }
-        _resolved[alias] = speaker;
+        Guid lasting = SourceIds.Speaker(key);
+        Guid id = await db.Speakers.AnyAsync(other => other.Id == lasting, cancellationToken) || db.Speakers.Local.Any(other => other.Id == lasting) ? Guid.CreateVersion7() : lasting;
+        speaker = new SpeakerRecord { Id = id, Name = name.Trim(), CreatedAt = time.GetUtcNow().UtcDateTime };
+        db.Speakers.Add(speaker);
+        byName[key] = speaker.Id;
         return speaker;
     }
 
-    public static Dictionary<string, string> ByAlias(IReadOnlyDictionary<string, string> byName)
+    private async Task<Dictionary<string, Guid>> ByNameAsync(CancellationToken cancellationToken)
     {
-        Dictionary<string, string> byAlias = new(StringComparer.Ordinal);
+        if (_byName is not null)
+            return _byName;
+        List<SpeakerRecord> speakers = await db.Speakers.AsNoTracking().ToListAsync(cancellationToken);
+        HashSet<Guid> exists = [.. speakers.Select(speaker => speaker.Id)];
+        var credited = await db.Sermons.AsNoTracking().Where(sermon => sermon.SourceSpeakerId != null || sermon.SpeakerId != null)
+            .OrderBy(sermon => sermon.PreachedAt).Select(sermon => new { sermon.SourceSpeaker, Source = sermon.SourceSpeakerId, Shown = sermon.SpeakerId ?? sermon.SourceSpeakerId })
+            .ToListAsync(cancellationToken);
+        HashSet<Guid?> withSermons = [.. credited.Select(sermon => sermon.Shown)];
+        Dictionary<string, Guid> byName = new(StringComparer.Ordinal);
+        foreach (var sermon in credited.Where(sermon => sermon.SourceSpeaker.Length > 0))
+            if ((withSermons.Contains(sermon.Source) ? sermon.Source : sermon.Shown) is { } id && exists.Contains(id))
+                byName[KeyOf(sermon.SourceSpeaker)] = id;
+        foreach (SpeakerRecord speaker in speakers)
+            byName.TryAdd(KeyOf(speaker.Name), speaker.Id);
+        return _byName = byName;
+    }
+
+    public static Dictionary<string, string> ByKey(IReadOnlyDictionary<string, string> byName)
+    {
+        Dictionary<string, string> byKey = new(StringComparer.Ordinal);
         foreach ((string name, string url) in byName)
-            byAlias.TryAdd(AliasOf(name), url);
-        return byAlias;
+            byKey.TryAdd(KeyOf(name), url);
+        return byKey;
     }
 
     public static IReadOnlyDictionary<string, string> Preferring(IReadOnlyDictionary<string, string> better, IReadOnlyDictionary<string, string> fallback)
     {
-        Dictionary<string, string> byAlias = ByAlias(fallback);
+        Dictionary<string, string> byKey = ByKey(fallback);
         foreach ((string name, string url) in better)
-            byAlias[AliasOf(name)] = url;
-        return byAlias;
+            byKey[KeyOf(name)] = url;
+        return byKey;
     }
 
-    public async Task<IReadOnlyList<string>> TakePhotosAsync(IReadOnlyDictionary<string, string> photosByAlias, bool onlyWithout, CancellationToken cancellationToken)
+    public async Task<IReadOnlyList<string>> TakePhotosAsync(IReadOnlyDictionary<string, string> photosByKey, bool onlyWithout, CancellationToken cancellationToken)
     {
+        Dictionary<string, Guid> byName = await ByNameAsync(cancellationToken);
         List<string> unmatched = [];
-        foreach ((string alias, string url) in photosByAlias)
+        foreach ((string key, string url) in photosByKey)
         {
-            Guid? id = await db.SpeakerAliases.Where(known => known.Alias == alias).Select(known => (Guid?)known.SpeakerId).SingleOrDefaultAsync(cancellationToken);
-            if (id is null || await db.Speakers.FindAsync([id.Value], cancellationToken) is not { } speaker)
+            if (!byName.TryGetValue(key, out Guid id) || await db.Speakers.FindAsync([id], cancellationToken) is not { } speaker)
             {
-                unmatched.Add(alias);
+                unmatched.Add(key);
                 continue;
             }
             if (speaker.PhotoSourceUrl == url || (onlyWithout && speaker.PhotoSourceUrl is not null))

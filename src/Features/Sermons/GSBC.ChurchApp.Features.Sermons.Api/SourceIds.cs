@@ -11,7 +11,7 @@ internal static class SourceIds
 
     public static Guid Series(string slug) => NameBased($"series:{slug.Trim().ToLowerInvariant()}");
 
-    public static Guid Speaker(string alias) => NameBased($"speaker:{alias}");
+    public static Guid Speaker(string key) => NameBased($"speaker:{key}");
 
     private static Guid NameBased(string name)
     {
