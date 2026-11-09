@@ -39,15 +39,12 @@ public sealed class LinkSetting(string key, string label, string defaultValue = 
 public sealed class IconSetting(string key, string label, string defaultValue = "", string help = "")
     : Setting<string>(key, label, defaultValue, help)
 {
-    public const string CustomPrefix = "custom:";
+    private const string CustomPrefix = "custom:";
 
     public static string Custom(string placementId) => CustomPrefix + placementId;
 
-    public static bool IsCustom(string value, out string placementId)
-    {
-        placementId = value.StartsWith(CustomPrefix, StringComparison.Ordinal) ? value[CustomPrefix.Length..] : "";
-        return Guid.TryParse(placementId, out _);
-    }
+    public static bool IsCustom(string value) =>
+        value.StartsWith(CustomPrefix, StringComparison.Ordinal) && Guid.TryParse(value[CustomPrefix.Length..], out _);
 
     public override bool TryParse(string text, out string value)
     {
@@ -58,7 +55,7 @@ public sealed class IconSetting(string key, string label, string defaultValue = 
     public override string Format(string value) => value;
 
     public override string? ProblemWith(string text) =>
-        text.Length == 0 || IsCustom(text, out _) || (text.Length <= 40 && text.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-'))
+        text.Length == 0 || IsCustom(text) || (text.Length <= 40 && text.All(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' or '-'))
             ? null
             : $"{Label} isn't an icon.";
 }
@@ -124,9 +121,9 @@ public static class TileTones
     public static readonly TileTone Masthead = new("masthead", "Top of Home", "masthead", "on-masthead", true);
     public static readonly TileTone Primary = new("primary", "Buttons", "primary", "on-primary", true);
     public static readonly TileTone LiveSoft = new("live-soft", "Pale accent", "live", "ink", false);
-    public static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
+    private static readonly TileTone Live = new("live", "Accent", "live", "on-live", true);
     public static readonly TileTone MarkerSoft = new("marker-soft", "Pale highlight", "marker", "ink", false);
-    public static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
+    private static readonly TileTone Marker = new("marker", "Highlight", "marker", "on-marker", true);
 
     public static readonly IReadOnlyList<TileTone> All = [Sand, Raised, Masthead, Primary, LiveSoft, Live, MarkerSoft, Marker];
 
@@ -234,8 +231,6 @@ public sealed class HubTileKind
     public IReadOnlyList<TileVariant> Variants { get; }
     public bool Offered { get; }
 
-    public IReadOnlyList<TileVariant> VariantsFor(TileSpan span) => Variants.Where(variant => variant.Suits(span)).ToList();
-
     public bool UsesPicture => Variants.Any(variant => variant.UsesPicture);
 
     public TileVariant DefaultFor(TileSpan span, bool hasPicture) =>
@@ -326,7 +321,7 @@ public static class TileVariants
 public sealed class TemplateSetting(string key, string label, string help = "")
     : Setting<IReadOnlyDictionary<string, string>>(key, label, new Dictionary<string, string>(), help)
 {
-    public const int MostCharacters = 8_000;
+    private const int MostCharacters = 8_000;
 
     public override bool TryParse(string text, out IReadOnlyDictionary<string, string> value)
     {

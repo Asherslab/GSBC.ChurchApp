@@ -20,7 +20,7 @@ public static class HubSurfaces
 
     public static readonly SurfaceArea Area = new("home.hub", "Home screen", "The tiles on the app's Home screen", ScopeKind.Global, Edit, Publish);
 
-    public static readonly IReadOnlyList<Choice> TileColours =
+    private static readonly IReadOnlyList<Choice> TileColours =
     [
         new("plain", "Plain"),
         new("navy", "Navy"),

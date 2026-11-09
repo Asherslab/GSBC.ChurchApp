@@ -217,7 +217,7 @@
     private bool OpensWeb => _web ?? LinkTargets.KindOf(Look.Link) == LinkKind.Web;
 
     private IReadOnlyList<FieldOption> IconColours => IconTones.Choices
-        .Where(choice => choice.Value != IconTones.Own || IconSetting.IsCustom(Look.Icon, out _))
+        .Where(choice => choice.Value != IconTones.Own || IconSetting.IsCustom(Look.Icon))
         .Select(choice => new FieldOption(choice.Value, choice.Label))
         .ToList();
 
