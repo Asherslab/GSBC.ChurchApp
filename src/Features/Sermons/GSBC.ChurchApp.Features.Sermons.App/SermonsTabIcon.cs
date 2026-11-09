@@ -5,8 +5,8 @@ namespace GSBC.ChurchApp.Features.Sermons.App;
 
 public sealed class SermonsTabIcon : ILiveTabIcon, IDisposable
 {
-    public const string Playing = "pause";
-    public const string NotPlaying = "play";
+    private const string Playing = "pause";
+    private const string NotPlaying = "play";
 
     private readonly IAudioPlayer _player;
     private bool _playing;

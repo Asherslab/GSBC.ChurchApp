@@ -8,7 +8,7 @@ public sealed class SermonPlayer(IAudioPlayer player, Listening listening, Sermo
 {
     public IAudioPlayer Audio => player;
 
-    public bool IsLoaded(Sermon sermon) => player.State.Item?.Id is { } id && (id == sermon.Id || sermon.FormerIds.Contains(id));
+    private bool IsLoaded(Sermon sermon) => player.State.Item?.Id is { } id && (id == sermon.Id || sermon.FormerIds.Contains(id));
 
     public bool IsPlaying(Sermon sermon) => IsLoaded(sermon) && player.State.Playing;
 
@@ -41,7 +41,7 @@ public sealed class SermonPlayer(IAudioPlayer player, Listening listening, Sermo
 
     public Task MarkWatchedAsync(Sermon sermon) => listening.MarkAsync(sermon.Id, Listening.Watched);
 
-    public static IReadOnlyList<Sermon> UpNext(SermonShelf shelf, Sermon sermon)
+    private static IReadOnlyList<Sermon> UpNext(SermonShelf shelf, Sermon sermon)
     {
         List<Sermon> next = [];
         for (Sermon? candidate = shelf.NextInSeries(sermon); candidate is not null && next.Count < 10; candidate = shelf.NextInSeries(candidate))

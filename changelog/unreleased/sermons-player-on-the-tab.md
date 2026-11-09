@@ -1,5 +1,6 @@
 ---
 title: The player lives on the Sermons tab
+audience: everyone
 added: 2026-11-09
 icon: sermons
 link: sermons
