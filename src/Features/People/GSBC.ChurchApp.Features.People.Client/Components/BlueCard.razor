@@ -1,0 +1,36 @@
+<div class="blue-card">
+    <div class="blue-card__head">
+        <span class="blue-card__kind">Blue card · Queensland</span>
+        <span class="blue-card__status blue-card__status--@Tone">@Status</span>
+    </div>
+    <div class="blue-card__number">@(Record.CardNumber.Length > 0 ? Record.CardNumber : "Number not recorded")</div>
+    <dl class="blue-card__facts">
+        <div><dt>Expires</dt><dd>@(Record.CardExpires is null ? "Not recorded" : PeopleWords.Day(Record.CardExpires))</dd></div>
+        @if (Record.CardChecked is not null)
+        {
+            <div><dt>Checked</dt><dd>@PeopleWords.Day(Record.CardChecked)</dd></div>
+        }
+    </dl>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required SafeguardingRecord Record { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Today { get; set; }
+
+    private SafeguardingFlag? Flag => SafeguardingFlags.For(Record, Today).FirstOrDefault(flag => flag.Subject == FlagSubject.BlueCard);
+
+    private string Status => Flag switch
+    {
+        { RunOut: true } when !BlueCards.Holds(Record.CardStatus) && Record.CardStatus.Length > 0 => BlueCards.Words(Record.CardStatus),
+        { RunOut: true } => "Expired",
+        { Kind: FlagKinds.DueSoon, When: { } when } => $"Expires {SafeguardingFlags.DaysWords(when, Today)}",
+        _ => BlueCards.Words(Record.CardStatus.Length > 0 ? Record.CardStatus : BlueCards.Current),
+    };
+
+    private string Tone => Flag switch
+    {
+        { RunOut: true } => "run-out",
+        { Kind: FlagKinds.DueSoon } => "soon",
+        _ => "current",
+    };
+}

@@ -1,11 +1,12 @@
 using GSBC.ChurchApp.Features.People.Api.Data;
 using GSBC.ChurchApp.Features.People.Contracts;
+using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.People;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.People.Api;
 
-internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts)
+internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, IAccountEmails emails)
 {
     public async Task<PersonFamily> FamilyAsync(Guid personId, bool safeguardingShown, CancellationToken cancellationToken)
     {
@@ -15,6 +16,8 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts)
         List<Guid> ids = [personId, .. links.SelectMany(link => new[] { link.ChildId, link.ParentId }), .. links.Select(link => link.LinkedBy).OfType<Guid>()];
         Dictionary<Guid, PersonRecord> records = await RecordsAsync(ids, cancellationToken);
         IReadOnlyDictionary<Guid, PersonAccount> people = await accounts.GetAsync(ids.Distinct().ToList(), cancellationToken);
+        List<string> theirEmails = (await emails.EmailsOfAsync([personId], cancellationToken)).Select(email => email.Trim().ToUpperInvariant()).ToList();
+        List<LinkAskRecord> askedOfThem = await db.Asks.AsNoTracking().Where(ask => theirEmails.Contains(ask.ParentEmail)).OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken);
         SafeguardingEntry? safeguarding = safeguardingShown
             ? await db.Safeguarding.AsNoTracking().SingleOrDefaultAsync(entry => entry.UserId == personId, cancellationToken)
             : null;
@@ -32,6 +35,7 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts)
             Parents = Cards(links.Where(link => link.ChildId == personId), link => link.ParentId, people, records),
             Children = Cards(links.Where(link => link.ParentId == personId), link => link.ChildId, people, records),
             Asks = await AsksAsync(asks, cancellationToken),
+            AskedOfThem = await AsksAsync(askedOfThem, cancellationToken),
             SafeguardingShown = safeguardingShown,
             Safeguarding = safeguarding is null ? null : await RecordAsync(safeguarding, cancellationToken),
         };

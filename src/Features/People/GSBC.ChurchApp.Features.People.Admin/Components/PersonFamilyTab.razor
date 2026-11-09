@@ -1,0 +1,264 @@
+@inject PeopleClient People
+@inject IPeopleDirectory Directory
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Family]" Load="() => People.GetPersonAsync(Person.Id).AsTask()" FailedTitle="Can't load this family right now">
+    @{
+        PersonFamily family = context.Value;
+        DateOnly today = ChurchTime.Today(Clock);
+        bool office = Access.Can(PeoplePermissions.FamiliesManage);
+        bool mayEdit = Access.Can(PeoplePermissions.FamilyEdit, family.Id);
+        bool minor = Ages.IsMinor(WireDates.FromWire(family.BirthDate), today);
+        List<LinkAsk> theirAsks = family.Asks.Where(ask => ask.ChildId == family.Id).ToList();
+    }
+    <div class="people-tab">
+        <div>
+            <div class="people-tab__group">
+                <ListGroup>
+                    <ListRow Title="@BornTitle(family)" Subtitle="@BornLine(family, today)" Icon="calendar" IconTone="RowTone.Quiet">
+                        <TrailingContent>
+                            @if (mayEdit && !_changingBirthDate)
+                            {
+                                <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => StartBirthDate(family)">Change</Button>
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                </ListGroup>
+                @if (_changingBirthDate)
+                {
+                    <div class="people-inline">
+                        <TextField Label="Birth date" Type="date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{today:yyyy-MM-dd}")" />
+                        <Button Variant="ButtonVariant.Quiet" OnClick="() => _changingBirthDate = false">Cancel</Button>
+                        @if (family.BirthDate is not null)
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveBirthDateAsync(null)">Clear it</Button>
+                        }
+                        <Button Busy="_busy" Disabled="@(PeopleWords.ParseDay(_born) is null)" OnClick="() => SaveBirthDateAsync(PeopleWords.ParseDay(_born))">Save</Button>
+                    </div>
+                }
+            </div>
+
+            @if (family.AskedOfThem.Count > 0 || theirAsks.Count > 0)
+            {
+                <div class="people-tab__group">
+                    <h2 class="people-tab__head">Waiting</h2>
+                    <ListGroup>
+                        @foreach (LinkAsk ask in family.AskedOfThem)
+                        {
+                            <ListRow @key="ask.Id" Title="@AskedOfLine(ask, Person)" Subtitle="@AskSub(ask, today)" Icon="users" IconTone="RowTone.Warm">
+                                <TrailingContent>
+                                    @if (office)
+                                    {
+                                        <div class="ui-actions">
+                                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take it back</Button>
+                                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => People.LinkAsync(family.Id, ask.ChildId).AsTask())">Link them</Button>
+                                        </div>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                        @foreach (LinkAsk ask in theirAsks)
+                        {
+                            <ListRow @key="ask.Id" Title="@($"Asked {ask.ParentEmail} to be their parent")" Subtitle="@($"{PeopleWords.Day(ask.AskedAt)} · waiting for them to say yes in the app")" Icon="clock" IconTone="RowTone.Quiet">
+                                <TrailingContent>
+                                    @if (office)
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take it back</Button>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </div>
+            }
+
+            <div class="people-tab__group">
+                <h2 class="people-tab__head">Children @Person.FirstName looks after · @family.Children.Count</h2>
+                <ListGroup>
+                    @foreach (PersonCard child in family.Children)
+                    {
+                        <ListRow @key="child.Id" Title="@child.Name" Subtitle="@CardLine(child, today)">
+                            <Leading><Avatar Name="@child.Name" /></Leading>
+                            <TrailingContent>
+                                <div class="ui-actions">
+                                    <Button Small="true" Variant="ButtonVariant.Quiet" Href="@($"people/{child.Id}?tab=family")">Open</Button>
+                                    @if (office)
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(family.Id, child.Id).AsTask())">Unlink</Button>
+                                    }
+                                </div>
+                            </TrailingContent>
+                        </ListRow>
+                    }
+                    @if (office && _linking != Linking.Child)
+                    {
+                        <ListRow Title="Link a child" Subtitle="Find someone, or add a child who isn't in the app" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _linking = Linking.Child" />
+                    }
+                </ListGroup>
+                @if (_linking == Linking.Child)
+                {
+                    <div class="ui-after">
+                        <PersonFinder Label="Find their child" Placeholder="Find their child by name" Find="FindAsync" ActionText="Link as their child" AutoFocus="true"
+                                      Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
+                        <div class="people-inline">
+                            <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
+                            <TextField Label="Birth date" Type="date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                            <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
+                        </div>
+                        <div class="ui-actions ui-after">
+                            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (minor || family.Parents.Count > 0 || office)
+            {
+                <div class="people-tab__group">
+                    <h2 class="people-tab__head">@Person.FirstName's parents and guardians</h2>
+                    <ListGroup>
+                        @foreach (PersonCard parent in family.Parents)
+                        {
+                            <ListRow @key="parent.Id" Title="@parent.Name" Subtitle="@LinkedLine(parent)">
+                                <Leading><Avatar Name="@parent.Name" /></Leading>
+                                <TrailingContent>
+                                    <div class="ui-actions">
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Href="@($"people/{parent.Id}?tab=family")">Open</Button>
+                                        @if (office)
+                                        {
+                                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(parent.Id, family.Id).AsTask())">Unlink</Button>
+                                        }
+                                    </div>
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                        @if (minor && family.Parents.Count == 0)
+                        {
+                            <ListRow Title="No parent linked yet" Subtitle="Shown on Safeguarding until someone is" Icon="alert" IconTone="RowTone.Warm" />
+                        }
+                        @if (office && _linking != Linking.Parent)
+                        {
+                            <ListRow Title="Link a parent" Subtitle="It matters while they're under 18" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _linking = Linking.Parent" />
+                        }
+                    </ListGroup>
+                    @if (_linking == Linking.Parent)
+                    {
+                        <div class="ui-after">
+                            <PersonFinder Label="Find their parent" Placeholder="Find their parent or guardian by name" Find="FindAsync" ActionText="Link as their parent" AutoFocus="true"
+                                          Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(person.Id, family.Id)" />
+                            <div class="ui-actions ui-after">
+                                <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
+            @if (_message is not null)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_message" />
+            }
+        </div>
+
+        <aside class="people-tab__panel">
+            <h3>What linking does</h3>
+            <p>A parent or guardian, while their child is under 18:</p>
+            <ul>
+                <li>sees and changes the child's details in the app</li>
+                <li>makes them a sign-in code for their own phone</li>
+                <li>is who ministries tell about the child</li>
+            </ul>
+            <p>Parents link from their Account page too: a parent adds a child, and a young person asks a parent, who says yes.</p>
+            <p>A young person no one has linked shows on Safeguarding until someone is.</p>
+        </aside>
+    </div>
+</LiveData>
+
+@code {
+    private enum Linking { None, Child, Parent }
+
+    private LiveData<PersonFamily>? _live;
+    private Linking _linking;
+    private bool _busy, _changingBirthDate;
+    private string? _busyFor, _message;
+    private string _born = "", _childName = "", _childBorn = "";
+
+    [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+
+    private static string BornTitle(PersonFamily family) => family.BirthDate is { } born ? $"Born {born:d MMMM yyyy}" : "No birth date";
+
+    private static string BornLine(PersonFamily family, DateOnly today) => family.BirthDate switch
+    {
+        { } born when Ages.IsMinor(WireDates.FromWire(born), today) => $"{PeopleWords.Age(born, today)} · under 18",
+        { } born => $"{PeopleWords.Age(born, today)} · an adult",
+        null when family.SaysAdult => "They've said they're 18 or older",
+        null => "They haven't said yet",
+    };
+
+    private static string CardLine(PersonCard card, DateOnly today) => $"{PeopleWords.ChildLine(card, today)} · {LinkedLine(card)}";
+
+    private static string LinkedLine(PersonCard card) => card.How switch
+    {
+        LinkHow.Added => $"added by {card.LinkedBy ?? "a parent"}, {PeopleWords.Day(card.LinkedAt)}",
+        LinkHow.Approved => $"asked and approved, {PeopleWords.Day(card.LinkedAt)}",
+        _ => $"linked by {card.LinkedBy ?? "the office"}, {PeopleWords.Day(card.LinkedAt)}",
+    };
+
+    private static string AskedOfLine(LinkAsk ask, PersonOnPage person) =>
+        ask.AskedByChild ? $"{ask.ChildName} asked {person.FirstName} to be their parent" : $"{ask.AskedByName} asked {person.FirstName} to look after {ask.ChildName} too";
+
+    private static string AskSub(LinkAsk ask, DateOnly today) =>
+        $"{PeopleWords.Day(ask.AskedAt)}{(ask.ChildBirthDate is null ? "" : $" · {ask.ChildName} is {PeopleWords.Age(ask.ChildBirthDate, today)}")}";
+
+    private static IReadOnlyCollection<string> Leave(PersonFamily family) =>
+        [family.Id, .. family.Children.Select(child => child.Id), .. family.Parents.Select(parent => parent.Id)];
+
+    private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
+        (await Directory.SearchAsync(query)).Where(person => !person.Disabled).Select(person => new PersonChoice(person.Id, person.Name, person.Email)).ToList();
+
+    private void StartBirthDate(PersonFamily family)
+    {
+        _born = PeopleWords.FieldDay(family.BirthDate);
+        _changingBirthDate = true;
+    }
+
+    private Task SaveBirthDateAsync(DateOnly? born) => RunAsync(async () =>
+    {
+        await People.SetBirthDateAsync(Person.Id, born);
+        _changingBirthDate = false;
+    });
+
+    private async Task LinkAsync(string parentId, string childId)
+    {
+        _busyFor = parentId == Person.Id ? childId : parentId;
+        await RunAsync(() => People.LinkAsync(parentId, childId).AsTask());
+        _busyFor = null;
+    }
+
+    private Task AddChildAsync(string parentId) => RunAsync(async () =>
+    {
+        await People.AddChildAsync(_childName, PeopleWords.ParseDay(_childBorn)!.Value, parentId);
+        (_childName, _childBorn) = ("", "");
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

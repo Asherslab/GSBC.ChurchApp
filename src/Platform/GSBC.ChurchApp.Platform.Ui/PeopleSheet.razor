@@ -5,23 +5,8 @@
     <ChildContent>
         @if (View.MayAdd)
         {
-            <SearchField Label="Add someone" Placeholder="Add someone: find them by name" Value="@_query" ValueChanged="SearchAsync" />
-            @if (_found.Count > 0)
-            {
-                <ul class="people-sheet__found" aria-label="People found">
-                    @foreach (PersonChoice person in _found)
-                    {
-                        <li class="people-sheet__found-row">
-                            <span class="people-sheet__who"><span class="people-sheet__name">@person.Name</span><span class="people-sheet__detail">@person.Detail</span></span>
-                            <Button Small="true" Busy="@(_busy == person.Id)" OnClick="() => AddAsync(person)">Add as @FirstGivable!.Name</Button>
-                        </li>
-                    }
-                </ul>
-            }
-            else if (_query.Trim().Length >= ShortestSearch && !_searching)
-            {
-                <p class="people-sheet__note">No one matches “@_query.Trim()”.</p>
-            }
+            <PersonFinder Label="Add someone" Placeholder="Add someone: find them by name" Find="Source.FindAsync" ActionText="@($"Add as {FirstGivable!.Name}")"
+                          Leave="View.People.Select(person => person.Id).ToList()" Busy="@_busy" OnChosen="AddAsync" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
         @if (View.People.Count == 0)
@@ -64,10 +49,6 @@
 </Sheet>
 
 @code {
-    private const int ShortestSearch = 2;
-    private string _query = "";
-    private bool _searching;
-    private IReadOnlyList<PersonChoice> _found = [];
     private string? _busy;
     private string? _problem;
     private (string PersonId, string RoleId)? _explaining;
@@ -88,39 +69,7 @@
     private void Explain(string personId, string roleId) =>
         _explaining = _explaining == (personId, roleId) ? null : (personId, roleId);
 
-    private async Task SearchAsync(string query)
-    {
-        _query = query;
-        _problem = null;
-        if (query.Trim().Length < ShortestSearch)
-        {
-            _found = [];
-            return;
-        }
-
-        _searching = true;
-        try
-        {
-            IReadOnlyList<PersonChoice> found = await Source.FindAsync(query.Trim());
-            if (_query == query)
-                _found = found.Where(person => View.People.All(already => already.Id != person.Id)).ToList();
-        }
-        catch (RpcException exception)
-        {
-            _problem = exception.Status.Detail;
-        }
-        finally
-        {
-            _searching = false;
-        }
-    }
-
-    private Task AddAsync(PersonChoice person) => RunAsync(person.Id, async () =>
-    {
-        await Source.GiveAsync(person.Id, FirstGivable!.Id);
-        _query = "";
-        _found = [];
-    });
+    private Task AddAsync(PersonChoice person) => RunAsync(person.Id, () => Source.GiveAsync(person.Id, FirstGivable!.Id));
 
     private Task TickAsync(PlacePersonView person, PlaceRoleView role, bool ticked) => RunAsync(person.Id, () =>
         ticked ? Source.GiveAsync(person.Id, role.Id) : Source.TakeAwayAsync(person.Id, role.Id));

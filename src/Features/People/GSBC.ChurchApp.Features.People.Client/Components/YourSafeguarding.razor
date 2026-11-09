@@ -1,0 +1,38 @@
+@if (Record.HasCard)
+{
+    <BlueCard Record="Record" Today="Today" />
+}
+<div class="@(Record.HasCard ? "ui-after" : "")">
+    <ListGroup>
+        @if (Record.HasTraining)
+        {
+            <ListRow Title="Safe Ministry training" Subtitle="@TrainingLine" Icon="@(TrainingFlag is null ? "shield-check" : "alert")" IconTone="@(TrainingFlag is null ? RowTone.Accent : RowTone.Warm)">
+                <TrailingContent>
+                    @if (TrainingFlag is { } flag)
+                    {
+                        <Pill Tone="PillTone.Marker">@(flag.RunOut ? "Overdue" : $"Due {SafeguardingFlags.DaysWords(flag.When!.Value, Today)}")</Pill>
+                    }
+                </TrailingContent>
+            </ListRow>
+        }
+        else
+        {
+            <ListRow Title="No Safe Ministry training recorded" Subtitle="If you've done it, tell the church office when" Icon="alert" IconTone="RowTone.Warm" />
+        }
+    </ListGroup>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required SafeguardingRecord Record { get; set; }
+    [Parameter, EditorRequired] public required DateOnly Today { get; set; }
+
+    private SafeguardingFlag? TrainingFlag =>
+        SafeguardingFlags.For(Record, Today).FirstOrDefault(flag => flag.Subject == FlagSubject.Training && flag.When is not null);
+
+    private string TrainingLine =>
+        string.Join(" · ", new[]
+        {
+            Record.TrainingDone is null ? null : $"Done {PeopleWords.Day(Record.TrainingDone)}",
+            Record.TrainingDue is null ? null : $"due again {PeopleWords.Day(Record.TrainingDue)}",
+        }.OfType<string>());
+}

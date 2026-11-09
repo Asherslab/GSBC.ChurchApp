@@ -1,0 +1,144 @@
+@inject PeopleClient People
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Safeguarding]" Load="LoadAsync" FailedTitle="Can't load their blue card and training right now">
+    @{
+        SafeguardingRecord saved = context.Value.Safeguarding ?? new SafeguardingRecord();
+        DateOnly today = ChurchTime.Today(Clock);
+        bool mayEdit = Access.Can(PeoplePermissions.SafeguardingEdit, Person.Id);
+        IReadOnlyList<SafeguardingFlag> flags = SafeguardingFlags.For(saved, today);
+    }
+    <div class="people-tab">
+        <div>
+            @foreach (SafeguardingFlag flag in flags)
+            {
+                <div class="people-flag @(flag.RunOut ? "people-flag--run-out" : "")"><Icon Name="alert" /> @flag.Words</div>
+            }
+            @if (!saved.HasCard && !saved.HasTraining)
+            {
+                <Notice Text="@($"Nothing recorded for {Person.FirstName} yet. Record a blue card or training below when they serve with children or young people.")" />
+            }
+
+            <h2 class="people-tab__head">Blue card</h2>
+            <div class="people-record">
+                <TextField Label="Number" Value="@_draft.CardNumber" ValueChanged="value => Edit(() => _draft.CardNumber = value)" MaxLength="30" Disabled="!mayEdit" Placeholder="For example 1234567/2" />
+                <SelectField Label="Status" Options="Statuses" Value="@_draft.CardStatus" ValueChanged="value => Edit(() => _draft.CardStatus = value)" Disabled="!mayEdit" />
+                <TextField Label="Expires" Type="date" Value="@PeopleWords.FieldDay(_draft.CardExpires)" ValueChanged="value => Edit(() => _draft.CardExpires = Day(value))" Disabled="!mayEdit" />
+                <TextField Label="Checked by the office" Type="date" Value="@PeopleWords.FieldDay(_draft.CardChecked)" ValueChanged="value => Edit(() => _draft.CardChecked = Day(value))" Disabled="!mayEdit"
+                           Max="@($"{today:yyyy-MM-dd}")" Hint="When someone last looked it up" />
+            </div>
+
+            <h2 class="people-tab__head">Safe Ministry training</h2>
+            <div class="people-record">
+                <TextField Label="Done" Type="date" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
+                <TextField Label="Due again" Type="date" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
+                           Hint="@($"Leave it empty for {BlueCards.TrainingLastsYears} years after it was done")" />
+            </div>
+
+            @if (mayEdit)
+            {
+                <div class="ui-actions ui-after">
+                    <Button Busy="_busy" Disabled="!_dirty" OnClick="() => SaveAsync(_draft)">Save</Button>
+                    @if (saved.HasCard)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(WithoutCard(saved))">Remove the blue card</Button>
+                    }
+                    @if (saved.HasTraining)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(WithoutTraining(saved))">Remove the training</Button>
+                    }
+                </div>
+            }
+            @if (saved.UpdatedAt is { } at)
+            {
+                <p class="hint">Recorded by hand@(saved.UpdatedBy is { } by ? $" by {by}" : ""), @PeopleWords.Day(at).</p>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_message" />
+        </div>
+
+        <aside class="people-tab__panel">
+            <h3>Entered by hand, for now</h3>
+            <p>Copy these from the card itself or from Safe Ministry Check. @Person.FirstName sees them on their Account page.</p>
+            <p>Nothing is ever blocked: a card or training that has run out, or is due in the next @SafeguardingFlags.SoonDays days, is flagged here, on Safeguarding and for @Person.FirstName.</p>
+            @if (saved.HasCard)
+            {
+                <p>How @Person.FirstName sees it:</p>
+                <BlueCard Record="saved" Today="today" />
+            }
+        </aside>
+    </div>
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyList<FieldOption> Statuses =
+        [new FieldOption("", "Not recorded"), .. BlueCards.Statuses.Select(status => new FieldOption(status.Value, status.Words))];
+
+    private LiveData<PersonFamily>? _live;
+    private SafeguardingRecord _draft = new();
+    private bool _busy, _dirty;
+    private string? _message;
+
+    [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+
+    private async Task<PersonFamily> LoadAsync()
+    {
+        PersonFamily family = await People.GetPersonAsync(Person.Id);
+        if (!_dirty)
+            _draft = Copy(family.Safeguarding ?? new SafeguardingRecord());
+        return family;
+    }
+
+    private void Edit(Action change)
+    {
+        change();
+        _dirty = true;
+    }
+
+    private static DateTime? Day(string text) => WireDates.ToWire(PeopleWords.ParseDay(text));
+
+    private static SafeguardingRecord Copy(SafeguardingRecord record) => new()
+    {
+        CardNumber = record.CardNumber,
+        CardStatus = record.CardStatus,
+        CardExpires = record.CardExpires,
+        CardChecked = record.CardChecked,
+        TrainingDone = record.TrainingDone,
+        TrainingDue = record.TrainingDue,
+    };
+
+    private static SafeguardingRecord WithoutCard(SafeguardingRecord record)
+    {
+        SafeguardingRecord copy = Copy(record);
+        (copy.CardNumber, copy.CardStatus, copy.CardExpires, copy.CardChecked) = ("", "", null, null);
+        return copy;
+    }
+
+    private static SafeguardingRecord WithoutTraining(SafeguardingRecord record)
+    {
+        SafeguardingRecord copy = Copy(record);
+        (copy.TrainingDone, copy.TrainingDue) = (null, null);
+        return copy;
+    }
+
+    private async Task SaveAsync(SafeguardingRecord record)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await People.SetSafeguardingAsync(Person.Id, record);
+            _dirty = false;
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _message = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

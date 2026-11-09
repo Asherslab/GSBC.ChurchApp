@@ -32,15 +32,7 @@ internal sealed class PeopleService(
 
     public async ValueTask<MyPeople> GetMineAsync(MineRequest request, CallContext context = default)
     {
-        CancellationToken cancellationToken = context.CancellationToken;
-        Guid me = Me(context);
-        IReadOnlyList<string> myEmails = await NormalizedEmailsAsync(me, cancellationToken);
-        List<LinkAskRecord> waiting = await db.Asks.AsNoTracking().Where(ask => myEmails.Contains(ask.ParentEmail)).OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken);
-        return new MyPeople
-        {
-            Me = await views.FamilyAsync(me, safeguardingShown: true, cancellationToken),
-            WaitingForMe = await views.AsksAsync(waiting, cancellationToken),
-        };
+        return new MyPeople { Me = await views.FamilyAsync(Me(context), safeguardingShown: true, context.CancellationToken) };
     }
 
     public async ValueTask<Done> SetMyBirthDateAsync(BirthDateRequest request, CallContext context = default)

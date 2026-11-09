@@ -14,7 +14,6 @@ public sealed class MineRequest;
 public sealed class MyPeople
 {
     [ProtoMember(1, IsRequired = true)] public PersonFamily Me { get; set; } = new();
-    [ProtoMember(2)] public List<LinkAsk> WaitingForMe { get; set; } = [];
 }
 
 [ProtoContract]
@@ -31,6 +30,7 @@ public sealed class PersonFamily
     [ProtoMember(9)] public List<LinkAsk> Asks { get; set; } = [];
     [ProtoMember(10)] public SafeguardingRecord? Safeguarding { get; set; }
     [ProtoMember(11)] public bool SafeguardingShown { get; set; }
+    [ProtoMember(12)] public List<LinkAsk> AskedOfThem { get; set; } = [];
 }
 
 [ProtoContract]
