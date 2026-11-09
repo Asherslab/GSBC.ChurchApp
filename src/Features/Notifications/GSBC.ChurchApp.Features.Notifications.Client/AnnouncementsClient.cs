@@ -22,5 +22,7 @@ public sealed class AnnouncementsClient(ChannelBase channel)
 
     public Task<Announcement> CancelAsync(string id) => _service.CancelAsync(new AnnouncementRequest { Id = id }).AsTask();
 
+    public Task<Announcement> RecallAsync(string id) => _service.RecallAsync(new AnnouncementRequest { Id = id }).AsTask();
+
     public Task<Reach> ReachAsync(AudienceMessage audience) => _service.ReachAsync(audience).AsTask();
 }

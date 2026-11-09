@@ -72,6 +72,18 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("reached_phones");
 
+                    b.Property<int>("ReadByWhenRecalled")
+                        .HasColumnType("integer")
+                        .HasColumnName("read_by_when_recalled");
+
+                    b.Property<DateTime?>("RecalledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recalled_at");
+
+                    b.Property<Guid?>("RecalledById")
+                        .HasColumnType("uuid")
+                        .HasColumnName("recalled_by_id");
+
                     b.Property<DateTime?>("SendAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("send_at");
@@ -316,6 +328,10 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                     b.Property<int>("Rank")
                         .HasColumnType("integer")
                         .HasColumnName("rank");
+
+                    b.Property<DateTime?>("RecalledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("recalled_at");
 
                     b.Property<string>("ScopeId")
                         .HasColumnType("text")
