@@ -90,6 +90,8 @@ public sealed class Announcement
     [ProtoMember(12)] public int ReachedPeople { get; set; }
     [ProtoMember(13)] public int ReachedPhones { get; set; }
     [ProtoMember(14)] public int ReadBy { get; set; }
+    [ProtoMember(15)] public DateTime? RecalledAt { get; set; }
+    [ProtoMember(16)] public string? RecalledBy { get; set; }
 }
 
 [ProtoContract]

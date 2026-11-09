@@ -381,17 +381,38 @@ phone" with the settings' own list (`NotificationSettings`, reused) and **Done**
 - **An announcement** (`notifications.announcements`): title, body (plain text; push can't show rich
   text), an optional link (a place in the app, chosen from Places in the app's list with
   `PlaceField` ([destinations.md](destinations.md)), or the web), who it's for, urgent or not, and its state:
-  draft, waiting to send, scheduled, sent, cancelled.
+  draft, waiting to send, scheduled, sent, cancelled, recalled.
 - **Who it's for,** in staff words, built on `NotificationAudience`: *Everyone with the app*,
   *Everyone signed in*, *Followers and members of a ministry* (when Ministries exists), *People who
   can …* (an ability, from the catalogue), *One person*. The composer shows "About 410 phones" from
   the same resolver before sending.
 - **Permissions:** `notifications.announcements.write` (write, test, ask to send) and
-  `notifications.announcements.send` (send now, schedule, cancel a scheduled one). A system role
+  `notifications.announcements.send` (send now, schedule, cancel a scheduled one, recall a sent one). A system role
   *Announcer* holds both; App editor and Staff can include it.
 - **Send to my phone** sends it to you alone, marked *Test*, so you see the lock screen and the
   inbox before anyone else does.
 - **Scheduling** in church time; a scheduled announcement can be changed or cancelled until it goes.
+- **Recall, not delete** (owner, 2026-11-09: "they should be able to 'recall' an announcement. but it will always be
+  there as basically auditable history"). A sent announcement has *Recall…*, for holders of `.send`, the same permission
+  as sending. A confirm sheet says what happens. Then:
+  - **It leaves every inbox and the app.** Its inbox rows are deleted and the inbox and public feeds get a tombstone
+    for each, so unread counts, the badge and "N new" stop counting it, signed in or not. Phones online now drop it at
+    once; the others drop it on their next sync, and the recall queues a sync push (within the usual 15-minute limit)
+    so they sync soon.
+  - **Nothing more goes out.** Pushes not sent yet (held for quiet hours, paced into a summary, waiting to retry) are
+    given up as *Recalled before it went*, and the dispatcher skips any delivery of a recalled notification it had
+    already leased.
+  - **A push already shown can't be taken back** (the confirm sheet says so). Tapping it opens what it always opened:
+    the place it linked to, or the notifications list, where it no longer is. Nothing on the phone tells "recalled"
+    apart from "not synced yet", so no recalled message is shown (decided while building, 2026-11-09).
+  - **The admin history keeps it**, marked *Recalled* on the desk, on the rail and in *Sent earlier*: "Recalled by
+    Ruth 9:40am today. It was sent … to about 240 phones, and 31 people had read it." The read count is kept as it
+    was at the recall, the name is looked up when the list loads (`IPeopleIndex.NamesAsync`), and deleting the
+    recaller's account forgets who it was. It can't be changed, sent again or deleted; *Copy into a new announcement*
+    starts a draft from it. Only a sent one can be recalled: one not sent yet is changed, cancelled or deleted.
+  - Tested in `AnnouncementRecallTests`: it leaves every inbox and the public feed (tombstones a phone syncs), the
+    badge no longer counts it, a push held for quiet hours never goes, the history keeps it with who recalled it, and
+    it can't be sent or changed as it is.
 - **The admin panel's Announcements page** (owner, 2026-11-03: "The fortnight ahead"; mostly the
   office, a few a month; writing it well is what's easiest). It opens on this week and next as the
   office week's rail (`DayRail`, shared with Home), sent ones in primary and scheduled ones as marker

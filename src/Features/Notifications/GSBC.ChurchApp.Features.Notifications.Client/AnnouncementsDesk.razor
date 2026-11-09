@@ -18,7 +18,7 @@
 
 <LiveData @ref="_live" TValue="IReadOnlyList<Announcement>" Load="LoadAsync" Feeds="[NotificationsFeeds.Announcements]" FailedTitle="Can't load announcements right now">
     <DayRail First="FirstDay" Today="Today" Days="FortnightDays" Spans="Spans(context.Value)" Heading="This week and next" Selected="@ThisOneHref"
-             Quiet="Nothing sent or scheduled this week or next." Legend="Legend" />
+             Quiet="Nothing sent or scheduled this week or next." Legend="LegendOf(context.Value)" />
 
     @if (context.Value.Where(announcement => announcement.State is Drafting or WaitingToSend).ToList() is { Count: > 0 } unsent)
     {
@@ -44,6 +44,10 @@
             <div class="announcement-desk__writing">
                 <div class="announcement-desk__head">
                     <h2 class="announcement-desk__title">@DeskTitle</h2>
+                    @if (_editing.State == Recalled)
+                    {
+                        <Pill Tone="PillTone.Quiet">Recalled</Pill>
+                    }
                     @if (Editable)
                     {
                         <SaveStatus State="_save" SavedText="@(_editing.Id.Length == 0 ? "Saves as you type" : "Saved")" Detail="@StateLabel(_editing)" Retry="SaveNowAsync" />
@@ -154,6 +158,17 @@
                                 <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="CancelAsync">Don't send it: back to writing</Button>
                             </div>
                         }
+                        else if (_editing.State is Sent or Recalled)
+                        {
+                            <div class="announcement-desk__actions">
+                                @if (_editing.State == Sent && MaySend)
+                                {
+                                    <Button Variant="ButtonVariant.Danger" Small="true" Busy="_busy" OnClick="() => _recalling = true">Recall…</Button>
+                                }
+                                <span class="announcement-desk__spacer"></span>
+                                <Button Variant="ButtonVariant.Quiet" Icon="copy" Busy="_busy" OnClick="CopyAsync">Copy into a new announcement</Button>
+                            </div>
+                        }
                     </div>
                 }
             </div>
@@ -171,7 +186,7 @@
         </div>
     }
 
-    @if (context.Value.Where(announcement => announcement.State == Sent && announcement.SentAt < ChurchTime.ToUtc(FirstDay)).ToList() is { Count: > 0 } earlier)
+    @if (context.Value.Where(announcement => announcement.State is Sent or Recalled && announcement.SentAt < ChurchTime.ToUtc(FirstDay)).ToList() is { Count: > 0 } earlier)
     {
         <Section Title="Sent earlier">
             <DataTable TItem="Announcement" Label="Announcements sent earlier" Items="earlier" Columns="EarlierColumns" Key="announcement => announcement.Id"
@@ -184,6 +199,18 @@
     <Actions>
         <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
         <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_recalling" OpenChanged="open => _recalling = open" Title="Recall this announcement?"
+       Lead="It leaves the app's notifications on every phone, signed in or not; a phone that's offline drops it when it next connects. Nobody who hasn't had it yet gets it.">
+    <ChildContent>
+        <Notice Text="A push already showing on someone's lock screen can't be taken back. Tapping it opens what the announcement opened, or the notifications list." />
+        <p class="announcement-desk__state">It stays here, marked recalled with your name, so there's a record of what was sent. It can't be sent again as it is, but you can copy it into a new one.</p>
+    </ChildContent>
+    <Actions>
+        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="RecallAsync">Recall it</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _recalling = false">Keep it</Button>
     </Actions>
 </Sheet>
 
@@ -224,6 +251,7 @@
     private const string WaitingToSend = "WaitingToSend";
     private const string Scheduled = "Scheduled";
     private const string Sent = "Sent";
+    private const string Recalled = "Recalled";
     private const string OpensNothing = "inbox";
     private const string OpensWeb = "web";
     private const string OpensPage = "page";
@@ -242,6 +270,7 @@
     private static readonly IReadOnlyList<FieldOption> Opens =
         [new(OpensNothing, "The notifications list"), new(OpensWeb, "A web page"), new(OpensPage, "A place in the app")];
     private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> Legend = [(OfficeSpanKind.Everyone, "Sent"), (OfficeSpanKind.Draft, "Scheduled")];
+    private static readonly IReadOnlyList<(OfficeSpanKind Kind, string Label)> LegendWithRecalled = [.. Legend, (OfficeSpanKind.Layer, "Recalled")];
 
     [Parameter] public string? Id { get; set; }
     [Parameter] public string? OpensPlace { get; set; }
@@ -261,6 +290,7 @@
     private bool _busy;
     private bool _confirming;
     private bool _deleting;
+    private bool _recalling;
     private string? _told;
     private string? _problem;
 
@@ -371,7 +401,7 @@
 
     private IReadOnlyList<TableColumn<Announcement>> EarlierColumns =>
     [
-        new("Announcement", announcement => @<span class="cell-strong">@announcement.Title</span>, announcement => announcement.Title),
+        new("Announcement", announcement => @<span class="cell-strong">@announcement.Title @if (announcement.State == Recalled) { <Pill Tone="PillTone.Quiet">Recalled</Pill> }</span>, announcement => announcement.Title),
         new("Sent", announcement => @<DateLine At="announcement.SentAt!.Value" Style="DateLineStyle.Short" WithTime="true" />, announcement => announcement.SentAt, "num"),
         new("Phones", announcement => @<span>@announcement.ReachedPhones</span>, announcement => announcement.ReachedPhones, "num optional"),
         new("Read by", announcement => @<span>@announcement.ReadBy</span>, announcement => announcement.ReadBy, "num"),
@@ -385,6 +415,7 @@
         _told = _problem = null;
         _gone = false;
         _confirming = false;
+        _recalling = false;
         if (Id is null or NewId)
             Show(Fresh(OpensPlace));
         else if (_all.FirstOrDefault(announcement => announcement.Id == Id) is { } found)
@@ -426,7 +457,7 @@
         Id = announcement.Id, Title = announcement.Title, Body = announcement.Body, Link = announcement.Link, Urgent = announcement.Urgent,
         Audience = new AudienceMessage { Kind = announcement.Audience?.Kind ?? Everyone }, State = announcement.State, SendAt = announcement.SendAt,
         SentAt = announcement.SentAt, UpdatedAt = announcement.UpdatedAt, ReachedPeople = announcement.ReachedPeople, ReachedPhones = announcement.ReachedPhones,
-        ReadBy = announcement.ReadBy,
+        ReadBy = announcement.ReadBy, RecalledAt = announcement.RecalledAt, RecalledBy = announcement.RecalledBy,
     };
 
     private void Open(Announcement announcement) => Navigation.NavigateTo($"announcements/{announcement.Id}");
@@ -537,6 +568,23 @@
         _told = "It won't be sent. It's back to being written.";
     });
 
+    private Task RecallAsync() => RunAsync(async () =>
+    {
+        Show(await Announcements.RecallAsync(_editing.Id));
+        _recalling = false;
+        _told = "Recalled. It's gone from the app on every phone, and stays here as a record.";
+    });
+
+    private Task CopyAsync() => RunAsync(async () =>
+    {
+        Announcement copy = await Announcements.SaveAsync(new Announcement
+        {
+            Title = _editing.Title, Body = _editing.Body, Link = _editing.Link, Urgent = _editing.Urgent,
+            Audience = new AudienceMessage { Kind = _editing.Audience?.Kind ?? Everyone }, State = Drafting,
+        });
+        Navigation.NavigateTo($"announcements/{copy.Id}");
+    });
+
     private Task DeleteAsync() => RunAsync(async () =>
     {
         await Announcements.DeleteAsync(_editing.Id);
@@ -571,13 +619,22 @@
         DateTime from = ChurchTime.ToUtc(FirstDay);
         DateTime until = from.AddDays(FortnightDays);
         return announcements
-            .Select(announcement => (announcement, at: announcement.State == Sent ? announcement.SentAt : announcement.State == Scheduled ? announcement.SendAt : null))
+            .Select(announcement => (announcement, at: announcement.State is Sent or Recalled ? announcement.SentAt : announcement.State == Scheduled ? announcement.SendAt : null))
             .Where(entry => entry.at is { } at && at >= from && at < until)
-            .Select(entry => new OfficeSpan(entry.announcement.Title, entry.at!.Value, entry.at.Value, $"announcements/{entry.announcement.Id}",
-                entry.announcement.State == Sent ? OfficeSpanKind.Everyone : OfficeSpanKind.Draft))
+            .Select(entry => new OfficeSpan(entry.announcement.Title, entry.at!.Value, entry.at.Value, $"announcements/{entry.announcement.Id}", SpanKind(entry.announcement)))
             .Concat(ThisOne(from, until))
             .ToList();
     }
+
+    private static OfficeSpanKind SpanKind(Announcement announcement) => announcement.State switch
+    {
+        Sent => OfficeSpanKind.Everyone,
+        Recalled => OfficeSpanKind.Layer,
+        _ => OfficeSpanKind.Draft,
+    };
+
+    private IReadOnlyList<(OfficeSpanKind Kind, string Label)> LegendOf(IReadOnlyList<Announcement> announcements) =>
+        Spans(announcements).Any(span => span.Kind == OfficeSpanKind.Layer) ? LegendWithRecalled : Legend;
 
     private IEnumerable<OfficeSpan> ThisOne(DateTime from, DateTime until)
     {
@@ -590,6 +647,7 @@
     private string SentLine(Announcement announcement) => announcement.State switch
     {
         Sent => $"Sent {Describe(announcement.SentAt!.Value)} to about {Count(announcement.ReachedPhones, "phone")}.{QuietSentence(announcement.SentAt.Value, announcement.Urgent)} Read by {Count(announcement.ReadBy, "person", "people")} so far; phones not signed in aren't counted.",
+        Recalled => $"Recalled by {announcement.RecalledBy ?? "someone who has since left"} {Describe(announcement.RecalledAt!.Value)}. It was sent {Describe(announcement.SentAt!.Value)} to about {Count(announcement.ReachedPhones, "phone")}, and {Count(announcement.ReadBy, "person", "people")} had read it.",
         Scheduled => $"Scheduled: it goes out {Describe(announcement.SendAt!.Value)}.{QuietSentence(announcement.SendAt.Value, announcement.Urgent)}",
         _ => "Cancelled.",
     };
@@ -597,6 +655,7 @@
     private static string StateLabel(Announcement announcement) => announcement.State switch
     {
         Sent => "Sent",
+        Recalled => "Recalled",
         Scheduled => "Scheduled",
         WaitingToSend => "Waiting to send",
         _ => "Being written",

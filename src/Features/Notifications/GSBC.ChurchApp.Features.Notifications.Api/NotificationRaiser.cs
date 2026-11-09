@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
+using GSBC.ChurchApp.Features.Notifications.Api.Push;
 using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
@@ -59,20 +60,14 @@ internal sealed class NotificationRaiser(
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         List<NotificationRecord> waiting = await db.Notifications
-            .Where(record => record.Subject == subject && record.Waits && record.SettledAt == null)
+            .Where(record => record.Subject == subject && record.Waits && record.SettledAt == null && record.RecalledAt == null)
             .ToListAsync(cancellationToken);
         if (waiting.Count == 0)
             return;
 
         List<Guid> notificationIds = waiting.Select(record => record.Id).ToList();
         List<InboxEntry> entries = await db.Inbox.Where(entry => notificationIds.Contains(entry.NotificationId)).ToListAsync(cancellationToken);
-        List<string> rowIds = [.. entries.Select(entry => entry.Id.ToString()), .. notificationIds.Select(id => id.ToString())];
-        Dictionary<(string Feed, string RecordId), long> versions = (await db.FeedChanges.AsNoTracking()
-                .Where(change => (change.Feed == NotificationsFeeds.Inbox || change.Feed == NotificationsFeeds.Public) && rowIds.Contains(change.RecordId))
-                .GroupBy(change => new { change.Feed, change.RecordId })
-                .Select(group => new { group.Key.Feed, group.Key.RecordId, Version = group.Max(change => change.Version) })
-                .ToListAsync(cancellationToken))
-            .ToDictionary(row => (row.Feed, row.RecordId), row => row.Version);
+        Dictionary<(string Feed, string RecordId), long> versions = await RowVersionsAsync(entries, notificationIds, cancellationToken);
 
         foreach (NotificationRecord record in waiting)
         {
@@ -85,12 +80,49 @@ internal sealed class NotificationRaiser(
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task RecallAsync(Guid notificationId, CancellationToken cancellationToken)
+    {
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        NotificationRecord record = await db.Notifications.SingleAsync(candidate => candidate.Id == notificationId, cancellationToken);
+        if (record.RecalledAt is not null)
+            return;
+
+        List<InboxEntry> entries = await db.Inbox.Where(entry => entry.NotificationId == notificationId).ToListAsync(cancellationToken);
+        Dictionary<(string Feed, string RecordId), long> versions = await RowVersionsAsync(entries, [notificationId], cancellationToken);
+        record.RecalledAt = now;
+        foreach (InboxEntry entry in entries)
+        {
+            db.FeedChanges.Add(InboxPayloads.Gone(NotificationsFeeds.Inbox, entry.Id.ToString(), entry.UserId.ToString(),
+                versions.GetValueOrDefault((NotificationsFeeds.Inbox, entry.Id.ToString())) + 1));
+        }
+        if (versions.TryGetValue((NotificationsFeeds.Public, notificationId.ToString()), out long publicVersion))
+            db.FeedChanges.Add(InboxPayloads.Gone(NotificationsFeeds.Public, notificationId.ToString(), null, publicVersion + 1));
+        db.Inbox.RemoveRange(entries);
+        await db.Deliveries.Where(delivery => delivery.NotificationId == notificationId && delivery.SentAt == null && delivery.GaveUpAt == null)
+            .ExecuteUpdateAsync(set => set.SetProperty(delivery => delivery.GaveUpAt, now).SetProperty(delivery => delivery.LastError, PushResult.Recalled.Error), cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
+        if (await SyncNudger.NudgeAsync(db, now, cancellationToken) > 0)
+            signal.Wake();
+    }
+
     public async Task<(int People, int Phones)> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken)
     {
         Recipients recipients = await NotificationRules.RecipientsAsync(
             new Notification(AnnouncementNotifications.Announcement, audience, "", ""), holders, people, cancellationToken);
         List<Device> devices = await DevicesAsync(recipients, cancellationToken);
         return (recipients.People.Count, devices.Count);
+    }
+
+    private async Task<Dictionary<(string Feed, string RecordId), long>> RowVersionsAsync(
+        List<InboxEntry> entries, List<Guid> notificationIds, CancellationToken cancellationToken)
+    {
+        List<string> rowIds = [.. entries.Select(entry => entry.Id.ToString()), .. notificationIds.Select(id => id.ToString())];
+        return (await db.FeedChanges.AsNoTracking()
+                .Where(change => (change.Feed == NotificationsFeeds.Inbox || change.Feed == NotificationsFeeds.Public) && rowIds.Contains(change.RecordId))
+                .GroupBy(change => new { change.Feed, change.RecordId })
+                .Select(group => new { group.Key.Feed, group.Key.RecordId, Version = group.Max(change => change.Version) })
+                .ToListAsync(cancellationToken))
+            .ToDictionary(row => (row.Feed, row.RecordId), row => row.Version);
     }
 
     private async Task QueuePushesAsync(
