@@ -5,7 +5,6 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Data;
-using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Testing;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -171,37 +170,5 @@ public sealed class InvitationTests : IAsyncLifetime
             LastLink = message.Body.Split('\n').Last(line => line.Contains("code=", StringComparison.Ordinal));
             return Task.CompletedTask;
         }
-    }
-
-    private sealed class NoRoles : IRoleAssignments
-    {
-        public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<IReadOnlyList<RoleHolder>>([]);
-
-        public ValueTask GiveAsFeatureAsync(Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask<AssignmentOutcome> GiveAsync(Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask<AssignmentOutcome> TakeAwayAsync(Guid actorId, Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask<bool> MayGiveAsync(Guid actorId, string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask TakeAwayAsFeatureAsync(Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
-
-        public ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken) => throw new NotSupportedException();
-    }
-
-    private sealed class NoGrants : IAccessEvaluator
-    {
-        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(GrantSet.Empty);
-
-        public ValueTask<bool> IsAllowedAsync(System.Security.Claims.ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
     }
 }

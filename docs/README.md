@@ -29,6 +29,7 @@ One doc per feature in [features/](features/), written before its code.
 |---|---|
 | [accounts.md](features/accounts.md) | Built: sign-up, passkeys (browser and phone), sessions, invitations, recovery, review sign-in codes, connected tools |
 | [access.md](features/access.md) | Built: roles, assignments, the evaluator, staff-friendly screens, the grants feed on the phone |
+| [people.md](features/people.md) | Built (Stage 1 of Ministries): families, young people and parents, how they're reached, blue cards and Safe Ministry training, the Safeguarding page |
 | [configuration.md](features/configuration.md) | Built: surfaces, settings, placements, drafts, themes |
 | [home.md](features/home.md) | Built: the Hub the church arranges |
 | [app-tabs.md](features/app-tabs.md) | Built: the tab bar the church chooses, through drafts |

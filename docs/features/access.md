@@ -57,6 +57,8 @@ day (mocks and review in `.impeccable/mocks/decision/roles/`):
 | | People Manager | `accounts.view`, `accounts.manage` | |
 | | Roles Manager | `access.view`, `access.assignments.edit` | people-names |
 | | App Review Manager | `accounts.review.manage` | |
+| | Safeguarding Viewer | `people.family.view`, `people.safeguarding.view` | people-names |
+| | Safeguarding Manager | `people.*` except `people.family.act` | people-names |
 | Insights and health | Insights Viewer | `analytics.view` | |
 | | Developer | `analytics.health.view`, `accounts.tools.connect` | |
 | Everything | Owner | `*` | |

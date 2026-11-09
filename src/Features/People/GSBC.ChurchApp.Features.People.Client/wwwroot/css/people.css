@@ -1,0 +1,181 @@
+.blue-card {
+  position: relative;
+  overflow: hidden;
+  border-radius: var(--radius);
+  padding: 16px 18px 14px;
+  background: var(--masthead);
+  color: var(--on-masthead);
+}
+
+.blue-card::after {
+  content: "";
+  position: absolute;
+  right: -44px;
+  top: -44px;
+  width: 150px;
+  height: 150px;
+  border-radius: 50%;
+  border: 18px solid var(--masthead-chip);
+  pointer-events: none;
+}
+
+.blue-card__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.blue-card__kind {
+  color: var(--masthead-note);
+  font-size: var(--text-pill);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.blue-card__status {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-pill);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.blue-card__status--current { background: var(--live); color: var(--on-live); }
+.blue-card__status--soon { background: var(--marker); color: var(--on-marker); }
+.blue-card__status--run-out { background: var(--on-masthead); color: var(--danger); }
+
+.blue-card__number {
+  margin: 8px 0 12px;
+  font-size: var(--text-title-lg);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.blue-card__facts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 24px;
+  margin: 0;
+  font-size: var(--text-caption);
+}
+
+.blue-card__facts dt { color: var(--on-masthead-2); }
+.blue-card__facts dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+.people-ask__actions { margin-top: 8px; }
+
+.people-code__shown {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-top: 6px;
+}
+
+.people-code__value {
+  color: var(--ink);
+  font-size: var(--text-headline);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+}
+
+.people-code__hint { margin-top: 8px; font-size: var(--text-caption); }
+
+.people-tab {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 380px);
+  gap: 40px;
+  align-items: start;
+  max-width: 1280px;
+}
+
+.people-tab__group { margin-bottom: 28px; }
+
+.people-tab__head {
+  margin: 0 0 6px;
+  color: var(--ink-3);
+  font-size: var(--text-pill);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.people-tab__panel {
+  position: sticky;
+  top: 24px;
+  border-radius: var(--radius);
+  padding: 20px 22px;
+  background: var(--sand);
+  color: var(--ink-2);
+  font-size: var(--text-caption);
+}
+
+.people-tab__panel h3 {
+  margin: 0 0 6px;
+  color: var(--ink);
+  font-size: var(--text-title);
+}
+
+.people-tab__panel ul { margin: 8px 0 0 18px; padding: 0; line-height: 1.7; }
+.people-tab__panel p + p, .people-tab__panel ul + p { margin-top: 10px; }
+.people-tab__panel .blue-card { margin-top: 14px; }
+
+.people-flag {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  border-radius: var(--radius);
+  padding: 13px 16px;
+  font-weight: 600;
+  font-size: var(--text-row);
+  background: color-mix(in srgb, var(--marker) 22%, transparent);
+  color: var(--marker-ink);
+}
+
+.people-flag--run-out {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+  color: var(--danger);
+}
+
+.people-record {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 28px;
+  align-items: start;
+  margin-top: 8px;
+}
+
+.people-record + .people-tab__head { margin-top: 26px; }
+
+.people-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.people-inline > :first-child { flex: 1 1 260px; }
+
+@media (max-width: 1328px) {
+  .people-tab { grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 28px; }
+}
+
+@media (max-width: 928px) {
+  .people-tab { grid-template-columns: minmax(0, 1fr); }
+  .people-tab__panel { position: static; }
+  .people-record { grid-template-columns: minmax(0, 1fr); }
+}

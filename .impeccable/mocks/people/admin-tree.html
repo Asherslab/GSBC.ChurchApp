@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Admin: a family tree</title><link rel="stylesheet" href="sketch.css">
+<style>
+.tree { margin-top: 30px; display: grid; justify-items: center; gap: 0; max-width: 1100px; }
+.lvl { display: flex; gap: 22px; justify-content: center; }
+.node { width: 220px; border-radius: 14px; background: var(--sand); padding: 14px 16px; }
+.node b { display: block; font-weight: 600; }
+.node span { font-size: var(--text-caption); color: var(--ink-2); }
+.node.me { background: var(--primary); color: var(--on-primary); }
+.node.me span { color: var(--on-masthead-2); }
+.node.wait { background: rgb(231 174 116 / 0.22); box-shadow: inset 0 0 0 2px var(--marker); }
+.node.add { background: transparent; box-shadow: inset 0 0 0 2px var(--line); color: var(--accent); font-weight: 600; display: grid; place-items: center; }
+.stem { width: 2px; height: 26px; background: var(--line); }
+.cap { font-size: var(--text-pill); color: var(--ink-3); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; margin: 8px 0; }
+</style></head>
+<body class="admin">
+<aside class="side"><div class="brand"><i></i>Good Shepherd</div><div class="grp">People</div><div class="lnk on">People</div><div class="lnk">Safeguarding <span class="cnt">6</span></div></aside>
+<main class="work">
+  <div class="back">‹ People</div>
+  <div class="band"><div><h1>Alex Sample</h1><p><span>alex@example.com</span><span>Joined 3 Oct 2026</span></p></div></div>
+  <div class="tabs"><span>Roles</span><span>What they can do</span><span class="on">Family</span><span>Safeguarding</span><span>Account</span><span>Activity</span></div>
+  <div class="tree">
+    <div class="cap">Parents and guardians</div>
+    <div class="lvl"><div class="node add">+ Link a parent</div></div>
+    <div class="stem"></div>
+    <div class="lvl"><div class="node me"><b>Alex Sample</b><span>Born 4 June 1984 · 42</span></div></div>
+    <div class="stem"></div>
+    <div class="cap">Children</div>
+    <div class="lvl">
+      <div class="node"><b>Mia Sample</b><span>8 · no sign-in · added by Alex</span></div>
+      <div class="node"><b>Leo Sample</b><span>13 · signs in · linked by the office</span></div>
+      <div class="node wait"><b>Jordan Sample</b><span>15 · asking to be linked · <u>Link</u> · <u>Take back</u></span></div>
+      <div class="node add">+ Link a child</div>
+    </div>
+  </div>
+  <span class="note">Sketch · sample names</span>
+</main></body></html>

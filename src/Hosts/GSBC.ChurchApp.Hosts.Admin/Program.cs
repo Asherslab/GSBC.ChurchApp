@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Configuration.Admin;
 using GSBC.ChurchApp.Features.Media.Admin;
 using GSBC.ChurchApp.Features.Notifications.Admin;
 using GSBC.ChurchApp.Features.Events.Admin;
+using GSBC.ChurchApp.Features.People.Admin;
 using GSBC.ChurchApp.Features.Sermons.Admin;
 using GSBC.ChurchApp.Features.Sermons.Import.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
@@ -36,6 +37,7 @@ builder.Services
     .AddEventsAdmin(modules)
     .AddAccountsAdmin(modules)
     .AddAccessAdmin(modules)
+    .AddPeopleAdmin(modules)
     .AddAnalyticsAdmin(modules);
 
 WebAssemblyHost host = builder.Build();

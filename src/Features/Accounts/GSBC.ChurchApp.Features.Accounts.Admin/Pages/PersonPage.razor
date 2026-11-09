@@ -17,7 +17,10 @@
         <TitleBand Title="@person.DisplayName" BackHref="people" BackText="People">
             <LeadContent>
                 <p class="person-page__lead">
-                    <span>@person.Email</span>
+                    @if (person.Email.Length > 0)
+                    {
+                        <span>@person.Email</span>
+                    }
                     <span><PersonState Person="person" Invitation="context.Value.Invitation" /></span>
                     @if (context.Value.Invitation is null)
                     {
@@ -62,8 +65,8 @@
 
     private IReadOnlyList<PersonTab> Tabs =>
         ContributedTabs.Where(tab => tab.Requires is null || Access.Can(tab.Requires))
-            .Append(new PersonTab(AccountTab, "Account", 2, NoContent))
-            .Concat(Access.Can(AccountsPermissions.Manage) ? [new PersonTab(ActivityTab, "Activity", 3, NoContent)] : [])
+            .Append(new PersonTab(AccountTab, "Account", 4, NoContent))
+            .Concat(Access.Can(AccountsPermissions.Manage) ? [new PersonTab(ActivityTab, "Activity", 5, NoContent)] : [])
             .OrderBy(tab => tab.Order)
             .ToList();
 

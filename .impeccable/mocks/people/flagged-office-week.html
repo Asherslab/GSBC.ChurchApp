@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Flagged: only in Needs you, and a People filter</title><link rel="stylesheet" href="sketch.css">
+<style>
+.cols { display: grid; grid-template-columns: 1.4fr 1fr; gap: 48px; margin-top: 30px; max-width: 1280px; }
+.need .row { min-height: 64px; }
+.need .tile { width: 34px; height: 34px; }
+h2 { font-size: var(--text-title); margin-bottom: 8px; }
+.peep { margin-top: 44px; max-width: 1280px; }
+.bar { display: flex; gap: 14px; align-items: center; margin: 14px 0 10px; }
+</style></head>
+<body class="admin">
+<aside class="side"><div class="brand"><i></i>Good Shepherd</div><div class="lnk on">Home</div><div class="grp">People</div><div class="lnk">People</div></aside>
+<main class="work">
+  <div class="band"><div><h1>Good morning</h1><p>Tuesday 10 November</p></div></div>
+  <div class="cols">
+    <div class="need"><h2>Needs you</h2>
+      <div class="list">
+        <div class="row"><div class="tile warm">!</div><div class="t"><b>2 blue cards or trainings have run out</b><span class="s">Chris Sample, Pat Sample</span></div><span class="chev">›</span></div>
+        <div class="row"><div class="tile warm">◷</div><div class="t"><b>3 are due in the next 60 days</b><span class="s">Alex Sample, Sam Sample and 1 more</span></div><span class="chev">›</span></div>
+        <div class="row"><div class="tile warm">J</div><div class="t"><b>Jordan Sample has no parent linked</b><span class="s">Asked a parent 2 days ago</span></div><span class="chev">›</span></div>
+      </div>
+    </div>
+    <div><h2>Your areas</h2><div class="list"><div class="row"><div class="tile">P</div><div class="t"><b>People</b><span class="s">Everyone with an account</span></div></div></div></div>
+  </div>
+  <div class="peep">
+    <h2>…which opens People, filtered</h2>
+    <div class="bar"><div class="search">Find someone</div><div class="chips"><span class="chip">Everyone <em>214</em></span><span class="chip">Invited <em>2</em></span><span class="chip on">Safeguarding to check <em>6</em></span><span class="chip">Under 18 <em>31</em></span></div></div>
+    <table><tr><th>Name</th><th>Email</th><th>Safeguarding</th></tr>
+      <tr><td><b>Chris Sample</b></td><td class="sub">chris@example.com</td><td><span class="pill bad">Blue card run out</span></td></tr>
+      <tr><td><b>Alex Sample</b></td><td class="sub">alex@example.com</td><td><span class="pill flag">Training due 20 Nov</span></td></tr>
+      <tr><td><b>Jordan Sample</b></td><td class="sub">jordan@example.com</td><td><span class="pill flag">No parent linked</span></td></tr>
+    </table>
+  </div>
+  <span class="note">Sketch · sample names</span>
+</main></body></html>

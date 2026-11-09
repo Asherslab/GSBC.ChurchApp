@@ -33,6 +33,7 @@ internal sealed class AccountsService(
     private const int LongestPin = 200;
     private const string DemoAccountsUseCodes = "This is a demo account for app reviewers. It signs in with a sign-in code, never a passkey.";
     private static readonly CodePurpose[] RedeemablePurposes = [CodePurpose.Invitation, CodePurpose.Recovery];
+    private static readonly CodePurpose[] FamilyPurposes = [CodePurpose.FamilySignIn];
 
     [EnableRateLimiting(RateLimits.PublicWrites)]
     public async ValueTask<TicketReply> StartSignUpAsync(StartSignUpRequest request, CallContext context = default)
@@ -56,7 +57,8 @@ internal sealed class AccountsService(
     {
         CancellationToken cancellationToken = context.CancellationToken;
         OneTimeCode code = await codes.FindTokenAsync(request.Code.Trim(), RedeemablePurposes, cancellationToken)
-            ?? throw new RpcException(new Status(StatusCode.NotFound, "That link has expired or was already used. Ask for a new one."));
+            ?? await codes.FindTokenAsync(OneTimeCodes.WithoutSpacing(request.Code), FamilyPurposes, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.NotFound, "That link or code has expired or was already used. Ask for a new one."));
 
         codes.Use(code);
         AccountUser user = await users.FindByIdAsync(code.UserId.ToString())
@@ -414,6 +416,7 @@ internal sealed class AccountsService(
                 HasPasskey = withPasskeys.Contains(user.Id),
                 CreatedAt = user.CreatedAt,
                 Deleted = user.DeletedAt is not null,
+                AddedByFamily = user.AddedByFamily,
             }).ToList(),
         };
     }

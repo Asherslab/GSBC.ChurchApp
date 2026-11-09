@@ -57,6 +57,8 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IInstallVerifier, NoInstallVerifier>();
         services.TryAddScoped<INotifications, NoNotifications>();
         services.TryAddScoped<IPeopleIndex, NoPeople>();
+        services.TryAddScoped<IPeopleAccounts, NoPeopleAccounts>();
+        services.TryAddScoped<IFamilies, NoFamilies>();
         services.TryAddScoped<IPermissionHolders, NoPermissionHolders>();
         services.TryAddScoped<IAccountEmails, NoAccountEmails>();
         services.AddSingleton<PermissionCatalog>();

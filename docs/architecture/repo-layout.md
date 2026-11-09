@@ -133,6 +133,14 @@ flowchart LR
         NotificationsContracts["Features.Notifications.Contracts"]
     end
 
+    subgraph People["Features / People"]
+        PeopleApp["Features.People.App"]
+        PeopleAdmin["Features.People.Admin"]
+        PeopleClient["Features.People.Client"]
+        PeopleApi["Features.People.Api"]
+        PeopleContracts["Features.People.Contracts"]
+    end
+
     subgraph Sermons["Features / Sermons"]
         SermonsApp["Features.Sermons.App"]
         SermonsAdmin["Features.Sermons.Admin"]
@@ -181,6 +189,7 @@ flowchart LR
         MediaTests["Features.Media.Api.Tests"]
         AnalyticsTests["Features.Analytics.Api.Tests"]
         NotificationsTests["Features.Notifications.Api.Tests"]
+        PeopleTests["Features.People.Api.Tests"]
         SermonsTests["Features.Sermons.Api.Tests"]
         SermonsImportTests["Features.Sermons.Import.Api.Tests"]
         EventsTests["Features.Events.Api.Tests"]
@@ -193,10 +202,10 @@ flowchart LR
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator & HostsWebsite
     HostsWebsite --> SermonsClient & EventsClient
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
-    HostsApp --> AccountsApp & AccessClient & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
-    HostsApi --> AccountsApi & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
+    HostsApp --> AccountsApp & AccessClient & PeopleApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
+    HostsApi --> AccountsApi & AccessApi & PeopleApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -232,6 +241,11 @@ flowchart LR
     AnalyticsApi --> AnalyticsContracts & PlatformApi & PlatformCommon
     AnalyticsContracts --> PlatformContracts
 
+    PeopleApp --> PeopleClient
+    PeopleAdmin --> PeopleClient
+    PeopleClient --> PeopleContracts & PlatformClient & PlatformUi & PlatformCommon
+    PeopleApi --> PeopleContracts & PlatformApi & PlatformCommon
+    PeopleContracts --> PlatformContracts
     SermonsApp --> SermonsClient
     SermonsAdmin --> SermonsClient
     SermonsClient --> SermonsContracts & PlatformClient & PlatformUi & PlatformCommon
@@ -266,6 +280,7 @@ flowchart LR
     MediaTests --> MediaApi & Testing
     AnalyticsTests --> AnalyticsApi & Testing
     NotificationsTests --> NotificationsApi & Testing
+    PeopleTests --> PeopleApi & Testing
     SermonsTests --> SermonsApi & Testing
     SermonsImportTests --> SermonsImportApi & Testing
     EventsTests --> EventsApi & Testing
@@ -296,9 +311,9 @@ flowchart LR
 | `GSBC.ChurchApp.Platform.Common` | Church time (`Australia/Brisbane`) and small shared types | Yes |
 | `GSBC.ChurchApp.Platform.Permissions` | Permission nodes, scopes, patterns and the grant matcher; the same code decides on server and phone | Yes |
 | `GSBC.ChurchApp.Platform.Contracts` | Tier attributes (`[Public]`, `[SignedIn]`, `[Requires]`, `[AppInstall]`), the Sync service contract, and configuration's descriptors (areas, surfaces, setting fields, audiences, layout composition, and the Hub area), `MediaRef` (how any feature's record points at an image or file), rich text (`RichText`, its parser and save rules), the Hub's tiles, grid and icon cleaning (`HubGrid`, `SvgIcons`), places (`DestinationPage`, `DestinationKind`), notification kinds, and usage measures | Yes |
-| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration), and the audio player (`IAudioPlayer`: the native player on the phone, an audio element in a browser, with a playback journal that survives the app being closed) | Yes |
-| `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the admin panel's building blocks (`DataTable`, `SplitView`, `SearchField`, `FilterChips`, `DayRail`, `TitleBand`, `SelectionTray`), Home (`Surfaces/`: `HomeScreen`, `HubTile`, `PhoneFrame`), places (`Destinations/`: `PlaceField`, `LinkOpener`, the directory and explorer), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor`, `MediaChooser` and `AudiencePicker`; `ChipPicker` (search and choose several, shown as chips); `VideoEmbed` (YouTube played inline from the app host's static `embed/youtube.html`) | Yes |
-| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, `IPermissionHolders` and `IAccountEmails` (who holds a node, and their addresses), `IMediaReferences` (the check features call on every `MediaRef` they save), `IMediaSystemFolders` (with `KeepAsync` and `KeepStoredAsync`, how a feature keeps the files it makes or has already stored), `INotifications`, the places directory (`gsbc.destinations.Destinations`), and the App Attest install check behind `[AppInstall]` | No |
+| `GSBC.ChurchApp.Platform.Client` | Client plumbing: module registry and startup tasks, `IAccess`, the session signal and `IPeopleDirectory` (how features cooperate without referencing each other), `PersonTab` and `AccountSection` (what features add to a person's page and to your Account page), the native bridge, local feed reads (`ILocalFeeds`), the outbox (`IOutbox`, with quiet entries that never show), `IClientDiagnostics` and `CurrentPage` (errors and failed calls, seen by the channel every feature calls through), `ISurfaceLayout` (an area as staff arranged it), `ClientSignals` (every change the client knows about, in one event), media files (`IMediaFiles`: the phone's file cache, or the URL in a browser; `MediaPrefetch` rules; the `MediaPicker` registration), and the audio player (`IAudioPlayer`: the native player on the phone, an audio element in a browser, with a playback journal that survives the app being closed) | Yes |
+| `GSBC.ChurchApp.Platform.Ui` | The design system: tokens, fonts and the mark (static web assets both hosts link), the phone shell (`Page`, `Masthead`, `ModuleNav` as tab bar or More list, `ModuleRouter`), `LiveData` and `RefreshOn` (screens that update themselves), generic building blocks (`Section`, `Card`, `ListGroup`/`ListRow`, `PullToRefresh`, `Sheet`, `EmptyState`, `DateLine`, `SyncIndicator`, `Button`, fields, `Segmented`, `Skeleton`), the admin panel's building blocks (`DataTable`, `SplitView`, `SearchField`, `FilterChips`, `DayRail`, `TitleBand`, `SelectionTray`), Home (`Surfaces/`: `HomeScreen`, `HubTile`, `PhoneFrame`), places (`Destinations/`: `PlaceField`, `LinkOpener`, the directory and explorer), the theme (`AppTheme`, `Appearance`), the `Can` permission gate, `MediaImage`, and in `Content/` `RichTextView`, `RichTextEditor`, `MediaChooser` and `AudiencePicker`; `ChipPicker` (search and choose several, shown as chips); `PersonFinder` (find someone by name and act on them, used by the People sheet and a person's Family tab); `VideoEmbed` (YouTube played inline from the app host's static `embed/youtube.html`) | Yes |
+| `GSBC.ChurchApp.Platform.Api` | Server plumbing: gRPC hosting and ports, the fail-closed tier interceptor, the permission catalogue and system roles, feeds, the Sync service, one `LISTEN` connection for every notification channel, email delivery, rate limits, health, `IPermissionHolders` and `IAccountEmails` (who holds a node, and their addresses), `IPeopleAccounts` (how People adds and removes an account without sign-in for a child, and makes its sign-in code), `IMediaReferences` (the check features call on every `MediaRef` they save), `IMediaSystemFolders` (with `KeepAsync` and `KeepStoredAsync`, how a feature keeps the files it makes or has already stored), `INotifications`, the places directory (`gsbc.destinations.Destinations`), and the App Attest install check behind `[AppInstall]` | No |
 | `GSBC.ChurchApp.Platform.Data` | EF Core base for feature schemas, the `sync.feed_changes` log and its `NOTIFY` trigger, the outgoing-email queue, migration targets | No |
 | `GSBC.ChurchApp.Platform.Storage` | `IBlobStore` over the S3 API (R2 in production, SeaweedFS in development): public and private buckets, signed links, copies with cache headers, content-addressed keys | No |
 | `GSBC.ChurchApp.Features.Accounts.Contracts` | The `Session` service contract and Accounts' permission nodes | Yes |
@@ -331,6 +346,11 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.Client` | The inbox (`Inbox`, also the bell's `IInboxCount`), push registration, preferences, and the shared `InboxView`, `NotificationSettings` and `AnnouncementsDesk` components | Yes |
 | `GSBC.ChurchApp.Features.Notifications.App` | The phone's Notifications list (from the bell) and More → Notifications | Yes |
 | `GSBC.ChurchApp.Features.Notifications.Admin` | The Announcements page | Yes |
+| `GSBC.ChurchApp.Features.People.Contracts` | The `People` service, family and safeguarding messages, the age rule (`Ages`), blue card statuses and the flag rule (`SafeguardingFlags`), feeds, notification kinds and the `people.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.People.Api` | Birth dates, family links and asks, and blue cards and Safe Ministry training (schema `people`); a child a parent adds is an account without sign-in, made through `IPeopleAccounts`; the hidden *Parent or guardian* role given at the child until they turn 18; forgetting a deleted person and the children left with no one | No |
+| `GSBC.ChurchApp.Features.People.Client` | People's gRPC calls and the Account page's *Your family* and *Blue card and training* (an `AccountSection`): adding a child, sign-in codes, asking and answering a parent, the blue card | Yes |
+| `GSBC.ChurchApp.Features.People.App` | Registers People on the phone and syncs the own-records feed that keeps the Account page current | Yes |
+| `GSBC.ChurchApp.Features.People.Admin` | A person's Family and Safeguarding tabs (`PersonTab`), the Safeguarding page of who's flagged, and its lines in Home's *Needs you* | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Contracts` | The `Sermons` and `Library` services, the sermon, series, speaker and listening messages, the progress merge rule (`ListeningProgress`), YouTube links, feeds, places and the `sermons.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Api` | Sermons uploaded in the admin panel, with their audio and pictures kept in Media, the catalogue, series and speaker feeds, the podcast feed, and listening history merged per person (schema `sermons`) | No |
 | `GSBC.ChurchApp.Features.Sermons.Client` | The catalogue read from the phone's store (`SermonCatalogue`), listening history from the native journal and the account's feed, sent through the outbox (`Listening`), the sermon player over `IAudioPlayer`, and the Home tile *Latest sermon* | Yes |
@@ -365,6 +385,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.Events.Api.Tests` | Unit: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them; only a publisher shows an event on a calendar that needs one or changes it once shown; this date only vs every date; a calendar for signed-in people can't be added or told to a signed-out phone; reading iCal (repeats, skipped and changed dates, other time zones) and asking with its ETag; addresses on private networks never read; writing calendar files; reminders due at 7 and 2 days and when they settle. Against Postgres: publishing sends a date leaving the window, or a calendar turning private, as deletes; Ask to publish reaches the publishers and publishing shows it; an editor can't reach another calendar's events; a copy on another calendar follows the home event; a private calendar's iCal file only through a valid link of someone it's for (not after their role goes, nor to a signed-out phone with a stale *Calendar added*); a reset link refused | No |
+| `GSBC.ChurchApp.Features.People.Api.Tests` | Unit: someone is under 18 until their birthday; which blue cards and training are flagged and when; who may unlink whom; who is left alone when a parent goes. Against Postgres: deleting a parent removes the children left with no parent and no sign-in, and forgets every link, ask and record of whoever goes | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |
 | `GSBC.ChurchApp.Features.Events.Client.Tests` | Unit tests, no I/O: Coming up leaves ordinary regular dates out; a date edited on its own starts from the regular event with only what its special changed, and never changes every date; a date not on says why on its own line; the widening sentence is one full sentence, and silent when nothing widens | No |

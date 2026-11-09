@@ -42,6 +42,8 @@ public static class AccountsApiExtensions
         services.AddSingleton(new AppAttest(AppAttest.AppleRoot(), AppIds(configuration)));
         services.AddScoped<IInstallVerifier, InstallVerifier>();
         services.AddScoped<IPeopleIndex, AccountsPeopleIndex>();
+        services.AddScoped<IPeopleAccounts, AccountsPeopleAccounts>();
+        services.AddScoped<IScopeObjects, PersonScopeObjects>();
         services.AddScoped<ISignedInSessions, AccountSessionCheck>();
         services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
         services.AddFeed(new FeedDefinition(AccountsFeeds.Pins, FeedAudience.OwnRecords));

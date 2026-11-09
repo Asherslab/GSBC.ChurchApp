@@ -17,6 +17,7 @@ else if (_mode == Mode.SignIn)
         <ListGroup>
             <ListRow Title="Create an account" Subtitle="With your name, your email and a passkey" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Switch(Mode.SignUp)" />
             <ListRow Title="Lost your passkey?" Subtitle="Get a link by email to add a new one" Icon="lock" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.Recover)" />
+            <ListRow Title="Got a code from your parent?" Subtitle="Sign in to the account they made for you" Icon="users" IconTone="RowTone.Quiet" OnClick="() => Switch(Mode.FamilyCode)" />
         </ListGroup>
         @if (Codes.IsAvailable)
         {
@@ -36,6 +37,16 @@ else if (_mode == Mode.Code)
         <div class="ui-actions ui-after">
             <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
             <Button Busy="_busy" Disabled="@(_email.Trim().Length == 0 || _code.Trim().Length == 0)" OnClick="SignInWithCodeAsync">Sign in</Button>
+        </div>
+    </Section>
+}
+else if (_mode == Mode.FamilyCode)
+{
+    <Section First="true" Title="Sign in with your parent's code" Lead="Your parent makes it on their Account page. Then this device makes a passkey, so next time you sign in with Face ID, Touch ID or your screen lock.">
+        <TextField Label="Code" Value="@_code" ValueChanged="value => _code = value" AutoComplete="one-time-code" Placeholder="ABCD-EFGH" />
+        <div class="ui-actions ui-after">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
+            <Button Busy="_busy" Disabled="@(_code.Trim().Length == 0)" OnClick="SignInWithFamilyCodeAsync">Create a passkey</Button>
         </div>
     </Section>
 }
@@ -71,7 +82,7 @@ else
 }
 
 @code {
-    private enum Mode { SignIn, SignUp, Recover, Code }
+    private enum Mode { SignIn, SignUp, Recover, Code, FamilyCode }
 
     private Mode _mode = Mode.SignIn;
     private bool? _supported;
@@ -106,6 +117,12 @@ else
     private Task SignInAsync() => RunAsync(async () => await FinishAsync(await Passkeys.SignInAsync()));
 
     private Task SignInWithCodeAsync() => RunAsync(async () => await FinishAsync(await Codes.SignInAsync(_email, _code)));
+
+    private Task SignInWithFamilyCodeAsync() => RunAsync(async () =>
+    {
+        TicketReply reply = await Accounts.RedeemAsync(_code);
+        await FinishAsync(await Passkeys.RegisterAsync(reply.Ticket));
+    });
 
     private Task SignUpAsync() => RunAsync(async () =>
     {

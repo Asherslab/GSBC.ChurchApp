@@ -154,6 +154,7 @@ public sealed class PersonInfo
     [ProtoMember(6)] public bool HasPasskey { get; set; }
     [ProtoMember(7)] public DateTime CreatedAt { get; set; }
     [ProtoMember(8)] public bool Deleted { get; set; }
+    [ProtoMember(9)] public bool AddedByFamily { get; set; }
 }
 
 [ProtoContract]

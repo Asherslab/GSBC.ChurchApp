@@ -1,0 +1,49 @@
+@inject PeopleClient People
+@inject TimeProvider Clock
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a child" Lead="A child in your care, under 18. They don't need an email or a phone; you can make them a sign-in code later.">
+    <ChildContent>
+        <TextField Label="Their name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="off" />
+        <div class="ui-after">
+            <TextField Label="Birth date" Type="date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" Hint="@PeopleWords.WhoSees" />
+        </div>
+        <Notice Tone="NoticeTone.Warning" Text="@_message" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" Disabled="@(_name.Trim().Length == 0 || PeopleWords.ParseDay(_born) is null)" OnClick="AddAsync">Add @(_name.Trim().Length > 0 ? _name.Trim() : "them")</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Not now</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public EventCallback<PersonCard> OnAdded { get; set; }
+    [Parameter] public string? ParentId { get; set; }
+
+    private string _name = "";
+    private string _born = "";
+    private bool _busy;
+    private string? _message;
+
+    private async Task AddAsync()
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            PersonCard child = await People.AddChildAsync(_name, PeopleWords.ParseDay(_born)!.Value, ParentId);
+            (_name, _born) = ("", "");
+            await OpenChanged.InvokeAsync(false);
+            await OnAdded.InvokeAsync(child);
+        }
+        catch (RpcException exception)
+        {
+            _message = PeopleWords.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

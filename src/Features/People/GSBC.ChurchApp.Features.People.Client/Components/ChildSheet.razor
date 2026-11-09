@@ -1,0 +1,179 @@
+@inject PeopleClient People
+
+<Sheet Open="Child is not null" OpenChanged="OpenChanged" Title="@Child?.Name" Lead="@Lead">
+    <ChildContent>
+        @if (Child is { } child)
+        {
+            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
+                @if (_code is { } made)
+                {
+                    <div class="people-code__shown">
+                        <span class="people-code__value" aria-label="@($"Sign-in code {string.Join(' ', made.Code.ToCharArray())}")">@made.Code</span>
+                        <CopyField Label="Copy the code" Value="@made.Code" ButtonOnly="true" ButtonIcon="copy" />
+                    </div>
+                    <p class="people-code__hint">@CodeHint(made)</p>
+                }
+                else
+                {
+                    <p>@(child.CanSignIn
+                        ? $"If {child.Name} has a new phone or lost their passkey, make a code and they add a new passkey with it."
+                        : $"When {child.Name} has a phone, make a code. They sign in with it once and the app remembers them.")</p>
+                    <div class="ui-actions ui-after">
+                        <Button Small="true" Busy="_busy" OnClick="MakeCodeAsync">Make a sign-in code</Button>
+                    </div>
+                }
+            </Card>
+
+            <Section Title="@($"How to reach {child.Name}")" Lead="@ReachLead(child)">
+                @if (child.CanSignIn)
+                {
+                    <Segmented TValue="string" Label="@($"How to reach {child.Name}")" Options="ReachOptions" Value="@PeopleWords.EffectiveReach(child, Today)"
+                               ValueChanged="reach => RunAsync(() => People.SetReachAsync(child.Id, reach).AsTask())" />
+                }
+            </Section>
+
+            <Section Title="Details">
+                @if (child is { AddedByFamily: true, CanSignIn: false })
+                {
+                    <TextField Label="Name" Value="@(_name ?? child.Name)" ValueChanged="value => _name = value" AutoComplete="off" />
+                }
+                <div class="ui-after">
+                    <TextField Label="Birth date" Type="date" Value="@(_born ?? PeopleWords.FieldDay(child.BirthDate))" ValueChanged="value => _born = value" />
+                </div>
+                <div class="ui-actions ui-after">
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_name is null && _born is null)" OnClick="SaveAsync">Save details</Button>
+                </div>
+            </Section>
+
+            <Section Title="Another parent" Lead="@($"Ask someone else who looks after {child.Name} to link to them too. They say yes on their Account page.")">
+                <ListGroup>
+                    @foreach (LinkAsk ask in Asks.Where(ask => ask.ChildId == child.Id && !ask.AskedByChild))
+                    {
+                        <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}")" Icon="clock" IconTone="RowTone.Quiet">
+                            <TrailingContent>
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
+                            </TrailingContent>
+                        </ListRow>
+                    }
+                </ListGroup>
+                <div class="ui-after">
+                    <TextField Label="Their email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" />
+                </div>
+                <div class="ui-actions ui-after">
+                    <Button Small="true" Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_email.Trim().Length == 0)" OnClick="AskAsync">Ask them</Button>
+                </div>
+            </Section>
+
+            <Section>
+                @if (_confirming)
+                {
+                    <Notice Tone="NoticeTone.Warning" Text="@RemoveWarning(child)" />
+                    <div class="ui-actions ui-after">
+                        <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = false">Keep</Button>
+                        <Button Small="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => RemoveAsync(child)">@RemoveLabel(child)</Button>
+                    </div>
+                }
+                else
+                {
+                    <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirming = true">@RemoveLabel(child)…</Button>
+                }
+            </Section>
+
+            @if (_message is not null)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@_message" />
+            }
+        }
+    </ChildContent>
+    <Actions>
+        <Button Block="true" OnClick="CloseAsync">Done</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    [Parameter] public PersonCard? Child { get; set; }
+    [Parameter, EditorRequired] public required string ParentId { get; set; }
+    [Parameter] public IReadOnlyList<LinkAsk> Asks { get; set; } = [];
+    [Parameter, EditorRequired] public required DateOnly Today { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private SignInCodeReply? _code;
+    private string? _name, _born;
+    private string _email = "";
+    private bool _busy, _confirming;
+    private string? _message;
+
+    private string? Lead => Child is { } child ? PeopleWords.ChildLine(child, Today) : null;
+
+    private static readonly IReadOnlyList<SegmentOption<string>> ReachOptions =
+    [
+        new(Reach.Directly, "Directly"),
+        new(Reach.ThroughParents, "Through you"),
+        new(Reach.Both, "Both"),
+    ];
+
+    private string ReachLead(PersonCard child) => child.CanSignIn
+        ? $"Roster requests, reminders and messages for {child.Name} from their ministries. Through you, they're labelled “For {child.Name}”, and you can answer for them."
+        : $"{child.Name} can't sign in yet, so ministries reach them through you, labelled “For {child.Name}”, and you answer for them.";
+
+    private static bool Removes(PersonCard child) => child is { AddedByFamily: true, CanSignIn: false };
+
+    private static string RemoveLabel(PersonCard child) => Removes(child) ? $"Remove {child.Name} from the app" : $"Stop looking after {child.Name}";
+
+    private static string RemoveWarning(PersonCard child) => Removes(child)
+        ? $"{child.Name}'s details go for good, and any ministry they're in forgets them. This can't be undone."
+        : $"{child.Name} keeps their account, and you stop seeing their details. A parent or the church office can link you again.";
+
+    private static string CodeHint(SignInCodeReply code) =>
+        $"Works once, until {code.ExpiresAt.ToLocalTime():h:mm tt d MMM}. On their phone: open the app, go to Account, then “Got a code from your parent?”.";
+
+    private Task OpenChanged(bool open) => open ? Task.CompletedTask : CloseAsync();
+
+    private Task CloseAsync() => OnClose.InvokeAsync();
+
+    private Task MakeCodeAsync() => RunAsync(async () => _code = await People.MakeSignInCodeAsync(Child!.Id));
+
+    private Task SaveAsync() => RunAsync(async () =>
+    {
+        if (_name is { } name)
+            await People.RenameAsync(Child!.Id, name);
+        if (_born is { } born)
+            await People.SetBirthDateAsync(Child!.Id, PeopleWords.ParseDay(born) ?? throw new RpcException(new Status(StatusCode.InvalidArgument, "Choose a birth date.")));
+        (_name, _born) = (null, null);
+    });
+
+    private Task AskAsync() => RunAsync(async () =>
+    {
+        await People.AskToLinkAsync(_email, Child!.Id);
+        _email = "";
+    });
+
+    private Task RemoveAsync(PersonCard child) => RunAsync(async () =>
+    {
+        if (Removes(child))
+            await People.RemoveChildAsync(child.Id);
+        else
+            await People.UnlinkAsync(ParentId, child.Id);
+        await CloseAsync();
+    });
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _message = PeopleWords.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,70 @@
+@page "/safeguarding"
+@inject PeopleClient People
+@inject NavigationManager Navigation
+@inject TimeProvider Clock
+
+<TitleBand Title="Safeguarding" Lead="Blue cards and Safe Ministry training that have run out or are due, and young people no parent has linked. Nothing here stops anyone serving; it's who to follow up, soonest first." />
+
+<LiveData TValue="IReadOnlyList<FlaggedPerson>" Feeds="[PeopleFeeds.Safeguarding, PeopleFeeds.Family]" Load="People.GetFlaggedAsync" FailedTitle="Can't load who's flagged right now">
+    <DataTable TItem="FlaggedPerson" Label="Who's flagged" Items="Shown(context.Value)" Columns="Columns(ChurchTime.Today(Clock))" Key="Key" SelectedChanged="Open">
+        <Toolbar>
+            <FilterChips TValue="string" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
+        </Toolbar>
+        <Empty>
+            @if (context.Value.Count == 0)
+            {
+                <EmptyState Icon="shield-check" Title="Nothing to follow up" Body="Every blue card and training recorded is current, and every young person has a parent linked." />
+            }
+            else
+            {
+                <EmptyState Icon="shield-check" Title="None of these" Body="Show everything to see the rest." />
+            }
+        </Empty>
+    </DataTable>
+</LiveData>
+
+@code {
+    private const string Everything = "";
+    private string _filter = Everything;
+
+    private static readonly IReadOnlyList<(string Kind, string Label)> Kinds =
+    [
+        (FlagKinds.RunOut, "Run out"),
+        (FlagKinds.DueSoon, $"Due in {SafeguardingFlags.SoonDays} days"),
+        (FlagKinds.NotRecorded, "Not recorded"),
+        (FlagKinds.NoParent, "Young people without a parent"),
+    ];
+
+    private static string Key(FlaggedPerson flagged) => $"{flagged.PersonId}-{flagged.Words}";
+
+    private IReadOnlyList<FilterOption<string>> Filters(IReadOnlyList<FlaggedPerson> flagged) =>
+    [
+        new(Everything, "Everything", flagged.Count),
+        .. Kinds.Select(kind => new FilterOption<string>(kind.Kind, kind.Label, flagged.Count(person => person.Kind == kind.Kind))),
+    ];
+
+    private IEnumerable<FlaggedPerson> Shown(IReadOnlyList<FlaggedPerson> flagged) =>
+        _filter == Everything ? flagged : flagged.Where(person => person.Kind == _filter);
+
+    private static IReadOnlyList<TableColumn<FlaggedPerson>> Columns(DateOnly today) =>
+    [
+        new("Person", flagged => @<span class="cell-strong">@flagged.Name</span>),
+        new("What", flagged => @<span>@flagged.Words</span>),
+        new("Status", flagged => @<Pill Tone="@Tone(flagged.Kind)">@KindWords(flagged.Kind)</Pill>),
+        new("When", flagged => @<span class="quiet">@When(flagged, today)</span>, null, "num"),
+    ];
+
+    private static PillTone Tone(string kind) => kind switch
+    {
+        FlagKinds.RunOut => PillTone.Danger,
+        FlagKinds.NotRecorded => PillTone.Quiet,
+        _ => PillTone.Marker,
+    };
+
+    private static string KindWords(string kind) => Kinds.FirstOrDefault(known => known.Kind == kind).Label ?? kind;
+
+    private static string When(FlaggedPerson flagged, DateOnly today) =>
+        flagged.When is { } when ? SafeguardingFlags.DaysWords(WireDates.FromWire(when), today) : "";
+
+    private void Open(FlaggedPerson flagged) => Navigation.NavigateTo(SafeguardingHref.For(flagged));
+}

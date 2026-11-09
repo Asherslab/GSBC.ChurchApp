@@ -85,12 +85,24 @@ any computer: `Accounts.GetPinnedPages` and `Accounts.SetPinnedPages` (signed in
 stored as `accounts.users.pinned_pages`. Saving marks the own-records `accounts.pins` feed, so another computer's sidebar
 reloads them; `AccountPinnedPages` is the admin panel's `IPinnedPages`. Deleting the account clears them.
 
+**Accounts a parent makes** (2026-11-10, [people.md](people.md)). A child without a phone is an account with no email
+and no passkey (`added_by_family`), made and removed by People through `IPeopleAccounts` (Platform.Api). The
+abandoned-sign-up clean-up skips them, People lists them as *Looked after by a parent*, and their passkey is named
+after them. A parent makes a **family sign-in code** (`FamilySignIn`: 8 letters and digits, one use, 24 hours, a new one
+replaces the last), which `Accounts.Redeem` accepts however it's typed; signing in has *Got a code from your parent?*.
+Deleting a parent's account also deletes a child who can't sign in and has no other parent (People's `IPersonData`),
+and the deletion sheet says so. Tests: `FamilySignInTests`.
+
+**What other features add to your Account page** (2026-11-10): an `AccountSection` (Platform.Client) shown after *You*,
+in the app and the admin panel (not for demo accounts). People adds *Your family* and *Blue card and training*.
+
 ## A person's page (2026-11-09)
 
 People lists everyone; choosing someone opens their page (`/people/{id}`): their email, account state and
 whether they have a passkey and joined date, and tabs. Accounts owns the page, its **Account** tab (recovery link,
 invitation, turning the account off, deleting it) and **Activity** (`accounts.manage`, as before); other features add tabs through `PersonTab`
-(Platform.Client): Access adds **Roles** and **What they can do** ([access.md](access.md#admin-screens)).
+(Platform.Client): Access adds **Roles** and **What they can do** ([access.md](access.md#admin-screens)), People adds
+**Family** and **Safeguarding** ([people.md](people.md)).
 `/people?person={id}` (the office week's links) goes to the page.
 
 ## Sessions and tokens

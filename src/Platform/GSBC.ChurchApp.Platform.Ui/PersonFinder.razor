@@ -1,0 +1,72 @@
+@using Grpc.Core
+@using GSBC.ChurchApp.Platform.Client.People
+
+<SearchField Label="@Label" Placeholder="@Placeholder" Value="@_query" ValueChanged="SearchAsync" AutoFocus="AutoFocus" />
+@if (_found.Count > 0)
+{
+    <ul class="people-sheet__found" aria-label="People found">
+        @foreach (PersonChoice person in _found)
+        {
+            <li class="people-sheet__found-row">
+                <span class="people-sheet__who"><span class="people-sheet__name">@person.Name</span><span class="people-sheet__detail">@person.Detail</span></span>
+                <Button Small="true" Busy="@(Busy == person.Id)" OnClick="() => ChooseAsync(person)">@ActionText</Button>
+            </li>
+        }
+    </ul>
+}
+else if (_query.Trim().Length >= ShortestSearch && !_searching)
+{
+    <p class="people-sheet__note">No one matches “@_query.Trim()”.</p>
+}
+<Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+@code {
+    private const int ShortestSearch = 2;
+    private string _query = "";
+    private bool _searching;
+    private IReadOnlyList<PersonChoice> _found = [];
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required Func<string, Task<IReadOnlyList<PersonChoice>>> Find { get; set; }
+    [Parameter, EditorRequired] public required string ActionText { get; set; }
+    [Parameter] public EventCallback<PersonChoice> OnChosen { get; set; }
+    [Parameter] public IReadOnlyCollection<string> Leave { get; set; } = [];
+    [Parameter] public string Label { get; set; } = "Find someone";
+    [Parameter] public string Placeholder { get; set; } = "Find them by name";
+    [Parameter] public string? Busy { get; set; }
+    [Parameter] public bool AutoFocus { get; set; }
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query;
+        _problem = null;
+        if (query.Trim().Length < ShortestSearch)
+        {
+            _found = [];
+            return;
+        }
+
+        _searching = true;
+        try
+        {
+            IReadOnlyList<PersonChoice> found = await Find(query.Trim());
+            if (_query == query)
+                _found = found.Where(person => !Leave.Contains(person.Id)).ToList();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _searching = false;
+        }
+    }
+
+    private async Task ChooseAsync(PersonChoice person)
+    {
+        await OnChosen.InvokeAsync(person);
+        _query = "";
+        _found = [];
+    }
+}

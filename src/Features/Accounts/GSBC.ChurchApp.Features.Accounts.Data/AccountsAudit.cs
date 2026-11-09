@@ -47,4 +47,6 @@ public static class AuditActions
     public const string ReviewCodeRefused = "review-code-refused";
     public const string ToolConnected = "tool-connected";
     public const string Deleted = "deleted";
+    public const string AddedByFamily = "added-by-family";
+    public const string FamilyCodeMade = "family-code-made";
 }

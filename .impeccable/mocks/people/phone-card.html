@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Phone: the card in your pocket</title><link rel="stylesheet" href="sketch.css">
+<style>
+.bluecard { background: var(--masthead); color: var(--on-masthead); border-radius: 14px; padding: 16px 18px 14px; position: relative; overflow: hidden; }
+.bluecard::after { content: ""; position: absolute; right: -40px; top: -40px; width: 150px; height: 150px; border-radius: 50%; border: 18px solid rgb(255 255 255 / 0.07); }
+.bluecard .k { color: var(--masthead-note); font-size: var(--text-pill); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.bluecard .n { font-size: var(--text-title-lg); font-weight: 700; letter-spacing: 0.04em; font-variant-numeric: tabular-nums; margin: 6px 0 12px; }
+.bluecard .facts { display: flex; gap: 22px; font-size: var(--text-caption); }
+.bluecard .facts b { display: block; font-weight: 600; }
+.bluecard .facts span { color: var(--on-masthead-2); }
+.bluecard .pill { position: absolute; right: 16px; top: 16px; background: rgb(0 156 143 / 0.9); color: #fff; }
+</style></head>
+<body class="phone">
+<div class="top">‹ More</div>
+<div class="mast"><h1>Account</h1><p>Your sign-in on this phone</p></div>
+
+<div class="sec first"><h2>You</h2>
+  <div class="list">
+    <div class="row"><div class="tile">A</div><div class="t"><b>Alex Sample</b><span class="s">alex@example.com · confirmed</span></div></div>
+    <div class="row"><div class="tile quiet">◷</div><div class="t"><b>Born 4 June 1984</b><span class="s">Only you, your parents and the church's safeguarding team see it</span></div><span class="chev">›</span></div>
+  </div>
+</div>
+
+<div class="sec"><h2>Your family</h2>
+  <p class="lead">Children you look after in the app. Ministries know who to tell about them.</p>
+  <div class="list">
+    <div class="row"><div class="tile warm">J</div><div class="t"><b>Jordan asked you to be their parent</b><span class="s">Jordan Sample · 15 · signed up 2 days ago</span></div><span class="btn sm">Answer</span></div>
+    <div class="row"><div class="tile">M</div><div class="t"><b>Mia</b><span class="s">8 · no sign-in of her own</span></div><span class="chev">›</span></div>
+    <div class="row"><div class="tile">L</div><div class="t"><b>Leo</b><span class="s">13 · signs in on his phone</span></div><span class="chev">›</span></div>
+    <div class="row"><div class="tile act">+</div><div class="t"><b class="add">Add a child</b></div></div>
+  </div>
+</div>
+
+<div class="sec"><h2>Blue card and training</h2>
+  <p class="lead">As the church office has it. Tell the office if anything's wrong.</p>
+  <div class="bluecard">
+    <span class="pill">Current</span>
+    <div class="k">Blue card · Queensland</div>
+    <div class="n">1234567/2</div>
+    <div class="facts"><div><span>Expires</span><b class="tab-num">12 Mar 2028</b></div><div><span>Checked</span><b class="tab-num">3 Oct 2026</b></div></div>
+  </div>
+  <div class="list" style="margin-top:14px">
+    <div class="row"><div class="tile warm">!</div><div class="t"><b>Safe Ministry training</b><span class="s">Done 20 Nov 2023 · due again 20 Nov 2026</span></div><span class="pill flag">Due in 10 days</span></div>
+  </div>
+</div>
+
+<div class="sec"><h2>Passkeys</h2><div class="list"><div class="row"><div class="tile act">⚿</div><div class="t"><b>iPhone</b><span class="s">Added 3 Oct 2026 · synced</span></div></div></div></div>
+<span class="note">Sketch · sample names</span>
+</body></html>

@@ -58,7 +58,7 @@ public static class PasskeyEndpoints
         string options = await signIn.MakePasskeyCreationOptionsAsync(new PasskeyUserEntity
         {
             Id = user.Id.ToString(),
-            Name = user.Email ?? user.UserName ?? user.Id.ToString(),
+            Name = user.Email ?? user.DisplayName,
             DisplayName = user.DisplayName,
         });
         return Results.Content(options, "application/json");

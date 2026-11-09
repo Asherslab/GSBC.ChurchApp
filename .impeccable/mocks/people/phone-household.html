@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Phone: household and a sheet per person</title><link rel="stylesheet" href="sketch.css">
+<style>
+body.phone { position: relative; height: 844px; overflow: hidden; }
+.house { display: flex; gap: 14px; overflow: hidden; padding: 4px 0 2px; }
+.who { width: 64px; text-align: center; font-size: var(--text-caption); font-weight: 600; }
+.who i { display: grid; place-items: center; width: 56px; height: 56px; margin: 0 auto 6px; border-radius: 50%; background: var(--sand); color: var(--primary); font-style: normal; font-weight: 700; font-size: var(--text-title); }
+.who.me i { background: var(--primary); color: var(--on-primary); }
+.who.wait i { background: rgb(231 174 116 / 0.3); color: var(--marker-ink); box-shadow: 0 0 0 2px var(--marker); }
+.who.add i { background: rgb(0 156 143 / 0.16); color: var(--accent); }
+.who small { display: block; font-weight: 400; color: var(--ink-3); }
+</style></head>
+<body class="phone">
+<div class="top">‹ More</div>
+<div class="mast"><h1>Account</h1><p>Your sign-in on this phone</p></div>
+<div class="sec first"><h2>Your household</h2>
+  <p class="lead">Tap someone to see their details, make them a sign-in code or answer a request.</p>
+  <div class="house">
+    <div class="who me"><i>A</i>You<small>Adult</small></div>
+    <div class="who"><i>M</i>Mia<small>8</small></div>
+    <div class="who"><i>L</i>Leo<small>13</small></div>
+    <div class="who wait"><i>J</i>Jordan<small>Asking</small></div>
+    <div class="who add"><i>+</i>Add</div>
+  </div>
+</div>
+<div class="sec"><h2>Blue card and training</h2>
+  <div class="list">
+    <div class="row"><div class="tile act">✓</div><div class="t"><b>Blue card 1234567/2</b><span class="s">Current · expires 12 Mar 2028</span></div></div>
+    <div class="row"><div class="tile warm">!</div><div class="t"><b>Safe Ministry training</b><span class="s">Due again 20 Nov 2026</span></div><span class="pill flag">10 days</span></div>
+  </div>
+</div>
+<div class="sheet-scrim"></div>
+<div class="sheet">
+  <div class="grab"></div>
+  <h3>Leo</h3>
+  <p class="lead">13 · born 2 Feb 2013 · signs in on his own phone</p>
+  <div class="callout"><b>Sign in on Leo's phone</b><p>Give Leo this code. On his phone, he opens the app, taps Sign in, then “I have a code from my parent”. It works once, for 24 hours.</p><div class="code">KQ7M-4TZP</div></div>
+  <div class="actions"><span class="btn q">Change details</span><span class="btn q">Stop looking after Leo</span></div>
+  <div class="actions" style="margin-top:20px"><span class="btn block">Done</span></div>
+</div>
+<span class="note">Sketch · sample names</span>
+</body></html>

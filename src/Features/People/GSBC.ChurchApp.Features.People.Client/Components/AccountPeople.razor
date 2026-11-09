@@ -1,0 +1,129 @@
+@inject PeopleClient People
+@inject TimeProvider Clock
+
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Mine]" Load="People.GetMineAsync" FailedTitle="Can't load your family right now">
+    @{
+        PersonFamily me = context.Value;
+        DateOnly today = ChurchTime.Today(Clock);
+        bool minor = Ages.IsMinor(WireDates.FromWire(me.BirthDate), today);
+        List<LinkAsk> myAsks = me.Asks.Where(ask => ask.ChildId == me.Id).ToList();
+    }
+    <Section Title="Your family" Lead="@(minor ? "Your parents see your details in the app while you're under 18." : "Children you look after in the app.")">
+        @if (me.BirthDate is null && !me.SaysAdult)
+        {
+            <BirthDateAsk OnSaved="ReloadAsync" />
+        }
+        <ListGroup>
+            @foreach (LinkAsk ask in me.AskedOfThem)
+            {
+                <ListRow @key="ask.Id" Title="@PeopleWords.AskTitle(ask)" Subtitle="@AskLine(ask, today)" Icon="users" IconTone="RowTone.Warm">
+                    <Below>
+                        <div class="ui-actions people-ask__actions">
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(ask, false)">@(ask.AskedByChild ? "Not my child" : "Not mine")</Button>
+                            <Button Small="true" Busy="_busy" OnClick="() => AnswerAsync(ask, true)">Yes, link us</Button>
+                        </div>
+                    </Below>
+                </ListRow>
+            }
+            @foreach (PersonCard child in me.Children)
+            {
+                <ListRow @key="child.Id" Title="@child.Name" Subtitle="@($"{PeopleWords.ChildLine(child, today)} · {PeopleWords.ReachForParent(child, today)}")" Chevron="true" OnClick="() => _child = child.Id">
+                    <Leading><Avatar Name="@child.Name" /></Leading>
+                </ListRow>
+            }
+            @foreach (PersonCard parent in me.Parents)
+            {
+                <ListRow @key="parent.Id" Title="@parent.Name" Subtitle="@($"Your parent · linked {PeopleWords.When(parent.LinkedAt)}")">
+                    <Leading><Avatar Name="@parent.Name" /></Leading>
+                    <TrailingContent>
+                        @if (!minor)
+                        {
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(parent.Id, me.Id).AsTask())">Unlink</Button>
+                        }
+                    </TrailingContent>
+                </ListRow>
+            }
+            @foreach (LinkAsk ask in myAsks)
+            {
+                <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}. They say yes on their Account page.")" Icon="clock" IconTone="RowTone.Quiet">
+                    <TrailingContent>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
+                    </TrailingContent>
+                </ListRow>
+            }
+            @if (minor)
+            {
+                <ListRow Title="Ask a parent to link to you" Subtitle="With the email they use for the app" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _askingParent = true" />
+            }
+            else
+            {
+                <ListRow Title="Add a child" Subtitle="A child in your care, under 18" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
+            }
+            @if (me.BirthDate is { } born)
+            {
+                <ListRow Title="@($"Born {born:d MMMM yyyy}")" Subtitle="@PeopleWords.WhoSees" Icon="calendar" IconTone="RowTone.Quiet" />
+            }
+        </ListGroup>
+        @if (minor && me.Parents.Count > 0)
+        {
+            <p class="hint">@PeopleWords.ReachForChild(me, today)</p>
+        }
+    </Section>
+
+    @if (me.Safeguarding is { } record && (record.HasCard || record.HasTraining))
+    {
+        <Section Title="Blue card and training" Lead="As the church office has it. Tell the office if something's wrong.">
+            <YourSafeguarding Record="record" Today="today" />
+        </Section>
+    }
+
+    @if (_message is not null)
+    {
+        <Section>
+            <Notice Tone="NoticeTone.Warning" Text="@_message" />
+        </Section>
+    }
+
+    <ChildSheet @key="_child" ParentId="@me.Id" Child="me.Children.FirstOrDefault(child => child.Id == _child)" Asks="me.Asks" Today="today" OnClose="() => _child = null" OnChanged="ReloadAsync" />
+    <AddChildSheet Open="_adding" OpenChanged="open => _adding = open" OnAdded="AddedAsync" />
+    <AskParentSheet Open="_askingParent" OpenChanged="open => _askingParent = open" OnAsked="ReloadAsync" />
+</LiveData>
+
+@code {
+    private LiveData<PersonFamily>? _live;
+    private string? _child;
+    private bool _adding, _askingParent, _busy;
+    private string? _message;
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private static string AskLine(LinkAsk ask, DateOnly today) =>
+        $"{(ask.ChildBirthDate is null ? "" : $"{ask.ChildName} is {PeopleWords.Age(ask.ChildBirthDate, today)} · ")}asked {PeopleWords.When(ask.AskedAt)}";
+
+    private Task AnswerAsync(LinkAsk ask, bool accept) => RunAsync(() => People.AnswerAsync(ask.Id, accept).AsTask());
+
+    private async Task AddedAsync(PersonCard child)
+    {
+        await ReloadAsync();
+        _child = child.Id;
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+            await ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _message = PeopleWords.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
