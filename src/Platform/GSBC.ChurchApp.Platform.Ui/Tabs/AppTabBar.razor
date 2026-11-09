@@ -2,11 +2,12 @@
 @inject PhoneTabs Tabs
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject IEnumerable<ILiveTabIcon> LiveIcons
 
 <nav class="tabbar" aria-label="Main">
     @foreach (AppTab tab in _tabs)
     {
-        @Tab(tab.Word, tab.Opens.TrimStart('/'), tab.Icon, Tabs.IsOn(tab, Path))
+        @Tab(tab.Word, tab.Opens.TrimStart('/'), IconOf(tab), Tabs.IsOn(tab, Path))
     }
     @Tab("More", PhoneTabs.MoreRoute, "more", Tabs.MoreIsOn(_tabs, Path))
 </nav>
@@ -25,6 +26,8 @@
     {
         Tabs.Changed += OnTabsChanged;
         Navigation.LocationChanged += OnLocationChanged;
+        foreach (ILiveTabIcon icon in LiveIcons)
+            icon.Changed += OnIconChanged;
         _tabs = await Tabs.CurrentAsync();
     }
 
@@ -41,11 +44,18 @@
         StateHasChanged();
     });
 
+    private string IconOf(AppTab tab) =>
+        LiveIcons.FirstOrDefault(icon => string.Equals(icon.Route.Trim('/'), tab.Route.Trim('/'), StringComparison.OrdinalIgnoreCase))?.Icon ?? tab.Icon;
+
     private void OnLocationChanged(object? sender, LocationChangedEventArgs args) => InvokeAsync(StateHasChanged);
+
+    private void OnIconChanged() => InvokeAsync(StateHasChanged);
 
     public void Dispose()
     {
         Tabs.Changed -= OnTabsChanged;
         Navigation.LocationChanged -= OnLocationChanged;
+        foreach (ILiveTabIcon icon in LiveIcons)
+            icon.Changed -= OnIconChanged;
     }
 }
