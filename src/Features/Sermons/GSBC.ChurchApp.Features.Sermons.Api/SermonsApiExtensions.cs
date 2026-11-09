@@ -32,6 +32,7 @@ public static class SermonsApiExtensions
         services.AddScoped<WebsiteReader>();
         services.AddScoped<SourceIdMove>();
         services.AddScoped<SermonUploads>();
+        services.AddScoped<SermonDeletion>();
         services.AddScoped<SermonFollowing>();
         services.AddScoped<SermonAnnouncer>();
         services.AddNotificationKinds(SermonsNotifications.All);

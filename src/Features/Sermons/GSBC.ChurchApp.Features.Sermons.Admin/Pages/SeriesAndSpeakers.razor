@@ -94,6 +94,12 @@
                     <Button Busy="_busy" OnClick="SaveSeriesAsync">@(editing.Id.Length == 0 ? "Add the series" : "Save")</Button>
                     <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
                 </div>
+                @if (editing.Id.Length > 0)
+                {
+                    <div class="series-desk__delete">
+                        <Button Variant="ButtonVariant.Danger" Small="true" Disabled="_busy" OnClick="AskToDeleteSeriesAsync">Delete this series…</Button>
+                    </div>
+                }
             }
             else if (_speaker is { } speaker)
             {
@@ -121,6 +127,12 @@
                     <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")</Button>
                     <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
                 </div>
+                @if (speaker.Id.Length > 0)
+                {
+                    <div class="series-desk__delete">
+                        <Button Variant="ButtonVariant.Danger" Small="true" Disabled="_busy" OnClick="() => _deleting = true">Delete this speaker…</Button>
+                    </div>
+                }
             }
             else
             {
@@ -132,6 +144,41 @@
             }
         </section>
     </div>
+    <Sheet Open="_deleting" OpenChanged="open => { if (!open) StopDeleting(); }" Title="@DeleteTitle">
+        <ChildContent>
+            @if (_speaker is { Id.Length: > 0 } doomedSpeaker)
+            {
+                @if (doomedSpeaker.Count > 0)
+                {
+                    <p class="sheet__lead">@SermonText.Sermons(doomedSpeaker.Count) @(doomedSpeaker.Count == 1 ? "is" : "are") credited to them.</p>
+                    <SearchPicker TItem="SpeakerDetail" Label="Where their sermons go" Items="OtherSpeakers(context.Value, doomedSpeaker)" Text="SpeakerName" Detail="SpeakerCount"
+                                  Value="_moveSpeakerTo" ValueChanged="speaker => _moveSpeakerTo = speaker" NoneText="Leave them without a speaker" Placeholder="Find a speaker" />
+                }
+                @foreach (string line in DeletionWords.Speaker(doomedSpeaker, _moveSpeakerTo, context.Value.Ours))
+                {
+                    <p class="sheet__lead">@line</p>
+                }
+            }
+            else if (_series is { Id.Length: > 0 } doomedSeries && _seriesDeletion is { } deletion)
+            {
+                @if (deletion.Sermons > 0)
+                {
+                    <p class="sheet__lead">@SermonText.Sermons(deletion.Sermons) @(deletion.Sermons == 1 ? "is" : "are") in it.</p>
+                    <SearchPicker TItem="SeriesDetail" Label="Where its sermons go" Items="OtherSeries(context.Value, doomedSeries)" Text="SeriesName" Detail="SeriesCount"
+                                  Value="_moveSeriesTo" ValueChanged="series => _moveSeriesTo = series" NoneText="Leave them not in a series" Placeholder="Find a series" />
+                }
+                @foreach (string line in DeletionWords.Series(doomedSeries, deletion, _moveSeriesTo))
+                {
+                    <p class="sheet__lead">@line</p>
+                }
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" Disabled="@(_speaker is null && _seriesDeletion is null)" OnClick="DeleteAsync">@DeleteButton</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="StopDeleting">Keep it</Button>
+        </Actions>
+    </Sheet>
 </LiveData>
 
 @code {
@@ -145,7 +192,10 @@
     private SpeakerDetail? _speaker;
     private string _name = "", _description = "", _seriesQuery = "", _speakerQuery = "";
     private MediaRef? _picture;
-    private bool _busy, _choosing, _useSource;
+    private bool _busy, _choosing, _useSource, _deleting;
+    private SpeakerDetail? _moveSpeakerTo;
+    private SeriesDetail? _moveSeriesTo;
+    private SeriesDeletion? _seriesDeletion;
     private string? _problem;
 
     private async Task<Lists> LoadAsync()
@@ -161,6 +211,25 @@
         query.Trim() is { Length: > 0 } wanted ? items.Where(item => text(item).Contains(wanted, StringComparison.CurrentCultureIgnoreCase)) : items;
 
     private static string SpeakerName(SpeakerDetail speaker) => speaker.Name;
+
+    private static string SpeakerCount(SpeakerDetail speaker) => SermonText.Sermons(speaker.Count);
+
+    private static string SeriesName(SeriesDetail series) => series.Name;
+
+    private static string SeriesCount(SeriesDetail series) => SermonText.Sermons(series.Count);
+
+    private static IReadOnlyList<SpeakerDetail> OtherSpeakers(Lists lists, SpeakerDetail leaving) => lists.Speakers.Where(speaker => speaker.Id != leaving.Id).ToList();
+
+    private static IReadOnlyList<SeriesDetail> OtherSeries(Lists lists, SeriesDetail leaving) => lists.Series.Where(series => series.Id != leaving.Id).ToList();
+
+    private string? DeleteTitle => _speaker is { } speaker ? $"Delete {speaker.Name}?" : _series is { } series ? $"Delete {series.Name}?" : null;
+
+    private string DeleteButton => (_speaker?.Name ?? _series?.Name, _moveSpeakerTo?.Name ?? _moveSeriesTo?.Name) switch
+    {
+        ({ } name, { } into) => $"Move to {into} and delete {name}",
+        ({ } name, null) => $"Delete {name}",
+        _ => "Delete",
+    };
 
     private MediaRef? ShownArtwork(SeriesDetail series) => _picture ?? (_useSource && series.ArtworkChosen ? null : series.Artwork);
 
@@ -198,8 +267,34 @@
         _useSource = true;
     }
 
+    private Task AskToDeleteSeriesAsync() => RunAsync(async () =>
+    {
+        _seriesDeletion = await Sermons.SeriesDeletionAsync(_series!.Id);
+        _deleting = true;
+    }, reload: false);
+
+    private void StopDeleting()
+    {
+        _deleting = false;
+        _moveSpeakerTo = null;
+        _moveSeriesTo = null;
+        _seriesDeletion = null;
+        _problem = null;
+    }
+
+    private Task DeleteAsync() => RunAsync(async () =>
+    {
+        if (_speaker is { } speaker)
+            await Sermons.DeleteSpeakerAsync(speaker.Id, _moveSpeakerTo?.Id);
+        else if (_series is { } series)
+            await Sermons.DeleteSeriesAsync(series.Id, _moveSeriesTo?.Id);
+        StopDeleting();
+        Close();
+    });
+
     private void Close()
     {
+        StopDeleting();
         _series = null;
         _speaker = null;
         _picture = null;
@@ -229,14 +324,14 @@
         }));
     });
 
-    private async Task RunAsync(Func<Task> work)
+    private async Task RunAsync(Func<Task> work, bool reload = true)
     {
         _busy = true;
         _problem = null;
         try
         {
             await work();
-            if (_live is not null)
+            if (reload && _live is not null)
                 await _live.ReloadAsync();
         }
         catch (RpcException exception)

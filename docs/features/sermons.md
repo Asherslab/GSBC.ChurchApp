@@ -12,7 +12,7 @@ current as it's built.
 | Everyone (the phone) | Browse the latest sermons, series and speakers; search; play audio in the background, with lock-screen, Control Center, AirPods and car controls; watch the video; pick up where they left off, offline too |
 | Everyone, signed in | The same, with their listening history on every phone they sign in on |
 | `sermons.upload` | In the admin panel: add a sermon by uploading its audio, when sermons come from uploads (the AV team's first pass) |
-| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one; manage series (name, picture, description) and speakers (name, photo); choose each sermon's service from the standard ones or add one |
+| `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service and video; hide one, and delete an uploaded one once it's hidden; manage series (name, picture, description) and speakers (name, photo), and delete them; choose each sermon's service from the standard ones or add one |
 | `sermons.source` | Choose where new sermons come from (the website, or uploads) |
 
 The **Sermons editor** system role holds `sermons.edit` and `sermons.upload`; the **Sermon uploader** role (the AV team)
@@ -224,8 +224,46 @@ So a one-off correction (the feed credited the wrong person on one sermon) never
 name, and a new spelling for someone ("Ps Lee Varga" for Lee Varga) is fixed once: its first sermon makes a new speaker,
 staff correct that sermon to the right person, and later sermons under the spelling land on them. The speaker left with
 no sermons isn't shown in the app (the speakers feed holds only speakers with sermons) but stays in the admin panel's
-list. Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
+list until staff delete it (*Deleting*, below). Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
 `SpeakersAndServicesTests`.
+
+### Deleting a speaker, a series or an uploaded sermon (owner, 2026-11-09)
+
+"If I can create something, I should be able to delete it" (AGENTS.md, *Create means delete*). Holders of
+`sermons.edit` delete from the admin panel (`Library.DeleteSpeaker`, `DeleteSeries`, `DeleteSermon`; `SermonDeletion`),
+in either source mode. Every delete asks first, says what happens, and says it can't be undone.
+
+- **A speaker or a series with sermons:** the dialog says how many and offers one picker, *Where their sermons go*:
+  another speaker (series), or *Leave them without a speaker* (*not in a series*). A speaker or series with none just
+  goes. Hidden sermons go the same way as the rest.
+- **Moving them** puts every sermon credited to it (the website's speaker or series, and staff's corrections) on the
+  one chosen; a correction that now matches the website's value is cleared. The deleted id is kept as a former id of
+  the one chosen (*Lasting ids*), so links to it (Hub tiles, announcements, notifications already sent, a phone's
+  saved place) open the one it moved into, and phones are sent the change with the payload's `FormerIds`.
+  - **Later website sermons follow:** a speaker's sermons keep the name the website wrote, so the next sermon under
+    that name lands on the speaker they moved to (rule 1 of *How a name lands*). A website series is remembered as
+    removed (`removed_series`, by its page's slug) with where it went: the website's series page is still read, and
+    its sermons, later ones included, go to the series chosen. The series is never made again from the website.
+  - Series followers follow the one it moved into (`MoveScopeAsync`).
+- **Leaving them:** sermons on the website's speaker lose it; a sermon staff had credited to it is *corrected to no
+  speaker* (`speaker_corrected`, like `series_corrected`), so a re-read doesn't put anyone back. **A later website
+  sermon under that name makes a new speaker** (as in rule 3), while the sermons left without stay without: the
+  reader keeps a sermon's speaker empty while the website still names the same person (`WebsiteReader.LeftWithoutSpeaker`).
+  The new speaker takes the lasting id the name gives, so an old link to the deleted speaker opens the new one.
+- **Leaving a website series' sermons out** (owner, 2026-11-09, asked: "it stays deleted"): the series stays deleted
+  and its sermons, later ones the website puts in it included, are in no series. Its followers stop following
+  (`ForgetScopeAsync`).
+- **What goes with it:** the speaker's photos or the series' pictures (their Media uses are released; a picture stays
+  in *Sermon artwork* like any unused one), its description, and its row in the speakers or series feed, so it leaves
+  every phone when it next connects.
+- **An uploaded sermon, only once it's hidden** (owner, 2026-11-09: "only delete after it's hidden"). A sermon from the
+  website can only be hidden: the website would bring it back. Deleting removes the sermon, its audio file in R2, its
+  artwork use and everyone's listening progress on it (their progress rows are deleted from the progress feed), and
+  rewrites the podcast feed. Notifications already sent about it open nothing.
+- **Custom services need no delete** (owner, 2026-11-09): one drops out of the picker once no sermon uses it
+  (*Services*).
+- Tests: `DeletingRules` (what moves where, unit) and `DeletingTests` (what the next website reads do after a delete;
+  an uploaded sermon's audio and progress).
 
 ### Uploads (the R2 version)
 

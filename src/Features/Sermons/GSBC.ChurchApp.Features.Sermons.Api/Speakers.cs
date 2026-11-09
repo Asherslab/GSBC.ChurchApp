@@ -31,8 +31,8 @@ internal sealed class Speakers(SermonsDbContext db, Artwork artwork, TimeProvide
             return _byName;
         List<SpeakerRecord> speakers = await db.Speakers.AsNoTracking().ToListAsync(cancellationToken);
         HashSet<Guid> exists = [.. speakers.Select(speaker => speaker.Id)];
-        var credited = await db.Sermons.AsNoTracking().Where(sermon => sermon.SourceSpeakerId != null || sermon.SpeakerId != null)
-            .OrderBy(sermon => sermon.PreachedAt).Select(sermon => new { sermon.SourceSpeaker, Source = sermon.SourceSpeakerId, Shown = sermon.SpeakerId ?? sermon.SourceSpeakerId })
+        var credited = await db.Sermons.AsNoTracking().Where(sermon => sermon.SourceSpeakerId != null)
+            .OrderBy(sermon => sermon.PreachedAt).Select(sermon => new { sermon.SourceSpeaker, Source = sermon.SourceSpeakerId, Shown = sermon.SpeakerCorrected ? sermon.SpeakerId : sermon.SourceSpeakerId })
             .ToListAsync(cancellationToken);
         HashSet<Guid?> withSermons = [.. credited.Select(sermon => sermon.Shown)];
         Dictionary<string, Guid> byName = new(StringComparer.Ordinal);

@@ -59,7 +59,7 @@
             else if (Selected(context.Value) is { } selected)
             {
                 <SermonCheck @key="selected.Sermon.Id" Sermons="Sermons" Detail="selected" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services"
-                             OursToAdd="context.Value.Status.Source == SermonSources.Uploads" Saved="SavedAsync" />
+                             OursToAdd="context.Value.Status.Source == SermonSources.Uploads" Saved="SavedAsync" Deleted="DeletedAsync" />
             }
             else
             {
@@ -151,6 +151,12 @@
             int index = shown.FindIndex(detail => detail.Sermon.Id == saved.Detail.Sermon.Id);
             _selectedId = shown.Skip(index + 1).FirstOrDefault()?.Sermon.Id ?? shown.Take(index).FirstOrDefault(detail => detail.Sermon.Id != saved.Detail.Sermon.Id)?.Sermon.Id;
         }
+        await ReloadAsync();
+    }
+
+    private async Task DeletedAsync()
+    {
+        _selectedId = null;
         await ReloadAsync();
     }
 

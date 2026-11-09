@@ -76,6 +76,7 @@ internal sealed class SourceIdMove(
                 case FormerId.Series:
                     await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET source_series_id = {move.To} WHERE source_series_id = {move.From}", cancellationToken);
                     await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET series_id = {move.To} WHERE series_id = {move.From}", cancellationToken);
+                    await db.Database.ExecuteSqlAsync($"UPDATE sermons.removed_series SET moved_to = {move.To} WHERE moved_to = {move.From}", cancellationToken);
                     break;
                 default:
                     await db.Database.ExecuteSqlAsync($"UPDATE sermons.sermons SET source_speaker_id = {move.To} WHERE source_speaker_id = {move.From}", cancellationToken);
@@ -140,7 +141,7 @@ internal sealed class SourceIdMove(
         _ => SermonsFeeds.Speakers,
     };
 
-    private async Task SettleAsync(CancellationToken cancellationToken)
+    public async Task SettleAsync(CancellationToken cancellationToken)
     {
         foreach (FormerId former in await db.FormerIds.Where(former => !former.Settled).ToListAsync(cancellationToken))
         {

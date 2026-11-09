@@ -21,6 +21,7 @@ public sealed class SermonRecord
     public string Summary { get; set; } = "";
 
     public string? Title { get; set; }
+    public bool SpeakerCorrected { get; set; }
     public Guid? SpeakerId { get; set; }
     public bool SeriesCorrected { get; set; }
     public Guid? SeriesId { get; set; }
@@ -51,7 +52,7 @@ public sealed class SermonRecord
     public Guid? CheckedBy { get; set; }
 
     public string EffectiveTitle => Title ?? SourceTitle;
-    public Guid? EffectiveSpeakerId => SpeakerId ?? SourceSpeakerId;
+    public Guid? EffectiveSpeakerId => SpeakerCorrected ? SpeakerId : SourceSpeakerId;
     public Guid? EffectiveSeriesId => SeriesCorrected ? SeriesId : SourceSeriesId;
     public string EffectiveService => Service ?? SourceService;
     public string? EffectiveYouTubeId => YouTubeCorrected ? YouTubeId : SourceYouTubeId;
@@ -82,6 +83,13 @@ public sealed class SpeakerRecord
     public MediaRef? ChosenPhoto { get; set; }
     public DateTime CreatedAt { get; set; }
     public string? PublishedHash { get; set; }
+}
+
+public sealed class RemovedSeries
+{
+    public required string Slug { get; set; }
+    public Guid? MovedTo { get; set; }
+    public DateTime RemovedAt { get; set; }
 }
 
 public sealed class ProgressRecord

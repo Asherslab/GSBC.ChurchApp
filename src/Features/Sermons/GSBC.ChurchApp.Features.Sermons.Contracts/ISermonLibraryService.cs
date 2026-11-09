@@ -25,6 +25,18 @@ public interface ISermonLibraryService
     [Requires(SermonsPermissions.EditNode)]
     ValueTask<SpeakerDetail> SaveSpeakerAsync(SpeakerDetail request, CallContext context = default);
 
+    [Requires(SermonsPermissions.EditNode)]
+    ValueTask<Done> DeleteSpeakerAsync(DeleteRequest request, CallContext context = default);
+
+    [Requires(SermonsPermissions.EditNode)]
+    ValueTask<SeriesDeletion> SeriesDeletionAsync(DeleteRequest request, CallContext context = default);
+
+    [Requires(SermonsPermissions.EditNode)]
+    ValueTask<Done> DeleteSeriesAsync(DeleteRequest request, CallContext context = default);
+
+    [Requires(SermonsPermissions.EditNode)]
+    ValueTask<Done> DeleteSermonAsync(DeleteRequest request, CallContext context = default);
+
     [SignedIn]
     ValueTask<ServiceList> ListServicesAsync(Done request, CallContext context = default);
 

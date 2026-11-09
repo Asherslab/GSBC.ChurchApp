@@ -188,6 +188,20 @@ public sealed class SpeakerList
 }
 
 [ProtoContract]
+public sealed class DeleteRequest
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string? MoveTo { get; set; }
+}
+
+[ProtoContract]
+public sealed class SeriesDeletion
+{
+    [ProtoMember(1)] public int Sermons { get; set; }
+    [ProtoMember(2)] public int Followers { get; set; }
+}
+
+[ProtoContract]
 public sealed class ServiceChoice
 {
     [ProtoMember(1)] public string Name { get; set; } = "";
