@@ -192,11 +192,16 @@ sketches are in `.impeccable/mocks/decision/app-styling/`; the direction contrac
   event layer going on or off, a draft publishing for good, a tile or tab with dates, a theme with dates). Clicking one
   shows the app on that day on the phone, and opens its draft if it's in one. The phone's own *Preview the app on* shows
   any day.
-- **Colours in plain words:** "The app's colours: the theme the app uses all year, for everyone", as cards (the
-  church's brand, the 2026 theme, and each theme made here, with *Change it*), plus *Make a theme*. The owner
+- **Colours in plain words:** "The app's colours: the theme the app uses all year, for everyone", as cards (every
+  theme, the seeded church's brand and 2026 theme included, each with *Change it*, *Copy* and *Delete*), plus *Make a
+  theme* ([data-driven.md](data-driven.md), *Themes*). The owner
   (2026-11-09): "we'll likely do a year long theme colours, changing yearly. with many a brief change for events", so
   the year's theme is the everyday choice (set up in a draft and published on 1 January), and an event's colours go in a
   draft turned on between dates. A theme choice that still has dates says so, with *Change the dates*.
+- **The phone acts in its own part (owner, 2026-11-09):** dragging or resizing a Home tile on the phone opens the Home
+  screen part, and dragging a tab along the phone's tab bar (Home and More stay put) opens the Tab bar part, whichever
+  part was open; the move arrows stay as the keyboard way. A change is always saved in its surface's own area
+  (`DraftSession` takes the area from the surface), so a tile can't land in Colours.
 - **Preview choices read as a sentence** under the phone: "Preview as a visitor in light mode on an iPhone 15 Pro on
   (day)". They change only the phone.
 - **Kept as they were:** saving, undo and redo, sharing, *Publish now* / *Ask to publish*, turning on for everyone or

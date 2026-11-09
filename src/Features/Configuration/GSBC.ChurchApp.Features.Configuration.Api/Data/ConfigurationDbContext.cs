@@ -15,6 +15,7 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
     public DbSet<ChangeRecord> Changes => Set<ChangeRecord>();
     public DbSet<DraftRecord> Drafts => Set<DraftRecord>();
     public DbSet<DraftChangeRecord> DraftChanges => Set<DraftChangeRecord>();
+    public DbSet<SeedRecord> Seeds => Set<SeedRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -51,6 +52,12 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
             entity.Property(change => change.Before).HasColumnType("jsonb");
             entity.Property(change => change.After).HasColumnType("jsonb");
             entity.HasIndex(change => change.DraftId);
+        });
+        modelBuilder.Entity<SeedRecord>(entity =>
+        {
+            entity.ToTable("seeds");
+            entity.HasKey(seed => seed.Key);
+            entity.Property(seed => seed.Key).HasMaxLength(80);
         });
         modelBuilder.Entity<DraftRecord>(entity =>
         {

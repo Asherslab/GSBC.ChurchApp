@@ -15,7 +15,7 @@ public sealed class Appearance(IJSRuntime js, IMediaFiles files)
 {
     public ColourScheme Scheme { get; private set; } = ColourScheme.Automatic;
 
-    public string StaffPalette { get; private set; } = AppearanceSurfaces.Brand;
+    public string StaffPalette { get; private set; } = AppearanceSurfaces.Fallback;
 
     public string? PreviewPalette { get; private set; }
 

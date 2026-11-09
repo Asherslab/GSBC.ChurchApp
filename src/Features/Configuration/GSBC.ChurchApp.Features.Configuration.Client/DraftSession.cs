@@ -59,17 +59,19 @@ internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces, TimePro
     public StoredPlacement? LiveOf(AreaKey area, string? placementId) =>
         placementId is null ? null : _live.GetValueOrDefault(area, []).FirstOrDefault(placement => placement.Id == placementId);
 
-    public void Set(AreaKey area, StoredPlacement wanted)
+    public void Set(StoredPlacement wanted, string? scopeId = null)
     {
+        AreaKey area = AreaOf(wanted.Surface, scopeId);
         StoredPlacement? live = LiveOf(area, wanted.Id);
         PlacementPatch? patch = live is null ? Added(area, wanted) : Changed(area, live, wanted);
         Put(wanted.Id, patch is null ? null : patch with { Base = _patches.GetValueOrDefault(wanted.Id)?.Base ?? live });
     }
 
-    public void Remove(AreaKey area, ArrangedSurface entry)
+    public void Remove(ArrangedSurface entry, string? scopeId = null)
     {
         if (entry.Placement is not { } placement)
             return;
+        AreaKey area = AreaOf(placement.Surface, scopeId);
         StoredPlacement? live = LiveOf(area, placement.Id);
         Put(placement.Id, live is null ? null : new PlacementPatch(placement.Id, area.Area, area.ScopeId, placement.Surface, PatchKind.Remove, Base: live));
     }
@@ -108,6 +110,8 @@ internal sealed class DraftSession(Draft draft, SurfaceCatalog surfaces, TimePro
         foreach (PlacementPatch patch in saved.Patches().Where(patch => !_dirty.Contains(patch.PlacementId)))
             _patches[patch.PlacementId] = patch;
     }
+
+    private AreaKey AreaOf(string surfaceKey, string? scopeId) => new(surfaces.ByKey[surfaceKey].Area.Key, scopeId);
 
     private IEnumerable<PlacementPatch> InArea(AreaKey area) => _patches.Values.Where(patch => patch.Touches(area.Area, area.ScopeId));
 

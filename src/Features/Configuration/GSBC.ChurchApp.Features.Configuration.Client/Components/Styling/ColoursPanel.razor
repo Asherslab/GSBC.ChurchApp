@@ -9,9 +9,8 @@
             bool chosen = card.Value == ChosenValue;
             <div class="theme-card @(chosen ? "theme-card--on" : "")">
                 <button type="button" class="theme-card__pick" role="radio" aria-checked="@(chosen ? "true" : "false")" disabled="@(!MayChange)" @onclick="() => OnChoose.InvokeAsync(card.Value)">
-                    <ThemeSwatches Palette="@card.Palette" Made="card.Made" />
+                    <ThemeSwatches Palette="@AppearanceSurfaces.CustomPalette" Made="card.Made" />
                     <b>@card.Name</b>
-                    <small>@card.Note</small>
                     @if (card.Value == EveryoneValue && !chosen)
                     {
                         <span class="theme-card__state">Everyone sees it now</span>
@@ -21,9 +20,13 @@
                         <span class="theme-card__state theme-card__state--changed">Chosen in this draft</span>
                     }
                 </button>
-                @if (card.Entry is { } made && MayChange)
+                @if (MayChange)
                 {
-                    <button type="button" class="link theme-card__edit" @onclick="() => OnEdit.InvokeAsync(made)">Change it</button>
+                    <span class="theme-card__actions">
+                        <button type="button" class="link" @onclick="() => OnEdit.InvokeAsync(card.Entry)">Change it</button>
+                        <button type="button" class="link" @onclick="() => OnCopy.InvokeAsync(card.Entry)">Copy</button>
+                        <button type="button" class="link" @onclick="() => DeleteAsync(card)">Delete</button>
+                    </span>
                 }
             </div>
         }
@@ -32,6 +35,10 @@
             <button type="button" class="theme-card theme-card--new" @onclick="OnMake"><Icon Name="plus" Size="IconSize.Small" /> Make a theme</button>
         }
     </div>
+    @if (_refused is not null)
+    {
+        <Notice Tone="NoticeTone.Warning" Text="@_refused" />
+    }
     @if (Theme is { } theme && (theme.StartsAt is not null || theme.EndsAt is not null))
     {
         <Notice>
@@ -46,29 +53,39 @@
 </div>
 
 @code {
+    private string? _refused;
+
     [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
-    [Parameter] public string EveryoneValue { get; set; } = AppearanceSurfaces.Brand;
+    [Parameter] public string EveryoneValue { get; set; } = AppearanceSurfaces.Theme.Palette.Default;
     [Parameter] public bool Drafting { get; set; }
     [Parameter] public bool MayChange { get; set; }
     [Parameter] public EventCallback<string> OnChoose { get; set; }
     [Parameter] public EventCallback<ArrangedSurface> OnEdit { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnCopy { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnDelete { get; set; }
     [Parameter] public EventCallback<ArrangedSurface> OnDates { get; set; }
     [Parameter] public EventCallback OnMake { get; set; }
 
-    private sealed record Card(string Value, string Palette, string Name, string Note, ThemeSpec? Made, ArrangedSurface? Entry);
+    private sealed record Card(string Value, string Name, ThemeSpec Made, ArrangedSurface Entry);
 
     private ArrangedSurface? Theme => Appearance.FirstOrDefault(entry => entry.Surface == AppearanceSurfaces.Theme.Surface);
 
-    private string ChosenValue => Theme?.Values.Get(AppearanceSurfaces.Theme.Palette) ?? AppearanceSurfaces.Brand;
+    private string ChosenValue => Theme?.Values.Get(AppearanceSurfaces.Theme.Palette) ?? AppearanceSurfaces.Theme.Palette.Default;
 
     private IEnumerable<Card> Cards =>
-    [
-        new(AppearanceSurfaces.Brand, AppearanceSurfaces.Brand, "The church's brand", "Navy and aqua", null, null),
-        new(AppearanceSurfaces.Year2026, AppearanceSurfaces.Year2026, "2026 theme", "Almighty God: greens", null, null),
-        .. Appearance.Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
-            .Select(entry => new Card(ThemeChoiceSetting.Custom(entry.Placement!.Id), AppearanceSurfaces.CustomPalette, entry.Values.Get(AppearanceSurfaces.CustomTheme.Name),
-                "Made here", AppearanceSurfaces.CustomTheme.SpecOf(entry.Values), entry)),
-    ];
+        Appearance.Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface && entry.Placement is not null)
+            .Select(entry => new Card(ThemeChoiceSetting.Custom(entry.Placement!.Id), entry.Values.Get(AppearanceSurfaces.CustomTheme.Name),
+                AppearanceSurfaces.CustomTheme.SpecOf(entry.Values), entry));
+
+    private Task DeleteAsync(Card card)
+    {
+        _refused = card.Value == EveryoneValue
+            ? $"“{card.Name}” is the theme everyone sees. Choose another theme for everyone, publish that, then delete it."
+            : card.Value == ChosenValue
+                ? $"“{card.Name}” is chosen in this draft. Choose another theme first, then delete it."
+                : null;
+        return _refused is null ? OnDelete.InvokeAsync(card.Entry) : Task.CompletedTask;
+    }
 
     private static string DatesWords(ArrangedSurface theme) => (theme.StartsAt, theme.EndsAt) switch
     {

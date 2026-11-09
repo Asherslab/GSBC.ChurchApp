@@ -279,7 +279,7 @@
 .theme-card__pick small { font-size: var(--text-caption); color: var(--ink-2); }
 .theme-card__state { margin-top: 4px; font-size: var(--text-pill); font-weight: 700; color: var(--ink-2); }
 .theme-card__state--changed { color: var(--marker-ink); }
-.theme-card__edit { justify-self: start; margin: -6px 14px 12px; font-size: var(--text-caption); }
+.theme-card__actions { display: flex; flex-wrap: wrap; gap: 4px 14px; margin: -6px 14px 12px; font-size: var(--text-caption); }
 .theme-card--new { display: flex; align-items: center; justify-content: center; gap: 6px; min-height: 112px; border: 0; background: none; box-shadow: inset 0 0 0 1px var(--line); color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }
 .theme-card--new:hover { background: color-mix(in srgb, var(--sand) 60%, transparent); }
 
@@ -307,3 +307,6 @@
   .styling__sentence, .styling__line { height: auto; }
   .styling__line, .styling__line .save-status { white-space: normal; }
 }
+.phone-frame .tabs-canvas__bar [data-tab] { touch-action: none; }
+.phone-frame .tabs-canvas__bar--moving { cursor: grabbing; }
+.phone-frame .tabs-canvas__tab--dragging { position: relative; z-index: 1; cursor: grabbing; background: var(--bar); box-shadow: var(--tile-lift), inset 0 0 0 2px var(--marker); }

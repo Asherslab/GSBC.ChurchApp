@@ -190,8 +190,8 @@ public sealed class ColourOverridesSetting(string key, string label, string help
         Enum.GetValues<ThemeScheme>().Any(scheme => ThemeDerivation.Editable.Any(role => key == RoleKey(scheme, role.Key)));
 }
 
-public sealed class ThemeChoiceSetting(string key, string label, IReadOnlyList<Choice> builtIn, string defaultValue, string help = "")
-    : ChoiceSetting(key, label, builtIn, defaultValue, help)
+public sealed class ThemeChoiceSetting(string key, string label, IReadOnlyDictionary<string, string> formerChoices, string defaultValue, string help = "")
+    : ChoiceSetting(key, label, [], defaultValue, help)
 {
     public const string CustomPrefix = "custom:";
 
@@ -205,7 +205,7 @@ public sealed class ThemeChoiceSetting(string key, string label, IReadOnlyList<C
 
     public override bool TryParse(string text, out string value)
     {
-        value = text;
-        return Choices.Any(choice => choice.Value == text) || IsCustom(text, out _);
+        value = formerChoices.GetValueOrDefault(text, text);
+        return IsCustom(value, out _);
     }
 }

@@ -11,7 +11,7 @@
                 <HomeScreen Shown="Shown" At="At" Overlay="Overlay" TopOverlay="TopOverlay" />
             </ChildContent>
             <TabBarContent>
-                <nav class="tabbar tabs-canvas__bar" aria-label="The tab bar">
+                <nav class="tabbar tabs-canvas__bar" aria-label="The tab bar" @ref="_bar">
                     <button type="button" class="tabbar__item tabs-canvas__tab active" title="Home is always the first tab" @onclick="OnTabBar">
                         <Icon Name="@TabBar.Home.Icon" />
                         <span>@TabBar.Home.Word</span>
@@ -20,7 +20,7 @@
                     {
                         AppTab tab = TabBar.Of(entry);
                         bool selected = HubTiles.KeyOf(entry) == SelectedKey;
-                        <button type="button" class="tabbar__item tabs-canvas__tab @(selected ? "tabs-canvas__tab--on" : "")"
+                        <button type="button" class="tabbar__item tabs-canvas__tab @(selected ? "tabs-canvas__tab--on" : "")" data-tab="@HubTiles.KeyOf(entry)"
                                 aria-pressed="@(selected ? "true" : "false")" @onclick="() => OnChoose.InvokeAsync(entry)">
                             <Icon Name="@tab.Icon" />
                             <span>@tab.Word</span>
@@ -41,6 +41,8 @@
     private ElementReference _canvas;
     private IJSObjectReference? _module;
     private IJSObjectReference? _attached;
+    private ElementReference _bar;
+    private IJSObjectReference? _tabs;
     private DotNetObjectReference<StylingPhone>? _self;
     private string _announced = "";
 
@@ -55,6 +57,7 @@
     [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
     [Parameter] public EventCallback OnTabBar { get; set; }
     [Parameter] public EventCallback<IReadOnlyList<ArrangedSurface>> OnMove { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<ArrangedSurface>> OnMoveTabs { get; set; }
     [Parameter] public EventCallback<(ArrangedSurface Tile, int Columns, int Rows)> OnResize { get; set; }
     [Parameter] public EventCallback<ThemeScheme> OnScheme { get; set; }
 
@@ -119,6 +122,7 @@
         _self = DotNetObjectReference.Create(this);
         _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Configuration.Client/js/hub-canvas.js");
         _attached = await _module.InvokeAsync<IJSObjectReference>("attach", _canvas, _self);
+        _tabs = await _module.InvokeAsync<IJSObjectReference>("attachTabs", _bar, _self);
         await OnScheme.InvokeAsync(Enum.Parse<ThemeScheme>(await _module.InvokeAsync<string>("scheme")));
     }
 
@@ -147,6 +151,19 @@
             return;
         await InvokeAsync(() => OnMove.InvokeAsync(arranged));
         Announce($"Moved {DraftWords.NameOf(entry)} to place {arranged.IndexOf(entry) + 1} of {arranged.Count}.");
+    }
+
+    [JSInvokable]
+    public async Task TabsArranged(string[] keys, string moved)
+    {
+        List<ArrangedSurface> onBar = OnBar;
+        List<ArrangedSurface> arranged = keys.Select(key => onBar.FirstOrDefault(entry => HubTiles.KeyOf(entry) == key)).OfType<ArrangedSurface>().ToList();
+        if (Still || arranged.Count != onBar.Count || arranged.FirstOrDefault(entry => HubTiles.KeyOf(entry) == moved) is not { } entry)
+            return;
+        Queue<ArrangedSurface> next = new(arranged);
+        List<ArrangedSurface> all = Tabs.Select(tab => onBar.Contains(tab) ? next.Dequeue() : tab).ToList();
+        await InvokeAsync(() => OnMoveTabs.InvokeAsync(all));
+        Announce($"Moved {DraftWords.NameOf(entry)} to place {arranged.IndexOf(entry) + 2} on the tab bar.");
     }
 
     [JSInvokable]
@@ -190,10 +207,10 @@
     {
         try
         {
-            if (_attached is not null)
+            foreach (IJSObjectReference attached in new[] { _attached, _tabs }.OfType<IJSObjectReference>())
             {
-                await _attached.InvokeVoidAsync("dispose");
-                await _attached.DisposeAsync();
+                await attached.InvokeVoidAsync("dispose");
+                await attached.DisposeAsync();
             }
             if (_module is not null)
                 await _module.DisposeAsync();

@@ -71,3 +71,9 @@ public sealed class DraftChangeRecord
     public DateTime ChangedAt { get; set; }
     public Guid ChangedBy { get; set; }
 }
+
+public sealed class SeedRecord
+{
+    public required string Key { get; set; }
+    public DateTime SeededAt { get; set; }
+}
