@@ -32,6 +32,23 @@ knows who is a minor and who their parents are **through every route there is**:
 birth date; a child with a phone signs in with a code the parent makes); a young person signs up with a birth date
 and names a parent, who approves; leaders and staff can set it on the team or attendee list.
 
+**Young people on a team, reached through their parents** (owner, 2026-11-10, decided in chat with another
+session and passed on): "We have several ministries with youth age kids serving in them as ministry members. Those
+ministries need to be able to roster those youth, chat, etc as a normal ministry member: however, some of them do not
+have phones, some require to be communicated 'through' their parents. I'd prefer them to still be rostered on as
+their child, (especially in the case where there are multiple of these kids under one parent)."
+- The minor is the team member and is **rostered as themselves** ("Tom, sound desk"), never as their parent. Several
+  children under one parent are separate members; the parent's app groups them ("This week: Tom (sound desk), Lily
+  (kids' helper)").
+- Each minor has a way to be reached: **Directly**, **Through their parents** (roster requests, reminders and
+  messages go to the linked parents, labelled "For Tom: …"), or **Both**. **Chosen per child by the family**, and a
+  ministry can require it.
+- **A parent can act for the child:** accept or decline a roster spot, ask for a swap, reply in a chat. What a parent
+  does or writes for the child **shows as the parent** ("Sarah, for Tom"), not as the child.
+- **The child can take over** once they have a phone or the app; the parent goes back to normal parental access (still
+  sees everything and can still act through it, e.g. while the child is grounded). **At 18 all of it ends:** no
+  parental supervision.
+
 **Audiences.** A post, event, file or chat is for any of: **Everyone (public)**, **Attendees and their parents**,
 **Parents only**, **Team only**. News is almost always events (Events calendars). The rare important message
 ("pick up your children before 9pm", "help needed for a family") goes to the ministry's people straight away; one to
