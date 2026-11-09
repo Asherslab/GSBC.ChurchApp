@@ -22,7 +22,8 @@
 
 @code {
     private static readonly IReadOnlyList<string> DeskFeeds = [EventsFeeds.Public, EventsFeeds.Digest];
-    private static readonly IReadOnlyList<SegmentOption<int>> WeekOptions = [new(1, "One week"), new(2, "Two weeks"), new(3, "Three weeks")];
+    private static readonly IReadOnlyList<SegmentOption<DigestRange>> RangeOptions =
+        [new(DigestRange.OneWeek, "One week"), new(DigestRange.TwoWeeks, "Two weeks"), new(DigestRange.Month, "Month"), new(DigestRange.Custom, "Custom")];
     private static readonly IReadOnlyList<SegmentOption<bool>> PreviewOptions = [new(false, "In the app"), new(true, "Email")];
     private static readonly TimeSpan SettleTime = TimeSpan.FromMilliseconds(700);
 
@@ -51,7 +52,7 @@
 
     private async Task<DigestDraft> LoadAsync()
     {
-        DigestDraft fresh = await Editing.Digest.OpenAsync(new DigestQuery { Start = _draft?.Start ?? "" });
+        DigestDraft fresh = await Editing.Digest.OpenAsync(new DigestQuery { Id = _draft?.Id ?? "" });
         if (_draft is null || _save == SaveState.Saved)
             _draft = fresh;
         return fresh;
@@ -65,14 +66,21 @@
             <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
 
             <div class="digest-desk__choices">
-                <Segmented TValue="int" Label="How many weeks" Options="WeekOptions" Value="draft.Weeks" ValueChanged="ChooseWeeksAsync" />
+                <div class="digest-desk__dates">
+                    <TextField Label="From" Type="date" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
+                    @if (draft.Range == DigestRange.Custom)
+                    {
+                        <TextField Label="To" Type="date" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
+                    }
+                </div>
+                <Segmented TValue="DigestRange" Label="How long" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
                 <span class="digest-desk__range">@RangeOf(draft)</span>
             </div>
             <ToggleChips TValue="string" Label="Calendars in the digest" Chips="Chips(draft)" Toggled="ToggleCalendarAsync" Class="digest-desk__calendars" />
 
             @if (draft.Items.Count == 0)
             {
-                <EmptyState Icon="calendar" Title="Nothing special on these weeks" Body="No one-off events, specials or breaks in the calendars you chose. Add something not on the calendar, or choose more weeks." />
+                <EmptyState Icon="calendar" Title="Nothing special on these dates" Body="No one-off events, specials or breaks in the calendars you chose. Add something not on the calendar, or choose a longer range." />
             }
             else
             {
@@ -282,11 +290,19 @@
     private string EmailPage(DigestDraft draft) =>
         $"<!doctype html><html><head><meta charset=\"utf-8\"><base target=\"_blank\"></head><body style=\"margin:0\">{DigestEmail.Html(RangeOf(draft), EmailItems(draft), AllEventsLink)}</body></html>";
 
-    private Task ChooseWeeksAsync(int weeks)
+    private Task ChooseRangeAsync(DigestRange range) => ChooseAsync(draft => draft.Range = range);
+
+    private Task ChooseStartAsync(string start) =>
+        EventDates.Parse(start) is null ? Task.CompletedTask : ChooseAsync(draft => draft.Start = start);
+
+    private Task ChooseEndAsync(string end) =>
+        EventDates.Parse(end) is null ? Task.CompletedTask : ChooseAsync(draft => draft.End = end);
+
+    private Task ChooseAsync(Action<DigestDraft> choose)
     {
         if (_draft is null)
             return Task.CompletedTask;
-        _draft.Weeks = weeks;
+        choose(_draft);
         return SaveNowAsync();
     }
 
@@ -366,7 +382,7 @@
         {
             DigestDraft saved = await Editing.Digest.SaveAsync(new DigestSave
             {
-                Start = draft.Start, Weeks = draft.Weeks, CalendarIds = draft.CalendarIds,
+                Id = draft.Id, Start = draft.Start, End = draft.End, Range = draft.Range, CalendarIds = draft.CalendarIds,
                 Entries = draft.Items.Select(item => new DigestEntry { Key = item.Key, Included = item.Included, Changed = item.Changed, Words = item.Words, Own = item.Kind == DigestItemKind.Own }).ToList(),
             });
             if (_save == SaveState.Saving)
@@ -416,7 +432,7 @@
         try
         {
             bool notifies = draft.NotifiedAt is null || _notifyAgain;
-            _draft = await Editing.Digest.SendToAppAsync(new DigestRef { Start = draft.Start, NotifyAgain = _notifyAgain });
+            _draft = await Editing.Digest.SendToAppAsync(new DigestRef { Id = draft.Id, NotifyAgain = _notifyAgain });
             _notifyAgain = false;
             await Shell.HapticAsync();
             _told = notifies
@@ -437,7 +453,7 @@
         _busy = "phone";
         try
         {
-            await Editing.Digest.SendToMyPhoneAsync(new DigestRef { Start = draft.Start });
+            await Editing.Digest.SendToMyPhoneAsync(new DigestRef { Id = draft.Id });
             _told = "Sent to your phone, marked Test. Tap it to open What's next.";
         }
         catch (RpcException exception)

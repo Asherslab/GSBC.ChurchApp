@@ -96,8 +96,9 @@ public sealed class EventsDbContext(DbContextOptions<EventsDbContext> options) :
         modelBuilder.Entity<DigestRecord>(entity =>
         {
             entity.ToTable("digests");
-            entity.HasKey(digest => digest.Start);
+            entity.HasKey(digest => digest.Id);
             entity.HasIndex(digest => digest.SentAt);
+            entity.HasIndex(digest => digest.Start);
             Json(entity.Property(digest => digest.Entries));
             Json(entity.Property(digest => digest.Sent));
         });

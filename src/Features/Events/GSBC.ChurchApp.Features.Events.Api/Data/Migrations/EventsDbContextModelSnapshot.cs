@@ -213,13 +213,18 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.DigestRecord", b =>
                 {
-                    b.Property<DateOnly>("Start")
-                        .HasColumnType("date")
-                        .HasColumnName("start");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
 
                     b.PrimitiveCollection<List<Guid>>("CalendarIds")
                         .HasColumnType("uuid[]")
                         .HasColumnName("calendar_ids");
+
+                    b.Property<DateOnly>("End")
+                        .HasColumnType("date")
+                        .HasColumnName("end");
 
                     b.Property<string>("Entries")
                         .IsRequired()
@@ -229,6 +234,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                     b.Property<DateTime?>("NotifiedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("notified_at");
+
+                    b.Property<int>("Range")
+                        .HasColumnType("integer")
+                        .HasColumnName("range");
 
                     b.Property<string>("Sent")
                         .IsRequired()
@@ -243,6 +252,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("sent_by");
 
+                    b.Property<DateOnly>("Start")
+                        .HasColumnType("date")
+                        .HasColumnName("start");
+
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("updated_at");
@@ -251,15 +264,14 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("updated_by");
 
-                    b.Property<int>("Weeks")
-                        .HasColumnType("integer")
-                        .HasColumnName("weeks");
-
-                    b.HasKey("Start")
+                    b.HasKey("Id")
                         .HasName("pk_digests");
 
                     b.HasIndex("SentAt")
                         .HasDatabaseName("ix_digests_sent_at");
+
+                    b.HasIndex("Start")
+                        .HasDatabaseName("ix_digests_start");
 
                     b.ToTable("digests", "events");
                 });

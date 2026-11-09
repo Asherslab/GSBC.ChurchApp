@@ -19,36 +19,48 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
 
     public async ValueTask<DigestDraft> OpenAsync(DigestQuery request, CallContext context = default)
     {
-        DateOnly start = StartOf(request.Start, required: false);
-        DigestRecord? record = await db.Digests.AsNoTracking().SingleOrDefaultAsync(digest => digest.Start == start, context.CancellationToken);
-        return await DraftAsync(start, record, context.CancellationToken);
+        CancellationToken cancellationToken = context.CancellationToken;
+        DigestRecord? record = Guid.TryParse(request.Id, out Guid id)
+            ? await db.Digests.AsNoTracking().SingleOrDefaultAsync(digest => digest.Id == id, cancellationToken)
+            : await CurrentAsync(cancellationToken);
+        return await DraftAsync(record ?? Fresh(), cancellationToken);
     }
 
     public async ValueTask<DigestDraft> SaveAsync(DigestSave request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        DateOnly start = StartOf(request.Start, required: true);
+        Guid id = IdOf(request.Id);
+        DateOnly start = EventDates.Parse(request.Start) ?? throw Invalid("Choose the day the digest starts.");
+        if (start < ChurchTime.Today(time).AddYears(-1) || start > ChurchTime.Today(time).AddYears(1))
+            throw Invalid("Choose a start within a year of today.");
+        DigestRange range = Enum.IsDefined(request.Range) ? request.Range : Digests.DefaultRange;
+        DateOnly? chosenEnd = EventDates.Parse(request.End);
+        if (range == DigestRange.Custom && chosenEnd is null)
+            throw Invalid("Choose the day the digest ends.");
         List<DigestEntry> entries = Checked(request.Entries);
-        DigestRecord record = await RecordAsync(start, cancellationToken);
-        record.Weeks = Math.Clamp(request.Weeks, 1, Digests.MostWeeks);
-        record.CalendarIds = request.CalendarIds.Select(id => Guid.TryParse(id, out Guid calendarId) ? calendarId : Guid.Empty).Where(id => id != Guid.Empty).Distinct().ToList();
+        DigestRecord record = await RecordAsync(id, cancellationToken);
+        record.Start = start;
+        record.Range = range;
+        record.End = Digests.EndOf(start, range, chosenEnd);
+        record.CalendarIds = request.CalendarIds.Select(calendar => Guid.TryParse(calendar, out Guid calendarId) ? calendarId : Guid.Empty).Where(calendar => calendar != Guid.Empty).Distinct().ToList();
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        IReadOnlySet<string> showing = Digests.Candidates(book, start, record.Weeks, CalendarsOf(book, record), time.GetUtcNow().UtcDateTime)
+        IReadOnlySet<string> showing = Digests.Candidates(book, record.Start, record.End, CalendarsOf(book, record), time.GetUtcNow().UtcDateTime)
             .Select(item => item.Key).ToHashSet();
         record.Entries = Digests.Kept(record.Entries, entries, showing);
         record.UpdatedAt = time.GetUtcNow().UtcDateTime;
         record.UpdatedBy = Caller.UserId(UserOf(context));
         await db.SaveChangesAsync(cancellationToken);
-        return await DraftAsync(start, record, cancellationToken);
+        return await DraftAsync(record, cancellationToken);
     }
 
     public async ValueTask<DigestDraft> SendToAppAsync(DigestRef request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        DateOnly start = StartOf(request.Start, required: true);
-        DigestRecord record = await RecordAsync(start, cancellationToken);
+        Guid id = IdOf(request.Id);
+        DigestRecord record = await db.Digests.SingleOrDefaultAsync(digest => digest.Id == id, cancellationToken)
+            ?? throw new RpcException(new Status(StatusCode.FailedPrecondition, "Wait for the digest to save, then send it."));
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        SentDigest sent = Digests.ForApp(ItemsOf(book, record), Digests.EndOf(start, WeeksOf(record)));
+        SentDigest sent = Digests.ForApp(ItemsOf(book, record), record.End);
         if (sent.Items.Count == 0)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Tick at least one thing to send."));
 
@@ -62,19 +74,18 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         await publisher.PublishAsync(cancellationToken);
         if (Digests.Notifies(record, request.NotifyAgain))
         {
-            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, sent, start), cancellationToken);
+            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, sent, record.Start), cancellationToken);
             record.NotifiedAt = now;
             await db.SaveChangesAsync(cancellationToken);
         }
-        return await DraftAsync(start, record, cancellationToken);
+        return await DraftAsync(record, cancellationToken);
     }
 
     public async ValueTask<Done> SendToMyPhoneAsync(DigestRef request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        DateOnly start = StartOf(request.Start, required: true);
-        DigestRecord? latest = await db.Digests.AsNoTracking().Where(digest => digest.SentAt != null).OrderByDescending(digest => digest.SentAt).FirstOrDefaultAsync(cancellationToken);
-        if (latest is null || latest.Start != start)
+        DigestRecord? latest = await LatestSentAsync(cancellationToken);
+        if (latest is null || latest.Id != IdOf(request.Id))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "Send it to the app first: the notification opens what the app has."));
         if (Caller.UserId(UserOf(context)) is not { } me)
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in to send it to your phone."));
@@ -84,53 +95,58 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         return new Done();
     }
 
-    private async Task<DigestDraft> DraftAsync(DateOnly start, DigestRecord? record, CancellationToken cancellationToken)
+    private async Task<DigestDraft> DraftAsync(DigestRecord record, CancellationToken cancellationToken)
     {
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        int weeks = WeeksOf(record);
-        List<DigestItem> items = ItemsOf(book, record ?? new DigestRecord { Start = start });
-        DigestRecord? latest = await db.Digests.AsNoTracking().Where(digest => digest.SentAt != null).OrderByDescending(digest => digest.SentAt).FirstOrDefaultAsync(cancellationToken);
+        List<DigestItem> items = ItemsOf(book, record);
+        DigestRecord? latest = await LatestSentAsync(cancellationToken);
         return new DigestDraft
         {
-            Start = EventDates.Format(start),
-            End = EventDates.Format(Digests.EndOf(start, weeks)),
-            Weeks = weeks,
+            Id = record.Id.ToString(),
+            Start = EventDates.Format(record.Start),
+            End = EventDates.Format(record.End),
+            Range = record.Range,
             CalendarIds = CalendarsOf(book, record).Select(id => id.ToString()).ToList(),
             Calendars = book.Calendars.Values.OrderBy(calendar => calendar.Order).ThenBy(calendar => calendar.Name).Select(EventsPublisher.CalendarPayload).ToList(),
             Items = items,
-            SavedAt = record is { UpdatedAt: var saved } && saved != default ? saved : null,
-            SentAt = record?.SentAt,
-            NotifiedAt = record?.NotifiedAt,
-            SentAsItIs = record?.SentAt is not null && Same(Digests.ForApp(items, Digests.EndOf(start, weeks)), record.Sent),
+            SavedAt = record.UpdatedAt != default ? record.UpdatedAt : null,
+            SentAt = record.SentAt,
+            NotifiedAt = record.NotifiedAt,
+            SentAsItIs = record.SentAt is not null && Same(Digests.ForApp(items, record.End), record.Sent),
             LastSent = latest is { SentAt: { } at } ? new DigestSent { Start = EventDates.Format(latest.Start), SentAt = at } : null,
         };
     }
 
     private List<DigestItem> ItemsOf(EventsBook book, DigestRecord record) =>
-        Digests.Merge(Digests.Candidates(book, record.Start, WeeksOf(record), CalendarsOf(book, record), time.GetUtcNow().UtcDateTime), record.Entries);
+        Digests.Merge(Digests.Candidates(book, record.Start, record.End, CalendarsOf(book, record), time.GetUtcNow().UtcDateTime), record.Entries);
 
-    private static IReadOnlySet<Guid> CalendarsOf(EventsBook book, DigestRecord? record) =>
-        record?.CalendarIds is { } chosen ? chosen.Where(book.Calendars.ContainsKey).ToHashSet() : Digests.DefaultCalendars(book);
+    private static IReadOnlySet<Guid> CalendarsOf(EventsBook book, DigestRecord record) =>
+        record.CalendarIds is { } chosen ? chosen.Where(book.Calendars.ContainsKey).ToHashSet() : Digests.DefaultCalendars(book);
 
-    private static int WeeksOf(DigestRecord? record) => record is { Weeks: > 0 } ? record.Weeks : Digests.DefaultWeeks;
+    private Task<DigestRecord?> CurrentAsync(CancellationToken cancellationToken) =>
+        db.Digests.AsNoTracking().Where(Digests.Current(ChurchTime.Today(time)))
+            .OrderByDescending(digest => digest.UpdatedAt).FirstOrDefaultAsync(cancellationToken);
 
-    private async Task<DigestRecord> RecordAsync(DateOnly start, CancellationToken cancellationToken)
+    private Task<DigestRecord?> LatestSentAsync(CancellationToken cancellationToken) =>
+        db.Digests.AsNoTracking().Where(digest => digest.SentAt != null).OrderByDescending(digest => digest.SentAt).FirstOrDefaultAsync(cancellationToken);
+
+    private DigestRecord Fresh()
     {
-        if (await db.Digests.SingleOrDefaultAsync(digest => digest.Start == start, cancellationToken) is { } existing)
+        DateOnly today = ChurchTime.Today(time);
+        return new DigestRecord { Id = Guid.CreateVersion7(), Start = today, Range = Digests.DefaultRange, End = Digests.EndOf(today, Digests.DefaultRange) };
+    }
+
+    private async Task<DigestRecord> RecordAsync(Guid id, CancellationToken cancellationToken)
+    {
+        if (await db.Digests.SingleOrDefaultAsync(digest => digest.Id == id, cancellationToken) is { } existing)
             return existing;
-        DigestRecord created = new() { Start = start, Weeks = Digests.DefaultWeeks };
+        DigestRecord created = new() { Id = id };
         db.Digests.Add(created);
         return created;
     }
 
-    private DateOnly StartOf(string text, bool required)
-    {
-        if (EventDates.Parse(text) is { } day)
-            return ChurchTime.WeekStart(day);
-        if (required)
-            throw Invalid("Choose which weeks the digest is for.");
-        return Digests.NextStart(ChurchTime.Today(time));
-    }
+    private static Guid IdOf(string text) =>
+        Guid.TryParse(text, out Guid id) && id != Guid.Empty ? id : throw Invalid("Open the digest again: it has no id.");
 
     private static List<DigestEntry> Checked(IReadOnlyList<DigestEntry> entries)
     {

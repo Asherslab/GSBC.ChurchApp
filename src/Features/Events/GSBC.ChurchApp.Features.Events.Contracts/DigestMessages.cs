@@ -3,6 +3,14 @@ using ProtoBuf;
 
 namespace GSBC.ChurchApp.Features.Events.Contracts;
 
+public enum DigestRange
+{
+    TwoWeeks = 0,
+    OneWeek = 1,
+    Month = 2,
+    Custom = 3,
+}
+
 public enum DigestItemKind
 {
     Event = 0,
@@ -103,7 +111,6 @@ public sealed class DigestDraft
 {
     [ProtoMember(1)] public string Start { get; set; } = "";
     [ProtoMember(2)] public string End { get; set; } = "";
-    [ProtoMember(3)] public int Weeks { get; set; }
     [ProtoMember(4)] public List<string> CalendarIds { get; set; } = [];
     [ProtoMember(5)] public List<CalendarInfo> Calendars { get; set; } = [];
     [ProtoMember(6)] public List<DigestItem> Items { get; set; } = [];
@@ -112,12 +119,14 @@ public sealed class DigestDraft
     [ProtoMember(9)] public bool SentAsItIs { get; set; }
     [ProtoMember(10)] public DigestSent? LastSent { get; set; }
     [ProtoMember(11)] public DateTime? NotifiedAt { get; set; }
+    [ProtoMember(12)] public string Id { get; set; } = "";
+    [ProtoMember(13)] public DigestRange Range { get; set; }
 }
 
 [ProtoContract]
 public sealed class DigestQuery
 {
-    [ProtoMember(1)] public string Start { get; set; } = "";
+    [ProtoMember(2)] public string Id { get; set; } = "";
 }
 
 [ProtoContract]
@@ -134,16 +143,18 @@ public sealed class DigestEntry
 public sealed class DigestSave
 {
     [ProtoMember(1)] public string Start { get; set; } = "";
-    [ProtoMember(2)] public int Weeks { get; set; }
     [ProtoMember(3)] public List<string> CalendarIds { get; set; } = [];
     [ProtoMember(4)] public List<DigestEntry> Entries { get; set; } = [];
+    [ProtoMember(5)] public string Id { get; set; } = "";
+    [ProtoMember(6)] public DigestRange Range { get; set; }
+    [ProtoMember(7)] public string End { get; set; } = "";
 }
 
 [ProtoContract]
 public sealed class DigestRef
 {
-    [ProtoMember(1)] public string Start { get; set; } = "";
     [ProtoMember(2)] public bool NotifyAgain { get; set; }
+    [ProtoMember(3)] public string Id { get; set; } = "";
 }
 
 [ProtoContract]

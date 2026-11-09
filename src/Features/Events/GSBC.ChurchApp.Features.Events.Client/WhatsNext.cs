@@ -33,7 +33,7 @@ public sealed record WhatsNextDigest(DigestShown? Header, IReadOnlyList<DigestSh
 
     public IReadOnlyList<WhatsNextWeek> Weeks(DateOnly today)
     {
-        DateOnly thisWeek = Header is { } header && EventDates.Parse(header.Start) is { } start && today < start ? start : ChurchTime.WeekStart(today);
+        DateOnly thisWeek = ChurchTime.WeekStart(Header is { } header && EventDates.Parse(header.Start) is { } start && today < start ? start : today);
         return StillToCome(today)
             .GroupBy(item => ChurchTime.WeekStart(Max(EventDates.Parse(item.FirstDate) ?? today, today)))
             .OrderBy(week => week.Key)
