@@ -60,46 +60,40 @@ public sealed class DeletingRules
     }
 }
 
-[Integration("A deleted speaker or series stays deleted through the next website reads, which rewrite every sermon's website speaker and series")]
+[Integration("Deleting a speaker or series rewrites every sermon that points at it and records the deleted id as a former id, in one transaction")]
 public sealed class DeletingTests : SermonsHost
 {
     [Fact]
-    public async Task MovingADeletedSpeakersSermonsSendsLaterWebsiteSermonsUnderTheirNameToTheSameSpeaker()
+    public async Task MovingADeletedSpeakersSermonsPutsThemOnTheOtherSpeakerAndOldLinksFollow()
     {
-        await ReadWithoutTheNewestAsync();
+        await ReadTheWebsiteAsync();
         Guid jo = (await SpeakerNamedAsync("Jo Ellery"))!.Id;
         Guid lee = (await SpeakerNamedAsync("Ps Lee Varga"))!.Id;
 
         await LibraryAsync(library => library.DeleteSpeakerAsync(new DeleteRequest { Id = jo.ToString(), MoveTo = lee.ToString() }).AsTask());
-        await ReadWithTheNewestByAsync("Jo Ellery");
 
         Assert.Null(await SpeakerNamedAsync("Jo Ellery"));
-        Assert.All(await SermonsAsync(), sermon => Assert.Equal(lee, sermon.EffectiveSpeakerId));
+        Assert.Equal(3, (await SermonsAsync()).Count(sermon => sermon.EffectiveSpeakerId == lee));
         Assert.DoesNotContain(await LiveRowsAsync(SermonsFeeds.Speakers), row => row.RecordId == jo.ToString());
         SpeakerInfo published = SermonsPayloads.Decode<SpeakerInfo>((await LiveRowsAsync(SermonsFeeds.Speakers)).Single(row => row.RecordId == lee.ToString()).Payload);
         Assert.Contains(jo.ToString(), published.FormerIds);
     }
 
     [Fact]
-    public async Task SermonsLeftWithoutTheirDeletedSpeakerStayWithoutOneAndALaterWebsiteSermonUnderTheNameMakesANewSpeaker()
+    public async Task SermonsLeftWithoutTheirDeletedSpeakerShowNoneAndThePhotoIsLetGo()
     {
-        await ReadWithoutTheNewestAsync();
+        await ReadTheWebsiteAsync();
         SpeakerRecord jo = (await SpeakerNamedAsync("Jo Ellery"))!;
 
         await LibraryAsync(library => library.DeleteSpeakerAsync(new DeleteRequest { Id = jo.Id.ToString() }).AsTask());
-        Assert.Equal([], Media.Uses[Artwork.SpeakerOwner(jo.Id)]);
-        await ReadTheWebsiteAsync(force: true);
-        Assert.Null(await SpeakerNamedAsync("Jo Ellery"));
 
-        await ReadWithTheNewestByAsync("Jo Ellery");
-        List<SermonRecord> sermons = await SermonsAsync();
-        SpeakerRecord newcomer = (await SpeakerNamedAsync("Jo Ellery"))!;
-        Assert.Equal(newcomer.Id, sermons.Single(sermon => sermon.SourceTitle == "Walking In The Light").EffectiveSpeakerId);
-        Assert.All(sermons.Where(sermon => sermon.SourceTitle.StartsWith("Safe Harbour", StringComparison.Ordinal)), sermon => Assert.Null(sermon.EffectiveSpeakerId));
+        Assert.Null(await SpeakerNamedAsync("Jo Ellery"));
+        Assert.Equal(2, (await SermonsAsync()).Count(sermon => sermon.EffectiveSpeakerId is null));
+        Assert.Equal([], Media.Uses[Artwork.SpeakerOwner(jo.Id)]);
     }
 
     [Fact]
-    public async Task AWebsiteSeriesMovedIntoAnotherStaysGoneAndItsLaterSermonsAndFollowersGoToTheOther()
+    public async Task ASeriesMovedIntoAnotherTakesItsSermonsAndFollowersThere()
     {
         await ReadTheWebsiteAsync();
         Guid harbour = (await SeriesNamedAsync("Safe Harbour"))!.Id;
@@ -109,26 +103,24 @@ public sealed class DeletingTests : SermonsHost
 
         SeriesDeletion asked = await LibraryAsync(library => library.SeriesDeletionAsync(new DeleteRequest { Id = harbour.ToString() }).AsTask());
         await LibraryAsync(library => library.DeleteSeriesAsync(new DeleteRequest { Id = harbour.ToString(), MoveTo = fruit.ToString() }).AsTask());
-        await ReadWithTheNewestInSafeHarbourAsync();
 
         Assert.Equal((2, 1), (asked.Sermons, asked.Followers));
         Assert.Null(await SeriesNamedAsync("Safe Harbour"));
-        Assert.Equal(4, (await SermonsAsync()).Count(sermon => sermon.EffectiveSeriesId == fruit));
+        Assert.Equal(3, (await SermonsAsync()).Count(sermon => sermon.EffectiveSeriesId == fruit));
         Assert.Contains((follower, SermonsPermissions.SeriesFollowerRole, fruit.ToString(), true), Roles.Held);
     }
 
     [Fact]
-    public async Task AWebsiteSeriesDeletedWithItsSermonsLeftOutStaysGoneWithItsLaterSermonsOutOfAnySeriesAndItsFollowersAndPictureLetGo()
+    public async Task ASeriesDeletedWithItsSermonsLeftOutLetsGoOfItsFollowersAndPicture()
     {
         await ReadTheWebsiteAsync();
         Guid harbour = (await SeriesNamedAsync("Safe Harbour"))!.Id;
         Roles.Held.Add((Guid.CreateVersion7(), SermonsPermissions.SeriesFollowerRole, harbour.ToString(), true));
 
         await LibraryAsync(library => library.DeleteSeriesAsync(new DeleteRequest { Id = harbour.ToString() }).AsTask());
-        await ReadWithTheNewestInSafeHarbourAsync();
 
         Assert.Null(await SeriesNamedAsync("Safe Harbour"));
-        Assert.All((await SermonsAsync()).Where(sermon => sermon.SourceTitle != "Mercy Before Judgement"), sermon => Assert.Null(sermon.EffectiveSeriesId));
+        Assert.All((await SermonsAsync()).Where(sermon => sermon.SourceTitle.StartsWith("Safe Harbour", StringComparison.Ordinal)), sermon => Assert.Null(sermon.EffectiveSeriesId));
         Assert.Empty(Roles.Held);
         Assert.Equal([], Media.Uses[Artwork.SeriesOwner(harbour)]);
         Assert.DoesNotContain(await LiveRowsAsync(SermonsFeeds.Series), row => row.RecordId == harbour.ToString());
@@ -174,33 +166,6 @@ public sealed class DeletingTests : SermonsHost
 
         Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
     }
-
-    private async Task ReadWithoutTheNewestAsync()
-    {
-        string feed = Sample("feed.rss");
-        Website.ServeFeed(feed[..feed.IndexOf(NewestItem, StringComparison.Ordinal)] + feed[feed.IndexOf("    <item>\n      <title>Safe Harbour: Part 4", StringComparison.Ordinal)..]);
-        await ReadTheWebsiteAsync();
-    }
-
-    private async Task ReadWithTheNewestByAsync(string author)
-    {
-        string feed = Sample("feed.rss");
-        int at = feed.IndexOf(NewestItem, StringComparison.Ordinal);
-        int end = feed.IndexOf("</item>", at, StringComparison.Ordinal);
-        Website.FeedETag = "W/\"newest\"";
-        Website.ServeFeed(feed[..at] + feed[at..end].Replace("<itunes:author>Sam Rivers</itunes:author>", $"<itunes:author>{author}</itunes:author>", StringComparison.Ordinal) + feed[end..]);
-        await ReadTheWebsiteAsync(force: true);
-    }
-
-    private async Task ReadWithTheNewestInSafeHarbourAsync()
-    {
-        string page = Sample("series-safe-harbour.html");
-        Website.ServeText($"{FakeWebsite.BaseUrl}/podcasts/media/series/safe-harbour",
-            page.Replace("</body>", "  <div class=\"media\"><a href=\"/media/2026-11-04-walking-in-the-light\"><h2>Walking In The Light</h2></a></div>\n</body>", StringComparison.Ordinal));
-        await ReadTheWebsiteAsync(force: true);
-    }
-
-    private const string NewestItem = "    <item>\n      <title>Walking In The Light";
 
     private Task<List<SermonRecord>> SermonsAsync() =>
         WithAsync(provider => provider.GetRequiredService<SermonsDbContext>().Sermons.AsNoTracking().ToListAsync(Cancel));

@@ -230,40 +230,30 @@ list until staff delete it (*Deleting*, below). Uploads choose a speaker from th
 ### Deleting a speaker, a series or an uploaded sermon (owner, 2026-11-09)
 
 "If I can create something, I should be able to delete it" (AGENTS.md, *Create means delete*). Holders of
-`sermons.edit` delete from the admin panel (`Library.DeleteSpeaker`, `DeleteSeries`, `DeleteSermon`; `SermonDeletion`),
-in either source mode. Every delete asks first, says what happens, and says it can't be undone.
+`sermons.edit` delete from the admin panel (`Library.DeleteSpeaker`, `DeleteSeries`, `DeleteSermon`; `SermonDeletion`).
+Every delete asks first, says what happens, and says it can't be undone. Kept simple on purpose (owner, 2026-11-09):
+sermons are moving to live only in the app, so nothing here decides what a later website read does.
 
 - **A speaker or a series with sermons:** the dialog says how many and offers one picker, *Where their sermons go*:
   another speaker (series), or *Leave them without a speaker* (*not in a series*). A speaker or series with none just
   goes. Hidden sermons go the same way as the rest.
-- **Moving them** puts every sermon credited to it (the website's speaker or series, and staff's corrections) on the
-  one chosen; a correction that now matches the website's value is cleared. The deleted id is kept as a former id of
-  the one chosen (*Lasting ids*), so links to it (Hub tiles, announcements, notifications already sent, a phone's
-  saved place) open the one it moved into, and phones are sent the change with the payload's `FormerIds`.
-  - **Later website sermons follow:** a speaker's sermons keep the name the website wrote, so the next sermon under
-    that name lands on the speaker they moved to (rule 1 of *How a name lands*). A website series is remembered as
-    removed (`removed_series`, by its page's slug) with where it went: the website's series page is still read, and
-    its sermons, later ones included, go to the series chosen. The series is never made again from the website.
-  - Series followers follow the one it moved into (`MoveScopeAsync`).
-- **Leaving them:** sermons on the website's speaker lose it; a sermon staff had credited to it is *corrected to no
-  speaker* (`speaker_corrected`, like `series_corrected`), so a re-read doesn't put anyone back. **A later website
-  sermon under that name makes a new speaker** (as in rule 3), while the sermons left without stay without: the
-  reader keeps a sermon's speaker empty while the website still names the same person (`WebsiteReader.LeftWithoutSpeaker`).
-  The new speaker takes the lasting id the name gives, so an old link to the deleted speaker opens the new one.
-- **Leaving a website series' sermons out** (owner, 2026-11-09, asked: "it stays deleted"): the series stays deleted
-  and its sermons, later ones the website puts in it included, are in no series. Its followers stop following
+- **Moving them** puts every sermon credited to it (its own value and staff's corrections) on the one chosen; a
+  correction that now matches the sermon's own value is cleared. The deleted id is kept as a former id of the one chosen
+  (*Lasting ids*), so links to it (Hub tiles, announcements, notifications already sent) open the one it moved into, and
+  series followers follow it (`MoveScopeAsync`).
+- **Leaving them:** the sermons show no speaker, or no series. A sermon staff had credited to the deleted speaker is
+  *corrected to no speaker* (`speaker_corrected`, like `series_corrected`). Series followers stop following
   (`ForgetScopeAsync`).
 - **What goes with it:** the speaker's photos or the series' pictures (their Media uses are released; a picture stays
   in *Sermon artwork* like any unused one), its description, and its row in the speakers or series feed, so it leaves
   every phone when it next connects.
-- **An uploaded sermon, only once it's hidden** (owner, 2026-11-09: "only delete after it's hidden"). A sermon from the
-  website can only be hidden: the website would bring it back. Deleting removes the sermon, its audio file in R2, its
-  artwork use and everyone's listening progress on it (their progress rows are deleted from the progress feed), and
-  rewrites the podcast feed. Notifications already sent about it open nothing.
+- **An uploaded sermon, only once it's hidden** (owner, 2026-11-09: "only delete after it's hidden"). Deleting removes
+  the sermon, its audio file in R2, its artwork use and everyone's listening progress on it (deleted from the progress
+  feed), and rewrites the podcast feed. Notifications already sent about it open nothing.
 - **Custom services need no delete** (owner, 2026-11-09): one drops out of the picker once no sermon uses it
   (*Services*).
-- Tests: `DeletingRules` (what moves where, unit) and `DeletingTests` (what the next website reads do after a delete;
-  an uploaded sermon's audio and progress).
+- Tests: `DeletingRules` (what moves where, unit) and `DeletingTests` (feeds, followers, pictures; an uploaded sermon's
+  audio and progress).
 
 ### Uploads (the R2 version)
 

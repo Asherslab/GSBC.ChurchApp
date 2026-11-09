@@ -73,13 +73,9 @@ internal sealed class WebsiteReader(
                 db.Sermons.Add(sermon);
             }
 
-            Guid? speakerId = item.Author.Length == 0 || LeftWithoutSpeaker(sermon, item.Author) ? null : (await speakers.ResolveAsync(item.Author, cancellationToken)).Id;
-            Take(sermon, item, speakerId, fileHost, now);
+            Take(sermon, item, item.Author.Length > 0 ? (await speakers.ResolveAsync(item.Author, cancellationToken)).Id : null, fileHost, now);
         }
     }
-
-    internal static bool LeftWithoutSpeaker(SermonRecord sermon, string author) =>
-        sermon.SourceSpeakerId is null && sermon.SourceSpeaker.Length > 0 && Speakers.KeyOf(sermon.SourceSpeaker) == Speakers.KeyOf(author);
 
     internal static void Take(SermonRecord sermon, PodcastItem item, Guid? speakerId, string? fileHost, DateTime now)
     {
@@ -156,29 +152,20 @@ internal sealed class WebsiteReader(
                 throw new FormatException("The sermons page lists no series.");
 
             Dictionary<string, SeriesRecord> bySlug = await db.Series.Where(series => series.Slug != null).ToDictionaryAsync(series => series.Slug!, cancellationToken);
-            Dictionary<string, Guid?> removed = await db.RemovedSeries.AsNoTracking().ToDictionaryAsync(series => series.Slug, series => series.MovedTo, cancellationToken);
             Dictionary<string, Guid> seriesOfLink = new(StringComparer.OrdinalIgnoreCase);
             Dictionary<string, string> photos = new(StringComparer.OrdinalIgnoreCase);
             foreach (SeriesLink link in links)
             {
                 SeriesPage page = await ReadSeriesPageAsync(link, cancellationToken);
-                Guid? seriesId;
-                if (bySlug.TryGetValue(link.Slug, out SeriesRecord? series))
-                    seriesId = series.Id;
-                else if (removed.TryGetValue(link.Slug, out Guid? movedTo))
-                    seriesId = movedTo;
-                else
+                if (!bySlug.TryGetValue(link.Slug, out SeriesRecord? series))
                 {
                     series = new SeriesRecord { Id = await FreeOrNewAsync(SourceIds.Series(link.Slug), cancellationToken), Slug = link.Slug, Name = link.Name, CreatedAt = now };
                     db.Series.Add(series);
                     bySlug[link.Slug] = series;
-                    seriesId = series.Id;
                 }
-                if (series is not null)
-                    Take(series, link, page);
-                if (seriesId is { } id)
-                    foreach (string path in page.SermonPaths)
-                        seriesOfLink.TryAdd(website.Absolute(path).ToString(), id);
+                Take(series, link, page);
+                foreach (string path in page.SermonPaths)
+                    seriesOfLink.TryAdd(website.Absolute(path).ToString(), series.Id);
                 foreach ((string name, string photo) in page.SpeakerPhotos)
                     photos.TryAdd(name, photo);
             }

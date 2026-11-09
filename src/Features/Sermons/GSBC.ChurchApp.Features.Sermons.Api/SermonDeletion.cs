@@ -64,9 +64,6 @@ internal sealed class SermonDeletion(
         {
             foreach (SermonRecord sermon in await db.Sermons.Where(sermon => sermon.SourceSeriesId == id || sermon.SeriesId == id).ToListAsync(cancellationToken))
                 MoveSeries(sermon, id, moveTo);
-            await db.RemovedSeries.Where(removed => removed.MovedTo == id).ExecuteUpdateAsync(set => set.SetProperty(removed => removed.MovedTo, moveTo), cancellationToken);
-            if (series.Slug is { } slug)
-                db.RemovedSeries.Add(new RemovedSeries { Slug = slug, MovedTo = moveTo, RemovedAt = now });
             db.Series.Remove(series);
             Unpublish(SermonsFeeds.Series, id, series.PublishedHash, now);
             await ForwardAsync(id, moveTo, FormerId.Series, now, cancellationToken);

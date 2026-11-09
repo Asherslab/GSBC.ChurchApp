@@ -151,26 +151,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Data.Migrations
                     b.ToTable("progress", "sermons");
                 });
 
-            modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.RemovedSeries", b =>
-                {
-                    b.Property<string>("Slug")
-                        .HasColumnType("text")
-                        .HasColumnName("slug");
-
-                    b.Property<Guid?>("MovedTo")
-                        .HasColumnType("uuid")
-                        .HasColumnName("moved_to");
-
-                    b.Property<DateTime>("RemovedAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("removed_at");
-
-                    b.HasKey("Slug")
-                        .HasName("pk_removed_series");
-
-                    b.ToTable("removed_series", "sermons");
-                });
-
             modelBuilder.Entity("GSBC.ChurchApp.Features.Sermons.Api.Data.SeriesRecord", b =>
                 {
                     b.Property<Guid>("Id")

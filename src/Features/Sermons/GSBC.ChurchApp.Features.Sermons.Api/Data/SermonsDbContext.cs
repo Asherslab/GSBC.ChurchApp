@@ -18,7 +18,6 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
     public DbSet<ArtworkSource> ArtworkSources => Set<ArtworkSource>();
     public DbSet<ArtworkAddress> ArtworkAddresses => Set<ArtworkAddress>();
     public DbSet<FormerId> FormerIds => Set<FormerId>();
-    public DbSet<RemovedSeries> RemovedSeries => Set<RemovedSeries>();
 
     protected override string Schema => SchemaName;
 
@@ -78,11 +77,6 @@ public sealed class SermonsDbContext(DbContextOptions<SermonsDbContext> options)
             entity.HasKey(former => former.Id);
             entity.Property(former => former.Id).ValueGeneratedNever();
             entity.HasIndex(former => former.CurrentId);
-        });
-        modelBuilder.Entity<RemovedSeries>(entity =>
-        {
-            entity.ToTable("removed_series");
-            entity.HasKey(removed => removed.Slug);
         });
         modelBuilder.Entity<SourceState>(entity =>
         {

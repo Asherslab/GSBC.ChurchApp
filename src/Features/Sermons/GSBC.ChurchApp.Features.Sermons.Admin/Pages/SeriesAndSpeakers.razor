@@ -154,7 +154,7 @@
                     <SearchPicker TItem="SpeakerDetail" Label="Where their sermons go" Items="OtherSpeakers(context.Value, doomedSpeaker)" Text="SpeakerName" Detail="SpeakerCount"
                                   Value="_moveSpeakerTo" ValueChanged="speaker => _moveSpeakerTo = speaker" NoneText="Leave them without a speaker" Placeholder="Find a speaker" />
                 }
-                @foreach (string line in DeletionWords.Speaker(doomedSpeaker, _moveSpeakerTo, context.Value.Ours))
+                @foreach (string line in DeletionWords.Speaker(doomedSpeaker, _moveSpeakerTo))
                 {
                     <p class="sheet__lead">@line</p>
                 }
@@ -167,7 +167,7 @@
                     <SearchPicker TItem="SeriesDetail" Label="Where its sermons go" Items="OtherSeries(context.Value, doomedSeries)" Text="SeriesName" Detail="SeriesCount"
                                   Value="_moveSeriesTo" ValueChanged="series => _moveSeriesTo = series" NoneText="Leave them not in a series" Placeholder="Find a series" />
                 }
-                @foreach (string line in DeletionWords.Series(doomedSeries, deletion, _moveSeriesTo))
+                @foreach (string line in DeletionWords.Series(deletion, _moveSeriesTo))
                 {
                     <p class="sheet__lead">@line</p>
                 }

@@ -85,13 +85,6 @@ public sealed class SpeakerRecord
     public string? PublishedHash { get; set; }
 }
 
-public sealed class RemovedSeries
-{
-    public required string Slug { get; set; }
-    public Guid? MovedTo { get; set; }
-    public DateTime RemovedAt { get; set; }
-}
-
 public sealed class ProgressRecord
 {
     public Guid UserId { get; set; }
