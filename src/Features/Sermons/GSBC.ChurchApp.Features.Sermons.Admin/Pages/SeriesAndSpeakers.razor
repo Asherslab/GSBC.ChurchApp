@@ -2,7 +2,7 @@
 @inject SermonsAdminClient Sermons
 
 <TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
-           Lead="Name a series, give it a picture and a line about it; tidy speakers' names and photos, and join two spellings of one person." />
+           Lead="Name a series, give it a picture and a line about it; keep the list of speakers, with their names and photos." />
 
 <LiveData @ref="_live" TValue="Lists" Feeds="ListFeeds" Load="LoadAsync" FailedTitle="Can't load series and speakers right now">
     @if (!context.Value.Ours)
