@@ -44,6 +44,7 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
         DateTime abandoned = now - AbandonedAfter;
         return db.Users.Where(user => user.CreatedAt < abandoned
             && user.DeletedAt == null
+            && !user.AddedByFamily
             && !demoAccounts.Contains(user.Id)
             && !db.Set<IdentityUserPasskey<Guid>>().Any(passkey => passkey.UserId == user.Id)
             && !db.Codes.Any(code => code.UserId == user.Id && code.UsedAt == null && code.ExpiresAt > now

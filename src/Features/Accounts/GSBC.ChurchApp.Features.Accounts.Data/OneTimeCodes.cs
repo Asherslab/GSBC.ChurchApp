@@ -11,6 +11,10 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
     public static readonly TimeSpan ConfirmationLifetime = TimeSpan.FromDays(1);
     public static readonly TimeSpan InvitationLifetime = TimeSpan.FromDays(7);
     public static readonly TimeSpan RecoveryLifetime = TimeSpan.FromHours(2);
+    public static readonly TimeSpan FamilySignInLifetime = TimeSpan.FromDays(1);
+
+    private const string ShortCodeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    private const int ShortCodeLength = 8;
 
     private const int TokenBytes = 32;
     private const int MaximumFailedAttempts = 5;
@@ -23,6 +27,20 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
         Add(Hash(token), userId, purpose, lifetime);
         return token;
     }
+
+    public async Task<string> IssueShortCodeAsync(Guid userId, CodePurpose purpose, TimeSpan lifetime, CancellationToken cancellationToken)
+    {
+        await db.Codes
+            .Where(code => code.UserId == userId && code.Purpose == purpose && code.UsedAt == null)
+            .ExecuteDeleteAsync(cancellationToken);
+
+        string code = RandomNumberGenerator.GetString(ShortCodeLetters, ShortCodeLength);
+        Add(Hash(code), userId, purpose, lifetime);
+        return $"{code[..4]}-{code[4..]}";
+    }
+
+    public static string WithoutSpacing(string shortCode) =>
+        new(shortCode.Where(char.IsAsciiLetterOrDigit).Select(char.ToUpperInvariant).ToArray());
 
     public async Task<string> IssueDigitsAsync(Guid userId, CodePurpose purpose, TimeSpan lifetime, CancellationToken cancellationToken)
     {
