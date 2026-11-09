@@ -113,6 +113,13 @@ or the session or permissions change; never load once in `OnInitialized` and lea
 [offline-and-caching.md](docs/architecture/offline-and-caching.md), *Screens update themselves*.
 `LiveDataRules` enforces it.
 
+# Create means delete
+
+**If staff can create something, they can delete it** (owner, 2026-11-09): a speaker, a series, a custom
+service, a calendar, a folder, a tile, anything. Build the delete in the same change as the create, decide what
+happens to whatever uses it (move it elsewhere, leave it without, or explain why it can't go yet), and ask before
+deleting anything that can't be undone.
+
 # Admin work stays in the admin panel
 
 Staff tools (drafts, insights, roles, people, media, announcements) are built for the admin panel on

@@ -224,7 +224,7 @@ So a one-off correction (the feed credited the wrong person on one sermon) never
 name, and a new spelling for someone ("Ps Lee Varga" for Lee Varga) is fixed once: its first sermon makes a new speaker,
 staff correct that sermon to the right person, and later sermons under the spelling land on them. The speaker left with
 no sermons isn't shown in the app (the speakers feed holds only speakers with sermons) but stays in the admin panel's
-list, with no way to remove it (owner, 2026-11-09: no "Remove" for speakers without sermons). Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
+list. Uploads choose a speaker from the list or add one by name, which lands the same way. Tests:
 `SpeakersAndServicesTests`.
 
 ### Uploads (the R2 version)
