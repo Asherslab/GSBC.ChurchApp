@@ -1,42 +1,16 @@
-@inject IPeopleDirectory People
+@inject IPeopleDirectory Directory
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Share \"{Draft.Name}\"")" Lead="They can preview it on their phone and watch it change as you edit. They can't change it.">
-    <ChildContent>
-        @if (Draft.SharedWith.Count > 0)
-        {
-            <ListGroup>
-                @foreach (string id in Draft.SharedWith)
-                {
-                    <ListRow Title="@Names.GetValueOrDefault(id, "Someone")" Icon="user">
-                        <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == id)" OnClick="() => ChangeAsync(id, OnUnshare)">Stop sharing</Button></TrailingContent>
-                    </ListRow>
-                }
-            </ListGroup>
-        }
-        <TextField Label="Share with" Placeholder="Find someone by name" Value="@_query" ValueChanged="SearchAsync" AutoComplete="off" />
-        @if (_problem is not null)
-        {
-            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        }
-        @if (_found.Count > 0)
-        {
-            <ListGroup>
-                @foreach (PersonSummary person in _found.Where(person => !Draft.SharedWith.Contains(person.Id)))
-                {
-                    <ListRow Title="@person.Name" Subtitle="@person.Email" Icon="user">
-                        <TrailingContent><Button Variant="ButtonVariant.Primary" Small="true" Busy="@(_busy == person.Id)" OnClick="() => ChangeAsync(person.Id, OnShare)">Share</Button></TrailingContent>
-                    </ListRow>
-                }
-            </ListGroup>
-        }
-    </ChildContent>
-    <Actions>
-        <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => OpenChanged.InvokeAsync(false)">Done</Button>
-    </Actions>
-</Sheet>
+<PeopleSheet Source="Reviewers" View="View" Title="@($"Share “{Draft.Name}”")" Open="Open" OpenChanged="OpenChanged"
+             Lead="Reviewers preview it on their phone and watch it change as you edit. They can't change it."
+             Empty="Not shared with anyone yet." />
 
 @code {
-    private const int ShortestSearch = 2;
+    private const string ReviewerRole = "reviewer";
+
+    private static readonly PlaceRoleView Reviewer = new(ReviewerRole, "Reviewer", "Preview this draft on their phone",
+        [new AbilityGroup("App", ["Preview this draft on their phone, and watch it change as it's edited"])], null);
+
+    private DraftPeople? _reviewers;
 
     [Parameter, EditorRequired] public required Draft Draft { get; set; }
     [Parameter] public bool Open { get; set; }
@@ -45,43 +19,25 @@
     [Parameter] public EventCallback<string> OnShare { get; set; }
     [Parameter] public EventCallback<string> OnUnshare { get; set; }
 
-    private string _query = "";
-    private string? _busy;
-    private string? _problem;
-    private IReadOnlyList<PersonSummary> _found = [];
+    private DraftPeople Reviewers => _reviewers ??= new DraftPeople(this);
 
-    private async Task SearchAsync(string query)
+    private PlacePeopleView View => new([Reviewer],
+        Draft.SharedWith.Select(id => new PlacePersonView(id, Names.GetValueOrDefault(id, "Someone"), null, [ReviewerRole])).ToList());
+
+    private sealed class DraftPeople(ShareSheet sheet) : IPlacePeople
     {
-        _query = query;
-        _problem = null;
-        if (query.Trim().Length < ShortestSearch)
-        {
-            _found = [];
-            return;
-        }
+        public IReadOnlyCollection<string> Feeds => [];
 
-        try
-        {
-            IReadOnlyList<PersonSummary> found = await People.SearchAsync(query.Trim());
-            if (_query == query)
-                _found = found.Where(person => !person.Disabled).ToList();
-        }
-        catch (RpcException exception)
-        {
-            _problem = exception.StatusCode == StatusCode.PermissionDenied ? "You can't look people up. Ask someone who manages people to share it." : exception.Status.Detail;
-        }
-    }
+        public Task<PlacePeopleView> LoadAsync() => Task.FromResult(sheet.View);
 
-    private async Task ChangeAsync(string id, EventCallback<string> change)
-    {
-        _busy = id;
-        try
-        {
-            await change.InvokeAsync(id);
-        }
-        finally
-        {
-            _busy = null;
-        }
+        public async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
+            (await sheet.Directory.SearchAsync(query))
+                .Where(person => !person.Disabled)
+                .Select(person => new PersonChoice(person.Id, person.Name, person.Email))
+                .ToList();
+
+        public Task GiveAsync(string userId, string roleId) => sheet.OnShare.InvokeAsync(userId);
+
+        public Task TakeAwayAsync(string userId, string roleId) => sheet.OnUnshare.InvokeAsync(userId);
     }
 }

@@ -1,0 +1,28 @@
+@using GSBC.ChurchApp.Platform.Client.People
+
+<div class="role-gives">
+    @if (Role.Gives.Count == 0)
+    {
+        <p class="role-gives__lead">@Role.Description</p>
+    }
+    @for (int index = 0; index < Role.Gives.Count; index++)
+    {
+        AbilityGroup group = Role.Gives[index];
+        <p class="role-gives__lead">@(index == 0 ? $"{Role.Name} lets {Who}:" : $"Also, from {group.Area}, because the job needs it:")</p>
+        <ul class="role-gives__list">
+            @foreach (string ability in group.Abilities)
+            {
+                <li>@ability</li>
+            }
+        </ul>
+    }
+    @if (Role.Refusal is not null)
+    {
+        <p class="role-gives__refusal">@Role.Refusal</p>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required PlaceRoleView Role { get; set; }
+    [Parameter] public string Who { get; set; } = "them";
+}

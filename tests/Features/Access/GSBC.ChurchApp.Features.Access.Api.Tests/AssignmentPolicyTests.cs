@@ -38,6 +38,19 @@ public sealed class AssignmentPolicyTests
     }
 
     [Fact]
+    public async Task WhatARoleBringsFromElsewhereCountsAsSomethingTheGiverMustHave()
+    {
+        Guid musicLeader = Guid.CreateVersion7(), staff = Guid.CreateVersion7();
+        _church.Assign(musicLeader, _church.SystemRole("leader").Id, scopeObjectId: Music);
+        _church.Assign(staff, _church.SystemRole("staff").Id);
+        _church.Assign(staff, _church.AddRole("Pictures", ScopeKind.Global, ["media.view"]));
+
+        Assert.Equal("You can't give the Publicity role, because it lets people do things you can't do yourself: See the media library.",
+            await _church.GiveAsync(musicLeader, Guid.CreateVersion7(), "publicity", Music));
+        Assert.Null(await _church.GiveAsync(staff, Guid.CreateVersion7(), "publicity", Music));
+    }
+
+    [Fact]
     public void TheLastActiveOwnerCannotBeRemoved()
     {
         RoleRecord owner = _church.SystemRole(AccessService.OwnerKey);

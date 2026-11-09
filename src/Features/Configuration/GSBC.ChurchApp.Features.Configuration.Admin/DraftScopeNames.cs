@@ -19,7 +19,7 @@ internal sealed class DraftScopeNames(DraftsClient drafts) : IScopeNamer
     {
         try
         {
-            return (await drafts.ListAsync()).Drafts.Select(draft => new ScopeChoice(draft.Id, draft.Name)).ToList();
+            return (await drafts.ListAsync()).Drafts.Select(draft => new ScopeChoice(draft.Id, draft.Name, $"drafts/{draft.Id}")).ToList();
         }
         catch (RpcException)
         {

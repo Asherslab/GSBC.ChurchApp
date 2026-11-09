@@ -2,6 +2,7 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Access.Api.Data;
 using GSBC.ChurchApp.Features.Access.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
@@ -9,31 +10,28 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AccessService(
-    AccessDbContext db, AccessChanges changes, IAccessEvaluator evaluator, AssignmentRules rules, AccessInsights insights, PermissionCatalog catalog, TimeProvider time)
+    AccessDbContext db, AccessChanges changes, IAccessEvaluator evaluator, AssignmentRules rules, AccessInsights insights, PermissionCatalog catalog,
+    IPeopleIndex people, TimeProvider time)
     : IAccessService
 {
     public const string OwnerKey = "owner";
-    private const int MaximumNameLength = 60;
+    public const string RolesManagerKey = "roles-manager";
+    private const int ShortestSearch = 2;
+    private const int MostFound = 20;
 
     public async ValueTask<GrantList> GetMineAsync(Nothing request, CallContext context = default) =>
         GrantsFeed.Messages(await evaluator.GrantsForAsync(CallerId(context), context.CancellationToken));
 
     public ValueTask<Catalog> ListCatalogAsync(Nothing request, CallContext context = default) => ValueTask.FromResult(new Catalog
     {
-        Permissions = catalog.ByNode.Values.OrderBy(permission => permission.Area).ThenBy(permission => permission.Node).Select(permission => new PermissionInfo
-        {
-            Node = permission.Node,
-            ScopeKind = permission.ScopeKind.Name,
-            Description = permission.Description,
-            Sensitive = permission.IsSensitive,
-            Area = permission.Area,
-        }).ToList(),
+        Permissions = catalog.ByNode.Values.OrderBy(permission => permission.Area).ThenBy(permission => permission.Node).Select(Info).ToList(),
         ScopeKinds = ScopeKind.Known.Select(kind => kind.Name).ToList(),
     });
 
     public async ValueTask<RoleNameList> ListRoleNamesAsync(Nothing request, CallContext context = default) => new()
     {
         Roles = await db.Roles.AsNoTracking()
+            .Where(role => !role.Hidden)
             .OrderBy(role => role.Name)
             .Select(role => new RoleName { Id = role.Id.ToString(), Name = role.Name, Description = role.Description })
             .ToListAsync(context.CancellationToken),
@@ -53,82 +51,21 @@ internal sealed class AccessService(
         return new RoleList
         {
             Roles = roles.Values
-                .OrderBy(role => role.SystemKey == null).ThenBy(role => role.Name)
+                .OrderBy(role => role.Position)
                 .Select(role => ToInfo(role, roles, holders.GetValueOrDefault(role.Id)))
                 .ToList(),
         };
     }
 
-    public async ValueTask<RoleInfo> SaveRoleAsync(RoleInfo request, CallContext context = default)
-    {
-        CancellationToken cancellationToken = context.CancellationToken;
-        RoleRecord? role = string.IsNullOrEmpty(request.Id) ? null : await LoadRoleAsync(ParseId(request.Id), cancellationToken);
-        RoleRecord draft = await DraftAsync(request, role, cancellationToken);
-
-        Dictionary<Guid, RoleRecord> included = await db.LoadRolesWithIncludesAsync(draft.Includes.Select(include => include.IncludedRoleId), cancellationToken);
-        ScopeKind.TryParse(draft.ScopeKind, out ScopeKind kind);
-        GrantSet actor = await evaluator.GrantsForAsync(CallerId(context), cancellationToken);
-        List<Permission> notHeld = RoleGrants.NotHeld(actor, RoleGrants.PatternsOf(draft, included), kind, null, catalog);
-        if (notHeld.Count > 0)
-            throw new RpcException(new Status(StatusCode.PermissionDenied,
-                $"A role can only include what you can do yourself. You can't: {string.Join(", ", notHeld.Select(permission => permission.Description))}."));
-
-        if (role is null)
-        {
-            role = new RoleRecord { Id = draft.Id, Name = draft.Name, ScopeKind = draft.ScopeKind, CreatedAt = Now };
-            db.Roles.Add(role);
-        }
-        role.Name = draft.Name;
-        role.Description = draft.Description;
-        role.ScopeKind = draft.ScopeKind;
-        role.AppliesToChildren = draft.AppliesToChildren;
-        role.Patterns.Clear();
-        role.Patterns.AddRange(draft.Patterns);
-        role.Includes.Clear();
-        role.Includes.AddRange(draft.Includes);
-        role.Assigners.Clear();
-        role.Assigners.AddRange(draft.Assigners);
-
-        await db.SaveChangesAsync(cancellationToken);
-        await changes.AnnounceAsync(cancellationToken);
-        Dictionary<Guid, RoleRecord> saved = await db.LoadRolesWithIncludesAsync([role.Id], cancellationToken);
-        return ToInfo(saved[role.Id], saved, await HolderCountAsync(role.Id, cancellationToken));
-    }
-
-    public async ValueTask<RoleEffect> PreviewRoleAsync(RolePreviewRequest request, CallContext context = default)
-    {
-        if (string.IsNullOrEmpty(request.Role.Id))
-            return new RoleEffect();
-
-        CancellationToken cancellationToken = context.CancellationToken;
-        RoleRecord role = await LoadRoleAsync(ParseId(request.Role.Id), cancellationToken);
-        RoleRecord? changed = request.Deleting ? null : await DraftAsync(request.Role, role, cancellationToken);
-        return await insights.PreviewAsync(changed, role.Id, cancellationToken);
-    }
-
-    public async ValueTask<Done> DeleteRoleAsync(RoleReference request, CallContext context = default)
-    {
-        RoleRecord role = await LoadRoleAsync(ParseId(request.Id), context.CancellationToken);
-        if (role.IsSystem)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Built-in roles come from the app and can't be deleted."));
-
-        db.Roles.Remove(role);
-        await db.SaveChangesAsync(context.CancellationToken);
-        await changes.AnnounceAsync(context.CancellationToken);
-        return new Done();
-    }
-
     public async ValueTask<AssignmentList> ListAssignmentsAsync(AssignmentQuery request, CallContext context = default)
     {
-        IQueryable<Assignment> query = db.Assignments.AsNoTracking().Include(assignment => assignment.Role);
+        IQueryable<Assignment> query = db.Assignments.AsNoTracking().Include(assignment => assignment.Role).Where(assignment => !assignment.Role!.Hidden);
         if (!string.IsNullOrEmpty(request.UserId))
             query = query.Where(assignment => assignment.UserId == ParseId(request.UserId));
 
-        return new AssignmentList
-        {
-            Assignments = (await query.OrderBy(assignment => assignment.CreatedAt).ToListAsync(context.CancellationToken))
-                .Select(ToInfo).ToList(),
-        };
+        List<Assignment> assignments = await query.OrderBy(assignment => assignment.CreatedAt).ToListAsync(context.CancellationToken);
+        IReadOnlyDictionary<Guid, string> names = await NamesAsync(assignments.Select(assignment => assignment.CreatedBy).OfType<Guid>(), context.CancellationToken);
+        return new AssignmentList { Assignments = assignments.Select(assignment => ToInfo(assignment, names)).ToList() };
     }
 
     public async ValueTask<PersonAbilities> ExplainAsync(PersonReference request, CallContext context = default) =>
@@ -142,6 +79,8 @@ internal sealed class AccessService(
         ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
 
         string? scopeObjectId = string.IsNullOrWhiteSpace(request.ScopeObjectId) ? null : request.ScopeObjectId.Trim();
+        if (role.Hidden)
+            throw Invalid($"The app gives the {role.Name} role by itself; it isn't given by hand.");
         if (AssignmentRules.ScopeProblem(kind, scopeObjectId) is { } problem)
             throw Invalid(problem);
         if (await rules.UnknownPlaceAsync(kind, scopeObjectId, cancellationToken) is { } unknown)
@@ -150,6 +89,13 @@ internal sealed class AccessService(
             throw Invalid("The end date has to be in the future.");
         if (await rules.RefusalAsync(CallerId(context), role, scopeObjectId, cancellationToken) is { } refusal)
             throw new RpcException(new Status(StatusCode.PermissionDenied, refusal));
+        if ((await people.GetAsync([userId], cancellationToken)).SingleOrDefault() is not { Disabled: false })
+            throw Invalid("That person's account isn't here or is turned off.");
+
+        if (await db.ActiveAssignments(Now).Include(existing => existing.Role)
+                .FirstOrDefaultAsync(existing => existing.UserId == userId && existing.RoleId == role.Id && existing.ScopeObjectId == scopeObjectId, cancellationToken)
+            is { } held)
+            return ToInfo(held, new Dictionary<Guid, string>());
 
         Assignment assignment = new()
         {
@@ -166,7 +112,7 @@ internal sealed class AccessService(
         await db.SaveChangesAsync(cancellationToken);
         await changes.AnnounceAsync(cancellationToken);
         assignment.Role = role;
-        return ToInfo(assignment);
+        return ToInfo(assignment, await NamesAsync([CallerId(context)], cancellationToken));
     }
 
     public async ValueTask<Done> UnassignAsync(AssignmentReference request, CallContext context = default)
@@ -187,58 +133,103 @@ internal sealed class AccessService(
         return new Done();
     }
 
+    public async ValueTask<PlacePeople> ListPlaceAsync(PlaceReference request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        (ScopeKind kind, string? objectId) = await PlaceAsync(request, cancellationToken);
+        List<RoleRecord> roles = await RolesAtAsync(kind, cancellationToken);
+        Guid callerId = CallerId(context);
+        List<PlaceRole> placeRoles = [];
+        foreach (RoleRecord role in roles)
+            placeRoles.Add(new PlaceRole
+            {
+                Id = role.Id.ToString(),
+                Name = role.Name,
+                Description = role.Description,
+                AbilityNodes = Abilities(role, roles.ToDictionary(each => each.Id)).Select(permission => permission.Node).ToList(),
+                Refusal = await rules.RefusalAsync(callerId, role, objectId, cancellationToken),
+            });
+        GrantSet grants = await evaluator.GrantsForAsync(callerId, cancellationToken);
+        if (!grants.IsAllowed(AccessPermissions.View) && placeRoles.All(role => role.Refusal is not null))
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You can't see who's on this. Ask someone who can add people to it."));
+
+        List<Guid> roleIds = roles.Select(role => role.Id).ToList();
+        List<Assignment> held = await db.ActiveAssignments(Now).Include(assignment => assignment.Role)
+            .Where(assignment => roleIds.Contains(assignment.RoleId) && assignment.ScopeObjectId == objectId)
+            .OrderBy(assignment => assignment.CreatedAt)
+            .ToListAsync(cancellationToken);
+        IReadOnlyDictionary<Guid, string> names = await NamesAsync(
+            held.Select(assignment => assignment.UserId).Concat(held.Select(assignment => assignment.CreatedBy).OfType<Guid>()), cancellationToken);
+
+        return new PlacePeople
+        {
+            Roles = placeRoles,
+            People = held.GroupBy(assignment => assignment.UserId)
+                .Select(person => new PlaceHolder
+                {
+                    UserId = person.Key.ToString(),
+                    Name = names.GetValueOrDefault(person.Key, "Someone"),
+                    Assignments = person.Select(assignment => ToInfo(assignment, names)).ToList(),
+                })
+                .OrderBy(person => person.Name, StringComparer.CurrentCulture)
+                .ToList(),
+            Abilities = placeRoles.SelectMany(role => role.AbilityNodes).Distinct()
+                .Select(node => catalog.ByNode.GetValueOrDefault(node)).OfType<Permission>().Select(Info).ToList(),
+        };
+    }
+
+    public async ValueTask<FoundPeople> FindPeopleAsync(FindPeopleRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        (ScopeKind kind, string? objectId) = await PlaceAsync(request.Place, cancellationToken);
+        Guid callerId = CallerId(context);
+        bool mayGiveSomething = false;
+        foreach (RoleRecord role in await RolesAtAsync(kind, cancellationToken))
+            mayGiveSomething = mayGiveSomething || await rules.RefusalAsync(callerId, role, objectId, cancellationToken) is null;
+        if (!mayGiveSomething)
+            throw new RpcException(new Status(StatusCode.PermissionDenied, "You can't add people to this."));
+
+        string query = request.Query.Trim();
+        if (query.Length < ShortestSearch)
+            return new FoundPeople();
+        return new FoundPeople
+        {
+            People = (await people.FindAsync(query, MostFound, cancellationToken))
+                .Select(person => new FoundPerson { Id = person.Id.ToString(), Name = person.Name, MaskedEmail = MaskedEmail(person.Email) })
+                .ToList(),
+        };
+    }
+
+    public static string MaskedEmail(string email) =>
+        email.IndexOf('@') is > 0 and var at ? $"{email[0]}…{email[at..]}" : "";
+
     private DateTime Now => time.GetUtcNow().UtcDateTime;
+
+    private async Task<(ScopeKind Kind, string? ObjectId)> PlaceAsync(PlaceReference place, CancellationToken cancellationToken)
+    {
+        if (!ScopeKind.TryParse(place.ScopeKind, out ScopeKind kind))
+            throw Invalid($"'{place.ScopeKind}' isn't a kind of place a role is given for.");
+        string? objectId = string.IsNullOrWhiteSpace(place.ObjectId) ? null : place.ObjectId.Trim();
+        if (AssignmentRules.ScopeProblem(kind, objectId) is { } problem)
+            throw Invalid(problem);
+        if (await rules.UnknownPlaceAsync(kind, objectId, cancellationToken) is { } unknown)
+            throw Invalid(unknown);
+        return (kind, objectId);
+    }
+
+    private Task<List<RoleRecord>> RolesAtAsync(ScopeKind kind, CancellationToken cancellationToken) =>
+        db.Roles.AsNoTracking().Include(role => role.Patterns).Include(role => role.Includes).Include(role => role.Assigners)
+            .Where(role => role.ScopeKind == kind.Name && !role.Hidden)
+            .OrderBy(role => role.Position)
+            .ToListAsync(cancellationToken);
+
+    private async Task<IReadOnlyDictionary<Guid, string>> NamesAsync(IEnumerable<Guid> ids, CancellationToken cancellationToken) =>
+        (await people.GetAsync(ids.Distinct().ToList(), cancellationToken)).ToDictionary(person => person.Id, person => person.Name);
 
     private async Task<RoleRecord> LoadRoleAsync(Guid id, CancellationToken cancellationToken) =>
         await db.Roles.Include(role => role.Patterns).Include(role => role.Includes).Include(role => role.Assigners)
             .SingleOrDefaultAsync(role => role.Id == id, cancellationToken)
         ?? throw new RpcException(new Status(StatusCode.NotFound, "That role no longer exists."));
-
-    private async Task<RoleRecord> DraftAsync(RoleInfo request, RoleRecord? existing, CancellationToken cancellationToken)
-    {
-        if (existing?.IsSystem == true)
-            throw new RpcException(new Status(StatusCode.FailedPrecondition, "Built-in roles come from the app. Make a copy to change it."));
-
-        string name = request.Name.Trim();
-        if (name.Length is 0 or > MaximumNameLength)
-            throw Invalid("Give the role a name (up to 60 characters).");
-        if (!ScopeKind.TryParse(request.ScopeKind, out ScopeKind kind))
-            throw Invalid($"'{request.ScopeKind}' isn't a kind of place a role is given for.");
-        if (existing is not null && existing.ScopeKind != kind.Name && await HolderCountAsync(existing.Id, cancellationToken) > 0)
-            throw Invalid("People have this role, so where it applies can't change. Make a copy instead.");
-
-        List<string> patterns = request.Patterns.Select(pattern => pattern.Trim()).Where(pattern => pattern.Length > 0).Distinct().ToList();
-        List<string> invalid = patterns.Where(pattern => !PermissionPattern.TryParse(pattern, out _)).ToList();
-        if (invalid.Count > 0)
-            throw Invalid($"Not valid patterns: {string.Join(", ", invalid)}.");
-
-        Guid id = existing?.Id ?? Guid.CreateVersion7();
-        List<Guid> includes = request.IncludedRoleIds.Select(ParseId).Distinct().ToList();
-        List<Guid> assigners = request.AssignableByRoleIds.Select(ParseId).Distinct().ToList();
-        Dictionary<Guid, RoleRecord> others = await db.Roles.AsNoTracking().Include(other => other.Includes)
-            .Where(other => includes.Contains(other.Id) || assigners.Contains(other.Id)).ToDictionaryAsync(other => other.Id, cancellationToken);
-        if (includes.Any(other => other == id || !others.ContainsKey(other)))
-            throw Invalid("A role can only include other roles that exist.");
-        if (includes.Any(other => others[other].Includes.Count > 0))
-            throw Invalid("Included roles can't include roles themselves (one level only).");
-        if (assigners.Any(other => !others.ContainsKey(other)))
-            throw Invalid("Only existing roles can be chosen to give this role.");
-
-        return new RoleRecord
-        {
-            Id = id,
-            Name = name,
-            Description = request.Description.Trim(),
-            ScopeKind = kind.Name,
-            AppliesToChildren = request.AppliesToChildren && kind != ScopeKind.Global,
-            Patterns = patterns.Select(pattern => new RolePattern { RoleId = id, Pattern = pattern }).ToList(),
-            Includes = includes.Select(other => new RoleInclude { RoleId = id, IncludedRoleId = other }).ToList(),
-            Assigners = assigners.Select(other => new RoleAssigner { RoleId = id, AssignerRoleId = other }).ToList(),
-        };
-    }
-
-    private Task<int> HolderCountAsync(Guid roleId, CancellationToken cancellationToken) =>
-        db.ActiveAssignments(Now).Where(assignment => assignment.RoleId == roleId).Select(assignment => assignment.UserId).Distinct().CountAsync(cancellationToken);
 
     private static Guid CallerId(CallContext context) =>
         Caller.UserId(context.ServerCallContext!.GetHttpContext().User)
@@ -249,26 +240,40 @@ internal sealed class AccessService(
 
     private static RpcException Invalid(string message) => new(new Status(StatusCode.InvalidArgument, message));
 
-    private RoleInfo ToInfo(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles, int holderCount)
+    private static PermissionInfo Info(Permission permission) => new()
+    {
+        Node = permission.Node,
+        ScopeKind = permission.ScopeKind.Name,
+        Description = permission.Description,
+        Sensitive = permission.IsSensitive,
+        Area = permission.Area,
+    };
+
+    private IEnumerable<Permission> Abilities(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles)
     {
         ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
-        return new RoleInfo
-        {
-            Id = role.Id.ToString(),
-            Name = role.Name,
-            Description = role.Description,
-            ScopeKind = role.ScopeKind,
-            IsSystem = role.IsSystem,
-            Patterns = role.Patterns.Select(pattern => pattern.Pattern).Order().ToList(),
-            IncludedRoleIds = role.Includes.Select(include => include.IncludedRoleId.ToString()).ToList(),
-            AbilityNodes = RoleGrants.Abilities(RoleGrants.PatternsOf(role, roles), kind, null, catalog).Select(permission => permission.Node).ToList(),
-            AppliesToChildren = role.AppliesToChildren,
-            AssignableByRoleIds = role.Assigners.Select(assigner => assigner.AssignerRoleId.ToString()).ToList(),
-            HolderCount = holderCount,
-        };
+        return RoleGrants.Abilities(RoleGrants.PatternsOf(role, roles), kind, null, catalog, RoleGrants.EverywhereOf(role, roles));
     }
 
-    private static AssignmentInfo ToInfo(Assignment assignment) => new()
+    private RoleInfo ToInfo(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles, int holderCount) => new()
+    {
+        Id = role.Id.ToString(),
+        Name = role.Name,
+        Description = role.Description,
+        ScopeKind = role.ScopeKind,
+        IsSystem = role.IsSystem,
+        Patterns = role.Patterns.Select(pattern => pattern.Everywhere ? $"{pattern.Pattern} (everywhere)" : pattern.Pattern).Order().ToList(),
+        IncludedRoleIds = role.Includes.Select(include => include.IncludedRoleId.ToString()).ToList(),
+        AbilityNodes = Abilities(role, roles).Select(permission => permission.Node).ToList(),
+        AppliesToChildren = role.AppliesToChildren,
+        AssignableByRoleIds = role.Assigners.Select(assigner => assigner.AssignerRoleId.ToString()).ToList(),
+        HolderCount = holderCount,
+        Feature = role.Feature,
+        Hidden = role.Hidden,
+        Position = role.Position,
+    };
+
+    private static AssignmentInfo ToInfo(Assignment assignment, IReadOnlyDictionary<Guid, string> names) => new()
     {
         Id = assignment.Id.ToString(),
         UserId = assignment.UserId.ToString(),
@@ -278,5 +283,6 @@ internal sealed class AccessService(
         ExpiresAt = assignment.ExpiresAt,
         Source = assignment.Source.ToString(),
         CreatedAt = assignment.CreatedAt,
+        CreatedBy = assignment.CreatedBy is { } by ? names.GetValueOrDefault(by) : null,
     };
 }

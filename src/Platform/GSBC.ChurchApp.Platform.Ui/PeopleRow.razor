@@ -1,0 +1,40 @@
+@using GSBC.ChurchApp.Platform.Client.People
+
+<LiveData @ref="_live" TValue="PlacePeopleView" Feeds="Source.Feeds" Load="Source.LoadAsync" FailedTitle="Can't load who's on this">
+    @if (context.Value is { Roles.Count: > 0 } view)
+    {
+        <div class="people-row">
+            <span class="people-row__body">
+                <span class="people-row__label">@Label</span>
+                <span class="people-row__names">@Summary(view)</span>
+            </span>
+            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="users" OnClick="() => _open = true">@(view.MayAdd ? "People" : "See who")</Button>
+        </div>
+        <PeopleSheet Source="Source" View="view" Title="@SheetTitle" Lead="@SheetLead" Empty="@Empty" Open="_open" OpenChanged="open => _open = open" OnChanged="ReloadAsync" />
+    }
+</LiveData>
+
+@code {
+    private LiveData<PlacePeopleView>? _live;
+    private bool _open;
+
+    [Parameter, EditorRequired] public required IPlacePeople Source { get; set; }
+    [Parameter, EditorRequired] public required string SheetTitle { get; set; }
+    [Parameter] public string? SheetLead { get; set; }
+    [Parameter] public string Label { get; set; } = "People";
+    [Parameter] public string Empty { get; set; } = "No one yet.";
+
+    private string Summary(PlacePeopleView view) => view.People.Count switch
+    {
+        0 => Empty,
+        1 => view.People[0].Name,
+        2 => $"{view.People[0].Name} and {view.People[1].Name}",
+        _ => $"{view.People[0].Name}, {view.People[1].Name} and {view.People.Count - 2} more",
+    };
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

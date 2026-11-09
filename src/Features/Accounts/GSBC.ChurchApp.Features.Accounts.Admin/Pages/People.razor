@@ -3,8 +3,9 @@
 @implements IDisposable
 @inject AccountsClient Accounts
 @inject IAccess Access
+@inject NavigationManager Navigation
 
-<TitleBand Title="People" Lead="Everyone with an account. Invite staff, send someone a recovery link, or turn an account off.">
+<TitleBand Title="People" Lead="Everyone with an account. Choose someone to give them roles, send them a recovery link, or turn their account off.">
     <Actions>
         <Can Permission="AccountsPermissions.Manage">
             <Button Icon="plus" OnClick="StartInvite">Invite someone</Button>
@@ -12,10 +13,10 @@
     </Actions>
 </TitleBand>
 
-<SplitView Detail="@Detail" DetailLabel="@(_inviting ? "Invite someone" : _selected?.DisplayName ?? "Person")">
+<SplitView Detail="@Detail" DetailLabel="Invite someone">
     <LiveData @ref="_live" TValue="PeopleView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
         <DataTable TItem="PersonInfo" Label="People" Items="Shown(context.Value)" Columns="Columns" Key="person => person.Id"
-                   Selected="_selected" SelectedChanged="Select" SortColumn="0">
+                   SelectedChanged="Open" SortColumn="0">
             <Toolbar>
                 <SearchField Label="Find someone" Placeholder="Find someone by name or email" Value="@_query" ValueChanged="SearchAsync" />
                 <FilterChips TValue="PeopleFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
@@ -39,7 +40,6 @@
     private Dictionary<string, InvitationInfo> _invitations = [];
     private string _query = "";
     private PeopleFilter _filter = PeopleFilter.Everyone;
-    private PersonInfo? _selected;
     private bool _inviting;
 
     [SupplyParameterFromQuery] public string? Show { get; set; }
@@ -55,10 +55,12 @@
 
     private RenderFragment? Detail => _inviting
         ? @<InvitePerson OnSent="InvitedAsync" OnCancel="() => _inviting = false" />
-        : _selected is null ? null : @<PersonDetail @key="_selected.Id" Person="_selected" Invitation="@_invitations.GetValueOrDefault(_selected.Id)" OnChanged="ChangedAsync" OnRemoved="RemovedAsync" />;
+        : null;
 
     protected override void OnInitialized()
     {
+        if (PersonId is { } linked)
+            Navigation.NavigateTo($"people/{Uri.EscapeDataString(linked)}", new NavigationOptions { ReplaceHistoryEntry = true });
         if (Show == InvitedQuery)
             _filter = PeopleFilter.Invited;
         Access.Changed += OnAccessChanged;
@@ -74,14 +76,6 @@
         List<InvitationInfo> invitations = (await listing).Invitations;
         List<PersonInfo> people = (await searching).People;
         _invitations = invitations.ToDictionary(invitation => invitation.UserId);
-        if (_selected is null && PersonId is { } chosen && _invitations.TryGetValue(chosen, out InvitationInfo? linked))
-        {
-            _selected = AsPerson(linked);
-            PersonId = null;
-            _ = InvokeAsync(StateHasChanged);
-        }
-        _selected = _selected is null ? null
-            : people.FirstOrDefault(person => person.Id == _selected.Id) ?? (_invitations.TryGetValue(_selected.Id, out InvitationInfo? invited) ? AsPerson(invited) : _selected);
         return new PeopleView(people, invitations.Select(AsPerson).ToList());
     }
 
@@ -128,34 +122,14 @@
         Enum.GetValues<PeopleFilter>().Select(filter => new FilterOption<PeopleFilter>(filter, FilterLabel(filter),
             filter == PeopleFilter.Invited ? view.Invited.Count : view.People.Count(person => Matches(person, filter)))).ToList();
 
-    private void Select(PersonInfo person)
-    {
-        _inviting = false;
-        _selected = person;
-    }
+    private void Open(PersonInfo person) => Navigation.NavigateTo($"people/{Uri.EscapeDataString(person.Id)}");
 
-    private void StartInvite()
-    {
-        _selected = null;
-        _inviting = true;
-    }
+    private void StartInvite() => _inviting = true;
 
     private async Task InvitedAsync()
     {
         if (_live is not null)
             await _live.ReloadAsync();
-    }
-
-    private async Task ChangedAsync()
-    {
-        if (_live is not null)
-            await _live.ReloadAsync();
-    }
-
-    private async Task RemovedAsync()
-    {
-        _selected = null;
-        await ChangedAsync();
     }
 
     private void OnAccessChanged() => InvokeAsync(StateHasChanged);

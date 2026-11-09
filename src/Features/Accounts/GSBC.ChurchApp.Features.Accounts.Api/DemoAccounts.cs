@@ -12,7 +12,7 @@ internal sealed class DemoAccounts(AccountsDbContext db, IRoleAssignments roles,
 
     public static readonly SystemRole Role = new(RoleKey, "App reviewer",
         "Marks a demo account that Apple's app reviewers sign in to with a sign-in code. It lets them do nothing more.",
-        ScopeKind.Global, []);
+        ScopeKind.Global, [], Hidden: true);
 
     public async Task<IReadOnlyList<Guid>> AllAsync(CancellationToken cancellationToken) =>
         (await roles.HoldersAsync(RoleKey, null, cancellationToken)).Select(holder => holder.UserId).ToList();

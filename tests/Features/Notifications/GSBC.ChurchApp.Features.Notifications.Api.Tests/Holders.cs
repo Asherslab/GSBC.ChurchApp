@@ -17,4 +17,10 @@ internal sealed class Holders : IPermissionHolders, IPeopleIndex
         ValueTask.FromResult(_granted.GetValueOrDefault((permission.Node, objectId), PermissionHolders.None));
 
     public ValueTask<IReadOnlyList<Guid>> EveryoneAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Everyone);
+
+    public ValueTask<IReadOnlyList<IndexedPerson>> FindAsync(string query, int limit, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyList<IndexedPerson>>([]);
+
+    public ValueTask<IReadOnlyList<IndexedPerson>> GetAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyList<IndexedPerson>>([]);
 }

@@ -27,12 +27,12 @@ public static class AnalyticsApiExtensions
         services.AddPermissions(AnalyticsPermissions.All);
         services.AddDestinations(AnalyticsDestinations.All);
         services.AddMeasures(AnalyticsMeasures.All);
-        services.AddSystemRole(new SystemRole(AnalyticsPermissions.InsightsViewerRole, "Insights viewer",
+        services.AddSystemRole(new SystemRole(AnalyticsPermissions.InsightsViewerRole, "Insights Viewer",
             "See how the app is used: how many phones open it, what's popular, whether notices were seen. Totals only, never anything about a person",
-            ScopeKind.Global, [AnalyticsPermissions.ViewNode]));
+            ScopeKind.Global, [AnalyticsPermissions.ViewNode], Feature: RoleFeatures.InsightsAndHealth));
         services.AddSystemRole(new SystemRole(AnalyticsPermissions.DeveloperRole, "Developer",
             "See the app's errors and failed calls, with their technical detail, get an email when a new kind of error appears, and connect a tool such as Claude to read them. For whoever builds the app",
-            ScopeKind.Global, [AnalyticsPermissions.HealthViewNode]));
+            ScopeKind.Global, [AnalyticsPermissions.HealthViewNode], Feature: RoleFeatures.InsightsAndHealth));
         return services;
     }
 

@@ -8,12 +8,12 @@ public static class HubSurfaces
     public const string EditNode = "config.hub.edit";
 
     public static readonly Permission Edit =
-        new(EditNode, ScopeKind.Global, "Arrange the app's Home screen: which tiles show, in what order, for whom and when");
+        new(EditNode, ScopeKind.Global, "Arrange the app's Home screen: which tiles show, in what order, for whom and when", area: "App");
 
     public const string PublishNode = "config.hub.publish";
 
     public static readonly Permission Publish =
-        new(PublishNode, ScopeKind.Global, "Put changes to the Home screen out to everyone, or on for an event");
+        new(PublishNode, ScopeKind.Global, "Put changes to the Home screen out to everyone, or on for an event", area: "App");
 
     public static readonly Measure TileTapped = new("hub.tile.tapped", "Home screen tiles tapped",
         "Taps on each Home screen tile. One person tapping twice counts twice", SubjectKinds.HubTile, SplitByGroup: true);

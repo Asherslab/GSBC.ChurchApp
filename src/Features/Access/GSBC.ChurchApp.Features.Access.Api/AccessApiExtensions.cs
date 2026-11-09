@@ -39,9 +39,12 @@ public static class AccessApiExtensions
         });
         services.AddHostedService<AccessReconciler>();
         services.AddPermissions(AccessPermissions.All);
-        services.AddSystemRole(new SystemRole(AccessService.OwnerKey, "Owner", "Everything, including making other owners", ScopeKind.Global, ["*"]));
-        services.AddSystemRole(new SystemRole("access-manager", "Access manager", "Manage roles and who holds them", ScopeKind.Global,
-            ["access.*", "accounts.view"]));
+        services.AddSystemRole(new SystemRole(AccessService.OwnerKey, "Owner", "Everything, including making other Owners", ScopeKind.Global, ["*"],
+            Feature: RoleFeatures.Everything));
+        services.AddSystemRole(new SystemRole(AccessService.RolesManagerKey, "Roles Manager",
+            "Give people roles and take them away, but only roles whose abilities they have themselves", ScopeKind.Global,
+            [AccessPermissions.ViewNode, AccessPermissions.EditAssignmentsNode], Feature: RoleFeatures.People, Kits: [RoleKits.PeopleNames],
+            Replaces: ["access-manager"]));
         return services;
     }
 

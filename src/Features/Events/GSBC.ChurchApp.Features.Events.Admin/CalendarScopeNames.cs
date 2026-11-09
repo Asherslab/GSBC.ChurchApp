@@ -19,7 +19,7 @@ internal sealed class CalendarScopeNames(CalendarEditing editing) : IScopeNamer
     {
         try
         {
-            return (await editing.DeskAsync()).Calendars.Select(calendar => new ScopeChoice(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
+            return (await editing.DeskAsync()).Calendars.Select(calendar => new ScopeChoice(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name, CalendarWorkbenchLinks.Calendar(calendar.Settings.Calendar.Slug))).ToList();
         }
         catch (RpcException)
         {

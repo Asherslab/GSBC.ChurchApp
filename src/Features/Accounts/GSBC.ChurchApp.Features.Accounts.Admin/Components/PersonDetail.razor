@@ -2,9 +2,6 @@
 @inject AccountsClient Accounts
 @inject TimeProvider Clock
 
-<h2 class="panel-title">@Person.DisplayName</h2>
-<p class="panel-lead">@Person.Email</p>
-
 <dl class="facts">
     <dt>Account</dt>
     <dd><PersonState Person="Person" Invitation="Invitation" /></dd>
@@ -25,10 +22,6 @@
         <dd><DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Short" WithTime="true" /></dd>
     }
 </dl>
-
-<div class="panel-actions">
-    <Button Variant="ButtonVariant.Quiet" Icon="key" Href="@($"access/people?user={Person.Id}")">See what they can do</Button>
-</div>
 
 @if (Invitation is not null)
 {

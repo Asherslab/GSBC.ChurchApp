@@ -9,9 +9,11 @@ public interface IScopeNames
     Task<IReadOnlyDictionary<string, string>> NamesAsync(string scopeKind, IReadOnlyCollection<string> objectIds);
 
     Task<IReadOnlyList<ScopeChoice>?> ChoicesAsync(string scopeKind);
+
+    Task<IReadOnlyDictionary<string, ScopeChoice>> PlacesAsync(string scopeKind, IReadOnlyCollection<string> objectIds);
 }
 
-public sealed record ScopeChoice(string Id, string Name);
+public sealed record ScopeChoice(string Id, string Name, string? Href = null);
 
 public interface IScopeNamer
 {
@@ -38,6 +40,12 @@ internal sealed class ScopeNames(IEnumerable<IScopeNamer> namers) : IScopeNames
                 if (names.ContainsKey(id))
                     names[id] = name;
         return names;
+    }
+
+    public async Task<IReadOnlyDictionary<string, ScopeChoice>> PlacesAsync(string scopeKind, IReadOnlyCollection<string> objectIds)
+    {
+        IReadOnlyList<ScopeChoice> known = objectIds.Count > 0 && await ChoicesAsync(scopeKind) is { } choices ? choices : [];
+        return objectIds.Distinct().ToDictionary(id => id, id => known.FirstOrDefault(choice => choice.Id == id) ?? new ScopeChoice(id, id));
     }
 
     public async Task<IReadOnlyList<ScopeChoice>?> ChoicesAsync(string scopeKind) =>

@@ -1190,3 +1190,39 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .swipe-pages__page--before, .swipe-pages__page--after { position: absolute; top: 0; width: 100%; }
 .swipe-pages__page--before { right: 100%; }
 .swipe-pages__page--after { left: 100%; }
+
+.role-tick { display: flex; align-items: center; gap: 2px; min-height: 40px; border-radius: var(--radius-field); }
+.role-tick__label { display: flex; flex: 1; align-items: center; gap: 10px; min-height: 40px; padding: 0 8px; font-size: var(--text-row); font-weight: 600; cursor: pointer; }
+.role-tick__box { width: 18px; height: 18px; margin: 0; flex: none; accent-color: var(--accent); cursor: pointer; }
+.role-tick__box:disabled { cursor: not-allowed; }
+.role-tick__box:disabled + .role-tick__name { color: var(--ink-3); }
+.role-tick__info { display: grid; place-items: center; width: 32px; height: 32px; flex: none; padding: 0; border: 0; border-radius: var(--radius-full); background: none; color: var(--accent); cursor: pointer; }
+.role-tick__info:hover { background: var(--sand); }
+.role-tick__info:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.role-tick--chosen { background: color-mix(in srgb, var(--accent) 9%, var(--surface)); }
+.role-tick--chosen .role-tick__info { background: var(--accent); color: var(--on-live); }
+
+.role-gives { display: grid; gap: 4px; font-size: var(--text-caption); line-height: 1.5; }
+.role-gives__lead { margin: 10px 0 0; color: var(--ink-2); font-weight: 600; }
+.role-gives__lead:first-child { margin-top: 0; }
+.role-gives__list { margin: 0; padding-left: 18px; }
+.role-gives__refusal { margin: 10px 0 0; color: var(--marker-ink); font-weight: 600; }
+
+.people-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); }
+.people-row__body { display: grid; gap: 2px; min-width: 0; }
+.people-row__label { color: var(--ink-2); font-size: var(--text-label); font-weight: 600; }
+.people-row__names { overflow: hidden; font-size: var(--text-row); font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
+
+.people-sheet__found, .people-sheet__people { display: grid; margin: 8px 0 0; padding: 0; list-style: none; }
+.people-sheet__found { margin-bottom: 8px; }
+.people-sheet__found-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; min-height: 52px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+.people-sheet__who { display: grid; gap: 1px; min-width: 0; }
+.people-sheet__name { font-size: var(--text-row); font-weight: 600; }
+.people-sheet__detail { overflow: hidden; color: var(--ink-2); font-size: var(--text-caption); text-overflow: ellipsis; }
+.people-sheet__note { margin: 12px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
+.people-sheet__person { display: grid; gap: 6px; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.people-sheet__person:last-child { border-bottom: 0; }
+.people-sheet__person-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.people-sheet__ticks { display: flex; flex-wrap: wrap; gap: 2px 8px; margin-left: -8px; }
+.people-sheet__ticks .role-tick__label { flex: none; }
+.people-sheet__person .role-gives { padding: 12px 14px; border-radius: var(--radius-field); background: var(--sand); }

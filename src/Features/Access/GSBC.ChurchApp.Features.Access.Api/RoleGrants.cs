@@ -14,29 +14,35 @@ internal static class RoleGrants
             .OfType<PermissionPattern>()
             .Select(pattern => new Grant(pattern, kind == ScopeKind.Global ? Scope.Global : Scope.Of(kind, objectId ?? AnyObject)));
 
-    public static IEnumerable<Permission> Abilities(IEnumerable<string> rolePatterns, ScopeKind kind, string? objectId, PermissionCatalog catalog)
+    public static IEnumerable<Permission> Abilities(
+        IEnumerable<string> rolePatterns, ScopeKind kind, string? objectId, PermissionCatalog catalog, IEnumerable<string>? everywhere = null)
     {
-        GrantSet role = new(At(rolePatterns, kind, objectId).ToList());
+        GrantSet role = new([.. At(rolePatterns, kind, objectId), .. At(everywhere ?? [], ScopeKind.Global, null)]);
         string checkedObject = objectId ?? AnyObject;
         return catalog.ByNode.Values
             .Where(permission => role.IsAllowed(permission, permission.ScopeKind == ScopeKind.Global ? null : checkedObject))
             .OrderBy(permission => permission.Node, StringComparer.Ordinal);
     }
 
-    public static List<Permission> NotHeld(GrantSet actor, IEnumerable<string> rolePatterns, ScopeKind kind, string? objectId, PermissionCatalog catalog)
+    public static List<Permission> NotHeld(
+        GrantSet actor, IEnumerable<string> rolePatterns, ScopeKind kind, string? objectId, PermissionCatalog catalog, IEnumerable<string>? everywhere = null)
     {
         string checkedObject = objectId ?? AnyObject;
-        return Abilities(rolePatterns, kind, objectId, catalog)
+        return Abilities(rolePatterns, kind, objectId, catalog, everywhere)
             .Where(permission => !actor.IsAllowed(permission, permission.ScopeKind == ScopeKind.Global ? null : checkedObject))
             .ToList();
     }
 
-    public static List<string> PatternsOf(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles) =>
-        role.Patterns.Select(pattern => pattern.Pattern)
-            .Concat(role.Includes
-                .Select(include => roles.GetValueOrDefault(include.IncludedRoleId))
-                .OfType<RoleRecord>()
-                .SelectMany(included => included.Patterns.Select(pattern => pattern.Pattern)))
+    public static List<string> PatternsOf(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles) => Of(role, roles, everywhere: false);
+
+    public static List<string> EverywhereOf(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles) => Of(role, roles, everywhere: true);
+
+    private static List<string> Of(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles, bool everywhere) =>
+        role.Includes
+            .Select(include => roles.GetValueOrDefault(include.IncludedRoleId))
+            .OfType<RoleRecord>()
+            .Prepend(role)
+            .SelectMany(each => each.Patterns.Where(pattern => pattern.Everywhere == everywhere).Select(pattern => pattern.Pattern))
             .ToList();
 
     public static async Task<IReadOnlyList<string?>> ScopesAsync(
@@ -62,6 +68,7 @@ internal static class RoleGrants
             List<string> patterns = PatternsOf(role, roles);
             foreach (string? scope in await ScopesAsync(role, kind, objectId, hierarchy, cancellationToken))
                 grants.AddRange(At(patterns, kind, scope));
+            grants.AddRange(At(EverywhereOf(role, roles), ScopeKind.Global, null));
         }
         return new GrantSet(grants);
     }

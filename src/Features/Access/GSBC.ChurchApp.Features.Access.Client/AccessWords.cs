@@ -13,6 +13,15 @@ public static class AccessWords
             ? includesTeams ? $"For one {scopeKind}, and its teams" : $"For one {scopeKind}"
             : scopeKind == ScopeKind.Draft.Name ? $"For the draft “{name}”" : Place(name, includesTeams);
 
+    public static string OneThing(string roleName, string scopeKind, string? placeName) =>
+        (scopeKind, placeName) switch
+        {
+            (_, null) => $"{roleName} of a {scopeKind.Replace('-', ' ')}",
+            ("calendar", _) => $"{roleName} of the {placeName} calendar",
+            ("draft", _) => $"{roleName} of the draft “{placeName}”",
+            _ => $"{roleName} of {placeName}",
+        };
+
     public static string GivenWhere(RoleInfo role) =>
         role.ScopeKind == ScopeKind.Global.Name ? "Everywhere"
         : role.AppliesToChildren ? $"For one {role.ScopeKind}, and its teams"
@@ -34,6 +43,14 @@ public static class AccessWords
         1 => "1 person",
         _ => $"{count} people",
     };
+
+    public static string? Added(AssignmentInfo? assignment, TimeProvider time) =>
+        assignment is null ? null
+        : assignment.CreatedBy is { } by ? $"Added by {by}, {When(assignment.CreatedAt, time)}"
+        : $"Added {When(assignment.CreatedAt, time)}";
+
+    private static string When(DateTime at, TimeProvider time) =>
+        at.ToLocalTime().ToString(at.Year == time.GetLocalNow().Year ? "d MMM" : "d MMM yyyy");
 
     public static string Until(DateTime? expiresAt) =>
         expiresAt is { } ends ? $"until {ends.ToLocalTime():d MMM yyyy}" : "";
