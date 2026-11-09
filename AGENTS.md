@@ -119,6 +119,9 @@ or the session or permissions change; never load once in `OnInitialized` and lea
 service, a calendar, a folder, a tile, anything. Build the delete in the same change as the create, decide what
 happens to whatever uses it (move it elsewhere, leave it without, or explain why it can't go yet), and ask before
 deleting anything that can't be undone.
+People can be deleted too (owner, 2026-11-09): a feature that keeps anything about a person (their id, their contact
+details, their progress) implements `IPersonData` (Platform.Api) so deleting an account forgets it
+([accounts.md](docs/features/accounts.md), *Deleting an account*).
 
 # Admin work stays in the admin panel
 

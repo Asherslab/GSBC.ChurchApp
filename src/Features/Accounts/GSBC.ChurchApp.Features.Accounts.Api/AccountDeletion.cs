@@ -58,7 +58,7 @@ internal sealed class AccountDeletion(AccountsDbContext db, IEnumerable<IPersonD
             await feature.ForgetAsync(userId, cancellationToken);
     }
 
-    internal static void Tombstone(AccountUser user, DateTime now)
+    private static void Tombstone(AccountUser user, DateTime now)
     {
         string placeholder = $"deleted-{user.Id:N}";
         user.Email = null;

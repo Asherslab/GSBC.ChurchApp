@@ -42,5 +42,5 @@ internal sealed class EventsPersonData(EventsDbContext db, EventsPublisher publi
             await publisher.PublishAsync(cancellationToken);
     }
 
-    internal static bool WithoutContact(EventFields fields, string personId) => fields.Contacts.RemoveAll(contact => contact.PersonId == personId) > 0;
+    private static bool WithoutContact(EventFields fields, string personId) => fields.Contacts.RemoveAll(contact => contact.PersonId == personId) > 0;
 }

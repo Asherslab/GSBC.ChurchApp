@@ -1,7 +1,6 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Api.Data;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
-using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Storage;
 using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;

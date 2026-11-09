@@ -122,7 +122,7 @@ internal sealed class SermonDeletion(
             sermon.SourceSpeakerId = to;
         if (sermon.SpeakerCorrected && sermon.SpeakerId == from)
             sermon.SpeakerId = to;
-        if (sermon.SpeakerCorrected && sermon.SpeakerId is { } shown && shown == sermon.SourceSpeakerId)
+        if (sermon is { SpeakerCorrected: true, SpeakerId: { } shown } && shown == sermon.SourceSpeakerId)
             (sermon.SpeakerCorrected, sermon.SpeakerId) = (false, null);
     }
 
@@ -132,7 +132,7 @@ internal sealed class SermonDeletion(
             sermon.SourceSeriesId = to;
         if (sermon.SeriesCorrected && sermon.SeriesId == from)
             sermon.SeriesId = to;
-        if (sermon.SeriesCorrected && sermon.SeriesId is { } shown && shown == sermon.SourceSeriesId && sermon.Origin == SermonSources.Website)
+        if (sermon is { SeriesCorrected: true, SeriesId: { } shown, Origin: SermonSources.Website } && shown == sermon.SourceSeriesId)
             (sermon.SeriesCorrected, sermon.SeriesId) = (false, null);
     }
 

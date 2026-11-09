@@ -67,7 +67,7 @@
             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Undo changes</Button>
         }
         <Button Variant="ButtonVariant.Quiet" Icon="@(Detail.Hidden ? "eye" : "eye-off")" Disabled="_busy" OnClick="ToggleHiddenAsync">@(Detail.Hidden ? "Show in the app" : "Hide from the app")</Button>
-        @if (Detail.Hidden && Detail.Origin == SermonSources.Uploads)
+        @if (Detail is { Hidden: true, Origin: SermonSources.Uploads })
         {
             <Button Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="() => _deleting = true">Delete for good…</Button>
         }
