@@ -50,7 +50,6 @@
     [Parameter, EditorRequired] public required StylingPreview Preview { get; set; }
     [Parameter] public ThemeSpec? Theme { get; set; }
     [Parameter] public string? SelectedKey { get; set; }
-    [Parameter] public IReadOnlyDictionary<string, string> Marks { get; set; } = new Dictionary<string, string>();
     [Parameter] public bool Still { get; set; }
     [Parameter] public string Showing { get; set; } = "the app";
     [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
@@ -92,10 +91,6 @@
         <div class="hub-arrange @(selected ? "hub-arrange--selected" : "")" data-arrange tabindex="0" role="button" aria-pressed="@(selected ? "true" : "false")"
              aria-label="@($"{DraftWords.NameOf(cell.Entry)}, {cell.Place.Columns} by {cell.Place.Rows}, tile {cell.Index + 1} of {Visible.Count}")">
             <span class="hub-arrange__tags">
-                @if (!selected && Marks.GetValueOrDefault(HubTiles.KeyOf(cell.Entry)) is { } mark)
-                {
-                    <span class="hub-arrange__mark">@mark</span>
-                }
                 @if (selected && !Still)
                 {
                     <span class="hub-arrange__size" data-size>@(new TileSpan(cell.Place.Columns, cell.Place.Rows).Words)</span>
@@ -114,10 +109,6 @@
         bool selected = top is not null && HubTiles.KeyOf(top) == SelectedKey;
         <button type="button" class="hub-arrange hub-arrange--top @(selected ? "hub-arrange--selected" : "")" aria-pressed="@(selected ? "true" : "false")"
                 aria-label="The words at the top of Home" @onclick="() => top is null ? Task.CompletedTask : OnChoose.InvokeAsync(top)">
-            @if (top is not null && Marks.GetValueOrDefault(HubTiles.KeyOf(top)) is { } mark && !selected)
-            {
-                <span class="hub-arrange__tags"><span class="hub-arrange__mark">@mark</span></span>
-            }
         </button>
     };
 

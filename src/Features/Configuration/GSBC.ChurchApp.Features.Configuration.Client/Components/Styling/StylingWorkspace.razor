@@ -92,7 +92,7 @@ else
         <div class="styling__desk">
             <div class="styling__stage">
                 <StylingPhone Hub="@shown.Arranged(HubSurfaces.Area, null)" Appearance="@shown.Arranged(AppearanceSurfaces.Area, null)" Tabs="@shown.Arranged(TabBarSurfaces.Area, null)"
-                              Preview="_preview" Theme="EditingTheme" SelectedKey="@_selectedKey" Marks="@(_session is null ? NoMarks : TileMarks(_session))" Still="@(_session is null || !MayEdit(HubSurfaces.Area))"
+                              Preview="_preview" Theme="EditingTheme" SelectedKey="@_selectedKey" Still="@(_session is null || !MayEdit(HubSurfaces.Area))"
                               Showing="@(_session is null ? "What everyone sees" : $"“{_session.Draft.Name}”")" OnChoose="ChooseAsync" OnTabBar="ChooseTabBarAsync"
                               OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnScheme="SchemeFound" />
                 <PreviewChips Value="_preview" ValueChanged="preview => _preview = preview" Roles="RolesInUse(shown)" RoleNames="_roleNames" />
@@ -182,7 +182,6 @@ else
 @code {
     private static readonly TimeSpan SaveAfter = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(5);
-    private static readonly IReadOnlyDictionary<string, string> NoMarks = new Dictionary<string, string>();
 
     [Parameter] public string? DraftId { get; set; }
     [Parameter] public string? AreaKey { get; set; }
@@ -641,7 +640,6 @@ else
     private IReadOnlyList<PlacementPatch> RemovedIn(DraftSession session) =>
         session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList();
 
-    private IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => MarksIn(session, HubSurfaces.Area);
 
     private void SchemeFound(ThemeScheme scheme)
     {

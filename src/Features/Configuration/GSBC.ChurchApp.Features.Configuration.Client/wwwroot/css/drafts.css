@@ -200,7 +200,6 @@
 .tile-settings .place-field__words { flex: 1 1 calc(100% - 50px); }
 .tile-settings :is(.place-field__title, .place-field__where) { white-space: normal; }
 
-.hub-arrange__mark { padding: 2px 8px; border-radius: var(--radius-full); background: var(--marker); color: var(--on-marker); font-size: var(--text-pill); font-weight: 700; pointer-events: none; }
 .draft-pane__back--folded { display: none; }
 .workbench.workbench--canvas.workbench--canvas { height: 100vh; height: 100dvh; min-height: 0; overflow: hidden; }
 @media (max-width: 1648px) {
