@@ -202,6 +202,34 @@ column, a phone) they return to one column: search and links above the list, gat
 - **Opened on its own** (a search result, a shared embed link): the page shows a thin green bar with the church's name
   and a link to the matching page on the website.
 
+### Moving between pages without a flash (2026-11-09)
+
+The owner saw a flicker moving between pages on the test pages ("i expect that might be iframe handling stuff"). Frame by
+frame, each move was a full reload inside the iframe: about ten blank white frames, the green *on the church website*
+bar showing for a frame or two (it was hidden only once `frame.js` ran), and the text shifting ten pixels as the framed
+padding arrived. Fixed:
+
+- **Pages swap in place.** `frame.js` follows links and the search form to the same approved pages itself: it fetches
+  the next page (the same `GET` a click would make), puts its `<main>` in place of the current one, and keeps the
+  address with `history.pushState`, inside a view transition where the browser has them. Back and forward work (the
+  browser's history steps through the iframe as before, and the website's address follows), and anything else (an
+  error, an outside link, a download) is an ordinary link. Measured on the test pages in Chromium and WebKit: before,
+  every move reloaded the frame; after, none do, and no blank frame shows.
+- **No new path.** Blazor's enhanced navigation would do the same, but it needs `blazor.web.js` and Razor Components'
+  endpoint mapping, which adds Blazor's own *opaque redirection* endpoint that the approval doesn't cover; the swap is
+  forty lines on the eight approved pages.
+- **The framed look is set before the page paints:** a one-line script in `<head>` marks the page as framed, so the green
+  bar and the padding never flash. When a page does load in full (the first one, or a fallback), `@view-transition {
+  navigation: auto; }` and a white background on the page avoid a blank flash where the browser supports it.
+- **Fonts are the site's own files,** DM Serif Text and Montserrat (latin subset, woff2, SIL Open Font License, licences
+  in `wwwroot/fonts/`), preloaded from the page's `<head>` with `font-display: swap`, rather than Google Fonts.
+- **The iframe keeps its height** until the new page reports its own (it never falls back to 1200), and when the new page
+  starts above the window, the website scrolls smoothly to the frame's top (instantly with *reduce motion*), never
+  otherwise.
+
+**Other dates** on an event's page are fixed-size tiles in a grid that wraps (eight across on a computer, five on a
+phone), each a link to that date; they had been squeezed to the width of their numbers.
+
 ### Search engines and share previews
 
 Each page has a `<title>`, a description, a canonical address (its own, on `embed.baptist.com.au`) and Open Graph

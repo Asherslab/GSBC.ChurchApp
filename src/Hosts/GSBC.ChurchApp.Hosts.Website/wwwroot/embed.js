@@ -95,7 +95,11 @@
             const query = toWebsiteQuery(base, event.data.path);
             const address = location.pathname + (query ? `?${query}` : "") + location.hash;
             if (address !== location.pathname + location.search + location.hash) history.replaceState(null, "", address);
-            if (moved && frame.getBoundingClientRect().top < 0) frame.scrollIntoView({ block: "start" });
+            const top = frame.getBoundingClientRect().top;
+            if (moved && top < 0) {
+                const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+                window.scrollTo({ top: Math.max(0, window.scrollY + top - 16), behavior: still ? "auto" : "smooth" });
+            }
         });
     }
 })();
