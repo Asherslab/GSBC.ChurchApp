@@ -325,6 +325,23 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data.Migrations
                     b.ToTable("placements", "config");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Configuration.Api.Data.SeedRecord", b =>
+                {
+                    b.Property<string>("Key")
+                        .HasMaxLength(80)
+                        .HasColumnType("character varying(80)")
+                        .HasColumnName("key");
+
+                    b.Property<DateTime>("SeededAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("seeded_at");
+
+                    b.HasKey("Key")
+                        .HasName("pk_seeds");
+
+                    b.ToTable("seeds", "config");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.FeedChangeRecord", b =>
                 {
                     b.Property<long>("Cursor")

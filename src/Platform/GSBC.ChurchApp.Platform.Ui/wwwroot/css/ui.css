@@ -516,9 +516,6 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 [data-theme-swatch="brand"] i:nth-child(1) { background: var(--swatch-brand-1); }
 [data-theme-swatch="brand"] i:nth-child(2) { background: var(--swatch-brand-2); }
 [data-theme-swatch="brand"] i:nth-child(3) { background: var(--swatch-brand-3); }
-[data-theme-swatch="year-2026"] i:nth-child(1) { background: var(--swatch-year-2026-1); }
-[data-theme-swatch="year-2026"] i:nth-child(2) { background: var(--swatch-year-2026-2); }
-[data-theme-swatch="year-2026"] i:nth-child(3) { background: var(--swatch-year-2026-3); }
 .check { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-full); background: var(--live); color: var(--on-live); }
 .row--selected { margin: 0 -12px; padding-left: 12px; padding-right: 12px; width: calc(100% + 24px); border-radius: var(--radius-field); border-bottom-color: transparent; background: var(--selected-fill); }
 .workbench__aside .row--selected { background: var(--segment-on); }

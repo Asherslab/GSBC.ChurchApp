@@ -680,3 +680,104 @@ export function show(canvas, key) {
 export function scheme() {
   return document.documentElement.dataset.scheme === 'dark' ? 'Dark' : 'Light';
 }
+
+export function attachTabs(bar, receiver) {
+  let gesture = null;
+
+  const movable = () => [...bar.querySelectorAll('[data-tab]')];
+  const widthOf = (tab) => tab.offsetWidth;
+  const scaleOf = (tab) => tab.getBoundingClientRect().width / tab.offsetWidth || 1;
+
+  const reset = () => {
+    for (const tab of movable()) {
+      tab.style.transform = '';
+      tab.style.transition = '';
+      tab.classList.remove('tabs-canvas__tab--dragging');
+    }
+    bar.classList.remove('tabs-canvas__bar--moving');
+  };
+
+  const targetIndex = (dx) => {
+    const { tab, tabs } = gesture;
+    const centre = tab.offsetLeft + widthOf(tab) / 2 + dx;
+    const others = tabs.filter((other) => other !== tab);
+    const before = others.filter((other) => other.offsetLeft + widthOf(other) / 2 < centre).length;
+    return Math.min(tabs.length - 1, before);
+  };
+
+  const shift = (to) => {
+    const { tab, tabs, from } = gesture;
+    const step = widthOf(tab);
+    tabs.forEach((other, index) => {
+      if (other === tab) return;
+      const by = from < to && index > from && index <= to ? -step : from > to && index >= to && index < from ? step : 0;
+      other.style.transition = still() ? 'none' : `transform ${glide}ms ${glideCurve}`;
+      other.style.transform = by ? `translateX(${by}px)` : '';
+    });
+  };
+
+  const down = (event) => {
+    const tab = event.target.closest?.('[data-tab]');
+    if (!tab || event.button !== 0 || bar.closest('[data-still="true"]')) return;
+    const tabs = movable();
+    gesture = { tab, tabs, from: tabs.indexOf(tab), to: tabs.indexOf(tab), x: event.clientX, started: false, scale: scaleOf(tab), pointer: event.pointerId };
+  };
+
+  const move = (event) => {
+    if (!gesture || event.pointerId !== gesture.pointer) return;
+    const dx = (event.clientX - gesture.x) / gesture.scale;
+    if (!gesture.started) {
+      if (Math.abs(dx) < startAfter) return;
+      gesture.started = true;
+      gesture.tab.setPointerCapture(event.pointerId);
+      gesture.tab.classList.add('tabs-canvas__tab--dragging');
+      bar.classList.add('tabs-canvas__bar--moving');
+    }
+    event.preventDefault();
+    gesture.tab.style.transform = `translateX(${dx}px)`;
+    gesture.to = targetIndex(dx);
+    shift(gesture.to);
+  };
+
+  const finish = async (event) => {
+    if (!gesture || event.pointerId !== gesture.pointer) return;
+    const done = gesture;
+    gesture = null;
+    if (!done.started) return;
+    const swallow = (click) => { click.stopPropagation(); click.preventDefault(); };
+    bar.addEventListener('click', swallow, { capture: true, once: true });
+    setTimeout(() => bar.removeEventListener('click', swallow, { capture: true }), 0);
+    const keys = done.tabs.map((tab) => tab.dataset.tab);
+    if (done.to !== done.from) {
+      const [moved] = keys.splice(done.from, 1);
+      keys.splice(done.to, 0, moved);
+      await receiver.invokeMethodAsync('TabsArranged', keys, moved);
+    }
+    reset();
+  };
+
+  const cancel = () => {
+    gesture = null;
+    reset();
+  };
+
+  const escape = (event) => {
+    if (event.key === 'Escape' && gesture?.started) cancel();
+  };
+
+  bar.addEventListener('pointerdown', down);
+  bar.addEventListener('pointermove', move);
+  bar.addEventListener('pointerup', finish);
+  bar.addEventListener('pointercancel', cancel);
+  document.addEventListener('keydown', escape, true);
+
+  return {
+    dispose() {
+      bar.removeEventListener('pointerdown', down);
+      bar.removeEventListener('pointermove', move);
+      bar.removeEventListener('pointerup', finish);
+      bar.removeEventListener('pointercancel', cancel);
+      document.removeEventListener('keydown', escape, true);
+    },
+  };
+}

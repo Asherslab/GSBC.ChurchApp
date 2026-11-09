@@ -1,15 +1,17 @@
+#:property PublishAot=false
+
 using System.Net.Http.Headers;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 
-if (args.Length != 4)
+if (args.Length != 5)
 {
-    Console.Error.WriteLine("usage: dotnet run SetWhatToTest.cs -- <bundle id> <version> <build number> <text file>");
+    Console.Error.WriteLine("usage: dotnet run SetWhatToTest.cs -- <bundle id> <version> <build number> <text file> <tester group>");
     return 2;
 }
 
-(string bundleId, string version, string buildNumber, string textFile) = (args[0], args[1], args[2], args[3]);
+(string bundleId, string version, string buildNumber, string textFile, string groupName) = (args[0], args[1], args[2], args[3], args[4]);
 string whatToTest = File.ReadAllText(textFile);
 TimeSpan waitAtMost = TimeSpan.FromMinutes(60);
 TimeSpan between = TimeSpan.FromSeconds(30);
@@ -61,6 +63,41 @@ foreach (JsonNode? localization in localizations)
     });
 }
 Console.WriteLine($"What to Test is set on build {version} ({buildNumber}).");
+
+JsonNode group = (await GetAsync($"apps/{appId}/betaGroups?filter[name]={Uri.EscapeDataString(groupName)}&limit=1"))["data"]!.AsArray().FirstOrDefault()
+    ?? throw new InvalidOperationException($"GSBC UAT has no TestFlight group named \"{groupName}\"; add the build to its testers by hand.");
+string groupId = group["id"]!.GetValue<string>();
+bool isInternal = group["attributes"]?["isInternalGroup"]?.GetValue<bool>() ?? false;
+bool getsEveryBuild = group["attributes"]?["hasAccessToAllBuilds"]?.GetValue<bool>() ?? false;
+
+if (isInternal && getsEveryBuild)
+{
+    Console.WriteLine($"{groupName} gets every build automatically.");
+    return 0;
+}
+
+await SendAsync(HttpMethod.Post, $"betaGroups/{groupId}/relationships/builds", new JsonObject
+{
+    ["data"] = new JsonArray(new JsonObject { ["type"] = "builds", ["id"] = buildId }),
+});
+Console.WriteLine($"Build {version} ({buildNumber}) is given to {groupName}.");
+
+if (!isInternal)
+{
+    JsonNode? review = (await GetAsync($"builds/{buildId}/betaAppReviewSubmission"))["data"];
+    if (review is null)
+    {
+        await SendAsync(HttpMethod.Post, "betaAppReviewSubmissions", new JsonObject
+        {
+            ["data"] = new JsonObject
+            {
+                ["type"] = "betaAppReviewSubmissions",
+                ["relationships"] = new JsonObject { ["build"] = new JsonObject { ["data"] = new JsonObject { ["type"] = "builds", ["id"] = buildId } } },
+            },
+        });
+        Console.WriteLine($"Sent to Apple's beta review; {groupName}'s testers get it once Apple approves it.");
+    }
+}
 return 0;
 
 async Task<JsonNode> GetAsync(string path)

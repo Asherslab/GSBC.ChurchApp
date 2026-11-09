@@ -99,8 +99,8 @@ it is in [home.md](home.md). The older link tile (`hub.link`) still draws but is
 ## The second consumer
 
 The app's **theme** (`app.appearance`: an `app.theme` surface with a palette choice, and repeatable
-`app.custom-theme` surfaces for themes staff make): staff choose the church's brand, the yearly theme
-or one they made, for everyone, and the phone applies it live. See
+`app.custom-theme` surfaces, the church's brand and the 2026 theme among them, seeded once): staff choose one
+for everyone, and the phone applies it live. See
 [data-driven.md](../architecture/data-driven.md), *Themes*. It's edited under Colours in a draft.
 
 ## Status

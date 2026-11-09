@@ -141,11 +141,11 @@ jobs:
           git tag "$UAT_TAG"
           git push origin "$UAT_TAG"
 
-      - name: Set What to Test once Apple has processed the build
+      - name: Set What to Test once Apple has processed the build, and give it to GSBC Staff
         env:
           ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
           ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
-        run: dotnet run tools/release-notes/SetWhatToTest.cs -- "$BUNDLE_ID" "$MARKETING_VERSION" "${{ github.run_number }}" "$RUNNER_TEMP/what-to-test.txt"
+        run: dotnet run tools/release-notes/SetWhatToTest.cs -- "$BUNDLE_ID" "$MARKETING_VERSION" "${{ github.run_number }}" "$RUNNER_TEMP/what-to-test.txt" "GSBC Staff"
 
       - name: Remove the API key and the signing keychain
         if: always()
