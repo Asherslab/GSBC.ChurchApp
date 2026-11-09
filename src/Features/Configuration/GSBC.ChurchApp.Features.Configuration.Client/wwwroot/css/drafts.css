@@ -285,3 +285,4 @@
 .hub-arrange--top.hub-arrange--selected { box-shadow: inset 0 0 0 3px var(--marker); }
 .hub-arrange--top .hub-arrange__tags { top: calc(var(--sat) + 8px); }
 .published-sheet__text { margin: 0 0 10px; font-size: var(--text-body); line-height: 1.5; color: var(--ink-2); }
+.hub-canvas .phone-frame .topbar:not(.is-stuck) { pointer-events: none; }

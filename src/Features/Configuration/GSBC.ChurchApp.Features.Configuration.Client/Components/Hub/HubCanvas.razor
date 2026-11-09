@@ -105,7 +105,7 @@
 
     private IReadOnlyList<FieldOption> ViewerChoices =>
     [
-        new(EveryTile, "Someone who sees every tile"),
+        new(EveryTile, "Anyone (all tiles)"),
         new(Visitor, "A visitor, not signed in"),
         new(SignedIn, "Someone signed in"),
         .. RolesInUse.Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
@@ -115,7 +115,7 @@
 
     private string ViewerWords => _viewer switch
     {
-        EveryTile => "someone who sees every tile",
+        EveryTile => "anyone, with all tiles",
         Visitor => "a visitor",
         SignedIn => "someone signed in",
         _ => Guid.TryParse(_viewer, out Guid role) ? $"someone who's {RoleNames.GetValueOrDefault(role, "in that role")}" : "everyone",

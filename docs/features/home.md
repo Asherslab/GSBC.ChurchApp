@@ -169,7 +169,7 @@ church days, as for every placement.
 
 Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the list editor):
 
-- **Toolbar:** Columns (2, 3, 4), **Preview the draft as** (someone who sees every tile, a visitor, someone
+- **Toolbar:** Columns (2, 3, 4), **Preview the draft as** (anyone with all tiles, a visitor, someone
   signed in, someone in a role a tile is for), **Preview in** Light or Dark (the phone only; the admin panel keeps its own mode, and the
   switch starts on it), **Preview the draft on** a date, and Add a tile. These are worded as previews (owner, 2026-11-09)
   because "Show Home for: Everyone" read as if it decided who sees Home. Below it, a toggle lists tiles not on

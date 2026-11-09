@@ -7,11 +7,8 @@
     </header>
     @Notices
 
-    <fieldset class="tile-settings__group">
-        <legend>Title</legend>
-        <TextField Label="@Top.Title.Label" Value="@Draft.Values[Top.Title.Key]" ValueChanged="value => SetAsync(Top.Title.Key, value)"
-                   MaxLength="Top.Title.MaxLength" Required="true" Problem="@Top.Title.ProblemWith(Draft.Values[Top.Title.Key])" />
-    </fieldset>
+    <TextField Label="@Top.Title.Label" Value="@Draft.Values[Top.Title.Key]" ValueChanged="value => SetAsync(Top.Title.Key, value)"
+               MaxLength="Top.Title.MaxLength" Required="true" Problem="@Top.Title.ProblemWith(Draft.Values[Top.Title.Key])" />
 
     <fieldset class="tile-settings__group">
         <legend>@Top.Under.Label</legend>
