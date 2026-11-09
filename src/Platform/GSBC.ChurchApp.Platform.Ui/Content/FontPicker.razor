@@ -35,7 +35,7 @@
         @if (Library is { MayChooseFromGoogle: true } library)
         {
             <TextField Label="Search Google Fonts" Placeholder="Playfair Display, Lora, Nunito…" Value="@_query" ValueChanged="SearchSoon"
-                       Hint="Free to use in the app. The font is copied into the media library." />
+                       Hint="Free to use in the app. Media keeps a copy under Made by the app." />
             @if (_results.Count > 0)
             {
                 <div class="font-picker__results" role="list" aria-label="Google Fonts">
