@@ -9,7 +9,7 @@ built. Permissions (who may do what) are the Access feature ([access.md](access.
 | Who | Can |
 |---|---|
 | Anyone | Sign up with a name, an email and a passkey; sign in; confirm their email |
-| Signed in | See and remove their passkeys, add another, see and end their sessions, sign out everywhere, change their name, delete their account |
+| Signed in | See and remove their passkeys, add another, see and end their sessions, sign out everywhere, change their name, delete their account, pin admin pages to the top of the sidebar |
 | Forgot / lost device | Ask for a recovery code by email (confirmed email, no sensitive permissions) and register a new passkey |
 | Staff with `accounts.manage` | Invite someone by email; give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account; delete an account |
 | Staff with `accounts.review.manage` | Make a demo account and sign-in codes for Apple's reviewers; turn a code off ([identity.md](../architecture/identity.md), *Review sign-in codes*) |
@@ -65,7 +65,7 @@ say it can't be undone (`AccountDeletionWords`).
 - **Only the name stays** (`AccountDeletion`): the account's row is kept with its display name, so the history of what
   they did still names them (draft changes, Live history, the People activity log). Its email, user name and phone are
   cleared (the email is free to sign up again, and the audit details that were the email are cleared), it's marked
-  `deleted_at` and disabled, and its passkeys, Identity claims, logins and tokens, sessions, codes and review codes are
+  `deleted_at` and disabled, its pinned pages are cleared, and its passkeys, Identity claims, logins and tokens, sessions, codes and review codes are
   deleted in one transaction, so it can't sign in and every device is signed out. People and the people picker no
   longer list it; `GetPeople` still answers its name, with `Deleted`. The abandoned-account clean-up never removes it.
 - **Every feature forgets its part** through `IPersonData` (Platform.Api, registered by each feature's API like
@@ -78,6 +78,12 @@ say it can't be undone (`AccountDeletionWords`).
   Owner assignment ("Make someone else an Owner first").
 - Phones held roles of their own (calendars added, follows) stay with the phone, as when someone signs out.
 - Tests: `AccountDeletionTests`, `InvitationTests`, `AssignmentPolicyTests`.
+
+**Pinned pages** (owner, 2026-11-09: pins "with the account"). The admin sidebar's *Pinned* list
+([repo-layout.md](../architecture/repo-layout.md), *The admin sidebar*) is kept on the account, so it follows the person to
+any computer: `Accounts.GetPinnedPages` and `Accounts.SetPinnedPages` (signed in, your own only; up to 12 page addresses),
+stored as `accounts.users.pinned_pages`. Saving marks the own-records `accounts.pins` feed, so another computer's sidebar
+reloads them; `AccountPinnedPages` is the admin panel's `IPinnedPages`. Deleting the account clears them.
 
 ## A person's page (2026-11-09)
 

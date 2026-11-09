@@ -54,6 +54,25 @@ public sealed class Shell(IJSRuntime js) : IDisposable
         return listener;
     }
 
+    public async ValueTask<WindowChannel> HearJumpKeyAsync(Func<string, Task> heard)
+    {
+        WindowChannel listener = new(heard);
+        listener.Subscription = await js.InvokeAsync<IJSObjectReference>("gsbcShell.jumpKeys", listener.Receiver);
+        return listener;
+    }
+
+    public ValueTask<bool> UsesCommandKeyAsync() => js.InvokeAsync<bool>("gsbcShell.usesCommandKey");
+
+    public ValueTask<string?> RecallAsync(string key) => js.InvokeAsync<string?>("gsbcShell.recall", key);
+
+    public ValueTask RememberAsync(string key, string value) => js.InvokeVoidAsync("gsbcShell.remember", key, value);
+
+    internal ValueTask RevealAsync(string elementId) => js.InvokeVoidAsync("gsbcShell.reveal", elementId);
+
+    internal ValueTask RestoreFocusAsync() => js.InvokeVoidAsync("gsbcShell.restoreFocus");
+
+    internal ValueTask FocusFirstAsync(ElementReference sheet) => js.InvokeVoidAsync("gsbcShell.focusFirst", sheet);
+
     public ValueTask StartedAsync() => js.InvokeVoidAsync("gsbcShell.started");
 
     public ValueTask BackAsync(string fallback) => js.InvokeVoidAsync("gsbcShell.back", fallback);

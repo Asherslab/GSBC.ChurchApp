@@ -65,7 +65,7 @@ which shows the shared not-found state when the item is gone.
 
 ## In the admin panel
 
-- **Places in the app** (`/places`, the sidebar's *The app* group; any signed-in staff member): the directory
+- **Places in the app** (`/places`, the sidebar's *The app* area; any signed-in staff member): the directory
   (search, area chips, rows grouped by area) beside a phone showing the chosen place, who can open it, its
   actions (the place's own change action first, then Copy link) and its link written out under them. The page was chosen by the owner on the decision page (2026-11-03, after a
   steer toward "a good overview for exploring and modifying specific things").

@@ -44,6 +44,12 @@ public sealed class Profile
 }
 
 [ProtoContract]
+public sealed class PinnedPages
+{
+    [ProtoMember(1)] public List<string> Hrefs { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class UpdateNameRequest
 {
     [ProtoMember(1)] public string DisplayName { get; set; } = "";

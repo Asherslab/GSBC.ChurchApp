@@ -23,6 +23,10 @@ public sealed class AccountsClient(ChannelBase channel, SessionSignal signal, ID
 
     public ValueTask<Profile> GetProfileAsync() => _accounts.GetProfileAsync(new Nothing());
 
+    public ValueTask<PinnedPages> GetPinnedPagesAsync() => _accounts.GetPinnedPagesAsync(new Nothing());
+
+    public ValueTask<Done> SetPinnedPagesAsync(IReadOnlyList<string> hrefs) => _accounts.SetPinnedPagesAsync(new PinnedPages { Hrefs = [.. hrefs] });
+
     public ValueTask<Done> UpdateNameAsync(string name) => _accounts.UpdateNameAsync(new UpdateNameRequest { DisplayName = name });
 
     public ValueTask<Done> ConfirmEmailAsync(string code) => _accounts.ConfirmEmailAsync(new ConfirmEmailRequest { Code = code });

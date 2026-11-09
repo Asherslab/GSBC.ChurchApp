@@ -1,3 +1,9 @@
+@implements IDisposable
+@inject ClientModules Modules
+@inject NavigationManager Navigation
+@inject SidebarPins Pins
+@inject IAccess Access
+
 <PageTitle>@(BrowserTitle ?? Title) · Good Shepherd admin</PageTitle>
 <header class="title-band">
     <div class="title-band__text">
@@ -12,9 +18,17 @@
         }
         @LeadContent
     </div>
-    @if (Actions is not null)
+    @if (Actions is not null || Pinnable is not null)
     {
-        <div class="title-band__actions">@Actions</div>
+        <div class="title-band__actions">
+            @Actions
+            @if (Pinnable is { } page)
+            {
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="pin" OnClick="() => Pins.SetAsync(page.Href, !Pins.IsPinned(page.Href))">
+                    @(Pins.IsPinned(page.Href) ? "Unpin from the sidebar" : "Pin to the sidebar")
+                </Button>
+            }
+        </div>
     }
 </header>
 
@@ -26,4 +40,14 @@
     [Parameter] public string? BackHref { get; set; }
     [Parameter] public string BackText { get; set; } = "Back";
     [Parameter] public string? BrowserTitle { get; set; }
+
+    private NavEntry? Pinnable => Pins.Available
+        ? Modules.Navigation.FirstOrDefault(entry => SidebarPlan.Pinnable(entry) && (entry.Requires is null || Access.CanSomewhere(entry.Requires)) && entry.Href == Navigation.ToBaseRelativePath(Navigation.Uri).Split('?', '#')[0])
+        : null;
+
+    protected override void OnInitialized() => Pins.Changed += OnPinsChanged;
+
+    private void OnPinsChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Pins.Changed -= OnPinsChanged;
 }

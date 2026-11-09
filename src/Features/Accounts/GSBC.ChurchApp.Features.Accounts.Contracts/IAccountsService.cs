@@ -32,6 +32,12 @@ public interface IAccountsService
     ValueTask<Done> ResendConfirmationAsync(Nothing request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<PinnedPages> GetPinnedPagesAsync(Nothing request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<Done> SetPinnedPagesAsync(PinnedPages request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<PasskeyList> ListPasskeysAsync(Nothing request, CallContext context = default);
 
     [SignedIn]

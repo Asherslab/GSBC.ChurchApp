@@ -1,0 +1,86 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+aside{background:#2a3d5e;color:#fff;padding:22px 14px 16px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+.brand{display:flex;gap:10px;align-items:center;padding:0 10px;font-weight:700;font-size:17px}
+.mark{width:30px;height:30px;border-radius:50%;border:5px solid #d5c9b7;border-right-color:transparent}
+.jump{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border-radius:9px;background:rgb(255 255 255/.12);color:rgb(255 255 255/.7);font-size:13px;font-weight:600}
+.jump kbd{margin-left:auto;font:600 11px Montserrat;color:#d5c9b7}
+.lbl{display:flex;justify-content:space-between;padding:0 10px 6px;color:#d5c9b7;font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+.lnk{position:relative;display:flex;align-items:center;gap:10px;height:36px;padding:0 10px;border-radius:9px;color:rgb(255 255 255/.76);font-size:14px;font-weight:600}
+.lnk i{width:16px;height:16px;border-radius:4px;border:2px solid currentColor;opacity:.8}
+.lnk.on{background:rgb(255 255 255/.12);color:#fff}
+.lnk.on:before{content:"";position:absolute;left:-14px;top:9px;bottom:9px;width:3px;border-radius:0 3px 3px 0;background:#e7ae74}
+.cnt{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#e7ae74;color:#2a1a08;font-size:12px;font-weight:700;display:grid;place-items:center}
+.area{display:flex;align-items:center;gap:8px;height:34px;padding:0 10px;border-radius:9px;color:#fff;font-size:13px;font-weight:700}
+.area b{width:8px;height:8px;border-right:2px solid #d5c9b7;border-bottom:2px solid #d5c9b7;transform:rotate(-45deg);margin-right:4px}
+.area.open b{transform:rotate(45deg)}
+.area .n{margin-left:auto;color:rgb(255 255 255/.72);font-size:12px;font-weight:600}
+.sub{padding-left:14px;display:grid;gap:1px}
+.foot{margin-top:auto;border-top:1px solid rgb(255 255 255/.12);padding-top:10px}
+main{padding:28px 40px}
+.tb{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+h1{font-size:30px;letter-spacing:-.02em}
+.lead{color:#545e70;font-size:14px;margin-top:4px}
+.btn{height:36px;padding:0 16px;border-radius:18px;background:#f4efe7;font:600 13px Montserrat;display:inline-flex;align-items:center}
+.chips{display:flex;gap:6px;margin-bottom:14px}
+.chip{height:34px;padding:0 12px;border-radius:17px;background:#f4efe7;color:#545e70;font:600 13px Montserrat;display:inline-flex;align-items:center}
+.chip.on{background:#2a3d5e;color:#fff}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font:600 12px Montserrat;color:#6b7384;padding:10px 12px;border-bottom:1px solid #e9e1d4}
+td{padding:14px 12px;border-bottom:1px solid #e9e1d4;font-size:14px}
+td.t{font-weight:600}
+.pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fbe7d3;color:#8a5422}
+.pill.q{background:#f4efe7;color:#545e70}
+.pinhint{margin-top:26px;padding:14px 16px;border-radius:12px;background:#f4efe7;font-size:13px;color:#545e70;max-width:620px}
+</style></head><body>
+<aside>
+ <div class="brand"><span class="mark"></span>Good Shepherd</div>
+ <div class="jump">Jump to…<kbd>⌘K</kbd></div>
+ <div>
+  <div class="lnk"><i></i>Home</div>
+ </div>
+ <div>
+  <div class="lbl">Pinned</div>
+  <div class="lnk"><i></i>Announcements<span class="cnt">2</span></div>
+  <div class="lnk"><i></i>Calendar</div>
+  <div class="lnk"><i></i>Sermons<span class="cnt">1</span></div>
+  <div class="lnk"><i></i>App styling</div>
+ </div>
+ <div>
+  <div class="lbl">Everything</div>
+  <div class="area"><b></b>Sundays &amp; sermons<span class="cnt">1</span></div>
+  <div class="area"><b></b>Calendar &amp; news<span class="cnt">2</span></div>
+  <div class="area open"><b></b>The app<span class="n">8</span></div>
+  <div class="sub">
+   <div class="lnk"><i></i>App styling</div>
+   <div class="lnk"><i></i>Media</div>
+   <div class="lnk"><i></i>Places in the app</div>
+   <div class="lnk"><i></i>Insights</div>
+   <div class="lnk on"><i></i>App health</div>
+   <div class="lnk"><i></i>App review</div>
+   <div class="lnk"><i></i>What's new</div>
+   <div class="lnk"><i></i>Notifications sent</div>
+  </div>
+  <div class="area"><b></b>People<span class="n">4</span></div>
+  <div class="area"><b></b>Church life<span class="n">6</span></div>
+ </div>
+ <div class="foot"><div class="lnk"><i></i>Account</div></div>
+</aside>
+<main>
+ <div class="tb"><div><h1>App health</h1><p class="lead">Errors from phones, the admin panel and the server, newest first.</p></div><span class="btn">Pin to the sidebar</span></div>
+ <div class="chips"><span class="chip on">All 14</span><span class="chip">Phones 9</span><span class="chip">Admin panel 3</span><span class="chip">Server 2</span></div>
+ <table>
+  <tr><th>What went wrong</th><th>Where</th><th>Phones</th><th>Last seen</th><th></th></tr>
+  <tr><td class="t">Sermon audio stopped after 40 minutes</td><td>iPhone 15, iOS 26.1</td><td>6</td><td>12 minutes ago</td><td><span class="pill">New</span></td></tr>
+  <tr><td class="t">Calendar didn't load on a slow connection</td><td>Pixel 8, Android 16</td><td>2</td><td>Today, 9:42</td><td><span class="pill">New</span></td></tr>
+  <tr><td class="t">Picture upload timed out</td><td>Admin panel, Safari</td><td>1</td><td>Yesterday</td><td><span class="pill q">Seen</span></td></tr>
+  <tr><td class="t">Weekly digest preview was empty</td><td>Admin panel, Chrome</td><td>1</td><td>Fri 6 Nov</td><td><span class="pill q">Seen</span></td></tr>
+  <tr><td class="t">Push token couldn't be refreshed</td><td>Server</td><td>—</td><td>Thu 5 Nov</td><td><span class="pill q">Seen</span></td></tr>
+ </table>
+ <p class="pinhint">Folded areas show what's waiting inside them. An area opens by itself when you're on one of its pages, and stays as you left it next time.</p>
+</main>
+</body></html>
