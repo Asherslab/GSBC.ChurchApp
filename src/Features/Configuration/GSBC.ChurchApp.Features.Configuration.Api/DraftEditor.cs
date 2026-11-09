@@ -276,7 +276,7 @@ internal sealed class DraftEditor(
         foreach (Guid id in due)
         {
             db.ChangeTracker.Clear();
-            if (await db.Drafts.SingleOrDefaultAsync(draft => draft.Id == id && draft.PublishAt != null && draft.PublishAt <= now && draft.NotPublished == null, cancellationToken) is not { } draft)
+            if (await db.Drafts.SingleOrDefaultAsync(found => found.Id == id && found.PublishAt != null && found.PublishAt <= now && found.NotPublished == null, cancellationToken) is not { } draft)
                 continue;
             outcomes.Add(await PublishScheduledAsync(draft, cancellationToken));
         }

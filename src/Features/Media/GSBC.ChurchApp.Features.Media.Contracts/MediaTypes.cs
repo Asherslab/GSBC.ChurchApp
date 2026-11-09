@@ -2,7 +2,7 @@ namespace GSBC.ChurchApp.Features.Media.Contracts;
 
 public static class MediaTypes
 {
-    public const long LargeFileBytes = 10 * 1024 * 1024;
+    private const long LargeFileBytes = 10 * 1024 * 1024;
     public const long LargeOriginalBytes = 2 * 1024 * 1024;
 
     private static readonly Dictionary<string, string> ExtensionByType = new(StringComparer.OrdinalIgnoreCase)
@@ -20,7 +20,7 @@ public static class MediaTypes
 
     public static bool IsFont(string contentType) => contentType.StartsWith("font/", StringComparison.OrdinalIgnoreCase);
 
-    public static string? FontTypeOf(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
+    private static string? FontTypeOf(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
     {
         ".woff2" => "font/woff2",
         ".woff" => "font/woff",
@@ -31,7 +31,7 @@ public static class MediaTypes
 
     public static IEnumerable<string> Accepted => ExtensionByType.Keys;
 
-    public static IEnumerable<string> FontFileExtensions => [".woff2", ".woff", ".ttf", ".otf"];
+    private static IEnumerable<string> FontFileExtensions => [".woff2", ".woff", ".ttf", ".otf"];
 
     public static string AcceptedFiles(bool fontsOnly) =>
         string.Join(",", fontsOnly ? FontFileExtensions : Accepted.Concat(FontFileExtensions));
@@ -41,7 +41,7 @@ public static class MediaTypes
     public static bool TryGetExtension(string contentType, out string extension) =>
         ExtensionByType.TryGetValue(contentType, out extension!);
 
-    public static bool IsLarge(long bytes) => bytes > LargeFileBytes;
+    private static bool IsLarge(long bytes) => bytes > LargeFileBytes;
 
     public static bool IsLargeOriginal(long bytes) => bytes > LargeOriginalBytes;
 

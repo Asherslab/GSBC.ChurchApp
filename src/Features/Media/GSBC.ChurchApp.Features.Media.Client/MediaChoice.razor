@@ -100,7 +100,7 @@
     protected override async Task OnInitializedAsync() => _folderId = await Memory.LastFolderAsync();
 
     private IReadOnlyList<Crumb> Trail(FolderMap map) =>
-        [new Crumb("Library", null, "image"), .. map.PathTo(_folderId).Select(folder => new Crumb(folder.Name, folder.Id, "folder"))];
+        [new("Library", null, "image"), .. map.PathTo(_folderId).Select(folder => new Crumb(folder.Name, folder.Id, "folder"))];
 
     private async Task<FolderMap> LoadTreeAsync()
     {

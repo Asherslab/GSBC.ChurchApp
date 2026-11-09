@@ -16,8 +16,8 @@ public sealed class FontLibrary(ChannelBase channel, IAccess access) : IFontLibr
     public bool MayChooseFiles => access.Can(MediaPermissions.View);
 
     public async Task<IReadOnlyList<FontFamilyChoice>> SearchAsync(string query, CancellationToken cancellationToken = default) =>
-        (await _fonts.SearchAsync(new FontSearch { Query = query })).Families;
+        (await _fonts.SearchAsync(new FontSearch { Query = query }, new CallOptions(cancellationToken: cancellationToken))).Families;
 
     public async Task<CustomFont> ImportAsync(string family, CancellationToken cancellationToken = default) =>
-        await _fonts.ImportAsync(new ImportFontRequest { Family = family });
+        await _fonts.ImportAsync(new ImportFontRequest { Family = family }, new CallOptions(cancellationToken: cancellationToken));
 }
