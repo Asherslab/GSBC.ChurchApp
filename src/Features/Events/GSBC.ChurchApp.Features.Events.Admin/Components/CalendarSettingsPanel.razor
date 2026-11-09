@@ -18,7 +18,7 @@
             <PeopleRow @key="existing.Settings.Calendar.Id" Source="People.For(ScopeKind.Calendar, existing.Settings.Calendar.Id)"
                        SheetTitle="@($"People on the {existing.Settings.Calendar.Name} calendar")"
                        SheetLead="Editors add and change its events; Publishers also publish them. Calendar Managers and Owners can change every calendar and aren't listed."
-                       Empty="Only Calendar Managers and Owners can change it." />
+                       Empty="No one is on it yet." />
             <CopyField Label="Link for calendar apps" Value="@LinkFor(existing.Settings.Calendar)"
                        Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "A private calendar: people subscribe through their own link in the app.")" />
         }
