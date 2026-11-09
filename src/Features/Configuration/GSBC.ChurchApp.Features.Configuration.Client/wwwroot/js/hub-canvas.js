@@ -373,6 +373,10 @@ export function attach(canvas, receiver) {
     if (!handle || !canvas.contains(handle)) return;
     const cell = cellOf(handle);
     if (!cell) return;
+    if (canvas.dataset.still) {
+      receiver.invokeMethodAsync('Chosen', cell.dataset.tile);
+      return;
+    }
     gesture = {
       kind: event.target.closest('[data-grip]') ? 'resize' : 'move',
       cell,
@@ -576,7 +580,7 @@ export function attach(canvas, receiver) {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       await receiver.invokeMethodAsync('Chosen', tile);
-    } else if (keys[event.key]) {
+    } else if (keys[event.key] && !canvas.dataset.still) {
       event.preventDefault();
       if (gesture) return;
       const [x, y] = keys[event.key];
@@ -651,14 +655,6 @@ export async function readText(input, most) {
 export function contrastOf(selector) {
   const element = document.querySelector(selector);
   return element ? contrast(element) : 0;
-}
-
-export function reveal(selector) {
-  const element = document.querySelector(selector);
-  if (!element) return;
-  element.scrollTop = 0;
-  const box = element.getBoundingClientRect();
-  if (box.top > innerHeight * 0.6) element.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
 }
 
 export function show(canvas, key) {

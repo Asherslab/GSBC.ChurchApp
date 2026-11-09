@@ -6,6 +6,8 @@
 @inject IPeopleDirectory People
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject TimeProvider Clock
+@inject SurfaceViews Views
 @inject IEnumerable<HubTileKind> TileKinds
 @inject IServiceProvider Services
 
@@ -13,43 +15,94 @@
 
 @if (_list is null && _loadProblem is not null)
 {
-    <EmptyState Icon="alert" Title="Can't show drafts right now" Body="@_loadProblem" />
+    <TitleBand Title="App styling" />
+    <EmptyState Icon="alert" Title="Can't show the app's styling right now" Body="@_loadProblem" />
 }
 else if (_list is null)
 {
-    <Skeleton Count="4" Label="Loading drafts" />
+    <TitleBand Title="App styling" />
+    <Skeleton Count="4" Label="Loading the app's styling" />
 }
 else
 {
-    <Workbench Narrow="Narrow" Class="@(!Narrow && _session is not null && IsCanvas && _view == View.Drafts ? "workbench--canvas" : null)" Showing="Showing" AsideLabel="Drafts" DetailLabel="Settings and preview" Detail="@(Narrow || _view == View.ChurchYear ? null : DetailPane)">
-        <Aside>
-            <div class="drafts-column">
-                <Segmented TValue="View" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
-                <EventLayerBand Layer="Layer" MayChange="MayPublishAnything" Busy="_busy" OnOpen="draft => OpenAsync(draft.Id)" OnTurnOff="TurnOffAsync" OnChangeDates="ChangeDatesAsync" />
-                <DraftListing List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync" PublishedNote="_publishedNote" />
-            </div>
-        </Aside>
-        <ChildContent>
-            @if (_view == View.ChurchYear)
-            {
-                <ChurchYear List="_list" OnOpen="OpenFromYearAsync" />
-            }
-            else if (_session is null)
-            {
-                @if (_message is not null)
+    DraftSession shown = Shown;
+    <div class="styling @(_session is null ? "" : "styling--drafting")">
+        <TitleBand Title="@(_session?.Draft.Name ?? "App styling")" BrowserTitle="App styling">
+            <LeadContent>
+                @if (_session is { } session)
                 {
-                    <Notice Text="@_message" />
+                    <div class="styling__line">
+                        <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(session.Draft)" Retry="SaveNowAsync" />
+                        <span class="styling__dot" aria-hidden="true">·</span>
+                        <button type="button" class="link styling__leave" @onclick="BackToEveryoneAsync">Back to what everyone sees</button>
+                        <span class="draft-pane__step-slot">
+                            @if (_stepNote is not null && session.Edits == _stepNoteAt)
+                            {
+                                <span class="draft-pane__step-note" role="status">
+                                    <span class="draft-pane__step-words">@_stepNote</span>
+                                    <button type="button" class="draft-pane__step-again" @onclick="@(_stepOffersRedo ? StepForwardAsync : StepBackAsync)">@(_stepOffersRedo ? "Redo" : "Undo")</button>
+                                </span>
+                            }
+                        </span>
+                    </div>
                 }
-                <EmptyState Icon="pencil" Title="Choose a draft, or start one" Body="A draft holds changes to the app's Home screen, colours and pages. Only you and people you share it with see it until it's published.">
-                    <Button Icon="plus" OnClick="() => _naming = true">New draft</Button>
-                </EmptyState>
-            }
-            else
-            {
-                @EditorPane
-            }
-        </ChildContent>
-    </Workbench>
+                else
+                {
+                    <p class="title-band__lead styling__sentence">@Sentence</p>
+                }
+            </LeadContent>
+            <Actions>
+                <div class="ui-actions draft-pane__actions">
+                    @if (_session is { } session)
+                    {
+                        <span class="draft-pane__steps" role="group" aria-label="Undo and redo" data-undo-keys>
+                            <Button Variant="ButtonVariant.Quiet" Icon="undo" AriaLabel="Undo" Tooltip="Undo (⌘Z, or Ctrl+Z)" Disabled="@(!session.CanStepBack)" OnClick="StepBackAsync" />
+                            <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z, or Ctrl+Shift+Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
+                        </span>
+                    }
+                    @if (_session is { } drafting)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Icon="share" AriaLabel="Share" Tooltip="Share" OnClick="() => _sharing = true"><span class="draft-pane__label">Share</span></Button>
+                        <Button Variant="ButtonVariant.Quiet" Icon="more" AriaLabel="More" Tooltip="More" OnClick="OpenMore"><span class="draft-pane__label">More</span></Button>
+                        @if (MayPublishDraft)
+                        {
+                            <Button Busy="_busy" Disabled="@(drafting.ChangedForEveryone.Count > 0 || !drafting.Patches.Any() || _save == SaveState.Failed)" OnClick="PublishAsync">Publish now</Button>
+                        }
+                        else if (drafting.Draft.Status == DraftStatus.WaitingToPublish)
+                        {
+                            <Button Disabled="true">Waiting to publish</Button>
+                        }
+                        else
+                        {
+                            <Button Busy="_busy" Disabled="@(!drafting.Patches.Any())" OnClick="AskToPublishAsync">Ask to publish</Button>
+                        }
+                    }
+                    <DraftsMenu List="_list" Names="_names" SelectedId="@_session?.Draft.Id" MayUndo="MayPublishAnything" PublishedNote="_publishedNote" TriggerClass="btn btn--quiet"
+                                OnOpen="draft => OpenAsync(draft.Id)" OnNew="() => _naming = true" OnUndo="UndoAsync" OnPublishAgain="PublishAgainAsync">
+                        <span>Drafts</span>
+                        @if (_list.Drafts.Count > 0)
+                        {
+                            <span class="drafts-menu__count">@_list.Drafts.Count</span>
+                        }
+                    </DraftsMenu>
+                </div>
+            </Actions>
+        </TitleBand>
+
+        <div class="styling__desk">
+            <div class="styling__stage">
+                <StylingPhone Hub="@shown.Arranged(HubSurfaces.Area, null)" Appearance="@shown.Arranged(AppearanceSurfaces.Area, null)" Tabs="@shown.Arranged(TabBarSurfaces.Area, null)"
+                              Preview="_preview" Theme="EditingTheme" SelectedKey="@_selectedKey" Marks="@(_session is null ? NoMarks : TileMarks(_session))" Still="@(_session is null || !MayEdit(HubSurfaces.Area))"
+                              Showing="@(_session is null ? "What everyone sees" : $"“{_session.Draft.Name}”")" OnChoose="ChooseAsync" OnTabBar="ChooseTabBarAsync"
+                              OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnScheme="SchemeFound" />
+                <PreviewChips Value="_preview" ValueChanged="preview => _preview = preview" Roles="RolesInUse(shown)" RoleNames="_roleNames" />
+            </div>
+            <div class="styling__panel">
+                @Notices
+                @Panel
+            </div>
+        </div>
+    </div>
 
     @if (_session is not null)
     {
@@ -64,6 +117,7 @@ else
                 <ListGroup>
                     <ListRow Title="Undo" Subtitle="Take back your last change (⌘Z, or Ctrl+Z)" Icon="undo" Disabled="@(!_session.CanStepBack)" OnClick="() => StepFromMoreAsync(StepBackAsync)" />
                     <ListRow Title="Redo" Subtitle="Bring back what you undid (⇧⌘Z, or Ctrl+Shift+Z)" Icon="redo" Disabled="@(!_session.CanStepForward)" OnClick="() => StepFromMoreAsync(StepForwardAsync)" />
+                    <ListRow Title="Open the preview in its own window" Subtitle="For a second screen; it follows this draft as you change it" Icon="external-link" OnClick="PopOutAsync" />
                 </ListGroup>
                 <ListGroup>
                     @if (MayPublishDraft)
@@ -93,23 +147,22 @@ else
                 <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _more = false">Close</Button>
             </Actions>
         </Sheet>
-        @if (Narrow)
-        {
-            <Sheet Open="_form is not null" OpenChanged="open => { if (!open) Deselect(); }" Title="@FormTitle" Lead="@_form?.Surface.Description">
-                <ChildContent>
-                    @if (_form is not null)
-                    {
-                        @ChangedWhileEditing
-                        <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
-                    }
-                </ChildContent>
-                <Actions>
-                    @FormActions
-                    <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="Deselect">Done</Button>
-                </Actions>
-            </Sheet>
-        }
     }
+
+    <Sheet Open="_choosing is not null" OpenChanged="open => { if (!open) _choosing = null; }" Title="Change it in which draft?" Lead="You have more than one draft open. Carry on in one of them, or start another.">
+        <ChildContent>
+            <ListGroup>
+                @foreach (Draft draft in MyOpenDrafts)
+                {
+                    <ListRow Title="@draft.Name" Subtitle="@DraftWords.Touches(draft, Surfaces)" Icon="pencil" Chevron="true" OnClick="() => CarryOnAsync(draft)" />
+                }
+            </ListGroup>
+        </ChildContent>
+        <Actions>
+            <Button Block="true" Icon="plus" Busy="_busy" OnClick="StartForChangeAsync">Start a new draft</Button>
+            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _choosing = null">Cancel</Button>
+        </Actions>
+    </Sheet>
 
     <Sheet Open="_naming" OpenChanged="open => _naming = open" Title="New draft" Lead="Name it for what it's for, so you'll know it in a few weeks.">
         <ChildContent>
@@ -127,18 +180,16 @@ else
 }
 
 @code {
-    private enum View { Drafts, ChurchYear }
-
     private static readonly TimeSpan SaveAfter = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan RetryAfter = TimeSpan.FromSeconds(5);
-    private static readonly IReadOnlyList<SegmentOption<View>> Views = [new(View.Drafts, "Drafts", "pencil"), new(View.ChurchYear, "Church year", "calendar")];
+    private static readonly IReadOnlyDictionary<string, string> NoMarks = new Dictionary<string, string>();
 
     [Parameter] public string? DraftId { get; set; }
     [Parameter] public string? AreaKey { get; set; }
-    [Parameter] public bool Narrow { get; set; }
-    [Parameter] public string BasePath { get; set; } = "drafts";
+    [Parameter] public string BasePath { get; set; } = "app-styling";
 
-    private ThemeScheme _themeScheme;
+    private StylingPreview _preview = StylingPreview.Start;
+    private bool _schemeFound;
     private bool _addingTile;
     private bool _savingTile;
     private string? _savedNote;
@@ -146,13 +197,17 @@ else
     private DraftList? _list;
     private string? _loadProblem;
     private readonly Dictionary<string, string> _names = [];
+    private readonly Dictionary<AreaKey, IReadOnlyList<StoredPlacement>> _everyone = [];
     private DraftSession? _session;
     private AreaKey _area;
-    private View _view;
+    private bool _overview = true;
     private PlacementDraft? _form;
     private string? _formId;
     private string? _selectedKey;
-    private bool _preview;
+    private (string Area, string? Key)? _choosing;
+    private (string Area, string? Key)? _carryOn;
+    private string? _madeForChange;
+    private bool _askedForArea;
     private SaveState _save;
     private bool _saving;
     private CancellationTokenSource? _pending;
@@ -186,250 +241,297 @@ else
         }
         if (_list is not null && DraftId != _opened)
             await OpenDraftAsync(DraftId);
+        if (_list is not null && DraftId is null && AreaKey is { } asked && !_askedForArea && Surfaces.Areas.ContainsKey(asked))
+        {
+            _askedForArea = true;
+            await ChangeAsync(asked, null);
+        }
     }
 
-    private WorkbenchPane Showing => _session is null && _view == View.Drafts ? WorkbenchPane.Aside : WorkbenchPane.Main;
-
     private Draft? Layer => _list?.Drafts.FirstOrDefault(draft => draft.LayerOn);
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
     private bool MayPublishAnything => Surfaces.Areas.Values.Any(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.PublishPermission));
 
     private bool MayPublishDraft => _session is not null
         && _session.TouchedAreas.Append(_area).All(area => Surfaces.Areas.TryGetValue(area.Area, out SurfaceArea? known) && Access.Can(known.PublishPermission, area.ScopeId));
 
-    private IEnumerable<SurfaceArea> EditableAreas => Surfaces.Areas.Values.Where(area => area.ScopeKind == ScopeKind.Global && Access.Can(area.EditPermission));
+    private bool MayEdit(SurfaceArea area) => Access.Can(area.EditPermission);
+
+    private IEnumerable<SurfaceArea> EditableAreas => Surfaces.Areas.Values.Where(area => area.ScopeKind == ScopeKind.Global && MayEdit(area));
 
     private SurfaceArea? CurrentArea => Surfaces.Areas.GetValueOrDefault(_area.Area);
 
-    private RenderFragment EditorPane => __builder =>
+    private List<Draft> MyOpenDrafts => _list?.Drafts.Where(draft => draft is { Mine: true, Status: DraftStatus.Open, LayerOn: false, PublishAt: null }).ToList() ?? [];
+
+    private DraftSession Shown => _session ?? EveryoneOn(_preview.At(Now));
+
+    private DraftSession EveryoneOn(DateTime at)
     {
-        DraftSession session = _session!;
-        Draft draft = session.Draft;
-        <div class="draft-pane">
-            @if (Narrow)
-            {
-                <button type="button" class="draft-pane__back" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> Drafts</button>
-            }
-            else if (IsCanvas)
-            {
-                <button type="button" class="draft-pane__back draft-pane__back--folded" @onclick="BackToListAsync"><Icon Name="chevron-left" Size="IconSize.Small" /> All drafts</button>
-            }
-            <header class="draft-pane__head">
-                <div class="draft-pane__title">
-                    <h2 title="@draft.Name">@draft.Name</h2>
-                    <SaveStatus State="_save" SavedText="Saved" Detail="@SharedText(draft)" Retry="SaveNowAsync" />
-                    <span class="draft-pane__step-slot">
-                        @if (_stepNote is not null && _session?.Edits == _stepNoteAt)
-                        {
-                            <span class="draft-pane__step-note" role="status">
-                                <span class="draft-pane__step-words">@_stepNote</span>
-                                <button type="button" class="draft-pane__step-again" @onclick="@(_stepOffersRedo ? StepForwardAsync : StepBackAsync)">@(_stepOffersRedo ? "Redo" : "Undo")</button>
-                            </span>
-                        }
-                    </span>
-                </div>
-                <div class="ui-actions draft-pane__actions">
-                    <span class="draft-pane__steps" role="group" aria-label="Undo and redo" data-undo-keys>
-                        <Button Variant="ButtonVariant.Quiet" Icon="undo" AriaLabel="Undo" Tooltip="Undo (⌘Z, or Ctrl+Z)" Disabled="@(!session.CanStepBack)" OnClick="StepBackAsync" />
-                        <Button Variant="ButtonVariant.Quiet" Icon="redo" AriaLabel="Redo" Tooltip="Redo (⇧⌘Z, or Ctrl+Shift+Z)" Disabled="@(!session.CanStepForward)" OnClick="StepForwardAsync" />
-                    </span>
-                    <Button Variant="ButtonVariant.Quiet" Icon="share" AriaLabel="Share" Tooltip="Share" OnClick="() => _sharing = true"><span class="draft-pane__label">Share</span></Button>
-                    <Button Variant="ButtonVariant.Quiet" Icon="more" AriaLabel="More" Tooltip="More" OnClick="OpenMore"><span class="draft-pane__label">More</span></Button>
-                    @if (MayPublishDraft)
-                    {
-                        <Button Busy="_busy" Disabled="@(session.ChangedForEveryone.Count > 0 || !session.Patches.Any() || _save == SaveState.Failed)" OnClick="PublishAsync">Publish now</Button>
-                    }
-                    else if (draft.Status == DraftStatus.WaitingToPublish)
-                    {
-                        <Button Disabled="true">Waiting to publish</Button>
-                    }
-                    else
-                    {
-                        <Button Busy="_busy" Disabled="@(!session.Patches.Any())" OnClick="AskToPublishAsync">Ask to publish</Button>
-                    }
-                </div>
-            </header>
+        Draft? layer = _list?.Drafts.FirstOrDefault(draft => draft.LayerOn && (draft.LayerStartsAt ?? DateTime.MinValue) <= at && (draft.LayerEndsAt ?? DateTime.MaxValue) > at);
+        DraftSession everyone = new(layer ?? new Draft(), Surfaces);
+        foreach ((AreaKey area, IReadOnlyList<StoredPlacement> placements) in _everyone)
+            everyone.UseLive(area, placements);
+        return everyone;
+    }
 
-            @if (_problem is not null && !_turningOn && !_naming)
-            {
-                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-            }
-            @if (session.ChangedForEveryone.Count is > 0 and var count)
-            {
-                <Notice Tone="NoticeTone.Warning" Text="@($"{(count == 1 ? "One thing" : $"{count} things")} in this draft {(count == 1 ? "was" : "were")} changed for everyone since you edited {(count == 1 ? "it" : "them")}. Choose which to keep before publishing.")" />
-            }
-            @if (draft is { LayerOn: true, LayerStartsAt: { } starts } && starts > DateTime.UtcNow)
-            {
-                <Notice Text="@($"This draft is scheduled for an event from {DraftWords.When(starts)}. What you save goes out to everyone then.")" />
-            }
-            else if (draft.LayerOn)
-            {
-                <Notice Text="This draft is on for an event, so everyone sees your changes as they save." />
-            }
-            else if (draft.Status == DraftStatus.WaitingToPublish)
-            {
-                <Notice Text="Waiting for someone who can publish. If you change it, you'll need to ask again." />
-            }
-            @if (draft is { PublishAt: { } publishAt, NotPublished: null })
-            {
-                <Notice>
-                    <span>Publishes on @DraftWords.Moment(publishAt), for good. What you save before then is published too.</span>
-                    @if (MayPublishDraft)
-                    {
-                        <span class="ui-actions">
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Change the time</Button>
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Don't publish it then</Button>
-                        </span>
-                    }
-                </Notice>
-            }
-            else if (draft is { PublishAt: { } missed, NotPublished: { } reason })
-            {
-                <Notice Tone="NoticeTone.Warning">
-                    <span>It didn't publish on @DraftWords.Moment(missed). @reason</span>
-                    <span class="ui-actions">
-                        @if (MayPublishDraft)
-                        {
-                            <Button Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Choose a new time</Button>
-                        }
-                        <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Dismiss</Button>
-                    </span>
-                </Notice>
-            }
+    private static IEnumerable<Guid> RolesInUse(DraftSession shown) =>
+        shown.Arranged(HubSurfaces.Area, null).Concat(shown.Arranged(TabBarSurfaces.Area, null)).SelectMany(entry => entry.Audience.RoleIds).Distinct();
 
-            <TabStrip TValue="AreaKey" Label="What this draft changes" Options="AreaTabs" Value="_area" ValueChanged="SelectAreaAsync">
-                <Trailing>
-                    @foreach (SurfaceArea other in EditableAreas.Where(surface => AreaTabs.All(tab => tab.Value.Area != surface.Key)))
-                    {
-                        <button type="button" class="tab-strip__add" @onclick="() => SelectAreaAsync(new AreaKey(other.Key, null))"><Icon Name="plus" Size="IconSize.Small" /> @other.Title</button>
-                    }
-                </Trailing>
-            </TabStrip>
-
-            @if (CurrentArea is { } area)
-            {
-                <p class="section__lead draft-pane__lead">@area.Description</p>
-                @if (!session.Knows(_area))
-                {
-                    <Skeleton Count="3" Label="Loading what's there" />
-                }
-                else if (!Narrow && EditingTheme is not null)
-                {
-                    <div class="theme-editor">
-                        <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> Everything in @area.Title</button>
-                        @ChangedWhileEditing
-                        <PlacementForm Draft="_form!" Changed="FormChangedAsync" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
-                        <div class="ui-actions">@FormActions</div>
-                    </div>
-                }
-                else if (!Narrow && IsHub)
-                {
-                    <HubCanvas Hub="@session.Arranged(area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)" SelectedKey="@_selectedKey"
-                               Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()"
-                               RoleNames="_roleNames" OnChoose="Select" OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
-                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" Tabs="@session.Arranged(TabBarSurfaces.Area, null)"
-                               Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
-                }
-                else if (!Narrow && IsTabs)
-                {
-                    <TabsCanvas Tabs="@session.Arranged(area, null)" Hub="@session.Arranged(HubSurfaces.Area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)"
-                                SelectedKey="@_selectedKey" RoleNames="_roleNames" Marks="@MarksIn(session, TabBarSurfaces.Area)" OnChoose="Select" OnMove="SetOrdersAsync"
-                                OnAdd="() => Add(TabBarSurfaces.Tab, session.Arranged(area, null))" OnPutBack="UndoAsync"
-                                Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()" />
-                }
-                else
-                {
-                    IReadOnlyList<ArrangedSurface> arranged = session.Arranged(area, _area.ScopeId);
-                    <ListGroup>
-                        @for (int index = 0; index < arranged.Count; index++)
-                        {
-                            int position = index;
-                            ArrangedSurface entry = arranged[position];
-                            PlacementPatch? patch = session.PatchFor(entry.Placement?.Id);
-                            ChangedForEveryone? changed = session.ChangedFor(entry.Placement?.Id);
-                            <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@DraftWords.Summary(entry)" Icon="@(changed is not null ? "alert" : entry.Hidden ? "eye-off" : "eye")"
-                                     IconTone="@(changed is not null ? RowTone.Warm : entry.Hidden ? RowTone.Quiet : RowTone.Accent)"
-                                     Class="@RowClass(entry)" OnClick="() => Select(entry)">
-                                <Below>
-                                    @if (patch is not null)
-                                    {
-                                        <Pill>@(patch.Kind == PatchKind.Add ? "Added in this draft" : "Changed in this draft")</Pill>
-                                    }
-                                    @if (changed is not null)
-                                    {
-                                        <span class="changed-for-everyone">
-                                            <b>Changed for everyone since you edited it:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, entry.Surface))).
-                                            <span class="ui-actions">
-                                                <Button Small="true" OnClick="() => SettleAsync(entry, keepMine: true)">Keep mine</Button>
-                                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleAsync(entry, keepMine: false)">Use everyone's</Button>
-                                            </span>
-                                        </span>
-                                    }
-                                </Below>
-                                <TrailingContent>
-                                    @if (area.Ordered && arranged.Count > 1)
-                                    {
-                                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-up" Disabled="@(position == 0)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} up")" OnClick="() => MoveAsync(arranged, position, -1)" />
-                                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-down" Disabled="@(position == arranged.Count - 1)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} down")" OnClick="() => MoveAsync(arranged, position, 1)" />
-                                    }
-                                    <Icon Name="chevron-right" Size="IconSize.Small" />
-                                </TrailingContent>
-                            </ListRow>
-                        }
-                        @foreach (PlacementPatch removed in session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)))
-                        {
-                            ChangedForEveryone? changed = session.ChangedFor(removed.PlacementId);
-                            <ListRow Title="@RemovedTitle(removed)" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
-                                <Below>
-                                    @if (changed is not null)
-                                    {
-                                        <span class="changed-for-everyone">
-                                            <b>Changed for everyone since you took it out.</b>
-                                            <span class="ui-actions">
-                                                <Button Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: true)">Take it out anyway</Button>
-                                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: false)">Keep it</Button>
-                                            </span>
-                                        </span>
-                                    }
-                                </Below>
-                                <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => UndoAsync(removed.PlacementId)">Put back</Button></TrailingContent>
-                            </ListRow>
-                        }
-                    </ListGroup>
-                    @foreach (Surface repeatable in Surfaces.In(area).Where(surface => surface.Repeatable))
-                    {
-                        <div class="ui-after">
-                            <Button Variant="ButtonVariant.Quiet" Icon="plus" OnClick="() => Add(repeatable, arranged)">Add a @repeatable.Title.ToLowerInvariant()</Button>
-                        </div>
-                    }
-                }
-            }
-        </div>
+    private RenderFragment Sentence => __builder =>
+    {
+        DraftSession now = EveryoneOn(Now);
+        IReadOnlyList<ArrangedSurface> appearance = now.Arranged(AppearanceSurfaces.Area, null);
+        int tiles = HubTiles.TilesIn(now.Arranged(HubSurfaces.Area, null), Views).Count(entry => entry.IsShownTo(Viewer.Anonymous, Now));
+        int tabs = TabBar.For(now.Arranged(TabBarSurfaces.Area, null).Where(entry => entry.IsShownTo(Viewer.Anonymous, Now))).Count + 1;
+        <span>@LayerLead(now)Everyone sees <b>@ThemeNames.Chosen(appearance, Viewer.Anonymous, Now)</b>, <b>@tiles tiles</b> on Home and <b>@tabs tabs</b>.</span>
     };
 
-    private RenderFragment DetailPane =>
-        @<div class="detail-pane">
-            @if (_session is not null && EditingTheme is { } theme)
+    private string LayerLead(DraftSession now) => Layer is { } layer && now.Draft.Id == layer.Id
+        ? $"“{layer.Name}” is on for everyone{(layer.LayerEndsAt is { } ends ? $" until {DraftWords.Day(ends)}" : "")}. "
+        : "";
+
+    private RenderFragment Notices => __builder =>
+    {
+        if (_message is not null)
+        {
+            <Notice Text="@_message" />
+        }
+        if (_session is not { } session)
+            return;
+        Draft draft = session.Draft;
+        if (_problem is not null && !_turningOn && !_naming)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+        if (session.ChangedForEveryone is { Count: > 0 } changedForEveryone)
+        {
+            int count = changedForEveryone.Count;
+            <Notice Tone="NoticeTone.Warning">
+                <span>@($"{(count == 1 ? "One thing" : $"{count} things")} in this draft {(count == 1 ? "was" : "were")} changed for everyone since you edited {(count == 1 ? "it" : "them")}. Choose which to keep before publishing.")</span>
+                @foreach (ChangedForEveryone changed in changedForEveryone)
+                {
+                    <span class="styling__settle">
+                        <b>@NameOfPatch(changed.Patch)</b>
+                        <span class="ui-actions">
+                            <Button Small="true" OnClick="() => SettleIdAsync(changed.Patch.PlacementId, keepMine: true)">Keep mine</Button>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleIdAsync(changed.Patch.PlacementId, keepMine: false)">Use everyone's</Button>
+                        </span>
+                    </span>
+                }
+            </Notice>
+        }
+        foreach (string dropped in draft.LayerOn ? draft.DroppedFromLayer : [])
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@($"Dropped {dropped} from this event: it was removed for everyone.")" />
+        }
+        if (draft is { LayerOn: true, LayerStartsAt: { } starts } && starts > Now)
+        {
+            <Notice Text="@($"This draft is on for an event from {DraftWords.When(starts)}. What you save goes out to everyone then.")" />
+        }
+        else if (draft.LayerOn)
+        {
+            <Notice Text="This draft is on for an event, so everyone sees your changes as they save." />
+        }
+        else if (draft.Status == DraftStatus.WaitingToPublish)
+        {
+            <Notice Text="Waiting for someone who can publish. If you change it, you'll need to ask again." />
+        }
+        if (draft is { PublishAt: { } publishAt, NotPublished: null })
+        {
+            <Notice>
+                <span>Publishes on @DraftWords.Moment(publishAt), for good. What you save before then is published too.</span>
+                @if (MayPublishDraft)
+                {
+                    <span class="ui-actions">
+                        <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Change the time</Button>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Don't publish it then</Button>
+                    </span>
+                }
+            </Notice>
+        }
+        else if (draft is { PublishAt: { } missed, NotPublished: { } reason })
+        {
+            <Notice Tone="NoticeTone.Warning">
+                <span>It didn't publish on @DraftWords.Moment(missed). @reason</span>
+                <span class="ui-actions">
+                    @if (MayPublishDraft)
+                    {
+                        <Button Small="true" OnClick="() => ChooseForEveryone(ForEveryoneWay.PublishOn)">Choose a new time</Button>
+                    }
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="_busy" OnClick="CancelScheduledPublishAsync">Dismiss</Button>
+                </span>
+            </Notice>
+        }
+    };
+
+    private RenderFragment Panel => __builder =>
+    {
+        if (_session is not { } session)
+        {
+            DraftSession everyone = EveryoneOn(Now);
+            <StylingOverview List="_list!" Hub="@everyone.Arranged(HubSurfaces.Area, null)" Appearance="@everyone.Arranged(AppearanceSurfaces.Area, null)"
+                             Tabs="@everyone.Arranged(TabBarSurfaces.Area, null)" OnPart="part => ChangeAsync(part, null)" OnComingUp="ComingUpAsync" />
+            return;
+        }
+        if (_overview || CurrentArea is not { } area)
+        {
+            <section class="styling-overview" aria-labelledby="styling-draft-parts">
+                <h2 id="styling-draft-parts" class="styling-panel__label">What this draft changes</h2>
+                <ListGroup>
+                    @foreach (SurfaceArea part in EditableAreas)
+                    {
+                        int count = session.CountIn(new AreaKey(part.Key, null));
+                        <ListRow Title="@part.Title" Subtitle="@(count == 0 ? "No changes yet" : count == 1 ? "1 change" : $"{count} changes")" Chevron="true" OnClick="() => OpenPartAsync(part.Key)" />
+                    }
+                </ListGroup>
+                <p class="styling-overview__quiet">Click a part of the phone, or one of these, to change it. Changes save themselves, and phones previewing this draft follow along.</p>
+            </section>
+            return;
+        }
+        if (!session.Knows(_area))
+        {
+            <Skeleton Count="3" Label="Loading what's there" />
+            return;
+        }
+        if (EditingTheme is not null)
+        {
+            <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> The app's colours</button>
+            @ChangedWhileEditing
+            <div class="theme-editor">
+                <PlacementForm Draft="_form!" Changed="FormChangedAsync" Scheme="_preview.Scheme" SchemeChanged="SetScheme" />
+                <div class="ui-actions tile-settings__actions">@FormActions</div>
+            </div>
+            return;
+        }
+        if (_form is not null && !IsHub && !IsTabs)
+        {
+            <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> @area.Title</button>
+            <div class="detail-pane__head">
+                <h3>@FormTitle</h3>
+                <span>@_form.Surface.Description</span>
+            </div>
+            @ChangedWhileEditing
+            <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_preview.Scheme" SchemeChanged="SetScheme" />
+            <div class="ui-actions tile-settings__actions">@FormActions</div>
+            return;
+        }
+        if (_form is null)
+        {
+            <button type="button" class="draft-pane__back" @onclick="ToOverview"><Icon Name="chevron-left" Size="IconSize.Small" /> What this draft changes</button>
+        }
+        if (IsAppearance)
+        {
+            <ColoursPanel Appearance="@session.Arranged(area, null)" EveryoneValue="@EveryoneThemeValue" Drafting="true" MayChange="MayEdit(area)"
+                          OnChoose="ChooseThemeAsync" OnEdit="Select" OnDates="Select" OnMake="() => Add(AppearanceSurfaces.CustomTheme.Surface, session.Arranged(area, null))" />
+        }
+        else if (IsHub)
+        {
+            if (_form is not null)
             {
-                <div class="detail-pane__head">
-                    <h3>@(theme.Name.Length > 0 ? theme.Name : "This theme"), live</h3>
-                    <span>As you change it, in @(_themeScheme == ThemeScheme.Light ? "light" : "dark") mode. Phones previewing this draft follow once it saves.</span>
-                </div>
-                <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Tabs="@_session.Arranged(TabBarSurfaces.Area, null)" Theme="theme" Scheme="_themeScheme" />
-            }
-            else if (_session is not null && IsHub)
-            {
+                <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> Home screen</button>
                 @HubDetail
             }
-            else if (_session is not null && IsTabs)
+            else
             {
+                <HomePanel Hub="@session.Arranged(area, null)" Preview="_preview" RoleNames="_roleNames" Removed="@RemovedIn(session)"
+                           OnAdd="() => _addingTile = true" OnColumns="SetColumnsAsync" OnChoose="Select" OnPutBack="UndoAsync">
+                    <HubLibrary Icons="CustomIconEntries" Library="Library" OnChoose="Select" />
+                </HomePanel>
+            }
+        }
+        else if (IsTabs)
+        {
+            if (_form is not null)
+            {
+                <button type="button" class="draft-pane__back" @onclick="Deselect"><Icon Name="chevron-left" Size="IconSize.Small" /> Tab bar</button>
                 @TabsDetail
             }
             else
             {
-                @SettingsOrPreview
+                <TabsPanel Tabs="@session.Arranged(area, null)" Preview="_preview" RoleNames="_roleNames" Removed="@RemovedIn(session)" SelectedKey="@_selectedKey"
+                           Marks="@MarksIn(session, TabBarSurfaces.Area)" MayChange="MayEdit(area)" OnChoose="Select" OnMove="SetOrdersAsync"
+                           OnAdd="() => Add(TabBarSurfaces.Tab, session.Arranged(area, null))" OnPutBack="UndoAsync" />
             }
-        </div>;
+        }
+        else
+        {
+            <div class="styling-panel__head">
+                <h2>@area.Title</h2>
+                <p>@area.Description</p>
+            </div>
+            @GenericArea(session, area)
+        }
+    };
+
+    private RenderFragment GenericArea(DraftSession session, SurfaceArea area) => __builder =>
+    {
+        IReadOnlyList<ArrangedSurface> arranged = session.Arranged(area, _area.ScopeId);
+        <ListGroup>
+            @for (int index = 0; index < arranged.Count; index++)
+            {
+                int position = index;
+                ArrangedSurface entry = arranged[position];
+                PlacementPatch? patch = session.PatchFor(entry.Placement?.Id);
+                ChangedForEveryone? changed = session.ChangedFor(entry.Placement?.Id);
+                <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@DraftWords.Summary(entry)" Icon="@(changed is not null ? "alert" : entry.Hidden ? "eye-off" : "eye")"
+                         IconTone="@(changed is not null ? RowTone.Warm : entry.Hidden ? RowTone.Quiet : RowTone.Accent)"
+                         Class="@RowClass(entry)" OnClick="() => Select(entry)">
+                    <Below>
+                        @if (patch is not null)
+                        {
+                            <Pill>@(patch.Kind == PatchKind.Add ? "Added in this draft" : "Changed in this draft")</Pill>
+                        }
+                        @if (changed is not null)
+                        {
+                            <span class="changed-for-everyone">
+                                <b>Changed for everyone since you edited it:</b> @string.Join(", ", changed.Fields.Select(changedField => DraftWords.Field(changedField, entry.Surface))).
+                                <span class="ui-actions">
+                                    <Button Small="true" OnClick="() => SettleAsync(entry, keepMine: true)">Keep mine</Button>
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleAsync(entry, keepMine: false)">Use everyone's</Button>
+                                </span>
+                            </span>
+                        }
+                    </Below>
+                    <TrailingContent>
+                        @if (area.Ordered && arranged.Count > 1)
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-up" Disabled="@(position == 0)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} up")" OnClick="() => MoveAsync(arranged, position, -1)" />
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Icon="arrow-down" Disabled="@(position == arranged.Count - 1)" AriaLabel="@($"Move {DraftWords.NameOf(entry)} down")" OnClick="() => MoveAsync(arranged, position, 1)" />
+                        }
+                        <Icon Name="chevron-right" Size="IconSize.Small" />
+                    </TrailingContent>
+                </ListRow>
+            }
+            @foreach (PlacementPatch removed in session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)))
+            {
+                ChangedForEveryone? changed = session.ChangedFor(removed.PlacementId);
+                <ListRow Title="@RemovedTitle(removed)" Subtitle="Taken out in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                    <Below>
+                        @if (changed is not null)
+                        {
+                            <span class="changed-for-everyone">
+                                <b>Changed for everyone since you took it out.</b>
+                                <span class="ui-actions">
+                                    <Button Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: true)">Take it out anyway</Button>
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => SettleRemovedAsync(removed, keepMine: false)">Keep it</Button>
+                                </span>
+                            </span>
+                        }
+                    </Below>
+                    <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => UndoAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                </ListRow>
+            }
+        </ListGroup>
+        @foreach (Surface repeatable in Surfaces.In(area).Where(surface => surface.Repeatable))
+        {
+            <div class="ui-after">
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" OnClick="() => Add(repeatable, arranged)">Add a @repeatable.Title.ToLowerInvariant()</Button>
+            </div>
+        }
+    };
+
 
     private RenderFragment HubDetail => __builder =>
     {
@@ -438,7 +540,7 @@ else
         {
             @ChangedWhileEditing
             <TileSettings Draft="_form" Kind="kind" Columns="@HubSurfaces.Grid.ColumnsIn(session.Arranged(HubSurfaces.Area, null))" Changed="FormChangedAsync"
-                          Theme="@HubTheme" Scheme="_themeScheme" Icons="CustomIcons" AddIcon="AddIcon" Notices="@SettleNotice" />
+                          Theme="@HubTheme" Scheme="_preview.Scheme" Icons="CustomIcons" AddIcon="AddIcon" Notices="@SettleNotice" />
             <div class="ui-actions tile-settings__actions">@FormActions</div>
             @if (_savedNote is not null)
             {
@@ -498,34 +600,6 @@ else
         }
         : null;
 
-    private RenderFragment SettingsOrPreview => __builder =>
-    {
-        <Segmented TValue="bool" Label="Show" Options="DetailViews" Value="_preview" ValueChanged="preview => _preview = preview" />
-        @if (_session is null || CurrentArea is null)
-        {
-            <p class="detail-pane__hint">Open a draft to change it here.</p>
-        }
-        else if (_preview)
-        {
-            <div class="ui-actions"><Button Variant="ButtonVariant.Quiet" Small="true" Icon="external-link" OnClick="PopOutAsync">Pop out</Button></div>
-            <PhonePreview Hub="@_session.Arranged(HubSurfaces.Area, null)" Appearance="@_session.Arranged(AppearanceSurfaces.Area, null)" Tabs="@_session.Arranged(TabBarSurfaces.Area, null)" />
-        }
-        else if (_form is null)
-        {
-            <p class="detail-pane__hint">Choose something on the left to change it. Changes save themselves, and phones previewing this draft follow along.</p>
-        }
-        else
-        {
-            <div class="detail-pane__head">
-                <h3>@FormTitle</h3>
-                <span>@_form.Surface.Description</span>
-            </div>
-            @ChangedWhileEditing
-            <PlacementForm Draft="_form" Changed="FormChangedAsync" MoreChoices="CustomThemes" Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
-            <div class="ui-actions">@FormActions</div>
-        }
-    };
-
     private RenderFragment ChangedWhileEditing => __builder =>
     {
         if (_changedWhileEditing)
@@ -545,25 +619,153 @@ else
         {
             if (_session.PatchFor(_formId) is not null)
             {
-                <Button Variant="ButtonVariant.Quiet" Small="@(!Narrow)" Block="Narrow" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo changes to this</Button>
+                <Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => UndoAsync(_formId!)">Undo changes to this</Button>
             }
-            if (IsHub && TileKind is not null && !Narrow)
+            if (IsHub && TileKind is not null)
             {
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="CopyTile">Make a copy</Button>
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="bookmark" OnClick="() => _savingTile = true">Save to the library</Button>
             }
             if (!_form.IsNew || _session.LiveOf(_area, _formId) is not null)
             {
-                <Button Variant="ButtonVariant.Danger" Small="@(!Narrow)" Block="Narrow" OnClick="RemoveSelectedAsync">@RemoveWords(_form)</Button>
+                <Button Variant="ButtonVariant.Danger" Small="true" OnClick="RemoveSelectedAsync">@RemoveWords(_form)</Button>
             }
         }
     };
 
+    private bool IsAppearance => _area.Area == AppearanceSurfaces.Area.Key;
+
+    private string EveryoneThemeValue => AppearanceSurfaces.ChosenFrom(EveryoneOn(Now).Arranged(AppearanceSurfaces.Area, null)
+        .Where(entry => entry.IsShownTo(Viewer.Anonymous, Now))).ChosenValue;
+
+    private IReadOnlyList<PlacementPatch> RemovedIn(DraftSession session) =>
+        session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList();
+
+    private IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => MarksIn(session, HubSurfaces.Area);
+
+    private void SchemeFound(ThemeScheme scheme)
+    {
+        if (_schemeFound)
+            return;
+        _schemeFound = true;
+        _preview = _preview with { Scheme = scheme };
+    }
+
+    private void SetScheme(ThemeScheme scheme) => _preview = _preview with { Scheme = scheme };
+
+    private void ToOverview()
+    {
+        Deselect();
+        _overview = true;
+    }
+
+    private async Task OpenPartAsync(string areaKey)
+    {
+        Deselect();
+        _area = new AreaKey(areaKey, null);
+        _overview = false;
+        if (_session is not null && !_session.Knows(_area))
+            await LoadLiveAsync(_area);
+    }
+
+    private async Task ChooseAsync(ArrangedSurface entry)
+    {
+        if (_session is null)
+        {
+            await ChangeAsync(entry.Surface.Area.Key, KeyOf(entry));
+            return;
+        }
+        if (_area.Area != entry.Surface.Area.Key || _overview)
+            await OpenPartAsync(entry.Surface.Area.Key);
+        Select(entry);
+    }
+
+    private Task ChooseTabBarAsync() => _session is null ? ChangeAsync(TabBarSurfaces.Area.Key, null) : OpenPartAsync(TabBarSurfaces.Area.Key);
+
+    private Task ChooseThemeAsync(string palette)
+    {
+        if (_session is null)
+            return Task.CompletedTask;
+        ArrangedSurface theme = _session.Arranged(AppearanceSurfaces.Area, null).First(entry => entry.Surface == AppearanceSurfaces.Theme.Surface);
+        PlacementDraft chosen = PlacementDraft.Of(theme);
+        chosen.Values[AppearanceSurfaces.Theme.Palette.Key] = palette;
+        _session.Set(new AreaKey(AppearanceSurfaces.Area.Key, null), chosen.ToStored(theme.Placement?.Id ?? Guid.CreateVersion7().ToString()));
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private async Task ComingUpAsync(ComingUp item)
+    {
+        _preview = _preview with { Day = DateOnly.FromDateTime(ChurchTime.ToChurch(item.At)) };
+        if (item.DraftId is { } draftId)
+            await OpenAsync(draftId);
+    }
+
+    private async Task ChangeAsync(string areaKey, string? key)
+    {
+        if (!Surfaces.Areas.TryGetValue(areaKey, out SurfaceArea? area) || !MayEdit(area))
+            return;
+        List<Draft> mine = MyOpenDrafts;
+        _message = null;
+        if (mine.Count == 1)
+        {
+            await CarryOnAsync(mine[0], (areaKey, key));
+            return;
+        }
+        _choosing = (areaKey, key);
+        if (mine.Count == 0)
+            await StartForChangeAsync();
+    }
+
+    private Task CarryOnAsync(Draft draft) => _choosing is { } wanted ? CarryOnAsync(draft, wanted) : OpenAsync(draft.Id);
+
+    private Task CarryOnAsync(Draft draft, (string Area, string? Key) wanted)
+    {
+        _choosing = null;
+        _carryOn = wanted;
+        return OpenAsync(draft.Id);
+    }
+
+    private Task StartForChangeAsync() => RunAsync(async () =>
+    {
+        if (_choosing is not { } wanted)
+            return;
+        string name = $"{Surfaces.Areas[wanted.Area].Title}, {DraftWords.Day(Now)}";
+        Draft created = await Drafts.CreateAsync(name);
+        _madeForChange = created.Id;
+        _list = await LoadListAsync();
+        await CarryOnAsync(created, wanted);
+    });
+
+    private async Task BackToEveryoneAsync()
+    {
+        await SaveNowAsync();
+        Navigation.NavigateTo(BasePath);
+    }
+
+    private async Task ForgetUnusedAsync()
+    {
+        if (_session is not { } left || left.Draft.Id != _madeForChange || left.Patches.Count > 0 || left.Draft.SharedWith.Count > 0)
+            return;
+        _madeForChange = null;
+        try
+        {
+            await Drafts.DeleteAsync(left.Draft.Id);
+            _list = await LoadListAsync();
+        }
+        catch (RpcException)
+        {
+        }
+    }
+
+    private string NameOfPatch(PlacementPatch patch) =>
+        _session?.Arranged(Surfaces.Areas[patch.Area], patch.ScopeId).FirstOrDefault(entry => entry.Placement?.Id == patch.PlacementId) is { } found
+            ? DraftWords.NameOf(found)
+            : RemovedTitle(patch);
+
     private bool IsHub => _area.Area == HubSurfaces.Area.Key && _area.ScopeId is null;
 
     private bool IsTabs => _area.Area == TabBarSurfaces.Area.Key;
-
-    private bool IsCanvas => IsHub || IsTabs;
 
     private IReadOnlyCollection<string> OtherTabRoutes => _session is null ? [TabBar.Home.Route]
         : [TabBar.Home.Route, .. _session.Arranged(TabBarSurfaces.Area, null).Where(entry => !entry.Hidden && KeyOf(entry) != _selectedKey).Select(entry => TabBar.Of(entry).Route)];
@@ -587,8 +789,6 @@ else
     private IReadOnlyList<ArrangedSurface> HubTilesNow => _session is null
         ? []
         : _session.Arranged(HubSurfaces.Area, null).Where(entry => TileKinds.Any(kind => kind.Surface == entry.Surface) || entry.Surface == HubSurfaces.LinkTile.Surface).ToList();
-
-    private IReadOnlyDictionary<string, string> TileMarks(DraftSession session) => MarksIn(session, HubSurfaces.Area);
 
     private IReadOnlyDictionary<string, string> MarksIn(DraftSession session, SurfaceArea area) => session.Patches
         .Where(patch => patch.Kind != PatchKind.Remove && patch.Touches(area.Key, null))
@@ -769,16 +969,6 @@ else
             .Select(entry => new Choice(ThemeChoiceSetting.Custom(entry.Placement!.Id), $"{entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)}: made here"))
             .ToList();
 
-    private static readonly IReadOnlyList<SegmentOption<bool>> DetailViews = [new(false, "Settings", "sliders"), new(true, "Phone preview", "smartphone")];
-
-    private IReadOnlyList<TabOption<AreaKey>> AreaTabs =>
-        _session is null
-            ? []
-            : _session.TouchedAreas.Append(_area).Distinct()
-                .Where(area => Surfaces.Areas.ContainsKey(area.Area))
-                .Select(area => new TabOption<AreaKey>(area, Surfaces.Areas[area.Area].Title, _session.CountIn(area)))
-                .ToList();
-
     private string FormTitle => _form is null ? "" : TabBarSurfaces.IsTab(_form.Surface) ? _form.Values[TabSettings.Word.Key] is { Length: > 0 } word ? word : "New tab"
         : _form.IsNew && _form.Surface.Repeatable && _session?.PatchFor(_formId) is null
         ? $"New {_form.Surface.Title.ToLowerInvariant()}"
@@ -846,12 +1036,13 @@ else
         try
         {
             _list = await LoadListAsync();
+            await LoadEveryoneAsync();
             _loadProblem = null;
         }
         catch (RpcException exception)
         {
             _loadProblem = exception.StatusCode == StatusCode.Unauthenticated
-                ? "Sign in to see and change drafts."
+                ? "Sign in to see the app's styling."
                 : exception.StatusCode == StatusCode.Unavailable ? "The church's server can't be reached. This page tries again when it's back." : exception.Status.Detail;
             return;
         }
@@ -945,10 +1136,13 @@ else
     private async Task OpenDraftAsync(string? draftId)
     {
         await SaveNowAsync();
+        if (_session?.Draft.Id != draftId)
+            await ForgetUnusedAsync();
         _opened = draftId;
         _session = null;
         Deselect();
         _problem = null;
+        _overview = true;
         if (draftId is null)
             return;
 
@@ -962,17 +1156,36 @@ else
             return;
         }
 
-        _view = View.Drafts;
+        _message = null;
         _save = SaveState.Saved;
         _rename = _session.Draft.Name;
-        AreaKey? requested = AreaKey is not null && Surfaces.Areas.ContainsKey(AreaKey) ? new AreaKey(AreaKey, null) : null;
-        AreaKey? touched = _session.TouchedAreas.Where(area => Surfaces.Areas.ContainsKey(area.Area)).Cast<AreaKey?>().FirstOrDefault();
-        _area = requested ?? touched ?? new AreaKey(EditableAreas.FirstOrDefault()?.Key ?? HubSurfaces.Area.Key, null);
+        (string Area, string? Key)? carryOn = _carryOn;
+        _carryOn = null;
+        string? asked = carryOn?.Area ?? (AreaKey is not null && Surfaces.Areas.ContainsKey(AreaKey) ? AreaKey : null);
+        _area = new AreaKey(asked ?? _session.TouchedAreas.Select(area => area.Area).FirstOrDefault(Surfaces.Areas.ContainsKey) ?? HubSurfaces.Area.Key, null);
+        _overview = asked is null;
         foreach (AreaKey area in _session.TouchedAreas.Append(_area).Concat(PreviewAreas).Distinct().ToList())
             await LoadLiveAsync(area);
+        if (carryOn is { Key: { } key } && _session.Arranged(Surfaces.Areas[_area.Area], null).FirstOrDefault(entry => KeyOf(entry) == key) is { } chosen)
+            Select(chosen);
     }
 
     private static readonly AreaKey[] PreviewAreas = [new(HubSurfaces.Area.Key, null), new(AppearanceSurfaces.Area.Key, null), new(TabBarSurfaces.Area.Key, null)];
+
+    private async Task LoadEveryoneAsync()
+    {
+        foreach (AreaKey area in PreviewAreas)
+        {
+            try
+            {
+                _everyone[area] = (await Configuration.GetAreaAsync(Surfaces.Areas[area.Area], null)).Placements.Select(placement => placement.ToStored()).ToList();
+            }
+            catch (RpcException exception) when (exception.StatusCode == StatusCode.PermissionDenied)
+            {
+                _everyone[area] = [];
+            }
+        }
+    }
 
     private async Task LoadLiveAsync(AreaKey area)
     {
@@ -995,22 +1208,6 @@ else
         return Task.CompletedTask;
     }
 
-    private Task OpenFromYearAsync(string? draftId) => draftId is null ? Task.CompletedTask : OpenAsync(draftId);
-
-    private async Task BackToListAsync()
-    {
-        await SaveNowAsync();
-        Navigation.NavigateTo(BasePath);
-    }
-
-    private async Task SelectAreaAsync(AreaKey area)
-    {
-        Deselect();
-        _area = area;
-        if (_session is not null && !_session.Knows(area))
-            await LoadLiveAsync(area);
-    }
-
     private void Select(ArrangedSurface entry)
     {
         _savedNote = null;
@@ -1018,14 +1215,12 @@ else
         _form = PlacementDraft.Of(entry);
         _formId = entry.Placement?.Id ?? Guid.CreateVersion7().ToString();
         _selectedKey = KeyOf(entry);
-        _preview = false;
     }
 
     private void Add(Surface surface, IReadOnlyList<ArrangedSurface> arranged)
     {
         _form = PlacementDraft.New(surface, arranged.Count == 0 ? surface.DefaultOrder : arranged.Max(entry => entry.Order) + 10);
         _formId = Guid.CreateVersion7().ToString();
-        _preview = false;
     }
 
     private void Deselect()
@@ -1363,15 +1558,6 @@ else
         if (_session?.Draft.Id == layer.Id)
             _session.Accept(await Drafts.GetAsync(layer.Id));
     });
-
-    private Task ChangeDatesAsync(Draft layer)
-    {
-        if (_session?.Draft.Id == layer.Id)
-            ChooseForEveryone(ForEveryoneWay.TryNow);
-        else
-            Navigation.NavigateTo($"{BasePath}/{layer.Id}");
-        return Task.CompletedTask;
-    }
 
     private Task UndoAsync(PublishedDraft published) => RollBackAsync(published.BatchId,
         $"Undid “{published.Name}”. Phones show it within a few seconds; open it here to publish it again.");

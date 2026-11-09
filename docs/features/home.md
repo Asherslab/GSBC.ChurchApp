@@ -238,7 +238,9 @@ Drafts → a draft → **Home screen** (desktop; the narrow layout keeps the lis
   the pointer and the layout thrashed). The phone is now scaled with `transform: scale()`
   (`gsbcShell.fitToSpace`), whose boxes every browser reports on screen.
 - **The page never scrolls on the canvas** (note 12): the workbench is exactly the window's height, and the
-  drafts list, the middle column and the settings each scroll on their own.
+  drafts list, the middle column and the settings each scroll on their own. Since App styling (2026-11-09,
+  [drafts.md](../architecture/drafts.md)) the phone is a sticky column as tall as the window and the settings
+  column scrolls with the page.
 - **Settings:** size steppers, its layout ("Best for this size (now …)" or one chosen; layouts that need
   a picture or a bigger tile are greyed out with the reason), colour swatches with their names, the chosen
   icon with **Change icon** opening the grid and upload, words, picture (the picture sheet, see [media.md](media.md)) and the part to keep in

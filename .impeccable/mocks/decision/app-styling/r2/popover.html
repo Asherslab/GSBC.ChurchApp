@@ -1,0 +1,43 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><title>Change it where you click</title><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700\&family=DM+Serif+Text\&display=swap" rel="stylesheet"><style>:root{--navy:#2a3d5e;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#545e70;--ink3:#6b7384;--line:rgb(42 61 94/.12);--aqua:#00776d;--orange:#e7ae74;--oink:#8a5422;--beige:#d5c9b7;--g:#4a7355;--gd:#2f5139;--cream:#f3eee2}
+*{box-sizing:border-box}html,body{margin:0;width:1440px;height:900px;overflow:hidden}
+body{font:400 16px/1.45 Montserrat,system-ui,sans-serif;color:var(--ink);background:#fff;display:grid;grid-template-columns:248px 1fr}
+.nav{background:var(--navy);color:rgb(255 255 255/.76);padding:24px 14px;font-size:14px;font-weight:600}
+.nav b{display:block;color:#fff;font-size:17px;margin:0 10px 26px}.nav i{display:block;font-style:normal;color:var(--beige);font-size:11px;letter-spacing:.06em;margin:18px 10px 6px}
+.nav span{display:block;padding:9px 10px;border-radius:9px}.nav .on{background:rgb(255 255 255/.12);color:#fff}
+h1{margin:0;font-size:27px;letter-spacing:-.02em}
+.lead{font-size:15px;color:var(--ink2);margin-top:6px;max-width:64ch}.lead b{color:var(--ink);font-weight:600}
+.chip{display:inline-flex;align-items:center;gap:8px;height:38px;padding:0 14px;border-radius:99px;background:var(--sand);font-size:13.5px;font-weight:600}
+.chip .n{display:inline-block;min-width:20px;height:20px;line-height:20px;text-align:center;border-radius:99px;background:var(--orange);color:#2b1a08;font-size:11px}
+.btn{display:inline-flex;align-items:center;justify-content:center;height:42px;padding:0 20px;border-radius:99px;font-weight:600;font-size:14px;background:var(--navy);color:#fff}
+.btn.q{background:var(--sand);color:var(--ink)}
+.phone{border-radius:46px;background:#111;padding:10px;box-shadow:0 18px 40px rgb(24 35 58/.16)}
+.scr{height:100%;border-radius:37px;overflow:hidden;background:#fff;position:relative}
+.mast{background:var(--g);color:#fff;padding:46px 18px 16px;position:relative}.mast b{font:400 28px/1 "DM Serif Text",serif}.mast small{display:block;color:var(--cream);font-size:12px;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;padding:12px}
+.t{border-radius:12px;padding:11px;font-size:12px;font-weight:700;min-height:92px;background:var(--cream);color:var(--gd);position:relative}
+.t.w{grid-column:span 2;min-height:72px;background:var(--gd);color:#fff}.t.s{background:#dfe8dc}
+.ring{outline:2px solid var(--orange);outline-offset:2px}
+.tabbar{position:absolute;bottom:0;left:0;right:0;height:58px;border-top:1px solid var(--line);display:grid;grid-template-columns:repeat(4,1fr);font-size:11px;font-weight:600;color:var(--ink3);text-align:center;padding-top:11px;background:#fff}
+.tabbar span:first-child{color:var(--g)}
+.quiet{display:flex;gap:6px;justify-content:center;flex-wrap:wrap;font-size:13px;font-weight:600;color:var(--ink2)}
+.quiet span{padding:7px 12px;border-radius:99px;background:var(--sand)}
+.sw{display:inline-flex;gap:4px;vertical-align:middle}.sw i{width:14px;height:14px;border-radius:50%;display:block}
+
+main{display:grid;grid-template-rows:auto 1fr;padding:30px 40px 0;background:#fff}
+.top{display:flex;justify-content:space-between;align-items:flex-start}
+.desk{position:relative;margin-top:18px;border-radius:18px;background:var(--sand);display:flex;justify-content:center;padding-top:28px}
+.desk .phone{width:330px;height:680px}
+.pop{position:absolute;left:calc(50% + 190px);top:270px;width:330px;border-radius:16px;background:#fff;box-shadow:0 2px 6px rgb(24 35 58/.1),0 16px 40px rgb(24 35 58/.14);padding:20px}
+.pop:before{content:"";position:absolute;left:-8px;top:40px;width:16px;height:16px;background:#fff;transform:rotate(45deg);box-shadow:-2px 2px 3px rgb(24 35 58/.05)}
+.pop h3{margin:0;font-size:19px}.pop .sub{font-size:13px;color:var(--ink2);margin:2px 0 14px}
+.fact{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding:10px 0;font-size:13.5px}.fact span{color:var(--ink2)}
+.pop .btn{width:100%;margin-top:12px}
+.ctl{position:absolute;left:24px;top:24px;display:flex;flex-direction:column;gap:8px}
+.ctl span{padding:8px 14px;border-radius:99px;background:#fff;font-size:13px;font-weight:600;color:var(--ink2)}
+
+</style></head><body><nav class="nav"><b>Good Shepherd</b><span>Home</span><i>THE APP</i><span class="on">App styling</span><span>Places in the app</span><span>App review</span><i>CONTENT</i><span>Media</span><span>Announcements</span><span>Sermons</span><span>Calendar</span><i>PEOPLE</i><span>People</span><span>Roles</span></nav>
+<main><div class="top"><div><h1>App styling</h1><div class="lead">This is the app as everyone sees it today. Click any part of it to change it.</div></div><span class="chip">Your drafts <span class="n">2</span> ▾</span></div>
+<div class="desk"><div class="ctl"><span>As a visitor ▾</span><span>Light ▾</span><span>iPhone 15 Pro ▾</span><span>Today ▾</span></div>
+<div class="phone"><div class="scr"><div class="mast"><b>Good Shepherd</b><small>Monday 9 November</small></div><div class="grid"><div class="t w">This Sunday · 10:30am and 6pm<br><span style="font-weight:400">Job 33:4 · Almighty God</span></div><div class="t ring">Sunday services</div><div class="t s">How can we pray for you?</div><div class="t s">Give</div><div class="t">Life Groups</div><div class="t">Bible</div><div class="t s">What's next</div></div><div class="tabbar"><span>Home</span><span>Sermons</span><span>Calendar</span><span>More</span></div></div></div>
+<div class="pop"><h3>Sunday services</h3><div class="sub">A tile on Home</div><div class="fact"><span>Size</span><b>1 wide, 1 tall</b></div><div class="fact"><span>Colour</span><b>Pale theme</b></div><div class="fact"><span>Opens</span><b>Sunday</b></div><span class="btn">Change it</span></div></div></main>
+</body></html>
