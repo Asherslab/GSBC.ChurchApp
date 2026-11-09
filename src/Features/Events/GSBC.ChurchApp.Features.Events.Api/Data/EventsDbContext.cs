@@ -1,5 +1,4 @@
 using System.Text.Json;
-using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;

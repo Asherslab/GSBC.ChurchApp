@@ -9,7 +9,6 @@ namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
 public sealed class DigestTests
 {
-    private static readonly DateOnly Today = new(2026, 11, 8);
     private static readonly DateOnly Start = new(2026, 11, 9);
     private static readonly DateTime Now = ChurchTime.ToUtc(new DateTime(2026, 11, 8, 12, 0, 0));
 
