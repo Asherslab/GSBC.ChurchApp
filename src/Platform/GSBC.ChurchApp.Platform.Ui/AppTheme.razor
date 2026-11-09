@@ -1,6 +1,7 @@
 @using GSBC.ChurchApp.Platform.Client.Configuration
 @implements IDisposable
 @inject ISurfaceLayout Layout
+@inject IPreviewMode Preview
 @inject Appearance Appearance
 
 @code {
@@ -13,8 +14,13 @@
 
     private void OnLayoutChanged() => InvokeAsync(ApplyAsync);
 
-    private async Task ApplyAsync() =>
+    private async Task ApplyAsync()
+    {
+        await Preview.LoadAsync();
+        if (Preview.Current?.DraftId is not null && Appearance.PreviewPalette is not null)
+            await Appearance.PreviewAsync(null);
         await Appearance.UseStaffThemeAsync(AppearanceSurfaces.ChosenFrom(await Layout.ShownAsync(AppearanceSurfaces.Area)));
+    }
 
     public void Dispose() => Layout.Changed -= OnLayoutChanged;
 }

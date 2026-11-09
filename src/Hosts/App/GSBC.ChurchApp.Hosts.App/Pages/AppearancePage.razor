@@ -4,6 +4,7 @@
 @inject Appearance Appearance
 @inject IAccess Access
 @inject Platform.Client.Configuration.ISurfaceLayout Layout
+@inject Platform.Client.Configuration.IPreviewMode Preview
 
 <Page Title="Appearance" BackHref="more" BackLabel="More">
     <Masthead Title="Appearance" Note="How the app looks on this phone" />
@@ -12,7 +13,11 @@
         <Segmented TValue="ColourScheme" Label="Light or dark" Options="Schemes" Value="Appearance.Scheme" ValueChanged="Appearance.SetSchemeAsync" />
     </Section>
 
-    @if (CanPreview)
+    @if (CanPreview && PreviewingADraft)
+    {
+        <Section Title="Preview colours" Lead="You're previewing a draft, so the app shows the draft's colours. Exit the preview to try a theme here." />
+    }
+    else if (CanPreview)
     {
         <Section Title="Preview colours" Lead="Try a theme on this phone only. Everyone else keeps the colours chosen for the church.">
             <ListGroup>
@@ -54,6 +59,8 @@
 
     private bool CanPreview => Access.Can(AppearanceSurfaces.Edit);
 
+    private bool PreviewingADraft => Preview.Current?.DraftId is not null;
+
     private sealed record MadeTheme(string Palette, ThemeSpec Spec);
 
     private IReadOnlyList<MadeTheme> MadeThemes { get; set; } = [];
@@ -63,6 +70,7 @@
         Appearance.Changed += OnChanged;
         Access.Changed += OnChanged;
         Layout.Changed += OnLayoutChanged;
+        Preview.Changed += OnChanged;
         await LoadMadeThemesAsync();
     }
 
@@ -85,5 +93,6 @@
         Appearance.Changed -= OnChanged;
         Access.Changed -= OnChanged;
         Layout.Changed -= OnLayoutChanged;
+        Preview.Changed -= OnChanged;
     }
 }
