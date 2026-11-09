@@ -149,7 +149,7 @@ party, origins, site URL, bundle id) are in `config.yaml` there.
 The build number is the workflow's run number; the version is `MARKETING_VERSION` in
 `ios/environments/Version.xcconfig` (1.0), which all three configurations include. The workflow also tags
 the uploaded commit `testflight/uat/<build>` and sets the build's What to Test from the release notes since
-the previous tag, once Apple has processed it ([changelog.md](changelog.md)). **A TestFlight build expires 90 days after upload** and then won't open, so cut a fresh one at
+the previous tag, once Apple has processed it ([changelog.md](changelog.md)). Then it gives the build to the **GSBC Staff** TestFlight group: an internal group that gets every build needs nothing, otherwise the build is added to it, and for an external group sent to Apple's beta review first (owner, 2026-11-10). **A TestFlight build expires 90 days after upload** and then won't open, so cut a fresh one at
 least every couple of months even when nothing changed, and before showing staff anything new. Only
 UAT's backend has to be up; the build carries everything else.
 
@@ -216,8 +216,8 @@ the `Release` configuration and `gsbc-media`/`gsbc-private`.
   the **Key ID** and the **Issuer ID** above the list. It has to be Admin: the runner has no distribution
   certificate, so the export asks Apple to sign in the cloud, and an App Manager key gets "Cloud signing
   permission error" (found 2026-11-03). It lives only in the `uat` environment, behind your approval.
-- **Apps** → **GSBC UAT** → **TestFlight** → **Internal Testing** → **+**: group `Staff`, tick
-  **Enable automatic distribution**, add testers (each must be a user in Users and Access first).
+- **Apps** → **GSBC UAT** → **TestFlight** → **Internal Testing** → **+**: group `GSBC Staff` (the workflow finds it by
+  that name), add testers (each must be a user in Users and Access first).
 
 **3. GitHub** (this repository → Settings):
 

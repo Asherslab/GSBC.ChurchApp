@@ -124,7 +124,7 @@ jobs:
         run: |
           sed -i "s/newTag: .* #image/newTag: sha-$SHA #image/" kustomization.yaml
           pinned="$(grep -c "newTag: sha-$SHA #image" kustomization.yaml || true)"
-          [[ "$pinned" == 3 ]] || { echo "::error::expected three '#image' lines in kustomization.yaml, found $pinned"; exit 1; }
+          [[ "$pinned" == 4 ]] || { echo "::error::expected four '#image' lines in kustomization.yaml, found $pinned"; exit 1; }
 
       - name: Commit and push (if changed)
         if: steps.token.outputs.present == 'true'

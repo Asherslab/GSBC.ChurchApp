@@ -271,8 +271,9 @@ any.
 2. **UAT and production** (gsbc.argo): a deployment of `ghcr.io/asherslab/gsbc-churchapp-website` (built by
    `tools/containers/publish.sh` beside the others) with `Api__Address` set to the API's internal gRPC address, gRPC
    liveness and readiness probes on port 8081 (`ready` waits for the first read), a service, and the tunnel's public
-   hostnames `uat-embed.baptist.com.au` and `embed.baptist.com.au` to port 8080. Then the UAT workflow can pin its
-   image as it does the others' (its `#image` count goes from three to four).
+   hostnames `uat-embed.baptist.com.au` and `embed.baptist.com.au` to port 8080. **UAT is live (2026-11-10):**
+   `church-app-uat/website.yaml`, and the UAT workflow pins its image with the others' (four `#image` lines).
+   Production waits for production's backend.
 3. **Cloudflare:** nothing new beyond the hostnames; check with
    `curl -sD - -o /dev/null https://embed.baptist.com.au/sermons` (and `/embed.js`, and a fingerprinted CSS file) that
    the headers above arrive and that nothing else caches HTML.

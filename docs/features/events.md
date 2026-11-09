@@ -361,7 +361,8 @@ over moving its events to another calendar first or keeping it 30 days to put ba
 - **A configurable tab bar** (owner, 2026-11-08): staff choose the app's tabs in the admin panel, through
   drafts. Built in Configuration: [app-tabs.md](app-tabs.md).
 
-- **Which tool sends *What's Next* today,** to ask the office; it decides what *Copy for email* produces.
+- **Which tool sends *What's Next* today:** Elvanto (owner, 2026-11-10), and that choice is under review. *Copy for email*
+  is pasted into an Elvanto email for now; whether its HTML survives Elvanto's editor is still to check.
 
 - **The website shows the app's calendar** (owner, 2026-11-07): replace the website's events page with an
   embed from the app. Designed and built on 2026-11-08: [website.md](website.md).
@@ -839,8 +840,8 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   `curl -sD - -o /dev/null https://dev-app.baptist.com.au/calendars/public.ics` for `no-store` on dev, and on
   production for `public, max-age=900` on the public links and `private, no-store` with no `cf-cache-status: HIT` on
   a secret link.
-- **The weekly digest** (decision 18): built; to show staff. Still to decide: which tool sends *What's next* today
-  (Pinned for later) and who gets *Digest maker*.
+- **The weekly digest** (decision 18): built; to show staff. *Digest maker* is given like any role, to whoever the
+  owner chooses; *What's Next* goes out through Elvanto for now (under review).
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.
