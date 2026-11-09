@@ -32,6 +32,8 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
     protected FakeAccess Access { get; } = new(TestSurfaces.Permissions);
 
+    protected RaisedNotifications Notifications { get; } = new();
+
     public async ValueTask InitializeAsync()
     {
         _database = await TestDatabase.CreateAsync();
@@ -46,7 +48,7 @@ public abstract class ConfigurationHost : IAsyncLifetime
             .AddSingleton<IAccessEvaluator>(Access)
             .AddSingleton<IRoleAssignments>(Access)
             .AddSingleton<IMediaReferences>(new Library())
-            .AddSingleton<INotifications, NoNotifications>()
+            .AddSingleton<INotifications>(Notifications)
             .AddSingleton(new FeedRegistry([
                 new FeedDefinition(ConfigurationFeeds.Placements, FeedAudience.Public),
                 new FeedDefinition(ConfigurationFeeds.Drafts, FeedAudience.Holding(ConfigurationPermissions.PreviewDraft))]))
@@ -170,9 +172,15 @@ public abstract class ConfigurationHost : IAsyncLifetime
         protected override Task WriteResponseHeadersAsyncCore(Metadata responseHeaders) => Task.CompletedTask;
     }
 
-    private sealed class NoNotifications : INotifications
+    protected sealed class RaisedNotifications : INotifications
     {
-        public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.CompletedTask;
+        public List<Notification> Raised { get; } = [];
+
+        public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
+        {
+            Raised.Add(notification);
+            return Task.CompletedTask;
+        }
 
         public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => Task.CompletedTask;
 
@@ -236,6 +244,9 @@ public abstract class ConfigurationHost : IAsyncLifetime
         public ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken) => ValueTask.FromResult(0);
 
         public ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken) => ValueTask.CompletedTask;
+
+        public void TakeAway(ClaimsPrincipal person, string node) =>
+            _grants[IdOf(person)].RemoveAll(grant => grant.Pattern.Text == node);
 
         public static Guid IdOf(ClaimsPrincipal person) => Caller.UserId(person)!.Value;
 

@@ -250,6 +250,43 @@ within a second or two:
   `HomeScreen`: the skeleton's Connection section is gone (owner, 2026-11-04), and being offline shows in
   the masthead's `SyncIndicator`, which draws only when Home is live.
 
+## Publishing on a date (owner, 2026-11-09)
+
+The owner: "I want an extra option to be able to schedule when it becomes published, for e.g. so my 2027
+theme can be fully published on 01/01/2027." Turning a draft on for everyone confused them, so the sheet
+(`ForEveryoneSheet`, opened from More) now offers three clearly different choices, as stacked segments
+with a line each:
+
+- **Turn it on now:** everyone sees it until it's turned off, or until an optional time; nothing is published.
+- **Turn it on between two dates:** the event layer, scheduled, as before; both dates are needed here.
+- **Publish it on a date:** at that moment it's published for good, exactly as *Publish now* would be,
+  with nothing to turn off.
+
+**How it works:** `Drafts.SchedulePublish` (gRPC) records `publish_at` and who scheduled it on the draft's
+row; `CancelScheduledPublish` clears them. `ScheduledPublishing`, a background service in Configuration.Api,
+checks every 30 seconds and publishes each due draft through the same code as *Publish now*, as the person
+who scheduled it, so it happens with nobody in the admin panel and survives restarts. Two API replicas
+can't publish one draft twice: publishing deletes the draft's row under its revision check, so the second
+gets a conflict and finds nothing next time. Tested by `ScheduledPublishTests` on `TestClock`.
+
+**Decided while building:**
+
+- **It publishes what the draft holds at that moment,** including changes saved after scheduling.
+- **Scheduling needs the publish permission for every area the draft touches,** and so does editing a
+  draft once it's scheduled, since every save will go out to everyone (as with an event layer). The
+  author, or anyone who sees every draft, can cancel it.
+- **If it can't publish at its time, it doesn't, and it says so:** something it changes was changed for
+  everyone since (the same check as *Publish now*), a name clashes, or whoever scheduled it can no longer
+  publish an area. The draft stays as it is, keeps its date, shows "It didn't publish on … ." with the reason,
+  is listed as *Didn't publish on …*, isn't tried again, and the person who scheduled it gets a notification
+  (`config.drafts.not-published`). *Choose a new time* (after settling) or *Dismiss* clears it. Publishing
+  over someone else's change silently was rejected: it would undo their work without anyone seeing.
+- **A deleted draft** simply isn't published: deleting it cancels the schedule with it.
+- **A draft that's also on as the event layer** can be scheduled to publish; publishing turns the layer
+  off, as *Publish now* does.
+- **Shown** on the draft ("Publishes on Friday 1 January 2027, 12am, for good.", with *Change the time*
+  and *Don't publish it then*), in More, and in the Drafts list's own group *Publishing on a date*.
+
 ## Open
 
 - **Scoped areas** (a ministry's page) work in the model; the workbench lists global areas only.

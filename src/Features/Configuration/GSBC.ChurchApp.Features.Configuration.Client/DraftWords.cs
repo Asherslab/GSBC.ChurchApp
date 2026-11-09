@@ -14,6 +14,9 @@ public static class DraftWords
         return local.ToString(format, CultureInfo.InvariantCulture).Replace(":00", "").Replace("AM", "am").Replace("PM", "pm");
     }
 
+    public static string Moment(DateTime utc) =>
+        ChurchTime.ToChurch(utc).ToString("dddd d MMMM yyyy, h:mmtt", CultureInfo.InvariantCulture).Replace(":00", "").Replace("AM", "am").Replace("PM", "pm");
+
     public static string Day(DateTime utc) => ChurchTime.ToChurch(utc).ToString("ddd d MMM", CultureInfo.InvariantCulture);
 
     public static string Touches(Draft draft, SurfaceCatalog surfaces)

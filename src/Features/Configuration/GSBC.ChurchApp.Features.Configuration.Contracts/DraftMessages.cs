@@ -51,6 +51,9 @@ public sealed class Draft
     [ProtoMember(13)] public List<string> DroppedFromLayer { get; set; } = [];
     [ProtoMember(14)] public bool Mine { get; set; }
     [ProtoMember(15)] public int ToCheck { get; set; }
+    [ProtoMember(16)] public DateTime? PublishAt { get; set; }
+    [ProtoMember(17)] public string? PublishScheduledBy { get; set; }
+    [ProtoMember(18)] public string? NotPublished { get; set; }
 }
 
 [ProtoContract]
@@ -130,6 +133,13 @@ public sealed class EventLayerRequest
     [ProtoMember(1)] public string DraftId { get; set; } = "";
     [ProtoMember(2)] public DateTime? StartsAt { get; set; }
     [ProtoMember(3)] public DateTime? EndsAt { get; set; }
+}
+
+[ProtoContract]
+public sealed class SchedulePublishRequest
+{
+    [ProtoMember(1)] public string DraftId { get; set; } = "";
+    [ProtoMember(2)] public DateTime At { get; set; }
 }
 
 [ProtoContract]

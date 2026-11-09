@@ -112,7 +112,7 @@ internal sealed class DraftEditor(
 
         foreach (PatchMessage message in request.Set)
         {
-            (SurfaceArea area, string? scopeId) = await placements.AuthoriseAsync(caller, message.Area, message.ScopeId, cancellationToken, publishing: draft.LayerOn);
+            (SurfaceArea area, string? scopeId) = await placements.AuthoriseAsync(caller, message.Area, message.ScopeId, cancellationToken, publishing: GoesOutToEveryone(draft));
             Surface surface = rules.SurfaceIn(area, message.Surface);
             Guid placementId = ParseId(message.PlacementId);
             DraftChangeRecord? row = existing.SingleOrDefault(change => change.PlacementId == placementId);
@@ -146,7 +146,7 @@ internal sealed class DraftEditor(
             Guid placementId = ParseId(cleared);
             if (existing.SingleOrDefault(change => change.PlacementId == placementId) is { } row)
             {
-                await placements.AuthoriseAsync(caller, row.Area, row.ScopeId, cancellationToken, publishing: draft.LayerOn);
+                await placements.AuthoriseAsync(caller, row.Area, row.ScopeId, cancellationToken, publishing: GoesOutToEveryone(draft));
                 db.DraftChanges.Remove(row);
                 existing.Remove(row);
             }
@@ -177,7 +177,7 @@ internal sealed class DraftEditor(
         List<DraftChangeRecord> existing = await db.DraftChanges.Where(change => change.DraftId == draft.Id).ToListAsync(cancellationToken);
         DraftChangeRecord row = existing.SingleOrDefault(change => change.PlacementId == placementId)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "That change isn't in this draft any more."));
-        await placements.AuthoriseAsync(caller, row.Area, row.ScopeId, cancellationToken, publishing: draft.LayerOn);
+        await placements.AuthoriseAsync(caller, row.Area, row.ScopeId, cancellationToken, publishing: GoesOutToEveryone(draft));
 
         PlacementPatch patch = Deserialize(row);
         PlacementRecord? live = await db.Placements.AsNoTracking().SingleOrDefaultAsync(placement => placement.Id == placementId, cancellationToken);
@@ -225,6 +225,116 @@ internal sealed class DraftEditor(
     public async Task<PublishReply> PublishAsync(ClaimsPrincipal caller, DraftQuery query, CancellationToken cancellationToken)
     {
         DraftRecord draft = await VisibleAsync(caller, query.DraftId, cancellationToken, tracked: true);
+        Guid batchId = await PublishAsync(draft, CallerId(caller),
+            (area, scopeId) => placements.AuthoriseAsync(caller, area, scopeId, cancellationToken, publishing: true), cancellationToken);
+        return new PublishReply { BatchId = batchId.ToString() };
+    }
+
+    public async Task<Draft> SchedulePublishAsync(ClaimsPrincipal caller, SchedulePublishRequest request, CancellationToken cancellationToken)
+    {
+        DraftRecord draft = await VisibleAsync(caller, request.DraftId, cancellationToken, tracked: true);
+        DateTime at = DateTime.SpecifyKind(request.At, DateTimeKind.Utc);
+        if (at <= Now)
+            throw Invalid("That time has already passed. Choose a later one, or publish it now.");
+
+        List<DraftChangeRecord> rows = await ChangesOfAsync(draft, cancellationToken);
+        await CheckPublishableAsync(rows, (area, scopeId) => placements.AuthoriseAsync(caller, area, scopeId, cancellationToken, publishing: true), cancellationToken);
+
+        draft.PublishAt = at;
+        draft.PublishScheduledBy = CallerId(caller);
+        draft.NotPublished = null;
+        Touch(draft);
+        await SaveAsync(draft, cancellationToken, rows);
+        return await ToMessageAsync(draft, rows, caller, cancellationToken);
+    }
+
+    public async Task<Draft> CancelScheduledPublishAsync(ClaimsPrincipal caller, DraftQuery query, CancellationToken cancellationToken)
+    {
+        DraftRecord draft = await ManagedAsync(caller, query.DraftId, cancellationToken);
+        List<DraftChangeRecord> rows = await ChangesOfAsync(draft, cancellationToken);
+        if (draft.PublishAt is null && draft.NotPublished is null)
+            return await ToMessageAsync(draft, rows, caller, cancellationToken);
+
+        draft.PublishAt = null;
+        draft.PublishScheduledBy = null;
+        draft.NotPublished = null;
+        Touch(draft);
+        await SaveAsync(draft, cancellationToken, rows);
+        return await ToMessageAsync(draft, rows, caller, cancellationToken);
+    }
+
+    public async Task<IReadOnlyList<ScheduledOutcome>> PublishDueAsync(CancellationToken cancellationToken)
+    {
+        DateTime now = Now;
+        List<Guid> due = await db.Drafts.AsNoTracking()
+            .Where(draft => draft.PublishAt != null && draft.PublishAt <= now && draft.NotPublished == null)
+            .OrderBy(draft => draft.PublishAt)
+            .Select(draft => draft.Id)
+            .ToListAsync(cancellationToken);
+
+        List<ScheduledOutcome> outcomes = [];
+        foreach (Guid id in due)
+        {
+            db.ChangeTracker.Clear();
+            if (await db.Drafts.SingleOrDefaultAsync(draft => draft.Id == id && draft.PublishAt != null && draft.PublishAt <= now && draft.NotPublished == null, cancellationToken) is not { } draft)
+                continue;
+            outcomes.Add(await PublishScheduledAsync(draft, cancellationToken));
+        }
+        return outcomes;
+    }
+
+    private async Task<ScheduledOutcome> PublishScheduledAsync(DraftRecord draft, CancellationToken cancellationToken)
+    {
+        Guid publisher = draft.PublishScheduledBy ?? draft.AuthorId;
+        GrantSet grants = await access.GrantsForAsync(publisher, cancellationToken);
+        try
+        {
+            await PublishAsync(draft, publisher, (area, scopeId) => Task.FromResult(AuthoriseScheduled(grants, area, scopeId)), cancellationToken);
+            return new ScheduledOutcome(draft.Id, draft.Name, Published: true);
+        }
+        catch (RpcException exception) when (exception.StatusCode is StatusCode.Aborted)
+        {
+            return new ScheduledOutcome(draft.Id, draft.Name, Published: false);
+        }
+        catch (RpcException exception)
+        {
+            db.ChangeTracker.Clear();
+            if (await db.Drafts.SingleOrDefaultAsync(found => found.Id == draft.Id, cancellationToken) is not { } kept)
+                return new ScheduledOutcome(draft.Id, draft.Name, Published: false);
+            kept.NotPublished = DraftRules.NotPublished(exception.Status.Detail);
+            Touch(kept);
+            await SaveAsync(kept, cancellationToken);
+            await notifications.RaiseAsync(DraftRules.DidNotPublish(kept, publisher), cancellationToken);
+            return new ScheduledOutcome(draft.Id, draft.Name, Published: false, kept.NotPublished);
+        }
+    }
+
+    public sealed record ScheduledOutcome(Guid DraftId, string Name, bool Published, string? NotPublished = null);
+
+    private (SurfaceArea Area, string? ScopeId) AuthoriseScheduled(GrantSet grants, string areaKey, string? scopeId)
+    {
+        (SurfaceArea area, string? scope, Permission needed) = rules.Required(areaKey, scopeId, publishing: true);
+        return grants.IsAllowed(needed, scope)
+            ? (area, scope)
+            : throw new RpcException(new Status(StatusCode.PermissionDenied, $"The person who scheduled it can no longer publish {area.Title}."));
+    }
+
+    private async Task CheckPublishableAsync(List<DraftChangeRecord> rows, Authorise authorise, CancellationToken cancellationToken)
+    {
+        if (rows.Count == 0)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, "There's nothing in this draft to publish yet."));
+        foreach (IGrouping<(string Area, string? ScopeId), DraftChangeRecord> inArea in rows.GroupBy(row => (row.Area, row.ScopeId)))
+        {
+            (SurfaceArea area, string? scopeId) = await authorise(inArea.Key.Area, inArea.Key.ScopeId);
+            List<StoredPlacement> live = (await placements.InArea(area, scopeId).AsNoTracking().ToListAsync(cancellationToken)).Select(Stored).ToList();
+            draftRules.RefuseChangedForEveryone(live, inArea.Select(Deserialize).ToList());
+        }
+    }
+
+    private delegate Task<(SurfaceArea Area, string? ScopeId)> Authorise(string area, string? scopeId);
+
+    private async Task<Guid> PublishAsync(DraftRecord draft, Guid actor, Authorise authorise, CancellationToken cancellationToken)
+    {
         List<DraftChangeRecord> rows = await ChangesOfAsync(draft, cancellationToken);
         if (rows.Count == 0)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "There's nothing in this draft to publish yet."));
@@ -233,7 +343,7 @@ internal sealed class DraftEditor(
         List<Guid> removed = [];
         foreach (IGrouping<(string Area, string? ScopeId), DraftChangeRecord> inArea in rows.GroupBy(row => (row.Area, row.ScopeId)))
         {
-            (SurfaceArea area, string? scopeId) = await placements.AuthoriseAsync(caller, inArea.Key.Area, inArea.Key.ScopeId, cancellationToken, publishing: true);
+            (SurfaceArea area, string? scopeId) = await authorise(inArea.Key.Area, inArea.Key.ScopeId);
             List<PlacementRecord> existing = await placements.InArea(area, scopeId).ToListAsync(cancellationToken);
             List<PlacementPatch> patches = inArea.Select(Deserialize).ToList();
             draftRules.RefuseChangedForEveryone(existing.Select(Stored), patches);
@@ -265,12 +375,12 @@ internal sealed class DraftEditor(
 
         bool wasLayer = draft.LayerOn;
         Close(draft);
-        Guid batchId = await placements.CommitAsync(CallerId(caller), commits, rollsBack: null, draft, cancellationToken);
+        Guid batchId = await placements.CommitAsync(actor, commits, rollsBack: null, draft, cancellationToken);
         if (wasLayer)
-            await RecordLayerAsync(draft, on: false, CallerId(caller), cancellationToken);
+            await RecordLayerAsync(draft, on: false, actor, cancellationToken);
         await AfterClosingAsync(draft, cancellationToken);
         await DropRemovedFromLayerAsync(removed, cancellationToken);
-        return new PublishReply { BatchId = batchId.ToString() };
+        return batchId;
     }
 
     public async Task<Draft> TurnOnAsync(ClaimsPrincipal caller, EventLayerRequest request, CancellationToken cancellationToken)
@@ -546,6 +656,9 @@ internal sealed class DraftEditor(
         Revision = draft.Revision,
         Changes = changes.OrderBy(change => change.Id).Select(change => Deserialize(change).ToMessage()).ToList(),
         DroppedFromLayer = [.. draft.DroppedFromLayer],
+        PublishAt = draft.PublishAt,
+        PublishScheduledBy = draft.PublishScheduledBy?.ToString(),
+        NotPublished = draft.NotPublished,
     };
 
     private async Task<Draft> ToMessageAsync(DraftRecord draft, IEnumerable<DraftChangeRecord> changes, ClaimsPrincipal caller, CancellationToken cancellationToken)
@@ -647,6 +760,8 @@ internal sealed class DraftEditor(
         area.ScopeKind == ScopeKind.Global
             ? grants.IsAllowed(area.EditPermission)
             : grants.Grants.Any(grant => !grant.Pattern.IsDeny && grant.Pattern.Matches(area.EditPermission.Node));
+
+    private static bool GoesOutToEveryone(DraftRecord draft) => draft.LayerOn || draft is { PublishAt: not null, NotPublished: null };
 
     private void Touch(DraftRecord draft)
     {

@@ -1,5 +1,17 @@
 @inject SurfaceCatalog Surfaces
 
+@if (Dated.Count > 0)
+{
+    <h2 class="draft-list__head">Publishing on a date</h2>
+    <ListGroup>
+        @foreach (Draft draft in Dated)
+        {
+            <ListRow Title="@draft.Name" Subtitle="@DatedLine(draft)" Icon="@(draft.NotPublished is null ? "send" : "alert")"
+                     IconTone="@(draft.NotPublished is null ? RowTone.Accent : RowTone.Warm)" Class="@RowClass(draft)" OnClick="() => OnOpen.InvokeAsync(draft)" />
+        }
+    </ListGroup>
+}
+
 @if (Waiting.Count > 0)
 {
     <h2 class="draft-list__head">Waiting to publish <span class="tab-strip__count">@Waiting.Count</span></h2>
@@ -129,9 +141,14 @@ else
         await action.InvokeAsync(published);
     }
 
-    private List<Draft> Waiting => List.Drafts.Where(draft => draft.Status == DraftStatus.WaitingToPublish).ToList();
+    private List<Draft> Dated => List.Drafts.Where(draft => draft.PublishAt is not null).OrderBy(draft => draft.PublishAt).ToList();
 
-    private List<Draft> Open => List.Drafts.Where(draft => draft.Status == DraftStatus.Open).ToList();
+    private List<Draft> Waiting => List.Drafts.Where(draft => draft.PublishAt is null && draft.Status == DraftStatus.WaitingToPublish).ToList();
+
+    private List<Draft> Open => List.Drafts.Where(draft => draft.PublishAt is null && draft.Status == DraftStatus.Open).ToList();
+
+    private string DatedLine(Draft draft) =>
+        $"{(draft.NotPublished is null ? "Publishes on" : "Didn't publish on")} {DraftWords.Moment(draft.PublishAt!.Value)} · {Author(draft)}";
 
     private string Author(Draft draft) => draft.Mine ? "You" : Names.GetValueOrDefault(draft.AuthorId, "Someone");
 

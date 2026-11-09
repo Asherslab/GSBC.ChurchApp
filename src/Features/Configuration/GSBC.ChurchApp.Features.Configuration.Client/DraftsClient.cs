@@ -26,6 +26,11 @@ public sealed class DraftsClient(ChannelBase channel)
 
     public ValueTask<PublishReply> PublishAsync(string draftId) => _drafts.PublishAsync(new DraftQuery { DraftId = draftId });
 
+    public ValueTask<Draft> SchedulePublishAsync(string draftId, DateTime at) =>
+        _drafts.SchedulePublishAsync(new SchedulePublishRequest { DraftId = draftId, At = at });
+
+    public ValueTask<Draft> CancelScheduledPublishAsync(string draftId) => _drafts.CancelScheduledPublishAsync(new DraftQuery { DraftId = draftId });
+
     public ValueTask<Draft> TurnOnAsync(string draftId, DateTime? startsAt, DateTime? endsAt) =>
         _drafts.TurnOnAsync(new EventLayerRequest { DraftId = draftId, StartsAt = startsAt, EndsAt = endsAt });
 

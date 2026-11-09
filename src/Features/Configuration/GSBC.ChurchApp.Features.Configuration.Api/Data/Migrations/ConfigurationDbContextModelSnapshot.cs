@@ -202,6 +202,19 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data.Migrations
                         .HasColumnType("character varying(80)")
                         .HasColumnName("name");
 
+                    b.Property<string>("NotPublished")
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)")
+                        .HasColumnName("not_published");
+
+                    b.Property<DateTime?>("PublishAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("publish_at");
+
+                    b.Property<Guid?>("PublishScheduledBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("publish_scheduled_by");
+
                     b.Property<long>("Revision")
                         .IsConcurrencyToken()
                         .HasColumnType("bigint")
@@ -224,6 +237,10 @@ namespace GSBC.ChurchApp.Features.Configuration.Api.Data.Migrations
                         .IsUnique()
                         .HasDatabaseName("ix_drafts_layer_on")
                         .HasFilter("layer_on");
+
+                    b.HasIndex("PublishAt")
+                        .HasDatabaseName("ix_drafts_publish_at")
+                        .HasFilter("publish_at IS NOT NULL");
 
                     b.ToTable("drafts", "config");
                 });

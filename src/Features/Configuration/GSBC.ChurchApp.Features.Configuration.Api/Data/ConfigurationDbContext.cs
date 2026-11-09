@@ -9,6 +9,7 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
 {
     public const string SchemaName = "config";
     public const int MaximumDraftName = 80;
+    public const int MaximumNotPublished = 600;
 
     public DbSet<PlacementRecord> Placements => Set<PlacementRecord>();
     public DbSet<ChangeRecord> Changes => Set<ChangeRecord>();
@@ -60,6 +61,8 @@ public sealed class ConfigurationDbContext(DbContextOptions<ConfigurationDbConte
             entity.Property(draft => draft.Revision).IsConcurrencyToken();
             entity.Property(draft => draft.DroppedFromLayer).HasColumnType("jsonb");
             entity.HasIndex(draft => draft.LayerOn).IsUnique().HasFilter("layer_on");
+            entity.HasIndex(draft => draft.PublishAt).HasFilter("publish_at IS NOT NULL");
+            entity.Property(draft => draft.NotPublished).HasMaxLength(MaximumNotPublished);
         });
         modelBuilder.Entity<DraftChangeRecord>(entity =>
         {

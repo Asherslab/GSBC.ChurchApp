@@ -31,6 +31,12 @@ internal sealed class DraftsService(DraftEditor drafts) : IDraftsService
     public async ValueTask<PublishReply> PublishAsync(DraftQuery request, CallContext context = default) =>
         await drafts.PublishAsync(CallerOf(context), request, context.CancellationToken);
 
+    public async ValueTask<Draft> SchedulePublishAsync(SchedulePublishRequest request, CallContext context = default) =>
+        await drafts.SchedulePublishAsync(CallerOf(context), request, context.CancellationToken);
+
+    public async ValueTask<Draft> CancelScheduledPublishAsync(DraftQuery request, CallContext context = default) =>
+        await drafts.CancelScheduledPublishAsync(CallerOf(context), request, context.CancellationToken);
+
     public async ValueTask<Draft> TurnOnAsync(EventLayerRequest request, CallContext context = default) =>
         await drafts.TurnOnAsync(CallerOf(context), request, context.CancellationToken);
 

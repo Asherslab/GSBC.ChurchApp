@@ -32,6 +32,12 @@ public interface IDraftsService
     ValueTask<PublishReply> PublishAsync(DraftQuery request, CallContext context = default);
 
     [SignedIn]
+    ValueTask<Draft> SchedulePublishAsync(SchedulePublishRequest request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<Draft> CancelScheduledPublishAsync(DraftQuery request, CallContext context = default);
+
+    [SignedIn]
     ValueTask<Draft> TurnOnAsync(EventLayerRequest request, CallContext context = default);
 
     [SignedIn]
