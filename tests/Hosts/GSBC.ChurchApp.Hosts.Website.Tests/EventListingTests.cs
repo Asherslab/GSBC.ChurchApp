@@ -53,7 +53,7 @@ public sealed class EventListingTests
     }
 
     [Fact]
-    public void DayToDayDatesAreGatheredOnceAndOnlyProperEventsAreListedByDate()
+    public void OnlyProperEventsAndDatesListedEveryTimeAreListedByDate()
     {
         EventOccurrence morning = Regular("morning", "2026-11-08", listEveryDate: false);
         EventOccurrence anniversary = Regular("morning", "2026-11-15", listEveryDate: false);
@@ -68,9 +68,27 @@ public sealed class EventListingTests
         List<EventOccurrence> ahead = [morning, evening, outreach, anniversary, eveningOff, carols];
 
         Assert.Equal([outreach, anniversary, carols], EventListing.Listed(ahead));
-        IReadOnlyList<RegularGathering> gatherings = EventListing.Gatherings(ahead);
-        Assert.Equal(["morning", "evening"], gatherings.Select(gathering => gathering.Next.ItemId));
-        Assert.Equal("Not on 15 November, back on 31 January (Christmas break)", gatherings[1].NotOn);
+    }
+
+    [Fact]
+    public void ThisWeekHasEveryDateInTheNextSevenDaysIncludingThoseNotOn()
+    {
+        EventOccurrence evening = Regular("evening", "2026-11-08", listEveryDate: false);
+        evening.StartsAt = evening.StartsAt.AddHours(8);
+        EventOccurrence morning = Regular("morning", "2026-11-08", listEveryDate: false);
+        EventOccurrence outreach = Regular("outreach", "2026-11-14", listEveryDate: true);
+        EventOccurrence prayerOff = Regular("prayer", "2026-11-09", listEveryDate: false);
+        prayerOff.NotOn = true;
+        prayerOff.NotOnReason = "Christmas break";
+        EventOccurrence nextMorning = Regular("morning", "2026-11-15", listEveryDate: false);
+        EventOccurrence carols = Occurrence("carols", "2026-12-12", Sundays.Id);
+
+        IReadOnlyList<WeekDay> days = EventListing.ThisWeek([evening, morning, outreach, prayerOff, nextMorning, carols], new DateOnly(2026, 11, 8));
+
+        Assert.Equal(["Today", "Tomorrow", "Saturday 14 November"], days.Select(day => day.Heading));
+        Assert.Equal([prayerOff], days[1].Events);
+        Assert.Equal(["morning-2026-11-08", "evening-2026-11-08"], days[0].Events.Select(occurrence => occurrence.Id));
+        Assert.Equal("not on this week (Christmas break)", EventListing.NotOnThisWeek(prayerOff));
     }
 
     private static EventOccurrence Regular(string itemId, string date, bool listEveryDate)

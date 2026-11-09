@@ -38,9 +38,11 @@ research, the design and each decision, then what was built.
    *Anniversary Sunday Service*); unchanged dates of a regular event are left out, by the same rule the weekly digest
    uses (`OccurrenceListing.IsOneOffOrSpecial`, Events.Contracts). Each regular event has a staff switch, **List every
    date on the website** (off by default; Events data, on the regular event's page under *How it runs*, in the admin
-   panel and on the phone), and with it on every date is listed (Outreach). Regular events not listed date by date
-   appear once under **Regular gatherings**: title, how it repeats and its time, place, a link to its next date, and
-   its next date that's not on, with the break's name and when it's back.
+   panel and on the phone), and with it on every date is listed (Outreach). Beside the list, a **This week** pane
+   (owner, 2026-11-09, replacing an earlier *Regular gatherings* pane) shows every date in the next seven days,
+   regular ones included, grouped by day: just the time and title, linking to that date. No repeat lines or places.
+   A date that's not on reads "Evening service, not on this week (Christmas break)" in the cancelled colour; a changed
+   date shows its changed title and time with *Changed*.
 9. **Build it overnight on the recommendation,** and pick the look; the decision page keeps the alternatives so the
    owner can change it in the morning.
 
@@ -118,11 +120,12 @@ grows to its content), keeps the app's calendar decisions, and is closest to the
 surface brief with its direction contract is `.impeccable/surfaces/src-hosts-gsbc-churchapp-hosts-website.md`.
 
 - **Events** (`/events`): calendar chips (*All calendars* and each public calendar) and *Subscribe in your calendar
-  app*; *Regular gatherings* (answer 8 above) in a grey panel; then *This week*, *Next week*, *Week of 22 November*,
+  app*; then *This week*, *Next week*, *Week of 22 November*,
   each day a date tile (green weekday band, serif day, month; today tinted) beside its events. Dates of a regular
   event listed every date are quiet single lines with a repeat mark; one-offs and specials are full rows (title, time, place, calendar or label, picture on the right). A date that's not on keeps its
   line, struck through, with "Not on this week · back on 29 November". *Changed* marks a recent change. Eight weeks at
-  first, then *Show the next 8 weeks* (up to the twelve months the feed holds).
+  first, then *Show the next 8 weeks* (up to the twelve months the feed holds). The *This week* pane (answer 8 above)
+  sits in a grey panel beside them.
 - **An event** (`/events/{id}`): *All events*, a large date tile beside the title and the when line, the repeat line
   for a regular event, the change note, the picture, *Register* (when there is one), *Add to Google Calendar*, *Share*,
   the About text; beside it the facts (when, where with *Open in Maps*, contact names, the calendar with *Subscribe to
@@ -186,8 +189,8 @@ script's help. Not checked in the editor (the help centre sits behind a bot chec
 
 **On a computer the pages use the room** (2026-11-08): the sermons list is a grid of sermon cards (art, title, series,
 speaker, day, length; three across at the website's width) beside a sidebar with search, the latest series with their
-art, and recent speakers; Events puts *Regular gatherings* in a sidebar beside the weeks. Under 992 pixels (a tablet's
-column, a phone) they return to one column: search and links above the list, gatherings after the weeks.
+art, and recent speakers; Events puts *This week* in a sidebar beside the weeks. Under 992 pixels (a tablet's
+column, a phone) they return to one column: search and links above the list, *This week* after the weeks.
 
 - **With the script** (`embed.js`): the iframe grows to its content (the page inside posts its height on every change;
   the iframe stops scrolling inside only once the first height arrives), so the website scrolls as one page. The website's address follows what's open inside: `?sermon=<id>`,
