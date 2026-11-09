@@ -425,7 +425,8 @@ else
         if (IsAppearance)
         {
             <ColoursPanel Appearance="@session.Arranged(area, null)" EveryoneValue="@EveryoneThemeValue" Drafting="true" MayChange="MayEdit(area)"
-                          OnChoose="ChooseThemeAsync" OnEdit="Select" OnDates="Select" OnMake="() => Add(AppearanceSurfaces.CustomTheme.Surface, session.Arranged(area, null))" />
+                          OnChoose="ChooseThemeAsync" OnEdit="Select" OnCopy="CopyThemeAsync" OnDelete="DeleteThemeAsync" OnDates="Select"
+                          OnMake="() => Add(AppearanceSurfaces.CustomTheme.Surface, session.Arranged(area, null))" />
         }
         else if (IsHub)
         {
@@ -690,6 +691,46 @@ else
         PlacementDraft chosen = PlacementDraft.Of(theme);
         chosen.Values[AppearanceSurfaces.Theme.Palette.Key] = palette;
         _session.Set(chosen.ToStored(theme.Placement?.Id ?? Guid.CreateVersion7().ToString()));
+        SaveSoon();
+        return Task.CompletedTask;
+    }
+
+    private async Task CopyThemeAsync(ArrangedSurface theme)
+    {
+        IReadOnlyList<ArrangedSurface> appearance = _session!.Arranged(AppearanceSurfaces.Area, null);
+        Add(AppearanceSurfaces.CustomTheme.Surface, appearance);
+        foreach ((string key, string value) in theme.Values.Raw)
+            _form!.Values[key] = value;
+        _form!.Values[AppearanceSurfaces.CustomTheme.Name.Key] = CopyName(theme.Values.Get(AppearanceSurfaces.CustomTheme.Name),
+            appearance.Where(entry => entry.Surface == AppearanceSurfaces.CustomTheme.Surface).Select(entry => entry.Values.Get(AppearanceSurfaces.CustomTheme.Name)).ToHashSet());
+        await FormChangedAsync();
+        Tell($"Made “{_form.Values[AppearanceSurfaces.CustomTheme.Name.Key]}” to change.", offersRedo: false);
+    }
+
+    private static string CopyName(string name, IReadOnlySet<string> taken)
+    {
+        int most = AppearanceSurfaces.CustomTheme.Name.MaxLength;
+        for (int copy = 1; ; copy++)
+        {
+            string suffix = copy == 1 ? " (copy)" : $" (copy {copy})";
+            string candidate = name[..Math.Min(name.Length, most - suffix.Length)] + suffix;
+            if (!taken.Contains(candidate))
+                return candidate;
+        }
+    }
+
+    private Task DeleteThemeAsync(ArrangedSurface theme)
+    {
+        if (theme.Placement is not { } placement)
+            return Task.CompletedTask;
+        string name = theme.Values.Get(AppearanceSurfaces.CustomTheme.Name);
+        if (_session!.LiveOf(new AreaKey(AppearanceSurfaces.Area.Key, null), placement.Id) is null)
+            _session.Discard(placement.Id);
+        else
+            _session.Remove(theme);
+        if (_formId == placement.Id)
+            Deselect();
+        Tell($"Deleted “{name}” in this draft.", offersRedo: false);
         SaveSoon();
         return Task.CompletedTask;
     }

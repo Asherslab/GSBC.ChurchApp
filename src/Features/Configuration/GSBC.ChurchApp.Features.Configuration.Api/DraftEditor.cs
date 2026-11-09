@@ -347,8 +347,11 @@ internal sealed class DraftEditor(
             List<PlacementRecord> existing = await placements.InArea(area, scopeId).ToListAsync(cancellationToken);
             List<PlacementPatch> patches = inArea.Select(Deserialize).ToList();
             draftRules.RefuseChangedForEveryone(existing.Select(Stored), patches);
-            draftRules.RefuseClashingNames(area, DraftComposition.Apply(existing.Select(Stored), patches),
-                patches.Where(patch => patch.Kind != PatchKind.Remove).Select(patch => patch.PlacementId).ToList());
+            List<StoredPlacement> live = existing.Select(Stored).ToList();
+            IReadOnlyList<StoredPlacement> composed = DraftComposition.Apply(live, patches);
+            draftRules.RefuseClashingNames(area, composed, patches.Where(patch => patch.Kind != PatchKind.Remove).Select(patch => patch.PlacementId).ToList());
+            if (area.Key == AppearanceSurfaces.Area.Key)
+                DraftRules.RefuseDeletingTheChosenTheme(live, composed);
 
             foreach (PlacementPatch patch in patches)
             {

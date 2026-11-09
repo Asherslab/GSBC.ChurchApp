@@ -36,6 +36,18 @@ internal sealed class DraftRules(SurfaceCatalog surfaces)
         }
     }
 
+    public static void RefuseDeletingTheChosenTheme(IReadOnlyList<StoredPlacement> before, IReadOnlyList<StoredPlacement> after)
+    {
+        string chosen = after.FirstOrDefault(placement => placement.Surface == AppearanceSurfaces.Theme.Surface.Key) is { } theme
+            ? new SettingValues(theme.Values).Get(AppearanceSurfaces.Theme.Palette)
+            : AppearanceSurfaces.Theme.Palette.Default;
+        if (!ThemeChoiceSetting.IsCustom(chosen, out string themeId) || after.Any(placement => placement.Id == themeId))
+            return;
+        if (before.FirstOrDefault(placement => placement.Id == themeId && placement.Surface == AppearanceSurfaces.CustomTheme.Surface.Key) is { } deleted)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition,
+                $"“{new SettingValues(deleted.Values).Get(AppearanceSurfaces.CustomTheme.Name)}” is the theme everyone sees. Choose another theme for everyone before deleting it."));
+    }
+
     public string TitleOf(PlacementPatch patch)
     {
         Surface? surface = surfaces.ByKey.GetValueOrDefault(patch.Surface);

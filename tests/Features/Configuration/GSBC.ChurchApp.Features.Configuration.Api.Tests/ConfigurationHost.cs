@@ -88,6 +88,12 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
     private protected Task<T> WithDbAsync<T>(Func<ConfigurationDbContext, Task<T>> action) => Use(action);
 
+    private protected async Task<T> InScopeAsync<T>(Func<IServiceProvider, Task<T>> action)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await action(scope.ServiceProvider);
+    }
+
     protected Task<Draft> NewDraftAsync(ClaimsPrincipal caller, string name = "Christmas 2026") =>
         Drafts(editor => editor.CreateAsync(caller, new NewDraftRequest { Name = name }, Cancel));
 

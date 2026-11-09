@@ -780,7 +780,7 @@ The admin panel is the same bulletin carried to the church office's desk. A pers
 
 A bulletin palette: one deep brand navy for the masthead and primary actions, warm paper neutrals for the page, aqua for things you can act on or that are live, and orange as the marker for "you are here" and "new".
 
-The palette is switched at the document root: `data-scheme` selects light or dark (the person's choice, or the phone's), `data-theme` selects the palette (`brand` or `year-2026`, staff's choice). Every component reads semantic roles (masthead, primary, accent, live, marker, sand, ink), never a raw hex, which is what lets the four combinations work without per-component overrides.
+The palette is switched at the document root: `data-scheme` selects light or dark (the person's choice, or the phone's), `data-theme` selects the palette: `custom`, the theme staff chose (every theme, the brand and the 2026 theme included, is an ordinary theme staff can change, copy and delete, its CSS worked out by `ThemeDerivation`), or `brand`, the app's own last resort before a theme arrives. A preview frame (`data-palette`, `data-preview-scheme`) resets every role and follows its own scheme, whatever the page's. Every component reads semantic roles (masthead, primary, accent, live, marker, sand, ink), never a raw hex, which is what lets the four combinations work without per-component overrides.
 
 ### Primary
 - **Brand Navy** (navy): the masthead ground, the stuck top bar, primary buttons, the play toggle, selected chips, and the default tint for row icons and agenda times. The colour of the brand guide; the bulletin's cover.
@@ -815,12 +815,11 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 - **The date block in dark** is a raised navy tile (night-surface, the surface role) with its numerals and month in bright aqua (the primary role), its weekday in night-ink-3; it reads as a dark tile on the night masthead, not a white one. Under the yearly palette the same roles give a year surface with sage numerals.
 - **Night Selected Fill** (night-selected-fill) is the selected row, the same raised step as a selected segment; Fill on Surface becomes **Night Fill on Surface** (night-fill-on-surface, the strong surface). Under the yearly palette in dark the selected row is **Year Night Selected Fill** (year-night-selected-fill) and fills on the panel use Year Night Surface Strong.
 
-### 2026 yearly palette (staff's choice)
+### 2026 yearly palette (seeded as a theme staff can change, 2026-11-09)
 - **Year Green** (year-green) replaces navy as the masthead and live colour; **Year Green Deep** (year-green-deep) is primary; **Year Accent** (year-accent) is the text-on-light action colour.
 - **Year Cream** (year-cream) is the masthead note; **Year Sand** and **Year Sand Strong** are the shaded boxes; green-tinted ink (year-ink, year-ink-2, year-ink-3) replaces navy-tinted ink.
 - **Year Marker** (year-marker) and **Year Marker Ink** (year-marker-ink) replace orange as the marker.
 - In dark, **Year Night**, **Year Night Surface**, **Year Night Masthead** and **Year Bright Sage** (with on-year-bright-sage) mirror the brand dark roles.
-- **Year Sage** (year-sage) appears only as a swatch in the Appearance palette picker.
 
 ### Named Rules
 **The Roles Not Hexes Rule.** Components use the semantic roles (masthead, primary, accent, live, marker, sand, ink, line) and never a palette hex, because every role is redefined by the scheme and the yearly theme. The only literal colours in components are the palette-picker swatches, the black video hero, and white on the play overlay.

@@ -7,7 +7,7 @@ public sealed partial class ThemeTokenRules
 {
     private const double ReadableText = 4.5;
 
-    private static readonly string[] Palettes = ["brand", "year-2026"];
+    private static readonly string[] Palettes = ["brand"];
     private static readonly string[] Schemes = ["light", "dark"];
 
     private static readonly (string Text, string Behind)[] Readable =

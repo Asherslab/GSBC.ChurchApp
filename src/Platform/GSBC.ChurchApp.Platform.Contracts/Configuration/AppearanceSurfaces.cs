@@ -5,8 +5,7 @@ namespace GSBC.ChurchApp.Platform.Contracts.Configuration;
 public static class AppearanceSurfaces
 {
     public const string EditNode = "config.appearance.edit";
-    public const string Brand = "brand";
-    public const string Year2026 = "year-2026";
+    public const string Fallback = "brand";
 
     public static readonly Permission Edit =
         new(EditNode, ScopeKind.Global, "Choose the app's colours for everyone: the church's brand or this year's theme", area: "App");
@@ -18,11 +17,17 @@ public static class AppearanceSurfaces
 
     public static readonly SurfaceArea Area = new("app.appearance", "Colours", "The colours everyone sees in the app", ScopeKind.Global, Edit, Publish, Ordered: false);
 
-    public static readonly IReadOnlyList<Choice> Palettes =
-    [
-        new(Brand, "The church's brand: navy and aqua"),
-        new(Year2026, "2026 theme, Almighty God: greens"),
-    ];
+    public static class Seeded
+    {
+        public const string BrandId = "01a1c200-0000-7000-8000-000000000001";
+        public const string Year2026Id = "01a1c200-0000-7000-8000-000000002026";
+
+        public static readonly IReadOnlyDictionary<string, string> FormerChoices = new Dictionary<string, string>
+        {
+            [Fallback] = ThemeChoiceSetting.Custom(BrandId),
+            ["year-2026"] = ThemeChoiceSetting.Custom(Year2026Id),
+        };
+    }
 
     public static readonly IReadOnlyList<ThemeFont> Fonts =
     [
@@ -32,7 +37,7 @@ public static class AppearanceSurfaces
 
     public static class Theme
     {
-        public static readonly ThemeChoiceSetting Palette = new("palette", "Colours", Palettes, Brand,
+        public static readonly ThemeChoiceSetting Palette = new("palette", "Colours", Seeded.FormerChoices, ThemeChoiceSetting.Custom(Seeded.BrandId),
             help: "Set dates to run a theme for a season; outside them, and when hidden, the app uses the church's brand.");
 
         public static readonly Surface Surface = new("app.theme", Area, "Theme", "Which colours the app uses", [Palette]);
@@ -108,15 +113,11 @@ public static class AppearanceSurfaces
     public static ChosenTheme ChosenFrom(IEnumerable<ArrangedSurface> shown)
     {
         List<ArrangedSurface> entries = shown.ToList();
-        string palette = entries.FirstOrDefault(entry => entry.Surface.Key == Theme.Surface.Key)?.Values.Get(Theme.Palette) ?? Brand;
-        if (!ThemeChoiceSetting.IsCustom(palette, out string themeId))
-        {
-            string known = Palettes.Any(choice => choice.Value == palette) ? palette : Brand;
-            return new ChosenTheme(known, null, known);
-        }
-
-        ArrangedSurface? custom = entries.FirstOrDefault(entry => entry.Surface.Key == CustomTheme.Surface.Key && entry.Placement?.Id == themeId);
-        return custom is null ? new ChosenTheme(Brand, null, Brand) : new ChosenTheme(CustomPalette, CustomTheme.SpecOf(custom.Values), palette);
+        string chosen = entries.FirstOrDefault(entry => entry.Surface.Key == Theme.Surface.Key)?.Values.Get(Theme.Palette) ?? Theme.Palette.Default;
+        ArrangedSurface? custom = ThemeChoiceSetting.IsCustom(chosen, out string themeId)
+            ? entries.FirstOrDefault(entry => entry.Surface.Key == CustomTheme.Surface.Key && entry.Placement?.Id == themeId)
+            : null;
+        return custom is null ? new ChosenTheme(Fallback, null, chosen) : new ChosenTheme(CustomPalette, CustomTheme.SpecOf(custom.Values), chosen);
     }
 
     public static string PaletteOf(IEnumerable<ArrangedSurface> shown) => ChosenFrom(shown).Palette;

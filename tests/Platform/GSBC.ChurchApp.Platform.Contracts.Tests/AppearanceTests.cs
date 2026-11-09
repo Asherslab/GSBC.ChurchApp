@@ -10,30 +10,33 @@ public sealed class AppearanceTests
     private static readonly string CustomId = Guid.CreateVersion7().ToString();
 
     [Fact]
-    public void TheBrandShowsUntilStaffChooseAnotherTheme() =>
-        Assert.Equal(AppearanceSurfaces.Brand, PaletteWith());
-
-    [Fact]
-    public void StaffsChoiceShowsWhileItIsShownAndInItsDates()
+    public void TheAppsOwnColoursShowUntilAThemeIsChosenAndWhenTheChosenThemeIsGone()
     {
-        Assert.Equal(AppearanceSurfaces.Year2026, PaletteWith(Theme(AppearanceSurfaces.Year2026)));
-        Assert.Equal(AppearanceSurfaces.Brand, PaletteWith(Theme(AppearanceSurfaces.Year2026, hidden: true)));
-        Assert.Equal(AppearanceSurfaces.Brand, PaletteWith(Theme(AppearanceSurfaces.Year2026, endsAt: Now)));
+        Assert.Equal(AppearanceSurfaces.Fallback, PaletteWith());
+        Assert.Equal(AppearanceSurfaces.Fallback, PaletteWith(Theme(ThemeChoiceSetting.Custom(CustomId))));
     }
 
     [Fact]
-    public void APaletteThisAppDoesNotKnowFallsBackToTheBrand() =>
-        Assert.Equal(AppearanceSurfaces.Brand, PaletteWith(Theme("year-2031")));
-
-    [Fact]
-    public void AThemeStaffMakeIsUsedWhileItExistsAndTheBrandOnceItIsGone()
+    public void AChosenThemeShowsWhileItExistsIsShownAndIsInItsDates()
     {
         AppearanceSurfaces.ChosenTheme chosen = ChosenWith(Theme(ThemeChoiceSetting.Custom(CustomId)), Custom("Advent"));
         Assert.Equal(AppearanceSurfaces.CustomPalette, chosen.Palette);
         Assert.Equal("Advent", chosen.Custom?.Name);
 
-        Assert.Equal(AppearanceSurfaces.Brand, PaletteWith(Theme(ThemeChoiceSetting.Custom(CustomId))));
+        Assert.Equal(AppearanceSurfaces.Fallback, PaletteWith(Theme(ThemeChoiceSetting.Custom(CustomId), hidden: true), Custom("Advent")));
+        Assert.Equal(AppearanceSurfaces.Fallback, PaletteWith(Theme(ThemeChoiceSetting.Custom(CustomId), endsAt: Now), Custom("Advent")));
     }
+
+    [Theory]
+    [InlineData("brand", AppearanceSurfaces.Seeded.BrandId)]
+    [InlineData("year-2026", AppearanceSurfaces.Seeded.Year2026Id)]
+    public void AChoiceMadeBeforeThemesWereSeededMeansTheSeededTheme(string former, string seeded) =>
+        Assert.Equal(ThemeChoiceSetting.Custom(seeded), new SettingValues(new Dictionary<string, string> { [AppearanceSurfaces.Theme.Palette.Key] = former })
+            .Get(AppearanceSurfaces.Theme.Palette));
+
+    [Fact]
+    public void AChoiceThisAppDoesNotKnowIsRefused() =>
+        Assert.NotNull(AppearanceSurfaces.Theme.Palette.ProblemWith("year-2031"));
 
     [Theory]
     [InlineData("#ffffff", "#ffffff", "#ffffff", "#ffffff", "#ffffff")]

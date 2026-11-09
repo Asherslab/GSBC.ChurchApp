@@ -106,18 +106,31 @@ release. It is the smallest design that fits the machinery above:
 
 - **One area, one surface.** `AppearanceSurfaces` (Platform.Contracts) declares the area `app.appearance`
   ("Colours", global, edited with `config.appearance.edit`) and one non-repeatable surface `app.theme`
-  with a choice setting `palette`: `brand` (the default), `year-2026`, or a theme staff made
-  (`custom:<id>`, below). Staff change it in a draft (admin panel → Drafts → Colours). It needs no new
+  with a choice setting `palette`: a theme (`custom:<id>`, below), the seeded church's brand by default. Staff change it in a draft (admin panel → Drafts → Colours). It needs no new
   service, table or feed, and its dates let a theme run for a season. Hidden, outside its dates, a
-  palette this app version doesn't know, or a made theme that's gone: the brand.
+  or a theme that's gone: the app's own brand colours.
 - **Applied at start-up and live.** The phone reads the area from the placements feed
   (`ISurfaceLayout`), sets `data-theme`, and remembers it, so the next launch starts in the right
   colours before Blazor runs; a change arrives through sync like any placement.
 - **Previewing.** Anyone holding `config.appearance.edit` can try a palette on their own phone
   (More → Appearance) without changing it for everyone, then "Change for everyone" opens the editor.
-  They sign in on the phone with their passkey, so the preview needs nothing else.
+  They sign in on the phone with their passkey, so the preview needs nothing else. Previewing a draft
+  (More → Previews) always shows the draft's colours: it ends a theme tried this way (2026-11-09; the
+  tried theme had stayed on top of a draft that chose the 2026 theme).
 - **Light, dark or automatic** is each person's own, kept on the phone.
-- **The built-in palettes are code** (`tokens.css`, changed with a release, SPEC §4).
+- **Every theme is an ordinary theme (owner, 2026-11-09):** "2026 theme should definitely be editable / deletable
+  just like a normal custom theme. should be seeded but not actually a 'system theme' of any form. same for church's
+  brand tbh." The church's brand and the 2026 theme are `app.custom-theme` placements seeded once by `ThemeSeeding`
+  (Configuration.Api, at start-up, marked done in `config.seeds` so a deleted one never comes back), with fixed ids
+  (`AppearanceSurfaces.Seeded`) so a choice saved before seeding (`brand`, `year-2026`) still means its theme. Staff
+  change, copy and delete them like any other. Nothing else is built in: `tokens.css` keeps the brand's colours only as
+  the app's last resort, used before a theme reaches the phone or when the chosen one is gone, and staff never see
+  it as a choice.
+- **Copy a theme (owner, 2026-11-09):** "Copying / duplicating a theme to make changes to it would be a good idea
+  though." Each theme card has *Copy*, which adds "<name> (copy)" to the draft and opens it to change.
+- **The theme everyone sees can't be deleted:** the card says to choose another for everyone first, and publishing a
+  draft that deletes it is refused (`DraftRules.RefuseDeletingTheChosenTheme`). A theme chosen in the same draft
+  likewise has to be swapped first.
 - **Staff can make their own (owner, 2026-11-03).** A repeatable surface `app.custom-theme` holds a
   name, a masthead font and a text font (the bundled Montserrat or DM Serif Text, one from Google
   Fonts, or an uploaded file for those allowed; see [media.md](../features/media.md), *Fonts*), five key colours
@@ -130,7 +143,7 @@ release. It is the smallest design that fits the machinery above:
   writes the CSS the phone applies, so they can't disagree. A theme fails to save while any text pair
   is under 4.5:1 (only a colour set by hand can do that). The phone stores the generated CSS with the
   palette, so the next launch starts in it before Blazor runs. People who can change colours can try
-  a made theme on their own phone under More → Appearance, as with the built-in ones.
+  any theme on their own phone under More → Appearance.
 - **Edited live, in a draft.** Opening a made theme in a draft puts its controls in the middle pane
   and the phone, in the scheme being edited, in the right pane; the preview follows every change as
   it's made, and phones previewing the draft follow once it saves.

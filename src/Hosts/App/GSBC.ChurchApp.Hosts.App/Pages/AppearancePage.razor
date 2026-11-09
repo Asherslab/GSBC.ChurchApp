@@ -21,12 +21,11 @@
     {
         <Section Title="Preview colours" Lead="Try a theme on this phone only. Everyone else keeps the colours chosen for the church.">
             <ListGroup>
-                @foreach (Choice palette in AppearanceSurfaces.Palettes.Concat(MadeThemes.Select(made => new Choice(made.Palette, made.Spec.Name))))
+                @foreach (MadeTheme made in MadeThemes)
                 {
-                    bool chosen = Appearance.Palette == palette.Value;
-                    ThemeSpec? made = MadeThemes.FirstOrDefault(theme => theme.Palette == palette.Value)?.Spec;
-                    <ListRow Title="@palette.Label" Subtitle="@(palette.Value == Appearance.StaffPalette ? "What everyone sees" : made is not null ? "Made by the church" : null)" OnClick="() => Appearance.PreviewAsync(palette.Value, made)">
-                        <Leading><ThemeSwatches Palette="@palette.Value" Made="made" /></Leading>
+                    bool chosen = Appearance.Palette == made.Palette;
+                    <ListRow Title="@made.Spec.Name" Subtitle="@(made.Palette == Appearance.StaffPalette ? "What everyone sees" : null)" OnClick="() => Appearance.PreviewAsync(made.Palette, made.Spec)">
+                        <Leading><ThemeSwatches Palette="@AppearanceSurfaces.CustomPalette" Made="made.Spec" /></Leading>
                         <TrailingContent>
                             @if (chosen)
                             {
