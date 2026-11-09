@@ -1,6 +1,6 @@
 # Ministries
 
-Status: interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -103,7 +103,9 @@ whether a group offers "join as a parent". (This round has four sessions and two
 reminder.**
 
 **Building it in stages,** each merged and tried before the next (some in parallel):
-1. **People:** families, minors and parents, blue cards and training.
+1. **People:** families, minors and parents, blue cards and training. **Built 2026-11-10** ([people.md](people.md)): a
+   child without a phone is an account without sign-in; parents hold a *Parent or guardian* role at the child that
+   ends at 18; how a young person is reached and acting for them are ready for Stages 3 and 4 (`IFamilies`).
 2. **Ministries:** structure, team and attendees, join settings, audiences, posts, files, Events calendars, Life
    Groups.
 3. **Rosters.**

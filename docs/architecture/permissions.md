@@ -81,6 +81,11 @@ is removed, [events.md](../features/events.md), *Removing a calendar*). **A role
 exists:** a feature registers an `IScopeObjects` (Platform.Api) for each scope kind it owns, and Access refuses a
 manual assignment, or a feature's `GiveAsync` for someone, at any other id.
 
+**A person as a place** (2026-11-10). `ScopeKind.Person` (`person:<user id>`, scope objects registered by Accounts)
+lets a role be held *at someone*: a parent holds the hidden *Parent or guardian* role at their child until the child
+turns 18 ([people.md](../features/people.md)). A role held at a person isn't a sensitive grant unless its nodes are, so
+parents keep email recovery.
+
 **Holding a role** (2026-11-04). Compiling someone's grants also gives them a global
 `roles.held.<role id>` grant for each role they hold and each role it includes (`RoleMembership`), so
 "people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't
