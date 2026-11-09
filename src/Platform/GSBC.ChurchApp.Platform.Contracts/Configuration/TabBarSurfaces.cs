@@ -55,7 +55,7 @@ public static class TabSettings
     {
         if (values.Get(Icon).Length == 0)
             yield return "A tab needs an icon.";
-        if (IconSetting.IsCustom(values.Get(Icon), out _))
+        if (IconSetting.IsCustom(values.Get(Icon)))
             yield return "A tab's icon has to be one of the app's own.";
     }
 }

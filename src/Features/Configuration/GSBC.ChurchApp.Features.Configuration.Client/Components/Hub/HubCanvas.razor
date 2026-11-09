@@ -12,7 +12,7 @@
             <Segmented TValue="int" Label="Columns" Options="ColumnChoices" Value="Columns" ValueChanged="OnColumns" />
         </div>
         <label class="hub-canvas__control">
-            <span>Show Home for</span>
+            <span>Preview the draft as</span>
             <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? EveryTile">
                 @foreach (FieldOption option in ViewerChoices)
                 {
@@ -21,11 +21,11 @@
             </select>
         </label>
         <div class="hub-canvas__control">
-            <span>Preview</span>
-            <Segmented TValue="ThemeScheme" Label="Preview in light or dark" Options="Schemes" Value="_scheme" ValueChanged="scheme => _scheme = scheme" />
+            <span>Preview in</span>
+            <Segmented TValue="ThemeScheme" Label="Preview in light or dark" Options="Schemes" Value="Scheme" ValueChanged="SchemeChanged" />
         </div>
         <label class="hub-canvas__control">
-            <span>Preview as on</span>
+            <span>Preview the draft on</span>
             <input class="hub-canvas__select hub-canvas__date" type="date" value="@Iso(_on ?? Today)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
         </label>
         @if (_on is not null && _on != Today)
@@ -48,8 +48,8 @@
     }
 
     <div class="hub-canvas__stage" data-fit-least="0.6">
-        <PhoneFrame Title="Good Shepherd" Bell="true" Tabs="ShownTabs" Scheme="_scheme" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"Home as {ViewerWords} sees it, with this draft")">
-            <HomeScreen Shown="Shown" At="At" Overlay="Overlay" />
+        <PhoneFrame Title="@HubSurfaces.Top.In(Shown).Title" Bell="true" Tabs="ShownTabs" Scheme="Scheme" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"A preview of Home with this draft, as {ViewerWords} would see it")">
+            <HomeScreen Shown="Shown" At="At" Overlay="Overlay" TopOverlay="TopOverlay" />
         </PhoneFrame>
     </div>
     <p class="visually-hidden" aria-live="polite">@_announced</p>
@@ -69,7 +69,6 @@
     private string _viewer = EveryTile;
     private DateOnly? _on;
     private string _announced = "";
-    private ThemeScheme _scheme = ThemeScheme.Light;
 
     private static readonly IReadOnlyList<SegmentOption<ThemeScheme>> Schemes =
         [new(ThemeScheme.Light, "Light", "sun"), new(ThemeScheme.Dark, "Dark", "moon")];
@@ -87,6 +86,8 @@
     [Parameter] public EventCallback<int> OnColumns { get; set; }
     [Parameter] public EventCallback OnAdd { get; set; }
     [Parameter] public EventCallback<string> OnPutBack { get; set; }
+    [Parameter] public ThemeScheme Scheme { get; set; }
+    [Parameter] public EventCallback<ThemeScheme> SchemeChanged { get; set; }
 
     private static readonly IReadOnlyList<SegmentOption<int>> ColumnChoices =
         Enumerable.Range(HubGrid.FewestColumns, HubGrid.MostColumns - HubGrid.FewestColumns + 1).Select(count => new SegmentOption<int>(count, count.ToString(CultureInfo.InvariantCulture))).ToList();
@@ -104,7 +105,7 @@
 
     private IReadOnlyList<FieldOption> ViewerChoices =>
     [
-        new(EveryTile, "Everyone"),
+        new(EveryTile, "Anyone (all tiles)"),
         new(Visitor, "A visitor, not signed in"),
         new(SignedIn, "Someone signed in"),
         .. RolesInUse.Select(role => new FieldOption(role.ToString(), $"Someone who's {RoleNames.GetValueOrDefault(role, "in a role")}")),
@@ -114,7 +115,7 @@
 
     private string ViewerWords => _viewer switch
     {
-        EveryTile => "everyone",
+        EveryTile => "anyone, with all tiles",
         Visitor => "a visitor",
         SignedIn => "someone signed in",
         _ => Guid.TryParse(_viewer, out Guid role) ? $"someone who's {RoleNames.GetValueOrDefault(role, "in that role")}" : "everyone",
@@ -201,6 +202,19 @@
         </div>
     };
 
+    private RenderFragment TopOverlay => __builder =>
+    {
+        ArrangedSurface? top = Hub.FirstOrDefault(entry => entry.Surface == HubSurfaces.Top.Surface);
+        bool selected = top is not null && HubTiles.KeyOf(top) == SelectedKey;
+        <button type="button" class="hub-arrange hub-arrange--top @(selected ? "hub-arrange--selected" : "")" aria-pressed="@(selected ? "true" : "false")"
+                aria-label="The words at the top of Home" @onclick="() => top is null ? Task.CompletedTask : OnChoose.InvokeAsync(top)">
+            @if (top is not null && Marks.GetValueOrDefault(HubTiles.KeyOf(top)) is { } mark && !selected)
+            {
+                <span class="hub-arrange__tags"><span class="hub-arrange__mark">@mark</span></span>
+            }
+        </button>
+    };
+
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!firstRender)
@@ -208,8 +222,7 @@
         _self = DotNetObjectReference.Create(this);
         _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Configuration.Client/js/hub-canvas.js");
         _attached = await _module.InvokeAsync<IJSObjectReference>("attach", _canvas, _self);
-        _scheme = Enum.Parse<ThemeScheme>(await _module.InvokeAsync<string>("scheme"));
-        StateHasChanged();
+        await SchemeChanged.InvokeAsync(Enum.Parse<ThemeScheme>(await _module.InvokeAsync<string>("scheme")));
     }
 
     private ArrangedSurface? Find(string key) => Tiles.FirstOrDefault(entry => HubTiles.KeyOf(entry) == key);

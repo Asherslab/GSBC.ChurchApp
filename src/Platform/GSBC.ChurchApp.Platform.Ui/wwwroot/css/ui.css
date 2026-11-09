@@ -532,6 +532,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .phone-frame .row { pointer-events: none; }
 .masthead--home { padding-top: calc(var(--sat) + 40px); padding-bottom: 18px; }
 .masthead--home h1 { max-width: none; font-size: min(var(--text-display), 10.5vw); white-space: nowrap; }
+.masthead--home-long h1 { white-space: normal; text-wrap: balance; overflow-wrap: break-word; }
 .masthead--home .masthead__extra { margin-top: 8px; }
 .home-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .home-line .masthead__note { margin: 0; }
@@ -971,11 +972,18 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .hub-tile--picture:has(.hub-tile__action) .hub-tile__words { padding-right: 64px; }
 .hub-tile--picture .hub-tile__title { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 
-.hub-tile--behind { --tile-ink: var(--on-masthead); --tile-ink-2: var(--on-masthead-2); --tile-go: var(--on-masthead); background: var(--masthead); }
+.hub-tile--behind { --fade-base: var(--masthead); --fade: var(--masthead-deep); --fade-ink: var(--on-masthead); --fade-ink-2: var(--on-masthead-2); --tile-ink: var(--fade-ink); --tile-ink-2: var(--fade-ink-2); --tile-go: var(--fade-ink); background: var(--fade-base); }
+.hub-fade--sand { --fade-base: var(--sand); --fade: var(--sand); --fade-ink: var(--ink); --fade-ink-2: var(--ink-2); }
+.hub-fade--raised { --fade-base: var(--surface); --fade: var(--surface); --fade-ink: var(--ink); --fade-ink-2: var(--ink-2); }
+.hub-fade--primary { --fade-base: var(--primary); --fade: var(--primary); --fade-ink: var(--on-primary); --fade-ink-2: color-mix(in srgb, var(--on-primary) 82%, var(--primary)); }
+.hub-fade--live-soft { --fade-base: color-mix(in srgb, var(--live) 13%, var(--page)); --fade: var(--fade-base); --fade-ink: var(--ink); --fade-ink-2: var(--ink-2); }
+.hub-fade--live { --fade-base: var(--live); --fade: var(--live); --fade-ink: var(--on-live); --fade-ink-2: color-mix(in srgb, var(--on-live) 84%, var(--live)); }
+.hub-fade--marker-soft { --fade-base: color-mix(in srgb, var(--marker) var(--tile-soft-mix, 24%), var(--tile-warm-base, var(--page))); --fade: var(--fade-base); --fade-ink: var(--ink); --fade-ink-2: var(--ink-2); }
+.hub-fade--marker { --fade-base: var(--marker); --fade: var(--marker); --fade-ink: var(--on-marker); --fade-ink-2: color-mix(in srgb, var(--on-marker) 84%, var(--marker)); }
 .hub-tile--behind .hub-tile__picture { position: absolute; inset: 0; z-index: -1; }
-.hub-tile--behind .hub-tile__picture::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--masthead-deep) 45%, transparent), color-mix(in srgb, var(--masthead-deep) 90%, transparent) 70%); }
+.hub-tile--behind .hub-tile__picture::after { content: ""; position: absolute; inset: 0; background: linear-gradient(to bottom, color-mix(in srgb, var(--fade) 45%, transparent), color-mix(in srgb, var(--fade) 90%, transparent) 70%); }
 .hub-tile--behind .hub-tile__image { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
-.hub-tile--behind .hub-tile__top .hub-icon { background: color-mix(in srgb, var(--on-masthead) 16%, transparent); color: var(--on-masthead); }
+.hub-tile--behind .hub-tile__top .hub-icon { background: color-mix(in srgb, var(--fade-ink) 16%, transparent); color: var(--fade-ink); }
 .hub-tile--beside { flex-direction: row; }
 .hub-tile--behind:has(.hub-tile__action) .hub-tile__words { padding-right: 56px; }
 .hub-tile--cover-only .hub-tile__words { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }

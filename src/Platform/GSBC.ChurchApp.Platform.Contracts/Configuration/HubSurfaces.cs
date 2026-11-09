@@ -20,7 +20,7 @@ public static class HubSurfaces
 
     public static readonly SurfaceArea Area = new("home.hub", "Home screen", "The tiles on the app's Home screen", ScopeKind.Global, Edit, Publish);
 
-    public static readonly IReadOnlyList<Choice> TileColours =
+    private static readonly IReadOnlyList<Choice> TileColours =
     [
         new("plain", "Plain"),
         new("navy", "Navy"),
@@ -55,6 +55,33 @@ public static class HubSurfaces
             shown.FirstOrDefault(entry => entry.Surface.Key == Surface.Key)?.Values.Get(Columns) ?? HubGrid.FewestColumns;
     }
 
+    public static class Top
+    {
+        public const string Today = "date";
+        public const string Words = "words";
+        public const string Nothing = "none";
+
+        public static readonly TextSetting Title = new("title", "Title", "Good Shepherd", required: true, maxLength: 40);
+
+        public static readonly ChoiceSetting Under = new("under", "Under the title",
+            [new(Today, "Today's date"), new(Words, "Your own words"), new(Nothing, "Nothing")], Today);
+
+        public static readonly TextSetting Line = new("line", "Your words", maxLength: 80, help: "Shown under the title when Under the title is Your own words");
+
+        public static readonly Surface Surface = new("hub.top", Area, "Top of Home", "The title at the top of Home and the line under it",
+            [Title, Under, Line], defaultOrder: -2000);
+
+        public static HomeTop In(IEnumerable<ArrangedSurface> shown) =>
+            Of(shown.FirstOrDefault(entry => entry.Surface.Key == Surface.Key)?.Values ?? SettingValues.None);
+
+        public static HomeTop Of(SettingValues values) => new(values.Get(Title), values.Get(Under) switch
+        {
+            Words when values.Get(Line) is { Length: > 0 } line => new HomeTopLine.Own(line),
+            Words or Nothing => HomeTopLine.None,
+            _ => HomeTopLine.Date,
+        });
+    }
+
     public static class Icon
     {
         public static readonly TextSetting Name = new("name", "Name", "New icon", required: true, maxLength: 40);
@@ -83,7 +110,21 @@ public static class HubSurfaces
         new TileDefaults("A new tile", Icon: "sparkles", TitleRequired: true));
 
     public static bool IsArrangement(Surface surface) =>
-        surface.Key == Grid.Surface.Key || surface.Key == Icon.Surface.Key || surface.Key == Saved.Surface.Key;
+        surface.Key == Grid.Surface.Key || surface.Key == Top.Surface.Key || surface.Key == Icon.Surface.Key || surface.Key == Saved.Surface.Key;
 
-    public static SurfaceSet All => new([LinkTile.Surface, Grid.Surface, Icon.Surface, Saved.Surface, PlainTile.Surface]);
+    public static SurfaceSet All => new([LinkTile.Surface, Grid.Surface, Top.Surface, Icon.Surface, Saved.Surface, PlainTile.Surface]);
+}
+
+public sealed record HomeTop(string Title, HomeTopLine Line);
+
+public abstract record HomeTopLine
+{
+    public static readonly HomeTopLine Date = new Today();
+    public static readonly HomeTopLine None = new Nothing();
+
+    public sealed record Today : HomeTopLine;
+
+    public sealed record Nothing : HomeTopLine;
+
+    public sealed record Own(string Words) : HomeTopLine;
 }

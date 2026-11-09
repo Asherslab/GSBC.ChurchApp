@@ -15,10 +15,14 @@
     {
         <Notice Tone="NoticeTone.Warning" Text="@hard" />
     }
+    @if (Theme.Custom is { } custom)
+    {
+        <ThemeStyle Theme="custom" Name="@DraftPalette" />
+    }
     <div class="tile-settings__proof" aria-hidden="true">
         @foreach (string scheme in Schemes)
         {
-            <div class="tile-settings__sample" data-preview-scheme="@scheme" data-palette="@Palette">
+            <div class="tile-settings__sample" data-preview-scheme="@scheme" data-palette="@ScopePalette">
                 <CascadingValue Value="Proof">
                     <div class="hub-cell" style="--tile-rows: @Math.Min(Look.Rows, 2)" data-proof="@scheme">
                         @Views.For(ProofEntry)
@@ -53,16 +57,7 @@
 
     <fieldset class="tile-settings__group">
         <legend>Colour, from the theme</legend>
-        <div class="hub-swatches" role="radiogroup" aria-label="Colour">
-            @foreach (TileTone tone in TileTones.All)
-            {
-                <button type="button" role="radio" aria-checked="@(tone == Look.Tone ? "true" : "false")" class="hub-swatch hub-tone--@tone.Value @(tone == Look.Tone ? "hub-swatch--on" : "")"
-                        title="@tone.Label" @onclick="() => SetAsync(Kind.Tile.Tone, tone.Value)">
-                    <span class="hub-swatch__chip">Aa</span>
-                    <span class="hub-swatch__name">@tone.Label</span>
-                </button>
-            }
-        </div>
+        @Swatches("Colour", Look.Tone, tone => SetAsync(Kind.Tile.Tone, tone.Value))
         <span class="tile-settings__note">The words change colour by themselves to stay easy to read.</span>
     </fieldset>
 
@@ -105,6 +100,11 @@
                                 aria-label="@FocusWords(point)" @onclick="() => SetAsync(Kind.Tile.Focus.Key, Kind.Tile.Focus.Format(point))"></button>
                     }
                 </div>
+                @if (Kind.VariantFor(Look, Columns).Key == TileVariants.PictureBehind)
+                {
+                    <span class="tile-settings__note">@Kind.Tile.Fade.Label: the colour behind the words, so they stay easy to read.</span>
+                    @Swatches(Kind.Tile.Fade.Label, Look.FadeTone, tone => SetAsync(Kind.Tile.Fade, tone.Value))
+                }
             }
         </fieldset>
     }
@@ -147,7 +147,8 @@
     [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
     [Parameter, EditorRequired] public required HubTileKind Kind { get; set; }
     [Parameter, EditorRequired] public required int Columns { get; set; }
-    [Parameter] public string? Palette { get; set; }
+    [Parameter, EditorRequired] public required AppearanceSurfaces.ChosenTheme Theme { get; set; }
+    [Parameter] public ThemeScheme Scheme { get; set; }
     [Parameter] public IReadOnlyDictionary<string, CustomIcon> Icons { get; set; } = new Dictionary<string, CustomIcon>();
     [Parameter] public RenderFragment? Notices { get; set; }
     [Parameter] public EventCallback Changed { get; set; }
@@ -159,6 +160,12 @@
     private static readonly IReadOnlyList<SegmentOption<bool>> LinkKinds = [new(false, "In the app", "smartphone"), new(true, "A web page", "globe")];
 
     private TileLook Look => TileLook.Of(Kind, new SettingValues(Draft.Values));
+
+    private const string DraftPalette = "tile-settings";
+
+    private string ScopePalette => Theme.Custom is null ? Theme.Palette : DraftPalette;
+
+    private string SchemeName => Scheme.ToString().ToLowerInvariant();
 
     private HubContext Proof => new(false, 2, Icons.ToDictionary(pair => pair.Key, pair => pair.Value.Drawing));
 
@@ -210,7 +217,7 @@
     private bool OpensWeb => _web ?? LinkTargets.KindOf(Look.Link) == LinkKind.Web;
 
     private IReadOnlyList<FieldOption> IconColours => IconTones.Choices
-        .Where(choice => choice.Value != IconTones.Own || IconSetting.IsCustom(Look.Icon, out _))
+        .Where(choice => choice.Value != IconTones.Own || IconSetting.IsCustom(Look.Icon))
         .Select(choice => new FieldOption(choice.Value, choice.Label))
         .ToList();
 
@@ -227,7 +234,7 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        string measuring = $"{Look.Tone.Value}/{Palette}";
+        string measuring = $"{Look.Tone.Value}/{Look.FadeTone.Value}/{Kind.VariantFor(Look, Columns).Key}/{ScopePalette}/{(Theme.Custom is { } custom ? ThemeDerivation.Css(custom, "", "") : "")}";
         if (measuring == _measuredFor)
             return;
         _measuredFor = measuring;
@@ -244,6 +251,20 @@
         {
         }
     }
+
+    private RenderFragment Swatches(string label, TileTone chosen, Func<TileTone, Task> choose) => __builder =>
+    {
+        <div class="hub-swatches" role="radiogroup" aria-label="@label">
+            @foreach (TileTone tone in TileTones.All)
+            {
+                <button type="button" role="radio" aria-checked="@(tone == chosen ? "true" : "false")" class="hub-swatch @(tone == chosen ? "hub-swatch--on" : "")"
+                        title="@tone.Label" @onclick="() => choose(tone)">
+                    <span class="hub-swatch__chip hub-tone--@tone.Value" data-palette="@ScopePalette" data-preview-scheme="@SchemeName">Aa</span>
+                    <span class="hub-swatch__name">@tone.Label</span>
+                </button>
+            }
+        </div>
+    };
 
     private TileSpan Span => new(Math.Min(Look.Columns, Columns), Look.Rows);
 

@@ -5,7 +5,7 @@
     <div class="hub-canvas__bar">
         <Button Icon="plus" Block="true" OnClick="OnAdd">Add a tab</Button>
         <label class="hub-canvas__control">
-            <span>Show the tabs for</span>
+            <span>Preview the draft as</span>
             <select class="hub-canvas__select" value="@_viewer" @onchange="change => _viewer = change.Value?.ToString() ?? Visitor">
                 @foreach (FieldOption option in ViewerChoices)
                 {
@@ -14,7 +14,7 @@
             </select>
         </label>
         <label class="hub-canvas__control">
-            <span>Preview as on</span>
+            <span>Preview the draft on</span>
             <input class="hub-canvas__select hub-canvas__date" type="date" value="@Iso(_on ?? Today)" @onchange="change => _on = FromIso(change.Value?.ToString() ?? string.Empty)" />
         </label>
         @if (_on is not null && _on != Today)
@@ -69,7 +69,7 @@
     </div>
 
     <div class="hub-canvas__stage" data-fit-least="0.6">
-        <PhoneFrame Title="Good Shepherd" Bell="true" Interactive="true" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"The tab bar as {ViewerWords} sees it, with this draft")">
+        <PhoneFrame Title="@HubSurfaces.Top.In(HomeShown).Title" Bell="true" Interactive="true" Palette="@Palette.Palette" Theme="@Palette.Custom" Label="@($"A preview of the tab bar with this draft, as {ViewerWords} would see it")">
             <ChildContent>
                 <HomeScreen Shown="HomeShown" At="At" />
             </ChildContent>

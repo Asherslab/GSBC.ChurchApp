@@ -60,7 +60,7 @@
     [
         new("", "No icon"),
         .. IconPicker.BuiltIn.Select(name => new FieldOption(name, IconPicker.Words(name))),
-        .. IconSetting.IsCustom(Value, out _) ? [new FieldOption(Value, "An uploaded icon")] : Array.Empty<FieldOption>(),
+        .. IconSetting.IsCustom(Value) ? [new FieldOption(Value, "An uploaded icon")] : Array.Empty<FieldOption>(),
     ];
 
     private string? Help => Setting.Help.Length > 0 ? Setting.Help : null;

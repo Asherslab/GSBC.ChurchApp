@@ -2,8 +2,7 @@
      style="@($"width: {Device.Width}px; height: {Device.Height}px; --sat: {Device.TopInset}px; --sab: {Device.BottomInset}px")">
     @if (Theme is not null)
     {
-        <style>@ThemeDerivation.Css(Theme, $"[data-palette=\"{PreviewPalette}\"]",
-            $":root[data-scheme=\"dark\"] [data-palette=\"{PreviewPalette}\"]:not([data-preview-scheme=\"light\"]), [data-palette=\"{PreviewPalette}\"][data-preview-scheme=\"dark\"]", _fontSources)</style>
+        <ThemeStyle Theme="Theme" Name="@PreviewPalette" />
     }
     <div class="phone-frame__screen" data-stuck-at="@StuckAt">
         <div class="topbar" aria-hidden="true"><span></span><span class="topbar__title">@Title</span><span class="topbar__end">@if (Bell)
@@ -40,23 +39,10 @@
 </div>
 
 @inject Shell Shell
-@inject Client.Media.IMediaFiles Files
 
 @code {
     private ElementReference _frame;
     private PhoneDevice? _fitted;
-    private IReadOnlyDictionary<string, string> _fontSources = new Dictionary<string, string>();
-    private string _fontsFor = "";
-
-    protected override async Task OnParametersSetAsync()
-    {
-        string fonts = Theme is null ? "" : string.Join(',', ThemeDerivation.FontFiles(Theme).Select(file => file.Key));
-        if (fonts == _fontsFor)
-            return;
-        _fontsFor = fonts;
-        _fontSources = Theme is null ? new Dictionary<string, string>() : await Appearance.FontSourcesAsync(Files, Theme);
-    }
-
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (_fitted == Device)

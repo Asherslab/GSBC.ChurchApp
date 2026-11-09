@@ -81,8 +81,8 @@ Drafts → a draft → **Tab bar**, desktop first, built from the Hub canvas's p
 
 - **The phone** draws the draft's Home with the draft's tab bar. Click a tab to choose it (the orange marker ring);
   Home and More are drawn faded, as they can't be chosen.
-- **Beside it,** a rail (`TabsCanvas`): *Add a tab*, *Show the tabs for* (a visitor, someone signed in, someone in a
-  role a tab is for), *Preview as on* (a date, to see dated tabs before they start), then **On the bar, in order**: Home
+- **Beside it,** a rail (`TabsCanvas`): *Add a tab*, *Preview the draft as* (a visitor, someone signed in, someone in a
+  role a tab is for), *Preview the draft on* (a date, to see dated tabs before they start), then **On the bar, in order**: Home
   first with a lock and "Always first", each chosen tab numbered, with an orange dot when this draft changed it
   and *Move left* and *Move right*, and More last with a lock and "Always last". On the phone, Home and More are drawn
   faded, as they can't be chosen. Under it, the tabs that aren't on the
