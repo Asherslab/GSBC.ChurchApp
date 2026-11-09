@@ -286,9 +286,12 @@ starting point (the team liked them).
 - **A speaker** (`/speaker/{id}`): their photo, their sermons, newest first.
 - **Search**: titles, series, speakers, services and the day ("anchored", "parry", "christmas", "2026"),
   across everything on the phone, offline.
-- **The player**: a mini-player above the tab bar on every screen while something is loaded (cover, title,
-  play/pause, progress), and a full sheet from it: scrubbing, back 15 and forward 30 seconds, speed
-  (0.8–2×), and *Up next* (the next in the series, or the next newest), which plays on in the background.
+- **The player** is the top of the Listen tab (owner, 2026-11-09): what is playing, or was last playing, with its
+  cover and title (tap to open the sermon), a scrubber, back 15 and forward 30 seconds, play/pause and the speed
+  (0.8–2×, tap to change); *Up next* (the next in the series) plays on in the background. Until something has been
+  played, the top is the latest sermon (or the one to keep going with) with Listen and Watch. The Sermons tab's icon is
+  Pause while playing and Play otherwise (paused, or nothing loaded); tapping it still opens Sermons, and when Sermons
+  isn't one of the chosen tabs nothing else shows the state. There is no mini-player (below).
   There is no sleep timer: the owner doesn't want the app to encourage falling asleep to a sermon
   (2026-11-06).
 - **Home**: the Hub's *Latest sermon* tile is real (below).
@@ -470,16 +473,14 @@ pictures, never duplicated by a re-read (`LastingIdTests`).
   Hope" shows as "Anchored In Hope" under "Anchored · Part 4"); elsewhere the full title shows.
 - **The website's summary** ("Sun AM - Watch at: …") isn't shown as a description; only an uploaded sermon's own words
   are.
-- **The mini-player and player sheet are Platform.Ui's `NowPlaying`**, generic over `IAudioPlayer`, placed above the
-  tab bar in the app's layout; an `AudioItem` carries a link back to its sermon.
-- **Swiping the mini-player away (owner, 2026-11-06)** hides it and nothing else: the sermon keeps playing and the lock
-  screen controls stay. It comes back when playback starts again (play from anywhere, or another sermon), and on the
-  playing sermon's page (`NowPlayingBar`); browsing the Sermons tab or other sermons doesn't bring it back (owner,
-  2026-11-08). The player sheet's *Hide the player* does the same for
-  anyone who can't swipe (VoiceOver, Switch Control). Every `Sheet` can be pulled down by its top like a native
-  sheet: it follows the finger and closes past a third of its height or on a quick flick, otherwise it springs back.
-- **The admin panel plays audio** with the browser's own audio element on the sermon being checked; it has no
-  mini-player.
+- **No mini-player (owner, 2026-11-09):** the bar above the tab bar and its player sheet were removed ("don't like how
+  it works or functions"), with their swipe-away and *Hide the player*. The controls are Platform.Ui's `AudioControls`
+  (generic over `IAudioPlayer`) on the Listen tab's masthead; the tab icon is a Platform.Ui `ILiveTabIcon` that
+  Sermons.App registers for its route (`SermonsTabIcon`), so the tab bar knows nothing about audio. The native player
+  restores the last item at launch, so "what was playing" survives the app being closed. Every `Sheet` can be pulled
+  down by its top like a native sheet: it follows the finger and closes past a third of its height or on a quick
+  flick, otherwise it springs back.
+- **The admin panel plays audio** with the browser's own audio element on the sermon being checked.
 - **Uploading** goes from the browser's file straight to R2 (an XHR with progress), not through WebAssembly memory;
   the browser reads an m4a's length, the server an mp3's.
 - **Copying the website's audio** in development copies only the newest 20 (about 1 GB into the local store).
