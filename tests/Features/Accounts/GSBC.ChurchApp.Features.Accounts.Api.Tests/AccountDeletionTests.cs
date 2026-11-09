@@ -10,7 +10,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
-[Integration("Deleting an account leaves a row with only the name, in one transaction with its passkeys, sessions and codes, and finishes the other features' part later if one fails")]
+[Integration("Deleting an account leaves a row with only the name (no pinned pages), in one transaction with its passkeys, sessions and codes, and finishes the other features' part later if one fails")]
 public sealed class AccountDeletionTests : IAsyncLifetime
 {
     private TestDatabase _database = null!;
@@ -55,6 +55,7 @@ public sealed class AccountDeletionTests : IAsyncLifetime
                 Data = new IdentityPasskeyData { PublicKey = [1], Transports = [], AttestationObject = [], ClientDataJson = [], CreatedAt = _clock.GetUtcNow() },
             });
             db.Sessions.Add(new AccountSession { Id = Guid.CreateVersion7(), UserId = naomi, Client = SessionClient.App, CreatedAt = _clock.UtcNow, LastSeenAt = _clock.UtcNow, ExpiresAt = _clock.UtcNow.AddDays(1) });
+            (await db.Users.SingleAsync(user => user.Id == naomi, Cancel)).PinnedPages = ["sermons", "announcements"];
             await db.SaveChangesAsync(Cancel);
         });
 
@@ -63,6 +64,7 @@ public sealed class AccountDeletionTests : IAsyncLifetime
         AccountUser kept = await WithAsync<AccountsDbContext, AccountUser>(db => db.Users.AsNoTracking().SingleAsync(user => user.Id == naomi, Cancel));
         Assert.Equal(("Naomi", (string?)null, true), (kept.DisplayName, kept.Email, kept.Disabled));
         Assert.NotNull(kept.ForgottenAt);
+        Assert.Empty(kept.PinnedPages);
         Assert.False(await WithAsync<AccountsDbContext, bool>(db => db.Set<IdentityUserPasskey<Guid>>().AnyAsync(passkey => passkey.UserId == naomi, Cancel)));
         Assert.False(await WithAsync<AccountsDbContext, bool>(db => db.Sessions.AnyAsync(session => session.UserId == naomi, Cancel)));
         Assert.Equal([naomi], _feature.Forgotten);

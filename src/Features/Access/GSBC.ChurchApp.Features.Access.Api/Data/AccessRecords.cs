@@ -9,6 +9,9 @@ public sealed class RoleRecord
     public required string ScopeKind { get; set; }
     public bool AppliesToChildren { get; set; }
     public bool PhoneHoldable { get; set; }
+    public string? Feature { get; set; }
+    public bool Hidden { get; set; }
+    public int Position { get; set; }
     public DateTime CreatedAt { get; set; }
     public List<RolePattern> Patterns { get; set; } = [];
     public List<RoleInclude> Includes { get; set; } = [];
@@ -21,6 +24,7 @@ public sealed class RolePattern
 {
     public Guid RoleId { get; set; }
     public required string Pattern { get; set; }
+    public bool Everywhere { get; set; }
 }
 
 public sealed class RoleInclude

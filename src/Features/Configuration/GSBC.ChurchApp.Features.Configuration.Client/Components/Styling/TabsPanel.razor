@@ -1,0 +1,143 @@
+@inject TimeProvider Clock
+
+<div class="tabs-panel">
+    <div class="styling-panel__head">
+        <h2>Tab bar</h2>
+        <p>Home first, up to three tabs you choose, then More. Click a tab on the phone, or here, to change what it opens, its word and its icon.</p>
+    </div>
+    @if (MayChange)
+    {
+        <div class="home-panel__controls"><Button Icon="plus" OnClick="OnAdd">Add a tab</Button></div>
+    }
+    <section class="tabs-canvas__order" aria-labelledby="tabs-order">
+        <h3 id="tabs-order">On the bar, in order</h3>
+        <ol class="tabs-canvas__list">
+            @FixedRow(TabBar.Home.Icon, TabBar.Home.Word, "Always first")
+            @for (int index = 0; index < OnBar.Count; index++)
+            {
+                int position = index;
+                ArrangedSurface entry = OnBar[position];
+                string name = DraftWords.NameOf(entry);
+                <li class="tabs-canvas__row @(KeyOf(entry) == SelectedKey ? "tabs-canvas__row--on" : "")">
+                    <button type="button" class="tabs-canvas__name" @onclick="() => OnChoose.InvokeAsync(entry)">
+                        <Icon Name="@TabBar.Of(entry).Icon" Size="IconSize.Small" />
+                        <span>@name</span>
+                        @if (Marks.GetValueOrDefault(KeyOf(entry)) is { } mark)
+                        {
+                            <span class="tabs-canvas__changed" title="@($"{mark} in this draft")"><span class="visually-hidden">@mark in this draft</span></span>
+                        }
+                    </button>
+                    @if (MayChange)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-left" Disabled="@(position == 0)" AriaLabel="@($"Move {name} left")" Tooltip="Move left" OnClick="() => SwapAsync(position, position - 1)" />
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="chevron-right" Disabled="@(position == OnBar.Count - 1)" AriaLabel="@($"Move {name} right")" Tooltip="Move right" OnClick="() => SwapAsync(position, position + 1)" />
+                    }
+                </li>
+            }
+            @FixedRow("more", "More", "Always last")
+        </ol>
+    </section>
+    @if (NotOnBar.Count > 0 || Removed.Count > 0)
+    {
+        <section class="hub-canvas__hidden" aria-labelledby="tabs-hidden">
+            <h3 id="tabs-hidden">Not on the bar for @Preview.Words(RoleNames)</h3>
+            <ListGroup>
+                @foreach ((ArrangedSurface entry, string why) in NotOnBar)
+                {
+                    <ListRow Title="@DraftWords.NameOf(entry)" Subtitle="@why" Icon="eye-off" IconTone="RowTone.Quiet" OnClick="() => OnChoose.InvokeAsync(entry)" />
+                }
+                @foreach (PlacementPatch removed in Removed)
+                {
+                    <ListRow Title="@(removed.Base?.Values.GetValueOrDefault(TabSettings.Word.Key) ?? "A tab")" Subtitle="Taken off in this draft" Icon="x" IconTone="RowTone.Quiet" Class="row--muted">
+                        <TrailingContent><Button Variant="ButtonVariant.Quiet" Small="true" Icon="undo" OnClick="() => OnPutBack.InvokeAsync(removed.PlacementId)">Put back</Button></TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        </section>
+    }
+    <p class="styling-panel__note">A place that isn't a tab is still in the app: it's listed in More, and reached from Home's tiles, links and notifications.</p>
+    <p class="visually-hidden" aria-live="polite">@_announced</p>
+</div>
+
+@code {
+    private string _announced = "";
+
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Tabs { get; set; }
+    [Parameter, EditorRequired] public required StylingPreview Preview { get; set; }
+    [Parameter] public IReadOnlyList<PlacementPatch> Removed { get; set; } = [];
+    [Parameter] public IReadOnlyDictionary<Guid, string> RoleNames { get; set; } = new Dictionary<Guid, string>();
+    [Parameter] public string? SelectedKey { get; set; }
+    [Parameter] public IReadOnlyDictionary<string, string> Marks { get; set; } = new Dictionary<string, string>();
+    [Parameter] public bool MayChange { get; set; }
+    [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<ArrangedSurface>> OnMove { get; set; }
+    [Parameter] public EventCallback OnAdd { get; set; }
+    [Parameter] public EventCallback<string> OnPutBack { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateTime At => Preview.At(Now);
+
+    private List<ArrangedSurface> Chosen => Tabs.Where(entry => !TabBarSurfaces.IsHome(entry.Surface)).ToList();
+
+    private List<ArrangedSurface> ShownToViewer => Chosen.Where(entry => Preview.Shows(entry, Now)).ToList();
+
+    private List<ArrangedSurface> OnBar
+    {
+        get
+        {
+            List<string> keys = TabBar.Chosen(ShownToViewer).Select(tab => tab.Key).ToList();
+            return Chosen.Where(entry => keys.Contains(KeyOf(entry))).ToList();
+        }
+    }
+
+    private List<(ArrangedSurface Entry, string Why)> NotOnBar
+    {
+        get
+        {
+            List<ArrangedSurface> onBar = OnBar;
+            return Chosen.Where(entry => !onBar.Contains(entry)).Select(entry => (entry, WhyNot(entry))).ToList();
+        }
+    }
+
+    private string WhyNot(ArrangedSurface entry)
+    {
+        if (entry.Hidden)
+            return "Taken off the bar: On the bar is off";
+        if (entry.StartsAt is { } starts && At < starts)
+            return $"On the bar from {DraftWords.Day(starts)}";
+        if (entry.EndsAt is { } ends && At >= ends)
+            return $"Ended {DraftWords.Day(ends.AddTicks(-1))}";
+        if (!Preview.Shows(entry, Now))
+            return entry.Audience.IsForRoles ? $"Only for {RoleWords.List(entry.Audience.RoleIds, RoleNames)}" : "Only for people who are signed in";
+        if (entry.Surface.ProblemsWith(entry.Values.Raw).Count > 0)
+            return "Not finished: it needs a place, a word and an icon";
+        AppTab tab = TabBar.Of(entry);
+        if (string.Equals(tab.Route, TabBar.Home.Route, StringComparison.OrdinalIgnoreCase))
+            return "Home is already the first tab";
+        return ShownToViewer.TakeWhile(other => other != entry).Any(other => string.Equals(TabBar.Of(other).Route, tab.Route, StringComparison.OrdinalIgnoreCase))
+            ? "Another tab already opens this place"
+            : "Past the third: only three tabs fit between Home and More";
+    }
+
+    private static RenderFragment FixedRow(string icon, string word, string where) => __builder =>
+    {
+        <li class="tabs-canvas__row tabs-canvas__row--fixed">
+            <span class="tabs-canvas__name"><Icon Name="@icon" Size="IconSize.Small" /><span>@word</span></span>
+            <span class="tabs-canvas__always" title="@where"><Icon Name="lock" Size="IconSize.Small" /><span class="visually-hidden">@where</span></span>
+        </li>
+    };
+
+    private static string KeyOf(ArrangedSurface entry) => entry.Placement?.Id ?? entry.Surface.Key;
+
+    private async Task SwapAsync(int from, int to)
+    {
+        List<ArrangedSurface> onBar = OnBar;
+        List<ArrangedSurface> all = [.. Chosen];
+        int one = all.IndexOf(onBar[from]);
+        int other = all.IndexOf(onBar[to]);
+        (all[one], all[other]) = (all[other], all[one]);
+        await OnMove.InvokeAsync([.. Tabs.Where(entry => TabBarSurfaces.IsHome(entry.Surface)), .. all]);
+        _announced = $"Moved {DraftWords.NameOf(onBar[from])} to tab {to + 2} of {onBar.Count + 1}, after Home.";
+    }
+}

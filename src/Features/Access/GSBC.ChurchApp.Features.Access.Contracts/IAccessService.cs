@@ -19,24 +19,21 @@ public interface IAccessService
     [SignedIn]
     ValueTask<RoleNameList> ListRoleNamesAsync(Nothing request, CallContext context = default);
 
-    [Requires(AccessPermissions.EditRolesNode)]
-    ValueTask<RoleInfo> SaveRoleAsync(RoleInfo request, CallContext context = default);
-
-    [Requires(AccessPermissions.EditRolesNode)]
-    ValueTask<RoleEffect> PreviewRoleAsync(RolePreviewRequest request, CallContext context = default);
-
-    [Requires(AccessPermissions.EditRolesNode)]
-    ValueTask<Done> DeleteRoleAsync(RoleReference request, CallContext context = default);
-
     [Requires(AccessPermissions.ViewNode)]
     ValueTask<AssignmentList> ListAssignmentsAsync(AssignmentQuery request, CallContext context = default);
 
     [Requires(AccessPermissions.ViewNode)]
     ValueTask<PersonAbilities> ExplainAsync(PersonReference request, CallContext context = default);
 
-    [Requires(AccessPermissions.EditAssignmentsNode)]
+    [SignedIn]
     ValueTask<AssignmentInfo> AssignAsync(AssignRequest request, CallContext context = default);
 
     [SignedIn]
     ValueTask<Done> UnassignAsync(AssignmentReference request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<PlacePeople> ListPlaceAsync(PlaceReference request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<FoundPeople> FindPeopleAsync(FindPeopleRequest request, CallContext context = default);
 }

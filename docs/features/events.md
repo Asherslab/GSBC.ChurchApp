@@ -474,7 +474,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   (ticked, order, reworded fields, things not on the calendar) and the snapshot last sent.
 - **Rules** (`Digests`, pure): what's in it, grouping, the when lines, merging staff choices with the calendar, what goes
   to the app. `EventsPublisher.DigestRows` publishes the latest sent digest on every publish.
-- **The admin panel:** *Weekly digest* (`/digest`, in the sidebar under Content for holders of `events.digest`):
+- **The admin panel:** *Weekly digest* (`/digest`, in the sidebar under Sundays & sermons for holders of `events.digest`):
   `DigestDesk` and `DigestItemWords`, with the app's own `WhatsNextView` in a `PhoneFrame` and the email in a frame.
 - **The phone:** `WhatsNextPage` (`/whats-next`) over `WhatsNextView` (Events.Client), read from the feeds by
   `DigestReader`, through `LiveData` with `Remember`.
@@ -558,8 +558,9 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   and a private calendar's own link use the person's link: `IYourCalendarLink` is `PhoneCalendarLink` on the phone
   (`CalendarFiles.Link`/`ResetLink`) and `PersonCalendarLink` in the admin panel (`PersonLink`/`ResetPersonLink`).
   *Make a new link* resets it; offline, the screen says the link needs a connection instead of showing a broken button.
-- **Who can edit it** in a calendar's settings explains and links to Access's *Who can do what*, where Calendar editor
-  is given at the calendar. Listing its holders there needs a Platform lookup of who holds a role at a scope (Open).
+- **People** in a calendar's settings (2026-11-09) names its Editors and Publishers and opens the shared People sheet:
+  find someone, tick Editor or Publisher, take them off ([access.md](access.md#admin-screens)). A regular event's
+  *Organisers*, under How it runs in the admin panel only, work the same way.
 - **The editor reads the calendar's publishing rules from the desk** (`Editing.Desk`), on the phone too, so an editor
   of a calendar that needs a publisher saves for later and gets *Ask to publish*.
 - **Home's tile on the admin canvas** reads the default calendars through `Editing.Agenda` (staff are signed in), so
@@ -846,7 +847,5 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 - **A calendar for a role a phone can hold** (such as *Calendar added*) would let *Tell people* reach phones and be
   written as a public notification. Nobody would choose one, but the calendar settings don't refuse it yet; that
   needs Access to say which roles are phone-holdable.
-- **Who can edit a calendar** can't be listed on its settings yet: it needs a Platform lookup of who holds a role at a
-  scope, which Access would provide. Until then the settings link to *Who can do what*.
 - **Choosing site-map places** in the editor's Where waits for the site map; the place search offers places used before.
 - **Checking the screens live** in the Simulator and through dev-app.baptist.com.au, once a backend can run with them.

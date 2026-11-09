@@ -1,0 +1,43 @@
+{
+  "title": "Roles for one thing: where people are added",
+  "question": "Next, roles for one thing, shown here on a calendar. The same shared People part goes on a regular event, on a draft (it replaces Share) and on ministries later. Each person on the thing has their roles for it as ticks with an (i), and you add someone by searching. Pick where it sits. If the roles in proposal.html need changing, write it in the steer box.",
+  "options": [
+    {
+      "id": "inline",
+      "kind": "dealt",
+      "label": "In the thing's settings",
+      "thesis": "People is a section of the calendar's own settings panel, under who it's for: who's on it, their roles as capsules, and a search to add someone.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["settings panel section", "role capsules", "inline search"],
+      "viewport": "The calendar workbench with the Kids calendar's settings open on the right; its People section lists Ruth (Editor) and Ben (Editor, Publisher), each with Change and Take off, then Add someone.",
+      "risk": "The settings panel gets long; People sits below the fold on a laptop unless it comes first.",
+      "html": ".impeccable/mocks/decision/roles/thing-inline.html"
+    },
+    {
+      "id": "sheet",
+      "kind": "dealt",
+      "label": "A People button that opens a sheet",
+      "thesis": "The thing shows 'People · 2' with faces; choosing it opens a sheet with everyone on it, their ticks, and the search, as drafts' Share does today.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["summary row", "sheet", "tick list per person"],
+      "viewport": "The calendar settings with a 'People · 2: Ruth and Ben' row; the sheet open over it, listing each person with Editor / Publisher ticks and Add someone at the top.",
+      "risk": "One more step to see who's on it; the panel only shows names, not their roles.",
+      "html": ".impeccable/mocks/decision/roles/thing-sheet.html"
+    },
+    {
+      "id": "listrow",
+      "kind": "dealt",
+      "label": "From the list of things",
+      "thesis": "Each calendar in the list carries an add-person action and a count; choosing it opens the calendar's People as its own panel, beside its settings.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["list row actions", "People panel", "settings and People tabs"],
+      "viewport": "The sand calendar list with a person icon and count on each row; the detail pane switched to the Kids calendar's People tab: people, their ticks with (i), Add someone.",
+      "risk": "Two places on each thing (Settings and People) where staff may expect one.",
+      "html": ".impeccable/mocks/decision/roles/thing-listrow.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" },
+  "followup": true
+}

@@ -37,31 +37,39 @@ public static class EventsApiExtensions
         services.AddHostedService(provider => provider.GetRequiredService<ICalSchedule>());
         services.AddHostedService<SampleCalendar>();
 
+        services.AddScoped<IRoleUses, EventsRoleUses>();
         services.AddPermissions(EventsPermissions.All);
         services.AddNotificationKinds(EventsNotifications.All);
         services.AddDestinations(EventsDestinations.All);
         services.AddDestinationSource<EventDestinationSource>();
         services.AddDestinationSource<CalendarDestinationSource>();
 
-        services.AddSystemRole(new SystemRole(EventsPermissions.EditorRole, "Calendar editor",
-            "Adds and changes events and regular events in a calendar, and can make others its editors", ScopeKind.Calendar,
-            [EventsPermissions.EditNode], AssignableBy: [EventsPermissions.EditorRole]));
-        services.AddSystemRole(new SystemRole(EventsPermissions.PublisherRole, "Calendar publisher",
-            "Publishes events in a calendar that needs a publisher", ScopeKind.Calendar,
-            [EventsPermissions.EditNode, EventsPermissions.PublishNode], AssignableBy: [EventsPermissions.ManagerRole]));
-        services.AddSystemRole(new SystemRole(EventsPermissions.ManagerRole, "Calendars manager",
-            "Creates calendars, chooses who each is for, keeps the named breaks, and edits and publishes every calendar", ScopeKind.Global,
-            [EventsPermissions.ManageNode, EventsPermissions.EditNode, EventsPermissions.PublishNode]));
-        services.AddSystemRole(new SystemRole(EventsPermissions.OrganiserRole, "Event organiser",
-            "Reminded when a date of a regular event is missing what it needs", ScopeKind.RegularEvent,
-            [EventsPermissions.OrganiseNode], AssignableBy: [EventsPermissions.EditorRole]));
+        services.AddSystemRole(new SystemRole(EventsPermissions.EveryCalendarEditorRole, "Calendar Editor",
+            "Add and change events and regular events in every calendar", ScopeKind.Global,
+            [EventsPermissions.EditNode], Feature: RoleFeatures.Calendar, Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole(EventsPermissions.EveryCalendarPublisherRole, "Calendar Publisher",
+            "Add, change and publish events in every calendar", ScopeKind.Global,
+            [EventsPermissions.EditNode, EventsPermissions.PublishNode], Feature: RoleFeatures.Calendar, Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole(EventsPermissions.ManagerRole, "Calendar Manager",
+            "Make and remove calendars, choose who each is for, keep the named breaks, and edit and publish every calendar", ScopeKind.Global,
+            [EventsPermissions.ManageNode, EventsPermissions.EditNode, EventsPermissions.PublishNode], Feature: RoleFeatures.Calendar, Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole(EventsPermissions.DigestMakerRole, "Digest Maker",
+            "Make the weekly digest from the calendar, copy it for email and send it to the app", ScopeKind.Global,
+            [EventsPermissions.DigestNode], Feature: RoleFeatures.Calendar));
+        services.AddSystemRole(new SystemRole(EventsPermissions.EditorRole, "Editor",
+            "Add and change this calendar's events and regular events, and add other editors", ScopeKind.Calendar,
+            [EventsPermissions.EditNode], AssignableBy: [EventsPermissions.EditorRole, EventsPermissions.EveryCalendarEditorRole, EventsPermissions.EveryCalendarPublisherRole, EventsPermissions.ManagerRole], Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole(EventsPermissions.PublisherRole, "Publisher",
+            "Add, change and publish this calendar's events", ScopeKind.Calendar,
+            [EventsPermissions.EditNode, EventsPermissions.PublishNode], AssignableBy: [EventsPermissions.EveryCalendarPublisherRole, EventsPermissions.ManagerRole], Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole(EventsPermissions.OrganiserRole, "Organiser",
+            "Reminded when a date of this regular event is missing what it needs", ScopeKind.RegularEvent,
+            [EventsPermissions.OrganiseNode],
+            AssignableBy: [EventsPermissions.EveryCalendarEditorRole, EventsPermissions.EveryCalendarPublisherRole, EventsPermissions.ManagerRole]));
         services.AddSystemRole(new SystemRole(EventsPermissions.AdderRole, "Calendar added",
-            "Has added a calendar to their week", ScopeKind.Calendar, [EventsPermissions.HaveNode], AssignableBy: [], PhoneHoldable: true));
+            "Has added a calendar to their week", ScopeKind.Calendar, [EventsPermissions.HaveNode], AssignableBy: [], PhoneHoldable: true, Hidden: true));
         services.AddSystemRole(new SystemRole(EventsPermissions.TurnedOffRole, "Calendar turned off",
-            "Has turned off a calendar they'd see anyway", ScopeKind.Calendar, [EventsPermissions.TurnedOffNode], AssignableBy: [], PhoneHoldable: true));
-        services.AddSystemRole(new SystemRole(EventsPermissions.DigestMakerRole, "Digest maker",
-            "Makes the weekly digest from the calendar, copies it for email and sends it to the app", ScopeKind.Global,
-            [EventsPermissions.DigestNode]));
+            "Has turned off a calendar they'd see anyway", ScopeKind.Calendar, [EventsPermissions.TurnedOffNode], AssignableBy: [], PhoneHoldable: true, Hidden: true));
 
         services.AddSurfaces(EventsTiles.Surfaces);
         services.AddFeed(new FeedDefinition(EventsFeeds.Calendars, FeedAudience.Public));

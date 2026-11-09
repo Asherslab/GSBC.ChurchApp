@@ -1,0 +1,206 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+@inject TimeProvider Clock
+@inject SurfaceViews Views
+
+<div class="styling-phone hub-canvas" @ref="_canvas" data-still="@(Still ? "true" : null)">
+    <div class="styling-phone__fit" data-fit-height data-fit-least="0.5">
+        <PhoneFrame Title="@HubSurfaces.Top.In(Shown).Title" Bell="true" Interactive="true" Scheme="Preview.Scheme" Palette="@Palette.Palette" Theme="@(Theme ?? Palette.Custom)"
+                    Device="Preview.Device" Label="@Label">
+            <ChildContent>
+                <HomeScreen Shown="Shown" At="At" Overlay="Overlay" TopOverlay="TopOverlay" />
+            </ChildContent>
+            <TabBarContent>
+                <nav class="tabbar tabs-canvas__bar" aria-label="The tab bar">
+                    <button type="button" class="tabbar__item tabs-canvas__tab active" title="Home is always the first tab" @onclick="OnTabBar">
+                        <Icon Name="@TabBar.Home.Icon" />
+                        <span>@TabBar.Home.Word</span>
+                    </button>
+                    @foreach (ArrangedSurface entry in OnBar)
+                    {
+                        AppTab tab = TabBar.Of(entry);
+                        bool selected = HubTiles.KeyOf(entry) == SelectedKey;
+                        <button type="button" class="tabbar__item tabs-canvas__tab @(selected ? "tabs-canvas__tab--on" : "")"
+                                aria-pressed="@(selected ? "true" : "false")" @onclick="() => OnChoose.InvokeAsync(entry)">
+                            <Icon Name="@tab.Icon" />
+                            <span>@tab.Word</span>
+                        </button>
+                    }
+                    <button type="button" class="tabbar__item tabs-canvas__tab" title="More is always the last tab" @onclick="OnTabBar">
+                        <Icon Name="more" />
+                        <span>More</span>
+                    </button>
+                </nav>
+            </TabBarContent>
+        </PhoneFrame>
+    </div>
+    <p class="visually-hidden" aria-live="polite">@_announced</p>
+</div>
+
+@code {
+    private ElementReference _canvas;
+    private IJSObjectReference? _module;
+    private IJSObjectReference? _attached;
+    private DotNetObjectReference<StylingPhone>? _self;
+    private string _announced = "";
+
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Hub { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Appearance { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ArrangedSurface> Tabs { get; set; }
+    [Parameter, EditorRequired] public required StylingPreview Preview { get; set; }
+    [Parameter] public ThemeSpec? Theme { get; set; }
+    [Parameter] public string? SelectedKey { get; set; }
+    [Parameter] public bool Still { get; set; }
+    [Parameter] public string Showing { get; set; } = "the app";
+    [Parameter] public EventCallback<ArrangedSurface> OnChoose { get; set; }
+    [Parameter] public EventCallback OnTabBar { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<ArrangedSurface>> OnMove { get; set; }
+    [Parameter] public EventCallback<(ArrangedSurface Tile, int Columns, int Rows)> OnResize { get; set; }
+    [Parameter] public EventCallback<ThemeScheme> OnScheme { get; set; }
+
+    private DateTime At => Preview.At(Clock.GetUtcNow().UtcDateTime);
+
+    private bool ShownNow(ArrangedSurface entry) => Preview.Shows(entry, Clock.GetUtcNow().UtcDateTime);
+
+    private string Label => $"{Showing} on an {Preview.Device.Name}, drawn by the app's own Home screen";
+
+    private int Columns => HubSurfaces.Grid.ColumnsIn(Hub);
+
+    private IReadOnlyList<ArrangedSurface> Tiles => HubTiles.TilesIn(Hub, Views);
+
+    private AppearanceSurfaces.ChosenTheme Palette =>
+        AppearanceSurfaces.ChosenFrom(Appearance.Where(entry => entry.IsShownTo(Viewer.Anonymous, At)));
+
+    private List<ArrangedSurface> Shown => Hub.Where(entry => HubSurfaces.IsArrangement(entry.Surface) || ShownNow(entry)).ToList();
+
+    private List<ArrangedSurface> Visible => Tiles.Where(ShownNow).ToList();
+
+    private List<ArrangedSurface> OnBar
+    {
+        get
+        {
+            List<ArrangedSurface> chosen = Tabs.Where(entry => !TabBarSurfaces.IsHome(entry.Surface)).ToList();
+            List<string> keys = TabBar.Chosen(chosen.Where(ShownNow)).Select(tab => tab.Key).ToList();
+            return chosen.Where(entry => keys.Contains(HubTiles.KeyOf(entry))).ToList();
+        }
+    }
+
+    private RenderFragment<HubCell> Overlay => cell => __builder =>
+    {
+        bool selected = HubTiles.KeyOf(cell.Entry) == SelectedKey;
+        <div class="hub-arrange @(selected ? "hub-arrange--selected" : "")" data-arrange tabindex="0" role="button" aria-pressed="@(selected ? "true" : "false")"
+             aria-label="@($"{DraftWords.NameOf(cell.Entry)}, {cell.Place.Columns} by {cell.Place.Rows}, tile {cell.Index + 1} of {Visible.Count}")">
+            <span class="hub-arrange__tags">
+                @if (selected && !Still)
+                {
+                    <span class="hub-arrange__size" data-size>@(new TileSpan(cell.Place.Columns, cell.Place.Rows).Words)</span>
+                }
+            </span>
+            @if (selected && !Still)
+            {
+                <span class="hub-arrange__grip" data-grip aria-hidden="true"></span>
+            }
+        </div>
+    };
+
+    private RenderFragment TopOverlay => __builder =>
+    {
+        ArrangedSurface? top = Hub.FirstOrDefault(entry => entry.Surface == HubSurfaces.Top.Surface);
+        bool selected = top is not null && HubTiles.KeyOf(top) == SelectedKey;
+        <button type="button" class="hub-arrange hub-arrange--top @(selected ? "hub-arrange--selected" : "")" aria-pressed="@(selected ? "true" : "false")"
+                aria-label="The words at the top of Home" @onclick="() => top is null ? Task.CompletedTask : OnChoose.InvokeAsync(top)">
+        </button>
+    };
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender)
+            return;
+        _self = DotNetObjectReference.Create(this);
+        _module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Configuration.Client/js/hub-canvas.js");
+        _attached = await _module.InvokeAsync<IJSObjectReference>("attach", _canvas, _self);
+        await OnScheme.InvokeAsync(Enum.Parse<ThemeScheme>(await _module.InvokeAsync<string>("scheme")));
+    }
+
+    private ArrangedSurface? Find(string key) => Tiles.FirstOrDefault(entry => HubTiles.KeyOf(entry) == key);
+
+    [JSInvokable]
+    public async Task Chosen(string key)
+    {
+        if (Find(key) is not { } entry)
+            return;
+        await InvokeAsync(() => OnChoose.InvokeAsync(entry));
+        if (_module is not null)
+            await _module.InvokeVoidAsync("show", _canvas, key);
+    }
+
+    [JSInvokable]
+    public int[] Plan(int columns, int[] widths, int[] heights, int dragged, int column, int row) =>
+        HubGrid.Plan(columns, widths.Zip(heights, (width, height) => new TileSpan(width, height)).ToList(), dragged, column, row).ToArray();
+
+    [JSInvokable]
+    public async Task Arranged(string[] keys, string moved)
+    {
+        List<ArrangedSurface> visible = Visible;
+        List<ArrangedSurface> arranged = keys.Select(Find).OfType<ArrangedSurface>().ToList();
+        if (Still || arranged.Count != visible.Count || !visible.All(arranged.Contains) || Find(moved) is not { } entry)
+            return;
+        await InvokeAsync(() => OnMove.InvokeAsync(arranged));
+        Announce($"Moved {DraftWords.NameOf(entry)} to place {arranged.IndexOf(entry) + 1} of {arranged.Count}.");
+    }
+
+    [JSInvokable]
+    public async Task Resized(string key, int columns, int rows)
+    {
+        if (Still || Find(key) is not { } entry)
+            return;
+        await InvokeAsync(() => OnResize.InvokeAsync((entry, columns, rows)));
+        Announce($"{DraftWords.NameOf(entry)} is now {columns} {(columns == 1 ? "column" : "columns")} wide and {rows} {(rows == 1 ? "row" : "rows")} tall.");
+    }
+
+    [JSInvokable]
+    public async Task Nudged(string key, int across, int down, bool resizing)
+    {
+        if (Still || Find(key) is not { } entry)
+            return;
+        TileSpan span = HubTiles.SpanOf(entry);
+        if (resizing)
+        {
+            await Resized(key, Math.Clamp(Math.Min(span.Columns, Columns) + across, 1, Columns), Math.Clamp(span.Rows + down, 1, HubGrid.MostRows));
+            return;
+        }
+        List<ArrangedSurface> visible = Visible;
+        int from = visible.IndexOf(entry);
+        if (from < 0)
+            return;
+        List<TileSpan> spans = visible.Select(HubTiles.SpanOf).ToList();
+        TilePlace place = HubGrid.Pack(Columns, spans)[from];
+        IReadOnlyList<int> order = HubGrid.Plan(Columns, spans, from, place.Column - 1 + across, place.Row - 1 + down);
+        if (!order.SequenceEqual(Enumerable.Range(0, visible.Count)))
+            await Arranged(order.Select(index => HubTiles.KeyOf(visible[index])).ToArray(), key);
+    }
+
+    private void Announce(string words)
+    {
+        _announced = words;
+        StateHasChanged();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_attached is not null)
+            {
+                await _attached.InvokeVoidAsync("dispose");
+                await _attached.DisposeAsync();
+            }
+            if (_module is not null)
+                await _module.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
+        _self?.Dispose();
+    }
+}

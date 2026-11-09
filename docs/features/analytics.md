@@ -286,7 +286,7 @@ Platform, because every feature records counts and features can't reference each
 
 | Permission | Plain words | Held by |
 |---|---|---|
-| `analytics.view` | "See how the app is used" | **Insights viewer**, a new system role, given by Access managers (and the Owner) to whoever should see it: the pastor, an elder, the office |
+| `analytics.view` | "See how the app is used" | **Insights Viewer**, a system role, given by Roles Managers (and the Owner) to whoever should see it: the pastor, an elder, the office |
 | `analytics.health.view` | "See app errors and get error emails" | The Owner (through `*`) and the *Developer* system role (owner, 2026-11-03: errors are for whoever builds the app); not in Insights viewer |
 
 Nobody holds `analytics.view` by default, not even the Staff role. Ministry leaders don't get a

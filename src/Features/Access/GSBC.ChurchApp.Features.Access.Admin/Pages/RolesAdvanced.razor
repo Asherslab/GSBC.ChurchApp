@@ -1,40 +1,20 @@
 @page "/access/roles/advanced"
 @inject AccessClient Access
 
-<TitleBand Title="Roles: developer tool" BackHref="access/roles" BackText="Roles" Lead="Raw permission patterns and included roles. Staff use Roles, which copies a built-in role and shows what changes before saving." />
+<TitleBand Title="Roles: developer tool" Lead="Every role the app declares, with its raw patterns, and every permission. Roles come from the app's code; staff give them from a person's page or from the thing itself." />
 
-<LiveData @ref="_live" TValue="ToolData" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load roles right now">
-    <SplitView Detail="@Editor(context.Value)" DetailLabel="Edit a role">
-        <DataTable TItem="RoleInfo" Label="Roles" Items="context.Value.Roles" Columns="RoleColumns(context.Value.Roles)" Key="role => role.Id"
-                   Selected="_editing" SelectedChanged="Edit" SortColumn="0">
-            <Toolbar>
-                <Can Permission="AccessPermissions.EditRoles">
-                    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="plus" OnClick="New">New role</Button>
-                </Can>
-            </Toolbar>
-        </DataTable>
-
-        <section class="editor-section" aria-labelledby="catalogue">
-            <h2 class="section__title" id="catalogue">Permissions the app knows about</h2>
-            <DataTable TItem="PermissionInfo" Label="Permissions" Items="context.Value.Catalog.Permissions" Columns="PermissionColumns" Key="permission => permission.Node" SortColumn="1" />
-        </section>
-    </SplitView>
+<LiveData TValue="ToolData" Feeds="[AccessFeeds.Roles]" Load="LoadAsync" FailedTitle="Can't load roles right now">
+    <section class="editor-section" aria-labelledby="roles">
+        <h2 class="section__title" id="roles">Roles</h2>
+        <DataTable TItem="RoleInfo" Label="Roles" Items="context.Value.Roles" Columns="RoleColumns(context.Value.Roles)" Key="role => role.Id" />
+    </section>
+    <section class="editor-section" aria-labelledby="catalogue">
+        <h2 class="section__title" id="catalogue">Permissions the app knows about</h2>
+        <DataTable TItem="PermissionInfo" Label="Permissions" Items="context.Value.Catalog.Permissions" Columns="PermissionColumns" Key="permission => permission.Node" SortColumn="1" />
+    </section>
 </LiveData>
 
-<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {_editing?.Name}?")" Lead="Everyone who has it loses it, and roles that include it stop including it. This can't be undone.">
-    <Actions>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
-    </Actions>
-</Sheet>
-
 @code {
-    private LiveData<ToolData>? _live;
-    private RoleInfo? _editing;
-    private string _patterns = "";
-    private bool _busy, _deleting;
-    private string? _message;
-
     private static readonly IReadOnlyList<TableColumn<PermissionInfo>> PermissionColumns =
     [
         new("Node", permission => @<code>@permission.Node</code>, permission => permission.Node),
@@ -46,10 +26,10 @@
     private static IReadOnlyList<TableColumn<RoleInfo>> RoleColumns(List<RoleInfo> roles) =>
     [
         new("Role", role => @<span class="cell-strong">@role.Name</span>, role => role.Name),
-        new("Given", role => @<span class="quiet">@role.ScopeKind</span>, role => role.ScopeKind),
+        new("Feature", role => @<span class="quiet">@(role.Hidden ? "Hidden" : role.Feature ?? $"One {role.ScopeKind}")</span>, role => role.Feature ?? ""),
         new("Patterns", role => @<code class="patterns">@string.Join(", ", role.Patterns)</code>),
-        new("Includes", role => @<span class="quiet">@string.Join(", ", role.IncludedRoleIds.Select(id => roles.FirstOrDefault(other => other.Id == id)?.Name ?? "a removed role"))</span>),
-        new("Kind", role => @<span class="quiet">@(role.IsSystem ? "System" : "Made here")</span>, role => role.IsSystem),
+        new("Given by", role => @<span class="quiet">@AccessWords.GivenBy(role, roles)</span>),
+        new("People", role => @<span>@role.HolderCount</span>, role => role.HolderCount, "num"),
     ];
 
     private async Task<ToolData> LoadAsync()
@@ -57,105 +37,6 @@
         Task<RoleList> roles = Access.ListRolesAsync().AsTask();
         Task<Catalog> catalog = Access.ListCatalogAsync().AsTask();
         return new ToolData((await roles).Roles, await catalog);
-    }
-
-    private RenderFragment? Editor(ToolData data) => _editing is not { } editing ? null : @<text>
-        <h2 class="panel-title">@(editing.IsSystem ? editing.Name : string.IsNullOrEmpty(editing.Id) ? "New role" : $"Edit {editing.Name}")</h2>
-        @if (editing.IsSystem)
-        {
-            <p class="panel-lead">@editing.Description</p>
-            <p class="panel-hint">System roles come from the app. You can give them to people, but not change them.</p>
-        }
-        else
-        {
-            <form class="panel-form" @onsubmit="SaveAsync">
-                <TextField Label="Name" @bind-Value="editing.Name" />
-                <TextField Label="Description" @bind-Value="editing.Description" />
-                <SelectField Label="Given" Options="ScopeOptions(data.Catalog)" @bind-Value="editing.ScopeKind" />
-                <TextField Label="Permissions, one per line" Multiline="true" @bind-Value="_patterns" Hint="ministries.news.* for everything under a node, or -node to deny." />
-                <fieldset class="choice-group">
-                    <legend class="field__label">Also includes</legend>
-                    @foreach (RoleInfo other in data.Roles.Where(other => other.Id != editing.Id && other.IncludedRoleIds.Count == 0))
-                    {
-                        <label class="choice"><input type="checkbox" checked="@editing.IncludedRoleIds.Contains(other.Id)" @onchange="() => ToggleInclude(other.Id)" /> <span>@other.Name</span></label>
-                    }
-                </fieldset>
-                <Can Permission="AccessPermissions.EditRoles">
-                    <div class="panel-actions">
-                        <Button Type="submit" Busy="_busy">Save</Button>
-                        @if (!string.IsNullOrEmpty(editing.Id))
-                        {
-                            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _deleting = true">Delete…</Button>
-                        }
-                    </div>
-                </Can>
-            </form>
-        }
-        <Notice Tone="NoticeTone.Warning" Text="@_message" />
-    </text>;
-
-    private static IReadOnlyList<FieldOption> ScopeOptions(Catalog catalog) =>
-        catalog.ScopeKinds.Select(kind => new FieldOption(kind, kind == "global" ? "everywhere" : $"per {kind}")).ToList();
-
-    private void New() => Edit(new RoleInfo { ScopeKind = "global" });
-
-    private void Edit(RoleInfo role)
-    {
-        _editing = new RoleInfo
-        {
-            Id = role.Id,
-            Name = role.Name,
-            Description = role.Description,
-            ScopeKind = role.ScopeKind,
-            IsSystem = role.IsSystem,
-            Patterns = [.. role.Patterns],
-            IncludedRoleIds = [.. role.IncludedRoleIds],
-            AppliesToChildren = role.AppliesToChildren,
-            AssignableByRoleIds = [.. role.AssignableByRoleIds],
-        };
-        _patterns = string.Join("\n", role.Patterns);
-        _message = null;
-    }
-
-    private void ToggleInclude(string id)
-    {
-        if (!_editing!.IncludedRoleIds.Remove(id))
-            _editing.IncludedRoleIds.Add(id);
-    }
-
-    private Task SaveAsync() => RunAsync(async () =>
-    {
-        _editing!.Patterns = _patterns.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
-        RoleInfo saved = await Access.SaveRoleAsync(_editing);
-        Edit(saved);
-        _message = "Saved.";
-    });
-
-    private Task DeleteAsync() => RunAsync(async () =>
-    {
-        await Access.DeleteRoleAsync(_editing!.Id);
-        _deleting = false;
-        _editing = null;
-        _message = "Deleted, and taken away from everyone who had it.";
-    });
-
-    private async Task RunAsync(Func<Task> action)
-    {
-        _busy = true;
-        try
-        {
-            await action();
-            if (_live is not null)
-                await _live.ReloadAsync();
-        }
-        catch (RpcException exception)
-        {
-            _message = exception.Status.Detail;
-        }
-        finally
-        {
-            _busy = false;
-        }
     }
 
     private sealed record ToolData(List<RoleInfo> Roles, Catalog Catalog);

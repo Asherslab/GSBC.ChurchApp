@@ -1,0 +1,46 @@
+{
+  "title": "Organising the admin sidebar",
+  "question": "Three ways to organise the sidebar by area, each drawn with twice today's pages (what the Owner will see). Every one keeps the navy sidebar, hides what someone's role doesn't allow, and adds Jump to (⌘K). Which should I build?",
+  "options": [
+    {
+      "id": "pinned",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "Your pages, then areas folded",
+      "lineage": "a desk with today's papers on top and the filing drawers below",
+      "thesis": "Each person pins the pages they use; everything else waits in areas that fold and remember.",
+      "palette": ["#2a3d5e", "#d5c9b7", "#e7ae74", "#ffffff"],
+      "materials": ["navy sidebar", "folding areas", "pins"],
+      "viewport": "Sidebar: Jump to, Pinned (4 pages), then Sundays & sermons, Calendar & news, The app (open: you're in it), People, Church life, each folded with its waiting count; Account at the foot.",
+      "risk": "Pins are one more thing to set up; until someone pins, it's just folding areas.",
+      "html": ".impeccable/mocks/decision/sidebar-pinned.html"
+    },
+    {
+      "id": "area-pages",
+      "kind": "dealt",
+      "label": "Areas with their own page",
+      "lineage": "a building directory: floors first, then the rooms on the floor you're on",
+      "thesis": "The sidebar lists six areas; the one you're in opens its pages, and an area's name opens its own index page.",
+      "palette": ["#2a3d5e", "#d5c9b7", "#e7ae74", "#ffffff"],
+      "materials": ["navy sidebar", "one open area", "area index page"],
+      "viewport": "Sidebar: Jump to, Home, then six areas; Calendar & news is open showing its four pages. The page is Calendar & news's index: each page with what it's for and what's waiting.",
+      "risk": "Only one area open at a time, so moving between areas is a click on the area first.",
+      "html": ".impeccable/mocks/decision/sidebar-area-pages.html"
+    },
+    {
+      "id": "rail",
+      "kind": "dealt",
+      "label": "Area rail and a pages column",
+      "lineage": "the calendar workbench's sand column, given to every area",
+      "thesis": "A slim navy rail of areas; beside it, a sand column with the chosen area's pages.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#ffffff"],
+      "materials": ["navy area rail", "sand pages column"],
+      "viewport": "A 76px navy rail (Home, Sundays, News, App, People, Church, Account) beside a 220px sand column listing the Sundays & sermons pages; Sermons is open on the right.",
+      "risk": "Two columns take more width; on narrow windows the pages column folds away behind the rail.",
+      "html": ".impeccable/mocks/decision/sidebar-rail.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": { "value": "code" },
+  "steer": true
+}

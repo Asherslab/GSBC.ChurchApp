@@ -82,10 +82,10 @@ Management reads go over gRPC, like Access's screens; only the phone's display r
 
 ## The editor
 
-The drafts workbench (`DraftsWorkspace`, Configuration.Client) renders any area from its descriptors: a
+App styling (`StylingWorkspace`, Configuration.Client) renders any area from its descriptors: a
 row per surface, with show or hide, move up and down where the area's order matters, then the settings
 form (one input per field kind), audience and dates, and "needs app version X" where it applies. It's
-the admin panel's Drafts page (`/drafts`); the app has no editor, only More → Previews (admin work stays
+the admin panel's App styling page (`/app-styling`, which was Drafts); the app has no editor, only More → Previews (admin work stays
 in the admin panel, AGENTS.md). Other features link to it by route rather than embedding it, since they
 can't reference Configuration.
 
@@ -93,7 +93,7 @@ can't reference Configuration.
 
 The Hub area holds Home's tiles, its grid and uploaded icons: plain tiles, feature tiles that features
 declare (`HubTileKind`, registered with `AddHubTile<TView>`), `hub.grid` and `hub.icon`. Home draws them
-through `HomeScreen` and the tile views, and the drafts workbench arranges them on a phone canvas. All of
+through `HomeScreen` and the tile views, and App styling arranges them on a phone canvas. All of
 it is in [home.md](home.md). The older link tile (`hub.link`) still draws but isn't offered for new tiles.
 
 ## The second consumer
@@ -108,7 +108,7 @@ or one they made, for everyone, and the phone applies it live. See
 **Built:** the descriptors and layout composition in Platform.Contracts; `ISurfaceLayout` and
 `AddSurfaces` in Platform.Client and Platform.Api; the `config` schema, the service with validation,
 per-area permissions, revisions, audit and rollback, and the `config.placements` feed; the editor in
-the admin panel's Drafts page; the Hub area. Tested by
+the admin panel's App styling page; the Hub area. Tested by
 `Features.Configuration.Api.Tests` (Postgres) and `SurfaceLayoutTests` in Platform.Contracts.Tests.
 
 **Built 2026-11-02: drafts, the event layer and previews** ([drafts.md](../architecture/drafts.md),
@@ -125,7 +125,7 @@ through the AppHost and on the owner's iPhone.
   shown as "only people with a particular permission"): picking one needs the plain-language
   permissions from Access's *Usability comes first*.
 - **Ministry modules:** Ministries declares its area (`ministries.modules.edit` per ministry) and its
-  module surfaces, and links its settings page to Drafts on that area, once the workbench handles
+  module surfaces, and links its settings page to App styling on that area, once App styling handles
   areas scoped to one ministry (open, [drafts.md](../architecture/drafts.md)).
 - **Feed writes by hand:** the editor adds its `sync.feed_changes` rows itself, in the same
   `SaveChanges`. [storage.md](../architecture/storage.md) wants Platform.Data to make that impossible

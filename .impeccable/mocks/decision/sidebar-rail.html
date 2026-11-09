@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:76px 220px 1fr}
+.rail{background:#2a3d5e;color:#fff;padding:18px 8px 14px;display:flex;flex-direction:column;align-items:stretch;gap:6px}
+.mark{width:30px;height:30px;border-radius:50%;border:5px solid #d5c9b7;border-right-color:transparent;margin:0 auto 14px}
+.ar{position:relative;display:grid;justify-items:center;gap:4px;padding:9px 0;border-radius:10px;color:rgb(255 255 255/.72);font-size:11px;font-weight:600}
+.ar i{width:20px;height:20px;border-radius:6px;border:2px solid currentColor}
+.ar.on{background:rgb(255 255 255/.12);color:#fff}
+.ar.on:before{content:"";position:absolute;left:-8px;top:12px;bottom:12px;width:3px;border-radius:0 3px 3px 0;background:#e7ae74}
+.dot{position:absolute;top:6px;right:12px;min-width:16px;height:16px;padding:0 4px;border-radius:8px;background:#e7ae74;color:#2a1a08;font-size:10px;font-weight:700;display:grid;place-items:center}
+.rail .foot{margin-top:auto}
+.col{background:#f4efe7;border-right:1px solid #e9e1d4;padding:22px 14px;display:flex;flex-direction:column;gap:14px}
+.jump{display:flex;align-items:center;height:36px;padding:0 10px;border-radius:9px;background:#fff;color:#6b7384;font-size:13px;font-weight:600}
+.jump kbd{margin-left:auto;font:600 11px Montserrat}
+.col h2{font-size:19px;letter-spacing:-.01em;padding:4px 6px 0}
+.pg{display:flex;align-items:center;height:40px;padding:0 10px;border-radius:10px;font-size:14px;font-weight:600;color:#18233a}
+.pg.on{background:#fff;box-shadow:inset 3px 0 0 #e7ae74}
+.cnt{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#e7ae74;color:#2a1a08;font-size:12px;font-weight:700;display:grid;place-items:center}
+.lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7384;padding:8px 10px 0}
+main{padding:28px 40px}
+.tb{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:22px}
+h1{font-size:30px;letter-spacing:-.02em}
+.lead{color:#545e70;font-size:14px;margin-top:4px}
+.btn{height:36px;padding:0 16px;border-radius:18px;background:#2a3d5e;color:#fff;font:600 13px Montserrat;display:inline-flex;align-items:center}
+.split{display:grid;grid-template-columns:1fr 380px;gap:32px}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font:600 12px Montserrat;color:#6b7384;padding:10px 12px;border-bottom:1px solid #e9e1d4}
+td{padding:14px 12px;border-bottom:1px solid #e9e1d4;font-size:14px}
+tr.sel td{background:#f4efe7}
+td.t{font-weight:600}
+.pill{font-size:12px;font-weight:700;padding:2px 8px;border-radius:10px;background:#fbe7d3;color:#8a5422}
+.det{border-left:1px solid #e9e1d4;padding-left:28px}
+.art{height:200px;border-radius:14px;background:#d5c9b7;margin-bottom:16px}
+.det h3{font-size:19px}
+.det p{font-size:13px;color:#545e70;margin-top:4px}
+</style></head><body>
+<nav class="rail">
+ <span class="mark"></span>
+ <div class="ar"><i></i>Home</div>
+ <div class="ar on"><i></i>Sundays<span class="dot">1</span></div>
+ <div class="ar"><i></i>News<span class="dot">3</span></div>
+ <div class="ar"><i></i>App</div>
+ <div class="ar"><i></i>People</div>
+ <div class="ar"><i></i>Church</div>
+ <div class="ar foot"><i></i>You</div>
+</nav>
+<div class="col">
+ <div class="jump">Jump to…<kbd>⌘K</kbd></div>
+ <h2>Sundays &amp; sermons</h2>
+ <div>
+  <div class="pg on">Sermons<span class="cnt">1</span></div>
+  <div class="pg">Series and speakers</div>
+  <div class="pg">Bulletin</div>
+  <div class="pg">Service orders</div>
+  <div class="pg">Rosters</div>
+  <div class="lbl">Later</div>
+  <div class="pg">Song list</div>
+ </div>
+</div>
+<main>
+ <div class="tb"><div><h1>Sermons</h1><p class="lead">Check new sermons, fix their details, and upload them.</p></div><span class="btn">Upload a sermon</span></div>
+ <div class="split">
+  <table>
+   <tr><th>Sermon</th><th>Series</th><th>Speaker</th><th>Date</th><th></th></tr>
+   <tr class="sel"><td class="t">The God who answers</td><td>Job: Almighty God</td><td>Ps. Mark</td><td>Sun 8 Nov, AM</td><td><span class="pill">Check</span></td></tr>
+   <tr><td class="t">Where were you?</td><td>Job: Almighty God</td><td>Ps. Mark</td><td>Sun 1 Nov, AM</td><td></td></tr>
+   <tr><td class="t">Wisdom's hiding place</td><td>Job: Almighty God</td><td>Ps. Dan</td><td>Sun 25 Oct, AM</td><td></td></tr>
+   <tr><td class="t">A friend who stays</td><td>Job: Almighty God</td><td>Ps. Mark</td><td>Sun 18 Oct, PM</td><td></td></tr>
+  </table>
+  <div class="det"><div class="art"></div><h3>The God who answers</h3><p>Job 38:1–11 · 41 minutes · from the podcast feed</p></div>
+ </div>
+</main>
+</body></html>

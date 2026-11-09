@@ -26,6 +26,15 @@ internal static class InboxPayloads
         Payload = Encode(Item(notification.Id.ToString(), notification, null)),
     };
 
+    public static FeedChangeRecord Gone(string feed, string recordId, string? scopeId, long version) => new()
+    {
+        Feed = feed,
+        RecordId = recordId,
+        ScopeId = scopeId,
+        Version = version,
+        Deleted = true,
+    };
+
     private static InboxItem Item(string id, NotificationRecord notification, DateTime? readAt) => new()
     {
         Id = id,

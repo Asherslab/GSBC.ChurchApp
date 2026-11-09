@@ -74,12 +74,9 @@ public sealed class RoleInfo
     [ProtoMember(9)] public bool AppliesToChildren { get; set; }
     [ProtoMember(10)] public List<string> AssignableByRoleIds { get; set; } = [];
     [ProtoMember(11)] public int HolderCount { get; set; }
-}
-
-[ProtoContract]
-public sealed class RoleReference
-{
-    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(12)] public string? Feature { get; set; }
+    [ProtoMember(13)] public bool Hidden { get; set; }
+    [ProtoMember(14)] public int Position { get; set; }
 }
 
 [ProtoContract]
@@ -105,6 +102,7 @@ public sealed class AssignmentInfo
     [ProtoMember(6)] public DateTime? ExpiresAt { get; set; }
     [ProtoMember(7)] public string Source { get; set; } = "";
     [ProtoMember(8)] public DateTime CreatedAt { get; set; }
+    [ProtoMember(9)] public string? CreatedBy { get; set; }
 }
 
 [ProtoContract]
@@ -154,29 +152,56 @@ public sealed class PlaceReason
 }
 
 [ProtoContract]
-public sealed class RolePreviewRequest
+public sealed class PlaceReference
 {
-    [ProtoMember(1, IsRequired = true)] public RoleInfo Role { get; set; } = new();
-    [ProtoMember(2)] public bool Deleting { get; set; }
+    [ProtoMember(1)] public string ScopeKind { get; set; } = "";
+    [ProtoMember(2)] public string? ObjectId { get; set; }
 }
 
 [ProtoContract]
-public sealed class RoleEffect
+public sealed class PlacePeople
 {
-    [ProtoMember(1)] public List<PersonEffect> People { get; set; } = [];
+    [ProtoMember(1)] public List<PlaceRole> Roles { get; set; } = [];
+    [ProtoMember(2)] public List<PlaceHolder> People { get; set; } = [];
+    [ProtoMember(3)] public List<PermissionInfo> Abilities { get; set; } = [];
 }
 
 [ProtoContract]
-public sealed class PersonEffect
+public sealed class PlaceRole
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public string Description { get; set; } = "";
+    [ProtoMember(4)] public List<string> AbilityNodes { get; set; } = [];
+    [ProtoMember(5)] public string? Refusal { get; set; }
+    [ProtoMember(6)] public List<string> AlsoNodes { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class PlaceHolder
 {
     [ProtoMember(1)] public string UserId { get; set; } = "";
-    [ProtoMember(2)] public List<AbilityChange> Gains { get; set; } = [];
-    [ProtoMember(3)] public List<AbilityChange> Losses { get; set; } = [];
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public List<AssignmentInfo> Assignments { get; set; } = [];
 }
 
 [ProtoContract]
-public sealed class AbilityChange
+public sealed class FindPeopleRequest
 {
-    [ProtoMember(1)] public string Node { get; set; } = "";
-    [ProtoMember(2)] public string? ObjectId { get; set; }
+    [ProtoMember(1, IsRequired = true)] public PlaceReference Place { get; set; } = new();
+    [ProtoMember(2)] public string Query { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class FoundPeople
+{
+    [ProtoMember(1)] public List<FoundPerson> People { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class FoundPerson
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public string Email { get; set; } = "";
 }

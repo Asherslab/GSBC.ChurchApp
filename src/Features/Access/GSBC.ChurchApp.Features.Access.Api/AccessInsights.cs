@@ -16,20 +16,6 @@ internal sealed class AccessInsights(AccessDbContext db, PermissionCatalog catal
         return await _explanations.ExplainAsync(assignments, roles, cancellationToken);
     }
 
-    public async Task<RoleEffect> PreviewAsync(RoleRecord? changed, Guid roleId, CancellationToken cancellationToken)
-    {
-        List<Guid> affectedRoles = [roleId, .. await db.RoleIncludes.AsNoTracking()
-            .Where(include => include.IncludedRoleId == roleId).Select(include => include.RoleId).ToListAsync(cancellationToken)];
-        List<Guid> userIds = await db.ActiveAssignments(Now).Where(assignment => affectedRoles.Contains(assignment.RoleId))
-            .Select(assignment => assignment.UserId).Distinct().ToListAsync(cancellationToken);
-        List<Assignment> assignments = await ActiveAssignmentsOfAsync(userIds, cancellationToken);
-
-        IEnumerable<Guid> loadIds = assignments.Select(assignment => assignment.RoleId)
-            .Concat(changed?.Includes.Select(include => include.IncludedRoleId) ?? []);
-        Dictionary<Guid, RoleRecord> before = await db.LoadRolesWithIncludesAsync(loadIds, cancellationToken);
-        return await _explanations.PreviewAsync(assignments, before, roleId, changed, cancellationToken);
-    }
-
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
     private Task<List<Assignment>> ActiveAssignmentsOfAsync(List<Guid> userIds, CancellationToken cancellationToken) =>

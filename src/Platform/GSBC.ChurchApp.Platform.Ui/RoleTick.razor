@@ -1,0 +1,21 @@
+<span class="role-tick @(Chosen ? "role-tick--chosen" : "")">
+    <label class="role-tick__label" title="@Refusal">
+        <input type="checkbox" class="role-tick__box" checked="@Checked" disabled="@(Refusal is not null || Busy)" @onchange="ChangeAsync" />
+        <span class="role-tick__name">@Name</span>
+    </label>
+    <button type="button" class="role-tick__info" aria-label="@($"What {Name} lets them do")" aria-pressed="@(Chosen ? "true" : "false")" @onclick="OnExplain">
+        <Icon Name="info" Size="IconSize.Small" />
+    </button>
+</span>
+
+@code {
+    [Parameter, EditorRequired] public required string Name { get; set; }
+    [Parameter] public bool Checked { get; set; }
+    [Parameter] public EventCallback<bool> CheckedChanged { get; set; }
+    [Parameter] public string? Refusal { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public bool Chosen { get; set; }
+    [Parameter] public EventCallback OnExplain { get; set; }
+
+    private Task ChangeAsync(ChangeEventArgs change) => CheckedChanged.InvokeAsync(change.Value is true);
+}

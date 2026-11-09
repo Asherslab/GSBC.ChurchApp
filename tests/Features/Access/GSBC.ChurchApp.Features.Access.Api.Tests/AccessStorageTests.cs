@@ -62,8 +62,78 @@ public sealed class AccessStorageTests : IAsyncLifetime
         await scope.ServiceProvider.GetRequiredService<SyncDbContext>().Database.MigrateAsync();
         AccessDbContext db = scope.ServiceProvider.GetRequiredService<AccessDbContext>();
         await db.Database.MigrateAsync();
-        await new AccessReconciler(_services.GetRequiredService<IServiceScopeFactory>(), catalog, TestChurch.SystemRoles, TestChurch.Additions, _clock,
-            NullLogger<AccessReconciler>.Instance).ReconcileAsync(db, TestContext.Current.CancellationToken);
+        await ReconcileAsync(TestChurch.SystemRoles);
+    }
+
+    [Fact]
+    public async Task ARenamedRoleKeepsItsIdSoItsHoldersAndAnythingAimedAtItCarryAcross()
+    {
+        Guid person = Guid.CreateVersion7();
+        Guid accessManager = await SystemRoleAsync("access-manager");
+        await AssignAsync(person, accessManager);
+
+        await ReconcileAsync([.. SystemRoles.Where(role => role.Key != "access-manager"),
+            new SystemRole("roles-manager", "Roles Manager", "", ScopeKind.Global, ["access.view"], Replaces: ["access-manager"])]);
+
+        Assert.Equal(accessManager, await SystemRoleAsync("roles-manager"));
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        Assert.Equal([new RoleHolder(person)],
+            await scope.ServiceProvider.GetRequiredService<IRoleAssignments>().HoldersAsync("roles-manager", null, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ARoleSplitOffStartsWithTheOldRolesHoldersOnlyWhenItIsFirstMade()
+    {
+        Guid person = Guid.CreateVersion7(), later = Guid.CreateVersion7();
+        await AssignAsync(person, await SystemRoleAsync("account-manager"));
+        SystemRole[] split = [.. SystemRoles, new("app-review", "App Review Manager", "", ScopeKind.Global, ["accounts.view"], StartsWithHoldersOf: ["account-manager"])];
+
+        await ReconcileAsync(split);
+        await AssignAsync(later, await SystemRoleAsync("account-manager"));
+        await ReconcileAsync(split);
+
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        Assert.Equal([new RoleHolder(person)],
+            await scope.ServiceProvider.GetRequiredService<IRoleAssignments>().HoldersAsync("app-review", null, TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task RolesMadeHereGoUnlessSomethingIsStillAimedAtThem()
+    {
+        Guid aimedAt = Guid.CreateVersion7(), unused = Guid.CreateVersion7();
+        await using (AsyncServiceScope setup = _services.CreateAsyncScope())
+        {
+            AccessDbContext db = setup.ServiceProvider.GetRequiredService<AccessDbContext>();
+            db.Roles.AddRange(
+                new RoleRecord { Id = aimedAt, Name = "Youth team", ScopeKind = ScopeKind.Global.Name, CreatedAt = _clock.UtcNow },
+                new RoleRecord { Id = unused, Name = "Test role", ScopeKind = ScopeKind.Global.Name, CreatedAt = _clock.UtcNow });
+            await db.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using ServiceProvider withUses = new ServiceCollection().AddSingleton(_services.GetRequiredService<IConfiguration>()).AddAccessData()
+            .AddSingleton<IRoleUses>(new AimedAt(aimedAt)).BuildServiceProvider();
+        await using AsyncServiceScope scope = withUses.CreateAsyncScope();
+        await Reconciler(SystemRoles).RemoveMadeHereRolesAsync(scope.ServiceProvider, TestContext.Current.CancellationToken);
+
+        await using AsyncServiceScope check = _services.CreateAsyncScope();
+        Assert.Equal([aimedAt], await check.ServiceProvider.GetRequiredService<AccessDbContext>().Roles
+            .Where(role => role.SystemKey == null).Select(role => role.Id).ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    private AccessReconciler Reconciler(IEnumerable<SystemRole> roles) =>
+        new(_services.GetRequiredService<IServiceScopeFactory>(), _services.GetRequiredService<PermissionCatalog>(), roles, TestChurch.Additions, TestChurch.Kits, _clock,
+            NullLogger<AccessReconciler>.Instance);
+
+    private async Task ReconcileAsync(IEnumerable<SystemRole> roles)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await Reconciler(roles).ReconcileAsync(scope.ServiceProvider.GetRequiredService<AccessDbContext>(), TestContext.Current.CancellationToken);
+    }
+
+    private sealed class AimedAt(Guid roleId) : IRoleUses
+    {
+        public ValueTask<IReadOnlyList<string>> UsesAsync(Guid role, CancellationToken cancellationToken) =>
+            ValueTask.FromResult<IReadOnlyList<string>>(role == roleId ? ["a Home screen tile"] : []);
     }
 
     [Fact]
@@ -77,7 +147,7 @@ public sealed class AccessStorageTests : IAsyncLifetime
         GrantSet grants = await scope.ServiceProvider.GetRequiredService<AccessEvaluator>().GrantsForAsync(person, TestContext.Current.CancellationToken);
 
         Assert.True(grants.IsAllowed(PostNews, Music));
-        Assert.False(grants.IsAllowed(AccessPermissions.EditRoles));
+        Assert.False(grants.IsAllowed(AccessPermissions.View));
     }
 
     [Fact]

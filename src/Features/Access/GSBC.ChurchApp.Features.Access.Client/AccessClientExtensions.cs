@@ -8,7 +8,8 @@ namespace GSBC.ChurchApp.Features.Access.Client;
 public static class AccessClientExtensions
 {
     public static IServiceCollection AddAccessClient(this IServiceCollection services) =>
-        services.AddSingleton<AccessClient>().AddSingleton<IRoleDirectory, AccessRoleDirectory>().AddSingleton<IClientStartupTask, AccessLoader>();
+        services.AddSingleton<AccessClient>().AddSingleton<IRoleDirectory, AccessRoleDirectory>().AddSingleton<IClientStartupTask, AccessLoader>()
+            .AddSingleton<IPlacePeopleSource, AccessPlacePeopleSource>();
 
     public static IServiceCollection AddAccessOnPhone(this IServiceCollection services, ClientModules modules)
     {

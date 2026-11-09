@@ -9,30 +9,85 @@ built.
 | Who | Can |
 |---|---|
 | Anyone signed in | See their own permissions (the app and admin panel use them to show or hide tools) |
-| `access.view` | See roles and what each person can do ("See roles and what each person can do") |
-| `access.roles.edit` | Make and change custom roles, by copying a role (system roles are locked) |
-| `access.assignments.edit` (at a scope) | Give or take away any role at that scope: globally, or within one ministry |
-| A role's **assignable-by** roles (at a scope) | Give or take away that role at that scope ([below](#who-can-give-which-role-assignable-by)) |
+| `access.view` (Roles Manager, Owner) | See everyone's roles and what each person can do |
+| `access.assignments.edit` (at a scope) | Give or take away any role at that scope whose abilities they have themselves |
+| A role's **assignable-by** roles (at a scope) | Give or take away that role at that scope ([below](#who-can-give-which-role-assignable-by)): a calendar's Editors add its Editors |
 
-## Roles
+Nobody makes or changes roles any more: they're all built in (owner, 2026-11-09).
 
-- **System roles** are declared in code by features and reconciled into the database at start-up;
-  they can be assigned but not edited. Configuration declares **Draft reviewer** (at a draft: preview
-  it; given and taken away by Configuration when a draft is shared) and **App editor** (`config.*`:
-  arrange and publish the app, see every draft). Access declares **Owner** (`*`) and **Access manager** (`access.*`);
-  Accounts declares **Account manager** (`accounts.view`, `.manage`, `.review.manage`) and **App reviewer**
-  (grants nothing; it marks a demo account). Media declares **Media editor**; Notifications declares
-  **Announcer**. Analytics declares
-  **Insights viewer** (`analytics.view`; nobody holds it by default) and **Developer**
-  (`analytics.health.view`). Ministries will declare its own. A feature may add its own nodes to a role
-  another feature declares (`AddToSystemRole`): Accounts adds `accounts.tools.connect` to Developer.
-- **Custom roles** are made in the admin panel by copying a role: a name, a description, the scope
-  kind they're assigned at, the abilities ticked, whether they apply to child ministries, and who can
-  give them. The developer tool can also set raw patterns (`ministries.news.*`,
-  `-ministries.roster.edit`) and up to one level of included roles.
-- The permission catalogue is every node the running features declare, reconciled at start-up, so the
-  role editor can list and explain them. Unknown patterns are allowed (a feature may come later) but
-  flagged.
+## Roles by feature, with levels (owner, 2026-11-09)
+
+The owner: roles "feel painful to use … role names just don't feel like they're easy to understand. Split
+roles more or less by feature, with levels of what most people will need." Decided with the owner the same
+day (mocks and review in `.impeccable/mocks/decision/roles/`):
+
+- **Built in only.** Features declare every role in code (`SystemRole`); staff can't make or change one,
+  and `access.roles.edit` is gone. Roles made here before were removed on the first start after this
+  (`AccessReconciler.RemoveMadeHereRolesAsync`), unless something was still aimed at one (below).
+- **Named *Feature Level*, ticked independently.** Each role names its feature (`SystemRole.Feature`,
+  the group heading, in `RoleFeatures`) and is listed in declaration order. A person can hold any
+  combination; a higher level already includes the lower one's abilities.
+- **A role brings what its job needs from elsewhere** through a **kit** the owning feature declares
+  (`AddRoleKit`): Media's `pictures` (see the library, upload) and People's `people-names` (see names and
+  emails). Kit patterns are stored as *everywhere* patterns (`role_patterns.everywhere`), so a role given
+  for one calendar still lets its holder pick a picture. The escalation guard counts them: you can't give
+  a role whose kit you don't hold.
+- **Bookkeeping roles are hidden** (`SystemRole.Hidden`): Sermon follower, Series follower, Calendar
+  added, Calendar turned off and App reviewer. The app gives them; they never show on People, in "what can
+  they do", in the audience picker, and `Assign` refuses them.
+- **No Roles page, no Who can do what.** Global roles are given from the person; roles for one thing
+  from the thing ([Admin screens](#admin-screens)).
+
+| Feature | Role | Gives | Brings |
+|---|---|---|---|
+| Sermons | Sermons Uploader, Sermons Editor | as Sermons declares | pictures |
+| Calendar | Calendar Editor | `events.edit` in every calendar | pictures |
+| | Calendar Publisher | `events.edit`, `events.publish` everywhere | pictures |
+| | Calendar Manager | `events.calendars.manage`, edit and publish everywhere | pictures |
+| | Digest Maker | `events.digest` | |
+| Announcements | Announcements Writer | `notifications.announcements.write` | |
+| | Announcements Sender | write and `send` | |
+| App | App Editor | `config.{hub,appearance,tabs}.edit`, `config.drafts.preview` everywhere | pictures |
+| | App Publisher | `config.*` | pictures |
+| Media | Media Viewer | `media.view` | |
+| | Media Editor | view, upload, organise, delete | |
+| | Media Manager | Media Editor and `media.fonts.upload` | |
+| People | People Viewer | `accounts.view` | |
+| | People Manager | `accounts.view`, `accounts.manage` | |
+| | Roles Manager | `access.view`, `access.assignments.edit` | people-names |
+| | App Review Manager | `accounts.review.manage` | |
+| Insights and health | Insights Viewer | `analytics.view` | |
+| | Developer | `analytics.health.view`, `accounts.tools.connect` | |
+| Everything | Owner | `*` | |
+
+**Roles for one thing** have no feature; they're given on the thing: a calendar's **Editor** (assignable by
+its Editors, Calendar Editors, Publishers and Managers; brings pictures) and **Publisher** (by Calendar
+Publishers and Managers; brings pictures), a regular event's **Organiser** (by Calendar Editors, Publishers
+and Managers), and a draft's **Reviewer** (given by Configuration when a draft is shared). Ministries'
+Member, Leader and Admin will be the same.
+
+**Nobody gains or loses access by accident** (the mapping, 2026-11-09). A role renamed in code keeps its
+record (`SystemRole.Replaces`), so its id, its holders and every Home tile, tab, calendar or announcement
+aimed at "people in this role" carry across; a role split off another starts with its holders, once, when
+it's first made (`StartsWithHoldersOf`).
+
+| Before | After |
+|---|---|
+| Access manager (`access.*`, `accounts.view`) | Roles Manager: loses making roles, which no one can do now |
+| Account manager | People Manager (same record), and the new App Review Manager for the same people |
+| Announcer | Announcements Sender |
+| App editor (`config.*`) | App Publisher, and gains pictures |
+| Calendars manager | Calendar Manager, and gains pictures |
+| Calendar editor, Calendar publisher (one calendar) | Editor, Publisher of that calendar, and gain pictures |
+| Event organiser, Draft reviewer | Organiser, Reviewer |
+| Media editor, Insights viewer, Developer, Digest maker, Owner | the same, renamed to the new capitals |
+| Made here | removed |
+
+**A role nothing can be aimed at once it's gone** (the owner, 2026-11-09, through the main station): a
+feature that aims things at "people in this role" implements `IRoleUses` (Platform.Api) and says what still
+is: Configuration (Home tiles, tabs, colours), Events (calendars) and Notifications (announcements not
+yet sent). A made-here role in use is kept, and the reconciler logs what to change, rather than leaving
+its tile or announcement reaching only the Owners.
 
 ## Assignments
 
@@ -74,29 +129,33 @@ request, so `[Requires]`, sync audiences and every feature reading `GrantsForAsy
 
 ## Admin screens
 
-- **Roles** (`/access/roles`): every role in a table you can search, filter (built in, made here) and
-  sort (what it's for, where it's given, who gives it, how many hold it). Choosing one
-  (`/access/roles/{id}`) shows it beside the table: what it lets people do, by area, and who has it;
-  Access managers can **Make a copy** (`/access/roles/new?from={id}`), and change or delete a custom
-  role (`/access/roles/{id}/edit`), each after **Check what changes**, which sits beside the editor.
-- **Who can do what** (`/access/people`): people on the left; the chosen person (`?user=`) shows their
-  roles with Take away and Give a role ("They will be able to: …" before the button), then "What can
-  they do?" by place with the reason.
-- **Roles: developer tool** (`/access/roles/advanced`, not in the navigation): the raw pattern editor
-  and the catalogue with nodes.
-- **People** (Accounts): find someone, invite someone, give a recovery code, disable an account, see the
-  audit log.
+- **A person** (`/people/{id}`, People's page, Accounts): Roles, What they can do, and Account tabs.
+  Access contributes its two tabs through `PersonTab` (Platform.Client), so the features stay apart.
+  **Roles** lists every role as a tick, grouped by feature in two columns; a tick the viewer can't give is
+  greyed with the reason. The (i) beside each fills the sand panel beside the list: what it lets them do,
+  then "Also, from Media, because the job needs it", then who gave it and when. Under the ticks, *For one
+  thing* lists their roles on single things ("Editor and Publisher of the Kids calendar") with a link
+  there. **What they can do** is the explanation by place, with the role that gives each.
+- **People on a thing**: the shared `PeopleRow` and `PeopleSheet` (Platform.Ui) over `IPlacePeople`
+  (Platform.Client). A row names who's on it and opens the sheet: search to add someone (as the thing's
+  first role you may give), each person's roles for that thing as ticks with the same (i), Take off.
+  Access implements it for any role kind (`IPlacePeopleSource.For(kind, id)`), using `Access.ListPlace`
+  and `Access.FindPeople` (both signed in, for people who may give a role there or hold `access.view`;
+  found people show a masked email, or the full one to people who can see People, through Accounts' `people-names` kit). Built on a calendar's settings, a regular event's *Organisers*, and
+  a draft's Share (Configuration's own adapter, so sharing still notifies).
+- **Roles: developer tool** (`/access/roles/advanced`, not in the navigation, `access.view`): every role
+  with its raw patterns (everywhere ones marked), its feature and who gives it, and the catalogue. Read only.
 
-The two features meet through a small `IPeopleDirectory` in Platform.Client, implemented by Accounts,
-so Access can show names without referencing Accounts. Place names come from `IScopeNames`
-(Platform.Client), which asks each feature's `IScopeNamer` for its own scope kind and reloads the
-screens on the namers' feeds. Configuration names drafts ("For the draft “Christmas Home”", from the
-drafts the viewer may see; 2026-11-04); Events names calendars (2026-11-08); Ministries will name ministries. An unnamed place reads
-"For one ministry". A namer also lists its places (`ChoicesAsync`), so *Give a role* picks the place from a list,
-never free text, for every kind a feature names (2026-11-08). The screens use
-the shared `GroupedList` and `Notice` from Platform.Ui.
+## Status (2026-11-09)
 
-## Status (2026-11-02)
+**Built 2026-11-09 (roles, redone):** roles by feature with levels, kits, hidden bookkeeping roles, built in
+only; renames and splits carry holders across; made-here roles removed unless aimed at (`IRoleUses`); the
+person page's Roles and What they can do tabs; the shared People row and sheet on a calendar, a regular
+event's organisers and a draft's Share. The Roles page, the role editor and Who can do what are gone.
+Tested in `Features.Access.Api.Tests` (a kit given everywhere from a role for one thing, the guard
+counting a kit, a renamed role keeping its holders, a split role starting with its holders once, a
+made-here role kept while aimed at) and checked in the admin panel against a copy of the dev database.
+
 
 **Built 2026-11-02 (the design below, minus Ministries itself):** plain-language descriptions and
 areas in the catalogue (`Permission.Area`), assignable-by and applies-to-children on roles
@@ -148,8 +207,8 @@ permission may name its area; when it doesn't, the area is its feature (the node
 
 ### Roles
 
-Roles are jobs people already know. Features declare them in code (system roles), and they double as
-the **templates** for anything custom.
+Roles are jobs people already know, declared in code by features. The staff roles are now by feature
+([above](#roles-by-feature-with-levels-owner-2026-11-09)); the ministry roles below are still to come.
 
 | Role | Given | Declared by | Can |
 |---|---|---|---|
@@ -157,8 +216,6 @@ the **templates** for anything custom.
 | **Leader** | per ministry, applies to its teams too | Ministries | Everything a Member can, plus run the ministry: post, start chats, roster, settings, add and remove members. Shown as a leader on the ministry's About |
 | **Admin** | per ministry, applies to its teams too | Ministries | Exactly what a Leader can, without the title: not shown as a leader. For the person who does a ministry's tech (owner, 2026-11-02) |
 | **Staff** | everywhere | Ministries | Everything a Leader can, in every ministry, plus message all serving teams |
-| **Account manager** | everywhere | Accounts | Invite people, help them back in, disable accounts, read the audit log |
-| **Access manager** | everywhere | Access | Manage roles and who holds them |
 | **Owner** | everywhere | Access | Everything |
 
 **Applies to its teams too** is a property of the role: a Leader of Music is a Leader of Choir, Vocal
@@ -166,19 +223,14 @@ Groups, Song Leading and Production. A Member of Music is not a Member of Choir.
 reading Music's members-only items is a Ministries feed rule, not a grant; see
 [ministries.md](ministries.md#the-model).)
 
-**Custom roles: copy a template, Access managers only** (owner, 2026-11-02). There's no blank role.
-An Access manager opens a role and chooses **Make a copy**, renames it, ticks abilities on or off by
-area, and saves after the preview. Copies store the abilities by name, never wildcards, so a feature
-added later never widens a custom role without someone choosing it. The raw editor (patterns,
-includes, the catalogue) stays as a developer's tool at `/access/roles/advanced`, not in the
-navigation, needing `access.roles.edit`.
+~~Custom roles: copy a template~~ (owner, 2026-11-02): replaced 2026-11-09 by built-in roles only.
 
 ### Who can give which role: "assignable by"
 
 Every role lists the roles whose holders may give and take it away. Someone may give role R in place
 P when either:
 
-- they hold `access.assignments.edit` in P (Access managers and the Owner hold it everywhere); or
+- they hold `access.assignments.edit` in P (Roles Managers and the Owner hold it everywhere); or
 - they hold, in P or everywhere, one of R's **assignable-by** roles (counting a role on a parent
   ministry that applies to its teams);
 
@@ -189,8 +241,10 @@ a role away follows the same rule, plus the last-Owner guard.
 |---|---|
 | Member | Leader, Admin (of that ministry or its parent), Staff |
 | Leader, Admin | Staff |
-| Staff, Account manager, Access manager, Owner | Only through `access.assignments.edit`, and the escalation guard means the giver must hold everything the role gives: in practice the Owner |
-| A custom role | Chosen in the editor; by default, only people with `access.assignments.edit` |
+| A calendar's Editor | Its Editors, Calendar Editors, Calendar Publishers, Calendar Managers (2026-11-09) |
+| A calendar's Publisher | Calendar Publishers, Calendar Managers |
+| A regular event's Organiser | Calendar Editors, Calendar Publishers, Calendar Managers |
+| Every role by feature, Staff, Owner | Only through `access.assignments.edit` (Roles Managers, Owners), and the escalation guard: they must hold everything the role gives, its kit included |
 
 Leaders add members; only staff make Leaders or Admins. Admins are staff-made too: an Admin can do
 everything a Leader can, so a Leader making Admins would be a Leader making co-leaders.
@@ -201,9 +255,9 @@ everything a Leader can, so a Leader making Admins would be a Leader making co-l
   (Member), **Remove from team**, and for staff **Make a leader**, **Make an admin**, **Stop being a
   leader**. Accepting a join request and an Open ministry's **Join** give Member too. Membership lives
   in the app, for every ministry (owner, 2026-11-02): Access assignments are the team list.
-- **A person** (Access → People, staff only): what they can do, and give or take away any role you're
-  allowed to.
-- The Roles screen never assigns; it shows who holds a role and links to them.
+- **A person** (People → a person → Roles, staff only): tick or untick any role you're allowed to give.
+- **The thing itself**, through its People button: a calendar, a regular event's organisers, a draft's
+  reviewers.
 
 ### "What can this person do?"
 
@@ -219,11 +273,10 @@ Opening a person shows their abilities in sentences, grouped by place, each with
 An end date shows as "until 21 Dec". Denied abilities simply don't appear. The same view, for yourself,
 is "What can I do?" (with the first phone feature that needs it).
 
-### Preview before saving
+### Before giving a role
 
-Saving a role, or deleting one, first shows its effect: "Saving changes what 4 people can do. They
-gain: Post news (in their ministry). They lose: Accept join requests." Giving a role shows what it will
-let that person do in that place before the button: "Sam will be able to: …".
+Every role's (i) says what it lets the person do, and what it brings from other features, before it's
+ticked. (Previewing a changed role went with making roles, 2026-11-09.)
 
 ### Guard rails, in words
 
@@ -231,10 +284,9 @@ let that person do in that place before the button: "Sam will be able to: …".
 |---|---|
 | A Leader tries to make a Leader | "Only someone with the Staff role can give the Leader role. Ask one of them." |
 | The escalation guard | "You can't give the Leader role, because it lets people do things you can't do yourself: Post news, …" |
-| A custom role with an ability you lack | The tick is greyed: "You can't do this yourself, so you can't give it." |
+| A role you can't give | The tick is greyed, and its (i) says why, in the guard's words |
 | Taking away the last Owner | "This is the church's last Owner. Make someone else an Owner first." |
-| Changing a system role | "Built-in roles come from the app. Make a copy to change it." |
-| Changing where a held role applies | "People have this role, so where it applies can't change. Make a copy instead." |
+| Giving a hidden role by hand | "The app gives the Calendar added role by itself; it isn't given by hand." |
 | A person has no roles | "Nothing beyond what everyone can do." |
 
 ### Scope hierarchy

@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0}
+body{width:1440px;height:900px;overflow:hidden;font:400 15px/1.45 Montserrat,sans-serif;color:#18233a;background:#fff;display:grid;grid-template-columns:248px 1fr}
+aside{background:#2a3d5e;color:#fff;padding:22px 14px 16px;display:flex;flex-direction:column;gap:18px}
+.brand{display:flex;gap:10px;align-items:center;padding:0 10px;font-weight:700;font-size:17px}
+.mark{width:30px;height:30px;border-radius:50%;border:5px solid #d5c9b7;border-right-color:transparent}
+.jump{display:flex;align-items:center;gap:8px;height:36px;padding:0 10px;border-radius:9px;background:rgb(255 255 255/.12);color:rgb(255 255 255/.7);font-size:13px;font-weight:600}
+.jump kbd{margin-left:auto;font:600 11px Montserrat;color:#d5c9b7}
+nav{display:grid;gap:4px}
+.area{position:relative;display:flex;align-items:center;gap:10px;height:42px;padding:0 10px;border-radius:9px;color:rgb(255 255 255/.8);font-size:15px;font-weight:700}
+.area i{width:18px;height:18px;border-radius:5px;border:2px solid currentColor;opacity:.85}
+.area.on{background:rgb(255 255 255/.12);color:#fff}
+.area.on:before{content:"";position:absolute;left:-14px;top:10px;bottom:10px;width:3px;border-radius:0 3px 3px 0;background:#e7ae74}
+.cnt{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:#e7ae74;color:#2a1a08;font-size:12px;font-weight:700;display:grid;place-items:center}
+.pages{margin:2px 0 8px 38px;border-left:1px solid rgb(255 255 255/.16);display:grid}
+.pg{display:flex;align-items:center;height:32px;padding:0 10px 0 14px;color:rgb(255 255 255/.72);font-size:13px;font-weight:600}
+.pg .cnt{height:18px;min-width:18px;font-size:11px}
+.foot{margin-top:auto;border-top:1px solid rgb(255 255 255/.12);padding-top:10px}
+main{padding:28px 40px}
+.crumbs{font-size:13px;font-weight:600;color:#007a70;margin-bottom:8px}
+h1{font-size:30px;letter-spacing:-.02em}
+.lead{color:#545e70;font-size:14px;margin:4px 0 26px;max-width:72ch}
+.cols{display:grid;grid-template-columns:1.4fr 1fr;gap:48px}
+h2{font-size:19px;margin-bottom:10px}
+.row{display:flex;gap:14px;align-items:center;min-height:72px;padding:12px 0;border-bottom:1px solid #e9e1d4}
+.tile{width:36px;height:36px;border-radius:10px;background:#f4efe7;flex:none}
+.row b{display:block;font-size:15px}
+.row span.s{font-size:13px;color:#545e70}
+.row .w{margin-left:auto;font-size:12px;font-weight:700;padding:3px 10px;border-radius:10px;background:#fbe7d3;color:#8a5422;white-space:nowrap}
+.task{padding:12px 0;border-bottom:1px solid #e9e1d4;font-size:14px}
+.task b{display:block}
+.task span{color:#545e70;font-size:13px}
+</style></head><body>
+<aside>
+ <div class="brand"><span class="mark"></span>Good Shepherd</div>
+ <div class="jump">Jump to…<kbd>⌘K</kbd></div>
+ <nav>
+  <div class="area"><i></i>Home</div>
+  <div class="area"><i></i>Sundays &amp; sermons<span class="cnt">1</span></div>
+  <div class="area on"><i></i>Calendar &amp; news<span class="cnt">3</span></div>
+  <div class="pages">
+   <div class="pg">Calendar<span class="cnt">1</span></div>
+   <div class="pg">Announcements<span class="cnt">2</span></div>
+   <div class="pg">Weekly digest</div>
+   <div class="pg">Bookings</div>
+  </div>
+  <div class="area"><i></i>The app</div>
+  <div class="area"><i></i>People</div>
+  <div class="area"><i></i>Church life</div>
+ </nav>
+ <div class="foot"><div class="area"><i></i>Account</div></div>
+</aside>
+<main>
+ <div class="crumbs">Home ›</div>
+ <h1>Calendar &amp; news</h1>
+ <p class="lead">What's on at Good Shepherd and how the church hears about it.</p>
+ <div class="cols">
+  <div>
+   <h2>Pages</h2>
+   <div class="row"><span class="tile"></span><div><b>Calendar</b><span class="s">The church calendar: events, regular events, breaks and calendars</span></div><span class="w">1 to publish</span></div>
+   <div class="row"><span class="tile"></span><div><b>Announcements</b><span class="s">Tell the church something, on everyone's phone</span></div><span class="w">2 not sent</span></div>
+   <div class="row"><span class="tile"></span><div><b>Weekly digest</b><span class="s">What's next at Good Shepherd, made from the calendar, for email and the app</span></div></div>
+   <div class="row"><span class="tile"></span><div><b>Bookings</b><span class="s">Rooms and the hall: who has them and when</span></div></div>
+  </div>
+  <div>
+   <h2>Needs you</h2>
+   <div class="task"><b>Carols by Candlelight</b><span>Asked to publish · 2 days ago</span></div>
+   <div class="task"><b>Christmas Day service times</b><span>Announcement not sent · scheduled Fri</span></div>
+   <div class="task"><b>Youth camp reminder</b><span>Announcement not sent · draft</span></div>
+  </div>
+ </div>
+</main>
+</body></html>

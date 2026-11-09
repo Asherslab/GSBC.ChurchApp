@@ -5,6 +5,7 @@ window.gsbcShell = (() => {
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const scroller = () => document.querySelector('.page-scroll');
   const mastheadLead = 16;
+  const focusBeforeModal = [];
 
   const back = (fallback) => {
     if (history.state?._index > 0) history.back();
@@ -119,6 +120,42 @@ window.gsbcShell = (() => {
       return { close: () => document.removeEventListener('keydown', key) };
     },
 
+    jumpKeys(receiver) {
+      const key = (event) => {
+        if (!(event.metaKey || event.ctrlKey) || event.altKey || event.shiftKey || event.key.toLowerCase() !== 'k') return;
+        if (document.querySelector('dialog[open]:not(.jump-layer)')) return;
+        event.preventDefault();
+        receiver.invokeMethodAsync('OnHeard', 'jump');
+      };
+      document.addEventListener('keydown', key);
+      return { close: () => document.removeEventListener('keydown', key) };
+    },
+
+    usesCommandKey() {
+      return [navigator.userAgentData?.platform, navigator.platform].some((platform) => /mac|iphone|ipad/i.test(platform ?? ''));
+    },
+
+    recall(key) {
+      try { return localStorage.getItem(`gsbc:${key}`); } catch { return null; }
+    },
+
+    remember(key, value) {
+      try { localStorage.setItem(`gsbc:${key}`, value); } catch { }
+    },
+
+    reveal(id) {
+      document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
+    },
+
+    restoreFocus() {
+      const before = focusBeforeModal.pop();
+      if (before?.isConnected) before.focus({ preventScroll: true });
+    },
+
+    focusFirst(sheet) {
+      (sheet.querySelector('[autofocus]') ?? sheet).focus({ preventScroll: true });
+    },
+
     onReturn(receiver) {
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible') receiver.invokeMethodAsync('OnReturned');
@@ -147,6 +184,7 @@ window.gsbcShell = (() => {
 
     showModal(dialog) {
       if (!dialog || dialog.open || typeof dialog.showModal !== 'function') return;
+      focusBeforeModal.push(document.activeElement);
       dialog.addEventListener('cancel', (event) => event.preventDefault());
       dialog.showModal();
     },

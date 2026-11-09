@@ -163,7 +163,7 @@ production's for the App Store.
 
 **Once per environment:** admin panel → **App review** → **Make a demo account**: name `App Review`, an
 email of its own that no one uses, such as `review@baptist.com.au` (nothing is ever sent to it). It
-needs the Account manager role, which the Owner holds.
+needs the App Review Manager role, which the Owner holds.
 
 **For each review:** **App review** → **Make a code**: what it's for (`TestFlight 1.0 (12)`), 30 days →
 copy the code (`ABCD-EFGH-JKMN`); it's shown only once. Then, in App Store Connect:

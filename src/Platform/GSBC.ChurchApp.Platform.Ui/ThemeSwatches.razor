@@ -1,0 +1,10 @@
+<span class="swatches" data-theme-swatch="@Palette" style="@Colours" aria-hidden="true"><i></i><i></i><i></i></span>
+
+@code {
+    [Parameter, EditorRequired] public required string Palette { get; set; }
+    [Parameter] public ThemeSpec? Made { get; set; }
+
+    private string? Colours => Made is null
+        ? null
+        : $"--swatch-1: {Made.Light.Masthead}; --swatch-2: {Made.Light.Accent}; --swatch-3: {Made.Light.Marker}";
+}

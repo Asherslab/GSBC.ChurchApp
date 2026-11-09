@@ -1,0 +1,11 @@
+@page "/app-styling"
+@page "/app-styling/{DraftId}"
+@page "/drafts"
+@page "/drafts/{DraftId}"
+
+<StylingWorkspace DraftId="@DraftId" AreaKey="@Area" />
+
+@code {
+    [Parameter] public string? DraftId { get; set; }
+    [SupplyParameterFromQuery(Name = "area")] public string? Area { get; set; }
+}

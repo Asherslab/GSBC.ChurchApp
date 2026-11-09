@@ -17,6 +17,7 @@ public sealed class NotificationRecord
     public string? Action { get; init; }
     public DateTime RaisedAt { get; init; }
     public DateTime? SettledAt { get; set; }
+    public DateTime? RecalledAt { get; set; }
     public Guid? OneOf { get; init; }
     public int Rank { get; init; }
 }
@@ -97,6 +98,9 @@ public sealed class AnnouncementRecord
     public int ReachedPeople { get; set; }
     public int ReachedPhones { get; set; }
     public Guid? NotificationId { get; set; }
+    public DateTime? RecalledAt { get; set; }
+    public Guid? RecalledById { get; set; }
+    public int ReadByWhenRecalled { get; set; }
 }
 
 public enum AnnouncementState
@@ -106,4 +110,5 @@ public enum AnnouncementState
     Scheduled,
     Sent,
     Cancelled,
+    Recalled,
 }

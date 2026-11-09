@@ -1,0 +1,102 @@
+@inject NavigationManager Navigation
+@inject Shell Shell
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Label="Jump to a page" LayerClass="jump-layer">
+    <div class="jump">
+        <label class="search-field jump__field">
+            <Icon Name="search" Size="IconSize.Small" />
+            <span class="visually-hidden">Jump to a page</span>
+            <input type="text" class="search-field__input" role="combobox" aria-expanded="true" aria-controls="@ListId" aria-autocomplete="list"
+                   aria-activedescendant="@(Matches.Count > 0 ? OptionId(_active) : null)" autocomplete="off" spellcheck="false" autofocus
+                   placeholder="Type the name of a page" value="@_query" @oninput="Type" @onkeydown="KeyAsync" />
+        </label>
+        <p class="@(Matches.Count == 0 ? "jump__none" : "visually-hidden")" role="status">@Status</p>
+        <ul class="jump__list" id="@ListId" role="listbox" aria-label="Pages you can open" hidden="@(Matches.Count == 0)">
+            @for (int index = 0; index < Matches.Count; index++)
+            {
+                NavEntry entry = Matches[index];
+                int at = index;
+                <li id="@OptionId(at)" role="option" aria-selected="@(at == _active ? "true" : "false")" class="jump__option @(at == _active ? "jump__option--active" : "")"
+                    @onmousedown:preventDefault="true" @onclick="() => GoAsync(entry)" @onmouseenter="() => _active = at">
+                    <span class="jump__tile" aria-hidden="true"><Icon Name="@entry.Icon" Size="IconSize.Small" /></span>
+                    <span class="jump__text">
+                        <strong>@entry.Title</strong>
+                        @if (Detail(entry) is { Length: > 0 } detail)
+                        {
+                            <span>@detail</span>
+                        }
+                    </span>
+                    @if (at == _active)
+                    {
+                        <Icon Name="chevron-right" Size="IconSize.Small" Class="jump__go" />
+                    }
+                </li>
+            }
+        </ul>
+    </div>
+</Sheet>
+
+@code {
+    private const int MostShown = 12;
+    private readonly string _id = PickerMatches.NextId();
+    private string _query = "";
+    private int _active;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<NavEntry> Entries { get; set; }
+
+    private string ListId => $"{_id}-pages";
+
+    private string OptionId(int index) => $"{_id}-page-{index}";
+
+    private List<NavEntry> Matches => PickerMatches.Of(Entries, entry => entry.Title, Detail, _query.Trim(), MostShown);
+
+    private string Status => Matches.Count switch
+    {
+        0 => $"No page called “{_query.Trim()}” that your role opens.",
+        1 => "1 page",
+        var count => $"{count} pages",
+    };
+
+    private static string Detail(NavEntry entry) => string.Join(" · ", new[] { entry.Area?.Title, entry.Summary }.OfType<string>());
+
+    protected override void OnParametersSet()
+    {
+        if (Open)
+            return;
+        _query = "";
+        _active = 0;
+    }
+
+    private void Type(ChangeEventArgs change)
+    {
+        _query = change.Value?.ToString() ?? "";
+        _active = 0;
+    }
+
+    private async Task KeyAsync(KeyboardEventArgs key)
+    {
+        int count = Matches.Count;
+        switch (key.Key)
+        {
+            case "ArrowDown" when count > 0:
+                _active = (_active + 1) % count;
+                await Shell.RevealAsync(OptionId(_active));
+                break;
+            case "ArrowUp" when count > 0:
+                _active = (_active + count - 1) % count;
+                await Shell.RevealAsync(OptionId(_active));
+                break;
+            case "Enter" when count > 0:
+                await GoAsync(Matches[Math.Min(_active, count - 1)]);
+                break;
+        }
+    }
+
+    private async Task GoAsync(NavEntry entry)
+    {
+        await OpenChanged.InvokeAsync(false);
+        Navigation.NavigateTo(entry.Href);
+    }
+}

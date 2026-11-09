@@ -185,6 +185,10 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("pattern");
 
+                    b.Property<bool>("Everywhere")
+                        .HasColumnType("boolean")
+                        .HasColumnName("everywhere");
+
                     b.HasKey("RoleId", "Pattern")
                         .HasName("pk_role_patterns");
 
@@ -211,6 +215,14 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("description");
 
+                    b.Property<string>("Feature")
+                        .HasColumnType("text")
+                        .HasColumnName("feature");
+
+                    b.Property<bool>("Hidden")
+                        .HasColumnType("boolean")
+                        .HasColumnName("hidden");
+
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -219,6 +231,10 @@ namespace GSBC.ChurchApp.Features.Access.Api.Data.Migrations
                     b.Property<bool>("PhoneHoldable")
                         .HasColumnType("boolean")
                         .HasColumnName("phone_holdable");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("integer")
+                        .HasColumnName("position");
 
                     b.Property<string>("ScopeKind")
                         .IsRequired()
