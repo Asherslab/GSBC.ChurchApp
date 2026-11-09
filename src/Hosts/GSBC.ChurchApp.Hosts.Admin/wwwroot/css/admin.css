@@ -453,6 +453,10 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .person-roles__why-title { margin: 0 0 10px; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.01em; }
 .person-roles__given { margin: 14px 0 0; padding-top: 12px; border-top: 1px solid var(--sand-strong); color: var(--ink-2); font-size: var(--text-caption); }
 @media (max-width: 1328px) {
+    .person-roles { grid-template-columns: minmax(0, 1fr) minmax(260px, 340px); gap: 28px; }
+    .person-roles__features { columns: 1; }
+}
+@media (max-width: 680px) {
     .person-roles { grid-template-columns: minmax(0, 1fr); }
     .person-roles__why { position: static; }
 }

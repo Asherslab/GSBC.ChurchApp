@@ -78,28 +78,6 @@
             <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _deleting = true">Delete the account…</Button>
         </section>
     }
-
-    <section class="panel-section" aria-labelledby="activity-@Person.Id">
-        <h3 class="panel-subtitle" id="activity-@Person.Id">Recent activity</h3>
-        <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
-            @if (context.Value.Count == 0)
-            {
-                <p class="panel-hint">Nothing yet.</p>
-            }
-            else
-            {
-                <ol class="activity">
-                    @foreach (AuditInfo entry in context.Value)
-                    {
-                        <li>
-                            <span>@Words(entry.Action)@(entry.ActorId is { Length: > 0 } actor && actor != Person.Id ? " by staff" : "")</span>
-                            <DateLine At="entry.At" Style="DateLineStyle.Short" WithTime="true" Class="quiet" />
-                        </li>
-                    }
-                </ol>
-            }
-        </LiveData>
-    </section>
 </Can>
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -163,8 +141,6 @@
         await OnRemoved.InvokeAsync();
     });
 
-    private async Task<List<AuditInfo>> LoadAuditAsync() => (await Accounts.ListAuditAsync(Person.Id)).Entries;
-
     private Task IssueAsync() => RunAsync(async () => _link = await Accounts.IssueRecoveryCodeAsync(Person.Id));
 
     private Task ToggleAsync() => RunAsync(async () =>
@@ -192,31 +168,4 @@
         }
     }
 
-    private static string Words(string action) => action switch
-    {
-        "signed-up" => "Made their account",
-        "signed-in" => "Signed in",
-        "passkey-added" => "Added a passkey",
-        "passkey-removed" => "Removed a passkey",
-        "email-confirmed" => "Confirmed their email",
-        "recovery-requested" => "Asked for a recovery email",
-        "recovery-issued" => "Recovery link made",
-        "code-redeemed" => "Used a link",
-        "invited" => "Invited",
-        "invitation-resent" => "Invitation sent again",
-        "invitation-withdrawn" => "Invitation withdrawn",
-        "session-ended" => "Signed out on a device",
-        "signed-out-everywhere" => "Signed out everywhere",
-        "name-changed" => "Changed their name",
-        "disabled" => "Account turned off",
-        "enabled" => "Account turned back on",
-        "demo-account-created" => "Made as a demo account",
-        "review-code-created" => "Sign-in code made",
-        "review-code-turned-off" => "Sign-in code turned off",
-        "review-code-used" => "Signed in with a code",
-        "review-code-refused" => "A sign-in code was refused",
-        "tool-connected" => "Connected a tool",
-        "deleted" => "Account deleted",
-        _ => action,
-    };
 }

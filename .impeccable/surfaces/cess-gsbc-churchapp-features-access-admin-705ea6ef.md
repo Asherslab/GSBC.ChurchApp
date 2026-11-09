@@ -31,8 +31,9 @@ at the 14px radius, sand quiet capsules for actions; the shared Sheet for the th
 STORY: I open People, choose Ruth, tick Announcements Writer, glance at the sand panel to see what it
 gives her, and I'm done. On the Kids calendar I press People, find Ben, tick Editor, Done.
 
-FIRST VIEWPORT: Back to People; the name with email, joined and passkey; account actions at the end.
-Tabs Roles · What they can do · Account · Activity. Roles: the tick list in two columns grouped by
+FIRST VIEWPORT: Back to People; the name with email, state, passkey and joined. Tabs Roles · What they
+can do · Account · Activity. (The account actions stay in the Account tab with the confirmation sheets they
+already had, rather than at the end of the title band: one home for them, and the Roles tab leads.) Roles: the tick list in two columns grouped by
 feature, "For one thing" under it with links; the sand panel (about 400px) beside it explains the chosen
 role. The thing: a People row ("Ruth and Ben · 2 people") opening the sheet: search to add, then each
 person with that thing's roles as ticks and (i), Take off, Done.

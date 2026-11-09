@@ -141,7 +141,7 @@ request, so `[Requires]`, sync audiences and every feature reading `GrantsForAsy
   first role you may give), each person's roles for that thing as ticks with the same (i), Take off.
   Access implements it for any role kind (`IPlacePeopleSource.For(kind, id)`), using `Access.ListPlace`
   and `Access.FindPeople` (both signed in, for people who may give a role there or hold `access.view`;
-  found people show a masked email). Built on a calendar's settings, a regular event's *Organisers*, and
+  found people show a masked email, or the full one to people who can see People, through Accounts' `people-names` kit). Built on a calendar's settings, a regular event's *Organisers*, and
   a draft's Share (Configuration's own adapter, so sharing still notifies).
 - **Roles: developer tool** (`/access/roles/advanced`, not in the navigation, `access.view`): every role
   with its raw patterns (everywhere ones marked), its feature and who gives it, and the catalogue. Read only.

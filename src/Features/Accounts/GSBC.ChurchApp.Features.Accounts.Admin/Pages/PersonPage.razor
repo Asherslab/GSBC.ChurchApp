@@ -21,6 +21,7 @@
                     <span><PersonState Person="person" Invitation="context.Value.Invitation" /></span>
                     @if (context.Value.Invitation is null)
                     {
+                        <span>@(person.HasPasskey ? "Has a passkey" : "No passkey yet")</span>
                         <span>Joined <DateLine At="person.CreatedAt" Style="DateLineStyle.Short" /></span>
                     }
                 </p>
@@ -37,6 +38,10 @@
                     <PersonDetail @key="person.Id" Person="person" Invitation="context.Value.Invitation" OnChanged="ReloadAsync" OnRemoved="Removed" />
                 </div>
             }
+            else if (Shown.Slug == ActivityTab)
+            {
+                <PersonActivity @key="person.Id" Person="person" />
+            }
             else
             {
                 @Shown.Content(new PersonOnPage(person.Id, person.DisplayName))
@@ -47,6 +52,7 @@
 
 @code {
     private const string AccountTab = "account";
+    private const string ActivityTab = "activity";
     private static readonly RenderFragment<PersonOnPage> NoContent = _ => _ => { };
 
     private LiveData<PersonView>? _live;
@@ -57,6 +63,7 @@
     private IReadOnlyList<PersonTab> Tabs =>
         ContributedTabs.Where(tab => tab.Requires is null || Access.Can(tab.Requires))
             .Append(new PersonTab(AccountTab, "Account", 2, NoContent))
+            .Concat(Access.Can(AccountsPermissions.Manage) ? [new PersonTab(ActivityTab, "Activity", 3, NoContent)] : [])
             .OrderBy(tab => tab.Order)
             .ToList();
 

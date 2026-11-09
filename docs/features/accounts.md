@@ -82,8 +82,8 @@ say it can't be undone (`AccountDeletionWords`).
 ## A person's page (2026-11-09)
 
 People lists everyone; choosing someone opens their page (`/people/{id}`): their email, account state and
-joined date, and tabs. Accounts owns the page and its **Account** tab (recovery link, invitation, turning
-the account off, deleting it, recent activity); other features add tabs through `PersonTab`
+whether they have a passkey and joined date, and tabs. Accounts owns the page, its **Account** tab (recovery link,
+invitation, turning the account off, deleting it) and **Activity** (`accounts.manage`, as before); other features add tabs through `PersonTab`
 (Platform.Client): Access adds **Roles** and **What they can do** ([access.md](access.md#admin-screens)).
 `/people?person={id}` (the office week's links) goes to the page.
 

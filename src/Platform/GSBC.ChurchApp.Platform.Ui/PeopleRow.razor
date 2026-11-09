@@ -7,6 +7,10 @@
             <span class="people-row__body">
                 <span class="people-row__label">@Label</span>
                 <span class="people-row__names">@Summary(view)</span>
+                @if (view.People.Count > 0)
+                {
+                    <span class="people-row__count">@(view.People.Count == 1 ? "1 person" : $"{view.People.Count} people")</span>
+                }
             </span>
             <Button Small="true" Variant="ButtonVariant.Quiet" Icon="users" OnClick="() => _open = true">@(view.MayAdd ? "People" : "See who")</Button>
         </div>

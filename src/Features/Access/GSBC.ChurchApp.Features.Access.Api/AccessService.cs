@@ -11,7 +11,7 @@ namespace GSBC.ChurchApp.Features.Access.Api;
 
 internal sealed class AccessService(
     AccessDbContext db, AccessChanges changes, IAccessEvaluator evaluator, AssignmentRules rules, AccessInsights insights, PermissionCatalog catalog,
-    IPeopleIndex people, TimeProvider time)
+    IPeopleIndex people, IEnumerable<RoleKit> kits, TimeProvider time)
     : IAccessService
 {
     public const string OwnerKey = "owner";
@@ -198,10 +198,13 @@ internal sealed class AccessService(
         string query = request.Query.Trim();
         if (query.Length < ShortestSearch)
             return new FoundPeople();
+        GrantSet grants = await evaluator.GrantsForAsync(callerId, cancellationToken);
+        bool seesEmails = kits.FirstOrDefault(kit => kit.Name == RoleKits.PeopleNames) is { } names
+            && names.Patterns.All(node => catalog.ByNode.TryGetValue(node, out Permission? permission) && grants.IsAllowed(permission));
         return new FoundPeople
         {
             People = (await people.FindAsync(query, MostFound, cancellationToken))
-                .Select(person => new FoundPerson { Id = person.Id.ToString(), Name = person.Name, MaskedEmail = MaskedEmail(person.Email) })
+                .Select(person => new FoundPerson { Id = person.Id.ToString(), Name = person.Name, MaskedEmail = seesEmails ? person.Email : MaskedEmail(person.Email) })
                 .ToList(),
         };
     }
