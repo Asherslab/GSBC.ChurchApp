@@ -25,7 +25,7 @@ OWN-WORLD: the website itself: DM Serif Text for reading and headings, Montserra
 
 STORY: what's on this week and what's coming, then one tap to an event's facts or a sermon's player; the website's address follows so it can be shared.
 
-FIRST VIEWPORT: events: calendar chips and Subscribe, then the next dated events; Regular gatherings follow them. Sermons: the latest sermon with Listen and Watch, then search.
+FIRST VIEWPORT: events: calendar chips and Subscribe, then the next dated events; This week (every date in the next seven days, time and title) sits beside them, after them on a phone. Sermons: the latest sermon with Listen and Watch, then search.
 
 SIGNATURE: the date tile (green weekday band, serif day number) anchoring each day and heading an event's page; the iframe that grows to its content and keeps the website's address in step.
 
