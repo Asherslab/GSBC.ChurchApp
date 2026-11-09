@@ -94,7 +94,7 @@ else
                 <StylingPhone Hub="@shown.Arranged(HubSurfaces.Area, null)" Appearance="@shown.Arranged(AppearanceSurfaces.Area, null)" Tabs="@shown.Arranged(TabBarSurfaces.Area, null)"
                               Preview="_preview" Theme="EditingTheme" SelectedKey="@_selectedKey" Still="@(_session is null || !MayEdit(HubSurfaces.Area))"
                               Showing="@(_session is null ? "What everyone sees" : $"“{_session.Draft.Name}”")" OnChoose="ChooseAsync" OnTabBar="ChooseTabBarAsync"
-                              OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnScheme="SchemeFound" />
+                              OnMove="ArrangeTilesAsync" OnMoveTabs="ArrangeTabsAsync" OnResize="ResizeTileAsync" OnScheme="SchemeFound" />
                 <PreviewChips Value="_preview" ValueChanged="preview => _preview = preview" Roles="RolesInUse(shown)" RoleNames="_roleNames" />
             </div>
             <div class="styling__panel">
@@ -907,10 +907,18 @@ else
         return IconSetting.Custom(id);
     }
 
-    private async Task ShowHomeAsync()
+    private async Task ShowPartAsync(SurfaceArea area)
     {
-        if (_area.Area != HubSurfaces.Area.Key || _overview)
-            await OpenPartAsync(HubSurfaces.Area.Key);
+        if (_area.Area != area.Key || _overview)
+            await OpenPartAsync(area.Key);
+    }
+
+    private Task ShowHomeAsync() => ShowPartAsync(HubSurfaces.Area);
+
+    private async Task ArrangeTabsAsync(IReadOnlyList<ArrangedSurface> arranged)
+    {
+        await ShowPartAsync(TabBarSurfaces.Area);
+        await SetOrdersAsync(arranged);
     }
 
     private async Task ArrangeTilesAsync(IReadOnlyList<ArrangedSurface> arranged)

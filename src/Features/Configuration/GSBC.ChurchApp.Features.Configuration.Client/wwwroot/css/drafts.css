@@ -307,3 +307,6 @@
   .styling__sentence, .styling__line { height: auto; }
   .styling__line, .styling__line .save-status { white-space: normal; }
 }
+.phone-frame .tabs-canvas__bar [data-tab] { touch-action: none; }
+.phone-frame .tabs-canvas__bar--moving { cursor: grabbing; }
+.phone-frame .tabs-canvas__tab--dragging { position: relative; z-index: 1; cursor: grabbing; background: var(--bar); box-shadow: var(--tile-lift), inset 0 0 0 2px var(--marker); }
