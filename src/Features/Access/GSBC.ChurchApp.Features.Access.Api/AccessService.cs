@@ -204,7 +204,7 @@ internal sealed class AccessService(
         return new FoundPeople
         {
             People = (await people.FindAsync(query, MostFound, cancellationToken))
-                .Select(person => new FoundPerson { Id = person.Id.ToString(), Name = person.Name, MaskedEmail = seesEmails ? person.Email : MaskedEmail(person.Email) })
+                .Select(person => new FoundPerson { Id = person.Id.ToString(), Name = person.Name, Email = seesEmails ? person.Email : MaskedEmail(person.Email) })
                 .ToList(),
         };
     }

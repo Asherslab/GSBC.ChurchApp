@@ -39,7 +39,7 @@ internal sealed class AccessPlacePeople(AccessClient access, TimeProvider time, 
 
     public async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
         (await access.FindPeopleAsync(kind.Name, objectId, query)).People
-            .Select(person => new PersonChoice(person.Id, person.Name, person.MaskedEmail))
+            .Select(person => new PersonChoice(person.Id, person.Name, person.Email))
             .ToList();
 
     public async Task GiveAsync(string userId, string roleId) =>
