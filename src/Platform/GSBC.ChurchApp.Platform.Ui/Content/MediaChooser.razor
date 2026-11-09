@@ -4,13 +4,14 @@
 
 @if (Picker is { } picker)
 {
-    <Sheet Open="true" OpenChanged="_ => OnCancel.InvokeAsync()" Wide="true" Title="@(ImagesOnly ? "Choose a picture" : "Choose a file")">
+    <Sheet Open="true" OpenChanged="_ => OnCancel.InvokeAsync()" Wide="true" Title="@(FontsOnly ? "Choose a font file" : ImagesOnly ? "Choose a picture" : "Choose a file")">
         @Render(picker)
     </Sheet>
 }
 
 @code {
     [Parameter] public bool ImagesOnly { get; set; } = true;
+    [Parameter] public bool FontsOnly { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public EventCallback<MediaRef> OnChosen { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
@@ -20,10 +21,11 @@
     private RenderFragment Render(MediaPicker picker) => builder =>
     {
         builder.OpenComponent(0, picker.Component);
-        builder.AddComponentParameter(1, MediaPicker.ImagesOnlyParameter, ImagesOnly);
+        builder.AddComponentParameter(1, MediaPicker.ImagesOnlyParameter, ImagesOnly && !FontsOnly);
         builder.AddComponentParameter(2, MediaPicker.OnPickParameter, EventCallback.Factory.Create<MediaRef>(this, media => OnChosen.InvokeAsync(media)));
         builder.AddComponentParameter(3, MediaPicker.OnCancelParameter, EventCallback.Factory.Create(this, () => OnCancel.InvokeAsync()));
         builder.AddComponentParameter(4, MediaPicker.SizeParameter, Size);
+        builder.AddComponentParameter(5, MediaPicker.FontsOnlyParameter, FontsOnly);
         builder.CloseComponent();
     };
 

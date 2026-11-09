@@ -374,6 +374,9 @@
         new(MediaFilter.All, "All", counts?.All),
         new(MediaFilter.Pictures, "Pictures", counts?.Pictures),
         new(MediaFilter.Documents, "PDFs and files", counts?.Documents),
+        .. counts?.Fonts > 0 || _filter == MediaFilter.Fonts
+            ? [new FilterOption<MediaFilter>(MediaFilter.Fonts, "Fonts", counts?.Fonts)]
+            : Array.Empty<FilterOption<MediaFilter>>(),
         new(MediaFilter.Unused, "Not used", counts?.Unused),
         .. counts?.LargeOriginals > 0 || _filter == MediaFilter.LargeOriginals
             ? [new FilterOption<MediaFilter>(MediaFilter.LargeOriginals, "Large originals", counts?.LargeOriginals)]

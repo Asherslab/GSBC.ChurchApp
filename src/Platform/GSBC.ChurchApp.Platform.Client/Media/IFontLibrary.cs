@@ -6,11 +6,9 @@ public interface IFontLibrary
 {
     bool MayChooseFromGoogle { get; }
 
-    bool MayUploadFiles { get; }
+    bool MayChooseFiles { get; }
 
     Task<IReadOnlyList<FontFamilyChoice>> SearchAsync(string query, CancellationToken cancellationToken = default);
 
     Task<CustomFont> ImportAsync(string family, CancellationToken cancellationToken = default);
-
-    Task<CustomFont> UploadAsync(string fileName, long bytes, Stream content, CancellationToken cancellationToken = default);
 }

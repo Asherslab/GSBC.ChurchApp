@@ -31,6 +31,13 @@ public static class MediaTypes
 
     public static IEnumerable<string> Accepted => ExtensionByType.Keys;
 
+    public static IEnumerable<string> FontFileExtensions => [".woff2", ".woff", ".ttf", ".otf"];
+
+    public static string AcceptedFiles(bool fontsOnly) =>
+        string.Join(",", fontsOnly ? FontFileExtensions : Accepted.Concat(FontFileExtensions));
+
+    public static string ContentTypeOf(string fileName, string reported) => FontTypeOf(fileName) ?? reported;
+
     public static bool TryGetExtension(string contentType, out string extension) =>
         ExtensionByType.TryGetValue(contentType, out extension!);
 

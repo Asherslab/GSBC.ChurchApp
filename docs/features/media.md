@@ -95,6 +95,18 @@ on the phone, and held by the draft or theme that uses it, so it can't be delete
   not endpoints. If Google changes that catalogue's format, search breaks and nothing else does.
 - **Uploaded**, through the usual presigned upload, only with `media.fonts.upload`; a font is never
   private, since everyone using the app downloads it.
+- **Fonts fetched from Google are made by the app** (owner, 2026-11-09: "Lobster 400.woff2, Not used yet"
+  sat in the Library). `Import` keeps them in the system folder *Fonts from Google* (`FontsService.Area`,
+  seen by anyone with `media.view`) through `KeepAsync`, so one fetched twice is one entry and its bytes
+  are stored once, and the theme or draft using it holds it. The migration `GoogleFontsMadeByTheApp`
+  moved the ones already in the Library: public `font/woff2` files named the way imports name them
+  (`<Family> <400|700|400 700>.woff2`), from any staff folder; a font staff uploaded keeps its place.
+- **The church's own font is chosen from Media** (owner, 2026-11-09), with the same picker as photos
+  (`MediaChooser` with `FontsOnly`, which lists `MediaFilter.Fonts`): staff upload the font file to Media
+  (or from the picker), then choose it. The font picker no longer uploads by itself. Choosing needs
+  `media.view`; uploading still needs `media.fonts.upload`. .woff2, .woff, .ttf and .otf are accepted,
+  typed by their extension (browsers often report none for a font), and deduplicated like all media.
+  The Library shows a *Fonts* filter once it has one.
 - **On screen**, a theme's font files become `@font-face` rules with a family name made from the
   file's hash, never from the name staff typed.
 - **Production needs CORS on the public media host** for fonts, since browsers fetch `@font-face`

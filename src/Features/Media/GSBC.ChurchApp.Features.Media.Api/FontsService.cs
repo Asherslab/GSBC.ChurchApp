@@ -1,14 +1,19 @@
-using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Contracts;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
 
-internal sealed class FontsService(GoogleFonts google, MediaLibrary library) : IFontsService
+internal sealed class FontsService(GoogleFonts google, IMediaSystemFolders folders) : IFontsService
 {
     private const int MostResults = 30;
+    private const string Woff2 = "font/woff2";
+
+    public static readonly MediaSystemArea Area = new("fonts", "Fonts from Google",
+        "Fonts fetched from Google Fonts for the themes staff make. Each is kept once, however many themes use it, and a theme using it keeps it.",
+        MediaPermissions.View);
 
     public async ValueTask<FontFamilies> SearchAsync(FontSearch request, CallContext context = default)
     {
@@ -41,13 +46,15 @@ internal sealed class FontsService(GoogleFonts google, MediaLibrary library) : I
             throw new RpcException(new Status(StatusCode.Unavailable, $"Couldn't fetch {family.Family} from Google Fonts. Try again in a moment."));
         }
 
-        ClaimsPrincipal user = context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
         CustomFont font = new() { Family = family.Family };
         foreach (GoogleFontFile file in files)
         {
-            string fileName = $"{family.Family} {file.Weight}.woff2";
-            MediaRef stored = await library.StoreAsync(user, file.Bytes, "font/woff2", fileName, context.CancellationToken);
-            font.Files.Add(new FontFile { Media = stored, Weight = file.Weight });
+            using MemoryStream content = new(file.Bytes);
+            if (!(await MediaInspector.InspectAsync(content, Woff2, context.CancellationToken)).MatchesType)
+                throw new RpcException(new Status(StatusCode.Unavailable, $"Google Fonts sent something for {family.Family} that isn't a font. Try again in a moment."));
+            MediaTypes.TryGetExtension(Woff2, out string extension);
+            MediaRef kept = await folders.KeepAsync(Area, new KeptFile(file.Bytes, Woff2, extension, $"{family.Family} {file.Weight}.woff2"), context.CancellationToken);
+            font.Files.Add(new FontFile { Media = kept, Weight = file.Weight });
         }
         return font;
     }

@@ -3,15 +3,15 @@
 
 <div class="media-choice">
     <div class="media-choice__tools">
-        <SearchField Label="@(ImagesOnly ? "Find a picture in every folder" : "Find a file in every folder")" Placeholder="@(ImagesOnly ? "Find a picture in every folder" : "Find a file in every folder")"
+        <SearchField Label="@FindLabel" Placeholder="@FindLabel"
                      Value="@_query" ValueChanged="SearchAsync" SettleMilliseconds="200" />
         <Button Variant="ButtonVariant.Quiet" Icon="@(_uploading ? "x" : "arrow-up")" OnClick="() => _uploading = !_uploading">@(_uploading ? "Close upload" : "Upload")</Button>
     </div>
     @if (_uploading)
     {
-        <MediaUpload Label="@(ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" FolderId="@(Searching ? null : _folderId)" OnUploaded="UploadedAsync" />
+        <MediaUpload Label="@(FontsOnly ? "Choose a font file (.woff2, .woff, .ttf or .otf)" : ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" FontsOnly="FontsOnly" FolderId="@(Searching ? null : _folderId)" OnUploaded="UploadedAsync" />
     }
-    <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the pictures right now" Context="tree">
+    <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
         @if (Searching)
         {
             <p class="media-choice__where">Results for “@_query” in every folder</p>
@@ -21,10 +21,10 @@
             <Breadcrumbs Label="Where you are" Trail="Trail(tree.Value)" OnOpen="crumb => OpenAsync(crumb.Key)" />
             <FolderTiles Compact="true" Folders="tree.Value.ChildrenOf(_folderId, system: false).ToList()" Subfolders="folder => tree.Value.ChildrenOf(folder.Id, system: false).Count()" OnOpen="folder => OpenAsync(folder.Id)" />
         }
-        <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the pictures right now">
+        <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
             @if (context.Value.Items is { Count: > 0 } shown)
             {
-                <div class="media-choice__grid" role="listbox" aria-label="@(ImagesOnly ? "Pictures" : "Files")">
+                <div class="media-choice__grid" role="listbox" aria-label="@(FontsOnly ? "Font files" : ImagesOnly ? "Pictures" : "Files")">
                     @foreach (MediaItemInfo item in shown)
                     {
                         MediaRef media = item.Media!;
@@ -57,8 +57,8 @@
             }
             else
             {
-                <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : _folderId is null ? (ImagesOnly ? "No pictures yet" : "No files yet") : (ImagesOnly ? "No pictures in this folder" : "This folder is empty"))"
-                            Body="@(Searching ? "Try another word." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
+                <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? (ImagesOnly ? "No pictures yet" : "No files yet") : (ImagesOnly ? "No pictures in this folder" : "This folder is empty"))"
+                            Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
             }
         </LiveData>
     </LiveData>
@@ -90,9 +90,12 @@
     [Parameter] public EventCallback<MediaRef> OnPick { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public bool ImagesOnly { get; set; }
+    [Parameter] public bool FontsOnly { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
 
     private bool Searching => _query.Length > 0;
+
+    private string FindLabel => FontsOnly ? "Find a font file in every folder" : ImagesOnly ? "Find a picture in every folder" : "Find a file in every folder";
 
     protected override async Task OnInitializedAsync() => _folderId = await Memory.LastFolderAsync();
 
@@ -113,7 +116,7 @@
         {
             FolderId = Searching ? null : _folderId,
             Search = _query,
-            Filter = ImagesOnly ? MediaFilter.Pictures : MediaFilter.All,
+            Filter = FontsOnly ? MediaFilter.Fonts : ImagesOnly ? MediaFilter.Pictures : MediaFilter.All,
             Take = _wanted,
         });
         page.Items.RemoveAll(item => item.Media is null);
