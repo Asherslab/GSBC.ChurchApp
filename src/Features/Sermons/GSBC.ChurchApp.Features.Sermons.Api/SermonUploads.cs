@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Sermons.Api;
 
 internal sealed partial class SermonUploads(
-    SermonsDbContext db, IBlobStore blobs, IMediaReferences media, Speakers speakers, SermonPublisher publisher, PodcastFeedWriter podcast,
+    SermonsDbContext db, IBlobStore blobs, IMediaReferences media, Speakers speakers, ServiceNames services, SermonPublisher publisher, PodcastFeedWriter podcast,
     SermonAnnouncer announcer, TimeProvider time)
 {
     private static readonly TimeSpan UploadWindow = TimeSpan.FromHours(2);
@@ -45,6 +45,7 @@ internal sealed partial class SermonUploads(
         string? youTube = string.IsNullOrWhiteSpace(request.YouTube) ? null
             : YouTubeIds.Find(request.YouTube) ?? throw Invalid("That isn't a YouTube link. Paste the video's address.");
 
+        string service = await services.NameAsync(request.Service, cancellationToken);
         DateTime now = time.GetUtcNow().UtcDateTime;
         SpeakerRecord speaker = await SpeakerAsync(request, cancellationToken);
         Guid? seriesId = await SeriesAsync(request, now, cancellationToken);
@@ -62,7 +63,7 @@ internal sealed partial class SermonUploads(
             SourceSpeaker = speaker.Name,
             SourceSpeakerId = speaker.Id,
             SourceSeriesId = seriesId,
-            SourceService = request.Service.Trim(),
+            SourceService = service,
             SourceYouTubeId = youTube,
             Summary = request.Summary.Trim(),
             AudioUrl = blobs.PublicUrlOf(request.AudioKey).ToString(),

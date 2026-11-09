@@ -177,9 +177,7 @@ public sealed class SpeakerDetail
     [ProtoMember(1)] public string Id { get; set; } = "";
     [ProtoMember(2)] public string Name { get; set; } = "";
     [ProtoMember(3)] public MediaRef? Photo { get; set; }
-    [ProtoMember(4)] public List<string> Aliases { get; set; } = [];
     [ProtoMember(5)] public int Count { get; set; }
-    [ProtoMember(6)] public string? MergeInto { get; set; }
     [ProtoMember(7)] public bool PhotoChosen { get; set; }
 }
 
@@ -187,6 +185,20 @@ public sealed class SpeakerDetail
 public sealed class SpeakerList
 {
     [ProtoMember(1)] public List<SpeakerDetail> Speakers { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ServiceChoice
+{
+    [ProtoMember(1)] public string Name { get; set; } = "";
+    [ProtoMember(2)] public bool Standard { get; set; }
+    [ProtoMember(3)] public int Count { get; set; }
+}
+
+[ProtoContract]
+public sealed class ServiceList
+{
+    [ProtoMember(1)] public List<ServiceChoice> Services { get; set; } = [];
 }
 
 [ProtoContract]

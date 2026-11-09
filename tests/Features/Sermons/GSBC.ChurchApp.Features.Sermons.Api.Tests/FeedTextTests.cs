@@ -6,11 +6,13 @@ namespace GSBC.ChurchApp.Features.Sermons.Api.Tests;
 public sealed class FeedTextTests
 {
     [Theory]
-    [InlineData("Sun AM - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday morning")]
-    [InlineData("SUN PM - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday evening")]
-    [InlineData("Wed PM", "Jo Ellery", "Wednesday evening")]
-    [InlineData("Wed", "Jo Ellery", "Wednesday")]
-    [InlineData("Sun AM - Ps Lee Varga - Watch at: https://youtu.be/AbCdEfGhIj0", "Lee Varga", "Sunday morning")]
+    [InlineData("Sun AM - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday Morning")]
+    [InlineData("SUN PM - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday Evening")]
+    [InlineData("Wed PM", "Jo Ellery", "Wednesday Night")]
+    [InlineData("Wed", "Jo Ellery", "Wednesday Night")]
+    [InlineData("Sun AM - Ps Lee Varga - Watch at: https://youtu.be/AbCdEfGhIj0", "Lee Varga", "Sunday Morning")]
+    [InlineData("Sun PM - Kit Ward - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday Evening")]
+    [InlineData("Mon PM", "Jo Ellery", "Monday evening")]
     [InlineData("Sun 9AM - Adults Session - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Sunday 9am · Adults Session")]
     [InlineData("Wed 2nd Session - Youth", "Jo Ellery", "Wednesday 2nd Session · Youth")]
     [InlineData("Christmas Day - Watch at: https://youtu.be/AbCdEfGhIj0", "Jo Ellery", "Christmas Day")]

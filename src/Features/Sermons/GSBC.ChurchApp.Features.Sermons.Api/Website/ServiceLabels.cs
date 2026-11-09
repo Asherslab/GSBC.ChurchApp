@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using GSBC.ChurchApp.Features.Sermons.Contracts;
 
 namespace GSBC.ChurchApp.Features.Sermons.Api.Website;
 
@@ -21,11 +22,13 @@ internal static partial class ServiceLabels
         string[] parts = before.Split(" - ", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         if (parts.Length == 0)
             return "";
+        if (SermonServices.StandardFor(Describe(parts[0])) is { } standard)
+            return standard;
         IEnumerable<string> extra = parts.Skip(1).Where(part => !NamesTheSpeaker(part, speaker));
         return string.Join(" · ", new[] { Describe(parts[0]) }.Concat(extra));
     }
 
-    public static string Describe(string label)
+    private static string Describe(string label)
     {
         string[] words = label.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (words.Length == 0 || !Days.TryGetValue(words[0], out string? day))

@@ -42,7 +42,7 @@
             <UseSource Show="Corrected(Fields.Series)" Value="@SeriesName(Detail.FromSource.SeriesId)" OnUse="() => UseSourceAsync(Fields.Series)" />
         </div>
         <div class="sermon-check__field">
-            <TextField Label="Service" Placeholder="Sunday morning" @bind-Value="_service" MaxLength="80" />
+            <ServicePicker Services="Services" @bind-Value="_service" />
             <UseSource Show="Corrected(Fields.Service)" Value="@Detail.FromSource.Service" OnUse="() => UseSourceAsync(Fields.Service)" />
         </div>
         <div class="sermon-check__field sermon-check__field--wide">
@@ -90,6 +90,7 @@
     [Parameter, EditorRequired] public required SermonDetail Detail { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SeriesDetail> Series { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SpeakerDetail> Speakers { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<ServiceChoice> Services { get; set; }
     [Parameter] public bool OursToAdd { get; set; }
     [Parameter] public EventCallback<SermonSaved> Saved { get; set; }
 
