@@ -83,8 +83,8 @@
                      .GroupBy(assignment => allRoles.FirstOrDefault(role => role.Id == assignment.RoleId)?.ScopeKind ?? ""))
         {
             IReadOnlyDictionary<string, ScopeChoice> places = await ScopeNames.PlacesAsync(kind.Key, kind.Select(assignment => assignment.ScopeObjectId!).ToList());
-            oneThing.AddRange(kind.Select(assignment => places[assignment.ScopeObjectId!] is var named
-                ? new OneThing(AccessWords.OneThing(assignment.RoleName, kind.Key, named.Name == named.Id ? null : named.Name), named.Href)
+            oneThing.AddRange(kind.GroupBy(assignment => assignment.ScopeObjectId!).Select(place => places[place.Key] is var named
+                ? new OneThing(AccessWords.OneThing(AccessWords.And(place.Select(assignment => assignment.RoleName).Distinct()), kind.Key, named.Name == named.Id ? null : named.Name), named.Href)
                 : null).OfType<OneThing>());
         }
 

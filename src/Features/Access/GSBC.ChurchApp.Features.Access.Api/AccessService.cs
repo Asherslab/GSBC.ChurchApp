@@ -140,15 +140,21 @@ internal sealed class AccessService(
         List<RoleRecord> roles = await RolesAtAsync(kind, cancellationToken);
         Guid callerId = CallerId(context);
         List<PlaceRole> placeRoles = [];
+        Dictionary<Guid, RoleRecord> byId = roles.ToDictionary(role => role.Id);
         foreach (RoleRecord role in roles)
+        {
+            List<string> abilities = Abilities(role, byId).Select(permission => permission.Node).ToList();
+            List<string> own = OwnAbilities(role, byId).Select(permission => permission.Node).ToList();
             placeRoles.Add(new PlaceRole
             {
                 Id = role.Id.ToString(),
                 Name = role.Name,
                 Description = role.Description,
-                AbilityNodes = Abilities(role, roles.ToDictionary(each => each.Id)).Select(permission => permission.Node).ToList(),
+                AbilityNodes = abilities,
+                AlsoNodes = abilities.Except(own).ToList(),
                 Refusal = await rules.RefusalAsync(callerId, role, objectId, cancellationToken),
             });
+        }
         GrantSet grants = await evaluator.GrantsForAsync(callerId, cancellationToken);
         if (!grants.IsAllowed(AccessPermissions.View) && placeRoles.All(role => role.Refusal is not null))
             throw new RpcException(new Status(StatusCode.PermissionDenied, "You can't see who's on this. Ask someone who can add people to it."));
@@ -253,6 +259,12 @@ internal sealed class AccessService(
     {
         ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
         return RoleGrants.Abilities(RoleGrants.PatternsOf(role, roles), kind, null, catalog, RoleGrants.EverywhereOf(role, roles));
+    }
+
+    private IEnumerable<Permission> OwnAbilities(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles)
+    {
+        ScopeKind.TryParse(role.ScopeKind, out ScopeKind kind);
+        return RoleGrants.Abilities(RoleGrants.PatternsOf(role, roles), kind, null, catalog);
     }
 
     private RoleInfo ToInfo(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles, int holderCount) => new()

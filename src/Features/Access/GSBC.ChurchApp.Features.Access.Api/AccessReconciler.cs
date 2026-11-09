@@ -118,7 +118,7 @@ internal sealed class AccessReconciler(
                 : throw new InvalidOperationException($"The role '{declared.Key}' uses the kit '{name}', which no feature declares."))
             .Except(declared.Patterns)
             .Distinct()
-            .Select(pattern => new RolePattern { RoleId = roleId, Pattern = pattern, Everywhere = declared.ScopeKind != ScopeKind.Global }),
+            .Select(pattern => new RolePattern { RoleId = roleId, Pattern = pattern, Everywhere = true }),
     ];
 
     private static void ReconcilePatterns(RoleRecord role, SystemRole declared, IReadOnlyDictionary<string, RoleKit> kits)

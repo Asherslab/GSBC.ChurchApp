@@ -29,7 +29,7 @@ public sealed record PlacePeopleView(IReadOnlyList<PlaceRoleView> Roles, IReadOn
 
 public sealed record PlaceRoleView(string Id, string Name, string Description, IReadOnlyList<AbilityGroup> Gives, string? Refusal);
 
-public sealed record AbilityGroup(string Area, IReadOnlyList<string> Abilities);
+public sealed record AbilityGroup(string Area, IReadOnlyList<string> Abilities, bool BecauseTheJobNeedsIt = false);
 
 public sealed record PlacePersonView(string Id, string Name, string? Detail, IReadOnlyCollection<string> RoleIds);
 

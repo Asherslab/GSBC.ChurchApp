@@ -8,7 +8,7 @@
     @for (int index = 0; index < Role.Gives.Count; index++)
     {
         AbilityGroup group = Role.Gives[index];
-        <p class="role-gives__lead">@(index == 0 ? $"{Role.Name} lets {Who}:" : $"Also, from {group.Area}, because the job needs it:")</p>
+        <p class="role-gives__lead">@Heading(group, index)</p>
         <ul class="role-gives__list">
             @foreach (string ability in group.Abilities)
             {
@@ -25,4 +25,9 @@
 @code {
     [Parameter, EditorRequired] public required PlaceRoleView Role { get; set; }
     [Parameter] public string Who { get; set; } = "them";
+
+    private string Heading(AbilityGroup group, int index) =>
+        group.BecauseTheJobNeedsIt ? $"Also, from {group.Area}, because the job needs it:"
+        : index == 0 ? $"{Role.Name} lets {Who}:"
+        : $"In {group.Area}:";
 }

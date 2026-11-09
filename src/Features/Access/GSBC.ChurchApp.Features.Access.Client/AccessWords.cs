@@ -22,6 +22,12 @@ public static class AccessWords
             _ => $"{roleName} of {placeName}",
         };
 
+    public static string And(IEnumerable<string> names)
+    {
+        List<string> all = names.ToList();
+        return all.Count <= 1 ? string.Concat(all) : $"{string.Join(", ", all[..^1])} and {all[^1]}";
+    }
+
     public static string GivenWhere(RoleInfo role) =>
         role.ScopeKind == ScopeKind.Global.Name ? "Everywhere"
         : role.AppliesToChildren ? $"For one {role.ScopeKind}, and its teams"

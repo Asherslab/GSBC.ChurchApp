@@ -174,6 +174,7 @@ public sealed class PlaceRole
     [ProtoMember(3)] public string Description { get; set; } = "";
     [ProtoMember(4)] public List<string> AbilityNodes { get; set; } = [];
     [ProtoMember(5)] public string? Refusal { get; set; }
+    [ProtoMember(6)] public List<string> AlsoNodes { get; set; } = [];
 }
 
 [ProtoContract]
