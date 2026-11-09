@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Linq.Expressions;
 using System.Text.RegularExpressions;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
@@ -11,20 +12,26 @@ namespace GSBC.ChurchApp.Features.Events.Api;
 
 internal static partial class Digests
 {
-    public const int DefaultWeeks = 2;
-    public const int MostWeeks = 3;
+    public const DigestRange DefaultRange = DigestRange.TwoWeeks;
+    public const int LongestDays = 92;
     public const string OwnPrefix = "own:";
 
     private static readonly CultureInfo English = CultureInfo.InvariantCulture;
     private static readonly string[] Counted = ["", "one", "two", "three", "four", "five"];
 
-    public static DateOnly NextStart(DateOnly today)
+    public static DateOnly EndOf(DateOnly start, DigestRange range, DateOnly? chosen = null) => range switch
     {
-        int days = ((int)DayOfWeek.Monday - (int)today.DayOfWeek + 7) % 7;
-        return today.AddDays(days == 0 ? 7 : days);
-    }
+        DigestRange.OneWeek => start.AddDays(6),
+        DigestRange.Month => start.AddMonths(1).AddDays(-1),
+        DigestRange.Custom when chosen is { } end => end < start ? start : end > start.AddDays(LongestDays - 1) ? start.AddDays(LongestDays - 1) : end,
+        _ => start.AddDays(13),
+    };
 
-    public static DateOnly EndOf(DateOnly start, int weeks) => start.AddDays(7 * weeks - 1);
+    public static Expression<Func<DigestRecord, bool>> Current(DateOnly today)
+    {
+        DateTime thisWeek = ChurchTime.ToUtc(ChurchTime.WeekStart(today).ToDateTime(TimeOnly.MinValue));
+        return digest => digest.UpdatedAt >= thisWeek && digest.End >= today;
+    }
 
     public static IReadOnlySet<Guid> DefaultCalendars(EventsBook book) =>
         book.Calendars.Values.Where(calendar => calendar.ICalSource is not { Length: > 0 }).Select(calendar => calendar.Id).ToHashSet();
@@ -32,9 +39,8 @@ internal static partial class Digests
     private static bool Worth(EventOccurrence occurrence) =>
         OccurrenceListing.IsOneOffOrSpecial(occurrence) || occurrence.NotOn || occurrence.Missing.Count > 0;
 
-    public static List<DigestItem> Candidates(EventsBook book, DateOnly start, int weeks, IReadOnlySet<Guid> calendars, DateTime now)
+    public static List<DigestItem> Candidates(EventsBook book, DateOnly start, DateOnly end, IReadOnlySet<Guid> calendars, DateTime now)
     {
-        DateOnly end = EndOf(start, weeks);
         List<EventOccurrence> occurrences = book
             .Occurrences(start, end, item => EventsBook.IsShown(item, now) && (calendars.Contains(item.CalendarId) || book.AlsoOn(item.Id).Any(calendars.Contains)))
             .Where(Worth)
@@ -140,7 +146,7 @@ internal static partial class Digests
 
     public static string When(IReadOnlyList<DateOnly> dates, DateOnly start)
     {
-        DateOnly firstWeekEnds = start.AddDays(6);
+        DateOnly firstWeekEnds = FirstWeekEnds(start);
         DateOnly first = dates[0];
         if (dates.Count == 1)
             return first <= firstWeekEnds ? $"This {LongDay(first)}" : LongDay(first);
@@ -160,8 +166,10 @@ internal static partial class Digests
             return $"Until {LongDay(last)}";
         string from = first.Month == last.Month ? first.ToString("dddd d", English) : LongDay(first);
         string span = $"{from} to {LongDay(last)}";
-        return first <= start.AddDays(6) ? $"This {span}" : span;
+        return first <= FirstWeekEnds(start) ? $"This {span}" : span;
     }
+
+    private static DateOnly FirstWeekEnds(DateOnly start) => ChurchTime.WeekStart(start).AddDays(6);
 
     private static string PlainText(string? markdown)
     {

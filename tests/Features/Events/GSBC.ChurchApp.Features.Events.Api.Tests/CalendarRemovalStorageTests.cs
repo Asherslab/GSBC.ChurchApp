@@ -32,7 +32,7 @@ public sealed class CalendarRemovalStorageTests : EventsHost
                 new ShowingRecord { Id = Guid.CreateVersion7(), CalendarId = wholeChurchId, EventId = camp.Id, AgreedAt = Clock.GetUtcNow().UtcDateTime },
                 new ShowingRecord { Id = Guid.CreateVersion7(), CalendarId = kidsId, EventId = picnic.Id, AgreedAt = Clock.GetUtcNow().UtcDateTime });
             db.DetailsReminders.Add(new DetailsReminderRecord { OccurrenceId = "reminded", DaysBefore = 7, RegularEventId = impactKids.Id, Date = Today.AddDays(5) });
-            db.Digests.Add(new DigestRecord { Start = Today.AddDays(1), Weeks = 2, CalendarIds = [kidsId, wholeChurchId] });
+            db.Digests.Add(new DigestRecord { Id = Guid.CreateVersion7(), Start = Today.AddDays(1), End = Today.AddDays(14), CalendarIds = [kidsId, wholeChurchId] });
             await db.SaveChangesAsync(Cancel);
             return true;
         });

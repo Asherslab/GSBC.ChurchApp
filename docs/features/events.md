@@ -466,11 +466,11 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 `.impeccable/surfaces/eatures-events-client-whatsnextview-razor-d8eabd9c.md`).
 
 - **Contracts:** the `Digest` service (`gsbc.events.Digest`, every method `[Requires(events.digest)]`): `Open` (the
-  digest for a fortnight, pre-filled and merged with what staff chose), `Save`, `SendToApp`, `SendToMyPhone`. The new
+  digest, pre-filled and merged with what staff chose), `Save`, `SendToApp`, `SendToMyPhone`. The new
   global permission `events.digest` and the *Digest maker* system role. Feeds `events.digest` (public) and
   `events.digest.private` (each row carries its audience). The place `/whats-next` (*What's next*, Places in the app) and
   the notification kind `events.digest.out`.
-- **Storage:** `events.digests`, one row per fortnight (keyed by its Monday): weeks, the calendars chosen, staff's entries
+- **Storage:** `events.digests`, one row per digest (since 2026-11-09; first one per fortnight keyed by its Monday): its dates, the calendars chosen, staff's entries
   (ticked, order, reworded fields, things not on the calendar) and the snapshot last sent.
 - **Rules** (`Digests`, pure): what's in it, grouping, the when lines, merging staff choices with the calendar, what goes
   to the app. `EventsPublisher.DigestRows` publishes the latest sent digest on every publish.
@@ -698,17 +698,17 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 ## Decided while building (the weekly digest, 2026-11-08)
 
 - **What's in it:** the shown one-off events, specials, dates that aren't on (a break's, or one cancelled) and dates of a
-  regular event that still need their details, in the chosen calendars over one, two (the default) or three weeks from the
-  Monday after today. A regular event that needs details on each date (outreach Saturdays) is exactly the kind of thing the
+  regular event that still need their details, in the chosen calendars over the digest's dates (*Its dates*, below; until
+  2026-11-09 one, two or three weeks from the Monday after today). A regular event that needs details on each date (outreach Saturdays) is exactly the kind of thing the
   digest announces, so its dates are in while they're missing something. Ordinary regular dates never are. Calendars copied
   from iCal start unticked.
 - **One item per thing, not per date:** dates of the same regular event with the same title, place and time are one item
   ("The next two Saturdays"); a break's dates for one regular event are one item, *No Impact Kids*, labelled "Kids on break"
   ("Not on" when it isn't a break), saying when it's back.
-- **The when line** is fixed words from the fortnight's Monday: "This Thursday 12 November" in the first week, "Friday 20
+- **The when line** is fixed words from the digest's start ("This" within the start's Monday-to-Sunday week): "This Thursday 12 November" in the first week, "Friday 20
   November" after, "The next two Sundays", "Sundays 22 and 29 November", "This Friday 13 to Sunday 15 November" for a camp.
   The time sits apart ("7:30pm"): the email joins them with "@", the app with "·", as today's What's Next and the app do.
-- **Staff choices outlive the calendar:** saved per fortnight as entries (ticked, order, which fields are reworded and to
+- **Staff choices outlive the calendar:** saved per digest as entries (ticked, order, which fields are reworded and to
   what). Each time it opens, the calendar is read again: an event that's gone drops out, a new one slots in after the last
   item dated on or before it and is marked *New on the calendar*, and a field not reworded follows the calendar. Typing a
   field back to the calendar's words keeps it in step again; *Use the calendar's* puts it back.
@@ -734,7 +734,7 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   (when an item is for everyone). Nobody is notified who would see nothing. Each counts and names what that audience will
   see ("6 things coming up: …" signed in, "4 things coming up: Kids camp, No Impact Kids and more." for everyone); they
   share the subject `events/digest/{monday}`, so a phone shows one. Not urgent, so quiet hours hold the buzz until
-  morning. **Once per digest:** the fortnight records when people were notified (`NotifiedAt`); sending again after a
+  morning. **Once per digest:** the digest records when people were notified (`NotifiedAt`); sending again after a
   change doesn't notify unless staff turn on *Notify people again*. The button says what it does: *Send to the app and
   notify people*, then *Send again without notifying* or *Send again and notify people*. *Send to my phone* still raises
   a test to the caller alone, naming only the items for everyone. Checked on a backend copy with every device row
@@ -753,6 +753,42 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
   Once the app has it as it is, the button reads *Sent to the app*. The email preview is
   the email at its real width, scaled to the column. It saves as you change it. Arrow buttons move a row too, for the
   keyboard. Finish-reviewed (verdict: ship after fixes; the fixes are in).
+
+## The owner's feedback (2026-11-09)
+
+- **Why the digest missed Anniversary Sunday** (owner: "why does this not show all the events i'd expect? no anniversary
+  sunday for e.g."): confirmed. A digest always started on the Monday *after* today (`Digests.NextStart`), so the one
+  opened on Monday 9 November covered 16 November to 6 December, after Anniversary Sunday (15 November), the AGM (12
+  November) and Kids camp (13 November).
+- **Its dates** (owner, 2026-11-09): the digest starts on any day and runs for *One week | Two weeks | Month | Custom*
+  (Custom: any end, up to 92 days). **Default: from today, two weeks**, so a Monday digest has the coming Sunday and the
+  week after, as What's Next did. One week is 7 days from the start, two weeks 14, a month to the day before the same
+  date next month.
+- **Storage:** a digest is a row of its own (`id`), with its `start`, `end` and `range`, instead of one per fortnight
+  keyed by its Monday. Migration `DigestRanges` gives each existing digest an id and its end (start + weeks), one week as
+  *One week*, two as *Two weeks* and three as *Custom*; sent digests keep their snapshot, notification time and feed rows.
+  The contracts carry the id (`DigestQuery.Id`, `DigestSave.Id`, `DigestRef.Id`) with `Start`, `End` and `Range`.
+- **Which digest the desk opens:** the one last worked on since this Monday that hasn't ended (`Digests.Current`), so
+  staff come back to the same digest all week and can still *Send again*; otherwise a new one from today, two weeks,
+  saved on its first change. There's no list of past digests.
+- **Home's This week tile** (owner, 2026-11-09): each event in the tile's list opens that date's page (`/event/{id}`, the
+  date, not the regular event); the tile's heading and the rest of the tile still open the calendar. Built as
+  Platform.Ui's `HubListEntry`, a button above the tile's hit area. The one-event (1×1) and words layouts stay one link to
+  the calendar: there the tile has no heading to tell the two apart.
+- **Highlighting** (owner, 2026-11-09: "probably something like the Marker colour"): in the app's week and month lists, a
+  row that's already shown bold with its label (a one-off, a changed date, and a date marked *Changed*) is set on the
+  theme's marker at 14% (`AgendaRow.Highlight`), so it follows the draft's theme. Plain repeats and dates that aren't on
+  stay plain. The admin panel's workbench isn't tinted (the owner asked for the app's lists). DESIGN.md's Marker Rule
+  records the exception.
+- **The editor's picture** (owner, 2026-11-09: a portrait picture showed as a squashed strip): the event editor (admin
+  panel and phone) and Home's settings (tiles, announcements: Configuration's `SettingInput`) share Platform.Ui's
+  `PictureField`, moved out of Configuration's own markup. The event editor shows the picture in the event page's 16:9
+  frame (a picture far from 16:9 whole, on the masthead colour), up to 240px wide, with how the app shows it and
+  Change and Remove beside it; Home's settings show it in its own proportions.
+- **Checked** on a backend of its own (`Dev__PortOffset=1000`, main's database copied with pg_dump): the migration on
+  the owner's two unsent digests; the desk from today with *Two weeks* (the AGM, Kids camp and Anniversary Sunday Service
+  in); the editor with a portrait picture (pictures stubbed, as the dev media tunnel was down); on a Simulator of its own
+  (`GSBC_DEVICE` with `tools/ios/deploy.sh --simulator`), the tile's entries opening their dates and the tint, light and dark.
 
 ## Decided while building (removing a calendar, 2026-11-08)
 

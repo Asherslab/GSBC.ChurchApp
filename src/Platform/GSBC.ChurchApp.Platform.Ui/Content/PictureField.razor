@@ -1,0 +1,73 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject IServiceProvider Services
+
+<div class="field picture-field @Class">
+    <span class="field__label">@Label</span>
+    @if (Value is { } chosen)
+    {
+        <div class="picture-field__chosen">
+            @if (!chosen.IsImage)
+            {
+                <span class="picture-field__file"><Icon Name="file" />@NameOf(chosen)</span>
+            }
+            else if (AsCover)
+            {
+                <MediaCover Media="chosen" Size="Size" Class="picture-field__preview" />
+            }
+            else
+            {
+                <span class="picture-field__preview picture-field__preview--whole"><MediaImage Media="chosen" Size="Size" Alt="" /></span>
+            }
+            <div class="picture-field__about">
+                @if (chosen.IsImage)
+                {
+                    <MediaShownAt Media="chosen" Size="Size" Class="picture-field__shown" />
+                }
+                <div class="picture-field__actions">
+                    @if (Choosable)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Icon="image" OnClick="() => _choosing = true">Change</Button>
+                    }
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" OnClick="() => ValueChanged.InvokeAsync(null)">Remove</Button>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Choosable)
+    {
+        <button type="button" class="add-row" @onclick="() => _choosing = true"><Icon Name="image" Size="IconSize.Small" />@Adding</button>
+    }
+    else if (Unavailable is not null)
+    {
+        <span class="field__hint">@Unavailable</span>
+    }
+</div>
+
+@if (_choosing)
+{
+    <MediaChooser ImagesOnly="ImagesOnly" Size="Size" OnChosen="ChooseAsync" OnCancel="() => _choosing = false" />
+}
+
+@code {
+    private bool _choosing;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public MediaRef? Value { get; set; }
+    [Parameter] public EventCallback<MediaRef?> ValueChanged { get; set; }
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public bool ImagesOnly { get; set; } = true;
+    [Parameter] public bool AsCover { get; set; }
+    [Parameter] public string Adding { get; set; } = "Choose a picture";
+    [Parameter] public string? Unavailable { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private bool Choosable => MediaChooser.IsAvailable(Services);
+
+    private async Task ChooseAsync(MediaRef picture)
+    {
+        _choosing = false;
+        await ValueChanged.InvokeAsync(picture);
+    }
+
+    private static string NameOf(MediaRef media) => media.AltText.Length > 0 ? media.AltText : string.IsNullOrEmpty(media.FileName) ? media.Key : media.FileName;
+}

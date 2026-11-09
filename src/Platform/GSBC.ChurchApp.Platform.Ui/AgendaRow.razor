@@ -23,6 +23,7 @@ else
     [Parameter] public bool Past { get; set; }
     [Parameter] public bool Selected { get; set; }
     [Parameter] public bool Warn { get; set; }
+    [Parameter] public bool Highlight { get; set; }
     [Parameter] public RenderFragment? TitleExtra { get; set; }
     [Parameter] public string? TitleIcon { get; set; }
     [Parameter] public string? TitleIconLabel { get; set; }
@@ -35,6 +36,7 @@ else
         Quiet && NotOn is null ? "agenda-row--quiet" : null,
         NotOn is not null ? "agenda-row--off" : null,
         Past ? "agenda-row--past" : null,
+        Highlight && !Selected ? "agenda-row--highlight" : null,
         Selected ? "row--selected" : null,
         Class,
     }.OfType<string>());

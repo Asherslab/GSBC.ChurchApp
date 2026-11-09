@@ -1,0 +1,30 @@
+@inject IServiceProvider Services
+
+@if (Hub.Live && Href is not null)
+{
+    <button type="button" class="hub-list__entry hub-list__entry--link @Class" aria-label="@Spoken" @onclick="OpenAsync">@ChildContent</button>
+}
+else
+{
+    <span class="hub-list__entry @Class">@ChildContent</span>
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+
+    [Parameter] public string? Href { get; set; }
+    [Parameter] public string? Spoken { get; set; }
+    [Parameter] public string? PlacementId { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private async Task OpenAsync()
+    {
+        if (Href is not { } target)
+            return;
+        if (PlacementId is { } placement)
+            (Services.GetService(typeof(Client.Analytics.IUsage)) as Client.Analytics.IUsage)?.Count(HubSurfaces.TileTapped, placement);
+        if (Services.GetService(typeof(Destinations.LinkOpener)) is Destinations.LinkOpener opener)
+            await opener.OpenAsync(target);
+    }
+}

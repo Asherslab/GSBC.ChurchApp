@@ -74,10 +74,10 @@
             <span class="hub-list">
                 @foreach (EventOccurrence occurrence in coming.Take(Fits))
                 {
-                    <span class="hub-list__entry @(occurrence.NotOn ? "hub-list__entry--off" : "")">
+                    <HubListEntry Href="@EventsPlaces.EventPath(occurrence.Id)" Spoken="@Line(occurrence)" PlacementId="@id" Class="@(occurrence.NotOn ? "hub-list__entry--off" : null)">
                         <span class="hub-list__when">@(occurrence.NotOn ? "Not on" : EventWords.TimeOf(occurrence))<small>@Relative(occurrence)</small></span>
                         <span class="hub-list__what">@occurrence.Fields.Title</span>
-                    </span>
+                    </HubListEntry>
                 }
             </span>
         </HubTile>;
