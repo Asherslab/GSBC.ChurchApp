@@ -2,14 +2,14 @@
 
 @if (!Compact)
 {
-    <SelectField Label="Phone" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
+    <SelectField Label="Preview on" Options="Devices" Value="@_device.Name" ValueChanged="name => _device = PhoneDevice.All.Single(device => device.Name == name)" />
 }
-<PhoneFrame Title="Good Shepherd" Bell="true" Tabs="ShownTabs" Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"Home on an {_device.Name}, as a visitor sees it with this draft")">
+<PhoneFrame Title="@HubSurfaces.Top.In(Shown).Title" Bell="true" Tabs="ShownTabs" Palette="@Chosen.Palette" Theme="@(Theme ?? Chosen.Custom)" Scheme="Scheme" Device="_device" Label="@($"A preview of Home with this draft on an {_device.Name}, as a visitor would see it")">
     <HomeScreen Shown="Shown" At="Now" />
 </PhoneFrame>
 @if (!Compact)
 {
-    <p class="phone-preview__note">Home as a visitor sees it today, drawn by the app's own screen. Your phone shows it live under Previews.</p>
+    <p class="phone-preview__note">A preview of Home with this draft, as a visitor would see it today, drawn by the app's own screen. Preview it on your phone under More → Previews.</p>
 }
 
 @code {

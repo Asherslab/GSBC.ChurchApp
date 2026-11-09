@@ -37,12 +37,12 @@
         </Section>
     </LiveData>
 
-    <Section Title="Show it as" Lead="A visitor isn't signed in. A member is signed in with no staff roles. This changes only what this phone shows.">
-        <Segmented TValue="PreviewViewer" Label="Show it as" Options="Viewers" Value="@(Current?.As ?? PreviewViewer.Me)" ValueChanged="ShowAsAsync" />
+    <Section Title="Preview it as" Lead="A visitor isn't signed in. A member is signed in with no staff roles. This only changes what this phone previews; nobody else sees a difference.">
+        <Segmented TValue="PreviewViewer" Label="Preview it as" Options="Viewers" Value="@(Current?.As ?? PreviewViewer.Me)" ValueChanged="ShowAsAsync" />
     </Section>
 
-    <Section Title="On a date">
-        <ToggleRow Title="Show a later date" Description="See tiles and event layers before they start" Checked="@(Current?.At is not null)" CheckedChanged="UseDateAsync" />
+    <Section Title="Preview on a date">
+        <ToggleRow Title="Preview a later date" Description="See tiles and event layers before they start" Checked="@(Current?.At is not null)" CheckedChanged="UseDateAsync" />
         @if (Current?.At is { } at)
         {
             <div class="ui-after">

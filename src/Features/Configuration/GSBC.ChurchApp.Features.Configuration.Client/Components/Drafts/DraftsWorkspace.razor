@@ -296,7 +296,8 @@ else
                     <HubCanvas Hub="@session.Arranged(area, null)" Appearance="@session.Arranged(AppearanceSurfaces.Area, null)" SelectedKey="@_selectedKey"
                                Removed="@session.Patches.Where(patch => patch.Kind == PatchKind.Remove && patch.Touches(_area.Area, _area.ScopeId)).ToList()"
                                RoleNames="_roleNames" OnChoose="Select" OnMove="ArrangeTilesAsync" OnResize="ResizeTileAsync" OnColumns="SetColumnsAsync"
-                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" Tabs="@session.Arranged(TabBarSurfaces.Area, null)" />
+                               OnAdd="() => _addingTile = true" OnPutBack="UndoAsync" Marks="@TileMarks(session)" Tabs="@session.Arranged(TabBarSurfaces.Area, null)"
+                               Scheme="_themeScheme" SchemeChanged="scheme => _themeScheme = scheme" />
                 }
                 else if (!Narrow && IsTabs)
                 {
@@ -406,12 +407,18 @@ else
         {
             @ChangedWhileEditing
             <TileSettings Draft="_form" Kind="kind" Columns="@HubSurfaces.Grid.ColumnsIn(session.Arranged(HubSurfaces.Area, null))" Changed="FormChangedAsync"
-                          Palette="@HubPalette" Icons="CustomIcons" AddIcon="AddIcon" Notices="@SettleNotice" />
+                          Theme="@HubTheme" Scheme="_themeScheme" Icons="CustomIcons" AddIcon="AddIcon" Notices="@SettleNotice" />
             <div class="ui-actions tile-settings__actions">@FormActions</div>
             @if (_savedNote is not null)
             {
                 <p class="tile-settings__saved" role="status"><Icon Name="check" Size="IconSize.Small" /> @_savedNote</p>
             }
+        }
+        else if (_form?.Surface == HubSurfaces.Top.Surface)
+        {
+            @ChangedWhileEditing
+            <HomeTopSettings Draft="_form" Changed="FormChangedAsync" Notices="@SettleNotice" />
+            <div class="ui-actions tile-settings__actions">@FormActions</div>
         }
         else if (_form is not null)
         {
@@ -535,8 +542,8 @@ else
 
     private HubTileKind? TileKind => _form is null ? null : TileKinds.FirstOrDefault(kind => kind.Surface == _form.Surface);
 
-    private string HubPalette => _session is null ? AppearanceSurfaces.Brand
-        : AppearanceSurfaces.ChosenFrom(_session.Arranged(AppearanceSurfaces.Area, null).Where(entry => entry.IsShownTo(Viewer.Anonymous, DateTime.UtcNow))).Palette;
+    private AppearanceSurfaces.ChosenTheme HubTheme => AppearanceSurfaces.ChosenFrom(_session is null ? []
+        : _session.Arranged(AppearanceSurfaces.Area, null).Where(entry => entry.IsShownTo(Viewer.Anonymous, DateTime.UtcNow)));
 
     private IReadOnlyList<ArrangedSurface> CustomIconEntries => _session is null
         ? []

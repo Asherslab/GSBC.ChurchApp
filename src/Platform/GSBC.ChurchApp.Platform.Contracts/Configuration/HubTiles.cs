@@ -177,9 +177,10 @@ public sealed record TileSettings(
     MediaSetting Image,
     FocusSetting Focus,
     LinkSetting Link,
-    ChoiceSetting Layout)
+    ChoiceSetting Layout,
+    ColourSetting Fade)
 {
-    public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout];
+    public IReadOnlyList<Setting> All => [Columns, Rows, Tone, Icon, IconTone, Title, Text, Image, Focus, Link, Layout, Fade];
 
     public static TileSettings For(TileDefaults defaults, IReadOnlyList<TileVariant> variants) => new(
         new NumberSetting(HubTileKeys.Columns, "Width", defaults.Columns, 1, HubGrid.MostColumns, help: "How many columns across"),
@@ -193,7 +194,9 @@ public sealed record TileSettings(
         new FocusSetting(HubTileKeys.Focus, "Keep in view"),
         new LinkSetting(HubTileKeys.Link, "Opens", defaults.Link),
         new ChoiceSetting(HubTileKeys.Layout, "Layout",
-            [new Choice(TileVariant.Automatic, "Best for this size"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic));
+            [new Choice(TileVariant.Automatic, "Best for this size"), .. variants.Select(variant => new Choice(variant.Key, variant.Label))], TileVariant.Automatic),
+        new ColourSetting(HubTileKeys.Fade, "Fade over the picture", TileTones.Choices, TileTones.Masthead.Value,
+            help: "The colour that fades over the picture behind the words"));
 }
 
 public static class HubTileKeys
@@ -209,6 +212,7 @@ public static class HubTileKeys
     public const string Focus = "focus";
     public const string Link = "link";
     public const string Layout = "layout";
+    public const string Fade = "fade";
 }
 
 public sealed class HubTileKind
@@ -253,8 +257,10 @@ public sealed class HubTileKind
 }
 
 public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon, string IconTone, string Title, string Text,
-    Media.MediaRef? Image, FocalPoint Focus, string Link, string Layout = TileVariant.Automatic)
+    Media.MediaRef? Image, FocalPoint Focus, string Link, string Layout = TileVariant.Automatic, TileTone? Fade = null)
 {
+    public TileTone FadeTone => Fade ?? TileTones.Masthead;
+
     public static TileLook Of(HubTileKind kind, SettingValues values) => new(
         values.Get(kind.Tile.Columns),
         values.Get(kind.Tile.Rows),
@@ -266,7 +272,8 @@ public sealed record TileLook(int Columns, int Rows, TileTone Tone, string Icon,
         values.Get(kind.Tile.Image),
         values.Get(kind.Tile.Focus),
         values.Get(kind.Tile.Link),
-        values.Get(kind.Tile.Layout));
+        values.Get(kind.Tile.Layout),
+        TileTones.Of(values.Get(kind.Tile.Fade)));
 }
 
 public sealed record TileVariant(string Key, string Label, string Description, Func<TileSpan, bool> Suits, Func<TileSpan, bool, bool> IsDefault,

@@ -1,0 +1,47 @@
+@using Top = GSBC.ChurchApp.Platform.Contracts.Configuration.HubSurfaces.Top
+
+<div class="tile-settings">
+    <header class="tile-settings__head">
+        <h3>@Top.Surface.Title</h3>
+        <span>The words at the top of Home, above the tiles. Everyone sees them once the draft is published.</span>
+    </header>
+    @Notices
+
+    <fieldset class="tile-settings__group">
+        <legend>Title</legend>
+        <TextField Label="@Top.Title.Label" Value="@Draft.Values[Top.Title.Key]" ValueChanged="value => SetAsync(Top.Title.Key, value)"
+                   MaxLength="Top.Title.MaxLength" Required="true" Problem="@Top.Title.ProblemWith(Draft.Values[Top.Title.Key])" />
+    </fieldset>
+
+    <fieldset class="tile-settings__group">
+        <legend>@Top.Under.Label</legend>
+        <Segmented TValue="string" Label="@Top.Under.Label" Options="Unders" Value="@Under" ValueChanged="value => SetAsync(Top.Under.Key, value)" />
+        @if (Under == Top.Words)
+        {
+            <TextField Label="@Top.Line.Label" Value="@Draft.Values[Top.Line.Key]" ValueChanged="value => SetAsync(Top.Line.Key, value)"
+                       MaxLength="Top.Line.MaxLength" Placeholder="Welcome home" Hint="Left empty, nothing shows under the title." />
+        }
+    </fieldset>
+
+    @foreach (string problem in Draft.Problems)
+    {
+        <Notice Tone="NoticeTone.Warning" Text="@problem" />
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required PlacementDraft Draft { get; set; }
+    [Parameter] public RenderFragment? Notices { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private static readonly IReadOnlyList<SegmentOption<string>> Unders =
+        Top.Under.Choices.Select(choice => new SegmentOption<string>(choice.Value, choice.Label)).ToList();
+
+    private string Under => new SettingValues(Draft.Values).Get(Top.Under);
+
+    private Task SetAsync(string key, string value)
+    {
+        Draft.Values[key] = value;
+        return Changed.InvokeAsync();
+    }
+}

@@ -1,0 +1,21 @@
+<style>@ThemeDerivation.Css(Theme, $"[data-palette=\"{Name}\"]",
+    $":root[data-scheme=\"dark\"] [data-palette=\"{Name}\"]:not([data-preview-scheme=\"light\"]), [data-palette=\"{Name}\"][data-preview-scheme=\"dark\"]", _fontSources)</style>
+
+@inject Client.Media.IMediaFiles Files
+
+@code {
+    private IReadOnlyDictionary<string, string> _fontSources = new Dictionary<string, string>();
+    private string? _fontsFor;
+
+    [Parameter, EditorRequired] public required ThemeSpec Theme { get; set; }
+    [Parameter, EditorRequired] public required string Name { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        string fonts = string.Join(',', ThemeDerivation.FontFiles(Theme).Select(file => file.Key));
+        if (fonts == _fontsFor)
+            return;
+        _fontsFor = fonts;
+        _fontSources = await Appearance.FontSourcesAsync(Files, Theme);
+    }
+}

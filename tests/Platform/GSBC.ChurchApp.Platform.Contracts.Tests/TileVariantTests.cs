@@ -80,6 +80,14 @@ public sealed class TileVariantTests
         Assert.NotNull(HubSurfaces.Saved.Kind.ProblemWith("<script>"));
     }
 
+    [Fact]
+    public void ATileSavedBeforeFadesCouldBeChosenKeepsTheMastheadFadeAndAChosenOneHolds()
+    {
+        Assert.Equal(TileTones.Masthead, TileLook.Of(Plain, new SettingValues(new Dictionary<string, string>())).FadeTone);
+        Assert.Equal(TileTones.MarkerSoft, TileLook.Of(Plain, new SettingValues(new Dictionary<string, string> { [HubTileKeys.Fade] = "marker-soft" })).FadeTone);
+        Assert.NotNull(Plain.Tile.Fade.ProblemWith("#ad3e00"));
+    }
+
     private static TileLook Look(int columns, int rows, bool picture, string layout) =>
         new(columns, rows, TileTones.Sand, "", IconTones.Auto, "Camp", "", picture ? Photo : null, FocalPoint.Centre, "", layout);
 }
