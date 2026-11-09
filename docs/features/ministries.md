@@ -1,9 +1,101 @@
 # Ministries
 
-Status: draft, 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
+
+## The interview (owner, 2026-11-10): what supersedes the draft below
+
+A full interview before building. **Where it disagrees with anything below, this wins;** the rest of the doc is the
+2026-10-30/31 draft, to be rewritten as each stage is built.
+
+**What it's for.** First release: **team life for volunteers**. First ministries: **Music (and its teams), Children's
+/ Impact Kids and Impact Youth**. Life Groups stay a kind of ministry (same model).
+
+**No Elvanto, for now.** Build it fully in the app, with no Elvanto link: the owner has discussions to have first.
+This reverses "Elvanto is the roster's source of truth" (2026-10-30). **Rosters are the app's own, against
+calendar events** (a Sunday service, an Impact Kids night): several ministries can each have their own roster on the
+same event. A ministry can roster against **any event in the app**, not only its own calendars.
+
+**Management lives in the app and the admin panel, both fully** (owner's exception to *Admin work stays in the admin
+panel*, for everything under Ministries): "ministry leaders are generally going to be much more lay-person and not
+always even have a desktop to use these tools. We need to bring them where they're at."
+
+**Structure.** Ministries nest to **any depth**; a ministry's leaders lead everything under it. **Leaders can do it
+all** under their ministry: create sub-ministries, make leaders and admins there. Staff do the top level. Each
+ministry chooses its **join settings, one for the team and one for attending** (Open, Ask, Invite only).
+
+**People: team, attendees, and parents of attendees.** A ministry has its team (leaders, admins, volunteers) and its
+attendees (the young people, kids' parents, regulars), and a young attendee's parents are linked to them. The app
+knows who is a minor and who their parents are **through every route there is**: a parent adds their child (name,
+birth date; a child with a phone signs in with a code the parent makes); a young person signs up with a birth date
+and names a parent, who approves; leaders and staff can set it on the team or attendee list.
+
+**Audiences.** A post, event, file or chat is for any of: **Everyone (public)**, **Attendees and their parents**,
+**Parents only**, **Team only**. News is almost always events (Events calendars). The rare important message
+("pick up your children before 9pm", "help needed for a family") goes to the ministry's people straight away; one to
+the **whole church needs staff to approve**, like any announcement.
+
+**Calendars.** Ministries **own Events calendars** (e.g. Impact Kids public, Impact Kids team), so their events show
+in people's calendars and iCal links, and rosters hang off those events (Events decision 15).
+
+**Files.** Documents and links, each with an audience. Music's set list per service (songs, practice recording,
+chart, key) is **later**.
+
+**Rosters.**
+- Fill **date by date and as a grid** (dates across, positions down, a term at a time), on the phone and computer.
+- People can **Accept / Decline**, **ask for a swap** and **mark unavailable dates**. The leader chooses which of
+  Accept/Decline and swaps are allowed; **unavailable dates are always allowed**, and leaders may roster over them.
+- **Swaps:** the ministry chooses which ways are on (the team picks it up and the leader sees it; the team picks it
+  up and a leader approves; a direct swap with a chosen person). With more than one on, the person picks.
+- **Who sees the roster** is a ministry setting: the whole team's, only your own dates, or your dates plus who's on
+  with you (whole roster is the usual).
+- **Notifications:** when rostered, a reminder before (timing set by the ministry), a nudge if no reply, and leaders
+  hear of declines, swaps and clashing unavailable dates.
+- **Positions can require** Safe Ministry training and being trained for that position (and a current blue card;
+  QLD). **Unmet requirements flag, never block:** a leader can always roster someone.
+- Blue cards and training: the church uses Safe Ministry Check, which syncs them into Elvanto. The owner prefers
+  pulling straight from Safe Ministry Check. As of 2026-11-10 it publishes no API, webhook or export; its only
+  integration is with Elvanto (it writes a person's training status and WWCC number, status and expiry to their
+  Elvanto profile). Until there's a way in, they're entered by hand, flagged when missing or expiring.
+
+**Chats, built well, from the first release.** "We'll very likely switch all our ministries to use the chat feature
+of our app": it has to be good.
+- **A ministry turns chats on or off.** Group chats and **leaders-post-only channels**. **No direct messages yet**
+  (tabled; see Open questions).
+- A chat is **for an audience** like a post (team, attendees, parents, or chosen people), and membership follows it.
+- Photos and files (private media), reply and react, read receipts, mentions and mute.
+- **Edit and delete**, shown as edited or deleted; **every version is kept forever**.
+- A small, quiet line when a chat starts says that church staff can check messages in chats; it scrolls away as
+  messages arrive (not a banner, nothing glaring).
+- **Minors in a chat:** at least **two adults with a current blue card** (flagged if not); **parents can read** the
+  chats their child is in, and the chat says so; **parent consent** comes after the first message: a leader creates
+  the chat and sends the first message, told that a parent must approve it; the parent reads that message (the "why")
+  and approves, and only then does the young person get it.
+- **Who can check chats:** a ministry's leaders can check every chat in their ministry and those under it; otherwise a
+  **chat auditor** role (given to the staff and pastors who need it). **Every check is logged** (who read whose
+  chats, when), for accountability.
+- **Reporting:** the reporter chooses to send it to the ministry's leaders or straight to the auditors. Auditors get
+  an **urgent notification**, and a group chat may be made for the auditors to coordinate (shape to design).
+  Auditors can **immediately pause** anyone involved from using chats until re-enabled. Handling is logged.
+- The whole app keeps a full audit of messages, reports and checks from day one.
+
+**Life Groups:** as designed, but **everything configurable** per round: how many classes, the time, the rooms,
+whether a group offers "join as a parent". (This round has four sessions and two Life Groups.) **No Sunday
+reminder.**
+
+**Building it in stages,** each merged and tried before the next (some in parallel):
+1. **People:** families, minors and parents, blue cards and training.
+2. **Ministries:** structure, team and attendees, join settings, audiences, posts, files, Events calendars, Life
+   Groups.
+3. **Rosters.**
+4. **Chats** with safeguarding, reporting and audit.
+
+**Open from the interview:** direct messages (who may message whom, whether DMs are auditable and by whom, whether
+they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
+auditors' coordination chat; getting blue card and training data from Safe Ministry Check (ask them for access) or
+from Elvanto.
 
 ## What it is
 
