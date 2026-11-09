@@ -118,7 +118,7 @@
   line-height: 1.02;
   text-wrap: balance;
 }
-.masthead h1:focus { outline: none; }
+h1:focus { outline: none; }
 .masthead__note { margin: 8px 0 0; font-size: var(--text-label); font-weight: 600; color: var(--masthead-note); }
 .masthead__extra { margin-top: 18px; }
 
