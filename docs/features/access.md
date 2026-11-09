@@ -40,7 +40,8 @@ day (mocks and review in `.impeccable/mocks/decision/roles/`):
 
 | Feature | Role | Gives | Brings |
 |---|---|---|---|
-| Sermons | Sermons Uploader, Sermons Editor | as Sermons declares | pictures |
+| Sermons | Sermons Uploader | `sermons.upload` | pictures |
+| | Sermons Editor | `sermons.edit`, `sermons.upload` | pictures |
 | Calendar | Calendar Editor | `events.edit` in every calendar | pictures |
 | | Calendar Publisher | `events.edit`, `events.publish` everywhere | pictures |
 | | Calendar Manager | `events.calendars.manage`, edit and publish everywhere | pictures |

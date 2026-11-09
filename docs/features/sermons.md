@@ -14,8 +14,10 @@ current as it's built.
 | `sermons.upload` | In the admin panel: add a sermon by uploading its audio (the AV team's first pass) |
 | `sermons.edit` | In the admin panel: check new sermons and correct a sermon's title, speaker, series, service, Bible passage, description and video; hide one, and delete it once it's hidden; manage series (name, picture, description) and speakers (name, photo), and delete them; choose each sermon's service from the standard ones or add one |
 
-The **Sermons editor** system role holds `sermons.edit` and `sermons.upload`; the **Sermon uploader** role (the AV team)
-holds `sermons.upload`. The series and speaker lists are `[SignedIn]`: they are public data already (the feeds), and an
+Two roles, both under *Sermons* in the roles-by-feature scheme ([access.md](access.md)): **Sermons Uploader** (the AV
+team) holds `sermons.upload`, and **Sermons Editor** holds `sermons.edit` and `sermons.upload`. Both bring Media's
+`pictures` kit (see the library and upload), as the other editor roles do; their keys are unchanged, so everyone who held
+them keeps them. `sermons.import` is in no role: only the Owner (`*`) runs the import, by default. The series and speaker lists are `[SignedIn]`: they are public data already (the feeds), and an
 uploader needs them to fill in the form.
 
 ## Sermons live in the app (owner, 2026-11-09)
