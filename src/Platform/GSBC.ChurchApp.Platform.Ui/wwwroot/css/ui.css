@@ -464,7 +464,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 
 .pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: var(--radius-full); background: color-mix(in srgb, var(--marker) 30%, transparent); color: var(--marker-ink); font-size: var(--text-pill); font-weight: 700; line-height: 1.3; white-space: nowrap; vertical-align: 1px; }
 .pill .icon { width: 14px; height: 14px; }
-.pill--accent { background: color-mix(in srgb, var(--live) 16%, transparent); color: var(--accent); }
+.pill--accent { background: color-mix(in srgb, var(--live) 12%, transparent); color: var(--accent); }
 .pill--masthead { background: var(--masthead); color: var(--on-masthead); }
 .pill--quiet { background: var(--fill-on-surface); color: var(--ink-2); }
 .media-shown-at { color: var(--ink-3); font-size: var(--text-caption); font-variant-numeric: tabular-nums; }
@@ -1160,6 +1160,12 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .segmented--on-masthead button { min-height: 32px; padding: 0 8px; color: var(--on-masthead); }
 .segmented--on-masthead button[aria-checked="true"] { background: var(--surface); color: var(--primary); }
 .toggle-chips--wrap { flex-wrap: wrap; margin: 0; padding: 0; overflow: visible; white-space: normal; }
+.toggle-chips--quiet { gap: 6px; }
+.toggle-chips--quiet .filter-chip { min-height: 32px; padding: 0 12px; background: none; box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ink-3) 45%, transparent); color: var(--ink-2); }
+.toggle-chips--quiet .filter-chip:hover { color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink-3); }
+.toggle-chips--quiet .filter-chip--on, .toggle-chips--quiet .filter-chip--on:hover { padding-left: 9px; background: var(--sand); box-shadow: none; color: var(--ink); }
+.toggle-chips--quiet .filter-chip--on .icon { color: var(--accent); }
+.toggle-chips--quiet .filter-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .add-row { display: flex; align-items: center; gap: 8px; width: 100%; min-height: var(--touch); padding: 0; border: 0; border-top: 1px solid var(--line); background: none; color: var(--accent); font: inherit; font-size: var(--text-label); font-weight: 600; text-align: left; cursor: pointer; }
 .add-row:hover { color: var(--ink); }
 

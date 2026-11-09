@@ -46,7 +46,7 @@ public static class EventListing
         .Select(day => new WeekDay(day.Key, DayHeading(day.Key, today), day.OrderBy(occurrence => occurrence.StartsAt).ToList()))
         .ToList();
 
-    public static string DayHeading(DateOnly day, DateOnly today) =>
+    private static string DayHeading(DateOnly day, DateOnly today) =>
         day.DayNumber - today.DayNumber is 0 or 1 ? EventWords.DayHeading(day, today) : day.ToString("dddd d MMMM", English);
 
     public static string NotOnThisWeek(EventOccurrence occurrence) =>
@@ -72,22 +72,20 @@ public static class EventListing
         ahead.Any(occurrence => EventWords.DayOf(occurrence) >= EventWords.SundayOf(today).AddDays(7 * Math.Clamp(weeks, 1, MostWeeks)));
 
     public static IReadOnlyList<EventOccurrence> OtherDates(IEnumerable<EventOccurrence> events, EventOccurrence occurrence, DateTime nowUtc, int count) =>
-        occurrence.Kind == OccurrenceKind.OneOff
-            ? []
-            : Ahead(events, nowUtc).Where(other => other.ItemId == occurrence.ItemId && other.Kind != OccurrenceKind.OneOff && other.Id != occurrence.Id).Take(count).ToList();
+        OccurrenceListing.OtherDates(occurrence, Ahead(events, nowUtc)).Take(count).ToList();
 
     public static bool IsQuiet(EventOccurrence occurrence) => occurrence.NotOn || occurrence.Kind == OccurrenceKind.Regular;
 
     public static string Sentence(string words) => words.Length > 0 ? char.ToUpperInvariant(words[0]) + words[1..] : words;
 
-    public static string WeekHeading(DateOnly start, DateOnly thisWeek) => (start.DayNumber - thisWeek.DayNumber) switch
+    private static string WeekHeading(DateOnly start, DateOnly thisWeek) => (start.DayNumber - thisWeek.DayNumber) switch
     {
         0 => "This week",
         7 => "Next week",
         _ => $"Week of {start.ToString("d MMMM", English)}",
     };
 
-    public static string Range(DateOnly first, DateOnly last) =>
+    private static string Range(DateOnly first, DateOnly last) =>
         first.Month == last.Month
             ? $"{first.Day} – {last.ToString("d MMMM", English)}"
             : $"{first.ToString("d MMMM", English)} – {last.ToString("d MMMM", English)}";

@@ -43,6 +43,8 @@
     private string? _told;
     private string? _busy;
     private string? _dragging;
+    private string? _focusAfter;
+    private string? _moved;
 
     private string? CalendarBack => Access.CanSomewhere(EventsPermissions.Edit) ? CalendarWorkbenchLinks.Page : null;
 
@@ -66,17 +68,21 @@
             <SaveStatus State="_save" SavedText="@(draft.SavedAt is null ? "Saves as you change it" : "Saved")" Detail="@SentLine(draft)" Retry="SaveNowAsync" />
 
             <div class="digest-desk__choices">
-                <div class="digest-desk__dates">
-                    <TextField Label="From" Type="date" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
-                    @if (draft.Range == DigestRange.Custom)
-                    {
-                        <TextField Label="To" Type="date" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
-                    }
+                <TextField Label="From" Type="date" Value="@draft.Start" ValueChanged="ChooseStartAsync" />
+                <div class="field digest-desk__length">
+                    <span class="field__label" aria-hidden="true">How long</span>
+                    <Segmented TValue="DigestRange" Label="How long" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
                 </div>
-                <Segmented TValue="DigestRange" Label="How long" Options="RangeOptions" Value="draft.Range" ValueChanged="ChooseRangeAsync" />
-                <span class="digest-desk__range">@RangeOf(draft)</span>
+                @if (draft.Range == DigestRange.Custom)
+                {
+                    <TextField Label="To" Type="date" Value="@draft.End" Min="@draft.Start" ValueChanged="ChooseEndAsync" />
+                }
+                <p class="digest-desk__range">@RangeOf(draft)</p>
             </div>
-            <ToggleChips TValue="string" Label="Calendars in the digest" Chips="Chips(draft)" Toggled="ToggleCalendarAsync" Class="digest-desk__calendars" />
+            <div class="digest-desk__calendars">
+                <span class="digest-desk__calendars-label" aria-hidden="true">Calendars</span>
+                <ToggleChips TValue="string" Label="Calendars in the digest" Chips="Chips(draft)" Toggled="ToggleCalendarAsync" Quiet="true" />
+            </div>
 
             @if (draft.Items.Count == 0)
             {
@@ -89,7 +95,7 @@
                     {
                         DigestItem item = draft.Items[index];
                         int at = index;
-                        <li class="digest-row @(item.Key == _selected ? "digest-row--chosen" : "") @(item.Included ? "" : "digest-row--left-out") @(item.Key == _dragging ? "digest-row--dragging" : "")"
+                        <li @key="item.Key" class="digest-row @(item.Key == _selected ? "digest-row--chosen" : "") @(item.Included ? "" : "digest-row--left-out") @(item.Key == _dragging ? "digest-row--dragging" : "")"
                             draggable="true" @ondragstart="() => _dragging = item.Key" @ondragend="() => _dragging = null"
                             @ondragover:preventDefault="true" @ondrop="() => Drop(at)">
                             <span class="digest-row__grip" aria-hidden="true"><Icon Name="grip" Size="IconSize.Small" /></span>
@@ -102,7 +108,10 @@
                                 }
                                 else
                                 {
-                                    <span class="digest-row__no-picture">@(item.Kind == DigestItemKind.NotOn ? "Not on" : "No picture")</span>
+                                    <span class="digest-row__no-picture @(item.Kind == DigestItemKind.NotOn ? "digest-row__no-picture--off" : "")">
+                                        <Icon Name="@(item.Kind == DigestItemKind.NotOn ? "circle-off" : "image")" Size="IconSize.Small" />
+                                        <span class="digest-row__no-picture-words">@(item.Kind == DigestItemKind.NotOn ? "Not on" : "No picture")</span>
+                                    </span>
                                 }
                             </span>
                             <button type="button" class="digest-row__body" aria-pressed="@(item.Key == _selected ? "true" : "false")" @onclick="() => _selected = item.Key">
@@ -118,12 +127,13 @@
                             </button>
                             <span class="digest-row__when">@item.Shown.When<small>@item.Shown.Time</small></span>
                             <span class="digest-row__moves">
-                                <button type="button" class="icon-btn" aria-label="@($"Move {item.Shown.Title} up")" disabled="@(index == 0)" @onclick="() => Move(at, at - 1)"><Icon Name="arrow-up" Size="IconSize.Small" /></button>
-                                <button type="button" class="icon-btn" aria-label="@($"Move {item.Shown.Title} down")" disabled="@(index == draft.Items.Count - 1)" @onclick="() => Move(at, at + 1)"><Icon Name="arrow-down" Size="IconSize.Small" /></button>
+                                <button type="button" id="@MoveId(item, up: true)" class="icon-btn" aria-label="@($"Move {item.Shown.Title} up")" disabled="@(index == 0)" @onclick="() => MoveByKeyboard(at, at - 1)"><Icon Name="arrow-up" Size="IconSize.Small" /></button>
+                                <button type="button" id="@MoveId(item, up: false)" class="icon-btn" aria-label="@($"Move {item.Shown.Title} down")" disabled="@(index == draft.Items.Count - 1)" @onclick="() => MoveByKeyboard(at, at + 1)"><Icon Name="arrow-down" Size="IconSize.Small" /></button>
                             </span>
                         </li>
                     }
                 </ol>
+                <p class="visually-hidden" role="status">@_moved</p>
             }
             <div class="digest-desk__add">
                 <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="AddOwn">Add something not on the calendar</Button>
@@ -315,6 +325,19 @@
         return SaveNowAsync();
     }
 
+    private void MoveByKeyboard(int from, int to)
+    {
+        if (_draft is not { } draft || to < 0 || to >= draft.Items.Count)
+            return;
+        DigestItem item = draft.Items[from];
+        Move(from, to);
+        bool up = to < from;
+        _focusAfter = MoveId(item, up: to != 0 && (to == draft.Items.Count - 1 || up));
+        _moved = $"Moved {item.Shown.Title} to {to + 1} of {draft.Items.Count}.";
+    }
+
+    private static string MoveId(DigestItem item, bool up) => $"digest-move-{(up ? "up" : "down")}-{item.Key}";
+
     private void Move(int from, int to)
     {
         if (_draft is null || to < 0 || to >= _draft.Items.Count)
@@ -465,6 +488,11 @@
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (_focusAfter is { } focus)
+        {
+            _focusAfter = null;
+            await Js.InvokeVoidAsync("gsbcEvents.focus", focus);
+        }
         if (_email == _emailFitted)
             return;
         _emailFitted = _email;

@@ -2,10 +2,13 @@
 @inject Shell Shell
 
 <div class="segmented @(Stacked ? "segmented--stacked" : "") @Class" role="radiogroup" aria-label="@Label">
-    @foreach (SegmentOption<TValue> option in Options)
+    @for (int index = 0; index < Options.Count; index++)
     {
-        bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
-        <button type="button" class="segmented__option" role="radio" aria-checked="@(selected ? "true" : "false")" @onclick="() => SelectAsync(option.Value)">
+        SegmentOption<TValue> option = Options[index];
+        int at = index;
+        bool selected = IsSelected(option);
+        <button type="button" class="segmented__option" role="radio" aria-checked="@(selected ? "true" : "false")" tabindex="@(at == TabStop ? 0 : -1)"
+                @ref="_buttons[at]" @onclick="() => SelectAsync(option.Value)" @onkeydown="key => StepAsync(key, at)">
             @if (option.Icon is not null)
             {
                 <Icon Name="@option.Icon" Size="IconSize.Small" />
@@ -39,6 +42,34 @@
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public bool Stacked { get; set; }
+
+    private ElementReference[] _buttons = [];
+
+    private bool IsSelected(SegmentOption<TValue> option) => EqualityComparer<TValue>.Default.Equals(option.Value, Value);
+
+    private int TabStop => Math.Max(0, Options.ToList().FindIndex(IsSelected));
+
+    protected override void OnParametersSet()
+    {
+        if (_buttons.Length != Options.Count)
+            _buttons = new ElementReference[Options.Count];
+    }
+
+    private async Task StepAsync(KeyboardEventArgs key, int at)
+    {
+        int? next = key.Key switch
+        {
+            "ArrowRight" or "ArrowDown" => (at + 1) % Options.Count,
+            "ArrowLeft" or "ArrowUp" => (at - 1 + Options.Count) % Options.Count,
+            "Home" => 0,
+            "End" => Options.Count - 1,
+            _ => null,
+        };
+        if (next is not { } chosen)
+            return;
+        await SelectAsync(Options[chosen].Value);
+        await _buttons[chosen].FocusAsync();
+    }
 
     private async Task SelectAsync(TValue value)
     {
