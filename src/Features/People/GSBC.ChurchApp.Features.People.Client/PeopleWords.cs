@@ -15,6 +15,8 @@ public static class PeopleWords
 
     public static string Day(DateTime? day) => day is { } value ? $"{value:d MMM yyyy}" : "";
 
+    public static string When(DateTime at) => $"{at.ToLocalTime():d MMM yyyy}";
+
     public static string AskTitle(LinkAsk ask) =>
         ask.AskedByChild ? $"{ask.ChildName} asks you to be their parent" : $"{ask.AskedByName} asks you to look after {ask.ChildName} too";
 

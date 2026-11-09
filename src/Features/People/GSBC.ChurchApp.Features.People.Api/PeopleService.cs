@@ -289,8 +289,8 @@ internal sealed class PeopleService(
         (string title, string body) = askedBy == childId
             ? ($"{child} asks you to be their parent in the app", "Say yes on your Account page if they're your child, and you'll see their details while they're under 18.")
             : ($"{names.GetValueOrDefault(askedBy)?.Name ?? "A parent"} asks you to look after {child} in the app too", "Say yes on your Account page if you're their parent or guardian.");
-        await notifications.RaiseAsync(new Notification(PeopleNotifications.Asked, NotificationAudience.Person(parentId), title, body, "account",
-            Subject: AskSubject(childId, parentId)), cancellationToken);
+        await notifications.RaiseAsync(new Notification(PeopleNotifications.Asked, NotificationAudience.Person(parentId), title, body, "/account",
+            Subject: AskSubject(childId, parentId), Action: "Answer"), cancellationToken);
     }
 
     private static string AskSubject(Guid childId, Guid parentId) => $"people-ask-{childId:N}-{parentId:N}";

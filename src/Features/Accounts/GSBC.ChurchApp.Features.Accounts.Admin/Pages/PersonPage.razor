@@ -17,7 +17,10 @@
         <TitleBand Title="@person.DisplayName" BackHref="people" BackText="People">
             <LeadContent>
                 <p class="person-page__lead">
-                    <span>@person.Email</span>
+                    @if (person.Email.Length > 0)
+                    {
+                        <span>@person.Email</span>
+                    }
                     <span><PersonState Person="person" Invitation="context.Value.Invitation" /></span>
                     @if (context.Value.Invitation is null)
                     {

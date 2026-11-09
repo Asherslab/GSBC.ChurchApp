@@ -52,7 +52,7 @@
             }
             @if (saved.UpdatedAt is { } at)
             {
-                <p class="hint">Recorded by hand@(saved.UpdatedBy is { } by ? $" by {by}" : ""), @PeopleWords.Day(at).</p>
+                <p class="hint">Recorded by hand@(saved.UpdatedBy is { } by ? $" by {by}" : ""), @PeopleWords.When(at).</p>
             }
             <Notice Tone="NoticeTone.Warning" Text="@_message" />
         </div>

@@ -4,7 +4,7 @@
     <ChildContent>
         @if (Child is { } child)
         {
-            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
+            <Card Tone="CardTone.Raised" Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
                 @if (_code is { } made)
                 {
                     <CopyField Label="Sign-in code" Value="@made.Code" Hint="@CodeHint(made)" />
@@ -37,7 +37,7 @@
                 <ListGroup>
                     @foreach (LinkAsk ask in Asks.Where(ask => ask.ChildId == child.Id && !ask.AskedByChild))
                     {
-                        <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.Day(ask.AskedAt)}")" Icon="clock" IconTone="RowTone.Quiet">
+                        <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}")" Icon="clock" IconTone="RowTone.Quiet">
                             <TrailingContent>
                                 <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
                             </TrailingContent>

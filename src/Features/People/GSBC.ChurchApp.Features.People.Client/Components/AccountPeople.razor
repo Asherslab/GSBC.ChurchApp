@@ -48,7 +48,7 @@
             <ListGroup>
                 @foreach (PersonCard parent in me.Parents)
                 {
-                    <ListRow @key="parent.Id" Title="@parent.Name" Subtitle="@($"Linked {PeopleWords.Day(parent.LinkedAt)}")">
+                    <ListRow @key="parent.Id" Title="@parent.Name" Subtitle="@($"Linked {PeopleWords.When(parent.LinkedAt)}")">
                         <Leading><Avatar Name="@parent.Name" /></Leading>
                         <TrailingContent>
                             @if (!minor)
@@ -60,7 +60,7 @@
                 }
                 @foreach (LinkAsk ask in myAsks)
                 {
-                    <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.Day(ask.AskedAt)}. They say yes on their Account page.")" Icon="clock" IconTone="RowTone.Quiet">
+                    <ListRow @key="ask.Id" Title="@($"Waiting for {ask.ParentEmail}")" Subtitle="@($"Asked {PeopleWords.When(ask.AskedAt)}. They say yes on their Account page.")" Icon="clock" IconTone="RowTone.Quiet">
                         <TrailingContent>
                             <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take back</Button>
                         </TrailingContent>
@@ -102,7 +102,7 @@
     private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
 
     private static string AskLine(LinkAsk ask, DateOnly today) =>
-        $"{(ask.ChildBirthDate is null ? "" : $"{ask.ChildName} is {PeopleWords.Age(ask.ChildBirthDate, today)} · ")}asked {PeopleWords.Day(ask.AskedAt)}";
+        $"{(ask.ChildBirthDate is null ? "" : $"{ask.ChildName} is {PeopleWords.Age(ask.ChildBirthDate, today)} · ")}asked {PeopleWords.When(ask.AskedAt)}";
 
     private Task AnswerAsync(LinkAsk ask, bool accept) => RunAsync(() => People.AnswerAsync(ask.Id, accept).AsTask());
 

@@ -60,7 +60,7 @@
                         }
                         @foreach (LinkAsk ask in theirAsks)
                         {
-                            <ListRow @key="ask.Id" Title="@($"Asked {ask.ParentEmail} to be their parent")" Subtitle="@($"{PeopleWords.Day(ask.AskedAt)} · waiting for them to say yes in the app")" Icon="clock" IconTone="RowTone.Quiet">
+                            <ListRow @key="ask.Id" Title="@($"Asked {ask.ParentEmail} to be their parent")" Subtitle="@($"{PeopleWords.When(ask.AskedAt)} · waiting for them to say yes in the app")" Icon="clock" IconTone="RowTone.Quiet">
                                 <TrailingContent>
                                     @if (office)
                                     {
@@ -73,45 +73,48 @@
                 </div>
             }
 
-            <div class="people-tab__group">
-                <h2 class="people-tab__head">Children @Person.FirstName looks after · @family.Children.Count</h2>
-                <ListGroup>
-                    @foreach (PersonCard child in family.Children)
+            @if (!minor || family.Children.Count > 0)
+            {
+                <div class="people-tab__group">
+                    <h2 class="people-tab__head">Children @Person.FirstName looks after · @family.Children.Count</h2>
+                    <ListGroup>
+                        @foreach (PersonCard child in family.Children)
+                        {
+                            <ListRow @key="child.Id" Title="@child.Name" Subtitle="@CardLine(child, today)">
+                                <Leading><Avatar Name="@child.Name" /></Leading>
+                                <TrailingContent>
+                                    <div class="ui-actions">
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Href="@($"people/{child.Id}?tab=family")">Open</Button>
+                                        @if (office)
+                                        {
+                                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(family.Id, child.Id).AsTask())">Unlink</Button>
+                                        }
+                                    </div>
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                        @if (office && _linking != Linking.Child)
+                        {
+                            <ListRow Title="Link a child" Subtitle="Find someone, or add a child who isn't in the app" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _linking = Linking.Child" />
+                        }
+                    </ListGroup>
+                    @if (_linking == Linking.Child)
                     {
-                        <ListRow @key="child.Id" Title="@child.Name" Subtitle="@CardLine(child, today)">
-                            <Leading><Avatar Name="@child.Name" /></Leading>
-                            <TrailingContent>
-                                <div class="ui-actions">
-                                    <Button Small="true" Variant="ButtonVariant.Quiet" Href="@($"people/{child.Id}?tab=family")">Open</Button>
-                                    @if (office)
-                                    {
-                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.UnlinkAsync(family.Id, child.Id).AsTask())">Unlink</Button>
-                                    }
-                                </div>
-                            </TrailingContent>
-                        </ListRow>
-                    }
-                    @if (office && _linking != Linking.Child)
-                    {
-                        <ListRow Title="Link a child" Subtitle="Find someone, or add a child who isn't in the app" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _linking = Linking.Child" />
-                    }
-                </ListGroup>
-                @if (_linking == Linking.Child)
-                {
-                    <div class="ui-after">
-                        <PersonFinder Label="Find their child" Placeholder="Find their child by name" Find="FindAsync" ActionText="Link as their child" AutoFocus="true"
-                                      Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
-                        <div class="people-inline">
-                            <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
-                            <TextField Label="Birth date" Type="date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
-                            <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
+                        <div class="ui-after">
+                            <PersonFinder Label="Find their child" Placeholder="Find their child by name" Find="FindAsync" ActionText="Link as their child" AutoFocus="true"
+                                          Leave="Leave(family)" Busy="@_busyFor" OnChosen="person => LinkAsync(family.Id, person.Id)" />
+                            <div class="people-inline">
+                                <TextField Label="Or add a child who isn't in the app" Placeholder="Their name" Value="@_childName" ValueChanged="value => _childName = value" />
+                                <TextField Label="Birth date" Type="date" Value="@_childBorn" ValueChanged="value => _childBorn = value" Max="@($"{today:yyyy-MM-dd}")" />
+                                <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(_childName.Trim().Length == 0 || PeopleWords.ParseDay(_childBorn) is null)" OnClick="() => AddChildAsync(family.Id)">Add</Button>
+                            </div>
+                            <div class="ui-actions ui-after">
+                                <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
+                            </div>
                         </div>
-                        <div class="ui-actions ui-after">
-                            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _linking = Linking.None">Done</Button>
-                        </div>
-                    </div>
-                }
-            </div>
+                    }
+                </div>
+            }
 
             @if (minor || family.Parents.Count > 0 || office)
             {
@@ -200,16 +203,16 @@
 
     private static string LinkedLine(PersonCard card) => card.How switch
     {
-        LinkHow.Added => $"added by {card.LinkedBy ?? "a parent"}, {PeopleWords.Day(card.LinkedAt)}",
-        LinkHow.Approved => $"asked and approved, {PeopleWords.Day(card.LinkedAt)}",
-        _ => $"linked by {card.LinkedBy ?? "the office"}, {PeopleWords.Day(card.LinkedAt)}",
+        LinkHow.Added => $"added by {card.LinkedBy ?? "a parent"}, {PeopleWords.When(card.LinkedAt)}",
+        LinkHow.Approved => $"asked and approved, {PeopleWords.When(card.LinkedAt)}",
+        _ => $"linked by {card.LinkedBy ?? "the office"}, {PeopleWords.When(card.LinkedAt)}",
     };
 
     private static string AskedOfLine(LinkAsk ask, PersonOnPage person) =>
         ask.AskedByChild ? $"{ask.ChildName} asked {person.FirstName} to be their parent" : $"{ask.AskedByName} asked {person.FirstName} to look after {ask.ChildName} too";
 
     private static string AskSub(LinkAsk ask, DateOnly today) =>
-        $"{PeopleWords.Day(ask.AskedAt)}{(ask.ChildBirthDate is null ? "" : $" · {ask.ChildName} is {PeopleWords.Age(ask.ChildBirthDate, today)}")}";
+        $"{PeopleWords.When(ask.AskedAt)}{(ask.ChildBirthDate is null ? "" : $" · {ask.ChildName} is {PeopleWords.Age(ask.ChildBirthDate, today)}")}";
 
     private static IReadOnlyCollection<string> Leave(PersonFamily family) =>
         [family.Id, .. family.Children.Select(child => child.Id), .. family.Parents.Select(parent => parent.Id)];

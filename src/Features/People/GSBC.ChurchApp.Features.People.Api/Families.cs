@@ -31,7 +31,7 @@ internal sealed class Families(PeopleDbContext db, IPeopleAccounts accounts, IRo
 
         if (child.CanSignIn && linkedBy != childId)
             await notifications.RaiseAsync(new Notification(PeopleNotifications.Linked, NotificationAudience.Person(childId),
-                $"{parent.Name} is linked as your parent", "They can see your details in the app while you're under 18.", "account",
+                $"{parent.Name} is linked as your parent", "They can see your details in the app while you're under 18.", "/account",
                 Subject: $"people-linked-{parentId:N}-{childId:N}"), cancellationToken);
     }
 
