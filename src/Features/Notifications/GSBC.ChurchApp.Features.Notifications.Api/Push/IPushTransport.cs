@@ -25,6 +25,7 @@ public enum PushOutcome
 public sealed record PushResult(PushOutcome Outcome, string? Error = null)
 {
     public static readonly PushResult Sent = new(PushOutcome.Sent);
+    public static readonly PushResult Recalled = new(PushOutcome.Failed, "Recalled before it went");
 }
 
 public interface IPushTransport
