@@ -64,9 +64,6 @@ public sealed class Shell(IJSRuntime js) : IDisposable
 
     public ValueTask<bool> CopyAsync(string text) => js.InvokeAsync<bool>("gsbcShell.copy", text);
 
-    internal ValueTask<IJSObjectReference> SwipeAwayAsync(ElementReference element, DotNetObjectReference<NowPlaying> receiver) =>
-        js.InvokeAsync<IJSObjectReference>("gsbcShell.swipeAway", element, receiver);
-
     internal ValueTask<IJSObjectReference> SheetDragAsync(ElementReference sheet, DotNetObjectReference<Sheet> receiver) =>
         js.InvokeAsync<IJSObjectReference>("gsbcShell.sheetDrag", sheet, receiver);
 

@@ -6,8 +6,6 @@ namespace GSBC.ChurchApp.Features.Sermons.Client;
 
 public sealed class SermonPlayer(IAudioPlayer player, Listening listening, SermonCatalogue catalogue)
 {
-    public static readonly IReadOnlyList<double> Speeds = [0.8, 1, 1.2, 1.5, 1.75, 2];
-
     public IAudioPlayer Audio => player;
 
     public bool IsLoaded(Sermon sermon) => player.State.Item?.Id is { } id && (id == sermon.Id || sermon.FormerIds.Contains(id));

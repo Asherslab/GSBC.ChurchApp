@@ -30,7 +30,7 @@ window.gsbcShell = (() => {
     document.addEventListener('touchstart', (event) => {
       const page = scroller();
       const touch = event.touches[0];
-      const own = event.target instanceof Element && !!event.target.closest('.now-playing, .sheet-layer');
+      const own = event.target instanceof Element && !!event.target.closest('.sheet-layer');
       start = page?.dataset.backHref && touch.clientX < edge && !own ? { x: touch.clientX, y: touch.clientY, page, dx: 0, at: event.timeStamp } : null;
     }, { passive: true });
     document.addEventListener('touchmove', (event) => {
@@ -163,79 +163,6 @@ window.gsbcShell = (() => {
     openExternal(url) {
       if (isNative()) window.location.href = url;
       else window.open(url, '_blank', 'noopener');
-    },
-
-    swipeAway(element, receiver) {
-      const ease = 'cubic-bezier(0.22, 1, 0.36, 1)';
-      let start = null;
-      let swiped = false;
-      const place = (x, y) => {
-        element.style.transform = reducedMotion.matches ? '' : `translate(${x}px, ${y}px)`;
-        element.style.opacity = String(1 - Math.min(0.8, Math.max(Math.abs(x) / element.offsetWidth, y / element.offsetHeight / 2)));
-      };
-      const settle = () => {
-        element.style.transition = `transform 200ms ${ease}, opacity 200ms ${ease}`;
-        place(0, 0);
-        element.style.opacity = '';
-        setTimeout(() => { element.style.transition = ''; }, 220);
-      };
-      const onStart = (event) => {
-        const touch = event.touches[0];
-        start = { x: touch.clientX, y: touch.clientY, at: event.timeStamp, axis: null, dx: 0, dy: 0 };
-        swiped = false;
-      };
-      const onMove = (event) => {
-        if (!start) return;
-        const touch = event.touches[0];
-        const dx = touch.clientX - start.x;
-        const dy = touch.clientY - start.y;
-        if (!start.axis) {
-          if (Math.hypot(dx, dy) < 8) return;
-          start.axis = Math.abs(dx) > Math.abs(dy) ? 'x' : dy > 0 ? 'y' : null;
-          if (!start.axis) { start = null; return; }
-        }
-        event.preventDefault();
-        swiped = true;
-        start.dx = start.axis === 'x' ? dx : 0;
-        start.dy = start.axis === 'y' ? Math.max(0, dy) : 0;
-        element.style.transition = '';
-        place(start.dx, start.dy);
-      };
-      const onEnd = (event) => {
-        if (!start?.axis) { start = null; return; }
-        const { dx, dy, at, axis } = start;
-        start = null;
-        const speed = Math.max(Math.abs(dx), dy) / Math.max(1, event.timeStamp - at);
-        const away = axis === 'x'
-          ? Math.abs(dx) > element.offsetWidth * 0.35 || (speed > 0.5 && Math.abs(dx) > 40)
-          : dy > element.offsetHeight * 0.8 || (speed > 0.5 && dy > 24);
-        if (!away) { settle(); return; }
-        window.gsbcShell.haptic('light');
-        element.style.transition = `transform 180ms ${ease}, opacity 180ms ${ease}`;
-        place(axis === 'x' ? Math.sign(dx) * element.offsetWidth * 1.1 : 0, axis === 'y' ? element.offsetHeight * 1.5 : 0);
-        element.style.opacity = '0';
-        setTimeout(() => receiver.invokeMethodAsync('OnSwipedAway'), reducedMotion.matches ? 0 : 170);
-      };
-      const onClick = (event) => {
-        if (!swiped) return;
-        swiped = false;
-        event.stopPropagation();
-        event.preventDefault();
-      };
-      element.addEventListener('touchstart', onStart, { passive: true });
-      element.addEventListener('touchmove', onMove, { passive: false });
-      element.addEventListener('touchend', onEnd);
-      element.addEventListener('touchcancel', settle);
-      element.addEventListener('click', onClick, true);
-      return {
-        dispose() {
-          element.removeEventListener('touchstart', onStart);
-          element.removeEventListener('touchmove', onMove);
-          element.removeEventListener('touchend', onEnd);
-          element.removeEventListener('touchcancel', settle);
-          element.removeEventListener('click', onClick, true);
-        },
-      };
     },
 
     sheetDrag(sheet, receiver) {

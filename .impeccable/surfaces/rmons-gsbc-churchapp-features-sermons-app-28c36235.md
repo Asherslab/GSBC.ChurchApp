@@ -2,13 +2,13 @@
 version: 1
 slug: "rmons-gsbc-churchapp-features-sermons-app-28c36235"
 primary_target: "src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.App"
-related_targets: ["src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client","src/Platform/GSBC.ChurchApp.Platform.Ui/NowPlaying.razor"]
+related_targets: ["src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Client","src/Platform/GSBC.ChurchApp.Platform.Ui/AudioControls.razor"]
 ---
 
 # Sermons on the phone
 
-Scope: the Sermons tab (`/sermons`) and what it opens: a sermon, a series, a speaker, search; the mini-player and
-player sheet (Platform.Ui `NowPlaying`) on every screen. Mode: Operate (a member or visitor listening and catching up).
+Scope: the Sermons tab (`/sermons`) and what it opens: a sermon, a series, a speaker, search; the player at the top
+of the tab (Platform.Ui `AudioControls`) and the tab's play/pause icon. Mode: Operate (a member or visitor listening and catching up).
 
 - **Audience and job:** the congregation, on their own phones, midweek and on the way to church. Pick up the sermon they
   were part-way through (if they listened in the past week), else the latest; browse by series and speaker; find one.
@@ -37,7 +37,7 @@ FIRST VIEWPORT: Masthead "Sermons" with a beige note ("Keep going · 22 min left
 latest); inside it the 136px artwork beside the title and speaker, an orange progress line when underway, and
 "Keep listening"/"Listen" (on-masthead button) with "Watch" (ghost) beside it. Under it a sand search field ("Search
 sermons, series, speakers") that opens search. Then "Latest" (three rows, "All 155 ›"), "Series" (a sideways shelf of
-covers), "Speakers" (faces). The mini-player floats above the tab bar while something is loaded.
+covers), "Speakers" (faces). Once something has been played, the masthead is the player instead: cover and title (opens the sermon), scrubber with times and a speed chip, back 15 · play/pause · forward 30; the tab icon is play or pause (owner, 2026-11-09).
 
 FORM: Shelves, third on the ranked list (1 the POC's section tabs, 2 Sunday by Sunday, 3 shelves, 4 series wall,
 5 search-led, 6 the year of preaching with series bands, 7 three segmented views), dealt as a card and chosen by the
