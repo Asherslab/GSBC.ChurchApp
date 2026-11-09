@@ -3,7 +3,6 @@
 @inject SermonLibrary Library
 @inject SermonPlayer Player
 @inject Shell Shell
-@inject NowPlayingBar Bar
 
 <LiveData @ref="_live" TValue="SermonView" Load="Library.LoadAsync" Feeds="SermonLibrary.Feeds" Remember="@SermonLibrary.Remembered" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session">
     <ChildContent>@Drawn(context.Value)</ChildContent>
@@ -41,7 +40,6 @@
         {
             _watching = Watch;
             _watchingId = Id;
-            Bar.ShowFor(Id);
         }
     }
 
