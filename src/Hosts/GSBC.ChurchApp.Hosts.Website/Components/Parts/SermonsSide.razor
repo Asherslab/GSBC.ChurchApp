@@ -1,0 +1,48 @@
+@inject PublicFeeds Feeds
+@inject WebsiteLinks Links
+
+<aside class="side wide-only" aria-label="Find a sermon">
+    <form class="search search-side" role="search" action="/sermons" method="get">
+        <label class="visually-hidden" for="sermon-search-side">Search sermons</label>
+        <span class="search-field"><SiteIcon Name="search" /><input id="sermon-search-side" name="q" type="search" value="@Query" placeholder="Search sermons" /></span>
+    </form>
+    <section class="side-block" aria-labelledby="side-series">
+        <h2 class="side-head" id="side-series">Series</h2>
+        <ul class="side-series">
+            @foreach (SeriesInfo series in Feeds.Current.Sermons.Series.Take(SeriesShown))
+            {
+                <li>
+                    <a href="/sermons/series/@Uri.EscapeDataString(series.Id)">
+                        @if (series.Artwork is { IsImage: true } artwork)
+                        {
+                            <MediaImage Media="artwork" Size="MediaSizeName.Thumbnail" Alt="" Class="side-art" />
+                        }
+                        <span>@series.Name</span>
+                    </a>
+                </li>
+            }
+        </ul>
+        <a class="text-link" href="/sermons/series">All series <SiteIcon Name="next" /></a>
+    </section>
+    <section class="side-block" aria-labelledby="side-speakers">
+        <h2 class="side-head" id="side-speakers">Speakers</h2>
+        <ul class="side-speakers">
+            @foreach (SpeakerInfo speaker in Feeds.Current.Sermons.Speakers.OrderByDescending(speaker => speaker.LatestAt).Take(SpeakersShown))
+            {
+                <li><a href="/sermons/speakers/@Uri.EscapeDataString(speaker.Id)">@speaker.Name</a><span class="length">@speaker.Count</span></li>
+            }
+        </ul>
+        <a class="text-link" href="/sermons/speakers">All speakers <SiteIcon Name="next" /></a>
+    </section>
+    @if (Links.Podcast.Length > 0)
+    {
+        <a class="text-link" href="@Links.Podcast" target="_blank" rel="noopener"><SiteIcon Name="headphones" /> Podcast</a>
+    }
+</aside>
+
+@code {
+    private const int SeriesShown = 6;
+    private const int SpeakersShown = 8;
+
+    [Parameter] public string? Query { get; set; }
+}

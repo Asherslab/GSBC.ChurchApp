@@ -158,18 +158,39 @@ and `embed.js` (the website's script, under its plain name). There is no root pa
 ### On the website
 
 What staff paste into a page's source code (Tithe.ly documents `<iframe>` and `<script>` embeds for the source-code
-editor; to be checked on a hidden page first, as its help suggests):
+editor; tried on hidden test pages on 2026-11-08, where both survived, though the editor wrapped the iframe in a `<p>`
+and dropped its `data-` attribute):
 
 ```html
-<iframe src="https://embed.baptist.com.au/sermons" title="Sermons" data-gsbc-embed
-        style="width:100%;height:1600px;border:0" loading="lazy"></iframe>
-<script src="https://embed.baptist.com.au/embed.js" async></script>
+<iframe src="https://embed.baptist.com.au/sermons" title="Sermons"
+        style="width:100%;height:1200px;border:0"></iframe>
+<script src="https://embed.baptist.com.au/embed.js" defer></script>
 ```
 
-For events, `src` is `https://embed.baptist.com.au/events`; a Kids page could use `/events?calendar=kids`.
+For events, `src` is `https://embed.baptist.com.au/events`; a Kids page could use `/events?calendar=kids`. The script
+finds its iframes by their address (any iframe from the same host as the script), so nothing else is needed.
 
-- **With the script** (`embed.js`): the iframe grows to its content (the page inside posts its height on every change),
-  so the website scrolls as one page. The website's address follows what's open inside: `?sermon=<id>`,
+**Full width (2026-11-08, the owner on the test page: "it isn't full width").** A Tithe.ly text page puts its content in
+a centred column (`.container > .row.subpage-main > .col-md-8.col-md-offset-2 > .article`), about 750 pixels wide on a
+computer. The script widens each iframe to the page's `.container` content box (1140 pixels, the same left edge as the
+header's title and the footer), measured from the page, so it lines up whatever wraps it, and only ever widens: on a
+phone the column already is the content width. It follows the window as it resizes, and touches nothing but its own
+iframes. Inside the iframe the pages drop their side padding, so their text starts where the website's does. To keep
+an iframe in its column, give it `data-gsbc-width="column"` or `class="gsbc-column"` (the class survives editors that
+drop `data-` attributes). Without the script the iframe stays in the column at its fixed height and scrolls inside;
+every page works from 360 pixels wide, so that's still readable, just narrower.
+
+Tithely Sites' block pages have a width setting per block (*contained* or *full-width*, under *Edit Block*), per their
+help centre; a page built from blocks with an HTML block set to *contained* would sit at the container width without the
+script's help. Not checked in the editor (the help centre sits behind a bot check); the script makes it unnecessary.
+
+**On a computer the pages use the room** (2026-11-08): the sermons list is a grid of sermon cards (art, title, series,
+speaker, day, length; three across at the website's width) beside a sidebar with search, the latest series with their
+art, and recent speakers; Events puts *Regular gatherings* in a sidebar beside the weeks. Under 992 pixels (a tablet's
+column, a phone) they return to one column: search and links above the list, gatherings after the weeks.
+
+- **With the script** (`embed.js`): the iframe grows to its content (the page inside posts its height on every change;
+  the iframe stops scrolling inside only once the first height arrives), so the website scrolls as one page. The website's address follows what's open inside: `?sermon=<id>`,
   `?series=<id>`, `?speaker=<id>`, `?event=<id>`, `?view=series|speakers`, and the list's own `?q=`, `?page=`,
   `?calendar=`, `?weeks=`; opening that address opens the same page in the iframe, so it can be shared and
   bookmarked. Moving to another page inside scrolls the website back to the iframe's top. The browser's Back button
