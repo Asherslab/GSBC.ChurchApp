@@ -189,12 +189,4 @@ public sealed class ReviewSignInTests : IAsyncLifetime
 
         public ValueTask ForgetScopeAsync(ScopeKind kind, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
-
-    private sealed class NoGrants : IAccessEvaluator
-    {
-        public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => ValueTask.FromResult(GrantSet.Empty);
-
-        public ValueTask<bool> IsAllowedAsync(System.Security.Claims.ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
-    }
 }
