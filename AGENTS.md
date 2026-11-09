@@ -145,6 +145,13 @@ dashboard ports too (`ASPNETCORE_URLS`, `ASPIRE_DASHBOARD_OTLP_ENDPOINT_URL`, `A
 and to sign in on `http://localhost:5400` set `Accounts__Passkeys__RelyingPartyId=localhost` and
 `Accounts__Passkeys__AllowedOrigins__0=http://localhost:5400`. Stop it by its own process id, never by pattern.
 
+**Clean up merged worktrees.** Each worktree costs 1–3 GB on disk (builds, the app shell) plus a Postgres volume,
+and 40 of them once filled the owner's disk (2026-11-09). Once a branch is merged, run `tools/dev/prune-worktrees.sh`
+from the main checkout (`--dry-run` to see what it would do). It removes only worktrees whose branch is fully merged,
+has no local changes and has nobody working in it, keeps the branches, and removes Postgres volumes no checkout
+uses. Never remove a worktree with `--force`; keep anything uncommitted you want first. Put screenshots and other
+throwaway files in your scratchpad, not the worktree.
+
 # Release notes: part of every change people would notice
 
 A change someone would notice in the app or the admin panel adds one file to `changelog/unreleased/`
