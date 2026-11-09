@@ -14,7 +14,7 @@ there is no store of its own. Until staff publish a change, the tabs are what th
 | `config.tabs.edit` | In a draft: add tabs, choose the place each opens, its word and icon, move them, choose who sees each and when, take them off the bar |
 | `config.tabs.publish` | Publish the draft, or turn it on for an event |
 
-The *App editor* role (`config.*`) holds both.
+The *App Publisher* role (`config.*`) holds both; *App Editor* holds edit (2026-11-09).
 
 ## Decided (owner, 2026-11-08)
 

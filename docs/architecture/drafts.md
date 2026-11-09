@@ -118,7 +118,7 @@ On top of Configuration, with no new feature project:
   - `config.drafts` (new, private): each draft and its changes, scoped to that draft, so a phone
     receives only drafts its user may see.
 - **Sharing uses Access,** not a list of its own. A new scope kind `draft`, a permission
-  `config.drafts.preview` at that scope, and a system role *Draft reviewer* that Configuration gives
+  `config.drafts.preview` at that scope, and a system role *Reviewer* (of a draft) that Configuration gives
   and takes away through `IRoleAssignments` when a draft is shared or unshared. Sync's per-scope
   feed filtering then does the rest, and removing someone takes the draft off their phone.
 - **Permissions:** the area's existing edit permission (`config.hub.edit` and so on) to change it in
@@ -186,8 +186,9 @@ panel's draft showed on the phone, previewing that draft, within a second of "Sa
   (`config.hub.publish`, `config.appearance.publish`). The direct `Configuration.Save` is gone: every
   edit is made in a draft. Tested by `DraftEditorTests` and the reworked `PlacementEditorTests`.
 - **Access:** a `draft` scope kind, `config.drafts.preview` (held at a draft: preview it; held
-  everywhere: see every draft), the system roles *Draft reviewer* (given and taken by Configuration
-  when a draft is shared or unshared, and to its author) and *App editor* (`config.*`).
+  everywhere: see every draft), the system roles *Reviewer* (given and taken by Configuration
+  when a draft is shared or unshared, and to its author; Share is the shared People sheet since 2026-11-09),
+  *App Editor* (edit and see every draft) and *App Publisher* (`config.*`).
 - **Sync:** a private feed resets for a session whose grants for it changed (`sync.audience_marks`),
   so unsharing takes a draft off that phone. Tested end to end in `DraftEditorTests`.
 - **Feeds:** `config.drafts` (private, per draft) and the event layer as the `event-layer` record in

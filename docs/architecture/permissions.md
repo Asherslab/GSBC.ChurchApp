@@ -42,13 +42,25 @@ Minecraft permissions plugins' rule, and it means a role can be "everything in M
 rosters" in two lines. A role may include other roles, one level deep, so "Ministry leader" can be
 "Ministry member" plus more.
 
-**Roles are data** (requirement G). Holders of `access.roles.edit` create and change roles in the
-admin panel. Features also seed **system roles** in code (today Owner, Access manager, Account manager, App editor,
-Media editor, Announcer, Insights viewer, Developer, Draft reviewer and App reviewer; Staff and the
-ministry roles come with Ministries), reconciled on start-up, as the earlier model's role creator did; they can be assigned but not edited, so
-code can rely on them. A role also says **who can give it** (assignable by: Leaders give Member) and
-whether it **applies to a ministry's teams**; staff see all of it in plain words
-([access.md](../features/access.md#how-staff-see-access-agreed-2026-11-02)).
+**Roles are built in** (owner, 2026-11-09; until then, roles were data, requirement G). Features declare
+every role in code as a **system role**, reconciled on start-up; nobody makes or changes one in the admin
+panel. Today: Owner, the roles by feature with their levels (Sermons, Calendar, Announcements, App, Media,
+People, Insights and health; [access.md](../features/access.md#roles-by-feature-with-levels-owner-2026-11-09)),
+the roles for one thing (a calendar's Editor and Publisher, a regular event's Organiser, a draft's Reviewer),
+and hidden bookkeeping roles (follows, calendars added, the demo account); Staff and the ministry roles come
+with Ministries. A role also says **who can give it** (assignable by: Leaders give Member), whether it
+**applies to a ministry's teams**, its **feature** (the heading it's listed under) and whether it's **hidden**;
+staff see all of it in plain words ([access.md](../features/access.md#how-staff-see-access-agreed-2026-11-02)).
+
+**Kits** (2026-11-09). A role can bring what its job needs from another feature without the features
+knowing each other: the owning feature declares a kit (`AddRoleKit`: Media's `pictures`, Accounts'
+`people-names`) and a role names it (`SystemRole.Kits`). Kit patterns are *everywhere* patterns: compiled
+as global grants even on a role given for one object, so a calendar's Editor can pick a picture.
+
+**Changing roles in code** (2026-11-09). `SystemRole.Replaces` renames a role in place (same id, so its
+holders and every audience aimed at it carry across); `StartsWithHoldersOf` gives a new role the holders
+of another, once, when it's first made. A feature that aims things at people in a role implements
+`IRoleUses` (Platform.Api), so a role still in use is never removed silently.
 
 **Assignment.** User + role + scope object (for a scoped role), with an optional end date (a Life
 Group round) and a source:
@@ -125,7 +137,7 @@ so the phone never keeps rows it is no longer allowed to read.
 |---|---|---|
 | Templated permission strings, rendered at run time for each object | Typed node + scope kind | AOT on the phone; no template rendering or regex |
 | Rendered permissions in role claims | Grants cached server-side, keyed by user | Small tokens; revocation is immediate |
-| Roles only in code | System roles in code, custom roles as data | Staff shape roles without a release (requirement G) |
+| Roles only in code | Roles only in code, by feature with levels (2026-11-09; custom roles as data from 2026-11-01 to 2026-11-09) | Custom roles went unused, and a flat list of jobs was hard to follow; a role per feature and level is what staff expect |
 | Exact match, all key subsets tried (2ⁿ renders) | Wildcards, negation, most-specific-wins | Fewer, clearer roles; one lookup per check |
 | Multi-slot objects (an object and its owner) | One scope object | Church data nests simply; add a scope kind if that changes |
 | `[Authorize(Policy = ":permission:…")]` before the body is read | Interceptor after deserialising | The scope is in the request |
