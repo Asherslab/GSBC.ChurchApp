@@ -84,7 +84,7 @@ public static class MinistryWords
         return you.Roles.Contains(Roles.Attendee) ? "You come along" : "";
     }
 
-    public static string Possessive(string name) => name.EndsWith('s') ? $"{name}'" : $"{name}'s";
+    public static string Possessive(string name) => MinistryNames.Possessive(name);
 
     public static string Ministries(int count) => count == 1 ? "1 ministry" : $"{count} ministries";
 

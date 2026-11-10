@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
@@ -5,8 +6,8 @@ namespace GSBC.ChurchApp.Features.Ministries.Api;
 internal static class MinistryRules
 {
     public const int LongestName = 60;
-    public const int LongestSummary = 140;
-    public const int LongestText = 4000;
+    private const int LongestSummary = 140;
+    private const int LongestText = 4000;
     public const int LongestTitle = 120;
 
     public static bool MaySee(string audience, Func<string, bool> holdsHere, Func<string, bool> holdsBelow) => audience switch
@@ -41,7 +42,7 @@ internal static class MinistryRules
     public static IReadOnlyList<string> PostableAudiences(string attendJoin) =>
         attendJoin == Joining.None ? [Audiences.Everyone, Audiences.Team] : Audiences.All;
 
-    public static string? WhyNotDetails(MinistryDetails details, bool topLevel)
+    public static string? WhyNotDetails(MinistryDetails details)
     {
         if (details.Name.Trim().Length is 0 or > LongestName)
             return $"Give it a name of up to {LongestName} characters.";
@@ -51,17 +52,25 @@ internal static class MinistryRules
             return $"Keep the about to {LongestText} characters.";
         if (!Joining.IsValid(details.TeamJoin, noneAllowed: false))
             return "Choose how people join the team.";
-        if (!Joining.IsValid(details.AttendJoin, noneAllowed: true))
-            return "Choose how people come along.";
+        if (!Joining.IsValid(details.AttendJoin, noneAllowed: details.Kind != MinistryKinds.LifeGroup))
+            return details.Kind == MinistryKinds.LifeGroup ? "Choose how people get into the group." : "Choose how people come along.";
         return details.Kind is MinistryKinds.Ministry or MinistryKinds.LifeGroup ? null : "That isn't a kind of ministry.";
     }
 
-    public static string PartName(string part) => part switch
+    public static string? WhyNotMove(MinistryTree tree, MinistryRecord ministry, MinistryRecord? under, Func<MinistryRecord?, bool> mayAddUnder)
     {
-        MinistryParts.News => "News",
-        MinistryParts.Calendar => "Calendar",
-        _ => "Files",
-    };
+        if (under?.Id == ministry.ParentId)
+            return under is null ? "It's already a top-level ministry." : $"It already sits under {under.Name}.";
+        if (tree.WouldLoop(ministry.Id, under?.Id))
+            return "A ministry can't sit under itself or under a ministry that's under it.";
+        if (under?.Kind == MinistryKinds.LifeGroup)
+            return "A Life Group can't have ministries under it.";
+        if (under is null && ministry.Kind == MinistryKinds.LifeGroup)
+            return "A Life Group sits under a ministry. Choose one.";
+        if (!mayAddUnder(under))
+            return under is null ? "Only staff make a ministry top-level." : $"You can't add ministries under {under.Name}.";
+        return null;
+    }
 
     public static string Yours(IReadOnlyCollection<string> roles, IReadOnlyCollection<string> childrenAttending, bool leadsFromAbove) =>
         roles.Contains(Roles.Leader) || leadsFromAbove ? "You lead it"
@@ -71,7 +80,7 @@ internal static class MinistryRules
         : roles.Contains(Roles.Attendee) ? "You come along"
         : "";
 
-    public static string Names(IReadOnlyCollection<string> names) =>
+    private static string Names(IReadOnlyCollection<string> names) =>
         names.Count <= 1 ? names.FirstOrDefault() ?? "" : $"{string.Join(", ", names.Take(names.Count - 1))} and {names.Last()}";
 }
 

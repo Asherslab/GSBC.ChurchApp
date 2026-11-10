@@ -6,18 +6,18 @@
 <Section First="true" Title="Details">
     <div class="ministry-form">
         <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
-        <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" Placeholder="Friday nights for ages 4 to 11" />
+        <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" />
         <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
-        <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" Placeholder="Fridays 6:30 to 8:30pm in school terms" />
-        <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" Placeholder="Ages 4 to 11" />
+        <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" />
+        <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
         @if (Details.Kind == MinistryKinds.LifeGroup)
         {
-            <TextField Label="Room" @bind-Value="Details.Room" MaxLength="60" Placeholder="Library (5)" />
+            <TextField Label="Room" @bind-Value="Details.Room" MaxLength="60" />
         }
     </div>
 </Section>
 
-<Section Title="Joining" Lead="@(Details.Kind == MinistryKinds.LifeGroup ? "How people get into the group." : "How people get on the team, and how they start coming along.")">
+<Section Title="Joining" Lead="@(Details.Kind == MinistryKinds.LifeGroup ? "How people get on the team, and how they get into the group." : "How people get on the team, and how they start coming along.")">
     <JoiningFields Kind="@Details.Kind" TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
                    AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
 </Section>
@@ -30,6 +30,8 @@
 </Section>
 
 <PartsSection Page="Page" OnChanged="OnChanged" />
+
+<MoveSection Page="Page" OnChanged="OnChanged" />
 
 @if (Page.Ministry.Kind != MinistryKinds.LifeGroup)
 {

@@ -68,7 +68,7 @@ public sealed class MinistryDetails
     [ProtoMember(15)] public bool JoinAsParent { get; set; }
     [ProtoMember(16)] public int Order { get; set; }
     [ProtoMember(17)] public List<string> PartsOff { get; set; } = [];
-    [ProtoMember(18)] public bool CalendarsFromBelow { get; set; }
+    [ProtoMember(19)] public List<string> PartsFromBelow { get; set; } = [];
 }
 
 [ProtoContract]
@@ -322,7 +322,7 @@ public sealed class PartsSave : IScopedRequest
 {
     [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2)] public List<string> PartsOff { get; set; } = [];
-    [ProtoMember(3)] public bool CalendarsFromBelow { get; set; }
+    [ProtoMember(4)] public List<string> PartsFromBelow { get; set; } = [];
 
     public string ScopeId => MinistryId;
 }
@@ -420,4 +420,33 @@ public sealed class WaitingRequest;
 public sealed class WaitingList
 {
     [ProtoMember(1)] public List<AskLine> Asks { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MoveRequest : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string UnderId { get; set; } = "";
+
+    public string ScopeId => MinistryId;
+}
+
+[ProtoContract]
+public sealed class MovePreview
+{
+    [ProtoMember(1)] public string Name { get; set; } = "";
+    [ProtoMember(2)] public string From { get; set; } = "";
+    [ProtoMember(3)] public string To { get; set; } = "";
+    [ProtoMember(4)] public int SubMinistries { get; set; }
+    [ProtoMember(5)] public List<LeadChange> Gain { get; set; } = [];
+    [ProtoMember(6)] public List<LeadChange> Lose { get; set; } = [];
+    [ProtoMember(7)] public List<string> Leaves { get; set; } = [];
+    [ProtoMember(8)] public List<string> Joins { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class LeadChange
+{
+    [ProtoMember(1)] public string Ministry { get; set; } = "";
+    [ProtoMember(2)] public List<string> People { get; set; } = [];
 }

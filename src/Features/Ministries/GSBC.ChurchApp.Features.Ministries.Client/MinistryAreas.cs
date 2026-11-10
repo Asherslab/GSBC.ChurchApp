@@ -14,11 +14,11 @@ public static class MinistryAreas
         if (lifeGroup && page.Round is not null)
             areas.Add((MinistriesPlaces.Sundays, "Sundays", null));
         if (Uses(page, MinistryParts.News) && (page.Posts.Count > 0 || posts))
-            areas.Add((MinistriesPlaces.News, "News", null));
+            areas.Add((MinistriesPlaces.News, MinistryParts.Of(MinistryParts.News).Name, null));
         if (Uses(page, MinistryParts.Calendar) && (page.Calendars.Count > 0 || you.MayEditSettings))
-            areas.Add((MinistriesPlaces.Calendar, "Calendar", null));
+            areas.Add((MinistriesPlaces.Calendar, MinistryParts.Of(MinistryParts.Calendar).Name, null));
         if (Uses(page, MinistryParts.Files) && (page.Files.Count > 0 || posts))
-            areas.Add((MinistriesPlaces.Files, "Files", null));
+            areas.Add((MinistriesPlaces.Files, MinistryParts.Of(MinistryParts.Files).Name, null));
         if (you.MayManagePeople)
             areas.Add((MinistriesPlaces.People, "People", you.Waiting));
         if (you.MayEditSettings)

@@ -5,7 +5,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Tests;
 
 public sealed class MinistryPartsTests
 {
-    private readonly MinistryRecord _kids = new() { Id = Guid.CreateVersion7(), Name = "Kids Ministries", Kind = MinistryKinds.Ministry, CalendarsFromBelow = true };
+    private readonly MinistryRecord _kids = new() { Id = Guid.CreateVersion7(), Name = "Kids Ministries", Kind = MinistryKinds.Ministry, PartsFromBelow = [MinistryParts.Calendar] };
     private readonly MinistryRecord _impactKids;
     private readonly MinistryRecord _leadersNight;
     private readonly MinistryRecord _kidsLife;
@@ -32,11 +32,24 @@ public sealed class MinistryPartsTests
         _impactKids.PartsOff = [MinistryParts.Calendar];
         Assert.Equal([_kids.Id, _kidsLife.Id], MinistryViews.CalendarsShown(Tree, _kids.Id));
 
-        _kids.CalendarsFromBelow = false;
+        _kids.PartsFromBelow = [];
         Assert.Equal([_kids.Id], MinistryViews.CalendarsShown(Tree, _kids.Id));
 
         _kids.PartsOff = [MinistryParts.Calendar];
         Assert.Empty(MinistryViews.CalendarsShown(Tree, _kids.Id));
+    }
+
+    [Fact]
+    public void AMinistryCanShowTheNewsOfTheMinistriesUnderItSkippingAnyThatDontUseNews()
+    {
+        Assert.Equal([_kids.Id], MinistryViews.Gathered(Tree, _kids.Id, MinistryParts.News));
+
+        _kids.PartsFromBelow = [MinistryParts.News];
+        Assert.Equal([_kids.Id, _impactKids.Id, _kidsLife.Id, _leadersNight.Id], MinistryViews.Gathered(Tree, _kids.Id, MinistryParts.News));
+        Assert.Equal([_kids.Id], MinistryViews.CalendarsShown(Tree, _kids.Id));
+
+        _impactKids.PartsOff = [MinistryParts.News];
+        Assert.Equal([_kids.Id, _kidsLife.Id], MinistryViews.Gathered(Tree, _kids.Id, MinistryParts.News));
     }
 
     [Fact]

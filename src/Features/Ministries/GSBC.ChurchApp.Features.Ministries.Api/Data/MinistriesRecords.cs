@@ -19,9 +19,16 @@ public sealed class MinistryRecord
     public bool JoinAsParent { get; set; }
     public int Order { get; set; }
     public List<string> PartsOff { get; set; } = [];
-    public bool CalendarsFromBelow { get; set; }
+    public List<string> PartsFromBelow { get; set; } = [];
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
+
+    public MinistryRecord Under(Guid? parentId)
+    {
+        MinistryRecord moved = (MinistryRecord)MemberwiseClone();
+        moved.ParentId = parentId;
+        return moved;
+    }
 }
 
 public sealed class AskRecord

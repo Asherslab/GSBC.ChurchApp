@@ -46,17 +46,17 @@
 
 @if (Page.SubMinistries.Count > 0)
 {
-    <Section Title="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? "Groups" : "Ministries under it")">
+    <Section Title="Ministries under it">
         <ListGroup>
             @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? under.Summary : MinistryWords.UnderLine(under))" Icon="@IconOf(under)" Chevron="true" Href="@Href(under.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@MinistryWords.UnderLine(under)" Icon="@IconOf(under)" Chevron="true" Href="@Href(under.Id)" />
             }
         </ListGroup>
     </Section>
 }
 
-@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings && MinistryParts.All.Any(part => MinistryAreas.Uses(Page, part)))
+@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings && MinistryParts.All.Any(part => MinistryAreas.Uses(Page, part.Key)))
 {
     <Section>
         <p class="hint">@Page.Ministry.Name's news, calendar and files are for the people in it.</p>

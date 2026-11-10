@@ -23,7 +23,7 @@
 <Sheet Open="_date is not null" OpenChanged="open => { if (!open) _date = null; }" Title="@(_date is null ? "" : MinistryWords.Day(_date))" Lead="Tell the group about this Sunday. They see it on the group's Sundays.">
     <ChildContent>
         <ToggleRow Title="No class this Sunday" @bind-Checked="_off" />
-        <TextField Label="What to say" @bind-Value="_note" MaxLength="200" Placeholder="Combined with Faith at Work, in Room 2" />
+        <TextField Label="What to say" @bind-Value="_note" MaxLength="200" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>

@@ -1,21 +1,21 @@
 @inject MinistriesClient Ministries
 
 <Section Title="What it uses" Lead="Turn off what this ministry doesn't use. Its tab and everything in it are hidden from everyone, leaders too, until you turn it back on. Nothing is deleted.">
-    @foreach (string part in MinistryParts.All)
+    @foreach (MinistryPart part in MinistryParts.All)
     {
-        <ToggleRow @key="part" Title="@Title(part)" Description="@Description(part)" Checked="@(!Off.Contains(part))" Disabled="_busy" CheckedChanged="on => TurnAsync(part, on)" />
+        <ToggleRow @key="part.Key" Title="@part.Name" Description="@part.Does" Checked="@(!Off.Contains(part.Key))" Disabled="_busy" CheckedChanged="on => TurnAsync(part.Key, on)" />
     }
-    @if (!Off.Contains(MinistryParts.Calendar) && Page.SubMinistries.Count > 0)
+    @foreach ((MinistryPart part, PartFromBelow below) in Gathering)
     {
-        <ToggleRow Title="Show the calendars of the ministries under it" Description="Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry."
-                   Checked="FromBelow" Disabled="_busy" CheckedChanged="FromBelowAsync" />
+        <ToggleRow @key="@($"{part.Key}-below")" Title="@below.Title" Description="@below.Does"
+                   Checked="@FromBelow.Contains(part.Key)" Disabled="_busy" CheckedChanged="on => FromBelowAsync(part.Key, on)" />
     }
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 </Section>
 
 @code {
     private List<string> _off = [];
-    private bool _fromBelow;
+    private List<string> _fromBelow = [];
     private MinistryDetails? _seen;
     private bool _busy;
     private string? _problem;
@@ -32,7 +32,7 @@
         }
     }
 
-    private bool FromBelow
+    private List<string> FromBelow
     {
         get
         {
@@ -46,31 +46,21 @@
         if (ReferenceEquals(_seen, Page.Ministry) || _busy)
             return;
         _seen = Page.Ministry;
-        (_off, _fromBelow) = ([.. Page.Ministry.PartsOff], Page.Ministry.CalendarsFromBelow);
+        (_off, _fromBelow) = ([.. Page.Ministry.PartsOff], [.. Page.Ministry.PartsFromBelow]);
     }
 
-    private static string Title(string part) => part switch
-    {
-        MinistryParts.News => "News",
-        MinistryParts.Calendar => "Calendar",
-        _ => "Files",
-    };
-
-    private static string Description(string part) => part switch
-    {
-        MinistryParts.News => "Posts from its leaders, for everyone or for its people",
-        MinistryParts.Calendar => "Its calendars, with their events in people's week and calendar links",
-        _ => "Documents and links, such as a code of conduct or practice recordings",
-    };
+    private IEnumerable<(MinistryPart, PartFromBelow)> Gathering =>
+        Page.SubMinistries.Count == 0 ? [] : MinistryParts.All.Where(part => part.FromBelow is not null && !Off.Contains(part.Key)).Select(part => (part, part.FromBelow!));
 
     private Task TurnAsync(string part, bool on) =>
         SaveAsync(on ? Off.Where(off => off != part).ToList() : [.. Off, part], FromBelow);
 
-    private Task FromBelowAsync(bool on) => SaveAsync(Off, on);
+    private Task FromBelowAsync(string part, bool on) =>
+        SaveAsync(Off, on ? [.. FromBelow, part] : FromBelow.Where(each => each != part).ToList());
 
-    private async Task SaveAsync(List<string> off, bool fromBelow)
+    private async Task SaveAsync(List<string> off, List<string> fromBelow)
     {
-        (List<string> before, bool beforeFromBelow) = (_off, _fromBelow);
+        (List<string> before, List<string> beforeFromBelow) = (_off, _fromBelow);
         (_off, _fromBelow, _busy, _problem) = (off, fromBelow, true, null);
         try
         {

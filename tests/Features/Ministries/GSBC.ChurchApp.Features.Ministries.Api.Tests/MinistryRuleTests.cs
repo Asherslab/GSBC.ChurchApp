@@ -37,6 +37,18 @@ public sealed class MinistryRuleTests
     }
 
     [Fact]
+    public void ALifeGroupHasATeamToJoinLikeAnyMinistryAndAlwaysTakesPeopleIntoTheGroup()
+    {
+        MinistryDetails kidsLife = new() { Name = "Kids Life", Kind = MinistryKinds.LifeGroup, TeamJoin = Joining.Ask, AttendJoin = Joining.Open };
+
+        Assert.Null(MinistryRules.WhyNotDetails(kidsLife));
+        kidsLife.TeamJoin = "";
+        Assert.NotNull(MinistryRules.WhyNotDetails(kidsLife));
+        (kidsLife.TeamJoin, kidsLife.AttendJoin) = (Joining.Invite, Joining.None);
+        Assert.NotNull(MinistryRules.WhyNotDetails(kidsLife));
+    }
+
+    [Fact]
     public void JoiningFollowsTheMinistrysSettingForTheTeamOrForComingAlong()
     {
         Assert.True(MinistryRules.Decide(Joining.Open, Places.Team).Joins);

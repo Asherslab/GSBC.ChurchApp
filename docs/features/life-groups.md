@@ -19,10 +19,20 @@ Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26
 - **Parents** (owner, 2026-11-10): a parent joins a children's group for their child (the child is the attendee, and the
   parent sees it through the family link) and joins their own adult group as themselves.
 - **A group's Sundays** tab lists its Sundays; its leaders mark one *No class this Sunday* or say what's changed
-  ("Combined with Faith at Work, in Room 2").
+  ("Combined with another group, in another room").
 - **A Life Group can sit under any ministry** (owner, 2026-11-10: Kids Life "does sit under kids ministries, which needs to
   be possible"): made from *A new ministry* (*What it is: A Life Group*) in the app or the admin panel. It still shows on
   Life Groups with its Sundays, and its leaders are that ministry's ([ministries.md](ministries.md), *Follow-ups*).
+- **A Life Group is a full ministry, just more temporary** (owner, 2026-11-10: "they're a full ministry, just more
+  temporary. should have all the stuff normal ministries do, that's why they're a subset of them", and "it's a whole team of
+  people" that needs volunteer chats and calendars). A Life Group has **a team** (leaders, admins, volunteers) with its own
+  *Joining the team* setting, and **the people in the group** with *Joining the group* (Open, Ask or Invite only; never "No
+  attendees", which the server refuses). Join offers the team as well as the group. Everything else is the ministry's own,
+  with no Life Group case in the model or Access: the same roles at `ministry:<id>`, the People tab, the four audiences
+  (team-only posts, files and calendars), *What it uses*, combined news and calendars, and moving it under another
+  ministry; rosters (Stage 3) and chats (Stage 4) apply the same way. The only differences are its extras (its Sundays, its
+  set of Sundays, its room, *Join as a parent*), that it can't be top-level, and that nothing sits under a Life Group
+  (*default*: the model has never allowed it; the owner can ask for it).
 - **No Sunday reminder** (owner, 2026-11-10). The site map isn't built, so a group shows its room as words.
 
 ## A kind of ministry
