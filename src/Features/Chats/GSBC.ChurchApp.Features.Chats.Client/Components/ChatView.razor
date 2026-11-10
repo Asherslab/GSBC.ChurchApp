@@ -174,8 +174,12 @@
         Conversation? chat = await Store.ChatAsync(ChatId);
         if (chat is { Paused: false } && chat.Card.YourRole.Length > 0)
             await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
-        if (chat is not null)
+        if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
+        {
             _title = ChatText.Title(chat.Card);
+            _card = chat.Card;
+            _ = InvokeAsync(StateHasChanged);
+        }
         return new OpenedChat(chat);
     }
 

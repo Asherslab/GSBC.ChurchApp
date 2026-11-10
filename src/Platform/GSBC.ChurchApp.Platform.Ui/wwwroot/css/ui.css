@@ -1247,6 +1247,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 
 .bubble-row { display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 8px; align-items: end; margin-top: 3px; }
 .bubble-row--first { margin-top: 12px; }
+.bubble-row__avatar { align-self: start; }
 .bubble-row--mine { grid-template-columns: minmax(0, 1fr); justify-items: end; }
 .bubble-row--dimmed .bubble { opacity: 0.6; }
 .bubble-row__stack { display: grid; justify-items: start; gap: 4px; max-width: min(82%, 520px); }
