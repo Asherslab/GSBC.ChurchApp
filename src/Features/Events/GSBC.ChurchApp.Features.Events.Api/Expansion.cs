@@ -60,6 +60,8 @@ internal static class Expansion
                 NotOnReason = inBreak?.Name ?? (special?.NotOn == true ? special.NotOnNote : ""),
                 BackOn = notOn ? BackOn(regular, specials, breaks, date) : "",
                 Missing = notOn ? [] : regular.Needs.Where(need => !FieldValues.IsSet(fields, need)).ToList(),
+                KeptBy = regular.KeptBy,
+                OpensAt = regular.OpensAt,
             };
             Time(occurrence, date, date, startMinute, endMinute);
             (occurrence.ChangedAt, occurrence.ChangeNote) = Latest((regular.ChangedAt, regular.ChangeNote), (special?.ChangedAt, special?.ChangeNote ?? ""));

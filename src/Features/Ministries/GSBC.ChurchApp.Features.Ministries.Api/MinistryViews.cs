@@ -185,5 +185,13 @@ internal sealed class MinistryViews(
         Starts = round.Starts.ToString("HH:mm"), Ends = round.Ends.ToString("HH:mm"), ShowsFrom = round.ShowsFrom?.ToString("yyyy-MM-dd") ?? "",
     };
 
+    public static SittingOut SittingOut(SitOutRecord sitOut, RoundRecord? round, MinistryTree tree) => new()
+    {
+        GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString(), Note = sitOut.Note,
+        InsteadId = sitOut.InsteadId is { } instead && tree.Find(instead) is not null ? instead.ToString() : "",
+        InsteadName = sitOut.InsteadId is { } other ? tree.Find(other)?.Name ?? "" : "",
+        Round = round is null ? null : Round(round),
+    };
+
     public static SessionChange Session(SessionRecord session) => new() { Date = session.Date.ToString("yyyy-MM-dd"), Off = session.Off, Note = session.Note };
 }

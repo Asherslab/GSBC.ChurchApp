@@ -79,6 +79,15 @@ public sealed class RoundRecord
     public DateOnly? ShowsFrom { get; set; }
 }
 
+public sealed class SitOutRecord
+{
+    public Guid GroupId { get; set; }
+    public Guid RoundId { get; set; }
+    public string Note { get; set; } = "";
+    public Guid? InsteadId { get; set; }
+    public DateTime MarkedAt { get; set; }
+}
+
 public sealed class SessionRecord
 {
     public Guid GroupId { get; set; }

@@ -73,6 +73,15 @@ public interface IMinistryLeadingService
     [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
     ValueTask<Done> DeleteRoundAsync(RoundRef request, CallContext context = default);
 
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<Done> SitOutAsync(SitOutSave request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<LifeGroupsCalendar> LifeGroupsCalendarAsync(LifeGroupsRequest request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<LifeGroupsCalendar> ShowLifeGroupsInAsync(LifeGroupsCalendarChoice request, CallContext context = default);
+
     [Requires(MinistriesPermissions.PostNode)]
     ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default);
 }

@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
@@ -23,6 +25,7 @@ internal sealed class MinistryLeadingService(
     IFamilies families,
     IPeopleIndex people,
     IMinistryCalendars calendars,
+    IKeptRegularEvents kept,
     INotifications notifications,
     TimeProvider time) : IMinistryLeadingService
 {
@@ -383,6 +386,7 @@ internal sealed class MinistryLeadingService(
         round.ShowsFrom = wanted.ShowsFrom.Length > 0 ? DateOf(wanted.ShowsFrom) : null;
         changes.Touch(round.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await KeepCalendarInStepAsync(cancellationToken);
         return MinistryViews.Round(round);
     }
 
@@ -392,11 +396,82 @@ internal sealed class MinistryLeadingService(
         Guid id = ParseId(request.Id);
         if (await db.Ministries.AnyAsync(group => group.RoundId == id, cancellationToken))
             throw Refused("Delete these groups, or move them, first.");
+        await db.SitOuts.Where(sitOut => sitOut.RoundId == id).ExecuteDeleteAsync(cancellationToken);
         await db.Rounds.Where(round => round.Id == id).ExecuteDeleteAsync(cancellationToken);
         changes.Touch(id);
         await db.SaveChangesAsync(cancellationToken);
+        await KeepCalendarInStepAsync(cancellationToken);
         return new Done();
     }
+
+    public async ValueTask<Done> SitOutAsync(SitOutSave request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryRecord group = Existing(tree, request.SittingOut.GroupId);
+        if (!group.ShowsInLifeGroups || group.RoundId is not null)
+            throw Refused($"{group.Name} isn't an all-year Life Group.");
+        Guid roundId = ParseId(request.SittingOut.RoundId);
+        RoundRecord round = await db.Rounds.AsNoTracking().SingleOrDefaultAsync(found => found.Id == roundId, cancellationToken)
+                            ?? throw new RpcException(new Status(StatusCode.NotFound, "Those groups' dates were deleted."));
+        string note = request.SittingOut.Note.Trim();
+        if (note.Length > MinistryRules.LongestLine)
+            throw Invalid($"Keep the note to {MinistryRules.LongestLine} characters.");
+        Guid? instead = request.SittingOut.InsteadId.Length > 0 ? Existing(tree, request.SittingOut.InsteadId).Id : null;
+        if (instead == group.Id)
+            throw Invalid("Choose another group for them to join.");
+
+        SitOutRecord? sitOut = await db.SitOuts.SingleOrDefaultAsync(found => found.GroupId == group.Id && found.RoundId == roundId, cancellationToken);
+        bool newlyOff = request.Off && sitOut is null;
+        if (!request.Off)
+        {
+            if (sitOut is not null)
+                db.SitOuts.Remove(sitOut);
+        }
+        else
+        {
+            sitOut ??= db.SitOuts.Add(new SitOutRecord { GroupId = group.Id, RoundId = roundId, MarkedAt = Now }).Entity;
+            (sitOut.Note, sitOut.InsteadId) = (note, instead);
+        }
+        changes.Touch(group.Id);
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (newlyOff && round.Sundays.Count > 0 && round.Sundays.Max() >= ChurchTime.Today(time))
+            await notifications.RaiseAsync(new Notification(
+                MinistriesNotifications.Important, NotificationAudience.Holding(MinistriesPermissions.AttendeesView, group.Id.ToString()),
+                $"{group.Name} isn't on {Span(round)}", note.Length > 0 ? note : "The group is back after these Sundays.",
+                $"/ministries/{group.Id}", Subject: $"ministries/sit-out/{group.Id:N}/{roundId:N}", ScopeId: group.Id.ToString()), cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<LifeGroupsCalendar> LifeGroupsCalendarAsync(LifeGroupsRequest request, CallContext context = default) =>
+        await CalendarChoiceAsync(UserOf(context), context.CancellationToken);
+
+    public async ValueTask<LifeGroupsCalendar> ShowLifeGroupsInAsync(LifeGroupsCalendarChoice request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        ClaimsPrincipal user = UserOf(context);
+        if (request.CalendarId.Length == 0)
+            await kept.RemoveAsync(LifeGroupSundays.Keeper, cancellationToken);
+        else
+            await kept.PutInAsync(user, ParseId(request.CalendarId), LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+        return await CalendarChoiceAsync(user, cancellationToken);
+    }
+
+    private async Task<LifeGroupsCalendar> CalendarChoiceAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        KeptCalendar? where = await kept.WhereAsync(LifeGroupSundays.Keeper, cancellationToken);
+        return new LifeGroupsCalendar
+        {
+            CalendarId = where?.Id.ToString() ?? "", CalendarName = where?.Name ?? "",
+            Choices = (await kept.ChoicesAsync(user, cancellationToken)).Select(choice => new Crumb { Id = choice.Id.ToString(), Name = choice.Name }).ToList(),
+        };
+    }
+
+    private async Task KeepCalendarInStepAsync(CancellationToken cancellationToken) =>
+        await kept.KeepInStepAsync(LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+
+    private static ClaimsPrincipal UserOf(CallContext context) => context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
 
     public async ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default)
     {
@@ -508,6 +583,11 @@ internal sealed class MinistryLeadingService(
     };
 
     private static int RoleOrder(string role) => role switch { Roles.Leader => 0, Roles.Admin => 1, _ => 2 };
+
+    private static string Span(RoundRecord round) =>
+        round.Sundays.Min() == round.Sundays.Max()
+            ? $"on {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)}"
+            : $"from {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)} to {round.Sundays.Max().ToString("d MMMM", CultureInfo.InvariantCulture)}";
 
     private static string Shortened(string body) => body.Length <= 140 ? body : body[..137].TrimEnd() + "…";
 
