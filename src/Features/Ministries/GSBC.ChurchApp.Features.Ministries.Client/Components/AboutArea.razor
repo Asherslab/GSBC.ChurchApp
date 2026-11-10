@@ -1,4 +1,4 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
 @inject TimeProvider Clock
 
 @if (Page.SittingOut.FirstOrDefault() is { } off)
@@ -127,7 +127,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

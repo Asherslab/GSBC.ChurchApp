@@ -86,6 +86,8 @@ public static class EventsApiExtensions
         services.AddFeed(new FeedDefinition(EventsFeeds.Editing, FeedAudience.Holding(EventsPermissions.Edit)));
         services.AddFeed(new FeedDefinition(EventsFeeds.Digest, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(EventsFeeds.PrivateDigest, FeedAudience.EachRow));
+        services.AddFeed(new FeedDefinition(EventsFeeds.Mine, FeedAudience.OwnRecords));
+        services.AddHostedService<YourCalendarsUpkeep>();
         return services;
     }
 

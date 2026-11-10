@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Access.Contracts;
 using ProtoBuf.Grpc.Client;
+using GSBC.ChurchApp.Platform.Client.Online;
 
 namespace GSBC.ChurchApp.Features.Access.Client;
 
+[AdminOnly]
 public sealed class AccessClient(ChannelBase channel)
 {
     private readonly IAccessService _access = channel.CreateGrpcService<IAccessService>();

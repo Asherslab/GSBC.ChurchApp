@@ -21,7 +21,7 @@ public sealed partial class LiveDataRules
         Assert.Empty(violations);
     }
 
-    [GeneratedRegex(@"@inject (I?[A-Za-z]+Client|ILocalFeeds|IOutbox|IPeopleDirectory)\b")]
+    [GeneratedRegex(@"@inject (I?[A-Za-z]+Client|I[A-Za-z]+Reads|ILocalFeeds|IOutbox|IPeopleDirectory)\b")]
     private static partial Regex InjectsData();
 
     [GeneratedRegex(@"\bOn(Initialized|ParametersSet)(Async)?\b")]

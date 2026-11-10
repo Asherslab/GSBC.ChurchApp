@@ -67,11 +67,16 @@ internal sealed class PeopleService(
         if (forSomeoneElse)
             await RequireAsync(context, PeoplePermissions.FamiliesManageNode, null, cancellationToken);
 
+        Guid? chosenId = request.Id.Length > 0 ? ParseId(request.Id) : null;
+        if (chosenId is { } already && await db.People.AsNoTracking().AnyAsync(person => person.UserId == already, cancellationToken))
+            return (await views.FamilyAsync(parentId, Shown.Hidden, cancellationToken)).Children.Single(child => child.Id == already.ToString());
         DateOnly born = ValidBirthDate(WireDates.FromWire(request.BirthDate));
         if (!Ages.IsMinor(born, Today))
             throw Invalid("Add children under 18 here. An adult signs up with their own email.");
 
-        Guid childId = await accounts.AddWithoutSignInAsync(request.Name, me, cancellationToken);
+        Guid childId = chosenId is { } id
+            ? await accounts.AddWithoutSignInAsync(id, request.Name, me, cancellationToken)
+            : await accounts.AddWithoutSignInAsync(request.Name, me, cancellationToken);
         db.People.Add(new PersonRecord { UserId = childId, BirthDate = born, UpdatedAt = Now });
         await db.SaveChangesAsync(cancellationToken);
         await families.LinkAsync(parentId, childId, forSomeoneElse ? LinkHow.Office : LinkHow.Added, me, cancellationToken);
@@ -101,7 +106,7 @@ internal sealed class PeopleService(
                 throw Refused($"There are already {MostWaitingAsks} asks waiting. Take one back first.");
             db.Asks.Add(new LinkAskRecord { Id = Guid.CreateVersion7(), ChildId = childId, ParentEmail = email, AskedBy = me, AskedAt = Now });
         }
-        await families.TouchAsync([childId, me], cancellationToken: cancellationToken);
+        await families.TouchAsync([childId, me, .. parentId is { } asked ? [asked] : Array.Empty<Guid>()], cancellationToken: cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
 
         if (parentId is { } parent)
@@ -135,10 +140,11 @@ internal sealed class PeopleService(
             throw Refused("Only whoever asked, or the church office, can take this back.");
 
         db.Asks.Remove(ask);
-        await families.TouchAsync([ask.ChildId, ask.AskedBy], cancellationToken: cancellationToken);
+        Guid? parent = await accounts.FindByEmailAsync(ask.ParentEmail, cancellationToken);
+        await families.TouchAsync([ask.ChildId, ask.AskedBy, .. parent is { } asked ? [asked] : Array.Empty<Guid>()], cancellationToken: cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-        if (await accounts.FindByEmailAsync(ask.ParentEmail, cancellationToken) is { } parent)
-            await notifications.SettleAsync(AskSubject(ask.ChildId, parent), cancellationToken);
+        if (parent is { } parentId)
+            await notifications.SettleAsync(AskSubject(ask.ChildId, parentId), cancellationToken);
         return new Done();
     }
 

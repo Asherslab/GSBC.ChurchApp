@@ -1,5 +1,6 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject UnsavedChanges Unsaved
 
 <UnsavedGuard Changed="() => Changed" What="the sign-in code" />
@@ -67,7 +68,7 @@ else
         _problem = null;
         try
         {
-            _made = await Accounts.CreateReviewCodeAsync(UserId, _label.Trim(), int.Parse(_days));
+            _made = await Office.CreateReviewCodeAsync(UserId, _label.Trim(), int.Parse(_days));
             _email = DemoAccounts.First(account => account.UserId == UserId).Email;
             await OnMade.InvokeAsync();
         }

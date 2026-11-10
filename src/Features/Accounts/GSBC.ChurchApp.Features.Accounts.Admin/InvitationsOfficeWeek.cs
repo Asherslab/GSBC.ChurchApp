@@ -5,7 +5,7 @@ using GSBC.ChurchApp.Platform.Client.Modules;
 
 namespace GSBC.ChurchApp.Features.Accounts.Admin;
 
-internal sealed class InvitationsOfficeWeek(AccountsClient accounts, IAccess access, TimeProvider clock) : IOfficeWeekSource
+internal sealed class InvitationsOfficeWeek(AccountsOfficeClient Office, IAccess access, TimeProvider clock) : IOfficeWeekSource
 {
     private static readonly TimeSpan QuietFor = TimeSpan.FromDays(2);
 
@@ -17,7 +17,7 @@ internal sealed class InvitationsOfficeWeek(AccountsClient accounts, IAccess acc
             return OfficeWeek.Nothing;
 
         DateTime now = clock.GetUtcNow().UtcDateTime;
-        List<OfficeTask> tasks = (await accounts.ListInvitationsAsync()).Invitations
+        List<OfficeTask> tasks = (await Office.ListInvitationsAsync()).Invitations
             .Where(invitation => !invitation.Held)
             .Where(invitation => now - invitation.InvitedAt >= QuietFor || invitation.ExpiresAt <= now)
             .Select(invitation => invitation.ExpiresAt <= now

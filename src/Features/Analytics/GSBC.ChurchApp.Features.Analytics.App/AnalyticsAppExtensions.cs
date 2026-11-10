@@ -11,6 +11,6 @@ public static class AnalyticsAppExtensions
     {
         modules.Add(new ClientModule("Analytics", typeof(AnalyticsAppExtensions).Assembly,
             [new NavEntry("Help improve the app", "help-improve", "heart")]));
-        return services.AddAnalyticsClient(ReportOrigin.App).AddUsageCounting();
+        return services.AddAnalyticsClient(ReportOrigin.App).AddUsageCounting().AddSingleton<IDiagnosticsSending, QueuedDiagnostics>();
     }
 }

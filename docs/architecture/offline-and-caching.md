@@ -13,7 +13,22 @@ builds on SPEC §5.
   is either up to date or knows exactly where it stopped.
 - **Screens read the store, never the network.** A screen renders what is stored at once and
   re-renders when Sync says its feed changed. There is no fetch-then-show path to go stale or fail.
-- **Writes go to the outbox** and show as pending until the server confirms them (SPEC §5).
+  **This is a hard rule** (owner, 2026-11-10, after a Life Group opened as a blank "can't load" page while the
+  server restarted; see AGENTS.md, *HARD RULE: the app reads data only through Sync*). Code that ships in the app
+  makes no direct call to the server except an owner-approved exception listed there: no gRPC proxy, no call
+  invoker, no raw native call. Sync and the outbox worker are the only transport. `Architecture.Tests`
+  (`SyncOnlyRules`) enforces it. Prefetching is just Sync: everything a person may see is synced in the background.
+- **Shared screens, two sources.** A `*.Client` component the admin panel also hosts depends on an interface (for
+  example `IMinistryReads` and `IMinistryWrites`): the phone fills it from the store and the outbox
+  (`StoredMinistries`, `QueuedMinistryWrites`), the admin panel online (`OnlineMinistries`, in the feature's Admin
+  project). `IWrites` (Platform.Client) does the same for single writes: queued on the phone, direct in the admin
+  panel. Client code only the admin panel uses is `[AdminOnly]`, and app code may never reach it.
+- **Views built from feeds match the server's.** Where a page combines several feeds with the viewer's permissions
+  (a ministry's page, the directory, Life Groups), the phone builds it from its store and its own grants, and a test
+  checks the result equals what the server's online method returns for the same person.
+- **Writes go to the outbox** and show as pending until the server confirms them (SPEC §5;
+  `WaitingToSend`, Platform.Ui, shows a screen's own waiting and failed changes with *Try again* and *Discard*).
+  Anything a write creates gets its id on the phone, and the server treats a repeated id as already done.
   **Quiet entries** (built 2026-11-03 for [analytics](../features/analytics.md)) are the exception: usage
   and error reports never show in Storage, never raise "couldn't send", and are deleted silently when
   they give up (three days). `IOutbox.EnqueueQuietlyAsync`, and `DiscardQuietAsync` when someone turns
@@ -74,7 +89,9 @@ on the phone, and each save carries what the editor started from so the server c
   news, your own prayer requests, your permissions) are stored for the signed-in user only and
   cleared on sign-out.
 - When someone's permissions change, the affected feeds reset for them, so nothing they can no
-  longer see stays on the phone.
+  longer see stays on the phone. A feed whose rows each carry their own audience (`FeedAudience.EachRow`) resets on
+  any change to the person's grants (2026-11-10; it used to watch only role membership, so leaving a ministry team
+  left its team posts on the phone).
 
 ## Configuration is data, so it syncs too
 

@@ -32,6 +32,7 @@ public static class TransportServiceCollectionExtensions
             .AddSingleton<IFeedSignals>(provider => provider.GetRequiredService<NativeLocalFeeds>())
             .AddSingleton<NativeOutbox>()
             .AddSingleton<IOutbox>(provider => provider.GetRequiredService<NativeOutbox>())
+            .AddSingleton<IWrites, QueuedWrites>()
             .AddSingleton<IMediaFiles, NativeMediaFiles>()
             .AddSingleton<IDeviceSession, NativeDeviceSession>()
             .AddSingleton<ILocalPreferences, NativeLocalPreferences>()

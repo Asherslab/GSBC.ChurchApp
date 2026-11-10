@@ -5,9 +5,11 @@ using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Sessions;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Platform.Client.Online;
 
 namespace GSBC.ChurchApp.Features.Access.Client;
 
+[AdminOnly]
 internal sealed class AccessLoader(AccessClient access, GrantedAccess granted, SessionSignal signal, IFeedSignals feeds) : IClientStartupTask
 {
     public Task RunAsync()
@@ -26,19 +28,11 @@ internal sealed class AccessLoader(AccessClient access, GrantedAccess granted, S
     {
         try
         {
-            granted.Replace(ToGrantSet(await access.GetMineAsync()), signedIn: true);
+            granted.Replace(GrantLists.ToGrantSet(await access.GetMineAsync()), signedIn: true);
         }
         catch (RpcException)
         {
             granted.Replace(GrantSet.Empty, signedIn: false);
         }
     }
-
-    public static GrantSet ToGrantSet(GrantList list) =>
-        new(list.Grants
-            .Select(grant => PermissionPattern.TryParse(grant.Pattern, out PermissionPattern? pattern) && ScopeKind.TryParse(grant.ScopeKind, out ScopeKind kind)
-                ? new Grant(pattern, kind == ScopeKind.Global ? Scope.Global : Scope.Of(kind, grant.ObjectId ?? ""))
-                : (Grant?)null)
-            .OfType<Grant>()
-            .ToList());
 }

@@ -1,10 +1,10 @@
 @page "/ministries"
 @page "/ministries/{Id}"
 @page "/ministries/{Id}/{Area}"
-@inject MinistriesClient Ministries
+@inject OnlineMinistries Ministries
 @inject NavigationManager Navigation
 
-<LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the ministries right now">
+<LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="Ministries.Feeds" FailedTitle="Can't load the ministries right now">
     <TitleBand Title="Ministries" Lead="@Lead(context.Value)">
         <Actions>
             <Button Variant="ButtonVariant.Quiet" Icon="archive" OnClick="() => _archivedOpen = true">Archived</Button>
@@ -49,7 +49,7 @@
     <div>
         @if (Id is { Length: > 0 } id)
         {
-            <LiveData @key="id" @ref="_live" TValue="MinistryPage" Context="live" Load="() => Ministries.MinistryAsync(id)" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load this ministry right now">
+            <LiveData @key="id" @ref="_live" TValue="MinistryPage" Context="live" Load="() => Ministries.MinistryAsync(id)" Feeds="Ministries.Feeds" FailedTitle="Can't load this ministry right now">
                 @{
                     MinistryPage shown = live.Value;
                     string area = MinistryAreas.Known(shown, Area ?? MinistriesPlaces.About);

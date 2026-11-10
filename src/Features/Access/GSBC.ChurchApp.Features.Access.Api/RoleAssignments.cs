@@ -53,6 +53,16 @@ internal sealed class RoleAssignments(AccessDbContext db, AccessChanges changes,
             .ToListAsync(cancellationToken);
     }
 
+    public async ValueTask<IReadOnlyList<RoleHolding>> HoldingsAsync(string roleKey, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken)
+    {
+        RoleRecord role = await SystemRoleAsync(roleKey, cancellationToken);
+        return await db.ActiveAssignments(Now)
+            .Where(assignment => assignment.RoleId == role.Id && assignment.ScopeObjectId != null && objectIds.Contains(assignment.ScopeObjectId))
+            .OrderBy(assignment => assignment.CreatedAt)
+            .Select(assignment => new RoleHolding(assignment.UserId, assignment.ScopeObjectId!))
+            .ToListAsync(cancellationToken);
+    }
+
     public async ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => await changes.AnnounceAsync(cancellationToken);
 
     public async ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken)

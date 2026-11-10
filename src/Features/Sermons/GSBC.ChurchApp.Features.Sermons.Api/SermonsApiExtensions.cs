@@ -58,6 +58,8 @@ public static class SermonsApiExtensions
         services.AddFeed(new FeedDefinition(SermonsFeeds.Series, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Speakers, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(SermonsFeeds.Progress, FeedAudience.OwnRecords));
+        services.AddFeed(new FeedDefinition(SermonsFeeds.Follows, FeedAudience.OwnRecords));
+        services.AddHostedService<SermonFollowsUpkeep>();
         services.AddFeed(new FeedDefinition(SermonsFeeds.Admin, FeedAudience.Holding(SermonsPermissions.Edit)));
         return services;
     }

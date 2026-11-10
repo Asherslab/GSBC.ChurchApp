@@ -1,6 +1,6 @@
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
 
-<LiveData @ref="_live" @key="Id" TValue="MinistryPage" Load="() => Ministries.MinistryAsync(Id)" Feeds="[MinistriesFeeds.Ministries]" Remember="@($"ministries.page.{Id}")" FailedTitle="Can't load this ministry right now">
+<LiveData @ref="_live" @key="Id" TValue="MinistryPage" Load="() => Reads.MinistryAsync(Id)" Feeds="Reads.Feeds" Remember="@($"ministries.page.{Id}")" FailedTitle="Can't load this ministry right now">
     <ChildContent>
         @{
             MinistryPage page = context.Value;
@@ -23,10 +23,21 @@
             {
                 <Section First="true"><Notice Text="@_joined" /></Section>
             }
+            <WaitingToSend MethodsUnder="@MinistryMethods.Under" Describe="MinistryMethods.Describe" First="@(_joined is null)" />
             <MinistryArea Page="page" Area="@area" Href="id => MinistriesPlaces.Of(id)" OnChanged="ReloadAsync" />
         </Page>
         <JoinSheet @key="@($"{Id}{_joining}")" Open="_joining" OpenChanged="open => _joining = open" Page="page" OnJoined="JoinedAsync" />
     </ChildContent>
+    <Failed>
+        <Page Title="Ministry" BackHref="@MinistriesPlaces.Directory" BackLabel="Ministries">
+            <Masthead Title="Ministry" />
+            <Section First="true">
+                <EmptyState Icon="users" Title="This ministry isn't on your phone"
+                            Body="@(context is MinistryNotHereException ? "It may have been moved or deleted, or it's still on its way. It shows here as soon as your phone has it." : "It shows here as soon as your phone has it.")" />
+            </Section>
+            <WaitingToSend MethodsUnder="@MinistryMethods.Under" Describe="MinistryMethods.Describe" />
+        </Page>
+    </Failed>
     <Loading>
         <Page Title="Ministry" BackHref="@MinistriesPlaces.Directory" BackLabel="Ministries">
             <Masthead Title=" " />

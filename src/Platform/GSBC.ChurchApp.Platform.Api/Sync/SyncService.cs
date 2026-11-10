@@ -18,7 +18,6 @@ public sealed class SyncService(
     private const int PageSize = 500;
     private static readonly TimeSpan HeartbeatInterval = TimeSpan.FromSeconds(30);
     private static readonly TimeSpan AudienceMarkResolution = TimeSpan.FromDays(1);
-    private static readonly string AnyRoleMembership = RoleMembership.Prefix + "any";
 
     public async ValueTask<PullReply> PullAsync(PullRequest request, CallContext context = default)
     {
@@ -191,7 +190,7 @@ public sealed class SyncService(
         GrantSet grants = await access.GrantsForAsync(userId, cancellationToken);
         string fingerprint = feed.Audience is FeedAudience.PermissionAudience audience
             ? Fingerprint(grants, grant => grant.Pattern.Matches(audience.Permission.Node))
-            : Fingerprint(grants, MayDecideRoleMembership);
+            : Fingerprint(grants, _ => true);
         AudienceMark? mark = await db.AudienceMarks.FindAsync([session, feed.Name], cancellationToken);
         bool changed = mark is not null && mark.Fingerprint != fingerprint;
         DateTime now = time.GetUtcNow().UtcDateTime;
@@ -205,9 +204,6 @@ public sealed class SyncService(
         await db.SaveChangesAsync(cancellationToken);
         return changed;
     }
-
-    private static bool MayDecideRoleMembership(Grant grant) =>
-        grant.Pattern.Matches(AnyRoleMembership) || grant.Pattern.Text.TrimStart('-').StartsWith(RoleMembership.Prefix, StringComparison.Ordinal);
 
     private static string Fingerprint(GrantSet grants, Func<Grant, bool> counts) =>
         Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', grants.Grants

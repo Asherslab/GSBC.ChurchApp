@@ -1,4 +1,4 @@
-@inject MinistriesClient Ministries
+@inject OnlineMinistries Ministries
 @inject TimeProvider Clock
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(LifeGroupsOnly ? "Archived Life Groups" : "Archived ministries")"
@@ -6,7 +6,7 @@
     <ChildContent>
         @if (Open)
         {
-            <LiveData @ref="_live" TValue="ArchivedList" Load="Ministries.ArchivedAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load what's archived right now">
+            <LiveData @ref="_live" TValue="ArchivedList" Load="Ministries.ArchivedAsync" Feeds="Ministries.Feeds" FailedTitle="Can't load what's archived right now">
                 @{
                     List<ArchivedLine> shown = context.Value.Ministries.Where(line => !LifeGroupsOnly || line.ShowsInLifeGroups).ToList();
                 }
@@ -58,7 +58,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

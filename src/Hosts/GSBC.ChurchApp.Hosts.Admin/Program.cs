@@ -11,7 +11,10 @@ using GSBC.ChurchApp.Features.Sermons.Admin;
 using GSBC.ChurchApp.Features.Sermons.Import.Admin;
 using GSBC.ChurchApp.Hosts.Admin;
 using GSBC.ChurchApp.Platform.Client;
+using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.Online;
+using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Transport;
 using GSBC.ChurchApp.Platform.Ui;
 using Microsoft.AspNetCore.Components.Web;
@@ -30,6 +33,8 @@ builder.Services
     .AddPlatformClient()
     .AddPlatformUi()
     .AddGrpcWebTransport(new Uri(builder.HostEnvironment.BaseAddress))
+    .AddSingleton<DestinationSearching>()
+    .AddSingleton<IWrites, DirectWrites>()
     .AddConfigurationAdmin(modules)
     .AddMediaAdmin(modules)
     .AddNotificationsAdmin(modules)

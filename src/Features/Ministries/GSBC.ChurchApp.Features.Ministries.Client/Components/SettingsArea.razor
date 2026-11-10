@@ -1,4 +1,5 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 @inject NavigationManager Navigation
 
 <UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} settings")" Save="SaveBeforeLeavingAsync" />
@@ -161,7 +162,7 @@
         return _problem is null;
     }
 
-    private Task PreviewAsync() => RunAsync(async () => _preview = await Ministries.DeletionAsync(Page.Ministry.Id));
+    private Task PreviewAsync() => RunAsync(async () => _preview = await Lookups.DeletionAsync(Page.Ministry.Id));
 
     private string ArchiveWords =>
         $"{Page.Ministry.Name}{(Page.SubMinistries.Count > 0 ? $" and the {MinistryWords.Ministries(Page.SubMinistries.Count)} under it" : "")} leave every list and the app, and nothing more can be posted. Its people, news, files and calendars are kept, and staff can restore it from Archived.";
@@ -197,7 +198,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {
