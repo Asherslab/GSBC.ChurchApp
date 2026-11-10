@@ -7,13 +7,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Access.Api;
 
-internal sealed class GrantsFeed(AccessDbContext db, IScopeHierarchy hierarchy, TimeProvider time)
+internal sealed class GrantsFeed(
+    AccessDbContext db, IScopeHierarchy hierarchy, IEnumerable<IScopeAttachments> attachments, HeldThroughRules throughRules, TimeProvider time)
 {
     public async Task PublishAsync(CancellationToken cancellationToken)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         List<Assignment> active = await db.ActiveAssignments(now).ToListAsync(cancellationToken);
-        Dictionary<Guid, RoleRecord> roles = await db.LoadRolesWithIncludesAsync(active.Select(assignment => assignment.RoleId), cancellationToken);
+        IReadOnlyList<HeldThroughRule> rules = await throughRules.ResolveAsync(db, cancellationToken);
+        Dictionary<Guid, RoleRecord> roles = await db.LoadRolesWithIncludesAsync(
+            active.Select(assignment => assignment.RoleId).Concat(rules.Select(rule => rule.GivesRoleId)), cancellationToken);
+        ILookup<Guid, (Guid RoleId, string? ObjectId)> heldBy = active.ToLookup(assignment => assignment.UserId, assignment => (assignment.RoleId, assignment.ScopeObjectId));
         Dictionary<string, FeedChangeRecord> published = (await db.FeedChanges.AsNoTracking()
                 .Where(change => change.Feed == AccessFeeds.Grants)
                 .GroupBy(change => change.RecordId)
@@ -24,8 +28,9 @@ internal sealed class GrantsFeed(AccessDbContext db, IScopeHierarchy hierarchy, 
 
         foreach (string userId in byUser.Select(group => group.Key).Union(published.Keys))
         {
-            GrantSet grants = await RoleGrants.CompileAsync(
-                byUser[userId].Select(assignment => (assignment.RoleId, assignment.ScopeObjectId)), roles, hierarchy, cancellationToken);
+            List<(Guid RoleId, string? ObjectId)> mine = byUser[userId].Select(assignment => (assignment.RoleId, assignment.ScopeObjectId)).ToList();
+            mine.AddRange(RoleGrants.HeldThrough(mine, person => heldBy[person], rules));
+            GrantSet grants = await RoleGrants.CompileAsync(mine, roles, hierarchy, cancellationToken, attachments);
             byte[] payload = Encode(Messages(grants));
             FeedChangeRecord? before = published.GetValueOrDefault(userId);
             if (before is not null && before.Payload.AsSpan().SequenceEqual(payload))

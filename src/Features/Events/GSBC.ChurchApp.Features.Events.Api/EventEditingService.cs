@@ -428,6 +428,8 @@ internal sealed class EventEditingService(
         Audience audience = CalendarAudiences.Of(calendar.Audience);
         if (audience.IsForRoles)
             return audience.RoleIds.Select(role => NotificationAudience.Holding(Platform.Permissions.RoleMembership.Of(role)));
+        if (audience is { At: { } group, Node: { } node })
+            return [NotificationAudience.Holding(new Platform.Permissions.Permission(node, group.Kind, node), group.ObjectId)];
         if (audience != Audience.Everyone)
             return [NotificationAudience.SignedIn];
         return [calendar.ShownOnNewPhones ? NotificationAudience.Everyone : NotificationAudience.Holding(EventsPermissions.Have, calendar.Id.ToString())];

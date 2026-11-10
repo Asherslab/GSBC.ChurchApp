@@ -46,7 +46,7 @@ internal sealed class CalendarFiles(EventsDbContext db, CalendarLinkSecrets link
         if (holder.UserId is not { } person)
             return Viewer.Anonymous;
         GrantSet grants = await access.GrantsForAsync(person, cancellationToken);
-        return new Viewer(true, node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
+        return Viewer.Of(grants);
     }
 
     private CalendarFile File(EventsBook book, string name, IReadOnlyCollection<CalendarRecord> calendars, Viewer viewer)
