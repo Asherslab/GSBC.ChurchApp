@@ -14,6 +14,7 @@ public static class MinistryParts
     public const string News = "news";
     public const string Calendar = "calendar";
     public const string Files = "files";
+    public const string Rosters = "rosters";
 
     public static readonly IReadOnlyList<MinistryPart> All =
     [
@@ -24,6 +25,7 @@ public static class MinistryParts
             new PartFromBelow("Show the calendars of the ministries under it",
                 "Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry.")),
         new(Files, "Files", "Documents and links for its people"),
+        new(Rosters, "Roster", "Who's on for each date, with replies, swaps and the dates people are away"),
     ];
 
     public static MinistryPart Of(string key) => All.Single(part => part.Key == key);

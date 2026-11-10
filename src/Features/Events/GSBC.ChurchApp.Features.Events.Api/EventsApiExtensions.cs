@@ -29,6 +29,7 @@ public static class EventsApiExtensions
         services.AddScoped<IMediaHolder>(provider => provider.GetRequiredService<EventPictures>());
         services.AddScoped<IScopeObjects, CalendarScopeObjects>();
         services.AddScoped<IMinistryCalendars, MinistryCalendars>();
+        services.AddScoped<IRosterableEvents, RosterableEvents>();
         services.AddScoped<IScopeAttachments, MinistryCalendarAttachments>();
         services.AddScoped<IScopeObjects, RegularEventScopeObjects>();
         services.AddHostedService<EventsSchedule>();
