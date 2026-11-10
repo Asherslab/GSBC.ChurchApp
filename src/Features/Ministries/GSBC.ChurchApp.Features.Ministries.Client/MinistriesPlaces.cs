@@ -19,5 +19,4 @@ public static class MinistriesPlaces
     public static string Of(string ministryId, string area = About) =>
         area.Length == 0 ? MinistriesDestinations.Ministry.PathOf(ministryId) : $"{MinistriesDestinations.Ministry.PathOf(ministryId)}/{area}";
 
-    public static string CalendarPage(CalendarLine calendar) => $"/calendar/{Uri.EscapeDataString(calendar.Slug.Length > 0 ? calendar.Slug : calendar.Id)}";
 }

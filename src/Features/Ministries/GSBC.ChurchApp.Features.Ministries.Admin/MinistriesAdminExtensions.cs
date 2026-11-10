@@ -15,6 +15,6 @@ public static class MinistriesAdminExtensions
              new NavEntry("Life Groups", "life-groups", "book-open", MinistriesPermissions.Settings, Area: NavAreas.People,
                 Summary: "The Sunday classes: what's on now, what's next, and the all-year groups")],
             MinistriesClientExtensions.Feeds, []));
-        return services.AddMinistriesClient();
+        return services.AddMinistriesClient().AddSingleton(MinistryLinks.Admin);
     }
 }

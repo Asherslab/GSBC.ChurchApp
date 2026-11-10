@@ -8,6 +8,7 @@
     <ProjectReference Include="..\..\..\src\Hosts\GSBC.ChurchApp.Hosts.Gateway\GSBC.ChurchApp.Hosts.Gateway.csproj" Aliases="GatewayHost" />
     <ProjectReference Include="..\..\..\src\Hosts\GSBC.ChurchApp.Hosts.Website\GSBC.ChurchApp.Hosts.Website.csproj" Aliases="WebsiteHost" />
     <ProjectReference Include="..\..\..\src\Platform\GSBC.ChurchApp.Platform.Ui\GSBC.ChurchApp.Platform.Ui.csproj" />
+    <ProjectReference Include="..\..\..\src\Features\Ministries\GSBC.ChurchApp.Features.Ministries.Client\GSBC.ChurchApp.Features.Ministries.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />
