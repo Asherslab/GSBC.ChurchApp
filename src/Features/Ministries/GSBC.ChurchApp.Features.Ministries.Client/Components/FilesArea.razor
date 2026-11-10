@@ -61,7 +61,7 @@
         if (file.Kind != FileKinds.Document)
             return;
         _problem = null;
-        string? link = null;
+        string? link;
         try
         {
             link = Links is null ? null : await Links.LinkAsync(file.MediaId, "");
