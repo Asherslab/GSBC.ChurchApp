@@ -223,7 +223,7 @@ else
                 <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel">
                     <p class="event-head__when regular-head__pattern"><Icon Name="repeat" Size="IconSize.Small" />@Pattern(draft)</p>
                 </EventHead>
-                <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync"
+                <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync" Hint="@(_kept.By.Length > 0 ? "Choose a date to see it" : "Choose a date to change only that date")"
                            Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
             </div>
             @if (_kept.By.Length > 0)

@@ -21,6 +21,7 @@ public sealed class KeptRegularEventTests
         Assert.All(dates.Where(date => !date.NotOn), date => Assert.Equal(("Life Groups", "/life-groups"), (date.KeptBy, date.OpensAt)));
         Assert.Equal((9 * 60, 9 * 60 + 45), Minutes(dates[0]));
         Assert.Equal((10 * 60, 11 * 60), Minutes(dates[5]));
+        Assert.All(dates, date => Assert.Equal(OccurrenceKind.Regular, date.Kind));
         Assert.All(dates.Skip(2).Take(2), gap => Assert.Equal((true, "Between groups", EventDates.Format(Sunday(5))), (gap.NotOn, gap.NotOnReason, gap.BackOn)));
     }
 

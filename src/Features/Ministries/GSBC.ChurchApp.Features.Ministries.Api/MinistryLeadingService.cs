@@ -605,7 +605,7 @@ internal sealed class MinistryLeadingService(
 
     private static TimeOnly TimeOf(string text, TimeOnly fallback) =>
         text.Length == 0 ? fallback
-        : TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
+        : TimeOnly.TryParseExact(text, ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
         : throw Invalid("That isn't a time.");
 
     private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("That isn't here any more.");
