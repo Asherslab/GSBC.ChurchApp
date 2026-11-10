@@ -75,6 +75,24 @@ is the owner's is marked so.
 - **What's logged** (*Claude's default*): every change, with who and when (sent, followed up, answered, notes added or
   deleted, put on or taken off the wall, changed). **Reading isn't logged.**
 
+## On the phone for staff
+
+**Owner, 2026-11-11:** "Prayer wall approvals and such should be able to be done on the phone" (an exception to
+*Admin work stays in the admin panel*, AGENTS.md). In progress on `feature/prayer-on-phone`. The plan:
+
+- **To approve** in Prayer, for holders of `prayer.wall.moderate`: the requests that ask for the wall, each opening to
+  the same moderation as the admin desk (the words, starting from theirs; the name, none by default; *Under 18*; how
+  long), *Put it on the wall* or *Not for the wall*. Also: take a post down, extend it.
+- **Pastoral team extras** (*Claude's default*, only what's useful on a phone): mark followed up or answered, add a
+  note, read the request. The full inbox with filters and history stays in the admin panel. *Mark answered* needs
+  `prayer.requests.read`, as on the desk.
+- **Data:** two feeds with a permission audience (`FeedAudience.Holding`), so they're private, cleared on sign-out and
+  reset when the role changes: one for wall moderators carrying only wall-asking requests, without contact details or
+  notes; one for the pastoral team carrying everything they may read. Every action goes through the outbox, applied
+  once by its `gsbc-request-id` (as Events does with `HandledRequests`). No new direct calls; nothing in analytics.
+- **Notifications:** `prayer.wall.waiting` stops being admin-panel-only and opens *To approve*; still without the words.
+- **One moderation component** in Prayer.Client, used by the admin desk and the phone.
+
 ## Notifications
 
 | Kind | Who | When |

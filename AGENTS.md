@@ -175,6 +175,11 @@ a computer. **Before designing an admin screen for the phone, or putting one in 
 and wait for a yes** (owner, 2026-11-03). The app shows staff only what they need on their phone,
 such as previewing a draft on it.
 
+**Exception, Prayer** (owner, 2026-11-11: "Prayer wall approvals and such should be able to be done on the phone"):
+people holding *Prayer wall* or *Pastoral team* approve wall requests and do the pastoral team's everyday steps on the
+phone, through Sync and the outbox ([prayer.md](docs/features/prayer.md), *On the phone for staff*). The full inbox
+stays in the admin panel.
+
 # Who may see or do something: always the permission system
 
 **Every "who can see or do this" goes through Access's permissions** ([permissions.md](docs/architecture/permissions.md)):
