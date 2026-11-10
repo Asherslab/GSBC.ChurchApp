@@ -1,14 +1,15 @@
 @inject PeopleClient People
 
+<UnsavedGuard Changed="() => _born.Length > 0" What="your birth date" Save="SaveBeforeLeavingAsync" />
+
 <Card Tone="CardTone.Raised" Title="How old are you?" Class="people-ask-age">
     <p>The church keeps young people safe in the app, so it asks everyone once. @PeopleWords.WhoSees</p>
     <div class="ui-after">
         <TextField Label="Your birth date" Type="date" Value="@_born" ValueChanged="value => _born = value" Max="@($"{ChurchTime.Today(Clock):yyyy-MM-dd}")" AutoComplete="bday" Problem="@_problem" />
     </div>
-    <div class="ui-actions ui-after">
+    <SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveAsync(adult: false)" Blocked="@(PeopleWords.ParseDay(_born) is null ? "Enter your birth date to save it." : null)">
         <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(adult: true)">I'm 18 or older</Button>
-        <Button Busy="_busy" Disabled="@(PeopleWords.ParseDay(_born) is null)" OnClick="() => SaveAsync(adult: false)">Save</Button>
-    </div>
+    </SaveBar>
 </Card>
 
 @code {
@@ -19,6 +20,14 @@
     private string _born = "";
     private string? _problem;
     private bool _busy;
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (PeopleWords.ParseDay(_born) is null)
+            return false;
+        await SaveAsync(adult: false);
+        return _problem is null;
+    }
+
     private async Task SaveAsync(bool adult)
     {
         _busy = true;

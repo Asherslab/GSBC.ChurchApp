@@ -1,4 +1,4 @@
-<div class="save-bar @(OnMasthead ? "save-bar--on-masthead" : "") @(Block ? "save-bar--block" : "")">
+<div class="save-bar @(OnMasthead ? "save-bar--on-masthead" : "") @(Block ? "save-bar--block" : "") @Class">
     <Button Block="Block" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="OnSave">@Label</Button>
     @if (Blocked is not null)
     {
@@ -20,6 +20,7 @@
     [Parameter] public string SavedText { get; set; } = "Saved";
     [Parameter] public bool OnMasthead { get; set; }
     [Parameter] public bool Block { get; set; }
+    [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 
     public static SaveState? For(bool changed, bool saved) => changed ? SaveState.Unsaved : saved ? SaveState.Saved : null;

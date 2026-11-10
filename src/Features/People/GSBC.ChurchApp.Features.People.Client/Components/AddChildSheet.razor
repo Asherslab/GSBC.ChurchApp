@@ -1,6 +1,8 @@
 @inject PeopleClient People
 @inject TimeProvider Clock
 
+<UnsavedGuard Changed="() => Open && (_name.Trim().Length > 0 || _born.Length > 0)" What="the child you were adding" />
+
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a child" Lead="A child in your care, under 18. They don't need an email or a phone; you can make them a sign-in code later.">
     <ChildContent>
         <TextField Label="Their name" Value="@_name" ValueChanged="value => _name = value" AutoComplete="off" />
