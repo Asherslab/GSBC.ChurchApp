@@ -15,6 +15,7 @@
     <ProjectReference Include="..\..\Features\Analytics\GSBC.ChurchApp.Features.Analytics.Admin\GSBC.ChurchApp.Features.Analytics.Admin.csproj" />
     <ProjectReference Include="..\..\Features\Notifications\GSBC.ChurchApp.Features.Notifications.Admin\GSBC.ChurchApp.Features.Notifications.Admin.csproj" />
     <ProjectReference Include="..\..\Features\Ministries\GSBC.ChurchApp.Features.Ministries.Admin\GSBC.ChurchApp.Features.Ministries.Admin.csproj" />
+    <ProjectReference Include="..\..\Features\Prayer\GSBC.ChurchApp.Features.Prayer.Admin\GSBC.ChurchApp.Features.Prayer.Admin.csproj" />
     <ProjectReference Include="..\..\Features\People\GSBC.ChurchApp.Features.People.Admin\GSBC.ChurchApp.Features.People.Admin.csproj" />
     <ProjectReference Include="..\..\Features\Sermons\GSBC.ChurchApp.Features.Sermons.Admin\GSBC.ChurchApp.Features.Sermons.Admin.csproj" />
     <ProjectReference Include="..\..\Features\Sermons\GSBC.ChurchApp.Features.Sermons.Import.Admin\GSBC.ChurchApp.Features.Sermons.Import.Admin.csproj" />

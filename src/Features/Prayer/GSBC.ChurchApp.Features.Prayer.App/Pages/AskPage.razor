@@ -1,0 +1,96 @@
+@page "/prayer/ask"
+@inject PrayerOnPhone Prayer
+@inject IAccess Access
+@inject ClientSignals Signals
+
+<UnsavedGuard Changed="() => _sentId is null && _text.Trim().Length > 0" What="your prayer request" />
+
+<Page Title="Ask for prayer" BackHref="prayer" BackLabel="Prayer">
+    <Masthead Title="Ask for prayer" Note="The pastoral team reads every request and prays for you." />
+    @if (_sentId is not null)
+    {
+        <Section First="true">
+            <EmptyState Icon="check" Title="@(_offline ? "It's on its way" : "Sent to the pastoral team")" Body="@SentBody">
+                <Button Variant="ButtonVariant.Quiet" Href="prayer">Done</Button>
+            </EmptyState>
+        </Section>
+    }
+    else if (!Prayer.CanSend)
+    {
+        <Section First="true">
+            <EmptyState Icon="prayer" Title="Ask from your phone" Body="@PrayerWords.CantSendHere" />
+        </Section>
+    }
+    else
+    {
+        <Section First="true">
+            <div class="prayer-form">
+                <TextField Label="What can we pray for?" Multiline="true" MaxLength="2000" @bind-Value="_text" AutoCapitalize="sentences" />
+                <Segmented TValue="bool" Label="Who reads it" ShowLabel="true" Stacked="true" Options="Readers" @bind-Value="_forWall" />
+                @if (_forWall)
+                {
+                    <Segmented TValue="bool" Label="On the prayer wall, show" ShowLabel="true" Options="Names" @bind-Value="_showName"
+                               Hint="@(Access.SignedIn ? "Your full name stays with the pastoral team." : "Your first name comes from the name below.")" />
+                }
+                @if (!Access.SignedIn)
+                {
+                    <TextField Label="Your name" Hint="Optional. Only the pastoral team sees it, unless you show your first name on the wall."
+                               AutoComplete="name" AutoCapitalize="words" MaxLength="60" @bind-Value="_name" />
+                }
+                <ToggleRow Title="I'd like someone to get in touch" Description="Someone from the pastoral team will call or email you." @bind-Checked="_wantsContact" />
+                @if (_wantsContact)
+                {
+                    <TextField Label="Phone or email" Type="text" AutoComplete="email" MaxLength="120" @bind-Value="_contact"
+                               Hint="@(Access.SignedIn ? "Optional. Without it, they'll use the details on your account." : null)" />
+                }
+            </div>
+        </Section>
+        <Section>
+            <SaveBar Block="true" Label="Send" Busy="_busy" Blocked="@Blocked" OnSave="SendAsync" />
+            <p class="prayer-form__private"><Icon Name="lock" Size="IconSize.Small" />@(_forWall ? "The wall shows only what the pastoral team shares." : "Only the pastoral team will read it.")</p>
+        </Section>
+    }
+</Page>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<bool>> Readers =
+    [
+        new(false, "The pastoral team", Detail: "Nobody else sees it."),
+        new(true, "The pastoral team and the prayer wall",
+            Detail: "The pastoral team reads it first and may shorten it before it's shown. It stays up for 30 days, and you can take it down."),
+    ];
+
+    private static readonly IReadOnlyList<SegmentOption<bool>> Names = [new(false, PrayerWords.NoName), new(true, "My first name")];
+
+    private string _text = "";
+    private bool _forWall;
+    private bool _showName;
+    private string _name = "";
+    private bool _wantsContact;
+    private string _contact = "";
+    private bool _busy;
+    private bool _offline;
+    private string? _sentId;
+
+    private string? Blocked => _text.Trim().Length == 0 ? "Write your request to send it." : null;
+
+    private string SentBody => _offline
+        ? "There's no signal right now, so it waits on your phone and sends by itself when you're back online. Nobody else can see it."
+        : _forWall
+            ? "Thank you for letting us pray with you. The pastoral team will read it before anything goes on the prayer wall."
+            : "Thank you for letting us pray with you.";
+
+    private async Task SendAsync()
+    {
+        _busy = true;
+        try
+        {
+            _sentId = await Prayer.SendAsync(new PrayerAsk(_text, _forWall, _showName, _name, _wantsContact, _contact));
+            _offline = !Signals.Online;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

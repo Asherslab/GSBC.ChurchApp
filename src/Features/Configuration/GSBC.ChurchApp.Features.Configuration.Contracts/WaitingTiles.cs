@@ -31,12 +31,6 @@ public static class WaitingTiles
             .. TileVariants.Pictures,
         ]);
 
-    public static readonly HubTileKind Prayer = new("hub.prayer", "Prayer",
-        "Asks for prayer requests and opens the prayer wall", "Prayer",
-        new TileDefaults("How can we pray for you?", "Share a request with the pastoral team", Tone: TileTones.LiveSoft, Icon: "prayer",
-            Link: ComingSoonDestinations.Prayer.Path),
-        sample: true, offered: false);
-
     public static readonly HubTileKind Outreach = new("hub.outreach", "Outreach day",
         "Invites people to letterbox drops, and goes live while outreach is on", "Outreach",
         new TileDefaults("Got an hour?", "Walk from your door: a loop of letterbox drops", Columns: 2, Tone: TileTones.MarkerSoft, Icon: "footprints",
@@ -62,7 +56,7 @@ public static class WaitingTiles
         new TileDefaults("Visit us", "Sundays 10:30am and 6pm · 185 Old Northern Road, Albany Creek", Columns: 2, Tone: TileTones.Raised, Icon: "map-pin",
             Link: "https://maps.apple.com/?q=185+Old+Northern+Road,+Albany+Creek+QLD+4035"), offered: false);
 
-    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Outreach, Prayer, Give, Bible, Visit];
+    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Outreach, Give, Bible, Visit];
 
     public static SurfaceSet Surfaces => new(All.Select(kind => kind.Surface).ToList());
 }
