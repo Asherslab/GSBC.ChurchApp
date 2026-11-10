@@ -14,7 +14,7 @@ public static class UiServiceCollectionExtensions
     {
         services.TryAddSingleton(TimeProvider.System);
         services.AddDestinations(ShellDestinations.All);
-        return services.AddSingleton<Shell>().AddSingleton<SidebarPins>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton<SurfaceViews>()
+        return services.AddSingleton<Shell>().AddSingleton<UnsavedChanges>().AddSingleton<SidebarPins>().AddSingleton<Appearance>().AddSingleton<LinkOpener>().AddSingleton<SurfaceViews>()
             .AddSurfaceView<LinkTileView>(HubSurfaces.LinkTile.Surface)
             .AddHubTile<WordsTileView>(HubSurfaces.PlainTile);
     }

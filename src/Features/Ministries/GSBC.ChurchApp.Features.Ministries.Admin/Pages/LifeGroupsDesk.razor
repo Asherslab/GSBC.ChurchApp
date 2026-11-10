@@ -83,6 +83,9 @@
     }
 </LiveData>
 
+<UnsavedGuard Changed="() => _setOpen && SetShape != _setWas" What="these groups' Sundays and time" />
+<UnsavedGuard Changed="() => _groupOpen && (_groupName.Length > 0 || _groupSummary.Length > 0 || _groupRoom.Length > 0)" What="the new group" />
+
 <Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and time")" Lead="People see these groups by their dates. Add the Sundays they meet; skip breaks." Wide="true">
     <ChildContent>
         <div class="filter-chips">
@@ -135,6 +138,7 @@
     private string _starts = "09:00";
     private string _ends = "09:45";
     private string _showsFrom = "";
+    private string _setWas = "";
     private bool _groupOpen;
     private string? _groupRound;
     private string _groupName = "";
@@ -175,8 +179,11 @@
         _sundays = round?.Sundays.ToList() ?? [];
         (_starts, _ends, _showsFrom) = (round?.Starts ?? "09:00", round?.Ends ?? "09:45", round?.ShowsFrom ?? "");
         DateOnly today = ChurchTime.Today(Clock);
+        _setWas = SetShape;
         _from = (_sundays.Count > 0 ? Day(_sundays.Max()).AddDays(7) : today.AddDays((7 - (int)today.DayOfWeek) % 7)).ToString("yyyy-MM-dd");
     }
+
+    private string SetShape => string.Join(" ", [.. _sundays.Order(), _starts, _ends, _showsFrom]);
 
     private void AddSundays(int how)
     {

@@ -1,10 +1,12 @@
 @inject MinistriesClient Ministries
 
+<UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this post" />
+
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "New post" : "Change the post")" Lead="@($"In {Page.Ministry.Name}.")">
     <ChildContent>
         <TextField Label="Title" @bind-Value="Draft.Title" MaxLength="120" Required="true" />
         <TextField Label="What to say" @bind-Value="Draft.Body" Multiline="true" MaxLength="4000" />
-        <Segmented TValue="string" Label="Who it's for" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+        <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
         <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
         <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
         @if (Draft.Audience == Contracts.Audiences.Everyone && Draft.Important)
@@ -31,6 +33,8 @@
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter, EditorRequired] public required Post Draft { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
+
+    private object Shape => (Draft.Title, Draft.Body, Draft.Audience, Draft.Important, Draft.AskWholeChurch);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
         Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();

@@ -1,7 +1,30 @@
 @typeparam TValue
 @inject Shell Shell
 
-<div class="segmented @(Stacked ? "segmented--stacked" : "") @Class" role="radiogroup" aria-label="@Label">
+@if (ShowLabel)
+{
+    <div class="field">
+        <span class="field__label" id="@_id">@Label</span>
+        @if (Hint is not null)
+        {
+            <span class="field__hint" id="@HintId">@Hint</span>
+        }
+        @Track
+    </div>
+}
+else
+{
+    @Track
+}
+
+@code {
+    private static int _groups;
+    private readonly string _id = $"segmented-{Interlocked.Increment(ref _groups)}";
+
+    private string HintId => $"{_id}-hint";
+
+    private RenderFragment Track => @<div class="segmented @(Stacked ? "segmented--stacked" : "") @Class" role="radiogroup" aria-label="@(ShowLabel ? null : Label)"
+     aria-labelledby="@(ShowLabel ? _id : null)" aria-describedby="@(ShowLabel && Hint is not null ? HintId : null)">
     @for (int index = 0; index < Options.Count; index++)
     {
         SegmentOption<TValue> option = Options[index];
@@ -33,15 +56,16 @@
             }
         </button>
     }
-</div>
+</div>;
 
-@code {
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<SegmentOption<TValue>> Options { get; set; }
     [Parameter] public TValue Value { get; set; } = default!;
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public bool Stacked { get; set; }
+    [Parameter] public bool ShowLabel { get; set; }
+    [Parameter] public string? Hint { get; set; }
 
     private ElementReference[] _buttons = [];
 

@@ -1,3 +1,5 @@
+@inject MinistryLinks Links
+
 <Section First="true">
     @if (Page.You.MayEditSettings)
     {
@@ -15,7 +17,7 @@
             <ListGroup>
                 @foreach (CalendarLine calendar in Page.Calendars.Where(calendar => calendar.Audience == audience))
                 {
-                    <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="See its events, or add it to your week" Icon="calendar" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.CalendarPage(calendar)">
+                    <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@Links.CalendarNote" Icon="calendar" IconTone="RowTone.Accent" Chevron="true" Href="@Links.Calendar(calendar)">
                         <TrailingContent>
                             @if (Page.You.MayEditSettings)
                             {

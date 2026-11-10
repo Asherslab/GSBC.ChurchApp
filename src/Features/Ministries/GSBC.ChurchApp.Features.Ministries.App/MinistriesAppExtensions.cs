@@ -11,6 +11,6 @@ public static class MinistriesAppExtensions
         modules.Add(new ClientModule("Ministries", typeof(MinistriesAppExtensions).Assembly,
             [new NavEntry("Ministries", "ministries", "users"), new NavEntry("Life Groups", "life-groups", "book-open")],
             MinistriesClientExtensions.Feeds, []));
-        return services.AddMinistriesClient();
+        return services.AddMinistriesClient().AddSingleton(MinistryLinks.App);
     }
 }

@@ -1,4 +1,4 @@
-<p class="save-status @(State == SaveState.Failed ? "save-status--failed" : "")" role="status" aria-live="polite">
+<p class="save-status @(State switch { SaveState.Failed => "save-status--failed", SaveState.Unsaved => "save-status--unsaved", _ => "" })" role="status" aria-live="polite">
     @switch (State)
     {
         case SaveState.Saving or SaveState.Waiting:
@@ -9,6 +9,10 @@
             <Icon Name="cloud-off" Size="IconSize.Small" />
             <span>Couldn't save. Trying again by itself.</span>
             <button type="button" class="save-status__retry" @onclick="Retry">Try now</button>
+            break;
+        case SaveState.Unsaved:
+            <Icon Name="pencil" Size="IconSize.Small" />
+            <span>@UnsavedText</span>
             break;
         default:
             <Icon Name="check" Size="IconSize.Small" />
@@ -24,6 +28,7 @@
 @code {
     [Parameter] public SaveState State { get; set; }
     [Parameter] public string SavedText { get; set; } = "Saved";
+    [Parameter] public string UnsavedText { get; set; } = "You have changes that aren't saved";
     [Parameter] public string? Detail { get; set; }
     [Parameter] public EventCallback Retry { get; set; }
 }

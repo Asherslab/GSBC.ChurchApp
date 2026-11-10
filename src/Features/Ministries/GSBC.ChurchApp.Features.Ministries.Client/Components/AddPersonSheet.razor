@@ -4,7 +4,7 @@
     <ChildContent>
         @if (Role != Roles.Attendee && Givable.Count > 1)
         {
-            <Segmented TValue="string" Label="As" Value="Chosen" ValueChanged="value => _role = value"
+            <Segmented TValue="string" Label="Add them as" ShowLabel="true" Value="Chosen" ValueChanged="value => _role = value"
                        Options="Givable.Select(role => new SegmentOption<string>(role, MinistryWords.Role(role))).ToList()" />
         }
         <PersonFinder Find="FindAsync" ActionText="@($"Add as {MinistryWords.Role(Chosen).ToLowerInvariant()}")" Busy="@_busy" AutoFocus="true" OnChosen="AddAsync" />

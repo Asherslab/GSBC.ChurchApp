@@ -1,0 +1,6 @@
+<div class="edit-scope" @oninput="Edited" @onchange="Edited" @onclick="Edited">@ChildContent</div>
+
+@code {
+    [Parameter, EditorRequired] public required EventCallback Edited { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

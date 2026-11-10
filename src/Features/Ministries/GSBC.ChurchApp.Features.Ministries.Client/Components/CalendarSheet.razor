@@ -1,5 +1,7 @@
 @inject MinistriesClient Ministries
 
+<UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this calendar" />
+
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "Add a calendar" : Draft.Name)" Lead="Leaders add events to it in the calendar. Who it's for decides who sees its events.">
     <ChildContent>
         @if (_removal is { } removal)
@@ -8,7 +10,7 @@
         }
         else
         {
-            <Segmented TValue="string" Label="Who it's for" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+            <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
             <TextField Label="Name" @bind-Value="Draft.Name" MaxLength="60" Placeholder="@DefaultName" Hint="Leave it empty for the usual name." />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
@@ -40,6 +42,8 @@
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter, EditorRequired] public required CalendarLine Draft { get; set; }
     [Parameter] public EventCallback OnSaved { get; set; }
+
+    private object Shape => (Draft.Name, Draft.Audience);
 
     private IReadOnlyList<SegmentOption<string>> Audiences =>
         (Page.Ministry.AttendJoin == Joining.None ? [Contracts.Audiences.Everyone, Contracts.Audiences.Team] : Contracts.Audiences.All)

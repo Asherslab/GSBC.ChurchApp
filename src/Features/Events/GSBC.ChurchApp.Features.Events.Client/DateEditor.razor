@@ -3,15 +3,18 @@
 @inject CalendarEditing Editor
 @inject TimeProvider Clock
 @inject Shell Shell
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="this date" Save="SaveBeforeLeavingAsync" />
 
 @if (InPanel)
 {
-    <div class="event-panel">@Body</div>
+    <div class="event-panel"><EditScope Edited="() => { }">@Body</EditScope></div>
 }
 else
 {
-    <Page Title="This date" OnBack="Closed" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
-        <ChildContent>@Body</ChildContent>
+    <Page Title="This date" OnBack="LeaveAsync" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
+        <ChildContent><EditScope Edited="() => { }">@Body</EditScope></ChildContent>
     </Page>
 }
 
@@ -29,7 +32,6 @@ else
     private string _tellTitle = "";
     private string _tellBody = "";
     private string _savedOccurrenceId = "";
-    private string? _done;
     private int _aboutVersion;
     private string? _inBreak;
     private (string, DateOnly)? _loadedFor;
@@ -55,12 +57,12 @@ else
         _loadedFor = (RegularEventId, Date);
         _draft = null;
         _loadFailure = null;
-        _done = null;
         try
         {
             _desk = await Editor.DeskAsync();
             RegularEventDetail detail = await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = CalendarId, RegularEventId = RegularEventId });
             _draft = EventDraft.From(detail, Date, Now);
+            Stored();
             _inBreak = detail.Dates.FirstOrDefault(entry => entry.Date == EventDates.Format(Date) && entry.NotOn && !_draft.NotOnThisDate)?.NotOnReason;
             _ = LoadPlacesAsync();
         }
@@ -106,10 +108,6 @@ else
                 </p>
             </div>
             <div class="event-body event-body--editing">
-                @if (_done is not null)
-                {
-                    <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />@_done</p>
-                }
                 @if (draft.NotOnThisDate)
                 {
                     <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date. People see it as not on, and calendar apps leave it out.</p>
@@ -138,12 +136,37 @@ else
             <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="editor-foot__actions">
-                    <Button Block="true" Busy="_saving" Disabled="@(OnDate.Fields.Title.Trim().Length == 0)" OnClick="() => SaveAsync(draft.NotOnThisDate)">Save this date</Button>
+                    <SaveBar Block="true" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords" />
                     <Button Variant="ButtonVariant.Quiet" Busy="_saving" OnClick="() => SaveAsync(!draft.NotOnThisDate)">@(draft.NotOnThisDate ? "On again" : "Not on this date")</Button>
                 </div>
             </div>
         }
     </text>;
+
+    private string? _stored;
+    private string? _savedWords;
+
+    private bool Changed => _draft is not null && _stored is not null && Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)) != _stored;
+
+    private SaveState? SaveLine => SaveBar.For(Changed, _savedWords is not null);
+
+    private string SavedWords => (_savedWords ?? "Saved").TrimEnd('.');
+
+    private void Stored() => (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync(_draft!.NotOnThisDate);
+        return _problem is null && !Changed;
+    }
+
+    private async Task LeaveAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            await Closed.InvokeAsync();
+    }
+
+    private static DateSave SaveMessage(EventDraft draft) => draft.ToDateSave(draft.NotOnThisDate);
 
     private RenderFragment? Usual(EventDraft draft, string key, string words) => !draft.DateDiffers(key) ? null :
         @<p class="usual-line">@words <button type="button" class="usual-line__back" @onclick="() => PutBack(draft, key)">Put it back</button></p>;
@@ -170,6 +193,7 @@ else
             bool wasShown = draft.WasShown;
             RegularEventDetail saved = await Editor.Editing.SaveDateAsync(draft.ToDateSave(notOn));
             draft.NotOnThisDate = notOn;
+            Stored();
             await Shell.HapticAsync(Haptic.Success);
             _savedOccurrenceId = draft.OccurrenceId(saved);
             if (wasShown && _savedOccurrenceId.Length > 0)
@@ -194,7 +218,7 @@ else
     private async Task FinishAsync(string done)
     {
         _telling = false;
-        _done = done;
+        _savedWords = done;
         await Saved.InvokeAsync(_savedOccurrenceId);
         if (!InPanel)
             await Closed.InvokeAsync();

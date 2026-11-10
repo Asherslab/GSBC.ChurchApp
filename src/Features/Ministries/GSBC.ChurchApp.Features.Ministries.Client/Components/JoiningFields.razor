@@ -1,0 +1,34 @@
+<div class="ministry-joining">
+    @if (Kind != MinistryKinds.LifeGroup)
+    {
+        <Segmented TValue="string" Label="Joining the team" ShowLabel="true" Stacked="true"
+                   Hint="The team runs it: its leaders, helpers and anyone on the roster. How does someone get on it?"
+                   Options="TeamOptions" Value="TeamJoin" ValueChanged="TeamJoinChanged" />
+    }
+    <Segmented TValue="string" Label="@(Kind == MinistryKinds.LifeGroup ? "Joining the group" : "Coming along")" ShowLabel="true" Stacked="true"
+               Hint="@(Kind == MinistryKinds.LifeGroup ? "How someone gets into the group. Parents join for their children." : "Attendees are the people it's for, like the kids on a Friday night. How does someone start coming? Parents join for their children.")"
+               Options="AttendOptions" Value="AttendJoin" ValueChanged="AttendJoinChanged" />
+</div>
+
+@code {
+    private static readonly IReadOnlyList<SegmentOption<string>> TeamOptions =
+    [
+        new(Joining.Open, "Open") { Detail = "Anyone can join the team from the app, straight away." },
+        new(Joining.Ask, "Ask") { Detail = "People ask to join the team, and a leader says yes." },
+        new(Joining.Invite, "Invite only") { Detail = "Nobody can ask. Leaders add people to the team themselves." },
+    ];
+
+    private static readonly IReadOnlyList<SegmentOption<string>> AttendOptions =
+    [
+        new(Joining.Open, "Open") { Detail = "Anyone can tap Join and they're in, straight away." },
+        new(Joining.Ask, "Ask") { Detail = "People ask to come along, and a leader says yes." },
+        new(Joining.Invite, "Invite only") { Detail = "Nobody can ask. Leaders add the people who come." },
+        new(Joining.None, "No attendees") { Detail = "It's only a team, like the welcome team. Nobody comes along, so posts are for everyone or the team." },
+    ];
+
+    [Parameter] public string Kind { get; set; } = MinistryKinds.Ministry;
+    [Parameter, EditorRequired] public required string TeamJoin { get; set; }
+    [Parameter] public EventCallback<string> TeamJoinChanged { get; set; }
+    [Parameter, EditorRequired] public required string AttendJoin { get; set; }
+    [Parameter] public EventCallback<string> AttendJoinChanged { get; set; }
+}

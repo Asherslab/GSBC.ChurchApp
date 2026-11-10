@@ -1,15 +1,18 @@
 @inject CalendarEditing Editor
 @inject TimeProvider Clock
 @inject Shell Shell
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="this event" Save="SaveBeforeLeavingAsync" />
 
 @if (InPanel)
 {
-    <div class="event-panel">@Body</div>
+    <div class="event-panel"><EditScope Edited="() => { }">@Body</EditScope></div>
 }
 else
 {
-    <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="Closed" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
-        <ChildContent>@Body</ChildContent>
+    <Page Title="@(Target.IsNew ? "New event" : "Editing")" OnBack="LeaveAsync" BackLabel="Cancel" TopBar="TopBarStyle.Solid">
+        <ChildContent><EditScope Edited="() => { }">@Body</EditScope></ChildContent>
     </Page>
 }
 
@@ -36,7 +39,7 @@ else
     private string _tellTitle = "";
     private string _tellBody = "";
     private string _savedOccurrenceId = "";
-    private string? _done;
+    private bool _asked;
 
     [Parameter, EditorRequired] public required EditTarget Target { get; set; }
     [Parameter] public IReadOnlyList<CalendarInfo> Calendars { get; set; } = [];
@@ -76,6 +79,7 @@ else
                 : EventDraft.New(StartingCalendar(), NewOn ?? Today);
             if (MustAsk && _draft.IsNew)
                 _draft.Showing = Showing.SavedForLater;
+            Stored();
             _ = LoadPlacesAsync();
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
@@ -118,9 +122,9 @@ else
             <EventHead Day="draft.ShownDay" Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New event")" When="@draft.WhenLine"
                        Compact="InPanel" />
             <div class="event-body event-body--editing">
-                @if (_done is not null)
+                @if (_asked)
                 {
-                    <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />@_done</p>
+                    <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>
                 }
                 @if (draft.IsNew)
                 {
@@ -144,7 +148,7 @@ else
             <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="editor-foot__actions">
-                    <Button Block="true" Busy="_saving" Disabled="@(Fields.Title.Trim().Length == 0)" OnClick="SaveAsync">@SaveLabel(draft)</Button>
+                    <SaveBar Block="true" Label="@SaveLabel(draft)" Busy="_saving" OnSave="SaveAsync" Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords" />
                     @if (!draft.IsNew)
                     {
                         <Button Variant="ButtonVariant.Quiet" Busy="_saving" OnClick="NotOnAsync">@(draft.NotOnThisDate ? "On again" : "Not on this date")</Button>
@@ -163,6 +167,33 @@ else
     </text>;
 
     private IReadOnlyList<FieldOption> CalendarOptions => Editable.Select(calendar => new FieldOption(calendar.Settings.Calendar.Id, calendar.Settings.Calendar.Name)).ToList();
+
+
+    private string? _stored;
+    private bool _leaving;
+    private string? _savedWords;
+
+    private bool Changed => !_leaving && _draft is not null && _stored is not null && Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)) != _stored;
+
+    private SaveState? SaveLine => SaveBar.For(Changed, _savedWords is not null);
+
+    private string SavedWords => (_savedWords ?? "Saved").TrimEnd('.');
+
+    private void Stored() => (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync();
+        return _problem is null && !Changed;
+    }
+
+    private async Task LeaveAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            await Closed.InvokeAsync();
+    }
+
+    private static EventSave SaveMessage(EventDraft draft) => draft.ToEventSave();
 
     private static string SaveLabel(EventDraft draft) => draft.IsNew ? "Add the event" : "Save";
 
@@ -216,6 +247,7 @@ else
     private async Task SavedAsync(string occurrenceId, bool wasShown, string changeNote)
     {
         await Shell.HapticAsync(Haptic.Success);
+        Stored();
         _savedOccurrenceId = occurrenceId;
         if (wasShown && occurrenceId.Length > 0)
         {
@@ -245,7 +277,7 @@ else
         {
             await Editor.Editing.AskToPublishAsync(new ItemRef { CalendarId = _draft.CalendarId, EventId = _draft.EventId, RegularEventId = _draft.RegularEventId });
             _draft.Asked = true;
-            _done = "Asked. The calendar's publishers have been told.";
+            _asked = true;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -262,6 +294,7 @@ else
         {
             if (_draft.EventId is { } eventId)
                 await Editor.Editing.DeleteEventAsync(new EventRef { CalendarId = _draft.CalendarId, EventId = eventId });
+            _leaving = true;
             _sheet = EditorSheet.None;
             _savedOccurrenceId = "";
             await Saved.InvokeAsync("");
@@ -283,7 +316,7 @@ else
     private async Task FinishAsync(string done)
     {
         _sheet = EditorSheet.None;
-        _done = done;
+        _savedWords = done;
         await Saved.InvokeAsync(_savedOccurrenceId);
         if (!InPanel)
             await Closed.InvokeAsync();
