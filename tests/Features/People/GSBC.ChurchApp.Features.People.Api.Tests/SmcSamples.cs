@@ -4,7 +4,7 @@ internal static class SmcSamples
 {
     public static string Person(string id, string first, string surname, string email = "", string? dob = null, string middle = "",
         string wwccId = "", string? wwccExpiry = null, string wwccChecked = "-0001-11-30 00:00:00", string wwccStatus = "", string wwccNote = "",
-        string status = "Approved", string statusWords = "", string? nextAction = "-0001-11-30", string progress = "", string police = "",
+        string status = "Cleared", string statusWords = "", string? nextAction = "-0001-11-30", string progress = "", string police = "",
         string referee1 = "", string referee2 = "", string photo = "", string disclosure = "", string worksWithChildren = "0") =>
         $$"""
         {

@@ -9,12 +9,12 @@ public sealed class SmcValuesTests
     public void TheBlueCardTrainingAndStatusComeAcrossWithEmptyDatesLeftEmpty()
     {
         SmcValues values = Values(SmcSamples.Person("88888", "Sam", "Example", wwccId: "123456/1", wwccExpiry: "2028-01-31",
-            wwccChecked: "2026-05-14 03:56:02", wwccStatus: "Current", status: "Approved", statusWords: "All done", nextAction: "2027-05-14", progress: "complete"));
+            wwccChecked: "2026-05-14 03:56:02", wwccStatus: "CLEARED", status: "Cleared", statusWords: "All done", nextAction: "2027-05-14", progress: "complete"));
         SmcValues empty = Values(SmcSamples.Person("99999", "Alex", "Example", wwccExpiry: null, nextAction: "-0001-11-30"));
 
         Assert.Equal(("123456/1", BlueCards.Current, new DateOnly(2028, 1, 31), new DateOnly(2026, 5, 14)),
             (values.CardNumber, values.CardStatus, values.CardExpires, values.CardChecked));
-        Assert.Equal(("complete", new DateOnly(2027, 5, 14), "Approved", "All done"), (values.TrainingProgress, values.TrainingDue, values.Status, values.StatusWords));
+        Assert.Equal(("complete", new DateOnly(2027, 5, 14), "Cleared", "All done"), (values.TrainingProgress, values.TrainingDue, values.Status, values.StatusWords));
         Assert.Empty(values.CheckReasons);
         Assert.Equal((null, null, null), (empty.CardExpires, empty.CardChecked, empty.TrainingDue));
     }
@@ -22,19 +22,15 @@ public sealed class SmcValuesTests
     [Theory]
     [InlineData("police", "pending", SmcReasons.PoliceCheck)]
     [InlineData("referee1", "negative", SmcReasons.Referee)]
-    [InlineData("photo", "Pending", SmcReasons.Photo)]
-    [InlineData("disclosure", "See file", SmcReasons.Disclosure)]
-    [InlineData("wwccNote", "WWCC Status should be verified again", SmcReasons.CardNote)]
+    [InlineData("wwccStatus", "NOTFOUND", SmcReasons.CardNotVerified)]
     [InlineData("worksWithChildren", "1", SmcReasons.NoCard)]
-    public void AProblemInAFieldThatIsNotBroughtAcrossRaisesAGenericReasonOnly(string field, string value, string reason)
+    public void AClearProblemInAFieldThatIsNotBroughtAcrossRaisesAGenericReasonOnly(string field, string value, string reason)
     {
         string person = field switch
         {
             "police" => SmcSamples.Person("1", "Sam", "Example", police: value),
             "referee1" => SmcSamples.Person("1", "Sam", "Example", referee1: value),
-            "photo" => SmcSamples.Person("1", "Sam", "Example", photo: value),
-            "disclosure" => SmcSamples.Person("1", "Sam", "Example", disclosure: value),
-            "wwccNote" => SmcSamples.Person("1", "Sam", "Example", wwccNote: value),
+            "wwccStatus" => SmcSamples.Person("1", "Sam", "Example", wwccId: "1/1", wwccStatus: value),
             _ => SmcSamples.Person("1", "Sam", "Example", worksWithChildren: value),
         };
 
@@ -42,13 +38,31 @@ public sealed class SmcValuesTests
     }
 
     [Fact]
-    public void ClearedPositiveAndNoneAreNotProblems() =>
-        Assert.Empty(Values(SmcSamples.Person("1", "Sam", "Example", police: "cleared", referee1: "positive", referee2: "positive_admin",
-            photo: "Approved", disclosure: "None", wwccId: "1/1", worksWithChildren: "1")).CheckReasons);
+    public void WhatIsUsualForSomeoneClearedIsNotAProblem() =>
+        Assert.Empty(Values(SmcSamples.Person("1", "Sam", "Example", status: "Cleared", wwccId: "1/1", wwccStatus: "CLEARED",
+            wwccNote: "WWCC Status should be verified again", photo: "Pending", police: "", referee1: "positive", referee2: "positive_admin",
+            disclosure: "None", worksWithChildren: "1")).CheckReasons);
 
     [Fact]
-    public void AStatusThatIsNotApprovedIsAReasonToCheck() =>
-        Assert.Equal([SmcReasons.Status("Pending")], Values(SmcSamples.Person("1", "Sam", "Example", status: "Pending")).CheckReasons);
+    public void ADisclosureIsOnlyFlaggedUntilTheyAreCleared()
+    {
+        Assert.Empty(Values(SmcSamples.Person("1", "Sam", "Example", status: "Cleared", disclosure: "See their file")).CheckReasons);
+        Assert.Equal([SmcReasons.Status("Pending"), SmcReasons.Disclosure],
+            Values(SmcSamples.Person("1", "Sam", "Example", status: "Pending", disclosure: "See their file")).CheckReasons);
+    }
+
+    [Theory]
+    [InlineData("Pending")]
+    [InlineData("Error")]
+    public void AStatusOtherThanClearedIsAReasonToCheck(string status) =>
+        Assert.Equal([SmcReasons.Status(status)], Values(SmcSamples.Person("1", "Sam", "Example", status: status)).CheckReasons);
+
+    [Fact]
+    public void TheirBlueCardWordsMapToOurStatuses()
+    {
+        Assert.Equal(BlueCards.Current, Values(SmcSamples.Person("1", "Sam", "Example", wwccId: "1/1", wwccStatus: "CLEARED")).CardStatus);
+        Assert.Equal(BlueCards.Expired, Values(SmcSamples.Person("1", "Sam", "Example", wwccId: "1/1", wwccStatus: "EXPIRED")).CardStatus);
+    }
 
     [Fact]
     public void TheTwoPeopleInTheirSampleReplyBothParse()

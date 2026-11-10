@@ -142,11 +142,14 @@ sync changes nothing and the page says why. Everyone's name, email and birth dat
   records that match the same person are all listed as still to match, never guessed.
 - **Someone who leaves Safe Ministry Check** keeps their link and last values, flagged "they're no longer in Safe
   Ministry Check".
-- **What counts as a problem** (to confirm against real data): an overall `status` other than Approved, Complete, Current,
-  Active, Cleared, Valid or Verified; a police check other than cleared; a referee answer not starting "positive"; a blue
-  card photo not approved; any `wwcc_status_description` or an unrecognised `wwcc_status`; a disclosure other than none;
-  working with children with no blue card. `paperwork_process_status` isn't used: its values ("0", "") don't say what
-  they mean.
+- **What counts as a problem** (calibrated 2026-11-10 against the church's 117 records, counted in memory, nothing
+  kept; the owner confirmed the first rules flagged his own cleared record wrongly): an overall `status` other than
+  *Cleared* (they're *Cleared*, *Pending* or *Error*; *Pending* says why in its description, which is shown); a
+  `wwcc_status` it couldn't map (*NOTFOUND*: the card couldn't be verified; *CLEARED* maps to Current, *EXPIRED* to
+  Expired); a police check status other than cleared or not required; a referee answer other than *positive* or
+  *positive_admin*; a disclosure on someone not yet cleared; working with children with no blue card there. **Not
+  problems:** `wwcc_status_description` ("WWCC Status should be verified again" is on most cleared people), a *Pending*
+  blue card photo (also common among cleared people), `paperwork_process_status` (*4* is "Linked to portal").
 - **The person doesn't see the flag or the status** on their Account page, only their card and training and that they
   came from Safe Ministry Check; following up is the office's.
 
@@ -194,8 +197,8 @@ Through `IPersonData` when an account is deleted:
 - Stage 2: leaders setting families from their team and attendee lists (a leader role giving the `people.family.*`
   nodes for people in their ministry), and "this team needs a blue card" so *missing* can be flagged for people with
   nothing recorded.
-- Safe Ministry Check's real values for `status`, `wwcc_status`, `wwcc_photo_status`, `police_check_status` and
-  `paperwork_process_status`: the problem rules above are from their sample; check them once real data has synced.
+- Whether ~50 *Pending* people all flagged "Check Safe Ministry Check" is the right amount on Safeguarding, or whether
+  Pending for overdue training alone should leave it to the training flag.
 - The Simulator can't make a passkey against a local backend, so a child signing in with a code was checked up to the
   passkey (the code is accepted and a ticket issued); it wants a try on a real phone on dev.
 

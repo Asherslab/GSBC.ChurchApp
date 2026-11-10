@@ -7,8 +7,7 @@ internal static class SmcReasons
 {
     public const string PoliceCheck = "their police check isn't cleared";
     public const string Referee = "a referee's answer needs looking at";
-    public const string Photo = "their blue card photo isn't approved";
-    public const string CardNote = "their blue card needs checking there";
+    public const string CardNotVerified = "their blue card couldn't be verified there";
     public const string Disclosure = "something in their paperwork needs looking at";
     public const string NoCard = "they work with children but have no blue card there";
     public const string Gone = "they're no longer in Safe Ministry Check";
@@ -34,6 +33,7 @@ internal sealed record SmcValues(
 
     private static readonly string[] AllGood = ["approved", "complete", "completed", "current", "active", "cleared", "valid", "verified"];
     private static readonly string[] NothingToSay = ["none", "no", "n/a", "na", "nil", "0"];
+    private static readonly string[] NoPoliceCheckNeeded = ["n/a", "na", "not required", "none"];
 
     public static SmcValues From(SmcRow row)
     {
@@ -76,15 +76,13 @@ internal sealed record SmcValues(
         List<string> reasons = [];
         if (status.Length > 0 && !Good(status))
             reasons.Add(SmcReasons.Status(Text(status, 60)!));
-        if (Said(row["police_check_status"]) && !Good(row["police_check_status"]))
+        if (row["wwcc_status"].Length > 0 && cardStatus.Length == 0)
+            reasons.Add(SmcReasons.CardNotVerified);
+        if (Said(row["police_check_status"]) && !Good(row["police_check_status"]) && !NoPoliceCheckNeeded.Contains(row["police_check_status"].ToLowerInvariant()))
             reasons.Add(SmcReasons.PoliceCheck);
         if (new[] { row["referee1_response"], row["referee2_response"] }.Any(answer => Said(answer) && !answer.StartsWith("positive", StringComparison.OrdinalIgnoreCase)))
             reasons.Add(SmcReasons.Referee);
-        if (Said(row["wwcc_photo_status"]) && !Good(row["wwcc_photo_status"]))
-            reasons.Add(SmcReasons.Photo);
-        if (row["wwcc_status_description"].Length > 0 || (row["wwcc_status"].Length > 0 && cardStatus.Length == 0))
-            reasons.Add(SmcReasons.CardNote);
-        if (Said(row["trainee_disclosure"]))
+        if (Said(row["trainee_disclosure"]) && !Good(status))
             reasons.Add(SmcReasons.Disclosure);
         if (row["works_with_children"] == "1" && cardNumber.Length == 0)
             reasons.Add(SmcReasons.NoCard);
