@@ -1,0 +1,59 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject CalendarDiary Diaries
+@inject TimeProvider Clock
+@inject IServiceProvider Services
+
+<LiveData TValue="ComingUpInSet" Load="LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@($"events.set.{string.Join(".", Calendars.Select(calendar => calendar.Id))}")">
+    <ChildContent>
+        @if (context.Value.Occurrences.Count == 0)
+        {
+            <p class="hint">Nothing coming up in these calendars.</p>
+        }
+        else
+        {
+            <div class="calendar-next">
+                @foreach (IGrouping<DateOnly, EventOccurrence> day in context.Value.Occurrences.GroupBy(EventWords.DayOf))
+                {
+                    <DaySection @key="day.Key" Day="day.Key" Today="EventWords.Today(Now)" Occurrences="day" Diary="context.Value.Diary" NowUtc="Now" FromOf="FromOf" />
+                }
+            </div>
+        }
+    </ChildContent>
+    <Loading><Skeleton Shape="SkeletonShape.Lines" Count="4" /></Loading>
+</LiveData>
+
+@code {
+    private const int Shown = 12;
+    private const int AdminWeeksAhead = 8;
+
+    [Parameter, EditorRequired] public required IReadOnlyList<CalendarInSet> Calendars { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    public static RenderFragment For(IReadOnlyList<CalendarInSet> calendars) => @<CalendarSetList Calendars="calendars" />;
+
+    private string? FromOf(EventOccurrence occurrence) =>
+        Calendars.Select(calendar => calendar.From).Distinct().Count() > 1
+            ? Calendars.FirstOrDefault(calendar => calendar.Id == occurrence.CalendarId)?.From
+            : null;
+
+    private async Task<ComingUpInSet> LoadAsync()
+    {
+        HashSet<string> ids = Calendars.Select(calendar => calendar.Id).ToHashSet();
+        if (Diaries.IsOnThisDevice)
+        {
+            Diary diary = await Diaries.LoadAsync();
+            return new ComingUpInSet(diary, Next(diary.In(ids)));
+        }
+        if (Services.GetService(typeof(CalendarEditing)) is not CalendarEditing editing || ids.Count == 0)
+            return new ComingUpInSet(Diary.Empty, []);
+        DateOnly today = EventWords.Today(Now);
+        Agenda agenda = await editing.AgendaAsync(ids, today, today.AddDays(7 * AdminWeeksAhead));
+        return new ComingUpInSet(Diary.Empty, Next(agenda.Occurrences));
+    }
+
+    private IReadOnlyList<EventOccurrence> Next(IEnumerable<EventOccurrence> occurrences) =>
+        occurrences.Where(occurrence => occurrence.EndsAt >= Now).Take(Shown).ToList();
+
+    private sealed record ComingUpInSet(Diary Diary, IReadOnlyList<EventOccurrence> Occurrences);
+}

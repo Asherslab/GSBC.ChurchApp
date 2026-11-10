@@ -153,6 +153,10 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("order");
 
+                    b.Property<string>("ShownAudience")
+                        .HasColumnType("text")
+                        .HasColumnName("shown_audience");
+
                     b.Property<bool>("ShownOnNewPhones")
                         .HasColumnType("boolean")
                         .HasColumnName("shown_on_new_phones");

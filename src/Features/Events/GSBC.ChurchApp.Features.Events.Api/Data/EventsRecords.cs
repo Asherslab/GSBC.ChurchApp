@@ -9,6 +9,7 @@ public sealed class CalendarRecord
     public required string Slug { get; set; }
     public string Description { get; set; } = "";
     public string Audience { get; set; } = Platform.Contracts.Configuration.Audience.Everyone.Text;
+    public string? ShownAudience { get; set; }
     public bool ShownOnNewPhones { get; set; }
     public bool NeedsPublisher { get; set; }
     public Guid? MinistryId { get; set; }

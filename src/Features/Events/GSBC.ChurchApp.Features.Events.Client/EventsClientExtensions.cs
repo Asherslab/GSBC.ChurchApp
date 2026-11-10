@@ -26,5 +26,6 @@ public static class EventsClientExtensions
             .AddSingleton<CalendarEditing>()
             .AddSingleton<CalendarSubscriptions>()
             .AddSingleton<WideningWords>()
+            .AddSingleton(new CalendarSetView(CalendarSetList.For))
             .AddHubTile<ComingUpTile>(EventsTiles.Week);
 }
