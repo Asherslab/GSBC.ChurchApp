@@ -2,6 +2,8 @@
 @inject AccountsClient Accounts
 @inject NavigationManager Navigation
 
+<UnsavedGuard Changed="() => _secret is null && _name.Trim().Length > 0" What="the tool you were connecting" />
+
 <Section Title="Connect a tool" Lead="A tool, such as Claude on your computer, can then read what you can see here, like App health. It can't use anything sensitive: roles, people's details, accounts or the pastoral inbox.">
     @if (_secret is not null)
     {

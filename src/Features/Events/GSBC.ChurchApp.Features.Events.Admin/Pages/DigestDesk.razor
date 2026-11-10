@@ -10,6 +10,8 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject Shell Shell
+
+<UnsavedGuard What="the digest" Autosave="() => _save" Save="SaveBeforeLeavingAsync" />
 @inject IJSRuntime Js
 
 <LiveData TValue="DigestDraft" Load="LoadAsync" Feeds="DeskFeeds" FailedTitle="Can't make the digest right now">
@@ -391,6 +393,12 @@
         _settling = new CancellationTokenSource();
         CancellationToken settling = _settling.Token;
         _ = Task.Delay(SettleTime, settling).ContinueWith(_ => InvokeAsync(SaveNowAsync), settling, TaskContinuationOptions.OnlyOnRanToCompletion, TaskScheduler.Default);
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveNowAsync();
+        return _save == SaveState.Saved;
     }
 
     private async Task SaveNowAsync()

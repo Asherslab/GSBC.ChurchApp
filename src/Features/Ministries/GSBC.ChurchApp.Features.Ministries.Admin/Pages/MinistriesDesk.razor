@@ -7,7 +7,7 @@
 <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the ministries right now">
     <TitleBand Title="Ministries" Lead="@Lead(context.Value)">
         <Actions>
-            @if (context.Value.MayCreate)
+            @if (context.Value.MayCreate || context.Value.Ministries.Any(ministry => ministry.MayAddUnder))
             {
                 <Button Icon="plus" OnClick="() => _creating = true">New ministry</Button>
             }
@@ -41,7 +41,7 @@
                 }
                 <h2 class="title-band__title">@shown.Ministry.Name</h2>
                 <p class="title-band__lead">@(string.Join(" · ", new[] { shown.Path.Count > 0 ? $"Under {string.Join(" › ", shown.Path.Select(crumb => crumb.Name))}" : "", MinistryWords.HeroNote(shown.Ministry) }.Where(part => part.Length > 0)))</p>
-                <TabStrip TValue="string" Label="@($"{shown.Ministry.Name}'s areas")" Options="MinistryAreas.Tabs(shown)" Value="@area" Href="key => Href(shown.Ministry.Id, key)" />
+                <TabStrip TValue="string" Label="@($"{MinistryWords.Possessive(shown.Ministry.Name)} areas")" Options="MinistryAreas.Tabs(shown)" Value="@area" Href="key => Href(shown.Ministry.Id, key)" />
                 <MinistryArea Page="shown" Area="@area" Wide="true" Href="ministry => Href(ministry)" OnChanged="ReloadAsync" />
             </LiveData>
         }
@@ -53,7 +53,7 @@
 </div>
 </LiveData>
 
-<MinistrySheet Open="_creating" OpenChanged="open => _creating = open" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
+<MinistrySheet Open="_creating" OpenChanged="open => _creating = open" UnderId="@(Id ?? "")" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
 
 @code {
     private LiveData<MinistryPage>? _live;

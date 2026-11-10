@@ -3,6 +3,8 @@
 @inject IAccess Access
 @inject TimeProvider Clock
 
+<UnsavedGuard Changed="() => _dirty" What="their blue card and training" Save="SaveBeforeLeavingAsync" />
+
 <LiveData @ref="_live" TValue="TabData" Feeds="[PeopleFeeds.Safeguarding]" Load="LoadAsync" FailedTitle="Can't load their blue card and training right now">
     @{
         SafeguardingRecord saved = context.Value.Family.Safeguarding ?? new SafeguardingRecord();
@@ -67,8 +69,7 @@
 
                 @if (mayEdit)
                 {
-                    <div class="ui-actions ui-after">
-                        <Button Busy="_busy" Disabled="!_dirty" OnClick="() => SaveAsync(_draft)">Save</Button>
+                    <SaveBar Class="ui-after" Label="Save" Busy="_busy" OnSave="() => SaveAsync(_draft)" State="SaveBar.For(_dirty, _saved)">
                         @if (saved.HasCard)
                         {
                             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(WithoutCard(saved))">Remove the blue card</Button>
@@ -77,7 +78,7 @@
                         {
                             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => SaveAsync(WithoutTraining(saved))">Remove the training</Button>
                         }
-                    </div>
+                    </SaveBar>
                 }
                 @if (saved.UpdatedAt is { } at)
                 {
@@ -159,7 +160,7 @@
 
     private LiveData<TabData>? _live;
     private SafeguardingRecord _draft = new();
-    private bool _busy, _dirty, _confirmingUnlink;
+    private bool _busy, _dirty, _saved, _confirmingUnlink;
     private string? _message;
 
     [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
@@ -228,10 +229,16 @@
         return copy;
     }
 
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync(_draft);
+        return !_dirty;
+    }
+
     private Task SaveAsync(SafeguardingRecord record) => ChangeAsync(async () =>
     {
         await People.SetSafeguardingAsync(Person.Id, record);
-        _dirty = false;
+        (_dirty, _saved) = (false, true);
     });
 
     private Task LinkAsync(SmcPerson? person) => person is null ? Task.CompletedTask : ChangeAsync(async () =>

@@ -3,6 +3,8 @@
 @inject MediaClient Media
 @inject IAccess Access
 
+<UnsavedGuard Changed="() => _sheet is FolderSheet.Create or FolderSheet.Rename && _name.Trim() != _nameWas" What="the folder's name" />
+
 <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
     @{ FolderMap map = tree.Value; }
     <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
@@ -195,6 +197,7 @@
     private FolderSheet _sheet;
     private FolderInfo? _sheetFolder;
     private string _name = "";
+    private string _nameWas = "";
     private string? _sheetProblem;
     private string _moveTitle = "";
     private string? _moveFrom;
@@ -622,7 +625,7 @@
     {
         _sheet = sheet;
         _sheetFolder = folder;
-        _name = name;
+        _name = _nameWas = name;
         _sheetProblem = null;
     }
 

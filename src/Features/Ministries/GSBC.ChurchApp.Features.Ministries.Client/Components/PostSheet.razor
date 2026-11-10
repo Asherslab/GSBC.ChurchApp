@@ -9,14 +9,15 @@
         <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
         <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
         <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
-        @if (Draft.Audience == Contracts.Audiences.Everyone && Draft.Important)
+        @if (Draft is { Audience: Contracts.Audiences.Everyone, Important: true })
         {
             <ToggleRow Title="Ask to send it to the whole church" Description="Church staff decide, as for any announcement" @bind-Checked="Draft.AskWholeChurch" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="SaveAsync">@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")</Button>
+        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")" Busy="_busy" OnSave="SaveAsync"
+                 Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
         @if (Draft.Id.Length > 0)
         {
             <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the post</Button>

@@ -23,8 +23,6 @@ public sealed class MinistriesClient(ChannelBase channel)
 
     public async Task WithdrawAsync(string ministryId, string askId) => await _ministries.WithdrawAsync(new AskRef { MinistryId = ministryId, AskId = askId });
 
-    public async Task<IReadOnlyList<AskLine>> WaitingAsync() => (await _ministries.WaitingAsync(new WaitingRequest())).Asks;
-
     public async Task<PeopleList> PeopleAsync(string ministryId) => await _leading.PeopleAsync(new MinistryRef { MinistryId = ministryId });
 
     public async Task AnswerAsync(string ministryId, string askId, bool yes) =>
@@ -50,8 +48,8 @@ public sealed class MinistriesClient(ChannelBase channel)
     public async Task<MinistryDetails> SaveMinistryAsync(MinistryDetails details) =>
         await _leading.SaveMinistryAsync(new MinistrySave { MinistryId = details.Id, Details = details });
 
-    public async Task<MinistryDetails> AddTeamAsync(string parentId, MinistryDetails details) =>
-        await _leading.AddTeamAsync(new MinistrySave { MinistryId = parentId, Details = details });
+    public async Task<MinistryDetails> AddSubMinistryAsync(string parentId, MinistryDetails details) =>
+        await _leading.AddSubMinistryAsync(new MinistrySave { MinistryId = parentId, Details = details });
 
     public async Task<MinistryDetails> CreateAsync(MinistryDetails details) => await _leading.CreateAsync(new MinistrySave { Details = details });
 
@@ -59,7 +57,7 @@ public sealed class MinistriesClient(ChannelBase channel)
 
     public async Task DeleteAsync(string ministryId) => await _leading.DeleteAsync(new MinistryRef { MinistryId = ministryId });
 
-    public async Task<CalendarLine> SaveCalendarAsync(string ministryId, CalendarLine calendar) =>
+    public async Task SaveCalendarAsync(string ministryId, CalendarLine calendar) =>
         await _leading.SaveCalendarAsync(new CalendarSave { MinistryId = ministryId, Calendar = calendar });
 
     public async Task<CalendarRemoval> CalendarRemovalAsync(string ministryId, string id) =>
@@ -67,7 +65,7 @@ public sealed class MinistriesClient(ChannelBase channel)
 
     public async Task RemoveCalendarAsync(string ministryId, string id) => await _leading.RemoveCalendarAsync(new ItemRef { MinistryId = ministryId, Id = id });
 
-    public async Task<Round> SaveRoundAsync(string ministryId, Round round) => await _leading.SaveRoundAsync(new RoundSave { MinistryId = ministryId, Round = round });
+    public async Task SaveRoundAsync(string ministryId, Round round) => await _leading.SaveRoundAsync(new RoundSave { MinistryId = ministryId, Round = round });
 
     public async Task DeleteRoundAsync(string ministryId, string id) => await _leading.DeleteRoundAsync(new ItemRef { MinistryId = ministryId, Id = id });
 

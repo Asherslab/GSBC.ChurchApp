@@ -4,6 +4,8 @@
 @inject IJSRuntime Js
 @inject TimeProvider Clock
 
+<UnsavedGuard Changed="() => Started" What="this upload" />
+
 <div class="sermon-upload">
     <h2>Upload a sermon</h2>
     <label class="sermon-upload__drop @(_file is null ? "" : "has-file")">
@@ -64,8 +66,9 @@
     }
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     <div class="panel-actions">
-        <Button Icon="arrow-up" Busy="_busy" Disabled="!Ready" OnClick="UploadAsync">Add to the app</Button>
-        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Cancelled">Cancel</Button>
+        <SaveBar Label="Add to the app" Busy="_busy" OnSave="UploadAsync" Blocked="@Blocked">
+            <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Cancelled">Cancel</Button>
+        </SaveBar>
     </div>
     <p class="hint">It's on everyone's phone as soon as it's added. Staff can tidy the details afterwards.</p>
     @if (_choosing)
@@ -102,8 +105,15 @@
         _service = SermonServices.SundayMorning;
     }
 
-    private bool Ready => _file is not null && _title.Trim().Length > 0 && _day.Length > 0
-        && (_speakerId.Length > 0 && _speakerId != NewOne || _newSpeaker.Trim().Length > 0);
+    private string? Blocked =>
+        _file is null ? "Choose the sermon's audio to add it."
+        : _title.Trim().Length == 0 ? "Give it a title to add it."
+        : !(_speakerId.Length > 0 && _speakerId != NewOne || _newSpeaker.Trim().Length > 0) ? "Choose who preached to add it."
+        : _day.Length == 0 ? "Choose the day it was preached to add it."
+        : null;
+
+    private bool Started => _busy || _file is not null || _artwork is not null
+        || new[] { _title, _speakerId, _newSpeaker, _seriesId, _newSeries, _youTube, _passage, _summary }.Any(typed => typed.Trim().Length > 0);
 
     private IReadOnlyList<SpeakerDetail> Popular => Speakers.OrderByDescending(speaker => speaker.Count).ToList();
 

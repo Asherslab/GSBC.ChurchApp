@@ -1,5 +1,7 @@
 @inject MinistriesClient Ministries
 
+<UnsavedGuard Changed="() => Open && _note.Trim().Length > 0" What="your note for the leaders" />
+
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Join {Page.Ministry.Name}")" Lead="@(Choices.Count > 1 ? "Who's it for?" : null)">
     <ChildContent>
         @foreach (JoinChoice choice in Choices)

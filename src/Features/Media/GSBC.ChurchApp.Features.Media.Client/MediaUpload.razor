@@ -1,6 +1,8 @@
 @inject MediaClient Media
 @inject IJSRuntime JS
 
+<UnsavedGuard Changed="() => _file is not null" What="@(_busy ? "the upload that's still going" : "the picture you chose")" />
+
 <div class="media-upload">
     <label class="media-upload__drop @(_busy ? "media-upload__drop--busy" : "")">
         <Icon Name="image" />

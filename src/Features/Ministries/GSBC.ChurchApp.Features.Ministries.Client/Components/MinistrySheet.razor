@@ -2,20 +2,32 @@
 
 <UnsavedGuard Changed="() => Open && (_name.Length > 0 || _summary.Length > 0)" What="the new ministry" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(ParentId.Length > 0 ? $"A team under {ParentName}" : "A new ministry")"
-       Lead="@(ParentId.Length > 0 ? $"{ParentName}'s leaders lead it too. Add its own leaders and people once it's made." : "Its leaders do the rest: people, posts, files and teams under it.")">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="A new ministry" Lead="Its leaders do the rest: people, posts, files and the ministries under it.">
     <ChildContent>
-        <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(ParentId.Length > 0 ? "Choir" : "Impact Kids")" />
-        <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
-        <JoiningFields Kind="@Kind" TeamJoin="@_teamJoin" TeamJoinChanged="value => _teamJoin = value" AttendJoin="@_attendJoin" AttendJoinChanged="value => _attendJoin = value" />
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
+            <ChildContent>
+                @{
+                    _directory = context.Value;
+                }
+                <SearchPicker TItem="MinistrySummary" Label="Sits under" Items="Places" Text="PathOf" Value="Under" ValueChanged="Choose"
+                              NoneText="@(_directory.MayCreate ? "Nothing: it's a top-level ministry" : null)" Placeholder="Find a ministry"
+                              Hint="Its leaders lead the new ministry too." />
+                <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(Under is null ? "Impact Kids" : "Choir")" />
+                <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
+                <JoiningFields Kind="@Kind" TeamJoin="@_teamJoin" TeamJoinChanged="value => _teamJoin = value" AttendJoin="@_attendJoin" AttendJoinChanged="value => _attendJoin = value" />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            </ChildContent>
+        </LiveData>
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="CreateAsync">Make it</Button>
+        <SaveBar Block="true" Label="Add the ministry" Busy="_busy" OnSave="CreateAsync" Blocked="@Blocked" />
     </Actions>
 </Sheet>
 
 @code {
+    private MinistryDirectory _directory = new();
+    private string? _underId;
+    private bool _opened;
     private string _name = "";
     private string _summary = "";
     private string _teamJoin = Joining.Ask;
@@ -25,10 +37,39 @@
 
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
-    [Parameter] public string ParentId { get; set; } = "";
-    [Parameter] public string ParentName { get; set; } = "";
+    [Parameter] public string UnderId { get; set; } = "";
     [Parameter] public string Kind { get; set; } = MinistryKinds.Ministry;
     [Parameter] public EventCallback<MinistryDetails> OnCreated { get; set; }
+
+    private IReadOnlyList<MinistrySummary> Places =>
+        _directory.Ministries.Where(ministry => ministry.MayAddUnder).OrderBy(PathOf, StringComparer.CurrentCulture).ToList();
+
+    private MinistrySummary? Under => Places.FirstOrDefault(ministry => ministry.Id == (_underId ?? UnderId));
+
+    private string? Blocked =>
+        _name.Trim().Length == 0 ? "Give it a name to add it."
+        : Under is null && !_directory.MayCreate ? "Choose the ministry it sits under to add it."
+        : null;
+
+    protected override void OnParametersSet()
+    {
+        if (Open && !_opened)
+            (_underId, _problem) = (null, null);
+        _opened = Open;
+    }
+
+    private void Choose(MinistrySummary? ministry) => _underId = ministry?.Id ?? "";
+
+    private string PathOf(MinistrySummary ministry)
+    {
+        List<string> names = [ministry.Name];
+        for (MinistrySummary? above = Parent(ministry); above is not null; above = Parent(above))
+            names.Insert(0, above.Name);
+        return string.Join(" › ", names);
+    }
+
+    private MinistrySummary? Parent(MinistrySummary ministry) =>
+        ministry.ParentId.Length == 0 ? null : _directory.Ministries.FirstOrDefault(candidate => candidate.Id == ministry.ParentId);
 
     private async Task CreateAsync()
     {
@@ -36,7 +77,7 @@
         try
         {
             MinistryDetails details = new() { Name = _name, Summary = _summary, TeamJoin = _teamJoin, AttendJoin = _attendJoin, Kind = Kind };
-            MinistryDetails created = ParentId.Length > 0 ? await Ministries.AddTeamAsync(ParentId, details) : await Ministries.CreateAsync(details);
+            MinistryDetails created = Under is { } under ? await Ministries.AddSubMinistryAsync(under.Id, details) : await Ministries.CreateAsync(details);
             (_name, _summary) = ("", "");
             await OpenChanged.InvokeAsync(false);
             await OnCreated.InvokeAsync(created);

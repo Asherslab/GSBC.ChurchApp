@@ -36,6 +36,7 @@ public sealed class MinistrySummary
     [ProtoMember(15)] public bool JoinAsParent { get; set; }
     [ProtoMember(16)] public string Latest { get; set; } = "";
     [ProtoMember(17)] public int Waiting { get; set; }
+    [ProtoMember(18)] public bool MayAddUnder { get; set; }
 }
 
 [ProtoContract]
@@ -72,7 +73,7 @@ public sealed class MinistryPage
 {
     [ProtoMember(1, IsRequired = true)] public MinistryDetails Ministry { get; set; } = new();
     [ProtoMember(2)] public List<PersonLine> Leaders { get; set; } = [];
-    [ProtoMember(3)] public List<MinistrySummary> Teams { get; set; } = [];
+    [ProtoMember(3)] public List<MinistrySummary> SubMinistries { get; set; } = [];
     [ProtoMember(4)] public List<Crumb> Path { get; set; } = [];
     [ProtoMember(5)] public List<Post> Posts { get; set; } = [];
     [ProtoMember(6)] public List<FileItem> Files { get; set; } = [];
@@ -315,13 +316,13 @@ public sealed class MinistrySave : IScopedRequest
 public sealed class DeletionPreview
 {
     [ProtoMember(1)] public string Name { get; set; } = "";
-    [ProtoMember(2)] public int Teams { get; set; }
+    [ProtoMember(2)] public int SubMinistries { get; set; }
     [ProtoMember(3)] public int People { get; set; }
     [ProtoMember(4)] public int Posts { get; set; }
     [ProtoMember(5)] public int Files { get; set; }
     [ProtoMember(6)] public List<string> Calendars { get; set; } = [];
     [ProtoMember(7)] public int Events { get; set; }
-    [ProtoMember(8)] public string TeamsGoTo { get; set; } = "";
+    [ProtoMember(8)] public string SubMinistriesGoTo { get; set; } = "";
 }
 
 [ProtoContract]

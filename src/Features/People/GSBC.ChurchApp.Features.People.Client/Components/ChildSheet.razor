@@ -1,5 +1,7 @@
 @inject PeopleClient People
 
+<UnsavedGuard Changed="() => Child is not null && (_name is not null || _born is not null || _email.Trim().Length > 0)" What="@($"{Child?.Name}'s details")" />
+
 <Sheet Open="Child is not null" OpenChanged="OpenChanged" Title="@Child?.Name" Lead="@Lead">
     <ChildContent>
         @if (Child is { } child)

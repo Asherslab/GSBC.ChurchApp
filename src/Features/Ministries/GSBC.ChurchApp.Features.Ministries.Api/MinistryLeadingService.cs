@@ -262,7 +262,7 @@ internal sealed class MinistryLeadingService(
         return MinistryViews.Details(ministry);
     }
 
-    public async ValueTask<MinistryDetails> AddTeamAsync(MinistrySave request, CallContext context = default)
+    public async ValueTask<MinistryDetails> AddSubMinistryAsync(MinistrySave request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryRecord parent = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);

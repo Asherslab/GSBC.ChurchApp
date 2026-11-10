@@ -1,4 +1,6 @@
 
+<UnsavedGuard Changed="() => Dirty" What="this sermon" Save="SaveBeforeLeavingAsync" />
+
 <div class="sermon-check">
     <div class="sermon-check__head">
         <MediaCover Media="Detail.Sermon.Artwork" FallbackTitle="@Detail.Sermon.Title" Class="sermon-check__art" />
@@ -63,6 +65,10 @@
         {
             <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Reset">Undo changes</Button>
         }
+        @if (SaveBar.For(Dirty, _saved) is { } state)
+        {
+            <SaveStatus State="state" />
+        }
         <Button Variant="ButtonVariant.Quiet" Icon="@(Detail.Hidden ? "eye" : "eye-off")" Disabled="_busy" OnClick="ToggleHiddenAsync">@(Detail.Hidden ? "Show in the app" : "Hide from the app")</Button>
         @if (Detail.Hidden)
         {
@@ -84,7 +90,7 @@
 
 @code {
     private string _title = "", _speakerId = "", _seriesId = "", _service = "", _youTube = "", _passage = "", _summary = "";
-    private bool _busy, _deleting;
+    private bool _busy, _deleting, _saved;
     private string? _problem;
     private readonly List<SpeakerDetail> _addedSpeakers = [];
     private readonly List<SeriesDetail> _addedSeries = [];
@@ -164,6 +170,12 @@
         _problem = null;
     }
 
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync(check: false);
+        return _problem is null;
+    }
+
     private Task SaveAsync(bool check) => SendAsync(new SermonCorrection
     {
         Id = Detail.Sermon.Id,
@@ -213,6 +225,7 @@
         try
         {
             SermonDetail saved = await Sermons.CorrectAsync(correction);
+            _saved = true;
             await Saved.InvokeAsync(new SermonSaved(saved, next));
         }
         catch (RpcException exception)

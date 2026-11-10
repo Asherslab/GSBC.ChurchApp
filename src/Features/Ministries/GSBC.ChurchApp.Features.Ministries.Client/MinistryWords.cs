@@ -47,22 +47,6 @@ public static class MinistryWords
         _ => "ministry-box--everyone",
     };
 
-    public static string Joining(string joining) => joining switch
-    {
-        Contracts.Joining.Open => "Open: anyone joins",
-        Contracts.Joining.Ask => "Ask: a leader says yes",
-        Contracts.Joining.Invite => "Invite only",
-        _ => "No attendees",
-    };
-
-    public static string JoinShort(string joining) => joining switch
-    {
-        Contracts.Joining.Open => "Open",
-        Contracts.Joining.Ask => "Ask",
-        Contracts.Joining.Invite => "Invite only",
-        _ => "None",
-    };
-
     public static string Role(string role) => role switch
     {
         Roles.Leader => "Leader",
@@ -75,8 +59,8 @@ public static class MinistryWords
 
     public static string JoinLine(MinistrySummary ministry) => ministry.TeamJoin switch
     {
-        Contracts.Joining.Open => "Open to join",
-        Contracts.Joining.Ask => "Ask to join",
+        Joining.Open => "Open to join",
+        Joining.Ask => "Ask to join",
         _ => "Invite only",
     };
 
@@ -94,6 +78,10 @@ public static class MinistryWords
             return $"{Names(attending)} {(attending.Count == 1 ? "attends" : "attend")}";
         return you.Roles.Contains(Roles.Attendee) ? "You come along" : "";
     }
+
+    public static string Possessive(string name) => name.EndsWith('s') ? $"{name}'" : $"{name}'s";
+
+    public static string Ministries(int count) => count == 1 ? "1 ministry" : $"{count} ministries";
 
     public static string Names(IReadOnlyList<string> names) =>
         names.Count <= 1 ? names.FirstOrDefault() ?? "" : $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}";

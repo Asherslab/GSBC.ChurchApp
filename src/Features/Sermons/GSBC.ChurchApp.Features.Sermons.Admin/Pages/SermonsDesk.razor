@@ -1,5 +1,6 @@
 @page "/sermons"
 @inject SermonsAdminClient Sermons
+@inject UnsavedChanges Unsaved
 
 <TitleBand Title="Sermons" Lead="The AV team uploads each sermon here, and the office gives it a look. What you save is on phones and the website at once.">
     <Actions>
@@ -57,7 +58,7 @@
         <section class="sermons-desk__record" aria-label="@(_uploading ? "Upload a sermon" : "The sermon")">
             @if (_uploading)
             {
-                <UploadSermon Sermons="Sermons" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Added="AddedAsync" Cancelled="() => _uploading = false" />
+                <UploadSermon Sermons="Sermons" Series="context.Value.Series" Speakers="context.Value.Speakers" Services="context.Value.Services" Added="AddedAsync" Cancelled="CancelUploadAsync" />
             }
             else if (Selected(context.Value) is { } selected)
             {
@@ -115,21 +116,35 @@
 
     private string EmptyBody => _query.Length > 0 ? "Try part of the title or the speaker's name." : _filter == SermonFilters.NeedsALook ? "Every new sermon has been checked." : "Choose another filter.";
 
-    private void Select(string id)
+    private async Task Select(string id)
     {
+        if (!await Unsaved.MayLeaveAsync())
+            return;
         _uploading = false;
         _selectedId = id;
     }
 
-    private void StartUpload() => _uploading = true;
-
-    private Task FilterAsync(string filter)
+    private async Task StartUpload()
     {
+        if (await Unsaved.MayLeaveAsync())
+            _uploading = true;
+    }
+
+    private async Task CancelUploadAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            _uploading = false;
+    }
+
+    private async Task FilterAsync(string filter)
+    {
+        if (!await Unsaved.MayLeaveAsync())
+            return;
         _filter = filter;
         _chosenFilter = true;
         _take = PageSize;
         _selectedId = null;
-        return ReloadAsync();
+        await ReloadAsync();
     }
 
     private Task SearchAsync(string query)

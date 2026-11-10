@@ -1,5 +1,8 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="the person you were adding" />
 
 <h2 class="panel-title">Add someone</h2>
 <p class="panel-lead">Send their invitation now, or add them without sending anything. Either way you can give them roles in Who can do what and put them in ministries straight away.</p>
@@ -7,12 +10,11 @@
     <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" />
     <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" />
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    <Notice Text="@_done" />
-    <div class="panel-actions">
-        <Button Type="submit" Icon="send" Busy="_busy" Disabled="@Incomplete">Send the invitation</Button>
+    <SaveBar Class="panel-actions" Submit="true" Label="Send the invitation" Busy="_busy" Blocked="@(Incomplete ? "Give their name and email to add them." : null)"
+             State="SaveBar.For(Changed, _done is not null)" SavedText="@(_done ?? "")">
         <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" Disabled="@Incomplete" OnClick="AddAsync">Add without inviting</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
-    </div>
+        <Button Variant="ButtonVariant.Quiet" OnClick="CloseAsync">Close</Button>
+    </SaveBar>
     <p class="panel-hint">Someone added without an invitation hears nothing from the app until you send it, from their page or all at once from People.</p>
 </form>
 
@@ -25,6 +27,14 @@
 
     [Parameter] public EventCallback OnSent { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+
+    private bool Changed => _name.Trim().Length > 0 || _email.Trim().Length > 0;
+
+    private async Task CloseAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            await OnCancel.InvokeAsync();
+    }
 
     private bool Incomplete => _name.Trim().Length == 0 || _email.Trim().Length == 0;
 

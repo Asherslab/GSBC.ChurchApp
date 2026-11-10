@@ -1,5 +1,7 @@
 @inject CalendarEditing Editing
 
+<UnsavedGuard Changed="() => Changed" What="this break" Save="SaveBeforeLeavingAsync" />
+
 <div class="event-panel">
     <EventHead Day="@EventDates.Parse(_start)" Title="@(_name.Length > 0 ? _name : "New break")" When="@When" Compact="true" />
     <div class="event-body event-body--editing">
@@ -15,7 +17,7 @@
                 <ul class="kept-list">
                     @foreach (string id in used.UsedBy)
                     {
-                        <li>@(RegularEvents.TryGetValue(id, out string? title) ? title : "A regular event in a calendar that's turned off")</li>
+                        <li>@(RegularEvents.GetValueOrDefault(id) ?? "A regular event in a calendar that's turned off")</li>
                     }
                 </ul>
                 <span class="field__hint">Changing the dates changes every one of these.</span>
@@ -25,7 +27,7 @@
     </div>
     <div class="editor-foot editor-foot--panel">
         <div class="editor-foot__actions">
-            <Button Block="true" Busy="_saving" Disabled="@(!Valid)" OnClick="SaveAsync">@(Break is null ? "Add the break" : "Save")</Button>
+            <SaveBar Block="true" Label="@(Break is null ? "Add the break" : "Save")" Busy="_saving" OnSave="SaveAsync" Blocked="@Blocked" State="SaveBar.For(Changed, _saved)" />
             <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
         </div>
         @if (Break is not null)
@@ -48,7 +50,9 @@
     private string _start = "";
     private string _end = "";
     private string? _problem;
-    private bool _saving, _deleting;
+    private bool _saving, _deleting, _saved, _loaded;
+    private BreakInfo? _loadedFrom;
+    private (string Name, string Start, string End) _stored;
 
     [Parameter] public BreakInfo? Break { get; set; }
     [Parameter] public IReadOnlyDictionary<string, string> RegularEvents { get; set; } = new Dictionary<string, string>();
@@ -62,15 +66,34 @@
         var count => $"The {count} regular events that pause for it are on again on those dates. This can't be undone.",
     };
 
-    private bool Valid => _name.Trim().Length > 0 && EventDates.Parse(_start) is { } start && EventDates.Parse(_end) is { } end && end >= start;
+    private string? Blocked =>
+        _name.Trim().Length == 0 ? $"Give it a name to {(Break is null ? "add" : "save")} it."
+        : EventDates.Parse(_start) is not { } start || EventDates.Parse(_end) is not { } end ? "Choose the day it starts and the day it ends."
+        : end < start ? "It can't end before it starts."
+        : null;
+
+    private bool Changed => (_name, _start, _end) != _stored;
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (Blocked is not null)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
 
     private string? When => EventDates.Parse(_start) is { } start && EventDates.Parse(_end) is { } end ? $"{EventWords.Date(start)} to {EventWords.Date(end)}" : null;
 
     protected override void OnParametersSet()
     {
+        if (_loaded && ReferenceEquals(_loadedFrom, Break))
+            return;
+        _saved = _saved && _loadedFrom?.Id == Break?.Id;
+        (_loaded, _loadedFrom) = (true, Break);
         _name = Break?.Name ?? "";
         _start = Break?.StartDate ?? "";
         _end = Break?.EndDate ?? "";
+        _stored = (_name, _start, _end);
     }
 
     private async Task SaveAsync()
@@ -78,6 +101,7 @@
         await RunAsync(async () =>
         {
             await Editing.Setup.SaveBreakAsync(new BreakInfo { Id = Break?.Id ?? "", Name = _name.Trim(), StartDate = _start, EndDate = _end });
+            (_stored, _saved) = ((_name, _start, _end), true);
             await Saved.InvokeAsync();
             if (Break is null)
                 await Closed.InvokeAsync();
@@ -91,6 +115,7 @@
         await RunAsync(async () =>
         {
             await Editing.Setup.DeleteBreakAsync(new BreakRef { Id = Break.Id });
+            _stored = (_name, _start, _end);
             _deleting = false;
             await Saved.InvokeAsync();
             await Closed.InvokeAsync();

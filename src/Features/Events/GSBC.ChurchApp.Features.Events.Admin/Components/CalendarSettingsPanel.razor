@@ -3,6 +3,8 @@
 @inject CalendarSubscriptions Subscriptions
 @inject IPlacePeopleSource People
 
+<UnsavedGuard Changed="() => Changed" What="this calendar" Save="SaveBeforeLeavingAsync" />
+
 <div class="event-panel">
     <EventHead Title="@(_name.Length > 0 ? _name : "New calendar")" Compact="true" />
     <div class="event-body event-body--editing">
@@ -23,14 +25,11 @@
                        Hint="@(CalendarSubscriptions.IsForEveryone(existing.Settings.Calendar) ? "Anyone can subscribe with this." : "A private calendar: people subscribe through their own link in the app.")" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        @if (_saved)
-        {
-            <p class="event-saved" role="status"><Icon Name="check" Size="IconSize.Small" />Saved.</p>
-        }
     </div>
     <div class="editor-foot editor-foot--panel">
         <div class="editor-foot__actions">
-            <Button Block="true" Busy="_saving" Disabled="@(_name.Trim().Length == 0)" OnClick="SaveAsync">@(Calendar is null ? "Add the calendar" : "Save")</Button>
+            <SaveBar Block="true" Label="@(Calendar is null ? "Add the calendar" : "Save")" Busy="_saving" OnSave="SaveAsync" State="SaveBar.For(Changed, _saved)"
+                     Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(Calendar is null ? "add" : "save")} it." : null)" />
             <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Close</Button>
         </div>
         @if (Calendar is not null)
@@ -70,6 +69,9 @@
     private string? _problem;
     private bool _saving;
     private bool _saved;
+    private bool _loaded;
+    private DeskCalendar? _loadedFrom;
+    private object _stored = "";
     private CalendarRemoval? _removal;
     private string? _removeProblem;
 
@@ -82,8 +84,24 @@
         ? $"Read-only here while it's set. Last read {EventWords.Date(EventWords.Today(read))}."
         : "A calendar copied from elsewhere (school terms, a ministry's Google Calendar) stays read-only here and refreshes by itself.";
 
+    private object Shape => (_name, _description, _audience, _defaults, _needsPublisher, _icalSource);
+
+    private bool Changed => !Shape.Equals(_stored);
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (_name.Trim().Length == 0)
+            return false;
+        await SaveAsync();
+        return _problem is null;
+    }
+
     protected override void OnParametersSet()
     {
+        if (_loaded && ReferenceEquals(_loadedFrom, Calendar))
+            return;
+        _saved = _saved && _loadedFrom?.Settings.Calendar.Id == Calendar?.Settings.Calendar.Id;
+        (_loaded, _loadedFrom) = (true, Calendar);
         CalendarSettings? settings = Calendar?.Settings;
         _name = settings?.Calendar.Name ?? "";
         _description = settings?.Calendar.Description ?? "";
@@ -91,6 +109,7 @@
         _defaults = settings?.Calendar.ShownOnNewPhones ?? false;
         _needsPublisher = settings?.NeedsPublisher ?? false;
         _icalSource = settings?.ICalSource ?? "";
+        _stored = Shape;
     }
 
     private string LinkFor(CalendarInfo calendar) => Subscriptions.Web(CalendarSubscriptions.CalendarPath(calendar));
@@ -119,7 +138,7 @@
                 NeedsPublisher = _needsPublisher,
                 ICalSource = _icalSource,
             });
-            _saved = true;
+            (_saved, _stored) = (true, Shape);
             await Saved.InvokeAsync();
             if (Calendar is null)
                 await Closed.InvokeAsync();
@@ -155,6 +174,7 @@
         try
         {
             await Editing.Setup.RemoveCalendarAsync(new CalendarToRemove { CalendarId = Calendar!.Settings.Calendar.Id });
+            _stored = Shape;
             _removal = null;
             await Removed.InvokeAsync();
         }

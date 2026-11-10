@@ -1,5 +1,8 @@
 @page "/sermons/series-and-speakers"
 @inject SermonsAdminClient Sermons
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="@(_speaker is null ? "this series" : "this speaker")" Save="SaveBeforeLeavingAsync" />
 
 <TitleBand Title="Series and speakers" BackHref="sermons" BackText="Sermons"
            Lead="Name a series, give it a picture and a line about it; keep the list of speakers, with their names and photos." />
@@ -10,14 +13,14 @@
             <div class="series-desk__head">
                 <h2>Series</h2>
                 <Can Permission="SermonsPermissions.Edit">
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSeries">New series</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="() => OpenAsync(NewSeries)">New series</Button>
                 </Can>
             </div>
             <SearchField Label="Find a series" Placeholder="Find a series" Value="@_seriesQuery" ValueChanged="query => _seriesQuery = query" />
             <div class="series-desk__list">
                 @foreach (SeriesDetail series in Matching(context.Value.Series, _seriesQuery, one => one.Name))
                 {
-                    <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSeries(series)">
+                    <button type="button" class="sermon-pick @(_series?.Id == series.Id && _series.Id.Length > 0 ? "is-selected" : "")" @onclick="() => OpenAsync(() => EditSeries(series))">
                         <MediaCover Media="series.Artwork" Size="MediaSizeName.Thumbnail" FallbackTitle="@series.Name" Class="sermon-pick__thumb" />
                         <span class="sermon-pick__words">
                             <strong>@series.Name</strong>
@@ -35,14 +38,14 @@
             <div class="series-desk__head">
                 <h2>Speakers</h2>
                 <Can Permission="SermonsPermissions.Edit">
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="NewSpeaker">New speaker</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="plus" OnClick="() => OpenAsync(NewSpeaker)">New speaker</Button>
                 </Can>
             </div>
             <SearchField Label="Find a speaker" Placeholder="Find a speaker" Value="@_speakerQuery" ValueChanged="query => _speakerQuery = query" />
             <div class="series-desk__list">
                 @foreach (SpeakerDetail speaker in Matching(context.Value.Speakers, _speakerQuery, SpeakerName))
                 {
-                    <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id && _speaker.Id.Length > 0 ? "is-selected" : "")" @onclick="() => EditSpeaker(speaker)">
+                    <button type="button" class="sermon-pick @(_speaker?.Id == speaker.Id && _speaker.Id.Length > 0 ? "is-selected" : "")" @onclick="() => OpenAsync(() => EditSpeaker(speaker))">
                         <Avatar Name="@speaker.Name" Photo="speaker.Photo" Size="40" />
                         <span class="sermon-pick__words">
                             <strong>@speaker.Name</strong>
@@ -81,8 +84,10 @@
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <Button Busy="_busy" OnClick="SaveSeriesAsync">@(editing.Id.Length == 0 ? "Add the series" : "Save")</Button>
-                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
+                    <SaveBar Label="@(editing.Id.Length == 0 ? "Add the series" : "Save")" Busy="_busy" OnSave="SaveSeriesAsync" State="SaveBar.For(Changed, _saved)"
+                             Blocked="@(_name.Trim().Length == 0 ? $"Give it a name to {(editing.Id.Length == 0 ? "add" : "save")} it." : null)">
+                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => OpenAsync(Close)">Cancel</Button>
+                    </SaveBar>
                 </div>
                 @if (editing.Id.Length > 0)
                 {
@@ -114,8 +119,10 @@
                 </div>
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="panel-actions">
-                    <Button Busy="_busy" OnClick="SaveSpeakerAsync">@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")</Button>
-                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Close">Cancel</Button>
+                    <SaveBar Label="@(speaker.Id.Length == 0 ? "Add the speaker" : "Save")" Busy="_busy" OnSave="SaveSpeakerAsync" State="SaveBar.For(Changed, _saved)"
+                             Blocked="@(_name.Trim().Length == 0 ? $"Give them a name to {(speaker.Id.Length == 0 ? "add" : "save")} them." : null)">
+                        <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => OpenAsync(Close)">Cancel</Button>
+                    </SaveBar>
                 </div>
                 @if (speaker.Id.Length > 0)
                 {
@@ -182,7 +189,7 @@
     private SpeakerDetail? _speaker;
     private string _name = "", _description = "", _seriesQuery = "", _speakerQuery = "";
     private MediaRef? _picture;
-    private bool _busy, _choosing, _removed, _deleting;
+    private bool _busy, _choosing, _removed, _deleting, _saved;
     private SpeakerDetail? _moveSpeakerTo;
     private SeriesDetail? _moveSeriesTo;
     private SeriesDeletion? _seriesDeletion;
@@ -223,6 +230,24 @@
     private MediaRef? ShownArtwork(SeriesDetail series) => _picture ?? (_removed ? null : series.Artwork);
 
     private MediaRef? ShownPhoto(SpeakerDetail speaker) => _picture ?? (_removed ? null : speaker.Photo);
+
+    private bool Changed =>
+        _series is { } series ? _name != series.Name || _description != series.Description || _picture is not null || _removed
+        : _speaker is { } speaker && (_name != speaker.Name || _picture is not null || _removed);
+
+    private async Task OpenAsync(Action open)
+    {
+        if (await Unsaved.MayLeaveAsync())
+            open();
+    }
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        if (_name.Trim().Length == 0)
+            return false;
+        await (_speaker is null ? SaveSeriesAsync() : SaveSpeakerAsync());
+        return _problem is null;
+    }
 
     private void NewSeries() => EditSeries(new SeriesDetail());
 
@@ -289,17 +314,20 @@
         _picture = null;
         _removed = false;
         _choosing = false;
+        _saved = false;
         _problem = null;
     }
 
     private Task SaveSeriesAsync() => RunAsync(async () =>
     {
         EditSeries(await Sermons.SaveSeriesAsync(new SeriesDetail { Id = _series!.Id, Name = _name, Description = _description, Artwork = ShownArtwork(_series) }));
+        _saved = true;
     });
 
     private Task SaveSpeakerAsync() => RunAsync(async () =>
     {
         EditSpeaker(await Sermons.SaveSpeakerAsync(new SpeakerDetail { Id = _speaker!.Id, Name = _name, Photo = ShownPhoto(_speaker) }));
+        _saved = true;
     });
 
     private async Task RunAsync(Func<Task> work, bool reload = true)

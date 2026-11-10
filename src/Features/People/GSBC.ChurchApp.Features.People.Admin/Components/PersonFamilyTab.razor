@@ -3,6 +3,8 @@
 @inject IAccess Access
 @inject TimeProvider Clock
 
+<UnsavedGuard Changed="() => Changed" What="their family details" />
+
 <LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Family]" Load="() => People.GetPersonAsync(Person.Id).AsTask()" FailedTitle="Can't load this family right now">
     @{
         PersonFamily family = context.Value;
@@ -199,7 +201,9 @@
     private Linking _linking;
     private bool _busy, _changingBirthDate;
     private string? _busyFor, _message;
-    private string _born = "", _childName = "", _childBorn = "";
+    private string _born = "", _bornWas = "", _childName = "", _childBorn = "";
+
+    private bool Changed => (_changingBirthDate && _born != _bornWas) || _childName.Trim().Length > 0 || _childBorn.Length > 0;
 
     [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
 
@@ -251,7 +255,7 @@
 
     private void StartBirthDate(PersonFamily family)
     {
-        _born = PeopleWords.FieldDay(family.BirthDate);
+        _born = _bornWas = PeopleWords.FieldDay(family.BirthDate);
         _changingBirthDate = true;
     }
 

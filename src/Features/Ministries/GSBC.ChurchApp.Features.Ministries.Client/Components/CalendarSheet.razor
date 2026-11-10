@@ -23,7 +23,7 @@
         }
         else
         {
-            <Button Block="true" Busy="_busy" OnClick="SaveAsync">@(Draft.Id.Length == 0 ? "Add the calendar" : "Save")</Button>
+            <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? "Add the calendar" : "Save")" Busy="_busy" OnSave="SaveAsync" />
             @if (Draft.Id.Length > 0)
             {
                 <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="AskRemoveAsync">Remove the calendar</Button>

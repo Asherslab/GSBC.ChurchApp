@@ -1,5 +1,8 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="the sign-in code" />
 
 <h2 class="panel-title">Make a code</h2>
 @if (_made is not null)
@@ -26,10 +29,9 @@ else
         <TextField Label="What it's for" @bind-Value="_label" AutoComplete="off" Hint="Such as TestFlight 1.2 or App Store 1.0" MaxLength="80" />
         <TextField Label="Works for (days)" Type="number" Value="@_days" ValueChanged="value => _days = value" Min="1" Max="180" Hint="30 days is usually enough for a review" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        <div class="panel-actions">
-            <Button Type="submit" Icon="key" Busy="_busy" Disabled="@(!int.TryParse(_days, out _))">Make the code</Button>
-            <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
-        </div>
+        <SaveBar Class="panel-actions" Submit="true" Label="Make the code" Busy="_busy" Blocked="@(!int.TryParse(_days, out _) ? "Say how many days it works for to make it." : null)">
+            <Button Variant="ButtonVariant.Quiet" OnClick="CloseAsync">Close</Button>
+        </SaveBar>
     </form>
 }
 
@@ -50,6 +52,14 @@ else
     private IReadOnlyList<FieldOption> Choices => DemoAccounts.Select(account => new FieldOption(account.UserId, $"{account.DisplayName} ({account.Email})")).ToList();
 
     private string UserId => _userId ?? DemoAccounts[0].UserId;
+
+    private bool Changed => _made is null && _label.Trim().Length > 0;
+
+    private async Task CloseAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            await OnCancel.InvokeAsync();
+    }
 
     private async Task MakeAsync()
     {
