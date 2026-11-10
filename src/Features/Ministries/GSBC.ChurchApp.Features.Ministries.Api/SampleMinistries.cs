@@ -39,11 +39,11 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
         int order = 0;
         List<(Guid, string, string)> calendars = [];
         MinistryRecord Add(Guid? parent, string name, string summary, string about, string meets, string whoFor, string colour, string icon,
-            string teamJoin, string attendJoin, string kind = MinistryKinds.Ministry)
+            string teamJoin, string attendJoin, bool inLifeGroups = false)
         {
             MinistryRecord ministry = new()
             {
-                Id = Guid.CreateVersion7(), ParentId = parent, Kind = kind, Name = name, Summary = summary, About = about, Meets = meets,
+                Id = Guid.CreateVersion7(), ParentId = parent, ShowsInLifeGroups = inLifeGroups, Name = name, Summary = summary, About = about, Meets = meets,
                 WhoFor = whoFor, Colour = colour, Icon = icon, TeamJoin = teamJoin, AttendJoin = attendJoin, Order = order++, CreatedAt = now, UpdatedAt = now,
             };
             db.Ministries.Add(ministry);
@@ -92,19 +92,19 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
         DateOnly sunday = today.AddDays((7 - (int)today.DayOfWeek) % 7);
         RoundRecord round = new()
         {
-            Id = Guid.CreateVersion7(), MinistryId = lifeGroups.Id, Name = "Sample round", Sundays = [.. Enumerable.Range(0, 4).Select(week => sunday.AddDays(7 * week))],
+            Id = Guid.CreateVersion7(), Name = "Sample round", Sundays = [.. Enumerable.Range(0, 4).Select(week => sunday.AddDays(7 * week))],
             Starts = new TimeOnly(9, 0), Ends = new TimeOnly(9, 45), ShowsFrom = today,
         };
         db.Rounds.Add(round);
         MinistryRecord first = Add(lifeGroups.Id, "Psalms of Ascent", "Four weeks in the songs pilgrims sang", "Sample group.", "", "Adults", "#009c8f", "book-open",
-            Joining.Invite, Joining.Open, MinistryKinds.LifeGroup);
-        (first.RoundId, first.Room) = (round.Id, "Library (5)");
+            Joining.Invite, Joining.Open, inLifeGroups: true);
+        (first.RoundId, first.Meets) = (round.Id, "Library (5)");
         MinistryRecord second = Add(lifeGroups.Id, "Faith at Work", "Living it out Monday to Friday", "Sample group.", "", "Adults", "#e7ae74", "book-open",
-            Joining.Invite, Joining.Open, MinistryKinds.LifeGroup);
-        (second.RoundId, second.Room) = (round.Id, "Room 2");
-        MinistryRecord kidsLife = Add(lifeGroups.Id, "Kids Life", "Prep to Year 6, all year", "Sample group.", "", "Prep to Year 6", "#f89833", "smile",
-            Joining.Invite, Joining.Open, MinistryKinds.LifeGroup);
-        (kidsLife.Room, kidsLife.JoinAsParent) = ("Hall", true);
+            Joining.Invite, Joining.Open, inLifeGroups: true);
+        (second.RoundId, second.Meets) = (round.Id, "Room 2");
+        MinistryRecord kidsLife = Add(kids.Id, "Kids Life", "Prep to Year 6, all year", "Sample group.", "", "Prep to Year 6", "#f89833", "smile",
+            Joining.Invite, Joining.Open, inLifeGroups: true);
+        kidsLife.Meets = "Hall";
         db.Sessions.Add(new SessionRecord { GroupId = second.Id, Date = round.Sundays[1], Off = true, Note = "No class this week" });
         db.Sessions.Add(new SessionRecord { GroupId = first.Id, Date = round.Sundays[2], Note = "Combined with Faith at Work, in Room 2" });
         return new SampleSet(calendars);

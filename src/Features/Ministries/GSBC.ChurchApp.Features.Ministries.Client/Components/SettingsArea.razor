@@ -10,16 +10,16 @@
         <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
         <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" />
         <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" />
-        @if (Details.Kind == MinistryKinds.LifeGroup)
-        {
-            <TextField Label="Room" @bind-Value="Details.Room" MaxLength="60" />
-        }
     </div>
 </Section>
 
-<Section Title="Joining" Lead="@(Details.Kind == MinistryKinds.LifeGroup ? "How people get on the team, and how they get into the group." : "How people get on the team, and how they start coming along.")">
-    <JoiningFields Kind="@Details.Kind" TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
+<Section Title="Joining" Lead="How people get on the team, and how they start coming along.">
+    <JoiningFields TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
                    AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
+</Section>
+
+<Section Title="Life Groups" Lead="Life Groups lists Sunday classes and groups from every ministry, for people choosing one.">
+    <LifeGroupsFields Shows="Details.ShowsInLifeGroups" ShowsChanged="value => Details.ShowsInLifeGroups = value" RoundId="@Details.RoundId" RoundIdChanged="value => Details.RoundId = value" />
 </Section>
 
 <Section>
@@ -33,18 +33,15 @@
 
 <MoveSection Page="Page" OnChanged="OnChanged" />
 
-@if (Page.Ministry.Kind != MinistryKinds.LifeGroup)
-{
-    <Section Title="Ministries under it" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")">
-        <ListGroup>
-            @foreach (MinistrySummary under in Page.SubMinistries)
-            {
-                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@under.Summary" Chevron="true" Href="@Href(under.Id)" />
-            }
-            <ListRow Title="Add a ministry" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
-        </ListGroup>
-    </Section>
-}
+<Section Title="Ministries under it" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")">
+    <ListGroup>
+        @foreach (MinistrySummary under in Page.SubMinistries)
+        {
+            <ListRow @key="under.Id" Title="@under.Name" Subtitle="@under.Summary" Chevron="true" Href="@Href(under.Id)" />
+        }
+        <ListRow Title="Add a ministry" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
+    </ListGroup>
+</Section>
 
 @if (Page.You.MayDelete)
 {
@@ -108,14 +105,14 @@
     }
 
     private static bool Same(MinistryDetails one, MinistryDetails other) =>
-        (one.Name, one.Summary, one.About, one.Meets, one.WhoFor, one.Room, one.TeamJoin, one.AttendJoin)
-        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.Room, other.TeamJoin, other.AttendJoin);
+        (one.Name, one.Summary, one.About, one.Meets, one.WhoFor, one.TeamJoin, one.AttendJoin, one.ShowsInLifeGroups, one.RoundId)
+        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.TeamJoin, other.AttendJoin, other.ShowsInLifeGroups, other.RoundId);
 
     private static MinistryDetails Copy(MinistryDetails from) => new()
     {
-        Id = from.Id, ParentId = from.ParentId, Kind = from.Kind, Name = from.Name, Summary = from.Summary, About = from.About, Meets = from.Meets,
+        Id = from.Id, ParentId = from.ParentId, Name = from.Name, Summary = from.Summary, About = from.About, Meets = from.Meets,
         WhoFor = from.WhoFor, Colour = from.Colour, Icon = from.Icon, TeamJoin = from.TeamJoin, AttendJoin = from.AttendJoin, RoundId = from.RoundId,
-        Room = from.Room, JoinAsParent = from.JoinAsParent, Order = from.Order,
+        ShowsInLifeGroups = from.ShowsInLifeGroups, Order = from.Order,
     };
 
     private static string DeleteWords(DeletionPreview preview)

@@ -1,0 +1,29 @@
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+
+<ToggleRow Title="Show in Life Groups" Description="It's listed with the Life Groups in the app, wherever it sits" Checked="Shows" CheckedChanged="ShowsChanged" />
+@if (Shows)
+{
+    <LiveData TValue="LifeGroupsPage" Load="Ministries.LifeGroupsAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.life-groups" FailedTitle="Can't load the Life Groups' Sundays right now">
+        <Segmented TValue="string" Label="When it shows" ShowLabel="true" Stacked="true" Options="Sundays(context.Value)" Value="@RoundId" ValueChanged="RoundIdChanged"
+                   Hint="All year, or with the groups on a set of Sundays. Staff plan the Sundays on Life Groups in the admin panel." />
+    </LiveData>
+}
+
+@code {
+    [Parameter] public bool Shows { get; set; }
+    [Parameter] public EventCallback<bool> ShowsChanged { get; set; }
+    [Parameter] public string RoundId { get; set; } = "";
+    [Parameter] public EventCallback<string> RoundIdChanged { get; set; }
+
+    private IReadOnlyList<SegmentOption<string>> Sundays(LifeGroupsPage page)
+    {
+        string today = ChurchTime.Today(Clock).ToString("yyyy-MM-dd");
+        return
+        [
+            new("", "All year"),
+            .. page.Rounds.Where(round => round.Id == RoundId || string.CompareOrdinal(round.Sundays.LastOrDefault(), today) >= 0)
+                .Select(round => new SegmentOption<string>(round.Id, MinistryWords.Span(round))),
+        ];
+    }
+}

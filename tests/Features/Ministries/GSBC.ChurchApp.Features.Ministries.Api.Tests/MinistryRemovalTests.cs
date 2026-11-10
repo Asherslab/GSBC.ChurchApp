@@ -87,7 +87,7 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
 
     private MinistryRecord Ministry(string name, Guid? parent) => new()
     {
-        Id = Guid.CreateVersion7(), ParentId = parent, Name = name, Kind = MinistryKinds.Ministry, TeamJoin = Joining.Ask, AttendJoin = Joining.None,
+        Id = Guid.CreateVersion7(), ParentId = parent, Name = name, TeamJoin = Joining.Ask, AttendJoin = Joining.None,
         CreatedAt = _clock.UtcNow, UpdatedAt = _clock.UtcNow,
     };
 

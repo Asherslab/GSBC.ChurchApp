@@ -29,13 +29,12 @@ internal sealed class MinistriesService(
         Guid? me = Me(context);
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         GrantSet grants = await views.GrantsAsync(me, cancellationToken);
-        Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, tree, grants, cancellationToken) : [];
+        Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, tree.All, grants, cancellationToken) : [];
         Dictionary<Guid, string> latest = await LatestAsync(tree, yours.Keys, grants, cancellationToken);
         Dictionary<Guid, int> waiting = me is null ? [] : (await db.Asks.AsNoTracking().GroupBy(ask => ask.MinistryId)
                 .Select(group => new { group.Key, Count = group.Count() }).ToListAsync(cancellationToken))
             .Where(group => MinistryViews.Holds(grants, MinistriesPermissions.People, group.Key))
             .ToDictionary(group => group.Key, group => group.Count);
-        Guid? lifeGroups = await views.LifeGroupsHomeAsync(tree, cancellationToken);
         return new MinistryDirectory
         {
             Ministries = tree.All.OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
@@ -43,13 +42,12 @@ internal sealed class MinistriesService(
                     waiting.GetValueOrDefault(ministry.Id)), ministry, grants))
                 .ToList(),
             MayCreate = grants.IsAllowed(MinistriesPermissions.Create),
-            LifeGroupsId = lifeGroups?.ToString() ?? "",
         };
     }
 
     private static MinistrySummary MayAddUnder(MinistrySummary summary, MinistryRecord ministry, GrantSet grants)
     {
-        summary.MayAddUnder = ministry.Kind != MinistryKinds.LifeGroup && MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
+        summary.MayAddUnder = MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
         return summary;
     }
 
@@ -71,7 +69,7 @@ internal sealed class MinistriesService(
             Calendars = await views.CalendarsAsync(tree, ministry.Id, grants, me is not null, cancellationToken),
             You = await YouAsync(me, tree, ministry, grants, cancellationToken),
         };
-        if (ministry.Kind == MinistryKinds.LifeGroup)
+        if (ministry.ShowsInLifeGroups)
         {
             page.Sessions = (await db.Sessions.AsNoTracking().Where(session => session.GroupId == ministry.Id).OrderBy(session => session.Date).ToListAsync(cancellationToken))
                 .Select(MinistryViews.Session).ToList();
@@ -84,24 +82,24 @@ internal sealed class MinistriesService(
     public async ValueTask<LifeGroupsPage> LifeGroupsAsync(LifeGroupsRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
+        Guid? me = Me(context);
         MinistryTree tree = await views.TreeAsync(cancellationToken);
-        List<MinistryRecord> groups = tree.All.Where(ministry => ministry.Kind == MinistryKinds.LifeGroup).OrderBy(group => group.Order).ThenBy(group => group.Name).ToList();
-        Guid? home = await views.LifeGroupsHomeAsync(tree, cancellationToken);
+        IReadOnlyList<MinistryRecord> groups = tree.LifeGroups();
         List<Guid> groupIds = groups.Select(group => group.Id).ToList();
         List<SessionRecord> sessions = await db.Sessions.AsNoTracking().Where(session => groupIds.Contains(session.GroupId)).ToListAsync(cancellationToken);
-        GrantSet grants = await views.GrantsAsync(Me(context), cancellationToken);
+        GrantSet grants = await views.GrantsAsync(me, cancellationToken);
+        Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, groups, grants, cancellationToken) : [];
         return new LifeGroupsPage
         {
-            MinistryId = home?.ToString() ?? "",
-            Rounds = home is { } parent
-                ? (await db.Rounds.AsNoTracking().Where(round => round.MinistryId == parent).ToListAsync(cancellationToken))
-                    .OrderBy(round => round.Sundays.DefaultIfEmpty().Min()).Select(MinistryViews.Round).ToList()
-                : [],
-            Groups = groups.Select(group => MinistryViews.Summary(group)).ToList(),
+            Rounds = (await db.Rounds.AsNoTracking().ToListAsync(cancellationToken))
+                .OrderBy(round => round.Sundays.DefaultIfEmpty().Min()).Select(MinistryViews.Round).ToList(),
+            Groups = groups.Select(group => MinistryViews.Summary(group, yours.GetValueOrDefault(group.Id) ?? "")).ToList(),
             Sessions = sessions.GroupBy(session => session.GroupId)
                 .Select(each => new GroupSessions { GroupId = each.Key.ToString(), Changes = each.OrderBy(session => session.Date).Select(MinistryViews.Session).ToList() })
                 .ToList(),
-            MaySetUp = home is { } lifeGroups && MinistryViews.Holds(grants, MinistriesPermissions.Settings, lifeGroups),
+            MayPlan = grants.IsAllowed(MinistriesPermissions.PlanLifeGroups),
+            Under = groups.Select(group => group.ParentId).OfType<Guid>().Distinct().Select(tree.Find).OfType<MinistryRecord>()
+                .Select(parent => new Crumb { Id = parent.Id.ToString(), Name = parent.Name }).ToList(),
         };
     }
 
@@ -249,12 +247,12 @@ internal sealed class MinistriesService(
         return you;
     }
 
-    private async Task<Dictionary<Guid, string>> YoursAsync(Guid me, MinistryTree tree, GrantSet grants, CancellationToken cancellationToken)
+    private async Task<Dictionary<Guid, string>> YoursAsync(Guid me, IEnumerable<MinistryRecord> among, GrantSet grants, CancellationToken cancellationToken)
     {
         Dictionary<Guid, string> yours = [];
         IReadOnlyList<Guid> children = (await views.FactsAsync([me], cancellationToken))[me].Children;
         IReadOnlyDictionary<Guid, string> names = children.Count > 0 ? await people.NamesAsync(children, cancellationToken) : new Dictionary<Guid, string>();
-        foreach (MinistryRecord ministry in tree.All)
+        foreach (MinistryRecord ministry in among)
         {
             bool sees = MinistryViews.Holds(grants, MinistriesPermissions.AttendeesView, ministry.Id)
                         || MinistryViews.Holds(grants, MinistriesPermissions.TeamView, ministry.Id);

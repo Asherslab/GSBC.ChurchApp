@@ -154,8 +154,7 @@ from the child's sheet (through `IFamilies.LinkAsync`, only for people in that m
 
 **The join settings explain themselves** (owner, 2026-11-10: "there's nothing telling the person creating the ministry
 what they are"). Settings and *A new ministry* share `JoiningFields`: *Joining the team* and *Coming along*, each labelled
-with a hint saying what it controls, and every option saying what happens to the person joining. A Life Group shows only
-*Joining the group*, since nobody joins a Life Group's team from the app. Every Ministries and Life Groups form asks
+with a hint saying what it controls, and every option saying what happens to the person joining. Every Ministries and Life Groups form asks
 before you leave it with unsaved changes (owner, 2026-11-10: "can accidentally lose my progress"): Platform.Ui's
 `UnsavedGuard`, with *Save and go on* where the form saves with a button.
 
@@ -166,7 +165,7 @@ team*, *Joining the team*, *Team only*); the owner hasn't asked to change that, 
 
 **Where a new ministry sits** (owner, 2026-11-10: "should also let you select what ministry it sits under"). *A new
 ministry* asks *Sits under* with the shared search picker, preselecting the ministry it was opened from. The directory
-marks each ministry `MayAddUnder` (Settings there, through Access; never a Life Group), and only staff with
+marks each ministry `MayAddUnder` (Settings there, through Access), and only staff with
 `ministries.create` get "Nothing: it's a top-level ministry". A leader sees *New ministry* when they may add under
 anything they lead.
 
@@ -207,8 +206,8 @@ The owner's notes after trying Stage 2 on their phone, and what was built for th
 **Ministries under ministries, one tap away** (owner: "i'd like navigating to child ministries to be simpler, e.g. showing
 the child ministries under the main one like in the admin panel"). The app's *All ministries* is the tree: each ministry
 with the ones under it indented beneath, three levels deep; a third-level ministry with more under it says "2 ministries
-under it" and shows the rest on its page (*default*). A Life Group under an ordinary ministry shows there too, marked "Life
-Group". The admin desk's tree and the app's list walk the tree the same way (`MinistryTrees`). *Ministries under it* stays
+under it" and shows the rest on its page (*default*). A ministry shown in Life Groups is in the tree like any other, its
+line starting "Life Group". The admin desk's tree and the app's list walk the tree the same way (`MinistryTrees`). *Ministries under it* stays
 on each ministry's About.
 
 **Turning parts of a ministry on and off** (owner: "tabs at the top of a ministry, should be features that are hidden/shown
@@ -237,20 +236,34 @@ nobody sees an event they wouldn't see in that ministry. Events draws the list (
 Events fills, since features don't reference each other); in the admin panel it shows the calendars the person edits.
 
 **Life Groups under ordinary ministries** (owner: Kids Life "is a life group ministry technically, but does sit under kids
-ministries, which needs to be possible"). *A new ministry*, in the app and the admin panel, asks *What it is*: a ministry
-or a Life Group; a Life Group adds its room, its Sundays (all year or one of the dated sets) and *Join as a parent*, and
-must sit under a ministry. It shows on Life Groups with the others, under its ministry in the directory and the desk, is
-led by that ministry's leaders, and can have calendars like any ministry (which then show on the parent's combined
-calendar). **The Life Groups ministry** is the one that holds the dated sets, or else the ministry holding only Life
-Groups, never one that merely has a Life Group under it (before this, a Life Group under Kids Ministries made Kids
-Ministries vanish from the directory).
+ministries, which needs to be possible"). Superseded the same day by *Show in Life Groups* below: any ministry, anywhere,
+can be listed in Life Groups.
 
 ## Parts, combined news and moving a ministry (owner, 2026-11-10)
 
 **A Life Group is a full ministry** (owner, 2026-11-10: "they're a full ministry, just more temporary. should have all the
-stuff normal ministries do, that's why they're a subset of them"): its own team with *Joining the team*, the group with
-*Joining the group* (never "No attendees"), and every team tool a ministry has. Details in
-[life-groups.md](life-groups.md), *Built*.
+stuff normal ministries do, that's why they're a subset of them"). Taken further the same day: see *Show in Life Groups*.
+
+## Show in Life Groups (owner, 2026-11-10)
+
+The owner, asked how Kids Life (under Kids Ministries) fits a Life Groups page built around one "Life Groups" ministry,
+chose **every group, wherever it sits**, and then: "honestly - "ministry is a life group" should basically just be a tag
+that either shows or doesn't show that ministry in the lifegroups lists. there's nothing special about them otherwise, just
+where they show and how they might be pushed/discovered". So:
+
+- **There is no Life Group kind.** A ministry has a switch, *Show in Life Groups* (Settings → *Life Groups*, and *A new
+  ministry*), saved with its details by whoever may change its settings. It can be top-level, have ministries under it,
+  sit anywhere and move anywhere, with every setting and tool any ministry has and no Life Group case in joining, People,
+  Access or the app.
+- **What the tag does:** the ministry is listed on Life Groups (the admin desk, the app's page, Home's rows and the Hub
+  tile) and in the directory's Life Groups section, and its line in the directory starts "Life Group". With the tag on,
+  *When it shows* puts it with a set of Sundays or *All year*; a ministry in a set has the *Sundays* tab for marking
+  changes.
+- **The room is the ministry's *When and where it meets*,** and *Join as a parent* is gone: joining for your child is how
+  every ministry works (*Coming along*). The migration moved each group's room into *When and where it meets* and turned
+  the tag on for every former Life Group, so Kids Life keeps its place under Kids Ministries and shows on Life Groups.
+- **A "Life Groups" ministry is optional**: an ordinary ministry for the rotating adult groups and whoever runs them.
+
 
 **No real ministries as examples in the copy** (owner, 2026-11-10: "i don't really want direct mentions of it in the
 frontend as being as/for kids life"): placeholders and hints are generic; the rule is in DESIGN.md, *Examples in copy*.
@@ -276,16 +289,15 @@ Settings → *Where it sits*, in the app and the admin panel (the same Settings)
 (`MinistryRules.WhyNotMove`, gRPC `Leading.Moving` and `Leading.Move`):
 - **Who may:** whoever may change the ministry's settings (`ministries.settings.edit` there, through Access) **and** may add
   under the new place (the same permission there; `ministries.create` to make it top-level, so staff only). Never under
-  itself or anything under it, never under a Life Group, and a Life Group never at the top level.
+  itself or anything under it.
 - **It says what changes first,** in sentences: where it goes and how many ministries under it go with it, the leaders (and
   admins) of the ministries it leaves who won't lead it any more, those of its new place who will, and whose combined news or
   calendar it joins or leaves. Its own people, posts, files and calendars move with it unchanged.
 - **Everything from the tree follows by itself:** only the ministry's parent changes, and Access reads the tree for inherited
   roles (`MinistryHierarchy`), so the move tells Access the scopes changed (grants are recompiled and each person's feeds reset,
   which carries calendars, iCal links and event notifications), and touches the moved ministry, everything under it and both
-  parents on the Ministries feed, so the directory, the desk's tree, combined news and calendars, Life Groups' home and every
-  open ministry page reload. A Life Group moves the same way.
-- **Moving a Life Group works the same** (it needs a ministry to sit under).
+  parents on the Ministries feed, so the directory, the desk's tree, combined news and calendars, Life Groups and every
+  open ministry page reload. A ministry shown in Life Groups moves the same way.
 - **Drag and drop in the admin tree: not built** (*default*): the Settings picker does it, with the preview; dragging would
   skip the preview and needs a keyboard way to be accessible.
 
@@ -354,7 +366,7 @@ its latest announcement. Home has it as a Hub tile ("You're on Sunday · Choir i
 
 ## The model
 
-- **Ministry:** a **kind** (Ministry or Life Group), name, a one-line summary, About paragraphs, meets (free text), who it's for, leaders,
+- **Ministry:** whether it shows in Life Groups, name, a one-line summary, About paragraphs, meets (free text), who it's for, leaders,
   colour and icon, an optional **parent**, a **join setting** (Open, Ask, Invite only), a **serving
   team** flag, and its **modules**: Calendar, Announcements, Chats, Rosters, Files. A ministry with
   children (Children's Ministry, Impact Youth) can't switch Chats on yet (below).
@@ -378,6 +390,9 @@ its latest announcement. Home has it as a Hub tile ("You're on Sunday · Choir i
   reply, plus for Music the songs with their practice files. They come from Elvanto (below).
 
 ## Life Groups are ministries
+
+Since 2026-11-10 a Life Group is any ministry with *Show in Life Groups* on, with no kind, room or *join as a parent* of its
+own ([Show in Life Groups](#show-in-life-groups-owner-2026-11-10)); this section is the 2026-10-30 design it grew from.
 
 A Life Group is a ministry of kind **Life Group** (owner, 2026-10-30). It shares the model and the
 modules: About, leaders, Join and Leave, the notifications switch, notices (Announcements), resources

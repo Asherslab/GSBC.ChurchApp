@@ -5,10 +5,9 @@
     <ChildContent>
         @{
             MinistryDirectory directory = context.Value;
-            List<MinistrySummary> ministries = directory.Ministries.Where(ministry => ministry.Kind != MinistryKinds.LifeGroup).ToList();
-            List<MinistrySummary> yours = ministries.Where(ministry => ministry.Yours.Length > 0).ToList();
-            List<(MinistrySummary Ministry, int Depth)> tree = MinistryTrees.Walk(directory.Ministries, directory.LifeGroupsId, Deepest).ToList();
-            List<MinistrySummary> groups = directory.Ministries.Where(ministry => ministry.Kind == MinistryKinds.LifeGroup).ToList();
+            List<MinistrySummary> yours = directory.Ministries.Where(ministry => ministry.Yours.Length > 0).ToList();
+            List<(MinistrySummary Ministry, int Depth)> tree = MinistryTrees.Walk(directory.Ministries, deepest: Deepest).ToList();
+            List<MinistrySummary> groups = directory.Ministries.Where(ministry => ministry.ShowsInLifeGroups).ToList();
             List<MinistrySummary> yourGroups = groups.Where(group => group.Yours.Length > 0).ToList();
         }
         @if (yours.Count > 0)
@@ -28,7 +27,7 @@
                 @foreach ((MinistrySummary ministry, int depth) in tree)
                 {
                     int hidden = depth == Deepest ? MinistryTrees.Under(directory.Ministries, ministry) : 0;
-                    <ListRow @key="ministry.Id" Indent="depth" Title="@ministry.Name" Subtitle="@Line(ministry, hidden)" Icon="@AboutArea.IconOf(ministry)"
+                    <ListRow @key="ministry.Id" Indent="depth" Title="@ministry.Name" Subtitle="@Line(ministry, hidden)" Icon="@AboutArea.IconOf(ministry.Icon)"
                              Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
                 }
                 @if (directory.MayCreate || directory.Ministries.Any(ministry => ministry.MayAddUnder))
@@ -60,7 +59,7 @@
     private static string Line(MinistrySummary ministry, int hidden)
     {
         List<string> parts = [];
-        if (ministry.Kind == MinistryKinds.LifeGroup)
+        if (ministry.ShowsInLifeGroups)
             parts.Add("Life Group");
         if (ministry.Summary.Length > 0)
             parts.Add(ministry.Summary);

@@ -6,7 +6,7 @@
     <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
         <div class="ministry-form">
             <SitsUnderPicker Directory="context.Value" UnderId="@(_chosen ?? Page.Ministry.ParentId)" UnderIdChanged="ChooseAsync" LeaveOut="@Page.Ministry.Id"
-                             TopLevelAllowed="@(Page.Ministry.Kind != MinistryKinds.LifeGroup)" Disabled="_busy"
+                             Disabled="_busy"
                              Hint="To move it, choose where it goes. You'll see what changes before anything moves." />
             @if (_preview is { } preview)
             {

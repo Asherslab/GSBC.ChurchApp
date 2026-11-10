@@ -74,9 +74,9 @@ public sealed class MinistriesClient(ChannelBase channel)
 
     public async Task RemoveCalendarAsync(string ministryId, string id) => await _leading.RemoveCalendarAsync(new ItemRef { MinistryId = ministryId, Id = id });
 
-    public async Task SaveRoundAsync(string ministryId, Round round) => await _leading.SaveRoundAsync(new RoundSave { MinistryId = ministryId, Round = round });
+    public async Task SaveRoundAsync(Round round) => await _leading.SaveRoundAsync(new RoundSave { Round = round });
 
-    public async Task DeleteRoundAsync(string ministryId, string id) => await _leading.DeleteRoundAsync(new ItemRef { MinistryId = ministryId, Id = id });
+    public async Task DeleteRoundAsync(string id) => await _leading.DeleteRoundAsync(new RoundRef { Id = id });
 
     public async Task SaveSessionAsync(string groupId, SessionChange change) =>
         await _leading.SaveSessionAsync(new SessionSave { MinistryId = groupId, Change = change });

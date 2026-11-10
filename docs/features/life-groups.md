@@ -4,7 +4,37 @@ Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
 
+## Show in Life Groups (owner, 2026-11-10)
+
+The owner saw the admin Life Groups page say "No Life Groups yet" although Kids Life (under Kids Ministries) existed, asked
+how it works for Kids Life, and chose **every group, wherever it sits**. Then: "honestly - "ministry is a life group"
+should basically just be a tag that either shows or doesn't show that ministry in the lifegroups lists. there's nothing
+special about them otherwise, just where they show and how they might be pushed/discovered". This replaces the Life Group
+kind below:
+
+- **A Life Group is any ministry with *Show in Life Groups* on** (Settings → *Life Groups*, or *A new ministry*). It can sit
+  anywhere, be top-level and have ministries under it; it is a ministry like any other in every other way. Details in
+  [ministries.md](ministries.md#show-in-life-groups-owner-2026-11-10).
+- **Every one shows on Life Groups:** the admin desk (each saying where it sits: "Under Kids Ministries"), the app's page,
+  Home's rows and the Hub tile. *Your groups* in the app lists the ones you or your children are in. The empty state shows
+  only when there are no Life Groups and no sets of Sundays at all, and offers *Add a Life Group* (the new-ministry sheet
+  with the switch already on). A "Life Groups" ministry is optional: an ordinary ministry for the rotating adult groups and
+  whoever runs them.
+- **The sets of Sundays are church-wide** (*default*, Claude's reading of the brief): a set belongs to no ministry; a
+  ministry shown in Life Groups is in one set or *All year* (*When it shows*). Planning sets (*Plan the next groups*,
+  *Sundays and time*, deleting an empty set) needs `ministries.lifegroups.plan`, a church-wide permission: the Ministries
+  Manager role has it (staff), and the new **Life Groups planner** role gives only that. Leading a ministry doesn't give it.
+  Existing sets were kept as they were and lost their owner.
+- **Adding a Life Group** follows *A new ministry*: under a ministry you may add under (its leaders and staff, through
+  Access), or top-level for staff.
+- **The room** is now the ministry's *When and where it meets*, and **Join as a parent** is gone: a parent joins for their
+  child through *Coming along*, as in any ministry (the earlier rule, a parent joining a children's group for their child,
+  still holds). The one thing lost: the app no longer hides "Me" from adults on a children's group.
+
 ## Built (2026-11-10)
+
+Since superseded in part by *Show in Life Groups* above: there is no Life Group kind, room or *Join as a parent*, and the
+sets of Sundays belong to no ministry.
 
 - **A Life Group is a ministry of kind Life Group** under a *Life Groups* ministry, so joining, leaders, news, files and
   the People tab are the ministries' own (the owner: "all those features are why lifegroups are a subset/type of ministry").

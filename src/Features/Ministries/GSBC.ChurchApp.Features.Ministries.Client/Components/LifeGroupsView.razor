@@ -9,9 +9,15 @@
             _choosing = sets.Next?.Groups ?? [];
             _set = sets.Next?.Round;
         }
+        @if (sets.Yours.Count > 0)
+        {
+            <Section First="true" Title="Your groups">
+                <ListGroup>@Rows(sets.Yours, "")</ListGroup>
+            </Section>
+        }
         @if (sets.Next is { Groups.Count: > 0 } next)
         {
-            <Section First="true">
+            <Section First="@(sets.Yours.Count == 0)">
                 <Card Title="@($"New groups from {MinistryWords.Day(next.Round.Sundays[0])}")">
                     <ChildContent>
                         <p>@Count(next.Groups.Count, "group") on @Count(next.Round.Sundays.Count, "Sunday"), @MinistryWords.Time(next.Round.Starts) to @MinistryWords.Time(next.Round.Ends). Choose one for you, and for each of your children.</p>
@@ -22,23 +28,23 @@
         }
         @if (sets.Now is { Groups.Count: > 0 } now)
         {
-            <Section First="@(sets.Next is null)" Title="Now on" Lead="@($"{MinistryWords.Span(now.Round)}, {MinistryWords.Time(now.Round.Starts)} to {MinistryWords.Time(now.Round.Ends)}")">
+            <Section First="@(sets.Yours.Count == 0 && sets.Next is null)" Title="Now on" Lead="@($"{MinistryWords.Span(now.Round)}, {MinistryWords.Time(now.Round.Starts)} to {MinistryWords.Time(now.Round.Ends)}")">
                 <ListGroup>@Rows(now.Groups, $"until {MinistryWords.Day(now.Round.Sundays[^1])}")</ListGroup>
             </Section>
         }
         @if (sets.AllYear.Count > 0)
         {
-            <Section First="@(sets.Now is null && sets.Next is null)" Title="All year">
+            <Section First="@(sets.Yours.Count == 0 && sets.Now is null && sets.Next is null)" Title="All year">
                 <ListGroup>@Rows(sets.AllYear, "")</ListGroup>
             </Section>
         }
-        @if (sets.Now is null && sets.Next is null && sets.AllYear.Count == 0)
+        @if (!sets.Any)
         {
             <Section First="true"><EmptyState Icon="book-open" Title="No Life Groups on right now" Body="The next groups show here as soon as the church sets them up." /></Section>
         }
         <PagedSheet Open="_open" OpenChanged="open => _open = open" Count="_choosing.Count" Label="Choose a group" ItemName="Group" DoneLabel="Close">
             <Cover Context="index">
-                <SheetHeading Icon="book-open" Title="@_choosing[index].Name" Note="@_choosing[index].Room" />
+                <SheetHeading Icon="book-open" Title="@_choosing[index].Name" Note="@_choosing[index].Meets" />
             </Cover>
             <Page Context="index">
                 @if (_choosing[index].Summary.Length > 0)
@@ -50,16 +56,12 @@
                     {
                         <ListRow Title="@MinistryWords.Span(set)" Subtitle="@($"Sundays, {MinistryWords.Time(set.Starts)} to {MinistryWords.Time(set.Ends)}")" Icon="clock" IconTone="RowTone.Quiet" />
                     }
-                    @if (_choosing[index].Room.Length > 0)
+                    @if (_choosing[index].Meets.Length > 0)
                     {
-                        <ListRow Title="@_choosing[index].Room" Subtitle="Where it meets" Icon="map-pin" IconTone="RowTone.Quiet" />
+                        <ListRow Title="@_choosing[index].Meets" Subtitle="Where it meets" Icon="map-pin" IconTone="RowTone.Quiet" />
                     }
                     <ListRow Title="More about it" Subtitle="Its leaders, news and files" Icon="book-open" IconTone="RowTone.Quiet" Chevron="true" Href="@MinistriesPlaces.Of(_choosing[index].Id)" />
                 </ListGroup>
-                @if (_choosing[index].JoinAsParent)
-                {
-                    <p class="hint">For children: join for your child, and you'll hear about it too.</p>
-                }
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </Page>
             <Action Context="index">
@@ -112,7 +114,7 @@
     private RenderFragment Rows(IReadOnlyList<MinistrySummary> groups, string until) => @<text>
         @foreach (MinistrySummary group in groups)
         {
-            string line = string.Join(" · ", new[] { group.Room, group.Yours.Length > 0 ? group.Yours : group.Summary, until }.Where(part => part.Length > 0));
+            string line = string.Join(" · ", new[] { group.Meets, group.Yours.Length > 0 ? group.Yours : group.Summary, until }.Where(part => part.Length > 0));
             <ListRow @key="group.Id" Title="@group.Name" Subtitle="@line" Icon="@AboutArea.IconOf(group.Icon)" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.Of(group.Id)" />
         }
     </text>;

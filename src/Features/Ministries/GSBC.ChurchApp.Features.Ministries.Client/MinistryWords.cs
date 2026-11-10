@@ -57,17 +57,12 @@ public static class MinistryWords
 
     public static string HeroNote(MinistryDetails ministry) => ministry.Summary.Length > 0 ? ministry.Summary : ministry.Meets;
 
-    public static string JoinLine(MinistrySummary ministry) => (ministry.Kind == MinistryKinds.LifeGroup ? ministry.AttendJoin : ministry.TeamJoin) switch
+    public static string JoinLine(MinistrySummary ministry) => ministry.TeamJoin switch
     {
         Joining.Open => "Open to join",
         Joining.Ask => "Ask to join",
         _ => "Invite only",
     };
-
-    public static string UnderLine(MinistrySummary ministry) =>
-        ministry.Kind == MinistryKinds.LifeGroup
-            ? string.Join(" · ", new[] { "Life Group", ministry.Summary }.Where(part => part.Length > 0))
-            : JoinLine(ministry);
 
     public static string Yours(MinistryPage page)
     {

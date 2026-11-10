@@ -16,7 +16,7 @@
     {
         TileLook look = TileLook.Of(MinistriesTiles.Ministries, Entry.Values);
         TileVariant variant = MinistriesTiles.Ministries.VariantFor(look, Hub.Columns);
-        List<MinistrySummary> yours = directory?.Ministries.Where(ministry => ministry.Yours.Length > 0 && ministry.Kind != MinistryKinds.LifeGroup).ToList() ?? [];
+        List<MinistrySummary> yours = directory?.Ministries.Where(ministry => ministry.Yours.Length > 0).ToList() ?? [];
         string title = yours.Count > 0 ? "Your ministries" : look.Title;
         IReadOnlyList<string> lines = yours.Count > 0
             ? yours.Take(2).Select(ministry => ministry.Latest.Length > 0 ? $"{ministry.Name}: {ministry.Latest}" : $"{ministry.Name} · {ministry.Yours}").ToList()

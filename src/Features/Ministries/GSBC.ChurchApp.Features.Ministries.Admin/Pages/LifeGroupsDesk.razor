@@ -3,11 +3,15 @@
 @inject MinistriesClient Ministries
 @inject TimeProvider Clock
 
-<TitleBand Title="Life Groups" Lead="Set up the next groups and the all-year groups. People see new groups in the app from the date you choose.">
+<TitleBand Title="Life Groups" Lead="Every ministry shown in Life Groups, wherever it sits. People see the next groups in the app from the date you choose.">
     <Actions>
-        @if (_page is { MaySetUp: true, MinistryId.Length: > 0 })
+        @if (_page is { MayPlan: true })
         {
-            <Button Icon="plus" OnClick="() => OpenSet(null)">Plan the next groups</Button>
+            <Button Variant="ButtonVariant.Quiet" Icon="calendar" OnClick="() => OpenSet(null)">Plan the next groups</Button>
+        }
+        @if (_mayAdd)
+        {
+            <Button Icon="plus" OnClick="() => OpenGroup(null)">Add a Life Group</Button>
         }
     </Actions>
 </TitleBand>
@@ -17,20 +21,20 @@
         LifeGroupsPage page = context.Value;
         DateOnly today = ChurchTime.Today(Clock);
     }
-    @if (page.MinistryId.Length == 0)
+    @if (page.Groups.Count == 0 && page.Rounds.Count == 0)
     {
-        <EmptyState Icon="book-open" Title="No Life Groups yet" Body="Life Groups live under a ministry of their own. Add groups to it once it's made.">
-            @if (page.MaySetUp || _mayCreate)
+        <EmptyState Icon="book-open" Title="No Life Groups yet" Body="A Life Group is a ministry shown here, under any ministry. Add one, or switch on Show in Life Groups in a ministry's settings.">
+            @if (_mayAdd)
             {
-                <Button OnClick="() => _creatingHome = true">Make the Life Groups ministry</Button>
+                <Button OnClick="() => OpenGroup(null)">Add a Life Group</Button>
             }
         </EmptyState>
     }
     else
     {
-        @if (!page.MaySetUp)
+        @if (!page.MayPlan)
         {
-            <Notice Text="Staff who look after Life Groups set them up. You can see them here." />
+            <Notice Text="Staff who plan Life Groups set their Sundays. You can see them here." />
         }
         <div class="life-groups-desk">
             @foreach (Round round in page.Rounds.OrderBy(round => round.Sundays.FirstOrDefault()))
@@ -45,14 +49,14 @@
                     <ListGroup>
                         @foreach (MinistrySummary group in groups)
                         {
-                            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
+                            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(page, group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
                         }
-                        @if (page.MaySetUp)
+                        @if (_mayAdd)
                         {
                             <ListRow Title="Add a group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(round.Id)" />
                         }
                     </ListGroup>
-                    @if (page.MaySetUp)
+                    @if (page.MayPlan)
                     {
                         <div class="ui-actions ministry-actions">
                             <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" OnClick="() => OpenSet(round)">Sundays and time</Button>
@@ -66,13 +70,13 @@
             }
             <section class="life-groups-desk__set">
                 <header class="life-groups-desk__head"><h2>All year</h2></header>
-                <p class="hint">Groups that meet every Sunday. A children's group lets parents join for their child.</p>
+                <p class="hint">Groups that meet every Sunday, wherever they sit.</p>
                 <ListGroup>
-                    @foreach (MinistrySummary group in page.Groups.Where(group => group.RoundId.Length == 0))
+                    @foreach (MinistrySummary group in page.Groups.Where(group => page.Rounds.All(round => round.Id != group.RoundId)))
                     {
-                        <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
+                        <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(page, group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
                     }
-                    @if (page.MaySetUp)
+                    @if (_mayAdd)
                     {
                         <ListRow Title="Add an all-year group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(null)" />
                     }
@@ -84,7 +88,6 @@
 </LiveData>
 
 <UnsavedGuard Changed="() => _setOpen && SetShape != _setWas" What="these groups' Sundays and time" />
-<UnsavedGuard Changed="() => _groupOpen && (_groupName.Length > 0 || _groupSummary.Length > 0 || _groupRoom.Length > 0)" What="the new group" />
 
 <Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and time")" Lead="People see these groups by their dates. Add the Sundays they meet; skip breaks." Wide="true">
     <ChildContent>
@@ -111,26 +114,12 @@
     </Actions>
 </Sheet>
 
-<Sheet Open="_groupOpen" OpenChanged="open => _groupOpen = open" Title="@(_groupRound is null ? "An all-year group" : "A group")" Lead="Add its leaders, news and files on its page once it's made.">
-    <ChildContent>
-        <TextField Label="Name" @bind-Value="_groupName" MaxLength="60" Required="true" />
-        <TextField Label="In a line" @bind-Value="_groupSummary" MaxLength="140" />
-        <TextField Label="Room" @bind-Value="_groupRoom" MaxLength="60" />
-        <ToggleRow Title="Join as a parent" Description="For children's groups: parents join for their child" @bind-Checked="_groupForChildren" />
-        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    </ChildContent>
-    <Actions>
-        <SaveBar Block="true" Label="Add the group" Busy="_busy" OnSave="SaveGroupAsync" Blocked="@(_groupName.Trim().Length == 0 ? "Give it a name to add it." : null)" />
-    </Actions>
-</Sheet>
-
-<MinistrySheet Open="_creatingHome" OpenChanged="open => _creatingHome = open" OnCreated="_ => ReloadAsync()" />
+<MinistrySheet Open="_groupOpen" OpenChanged="open => _groupOpen = open" InLifeGroups="true" RoundId="@(_groupRound ?? "")" OnCreated="_ => ReloadAsync()" />
 
 @code {
     private LiveData<LifeGroupsPage>? _live;
     private LifeGroupsPage? _page;
-    private bool _mayCreate;
-    private bool _creatingHome;
+    private bool _mayAdd;
     private bool _setOpen;
     private Round? _set;
     private List<string> _sundays = [];
@@ -141,25 +130,25 @@
     private string _setWas = "";
     private bool _groupOpen;
     private string? _groupRound;
-    private string _groupName = "";
-    private string _groupSummary = "";
-    private string _groupRoom = "";
-    private bool _groupForChildren;
     private bool _busy;
     private string? _problem;
 
     private async Task<LifeGroupsPage> LoadAsync()
     {
         _page = await Ministries.LifeGroupsAsync();
-        if (_page.MinistryId.Length == 0)
-            _mayCreate = (await Ministries.DirectoryAsync()).MayCreate;
+        MinistryDirectory directory = await Ministries.DirectoryAsync();
+        _mayAdd = directory.MayCreate || directory.Ministries.Any(ministry => ministry.MayAddUnder);
+        StateHasChanged();
         return _page;
     }
 
     private static string Count(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 
-    private static string GroupLine(MinistrySummary group) =>
-        string.Join(" · ", new[] { group.Room, group.Summary, group.JoinAsParent ? "parents join for their children" : "" }.Where(part => part.Length > 0));
+    private static string GroupLine(LifeGroupsPage page, MinistrySummary group) =>
+        string.Join(" · ", new[] { Where(page, group), group.Meets, group.Summary }.Where(part => part.Length > 0));
+
+    private static string Where(LifeGroupsPage page, MinistrySummary group) =>
+        page.Under.FirstOrDefault(crumb => crumb.Id == group.ParentId) is { } parent ? $"Under {parent.Name}" : "Top-level";
 
     private static string State(Round round, DateOnly today) =>
         Day(round.Sundays.LastOrDefault()) < today ? "Finished"
@@ -200,25 +189,13 @@
         {
             Round round = new() { Id = _set?.Id ?? "", Sundays = _sundays.Order().ToList(), Starts = _starts, Ends = _ends, ShowsFrom = _showsFrom };
             round.Name = MinistryWords.Span(round);
-            await Ministries.SaveRoundAsync(_page!.MinistryId, round);
+            await Ministries.SaveRoundAsync(round);
             _setOpen = false;
         });
 
-    private Task DeleteSetAsync(Round round) => RunAsync(() => Ministries.DeleteRoundAsync(_page!.MinistryId, round.Id));
+    private Task DeleteSetAsync(Round round) => RunAsync(() => Ministries.DeleteRoundAsync(round.Id));
 
-    private void OpenGroup(string? roundId) =>
-        (_groupRound, _groupName, _groupSummary, _groupRoom, _groupForChildren, _problem, _groupOpen) = (roundId, "", "", "", false, null, true);
-
-    private Task SaveGroupAsync() =>
-        RunAsync(async () =>
-        {
-            await Ministries.AddSubMinistryAsync(_page!.MinistryId, new MinistryDetails
-            {
-                Kind = MinistryKinds.LifeGroup, Name = _groupName, Summary = _groupSummary, Room = _groupRoom, JoinAsParent = _groupForChildren,
-                RoundId = _groupRound ?? "", TeamJoin = Joining.Invite, AttendJoin = Joining.Open,
-            });
-            _groupOpen = false;
-        });
+    private void OpenGroup(string? roundId) => (_groupRound, _problem, _groupOpen) = (roundId, null, true);
 
     private async Task RunAsync(Func<Task> work)
     {

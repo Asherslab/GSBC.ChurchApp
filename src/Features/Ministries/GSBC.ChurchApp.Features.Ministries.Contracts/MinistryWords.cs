@@ -5,12 +5,6 @@ public static class MinistryNames
     public static string Possessive(string name) => name.EndsWith('s') ? $"{name}'" : $"{name}'s";
 }
 
-public static class MinistryKinds
-{
-    public const string Ministry = "ministry";
-    public const string LifeGroup = "life-group";
-}
-
 public sealed record MinistryPart(string Key, string Name, string Does, PartFromBelow? FromBelow = null);
 
 public sealed record PartFromBelow(string Title, string Does);
