@@ -6,12 +6,12 @@ namespace GSBC.ChurchApp.Features.Sermons.Api;
 internal static class SermonMedia
 {
     public static readonly MediaSystemArea Pictures = new("sermons", "Sermon artwork",
-        "Pictures of sermons, series and speakers that the app keeps itself, such as those brought across from the old website. Each picture is kept once, however many sermons use it, and Media makes the sizes phones need.",
-        SermonsPermissions.Edit);
+        "Pictures of sermons, series and speakers that the app keeps itself, such as those brought across from the old website. Each picture is kept once, however many sermons use it, and Media makes the sizes phones need. One nothing uses any more can be deleted.",
+        SermonsPermissions.Edit, StaffDeleteUnused: true);
 
     public static readonly MediaSystemArea Audio = new("sermons-audio", "Sermon audio",
-        "The sermons' audio in the church's own storage: what the AV team uploads and what was brought across from the old website. Each recording is kept once.",
-        SermonsPermissions.Edit);
+        "The sermons' audio in the church's own storage: what the AV team uploads and what was brought across from the old website. Each recording is kept once. One no sermon uses any more, such as a deleted sermon's, can be deleted.",
+        SermonsPermissions.Edit, StaffDeleteUnused: true);
 
     public static string SermonOwner(Guid id) => $"sermons/sermon/{id}";
 

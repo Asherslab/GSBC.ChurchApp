@@ -85,7 +85,9 @@ Every delete asks first, says what happens, and says it can't be undone.
   when it next connects.
 - **A sermon, only once it's hidden** (owner, 2026-11-09: "only delete after it's hidden"). Deleting removes the
   sermon, its uploaded audio file in R2 (unless Media keeps it), its picture use and everyone's listening progress on
-  it (deleted from the progress feed), and rewrites the podcast feed. Notifications already sent about it open nothing.
+  it (deleted from the progress feed), and rewrites the podcast feed. Audio Media keeps (every upload, once
+  `AudioKeeper` has hashed it, and every imported recording) stays in *Sermon audio* as *Not used*, and holders of
+  `media.delete` delete it there (`StaffDeleteUnused`, as fonts are; the same for *Sermon artwork*). Notifications already sent about it open nothing.
 - **Custom services need no delete** (owner, 2026-11-09): one drops out of the picker once no sermon uses it
   (*Services*).
 - Tests: `DeletingTests` (feeds, followers, pictures; a sermon's audio and progress).
