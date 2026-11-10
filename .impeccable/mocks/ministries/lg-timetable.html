@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Life Groups: the Sundays as a timetable</title><link rel="stylesheet" href="sketch.css">
+<style>
+.tt { width: 100%; border-collapse: collapse; font-size: var(--text-caption); margin-top: 8px; }
+.tt th { font-size: var(--text-pill); padding: 6px 4px; color: var(--ink-3); text-align: center; }
+.tt th:first-child { text-align: left; }
+.tt td { padding: 8px 4px; border-bottom: 1px solid var(--line); text-align: center; }
+.tt td:first-child { text-align: left; }
+.tt td b { display: block; font-size: var(--text-label); }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); }
+.dot.off { background: transparent; box-shadow: inset 0 0 0 2px var(--ink-3); }
+.dot.chg { background: var(--marker); }
+</style></head>
+<body class="board">
+
+<div class="dev"><div class="cap">Life Groups in the app</div><div class="screen">
+  <div class="top">‹ More</div>
+  <div class="mast"><h1>Life Groups</h1><p>Sundays 9:00 to 9:45, before the 10:30 service</p></div>
+  <div class="sec first"><h2>Now on</h2><p class="lead">15 November to 6 December</p>
+    <table class="tt"><tr><th>Group</th><th>15 Nov</th><th>22</th><th>29</th><th>6 Dec</th></tr>
+      <tr><td><b>Psalms of Ascent</b>Library (5)</td><td><span class="dot"></span></td><td><span class="dot"></span></td><td><span class="dot chg"></span></td><td><span class="dot"></span></td></tr>
+      <tr><td><b>Faith at Work</b>Room 2</td><td><span class="dot"></span></td><td><span class="dot off"></span></td><td><span class="dot"></span></td><td><span class="dot"></span></td></tr>
+    </table>
+    <p class="hint"><span class="dot"></span> on · <span class="dot chg"></span> changed (tap to see) · <span class="dot off"></span> no class</p></div>
+  <div class="sec"><h2>All year</h2><div class="list">
+    <div class="row"><div class="tile act">N</div><div class="t"><b>Nursery</b><span class="s">0 to 3 · Nursery room</span></div><span class="add">Join as a parent</span></div>
+    <div class="row"><div class="tile act">K</div><div class="t"><b>Kids Life</b><span class="s">Prep to Year 6 · Hall</span></div><span class="add">Join as a parent</span></div>
+  </div></div>
+  <div class="sec"><div class="callout"><b>Next, from 24 January</b><p>Three new groups. See them from 10 January.</p></div></div>
+  <div class="tabbar"><span>Home</span><span>Sunday</span><span>Listen</span><span>Events</span><span class="on">More</span></div>
+</div></div>
+
+<div class="dev"><div class="cap">A group</div><div class="screen">
+  <div class="top">‹ Life Groups</div>
+  <div class="hero"><div class="kind">Library (5) · Sundays 9:00</div><h1>Psalms of Ascent</h1><p>Led by Alex Sample · until 6 December</p><div class="act"><span class="btn">Join</span></div></div>
+  <div class="stabs"><span>About</span><span class="on">Sundays</span><span>News</span><span>Files</span></div>
+  <div class="sec first"><div class="list">
+    <div class="row"><div class="t"><b>15 November</b><span class="s">Psalm 120</span></div></div>
+    <div class="row"><div class="t"><b>22 November</b><span class="s">Psalm 121</span></div></div>
+    <div class="row"><div class="t"><b>29 November</b><span class="s" style="color:var(--marker-ink);font-weight:600">Combined with Faith at Work, in Room 2</span></div></div>
+    <div class="row"><div class="t"><b>6 December</b><span class="s">Psalm 122</span></div></div>
+  </div></div>
+</div></div>
+
+<div class="deskwrap"><div class="cap">Setting them up · admin panel, staff</div><div class="desk">
+  <div class="side"><div class="grp">Church life</div><div class="lnk">Ministries</div><div class="lnk on">Life Groups</div></div>
+  <div class="work">
+    <div class="band"><div><h1>Life Groups</h1><p><span>What's on now, what's next, and the all-year groups</span></p></div><span class="btn sm">Plan the next groups</span></div>
+    <div class="twocol">
+      <div class="setcol"><h3>Now on <span class="pill ok">Showing</span></h3><p class="hint" style="margin-top:4px">15 Nov to 6 Dec · 4 Sundays · 9:00 to 9:45</p>
+        <div class="list" style="margin-top:8px"><div class="row"><div class="t"><b>Psalms of Ascent</b><span class="s">Library (5) · Alex Sample</span></div></div>
+        <div class="row"><div class="t"><b>Faith at Work</b><span class="s">Room 2 · Chris Sample</span></div></div></div></div>
+      <div class="setcol"><h3>Next <span class="pill">Shows from 10 Jan</span></h3><p class="hint" style="margin-top:4px">24 Jan to 28 Feb · 6 Sundays · 9:00 to 9:45</p>
+        <div class="list" style="margin-top:8px"><div class="row"><div class="t"><b>Ephesians</b><span class="s">Library (5) · leader to choose</span></div></div>
+        <div class="row"><div class="tile act">+</div><div class="t"><b class="add">Add a group</b></div></div></div></div>
+    </div>
+    <div class="setcol" style="margin-top:14px"><h3>All year</h3><div class="list" style="margin-top:6px"><div class="row"><div class="t"><b>Nursery</b><span class="s">Nursery room · join as a parent</span></div></div><div class="row"><div class="t"><b>Kids Life</b><span class="s">Hall · join as a parent</span></div></div></div></div>
+  </div>
+</div></div>
+<span class="note">Sketch · sample names</span>
+</body></html>

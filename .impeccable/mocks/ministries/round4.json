@@ -1,0 +1,78 @@
+{
+  "title": "Ministries 4 of 4: Life Groups",
+  "question": "Sunday 9:00 classes. People see what's on now, what's next and the all-year groups; nobody sees the word 'round'. Staff set up each new set of groups (its Sundays, time, rooms, groups, join as a parent) in the admin panel, not the app. Which should I build?",
+  "options": [
+    {
+      "id": "timetable",
+      "kind": "assigned",
+      "label": "The round as a timetable",
+      "lineage": "the printed Life Groups flyer as a grid",
+      "thesis": "What's on now as a timetable: groups down, Sundays across, a dot per class.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "timetable grid",
+        "changed and off dots",
+        "Next, from \u2026 card",
+        "staff set-up: Now on and Next side by side"
+      ],
+      "viewport": "App: Now on (15 Nov to 6 Dec) as a grid with one changed and one off class, all-year groups with Join as a parent, a 'Next, from 24 January' card; a group with a Sundays tab. Admin: Now on and Next as two columns, Plan the next groups.",
+      "risk": "The grid gets tight past six Sundays on a phone.",
+      "html": ".impeccable/mocks/decision/ministries/lg-timetable.html",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "pages",
+      "kind": "dealt",
+      "label": "Choose one, page by page",
+      "lineage": "flicking through the flyer",
+      "thesis": "'Choose a group' opens a sheet, one group per page, when new groups are coming.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "new groups card",
+        "paged choose sheet",
+        "Now on list",
+        "staff set-up as rows"
+      ],
+      "viewport": "App: 'New groups from 24 January' with Choose a group, Now on and All year lists; a paged sheet per group with Join. Admin: Next groups as rows (Sundays, time, groups, shows from).",
+      "risk": "After choosing, the Sundays aren't at a glance.",
+      "html": ".impeccable/mocks/decision/ministries/lg-pages.html"
+    },
+    {
+      "id": "map",
+      "kind": "dealt",
+      "label": "On the map",
+      "lineage": "the church's site map by the door",
+      "thesis": "The site map with each group's room pinned.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "site map",
+        "room pins",
+        "rooms on the map"
+      ],
+      "viewport": "App: the site map with the Library and Room 2 pinned, groups listed under it; a group page with this Sunday's change. Admin: staff give rooms to groups on the map.",
+      "risk": "The site map isn't built yet, so this is the most work.",
+      "html": ".impeccable/mocks/decision/ministries/lg-map.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": {
+    "value": "code"
+  },
+  "steer": true,
+  "followup": false
+}

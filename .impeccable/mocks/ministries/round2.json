@@ -1,0 +1,77 @@
+{
+  "title": "Ministries 2 of 4: a leader on the phone, and joining",
+  "question": "Lay leaders without a desktop: asks to answer, the team and attendee lists (each child with their parents), settings, posting, teams under their ministry. Joining: a visitor, a parent for their child, a young person. Which should I build?",
+  "options": [
+    {
+      "id": "people",
+      "kind": "assigned",
+      "label": "A People tab with two lists",
+      "lineage": "the church office's class lists",
+      "thesis": "Leaders get a People tab: Team and Attendees, asks on top, a sheet per person.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "People tab",
+        "Team | Attendees",
+        "person sheet",
+        "\u2699 settings tab"
+      ],
+      "viewport": "People tab on Attendees: two asking, then each child with their parents and a flag when none is linked; a sheet to link a parent, move to the team or stop attending; Settings as a \u2699 tab; joining asks who for: Mia to attend, or me on the team.",
+      "risk": "Two extra tabs for leaders on a narrow phone.",
+      "html": ".impeccable/mocks/decision/ministries/lead-people.html",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "inline",
+      "kind": "dealt",
+      "label": "Everything in place",
+      "lineage": "a noticeboard you pin straight onto",
+      "thesis": "No leader tabs: asks and the team on About, Edit turns the page into a form, Post floats on News.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "asks on About",
+        "Edit form",
+        "floating Post"
+      ],
+      "viewport": "About shows asks waiting and the team with Add; Edit from the top bar; News has a floating Post; joining asks which team.",
+      "risk": "About gets long for leaders; attendees and parents have no home.",
+      "html": ".impeccable/mocks/decision/ministries/lead-inline.html"
+    },
+    {
+      "id": "compose",
+      "kind": "dealt",
+      "label": "Compose first",
+      "lineage": "a leader's notebook open at a fresh page",
+      "thesis": "A leader's ministry opens on a box to write in, then what's waiting.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "compose box",
+        "waiting on you",
+        "audience chips"
+      ],
+      "viewport": "A box to write in with Post, Event, File; Waiting on you (asks, no parent linked); Team, Attendees, Settings rows; the post sheet with audience chips and how many an important post reaches.",
+      "risk": "Leaders look after people more often than they post.",
+      "html": ".impeccable/mocks/decision/ministries/lead-compose.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": {
+    "value": "code"
+  },
+  "steer": true,
+  "followup": true
+}

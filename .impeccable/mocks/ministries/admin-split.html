@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Admin: the tree beside the ministry</title><link rel="stylesheet" href="sketch.css">
+<style>
+.split { display: grid; grid-template-columns: 300px 1fr 340px; gap: 28px; margin-top: 18px; }
+.tree .row { min-height: 44px; padding: 6px 8px; border-radius: 9px; border: 0; }
+.tree .row.on { background: var(--selected-fill, rgb(0 156 143 / 0.1)); }
+.tree .row b { font-size: var(--text-label); }
+.tree .indent { padding-left: 30px; }
+</style></head>
+<body class="admin">
+<div class="side"><div class="brand"><i></i>GSBC</div>
+  <div class="grp">Church life</div><div class="lnk on">Ministries <span class="cnt">3</span></div><div class="lnk">Life Groups</div>
+  <div class="grp">People</div><div class="lnk">People</div><div class="lnk">Safeguarding</div>
+  <div class="grp">Calendar &amp; news</div><div class="lnk">Calendar</div><div class="lnk">Announcements</div></div>
+<div class="work">
+  <div class="band"><div><h1>Ministries</h1><p><span>9 ministries</span><span>3 asks waiting</span></p></div><span class="btn">New ministry</span></div>
+  <div class="split">
+    <div class="tree">
+      <div class="search" style="width:100%">Find a ministry</div>
+      <div class="list" style="border:0;margin-top:10px">
+        <div class="row"><div class="tile">♪</div><div class="t"><b>Music</b></div><span class="end">23</span></div>
+        <div class="row indent"><div class="t"><b>Choir</b></div><span class="end">12</span></div>
+        <div class="row indent"><div class="t"><b>Vocal Groups</b></div><span class="end">6</span></div>
+        <div class="row indent"><div class="t"><b>Song Leading</b></div><span class="end">4</span></div>
+        <div class="row indent"><div class="t"><b>Production</b></div><span class="end">5</span></div>
+        <div class="row on"><div class="tile">K</div><div class="t"><b>Impact Kids</b></div><span class="pill flag">2</span></div>
+        <div class="row"><div class="tile">Y</div><div class="t"><b>Impact Youth</b></div><span class="pill flag">1</span></div>
+        <div class="row"><div class="tile act">L</div><div class="t"><b>Life Groups</b></div><span class="end">4</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="micro">Serving team · for ages 4 to 11</div>
+      <h1 style="font-size:var(--text-headline);letter-spacing:-0.02em">Impact Kids</h1>
+      <div class="tabs"><span>About</span><span>News</span><span>Calendar</span><span>Files</span><span class="on">People</span><span>Settings</span></div>
+      <div style="display:flex;gap:10px;margin-top:16px"><div class="chips"><span class="chip">Team 9</span><span class="chip on">Attendees 34</span><span class="chip">Asking 2</span></div><span class="search" style="margin-left:auto;width:260px">Find someone</span></div>
+      <table style="margin-top:10px"><tr><th>Name</th><th>Age</th><th>Parents</th><th>Reached</th><th>Since</th></tr>
+        <tr><td><b>Mia Sample</b></td><td class="num">8</td><td class="sub">Alex, Jamie</td><td class="sub">Through parents</td><td class="sub">Feb 2026</td></tr>
+        <tr><td><b>Leo Sample</b></td><td class="num">10</td><td class="sub">Chris</td><td class="sub">Both</td><td class="sub">Mar 2025</td></tr>
+        <tr><td><b>Noah Sample</b></td><td class="num">9</td><td><span class="pill flag">No parent linked</span></td><td class="sub">Directly</td><td class="sub">Oct 2026</td></tr>
+        <tr><td><b>Ava Sample</b></td><td class="num">6</td><td class="sub">Sam, Robin</td><td class="sub">Through parents</td><td class="sub">Jul 2026</td></tr>
+      </table>
+    </div>
+    <div class="panel"><h3>Noah Sample</h3><p>9 · attends since October</p>
+      <ul><li>No parent is linked, so nobody hears about Impact Kids for Noah.</li><li>Link a parent here, or ask the office.</li></ul>
+      <div class="actions"><span class="btn sm">Link a parent</span><span class="btn sm q">Stop attending</span></div></div>
+  </div>
+</div>
+<span class="note">Sketch · sample names</span>
+</body></html>
