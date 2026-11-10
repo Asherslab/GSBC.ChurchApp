@@ -22,9 +22,10 @@ Groups never say "round" to anyone (owner); a Life Groups set is set up by staff
 THESIS: A ministry reads like the Sunday bulletin's shaded boxes: in each area, what you may see is boxed by who it's for, team
 first, so nobody wonders who else reads it. Refuses one mixed feed with tags, and refuses a separate admin world for leaders.
 
-OWN-WORLD: The ministry's navy hero (kind kicker in beige, title, one line, its one action in marker orange or a quiet chip), the
-sliding orange section tabs, audience boxes at the 14px radius (team navy 7%, families aqua 8%, parents orange 18%, everyone sand)
-with a pill-size uppercase "For …" head; hairline rows with 34px tiles; a leader's People and ⚙ tabs in the same strip.
+OWN-WORLD: The ministry's navy masthead (title, its one line as the note, no label above the title), its one action as the
+white on-masthead button or a chip pill ("You lead it"), the area tabs (TabStrip link mode, orange underline), audience boxes
+at the 14px radius (team navy 7%, families aqua 8%, parents orange 18%, everyone sand) with a pill-size uppercase "For …" head;
+hairline rows with 34px tiles; a leader's People and Settings tabs in the same strip; the admin's tree beside the same areas.
 
 STORY: A parent opens Impact Kids, sees "Mia attends", reads the families box. A leader opens People, answers Sam's ask, links
 Noah's parent from a sheet. Staff pick a ministry in the tree and do the same in a table. A newcomer taps Choose a group and

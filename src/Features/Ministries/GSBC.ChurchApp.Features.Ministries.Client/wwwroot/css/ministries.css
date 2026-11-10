@@ -207,3 +207,5 @@ button.ministry-item { cursor: pointer; }
 .ministry-actions { margin-top: 10px; }
 .life-groups-desk__head h2 { margin: 0; }
 .life-groups-desk__set .hint { margin-top: 4px; }
+
+.ministry-hero__action .pill--masthead { background: var(--masthead-chip); padding: 6px 12px; }
