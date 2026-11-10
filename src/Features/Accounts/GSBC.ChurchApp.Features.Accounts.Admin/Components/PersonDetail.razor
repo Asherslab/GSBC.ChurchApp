@@ -16,14 +16,28 @@
     }
     else
     {
-        <dt>Invited by</dt>
+        <dt>@(Invitation.Held ? "Added by" : "Invited by")</dt>
         <dd>@(Invitation.InvitedBy ?? "Not recorded")</dd>
-        <dt>Invited</dt>
+        <dt>@(Invitation.Held ? "Added" : "Invited")</dt>
         <dd><DateLine At="Invitation.InvitedAt" Style="DateLineStyle.Short" WithTime="true" /></dd>
     }
 </dl>
 
-@if (Invitation is not null)
+@if (Invitation is { Held: true })
+{
+    <section class="panel-section" aria-labelledby="invitation-@Person.Id">
+        <h3 class="panel-subtitle" id="invitation-@Person.Id">Not invited yet</h3>
+        <p class="panel-lead">They can be given roles and put in ministries, but they haven't heard anything from the app. Send their invitation when you're ready.</p>
+        <Can Permission="AccountsPermissions.Manage">
+            <div class="panel-actions">
+                <Button Icon="send" Busy="_busy" OnClick="ResendAsync">Send the invitation</Button>
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _withdrawing = true">Remove them</Button>
+            </div>
+            <p class="panel-hint">The invitation is an email with a link that works for 7 days. Removing them takes away their account and anything they were given.</p>
+        </Can>
+    </section>
+}
+else if (Invitation is not null)
 {
     <section class="panel-section" aria-labelledby="invitation-@Person.Id">
         <h3 class="panel-subtitle" id="invitation-@Person.Id">@(InvitationExpired ? "Their invitation has expired" : "Invited, not accepted yet")</h3>
@@ -39,10 +53,7 @@
             }
         </p>
         <Can Permission="AccountsPermissions.Manage">
-            @if (_resent)
-            {
-                <Notice Text="@($"A new invitation is on its way to {Person.Email}. The old link no longer works.")" />
-            }
+            <Notice Text="@_sent" />
             <div class="panel-actions">
                 <Button Variant="ButtonVariant.Quiet" Icon="send" Busy="_busy" OnClick="ResendAsync">Send it again</Button>
                 <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => _withdrawing = true">Withdraw the invitation</Button>
@@ -82,13 +93,26 @@
 
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
-<Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
-       Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
-    <Actions>
-        <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
-        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
-    </Actions>
-</Sheet>
+@if (Invitation is { Held: true })
+{
+    <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Remove {Person.DisplayName}?")"
+           Lead="Their account is removed, with the roles, ministries and families they were given. They never hear about it. You can add them again.">
+        <Actions>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep them</Button>
+            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Remove them</Button>
+        </Actions>
+    </Sheet>
+}
+else
+{
+    <Sheet Open="_withdrawing" OpenChanged="open => _withdrawing = open" Title="@($"Withdraw {Person.DisplayName}'s invitation?")"
+           Lead="The link in their email stops working and the account they haven't set up is removed. You can invite them again.">
+        <Actions>
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => _withdrawing = false">Keep it</Button>
+            <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="WithdrawAsync">Withdraw it</Button>
+        </Actions>
+    </Sheet>
+}
 
 <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete {Person.DisplayName}'s account?")">
     <ChildContent>
@@ -114,7 +138,7 @@
     [Parameter] public EventCallback OnChanged { get; set; }
     [Parameter] public EventCallback OnRemoved { get; set; }
 
-    private bool _resent;
+    private string? _sent;
     private bool _withdrawing;
     private bool _deleting;
 
@@ -122,8 +146,11 @@
 
     private Task ResendAsync() => RunAsync(async () =>
     {
+        bool first = Invitation is { Held: true };
         await Accounts.ResendInvitationAsync(Person.Id);
-        _resent = true;
+        _sent = first
+            ? $"Their invitation is on its way to {Person.Email}."
+            : $"A new invitation is on its way to {Person.Email}. The old link no longer works.";
         await OnChanged.InvokeAsync();
     });
 

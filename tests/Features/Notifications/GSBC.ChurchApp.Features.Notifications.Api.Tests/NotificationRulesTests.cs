@@ -36,6 +36,23 @@ public sealed class NotificationRulesTests
     }
 
     [Fact]
+    public async Task SomeoneAddedWithoutAnInvitationYetIsToldNothing()
+    {
+        Guid leader = Guid.CreateVersion7(), notInvitedYet = Guid.CreateVersion7();
+        Holders holders = new() { Everyone = [leader, notInvitedYet] };
+        holders.NotInvitedYet.Add(notInvitedYet);
+        holders.Grant(TestKinds.ReceiveNotices, TestKinds.Music, people: [leader, notInvitedYet], phones: []);
+
+        Recipients members = await NotificationRules.RecipientsAsync(new Notification(TestKinds.Notice,
+            NotificationAudience.Holding(TestKinds.ReceiveNotices, TestKinds.Music), "No practice tonight", ""), holders, holders, TestContext.Current.CancellationToken);
+        Recipients justThem = await NotificationRules.RecipientsAsync(new Notification(TestKinds.Notice,
+            NotificationAudience.Person(notInvitedYet), "You're in Music", ""), holders, holders, TestContext.Current.CancellationToken);
+
+        Assert.Equal([leader], members.People);
+        Assert.Empty(justThem.People);
+    }
+
+    [Fact]
     public void TurningAKindOffStopsItButSafetyNoticesAlwaysArrive()
     {
         Guid person = Guid.CreateVersion7();

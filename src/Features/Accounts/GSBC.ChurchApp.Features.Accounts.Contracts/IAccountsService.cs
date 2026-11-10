@@ -64,6 +64,12 @@ public interface IAccountsService
     [Requires(AccountsPermissions.ManageNode)]
     ValueTask<Done> InviteAsync(InviteRequest request, CallContext context = default);
 
+    [Requires(AccountsPermissions.ManageNode)]
+    ValueTask<AddedPerson> AddPersonAsync(InviteRequest request, CallContext context = default);
+
+    [Requires(AccountsPermissions.ManageNode)]
+    ValueTask<SentInvitations> SendHeldInvitationsAsync(SendHeldInvitationsRequest request, CallContext context = default);
+
     [Requires(AccountsPermissions.ViewNode)]
     ValueTask<InvitationList> ListInvitationsAsync(Nothing request, CallContext context = default);
 

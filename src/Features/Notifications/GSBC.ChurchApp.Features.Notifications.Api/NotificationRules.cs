@@ -58,6 +58,14 @@ internal static class NotificationRules
         if (notification is { Test: true, Audience: not NotificationAudience.PersonAudience })
             throw new ArgumentException("A test goes to one person.", nameof(notification));
 
+        Recipients found = await AudienceAsync(notification, holders, people, cancellationToken);
+        IReadOnlySet<Guid> notInvitedYet = await people.NotInvitedYetAsync(found.People, cancellationToken);
+        return notInvitedYet.Count == 0 ? found : found with { People = found.People.Where(person => !notInvitedYet.Contains(person)).ToList() };
+    }
+
+    private static async Task<Recipients> AudienceAsync(
+        Notification notification, IPermissionHolders holders, IPeopleIndex people, CancellationToken cancellationToken)
+    {
         switch (notification.Audience)
         {
             case NotificationAudience.EveryoneAudience:
