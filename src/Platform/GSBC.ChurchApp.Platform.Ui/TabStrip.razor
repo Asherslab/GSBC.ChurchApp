@@ -1,7 +1,8 @@
 @typeparam TValue
 @inject NavigationManager Navigation
+@inject Shell Shell
 
-<div class="tab-strip @(Sticky ? "tab-strip--sticky" : "")" role="@(Href is null ? "tablist" : null)" aria-label="@Label">
+<div @ref="_strip" class="tab-strip @(Sticky ? "tab-strip--sticky" : "")" role="@(Href is null ? "tablist" : null)" aria-label="@Label">
     @foreach (TabOption<TValue> option in Options)
     {
         bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
@@ -18,6 +19,10 @@
 </div>
 
 @code {
+    private ElementReference _strip;
+    private TValue? _revealed;
+    private bool _rendered;
+
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter, EditorRequired] public required IReadOnlyList<TabOption<TValue>> Options { get; set; }
     [Parameter] public TValue Value { get; set; } = default!;
@@ -33,6 +38,14 @@
             <span class="tab-strip__count">@option.Count</span>
         }
     </text>;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_rendered && EqualityComparer<TValue>.Default.Equals(_revealed, Value))
+            return;
+        (_rendered, _revealed) = (true, Value);
+        await Shell.RevealTabAsync(_strip);
+    }
 
     private async Task GoAsync(TValue value, Func<TValue, string> href)
     {
