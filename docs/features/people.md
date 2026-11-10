@@ -143,11 +143,14 @@ sync changes nothing and the page says why. Everyone's name, email and birth dat
 - **Someone who leaves Safe Ministry Check** keeps their link and last values, flagged "they're no longer in Safe
   Ministry Check".
 - **What counts as a problem** (calibrated 2026-11-10 against the church's 117 records, counted in memory, nothing
-  kept; the owner confirmed the first rules flagged his own cleared record wrongly): an overall `status` other than
+  kept; the owner confirmed the first rules flagged the owner's own cleared record wrongly): an overall `status` other than
   *Cleared* (they're *Cleared*, *Pending* or *Error*; *Pending* says why in its description, which is shown); a
   `wwcc_status` it couldn't map (*NOTFOUND*: the card couldn't be verified; *CLEARED* maps to Current, *EXPIRED* to
   Expired); a police check status other than cleared or not required; a referee answer other than *positive* or
-  *positive_admin*; a disclosure on someone not yet cleared; working with children with no blue card there. **Not
+  *positive_admin*; a disclosure on someone not yet cleared; working with children with no blue card there. **Overdue
+  training is flagged, but less severely** (owner, 2026-11-10: "overdue training should technically still be flagged
+  regardless. but it is less severe"): *Pending* while their training is overdue or unfinished is left to the training
+  flag, and "Check Safe Ministry Check" sorts above run-out, due-soon and not-recorded flags on Safeguarding. **Not
   problems:** `wwcc_status_description` ("WWCC Status should be verified again" is on most cleared people), a *Pending*
   blue card photo (also common among cleared people), `paperwork_process_status` (*4* is "Linked to portal").
 - **The person doesn't see the flag or the status** on their Account page, only their card and training and that they
@@ -197,8 +200,6 @@ Through `IPersonData` when an account is deleted:
 - Stage 2: leaders setting families from their team and attendee lists (a leader role giving the `people.family.*`
   nodes for people in their ministry), and "this team needs a blue card" so *missing* can be flagged for people with
   nothing recorded.
-- Whether ~50 *Pending* people all flagged "Check Safe Ministry Check" is the right amount on Safeguarding, or whether
-  Pending for overdue training alone should leave it to the training flag.
 - The Simulator can't make a passkey against a local backend, so a child signing in with a code was checked up to the
   passkey (the code is accepted and a ticket issued); it wants a try on a real phone on dev.
 
