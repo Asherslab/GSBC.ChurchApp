@@ -21,6 +21,7 @@ public static class EventsApiExtensions
         services.AddScoped<EventsPublisher>();
         services.AddScoped<IPersonData, EventsPersonData>();
         services.AddScoped<EventWriter>();
+        services.AddScoped<HandledRequests>();
         services.AddScoped<CalendarFollowing>();
         services.AddScoped<CalendarRemover>();
         services.AddScoped<CalendarLinkSecrets>();
@@ -82,6 +83,7 @@ public static class EventsApiExtensions
         services.AddFeed(new FeedDefinition(EventsFeeds.Private, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(EventsFeeds.Contacts, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(EventsFeeds.Admin, FeedAudience.Holding(EventsPermissions.Edit)));
+        services.AddFeed(new FeedDefinition(EventsFeeds.Editing, FeedAudience.Holding(EventsPermissions.Edit)));
         services.AddFeed(new FeedDefinition(EventsFeeds.Digest, FeedAudience.Public));
         services.AddFeed(new FeedDefinition(EventsFeeds.PrivateDigest, FeedAudience.EachRow));
         services.AddFeed(new FeedDefinition(EventsFeeds.Mine, FeedAudience.OwnRecords));

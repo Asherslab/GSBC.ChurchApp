@@ -128,6 +128,12 @@ public sealed class ShowingRecord
     public bool AskedByOther { get; set; }
 }
 
+public sealed class HandledRequestRecord
+{
+    public required string Id { get; set; }
+    public DateTime HandledAt { get; set; }
+}
+
 public sealed class PublishedRow
 {
     public required string Feed { get; set; }

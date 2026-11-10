@@ -9,12 +9,14 @@ namespace GSBC.ChurchApp.Features.Events.Client;
 public static class EventsClientExtensions
 {
     public static readonly IReadOnlyList<string> Feeds = [EventsFeeds.Calendars, EventsFeeds.Public, EventsFeeds.Digest];
-    public static readonly IReadOnlyList<string> PrivateFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest, EventsFeeds.Mine];
+    public static readonly IReadOnlyList<string> PrivateFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest, EventsFeeds.Editing, EventsFeeds.Mine];
 
     public static IServiceCollection AddEventsOnPhone(this IServiceCollection services) =>
         services
             .AddEventsClient()
             .AddSingleton<YourCalendars>()
+            .AddSingleton<QueuedEventEdits>()
+            .AddSingleton<IEventEditing, StoredEventEditing>()
             .AddSingleton<IYourCalendarLink, PhoneCalendarLink>()
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<YourCalendars>());
 
@@ -23,7 +25,6 @@ public static class EventsClientExtensions
             .AddDestinations(EventsDestinations.All)
             .AddSingleton<CalendarDiary>()
             .AddSingleton<DigestReader>()
-            .AddSingleton<CalendarEditing>()
             .AddSingleton<CalendarSubscriptions>()
             .AddSingleton<WideningWords>()
             .AddSingleton(new CalendarSetView(CalendarSetList.For))

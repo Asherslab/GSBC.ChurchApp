@@ -12,7 +12,7 @@ using ProtoBuf.Grpc;
 namespace GSBC.ChurchApp.Features.Events.Api;
 
 internal sealed class EventEditingService(
-    EventsDbContext db, EventsPublisher publisher, EventWriter writer, IAccessEvaluator access, INotifications notifications, TimeProvider time)
+    EventsDbContext db, EventsPublisher publisher, EventWriter writer, HandledRequests handled, IAccessEvaluator access, INotifications notifications, TimeProvider time)
     : IEventEditingService
 {
     private const int NeedsDetailsDays = 60;
@@ -72,10 +72,12 @@ internal sealed class EventEditingService(
     }
 
     public async ValueTask<EventDetail> SaveEventAsync(EventSave request, CallContext context = default) =>
-        await writer.SaveEventAsync(UserOf(context), request, context.CancellationToken);
+        await handled.AlreadyAsync(context) ? new EventDetail() : await writer.SaveEventAsync(UserOf(context), request, context.CancellationToken);
 
     public async ValueTask<Done> DeleteEventAsync(EventRef request, CallContext context = default)
     {
+        if (await handled.AlreadyAsync(context))
+            return new Done();
         await writer.DeleteEventAsync(UserOf(context), request, context.CancellationToken);
         return new Done();
     }
@@ -101,20 +103,24 @@ internal sealed class EventEditingService(
     }
 
     public async ValueTask<RegularEventSaved> SaveRegularEventAsync(RegularEventSave request, CallContext context = default) =>
-        await writer.SaveRegularEventAsync(UserOf(context), request, context.CancellationToken);
+        await handled.AlreadyAsync(context) ? new RegularEventSaved { Saved = true } : await writer.SaveRegularEventAsync(UserOf(context), request, context.CancellationToken);
 
     public async ValueTask<Done> DeleteRegularEventAsync(RegularRef request, CallContext context = default)
     {
+        if (await handled.AlreadyAsync(context))
+            return new Done();
         await writer.DeleteRegularEventAsync(UserOf(context), request, context.CancellationToken);
         return new Done();
     }
 
     public async ValueTask<RegularEventDetail> SaveDateAsync(DateSave request, CallContext context = default) =>
-        await writer.SaveDateAsync(UserOf(context), request, context.CancellationToken);
+        await handled.AlreadyAsync(context) ? new RegularEventDetail() : await writer.SaveDateAsync(UserOf(context), request, context.CancellationToken);
 
     public async ValueTask<Done> AskToPublishAsync(ItemRef request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
+        if (await handled.AlreadyAsync(context))
+            return new Done();
         (IShowable item, CalendarRecord calendar) = await writer.ItemInAsync(request, cancellationToken);
         if (!calendar.NeedsPublisher)
             throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{calendar.Name} doesn't need a publisher: show it yourself."));
@@ -171,6 +177,8 @@ internal sealed class EventEditingService(
     public async ValueTask<Done> ShowOnAsync(ShowOnRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
+        if (await handled.AlreadyAsync(context))
+            return new Done();
         (IShowable item, CalendarRecord home) = await writer.ItemInAsync(new ItemRef { CalendarId = request.CalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId }, cancellationToken);
         if (!Guid.TryParse(request.OtherCalendarId, out Guid otherId) || otherId == home.Id
             || await db.Calendars.AsNoTracking().SingleOrDefaultAsync(calendar => calendar.Id == otherId, cancellationToken) is not { } other)
@@ -284,6 +292,8 @@ internal sealed class EventEditingService(
     public async ValueTask<ShowHereResult> ShowHereAsync(ShowHereRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
+        if (await handled.AlreadyAsync(context))
+            return new ShowHereResult();
         Guid yours = CalendarIdOf(request.CalendarId);
         ClaimsPrincipal user = UserOf(context);
         (IShowable item, CalendarRecord home) = await writer.ItemInAsync(new ItemRef { CalendarId = request.HomeCalendarId, EventId = request.EventId, RegularEventId = request.RegularEventId }, cancellationToken);
@@ -369,6 +379,8 @@ internal sealed class EventEditingService(
     public async ValueTask<Done> TellPeopleAsync(TellPeople request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
+        if (await handled.AlreadyAsync(context))
+            return new Done();
         if (!EventDates.TryReadOccurrenceId(request.OccurrenceId, out Guid itemId, out DateOnly? date))
             throw Invalid("Choose an event to tell people about.");
         (IShowable item, CalendarRecord calendar) = await writer.ItemInAsync(new ItemRef
@@ -392,6 +404,7 @@ internal sealed class EventEditingService(
         await notifications.RaiseOneOfAsync(Tellable(calendar).Select(audience => new Notification(EventsNotifications.Told, audience, title, body,
             Link: EventsDestinations.Event.PathOf(occurrence.Id), Subject: $"events/told/{occurrence.Id}/{now.Ticks}", ScopeId: calendar.Id.ToString(),
             Action: "Open")).ToList(), cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
         return new Done();
     }
 

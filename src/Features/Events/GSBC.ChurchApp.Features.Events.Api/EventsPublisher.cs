@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Cryptography;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
@@ -13,7 +14,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
     private const long AdvisoryLockKey = 0x6576_656e_7473_7075;
 
     public static readonly IReadOnlyList<string> EachRowFeeds = [EventsFeeds.PrivateCalendars, EventsFeeds.Private, EventsFeeds.Contacts, EventsFeeds.PrivateDigest];
-    private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public, EventsFeeds.Digest];
+    private static readonly IReadOnlyList<string> Published = [EventsFeeds.Calendars, .. EachRowFeeds, EventsFeeds.Public, EventsFeeds.Digest, EventsFeeds.Editing];
     private const string DigestHeader = "digest";
 
     internal sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience, DateTime? StartsAt = null, DateTime? EndsAt = null, string? SortKey = null, string? GroupKey = null);
@@ -26,7 +27,7 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
         DateTime now = time.GetUtcNow().UtcDateTime;
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
         DigestRecord? digest = await db.Digests.AsNoTracking().Where(sent => sent.SentAt != null).OrderByDescending(sent => sent.SentAt).FirstOrDefaultAsync(cancellationToken);
-        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, digest)).ToDictionary(row => (row.Feed, row.RecordId));
+        Dictionary<(string, string), Row> wanted = Rows(book, now).Concat(DigestRows(book, digest)).Concat(EditingRows(book, now)).ToDictionary(row => (row.Feed, row.RecordId));
         Dictionary<(string, string), PublishedRow> published = await db.PublishedRows
             .Where(row => Published.Contains(row.Feed)).ToDictionaryAsync(row => (row.Feed, row.RecordId), cancellationToken);
 
@@ -100,6 +101,57 @@ internal sealed class EventsPublisher(EventsDbContext db, TimeProvider time)
                     EventsPayloads.Encode(new OccurrenceContacts { OccurrenceId = occurrence.Id, Contacts = contacts }),
                     CalendarAudiences.SignedInPart(audience).Text, occurrence.StartsAt, occurrence.EndsAt, sortKey, occurrence.CalendarId);
         }
+    }
+
+    public static IEnumerable<Row> EditingRows(EventsBook book, DateTime now)
+    {
+        DateOnly today = ChurchTime.DayOf(now);
+        DateOnly from = WindowAt(now).From;
+        List<BreakInfo> breaks = book.NamedBreaks.Select(stop => CalendarSetupService.Info(stop, book.UsersOf(stop.Id))).ToList();
+        foreach (CalendarRecord calendar in book.Calendars.Values)
+        {
+            string id = calendar.Id.ToString();
+            EditingCalendar settings = new()
+            {
+                Settings = new CalendarSettings { Calendar = CalendarPayload(calendar), NeedsPublisher = calendar.NeedsPublisher },
+                Breaks = breaks,
+                Asked = AskedToShowOn(book, calendar),
+            };
+            yield return new Row(EventsFeeds.Editing, $"calendar/{id}", EventsPayloads.Encode(settings), id, SortKey: "calendar", GroupKey: id);
+            if (calendar.ICalSource is { Length: > 0 })
+                continue;
+            foreach (EventRecord record in book.Events.Where(record => record.CalendarId == calendar.Id && Expansion.LastDayOf(record) >= from))
+                yield return new Row(EventsFeeds.Editing, $"event/{record.Id}", EventsPayloads.Encode(EventWriter.Detail(record, book.ShowingsOf(record.Id), calendar)), id,
+                    SortKey: $"event/{EventDates.Format(record.StartDate)}", GroupKey: id);
+            foreach (RegularEventRecord regular in book.RegularEvents.Where(regular => regular.CalendarId == calendar.Id))
+                yield return new Row(EventsFeeds.Editing, $"regular/{regular.Id}", EventsPayloads.Encode(new EditingRegular
+                {
+                    Detail = EventWriter.Detail(regular, book.SpecialsOf(regular.Id), book.BreaksOf(regular.Id), book.ShowingsOf(regular.Id), today),
+                    Summary = book.SummaryOf(regular, today),
+                }), id, SortKey: $"regular/{regular.Fields.Title}", GroupKey: id);
+        }
+    }
+
+    private static List<ShowingRequest> AskedToShowOn(EventsBook book, CalendarRecord calendar)
+    {
+        Dictionary<Guid, IShowable> items = book.Events.Cast<IShowable>().Concat(book.RegularEvents).ToDictionary(item => item.Id);
+        return book.AllShowings.Where(showing => showing.CalendarId == calendar.Id && showing.AgreedAt is null)
+            .Select(showing => (Showing: showing, Item: items.GetValueOrDefault(showing.EventId ?? showing.RegularEventId ?? Guid.Empty)))
+            .Where(entry => entry.Item is not null)
+            .OrderBy(entry => entry.Showing.AskedAt)
+            .Select(entry => new ShowingRequest
+            {
+                CalendarId = calendar.Id.ToString(),
+                HomeCalendarId = entry.Item!.CalendarId.ToString(),
+                EventId = entry.Showing.EventId?.ToString(),
+                RegularEventId = entry.Showing.RegularEventId?.ToString(),
+                Title = entry.Item.Fields.Title,
+                AskedAt = entry.Showing.AskedAt,
+                AskedByOther = entry.Showing.AskedByOther,
+                CalendarName = calendar.Name,
+                HomeCalendarName = book.Calendars.TryGetValue(entry.Item.CalendarId, out CalendarRecord? home) ? home.Name : "",
+            })
+            .ToList();
     }
 
     public static IEnumerable<Row> DigestRows(EventsBook book, DigestRecord? digest)

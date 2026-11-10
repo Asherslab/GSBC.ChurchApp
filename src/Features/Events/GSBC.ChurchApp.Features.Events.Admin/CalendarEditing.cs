@@ -2,7 +2,7 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using ProtoBuf.Grpc.Client;
 
-namespace GSBC.ChurchApp.Features.Events.Client;
+namespace GSBC.ChurchApp.Features.Events.Admin;
 
 public sealed class CalendarEditing(ChannelBase channel)
 {

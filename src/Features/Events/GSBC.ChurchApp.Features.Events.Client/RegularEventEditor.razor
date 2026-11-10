@@ -1,10 +1,12 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Common
-@inject CalendarEditing Editor
+@inject IEventEditing Editing
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject UnsavedChanges Unsaved
 
 <UnsavedGuard Changed="() => Changed" What="this regular event" Save="SaveBeforeLeavingAsync" />
+<RefreshOn Feeds="Editing.Feeds" On="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox" Changed="_ => RefreshAsync()" />
 
 @if (InPanel)
 {
@@ -76,7 +78,10 @@ else
     private CalendarDesk _desk = new();
     private BreakList _breaks = new();
     private IReadOnlyList<EventPlace> _placesUsed = [];
-    private Exception? _loadFailure;
+    private IReadOnlyList<MediaRef>? _pictures = [];
+    private string? _loadProblem;
+    private RegularEventDetail? _detail;
+    private RegularEventSave? _base;
     private string? _problem;
     private bool _saving;
     private EditorSheet _sheet;
@@ -126,12 +131,24 @@ else
         _datesVersion = DatesVersion;
         _loadedFor = (CalendarId, RegularEventId);
         _draft = null;
-        _loadFailure = null;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loadProblem = null;
         try
         {
-            _desk = await Editor.DeskAsync();
+            _desk = await Editing.DeskAsync();
             if (RegularEventId is { } regularId)
-                Show(await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = CalendarId, RegularEventId = regularId }));
+            {
+                if (await Editing.RegularEventAsync(CalendarId, regularId) is not { } detail)
+                {
+                    _loadProblem = "It isn't on this phone. It may have been deleted, or you may no longer edit its calendar.";
+                    return;
+                }
+                Show(detail);
+            }
             else
             {
                 _draft = EventDraft.NewRegular(StartingCalendar(), Today);
@@ -141,12 +158,27 @@ else
                     _draft.Showing = Showing.SavedForLater;
                 Stored();
             }
-            _ = LoadSideAsync();
+            await LoadSideAsync();
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _loadFailure = exception;
+            _loadProblem = Editing.Explain(exception);
         }
+    }
+
+    private async Task RefreshAsync()
+    {
+        if (_saving || _sheet != EditorSheet.None || _draft is null)
+            return;
+        if (!Changed && !_draft.IsNew)
+        {
+            string? said = _savedWords;
+            await LoadAsync();
+            _savedWords = said;
+            return;
+        }
+        _desk = await Editing.DeskAsync();
+        await LoadSideAsync();
     }
 
     private async Task RefreshDatesAsync()
@@ -156,16 +188,18 @@ else
             return;
         try
         {
-            _dates = (await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = _draft.CalendarId, RegularEventId = regularId })).Dates;
+            if (await Editing.RegularEventAsync(_draft.CalendarId, regularId) is { } detail)
+                (_detail, _dates) = (detail, detail.Dates);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _problem = CalendarEditing.Problem(exception);
+            _problem = Editing.Explain(exception);
         }
     }
 
     private void Show(RegularEventDetail detail)
     {
+        _detail = detail;
         _draft = EventDraft.From(detail, null, Now);
         _dates = detail.Dates;
         _kept = (detail.KeptBy, detail.OpensAt);
@@ -177,24 +211,15 @@ else
 
     private async Task LoadSideAsync()
     {
-        try
-        {
-            Task<BreakList> breaks = Editor.BreaksAsync().AsTask();
-            Task<PlacesUsed> places = Editor.PlacesUsedAsync().AsTask();
-            await Task.WhenAll(breaks, places);
-            _breaks = breaks.Result;
-            _placesUsed = places.Result.Places;
-            StateHasChanged();
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-        }
+        _breaks = await Editing.BreaksAsync();
+        _placesUsed = await Editing.PlacesUsedAsync();
+        _pictures = await Editing.PicturesUsedAsync(_draft?.CalendarId ?? CalendarId);
     }
 
     private RenderFragment Body => @<text>
-        @if (_loadFailure is not null)
+        @if (_loadProblem is not null)
         {
-            <EmptyState Icon="cloud-off" Title="Can't open this regular event" Body="@CalendarEditing.Problem(_loadFailure)">
+            <EmptyState Icon="cloud-off" Title="Can't open this regular event" Body="@_loadProblem">
                 <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
             </EmptyState>
         }
@@ -249,7 +274,7 @@ else
                     }
                     <TitleFields Fields="Fields" CalendarName="@CalendarName" Placeholder="Morning service" />
                     <TimesEditor Timed="draft.Every" />
-                    <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" Needs="draft.Needs" />
+                    <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" Needs="draft.Needs" />
                 </section>
                 <section class="regular-col" aria-labelledby="regular-runs">
                     <h2 class="regular-col__head" id="regular-runs">How it runs</h2>
@@ -293,6 +318,7 @@ else
     private RenderFragment SaveButton(EventDraft draft, bool onMasthead) =>
         @<SaveBar Block="@(!onMasthead)" OnMasthead="onMasthead" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving"
                   Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                  WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)"
                   OnSave="() => SaveAsync(keepOwnConfirmed: false)" />;
 
     private string? _stored;
@@ -301,11 +327,19 @@ else
 
     private bool Changed => !_leaving && _draft is not null && _stored is not null && Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)) != _stored;
 
-    private SaveState? SaveLine => SaveBar.For(Changed, _savedWords is not null);
+    private string ItemKey => EditKeys.Regular(_draft?.ItemId ?? "");
+
+    private EditWaiting? Waiting => _draft is null || Changed ? null : Editing.WaitingFor(ItemKey);
+
+    private SaveState? SaveLine => Waiting?.State ?? SaveBar.For(Changed, _savedWords is not null);
 
     private string SavedWords => (_savedWords ?? "Saved").TrimEnd('.');
 
-    private void Stored() => (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+    private void Stored()
+    {
+        (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+        _base = _draft is null || _draft.IsNew ? null : EditSaves.Copy(SaveMessage(_draft));
+    }
 
     private async Task<bool> SaveBeforeLeavingAsync()
     {
@@ -392,64 +426,57 @@ else
     {
         if (_draft is not { } draft || _saving)
             return;
-        _saving = true;
         _problem = null;
-        try
+        RegularEventSave? before = _base;
+        RegularEventSave save = draft.ToRegularSave(keepOwnConfirmed: true);
+        if (!keepOwnConfirmed && !draft.IsNew && _detail is not null && KeptValues.Of(_detail, save, Today) is { Count: > 0 } kept)
         {
-            bool wasShown = draft.WasShown && !draft.IsNew;
-            RegularEventSaved result = await Editor.Editing.SaveRegularEventAsync(draft.ToRegularSave(keepOwnConfirmed));
-            if (!result.Saved && result.KeepOwn.Count > 0)
-            {
-                _keepOwn = result.KeepOwn;
-                _sheet = EditorSheet.KeepOwn;
-                return;
-            }
-            if (result.Detail is not { } detail)
-                return;
-            await Shell.HapticAsync(Haptic.Success);
-            Show(detail);
-            _loadedFor = (detail.CalendarId, detail.Id);
-            _tellOccurrenceId = _draft!.OccurrenceId(detail);
-            if (wasShown && _tellOccurrenceId.Length > 0)
-            {
-                _tellBody = detail.ChangeNote;
-                _sheet = EditorSheet.Tell;
-                return;
-            }
-            await FinishAsync(TellPeopleSheet.SavedWords);
+            _keepOwn = kept;
+            _sheet = EditorSheet.KeepOwn;
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        _saving = true;
+        bool wasShown = draft.WasShown && !draft.IsNew;
+        save.Base = before;
+        EditSent sent = await Editing.SaveRegularEventAsync(save);
+        _saving = false;
+        if (!sent.Succeeded)
         {
-            _problem = CalendarEditing.Problem(exception);
+            _problem = sent.Problem;
             _sheet = EditorSheet.None;
+            return;
         }
-        finally
+        await Shell.HapticAsync(Haptic.Success);
+        Stored();
+        _tellOccurrenceId = draft.OccurrenceId(_detail);
+        if (wasShown && before is not null && _tellOccurrenceId.Length > 0)
         {
-            _saving = false;
+            _tellBody = FieldValues.ChangeNote(new Timed(before.Fields, before.StartMinute, before.EndMinute), new Timed(save.Fields, save.StartMinute, save.EndMinute));
+            _sheet = EditorSheet.Tell;
+            return;
         }
+        await FinishAsync(TellPeopleSheet.SavedWords);
     }
 
     private async Task FinishAsync(string done)
     {
         _sheet = EditorSheet.None;
         _savedWords = done;
-        await Saved.InvokeAsync(_draft?.RegularEventId ?? "");
+        await Saved.InvokeAsync(_draft?.ItemId ?? "");
     }
 
     private async Task AskAsync()
     {
         if (_draft is null)
             return;
-        try
+        EditSent sent = await Editing.AskToPublishAsync(new ItemRef { CalendarId = _draft.CalendarId, RegularEventId = _draft.RegularEventId });
+        if (!sent.Succeeded)
         {
-            await Editor.Editing.AskToPublishAsync(new ItemRef { CalendarId = _draft.CalendarId, RegularEventId = _draft.RegularEventId });
-            _draft.Asked = true;
-            _asked = true;
+            _problem = sent.Problem;
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            _problem = CalendarEditing.Problem(exception);
-        }
+        _draft.Asked = true;
+        _asked = true;
     }
 
     private async Task DeleteAsync()
@@ -457,22 +484,16 @@ else
         if (_draft?.RegularEventId is not { } regularId)
             return;
         _saving = true;
-        try
+        EditSent sent = await Editing.DeleteRegularEventAsync(new RegularRef { CalendarId = _draft.CalendarId, RegularEventId = regularId });
+        _saving = false;
+        _sheet = EditorSheet.None;
+        if (!sent.Succeeded)
         {
-            await Editor.Editing.DeleteRegularEventAsync(new RegularRef { CalendarId = _draft.CalendarId, RegularEventId = regularId });
-            _leaving = true;
-            _sheet = EditorSheet.None;
-            await Saved.InvokeAsync("");
-            await Closed.InvokeAsync();
+            _problem = sent.Problem;
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            _problem = CalendarEditing.Problem(exception);
-            _sheet = EditorSheet.None;
-        }
-        finally
-        {
-            _saving = false;
-        }
+        _leaving = true;
+        await Saved.InvokeAsync("");
+        await Closed.InvokeAsync();
     }
 }
