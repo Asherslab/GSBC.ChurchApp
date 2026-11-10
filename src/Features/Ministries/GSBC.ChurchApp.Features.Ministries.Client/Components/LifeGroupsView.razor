@@ -1,8 +1,8 @@
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 
-<LiveData TValue="LifeGroupsPage" Load="Ministries.LifeGroupsAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.life-groups" FailedTitle="Can't load Life Groups right now">
+<LiveData TValue="LifeGroupsPage" Load="Reads.LifeGroupsAsync" Feeds="Reads.Feeds" Remember="ministries.life-groups" FailedTitle="Can't load Life Groups right now">
     <ChildContent>
         @{
             LifeGroupSets sets = LifeGroupSets.Of(context.Value, ChurchTime.Today(Clock));
@@ -93,7 +93,7 @@
         (_loading, _problem) = (group.Id, null);
         try
         {
-            MinistryPage page = await Ministries.MinistryAsync(group.Id);
+            MinistryPage page = await Reads.MinistryAsync(group.Id);
             if (!page.You.SignedIn)
             {
                 Navigation.NavigateTo("/account");
@@ -101,9 +101,9 @@
             }
             (_open, _joining) = (false, page);
         }
-        catch (RpcException exception)
+        catch (MinistryNotHereException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = exception.Message;
         }
         finally
         {

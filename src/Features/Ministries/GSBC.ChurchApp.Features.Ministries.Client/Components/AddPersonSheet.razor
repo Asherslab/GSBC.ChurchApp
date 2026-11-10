@@ -1,4 +1,5 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 
 <Sheet Open="Open" OpenChanged="ClosingAsync" Title="@(Role == Roles.Attendee ? "Add an attendee" : "Add to the team")" Lead="Find them by name. They need to be in the app; a child is added by their parent first.">
     <ChildContent>
@@ -36,7 +37,7 @@
     }
 
     private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
-        (await Ministries.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
+        (await Lookups.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
 
     private async Task AddAsync(PersonChoice person)
     {
@@ -49,7 +50,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

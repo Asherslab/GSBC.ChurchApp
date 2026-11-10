@@ -29,7 +29,7 @@ internal sealed class MinistryViews(
     public static bool Holds(GrantSet grants, Permission permission, Guid ministryId) => grants.IsAllowed(permission, ministryId.ToString());
 
     public static bool MaySee(string audience, GrantSet grants, MinistryTree tree, Guid ministryId) =>
-        MinistryRules.MaySee(
+        MinistryLogic.MaySee(
             audience,
             node => grants.IsAllowed(Permission(node), ministryId.ToString()),
             node => tree.Below(ministryId).Any(below => grants.IsAllowed(Permission(node), below.Id.ToString())));
@@ -41,6 +41,16 @@ internal sealed class MinistryViews(
             if ((await roles.HoldersAsync(Roles.KeyOf(role), ministryId.ToString(), cancellationToken)).Any(holder => holder.UserId == userId))
                 held.Add(role);
         return held;
+    }
+
+    public async Task<MinistryHoldings> HoldingsAsync(IReadOnlyCollection<MinistryRecord> places, CancellationToken cancellationToken)
+    {
+        List<string> ids = places.Select(place => place.Id.ToString()).ToList();
+        List<(string, Guid, Guid)> all = [];
+        foreach (string role in MinistryHoldings.AllRoles)
+            all.AddRange((await roles.HoldingsAsync(Roles.KeyOf(role), ids, cancellationToken))
+                .Select(holding => (role, holding.UserId, Guid.Parse(holding.ObjectId))));
+        return MinistryHoldings.From(all);
     }
 
     public async Task<IReadOnlyList<Guid>> HoldersAsync(string role, Guid ministryId, CancellationToken cancellationToken) =>

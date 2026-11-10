@@ -1,5 +1,6 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 
 <h2 class="panel-title">@Code.Label</h2>
 <p class="panel-lead">@(Account is null ? "Its demo account was removed." : $"Signs in to {Account.DisplayName}, {Account.Email}.")</p>
@@ -45,7 +46,7 @@
         _problem = null;
         try
         {
-            await Accounts.TurnOffReviewCodeAsync(Code.Id);
+            await Office.TurnOffReviewCodeAsync(Code.Id);
             await OnChanged.InvokeAsync();
         }
         catch (RpcException exception)

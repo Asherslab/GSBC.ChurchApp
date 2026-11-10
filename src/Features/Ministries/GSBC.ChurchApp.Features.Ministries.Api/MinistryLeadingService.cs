@@ -40,46 +40,19 @@ internal sealed class MinistryLeadingService(
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         MinistryRecord ministry = Existing(tree, request.MinistryId);
 
-        List<(Guid Person, string Role, string From)> team = [];
-        foreach (string role in new[] { Roles.Leader, Roles.Admin, Roles.Team })
-            team.AddRange((await views.HoldersAsync(role, ministry.Id, cancellationToken)).Select(person => (person, role, "")));
-        foreach (MinistryRecord above in tree.Above(ministry.Id))
-            team.AddRange((await views.HoldersAsync(Roles.Leader, above.Id, cancellationToken)).Select(person => (person, Roles.Leader, above.Name)));
-        team = team.GroupBy(member => member.Person).Select(member => member.OrderBy(each => RoleOrder(each.Role)).ThenBy(each => each.From.Length).First()).ToList();
-        IReadOnlyList<Guid> attendees = await views.HoldersAsync(Roles.Attendee, ministry.Id, cancellationToken);
-
-        List<Guid> everyone = team.Select(member => member.Person).Concat(attendees).Distinct().ToList();
+        MinistryHoldings holdings = await views.HoldingsAsync([ministry, .. tree.Above(ministry.Id)], cancellationToken);
+        List<Guid> everyone = [.. MinistryPeopleLists.Everyone(ministry, tree, holdings)];
         IReadOnlyDictionary<Guid, FamilyFacts> facts = await views.FactsAsync(everyone, cancellationToken);
         List<Guid> parents = facts.Values.SelectMany(fact => fact.Parents).Distinct().ToList();
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync([.. everyone, .. parents], cancellationToken);
 
-        Member MemberOf(Guid person, string role, string from)
-        {
-            FamilyFacts? fact = facts.GetValueOrDefault(person);
-            return new Member
-            {
-                PersonId = person.ToString(), Name = names.GetValueOrDefault(person) ?? "Someone", Role = role, Age = fact?.Minor == true ? fact.Age : null,
-                Parents = (fact?.Parents ?? []).Select(parent => new PersonLine { Id = parent.ToString(), Name = names.GetValueOrDefault(parent) ?? "A parent" }).ToList(),
-                NoParent = fact is { Minor: true, Parents.Count: 0 }, CanSignIn = fact?.CanSignIn ?? true, LeadsFrom = from,
-            };
-        }
-
         List<string> mayGive = [];
-        foreach (string role in new[] { Roles.Leader, Roles.Admin, Roles.Team, Roles.Attendee })
+        foreach (string role in MinistryHoldings.AllRoles)
             if (await roles.MayGiveAsync(me, Roles.KeyOf(role), ministry.Id.ToString(), cancellationToken))
                 mayGive.Add(role);
 
         List<AskRecord> asks = await db.Asks.AsNoTracking().Where(ask => ask.MinistryId == ministry.Id).OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken);
-        return new PeopleList
-        {
-            Team = team.Select(member => MemberOf(member.Person, member.Role, member.From))
-                .OrderBy(member => RoleOrder(member.Role)).ThenBy(member => member.Name, StringComparer.CurrentCulture).ToList(),
-            Attendees = attendees.Select(person => MemberOf(person, Roles.Attendee, ""))
-                .OrderByDescending(member => member.NoParent).ThenBy(member => member.Name, StringComparer.CurrentCulture).ToList(),
-            Asks = await AskLinesAsync(asks, tree, views, people, cancellationToken),
-            MayGive = mayGive,
-            Attending = ministry.AttendJoin != Joining.None || attendees.Count > 0,
-        };
+        return MinistryPeopleLists.Build(ministry, tree, holdings, facts, names, await AskLinesAsync(asks, tree, views, people, cancellationToken), mayGive);
     }
 
     public async ValueTask<Done> AnswerAsync(AskRef request, CallContext context = default)
@@ -175,10 +148,13 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         TurnedOn(ministry, MinistryParts.News);
         Post wanted = request.Post;
-        if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryRules.PostableAudiences(ministry.AttendJoin)) is { } problem)
+        if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryLogic.PostableAudiences(ministry.AttendJoin)) is { } problem)
             throw Invalid(problem);
 
-        PostRecord? post = wanted.Id.Length > 0
+        Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
+        if (chosenId is { } already && await db.Posts.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } sent)
+            return MinistryViews.Post(sent);
+        PostRecord? post = wanted.Id.Length > 0 && !wanted.New
             ? await db.Posts.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That post was deleted."))
             : null;
@@ -186,7 +162,7 @@ internal sealed class MinistryLeadingService(
         if (post is null)
         {
             string author = (await people.NamesAsync([me], cancellationToken)).GetValueOrDefault(me) ?? "";
-            post = db.Posts.Add(new PostRecord { Id = Guid.CreateVersion7(), MinistryId = ministry.Id, AuthorId = me, AuthorName = author, PostedAt = Now }).Entity;
+            post = db.Posts.Add(new PostRecord { Id = chosenId ?? Guid.CreateVersion7(), MinistryId = ministry.Id, AuthorId = me, AuthorName = author, PostedAt = Now }).Entity;
         }
         else
             post.EditedAt = Now;
@@ -226,17 +202,20 @@ internal sealed class MinistryLeadingService(
         FileItem wanted = request.File;
         if (wanted.Title.Trim().Length is 0 or > MinistryRules.LongestTitle)
             throw Invalid($"Give it a name of up to {MinistryRules.LongestTitle} characters.");
-        if (!MinistryRules.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
+        if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who it's for.");
         Guid? media = Guid.TryParse(wanted.MediaId, out Guid mediaId) ? mediaId : null;
         string url = wanted.Url.Trim();
         if (media is null && !IsWebAddress(url))
             throw Invalid("Add a document, or a link that starts with https://.");
 
-        FileRecord file = wanted.Id.Length > 0
+        Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
+        if (chosenId is { } already && await db.Files.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } sent)
+            return MinistryViews.File(sent);
+        FileRecord file = wanted.Id.Length > 0 && !wanted.New
             ? await db.Files.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That file was deleted."))
-            : db.Files.Add(new FileRecord { Id = Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
+            : db.Files.Add(new FileRecord { Id = chosenId ?? Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
         (file.Title, file.Kind, file.Url, file.MediaId, file.Audience, file.Note) =
             (wanted.Title.Trim(), media is null ? FileKinds.Link : FileKinds.Document, media is null ? url : "", media, wanted.Audience, wanted.Note.Trim());
         changes.Touch(ministry.Id);
@@ -395,7 +374,7 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         TurnedOn(ministry, MinistryParts.Calendar);
         CalendarLine wanted = request.Calendar;
-        if (!MinistryRules.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
+        if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who the calendar is for.");
         string name = wanted.Name.Trim().Length > 0 ? wanted.Name : CalendarName(ministry, wanted.Audience);
         MinistryCalendar saved = wanted.Id.Length > 0
@@ -557,11 +536,14 @@ internal sealed class MinistryLeadingService(
 
     private async Task<MinistryDetails> AddAsync(Guid? parentId, MinistryDetails wanted, CancellationToken cancellationToken)
     {
+        Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
+        if (chosenId is { } already && await db.Ministries.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } added)
+            return MinistryViews.Details(added);
         await CheckAsync(wanted, cancellationToken);
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
-            Id = Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
+            Id = chosenId ?? Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
             Order = await db.Ministries.Where(other => other.ParentId == parentId).Select(other => (int?)other.Order).MaxAsync(cancellationToken) + 1 ?? 0,
         };
         Apply(ministry, wanted);
@@ -637,8 +619,6 @@ internal sealed class MinistryLeadingService(
         Audiences.Attendees => $"{ministry.Name} families",
         _ => ministry.Name,
     };
-
-    private static int RoleOrder(string role) => role switch { Roles.Leader => 0, Roles.Admin => 1, _ => 2 };
 
     private static string Span(RoundRecord round) =>
         round.Sundays.Min() == round.Sundays.Max()

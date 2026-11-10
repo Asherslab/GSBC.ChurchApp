@@ -56,4 +56,9 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(MoveRequest))]
 [ProtoSerializable(typeof(MovePreview))]
 [ProtoSerializable(typeof(LeadChange))]
+[ProtoSerializable(typeof(MinistryCard))]
+[ProtoSerializable(typeof(MinistryPeople))]
+[ProtoSerializable(typeof(YourMinistries))]
+[ProtoSerializable(typeof(ChildFacts))]
+[ProtoSerializable(typeof(YourRoles))]
 public partial class MinistriesContractsModel : TypeModel;

@@ -1,5 +1,6 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject UnsavedChanges Unsaved
 
 <UnsavedGuard Changed="() => Changed" What="the demo account" />
@@ -45,7 +46,7 @@
         _problem = _made = null;
         try
         {
-            await Accounts.CreateDemoAccountAsync(_name.Trim(), _email.Trim());
+            await Office.CreateDemoAccountAsync(_name.Trim(), _email.Trim());
             _made = $"{_email.Trim()} is ready. Next, make a sign-in code for it.";
             _email = "";
             await OnMade.InvokeAsync();

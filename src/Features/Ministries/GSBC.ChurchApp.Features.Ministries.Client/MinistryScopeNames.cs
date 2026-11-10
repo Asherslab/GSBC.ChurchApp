@@ -5,11 +5,11 @@ using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
-internal sealed class MinistryScopeNames(MinistriesClient ministries) : IScopeNamer
+internal sealed class MinistryScopeNames(IMinistryReads ministries) : IScopeNamer
 {
     public ScopeKind Kind => ScopeKind.Ministry;
 
-    public IReadOnlyCollection<string> Feeds { get; } = [MinistriesFeeds.Ministries];
+    public IReadOnlyCollection<string> Feeds => ministries.Feeds;
 
     public async Task<IReadOnlyList<ScopeChoice>> ChoicesAsync()
     {
@@ -19,7 +19,7 @@ internal sealed class MinistryScopeNames(MinistriesClient ministries) : IScopeNa
                 .Select(ministry => new ScopeChoice(ministry.Id, ministry.Name, $"ministries/{ministry.Id}"))
                 .ToList();
         }
-        catch (RpcException)
+        catch (Exception exception) when (exception is RpcException or MinistryNotHereException)
         {
             return [];
         }

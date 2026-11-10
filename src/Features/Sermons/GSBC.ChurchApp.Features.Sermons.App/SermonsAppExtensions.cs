@@ -16,7 +16,7 @@ public static class SermonsAppExtensions
             [new NavEntry("Sermons", Route, "sermons",
                 AlsoUnder: [SermonsDestinations.Sermon.PathPrefix, SermonsDestinations.Series.PathPrefix, SermonsDestinations.Speaker.PathPrefix])],
             SermonCatalogue.Feeds,
-            Listening.Feeds));
+            [.. Listening.Feeds, SermonsFeeds.Follows]));
         return services.AddSermonsOnPhone().AddStoragePart<DownloadsStoragePart>().AddSingleton<ILiveTabIcon, SermonsTabIcon>();
     }
 }

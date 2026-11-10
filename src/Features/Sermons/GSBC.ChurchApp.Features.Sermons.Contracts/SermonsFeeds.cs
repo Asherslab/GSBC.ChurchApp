@@ -6,6 +6,7 @@ public static class SermonsFeeds
     public const string Series = "sermons.series";
     public const string Speakers = "sermons.speakers";
     public const string Progress = "sermons.progress";
+    public const string Follows = "sermons.follows";
     public const string Admin = "sermons.admin";
 
     public const int CatalogueWindow = 400;

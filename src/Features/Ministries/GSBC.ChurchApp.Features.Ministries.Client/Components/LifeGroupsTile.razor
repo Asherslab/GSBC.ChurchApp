@@ -1,9 +1,9 @@
 @using GSBC.ChurchApp.Platform.Contracts.Configuration
 @using GSBC.ChurchApp.Platform.Ui.Surfaces
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
 @inject TimeProvider Clock
 
-<LiveData TValue="LifeGroupsPage" Load="Ministries.LifeGroupsAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.life-groups">
+<LiveData TValue="LifeGroupsPage" Load="Reads.LifeGroupsAsync" Feeds="Reads.Feeds" Remember="ministries.life-groups">
     <ChildContent>@Drawn(context.Value)</ChildContent>
     <Loading>@Drawn(null)</Loading>
     <Failed>@Drawn(null)</Failed>

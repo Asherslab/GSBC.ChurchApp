@@ -1,4 +1,4 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this link" />
 
@@ -57,7 +57,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

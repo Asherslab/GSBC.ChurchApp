@@ -305,3 +305,11 @@ public sealed class InvitationRequest
 {
     [ProtoMember(1)] public string UserId { get; set; } = "";
 }
+
+[ProtoContract]
+public sealed class MyAccount
+{
+    [ProtoMember(1, IsRequired = true)] public Profile Profile { get; set; } = new();
+    [ProtoMember(2, IsRequired = true)] public PasskeyList Passkeys { get; set; } = new();
+    [ProtoMember(3, IsRequired = true)] public SessionList Sessions { get; set; } = new();
+}

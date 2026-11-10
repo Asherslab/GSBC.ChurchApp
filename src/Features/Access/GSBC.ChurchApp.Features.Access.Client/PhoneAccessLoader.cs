@@ -9,14 +9,11 @@ using GSBC.ChurchApp.Platform.Permissions;
 namespace GSBC.ChurchApp.Features.Access.Client;
 
 internal sealed class PhoneAccessLoader(
-    ILocalFeeds feeds, NativeBridge bridge, GrantedAccess granted, SessionSignal signal, AccessLoader online)
+    ILocalFeeds feeds, NativeBridge bridge, GrantedAccess granted, SessionSignal signal)
     : IClientStartupTask
 {
     public Task RunAsync()
     {
-        if (!feeds.IsAvailable)
-            return online.RunAsync();
-
         signal.Changed += ReloadAsync;
         feeds.FeedsChanged += changed =>
         {
@@ -31,7 +28,7 @@ internal sealed class PhoneAccessLoader(
         IReadOnlyList<StoredRecord> mine = bridge.SignedIn ? await feeds.ReadPageAsync(new FeedPageQuery(AccessFeeds.Grants, Limit: 1)) : [];
         GrantSet grants = mine.Count == 0
             ? GrantSet.Empty
-            : AccessLoader.ToGrantSet(AccessContractsModel.Instance.Deserialize<GrantList>(new MemoryStream(mine[0].Payload)));
+            : GrantLists.ToGrantSet(AccessContractsModel.Instance.Deserialize<GrantList>(new MemoryStream(mine[0].Payload)));
         granted.Replace(grants, bridge.SignedIn);
     }
 }

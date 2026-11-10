@@ -209,7 +209,7 @@ internal sealed class MinistriesService(
         {
             Id = ask.Id.ToString(), PersonId = ask.PersonId.ToString(), Name = names.GetValueOrDefault(ask.PersonId) ?? "Someone",
             Age = facts.GetValueOrDefault(ask.PersonId)?.Age, As = ask.As,
-            AskedBy = ask.AskedBy == ask.PersonId ? "" : names.GetValueOrDefault(ask.AskedBy) ?? "",
+            AskedBy = ask.AskedBy == ask.PersonId ? "" : names.GetValueOrDefault(ask.AskedBy) ?? "", AskedById = ask.AskedBy.ToString(),
             Note = ask.Note, AskedAt = ask.AskedAt, MinistryId = ask.MinistryId.ToString(), MinistryName = tree.Find(ask.MinistryId)?.Name ?? "",
         }).ToList();
     }
@@ -249,7 +249,7 @@ internal sealed class MinistriesService(
             .ToListAsync(cancellationToken);
         you.Asked = await AskLinesAsync(asks, tree, views, people, cancellationToken);
         if (MinistryViews.Holds(grants, MinistriesPermissions.Post, ministry.Id))
-            you.MayPostFor = [.. MinistryRules.PostableAudiences(ministry.AttendJoin)];
+            you.MayPostFor = [.. MinistryLogic.PostableAudiences(ministry.AttendJoin)];
         you.MayManagePeople = MinistryViews.Holds(grants, MinistriesPermissions.People, ministry.Id);
         you.MayEditSettings = MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
         you.MayDelete = ministry.ParentId is { } parent
@@ -281,7 +281,7 @@ internal sealed class MinistriesService(
             bool fromAbove = held.Count == 0 && MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
             if (fromAbove)
                 continue;
-            string words = MinistryRules.Yours(held, attending, leadsFromAbove: false);
+            string words = MinistryLogic.Yours(held, attending, leadsFromAbove: false);
             if (words.Length > 0)
                 yours[ministry.Id] = words;
         }

@@ -1,6 +1,7 @@
 @page "/safeguarding"
 @using GSBC.ChurchApp.Features.People.Admin.Components
 @inject PeopleClient People
+@inject PeopleOfficeClient Office
 @inject NavigationManager Navigation
 @inject TimeProvider Clock
 
@@ -8,7 +9,7 @@
 
 <SafeMinistryCheckLine />
 
-<LiveData TValue="IReadOnlyList<FlaggedPerson>" Feeds="[PeopleFeeds.Safeguarding, PeopleFeeds.Family]" Load="People.GetFlaggedAsync" FailedTitle="Can't load who's flagged right now">
+<LiveData TValue="IReadOnlyList<FlaggedPerson>" Feeds="[PeopleFeeds.Safeguarding, PeopleFeeds.Family]" Load="Office.GetFlaggedAsync" FailedTitle="Can't load who's flagged right now">
     <DataTable TItem="FlaggedPerson" Label="Who's flagged" Items="Shown(context.Value)" Columns="Columns(ChurchTime.Today(Clock))" Key="Key" SelectedChanged="Open">
         <Toolbar>
             <FilterChips TValue="string" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />

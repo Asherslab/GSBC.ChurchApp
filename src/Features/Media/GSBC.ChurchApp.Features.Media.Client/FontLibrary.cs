@@ -2,11 +2,13 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Media;
+using GSBC.ChurchApp.Platform.Client.Online;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Media.Client;
 
+[AdminOnly]
 public sealed class FontLibrary(ChannelBase channel, IAccess access) : IFontLibrary
 {
     private readonly IFontsService _fonts = channel.CreateGrpcService<IFontsService>();

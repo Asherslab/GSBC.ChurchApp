@@ -4,11 +4,9 @@ using GSBC.ChurchApp.Features.Analytics.Contracts;
 using GSBC.ChurchApp.Platform.Client.Diagnostics;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Native;
-using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Signals;
 using GSBC.ChurchApp.Platform.Common;
 using Microsoft.Extensions.DependencyInjection;
-using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Analytics.Client;
 
@@ -118,16 +116,8 @@ internal sealed class ErrorReporter(IServiceProvider services, AnalyticsConsent 
     {
         try
         {
-            if (services.GetService<IOutbox>() is { IsAvailable: true } outbox)
-            {
-                using MemoryStream body = new();
-                AnalyticsContractsModel.Instance.Serialize(body, report);
-                await outbox.EnqueueQuietlyAsync(IDiagnosticsService.ReportMethod, body.ToArray());
-            }
-            else
-            {
-                await services.GetRequiredService<ChannelBase>().CreateGrpcService<IDiagnosticsService>().ReportAsync(report);
-            }
+            if (services.GetService<IDiagnosticsSending>() is { } sending)
+                await sending.SendAsync(report);
         }
         catch (Exception failure)
         {
