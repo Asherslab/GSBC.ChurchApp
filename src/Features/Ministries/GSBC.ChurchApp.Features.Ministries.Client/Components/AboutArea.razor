@@ -44,13 +44,13 @@
     </Section>
 }
 
-@if (Page.Teams.Count > 0)
+@if (Page.SubMinistries.Count > 0)
 {
-    <Section Title="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? "Groups" : "Teams")">
+    <Section Title="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? "Groups" : "Ministries under it")">
         <ListGroup>
-            @foreach (MinistrySummary team in Page.Teams)
+            @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="team.Id" Title="@team.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? team.Summary : MinistryWords.JoinLine(team))" Icon="@IconOf(team.Icon)" Chevron="true" Href="@Href(team.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? under.Summary : MinistryWords.JoinLine(under))" Icon="@IconOf(under.Icon)" Chevron="true" Href="@Href(under.Id)" />
             }
         </ListGroup>
     </Section>

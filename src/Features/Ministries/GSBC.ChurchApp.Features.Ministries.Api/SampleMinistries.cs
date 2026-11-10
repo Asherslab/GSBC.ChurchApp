@@ -60,7 +60,7 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
             db.Files.Add(new FileRecord { Id = Guid.CreateVersion7(), MinistryId = ministry.Id, Title = title, Kind = FileKinds.Link, Url = url, Audience = audience, AddedAt = now });
 
         MinistryRecord music = Add(null, "Music", "Leads the church in song at the morning and evening services",
-            "Sample description. Music leads the congregation in song and looks after the teams under it.",
+            "Sample description. Music leads the congregation in song and looks after the ministries under it.",
             "Sundays 10:30am and 6pm; rehearsals Thursdays 7:30pm", "Singers, musicians and sound", "#2a3d5e", "music", Joining.Ask, Joining.None);
         Add(music.Id, "Choir", "Sings at the morning service and at Christmas", "Sample description.", "Thursdays 7:30pm", "", "#2a3d5e", "music", Joining.Ask, Joining.None);
         Add(music.Id, "Vocal Groups", "Small groups who sing a special item", "Sample description.", "", "", "#2a3d5e", "music", Joining.Ask, Joining.None);

@@ -56,7 +56,7 @@ internal sealed class MinistriesService(
         {
             Ministry = MinistryViews.Details(ministry),
             Leaders = await views.LeadersAsync(tree, ministry.Id, cancellationToken),
-            Teams = tree.ChildrenOf(ministry.Id).Select(child => MinistryViews.Summary(child)).ToList(),
+            SubMinistries = tree.ChildrenOf(ministry.Id).Select(child => MinistryViews.Summary(child)).ToList(),
             Path = tree.Above(ministry.Id).Reverse().Select(above => new Crumb { Id = above.Id.ToString(), Name = above.Name }).ToList(),
             Posts = await views.PostsAsync(tree, ministry.Id, grants, cancellationToken),
             Files = await views.FilesAsync(tree, ministry.Id, grants, cancellationToken),

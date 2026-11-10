@@ -95,6 +95,10 @@ public static class MinistryWords
         return you.Roles.Contains(Roles.Attendee) ? "You come along" : "";
     }
 
+    public static string Possessive(string name) => name.EndsWith('s') ? $"{name}'" : $"{name}'s";
+
+    public static string Ministries(int count) => count == 1 ? "1 ministry" : $"{count} ministries";
+
     public static string Names(IReadOnlyList<string> names) =>
         names.Count <= 1 ? names.FirstOrDefault() ?? "" : $"{string.Join(", ", names.Take(names.Count - 1))} and {names[^1]}";
 

@@ -1,7 +1,7 @@
 @inject MinistriesClient Ministries
 @inject NavigationManager Navigation
 
-<UnsavedGuard Changed="() => Changed" What="@($"{Page.Ministry.Name}'s settings")" Save="SaveBeforeLeavingAsync" />
+<UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} settings")" Save="SaveBeforeLeavingAsync" />
 
 <Section First="true" Title="Details">
     <div class="ministry-form">
@@ -31,13 +31,13 @@
 
 @if (Page.Ministry.Kind != MinistryKinds.LifeGroup)
 {
-    <Section Title="Teams under it" Lead="@($"{Page.Ministry.Name}'s leaders lead these too.")">
+    <Section Title="Ministries under it" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")">
         <ListGroup>
-            @foreach (MinistrySummary team in Page.Teams)
+            @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="team.Id" Title="@team.Name" Subtitle="@team.Summary" Chevron="true" Href="@Href(team.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@under.Summary" Chevron="true" Href="@Href(under.Id)" />
             }
-            <ListRow Title="Add a team" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
+            <ListRow Title="Add a ministry" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
         </ListGroup>
     </Section>
 }
@@ -122,8 +122,10 @@
         if (preview.Calendars.Count > 0) goes.Add($"the {MinistryWords.Names(preview.Calendars)} {(preview.Calendars.Count == 1 ? "calendar" : "calendars")} and {preview.Events} {(preview.Events == 1 ? "event" : "events")}");
         if (preview.People > 0) goes.Add($"everyone's place in it ({preview.People})");
         string what = goes.Count > 0 ? $"This deletes {MinistryWords.Names(goes)}." : "Nothing else is in it.";
-        string teams = preview.Teams > 0 ? $" Its {preview.Teams} {(preview.Teams == 1 ? "team moves" : "teams move")} up to {(preview.TeamsGoTo.Length > 0 ? preview.TeamsGoTo : "the top level")}." : "";
-        return $"{what}{teams} This can't be undone.";
+        string under = preview.SubMinistries > 0
+            ? $" The {MinistryWords.Ministries(preview.SubMinistries)} under it {(preview.SubMinistries == 1 ? "moves" : "move")} up to {(preview.SubMinistriesGoTo.Length > 0 ? preview.SubMinistriesGoTo : "the top level")}."
+            : "";
+        return $"{what}{under} This can't be undone.";
     }
 
     private Task SaveAsync() =>

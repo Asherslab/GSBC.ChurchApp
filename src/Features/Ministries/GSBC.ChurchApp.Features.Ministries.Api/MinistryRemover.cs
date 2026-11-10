@@ -14,8 +14,8 @@ internal sealed class MinistryRemover(MinistriesDbContext db, MinistryChanges ch
         DeletionPreview preview = new()
         {
             Name = ministry.Name,
-            Teams = tree.ChildrenOf(ministry.Id).Count(),
-            TeamsGoTo = ministry.ParentId is { } parent ? tree.Find(parent)?.Name ?? "" : "",
+            SubMinistries = tree.ChildrenOf(ministry.Id).Count(),
+            SubMinistriesGoTo = ministry.ParentId is { } parent ? tree.Find(parent)?.Name ?? "" : "",
             Posts = await db.Posts.CountAsync(post => post.MinistryId == ministry.Id, cancellationToken),
             Files = await db.Files.CountAsync(file => file.MinistryId == ministry.Id, cancellationToken),
         };

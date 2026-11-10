@@ -50,8 +50,8 @@ public sealed class MinistriesClient(ChannelBase channel)
     public async Task<MinistryDetails> SaveMinistryAsync(MinistryDetails details) =>
         await _leading.SaveMinistryAsync(new MinistrySave { MinistryId = details.Id, Details = details });
 
-    public async Task<MinistryDetails> AddTeamAsync(string parentId, MinistryDetails details) =>
-        await _leading.AddTeamAsync(new MinistrySave { MinistryId = parentId, Details = details });
+    public async Task<MinistryDetails> AddSubMinistryAsync(string parentId, MinistryDetails details) =>
+        await _leading.AddSubMinistryAsync(new MinistrySave { MinistryId = parentId, Details = details });
 
     public async Task<MinistryDetails> CreateAsync(MinistryDetails details) => await _leading.CreateAsync(new MinistrySave { Details = details });
 

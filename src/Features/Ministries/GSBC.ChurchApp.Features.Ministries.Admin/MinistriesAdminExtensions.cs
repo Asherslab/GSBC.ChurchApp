@@ -11,7 +11,7 @@ public static class MinistriesAdminExtensions
     {
         modules.Add(new ClientModule("Ministries", typeof(MinistriesAdminExtensions).Assembly,
             [new NavEntry("Ministries", "ministries", "users", MinistriesPermissions.People, Area: NavAreas.People,
-                Summary: "Each ministry's people, news, calendars, files and teams, for its leaders and for staff"),
+                Summary: "Each ministry's people, news, calendars, files and the ministries under it, for its leaders and for staff"),
              new NavEntry("Life Groups", "life-groups", "book-open", MinistriesPermissions.Settings, Area: NavAreas.People,
                 Summary: "The Sunday classes: what's on now, what's next, and the all-year groups")],
             MinistriesClientExtensions.Feeds, []));

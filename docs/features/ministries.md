@@ -10,7 +10,7 @@ each with a contact or 'I'm interested' button") was the placeholder. A POC is i
 A full interview before building. **Where it disagrees with anything below, this wins;** the rest of the doc is the
 2026-10-30/31 draft, to be rewritten as each stage is built.
 
-**What it's for.** First release: **team life for volunteers**. First ministries: **Music (and its teams), Children's
+**What it's for.** First release: **team life for volunteers**. First ministries: **Music (and the ministries under it), Children's
 / Impact Kids and Impact Youth**. Life Groups stay a kind of ministry (same model).
 
 **No Elvanto, for now.** Build it fully in the app, with no Elvanto link: the owner has discussions to have first.
@@ -132,7 +132,7 @@ Life, Youth) **for their child**, and joins their own adult group as themselves.
 
 | Role | Can | Given by |
 |---|---|---|
-| Leader | Everything in the ministry and every ministry under it: people, posts, files, its calendars (Events' `events.edit` and `events.publish` reach them as *attached* scopes), settings, teams under it. Listed as a leader | Leaders and admins of it or above it, Ministries Manager |
+| Leader | Everything in the ministry and every ministry under it: people, posts, files, its calendars (Events' `events.edit` and `events.publish` reach them as *attached* scopes), settings, the ministries under it. Listed as a leader | Leaders and admins of it or above it, Ministries Manager |
 | Admin | The same, not listed | The same |
 | Team | Sees what's for the team, attendees and parents | The same |
 | Attendee | Sees what's for attendees and their parents | The same |
@@ -159,6 +159,11 @@ with a hint saying what it controls, and every option saying what happens to the
 before you leave it with unsaved changes (owner, 2026-11-10: "can accidentally lose my progress"): Platform.Ui's
 `UnsavedGuard`, with *Save and go on* where the form saves with a button.
 
+**Ministries, not teams** (owner, 2026-11-10: "i think we stick with "ministries" language, not "teams". our church
+treats them as ministries"). A ministry under another is a ministry: *Ministries under it*, *Add a ministry*, *A
+ministry under Kids Ministries*. "Team" means only the people who serve in a ministry, as against its attendees (*the
+team*, *Joining the team*, *Team only*); the owner hasn't asked to change that, so it stays unless they say otherwise.
+
 **Audiences.** Posts and links are for **everyone**, **attendees and their parents**, **parents only** or **the team**; a
 ministry with no attendees offers only everyone and the team. An **important** post notifies those it's for straight away
 (for everyone: the ministry's own people). Asking to send one to the **whole church** marks it for staff (*default*: the
@@ -173,7 +178,7 @@ their own. Removing one says how many events go with it.
 into private media* is still to do.
 
 **Deleting a ministry** (Settings, for the leaders of the ministry above it, or staff for a top-level one) first says what
-goes: its teams **move up** to its parent (*default*), and its posts, files, asks, calendars and their events and everyone's
+goes: the ministries under it **move up** to its parent (*default*), and its posts, files, asks, calendars and their events and everyone's
 place in it are deleted; it can't be undone. **Deleting an account** forgets its asks and clears its name from posts and files
 (`IPersonData`).
 
@@ -214,7 +219,7 @@ owner. The spike uses these names; descriptions marked "sample" are written for 
 | Children's Ministry | Website: "Children ages 4 to 11." | Serving team, ask to join; its Friday night is Impact Kids (from the bulletin) |
 | Impact Youth | Website: the full description, Fridays 6:30–8:30pm in school terms | Serving team, ask to join |
 | Young Adults | Website: "Men & Women 18 or older." | Fellowship, open |
-| Music, over Vocal Groups, Choir, Song Leading and Production | The owner | Serving team and its four teams |
+| Music, over Vocal Groups, Choir, Song Leading and Production | The owner | Serving ministry and the four under it |
 | Men's | The owner | Fellowship, open; Men's Prayer Fridays 5am (bulletin) |
 | Ladies | The website's Our Team page | Fellowship, open; Ladies' Prayer Fridays 9:30am (bulletin) |
 | Southland Baptist Productions | The website's Our Team page (a staff role, no description) | Serving team, ask to join; sample description |
@@ -222,10 +227,10 @@ owner. The spike uses these names; descriptions marked "sample" are written for 
 
 ## What people can do
 
-- **Anyone (a visitor):** browse every ministry, grouped as serving teams (with Music's four teams
+- **Anyone (a visitor):** browse every ministry, grouped as serving ministries (with Music's four
   under it) and fellowship groups, each with what it offers and how to join. Open a ministry to read
   its About (description, when and where it meets, who it's for, its leaders) and how to join. For
-  most serving teams that's all: their news, calendar and files are for members. Where a ministry
+  most serving ministries that's all: their news, calendar and files are for members. Where a ministry
   has made a module public (Children's Ministry's news and calendar, Young Adults' calendar), the
   visitor sees its public stream in its own tab. Then, by the ministry's join setting:
   - **Open:** tap Join; the members-only side opens at once.
@@ -243,9 +248,9 @@ owner. The spike uses these names; descriptions marked "sample" are written for 
   requests, and add and remove members.
 - **An admin:** everything a leader can do, without the title: not listed as a leader on the About.
   For the person who looks after a ministry's tech (owner, 2026-11-02).
-- **Staff:** everything a leader can do in every ministry, plus **Message all serving teams**: one
+- **Staff:** everything a leader can do in every ministry, plus **Message all serving ministries**: one
   important announcement, with a notification, to the members of every serving team and their
-  sub-teams. Whether a ministry is a serving team is a staff-only setting. Only staff make someone a
+  the ministries under them. Whether a ministry is a serving ministry is a staff-only setting. Only staff make someone a
   leader or an admin.
 
 "My ministries" is the top of the directory: your next roster date, then each ministry you're in with
@@ -317,7 +322,7 @@ own view under the hero, reached by the section tabs and each with its own URL:
 
 | Area | URL | Shown when |
 |---|---|---|
-| About | `/ministries/{id}` | Always. What it is, when it meets, who leads it, its teams; for a member, your next roster date and what's next |
+| About | `/ministries/{id}` | Always. What it is, when it meets, who leads it, the ministries under it; for a member, your next roster date and what's next |
 | News | `/ministries/{id}/news` (and `/news/public`) | Announcements is on, and there's something you may read (leaders always see it) |
 | Calendar | `/ministries/{id}/calendar` (and `/calendar/public`) | Calendar is on, likewise |
 | Roster | `/ministries/{id}/roster` | Rosters is on and you're a member |
@@ -362,7 +367,7 @@ always members only. The defaults, which leaders can change:
 
 | Ministry | News | Calendar | Files | Why |
 |---|---|---|---|---|
-| Serving teams: Music and its four teams, Southland Baptist Productions | Members only | Members only | Members only | The owner's rule: for most service ministries only About is public. A visitor sees what the team does and how to join, nothing else |
+| Serving ministries: Music and the four under it, Southland Baptist Productions | Members only | Members only | Members only | The owner's rule: for most service ministries only About is public. A visitor sees what the team does and how to join, nothing else |
 | Children's Ministry (Impact Kids) | Both | Both | Members only | Parents need the Friday nights, the break-up night and "this Friday: space night"; helpers need their own briefings, planning and training dates. Its files (the helpers' guide, the code of conduct) are for the team |
 | Impact Youth | Both | Both | Both | The same reasons as Kids, plus a public file families need (the camp permission form) beside the leaders' room lists. A guess, to confirm with its leader |
 | Young Adults | Both | Everyone | Everyone | An open group: what's on is public, but the group has its own notices too ("camp carpool") |
@@ -425,7 +430,7 @@ above, so the switch is gone (the eye button still sets who you're viewing as):
 
 - Every chat starts with "Only Music members can read this chat. Messages are kept."
 - Roster and chats are always members only; there's no public roster or public chat.
-- Staff's "Message all serving teams" is always members only.
+- Staff's "Message all serving ministries" is always members only.
 
 ### To decide with staff
 
@@ -479,7 +484,7 @@ concerns children, the church's Safe Ministry policy needs these in the design:
 
 Each ministry is a push topic. Members have a per-ministry switch (in the spike it's a mock: nothing
 is sent). Important announcements and new messages in your chats notify; everything else syncs
-quietly. Staff messages to all serving teams are always important.
+quietly. Staff messages to all serving ministries are always important.
 
 ## Accounts
 
@@ -498,7 +503,7 @@ people who hold its **Member**, **Leader** or **Admin** role, as Access assignme
 Elvanto supplies roster dates, positions and replies, matched to app people; it doesn't decide who is
 on a team.
 
-| Role | Given per ministry by | Applies to its teams | On the About |
+| Role | Given per ministry by | Applies to the ministries under it | On the About |
 |---|---|---|---|
 | Member | Leaders and Admins of the ministry or its parent, Staff; Join on an Open ministry; accepting a join request | No | No |
 | Leader | Staff | Yes | Listed as a leader |
@@ -525,8 +530,8 @@ Join requests sit at the top with Accept and Decline. Leave removes your own Mem
 | `ministries.roster.edit` | ministry | Manage the roster | | ✓ | ✓ |
 | `ministries.members.edit` | ministry | Add and remove members, accept join requests | | ✓ | ✓ |
 | `ministries.settings.edit` | ministry | Change the ministry's settings | | ✓ | ✓ |
-| `ministries.serving.message` | everywhere | Message all serving teams | | | ✓ |
-| `ministries.serving.set` | everywhere | Choose which ministries are serving teams | | | ✓ |
+| `ministries.serving.message` | everywhere | Message all serving ministries | | | ✓ |
+| `ministries.serving.set` | everywhere | Choose which ministries are serving ministries | | | ✓ |
 
 "Members can start chats" is a ministry setting checked by Ministries, not a role change. The Choir
 member reading Music's members-only items is Ministries' feed rule (a child's member reads the
@@ -571,7 +576,7 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
 ## Decided
 
 - **Posting:** every event, announcement and file is marked Everyone or Members (owner, 2026-10-30).
-- **Visibility:** for most serving teams only About is public; ministries such as Impact Kids need
+- **Visibility:** for most serving ministries only About is public; ministries such as Impact Kids need
   public and private news and calendar (owner, 2026-10-31). Hence the per-module setting.
 - **Rosters:** Elvanto is the source of truth; leaders roster through the app into Elvanto; members
   read from it; Elvanto stays usable directly (owner, 2026-10-30).
@@ -587,8 +592,8 @@ per ministry, as for Life Group leaders: a leader's token can't touch another mi
 1. **Defaults per ministry.** Which modules each ministry makes public or Both; the spike's table is a
    guess, to confirm with each ministry's leaders.
 2. **Which ministries, under whom?** Parents and children, join settings, and which are serving
-   teams. The spike guesses all but Music's tier.
-3. **Southland Baptist Productions:** what it does, and whether it's Music's Production team, sits
+   ministries. The spike guesses all but Music's tier.
+3. **Southland Baptist Productions:** what it does, and whether it's Music's Production ministry, sits
    beside it, or isn't a ministry members join.
 4. **Life Groups and the Friday ministries:** should Kids Life sit under Children's Ministry and Youth
    under Impact Youth (needs "followers", above)? Is the Ladies ministry the same group as a ladies'

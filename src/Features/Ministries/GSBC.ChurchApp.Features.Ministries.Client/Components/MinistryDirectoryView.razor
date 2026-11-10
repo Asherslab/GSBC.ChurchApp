@@ -27,8 +27,8 @@
             <ListGroup>
                 @foreach (MinistrySummary ministry in top)
                 {
-                    int teams = ministries.Count(child => child.ParentId == ministry.Id);
-                    <ListRow @key="ministry.Id" Title="@ministry.Name" Subtitle="@Line(ministry, teams)" Icon="@AboutArea.IconOf(ministry.Icon)" Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
+                    int under = ministries.Count(child => child.ParentId == ministry.Id);
+                    <ListRow @key="ministry.Id" Title="@ministry.Name" Subtitle="@Line(ministry, under)" Icon="@AboutArea.IconOf(ministry.Icon)" Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
                 }
                 @if (directory.MayCreate)
                 {
@@ -58,12 +58,12 @@
     private static bool HoldsLifeGroups(MinistryDirectory directory, MinistrySummary ministry) =>
         directory.Ministries.Any(child => child.ParentId == ministry.Id && child.Kind == MinistryKinds.LifeGroup);
 
-    private static string Line(MinistrySummary ministry, int teams)
+    private static string Line(MinistrySummary ministry, int under)
     {
         List<string> parts = [];
         if (ministry.Summary.Length > 0)
             parts.Add(ministry.Summary);
-        parts.Add(teams > 0 ? $"{teams} {(teams == 1 ? "team" : "teams")}" : MinistryWords.JoinLine(ministry));
+        parts.Add(under > 0 ? $"{MinistryWords.Ministries(under)} under it" : MinistryWords.JoinLine(ministry));
         return string.Join(" · ", parts);
     }
 }

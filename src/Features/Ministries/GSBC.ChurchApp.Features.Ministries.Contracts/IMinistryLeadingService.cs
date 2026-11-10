@@ -38,7 +38,7 @@ public interface IMinistryLeadingService
     ValueTask<MinistryDetails> SaveMinistryAsync(MinistrySave request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]
-    ValueTask<MinistryDetails> AddTeamAsync(MinistrySave request, CallContext context = default);
+    ValueTask<MinistryDetails> AddSubMinistryAsync(MinistrySave request, CallContext context = default);
 
     [Requires(MinistriesPermissions.CreateNode)]
     ValueTask<MinistryDetails> CreateAsync(MinistrySave request, CallContext context = default);

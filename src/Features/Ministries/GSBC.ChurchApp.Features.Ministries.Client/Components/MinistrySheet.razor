@@ -2,8 +2,8 @@
 
 <UnsavedGuard Changed="() => Open && (_name.Length > 0 || _summary.Length > 0)" What="the new ministry" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(ParentId.Length > 0 ? $"A team under {ParentName}" : "A new ministry")"
-       Lead="@(ParentId.Length > 0 ? $"{ParentName}'s leaders lead it too. Add its own leaders and people once it's made." : "Its leaders do the rest: people, posts, files and teams under it.")">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(ParentId.Length > 0 ? $"A ministry under {ParentName}" : "A new ministry")"
+       Lead="@(ParentId.Length > 0 ? $"{MinistryWords.Possessive(ParentName)} leaders lead it too. Add its own leaders and people once it's made." : "Its leaders do the rest: people, posts, files and the ministries under it.")">
     <ChildContent>
         <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(ParentId.Length > 0 ? "Choir" : "Impact Kids")" />
         <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
@@ -36,7 +36,7 @@
         try
         {
             MinistryDetails details = new() { Name = _name, Summary = _summary, TeamJoin = _teamJoin, AttendJoin = _attendJoin, Kind = Kind };
-            MinistryDetails created = ParentId.Length > 0 ? await Ministries.AddTeamAsync(ParentId, details) : await Ministries.CreateAsync(details);
+            MinistryDetails created = ParentId.Length > 0 ? await Ministries.AddSubMinistryAsync(ParentId, details) : await Ministries.CreateAsync(details);
             (_name, _summary) = ("", "");
             await OpenChanged.InvokeAsync(false);
             await OnCreated.InvokeAsync(created);
