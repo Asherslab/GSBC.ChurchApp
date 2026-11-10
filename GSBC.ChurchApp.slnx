@@ -180,9 +180,9 @@
   </Folder>
   <Folder Name="/tests/Features/Ministries/">
     <Project Path="tests/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api.Tests/GSBC.ChurchApp.Features.Ministries.Api.Tests.csproj" />
+  </Folder>
   <Folder Name="/tests/Features/Prayer/">
     <Project Path="tests/Features/Prayer/GSBC.ChurchApp.Features.Prayer.Api.Tests/GSBC.ChurchApp.Features.Prayer.Api.Tests.csproj" />
-  </Folder>
   </Folder>
   <Folder Name="/tests/Features/People/">
     <Project Path="tests/Features/People/GSBC.ChurchApp.Features.People.Api.Tests/GSBC.ChurchApp.Features.People.Api.Tests.csproj" />
