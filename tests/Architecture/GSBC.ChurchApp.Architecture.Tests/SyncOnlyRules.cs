@@ -29,14 +29,14 @@ public sealed partial class SyncOnlyRules
         "IMinistryLeadingService.Moving",
         "IMinistryLeadingService.CalendarRemoval",
         "IEventEditingService.TellPeople",
+        "IAccountsService.UpdateName",
+        "IAccountsService.RemovePasskey",
+        "IMediaService.List",
+        "IMediaFoldersService.List",
     ];
 
     private static readonly string[] NotYetOnSync =
     [
-        "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/AccountsClient.cs: IAccountsService.UpdateName",
-        "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/AccountsClient.cs: IAccountsService.RemovePasskey",
-        "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaClient.cs: IMediaService.List",
-        "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaClient.cs: IMediaFoldersService.List",
     ];
 
     private static readonly string[] TheTransportItself =

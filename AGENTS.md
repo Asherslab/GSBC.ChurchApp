@@ -105,17 +105,10 @@ Every entry needs the owner's explicit approval in chat first.
 | Sign-in and account actions: sign up, redeem a family or invitation code, account recovery, resend or confirm an email code, sign out (ending this or another device's session) and sign out everywhere, delete my account, register the phone for push and claim the install, make a child's sign-in code | `IAccountsService.Redeem`, `StartSignUp`, `RequestRecovery`, `ResendConfirmation`, `ConfirmEmail`, `SignOutEverywhere`, `EndSession`, `DeleteMyAccount`; `IInstallsService.Claim`; `INotificationsService.RegisterDevice`; `IPeopleService.MakeSignInCode` | Each needs the server's yes or no at that moment and means nothing offline | 2026-11-10 |
 | Links and uploads: signed links to private pictures and files, uploading a file (duplicate check, begin, complete), your private calendar-subscription link and a new one, opening a link to something outside the app | `IMediaService.GetLink`, `FindByHash`, `BeginUpload`, `CompleteUpload`; `ICalendarFilesService.Link`, `ResetLink`; `IDestinationsService.Describe` | The server hands out a link or receives bytes; there is nothing to store. Uploads move to the outbox with the Offline uploads station (owner, 2026-11-11), which narrows this entry | 2026-11-10 |
 | Leader lookups: searching the church's people to add someone to a ministry, the "what goes" previews before deleting or moving a ministry or removing its calendar, and *Tell people* | `IMinistryLeadingService.Find`, `Deletion`, `Moving`, `CalendarRemoval`; `IEventEditingService.TellPeople` | Searching everyone's names can't be synced to every phone, and a preview must be the server's current answer | 2026-11-10 |
+| Account security changes: changing your name and removing a passkey (ending a device's session is above); your account itself syncs and shows offline, read only | `IAccountsService.UpdateName`, `RemovePasskey` | The owner: "Account and security is read only offline" | 2026-11-11 |
+| Event editors: browsing the Media library beyond what's synced, online only | `IMediaService.List`; `IMediaFoldersService.List` | The owner: "those that *are* synced already (as some will be) can be browsed offline. otherwise online" | 2026-11-11 |
 
-**Not yet on Sync** (temporary; the test's `NotYetOnSync`):
-
-- Changing your name and removing a passkey on the phone (`IAccountsService.UpdateName`, `RemovePasskey`; ending a
-  device's session is already `EndSession` above): the owner chose "Account and security is read only offline"
-  (2026-11-11, through the orchestrator): your account syncs (`accounts.mine`) and shows offline, and changes are
-  online only. The orchestrator records the exception "Account security changes (name, passkeys, signed-in devices),
-  online only" in the table above on merge.
-- The event editors' picture chooser browsing the Media library beyond what's synced (`IMediaService.List`,
-  `IMediaFoldersService.List`): the owner approved it through the orchestrator (2026-11-11, "those that *are* synced
-  already ... can be browsed offline. otherwise online"), who moves it to the table above on merge.
+**Not yet on Sync** (temporary; the test's `NotYetOnSync`): nothing. The list stays empty; it is never an approval.
 
 # Repo layout
 
