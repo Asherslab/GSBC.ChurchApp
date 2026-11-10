@@ -17,19 +17,18 @@
         else
         {
             <Section First="true">
-                <p class="prayer-yours__status">@PrayerWords.Status(line)</p>
+                <p class="prayer-yours__status @(line.Sending == Sending.Sent ? "" : "is-waiting")">@PrayerWords.Status(line)</p>
                 <p class="prayer-yours__text">@line.Text</p>
-                <p class="prayer-yours__meta">Sent @PrayerWords.Day(line.SentAt)@(line.Wall == WallState.Shown ? $" · Shown as {(line.WallName.Length > 0 ? line.WallName : PrayerWords.NoName.ToLowerInvariant())}" : "")</p>
+                <p class="prayer-yours__meta">@(line.Sending == Sending.Sent ? "Sent" : "Written") @PrayerWords.Day(line.SentAt)@(line.Wall == WallState.Shown ? $" · Shown as {(line.WallName.Length > 0 ? line.WallName : PrayerWords.NoName.ToLowerInvariant())}" : "")</p>
                 @if (line.Answered && line.AnsweredNote.Length > 0)
                 {
                     <Card Class="prayer-yours__answered" Title="Answered"><p>@line.AnsweredNote</p></Card>
                 }
                 @if (line.Problem is { Length: > 0 } problem)
                 {
-                    <Notice Tone="NoticeTone.Warning" Text="@($"It couldn't be sent: {problem}")" />
+                    <Notice Tone="NoticeTone.Warning" Text="@problem" />
                 }
             </Section>
-            <WaitingToSend MethodsUnder="@PrayerOnPhone.Service" Describe="PrayerOnPhone.Describe" />
             <Section>
                 <ListGroup>
                     @if (line.Sending == Sending.CouldNotSend)

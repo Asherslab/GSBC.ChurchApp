@@ -25,6 +25,7 @@
 .prayer-form__private { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 12px 0 0; color: var(--ink-2); font-size: var(--text-caption); }
 
 .prayer-yours__status { margin: 0 0 10px; color: var(--accent); font-size: var(--text-caption); font-weight: 700; }
+.prayer-yours__status.is-waiting { color: var(--marker-ink); }
 .prayer-yours__text { margin: 0; color: var(--ink); font-size: var(--text-lead); line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
 .prayer-yours__meta { margin: 12px 0 0; color: var(--ink-3); font-size: var(--text-caption); }
 .prayer-yours__answered { margin-top: 16px; }
@@ -48,7 +49,6 @@
 .prayer-request__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
 .prayer-request__text { margin: 0; max-width: 66ch; color: var(--ink); font-size: var(--text-lead); line-height: 1.6; white-space: pre-line; overflow-wrap: anywhere; }
 .prayer-request__care { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
-.prayer-request__state { margin-right: 6px; color: var(--ink-3); font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; }
 .prayer-request__answered { margin: 0; color: var(--accent); font-size: var(--text-caption); font-weight: 600; }
 .prayer-request__wall { display: grid; gap: 16px; margin-top: 14px; padding-top: 22px; border-top: 1px solid var(--line); }
 .prayer-request h2 { margin: 0; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.01em; }

@@ -6,7 +6,7 @@ icon: prayer
 area: Prayer
 highlight: true
 ---
-Ask the pastoral team to pray for you, from Home's Prayer tile, even with no signal. It stays private unless you ask for it on the prayer wall, where the church can pray with you.
+Ask the pastoral team to pray for you, even with no signal. It stays private unless you share it on the prayer wall for the church to pray too.
 
 ## For staff
 Changed: Prayer is real. Anyone can send a request from the app, signed in or not; it goes only to the pastoral team unless they ask for the prayer wall too, and then nothing shows until you choose the words, whether their first name shows and for how long (30 days to start). In the admin panel you read each request, keep notes only the pastoral team sees, mark it followed up or answered, and delete it. The person sees where theirs is, can say it was answered, take it off the wall or delete it, and hears when someone prays for it. Requests are deleted a year after their last change. Two new roles in Access: Pastoral team (everything) and Prayer wall (only requests that ask for the wall).

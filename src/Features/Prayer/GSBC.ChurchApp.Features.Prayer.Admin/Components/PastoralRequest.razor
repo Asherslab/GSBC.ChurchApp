@@ -23,7 +23,7 @@
             @if (request.MayRead)
             {
                 <div class="prayer-request__care">
-                    <span class="prayer-request__state">@PrayerWords.Care(line.Care)</span>
+                    <Pill Tone="@(line.Care == CareState.New ? PillTone.Marker : PillTone.Accent)">@PrayerWords.Care(line.Care)</Pill>
                     @if (line.Care == CareState.New)
                     {
                         <Button Icon="check" Busy="@(_busy == "care")" OnClick="() => CareAsync(CareState.FollowedUp)">Mark followed up</Button>

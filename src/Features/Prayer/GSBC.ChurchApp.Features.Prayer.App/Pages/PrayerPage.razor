@@ -5,7 +5,7 @@
     <Masthead Title="Prayer" Note="@PrayerWords.Note" />
     <LiveData TValue="PrayerView" Load="Prayer.LoadAsync" Feeds="PrayerOnPhone.Feeds" ReloadOn="Reload" Remember="prayer.view">
         <Section First="true">
-            <Card Class="prayer-ask" Title="Ask for prayer">
+            <Card Class="prayer-ask" Title="How can we pray for you?">
                 <p>@PrayerWords.Private</p>
                 @if (Prayer.CanSend)
                 {
