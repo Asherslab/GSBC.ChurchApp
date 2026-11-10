@@ -1,0 +1,16 @@
+@using GSBC.ChurchApp.Platform.Contracts
+<TextField Label="@Label" Value="@Value" ValueChanged="ChangeAsync" AutoComplete="one-time-code" AutoCapitalize="characters"
+           Placeholder="@Placeholder" MaxLength="CodeGroups.FormattedLength(Length)" Hint="@Hint" Problem="@Problem" />
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required int Length { get; set; }
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public string? Problem { get; set; }
+
+    private string Placeholder => CodeGroups.Format("ABCDEFGHJKMNPQRSTUVWXYZ", Length);
+
+    private Task ChangeAsync(string typed) => ValueChanged.InvokeAsync(CodeGroups.Format(typed, Length));
+}

@@ -27,7 +27,9 @@ are, how to reach them, and who holds a current blue card and Safe Ministry trai
   each other. The abandoned-sign-up clean-up skips them.
 - **A sign-in code** (`Accounts`' `FamilySignIn` code: 8 letters and digits as `ABCD-EFGH`, one use, 24 hours, a new
   one replaces the last) is redeemed through the same `Accounts.Redeem` an invitation uses, then the child's phone
-  makes a passkey for the account the parent made, already linked and aged. Signing in has *Got a code from your
+  makes a passkey for the account the parent made, already linked and aged. The code is spent when the passkey is made,
+  not when it's redeemed, so a cancelled passkey prompt can be tried again. The field (`CodeField`) adds the capitals
+  and the dash as it's typed. Signing in has *Got a code from your
   parent?*. A parent can also make a code for a child who already signs in (a new phone, a lost passkey).
 - **Everything else is the People feature** (schema `people`): `people` (birth date, *I'm 18 or older*, how to
   reach), `links` (parent, child, how and by whom), `asks` (a child and a parent's email, who asked) and

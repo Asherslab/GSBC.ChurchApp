@@ -1,22 +1,22 @@
 using System.Linq.Expressions;
 using System.Security.Cryptography;
 using System.Text;
+using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Platform.Contracts;
 
 namespace GSBC.ChurchApp.Features.Accounts.Data;
 
 public static class ReviewCodes
 {
     public const string Alphabet = "ACDEFGHJKMNPQRTUVWXY34679";
-    public const int GroupLength = 4;
-    public const int Groups = 3;
     public const int LabelLength = 80;
     public static readonly TimeSpan DefaultLifetime = TimeSpan.FromDays(30);
     public static readonly TimeSpan LongestLifetime = TimeSpan.FromDays(180);
 
     public static string NewCode()
     {
-        char[] characters = RandomNumberGenerator.GetItems<char>(Alphabet, GroupLength * Groups);
-        return string.Join('-', characters.Chunk(GroupLength).Select(group => new string(group)));
+        char[] characters = RandomNumberGenerator.GetItems<char>(Alphabet, AccountsCodes.ReviewLength);
+        return CodeGroups.Format(new string(characters), AccountsCodes.ReviewLength);
     }
 
     public static string Normalise(string typed) =>

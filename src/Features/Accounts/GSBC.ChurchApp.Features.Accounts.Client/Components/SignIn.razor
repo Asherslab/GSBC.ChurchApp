@@ -34,7 +34,7 @@ else if (_mode == Mode.Code)
     <Section First="true" Title="Sign in with a code" Lead="For app reviewers. Use the email and sign-in code the church gave you.">
         <TextField Label="Email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="username" />
         <div class="ui-after">
-            <TextField Label="Sign-in code" Value="@_code" ValueChanged="value => _code = value" AutoComplete="one-time-code" Placeholder="ABCD-EFGH-JKMN" />
+            <CodeField Label="Sign-in code" Length="AccountsCodes.ReviewLength" Value="@_code" ValueChanged="value => _code = value" />
         </div>
         <div class="ui-actions ui-after">
             <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
@@ -45,7 +45,7 @@ else if (_mode == Mode.Code)
 else if (_mode == Mode.FamilyCode)
 {
     <Section First="true" Title="Sign in with your parent's code" Lead="Your parent makes it on their Account page. Then this device makes a passkey, so next time you sign in with Face ID, Touch ID or your screen lock.">
-        <TextField Label="Code" Value="@_code" ValueChanged="value => _code = value" AutoComplete="one-time-code" Placeholder="ABCD-EFGH" />
+        <CodeField Label="Code" Length="AccountsCodes.FamilySignInLength" Value="@_code" ValueChanged="value => _code = value" />
         <div class="ui-actions ui-after">
             <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
             <Button Busy="_busy" Disabled="@(_code.Trim().Length == 0)" OnClick="SignInWithFamilyCodeAsync">Create a passkey</Button>

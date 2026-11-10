@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Platform.Contracts;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +16,6 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
     public static readonly TimeSpan FamilySignInLifetime = TimeSpan.FromDays(1);
 
     private const string ShortCodeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private const int ShortCodeLength = 8;
 
     private const int TokenBytes = 32;
     private const int MaximumFailedAttempts = 5;
@@ -47,9 +48,9 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
             .Where(code => code.UserId == userId && code.Purpose == purpose && code.UsedAt == null)
             .ExecuteDeleteAsync(cancellationToken);
 
-        string code = RandomNumberGenerator.GetString(ShortCodeLetters, ShortCodeLength);
+        string code = RandomNumberGenerator.GetString(ShortCodeLetters, AccountsCodes.FamilySignInLength);
         Add(Hash(code), userId, purpose, lifetime);
-        return $"{code[..4]}-{code[4..]}";
+        return CodeGroups.Format(code, AccountsCodes.FamilySignInLength);
     }
 
     public static string WithoutSpacing(string shortCode) =>
@@ -94,7 +95,7 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
         return true;
     }
 
-    public void Use(OneTimeCode code) => code.UsedAt = Now;
+    private void Use(OneTimeCode code) => code.UsedAt = Now;
 
     private void Add(string hash, Guid userId, CodePurpose purpose, TimeSpan lifetime, string? spends = null) =>
         db.Codes.Add(new OneTimeCode
