@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Notifications.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Notifications.Client;
 
+[AdminOnly]
 public sealed class AnnouncementsClient(ChannelBase channel)
 {
     private readonly IAnnouncementsService _service = channel.CreateGrpcService<IAnnouncementsService>();

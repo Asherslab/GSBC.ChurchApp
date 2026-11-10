@@ -1,5 +1,4 @@
 using System.Diagnostics.CodeAnalysis;
-using Grpc.Core;
 using GSBC.ChurchApp.Features.Notifications.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
@@ -7,21 +6,20 @@ using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Permissions;
-using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Notifications.Client;
 
 public sealed record KindChoice(KindInfo Kind, bool Push);
 
 public sealed class NotificationPreferences(
-    ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences local, NativeBridge bridge, ChannelBase channel)
+    ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences local, NativeBridge bridge)
 {
     private const string SetMethod = "/gsbc.notifications.Notifications/SetPreference";
+    private const string SetPhoneMethod = "/gsbc.notifications.Notifications/SetPhonePreference";
     public static readonly IReadOnlyList<string> Feeds = [NotificationsFeeds.Kinds, NotificationsFeeds.Preferences];
     private const string OnThisPhone = "notifications.push.";
     private const int MostKinds = 200;
 
-    private readonly INotificationsService _service = channel.CreateGrpcService<INotificationsService>();
 
     public async Task<IReadOnlyList<KindChoice>> LoadAsync()
     {
@@ -50,15 +48,7 @@ public sealed class NotificationPreferences(
 
         await local.SetAsync(OnThisPhone + kind.Key, push ? "on" : "off");
         if (await bridge.ProveInstallAsync())
-        {
-            try
-            {
-                await _service.SetPhonePreferenceAsync(preference);
-            }
-            catch (RpcException)
-            {
-            }
-        }
+            await outbox.EnqueueQuietlyAsync(SetPhoneMethod, Encode(preference));
     }
 
     public async Task<Func<string, bool>> WantedOnThisPhoneAsync()
@@ -84,6 +74,13 @@ public sealed class NotificationPreferences(
                 chosen[kind.Key] = value == "on";
         }
         return chosen;
+    }
+
+    private static byte[] Encode(PreferenceItem preference)
+    {
+        using MemoryStream stream = new();
+        NotificationsContractsModel.Instance.Serialize(stream, preference);
+        return stream.ToArray();
     }
 
     private static T Decode<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(byte[] payload) => NotificationsContractsModel.Instance.Deserialize<T>(new MemoryStream(payload));

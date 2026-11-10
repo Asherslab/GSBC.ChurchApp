@@ -33,16 +33,6 @@ public sealed class PhoneCalendarLink(ChannelBase channel) : IYourCalendarLink
     }
 }
 
-public sealed class PersonCalendarLink(ChannelBase channel) : IYourCalendarLink
-{
-    private readonly ICalendarFilesService _files = channel.CreateGrpcService<ICalendarFilesService>();
-    private string? _key;
-
-    public async Task<string?> PersonalKeyAsync() => _key ??= await PhoneCalendarLink.KeyOfAsync(() => _files.PersonLinkAsync(new Done()));
-
-    public async Task<string?> ResetAsync() => _key = await PhoneCalendarLink.KeyOfAsync(() => _files.ResetPersonLinkAsync(new Done())) ?? _key;
-}
-
 public sealed class CalendarSubscriptions(ChannelBase channel, IYourCalendarLink yours)
 {
     private Uri Origin => new(channel.Target.Contains("://", StringComparison.Ordinal) ? channel.Target : $"https://{channel.Target}");

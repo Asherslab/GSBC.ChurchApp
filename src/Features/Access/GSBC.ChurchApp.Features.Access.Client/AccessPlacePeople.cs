@@ -2,14 +2,17 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Access.Contracts;
 using GSBC.ChurchApp.Platform.Client.People;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Platform.Client.Online;
 
 namespace GSBC.ChurchApp.Features.Access.Client;
 
+[AdminOnly]
 internal sealed class AccessPlacePeopleSource(AccessClient access, TimeProvider time) : IPlacePeopleSource
 {
     public IPlacePeople For(ScopeKind kind, string objectId) => new AccessPlacePeople(access, time, kind, objectId);
 }
 
+[AdminOnly]
 internal sealed class AccessPlacePeople(AccessClient access, TimeProvider time, ScopeKind kind, string objectId) : IPlacePeople
 {
     private PlacePeople? _last;

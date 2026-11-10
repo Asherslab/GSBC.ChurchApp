@@ -21,8 +21,6 @@ public static class AnalyticsClientExtensions
         services.AddSingleton<IClientDiagnostics>(provider => provider.GetRequiredService<ErrorReporter>());
         services.AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<ErrorReporter>());
         services.AddSingleton<ILoggerProvider, ErrorLoggerProvider>();
-        services.AddSingleton<HealthClient>();
-        services.AddSingleton<InsightsClient>();
         return services;
     }
 

@@ -10,6 +10,7 @@ public static class EventsFeeds
     public const string Admin = "events.admin";
     public const string Digest = "events.digest";
     public const string PrivateDigest = "events.digest.private";
+    public const string Mine = "events.mine";
 
     public const int DaysBack = 30;
     public const int MonthsAhead = 12;

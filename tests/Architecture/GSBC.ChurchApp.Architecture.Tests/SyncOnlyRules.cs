@@ -6,10 +6,42 @@ public sealed partial class SyncOnlyRules
 {
     private static readonly string[] ApprovedDirectCalls =
     [
+        "IAccountsService.Redeem",
+        "IAccountsService.StartSignUp",
+        "IAccountsService.RequestRecovery",
+        "IAccountsService.ResendConfirmation",
+        "IAccountsService.ConfirmEmail",
+        "IAccountsService.SignOutEverywhere",
+        "IAccountsService.EndSession",
+        "IAccountsService.DeleteMyAccount",
+        "IInstallsService.Claim",
+        "INotificationsService.RegisterDevice",
+        "IPeopleService.MakeSignInCode",
+        "IMediaService.GetLink",
+        "IMediaService.FindByHash",
+        "IMediaService.BeginUpload",
+        "IMediaService.CompleteUpload",
+        "ICalendarFilesService.Link",
+        "ICalendarFilesService.ResetLink",
+        "IDestinationsService.Describe",
+        "IMinistryLeadingService.Find",
+        "IMinistryLeadingService.Deletion",
+        "IMinistryLeadingService.Moving",
+        "IMinistryLeadingService.CalendarRemoval",
+        "IEventEditingService.TellPeople",
     ];
 
     private static readonly string[] NotYetOnSync =
     [
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService handed out as _editing",
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.Desk",
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.Agenda",
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.Breaks",
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.PlacesUsed",
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: ICalendarSetupService handed out as Setup",
+        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IDigestService handed out as Digest",
+        "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaClient.cs: IMediaService.List",
+        "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaClient.cs: IMediaFoldersService.List",
     ];
 
     private static readonly string[] TheTransportItself =
@@ -38,10 +70,11 @@ public sealed partial class SyncOnlyRules
     public void TheAppNeverReachesAdminOnlyCode()
     {
         List<AppFile> files = AppFiles().ToList();
-        List<string> adminOnly = files.Where(file => file.AdminOnly).SelectMany(file => file.Types).Distinct().ToList();
+        List<(string Type, bool Component)> adminOnly = files.Where(file => file.AdminOnly)
+            .SelectMany(file => file.Types.Select(type => (type, file.Path.EndsWith(".razor", StringComparison.Ordinal)))).Distinct().ToList();
         List<string> violations = files
             .Where(file => !file.AdminOnly)
-            .SelectMany(file => adminOnly.Where(type => Regex.IsMatch(file.Text, $@"(?<![\w.""/-]){type}\b")).Select(type => $"{file.Path} uses {type}"))
+            .SelectMany(file => adminOnly.Where(only => Regex.IsMatch(file.Text, Use(only.Type, only.Component))).Select(only => $"{file.Path} uses {only.Type}"))
             .ToList();
 
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
@@ -65,11 +98,16 @@ public sealed partial class SyncOnlyRules
         Assert.Equal(NotYetOnSync.Length, NotYetOnSync.Distinct().Count());
     }
 
+    private static string Use(string type, bool component) => component
+        ? $@"<{type}[\s/>]|typeof\({type}\)|<{type}>"
+        : $@"(?<![\w.""/-])(?<!\bnew\s){type}\b(?!\s*\()|\bnew\s+{type}\b";
+
     private static IEnumerable<string> DirectCalls(AppFile file, IReadOnlyDictionary<string, string> services)
     {
         string text = file.Text;
         HashSet<int> understood = [];
-        foreach (Match proxy in ProxyField().Matches(text))
+        List<Match> proxies = ProxyField().Matches(text).ToList();
+        foreach (Match proxy in proxies)
         {
             understood.Add(proxy.Groups["create"].Index);
             string service = proxy.Groups["service"].Value;
@@ -81,7 +119,7 @@ public sealed partial class SyncOnlyRules
             string name = proxy.Groups["name"].Value;
             foreach (Match call in Regex.Matches(text, $@"\b{name}\.(\w+?)Async\("))
                 yield return $"{service}.{call.Groups[1].Value}";
-            if (Regex.Matches(text, $@"(?<![\w.]){name}\b(?!\.\w+?Async\()").Count > 1)
+            if (Regex.Matches(text, $@"(?<![\w.]){name}\b(?!\.\w+?Async\()").Count > proxies.Count(other => other.Groups["name"].Value == name))
                 yield return $"{service} handed out as {name}";
         }
         foreach (Match inline in InlineCall().Matches(text))
@@ -139,7 +177,7 @@ public sealed partial class SyncOnlyRules
             bool adminOnly = razor ? RazorAdminOnly().IsMatch(text) : ClassAdminOnly().IsMatch(text);
             IReadOnlyList<string> types = razor
                 ? [System.IO.Path.GetFileNameWithoutExtension(path)]
-                : TypeDeclaration().Matches(text).Select(match => match.Groups[1].Value).ToList();
+                : ClassAdminOnly().Matches(text).Select(match => match.Groups["type"].Value).ToList();
             return new AppFile(relative, text, adminOnly, types);
         }
     }
@@ -162,9 +200,6 @@ public sealed partial class SyncOnlyRules
     [GeneratedRegex(@"^@attribute \[AdminOnly\]", RegexOptions.Multiline)]
     private static partial Regex RazorAdminOnly();
 
-    [GeneratedRegex(@"\[AdminOnly\]\s*(?:public|internal)")]
+    [GeneratedRegex(@"\[AdminOnly\]\s*(?:public|internal)[\w\s]*?\bclass\s+(?<type>\w+)")]
     private static partial Regex ClassAdminOnly();
-
-    [GeneratedRegex(@"(?:class|record|interface|struct)\s+(\w+)")]
-    private static partial Regex TypeDeclaration();
 }

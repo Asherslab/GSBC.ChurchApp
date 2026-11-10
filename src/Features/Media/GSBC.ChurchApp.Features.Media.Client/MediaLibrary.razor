@@ -1,6 +1,9 @@
+@using GSBC.ChurchApp.Platform.Client.Online
+@attribute [AdminOnly]
 @using static MediaWords
 @using GSBC.ChurchApp.Platform.Client.Audio
 @inject MediaClient Media
+@inject MediaLibraryClient Library
 @inject IAccess Access
 
 <UnsavedGuard Changed="() => _sheet is FolderSheet.Create or FolderSheet.Rename && _name.Trim() != _nameWas" What="the folder's name" />
@@ -568,7 +571,7 @@
         _problem = null;
         try
         {
-            await Media.MoveAsync(items, folders, target);
+            await Library.MoveAsync(items, folders, target);
             _moved = Moved(items.Count, folders.Count, target);
             ClearChosen();
             await ReloadAllAsync();
@@ -643,15 +646,15 @@
         await RunSheetAsync(async () =>
         {
             if (_sheet == FolderSheet.Create)
-                await Media.CreateFolderAsync(_folderId, _name.Trim());
+                await Library.CreateFolderAsync(_folderId, _name.Trim());
             else
-                await Media.RenameFolderAsync(_sheetFolder!.Id, _name.Trim());
+                await Library.RenameFolderAsync(_sheetFolder!.Id, _name.Trim());
         });
     }
 
     private Task MoveAsync(string? target) => RunSheetAsync(async () =>
     {
-        await Media.MoveAsync(_moveItems, _moveFolders, target);
+        await Library.MoveAsync(_moveItems, _moveFolders, target);
         _moved = Moved(_moveItems.Count, _moveFolders.Count, target);
         ClearChosen();
     });
@@ -672,7 +675,7 @@
     private Task DeleteFolderAsync(bool moveContents, string? target) => RunSheetAsync(async () =>
     {
         FolderInfo folder = _sheetFolder!;
-        await Media.DeleteFolderAsync(folder.Id, moveContents, target);
+        await Library.DeleteFolderAsync(folder.Id, moveContents, target);
         if (_folderId == folder.Id)
             _folderId = folder.ParentId;
     });
@@ -725,7 +728,7 @@
         _versionsProblem = null;
         try
         {
-            MediaItemInfo updated = await Media.RemoveOriginalAsync(_chosen[0]);
+            MediaItemInfo updated = await Library.RemoveOriginalAsync(_chosen[0]);
             _known[updated.Media!.Id] = updated;
             await ReloadListAsync();
         }
@@ -745,7 +748,7 @@
         _error = null;
         try
         {
-            await Media.DeleteAsync(_chosen[0]);
+            await Library.DeleteAsync(_chosen[0]);
             ClearChosen();
             await ReloadAllAsync();
         }
