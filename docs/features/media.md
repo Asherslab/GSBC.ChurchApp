@@ -144,6 +144,31 @@ out links over gRPC (AGENTS.md's hard rule).
    turned by the JPEG's EXIF orientation so a sideways phone photo gets its displayed shape), so
    placeholders know their shape. The client no longer sends them.
 
+**On the phone** (built 2026-11-11) the same four steps are made by the native outbox, never by a screen: the file is
+kept on the phone when chosen and sent with the save that uses it, offline or not
+([offline-and-caching.md](../architecture/offline-and-caching.md), *Files in the outbox*). The phone uses the existing
+file without asking (the default above). The admin panel's upload (`MediaUpload`, `MediaUploadClient`) is
+`[AdminOnly]`, and the picture sheet reaches it through `MediaDirectUpload`, which only the admin panel registers.
+
+### Uploads from features (built 2026-11-11)
+
+People who aren't staff add files too: a leader's document in a ministry's Files, a photo in a group chat. They don't
+hold `media.upload`, so a feature's **area** says who may upload into it:
+
+- **A permission at a scope:** `MediaSystemArea.Uploaders` (Ministries: `ministries.posts.write` at the ministry).
+  The file's audience is the one the upload asks for, which the uploader must hold, as for any private file.
+- **Or the feature's own check:** an `IMediaAreaAccess` registered for the area answers `MayUploadAsync` and
+  `MayReadAsync` for a person and a scope (Chats, whose membership has rules a single permission can't express:
+  a young person waiting for a parent's yes, someone paused). Its files are private to the area's audience at that
+  scope, and `GetLink` asks the feature instead of the permission.
+- `BeginUploadRequest` and `FindByHashRequest` carry `Area` and `AreaScopeId`. With an area, the upload methods allow
+  whoever the area allows (they are `[SignedIn]` and check in code: `media.upload` without an area). A file uploaded
+  into an area lands in that area's system folder and is never matched as a duplicate of another entry (system
+  folders never are). The feature files it under its scope with `IMediaSystemFolders.FileAsync` after saving, and
+  records its use with `IMediaReferences` like any holder.
+- **Ministry files** (`ministry-files`, *Ministry files*, seen by the ministry's team, staff may delete unused ones)
+  are the first. Chats' area follows on its branch.
+
 Abandoned uploads: the pending row is pruned after a day, and the staged object by the bucket's
 lifecycle rule (below).
 
@@ -429,7 +454,7 @@ is the same list for its buckets when it does.
 - **Android's media cache:** Android has no `MediaCache` yet, so prefetching (and caching) are iOS only.
 - **Background prefetch:** records synced in the background get their images on the next open (above).
 - **Media in the Storage screen's total.**
-- **A phone page** for uploading (Life Group leaders), when a feature needs it.
+- **A background transfer** for the phone's PUT (offline-and-caching.md, *Files in the outbox*).
 - **Drafts as media holders,** so a picture in an unpublished draft can lose its original.
 - **Existing items' dimensions:** files uploaded before 2026-11-02 keep the dimensions the client sent
   (none, from the admin panel). Development data only; re-upload if it matters.
