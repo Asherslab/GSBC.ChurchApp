@@ -472,7 +472,10 @@
         change(_editing);
         _told = null;
         if (_editing.Title.Trim().Length == 0)
+        {
+            _save = WhyNotSaving.Length > 0 ? SaveState.Unsaved : SaveState.Saved;
             return;
+        }
         _save = SaveState.Waiting;
         _settling?.Cancel();
         _settling = new CancellationTokenSource();
@@ -524,7 +527,8 @@
             StateHasChanged();
             return;
         }
-        _settling?.Cancel();
+        if (_settling is not null)
+            await _settling.CancelAsync();
         _save = SaveState.Saving;
         StateHasChanged();
         try
@@ -610,7 +614,8 @@
 
     private async Task RunAsync(Func<Task> action)
     {
-        _settling?.Cancel();
+        if (_settling is not null)
+            await _settling.CancelAsync();
         _busy = true;
         _problem = null;
         try
@@ -634,12 +639,14 @@
     {
         DateTime from = ChurchTime.ToUtc(FirstDay);
         DateTime until = from.AddDays(FortnightDays);
-        return announcements
-            .Select(announcement => (announcement, at: announcement.State is Sent or Recalled ? announcement.SentAt : announcement.State == Scheduled ? announcement.SendAt : null))
-            .Where(entry => entry.at is { } at && at >= from && at < until)
-            .Select(entry => new OfficeSpan(entry.announcement.Title, entry.at!.Value, entry.at.Value, $"announcements/{entry.announcement.Id}", SpanKind(entry.announcement)))
-            .Concat(ThisOne(from, until))
-            .ToList();
+        return
+        [
+            .. announcements
+                .Select(announcement => (announcement, at: announcement.State is Sent or Recalled ? announcement.SentAt : announcement.State == Scheduled ? announcement.SendAt : null))
+                .Where(entry => entry.at is { } at && at >= from && at < until)
+                .Select(entry => new OfficeSpan(entry.announcement.Title, entry.at!.Value, entry.at.Value, $"announcements/{entry.announcement.Id}", SpanKind(entry.announcement))),
+            .. ThisOne(from, until),
+        ];
     }
 
     private static OfficeSpanKind SpanKind(Announcement announcement) => announcement.State switch

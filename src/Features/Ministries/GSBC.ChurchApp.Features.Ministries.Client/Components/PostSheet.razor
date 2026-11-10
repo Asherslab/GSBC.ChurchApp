@@ -9,7 +9,7 @@
         <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
         <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
         <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
-        @if (Draft.Audience == Contracts.Audiences.Everyone && Draft.Important)
+        @if (Draft is { Audience: Contracts.Audiences.Everyone, Important: true })
         {
             <ToggleRow Title="Ask to send it to the whole church" Description="Church staff decide, as for any announcement" @bind-Checked="Draft.AskWholeChurch" />
         }

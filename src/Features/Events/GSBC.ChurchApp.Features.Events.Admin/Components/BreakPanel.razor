@@ -17,7 +17,7 @@
                 <ul class="kept-list">
                     @foreach (string id in used.UsedBy)
                     {
-                        <li>@(RegularEvents.TryGetValue(id, out string? title) ? title : "A regular event in a calendar that's turned off")</li>
+                        <li>@(RegularEvents.GetValueOrDefault(id) ?? "A regular event in a calendar that's turned off")</li>
                     }
                 </ul>
                 <span class="field__hint">Changing the dates changes every one of these.</span>

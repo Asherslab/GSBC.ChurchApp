@@ -34,7 +34,7 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
         }
     }
 
-    public static SampleSet Fill(MinistriesDbContext db, DateOnly today, DateTime now)
+    private static SampleSet Fill(MinistriesDbContext db, DateOnly today, DateTime now)
     {
         int order = 0;
         List<(Guid, string, string)> calendars = [];
@@ -110,5 +110,5 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
         return new SampleSet(calendars);
     }
 
-    public sealed record SampleSet(IReadOnlyList<(Guid Ministry, string Name, string Audience)> Calendars);
+    private sealed record SampleSet(IReadOnlyList<(Guid Ministry, string Name, string Audience)> Calendars);
 }
