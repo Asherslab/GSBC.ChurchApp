@@ -1,0 +1,147 @@
+@inject AccountsClient Accounts
+@inject IPasskeyCeremonies Passkeys
+
+<LiveData @ref="_live" TValue="SecurityView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't reach the church's server">
+    @if (!context.Value.DemoAccount)
+    {
+        <Section First="true" Title="Passkeys" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
+            <ListGroup>
+                @foreach (PasskeySummary passkey in context.Value.Passkeys)
+                {
+                    <ListRow Title="@passkey.Name" Subtitle="@PasskeyLine(passkey)" Icon="key" IconTone="RowTone.Accent">
+                        <TrailingContent>
+                            @if (context.Value.Passkeys.Count > 1)
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RemoveAsync(passkey.Id)">Remove</Button>
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+            <div class="ui-after">
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" OnClick="AddPasskeyAsync">Add a passkey on this device</Button>
+            </div>
+        </Section>
+    }
+
+    <Section First="context.Value.DemoAccount" Title="Where you're signed in" Lead="This device first, then the rest by when they were last used. Sign out of anything you don't recognise.">
+        <ListGroup>
+            @foreach (SessionSummary session in context.Value.Sessions)
+            {
+                <ListRow Title="@(session.Current ? "This device" : session.DeviceName ?? session.Client)" Subtitle="@SessionLine(session)" Icon="@SessionIcon(session)" IconTone="RowTone.Quiet">
+                    <TrailingContent>
+                        @if (!session.Current)
+                        {
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => EndAsync(session.Id)">Sign out</Button>
+                        }
+                    </TrailingContent>
+                </ListRow>
+            }
+        </ListGroup>
+        <div class="ui-actions ui-after">
+            <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => RunAsync(Accounts.SignOutEverywhereAsync)">Sign out everywhere</Button>
+        </div>
+    </Section>
+
+    @AfterSessions?.Invoke(ReloadAsync)
+</LiveData>
+
+@if (_message is not null)
+{
+    <Section>
+        <Notice Tone="_messageTone" Text="@_message" />
+    </Section>
+}
+
+@code {
+    private LiveData<SecurityView>? _live;
+    private bool _busy;
+    private string? _message;
+    private NoticeTone _messageTone = NoticeTone.Info;
+
+    [Parameter] public RenderFragment<Func<Task>>? AfterSessions { get; set; }
+
+    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
+
+    private static bool IsTool(SessionSummary session) => session.Client == "Tool";
+
+    private static string SessionIcon(SessionSummary session) => session.Client switch
+    {
+        "Tool" => "terminal",
+        "Browser" => "globe",
+        _ => "smartphone",
+    };
+
+    private static string SessionLine(SessionSummary session)
+    {
+        string lastUsed = $"{session.LastSeenAt.ToLocalTime():d MMM, h:mm tt}";
+        return IsTool(session) ? $"A connected tool · last used {lastUsed}" : $"Last used {lastUsed}";
+    }
+
+    private static string PasskeyLine(PasskeySummary passkey) =>
+        $"Added {passkey.CreatedAt.ToLocalTime():d MMM yyyy}{(passkey.BackedUp ? " · synced" : "")}";
+
+    private async Task<SecurityView> LoadAsync() => new(
+        (await Accounts.GetProfileAsync()).DemoAccount,
+        (await Accounts.ListPasskeysAsync()).Passkeys,
+        (await Accounts.ListSessionsAsync()).Sessions);
+
+    private Task AddPasskeyAsync() => RunAsync(async () =>
+    {
+        CeremonyResult result = await Passkeys.RegisterAsync(null);
+        if (result.Ok)
+            Tell("Passkey added.");
+        else
+            Warn(result.Error ?? "That didn't work. Try again.");
+    });
+
+    private Task RemoveAsync(string id) => RunAsync(async () =>
+    {
+        await Accounts.RemovePasskeyAsync(id);
+        Tell("Passkey removed.");
+    });
+
+    private Task EndAsync(string id) => RunAsync(async () =>
+    {
+        await Accounts.EndSessionAsync(id);
+        Tell("Signed out of that device.");
+    });
+
+    private void Tell(string message)
+    {
+        _messageTone = NoticeTone.Info;
+        _message = message;
+    }
+
+    private void Warn(string message)
+    {
+        _messageTone = NoticeTone.Warning;
+        _message = message;
+    }
+
+    private async Task RunAsync(Func<Task> action)
+    {
+        _busy = true;
+        _message = null;
+        try
+        {
+            await action();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            Warn(exception.Status.Detail);
+        }
+        catch (JSException)
+        {
+            Warn("This page couldn't start passkeys. Reload it and try again.");
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed record SecurityView(bool DemoAccount, List<PasskeySummary> Passkeys, List<SessionSummary> Sessions);
+}
