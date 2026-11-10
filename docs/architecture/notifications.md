@@ -142,7 +142,7 @@ Known sources, and how each will raise:
 | Ministries and Life Groups | important notice, new chat message, roster ("You're on Sunday") | holders of `ministries.notices.receive` at the ministry; chat members; the rostered person |
 | Life Groups | "Choose your group for Round 3" | everyone who followed a group last round |
 | Events (Elvanto) | changed or cancelled; reminders | followers of the event's ministry, or everyone |
-| Prayer | your request was prayed for / answered | the person |
+| Prayer | a new request (staff); one asks for the wall; your request was prayed for / answered ([prayer.md](../features/prayer.md)) | the pastoral team; the prayer wall's staff; the person |
 | Sync | "new data, fetch it" | silent; not a kind, not in the inbox (below) |
 
 ## Audience: always Access

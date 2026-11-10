@@ -31,8 +31,8 @@ Client, as it does for permissions, surfaces and notification kinds. Features ne
   kind may share a prefix, a list and its items (2026-11-10): `/ministries` is the directory, `/ministries/<id>` a ministry.
 - `DestinationRules` (Architecture tests) fails when a declared page isn't a route in the app.
 
-**Places that aren't built yet** (2026-11-04; Sermons built 2026-11-05): Home's feature tiles open `/sunday`, `/week`,
-`/prayer`, `/outreach`, `/life-groups` and `/ministries`, declared in `ComingSoonDestinations`
+**Places that aren't built yet** (2026-11-04; Sermons built 2026-11-05, Prayer 2026-11-11): Home's feature tiles open `/sunday`, `/week`,
+`/outreach`, `/life-groups` and `/ministries`, declared in `ComingSoonDestinations`
 (Configuration) and drawn by the app's *coming soon* page. A feature built later removes its path there
 and declares its own ([home.md](../features/home.md)).
 

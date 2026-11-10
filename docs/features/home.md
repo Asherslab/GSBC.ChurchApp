@@ -261,7 +261,7 @@ the phone is the canvas (the owner's brief named it), with a list for what the c
 
 ## Places that aren't built yet
 
-Feature tiles open their place: `/sunday`, `/week`, `/prayer`, `/outreach`, `/life-groups`
+Feature tiles open their place: `/sunday`, `/week`, `/outreach`, `/life-groups`
 and `/ministries` are declared in `ComingSoonDestinations` (Configuration) and drawn by the app's
 *coming soon* page. A feature that's built removes its path there and declares its own; two features
 declaring one path fail at start-up, so it can't be forgotten.
