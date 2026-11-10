@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
 @inject IEventEditing Editing
 @inject TimeProvider Clock
 @inject Shell Shell
@@ -33,6 +34,7 @@ else
     private EventDraft? _draft;
     private CalendarDesk _desk = new();
     private IReadOnlyList<EventPlace> _placesUsed = [];
+    private IReadOnlyList<MediaRef>? _pictures = [];
     private string? _loadProblem;
     private EventSave? _base;
     private string? _problem;
@@ -98,6 +100,7 @@ else
                 _draft.Showing = Showing.SavedForLater;
             Stored();
             _placesUsed = await Editing.PlacesUsedAsync();
+        _pictures = await Editing.PicturesUsedAsync(_draft?.CalendarId ?? Target.CalendarId);
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -118,6 +121,7 @@ else
         }
         _desk = await Editing.DeskAsync();
         _placesUsed = await Editing.PlacesUsedAsync();
+        _pictures = await Editing.PicturesUsedAsync(_draft?.CalendarId ?? Target.CalendarId);
     }
 
     private string StartingCalendar() =>
@@ -159,7 +163,7 @@ else
                 {
                     <p class="event-off"><Icon Name="circle-off" Size="IconSize.Small" />Not on this date</p>
                 }
-                <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" />
+                <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" />
                 <ShownOnEditor Draft="draft" Desk="_desk" />
                 <ShowingEditor Draft="draft" MustAsk="MustAsk" CalendarName="@CalendarName" />
             </div>

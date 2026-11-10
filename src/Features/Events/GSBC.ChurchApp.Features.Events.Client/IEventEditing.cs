@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Ui;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
@@ -20,6 +21,8 @@ public interface IEventEditing
     Task<IReadOnlyList<EventPlace>> PlacesUsedAsync();
 
     Task<BreakList> BreaksAsync();
+
+    Task<IReadOnlyList<MediaRef>?> PicturesUsedAsync(string calendarId);
 
     Task<ShowableList> ShowableAsync(string calendarId, string search);
 

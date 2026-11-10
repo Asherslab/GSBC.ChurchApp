@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
 
@@ -19,6 +20,14 @@ public static class EditingOffers
             .Select(used => used.Place!)
             .DistinctBy(place => (place.Name.Trim().ToLowerInvariant(), place.Address.Trim().ToLowerInvariant()))
             .Take(MostPlacesUsed)
+            .ToList();
+
+    public static IReadOnlyList<MediaRef> PicturesUsed(EditingBook book, string calendarId) =>
+        book.Events.Values.Where(detail => detail.CalendarId == calendarId).OrderByDescending(detail => detail.UpdatedAt).Select(detail => detail.Fields.Picture)
+            .Concat(book.Regulars.Values.Select(regular => regular.Detail).Where(detail => detail.CalendarId == calendarId).OrderByDescending(detail => detail.UpdatedAt)
+                .SelectMany(detail => detail.Specials.Select(special => special.Fields.Picture).Prepend(detail.Fields.Picture)))
+            .OfType<MediaRef>()
+            .DistinctBy(picture => picture.Id)
             .ToList();
 
     public static ShowableList Showable(Diary diary, EditingBook book, string yours, string search, DateOnly today, Func<string, bool> edits)

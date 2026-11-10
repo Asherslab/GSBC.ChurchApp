@@ -65,7 +65,7 @@ public sealed class QueuedEventEdits : IDisposable
 
     public EditWaiting? WaitingFor(string key)
     {
-        List<OutboxEntry> entries = (_edits ?? []).Where(edit => Concerns(edit.Key, key) && _entries.ContainsKey(edit.EntryId))
+        List<OutboxEntry> entries = (_edits ?? []).Where(edit => (Concerns(edit.Key, key) || Concerns(key, edit.Key)) && _entries.ContainsKey(edit.EntryId))
             .Select(edit => _entries[edit.EntryId]).ToList();
         if (entries.Count == 0)
             return null;
@@ -76,7 +76,7 @@ public sealed class QueuedEventEdits : IDisposable
 
     public async Task RetryAsync(string key)
     {
-        foreach (QueuedEdit edit in (_edits ?? []).Where(edit => Concerns(edit.Key, key)).ToList())
+        foreach (QueuedEdit edit in (_edits ?? []).Where(edit => Concerns(edit.Key, key) || Concerns(key, edit.Key)).ToList())
             if (_entries.TryGetValue(edit.EntryId, out OutboxEntry? entry) && entry.Failed)
                 await _outbox.RetryAsync(entry.Id);
     }

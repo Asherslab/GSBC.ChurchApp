@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Common
 @inject IEventEditing Editing
 @inject TimeProvider Clock
@@ -77,6 +78,7 @@ else
     private CalendarDesk _desk = new();
     private BreakList _breaks = new();
     private IReadOnlyList<EventPlace> _placesUsed = [];
+    private IReadOnlyList<MediaRef>? _pictures = [];
     private string? _loadProblem;
     private RegularEventDetail? _detail;
     private RegularEventSave? _base;
@@ -208,6 +210,7 @@ else
     {
         _breaks = await Editing.BreaksAsync();
         _placesUsed = await Editing.PlacesUsedAsync();
+        _pictures = await Editing.PicturesUsedAsync(_draft?.CalendarId ?? CalendarId);
     }
 
     private RenderFragment Body => @<text>
@@ -260,7 +263,7 @@ else
                     }
                     <TitleFields Fields="Fields" CalendarName="@CalendarName" Placeholder="Morning service" />
                     <TimesEditor Timed="draft.Every" />
-                    <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" Needs="draft.Needs" />
+                    <EventFieldsEditor Fields="Fields" PlacesUsed="_placesUsed" PicturesUsed="_pictures" Needs="draft.Needs" />
                 </section>
                 <section class="regular-col" aria-labelledby="regular-runs">
                     <h2 class="regular-col__head" id="regular-runs">How it runs</h2>

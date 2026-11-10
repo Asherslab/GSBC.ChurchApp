@@ -1,5 +1,6 @@
 using GSBC.ChurchApp.Features.Events.Client;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Events.Admin;
 
@@ -27,6 +28,8 @@ internal sealed class OnlineEventEditing(CalendarEditing editing) : IEventEditin
     public async Task<IReadOnlyList<EventPlace>> PlacesUsedAsync() => (await editing.PlacesUsedAsync()).Places;
 
     public async Task<BreakList> BreaksAsync() => await editing.BreaksAsync();
+
+    public Task<IReadOnlyList<MediaRef>?> PicturesUsedAsync(string calendarId) => Task.FromResult<IReadOnlyList<MediaRef>?>(null);
 
     public async Task<ShowableList> ShowableAsync(string calendarId, string search) =>
         await editing.Editing.ShowableAsync(new ShowableQuery { CalendarId = calendarId, Search = search });

@@ -36,7 +36,7 @@ builder.Services
     .AddPeopleApp(modules)
     .AddMinistriesApp(modules)
     .AddConfigurationApp(modules)
-    .AddMediaClient()
+    .AddMediaOnPhone()
     .AddNotificationsApp(modules)
     .AddSermonsApp(modules)
     .AddEventsApp(modules);

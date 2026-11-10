@@ -36,7 +36,7 @@
                 </span>
                 <span class="media-name">
                     <strong>@MediaWords.NameOf(existing)</strong>
-                    <span class="quiet">In @_folders.PathName(match.FolderId) · @MediaWords.UsedIn(match.Uses)</span>
+                    <span class="quiet">@(NamesFolder ? $"In {_folders.PathName(match.FolderId)} · " : "")@MediaWords.UsedIn(match.Uses)</span>
                 </span>
             </div>
             <div class="panel-actions">
@@ -88,6 +88,7 @@
     [Parameter] public string? FolderId { get; set; }
     [Parameter] public EventCallback<UploadedMedia> OnUploaded { get; set; }
     [Parameter] public bool FontsOnly { get; set; }
+    [Parameter] public bool NamesFolder { get; set; } = true;
 
     private static string ContentTypeOf(IBrowserFile file) => MediaTypes.ContentTypeOf(file.Name, file.ContentType);
 
@@ -115,7 +116,8 @@
             _putBack = _match is not null && found!.Items.Count == 0;
             if (_match is not null)
             {
-                _folders = await Media.FoldersAsync();
+                if (NamesFolder)
+                    _folders = await Media.FoldersAsync();
                 _showPrompt = true;
             }
         }

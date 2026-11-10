@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
 
@@ -95,6 +96,8 @@ public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue
     }
 
     public async Task<IReadOnlyList<EventPlace>> PlacesUsedAsync() => EditingOffers.PlacesUsed(await ReadAsync());
+
+    public async Task<IReadOnlyList<MediaRef>?> PicturesUsedAsync(string calendarId) => EditingOffers.PicturesUsed(await ReadAsync(), calendarId);
 
     public async Task<BreakList> BreaksAsync() => new() { Breaks = (await ReadAsync()).Calendars.FirstOrDefault()?.Breaks ?? [] };
 
