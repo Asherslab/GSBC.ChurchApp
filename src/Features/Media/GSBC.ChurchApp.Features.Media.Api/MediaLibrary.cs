@@ -3,6 +3,7 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Storage;
@@ -12,7 +13,8 @@ using Npgsql;
 namespace GSBC.ChurchApp.Features.Media.Api;
 
 internal sealed class MediaLibrary(
-    MediaDbContext db, MediaFolders folders, MediaSizer sizer, MediaHolders holders, IBlobStore blobs, IAccessEvaluator access, PermissionCatalog catalog, TimeProvider time)
+    MediaDbContext db, MediaFolders folders, MediaSizer sizer, MediaHolders holders, IBlobStore blobs, IAccessEvaluator access, PermissionCatalog catalog,
+    IEnumerable<IMediaAreaAccess> areaAccess, TimeProvider time)
 {
     private static readonly TimeSpan UploadWindow = TimeSpan.FromMinutes(15);
     public static readonly TimeSpan PrivateLinkLifetime = TimeSpan.FromMinutes(5);
@@ -21,12 +23,17 @@ internal sealed class MediaLibrary(
 
     public async Task<UploadTicket> BeginUploadAsync(ClaimsPrincipal user, BeginUploadRequest request, CancellationToken cancellationToken)
     {
+        AreaUpload? area = await MayUploadAsync(user, request.Area, request.AreaScopeId, cancellationToken);
+        if (area is { Access: not null })
+            request.PrivateTo = new MediaAudience { Permission = area.Area.Audience.Node, ScopeId = area.ScopeId };
+        else if (area is not null && MediaTypes.IsFont(request.ContentType))
+            throw Invalid("Fonts can't be added here.");
         bool knownAudience = request.PrivateTo is { } audience && catalog.ByNode.ContainsKey(audience.Permission);
-        bool amongAudience = knownAudience && await access.IsAllowedAsync(user, request.PrivateTo!.Permission, NullIfEmpty(request.PrivateTo.ScopeId), cancellationToken);
+        bool amongAudience = area is { Access: not null } || knownAudience && await access.IsAllowedAsync(user, request.PrivateTo!.Permission, NullIfEmpty(request.PrivateTo.ScopeId), cancellationToken);
         bool mayUploadFonts = MediaTypes.IsFont(request.ContentType) && await access.IsAllowedAsync(user, MediaPermissions.UploadFontsNode, null, cancellationToken);
         CheckUpload(request, knownAudience, amongAudience, mayUploadFonts);
 
-        Guid? folderId = await folders.UploadFolderAsync(request.FolderId, cancellationToken);
+        Guid? folderId = area is null ? await folders.UploadFolderAsync(request.FolderId, cancellationToken) : await folders.AreaFolderAsync(area.Area, cancellationToken);
         DateTime now = Now;
         await db.PendingUploads.Where(upload => upload.ExpiresAt < now - PendingKeptFor).ExecuteDeleteAsync(cancellationToken);
 
@@ -41,6 +48,7 @@ internal sealed class MediaLibrary(
             AudienceScopeId = NullIfEmpty(request.PrivateTo?.ScopeId),
             ExpiresAt = now + UploadWindow,
             FolderId = folderId,
+            Area = area?.Area.Key,
         };
         db.PendingUploads.Add(pending);
         await db.SaveChangesAsync(cancellationToken);
@@ -48,6 +56,26 @@ internal sealed class MediaLibrary(
         Uri url = await blobs.PresignUploadAsync(BlobBucket.Private, pending.StagingKey, pending.ContentType, UploadWindow);
         return new UploadTicket { UploadId = pending.Id.ToString(), Url = url.ToString(), ContentType = pending.ContentType, ExpiresAt = pending.ExpiresAt };
     }
+
+    private async Task<AreaUpload?> MayUploadAsync(ClaimsPrincipal user, string? areaKey, string? scopeId, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(areaKey))
+        {
+            return await access.IsAllowedAsync(user, MediaPermissions.UploadNode, null, cancellationToken)
+                ? null
+                : throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+        }
+
+        MediaSystemArea area = folders.Area(areaKey) ?? throw Invalid($"'{areaKey}' isn't somewhere files can be added.");
+        string scope = NullIfEmpty(scopeId) ?? throw Invalid("Say where the file is going.");
+        IMediaAreaAccess? own = areaAccess.FirstOrDefault(candidate => candidate.Area == area.Key);
+        bool allowed = own is not null
+            ? await own.MayUploadAsync(user, scope, cancellationToken)
+            : area.Uploaders is { } uploaders && await access.IsAllowedAsync(user, uploaders.Node, scope, cancellationToken);
+        return allowed ? new AreaUpload(area, scope, own) : throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
+    }
+
+    private sealed record AreaUpload(MediaSystemArea Area, string ScopeId, IMediaAreaAccess? Access);
 
     internal static void CheckUpload(BeginUploadRequest request, bool knownAudience, bool amongAudience, bool mayUploadFonts)
     {
@@ -85,7 +113,7 @@ internal sealed class MediaLibrary(
             throw Invalid($"That file isn't really {pending.ContentType}.");
         }
 
-        if (!request.AddAgain)
+        if (!request.AddAgain && pending.Area is null)
         {
             List<MediaItem> same = await SameContentAsync(user, content.Sha256, pending.ContentType, pending.AudiencePermission, pending.AudienceScopeId, cancellationToken);
             SameContentChoice choice = Choose(same, request.PutBackInto);
@@ -123,6 +151,7 @@ internal sealed class MediaLibrary(
             UploadedBy = caller,
             UploadedAt = Now,
             FolderId = pending.FolderId is { } folder && await db.Folders.AnyAsync(existing => existing.Id == folder, cancellationToken) ? folder : null,
+            Area = pending.Area,
         };
         await sizer.SizeAsync(item, token => MediaSizer.BytesOfAsync(blobs, BlobBucket.Private, pending.StagingKey, token), cancellationToken);
         db.Items.Add(item);
@@ -203,6 +232,8 @@ internal sealed class MediaLibrary(
         string sha256 = request.Sha256.Trim().ToLowerInvariant();
         if (!ContentAddress.IsSha256(sha256))
             throw Invalid("That isn't a SHA-256 hash.");
+        if (await MayUploadAsync(user, request.Area, request.AreaScopeId, cancellationToken) is not null)
+            return new MediaMatches();
 
         List<MediaItem> matches = await SameContentAsync(user, sha256, request.ContentType.ToLowerInvariant(),
             NullIfEmpty(request.PrivateTo?.Permission), NullIfEmpty(request.PrivateTo?.ScopeId), cancellationToken);
@@ -264,7 +295,11 @@ internal sealed class MediaLibrary(
         if (item.AudiencePermission is not { } permission)
             return new MediaLink { Url = blobs.PublicUrlOf(key).ToString(), ExpiresAt = DateTime.MaxValue.ToUniversalTime() };
 
-        if (!await access.IsAllowedAsync(user, permission, item.AudienceScopeId, cancellationToken))
+        IMediaAreaAccess? own = item.Area is { } area ? areaAccess.FirstOrDefault(candidate => candidate.Area == area) : null;
+        bool allowed = own is not null
+            ? item.AudienceScopeId is { } scope && await own.MayReadAsync(user, scope, cancellationToken)
+            : await access.IsAllowedAsync(user, permission, item.AudienceScopeId, cancellationToken);
+        if (!allowed)
             throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
 
         DateTime expiresAt = Now + PrivateLinkLifetime;

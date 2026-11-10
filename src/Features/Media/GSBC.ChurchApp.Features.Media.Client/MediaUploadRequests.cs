@@ -27,10 +27,14 @@ public sealed class MediaUploadRequests : IUploadRequests
     {
         MediaAudience? privateTo = target.PrivateTo is { } permission ? new MediaAudience { Permission = permission, ScopeId = target.PrivateToScope } : null;
         return new QueuedUpload(file,
-            new QueuedCall(FindByHash, Encode(new FindByHashRequest { Sha256 = file.Sha256, ContentType = file.ContentType, PrivateTo = privateTo })),
+            new QueuedCall(FindByHash, Encode(new FindByHashRequest
+            {
+                Sha256 = file.Sha256, ContentType = file.ContentType, PrivateTo = privateTo, Area = target.Area, AreaScopeId = target.AreaScopeId,
+            })),
             new QueuedCall(BeginUpload, Encode(new BeginUploadRequest
             {
                 FileName = file.Name, ContentType = file.ContentType, Bytes = file.Bytes, AltText = target.AltText, PrivateTo = privateTo,
+                Area = target.Area, AreaScopeId = target.AreaScopeId,
             })),
             new QueuedCall(CompleteUpload, Encode(new CompleteUploadRequest())),
             slots);

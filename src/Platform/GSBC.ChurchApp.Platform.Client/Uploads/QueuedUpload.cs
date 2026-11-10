@@ -2,7 +2,7 @@ namespace GSBC.ChurchApp.Platform.Client.Uploads;
 
 public sealed record StagedFile(string Token, string Name, string ContentType, long Bytes, string Sha256, string Preview);
 
-public sealed record UploadTarget(string AltText = "", string? PrivateTo = null, string? PrivateToScope = null)
+public sealed record UploadTarget(string AltText = "", string? PrivateTo = null, string? PrivateToScope = null, string? Area = null, string? AreaScopeId = null)
 {
     public static readonly UploadTarget Public = new();
 }
