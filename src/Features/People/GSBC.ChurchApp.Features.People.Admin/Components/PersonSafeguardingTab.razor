@@ -33,7 +33,7 @@
             <div class="people-record">
                 <TextField Label="Done" Type="date" Value="@PeopleWords.FieldDay(_draft.TrainingDone)" ValueChanged="value => Edit(() => _draft.TrainingDone = Day(value))" Disabled="!mayEdit" Max="@($"{today:yyyy-MM-dd}")" />
                 <TextField Label="Due again" Type="date" Value="@PeopleWords.FieldDay(_draft.TrainingDue)" ValueChanged="value => Edit(() => _draft.TrainingDue = Day(value))" Disabled="!mayEdit"
-                           Hint="@($"Leave it empty for {BlueCards.TrainingLastsYears} years after it was done")" />
+                           Hint="Leave it empty for a year after it was done" />
             </div>
 
             @if (mayEdit)

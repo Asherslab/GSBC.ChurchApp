@@ -44,9 +44,9 @@ public sealed class SafeguardingFlagTests
     }
 
     [Fact]
-    public void TrainingIsDueThreeYearsAfterItWasDoneUnlessADueDateIsGiven()
+    public void TrainingIsDueAYearAfterItWasDoneUnlessADueDateIsGiven()
     {
-        Assert.Equal(new DateOnly(2026, 11, 20), FamilyRules.TrainingDue(new DateOnly(2023, 11, 20), null));
+        Assert.Equal(new DateOnly(2026, 11, 20), FamilyRules.TrainingDue(new DateOnly(2025, 11, 20), null));
         Assert.Equal(new DateOnly(2025, 1, 1), FamilyRules.TrainingDue(new DateOnly(2023, 11, 20), new DateOnly(2025, 1, 1)));
     }
 
