@@ -135,6 +135,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("forgotten_at");
 
+                    b.Property<bool>("InvitationHeld")
+                        .HasColumnType("boolean")
+                        .HasColumnName("invitation_held");
+
                     b.Property<bool>("LockoutEnabled")
                         .HasColumnType("boolean")
                         .HasColumnName("lockout_enabled");

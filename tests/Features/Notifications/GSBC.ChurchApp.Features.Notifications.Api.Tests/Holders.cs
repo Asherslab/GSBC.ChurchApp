@@ -12,6 +12,8 @@ internal sealed class Holders : IPermissionHolders, IPeopleIndex
 
     public Dictionary<Guid, string> Names { get; } = [];
 
+    public HashSet<Guid> NotInvitedYet { get; } = [];
+
     public void Grant(Permission permission, string? objectId, IReadOnlyList<Guid> people, IReadOnlyList<Guid> phones) =>
         _granted[(permission.Node, objectId)] = new PermissionHolders(people, phones);
 
@@ -28,4 +30,7 @@ internal sealed class Holders : IPermissionHolders, IPeopleIndex
 
     public ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
         ValueTask.FromResult<IReadOnlyDictionary<Guid, string>>(Names.Where(name => people.Contains(name.Key)).ToDictionary());
+
+    public ValueTask<IReadOnlySet<Guid>> NotInvitedYetAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlySet<Guid>>(NotInvitedYet.Where(people.Contains).ToHashSet());
 }

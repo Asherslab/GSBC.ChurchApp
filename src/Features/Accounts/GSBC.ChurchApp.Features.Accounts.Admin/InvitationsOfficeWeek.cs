@@ -18,6 +18,7 @@ internal sealed class InvitationsOfficeWeek(AccountsClient accounts, IAccess acc
 
         DateTime now = clock.GetUtcNow().UtcDateTime;
         List<OfficeTask> tasks = (await accounts.ListInvitationsAsync()).Invitations
+            .Where(invitation => !invitation.Held)
             .Where(invitation => now - invitation.InvitedAt >= QuietFor || invitation.ExpiresAt <= now)
             .Select(invitation => invitation.ExpiresAt <= now
                 ? new OfficeTask(invitation.DisplayName, "Their invitation expired before they accepted it", Href(invitation), "Send again", invitation.ExpiresAt)

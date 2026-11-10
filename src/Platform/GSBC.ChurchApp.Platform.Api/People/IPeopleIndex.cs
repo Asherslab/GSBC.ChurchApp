@@ -9,6 +9,8 @@ public interface IPeopleIndex
     ValueTask<IReadOnlyList<IndexedPerson>> GetAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
 
     ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken);
+
+    ValueTask<IReadOnlySet<Guid>> NotInvitedYetAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken);
 }
 
 public sealed record IndexedPerson(Guid Id, string Name, string Email, bool Disabled);
@@ -25,4 +27,7 @@ internal sealed class NoPeople : IPeopleIndex
 
     public ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
         ValueTask.FromResult<IReadOnlyDictionary<Guid, string>>(new Dictionary<Guid, string>());
+
+    public ValueTask<IReadOnlySet<Guid>> NotInvitedYetAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlySet<Guid>>(new HashSet<Guid>());
 }

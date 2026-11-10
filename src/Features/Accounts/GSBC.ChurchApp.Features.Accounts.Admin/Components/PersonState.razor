@@ -4,6 +4,10 @@
 {
     <Pill Tone="PillTone.Masthead">Turned off</Pill>
 }
+else if (Invitation is { Held: true })
+{
+    <Pill Tone="PillTone.Quiet" Icon="clock">Not invited yet</Pill>
+}
 else if (Invitation is not null)
 {
     <Pill Tone="@(Expired ? PillTone.Quiet : PillTone.Marker)" Icon="send">@(Expired ? "Invitation expired" : "Invited")</Pill>

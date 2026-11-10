@@ -29,4 +29,8 @@ internal sealed class AccountsPeopleIndex(AccountsDbContext db) : IPeopleIndex
 
     public async ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
         await db.Users.AsNoTracking().Where(user => people.Contains(user.Id)).ToDictionaryAsync(user => user.Id, user => user.DisplayName, cancellationToken);
+
+    public async ValueTask<IReadOnlySet<Guid>> NotInvitedYetAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
+        (await db.Users.AsNoTracking().Where(user => user.InvitationHeld && people.Contains(user.Id)).Select(user => user.Id).ToListAsync(cancellationToken))
+        .ToHashSet();
 }

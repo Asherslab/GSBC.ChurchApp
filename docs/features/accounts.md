@@ -11,7 +11,7 @@ built. Permissions (who may do what) are the Access feature ([access.md](access.
 | Anyone | Sign up with a name, an email and a passkey; sign in; confirm their email |
 | Signed in | See and remove their passkeys, add another, see and end their sessions, sign out everywhere, change their name, delete their account, pin admin pages to the top of the sidebar |
 | Forgot / lost device | Ask for a recovery code by email (confirmed email, no sensitive permissions) and register a new passkey |
-| Staff with `accounts.manage` | Invite someone by email; give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account; delete an account |
+| Staff with `accounts.manage` | Invite someone by email, or add them now and invite them later (one at a time or all at once); give someone a recovery code (QR or email); see and end anyone's sessions; remove a passkey; disable an account; delete an account |
 | Staff with `accounts.review.manage` | Make a demo account and sign-in codes for Apple's reviewers; turn a code off ([identity.md](../architecture/identity.md), *Review sign-in codes*) |
 | Apple's reviewers | Sign in to a demo account with its email and a sign-in code, in the app |
 | Staff with `accounts.tools.connect` (Developer, Owner) | Connect a tool, such as Claude on a computer, to their own account ([identity.md](../architecture/identity.md), *Connected tools*) |
@@ -49,6 +49,32 @@ when the link stops working (expired ones stay listed until the cleanup removes 
 set up, as the cleanup would a week later. The admin panel's People shows them under the *Invited*
 filter, with both actions on the person's page (Account tab), and an invitation still waiting after two days, or
 expired, reaches Home's *Needs you* (`InvitationsOfficeWeek`, for holders of `accounts.manage`).
+
+**Adding someone without inviting them** (owner, 2026-11-10: "create an account for somebody without sending the invite
+yet", to set up every ministry leader before the app is announced, then "batch send all the invitations at once").
+`Accounts.AddPerson(name, email)` (`accounts.manage`) makes the account with its invitation **held**
+(`accounts.users.invitation_held`) and emails nothing. A held person is a real account from then on: roles, ministries,
+families and every people picker take them. Their invitation is listed by `ListInvitations` with `Held` (People's *Not
+invited yet* filter, not *Invited*, and never on Home's *Needs you*), and the clean-up of abandoned sign-ups never removes
+them. **Nothing tells them anything** until it's sent: Notifications leaves anyone held out of every audience
+(`IPeopleIndex.NotInvitedYetAsync`), so a ministry notice or *You're in* writes no inbox row and sends no push; they see
+their roles and ministries when they sign up, not the notices from before. Sending:
+
+- one at a time, `ResendInvitation` on a held person (the person's page, *Send the invitation*), or through *Send the
+  invitation* in *Add someone* with the same email: either sends the ordinary 7-day invitation and the hold ends;
+- all at once, `Accounts.SendHeldInvitations(expected)` (`accounts.manage`; People → *Not invited yet* → *Send N
+  invitations…*, after a confirmation that says how many people get an email). It refuses if the number held isn't the
+  number staff saw, and claims each person (`invitation_held` true → false) in the transaction that makes their link,
+  so two clicks or two staff never email anyone twice.
+- **Removing** a held person is `WithdrawInvitation` (*Remove them*): the account and everything features keep about it
+  go, as for any invitation never accepted.
+
+**Signing up with an email staff already used** (decided 2026-11-10, the owner's default "yes, after the email is
+proved"). If `StartSignUp`'s email belongs to an account staff made (held, or invited and not yet accepted, no passkey),
+the reply carries no ticket but `LinkEmailed`: the invitation is emailed to that address now (`invitation-asked-for` in
+the activity log) and the sign-in screen says to open it. Whoever opens the link proved the email and gets the account
+with everything given to it; anyone who only knows the email gets nothing, and the name staff gave is kept. Before this,
+an invited account went to whoever signed up with its email first. Tests: `InvitationTests`, `NotificationRulesTests`.
 
 **Review sign-in.** In the app, signed out: **Have a sign-in code?** → email and code →
 `Accounts.SignInWithCode` (gRPC, public, rate-limited and throttled) answers with an app session secret,

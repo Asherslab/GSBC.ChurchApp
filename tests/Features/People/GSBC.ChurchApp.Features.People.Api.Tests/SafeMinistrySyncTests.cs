@@ -171,6 +171,8 @@ public sealed class SafeMinistrySyncTests : IAsyncLifetime
             ValueTask.FromResult<IReadOnlyList<IndexedPerson>>(People.Where(person => ids.Contains(person.Id)).ToList());
 
         public ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask<IReadOnlySet<Guid>> NotInvitedYetAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class FakeSmc(TestClock clock) : HttpMessageHandler

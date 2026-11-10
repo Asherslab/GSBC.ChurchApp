@@ -1,37 +1,52 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
 
-<h2 class="panel-title">Invite someone</h2>
-<p class="panel-lead">They get an email with a link to make their account and a passkey. Give them a role afterwards in Who can do what.</p>
+<h2 class="panel-title">Add someone</h2>
+<p class="panel-lead">Send their invitation now, or add them without sending anything. Either way you can give them roles in Who can do what and put them in ministries straight away.</p>
 <form class="panel-form" @onsubmit="SendAsync">
     <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" />
     <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" />
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    <Notice Text="@_sent" />
+    <Notice Text="@_done" />
     <div class="panel-actions">
-        <Button Type="submit" Icon="send" Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)">Send the invitation</Button>
+        <Button Type="submit" Icon="send" Busy="_busy" Disabled="@Incomplete">Send the invitation</Button>
+        <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" Disabled="@Incomplete" OnClick="AddAsync">Add without inviting</Button>
         <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
     </div>
+    <p class="panel-hint">Someone added without an invitation hears nothing from the app until you send it, from their page or all at once from People.</p>
 </form>
 
 @code {
     private string _name = "";
     private string _email = "";
     private string? _problem;
-    private string? _sent;
+    private string? _done;
     private bool _busy;
 
     [Parameter] public EventCallback OnSent { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
 
-    private async Task SendAsync()
+    private bool Incomplete => _name.Trim().Length == 0 || _email.Trim().Length == 0;
+
+    private Task SendAsync() => RunAsync(async (name, email) =>
+    {
+        await Accounts.InviteAsync(name, email);
+        return $"Invitation sent to {email}.";
+    });
+
+    private Task AddAsync() => RunAsync(async (name, email) =>
+    {
+        await Accounts.AddPersonAsync(name, email);
+        return $"{name} is added. They won't hear anything until you send their invitation.";
+    });
+
+    private async Task RunAsync(Func<string, string, Task<string>> action)
     {
         _busy = true;
-        _problem = _sent = null;
+        _problem = _done = null;
         try
         {
-            await Accounts.InviteAsync(_name.Trim(), _email.Trim());
-            _sent = $"Invitation sent to {_email.Trim()}.";
+            _done = await action(_name.Trim(), _email.Trim());
             _name = _email = "";
             await OnSent.InvokeAsync();
         }

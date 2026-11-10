@@ -133,6 +133,12 @@ else
     private Task SignUpAsync() => RunAsync(async () =>
     {
         TicketReply reply = await Accounts.StartSignUpAsync(_name, _email);
+        if (reply.LinkEmailed)
+        {
+            _messageTone = NoticeTone.Info;
+            _message = $"The church has already made you an account. We've emailed a link to {_email}: open it on this device to set up your sign-in.";
+            return;
+        }
         CeremonyResult result = await Passkeys.RegisterAsync(reply.Ticket);
         if (result.Ok)
             foreach (ISignUpQuestion question in Questions)
