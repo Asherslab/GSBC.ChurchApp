@@ -68,6 +68,55 @@ separate sign-up endpoint.
 natively). Anything else around sign-in, such as "who am I", sign-out, or managing staff and
 invitations, is gRPC unless it is added here.
 
+# HARD RULE: the app reads data only through Sync
+
+**The phone never loads data from the server with a direct call** (owner, 2026-11-10: "nothing should do that ...
+make sure that's a hard rule. only explicit exceptions should ever bypass that"). In code that ships in the app
+(`Hosts.App` and every project it references: each `*.App`, each `*.Client`, `Platform.Client` and `Platform.Ui`):
+
+- **Reads come from the local store** (`ILocalFeeds`), fed by Sync. Everything a person may see is synced in the
+  background, so a screen opens at once and works offline. A screen never shows a blank "can't load" page for data
+  it could have had.
+- **Writes go through the outbox** (`IOutbox`, or `IWrites`, which queues on the phone and sends directly in the
+  admin panel). They show as waiting to send (`WaitingToSend`) and retry by themselves. Anything new gets its id on
+  the phone, so a retried send is recognised as already done.
+- **A direct call is anything else that reaches the server:** a gRPC proxy (`CreateGrpcService`) or call invoker
+  made by the code, or a raw native call. Sync itself and the outbox worker are the transport, not direct calls.
+- **Only an exception the owner has approved may make one.** Same process as approved non-gRPC paths: stop, ask the
+  owner in chat (which call, from which screen, and why Sync or the outbox can't do it), wait for an explicit yes,
+  and record it below with the date, in the same commit as the code.
+
+**The admin panel is not covered:** it is online only by design (docs/architecture/offline-and-caching.md, *The
+admin panel*). Code in `*.Client` that only the admin panel uses is marked `[AdminOnly]` (Platform.Client); app
+code may never reach it, and anything shared depends on an interface the phone fills from the store.
+
+**It is enforced by a test.** `tests/Architecture/…/SyncOnlyRules.cs` finds every direct call in app code and fails
+on anything not in its `ApprovedDirectCalls` (which mirrors the list below) or its `NotYetOnSync` list, and on app
+code that reaches `[AdminOnly]` code. Never edit `ApprovedDirectCalls` except to mirror this list. **`NotYetOnSync`
+is temporary, empty by design and not an approval:** it only names calls waiting for a change already under way, and
+each entry says which.
+
+## Approved direct calls from the app
+
+Every entry needs the owner's explicit approval in chat first.
+
+| What | Calls | Why it can't go through Sync or the outbox | Approved |
+|---|---|---|---|
+| Sign-in and account actions: sign up, redeem a family or invitation code, account recovery, resend or confirm an email code, sign out (ending this or another device's session) and sign out everywhere, delete my account, register the phone for push and claim the install, make a child's sign-in code | `IAccountsService.Redeem`, `StartSignUp`, `RequestRecovery`, `ResendConfirmation`, `ConfirmEmail`, `SignOutEverywhere`, `EndSession`, `DeleteMyAccount`; `IInstallsService.Claim`; `INotificationsService.RegisterDevice`; `IPeopleService.MakeSignInCode` | Each needs the server's yes or no at that moment and means nothing offline | 2026-11-10 |
+| Links and uploads: signed links to private pictures and files, uploading a file (duplicate check, begin, complete), your private calendar-subscription link and a new one, opening a link to something outside the app | `IMediaService.GetLink`, `FindByHash`, `BeginUpload`, `CompleteUpload`; `ICalendarFilesService.Link`, `ResetLink`; `IDestinationsService.Describe` | The server hands out a link or receives bytes; there is nothing to store. Uploads move to the outbox with the Offline uploads station (owner, 2026-11-11), which narrows this entry | 2026-11-10 |
+| Leader lookups: searching the church's people to add someone to a ministry, the "what goes" previews before deleting or moving a ministry or removing its calendar, and *Tell people* | `IMinistryLeadingService.Find`, `Deletion`, `Moving`, `CalendarRemoval`; `IEventEditingService.TellPeople` | Searching everyone's names can't be synced to every phone, and a preview must be the server's current answer | 2026-11-10 |
+
+**Not yet on Sync** (temporary; the test's `NotYetOnSync`):
+
+- Changing your name and removing a passkey on the phone (`IAccountsService.UpdateName`, `RemovePasskey`; ending a
+  device's session is already `EndSession` above): the owner chose "Account and security is read only offline"
+  (2026-11-11, through the orchestrator): your account syncs (`accounts.mine`) and shows offline, and changes are
+  online only. The orchestrator records the exception "Account security changes (name, passkeys, signed-in devices),
+  online only" in the table above on merge.
+- The event editors' picture chooser browsing the Media library beyond what's synced (`IMediaService.List`,
+  `IMediaFoldersService.List`): the owner approved it through the orchestrator (2026-11-11, "those that *are* synced
+  already ... can be browsed offline. otherwise online"), who moves it to the table above on merge.
+
 # Repo layout
 
 Feature-first, with solution folders that mirror the disk: see

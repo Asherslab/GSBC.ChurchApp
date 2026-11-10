@@ -1,6 +1,7 @@
 @page "/account"
 @implements IDisposable
 @inject AccountsClient Accounts
+@inject OnlineAccount Online
 
 @if (_session is null)
 {
@@ -29,12 +30,12 @@ else
     protected override async Task OnInitializedAsync()
     {
         Accounts.SessionChanged += OnSessionChanged;
-        _session = await Accounts.GetCurrentSessionAsync();
+        _session = await Online.GetCurrentSessionAsync();
     }
 
     private void OnSessionChanged() => InvokeAsync(async () =>
     {
-        _session = await Accounts.GetCurrentSessionAsync();
+        _session = await Online.GetCurrentSessionAsync();
         StateHasChanged();
     });
 

@@ -1,7 +1,13 @@
 @inject AccountsClient Accounts
+@inject IAccountReads Reads
+@inject ClientSignals Signals
 @inject IPasskeyCeremonies Passkeys
 
-<LiveData @ref="_live" TValue="SecurityView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't reach the church's server">
+<LiveData @ref="_live" TValue="SecurityView" Feeds="Reads.Feeds" Load="LoadAsync" FailedTitle="Can't reach the church's server">
+    @if (!Signals.Online)
+    {
+        <Section First="true"><Notice Text="Needs a connection to change. This is how it was when your phone last had a signal." /></Section>
+    }
     @if (!context.Value.DemoAccount)
     {
         <Section First="true" Title="Passkeys" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
@@ -12,14 +18,14 @@
                         <TrailingContent>
                             @if (context.Value.Passkeys.Count > 1)
                             {
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RemoveAsync(passkey.Id)">Remove</Button>
+                                <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="@(_busy || !Signals.Online)" OnClick="() => RemoveAsync(passkey.Id)">Remove</Button>
                             }
                         </TrailingContent>
                     </ListRow>
                 }
             </ListGroup>
             <div class="ui-after">
-                <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" OnClick="AddPasskeyAsync">Add a passkey on this device</Button>
+                <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" Disabled="@(!Signals.Online)" OnClick="AddPasskeyAsync">Add a passkey on this device</Button>
             </div>
         </Section>
     }
@@ -32,14 +38,14 @@
                     <TrailingContent>
                         @if (!session.Current)
                         {
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => EndAsync(session.Id)">Sign out</Button>
+                            <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="@(_busy || !Signals.Online)" OnClick="() => EndAsync(session.Id)">Sign out</Button>
                         }
                     </TrailingContent>
                 </ListRow>
             }
         </ListGroup>
         <div class="ui-actions ui-after">
-            <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => RunAsync(Accounts.SignOutEverywhereAsync)">Sign out everywhere</Button>
+            <Button Variant="ButtonVariant.Quiet" Busy="_busy" Disabled="@(!Signals.Online)" OnClick="() => RunAsync(Accounts.SignOutEverywhereAsync)">Sign out everywhere</Button>
         </div>
     </Section>
 
@@ -74,17 +80,18 @@
 
     private static string SessionLine(SessionSummary session)
     {
-        string lastUsed = $"{session.LastSeenAt.ToLocalTime():d MMM, h:mm tt}";
+        string lastUsed = $"{session.LastSeenAt.ToLocalTime():d MMM}";
         return IsTool(session) ? $"A connected tool · last used {lastUsed}" : $"Last used {lastUsed}";
     }
 
     private static string PasskeyLine(PasskeySummary passkey) =>
         $"Added {passkey.CreatedAt.ToLocalTime():d MMM yyyy}{(passkey.BackedUp ? " · synced" : "")}";
 
-    private async Task<SecurityView> LoadAsync() => new(
-        (await Accounts.GetProfileAsync()).DemoAccount,
-        (await Accounts.ListPasskeysAsync()).Passkeys,
-        (await Accounts.ListSessionsAsync()).Sessions);
+    private async Task<SecurityView> LoadAsync()
+    {
+        MyAccount mine = await Reads.MineAsync();
+        return new SecurityView(mine.Profile.DemoAccount, mine.Passkeys.Passkeys, mine.Sessions.Sessions);
+    }
 
     private Task AddPasskeyAsync() => RunAsync(async () =>
     {

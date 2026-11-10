@@ -33,13 +33,8 @@ public sealed partial class SyncOnlyRules
 
     private static readonly string[] NotYetOnSync =
     [
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService handed out as _editing",
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.Desk",
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.Agenda",
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.Breaks",
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IEventEditingService.PlacesUsed",
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: ICalendarSetupService handed out as Setup",
-        "src/Features/Events/GSBC.ChurchApp.Features.Events.Client/CalendarEditing.cs: IDigestService handed out as Digest",
+        "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/AccountsClient.cs: IAccountsService.UpdateName",
+        "src/Features/Accounts/GSBC.ChurchApp.Features.Accounts.Client/AccountsClient.cs: IAccountsService.RemovePasskey",
         "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaClient.cs: IMediaService.List",
         "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaClient.cs: IMediaFoldersService.List",
     ];
@@ -48,6 +43,7 @@ public sealed partial class SyncOnlyRules
     [
         "src/Platform/GSBC.ChurchApp.Platform.Client/Native/",
         "src/Platform/GSBC.ChurchApp.Platform.Client/Transport/",
+        "src/Platform/GSBC.ChurchApp.Platform.Client/Diagnostics/ObservedChannel.cs",
     ];
 
     private const string AppHost = "src/Hosts/App/GSBC.ChurchApp.Hosts.App/GSBC.ChurchApp.Hosts.App.csproj";
