@@ -45,6 +45,8 @@ public static class PeopleWords
         _ => "That didn't go through. Check you're online and try again.",
     };
 
+    public static string Sentence(string words) => words.Length > 0 ? char.ToUpperInvariant(words[0]) + words[1..] : words;
+
     public static DateOnly? ParseDay(string text) => DateOnly.TryParseExact(text, "yyyy-MM-dd", out DateOnly day) ? day : null;
 
     public static string FieldDay(DateTime? day) => day is { } value ? $"{value:yyyy-MM-dd}" : "";

@@ -25,5 +25,12 @@ namespace GSBC.ChurchApp.Features.People.Contracts;
 [ProtoSerializable(typeof(FlaggedRequest))]
 [ProtoSerializable(typeof(FlaggedList))]
 [ProtoSerializable(typeof(FlaggedPerson))]
+[ProtoSerializable(typeof(SmcStatusRequest))]
+[ProtoSerializable(typeof(SmcSyncRequest))]
+[ProtoSerializable(typeof(SmcUnmatchedRequest))]
+[ProtoSerializable(typeof(SmcSyncStatus))]
+[ProtoSerializable(typeof(SmcPeopleList))]
+[ProtoSerializable(typeof(SmcPerson))]
+[ProtoSerializable(typeof(SmcLinkRequest))]
 [ProtoSerializable(typeof(Done))]
 public partial class PeopleContractsModel : TypeModel;

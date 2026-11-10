@@ -72,10 +72,9 @@ chart, key) is **later**.
   hear of declines, swaps and clashing unavailable dates.
 - **Positions can require** Safe Ministry training and being trained for that position (and a current blue card;
   QLD). **Unmet requirements flag, never block:** a leader can always roster someone.
-- Blue cards and training: the church uses Safe Ministry Check, which syncs them into Elvanto. The owner prefers
-  pulling straight from Safe Ministry Check. As of 2026-11-10 it publishes no API, webhook or export; its only
-  integration is with Elvanto (it writes a person's training status and WWCC number, status and expiry to their
-  Elvanto profile). Until there's a way in, they're entered by hand, flagged when missing or expiring.
+- Blue cards and training: the church uses Safe Ministry Check. The owner prefers pulling straight from it, and the
+  church got API access on 2026-11-10: the app now reads blue cards and training from it each night, read only
+  ([people.md](people.md), *Safe Ministry Check*). Anyone not in it is entered by hand, flagged when missing or expiring.
 
 **Chats, built well, from the first release.** "We'll very likely switch all our ministries to use the chat feature
 of our app": it has to be good.
@@ -113,8 +112,7 @@ reminder.**
 
 **Open from the interview:** direct messages (who may message whom, whether DMs are auditable and by whom, whether
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
-auditors' coordination chat; getting blue card and training data from Safe Ministry Check (ask them for access) or
-from Elvanto.
+auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
 
 ## What it is
 

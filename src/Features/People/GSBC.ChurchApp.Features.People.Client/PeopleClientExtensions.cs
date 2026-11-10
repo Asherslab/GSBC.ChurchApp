@@ -11,6 +11,7 @@ public static class PeopleClientExtensions
 
     public static IServiceCollection AddPeopleClient(this IServiceCollection services) =>
         services.AddSingleton<PeopleClient>()
+            .AddSingleton<SafeMinistryCheckClient>()
             .AddSingleton(new AccountSection("people", AfterYou, Family))
             .AddSingleton<ISignUpQuestion, SignUpAge>();
 

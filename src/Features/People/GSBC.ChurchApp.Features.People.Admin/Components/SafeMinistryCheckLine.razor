@@ -1,0 +1,17 @@
+@inject SafeMinistryCheckClient SafeMinistryCheck
+@inject TimeProvider Clock
+
+<LiveData TValue="SmcSyncStatus" Feeds="[PeopleFeeds.Safeguarding]" Load="() => SafeMinistryCheck.GetStatusAsync().AsTask()" FailedTitle="Can't show Safe Ministry Check right now">
+    <p class="hint">@Words(context.Value) <TextLink Href="safe-ministry-check">Safe Ministry Check</TextLink></p>
+</LiveData>
+
+@code {
+    private string Words(SmcSyncStatus status) => status switch
+    {
+        { Connected: false } => "Safe Ministry Check isn't connected, so blue cards and training are entered by hand.",
+        { Problem.Length: > 0 } => "The last sync from Safe Ministry Check didn't finish.",
+        { LastSucceededAt: { } at, ToMatch: > 0 } => $"From Safe Ministry Check, synced {ChurchDates.Ago(at, Clock.GetUtcNow().UtcDateTime)}. {status.ToMatch} {(status.ToMatch == 1 ? "record is" : "records are")} still to match.",
+        { LastSucceededAt: { } at } => $"From Safe Ministry Check, synced {ChurchDates.Ago(at, Clock.GetUtcNow().UtcDateTime)}.",
+        _ => "Safe Ministry Check hasn't synced yet.",
+    };
+}

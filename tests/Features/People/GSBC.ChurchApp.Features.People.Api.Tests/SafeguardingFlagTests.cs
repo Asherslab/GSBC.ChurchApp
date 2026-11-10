@@ -50,6 +50,27 @@ public sealed class SafeguardingFlagTests
         Assert.Equal(new DateOnly(2025, 1, 1), FamilyRules.TrainingDue(new DateOnly(2023, 11, 20), new DateOnly(2025, 1, 1)));
     }
 
+    [Fact]
+    public void SomethingToLookAtInSafeMinistryCheckIsOneFlagWithItsReasons()
+    {
+        SafeguardingFlag flag = Assert.Single(SafeguardingFlags.For(new SafeguardingRecord { CheckReasons = ["their police check isn't cleared", "a referee's answer needs looking at"] }, Today));
+        Assert.Equal((FlagKinds.Check, "Check Safe Ministry Check: their police check isn't cleared; a referee's answer needs looking at"), (flag.Kind, flag.Words));
+    }
+
+    [Fact]
+    public void TrainingNotFinishedInSafeMinistryCheckIsFlaggedUntilItsDueDatePasses()
+    {
+        SafeguardingRecord record = Record(cardExpires: "2029-01-01", trainingDue: "2027-06-01");
+        record.TrainingProgress = "in progress";
+        Assert.Equal((FlagKinds.NotRecorded, "Safe Ministry training not finished"), Training(record));
+
+        record.TrainingDue = Day("2026-11-01");
+        Assert.Equal(FlagKinds.RunOut, Training(record).Kind);
+    }
+
+    private static (string Kind, string Words) Training(SafeguardingRecord record) =>
+        SafeguardingFlags.For(record, Today).Where(flag => flag.Subject == FlagSubject.Training).Select(flag => (flag.Kind, flag.Words)).Single();
+
     private static SafeguardingFlag? Card(SafeguardingRecord record) =>
         SafeguardingFlags.For(record, Today).FirstOrDefault(flag => flag.Subject == FlagSubject.BlueCard);
 

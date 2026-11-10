@@ -1,0 +1,156 @@
+@page "/safe-ministry-check"
+@inject SafeMinistryCheckClient SafeMinistryCheck
+@inject IPeopleDirectory Directory
+@inject IAccess Access
+@inject TimeProvider Clock
+
+<TitleBand Title="Safe Ministry Check" BackHref="safeguarding" BackText="Safeguarding"
+           Lead="Blue cards and Safe Ministry training come across from Safe Ministry Check each night, for everyone linked to a record there. The app only reads from Safe Ministry Check: it never changes anything in it." />
+
+<LiveData @ref="_live" TValue="PageData" Feeds="[PeopleFeeds.Safeguarding]" Load="LoadAsync" FailedTitle="Can't show Safe Ministry Check right now">
+    @{ SmcSyncStatus status = context.Value.Status; }
+    <Section First="true" Title="@Heading(status)" Lead="@Summary(status)">
+        @if (status is { Connected: true, LastSucceededAt: not null })
+        {
+            <div class="stat-tiles">
+                <StatTile Value="@status.People.ToString("N0")" Label="people in Safe Ministry Check" />
+                <StatTile Value="@status.Linked.ToString("N0")" Label="linked to someone in the app" />
+                <StatTile Value="@status.ToMatch.ToString("N0")" Label="still to match" Quiet="status.ToMatch == 0" Explanation="Listed below" />
+                <StatTile Value="@status.ToCheck.ToString("N0")" Label="to check there" Quiet="status.ToCheck == 0" Explanation="@($"Flagged “{SafeguardingFlags.CheckWords}” on Safeguarding")" />
+            </div>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@(status.Problem is { } problem ? $"The last sync didn't finish: {problem}" : null)" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        @if (status.Connected && Access.Can(PeoplePermissions.SafeguardingEdit))
+        {
+            <div class="panel-actions">
+                <Button Icon="refresh" Busy="_syncing" OnClick="SyncAsync">Sync now</Button>
+            </div>
+        }
+    </Section>
+
+    @if (status.Connected)
+    {
+        <Section Title="Still to match" Lead="Safe Ministry Check records the app couldn't match to anyone by email, or by name and birth date. Choose one to link it to the right person in the app. Someone not in the app yet is matched at the next sync after they sign up.">
+            <DataTable TItem="SmcPerson" Label="Safe Ministry Check records still to match" Items="context.Value.Unmatched" Columns="Columns" Key="person => person.SmcId"
+                       SelectedChanged="Choose">
+                <Empty>
+                    <EmptyState Icon="shield-check" Title="Everyone's matched" Body="Every record in Safe Ministry Check is linked to someone in the app." />
+                </Empty>
+            </DataTable>
+        </Section>
+    }
+</LiveData>
+
+<Sheet Open="_chosen is not null" OpenChanged="open => { if (!open) _chosen = null; }" Title="@($"Link {_chosen?.Name}")"
+       Lead="Their blue card and training then come from this Safe Ministry Check record, replacing anything entered by hand.">
+    @if (_chosen is not null)
+    {
+        <p class="hint">@Detail(_chosen)</p>
+        @if (Access.Can(PeoplePermissions.SafeguardingEdit))
+        {
+            <PersonFinder Label="Who is it in the app?" Placeholder="Find them by name or email" Find="FindAsync" ActionText="Link" AutoFocus="true"
+                          Busy="@_linkingTo" OnChosen="LinkAsync" />
+        }
+        else
+        {
+            <Notice Text="A Safeguarding Manager can link it." />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_sheetProblem" />
+    }
+</Sheet>
+
+@code {
+    private sealed record PageData(SmcSyncStatus Status, IReadOnlyList<SmcPerson> Unmatched);
+
+    private static readonly IReadOnlyList<TableColumn<SmcPerson>> Columns =
+    [
+        new("Name", person => @<span class="cell-strong">@person.Name</span>),
+        new("Email", person => @<span>@person.Email</span>),
+        new("Born", person => @<span class="quiet">@PeopleWords.Day(person.BirthDate)</span>),
+        new("Why", person => @<span class="quiet">@person.Why</span>),
+    ];
+
+    private LiveData<PageData>? _live;
+    private SmcPerson? _chosen;
+    private string? _linkingTo, _problem, _sheetProblem;
+    private bool _syncing;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private async Task<PageData> LoadAsync()
+    {
+        SmcSyncStatus status = await SafeMinistryCheck.GetStatusAsync();
+        return new PageData(status, status.Connected ? await SafeMinistryCheck.GetUnmatchedAsync() : []);
+    }
+
+    private string Heading(SmcSyncStatus status) => status switch
+    {
+        { Connected: false } => "Not connected",
+        { LastRunAt: null } => "Not synced yet",
+        { LastSucceededAt: { } at } => $"Synced {ChurchDates.Ago(at, Now)}",
+        _ => "Not synced yet",
+    };
+
+    private static string Summary(SmcSyncStatus status) => status switch
+    {
+        { Connected: false } => "The app doesn't have the church's Safe Ministry Check API key yet, so nothing comes across. Ask whoever looks after the app's server to add it. Until then, record blue cards and training by hand on each person's Safeguarding tab.",
+        { NextRunAt: { } next } => $"People are matched by email, or by name and birth date, and a match is kept once it's made. The next sync is at {ChurchDates.Time(ChurchTime.ToChurch(next))}.",
+        _ => "",
+    };
+
+    private static string Detail(SmcPerson person) =>
+        string.Join(" · ", new[] { person.Email, person.BirthDate is null ? "" : $"born {PeopleWords.Day(person.BirthDate)}", person.Why }.Where(part => part.Length > 0));
+
+    private void Choose(SmcPerson person)
+    {
+        _chosen = person;
+        _sheetProblem = null;
+    }
+
+    private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
+        (await Directory.SearchAsync(query)).Where(person => !person.Disabled).Select(person => new PersonChoice(person.Id, person.Name, person.Email)).ToList();
+
+    private async Task SyncAsync()
+    {
+        _syncing = true;
+        _problem = null;
+        try
+        {
+            await SafeMinistryCheck.SyncNowAsync();
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = PeopleWords.Problem(exception);
+        }
+        finally
+        {
+            _syncing = false;
+        }
+    }
+
+    private async Task LinkAsync(PersonChoice person)
+    {
+        if (_chosen is not { } record)
+            return;
+        _linkingTo = person.Id;
+        _sheetProblem = null;
+        try
+        {
+            await SafeMinistryCheck.LinkAsync(person.Id, record.SmcId);
+            _chosen = null;
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _sheetProblem = PeopleWords.Problem(exception);
+        }
+        finally
+        {
+            _linkingTo = null;
+        }
+    }
+}
