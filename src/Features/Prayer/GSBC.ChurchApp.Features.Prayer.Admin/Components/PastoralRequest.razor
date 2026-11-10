@@ -65,7 +65,7 @@
                         }
                         <TextField Label="Shows until" Type="date" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
                         <div class="prayer-request__actions">
-                            <SaveBar Label="@(line.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" Busy="@(_busy == "wall")" Blocked="@WallBlocked" OnSave="ShowAsync" />
+                            <SaveBar Label="@(line.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" State="@(WallChanged ? SaveState.Unsaved : null)" Busy="@(_busy == "wall")" Blocked="@WallBlocked" OnSave="ShowAsync" />
                             @if (line.Wall is WallState.Waiting or WallState.Shown)
                             {
                                 <Button Variant="ButtonVariant.Quiet" Busy="@(_busy == "private")" OnClick="KeepPrivateAsync">
@@ -152,7 +152,7 @@
     [Parameter] public EventCallback OnGone { get; set; }
 
     private LiveData<RequestDetails>? _live;
-    private (string Text, bool ShowName, string Until) _wallWas;
+    private (string Text, bool ShowName, string Until)? _wallWas;
     private string _wallText = "";
     private bool _showName;
     private string _until = "";
@@ -173,7 +173,9 @@
 
     private static bool MayShow(WallState wall) => wall is not WallState.TakenDown;
 
-    private bool HasChanges() => _note.Trim().Length > 0 || (_wallText, _showName, _until) != _wallWas;
+    private bool WallChanged => _wallWas is { } was && (_wallText, _showName, _until) != was;
+
+    private bool HasChanges() => _note.Trim().Length > 0 || WallChanged;
 
     private string? WallBlocked => _wallText.Trim().Length == 0
         ? "Give the wall some words to show."
@@ -192,14 +194,14 @@
     private async Task<RequestDetails> LoadAsync()
     {
         RequestDetails request = await Pastoral.RequestAsync(Id);
-        if ((_wallText, _showName, _until) == _wallWas)
+        if (!WallChanged)
         {
             DateOnly until = request.Line.Wall == WallState.Shown && request.WallUntil is { } shownUntil
                 ? ChurchTime.DayOf(shownUntil)
                 : Today.AddDays(WallDays);
             bool showName = request.Line.Wall == WallState.Shown ? request.WallName.Length > 0 : request.ShowName;
-            _wallWas = (request.WallText, showName, Day(until));
-            (_wallText, _showName, _until) = _wallWas;
+            (_wallText, _showName, _until) = (request.WallText, showName, Day(until));
+            _wallWas = (_wallText, _showName, _until);
         }
         return request;
     }

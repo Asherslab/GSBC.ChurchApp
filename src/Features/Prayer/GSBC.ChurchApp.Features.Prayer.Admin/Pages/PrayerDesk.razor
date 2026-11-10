@@ -3,12 +3,14 @@
 @inject UnsavedChanges Unsaved
 @inject TimeProvider Clock
 
-<TitleBand Title="Prayer" Lead="Prayer requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share." />
+<PageTitle>Prayer · Good Shepherd admin</PageTitle>
 
 <LiveData @ref="_live" TValue="Inbox" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load prayer requests right now">
-    <TabStrip TValue="Tab" Label="Show" Options="Tabs(context.Value)" Value="TabFor(context.Value)" ValueChanged="ChooseTabAsync" />
     <Workbench AsideLabel="Prayer requests" Class="prayer-desk" Showing="@(_selectedId is null ? WorkbenchPane.Aside : WorkbenchPane.Main)">
         <Aside>
+            <h1 class="prayer-desk__title">Prayer</h1>
+            <p class="prayer-desk__lead">Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share.</p>
+            <FilterChips TValue="Tab" Label="Show" Options="Tabs(context.Value)" Value="TabFor(context.Value)" ValueChanged="ChooseTabAsync" />
             <SearchField Label="Find a request" Placeholder="Words or a name" Value="@_query" ValueChanged="SearchAsync" />
             @if (Shown(context.Value) is { Count: > 0 } shown)
             {
@@ -87,9 +89,9 @@
 
     private Tab TabFor(Inbox inbox) => _tab ?? (inbox.MayRead ? Tab.New : Tab.ForTheWall);
 
-    private static IReadOnlyList<TabOption<Tab>> Tabs(Inbox inbox)
+    private static IReadOnlyList<FilterOption<Tab>> Tabs(Inbox inbox)
     {
-        List<TabOption<Tab>> tabs = [];
+        List<FilterOption<Tab>> tabs = [];
         if (inbox.MayRead)
             tabs.Add(new(Tab.New, "New", Count(inbox, Tab.New)));
         tabs.Add(new(Tab.ForTheWall, "For the wall", Count(inbox, Tab.ForTheWall)));
