@@ -121,7 +121,7 @@ internal sealed class ChatActions(
         await notifier.ConsentAsync(published, cancellationToken);
     }
 
-    public async Task SendAsync(Guid me, SendMessage request, CancellationToken cancellationToken)
+    public async Task SendAsync(Guid me, SendMessage request, CancellationToken cancellationToken, bool opensAsk = false)
     {
         Guid chatId = ChatErrors.IdOf(request.ChatId, "chat");
         string clientId = request.ClientId.Length is > 0 and <= 80 ? request.ClientId : throw ChatErrors.Invalid("That message has no id.");
@@ -140,7 +140,7 @@ internal sealed class ChatActions(
                 throw ChatErrors.Refused("You can't write for them in this chat.");
             forPerson = child;
         }
-        else if (!ChatMembership.MaySend(plan.Plan, chat.Kind, me))
+        else if (!ChatMembership.MaySend(plan.Plan, chat.Kind, me) && !(opensAsk && chat.Kind == ChatKinds.Ask && chat.AskerId == me))
         {
             throw ChatErrors.Refused(plan.Plan.Of(me) switch
             {
@@ -366,7 +366,7 @@ internal sealed class ChatActions(
         }
 
         string text = request.Text.Trim().Length > 0 ? request.Text : ChatCopy.AskToJoin(place.Name);
-        await SendAsync(me, new SendMessage { ChatId = open.Id.ToString(), ClientId = $"ask:{chatId:N}", Text = text }, cancellationToken);
+        await SendAsync(me, new SendMessage { ChatId = open.Id.ToString(), ClientId = $"ask:{chatId:N}", Text = text }, cancellationToken, opensAsk: true);
     }
 
     private async Task<MessageRecord> AddMessageAsync(

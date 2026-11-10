@@ -177,6 +177,20 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AYoungPersonAskingToJoinReachesTheLeadersAndTheirParentButGetsTheChatOnlyOnceTheParentSaysYes()
+    {
+        Guid ask = Guid.NewGuid();
+        await ActAsync(actions => actions.AskToJoinAsync(_teen, new AskToJoin { ChatId = ask.ToString(), MinistryId = _church.MinistryId.ToString(), Text = "Can I help?" }, Cancel));
+
+        Assert.Equal(["Can I help?"], await TextsAsync(_leader, ask));
+        Assert.Equal(["Can I help?"], await TextsAsync(_parent, ask));
+        Assert.Empty(await TextsAsync(_teen, ask));
+
+        await ActAsync(actions => actions.ConsentAsync(_parent, new Consent { ChatId = ask.ToString(), ChildId = _teen.ToString(), Approve = true }, Cancel));
+        Assert.Equal(["Can I help?"], await TextsAsync(_teen, ask));
+    }
+
+    [Fact]
     public async Task ADeletedAccountsMessagesStayAsFromADeletedAccount()
     {
         Guid chat = await StartAsync("Sunday team", "");
