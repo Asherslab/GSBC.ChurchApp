@@ -10,7 +10,9 @@ public static class PeopleClientExtensions
     private const int AfterYou = 10;
 
     public static IServiceCollection AddPeopleClient(this IServiceCollection services) =>
-        services.AddSingleton<PeopleClient>().AddSingleton(new AccountSection("people", AfterYou, Family));
+        services.AddSingleton<PeopleClient>()
+            .AddSingleton(new AccountSection("people", AfterYou, Family))
+            .AddSingleton<ISignUpQuestion, SignUpAge>();
 
     private static readonly RenderFragment Family = builder =>
     {

@@ -335,6 +335,10 @@ namespace GSBC.ChurchApp.Features.Accounts.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("purpose");
 
+                    b.Property<string>("SpendsCode")
+                        .HasColumnType("text")
+                        .HasColumnName("spends_code");
+
                     b.Property<DateTime?>("UsedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("used_at");

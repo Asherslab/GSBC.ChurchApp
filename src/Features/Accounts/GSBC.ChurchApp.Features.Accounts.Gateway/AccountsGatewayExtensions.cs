@@ -38,8 +38,7 @@ public static class AccountsGatewayExtensions
             .AddScheme<AuthenticationSchemeOptions, AppSessionHandler>(AppSessionHandler.SchemeName, null)
             .AddIdentityCookies();
         services
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>()
+            .AddAccountIdentity()
             .AddClaimsPrincipalFactory<AccountClaimsPrincipalFactory>()
             .AddSignInManager<AccountSignInManager>();
 

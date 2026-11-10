@@ -60,7 +60,6 @@ internal sealed class AccountsService(
             ?? await codes.FindTokenAsync(OneTimeCodes.WithoutSpacing(request.Code), FamilyPurposes, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "That link or code has expired or was already used. Ask for a new one."));
 
-        codes.Use(code);
         AccountUser user = await users.FindByIdAsync(code.UserId.ToString())
             ?? throw new RpcException(new Status(StatusCode.NotFound, "That account no longer exists."));
         if (user.Disabled)
@@ -70,7 +69,7 @@ internal sealed class AccountsService(
         if (code.Purpose == CodePurpose.Invitation)
             user.EmailConfirmed = true;
 
-        string ticket = codes.IssueToken(user.Id, CodePurpose.RegisterPasskey, OneTimeCodes.TicketLifetime);
+        string ticket = codes.IssueToken(user.Id, CodePurpose.RegisterPasskey, OneTimeCodes.TicketLifetime, spends: code);
         audit.Record(AuditActions.CodeRedeemed, user.Id, detail: code.Purpose.ToString(), remoteAddress: Address(context));
         await db.SaveChangesAsync(cancellationToken);
         return new TicketReply { Ticket = ticket };

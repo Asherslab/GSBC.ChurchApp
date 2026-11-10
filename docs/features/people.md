@@ -27,7 +27,9 @@ are, how to reach them, and who holds a current blue card and Safe Ministry trai
   each other. The abandoned-sign-up clean-up skips them.
 - **A sign-in code** (`Accounts`' `FamilySignIn` code: 8 letters and digits as `ABCD-EFGH`, one use, 24 hours, a new
   one replaces the last) is redeemed through the same `Accounts.Redeem` an invitation uses, then the child's phone
-  makes a passkey for the account the parent made, already linked and aged. Signing in has *Got a code from your
+  makes a passkey for the account the parent made, already linked and aged. The code is spent when the passkey is made,
+  not when it's redeemed, so a cancelled passkey prompt can be tried again. The field (`CodeField`) adds the capitals
+  and the dash as it's typed. Signing in has *Got a code from your
   parent?*. A parent can also make a code for a child who already signs in (a new phone, a lost passkey).
 - **Everything else is the People feature** (schema `people`): `people` (birth date, *I'm 18 or older*, how to
   reach), `links` (parent, child, how and by whom), `asks` (a child and a parent's email, who asked) and
@@ -36,9 +38,14 @@ are, how to reach them, and who holds a current blue card and Safe Ministry trai
   hasn't signed up yet; the answer never reveals whether the email has an account. A parent with an account gets a
   notification (*Someone asks you to look after them in the app*, waits until answered). Up to 5 asks wait per child.
   A parent asks another parent the same way for their child.
-- **Everyone is asked their age once** on the Account page (*default*): a birth date, or *I'm 18 or older* (no date
-  kept). Someone sets their own birth date once; after that a parent or the office changes it, so a young person
-  can't type their way out of being a minor. Sign-up itself doesn't ask (Accounts doesn't know about ages).
+- **Sign-up asks for a birth date** (owner, 2026-11-10), in the app and the admin panel, with *I'm 18 or older* (no
+  date kept) instead. Someone under 18 also names a parent's email and goes the young person's way: once their passkey
+  is made, the ask is sent as if from the Account page. Accounts doesn't know about ages: People adds the question to
+  the form through `ISignUpQuestion` (Platform.Client) and saves it with its own gRPC calls once the new account is
+  signed in, so an abandoned sign-up keeps nothing and asks nobody. If saving fails, the Account page asks again.
+- **People who signed up before that are asked once** on the Account page, the same way. Someone sets their own birth
+  date once; after that a parent or the office changes it, so a young person can't type their way out of being a
+  minor.
 
 ## Who sees what: Access only
 
@@ -66,7 +73,8 @@ You see your own family through your own records (the `people.mine` feed, own re
 
 From the owner's decision *Young people on a team, reached through their parents* ([ministries.md](ministries.md)):
 each linked young person has a way to be reached, **Directly**, **Through their parents** or **Both**, chosen by the
-family on the child's sheet (or staff on the Family tab). The rule (`Reach.Effective`): an adult, or someone with no
+family on the child's sheet (or staff on the Family tab). **Only a parent or the office changes it, not the young
+person** (owner, 2026-11-10). The rule (`Reach.Effective`): an adult, or someone with no
 parent linked, is reached directly; a child who can't sign in is reached through their parents; otherwise what the
 family chose, **Both** until they choose (*default*). A ministry requiring one comes with Stage 2.
 
@@ -78,8 +86,9 @@ Rosters and chats themselves are Stages 3 and 4.
 ## Blue cards and Safe Ministry training
 
 Per person: blue card number, status (Current, Exemption card, Applied for, Suspended, Cancelled, Expired), expiry and
-when the office last checked it; Safe Ministry training done and due again (**three years after it was done unless a
-date is given**, *default*). **Entered by hand** by Safeguarding Managers on the person's Safeguarding tab, shown to
+when the office last checked it; Safe Ministry training done and due again (**a year after it was done unless a date
+is given**, owner, 2026-11-10). The period and the due dates are **placeholders until they come from Safe Ministry
+Check**, which will decide them. **Entered by hand** by Safeguarding Managers on the person's Safeguarding tab, shown to
 the person on their Account page (the card drawn as a card), and **flagged, never blocking**
 (`SafeguardingFlags`):
 
@@ -125,8 +134,6 @@ Through `IPersonData` when an account is deleted:
 
 ## Open for the owner
 
-- Whether to ask for a birth date at sign-up instead of on the Account page afterwards.
-- Whether a young person can change their own *how to reach* (now: the parent and the office).
 - Stage 2: leaders setting families from their team and attendee lists (a leader role giving the `people.family.*`
   nodes for people in their ministry), and "this team needs a blue card" so *missing* can be flagged for people with
   nothing recorded.

@@ -6,13 +6,14 @@ using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Testing;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Accounts.Api.Tests;
 
-[Integration("A child a parent adds is an account row with no email or passkey that the abandoned-account clean-up keeps; its sign-in code is a one-time code in Postgres that redeems once, however it's typed")]
+[Integration("A child a parent adds is an account row with no email or passkey that the abandoned-account clean-up keeps; its sign-in code is a one-time code in Postgres, spent once a passkey is made with it, however it's typed")]
 public sealed class FamilySignInTests : IAsyncLifetime
 {
     private TestDatabase _database = null!;
@@ -44,8 +45,7 @@ public sealed class FamilySignInTests : IAsyncLifetime
             .AddScoped<IPeopleAccounts, AccountsPeopleAccounts>()
             .AddAccountsData()
             .AddSyncData()
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>();
+            .AddAccountIdentity();
         services.AddOptions<AccountsOptions>();
         _services = services.BuildServiceProvider();
 
@@ -55,19 +55,45 @@ public sealed class FamilySignInTests : IAsyncLifetime
     }
 
     [Fact]
-    public async Task AParentsCodeRedeemsOnceForTheirChildWhateverItsCaseOrSpacing()
+    public async Task AParentsCodeRedeemsForTheirChildWhateverItsCaseOrSpacing()
     {
         Guid mia = await WithAsync<IPeopleAccounts, Guid>(accounts => accounts.AddWithoutSignInAsync("Mia", _parent, Cancel).AsTask());
         FamilySignInCode code = await WithAsync<IPeopleAccounts, FamilySignInCode>(accounts => accounts.MakeSignInCodeAsync(mia, _parent, Cancel).AsTask());
 
         TicketReply ticket = await RedeemAsync($" {code.Code.ToLowerInvariant().Replace("-", " ", StringComparison.Ordinal)} ");
-        RpcException again = await Assert.ThrowsAsync<RpcException>(() => RedeemAsync(code.Code));
 
         OneTimeCode issued = await WithAsync<AccountsDbContext, OneTimeCode>(db =>
             db.Codes.AsNoTracking().SingleAsync(found => found.Purpose == CodePurpose.RegisterPasskey, Cancel));
         Assert.False(string.IsNullOrEmpty(ticket.Ticket));
         Assert.Equal(mia, issued.UserId);
-        Assert.Equal(StatusCode.NotFound, again.StatusCode);
+    }
+
+    [Fact]
+    public async Task ACodeIsSpentOnlyWhenAPasskeyIsMadeWithIt()
+    {
+        Guid mia = await WithAsync<IPeopleAccounts, Guid>(accounts => accounts.AddWithoutSignInAsync("Mia", _parent, Cancel).AsTask());
+        FamilySignInCode code = await WithAsync<IPeopleAccounts, FamilySignInCode>(accounts => accounts.MakeSignInCodeAsync(mia, _parent, Cancel).AsTask());
+
+        TicketReply cancelled = await RedeemAsync(code.Code);
+        TicketReply retried = await RedeemAsync(code.Code);
+        bool madePasskey = await SpendAsync(retried);
+        bool spentAgain = await SpendAsync(cancelled);
+        RpcException afterwards = await Assert.ThrowsAsync<RpcException>(() => RedeemAsync(code.Code));
+
+        Assert.True(madePasskey);
+        Assert.False(spentAgain);
+        Assert.Equal(StatusCode.NotFound, afterwards.StatusCode);
+    }
+
+    [Fact]
+    public async Task AChildWithNoEmailCanBeSavedWhenTheirPasskeyIsAdded()
+    {
+        Guid mia = await WithAsync<IPeopleAccounts, Guid>(accounts => accounts.AddWithoutSignInAsync("Mia", _parent, Cancel).AsTask());
+
+        IdentityResult saved = await WithAsync<UserManager<AccountUser>, IdentityResult>(async users =>
+            await users.UpdateAsync(await users.FindByIdAsync(mia.ToString()) ?? throw new InvalidOperationException("No child")));
+
+        Assert.True(saved.Succeeded, string.Join(" ", saved.Errors.Select(error => error.Description)));
     }
 
     [Fact]
@@ -90,6 +116,13 @@ public sealed class FamilySignInTests : IAsyncLifetime
 
         Assert.True(await WithAsync<AccountsDbContext, bool>(db => db.Users.AnyAsync(user => user.Id == mia, Cancel)));
     }
+
+    private Task<bool> SpendAsync(TicketReply reply) =>
+        WithAsync<OneTimeCodes, bool>(async codes =>
+        {
+            OneTimeCode ticket = await codes.FindTokenAsync(reply.Ticket, [CodePurpose.RegisterPasskey], Cancel) ?? throw new InvalidOperationException("No ticket");
+            return await codes.SpendTicketAsync(ticket, Cancel);
+        });
 
     private Task<TicketReply> RedeemAsync(string code) =>
         WithAsync<AccountsService, TicketReply>(service => service.RedeemAsync(new RedeemRequest { Code = code }).AsTask());

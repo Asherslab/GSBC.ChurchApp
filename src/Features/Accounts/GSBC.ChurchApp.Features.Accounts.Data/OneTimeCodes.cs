@@ -1,5 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
+using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Platform.Contracts;
 using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,18 +16,30 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
     public static readonly TimeSpan FamilySignInLifetime = TimeSpan.FromDays(1);
 
     private const string ShortCodeLetters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-    private const int ShortCodeLength = 8;
 
     private const int TokenBytes = 32;
     private const int MaximumFailedAttempts = 5;
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
-    public string IssueToken(Guid userId, CodePurpose purpose, TimeSpan lifetime)
+    public string IssueToken(Guid userId, CodePurpose purpose, TimeSpan lifetime, OneTimeCode? spends = null)
     {
         string token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(TokenBytes));
-        Add(Hash(token), userId, purpose, lifetime);
+        Add(Hash(token), userId, purpose, lifetime, spends?.Hash);
         return token;
+    }
+
+    public async Task<bool> SpendTicketAsync(OneTimeCode ticket, CancellationToken cancellationToken)
+    {
+        Use(ticket);
+        if (ticket.SpendsCode is not { } hash)
+            return true;
+
+        DateTime now = Now;
+        int spent = await db.Codes
+            .Where(code => code.Hash == hash && code.UsedAt == null)
+            .ExecuteUpdateAsync(code => code.SetProperty(found => found.UsedAt, now), cancellationToken);
+        return spent == 1;
     }
 
     public async Task<string> IssueShortCodeAsync(Guid userId, CodePurpose purpose, TimeSpan lifetime, CancellationToken cancellationToken)
@@ -34,9 +48,9 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
             .Where(code => code.UserId == userId && code.Purpose == purpose && code.UsedAt == null)
             .ExecuteDeleteAsync(cancellationToken);
 
-        string code = RandomNumberGenerator.GetString(ShortCodeLetters, ShortCodeLength);
+        string code = RandomNumberGenerator.GetString(ShortCodeLetters, AccountsCodes.FamilySignInLength);
         Add(Hash(code), userId, purpose, lifetime);
-        return $"{code[..4]}-{code[4..]}";
+        return CodeGroups.Format(code, AccountsCodes.FamilySignInLength);
     }
 
     public static string WithoutSpacing(string shortCode) =>
@@ -81,9 +95,9 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
         return true;
     }
 
-    public void Use(OneTimeCode code) => code.UsedAt = Now;
+    private void Use(OneTimeCode code) => code.UsedAt = Now;
 
-    private void Add(string hash, Guid userId, CodePurpose purpose, TimeSpan lifetime) =>
+    private void Add(string hash, Guid userId, CodePurpose purpose, TimeSpan lifetime, string? spends = null) =>
         db.Codes.Add(new OneTimeCode
         {
             Hash = hash,
@@ -91,6 +105,7 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
             Purpose = purpose,
             CreatedAt = Now,
             ExpiresAt = Now + lifetime,
+            SpendsCode = spends,
         });
 
     private static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));

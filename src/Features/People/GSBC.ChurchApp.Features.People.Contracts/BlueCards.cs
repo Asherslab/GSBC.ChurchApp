@@ -19,7 +19,7 @@ public static class BlueCards
         (Expired, "Expired"),
     ];
 
-    public const int TrainingLastsYears = 3;
+    public const int TrainingLastsYears = 1;
 
     public static bool Valid(string status) => Statuses.Any(known => known.Value == status);
 

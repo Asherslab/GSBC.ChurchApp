@@ -43,8 +43,7 @@ public sealed class InvitationTests : IAsyncLifetime
             .AddSingleton<IPersonData>(_forgotten)
             .AddAccountsData()
             .AddSyncData()
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>();
+            .AddAccountIdentity();
         services.AddOptions<AccountsOptions>();
         _services = services.BuildServiceProvider();
 

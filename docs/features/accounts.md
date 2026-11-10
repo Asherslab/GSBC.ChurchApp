@@ -24,7 +24,9 @@ Every non-gRPC step is one of the approved passkey ceremonies at the gateway (AG
 account and returns a sign-up ticket (single-use, 15 minutes). The client runs the *register a
 passkey* ceremony with the ticket; on success the gateway starts a session. A 6-digit code is emailed;
 `Accounts.ConfirmEmail(code)` marks the email confirmed. Until then the account works but can't
-recover by email.
+recover by email. Other features add questions to the form through `ISignUpQuestion` (Platform.Client) and save
+their answers once the passkey is made and the session started: People asks for a birth date or *I'm 18 or older*,
+and an under-18's parent ([people.md](people.md)). Accounts itself stores none of it.
 
 **Sign in.** The *sign in* ceremony with a discoverable passkey (no username to type; the browser's
 autofill offers passkeys). On success the gateway starts a session.
@@ -34,7 +36,10 @@ autofill offers passkeys). On success the gateway starts a session.
 **Invitation.** `Accounts.Invite(name, email)` (`accounts.manage`) emails a link to
 `<site>/welcome?code=…`, a client-side route of the app or admin panel (static files, not an API path).
 The page calls `Accounts.Redeem(code)`, which returns a registration ticket for that account, then runs
-the *register a passkey* ceremony.
+the *register a passkey* ceremony. **The code is spent when the passkey is made with the ticket**, not when it's
+redeemed (2026-11-10): a cancelled or failed passkey prompt can be retried with the same invitation, recovery link or
+parent's code, and once one passkey is made every other ticket from that code is refused. The ticket remembers its
+code (`spends_code`); the gateway spends both together.
 
 **Invitations not yet accepted** (2026-11-04). `Accounts.ListInvitations` (`accounts.view`) lists every
 unused invitation whose account has no passkey yet: who, who invited them (from the audit log), when, and

@@ -1,0 +1,28 @@
+<div class="ui-after">
+    <ToggleRow Title="I'm 18 or older" Checked="Answers.Adult" CheckedChanged="adult => ChangeAsync(() => Answers.Adult = adult)" />
+</div>
+@if (!Answers.Adult)
+{
+    <div class="ui-after">
+        <TextField Label="Your birth date" Type="date" Value="@Answers.Born" ValueChanged="born => ChangeAsync(() => Answers.Born = born)"
+                   Max="@($"{Answers.Today:yyyy-MM-dd}")" AutoComplete="bday" Hint="@PeopleWords.WhoSees" />
+    </div>
+    @if (Answers.Minor)
+    {
+        <div class="ui-after">
+            <TextField Label="Your parent's email" Type="email" Value="@Answers.ParentEmail" ValueChanged="email => ChangeAsync(() => Answers.ParentEmail = email)"
+                       AutoComplete="off" Hint="Under 18, a parent or guardian looks after you in the app. They say yes on their Account page, or when they sign up with this email." />
+        </div>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired] public required SignUpAge Answers { get; set; }
+    [Parameter] public EventCallback Changed { get; set; }
+
+    private Task ChangeAsync(Action change)
+    {
+        change();
+        return Changed.InvokeAsync();
+    }
+}
