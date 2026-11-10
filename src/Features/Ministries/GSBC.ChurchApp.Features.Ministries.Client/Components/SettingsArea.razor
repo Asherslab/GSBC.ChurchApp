@@ -67,6 +67,7 @@
 @code {
     private MinistryDetails _details = new();
     private MinistryDetails _stored = new();
+    private MinistryDetails? _seen;
     private DeletionPreview? _preview;
     private bool _adding;
     private bool _busy;
@@ -79,12 +80,22 @@
     [Parameter] public string AfterDelete { get; set; } = MinistriesPlaces.Directory;
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private MinistryDetails Details => _details;
+    private MinistryDetails Details
+    {
+        get
+        {
+            FollowPage();
+            return _details;
+        }
+    }
 
     private bool Changed => !_leaving && !Same(Details, _stored);
 
-    protected override void OnParametersSet()
+    private void FollowPage()
     {
+        if (ReferenceEquals(_seen, Page.Ministry))
+            return;
+        _seen = Page.Ministry;
         bool another = _stored.Id != Page.Ministry.Id;
         if (another)
             (_saved, _problem, _preview) = (false, null, null);

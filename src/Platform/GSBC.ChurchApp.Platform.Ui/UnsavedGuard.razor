@@ -23,14 +23,25 @@
     private bool _busy;
     private string? _problem;
 
-    [Parameter, EditorRequired] public required Func<bool> Changed { get; set; }
+    [Parameter] public Func<bool>? Changed { get; set; }
+    [Parameter] public object? Editing { get; set; }
+    [Parameter] public Func<object>? State { get; set; }
     [Parameter, EditorRequired] public required string What { get; set; }
     [Parameter] public Func<Task<bool>>? Save { get; set; }
     [Parameter] public bool Failed { get; set; }
 
-    internal bool HasChanges => Changed();
+    private object? _editing;
+    private object? _snapshot;
+
+    internal bool HasChanges => (Changed?.Invoke() ?? true) && (State is null || !Equals(State(), _snapshot));
 
     protected override void OnInitialized() => Unsaved.Add(this);
+
+    protected override void OnParametersSet()
+    {
+        if (State is not null && !ReferenceEquals(_editing, Editing))
+            (_editing, _snapshot) = (Editing, State());
+    }
 
     internal async Task<bool> AskAsync()
     {
