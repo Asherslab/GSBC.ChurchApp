@@ -4,6 +4,7 @@
 @inject TimeProvider Clock
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject UnsavedChanges Unsaved
 @inject WideningWords Widening
 
 <PageTitle>Calendar · Good Shepherd admin</PageTitle>
@@ -175,7 +176,7 @@
             <button type="button" class="calendar-regular__back" @onclick="BackToRegularList"><Icon Name="chevron-left" Size="IconSize.Small" />Regular events</button>
             <RegularEventEditor @key="@(chosen.RegularEventId ?? $"new-{chosen.CalendarId}")" CalendarId="@chosen.CalendarId" RegularEventId="@chosen.RegularEventId" InPanel="true"
                                 SelectedDate="@chosen.Date?.Date" DatesVersion="_datesVersion" Saved="id => RegularSavedAsync(chosen, id)" Closed="BackToRegularList"
-                                DatePicked="date => _chosen = chosen with { Date = date }" Organisers="Organisers" />
+                                DatePicked="date => Choose(chosen with { Date = date })" Organisers="Organisers" />
         </div>;
 
     private RenderFragment<string> Organisers => regularEventId =>
@@ -514,7 +515,7 @@
                                           Saved="SavedAsync" Closed="CloseDetail" OpenRegular="() => Choose(new ChosenRegular(chosen.CalendarId, chosen.RegularEventId))" />,
         ChosenRegular { Date: { } date } chosen when EventDates.Parse(date.Date) is { } day =>
             @<DateEditor @key="date.OccurrenceId" CalendarId="@chosen.CalendarId" RegularEventId="@(chosen.RegularEventId ?? string.Empty)" Date="day" InPanel="true"
-                         Saved="_ => DateSavedAsync()" Closed="() => _chosen = chosen with { Date = null }" OpenRegular="() => _chosen = chosen with { Date = null }" />,
+                         Saved="_ => DateSavedAsync()" Closed="() => Choose(chosen with { Date = null })" OpenRegular="() => Choose(chosen with { Date = null })" />,
         NewEvent fresh => @<EventEditor @key="@($"new-{fresh.CalendarId}")" Target="EditTarget.New(fresh.CalendarId)" NewOn="fresh.On" InPanel="true" Saved="SavedNewAsync" Closed="CloseDetail" />,
         ChosenCalendar calendar => @<CalendarSettingsPanel @key="@(calendar.Calendar?.Settings.Calendar.Id ?? "new")" Calendar="calendar.Calendar" Saved="ReloadAsync" Closed="CloseDetail" Removed="RemovedAsync" />,
         ShowingHere here => @<div class="event-panel" @key="@($"show-{here.Calendar.Id}")">
@@ -539,10 +540,11 @@
     private static CalendarInfo? CalendarOf(WorkbenchView view, string id) =>
         view.Desk.Calendars.Select(calendar => calendar.Settings.Calendar).FirstOrDefault(calendar => calendar.Id == id);
 
-    private void Choose(Chosen chosen)
+    private async Task Choose(Chosen? chosen)
     {
         _newMenu = false;
-        _chosen = chosen;
+        if (await Unsaved.MayLeaveAsync())
+            _chosen = chosen;
     }
 
     private void CloseMenuOnEscape(KeyboardEventArgs key)
@@ -551,12 +553,14 @@
             _newMenu = false;
     }
 
-    private void NewOnce(DeskCalendar into) => Choose(new NewEvent(into.Settings.Calendar.Id, ShowingMonth ? _monthDay : null));
+    private Task NewOnce(DeskCalendar into) => Choose(new NewEvent(into.Settings.Calendar.Id, ShowingMonth ? _monthDay : null));
 
-    private void NewRegular(DeskCalendar into) => Choose(new ChosenRegular(into.Settings.Calendar.Id, null));
+    private Task NewRegular(DeskCalendar into) => Choose(new ChosenRegular(into.Settings.Calendar.Id, null));
 
     private async Task BackToRegularList()
     {
+        if (!await Unsaved.MayLeaveAsync())
+            return;
         _chosen = null;
         if (ShownCalendarKey is not null)
             await ShowViewAsync(View.Regular);
@@ -577,13 +581,13 @@
         await ReloadAsync();
     }
 
-    private void ChooseBreak(WorkbenchView view, BreakInfo entry)
+    private async Task ChooseBreak(WorkbenchView view, BreakInfo entry)
     {
         if (view.Desk.CanManage)
-            _chosen = new ChosenBreak(entry);
+            await Choose(new ChosenBreak(entry));
     }
 
-    private void CloseDetail() => _chosen = null;
+    private Task CloseDetail() => Choose(null);
 
     private async Task RemovedAsync()
     {

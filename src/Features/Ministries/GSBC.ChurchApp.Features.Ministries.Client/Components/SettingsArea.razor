@@ -25,13 +25,7 @@
 <Section>
     <div class="ministry-form">
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        <div class="ui-actions ministry-save">
-            <Button Busy="_busy" OnClick="SaveAsync">Save the details</Button>
-            @if (Changed || _saved)
-            {
-                <SaveStatus State="@(Changed ? SaveState.Unsaved : SaveState.Saved)" />
-            }
-        </div>
+        <SaveBar Label="Save the details" Busy="_busy" OnSave="SaveAsync" Blocked="@(Details.Name.Trim().Length == 0 ? "Give it a name to save it." : null)" State="SaveBar.For(Changed, _saved)" />
     </div>
 </Section>
 

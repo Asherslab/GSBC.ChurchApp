@@ -478,6 +478,14 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .save-status .spinner { width: 12px; height: 12px; }
 .save-status__detail { font-weight: 400; color: var(--ink-3); }
 .save-status__retry { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.save-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.save-bar--block { display: grid; justify-items: stretch; }
+.save-bar--block > :is(.save-status, .save-bar__why) { justify-self: center; }
+.save-bar--on-masthead { flex-direction: row-reverse; }
+.save-bar__why { margin: 0; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
+.save-bar--on-masthead :is(.save-bar__why, .save-status, .save-status > .icon) { color: var(--on-masthead-2); }
+.save-bar--on-masthead .btn:disabled:not([aria-busy="true"]) { background: var(--masthead-chip); color: var(--on-masthead); }
+.edit-scope { display: contents; }
 
 .tab-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 22px; border-bottom: 1px solid var(--line); }
 .tab-strip__tab { position: relative; display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--ink-3); font: inherit; font-size: var(--text-label); font-weight: 600; cursor: pointer; }

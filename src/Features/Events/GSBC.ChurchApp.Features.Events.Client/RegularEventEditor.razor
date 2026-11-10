@@ -2,15 +2,18 @@
 @inject CalendarEditing Editor
 @inject TimeProvider Clock
 @inject Shell Shell
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="this regular event" Save="SaveBeforeLeavingAsync" />
 
 @if (InPanel)
 {
-    <div class="regular-page regular-page--panel">@Body</div>
+    <div class="regular-page regular-page--panel"><EditScope Edited="() => { }">@Body</EditScope></div>
 }
 else
 {
-    <Page Title="@(RegularEventId is null ? "New regular event" : "Regular event")" OnBack="Closed" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
-        <ChildContent><div class="regular-page">@Body</div></ChildContent>
+    <Page Title="@(RegularEventId is null ? "New regular event" : "Regular event")" OnBack="LeaveAsync" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
+        <ChildContent><div class="regular-page"><EditScope Edited="() => { }">@Body</EditScope></div></ChildContent>
     </Page>
 }
 
@@ -80,7 +83,7 @@ else
     private List<KeptValue> _keepOwn = [];
     private string _tellOccurrenceId = "";
     private string _tellBody = "";
-    private string? _done;
+    private bool _asked;
     private (string, string?)? _loadedFor;
     private int _datesVersion;
 
@@ -134,6 +137,7 @@ else
                 _dates = [];
                 if (MustAsk)
                     _draft.Showing = Showing.SavedForLater;
+                Stored();
             }
             _ = LoadSideAsync();
         }
@@ -162,6 +166,7 @@ else
     {
         _draft = EventDraft.From(detail, null, Now);
         _dates = detail.Dates;
+        Stored();
     }
 
     private string StartingCalendar() =>
@@ -206,7 +211,7 @@ else
                         {
                             <Button Variant="ButtonVariant.GhostOnMasthead" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
                         }
-                        @SaveButton(draft)
+                        @SaveButton(draft, onMasthead: true)
                     </div>
                 }
                 <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel">
@@ -216,9 +221,9 @@ else
                            Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
             </div>
             <div class="regular-body">
-                @if (_done is not null)
+                @if (_asked)
                 {
-                    <p class="event-saved regular-body__wide" role="status"><Icon Name="check" Size="IconSize.Small" />@_done</p>
+                    <p class="event-saved regular-body__wide" role="status"><Icon Name="check" Size="IconSize.Small" />Asked. The calendar's publishers have been told.</p>
                 }
                 @if (InPanel && _problem is not null)
                 {
@@ -260,11 +265,7 @@ else
             {
                 <div class="editor-foot">
                     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-                    <div class="editor-foot__actions">@SaveButton(draft)</div>
-                    @if (Fields.Title.Trim().Length == 0)
-                    {
-                        <span class="field__hint">Give it a title to add it.</span>
-                    }
+                    <div class="editor-foot__actions">@SaveButton(draft, onMasthead: false)</div>
                     @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
                     {
                         <Button Variant="ButtonVariant.Quiet" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
@@ -278,10 +279,36 @@ else
         }
     </text>;
 
-    private RenderFragment SaveButton(EventDraft draft) =>
-        @<Button Block="@(!InPanel)" Variant="@(InPanel ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="_saving"
-                 Disabled="@(Fields.Title.Trim().Length == 0)" Tooltip="@(Fields.Title.Trim().Length == 0 ? "Give it a title to add it" : null)"
-                 OnClick="() => SaveAsync(keepOwnConfirmed: false)">@(draft.IsNew ? "Add the regular event" : "Save every date")</Button>;
+    private RenderFragment SaveButton(EventDraft draft, bool onMasthead) =>
+        @<SaveBar Block="@(!onMasthead)" OnMasthead="onMasthead" Label="@(draft.IsNew ? "Add the regular event" : "Save every date")" Busy="_saving"
+                  Blocked="@(Fields.Title.Trim().Length == 0 ? $"Give it a title to {(draft.IsNew ? "add" : "save")} it." : null)" State="SaveLine" SavedText="@SavedWords"
+                  OnSave="() => SaveAsync(keepOwnConfirmed: false)" />;
+
+    private string? _stored;
+    private bool _leaving;
+    private string? _savedWords;
+
+    private bool Changed => !_leaving && _draft is not null && _stored is not null && Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)) != _stored;
+
+    private SaveState? SaveLine => SaveBar.For(Changed, _savedWords is not null);
+
+    private string SavedWords => (_savedWords ?? "Saved").TrimEnd('.');
+
+    private void Stored() => (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync(keepOwnConfirmed: false);
+        return _problem is null && !Changed;
+    }
+
+    private async Task LeaveAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            await Closed.InvokeAsync();
+    }
+
+    private static RegularEventSave SaveMessage(EventDraft draft) => draft.ToRegularSave(false);
 
     private static string RepeatsLine(EventDraft draft)
     {
@@ -394,7 +421,7 @@ else
     private async Task FinishAsync(string done)
     {
         _sheet = EditorSheet.None;
-        _done = done;
+        _savedWords = done;
         await Saved.InvokeAsync(_draft?.RegularEventId ?? "");
     }
 
@@ -406,7 +433,7 @@ else
         {
             await Editor.Editing.AskToPublishAsync(new ItemRef { CalendarId = _draft.CalendarId, RegularEventId = _draft.RegularEventId });
             _draft.Asked = true;
-            _done = "Asked. The calendar's publishers have been told.";
+            _asked = true;
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
@@ -422,6 +449,7 @@ else
         try
         {
             await Editor.Editing.DeleteRegularEventAsync(new RegularRef { CalendarId = _draft.CalendarId, RegularEventId = regularId });
+            _leaving = true;
             _sheet = EditorSheet.None;
             await Saved.InvokeAsync("");
             await Closed.InvokeAsync();
