@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Calendars;
+using GSBC.ChurchApp.Testing;
 
 namespace GSBC.ChurchApp.Features.Events.Api.Tests;
 
@@ -37,7 +38,7 @@ public sealed class KeptRegularEventTests
     private static List<EventOccurrence> Occurrences(KeptRegularEvent wanted, DateOnly from, DateOnly to)
     {
         RegularEventRecord regular = new() { Id = Guid.CreateVersion7(), Keeper = wanted.Keeper, KeptBy = wanted.KeptBy, OpensAt = wanted.OpensAt, Fields = new EventFields { Title = wanted.Title } };
-        KeptShape shape = KeptShape.Of(regular.Id, wanted, DateTime.UtcNow);
+        KeptShape shape = KeptShape.Of(regular.Id, wanted, TestClock.Start);
         (regular.Pattern, regular.StartMinute, regular.EndMinute) = (shape.Pattern, shape.StartMinute, shape.EndMinute);
         return Expansion.OccurrencesOf(regular, shape.Specials.ToDictionary(special => special.Date), shape.Breaks, from, to).ToList();
     }
