@@ -1,0 +1,70 @@
+@{
+    List<RosterDate> shown = Dates.Skip(_from).Take(PerPage).ToList();
+}
+<div class="roster-grid__bar">
+    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-left" AriaLabel="Earlier dates" Disabled="@(_from == 0)" OnClick="() => _from = Math.Max(0, _from - PerPage)" />
+    <span class="roster-grid__range">@(shown.Count == 0 ? "" : shown.Count == 1 ? RosterLines.When(shown[0]) : $"{RosterLines.When(shown[0])} to {RosterLines.When(shown[^1])}")</span>
+    <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-right" AriaLabel="Later dates" Disabled="@(_from + PerPage >= Dates.Count)" OnClick="() => _from += PerPage" />
+</div>
+<div class="roster-grid" role="region" aria-label="The roster as a grid" tabindex="0">
+    <table>
+        <thead>
+            <tr>
+                <th scope="col"><span class="visually-hidden">Position</span></th>
+                @foreach (RosterDate date in shown)
+                {
+                    <th @key="date.Id" scope="col">
+                        <button type="button" class="roster-grid__date" @onclick="() => OnOpen.InvokeAsync(date)">
+                            <span>@RosterLines.When(date)</span>
+                            <small>@date.Title</small>
+                        </button>
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (Position position in View.Positions)
+            {
+                <tr @key="position.Id">
+                    <th scope="row">@position.Name@if (position.NeedsBlueCard || position.NeedsTraining || position.NeedsTrained)
+                        {
+                            <small>@RosterLines.Needs(position)</small>
+                        }
+                    </th>
+                    @foreach (RosterDate date in shown)
+                    {
+                        IReadOnlyList<Assignment> on = RosterLines.In(date, position);
+                        int gaps = Math.Max(0, position.Needed - RosterLines.Filled(date, position));
+                        <td @key="date.Id">
+                            @foreach (Assignment assignment in on)
+                            {
+                                <span class="roster-cell roster-cell--@(View.Settings.Replies ? assignment.State : Replies.On)">
+                                    @(Wide ? assignment.Name : RosterLines.First(assignment.Name))
+                                    @foreach (string flag in assignment.Flags)
+                                    {
+                                        <small>@flag</small>
+                                    }
+                                </span>
+                            }
+                            @if (gaps > 0 && View.MayEdit && !date.NotOn)
+                            {
+                                <button type="button" class="roster-cell roster-cell--gap" @onclick="() => OnOpen.InvokeAsync(date)">Put on</button>
+                            }
+                        </td>
+                    }
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@code {
+    private int _from;
+
+    [Parameter, EditorRequired] public required RosterView View { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<RosterDate> Dates { get; set; }
+    [Parameter] public bool Wide { get; set; }
+    [Parameter] public EventCallback<RosterDate> OnOpen { get; set; }
+
+    private int PerPage => Wide ? 8 : 4;
+}

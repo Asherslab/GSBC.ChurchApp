@@ -76,6 +76,9 @@ internal sealed class RosterBook(
                 .OfType<RosterDate>()
                 .ToList(),
             Team = leads ? TeamLines() : [],
+            TeamNames = leads || Settings.SwapWays.Contains(SwapWays.Direct)
+                ? team.Select(member => new PersonLine { Id = member.PersonId.ToString(), Name = NameOf(member.PersonId) }).OrderBy(line => line.Name, StringComparer.CurrentCulture).ToList()
+                : [],
             YourId = viewer.ToString(),
             You = recipient.People.OrderBy(person => person == viewer ? 0 : 1).ThenBy(person => NameOf(person))
                 .Select(person => new PersonLine { Id = person.ToString(), Name = NameOf(person) }).ToList(),

@@ -1,0 +1,86 @@
+@{
+    RosterView view = Date.View;
+    Assignment assignment = Date.Assignment;
+    bool live = !view.Archived;
+    SwapLine? swap = assignment.Swap is { } each && SwapStates.Live(each.State) ? each : null;
+}
+<UnsavedGuard Changed="() => _why && _reason.Trim().Length > 0" What="why you can't do it" />
+
+<ListRow Title="@($"{assignment.PositionName} · {RosterLines.When(Date.Date)}")"
+         Subtitle="@(Date.Yourself ? Date.Date.Title : $"For {RosterLines.First(Date.For.Name)} · {Date.Date.Title}")" IconTone="RowTone.Warm">
+    <Leading><span class="roster-day roster-day--warm" aria-hidden="true">@RosterLines.DayNumber(Date.Date)</span></Leading>
+    <TrailingContent>
+        @if (view.Settings.Replies && assignment.State != Replies.Asked)
+        {
+            <Pill Tone="RosterLines.ToneOf(assignment)">@RosterLines.StateWords(assignment)</Pill>
+        }
+    </TrailingContent>
+    <Below>
+        @if (assignment.RepliedBy.Length > 0)
+        {
+            <p class="roster-note">Answered by @assignment.RepliedBy</p>
+        }
+        @if (swap is not null)
+        {
+            <p class="roster-note">@SwapWords(swap)</p>
+        }
+        @if (live)
+        {
+            @if (_why)
+            {
+                <div class="roster-why">
+                    <TextField Label="Want to say why? It goes to the leaders" @bind-Value="_reason" MaxLength="200" />
+                    <div class="roster-actions">
+                        <Button Small="true" Variant="ButtonVariant.Danger" Disabled="Busy" OnClick="SendCantAsync">@(Date.Yourself ? "I can't do it" : $"{RosterLines.First(Date.For.Name)} can't do it")</Button>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => _why = false">Keep it</Button>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="roster-actions">
+                    @if (view.Settings.Replies && assignment.State == Replies.Asked)
+                    {
+                        <Button Small="true" Disabled="Busy" OnClick="() => OnAnswer.InvokeAsync((true, string.Empty))">@(Date.Yourself ? "I can do it" : $"Yes, for {RosterLines.First(Date.For.Name)}")</Button>
+                    }
+                    @if (view.Settings.Replies)
+                    {
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _why = true">@(assignment.State == Replies.Accepted ? "I can't now" : "Can't do it")</Button>
+                    }
+                    @if (swap is null && view.Settings.SwapWays.Count > 0)
+                    {
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="repeat" Disabled="Busy" OnClick="OnSwap">Ask for a swap</Button>
+                    }
+                    else if (swap is not null)
+                    {
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="OnWithdraw">Call off the swap</Button>
+                    }
+                </div>
+            }
+        }
+    </Below>
+</ListRow>
+
+@code {
+    private bool _why;
+    private string _reason = "";
+
+    [Parameter, EditorRequired] public required YourDate Date { get; set; }
+    [Parameter] public bool Busy { get; set; }
+    [Parameter] public EventCallback<(bool Accept, string Reason)> OnAnswer { get; set; }
+    [Parameter] public EventCallback OnSwap { get; set; }
+    [Parameter] public EventCallback OnWithdraw { get; set; }
+
+    private async Task SendCantAsync()
+    {
+        _why = false;
+        await OnAnswer.InvokeAsync((false, _reason.Trim()));
+    }
+
+    private static string SwapWords(SwapLine swap) => swap switch
+    {
+        { State: SwapStates.Offered } => $"{RosterLines.First(swap.OfferedByName)} offered to take it. A leader says yes.",
+        { Way: SwapWays.Direct } => $"Asked {RosterLines.First(swap.AskedToName)} to take it. Waiting for them.",
+        _ => "Swap asked. Waiting for someone on the team to take it.",
+    };
+}

@@ -28,6 +28,7 @@ public static class RostersApiExtensions
         services.AddToSystemRole(TeamRole, RostersPermissions.ReplyNode);
         services.AddFeed(new FeedDefinition(RostersFeeds.Ministries, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(RostersFeeds.Away, FeedAudience.OwnRecords));
+        services.AddFeed(new FeedDefinition(RostersFeeds.Changes, FeedAudience.Holding(RostersPermissions.Edit)));
         services.AddSurfaces(RostersTiles.Surfaces);
         return services;
     }

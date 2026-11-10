@@ -1,5 +1,11 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject IEnumerable<MinistryPartView> PartViews
+
 @switch (Area)
 {
+    case MinistriesPlaces.Roster when PartViews.FirstOrDefault(view => view.Part == MinistryParts.Rosters) is { } roster:
+        @roster.Content(new MinistryOnPage(Page.Ministry.Id, Page.Ministry.Name, Wide))
+        break;
     case MinistriesPlaces.News:
         <NewsArea Page="Page" OnChanged="OnChanged" />
         break;

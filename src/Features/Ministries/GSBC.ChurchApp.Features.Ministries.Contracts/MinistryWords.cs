@@ -38,6 +38,8 @@ public static class MinistryParts
             News => page.Posts.Count > 0 || page.You.MayPostFor.Count > 0,
             Calendar => page.Calendars.Count > 0 || page.You.MayEditSettings,
             Files => page.Files.Count > 0 || page.You.MayPostFor.Count > 0,
+            Rosters => page.You.MayEditSettings || page.You.LeadsFromAbove || page.You.Roles.Any(role => role is Roles.Leader or Roles.Admin or Roles.Team)
+                       || page.You.Children.Any(child => child.OnTeam),
             _ => false,
         };
 

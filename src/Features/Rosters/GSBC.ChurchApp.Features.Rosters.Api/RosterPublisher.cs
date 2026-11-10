@@ -33,7 +33,13 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
             foreach ((Guid person, Recipient recipient) in book.Recipients())
                 wanted[$"{person:N}-{ministryId:N}"] = (person, RostersPayloads.Encode(book.ViewFor(person, recipient)));
 
-        await WriteAsync(RostersFeeds.Ministries, ministryId, wanted, row => row.MinistryId == ministryId, cancellationToken);
+        if (await WriteAsync(RostersFeeds.Ministries, ministryId, wanted, row => row.MinistryId == ministryId, cancellationToken))
+        {
+            FeedChangeRecord marker = FeedChangeRecord.Marker(RostersFeeds.Changes, ministryId.ToString(), time.GetUtcNow().UtcDateTime);
+            marker.ScopeId = ministryId.ToString();
+            db.FeedChanges.Add(marker);
+            await db.SaveChangesAsync(cancellationToken);
+        }
     }
 
     public async Task PublishAwayAsync(IReadOnlyCollection<Guid> changed, CancellationToken cancellationToken)
@@ -77,7 +83,7 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
     public async Task ForgetAsync(Guid person, CancellationToken cancellationToken) =>
         await WriteAsync(RostersFeeds.Away, null, [], row => row.ScopeId == person, cancellationToken, RostersFeeds.Ministries);
 
-    private async Task WriteAsync(string feed, Guid? ministryId, Dictionary<string, (Guid Scope, byte[] Payload)> wanted,
+    private async Task<bool> WriteAsync(string feed, Guid? ministryId, Dictionary<string, (Guid Scope, byte[] Payload)> wanted,
         System.Linq.Expressions.Expression<Func<PublishedRecord, bool>> mine, CancellationToken cancellationToken, string? alsoFeed = null)
     {
         await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
@@ -104,7 +110,9 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
             db.FeedChanges.Add(new FeedChangeRecord { Feed = gone.Feed, RecordId = gone.RecordId, ScopeId = gone.ScopeId.ToString(), Version = version, Deleted = true });
         }
 
+        bool changed = db.ChangeTracker.HasChanges();
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
+        return changed;
     }
 }

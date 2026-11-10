@@ -22,6 +22,7 @@ public sealed class RosterView
     [ProtoMember(8)] public List<TeamMember> Team { get; set; } = [];
     [ProtoMember(9)] public List<PersonLine> You { get; set; } = [];
     [ProtoMember(10)] public string YourId { get; set; } = "";
+    [ProtoMember(11)] public List<PersonLine> TeamNames { get; set; } = [];
 }
 
 [ProtoContract]

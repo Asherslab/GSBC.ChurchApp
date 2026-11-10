@@ -1,0 +1,138 @@
+@inject RosterWrites Writes
+@inject TimeProvider Clock
+
+@if (Date is { } date)
+{
+    <Sheet Open="true" OpenChanged="open => Close(open)" Title="@(_picking is { } picking ? $"{picking.Name} · {RosterLines.When(date)}" : $"{RosterLines.When(date)} · {date.Title}")"
+           Lead="@(_picking is null ? Lead(date) : $"{date.Title}. Flags never stop you putting someone on.")">
+        <ChildContent>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+            @if (_picking is { } picked)
+            {
+                <SearchField Label="Find someone on the team" @bind-Value="_find" AutoFocus="true" />
+                <ListGroup>
+                    @foreach (TeamMember member in Choices(date, picked))
+                    {
+                        IReadOnlyList<string> flags = RosterLines.FlagsIfOn(View, member, date, picked);
+                        <ListRow @key="member.PersonId" Title="@(member.Age is { } age ? $"{member.Name}, {age}" : member.Name)"
+                                 Subtitle="@string.Join(" · ", flags.Prepend(member.ReachedThrough.Length > 0 ? $"Reached through {member.ReachedThrough}" : "").Where(line => line.Length > 0))"
+                                 IconTone="@(flags.Count > 0 ? RowTone.Warm : RowTone.Primary)">
+                            <Leading><Avatar Name="@member.Name" /></Leading>
+                            <TrailingContent>
+                                <Button Small="true" Variant="@(flags.Count > 0 ? ButtonVariant.Quiet : ButtonVariant.Primary)" Disabled="_busy"
+                                        OnClick="() => RunAsync(() => Writes.AssignAsync(View.MinistryId, date.Id, picked.Id, member.PersonId))">Put on</Button>
+                            </TrailingContent>
+                        </ListRow>
+                    }
+                </ListGroup>
+                <p class="roster-hint">Everyone put on hears straight away@(View.Settings.Replies ? ", and is asked whether they can do it" : "").</p>
+            }
+            else
+            {
+                @foreach (Position position in View.Positions)
+                {
+                    IReadOnlyList<Assignment> on = RosterLines.In(date, position);
+                    <h3 class="roster-position">@position.Name <span>@RosterLines.Filled(date, position) of @position.Needed</span></h3>
+                    <ListGroup>
+                        @foreach (Assignment assignment in on)
+                        {
+                            <ListRow @key="assignment.Id" Title="@assignment.Name" Subtitle="@Detail(assignment)"
+                                     IconTone="@(assignment.Flags.Count > 0 || assignment.State == Replies.Declined ? RowTone.Warm : RowTone.Primary)">
+                                <Leading><Avatar Name="@assignment.Name" /></Leading>
+                                <TrailingContent>
+                                    @if (View.Settings.Replies && assignment.State != Replies.On)
+                                    {
+                                        <Pill Tone="RosterLines.ToneOf(assignment)">@RosterLines.StateWords(assignment)</Pill>
+                                    }
+                                    @if (Changeable(date))
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="@($"Take {assignment.Name} off {position.Name}")" Disabled="_busy"
+                                                OnClick="() => RunAsync(() => Writes.UnassignAsync(View.MinistryId, assignment.Id))" />
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                        @if (Changeable(date))
+                        {
+                            <ListRow Title="Put someone on" Icon="plus" IconTone="RowTone.Accent" OnClick="() => (_picking, _find) = (position, string.Empty)" />
+                        }
+                        else if (on.Count == 0)
+                        {
+                            <ListRow Title="Nobody yet" IconTone="RowTone.Quiet" />
+                        }
+                    </ListGroup>
+                }
+                @if (View.MayEdit && !View.Archived)
+                {
+                    <p class="roster-hint">Removing the date takes everyone off it and tells them. The event stays on its calendar.</p>
+                }
+            }
+        </ChildContent>
+        <Actions>
+            @if (_picking is not null)
+            {
+                <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _picking = null">Back to the date</Button>
+            }
+            else if (View.MayEdit && !View.Archived)
+            {
+                <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="RemoveAsync">Remove the date from the roster</Button>
+            }
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private Position? _picking;
+    private string _find = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required RosterView View { get; set; }
+    [Parameter] public string? DateId { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private RosterDate? Date => DateId is null ? null : View.Dates.FirstOrDefault(date => date.Id == DateId);
+
+    private bool Changeable(RosterDate date) => View.MayEdit && !View.Archived && date.StartsAt > Clock.GetUtcNow().UtcDateTime;
+
+    private string Lead(RosterDate date) =>
+        $"{RosterLines.LongWhen(date)}{(date.CalendarName.Length > 0 ? $", on {date.CalendarName}" : "")}.{(date.NotOn ? " It's off the calendar now." : "")}";
+
+    private static string Detail(Assignment assignment) =>
+        string.Join(" · ", ((string[])
+        [
+            assignment.RepliedBy.Length > 0 ? $"Answered by {assignment.RepliedBy}" : "",
+            assignment.Reason.Length > 0 ? $"“{assignment.Reason}”" : "",
+            assignment.Swap is { } swap && SwapStates.Live(swap.State) ? swap.State == SwapStates.Offered ? $"{RosterLines.First(swap.OfferedByName)} offers to take it" : "Asked for a swap" : "",
+            .. assignment.Flags,
+        ]).Where(line => line.Length > 0));
+
+    private IEnumerable<TeamMember> Choices(RosterDate date, Position position) =>
+        View.Team
+            .Where(member => !RosterLines.In(date, position).Any(each => each.PersonId == member.PersonId && Replies.Fills(each.State)))
+            .Where(member => _find.Length == 0 || member.Name.Contains(_find, StringComparison.CurrentCultureIgnoreCase))
+            .OrderBy(member => RosterLines.FlagsIfOn(View, member, date, position).Count)
+            .ThenBy(member => member.Name, StringComparer.CurrentCulture);
+
+    private async Task Close(bool open)
+    {
+        if (!open)
+            await OnClose.InvokeAsync();
+    }
+
+    private async Task RemoveAsync()
+    {
+        await RunAsync(() => Writes.RemoveDateAsync(View.MinistryId, DateId!));
+        if (_problem is null)
+            await OnClose.InvokeAsync();
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(work);
+        _busy = false;
+        if (_problem is null)
+            _picking = null;
+    }
+}

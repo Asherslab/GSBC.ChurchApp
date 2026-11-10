@@ -4,7 +4,7 @@ using GSBC.ChurchApp.Platform.Client.Modules;
 
 namespace GSBC.ChurchApp.Features.Rosters.Client;
 
-public sealed class StoredRosters(ILocalFeeds feeds, IServiceProvider services) : IRosterReads
+public sealed class StoredRosters(ILocalFeeds feeds, TimeProvider time, IServiceProvider services) : IRosterReads
 {
     private const int Page = 200;
     private static readonly TimeSpan ChoicesAhead = TimeSpan.FromDays(13 * 7);
@@ -13,7 +13,8 @@ public sealed class StoredRosters(ILocalFeeds feeds, IServiceProvider services) 
 
     public IReadOnlyList<string> Feeds => [RostersFeeds.Ministries, RostersFeeds.Away, .. _events?.Feeds ?? []];
 
-    public async Task<RosterView?> RosterAsync(string ministryId) => (await YoursAsync()).FirstOrDefault(view => view.MinistryId == ministryId);
+    public async Task<RosterView> RosterAsync(string ministryId) =>
+        (await YoursAsync()).FirstOrDefault(view => view.MinistryId == ministryId) ?? throw new RosterNotHereException();
 
     public async Task<IReadOnlyList<RosterView>> YoursAsync()
     {
@@ -21,20 +22,20 @@ public sealed class StoredRosters(ILocalFeeds feeds, IServiceProvider services) 
         for (int offset = 0; ; offset += Page)
         {
             IReadOnlyList<StoredRecord> page = await feeds.ReadPageAsync(new FeedPageQuery(RostersFeeds.Ministries, Limit: Page, Offset: offset));
-            views.AddRange(page.Select(record => Decode<RosterView>(record.Payload)));
+            views.AddRange(page.Select(record => RostersContractsModel.Instance.Deserialize<RosterView>(new MemoryStream(record.Payload))));
             if (page.Count < Page)
                 return views;
         }
     }
 
     public async Task<AwayList> AwayAsync() =>
-        (await feeds.ReadPageAsync(new FeedPageQuery(RostersFeeds.Away, Limit: 1))).FirstOrDefault() is { } record ? Decode<AwayList>(record.Payload) : new AwayList();
+        (await feeds.ReadPageAsync(new FeedPageQuery(RostersFeeds.Away, Limit: 1))).FirstOrDefault() is { } record ? RostersContractsModel.Instance.Deserialize<AwayList>(new MemoryStream(record.Payload)) : new AwayList();
 
     public async Task<IReadOnlyList<EventChoice>> EventChoicesAsync(string ministryId)
     {
         if (_events is null)
             return [];
-        DateTime now = DateTime.UtcNow;
+        DateTime now = time.GetUtcNow().UtcDateTime;
         return (await _events.UpcomingAsync(now, now + ChoicesAhead))
             .Select(line => new EventChoice
             {
@@ -43,6 +44,4 @@ public sealed class StoredRosters(ILocalFeeds feeds, IServiceProvider services) 
             })
             .ToList();
     }
-
-    private static T Decode<T>(byte[] payload) => RostersContractsModel.Instance.Deserialize<T>(new MemoryStream(payload));
 }

@@ -4,9 +4,9 @@ using GSBC.ChurchApp.Platform.Client.Outbox;
 
 namespace GSBC.ChurchApp.Features.Rosters.Client;
 
-public sealed class QueuedRosterWrites(IOutbox outbox) : IRosterWrites
+public sealed class RosterWrites(IWrites writes)
 {
-    public bool Queued => true;
+    public bool Queued => writes.Queued;
 
     public Task SavePositionAsync(string ministryId, Position position) =>
         SendAsync(RosterMethods.SavePosition, new PositionSave { MinistryId = ministryId, Position = RosterIds.Minted(position) });
@@ -53,5 +53,5 @@ public sealed class QueuedRosterWrites(IOutbox outbox) : IRosterWrites
     public Task RemoveAwayAsync(string awayId) => SendAsync(RosterMethods.RemoveAway, new AwayRef { AwayId = awayId });
 
     private async Task SendAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request) =>
-        await outbox.EnqueueAsync(method, request, RostersContractsModel.Instance);
+        await writes.SendAsync(method, request, RostersContractsModel.Instance);
 }
