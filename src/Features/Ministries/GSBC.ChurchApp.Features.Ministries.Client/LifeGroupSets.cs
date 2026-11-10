@@ -7,6 +7,12 @@ public sealed record LifeGroupSet(Round Round, IReadOnlyList<MinistrySummary> Gr
 
 public sealed record LifeGroupSets(LifeGroupSet? Now, LifeGroupSet? Next, IReadOnlyList<MinistrySummary> AllYear)
 {
+    public IReadOnlyList<MinistrySummary> Yours =>
+        new[] { Now?.Groups, Next?.Groups, AllYear }.OfType<IReadOnlyList<MinistrySummary>>().SelectMany(groups => groups)
+            .Where(group => group.Yours.Length > 0).ToList();
+
+    public bool Any => Now is not null || Next is not null || AllYear.Count > 0;
+
     public static LifeGroupSets Of(LifeGroupsPage page, DateOnly today)
     {
         List<(Round Round, DateOnly First, DateOnly Last)> rounds = page.Rounds
@@ -21,7 +27,7 @@ public sealed record LifeGroupSets(LifeGroupSet? Now, LifeGroupSet? Next, IReadO
         return new LifeGroupSets(
             now is { } current ? Set(current.Round) : null,
             next is { } coming ? Set(coming.Round) : null,
-            page.Groups.Where(group => group.RoundId.Length == 0).ToList());
+            page.Groups.Where(group => group.RoundId.Length == 0 || rounds.All(each => each.Round.Id != group.RoundId)).ToList());
     }
 
     private static DateOnly Day(string? text) =>

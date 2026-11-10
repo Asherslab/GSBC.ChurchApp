@@ -9,9 +9,8 @@ public static class MinistryAreas
     {
         YourPlace you = page.You;
         bool posts = you.MayPostFor.Count > 0;
-        bool lifeGroup = page.Ministry.Kind == MinistryKinds.LifeGroup;
         List<(string, string, int?)> areas = [(MinistriesPlaces.About, "About", null)];
-        if (lifeGroup && page.Round is not null)
+        if (page.Round is not null)
             areas.Add((MinistriesPlaces.Sundays, "Sundays", null));
         if (Uses(page, MinistryParts.News) && (page.Posts.Count > 0 || posts))
             areas.Add((MinistriesPlaces.News, MinistryParts.Of(MinistryParts.News).Name, null));

@@ -11,6 +11,7 @@ public static class MinistriesPermissions
     public const string PeopleNode = "ministries.people.manage";
     public const string SettingsNode = "ministries.settings.edit";
     public const string CreateNode = "ministries.create";
+    public const string PlanLifeGroupsNode = "ministries.lifegroups.plan";
 
     public const string LeaderRole = "ministry-leader";
     public const string AdminRole = "ministry-admin";
@@ -18,6 +19,7 @@ public static class MinistriesPermissions
     public const string AttendeeRole = "ministry-attendee";
     public const string AttendeesParentRole = "ministry-attendees-parent";
     public const string ManagerRole = "ministries-manager";
+    public const string LifeGroupsPlannerRole = "life-groups-planner";
 
     public static readonly Permission TeamView =
         new(TeamViewNode, ScopeKind.Ministry, "See what a ministry shares with its team", area: "Ministries");
@@ -40,5 +42,8 @@ public static class MinistriesPermissions
     public static readonly Permission Create =
         new(CreateNode, ScopeKind.Global, "Create and delete the church's top-level ministries", area: "Ministries");
 
-    public static readonly IReadOnlyList<Permission> All = [TeamView, AttendeesView, ParentsView, Post, People, Settings, Create];
+    public static readonly Permission PlanLifeGroups =
+        new(PlanLifeGroupsNode, ScopeKind.Global, "Plan the Life Groups: their Sundays, their time and when they show in the app", area: "Ministries");
+
+    public static readonly IReadOnlyList<Permission> All = [TeamView, AttendeesView, ParentsView, Post, People, Settings, Create, PlanLifeGroups];
 }

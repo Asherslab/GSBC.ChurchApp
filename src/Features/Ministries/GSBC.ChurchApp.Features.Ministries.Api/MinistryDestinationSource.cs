@@ -27,5 +27,5 @@ internal sealed class MinistryDestinationSource(MinistriesDbContext db) : IDesti
     public Task<string?> OpenUrlAsync(string id, CancellationToken cancellationToken) => Task.FromResult<string?>(null);
 
     private static FoundPlace Place(MinistryRecord ministry) =>
-        new(ministry.Id.ToString(), ministry.Name, ministry.Kind == MinistryKinds.LifeGroup ? "Life Groups" : "Ministries", Audience.Everyone);
+        new(ministry.Id.ToString(), ministry.Name, "Ministries", Audience.Everyone);
 }

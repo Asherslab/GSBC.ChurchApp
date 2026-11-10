@@ -11,11 +11,7 @@
     <ListGroup>
         @if (Page.Ministry.Meets.Length > 0)
         {
-            <ListRow Title="@Page.Ministry.Meets" Subtitle="When it meets" Icon="clock" IconTone="RowTone.Quiet" />
-        }
-        @if (Page.Ministry.Room.Length > 0)
-        {
-            <ListRow Title="@Page.Ministry.Room" Subtitle="Where it meets" Icon="map-pin" IconTone="RowTone.Quiet" />
+            <ListRow Title="@Page.Ministry.Meets" Subtitle="When and where it meets" Icon="clock" IconTone="RowTone.Quiet" />
         }
         @if (Page.Ministry.WhoFor.Length > 0)
         {
@@ -50,7 +46,7 @@
         <ListGroup>
             @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@MinistryWords.UnderLine(under)" Icon="@IconOf(under)" Chevron="true" Href="@Href(under.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@MinistryWords.JoinLine(under)" Icon="@IconOf(under.Icon)" Chevron="true" Href="@Href(under.Id)" />
             }
         </ListGroup>
     </Section>
@@ -88,8 +84,6 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     public static string IconOf(string icon) => icon.Length > 0 ? icon : "users";
-
-    public static string IconOf(MinistrySummary ministry) => ministry.Kind == MinistryKinds.LifeGroup ? "book-open" : IconOf(ministry.Icon);
 
     private IReadOnlyList<(string Person, string Place, string Words)> Leaving
     {

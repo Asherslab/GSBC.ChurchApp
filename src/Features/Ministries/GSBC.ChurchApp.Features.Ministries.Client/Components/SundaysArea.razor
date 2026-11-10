@@ -43,7 +43,7 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     private string? Lead => Page.Round is { } round
-        ? $"{MinistryWords.Time(round.Starts)} to {MinistryWords.Time(round.Ends)}{(Page.Ministry.Room.Length > 0 ? $", {Page.Ministry.Room}" : "")}"
+        ? $"{MinistryWords.Time(round.Starts)} to {MinistryWords.Time(round.Ends)}{(Page.Ministry.Meets.Length > 0 ? $", {Page.Ministry.Meets}" : "")}"
         : null;
 
     private void Open(string date)

@@ -5,21 +5,21 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Tests;
 
 public sealed class MinistryPartsTests
 {
-    private readonly MinistryRecord _kids = new() { Id = Guid.CreateVersion7(), Name = "Kids Ministries", Kind = MinistryKinds.Ministry, PartsFromBelow = [MinistryParts.Calendar] };
+    private readonly MinistryRecord _kids = new() { Id = Guid.CreateVersion7(), Name = "Kids Ministries", PartsFromBelow = [MinistryParts.Calendar] };
     private readonly MinistryRecord _impactKids;
     private readonly MinistryRecord _leadersNight;
     private readonly MinistryRecord _kidsLife;
-    private readonly MinistryRecord _lifeGroups = new() { Id = Guid.CreateVersion7(), Name = "Life Groups", Kind = MinistryKinds.Ministry };
+    private readonly MinistryRecord _lifeGroups = new() { Id = Guid.CreateVersion7(), Name = "Life Groups" };
     private readonly MinistryRecord _faithAtWork;
     private readonly MinistryRecord _young;
 
     public MinistryPartsTests()
     {
-        _impactKids = new() { Id = Guid.CreateVersion7(), ParentId = _kids.Id, Name = "Impact Kids", Kind = MinistryKinds.Ministry };
-        _leadersNight = new() { Id = Guid.CreateVersion7(), ParentId = _impactKids.Id, Name = "Leaders' night", Kind = MinistryKinds.Ministry };
-        _kidsLife = new() { Id = Guid.CreateVersion7(), ParentId = _kids.Id, Name = "Kids Life", Kind = MinistryKinds.LifeGroup };
-        _faithAtWork = new() { Id = Guid.CreateVersion7(), ParentId = _lifeGroups.Id, Name = "Faith at Work", Kind = MinistryKinds.LifeGroup };
-        _young = new() { Id = Guid.CreateVersion7(), ParentId = _lifeGroups.Id, Name = "Young Adults", Kind = MinistryKinds.LifeGroup };
+        _impactKids = new() { Id = Guid.CreateVersion7(), ParentId = _kids.Id, Name = "Impact Kids" };
+        _leadersNight = new() { Id = Guid.CreateVersion7(), ParentId = _impactKids.Id, Name = "Leaders' night" };
+        _kidsLife = new() { Id = Guid.CreateVersion7(), ParentId = _kids.Id, Name = "Kids Life", ShowsInLifeGroups = true };
+        _faithAtWork = new() { Id = Guid.CreateVersion7(), ParentId = _lifeGroups.Id, Name = "Faith at Work", ShowsInLifeGroups = true };
+        _young = new() { Id = Guid.CreateVersion7(), ParentId = _lifeGroups.Id, Name = "Young Adults", ShowsInLifeGroups = true };
     }
 
     private MinistryTree Tree => new([_kids, _impactKids, _leadersNight, _kidsLife, _lifeGroups, _faithAtWork, _young]);
@@ -64,13 +64,12 @@ public sealed class MinistryPartsTests
     }
 
     [Fact]
-    public void LifeGroupsLiveWhereTheirSundaysAreSetUpEvenWhenOneSitsUnderAnotherMinistry()
+    public void LifeGroupsListEveryMinistryShownInThemWhereverItSits()
     {
-        Assert.Equal(_lifeGroups.Id, Tree.LifeGroupsHome([]));
-        Assert.Equal(_lifeGroups.Id, Tree.LifeGroupsHome([Guid.CreateVersion7(), _lifeGroups.Id]));
+        MinistryRecord topLevel = new() { Id = Guid.CreateVersion7(), Name = "Prayer breakfast", ShowsInLifeGroups = true };
+        MinistryTree tree = new([_kids, _impactKids, _leadersNight, _kidsLife, _lifeGroups, _faithAtWork, _young, topLevel]);
 
-        MinistryTree onlyKidsLife = new([_kids, _impactKids, _kidsLife, _lifeGroups]);
-        Assert.Equal(_lifeGroups.Id, onlyKidsLife.LifeGroupsHome([_lifeGroups.Id]));
-        Assert.Null(onlyKidsLife.LifeGroupsHome([]));
+        Assert.Equal(new[] { _faithAtWork.Id, _kidsLife.Id, topLevel.Id, _young.Id }.Order(), tree.LifeGroups().Select(group => group.Id).Order());
+        Assert.DoesNotContain(tree.LifeGroups(), group => group.Id == _lifeGroups.Id);
     }
 }

@@ -14,7 +14,6 @@ public sealed class MinistryDirectory
 {
     [ProtoMember(1)] public List<MinistrySummary> Ministries { get; set; } = [];
     [ProtoMember(2)] public bool MayCreate { get; set; }
-    [ProtoMember(3)] public string LifeGroupsId { get; set; } = "";
 }
 
 [ProtoContract]
@@ -22,7 +21,6 @@ public sealed class MinistrySummary
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
     [ProtoMember(2)] public string ParentId { get; set; } = "";
-    [ProtoMember(3)] public string Kind { get; set; } = "";
     [ProtoMember(4)] public string Name { get; set; } = "";
     [ProtoMember(5)] public string Summary { get; set; } = "";
     [ProtoMember(6)] public string Meets { get; set; } = "";
@@ -33,8 +31,7 @@ public sealed class MinistrySummary
     [ProtoMember(11)] public int Order { get; set; }
     [ProtoMember(12)] public string Yours { get; set; } = "";
     [ProtoMember(13)] public string RoundId { get; set; } = "";
-    [ProtoMember(14)] public string Room { get; set; } = "";
-    [ProtoMember(15)] public bool JoinAsParent { get; set; }
+    [ProtoMember(19)] public bool ShowsInLifeGroups { get; set; }
     [ProtoMember(16)] public string Latest { get; set; } = "";
     [ProtoMember(17)] public int Waiting { get; set; }
     [ProtoMember(18)] public bool MayAddUnder { get; set; }
@@ -53,7 +50,6 @@ public sealed class MinistryDetails
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
     [ProtoMember(2)] public string ParentId { get; set; } = "";
-    [ProtoMember(3)] public string Kind { get; set; } = "";
     [ProtoMember(4)] public string Name { get; set; } = "";
     [ProtoMember(5)] public string Summary { get; set; } = "";
     [ProtoMember(6)] public string About { get; set; } = "";
@@ -64,8 +60,7 @@ public sealed class MinistryDetails
     [ProtoMember(11)] public string TeamJoin { get; set; } = "";
     [ProtoMember(12)] public string AttendJoin { get; set; } = "";
     [ProtoMember(13)] public string RoundId { get; set; } = "";
-    [ProtoMember(14)] public string Room { get; set; } = "";
-    [ProtoMember(15)] public bool JoinAsParent { get; set; }
+    [ProtoMember(20)] public bool ShowsInLifeGroups { get; set; }
     [ProtoMember(16)] public int Order { get; set; }
     [ProtoMember(17)] public List<string> PartsOff { get; set; } = [];
     [ProtoMember(19)] public List<string> PartsFromBelow { get; set; } = [];
@@ -362,11 +357,11 @@ public sealed class LifeGroupsRequest;
 [ProtoContract]
 public sealed class LifeGroupsPage
 {
-    [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2)] public List<Round> Rounds { get; set; } = [];
     [ProtoMember(3)] public List<MinistrySummary> Groups { get; set; } = [];
     [ProtoMember(4)] public List<GroupSessions> Sessions { get; set; } = [];
-    [ProtoMember(5)] public bool MaySetUp { get; set; }
+    [ProtoMember(5)] public bool MayPlan { get; set; }
+    [ProtoMember(6)] public List<Crumb> Under { get; set; } = [];
 }
 
 [ProtoContract]
@@ -396,12 +391,15 @@ public sealed class SessionChange
 }
 
 [ProtoContract]
-public sealed class RoundSave : IScopedRequest
+public sealed class RoundSave
 {
-    [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2, IsRequired = true)] public Round Round { get; set; } = new();
+}
 
-    public string ScopeId => MinistryId;
+[ProtoContract]
+public sealed class RoundRef
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
 }
 
 [ProtoContract]

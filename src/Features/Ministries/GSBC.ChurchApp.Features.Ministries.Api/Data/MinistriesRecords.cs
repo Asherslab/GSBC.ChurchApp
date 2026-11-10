@@ -4,7 +4,6 @@ public sealed class MinistryRecord
 {
     public Guid Id { get; set; }
     public Guid? ParentId { get; set; }
-    public string Kind { get; set; } = "";
     public string Name { get; set; } = "";
     public string Summary { get; set; } = "";
     public string About { get; set; } = "";
@@ -14,9 +13,8 @@ public sealed class MinistryRecord
     public string Icon { get; set; } = "";
     public string TeamJoin { get; set; } = "";
     public string AttendJoin { get; set; } = "";
+    public bool ShowsInLifeGroups { get; set; }
     public Guid? RoundId { get; set; }
-    public string Room { get; set; } = "";
-    public bool JoinAsParent { get; set; }
     public int Order { get; set; }
     public List<string> PartsOff { get; set; } = [];
     public List<string> PartsFromBelow { get; set; } = [];
@@ -74,7 +72,6 @@ public sealed class FileRecord
 public sealed class RoundRecord
 {
     public Guid Id { get; set; }
-    public Guid MinistryId { get; set; }
     public string Name { get; set; } = "";
     public List<DateOnly> Sundays { get; set; } = [];
     public TimeOnly Starts { get; set; }

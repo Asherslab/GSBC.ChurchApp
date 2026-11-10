@@ -256,9 +256,7 @@ internal sealed class MinistryLeadingService(
         Guid id = Existing(tree, request.MinistryId).Id;
         MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
         MinistryDetails wanted = request.Details;
-        wanted.Kind = ministry.Kind;
-        if (MinistryRules.WhyNotDetails(wanted) is { } problem)
-            throw Invalid(problem);
+        await CheckAsync(wanted, cancellationToken);
         Apply(ministry, wanted);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -284,8 +282,6 @@ internal sealed class MinistryLeadingService(
     {
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryRecord parent = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
-        if (parent.Kind == MinistryKinds.LifeGroup)
-            throw Refused("A Life Group can't have ministries under it.");
         return await AddAsync(parent.Id, request.Details, cancellationToken);
     }
 
@@ -365,7 +361,6 @@ internal sealed class MinistryLeadingService(
     public async ValueTask<Round> SaveRoundAsync(RoundSave request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        MinistryRecord home = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         Round wanted = request.Round;
         if (wanted.Name.Trim().Length is 0 or > MinistryRules.LongestName)
             throw Invalid($"Name them in up to {MinistryRules.LongestName} characters.");
@@ -378,25 +373,24 @@ internal sealed class MinistryLeadingService(
             throw Invalid("A class can't end before it starts.");
 
         RoundRecord round = wanted.Id.Length > 0
-            ? await db.Rounds.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == home.Id, cancellationToken)
+            ? await db.Rounds.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id), cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "Those groups' dates were deleted."))
-            : db.Rounds.Add(new RoundRecord { Id = Guid.CreateVersion7(), MinistryId = home.Id }).Entity;
+            : db.Rounds.Add(new RoundRecord { Id = Guid.CreateVersion7() }).Entity;
         (round.Name, round.Sundays, round.Starts, round.Ends) = (wanted.Name.Trim(), sundays, starts, ends);
         round.ShowsFrom = wanted.ShowsFrom.Length > 0 ? DateOf(wanted.ShowsFrom) : null;
-        changes.Touch(home.Id);
+        changes.Touch(round.Id);
         await db.SaveChangesAsync(cancellationToken);
         return MinistryViews.Round(round);
     }
 
-    public async ValueTask<Done> DeleteRoundAsync(ItemRef request, CallContext context = default)
+    public async ValueTask<Done> DeleteRoundAsync(RoundRef request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
-        MinistryRecord home = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         Guid id = ParseId(request.Id);
         if (await db.Ministries.AnyAsync(group => group.RoundId == id, cancellationToken))
             throw Refused("Delete these groups, or move them, first.");
-        await db.Rounds.Where(round => round.Id == id && round.MinistryId == home.Id).ExecuteDeleteAsync(cancellationToken);
-        changes.Touch(home.Id);
+        await db.Rounds.Where(round => round.Id == id).ExecuteDeleteAsync(cancellationToken);
+        changes.Touch(id);
         await db.SaveChangesAsync(cancellationToken);
         return new Done();
     }
@@ -425,16 +419,11 @@ internal sealed class MinistryLeadingService(
 
     private async Task<MinistryDetails> AddAsync(Guid? parentId, MinistryDetails wanted, CancellationToken cancellationToken)
     {
-        if (wanted.Kind.Length == 0)
-            wanted.Kind = MinistryKinds.Ministry;
-        if (MinistryRules.WhyNotDetails(wanted) is { } problem)
-            throw Invalid(problem);
-        if (Guid.TryParse(wanted.RoundId, out Guid round) && !await db.Rounds.AnyAsync(found => found.Id == round, cancellationToken))
-            throw Invalid("Those Sundays were deleted. Choose others.");
+        await CheckAsync(wanted, cancellationToken);
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
-            Id = Guid.CreateVersion7(), ParentId = parentId, Kind = wanted.Kind, CreatedAt = now,
+            Id = Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
             Order = await db.Ministries.Where(other => other.ParentId == parentId).Select(other => (int?)other.Order).MaxAsync(cancellationToken) + 1 ?? 0,
         };
         Apply(ministry, wanted);
@@ -443,6 +432,14 @@ internal sealed class MinistryLeadingService(
         await db.SaveChangesAsync(cancellationToken);
         await roles.ScopesChangedAsync(cancellationToken);
         return MinistryViews.Details(ministry);
+    }
+
+    private async Task CheckAsync(MinistryDetails wanted, CancellationToken cancellationToken)
+    {
+        if (MinistryRules.WhyNotDetails(wanted) is { } problem)
+            throw Invalid(problem);
+        if (wanted.ShowsInLifeGroups && Guid.TryParse(wanted.RoundId, out Guid round) && !await db.Rounds.AnyAsync(found => found.Id == round, cancellationToken))
+            throw Invalid("Those Sundays were deleted. Choose others.");
     }
 
     private void Apply(MinistryRecord ministry, MinistryDetails wanted)
@@ -456,9 +453,8 @@ internal sealed class MinistryLeadingService(
         ministry.Icon = wanted.Icon.Trim();
         ministry.TeamJoin = wanted.TeamJoin;
         ministry.AttendJoin = wanted.AttendJoin;
-        ministry.Room = wanted.Room.Trim();
-        ministry.JoinAsParent = wanted.JoinAsParent;
-        ministry.RoundId = Guid.TryParse(wanted.RoundId, out Guid round) ? round : null;
+        ministry.ShowsInLifeGroups = wanted.ShowsInLifeGroups;
+        ministry.RoundId = wanted.ShowsInLifeGroups && Guid.TryParse(wanted.RoundId, out Guid round) ? round : null;
         ministry.UpdatedAt = Now;
     }
 

@@ -5,31 +5,31 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Tests;
 
 public sealed class MinistryMoveRuleTests
 {
-    private readonly MinistryRecord _music = new() { Id = Guid.CreateVersion7(), Name = "Music", Kind = MinistryKinds.Ministry, PartsFromBelow = [MinistryParts.Calendar] };
+    private readonly MinistryRecord _music = new() { Id = Guid.CreateVersion7(), Name = "Music", PartsFromBelow = [MinistryParts.Calendar] };
     private readonly MinistryRecord _choir;
     private readonly MinistryRecord _altos;
-    private readonly MinistryRecord _kids = new() { Id = Guid.CreateVersion7(), Name = "Kids Ministries", Kind = MinistryKinds.Ministry, PartsFromBelow = [MinistryParts.News] };
+    private readonly MinistryRecord _kids = new() { Id = Guid.CreateVersion7(), Name = "Kids Ministries", PartsFromBelow = [MinistryParts.News] };
     private readonly MinistryRecord _kidsLife;
 
     public MinistryMoveRuleTests()
     {
-        _choir = new() { Id = Guid.CreateVersion7(), ParentId = _music.Id, Name = "Choir", Kind = MinistryKinds.Ministry };
-        _altos = new() { Id = Guid.CreateVersion7(), ParentId = _choir.Id, Name = "Altos", Kind = MinistryKinds.Ministry };
-        _kidsLife = new() { Id = Guid.CreateVersion7(), ParentId = _kids.Id, Name = "Kids Life", Kind = MinistryKinds.LifeGroup };
+        _choir = new() { Id = Guid.CreateVersion7(), ParentId = _music.Id, Name = "Choir" };
+        _altos = new() { Id = Guid.CreateVersion7(), ParentId = _choir.Id, Name = "Altos" };
+        _kidsLife = new() { Id = Guid.CreateVersion7(), ParentId = _kids.Id, Name = "Kids Life", ShowsInLifeGroups = true };
     }
 
     private MinistryTree Tree => new([_music, _choir, _altos, _kids, _kidsLife]);
 
     [Fact]
-    public void AMinistryNeverMovesUnderItselfOrAnythingUnderItAndNeverUnderALifeGroup()
+    public void AMinistryNeverMovesUnderItselfOrAnythingUnderItAndOneShownInLifeGroupsMovesLikeAnyOther()
     {
         static bool Anywhere(MinistryRecord? place) => true;
 
         Assert.NotNull(MinistryRules.WhyNotMove(Tree, _choir, _choir, Anywhere));
         Assert.NotNull(MinistryRules.WhyNotMove(Tree, _music, _altos, Anywhere));
-        Assert.NotNull(MinistryRules.WhyNotMove(Tree, _choir, _kidsLife, Anywhere));
-        Assert.NotNull(MinistryRules.WhyNotMove(Tree, _kidsLife, null, Anywhere));
         Assert.NotNull(MinistryRules.WhyNotMove(Tree, _choir, _music, Anywhere));
+        Assert.Null(MinistryRules.WhyNotMove(Tree, _choir, _kidsLife, Anywhere));
+        Assert.Null(MinistryRules.WhyNotMove(Tree, _kidsLife, null, Anywhere));
         Assert.Null(MinistryRules.WhyNotMove(Tree, _choir, _kids, Anywhere));
         Assert.Null(MinistryRules.WhyNotMove(Tree, _kidsLife, _music, Anywhere));
     }

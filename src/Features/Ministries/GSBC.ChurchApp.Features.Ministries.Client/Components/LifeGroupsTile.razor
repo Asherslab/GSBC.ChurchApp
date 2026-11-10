@@ -18,9 +18,9 @@
         TileLook look = TileLook.Of(MinistriesTiles.LifeGroups, Entry.Values);
         TileVariant variant = MinistriesTiles.LifeGroups.VariantFor(look, Hub.Columns);
         LifeGroupSets? sets = page is null ? null : LifeGroupSets.Of(page, ChurchTime.Today(Clock));
-        MinistrySummary? yours = sets?.Now?.Groups.FirstOrDefault(group => group.Yours.Length > 0);
+        MinistrySummary? yours = sets?.Yours.FirstOrDefault(group => group.RoundId.Length == 0 || group.RoundId == sets.Now?.Round.Id);
         (string title, string line) = yours is not null
-            ? ("Your Life Group", $"{yours.Name}{(yours.Room.Length > 0 ? $" · {yours.Room}" : "")}, {MinistryWords.Time(sets!.Now!.Round.Starts)}")
+            ? ("Your Life Group", string.Join(" · ", new[] { yours.Name, yours.Meets }.Where(part => part.Length > 0)))
             : sets?.Next is { Groups.Count: > 0 } next
                 ? (look.Title, $"New groups from {MinistryWords.Day(next.Round.Sundays[0])}")
                 : (look.Title, look.Text);

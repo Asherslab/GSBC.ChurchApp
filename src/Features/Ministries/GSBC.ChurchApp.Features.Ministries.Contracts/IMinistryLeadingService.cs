@@ -67,11 +67,11 @@ public interface IMinistryLeadingService
     [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<Done> RemoveCalendarAsync(ItemRef request, CallContext context = default);
 
-    [Requires(MinistriesPermissions.SettingsNode)]
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
     ValueTask<Round> SaveRoundAsync(RoundSave request, CallContext context = default);
 
-    [Requires(MinistriesPermissions.SettingsNode)]
-    ValueTask<Done> DeleteRoundAsync(ItemRef request, CallContext context = default);
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<Done> DeleteRoundAsync(RoundRef request, CallContext context = default);
 
     [Requires(MinistriesPermissions.PostNode)]
     ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default);

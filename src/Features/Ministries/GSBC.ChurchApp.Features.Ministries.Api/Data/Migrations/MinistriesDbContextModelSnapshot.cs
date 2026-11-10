@@ -155,15 +155,6 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("icon");
 
-                    b.Property<bool>("JoinAsParent")
-                        .HasColumnType("boolean")
-                        .HasColumnName("join_as_parent");
-
-                    b.Property<string>("Kind")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("kind");
-
                     b.Property<string>("Meets")
                         .IsRequired()
                         .HasColumnType("text")
@@ -192,14 +183,13 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text[]")
                         .HasColumnName("parts_off");
 
-                    b.Property<string>("Room")
-                        .IsRequired()
-                        .HasColumnType("text")
-                        .HasColumnName("room");
-
                     b.Property<Guid?>("RoundId")
                         .HasColumnType("uuid")
                         .HasColumnName("round_id");
+
+                    b.Property<bool>("ShowsInLifeGroups")
+                        .HasColumnType("boolean")
+                        .HasColumnName("shows_in_life_groups");
 
                     b.Property<string>("Summary")
                         .IsRequired()
@@ -298,10 +288,6 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("time without time zone")
                         .HasColumnName("ends");
 
-                    b.Property<Guid>("MinistryId")
-                        .HasColumnType("uuid")
-                        .HasColumnName("ministry_id");
-
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasColumnType("text")
@@ -322,9 +308,6 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
 
                     b.HasKey("Id")
                         .HasName("pk_rounds");
-
-                    b.HasIndex("MinistryId")
-                        .HasDatabaseName("ix_rounds_ministry_id");
 
                     b.ToTable("rounds", "ministries");
                 });

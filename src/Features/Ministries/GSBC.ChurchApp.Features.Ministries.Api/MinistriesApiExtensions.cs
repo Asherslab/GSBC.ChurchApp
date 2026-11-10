@@ -17,6 +17,13 @@ public static class MinistriesApiExtensions
     private const string EditCalendarsNode = "events.edit";
     private const string PublishCalendarsNode = "events.publish";
 
+    internal static readonly IReadOnlyList<string> LeaderPatterns =
+    [
+        MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode,
+        MinistriesPermissions.PostNode, MinistriesPermissions.PeopleNode, MinistriesPermissions.SettingsNode,
+        EditCalendarsNode, PublishCalendarsNode,
+    ];
+
     public static IServiceCollection AddMinistriesApi(this IServiceCollection services)
     {
         services.AddMinistriesData();
@@ -28,19 +35,13 @@ public static class MinistriesApiExtensions
         services.AddPermissions(MinistriesPermissions.All);
         services.AddNotificationKinds(MinistriesNotifications.All);
 
-        string[] leads =
-        [
-            MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode,
-            MinistriesPermissions.PostNode, MinistriesPermissions.PeopleNode, MinistriesPermissions.SettingsNode,
-            EditCalendarsNode, PublishCalendarsNode,
-        ];
         string[] givers = [MinistriesPermissions.LeaderRole, MinistriesPermissions.AdminRole, MinistriesPermissions.ManagerRole];
         services.AddSystemRole(new SystemRole(MinistriesPermissions.LeaderRole, "Leader",
             "Leads this ministry and everything under it: its people, posts, files, calendars and settings. Listed as a leader", ScopeKind.Ministry,
-            leads, AssignableBy: givers, AppliesToChildren: true, Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
+            LeaderPatterns, AssignableBy: givers, AppliesToChildren: true, Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.AdminRole, "Admin",
             "Everything a leader can do in this ministry and under it, without being listed as a leader", ScopeKind.Ministry,
-            leads, AssignableBy: givers, AppliesToChildren: true, Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
+            LeaderPatterns, AssignableBy: givers, AppliesToChildren: true, Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
         services.AddSystemRole(new SystemRole(MinistriesPermissions.TeamRole, "Team",
             "On this ministry's team: sees what it shares with its team, attendees and parents", ScopeKind.Ministry,
             [MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode],
@@ -55,6 +56,9 @@ public static class MinistriesApiExtensions
         services.AddSystemRole(new SystemRole(MinistriesPermissions.ManagerRole, "Ministries Manager",
             "Creates and deletes the church's ministries and does everything a leader can in every one of them", ScopeKind.Global,
             ["ministries.*"], Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
+        services.AddSystemRole(new SystemRole(MinistriesPermissions.LifeGroupsPlannerRole, "Life Groups planner",
+            "Plans the Life Groups: the Sundays each set of groups meets, their time and when they show in the app", ScopeKind.Global,
+            [MinistriesPermissions.PlanLifeGroupsNode], Feature: RoleFeatures.Ministries));
 
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Ministries, FeedAudience.Public));
         services.AddDestinations(MinistriesDestinations.All);

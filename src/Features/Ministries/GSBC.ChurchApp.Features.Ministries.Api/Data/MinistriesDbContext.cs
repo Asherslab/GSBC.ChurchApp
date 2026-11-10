@@ -53,7 +53,6 @@ public sealed class MinistriesDbContext(DbContextOptions<MinistriesDbContext> op
             entity.ToTable("rounds");
             entity.HasKey(round => round.Id);
             entity.Property(round => round.Id).ValueGeneratedNever();
-            entity.HasIndex(round => round.MinistryId);
         });
         modelBuilder.Entity<SessionRecord>(entity =>
         {

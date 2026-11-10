@@ -52,9 +52,7 @@ internal static class MinistryRules
             return $"Keep the about to {LongestText} characters.";
         if (!Joining.IsValid(details.TeamJoin, noneAllowed: false))
             return "Choose how people join the team.";
-        if (!Joining.IsValid(details.AttendJoin, noneAllowed: details.Kind != MinistryKinds.LifeGroup))
-            return details.Kind == MinistryKinds.LifeGroup ? "Choose how people get into the group." : "Choose how people come along.";
-        return details.Kind is MinistryKinds.Ministry or MinistryKinds.LifeGroup ? null : "That isn't a kind of ministry.";
+        return Joining.IsValid(details.AttendJoin, noneAllowed: true) ? null : "Choose how people come along.";
     }
 
     public static string? WhyNotMove(MinistryTree tree, MinistryRecord ministry, MinistryRecord? under, Func<MinistryRecord?, bool> mayAddUnder)
@@ -63,10 +61,6 @@ internal static class MinistryRules
             return under is null ? "It's already a top-level ministry." : $"It already sits under {under.Name}.";
         if (tree.WouldLoop(ministry.Id, under?.Id))
             return "A ministry can't sit under itself or under a ministry that's under it.";
-        if (under?.Kind == MinistryKinds.LifeGroup)
-            return "A Life Group can't have ministries under it.";
-        if (under is null && ministry.Kind == MinistryKinds.LifeGroup)
-            return "A Life Group sits under a ministry. Choose one.";
         if (!mayAddUnder(under))
             return under is null ? "Only staff make a ministry top-level." : $"You can't add ministries under {under.Name}.";
         return null;

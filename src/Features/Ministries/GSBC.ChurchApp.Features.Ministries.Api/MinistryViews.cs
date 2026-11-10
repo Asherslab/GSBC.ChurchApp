@@ -20,9 +20,6 @@ internal sealed class MinistryViews(
     public async Task<MinistryTree> TreeAsync(CancellationToken cancellationToken) =>
         new(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken));
 
-    public async Task<Guid?> LifeGroupsHomeAsync(MinistryTree tree, CancellationToken cancellationToken) =>
-        tree.LifeGroupsHome(await db.Rounds.AsNoTracking().OrderBy(round => round.MinistryId).Select(round => round.MinistryId).Distinct().ToListAsync(cancellationToken));
-
     public async Task<GrantSet> GrantsAsync(Guid? userId, CancellationToken cancellationToken) =>
         userId is { } person ? await access.GrantsForAsync(person, cancellationToken) : GrantSet.Empty;
 
@@ -154,19 +151,19 @@ internal sealed class MinistryViews(
 
     public static MinistryDetails Details(MinistryRecord ministry) => new()
     {
-        Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Kind = ministry.Kind, Name = ministry.Name,
+        Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Name = ministry.Name,
         Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, WhoFor = ministry.WhoFor, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, RoundId = ministry.RoundId?.ToString() ?? "",
-        Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Order = ministry.Order,
+        ShowsInLifeGroups = ministry.ShowsInLifeGroups, Order = ministry.Order,
         PartsOff = [.. ministry.PartsOff], PartsFromBelow = [.. ministry.PartsFromBelow],
     };
 
     public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "", int waiting = 0) => new()
     {
-        Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Kind = ministry.Kind, Name = ministry.Name,
+        Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Name = ministry.Name,
         Summary = ministry.Summary, Meets = ministry.Meets, Colour = ministry.Colour, Icon = ministry.Icon, TeamJoin = ministry.TeamJoin,
         AttendJoin = ministry.AttendJoin, Order = ministry.Order, Yours = yours, RoundId = ministry.RoundId?.ToString() ?? "",
-        Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Latest = latest, Waiting = waiting,
+        ShowsInLifeGroups = ministry.ShowsInLifeGroups, Latest = latest, Waiting = waiting,
     };
 
     public static Post Post(PostRecord post, string from = "") => new()
