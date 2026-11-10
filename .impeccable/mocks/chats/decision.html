@@ -1,0 +1,163 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Chats: sketches and picks</title><link rel="stylesheet" href="sketch.css">
+<style>
+body { max-width: 1500px; margin: 0 auto; padding: 32px 24px 64px; background: var(--page); display: block; }
+h1 { font-size: var(--text-headline); letter-spacing: -0.02em; }
+.intro { color: var(--ink-2); max-width: 82ch; margin-top: 8px; }
+.intro p + p { margin-top: 8px; }
+h2 { font-size: var(--text-title-lg); margin: 46px 0 6px; letter-spacing: -0.02em; }
+.why { max-width: 90ch; color: var(--ink-2); font-size: var(--text-caption); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 18px; }
+.card { border-radius: 14px; background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.built { box-shadow: inset 0 0 0 2px var(--accent); background: rgb(0 156 143 / 0.08); }
+.card h3 { font-size: var(--text-row); font-weight: 700; }
+.card .tag { font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.card.built .tag { color: var(--accent); }
+.card p { font-size: var(--text-caption); color: var(--ink-2); }
+.frame { position: relative; overflow: hidden; border-radius: 10px; background: var(--page); box-shadow: 0 0 0 1px var(--line); height: 300px; }
+.frame iframe { border: 0; width: 1440px; height: 960px; zoom: 0.31; pointer-events: none; }
+.card a { color: var(--accent); font-weight: 600; font-size: var(--text-caption); }
+.links { display: flex; gap: 14px; flex-wrap: wrap; }
+.open { margin-top: 46px; background: var(--sand); border-radius: 14px; padding: 18px 22px; max-width: 100ch; }
+.open h2 { margin-top: 0; }
+.open li { font-size: var(--text-caption); color: var(--ink-2); margin: 6px 0 0 18px; }
+@media (max-width: 1000px) { .cards { grid-template-columns: 1fr; } .frame iframe { zoom: 0.24; } }
+</style></head>
+<body>
+<h1>Chats (Ministries Stage 4): sketches to choose from</h1>
+<div class="intro">
+  <p>Two or three ways each for eight places, from the interview in docs/features/ministries.md (<i>Chats, built well, from the first release</i>, <i>Asking to join is a chat</i>, <i>Safeguarding, for later</i>). The owner was asleep, so Claude picked one in each; the card with the aqua border is <b>Claude's pick (owner can redirect)</b>, and it is what the builder works from (<a href="picks.md" style="color:var(--accent);font-weight:600">picks.md</a>). Every sketch uses the app's real colours, type and components; names and ministries are made up.</p>
+  <p>Underneath every option is the same: group chats and leaders-post-only channels, each for an audience (the team, attendees and their parents, parents only, chosen people); every version of every message kept; two adults with a current blue card and the parents' yes before a young person is in a chat; checks and reports logged.</p>
+</div>
+
+<h2>1. The chats list: the app-wide list and a ministry's Chats tab</h2>
+<p class="why">Unread, muted, waiting for a parent's yes, "you can read this" for a parent, channels and group chats.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>Newest first</h3>
+    <div class="frame"><iframe src="list-recent.html" title="Newest first"></iframe></div>
+    <p>One list, newest first, from the Hub tile; a ministry's Chats tab is the same rows for that ministry, with New chat for leaders. Each row: icon tile (speech bubble for a group chat, megaphone for a channel) in the audience's tint, the audience as a coloured word, the last message, time and the unread count. A parent's yes waiting sits on top as a warm row.</p>
+    <p><b>Why:</b> chats are about what's new, and people are in two or three ministries at most; the audience word keeps the bulletin boxes' colours without the boxes.</p>
+    <a href="list-recent.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Grouped by ministry</h3>
+    <div class="frame"><iframe src="list-byministry.html" title="By ministry"></iframe></div>
+    <p>The app-wide list in a section per ministry, channels first; the Chats tab splits "From the leaders" and "Group chats"; muted chats fold into one row at the foot.</p>
+    <p><b>Not picked:</b> a new message in a quiet ministry hides below a busy one. Its "Only the leaders post here" wording is kept.</p>
+    <a href="list-byministry.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Audience boxes</h3>
+    <div class="frame"><iframe src="list-boxes.html" title="Boxes"></iframe></div>
+    <p>The Chats tab boxed by who each chat is for, exactly as News is (team, families, parents, everyone).</p>
+    <p><b>Not picked:</b> consistent with News, but it orders chats by audience instead of by what just happened.</p>
+    <a href="list-boxes.html">Open full size</a></div>
+</div>
+
+<h2>2. A conversation</h2>
+<p class="why">Bubbles, sending and couldn't send, replies, reactions, mentions, "Seen by", edited and deleted, photos and files, the quiet staff line, the parents line, a paused person, a channel, and a parent writing for their child.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>Bubbles</h3>
+    <div class="frame"><iframe src="conv-bubbles.html" title="Bubbles"></iframe></div>
+    <p>Others on sand at the left with their Avatar and name, yours navy at the right. The staff line is a centred caption at the very top that scrolls away. Status lives under your last bubble ("Seen by 4", "Couldn't send · Try again"). A channel or a pause replaces the composer with one plain sentence.</p>
+    <p><b>Why:</b> everyone in the congregation, from teenagers to older members, already reads bubbles; who said what is clear at a glance.</p>
+    <a href="conv-bubbles.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Rows, like the bulletin</h3>
+    <div class="frame"><iframe src="conv-rows.html" title="Rows"></iframe></div>
+    <p>Every message a row with the Avatar and name, yours on sand; closer to the app's lists.</p>
+    <p><b>Not picked:</b> fine for long notices, but in a back-and-forth it's hard to see which are yours.</p>
+    <a href="conv-rows.html">Open full size</a></div>
+</div>
+
+<h2>3. Message actions and earlier versions</h2>
+<p class="why">Long-press: reply, react, copy, edit, delete, report, see earlier versions.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>A sheet</h3>
+    <div class="frame"><iframe src="actions-sheet.html" title="Sheet"></iframe></div>
+    <p>The message lifts over the scrim; the Sheet holds a row of six reactions then action rows. Earlier versions open in a sheet, newest first, with changes marked. Delete confirms and says the church keeps a copy. Editing happens in the composer (from B).</p>
+    <p><b>Why:</b> the app's own Sheet, big targets, and the same on iPhone and Android.</p>
+    <a href="actions-sheet.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A menu by the message</h3>
+    <div class="frame"><iframe src="actions-menu.html" title="Menu"></iframe></div>
+    <p>iOS-style: the message lifts with reactions above and a small menu below; earlier versions open in place under the message.</p>
+    <p><b>Not picked:</b> small targets and a second, iOS-only pattern. Its in-composer editing is kept.</p>
+    <a href="actions-menu.html">Open full size</a></div>
+</div>
+
+<h2>4. Starting a chat</h2>
+<p class="why">Name, kind, who it's for, the two-adults check, and the parents' yes explained before the first message is sent.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>One sheet</h3>
+    <div class="frame"><iframe src="start-sheet.html" title="One sheet"></iframe></div>
+    <p>Name, then Kind and Who it's for as stacked segmented controls; under them a sand line counting who's in it, the blue-card check, the "Parents say yes first" notice, and the first message, which is required when young people are in it. The button names the result ("Start the chat and ask the parents").</p>
+    <p><b>Why:</b> it's the Post sheet's shape, and the warnings sit right where the choice that causes them is made.</p>
+    <a href="start-sheet.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Three steps</h3>
+    <div class="frame"><iframe src="start-steps.html" title="Steps"></iframe></div>
+    <p>A paged sheet: what it is, who's in it, then the message for the parents.</p>
+    <p><b>Not picked:</b> three taps for a team chat that needs none of the safeguarding steps.</p>
+    <a href="start-steps.html">Open full size</a></div>
+</div>
+
+<h2>5. A parent's yes</h2>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>In the chat</h3>
+    <div class="frame"><iframe src="consent-inchat.html" title="In the chat"></iframe></div>
+    <p>The notification opens the chat as the child would see it: the leader's first message, then the answer where the composer goes, saying who's in it and who has a blue card. Two children: a Yes and Not now for each.</p>
+    <p><b>Why:</b> the parent sees exactly what they're agreeing to, and the leader's message is the reason.</p>
+    <a href="consent-inchat.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A sheet from Your family</h3>
+    <div class="frame"><iframe src="consent-sheet.html" title="Sheet"></iframe></div>
+    <p>An ask on Account › Your family opens a sheet with the message quoted and the facts as rows.</p>
+    <p><b>Not picked:</b> buried in Account; the facts rows are good and go into the pick's caption.</p>
+    <a href="consent-sheet.html">Open full size</a></div>
+</div>
+
+<h2>6. Reporting, and the safety team's urgent view</h2>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>A sheet, then the admin panel</h3>
+    <div class="frame"><iframe src="report-sheet.html" title="Sheet"></iframe></div>
+    <p>Report: the message, two choice cards (the ministry's leaders, or the church's safety team), an optional note. The safety team gets a time-sensitive notification and an inbox row; they act in the admin panel (§7).</p>
+    <p><b>Why:</b> admin stays in the admin panel (owner, 2026-11-03), and that's where checks are logged with full context.</p>
+    <a href="report-sheet.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative · needs the owner's yes</span><h3>Acting on the phone</h3>
+    <div class="frame"><iframe src="report-phone.html" title="Phone"></iframe></div>
+    <p>A reason list first; the safety team gets an urgent page on the phone with Pause, and their own chat per report.</p>
+    <p><b>Not picked:</b> it's an admin screen in the app, which needs the owner's yes. Worth asking: pausing someone at 9pm may not wait for a computer.</p>
+    <a href="report-phone.html">Open full size</a></div>
+</div>
+
+<h2>7. The admin panel</h2>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>A Chats desk with four tabs</h3>
+    <div class="frame"><iframe src="admin-reports.html" title="Reports"></iframe></div>
+    <p>Reports (waiting first, the message in its context, Pause, Mark as handled), Chats (the ministry tree, the chats, a deliberate "Read this chat" that's logged), Paused people, Checks log. The navy "This check is logged" line heads every reading pane.</p>
+    <p><b>Why:</b> reports can't wait behind a ministry tree, and the log and pauses are church-wide.</p>
+    <div class="links"><a href="admin-reports.html">Reports</a><a href="admin-check.html">Checking a chat</a><a href="admin-paused-log.html">Paused people and the log</a></div></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Inside the Ministries desk</h3>
+    <div class="frame"><iframe src="admin-tree.html" title="Tree"></iframe></div>
+    <p>Chats as a tab of each ministry on the Ministries desk; pauses and the log under Safeguarding.</p>
+    <p><b>Not picked:</b> scatters the safety team's work across pages. Leaders still get their ministry's Chats tab in the app.</p>
+    <a href="admin-tree.html">Open full size</a></div>
+</div>
+
+<h2>8. Asking to join is a chat</h2>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick (owner can redirect)</span><h3>The join sheet, then the chat</h3>
+    <div class="frame"><iframe src="join-sheet.html" title="Sheet"></iframe></div>
+    <p>Ask to join keeps the Join sheet's choice cards (who it's for) and adds the first message, prefilled "I'd like to chat about joining Choir." Sending starts a chat with the leaders. Leaders see the ask on top of that chat with Add to the team and Not now; adding leaves a line in the chat.</p>
+    <p><b>Why:</b> it reuses the Join sheet, and the yes sits where the conversation is.</p>
+    <a href="join-sheet.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Straight into the chat</h3>
+    <div class="frame"><iframe src="join-direct.html" title="Direct"></iframe></div>
+    <p>Ask to join opens the chat with the message waiting in the composer and "For me / For Mia" chips; leaders add from the chat's people sheet.</p>
+    <p><b>Not picked:</b> sending is the only way out, and the who-for choice is easy to miss.</p>
+    <a href="join-direct.html">Open full size</a></div>
+</div>
+
+<div class="open">
+  <h2>For the owner to confirm</h2>
+  <ul>
+    <li>The word people see for the chat auditors: the sketches say <b>"the church's safety team"</b>; the role in Access stays <i>Chat auditor</i>.</li>
+    <li>Whether the safety team may pause someone from the phone (alternative 6B), which is an admin action in the app.</li>
+    <li>Earlier versions of an edited message are visible to everyone in the chat; what a deleted message said is visible only to people checking the chat.</li>
+    <li>A young person asking to join by themselves: the chat follows the minors' rules (two adults with a blue card, their parents can read it).</li>
+  </ul>
+</div>
+</body></html>
