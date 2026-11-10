@@ -1,0 +1,70 @@
+@page "/prayer"
+@inject PrayerOnPhone Prayer
+
+<Page Title="Prayer" BackHref="" BackLabel="Home">
+    <Masthead Title="Prayer" Note="@PrayerWords.Note" />
+    <LiveData TValue="PrayerView" Load="Prayer.LoadAsync" Feeds="PrayerOnPhone.Feeds" ReloadOn="Reload" Remember="prayer.view">
+        <Section First="true">
+            <Card Class="prayer-ask" Title="How can we pray for you?">
+                <p>@PrayerWords.Private</p>
+                @if (Prayer.CanSend)
+                {
+                    <Button Block="true" Icon="prayer" Href="prayer/ask">Ask for prayer</Button>
+                }
+                else
+                {
+                    <p class="prayer-ask__note">@PrayerWords.CantSendHere</p>
+                }
+            </Card>
+        </Section>
+        @if (context.Value.Yours.Count > 0)
+        {
+            <Section Title="Yours">
+                <ListGroup>
+                    @foreach (YourLine line in context.Value.Yours)
+                    {
+                        <ListRow @key="line.Id" Title="@PrayerWords.Excerpt(line.Text)" Subtitle="@PrayerWords.Status(line)"
+                                 Icon="@Icon(line)" IconTone="@Tone(line)" Chevron="true" Href="@($"prayer/yours/{line.Id}")" />
+                    }
+                </ListGroup>
+            </Section>
+        }
+        <Section Title="The prayer wall" Lead="Requests people asked the church to pray for. The pastoral team reads each one first.">
+            @if (context.Value.Wall.Count == 0)
+            {
+                <EmptyState Icon="prayer" Title="Nothing on the prayer wall right now"
+                            Body="When someone asks the church to pray with them and the pastoral team shares it, it shows here." />
+            }
+            else
+            {
+                <div class="prayer-wall">
+                    @foreach (WallLine line in context.Value.Wall)
+                    {
+                        <WallPostRow @key="line.Post.Id" Line="line" CanPray="Prayer.CanSend" OnPray="prayed => Prayer.PrayAsync(line.Post.Id, prayed)" />
+                    }
+                </div>
+            }
+        </Section>
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private static string Icon(YourLine line) => line.Sending switch
+    {
+        Sending.Waiting => "clock",
+        Sending.CouldNotSend => "cloud-off",
+        _ when line.Answered => "check",
+        _ when line.Wall == WallState.Shown => "prayer",
+        _ => "lock",
+    };
+
+    private static RowTone Tone(YourLine line) => line.Sending switch
+    {
+        Sending.CouldNotSend => RowTone.Warm,
+        Sending.Waiting => RowTone.Quiet,
+        _ when line.Wall == WallState.Shown || line.Answered => RowTone.Accent,
+        _ => RowTone.Primary,
+    };
+}

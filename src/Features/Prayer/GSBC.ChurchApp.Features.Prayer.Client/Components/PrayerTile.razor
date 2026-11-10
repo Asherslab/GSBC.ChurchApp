@@ -1,0 +1,32 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject IServiceProvider Services
+
+@if (Services.GetService(typeof(PrayerOnPhone)) is PrayerOnPhone prayer)
+{
+    <LiveData TValue="PrayerView" Load="prayer.LoadAsync" Feeds="PrayerOnPhone.Feeds" Remember="prayer.view">
+        <ChildContent>@Drawn(context.Value)</ChildContent>
+        <Loading>@Drawn(null)</Loading>
+        <Failed>@Drawn(null)</Failed>
+    </LiveData>
+}
+else
+{
+    @Drawn(null)
+}
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private RenderFragment Drawn(PrayerView? view)
+    {
+        TileLook look = TileLook.Of(PrayerTiles.Prayer, Entry.Values);
+        TileVariant variant = PrayerTiles.Prayer.VariantFor(look, Hub.Columns);
+        int onWall = view?.Wall.Count ?? 0;
+        IReadOnlyList<string> lines = onWall > 0
+            ? [look.Text, onWall == 1 ? "1 request on the prayer wall" : $"{onWall} requests on the prayer wall"]
+            : [look.Text];
+        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@look.Title" Lines="lines" PlacementId="@Entry.Placement?.Id" />;
+    }
+}

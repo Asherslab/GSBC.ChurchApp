@@ -1,0 +1,35 @@
+@inject TimeProvider Time
+
+<article class="prayer-post">
+    <p class="prayer-post__text">@Line.Post.Text</p>
+    @if (Line.Post.Answered)
+    {
+        <p class="prayer-post__answered"><Icon Name="check" Size="IconSize.Small" />Answered@(Line.Post.AnsweredNote.Length > 0 ? $": {Line.Post.AnsweredNote}" : "")</p>
+    }
+    <footer class="prayer-post__foot">
+        <span class="prayer-post__who">@(Line.Yours ? "Yours · " : "")@PrayerWords.WhoAndWhen(Line.Post, Time.GetUtcNow().UtcDateTime)</span>
+        @if (CanPray && OnPray.HasDelegate)
+        {
+            <button type="button" class="prayer-pray @(Line.PrayedHere ? "is-prayed" : "")" aria-pressed="@(Line.PrayedHere ? "true" : "false")"
+                    aria-label="@(Line.PrayedHere ? $"You prayed for this. {PrayerWords.Prayed(Line.Post.Prayed)}. Tap to take it back" : $"I prayed for this. {PrayerWords.Prayed(Line.Post.Prayed)} so far")"
+                    @onclick="() => OnPray.InvokeAsync(!Line.PrayedHere)">
+                <Icon Name="prayer" Size="IconSize.Small" />
+                <span>@(Line.PrayedHere ? "Prayed" : "Pray")</span>
+                @if (Line.Post.Prayed > 0)
+                {
+                    <span class="prayer-pray__count">@Line.Post.Prayed</span>
+                }
+            </button>
+        }
+        else if (Line.Post.Prayed > 0)
+        {
+            <span class="prayer-post__count">@PrayerWords.Prayed(Line.Post.Prayed)</span>
+        }
+    </footer>
+</article>
+
+@code {
+    [Parameter, EditorRequired] public required WallLine Line { get; set; }
+    [Parameter] public EventCallback<bool> OnPray { get; set; }
+    [Parameter] public bool CanPray { get; set; } = true;
+}
