@@ -1,0 +1,68 @@
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(LifeGroupsOnly ? "Archived Life Groups" : "Archived ministries")"
+       Lead="Put away without deleting. Restoring one brings it back as it was, with its people, news, files and calendars.">
+    <ChildContent>
+        @if (Open)
+        {
+            <LiveData @ref="_live" TValue="ArchivedList" Load="Ministries.ArchivedAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load what's archived right now">
+                @{
+                    List<ArchivedLine> shown = context.Value.Ministries.Where(line => !LifeGroupsOnly || line.ShowsInLifeGroups).ToList();
+                }
+                @if (shown.Count == 0)
+                {
+                    <EmptyState Icon="archive" Title="Nothing archived" Body="@(LifeGroupsOnly ? "Life Groups you archive show here." : "Ministries you archive show here.")" />
+                }
+                else
+                {
+                    <ListGroup>
+                        @foreach (ArchivedLine line in shown)
+                        {
+                            <ListRow @key="line.Id" Title="@line.Name" Subtitle="@($"{line.Where} · archived {MinistryWords.Ago(line.ArchivedAt, Clock.GetUtcNow().UtcDateTime).ToLowerInvariant()}")" Icon="archive" IconTone="RowTone.Quiet">
+                                <TrailingContent>
+                                    @if (line.MayRestore)
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Busy="@(_restoring == line.Id)" OnClick="() => RestoreAsync(line)">Restore</Button>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                }
+            </LiveData>
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+</Sheet>
+
+@code {
+    private LiveData<ArchivedList>? _live;
+    private string? _restoring;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public bool LifeGroupsOnly { get; set; }
+    [Parameter] public EventCallback OnRestored { get; set; }
+
+    private async Task RestoreAsync(ArchivedLine line)
+    {
+        (_restoring, _problem) = (line.Id, null);
+        try
+        {
+            await Ministries.RestoreAsync(line.Id);
+            if (_live is not null)
+                await _live.ReloadAsync();
+            await OnRestored.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _restoring = null;
+        }
+    }
+}

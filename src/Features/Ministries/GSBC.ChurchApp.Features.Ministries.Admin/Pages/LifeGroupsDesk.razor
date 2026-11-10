@@ -1,5 +1,4 @@
 @page "/life-groups"
-@using System.Globalization
 @inject MinistriesClient Ministries
 @inject TimeProvider Clock
 
@@ -20,6 +19,11 @@
     @{
         LifeGroupsPage page = context.Value;
         DateOnly today = ChurchTime.Today(Clock);
+        List<MinistrySummary> allYear = AllYear(page);
+        ILookup<RoundStage, Round> stages = page.Rounds.OrderBy(round => LifeGroupRounds.Day(round.Sundays.FirstOrDefault())).ToLookup(round => LifeGroupRounds.StageOf(round, today));
+        List<Round> unfinished = page.Rounds.Where(round => LifeGroupRounds.StageOf(round, today) != RoundStage.Finished).OrderBy(round => LifeGroupRounds.Day(round.Sundays.FirstOrDefault())).ToList();
+        List<int> years = stages[RoundStage.Finished].Select(round => LifeGroupRounds.Day(round.Sundays.Last()).Year).Distinct().OrderDescending().ToList();
+        int year = _year is { } chosen && years.Contains(chosen) ? chosen : years.FirstOrDefault(today.Year);
     }
     @if (page.Groups.Count == 0 && page.Rounds.Count == 0)
     {
@@ -41,69 +45,104 @@
                      Subtitle="@(page.CalendarName.Length > 0 ? "One Life Groups entry on each Sunday they meet, kept in step with the Sundays here. Sundays between show as not on." : "Show one Life Groups entry in a calendar, such as the one for Sunday services, kept in step with the Sundays here.")"
                      Chevron="page.MayPlan" OnClick="() => page.MayPlan ? OpenCalendarAsync() : Task.CompletedTask" />
         </ListGroup>
-        <div class="life-groups-desk">
-            @foreach (Round round in page.Rounds.OrderBy(round => round.Sundays.FirstOrDefault()))
+        <div class="lg-all-year">
+            <span class="lg-all-year__label">All year</span>
+            @foreach (MinistrySummary group in allYear)
             {
-                List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
-                List<MinistrySummary> allYear = AllYear(page);
-                <section class="life-groups-desk__set" @key="round.Id">
-                    <header class="life-groups-desk__head">
-                        <h2>@MinistryWords.Span(round)</h2>
-                        <Pill Tone="@Tone(round, today)">@State(round, today)</Pill>
-                    </header>
-                    <p class="hint">@Count(round.Sundays.Count, "Sunday") · @MinistryWords.Time(round.Starts) to @MinistryWords.Time(round.Ends)@(round.ShowsFrom.Length > 0 ? $" · shows in the app from {MinistryWords.Day(round.ShowsFrom)}" : "")</p>
-                    <ListGroup>
-                        @foreach (MinistrySummary group in groups)
-                        {
-                            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(page, group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
-                        }
-                        @foreach (MinistrySummary group in allYear)
-                        {
-                            if (LifeGroupRounds.SitsOut(group.Id, round, page.SittingOut) is { } off)
-                            {
-                                <ListRow @key="@($"off-{group.Id}")" Title="@group.Name" Subtitle="@OffLine(off)" Icon="circle-off" IconTone="RowTone.Quiet"
-                                         Chevron="page.MayPlan" OnClick="() => { if (page.MayPlan) OpenSitOut(round, off); }" />
-                            }
-                        }
-                        @if (_mayAdd)
-                        {
-                            <ListRow Title="Add a group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(round.Id)" />
-                        }
-                        @if (page.MayPlan && !Finished(round, today) && allYear.Any(group => LifeGroupRounds.Runs(group.Id, "", round, page.SittingOut)))
-                        {
-                            <ListRow Title="An all-year group isn't on these Sundays" Icon="circle-off" IconTone="RowTone.Accent" OnClick="() => OpenSitOut(round, null)" />
-                        }
-                    </ListGroup>
-                    @if (page.MayPlan)
+                Round? offFor = unfinished.FirstOrDefault(round => LifeGroupRounds.SitsOut(group.Id, round, page.SittingOut) is not null);
+                <a @key="group.Id" class="lg-chip @(offFor is null ? "" : "lg-chip--off")" href="@($"ministries/{group.Id}")">
+                    <b>@group.Name</b>@if (offFor is not null) {<span>· not on @MinistryWords.Span(offFor)</span>}
+                </a>
+            }
+            @if (_mayAdd)
+            {
+                <button type="button" class="lg-chip lg-chip--add" @onclick="() => OpenGroup(null)"><Icon Name="plus" Size="IconSize.Small" />Add an all-year group</button>
+            }
+            <button type="button" class="text-link lg-all-year__archived" @onclick="() => _archivedOpen = true">Archived groups <Icon Name="chevron-right" Size="IconSize.Small" /></button>
+        </div>
+        <div class="lg-board">
+            @foreach (RoundStage stage in new[] { RoundStage.BeingPlanned, RoundStage.ShownInTheApp, RoundStage.NowOn })
+            {
+                <section class="lg-col" @key="stage" aria-labelledby="@($"lg-{stage}")">
+                    <h2 class="lg-col__head" id="@($"lg-{stage}")">@StageName(stage) <span class="lg-col__count">@stages[stage].Count()</span></h2>
+                    @foreach (Round round in stages[stage])
                     {
-                        <div class="ui-actions ministry-actions">
-                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" OnClick="() => OpenSet(round)">Sundays and time</Button>
-                            @if (groups.Count == 0)
-                            {
-                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => DeleteSetAsync(round)">Delete</Button>
-                            }
-                        </div>
+                        @SetCard(page, round, stage, allYear, today)
+                    }
+                    @if (!stages[stage].Any())
+                    {
+                        <p class="lg-col__empty">@EmptyWords(stage, stages)</p>
                     }
                 </section>
             }
-            <section class="life-groups-desk__set">
-                <header class="life-groups-desk__head"><h2>All year</h2></header>
-                <p class="hint">Groups that meet on every set of Sundays, wherever they sit.</p>
-                <ListGroup>
-                    @foreach (MinistrySummary group in AllYear(page))
-                    {
-                        <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(page, group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
-                    }
-                    @if (_mayAdd)
-                    {
-                        <ListRow Title="Add an all-year group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(null)" />
-                    }
-                </ListGroup>
+            <section class="lg-col" aria-labelledby="lg-finished">
+                <h2 class="lg-col__head" id="lg-finished">
+                    Finished in @year <span class="lg-col__count">@stages[RoundStage.Finished].Count(round => LifeGroupRounds.Day(round.Sundays.Last()).Year == year)</span>
+                </h2>
+                @if (years.Count > 1)
+                {
+                    <div class="lg-years">
+                        @foreach (int each in years)
+                        {
+                            <button type="button" class="lg-year @(each == year ? "lg-year--on" : "")" aria-pressed="@(each == year)" @onclick="() => _year = each">@each</button>
+                        }
+                    </div>
+                }
+                @if (years.Count == 0)
+                {
+                    <p class="lg-col__empty">Sets of Sundays fold in here once they finish, kept for looking back.</p>
+                }
+                else
+                {
+                    <div class="lg-card lg-card--finished">
+                        @foreach (Round round in stages[RoundStage.Finished].Where(round => LifeGroupRounds.Day(round.Sundays.Last()).Year == year).Reverse())
+                        {
+                            List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
+                            bool open = _openFinished == round.Id;
+                            <div class="lg-finished" @key="round.Id">
+                                <button type="button" class="lg-finished__line" aria-expanded="@open" @onclick="() => _openFinished = open ? null : round.Id">
+                                    <Icon Name="@(open ? "chevron-down" : "chevron-right")" Size="IconSize.Small" />
+                                    <b>@MinistryWords.Span(round)</b><span>@Count(groups.Count, "group")</span>
+                                </button>
+                                @if (open)
+                                {
+                                    <ul class="lg-groups">
+                                        @foreach (MinistrySummary group in groups)
+                                        {
+                                            <li @key="group.Id"><a href="@($"ministries/{group.Id}")">@group.Name</a></li>
+                                        }
+                                    </ul>
+                                    @if (groups.Count > 0)
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="archive" OnClick="() => _archivingSet = round">Archive their groups</Button>
+                                    }
+                                    else if (page.MayPlan)
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => DeleteSetAsync(round)">Delete these Sundays</Button>
+                                    }
+                                }
+                            </div>
+                        }
+                    </div>
+                }
             </section>
         </div>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     }
 </LiveData>
+
+<ArchivedSheet Open="_archivedOpen" OpenChanged="open => _archivedOpen = open" LifeGroupsOnly="true" OnRestored="ReloadAsync" />
+
+<Sheet Open="_archivingSet is not null" OpenChanged="open => { if (!open) _archivingSet = null; }" Title="@(_archivingSet is { } set ? $"Archive the groups from {MinistryWords.Span(set)}?" : "")"
+       Lead="They leave Life Groups, the app and every list, and nothing more can be posted in them. Their people, news, files and calendars are kept, and you can restore any of them from Archived groups.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="ArchiveSetAsync">Archive them</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _archivingSet = null">Keep them</Button>
+    </Actions>
+</Sheet>
 
 <UnsavedGuard Changed="() => _setOpen && SetShape != _setWas" What="these groups' Sundays and time" />
 
@@ -222,6 +261,10 @@
     private string _sitOutNote = "";
     private string _sitOutInstead = "";
     private (string, string, string) _sitOutWas;
+    private int? _year;
+    private string? _openFinished;
+    private bool _archivedOpen;
+    private Round? _archivingSet;
 
     private async Task<LifeGroupsPage> LoadAsync()
     {
@@ -235,10 +278,94 @@
     private static List<MinistrySummary> AllYear(LifeGroupsPage page) =>
         page.Groups.Where(group => page.Rounds.All(round => round.Id != group.RoundId)).ToList();
 
-    private static bool Finished(Round round, DateOnly today) => Day(round.Sundays.LastOrDefault()) < today;
+    private static string StageName(RoundStage stage) => stage switch
+    {
+        RoundStage.BeingPlanned => "Being planned",
+        RoundStage.ShownInTheApp => "Shown in the app",
+        _ => "Now on",
+    };
 
-    private static string OffLine(SittingOut off) =>
-        string.Join(" · ", new[] { "Not on these Sundays", off.Note, off.InsteadName.Length > 0 ? $"pointing to {off.InsteadName}" : "" }.Where(part => part.Length > 0));
+    private static string EmptyWords(RoundStage stage, ILookup<RoundStage, Round> stages) => stage switch
+    {
+        RoundStage.BeingPlanned => "Nothing being planned. Plan the next groups to start a set.",
+        RoundStage.ShownInTheApp when stages[RoundStage.BeingPlanned].FirstOrDefault() is { ShowsFrom.Length: > 0 } next =>
+            $"{MinistryWords.Span(next)} shows here from {MinistryWords.Day(next.ShowsFrom)}, when people can choose a group.",
+        RoundStage.ShownInTheApp => "Nothing showing ahead of time.",
+        _ => "No Life Groups this Sunday.",
+    };
+
+    private static string Facts(Round round, RoundStage stage, DateOnly today)
+    {
+        string time = $"{MinistryWords.Time(round.Starts)} to {MinistryWords.Time(round.Ends)}";
+        if (stage == RoundStage.NowOn)
+        {
+            int week = round.Sundays.Count(sunday => LifeGroupRounds.Day(sunday) <= today);
+            return $"{time} · Sunday {Math.Max(week, 1)} of {round.Sundays.Count}";
+        }
+        string shows = stage == RoundStage.BeingPlanned && round.ShowsFrom.Length > 0 ? $" · shows in the app from {MinistryWords.Day(round.ShowsFrom)}" : "";
+        return $"{Count(round.Sundays.Count, "Sunday")} · {time}{shows}";
+    }
+
+    private RenderFragment SetCard(LifeGroupsPage page, Round round, RoundStage stage, List<MinistrySummary> allYear, DateOnly today) => @<article @key="round.Id" class="@($"lg-card lg-card--{stage.ToString().ToLowerInvariant()}")" aria-label="@MinistryWords.Span(round)">
+        @{
+            List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
+            List<(MinistrySummary Group, SittingOut Off)> off = allYear.Select(group => (group, LifeGroupRounds.SitsOut(group.Id, round, page.SittingOut))).Where(each => each.Item2 is not null).Select(each => (each.group, each.Item2!)).ToList();
+        }
+        <h3 class="lg-card__title">@MinistryWords.Span(round)</h3>
+        <p class="lg-card__facts">@Facts(round, stage, today)</p>
+        @if (groups.Count > 0 || off.Count > 0)
+        {
+            <ul class="lg-groups">
+                @foreach (MinistrySummary group in groups)
+                {
+                    <li @key="group.Id"><a href="@($"ministries/{group.Id}")">@group.Name</a>@if (group.Meets.Length == 0) {<span class="lg-missing">needs where it meets</span>}</li>
+                }
+                @foreach ((MinistrySummary group, SittingOut sitting) in off)
+                {
+                    <li @key="@($"off-{group.Id}")" class="lg-groups__off">
+                        @if (page.MayPlan)
+                        {
+                            <button type="button" @onclick="() => OpenSitOut(round, sitting)"><Icon Name="circle-off" Size="IconSize.Small" />@group.Name, not on these Sundays</button>
+                        }
+                        else
+                        {
+                            <span><Icon Name="circle-off" Size="IconSize.Small" />@group.Name, not on these Sundays</span>
+                        }
+                    </li>
+                }
+            </ul>
+        }
+        else
+        {
+            <p class="lg-card__facts">No groups yet.</p>
+        }
+        <div class="lg-card__actions">
+            @if (_mayAdd)
+            {
+                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="plus" OnClick="() => OpenGroup(round.Id)">Add a group</Button>
+            }
+            @if (page.MayPlan)
+            {
+                <button type="button" class="lg-action" @onclick="() => OpenSet(round)">Sundays and time</button>
+                @if (stage != RoundStage.NowOn && allYear.Any(group => LifeGroupRounds.Runs(group.Id, "", round, page.SittingOut)))
+                {
+                    <button type="button" class="lg-action" @onclick="() => OpenSitOut(round, null)">An all-year group isn't on</button>
+                }
+                @if (groups.Count == 0)
+                {
+                    <button type="button" class="lg-action" @onclick="() => DeleteSetAsync(round)">Delete</button>
+                }
+            }
+        </div>
+    </article>;
+
+    private Task ArchiveSetAsync() =>
+        RunAsync(async () =>
+        {
+            foreach (MinistrySummary group in _page?.Groups.Where(group => group.RoundId == _archivingSet?.Id).ToList() ?? [])
+                await Ministries.ArchiveAsync(group.Id);
+            _archivingSet = null;
+        });
 
     private string NameOf(string groupId) => _page?.Groups.FirstOrDefault(group => group.Id == groupId)?.Name ?? "";
 
@@ -308,23 +435,7 @@
 
     private static string Count(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 
-    private static string GroupLine(LifeGroupsPage page, MinistrySummary group) =>
-        string.Join(" · ", new[] { Where(page, group), group.Meets, group.Summary }.Where(part => part.Length > 0));
-
-    private static string Where(LifeGroupsPage page, MinistrySummary group) =>
-        page.Under.FirstOrDefault(crumb => crumb.Id == group.ParentId) is { } parent ? $"Under {parent.Name}" : "Top-level";
-
-    private static string State(Round round, DateOnly today) =>
-        Day(round.Sundays.LastOrDefault()) < today ? "Finished"
-        : Day(round.Sundays.FirstOrDefault()) <= today ? "Now on"
-        : round.ShowsFrom.Length > 0 && Day(round.ShowsFrom) > today ? $"Shows from {MinistryWords.Day(round.ShowsFrom)}"
-        : "Next";
-
-    private static PillTone Tone(Round round, DateOnly today) =>
-        State(round, today) switch { "Now on" => PillTone.Accent, "Finished" => PillTone.Quiet, _ => PillTone.Marker };
-
-    private static DateOnly Day(string? text) =>
-        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day) ? day : DateOnly.MinValue;
+    private static DateOnly Day(string? text) => LifeGroupRounds.Day(text);
 
     private void OpenSet(Round? round)
     {

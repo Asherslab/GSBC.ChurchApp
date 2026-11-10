@@ -54,6 +54,19 @@ public sealed class LifeGroupsCalendarTests
             LifeGroupSundays.Plan([Round(Nine, QuarterToTen, 0, 1), Round(Nine, QuarterToTen, 4, 5)]).On.Select(date => date.Date));
     }
 
+    [Fact]
+    public void ASetIsBeingPlannedUntilItShowsInTheAppThenNowOnFromItsFirstSundayAndFinishedAfterItsLast()
+    {
+        Round set = new() { Id = "next", Sundays = [Day(2), Day(3)], ShowsFrom = Day(1) };
+        DateOnly today = Sunday(0);
+
+        Assert.Equal(RoundStage.BeingPlanned, LifeGroupRounds.StageOf(set, today));
+        Assert.Equal(RoundStage.ShownInTheApp, LifeGroupRounds.StageOf(set, Sunday(1)));
+        Assert.Equal(RoundStage.ShownInTheApp, LifeGroupRounds.StageOf(new Round { Sundays = [Day(2)] }, today));
+        Assert.Equal(RoundStage.NowOn, LifeGroupRounds.StageOf(set, Sunday(3)));
+        Assert.Equal(RoundStage.Finished, LifeGroupRounds.StageOf(set, Sunday(3).AddDays(1)));
+    }
+
     private static RoundRecord Round(TimeOnly starts, TimeOnly ends, params int[] weeks) =>
         new() { Id = Guid.CreateVersion7(), Sundays = weeks.Select(Sunday).ToList(), Starts = starts, Ends = ends };
 

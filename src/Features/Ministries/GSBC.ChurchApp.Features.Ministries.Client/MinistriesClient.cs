@@ -66,6 +66,12 @@ public sealed class MinistriesClient(ChannelBase channel)
 
     public async Task DeleteAsync(string ministryId) => await _leading.DeleteAsync(new MinistryRef { MinistryId = ministryId });
 
+    public async Task ArchiveAsync(string ministryId) => await _leading.ArchiveAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task RestoreAsync(string ministryId) => await _leading.RestoreAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task<ArchivedList> ArchivedAsync() => await _leading.ArchivedAsync(new DirectoryRequest());
+
     public async Task SaveCalendarAsync(string ministryId, CalendarLine calendar) =>
         await _leading.SaveCalendarAsync(new CalendarSave { MinistryId = ministryId, Calendar = calendar });
 
