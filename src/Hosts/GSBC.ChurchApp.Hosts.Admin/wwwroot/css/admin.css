@@ -63,7 +63,7 @@ a { color: var(--accent); }
 .admin-menu { display: none; }
 
 .module-nav { display: flex; flex: 1; flex-direction: column; gap: 18px; }
-.module-nav__group { display: grid; gap: 2px; }
+.module-nav__group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .module-nav__foot { margin-top: auto; padding-top: 12px; border-top: 1px solid var(--masthead-chip); }
 .module-nav__label { padding: 0 10px 6px; color: var(--masthead-note); font-size: var(--text-micro); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
 
@@ -108,7 +108,7 @@ a { color: var(--accent); }
 .module-nav__chevron { flex: none; color: var(--masthead-note); transition: transform 200ms var(--ease-out); }
 .module-nav__area--open .module-nav__chevron { transform: rotate(90deg); }
 .module-nav__pages { margin-left: auto; color: var(--on-masthead-2); font-size: var(--text-pill); font-weight: 600; font-variant-numeric: tabular-nums; }
-.module-nav__area-pages { display: grid; gap: 2px; padding: 2px 0 8px; }
+.module-nav__area-pages { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px 0 8px; }
 .module-nav__area-pages[hidden] { display: none; }
 .module-nav__area--open .module-nav__area-pages { animation: module-nav-area-open 200ms var(--ease-out) both; }
 @keyframes module-nav-area-open { from { opacity: 0; transform: translateY(-4px); } }
@@ -150,7 +150,7 @@ a { color: var(--accent); }
     transition: transform 240ms var(--ease-out);
 }
 .module-nav__link.active::before { transform: scaleY(1); }
-.module-nav__title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.module-nav__title { min-width: 0; padding: 8px 0; line-height: 1.3; overflow-wrap: anywhere; }
 .module-nav__row:is(:hover, :focus-within) .module-nav__link { padding-right: 40px; }
 
 .module-nav__pin {
