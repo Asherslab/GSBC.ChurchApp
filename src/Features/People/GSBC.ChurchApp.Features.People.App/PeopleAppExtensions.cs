@@ -9,7 +9,7 @@ public static class PeopleAppExtensions
 {
     public static IServiceCollection AddPeopleApp(this IServiceCollection services, ClientModules modules)
     {
-        modules.Add(new ClientModule("People", typeof(PeopleAppExtensions).Assembly, [], PrivateFeeds: [PeopleFeeds.Mine]));
+        modules.Add(new ClientModule("People", typeof(PeopleAppExtensions).Assembly, [], PrivateFeeds: [PeopleFeeds.Mine, PeopleFeeds.Me]));
         return services.AddPeopleClient();
     }
 }

@@ -36,12 +36,12 @@ public sealed class MinistryRuleTests
         static bool Attendee(string node) => node == MinistriesPermissions.AttendeesViewNode;
         static bool Team(string node) => node == MinistriesPermissions.TeamViewNode;
 
-        Assert.True(MinistryRules.MaySee(Audiences.Everyone, None, None));
-        Assert.True(MinistryRules.MaySee(Audiences.Attendees, Attendee, None));
-        Assert.False(MinistryRules.MaySee(Audiences.Parents, Attendee, None));
-        Assert.False(MinistryRules.MaySee(Audiences.Team, Attendee, Attendee));
-        Assert.True(MinistryRules.MaySee(Audiences.Team, None, Team));
-        Assert.False(MinistryRules.MaySee(Audiences.Attendees, None, Attendee));
+        Assert.True(MinistryLogic.MaySee(Audiences.Everyone, None, None));
+        Assert.True(MinistryLogic.MaySee(Audiences.Attendees, Attendee, None));
+        Assert.False(MinistryLogic.MaySee(Audiences.Parents, Attendee, None));
+        Assert.False(MinistryLogic.MaySee(Audiences.Team, Attendee, Attendee));
+        Assert.True(MinistryLogic.MaySee(Audiences.Team, None, Team));
+        Assert.False(MinistryLogic.MaySee(Audiences.Attendees, None, Attendee));
     }
 
     [Fact]
@@ -56,18 +56,18 @@ public sealed class MinistryRuleTests
     [Fact]
     public void AMinistryWithoutAttendeesPostsOnlyForEveryoneOrItsTeam()
     {
-        Assert.Equal([Audiences.Everyone, Audiences.Team], MinistryRules.PostableAudiences(Joining.None));
-        Assert.Equal(Audiences.All, MinistryRules.PostableAudiences(Joining.Ask));
-        Assert.NotNull(MinistryRules.WhyNotPost("Pick up by 8:30", "", Audiences.Parents, MinistryRules.PostableAudiences(Joining.None)));
-        Assert.Null(MinistryRules.WhyNotPost("Pick up by 8:30", "", Audiences.Parents, MinistryRules.PostableAudiences(Joining.Open)));
+        Assert.Equal([Audiences.Everyone, Audiences.Team], MinistryLogic.PostableAudiences(Joining.None));
+        Assert.Equal(Audiences.All, MinistryLogic.PostableAudiences(Joining.Ask));
+        Assert.NotNull(MinistryRules.WhyNotPost("Pick up by 8:30", "", Audiences.Parents, MinistryLogic.PostableAudiences(Joining.None)));
+        Assert.Null(MinistryRules.WhyNotPost("Pick up by 8:30", "", Audiences.Parents, MinistryLogic.PostableAudiences(Joining.Open)));
     }
 
     [Fact]
     public void YourPlaceIsSaidInWordsLeadingFirstThenTheTeamThenYourChildren()
     {
-        Assert.Equal("You lead it", MinistryRules.Yours([Roles.Team, Roles.Leader], [], leadsFromAbove: false));
-        Assert.Equal("On the team", MinistryRules.Yours([Roles.Team], ["Mia"], leadsFromAbove: false));
-        Assert.Equal("Mia and Leo attend", MinistryRules.Yours([], ["Mia", "Leo"], leadsFromAbove: false));
-        Assert.Equal("", MinistryRules.Yours([], [], leadsFromAbove: false));
+        Assert.Equal("You lead it", MinistryLogic.Yours([Roles.Team, Roles.Leader], [], leadsFromAbove: false));
+        Assert.Equal("On the team", MinistryLogic.Yours([Roles.Team], ["Mia"], leadsFromAbove: false));
+        Assert.Equal("Mia and Leo attend", MinistryLogic.Yours([], ["Mia", "Leo"], leadsFromAbove: false));
+        Assert.Equal("", MinistryLogic.Yours([], [], leadsFromAbove: false));
     }
 }

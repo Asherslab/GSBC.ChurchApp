@@ -1,4 +1,4 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
 
 <UnsavedGuard Changed="() => Open && _note.Trim().Length > 0" What="your note for the leaders" />
 
@@ -48,13 +48,13 @@
         (_busy, _problem) = (true, null);
         try
         {
-            JoinOutcome outcome = await Ministries.JoinAsync(Page.Ministry.Id, choice.PersonId, choice.Place, _note);
+            JoinOutcome outcome = await Ministries.JoinAsync(Page.Ministry, choice.PersonId, choice.Place, _note);
             await OpenChanged.InvokeAsync(false);
             await OnJoined.InvokeAsync(outcome.Words);
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

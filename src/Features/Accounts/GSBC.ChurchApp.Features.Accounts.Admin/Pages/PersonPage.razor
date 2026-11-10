@@ -2,6 +2,7 @@
 @using GSBC.ChurchApp.Platform.Client.Access
 @using GSBC.ChurchApp.Platform.Client.Modules
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject IAccess Access
 @inject NavigationManager Navigation
 @inject IEnumerable<PersonTab> ContributedTabs
@@ -74,8 +75,8 @@
 
     private async Task<PersonView> LoadAsync()
     {
-        Task<PeopleList> people = Accounts.GetPeopleAsync([Id]).AsTask();
-        Task<InvitationList> invitations = Accounts.ListInvitationsAsync().AsTask();
+        Task<PeopleList> people = Office.GetPeopleAsync([Id]).AsTask();
+        Task<InvitationList> invitations = Office.ListInvitationsAsync().AsTask();
         PersonInfo? person = (await people).People.FirstOrDefault(found => !found.Deleted);
         InvitationInfo? invitation = (await invitations).Invitations.FirstOrDefault(found => found.UserId == Id);
         return new PersonView(person, invitation);

@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
@@ -23,6 +25,7 @@ internal sealed class MinistryLeadingService(
     IFamilies families,
     IPeopleIndex people,
     IMinistryCalendars calendars,
+    IKeptRegularEvents keptEvents,
     INotifications notifications,
     TimeProvider time) : IMinistryLeadingService
 {
@@ -37,46 +40,19 @@ internal sealed class MinistryLeadingService(
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         MinistryRecord ministry = Existing(tree, request.MinistryId);
 
-        List<(Guid Person, string Role, string From)> team = [];
-        foreach (string role in new[] { Roles.Leader, Roles.Admin, Roles.Team })
-            team.AddRange((await views.HoldersAsync(role, ministry.Id, cancellationToken)).Select(person => (person, role, "")));
-        foreach (MinistryRecord above in tree.Above(ministry.Id))
-            team.AddRange((await views.HoldersAsync(Roles.Leader, above.Id, cancellationToken)).Select(person => (person, Roles.Leader, above.Name)));
-        team = team.GroupBy(member => member.Person).Select(member => member.OrderBy(each => RoleOrder(each.Role)).ThenBy(each => each.From.Length).First()).ToList();
-        IReadOnlyList<Guid> attendees = await views.HoldersAsync(Roles.Attendee, ministry.Id, cancellationToken);
-
-        List<Guid> everyone = team.Select(member => member.Person).Concat(attendees).Distinct().ToList();
+        MinistryHoldings holdings = await views.HoldingsAsync([ministry, .. tree.Above(ministry.Id)], cancellationToken);
+        List<Guid> everyone = [.. MinistryPeopleLists.Everyone(ministry, tree, holdings)];
         IReadOnlyDictionary<Guid, FamilyFacts> facts = await views.FactsAsync(everyone, cancellationToken);
         List<Guid> parents = facts.Values.SelectMany(fact => fact.Parents).Distinct().ToList();
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync([.. everyone, .. parents], cancellationToken);
 
-        Member MemberOf(Guid person, string role, string from)
-        {
-            FamilyFacts? fact = facts.GetValueOrDefault(person);
-            return new Member
-            {
-                PersonId = person.ToString(), Name = names.GetValueOrDefault(person) ?? "Someone", Role = role, Age = fact?.Minor == true ? fact.Age : null,
-                Parents = (fact?.Parents ?? []).Select(parent => new PersonLine { Id = parent.ToString(), Name = names.GetValueOrDefault(parent) ?? "A parent" }).ToList(),
-                NoParent = fact is { Minor: true, Parents.Count: 0 }, CanSignIn = fact?.CanSignIn ?? true, LeadsFrom = from,
-            };
-        }
-
         List<string> mayGive = [];
-        foreach (string role in new[] { Roles.Leader, Roles.Admin, Roles.Team, Roles.Attendee })
+        foreach (string role in MinistryHoldings.AllRoles)
             if (await roles.MayGiveAsync(me, Roles.KeyOf(role), ministry.Id.ToString(), cancellationToken))
                 mayGive.Add(role);
 
         List<AskRecord> asks = await db.Asks.AsNoTracking().Where(ask => ask.MinistryId == ministry.Id).OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken);
-        return new PeopleList
-        {
-            Team = team.Select(member => MemberOf(member.Person, member.Role, member.From))
-                .OrderBy(member => RoleOrder(member.Role)).ThenBy(member => member.Name, StringComparer.CurrentCulture).ToList(),
-            Attendees = attendees.Select(person => MemberOf(person, Roles.Attendee, ""))
-                .OrderByDescending(member => member.NoParent).ThenBy(member => member.Name, StringComparer.CurrentCulture).ToList(),
-            Asks = await AskLinesAsync(asks, tree, views, people, cancellationToken),
-            MayGive = mayGive,
-            Attending = ministry.AttendJoin != Joining.None || attendees.Count > 0,
-        };
+        return MinistryPeopleLists.Build(ministry, tree, holdings, facts, names, await AskLinesAsync(asks, tree, views, people, cancellationToken), mayGive);
     }
 
     public async ValueTask<Done> AnswerAsync(AskRef request, CallContext context = default)
@@ -172,10 +148,13 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         TurnedOn(ministry, MinistryParts.News);
         Post wanted = request.Post;
-        if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryRules.PostableAudiences(ministry.AttendJoin)) is { } problem)
+        if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryLogic.PostableAudiences(ministry.AttendJoin)) is { } problem)
             throw Invalid(problem);
 
-        PostRecord? post = wanted.Id.Length > 0
+        Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
+        if (chosenId is { } already && await db.Posts.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } sent)
+            return MinistryViews.Post(sent);
+        PostRecord? post = wanted.Id.Length > 0 && !wanted.New
             ? await db.Posts.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That post was deleted."))
             : null;
@@ -183,7 +162,7 @@ internal sealed class MinistryLeadingService(
         if (post is null)
         {
             string author = (await people.NamesAsync([me], cancellationToken)).GetValueOrDefault(me) ?? "";
-            post = db.Posts.Add(new PostRecord { Id = Guid.CreateVersion7(), MinistryId = ministry.Id, AuthorId = me, AuthorName = author, PostedAt = Now }).Entity;
+            post = db.Posts.Add(new PostRecord { Id = chosenId ?? Guid.CreateVersion7(), MinistryId = ministry.Id, AuthorId = me, AuthorName = author, PostedAt = Now }).Entity;
         }
         else
             post.EditedAt = Now;
@@ -223,17 +202,20 @@ internal sealed class MinistryLeadingService(
         FileItem wanted = request.File;
         if (wanted.Title.Trim().Length is 0 or > MinistryRules.LongestTitle)
             throw Invalid($"Give it a name of up to {MinistryRules.LongestTitle} characters.");
-        if (!MinistryRules.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
+        if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who it's for.");
         Guid? media = Guid.TryParse(wanted.MediaId, out Guid mediaId) ? mediaId : null;
         string url = wanted.Url.Trim();
         if (media is null && !IsWebAddress(url))
             throw Invalid("Add a document, or a link that starts with https://.");
 
-        FileRecord file = wanted.Id.Length > 0
+        Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
+        if (chosenId is { } already && await db.Files.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } sent)
+            return MinistryViews.File(sent);
+        FileRecord file = wanted.Id.Length > 0 && !wanted.New
             ? await db.Files.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That file was deleted."))
-            : db.Files.Add(new FileRecord { Id = Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
+            : db.Files.Add(new FileRecord { Id = chosenId ?? Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
         (file.Title, file.Kind, file.Url, file.MediaId, file.Audience, file.Note) =
             (wanted.Title.Trim(), media is null ? FileKinds.Link : FileKinds.Document, media is null ? url : "", media, wanted.Audience, wanted.Note.Trim());
         changes.Touch(ministry.Id);
@@ -310,6 +292,66 @@ internal sealed class MinistryLeadingService(
         return new Done();
     }
 
+    public async ValueTask<Done> ArchiveAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
+        DateTime now = Now;
+        foreach (MinistryRecord archiving in MinistryArchive.Archiving(every, ministry))
+        {
+            await db.Ministries.Where(found => found.Id == archiving.Id).ExecuteUpdateAsync(set => set.SetProperty(found => found.ArchivedAt, now), cancellationToken);
+            await calendars.ShowAsync(archiving.Id, false, MinistryViews.WhileHidden(archiving.Id), cancellationToken);
+            changes.Touch(archiving.Id, deleted: true);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> RestoreAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(every, request.MinistryId);
+        await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
+        if (MinistryArchive.WhyNotRestore(every, ministry) is { } why)
+            throw Refused(why);
+        foreach (MinistryRecord restoring in MinistryArchive.Restoring(every, ministry))
+        {
+            await db.Ministries.Where(found => found.Id == restoring.Id).ExecuteUpdateAsync(set => set.SetProperty(found => found.ArchivedAt, (DateTime?)null), cancellationToken);
+            await calendars.ShowAsync(restoring.Id, MinistryParts.IsOn(restoring.PartsOff, MinistryParts.Calendar), MinistryViews.WhileHidden(restoring.Id), cancellationToken);
+            changes.Touch(restoring.Id);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<ArchivedList> ArchivedAsync(DirectoryRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        GrantSet grants = await views.GrantsAsync(SignedIn(context), cancellationToken);
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        return new ArchivedList
+        {
+            Ministries = every.All.Where(ministry => ministry.ArchivedAt is not null && MayFind(grants, ministry))
+                .OrderByDescending(ministry => ministry.ArchivedAt).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
+                .Select(ministry => new ArchivedLine
+                {
+                    Id = ministry.Id.ToString(), Name = ministry.Name, ArchivedAt = ministry.ArchivedAt!.Value, ShowsInLifeGroups = ministry.ShowsInLifeGroups,
+                    Where = ministry.ParentId is { } parent && every.Find(parent) is { } above ? $"Under {above.Name}" : "Not under another ministry",
+                    MayRestore = MayDelete(grants, ministry) && MinistryArchive.WhyNotRestore(every, ministry) is null,
+                })
+                .ToList(),
+        };
+    }
+
+    private static bool MayFind(GrantSet grants, MinistryRecord ministry) =>
+        MayDelete(grants, ministry) || MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
+
+    private static bool MayDelete(GrantSet grants, MinistryRecord ministry) =>
+        ministry.ParentId is { } parent ? MinistryViews.Holds(grants, MinistriesPermissions.Settings, parent) : grants.IsAllowed(MinistriesPermissions.Create);
+
     public async ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
@@ -332,7 +374,7 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         TurnedOn(ministry, MinistryParts.Calendar);
         CalendarLine wanted = request.Calendar;
-        if (!MinistryRules.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
+        if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who the calendar is for.");
         string name = wanted.Name.Trim().Length > 0 ? wanted.Name : CalendarName(ministry, wanted.Audience);
         MinistryCalendar saved = wanted.Id.Length > 0
@@ -383,6 +425,7 @@ internal sealed class MinistryLeadingService(
         round.ShowsFrom = wanted.ShowsFrom.Length > 0 ? DateOf(wanted.ShowsFrom) : null;
         changes.Touch(round.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await KeepCalendarInStepAsync(cancellationToken);
         return MinistryViews.Round(round);
     }
 
@@ -392,11 +435,82 @@ internal sealed class MinistryLeadingService(
         Guid id = ParseId(request.Id);
         if (await db.Ministries.AnyAsync(group => group.RoundId == id, cancellationToken))
             throw Refused("Delete these groups, or move them, first.");
+        await db.SitOuts.Where(sitOut => sitOut.RoundId == id).ExecuteDeleteAsync(cancellationToken);
         await db.Rounds.Where(round => round.Id == id).ExecuteDeleteAsync(cancellationToken);
         changes.Touch(id);
         await db.SaveChangesAsync(cancellationToken);
+        await KeepCalendarInStepAsync(cancellationToken);
         return new Done();
     }
+
+    public async ValueTask<Done> SitOutAsync(SitOutSave request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryRecord group = Existing(tree, request.SittingOut.GroupId);
+        if (!group.ShowsInLifeGroups || group.RoundId is not null)
+            throw Refused($"{group.Name} isn't an all-year Life Group.");
+        Guid roundId = ParseId(request.SittingOut.RoundId);
+        RoundRecord round = await db.Rounds.AsNoTracking().SingleOrDefaultAsync(found => found.Id == roundId, cancellationToken)
+                            ?? throw new RpcException(new Status(StatusCode.NotFound, "Those groups' dates were deleted."));
+        string note = request.SittingOut.Note.Trim();
+        if (note.Length > MinistryRules.LongestLine)
+            throw Invalid($"Keep the note to {MinistryRules.LongestLine} characters.");
+        Guid? instead = request.SittingOut.InsteadId.Length > 0 ? Existing(tree, request.SittingOut.InsteadId).Id : null;
+        if (instead == group.Id)
+            throw Invalid("Choose another group for them to join.");
+
+        SitOutRecord? sitOut = await db.SitOuts.SingleOrDefaultAsync(found => found.GroupId == group.Id && found.RoundId == roundId, cancellationToken);
+        bool newlyOff = request.Off && sitOut is null;
+        if (!request.Off)
+        {
+            if (sitOut is not null)
+                db.SitOuts.Remove(sitOut);
+        }
+        else
+        {
+            sitOut ??= db.SitOuts.Add(new SitOutRecord { GroupId = group.Id, RoundId = roundId, MarkedAt = Now }).Entity;
+            (sitOut.Note, sitOut.InsteadId) = (note, instead);
+        }
+        changes.Touch(group.Id);
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (newlyOff && round.Sundays.Count > 0 && round.Sundays.Max() >= ChurchTime.Today(time))
+            await notifications.RaiseAsync(new Notification(
+                MinistriesNotifications.Important, NotificationAudience.Holding(MinistriesPermissions.AttendeesView, group.Id.ToString()),
+                $"{group.Name} isn't on {Span(round)}", note.Length > 0 ? note : "The group is back after these Sundays.",
+                $"/ministries/{group.Id}", Subject: $"ministries/sit-out/{group.Id:N}/{roundId:N}", ScopeId: group.Id.ToString()), cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<LifeGroupsCalendar> LifeGroupsCalendarAsync(LifeGroupsRequest request, CallContext context = default) =>
+        await CalendarChoiceAsync(UserOf(context), context.CancellationToken);
+
+    public async ValueTask<LifeGroupsCalendar> ShowLifeGroupsInAsync(LifeGroupsCalendarChoice request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        ClaimsPrincipal user = UserOf(context);
+        if (request.CalendarId.Length == 0)
+            await keptEvents.RemoveAsync(LifeGroupSundays.Keeper, cancellationToken);
+        else
+            await keptEvents.PutInAsync(user, ParseId(request.CalendarId), LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+        return await CalendarChoiceAsync(user, cancellationToken);
+    }
+
+    private async Task<LifeGroupsCalendar> CalendarChoiceAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        KeptCalendar? where = await keptEvents.WhereAsync(LifeGroupSundays.Keeper, cancellationToken);
+        return new LifeGroupsCalendar
+        {
+            CalendarId = where?.Id.ToString() ?? "", CalendarName = where?.Name ?? "",
+            Choices = (await keptEvents.ChoicesAsync(user, cancellationToken)).Select(choice => new Crumb { Id = choice.Id.ToString(), Name = choice.Name }).ToList(),
+        };
+    }
+
+    private async Task KeepCalendarInStepAsync(CancellationToken cancellationToken) =>
+        await keptEvents.KeepInStepAsync(LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+
+    private static ClaimsPrincipal UserOf(CallContext context) => context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
 
     public async ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default)
     {
@@ -422,11 +536,14 @@ internal sealed class MinistryLeadingService(
 
     private async Task<MinistryDetails> AddAsync(Guid? parentId, MinistryDetails wanted, CancellationToken cancellationToken)
     {
+        Guid? chosenId = wanted.New ? ParseId(wanted.Id) : null;
+        if (chosenId is { } already && await db.Ministries.AsNoTracking().SingleOrDefaultAsync(found => found.Id == already, cancellationToken) is { } added)
+            return MinistryViews.Details(added);
         await CheckAsync(wanted, cancellationToken);
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
-            Id = Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
+            Id = chosenId ?? Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
             Order = await db.Ministries.Where(other => other.ParentId == parentId).Select(other => (int?)other.Order).MaxAsync(cancellationToken) + 1 ?? 0,
         };
         Apply(ministry, wanted);
@@ -469,11 +586,7 @@ internal sealed class MinistryLeadingService(
 
     private async Task MayDeleteAsync(Guid me, MinistryRecord ministry, CancellationToken cancellationToken)
     {
-        GrantSet grants = await views.GrantsAsync(me, cancellationToken);
-        bool may = ministry.ParentId is { } parent
-            ? MinistryViews.Holds(grants, MinistriesPermissions.Settings, parent)
-            : grants.IsAllowed(MinistriesPermissions.Create);
-        if (!may)
+        if (!MayDelete(await views.GrantsAsync(me, cancellationToken), ministry))
             throw new RpcException(new Status(StatusCode.PermissionDenied, ministry.ParentId is null
                 ? "Only staff delete the church's top-level ministries."
                 : "Only the leaders of the ministry above this one can delete it."));
@@ -507,7 +620,10 @@ internal sealed class MinistryLeadingService(
         _ => ministry.Name,
     };
 
-    private static int RoleOrder(string role) => role switch { Roles.Leader => 0, Roles.Admin => 1, _ => 2 };
+    private static string Span(RoundRecord round) =>
+        round.Sundays.Min() == round.Sundays.Max()
+            ? $"on {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)}"
+            : $"from {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)} to {round.Sundays.Max().ToString("d MMMM", CultureInfo.InvariantCulture)}";
 
     private static string Shortened(string body) => body.Length <= 140 ? body : body[..137].TrimEnd() + "…";
 
@@ -525,7 +641,7 @@ internal sealed class MinistryLeadingService(
 
     private static TimeOnly TimeOf(string text, TimeOnly fallback) =>
         text.Length == 0 ? fallback
-        : TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
+        : TimeOnly.TryParseExact(text, ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
         : throw Invalid("That isn't a time.");
 
     private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("That isn't here any more.");

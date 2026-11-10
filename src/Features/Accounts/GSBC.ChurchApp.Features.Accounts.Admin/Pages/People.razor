@@ -3,6 +3,7 @@
 @using GSBC.ChurchApp.Platform.Client.Access
 @implements IDisposable
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject IAccess Access
 @inject NavigationManager Navigation
 
@@ -100,8 +101,8 @@
 
     private async Task<PeopleView> LoadAsync()
     {
-        Task<PeopleList> searching = Accounts.SearchPeopleAsync(_query).AsTask();
-        Task<InvitationList> listing = Accounts.ListInvitationsAsync().AsTask();
+        Task<PeopleList> searching = Office.SearchPeopleAsync(_query).AsTask();
+        Task<InvitationList> listing = Office.ListInvitationsAsync().AsTask();
         await Task.WhenAll(searching, listing);
         List<InvitationInfo> invitations = (await listing).Invitations;
         List<PersonInfo> people = (await searching).People;
@@ -181,7 +182,7 @@
         _problem = null;
         try
         {
-            await Accounts.SendHeldInvitationsAsync(_waiting);
+            await Office.SendHeldInvitationsAsync(_waiting);
             _sendingAll = false;
             _filter = PeopleFilter.Invited;
         }

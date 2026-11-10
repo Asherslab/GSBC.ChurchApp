@@ -45,7 +45,7 @@
 
 @if (_choosing)
 {
-    <MediaChooser ImagesOnly="ImagesOnly" Size="Size" OnChosen="ChooseAsync" OnCancel="() => _choosing = false" />
+    <MediaChooser ImagesOnly="ImagesOnly" Size="Size" Offered="Offered" OnChosen="ChooseAsync" OnCancel="() => _choosing = false" />
 }
 
 @code {
@@ -59,6 +59,7 @@
     [Parameter] public bool AsCover { get; set; }
     [Parameter] public string Adding { get; set; } = "Choose a picture";
     [Parameter] public string? Unavailable { get; set; }
+    [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
     [Parameter] public string? Class { get; set; }
 
     private bool Choosable => MediaChooser.IsAvailable(Services);

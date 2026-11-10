@@ -120,6 +120,7 @@ public sealed class AddChildRequest
     [ProtoMember(1)] public string Name { get; set; } = "";
     [ProtoMember(2)] public DateTime BirthDate { get; set; }
     [ProtoMember(3)] public string ParentId { get; set; } = "";
+    [ProtoMember(4)] public string Id { get; set; } = "";
 }
 
 [ProtoContract]

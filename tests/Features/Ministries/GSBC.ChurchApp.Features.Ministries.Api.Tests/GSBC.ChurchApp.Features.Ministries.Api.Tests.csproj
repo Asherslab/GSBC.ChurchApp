@@ -5,6 +5,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\Testing\GSBC.ChurchApp.Testing\GSBC.ChurchApp.Testing.csproj" />
     <ProjectReference Include="..\..\..\..\src\Features\Ministries\GSBC.ChurchApp.Features.Ministries.Api\GSBC.ChurchApp.Features.Ministries.Api.csproj" />
+    <ProjectReference Include="..\..\..\..\src\Features\Ministries\GSBC.ChurchApp.Features.Ministries.Client\GSBC.ChurchApp.Features.Ministries.Client.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Xunit" />

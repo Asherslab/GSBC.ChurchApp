@@ -50,7 +50,7 @@ internal static class Expansion
             EventOccurrence occurrence = new()
             {
                 Id = EventDates.OccurrenceId(regular.Id, date),
-                Kind = special is { Changed.Count: > 0 } ? OccurrenceKind.Special : OccurrenceKind.Regular,
+                Kind = special is { Changed.Count: > 0 } && regular.Keeper is null ? OccurrenceKind.Special : OccurrenceKind.Regular,
                 ItemId = regular.Id.ToString(),
                 Date = EventDates.Format(date),
                 CalendarId = regular.CalendarId.ToString(),
@@ -60,6 +60,8 @@ internal static class Expansion
                 NotOnReason = inBreak?.Name ?? (special?.NotOn == true ? special.NotOnNote : ""),
                 BackOn = notOn ? BackOn(regular, specials, breaks, date) : "",
                 Missing = notOn ? [] : regular.Needs.Where(need => !FieldValues.IsSet(fields, need)).ToList(),
+                KeptBy = regular.KeptBy,
+                OpensAt = regular.OpensAt,
             };
             Time(occurrence, date, date, startMinute, endMinute);
             (occurrence.ChangedAt, occurrence.ChangeNote) = Latest((regular.ChangedAt, regular.ChangeNote), (special?.ChangedAt, special?.ChangeNote ?? ""));
@@ -82,7 +84,7 @@ internal static class Expansion
                 Title = special is not null && special.Changed.Contains(EventFieldKeys.Title) ? special.Fields.Title : regular.Fields.Title,
                 StartMinute = ownTime ? special!.StartMinute : regular.StartMinute,
                 EndMinute = ownTime ? special!.EndMinute : regular.EndMinute,
-                Changed = special is { Changed.Count: > 0 },
+                Changed = special is { Changed.Count: > 0 } && regular.Keeper is null,
                 NotOn = inBreak is not null || special?.NotOn == true,
                 NotOnReason = inBreak?.Name ?? (special?.NotOn == true ? special.NotOnNote : ""),
             };

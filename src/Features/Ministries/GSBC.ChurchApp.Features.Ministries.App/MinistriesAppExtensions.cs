@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Ministries.Client;
+using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -10,7 +11,7 @@ public static class MinistriesAppExtensions
     {
         modules.Add(new ClientModule("Ministries", typeof(MinistriesAppExtensions).Assembly,
             [new NavEntry("Ministries", "ministries", "users"), new NavEntry("Life Groups", "life-groups", "book-open")],
-            MinistriesClientExtensions.Feeds, []));
-        return services.AddMinistriesClient().AddSingleton(MinistryLinks.App);
+            MinistriesFeeds.OnPhones, MinistriesFeeds.PrivateOnPhones));
+        return services.AddMinistriesOnPhone().AddSingleton(MinistryLinks.App);
     }
 }

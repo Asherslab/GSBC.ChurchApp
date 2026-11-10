@@ -45,11 +45,10 @@
             Diary diary = await Diaries.LoadAsync();
             return new ComingUpInSet(diary, Next(diary.In(ids)));
         }
-        if (Services.GetService(typeof(CalendarEditing)) is not CalendarEditing editing || ids.Count == 0)
+        if (Services.GetService(typeof(IOnlineAgenda)) is not IOnlineAgenda online || ids.Count == 0)
             return new ComingUpInSet(Diary.Empty, []);
         DateOnly today = EventWords.Today(Now);
-        Agenda agenda = await editing.AgendaAsync(ids, today, today.AddDays(7 * AdminWeeksAhead));
-        return new ComingUpInSet(Diary.Empty, Next(agenda.Occurrences));
+        return new ComingUpInSet(Diary.Empty, Next(await online.AgendaAsync(ids, today, today.AddDays(7 * AdminWeeksAhead))));
     }
 
     private IReadOnlyList<EventOccurrence> Next(IEnumerable<EventOccurrence> occurrences) =>

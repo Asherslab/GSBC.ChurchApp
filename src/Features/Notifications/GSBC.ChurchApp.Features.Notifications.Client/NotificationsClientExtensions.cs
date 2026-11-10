@@ -20,8 +20,4 @@ public static class NotificationsClientExtensions
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<PushRegistration>())
             .AddSingleton<IWeeklyState, PushSetting>()
             .AddHubTile<InboxTile>(NotificationsTiles.Inbox);
-
-    public static IServiceCollection AddAnnouncements(this IServiceCollection services) =>
-        services.AddDestinations(NotificationsDestinations.All).AddHubTile<InboxTile>(NotificationsTiles.Inbox)
-            .AddSingleton(provider => new AnnouncementsClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()));
 }

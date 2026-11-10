@@ -1,20 +1,22 @@
 using System.Globalization;
-using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Client.Access;
+using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Client.Signals;
-using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
 
-public sealed class YourCalendars(ChannelBase channel, ILocalPreferences preferences, ClientSignals signals) : IClientStartupTask, IDisposable
+public sealed class YourCalendars(ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences preferences, ClientSignals signals)
+    : IClientStartupTask, IDisposable
 {
+    private const string ChooseMethod = "/gsbc.events.Events/Choose";
     private const string AddedKey = "events.added";
     private const string TurnedOffKey = "events.turned-off";
     private const string SeenKey = "events.seen";
     private const int SeenKept = 200;
-    private readonly IEventsService _events = channel.CreateGrpcService<IEventsService>();
     private MyCalendars _mine = new();
     private readonly HashSet<string> _hidden = [];
     private List<string> _seen = [];
@@ -52,29 +54,23 @@ public sealed class YourCalendars(ChannelBase channel, ILocalPreferences prefere
 
     public async Task RunAsync()
     {
-        _mine = new MyCalendars { Added = await ListAsync(AddedKey), TurnedOff = await ListAsync(TurnedOffKey) };
         _seen = await ListAsync(SeenKey);
         signals.Changed += OnSignals;
-        _ = RefreshAsync();
+        await RefreshAsync();
     }
 
     public async Task<string?> ChooseAsync(string calendarId, bool inYourWeek)
     {
-        try
+        await outbox.EnqueueAsync(ChooseMethod, new CalendarChoice { CalendarId = calendarId, InYourWeek = inYourWeek }, EventsContractsModel.Instance);
+        MyCalendars mine = new()
         {
-            await TakeAsync(await _events.ChooseAsync(new CalendarChoice { CalendarId = calendarId, InYourWeek = inYourWeek }));
-            if (inYourWeek)
-                Hide(calendarId, false);
-            return null;
-        }
-        catch (RpcException exception) when (exception.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded)
-        {
-            return "That needs a connection. Try again when you're online.";
-        }
-        catch (RpcException exception)
-        {
-            return exception.Status.Detail;
-        }
+            Added = [.. _mine.Added.Where(id => id != calendarId), .. inYourWeek ? [calendarId] : Array.Empty<string>()],
+            TurnedOff = [.. _mine.TurnedOff.Where(id => id != calendarId), .. inYourWeek ? Array.Empty<string>() : [calendarId]],
+        };
+        await TakeAsync(mine, remember: !access.SignedIn);
+        if (inYourWeek)
+            Hide(calendarId, false);
+        return null;
     }
 
     public void Dispose() => signals.Changed -= OnSignals;
@@ -87,26 +83,29 @@ public sealed class YourCalendars(ChannelBase channel, ILocalPreferences prefere
 
     private async Task RefreshAsync()
     {
-        try
+        if (!access.SignedIn)
         {
-            await TakeAsync(await _events.MineAsync(new Done()));
+            await TakeAsync(new MyCalendars { Added = await ListAsync(AddedKey), TurnedOff = await ListAsync(TurnedOffKey) }, remember: false);
+            return;
         }
-        catch (RpcException)
-        {
-        }
+        IReadOnlyList<StoredRecord> stored = await feeds.ReadPageAsync(new FeedPageQuery(EventsFeeds.Mine, Limit: 1));
+        await TakeAsync(stored.Count == 0 ? new MyCalendars() : EventsContractsModel.Instance.Deserialize<MyCalendars>(new MemoryStream(stored[0].Payload)), remember: false);
     }
 
-    private async Task TakeAsync(MyCalendars mine)
+    private async Task TakeAsync(MyCalendars mine, bool remember)
     {
         _mine = mine;
-        await preferences.SetAsync(AddedKey, string.Join(',', mine.Added));
-        await preferences.SetAsync(TurnedOffKey, string.Join(',', mine.TurnedOff));
+        if (remember)
+        {
+            await preferences.SetAsync(AddedKey, string.Join(',', mine.Added));
+            await preferences.SetAsync(TurnedOffKey, string.Join(',', mine.TurnedOff));
+        }
         Changed?.Invoke();
     }
 
     private void OnSignals(ClientChange change)
     {
-        if (change.Concerns(ChangeKind.Session | ChangeKind.Reconnected | ChangeKind.Access, null))
+        if (change.Concerns(ChangeKind.Session | ChangeKind.Feeds, [EventsFeeds.Mine]))
             _ = RefreshAsync();
     }
 }

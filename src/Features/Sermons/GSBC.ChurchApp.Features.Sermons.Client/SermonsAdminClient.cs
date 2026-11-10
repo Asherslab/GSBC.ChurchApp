@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Sermons.Client;
 
+[AdminOnly]
 public sealed class SermonsAdminClient(ChannelBase channel)
 {
     private readonly ISermonLibraryService _library = channel.CreateGrpcService<ISermonLibraryService>();

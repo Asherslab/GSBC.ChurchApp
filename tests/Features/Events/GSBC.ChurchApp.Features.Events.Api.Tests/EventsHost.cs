@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
@@ -44,6 +45,7 @@ public abstract class EventsHost : IAsyncLifetime
         services.AddSingleton<IMediaReferences, AnyMedia>();
         services.AddScoped<EventsPublisher>();
         services.AddScoped<EventWriter>();
+        services.AddScoped<HandledRequests>();
         services.AddScoped<EventEditingService>();
         services.AddScoped<CalendarSetupService>();
         services.AddScoped<CalendarFollowing>();
@@ -83,6 +85,9 @@ public abstract class EventsHost : IAsyncLifetime
     private protected Task<T> EditingAsync<T>(ClaimsPrincipal person, Func<EventEditingService, CallContext, ValueTask<T>> call) =>
         WithAsync(async provider => await call(provider.GetRequiredService<EventEditingService>(), As(person)));
 
+    private protected Task<T> QueuedAsync<T>(ClaimsPrincipal person, string requestId, Func<EventEditingService, CallContext, ValueTask<T>> call) =>
+        WithAsync(async provider => await call(provider.GetRequiredService<EventEditingService>(), As(person, requestId)));
+
     protected Task<CalendarSettings> CalendarAsync(string name, Audience audience, bool needsPublisher = false) =>
         WithAsync(async provider => await provider.GetRequiredService<CalendarSetupService>().SaveCalendarAsync(new CalendarSettings
         {
@@ -116,9 +121,9 @@ public abstract class EventsHost : IAsyncLifetime
     protected static RegularPattern Weekly(DayOfWeek day, DateOnly? from = null) =>
         new() { Repeats = Repeats.Weekly, Days = [day], StartDate = EventDates.Format(from ?? Today.AddDays(-60)) };
 
-    protected static CallContext As(ClaimsPrincipal person) => new(person, new PersonCallContext(person, Cancel));
+    protected static CallContext As(ClaimsPrincipal person, string? requestId = null) => new(person, new PersonCallContext(person, requestId, Cancel));
 
-    private sealed class PersonCallContext(ClaimsPrincipal person, CancellationToken cancellationToken) : ServerCallContext
+    private sealed class PersonCallContext(ClaimsPrincipal person, string? requestId, CancellationToken cancellationToken) : ServerCallContext
     {
         private readonly Dictionary<object, object> _state = new() { ["__HttpContext"] = new DefaultHttpContext { User = person } };
 
@@ -127,7 +132,7 @@ public abstract class EventsHost : IAsyncLifetime
         protected override string HostCore => "";
         protected override string PeerCore => "";
         protected override DateTime DeadlineCore => DateTime.MaxValue;
-        protected override Metadata RequestHeadersCore => [];
+        protected override Metadata RequestHeadersCore => requestId is null ? [] : [new Metadata.Entry(QueuedRequest.IdHeader, requestId)];
         protected override CancellationToken CancellationTokenCore => cancellationToken;
         protected override Metadata ResponseTrailersCore => [];
         protected override Status StatusCore { get; set; }

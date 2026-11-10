@@ -1,4 +1,5 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 
 <UnsavedGuard Changed="() => Open" Editing="Draft" State="() => Shape" What="this calendar" />
 
@@ -71,7 +72,7 @@
             await OnSaved.InvokeAsync();
         });
 
-    private Task AskRemoveAsync() => RunAsync(async () => _removal = await Ministries.CalendarRemovalAsync(Page.Ministry.Id, Draft.Id));
+    private Task AskRemoveAsync() => RunAsync(async () => _removal = await Lookups.CalendarRemovalAsync(Page.Ministry.Id, Draft.Id));
 
     private Task RemoveAsync() =>
         RunAsync(async () =>
@@ -90,7 +91,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

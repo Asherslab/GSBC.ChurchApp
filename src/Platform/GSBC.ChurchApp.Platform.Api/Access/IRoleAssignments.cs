@@ -16,6 +16,14 @@ public interface IRoleAssignments
 
     ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken);
 
+    async ValueTask<IReadOnlyList<RoleHolding>> HoldingsAsync(string roleKey, IReadOnlyCollection<string> objectIds, CancellationToken cancellationToken)
+    {
+        List<RoleHolding> holdings = [];
+        foreach (string objectId in objectIds)
+            holdings.AddRange((await HoldersAsync(roleKey, objectId, cancellationToken)).Select(holder => new RoleHolding(holder.UserId, objectId)));
+        return holdings;
+    }
+
     ValueTask ScopesChangedAsync(CancellationToken cancellationToken);
 
     ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken);
@@ -33,3 +41,5 @@ public sealed record AssignmentOutcome(bool Done, string? Refusal)
 }
 
 public sealed record RoleHolder(Guid UserId);
+
+public sealed record RoleHolding(Guid UserId, string ObjectId);

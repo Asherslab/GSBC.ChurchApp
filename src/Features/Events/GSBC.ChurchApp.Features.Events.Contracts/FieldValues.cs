@@ -1,12 +1,10 @@
 using System.Globalization;
-using System.Text.Json;
-using GSBC.ChurchApp.Features.Events.Contracts;
 
-namespace GSBC.ChurchApp.Features.Events.Api;
+namespace GSBC.ChurchApp.Features.Events.Contracts;
 
-internal sealed record Timed(EventFields Fields, int? StartMinute, int? EndMinute);
+public sealed record Timed(EventFields Fields, int? StartMinute, int? EndMinute);
 
-internal static class FieldValues
+public static class FieldValues
 {
     private const int MostNotes = 2;
 
@@ -76,12 +74,10 @@ internal static class FieldValues
         EventFieldKeys.Title => value.Fields.Title,
         EventFieldKeys.Label => value.Fields.Label,
         EventFieldKeys.Picture => value.Fields.Picture?.Id ?? "",
-        EventFieldKeys.Description => value.Fields.Description is { IsEmpty: false } description ? Json(description) : "",
-        EventFieldKeys.Place => IsSet(value.Fields, EventFieldKeys.Place) ? Json(value.Fields.Place) : "",
-        EventFieldKeys.Contacts => Json(value.Fields.Contacts),
+        EventFieldKeys.Description => value.Fields.Description is { IsEmpty: false } description ? description.Markdown + "|" + string.Join(",", description.Media.Select(media => media.Id)) : "",
+        EventFieldKeys.Place => IsSet(value.Fields, EventFieldKeys.Place) ? $"{value.Fields.Place!.PlaceId}|{value.Fields.Place.Name}|{value.Fields.Place.Address}" : "",
+        EventFieldKeys.Contacts => string.Join("\n", value.Fields.Contacts.Select(contact => $"{contact.PersonId}|{contact.Name}|{contact.Phone}|{contact.Email}")),
         EventFieldKeys.Register => value.Fields.RegisterLink,
-        _ => Json(value.Fields.Links),
+        _ => string.Join("\n", value.Fields.Links.Select(link => $"{link.Title}|{link.Url}")),
     };
-
-    private static string Json<T>(T value) => JsonSerializer.Serialize(value, JsonSerializerOptions.Web);
 }

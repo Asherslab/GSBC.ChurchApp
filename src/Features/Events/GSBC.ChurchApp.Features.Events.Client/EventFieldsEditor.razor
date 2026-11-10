@@ -1,3 +1,4 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.Content
 
@@ -13,11 +14,12 @@
                Placeholder="https://" Hint="Opens in the app's browser. The app never counts registrations." />
 </AddableField>
 <LinksEditor Links="Fields.Links" />
-<PictureField Label="Picture" Value="Fields.Picture" ValueChanged="picture => Fields.Picture = picture" AsCover="true" Adding="Add a picture"
+<PictureField Label="Picture" Value="Fields.Picture" ValueChanged="picture => Fields.Picture = picture" AsCover="true" Adding="Add a picture" Offered="PicturesUsed"
               Unavailable="Pictures are added in the admin panel." />
 
 @code {
     [Parameter, EditorRequired] public required EventFields Fields { get; set; }
     [Parameter] public IReadOnlyList<EventPlace> PlacesUsed { get; set; } = [];
+    [Parameter] public IReadOnlyList<MediaRef>? PicturesUsed { get; set; }
     [Parameter] public IReadOnlyList<string> Needs { get; set; } = [];
 }

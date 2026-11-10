@@ -1,7 +1,7 @@
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
 @inject NavigationManager Navigation
 
-<LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
+<LiveData TValue="MinistryDirectory" Load="Reads.DirectoryAsync" Feeds="Reads.Feeds" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
     <ChildContent>
         @{
             MinistryDirectory directory = context.Value;

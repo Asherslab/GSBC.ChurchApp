@@ -4,6 +4,8 @@ public interface IPeopleAccounts
 {
     ValueTask<Guid> AddWithoutSignInAsync(string name, Guid addedBy, CancellationToken cancellationToken);
 
+    ValueTask<Guid> AddWithoutSignInAsync(Guid id, string name, Guid addedBy, CancellationToken cancellationToken) => AddWithoutSignInAsync(name, addedBy, cancellationToken);
+
     ValueTask<FamilySignInCode> MakeSignInCodeAsync(Guid userId, Guid madeBy, CancellationToken cancellationToken);
 
     ValueTask<Guid?> FindByEmailAsync(string email, CancellationToken cancellationToken);

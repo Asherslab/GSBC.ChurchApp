@@ -30,12 +30,13 @@ public static class MinistriesApiExtensions
     public static IServiceCollection AddMinistriesApi(this IServiceCollection services)
     {
         services.AddMinistriesData();
-        services.AddScoped<MinistryViews>().AddScoped<MinistryChanges>().AddScoped<MinistryRemover>().AddScoped<MinistryMover>();
+        services.AddScoped<MinistryViews>().AddScoped<MinistriesPublisher>().AddScoped<MinistryChanges>().AddScoped<MinistryRemover>().AddScoped<MinistryMover>();
         services.AddSingleton<IScopeHierarchy, MinistryHierarchy>();
         services.AddScoped<IScopeObjects, MinistryScopeObjects>();
         services.AddScoped<IPersonData, MinistriesPersonData>();
         services.AddScoped<IChatPlaces, MinistryChatPlaces>();
         services.AddHostedService<SampleMinistries>();
+        services.AddHostedService<MinistriesFeedUpkeep>();
         services.AddPermissions(MinistriesPermissions.All);
         services.AddNotificationKinds(MinistriesNotifications.All);
 
@@ -65,6 +66,11 @@ public static class MinistriesApiExtensions
             [MinistriesPermissions.PlanLifeGroupsNode], Feature: RoleFeatures.Ministries));
 
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Ministries, FeedAudience.Public));
+        foreach (string feed in MinistriesFeeds.OnPhones)
+            services.AddFeed(new FeedDefinition(feed, FeedAudience.Public));
+        foreach (string feed in new[] { MinistriesFeeds.PrivatePosts, MinistriesFeeds.PrivateFiles, MinistriesFeeds.PrivateCalendars, MinistriesFeeds.People })
+            services.AddFeed(new FeedDefinition(feed, FeedAudience.EachRow));
+        services.AddFeed(new FeedDefinition(MinistriesFeeds.Yours, FeedAudience.OwnRecords));
         services.AddDestinations(MinistriesDestinations.All);
         services.AddDestinationSource<MinistryDestinationSource>();
         services.AddSurfaces(MinistriesTiles.Surfaces);
