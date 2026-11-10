@@ -35,10 +35,10 @@ public sealed class KeptRegularEventStorageTests : EventsHost
             return (await db.Specials.CountAsync(Cancel), await db.Breaks.CountAsync(Cancel));
         }));
 
-        RegularEventRecord kept = await WithAsync(provider => provider.GetRequiredService<EventsDbContext>().RegularEvents.AsNoTracking().SingleAsync(Cancel));
+        RegularEventRecord record = await WithAsync(provider => provider.GetRequiredService<EventsDbContext>().RegularEvents.AsNoTracking().SingleAsync(Cancel));
         RpcException refused = await Assert.ThrowsAsync<RpcException>(() => EditingAsync(planner, (editing, context) => editing.SaveDateAsync(new DateSave
         {
-            CalendarId = services.Calendar.Id, RegularEventId = kept.Id.ToString(), Date = EventDates.Format(Sunday(2)), NotOn = true,
+            CalendarId = services.Calendar.Id, RegularEventId = record.Id.ToString(), Date = EventDates.Format(Sunday(2)), NotOn = true,
         }, context)));
         Assert.Equal(StatusCode.FailedPrecondition, refused.StatusCode);
 

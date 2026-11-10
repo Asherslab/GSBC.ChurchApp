@@ -25,7 +25,7 @@ internal sealed class MinistryLeadingService(
     IFamilies families,
     IPeopleIndex people,
     IMinistryCalendars calendars,
-    IKeptRegularEvents kept,
+    IKeptRegularEvents keptEvents,
     INotifications notifications,
     TimeProvider time) : IMinistryLeadingService
 {
@@ -512,24 +512,24 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         ClaimsPrincipal user = UserOf(context);
         if (request.CalendarId.Length == 0)
-            await kept.RemoveAsync(LifeGroupSundays.Keeper, cancellationToken);
+            await keptEvents.RemoveAsync(LifeGroupSundays.Keeper, cancellationToken);
         else
-            await kept.PutInAsync(user, ParseId(request.CalendarId), LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+            await keptEvents.PutInAsync(user, ParseId(request.CalendarId), LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
         return await CalendarChoiceAsync(user, cancellationToken);
     }
 
     private async Task<LifeGroupsCalendar> CalendarChoiceAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
     {
-        KeptCalendar? where = await kept.WhereAsync(LifeGroupSundays.Keeper, cancellationToken);
+        KeptCalendar? where = await keptEvents.WhereAsync(LifeGroupSundays.Keeper, cancellationToken);
         return new LifeGroupsCalendar
         {
             CalendarId = where?.Id.ToString() ?? "", CalendarName = where?.Name ?? "",
-            Choices = (await kept.ChoicesAsync(user, cancellationToken)).Select(choice => new Crumb { Id = choice.Id.ToString(), Name = choice.Name }).ToList(),
+            Choices = (await keptEvents.ChoicesAsync(user, cancellationToken)).Select(choice => new Crumb { Id = choice.Id.ToString(), Name = choice.Name }).ToList(),
         };
     }
 
     private async Task KeepCalendarInStepAsync(CancellationToken cancellationToken) =>
-        await kept.KeepInStepAsync(LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+        await keptEvents.KeepInStepAsync(LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
 
     private static ClaimsPrincipal UserOf(CallContext context) => context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
 

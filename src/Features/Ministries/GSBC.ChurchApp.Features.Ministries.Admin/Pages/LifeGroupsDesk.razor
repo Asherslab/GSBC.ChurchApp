@@ -370,21 +370,24 @@
     private string NameOf(string groupId) => _page?.Groups.FirstOrDefault(group => group.Id == groupId)?.Name ?? "";
 
     private IReadOnlyList<FieldOption> CalendarOptions =>
-        new[] { new FieldOption("", "No calendar") }
-            .Concat(_calendar.CalendarId.Length > 0 && _calendar.Choices.All(choice => choice.Id != _calendar.CalendarId) ? [new FieldOption(_calendar.CalendarId, _calendar.CalendarName)] : [])
-            .Concat(_calendar.Choices.Select(choice => new FieldOption(choice.Id, choice.Name)))
-            .ToList();
+        [
+            new FieldOption("", "No calendar"),
+            .. _calendar.CalendarId.Length > 0 && _calendar.Choices.All(choice => choice.Id != _calendar.CalendarId) ? [new FieldOption(_calendar.CalendarId, _calendar.CalendarName)] : Array.Empty<FieldOption>(),
+            .. _calendar.Choices.Select(choice => new FieldOption(choice.Id, choice.Name)),
+        ];
 
     private IReadOnlyList<FieldOption> SitOutOptions(Round round) =>
-        new[] { new FieldOption("", "Choose a group") }
-            .Concat(_page is null ? [] : AllYear(_page).Where(group => LifeGroupRounds.Runs(group.Id, "", round, _page.SittingOut)).Select(group => new FieldOption(group.Id, group.Name)))
-            .ToList();
+        [
+            new FieldOption("", "Choose a group"),
+            .. _page is null ? [] : AllYear(_page).Where(group => LifeGroupRounds.Runs(group.Id, "", round, _page.SittingOut)).Select(group => new FieldOption(group.Id, group.Name)),
+        ];
 
     private IReadOnlyList<FieldOption> InsteadOptions(Round round) =>
-        new[] { new FieldOption("", "Nowhere") }
-            .Concat(_page is null ? [] : _page.Groups.Where(group => group.Id != _sitOutGroup && LifeGroupRounds.Runs(group.Id, group.RoundId, round, _page.SittingOut))
-                .Select(group => new FieldOption(group.Id, group.Name)))
-            .ToList();
+        [
+            new FieldOption("", "Nowhere"),
+            .. _page is null ? [] : _page.Groups.Where(group => group.Id != _sitOutGroup && LifeGroupRounds.Runs(group.Id, group.RoundId, round, _page.SittingOut))
+                .Select(group => new FieldOption(group.Id, group.Name)),
+        ];
 
     private async Task OpenCalendarAsync()
     {

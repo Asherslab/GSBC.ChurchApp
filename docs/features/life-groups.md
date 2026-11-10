@@ -4,6 +4,25 @@ Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
 
+## The desk by stage (owner, 2026-11-11)
+
+The owner: "this page feels like it's going to get very busy later into the year, with a lot of rounds added / etc.
+thoughts?" Asked, staff mostly come to **plan and fill the next set**, and finished sets should stay in reach **this
+year, folded away**. Shown sketches through impeccable, the owner steered "most life groups will be unique to a specific
+round, not cross multiple rounds" and chose **Sets by stage** (surface brief
+`.impeccable/surfaces/nistries-admin-pages-lifegroupsdesk-razor-23a45361.md`):
+
+- **Four columns:** *Being planned* (a set whose *shows in the app from* date hasn't come), *Shown in the app* (people can
+  choose a group, the Sundays haven't started; a set with no *shows from* date is shown straight away), *Now on* and
+  *Finished in* a year (`LifeGroupRounds.StageOf`, tested). Each set is a card with its time and Sundays (or "Sunday 2 of
+  4" while on), its groups (one missing *where it meets* says so), any all-year group off for it, and *Add a group*,
+  *Sundays and time*, *An all-year group isn't on* and *Delete* (when empty).
+- **Finished sets** fold to a line each (dates, number of groups), by year with a year switch; opening one lists its groups
+  with *Archive their groups* (asks first).
+- **All-year groups** sit in a strip above the board; one that's off for a set still to come or on now says so.
+  *Archived groups* (right of the strip) lists archived Life Groups with *Restore*.
+- *Reuse a finished set as a starting point* (offered in the first sketches) isn't built: the chosen sketch dropped it.
+
 ## Life Groups in the calendar (owner, 2026-11-10)
 
 The owner: "Life Groups - their calendars are technically automatic. they run any time a life group round is on. maybe

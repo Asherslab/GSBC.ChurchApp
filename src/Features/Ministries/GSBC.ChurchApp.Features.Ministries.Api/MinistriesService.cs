@@ -82,7 +82,7 @@ internal sealed class MinistriesService(
             List<Guid> roundIds = sitOuts.Select(sitOut => sitOut.RoundId).ToList();
             Dictionary<Guid, RoundRecord> rounds = await db.Rounds.AsNoTracking().Where(found => roundIds.Contains(found.Id)).ToDictionaryAsync(found => found.Id, cancellationToken);
             DateOnly today = ChurchTime.Today(time);
-            page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? round) && round.Sundays.Count > 0 && round.Sundays.Max() >= today)
+            page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? set) && set.Sundays.Count > 0 && set.Sundays.Max() >= today)
                 .OrderBy(sitOut => rounds[sitOut.RoundId].Sundays.Min())
                 .Select(sitOut => MinistryViews.SittingOut(sitOut, rounds[sitOut.RoundId], tree)).ToList();
         }
