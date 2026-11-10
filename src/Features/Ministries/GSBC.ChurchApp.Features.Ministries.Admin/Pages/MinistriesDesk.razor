@@ -7,7 +7,7 @@
 <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the ministries right now">
     <TitleBand Title="Ministries" Lead="@Lead(context.Value)">
         <Actions>
-            @if (context.Value.MayCreate)
+            @if (context.Value.MayCreate || context.Value.Ministries.Any(ministry => ministry.MayAddUnder))
             {
                 <Button Icon="plus" OnClick="() => _creating = true">New ministry</Button>
             }
@@ -53,7 +53,7 @@
 </div>
 </LiveData>
 
-<MinistrySheet Open="_creating" OpenChanged="open => _creating = open" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
+<MinistrySheet Open="_creating" OpenChanged="open => _creating = open" UnderId="@(Id ?? "")" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
 
 @code {
     private LiveData<MinistryPage>? _live;

@@ -38,11 +38,17 @@ internal sealed class MinistriesService(
         return new MinistryDirectory
         {
             Ministries = tree.All.OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
-                .Select(ministry => MinistryViews.Summary(ministry, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
-                    waiting.GetValueOrDefault(ministry.Id)))
+                .Select(ministry => MayAddUnder(MinistryViews.Summary(ministry, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
+                    waiting.GetValueOrDefault(ministry.Id)), ministry, grants))
                 .ToList(),
             MayCreate = grants.IsAllowed(MinistriesPermissions.Create),
         };
+    }
+
+    private static MinistrySummary MayAddUnder(MinistrySummary summary, MinistryRecord ministry, GrantSet grants)
+    {
+        summary.MayAddUnder = ministry.Kind != MinistryKinds.LifeGroup && MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
+        return summary;
     }
 
     public async ValueTask<MinistryPage> MinistryAsync(MinistryRef request, CallContext context = default)

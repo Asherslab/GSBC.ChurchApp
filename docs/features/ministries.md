@@ -164,6 +164,12 @@ treats them as ministries"). A ministry under another is a ministry: *Ministries
 ministry under Kids Ministries*. "Team" means only the people who serve in a ministry, as against its attendees (*the
 team*, *Joining the team*, *Team only*); the owner hasn't asked to change that, so it stays unless they say otherwise.
 
+**Where a new ministry sits** (owner, 2026-11-10: "should also let you select what ministry it sits under"). *A new
+ministry* asks *Sits under* with the shared search picker, preselecting the ministry it was opened from. The directory
+marks each ministry `MayAddUnder` (Settings there, through Access; never a Life Group), and only staff with
+`ministries.create` get "Nothing: it's a top-level ministry". A leader sees *New ministry* when they may add under
+anything they lead.
+
 **Audiences.** Posts and links are for **everyone**, **attendees and their parents**, **parents only** or **the team**; a
 ministry with no attendees offers only everyone and the team. An **important** post notifies those it's for straight away
 (for everyone: the ministry's own people). Asking to send one to the **whole church** marks it for staff (*default*: the

@@ -30,7 +30,7 @@
                     int under = ministries.Count(child => child.ParentId == ministry.Id);
                     <ListRow @key="ministry.Id" Title="@ministry.Name" Subtitle="@Line(ministry, under)" Icon="@AboutArea.IconOf(ministry.Icon)" Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
                 }
-                @if (directory.MayCreate)
+                @if (directory.MayCreate || directory.Ministries.Any(ministry => ministry.MayAddUnder))
                 {
                     <ListRow Title="Add a ministry" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _creating = true" />
                 }

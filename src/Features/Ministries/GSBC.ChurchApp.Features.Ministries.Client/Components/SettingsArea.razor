@@ -62,7 +62,7 @@
     </Section>
 }
 
-<MinistrySheet Open="_adding" OpenChanged="open => _adding = open" ParentId="@Page.Ministry.Id" ParentName="@Page.Ministry.Name" OnCreated="CreatedAsync" />
+<MinistrySheet Open="_adding" OpenChanged="open => _adding = open" UnderId="@Page.Ministry.Id" OnCreated="CreatedAsync" />
 
 @code {
     private MinistryDetails _details = new();
