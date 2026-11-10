@@ -255,12 +255,10 @@ proposal; the owner hadn't confirmed it):
 - **What it does:** the ministry (`ArchivedAt`) leaves the tree every screen reads, so it's gone from the directory, Life
   Groups, pickers, places and the app's feed, and nothing can be posted, joined or changed in it, so no notifications.
   Its calendars narrow to its leaders (as *What it uses* hides them). Its people, posts, files and calendars are kept.
-- **Finding it again:** *Archived* (`Leading.Archived`) lists what the caller may restore or leads; Life Groups shows it as
-  *Archived groups*. **Restore** brings back the ministry and what was archived with it (not what was archived on its own
+- **Finding it again:** *Archived* (`Leading.Archived`) lists what the caller may restore or leads; the Ministries desk shows it as *Archived* (title band) and Life Groups as *Archived groups*. **Restore** brings back the ministry and what was archived with it (not what was archived on its own
   before), and its calendars as *What it uses* says. Restoring one under an archived ministry asks to restore that first
   (*default*).
-- **Not built yet:** reading an archived ministry's page (it isn't found once archived), a *Show archived* switch on the
-  Ministries desk and search across archived ones. *Archive their groups* on a finished set of Sundays is the only bulk
+- **Not built yet:** reading an archived ministry's page (it isn't found once archived), and search across archived ones. *Archive their groups* on a finished set of Sundays is the only bulk
   archive; nothing archives by itself.
 
 ## Show in Life Groups (owner, 2026-11-10)
