@@ -4,7 +4,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Client;
 
 public static class MinistryTrees
 {
-    public static IEnumerable<(MinistrySummary Ministry, int Depth)> Walk(IReadOnlyList<MinistrySummary> ministries, int deepest = int.MaxValue, IReadOnlySet<string>? folded = null)
+    public static IEnumerable<(MinistrySummary Ministry, int Depth)> Walk(IReadOnlyList<MinistrySummary> ministries, int deepest = int.MaxValue, IReadOnlySet<string>? folded = null, IReadOnlySet<string>? path = null)
     {
         ILookup<string, MinistrySummary> children = ministries.ToLookup(ministry => ministry.ParentId);
         Stack<(MinistrySummary, int)> waiting = new(children[""].Reverse().Select(ministry => (ministry, 0)));
@@ -14,8 +14,11 @@ public static class MinistryTrees
             if (!seen.Add(next.Ministry.Id))
                 continue;
             yield return next;
-            if (next.Depth < deepest && folded?.Contains(next.Ministry.Id) != true)
-                foreach (MinistrySummary child in children[next.Ministry.Id].Reverse())
+            if (next.Depth >= deepest)
+                continue;
+            bool isFolded = folded?.Contains(next.Ministry.Id) == true;
+            foreach (MinistrySummary child in children[next.Ministry.Id].Reverse())
+                if (!isFolded || path?.Contains(child.Id) == true)
                     waiting.Push((child, next.Depth + 1));
         }
     }

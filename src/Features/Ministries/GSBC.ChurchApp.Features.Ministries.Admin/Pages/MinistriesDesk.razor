@@ -97,8 +97,8 @@
                 yield return (found, 0);
             yield break;
         }
-        IReadOnlySet<string> keepOpen = MinistryTrees.Above(directory.Ministries, Id);
-        foreach ((MinistrySummary, int) next in MinistryTrees.Walk(directory.Ministries, folded: _folded.Except(keepOpen).ToHashSet()))
+        HashSet<string> path = [.. MinistryTrees.Above(directory.Ministries, Id), .. Id is { Length: > 0 } open ? [open] : Array.Empty<string>()];
+        foreach ((MinistrySummary, int) next in MinistryTrees.Walk(directory.Ministries, folded: _folded, path: path))
             yield return next;
     }
 
