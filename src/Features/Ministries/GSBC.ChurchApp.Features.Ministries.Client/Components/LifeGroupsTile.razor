@@ -1,0 +1,29 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+
+<LiveData TValue="LifeGroupsPage" Load="Ministries.LifeGroupsAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.life-groups">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn(null)</Loading>
+    <Failed>@Drawn(null)</Failed>
+</LiveData>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private RenderFragment Drawn(LifeGroupsPage? page)
+    {
+        TileLook look = TileLook.Of(MinistriesTiles.LifeGroups, Entry.Values);
+        TileVariant variant = MinistriesTiles.LifeGroups.VariantFor(look, Hub.Columns);
+        LifeGroupSets? sets = page is null ? null : LifeGroupSets.Of(page, ChurchTime.Today(Clock));
+        MinistrySummary? yours = sets?.Now?.Groups.FirstOrDefault(group => group.Yours.Length > 0);
+        (string title, string line) = yours is not null
+            ? ("Your Life Group", $"{yours.Name}{(yours.Room.Length > 0 ? $" · {yours.Room}" : "")}, {MinistryWords.Time(sets!.Now!.Round.Starts)}")
+            : sets?.Next is { Groups.Count: > 0 } next
+                ? (look.Title, $"New groups from {MinistryWords.Day(next.Round.Sundays[0])}")
+                : (look.Title, look.Text);
+        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@title" Lines="[line]" PlacementId="@Entry.Placement?.Id" />;
+    }
+}

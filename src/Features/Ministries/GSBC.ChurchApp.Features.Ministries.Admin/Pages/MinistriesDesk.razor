@@ -1,0 +1,103 @@
+@page "/ministries"
+@page "/ministries/{Id}"
+@page "/ministries/{Id}/{Area}"
+@inject MinistriesClient Ministries
+@inject NavigationManager Navigation
+
+<TitleBand Title="Ministries" Lead="Every ministry and the teams under it. Leaders see and change their own here and on their phone.">
+    <Actions>
+        @if (_mayCreate)
+        {
+            <Button Icon="plus" OnClick="() => _creating = true">New ministry</Button>
+        }
+    </Actions>
+</TitleBand>
+
+<div class="ministry-desk">
+    <LiveData TValue="MinistryDirectory" Load="LoadDirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the ministries right now">
+        <nav class="ministry-tree" aria-label="Ministries">
+            <SearchField Label="Find a ministry" Placeholder="Find a ministry" Value="@_query" ValueChanged="value => _query = value" />
+            @foreach ((MinistrySummary ministry, int depth) in Tree(context.Value))
+            {
+                <button type="button" class="ministry-tree__item @(ministry.Id == Id ? "ministry-tree__item--on" : "")" style="@($"padding-left: {10 + depth * 20}px")"
+                        aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id))">
+                    <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
+                    <span class="ministry-tree__name">@ministry.Name</span>
+                    @if (ministry.Yours.Length > 0)
+                    {
+                        <Pill Tone="PillTone.Quiet">@ministry.Yours</Pill>
+                    }
+                </button>
+            }
+        </nav>
+    </LiveData>
+
+    <div>
+        @if (Id is { Length: > 0 } id)
+        {
+            <LiveData @key="id" @ref="_live" TValue="MinistryPage" Load="() => Ministries.MinistryAsync(id)" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load this ministry right now">
+                @{
+                    MinistryPage shown = context.Value;
+                    string area = MinistryAreas.Known(shown, Area ?? MinistriesPlaces.About);
+                }
+                <h2 class="title-band__title">@shown.Ministry.Name</h2>
+                <p class="title-band__lead">@(string.Join(" · ", new[] { shown.Path.Count > 0 ? $"Under {string.Join(" › ", shown.Path.Select(crumb => crumb.Name))}" : "", MinistryWords.HeroNote(shown.Ministry) }.Where(part => part.Length > 0)))</p>
+                <SectionTabs Label="@($"{shown.Ministry.Name}'s areas")" Tabs="MinistryAreas.Tabs(shown, area, key => Href(shown.Ministry.Id, key))" />
+                <MinistryArea Page="shown" Area="@area" Href="ministry => Href(ministry)" OnChanged="ReloadAsync" />
+            </LiveData>
+        }
+        else
+        {
+            <EmptyState Icon="users" Title="Choose a ministry" Body="Its people, news, calendars, files and settings open here." />
+        }
+    </div>
+</div>
+
+<MinistrySheet Open="_creating" OpenChanged="open => _creating = open" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
+
+@code {
+    private LiveData<MinistryPage>? _live;
+    private string _query = "";
+    private bool _mayCreate;
+    private bool _creating;
+
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? Area { get; set; }
+
+    private static string Href(string id, string area = "") => area.Length == 0 ? $"ministries/{id}" : $"ministries/{id}/{area}";
+
+    private async Task<MinistryDirectory> LoadDirectoryAsync()
+    {
+        MinistryDirectory directory = await Ministries.DirectoryAsync();
+        _mayCreate = directory.MayCreate;
+        return directory;
+    }
+
+    private IEnumerable<(MinistrySummary Ministry, int Depth)> Tree(MinistryDirectory directory)
+    {
+        string query = _query.Trim();
+        if (query.Length > 0)
+        {
+            foreach (MinistrySummary found in directory.Ministries.Where(ministry => ministry.Name.Contains(query, StringComparison.CurrentCultureIgnoreCase)))
+                yield return (found, 0);
+            yield break;
+        }
+        ILookup<string, MinistrySummary> children = directory.Ministries.ToLookup(ministry => ministry.ParentId);
+        Stack<(MinistrySummary, int)> waiting = new(children[""].Reverse().Select(ministry => (ministry, 0)));
+        HashSet<string> seen = [];
+        while (waiting.TryPop(out (MinistrySummary Ministry, int Depth) next))
+        {
+            if (!seen.Add(next.Ministry.Id))
+                continue;
+            yield return next;
+            foreach (MinistrySummary child in children[next.Ministry.Id].Reverse())
+                waiting.Push((child, next.Depth + 1));
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

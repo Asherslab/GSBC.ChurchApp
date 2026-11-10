@@ -1,0 +1,239 @@
+@page "/life-groups"
+@using System.Globalization
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+
+<TitleBand Title="Life Groups" Lead="What's on now, what's next and the all-year groups. People in the app see each set of groups by its dates: “Now on”, “New groups from …”.">
+    <Actions>
+        @if (_page is { MaySetUp: true, MinistryId.Length: > 0 })
+        {
+            <Button Icon="plus" OnClick="() => OpenSet(null)">Plan the next groups</Button>
+        }
+    </Actions>
+</TitleBand>
+
+<LiveData @ref="_live" TValue="LifeGroupsPage" Load="LoadAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load Life Groups right now">
+    @{
+        LifeGroupsPage page = context.Value;
+        DateOnly today = ChurchTime.Today(Clock);
+    }
+    @if (page.MinistryId.Length == 0)
+    {
+        <EmptyState Icon="book-open" Title="No Life Groups yet" Body="Life Groups live under a ministry of their own. Add groups to it once it's made.">
+            @if (page.MaySetUp || _mayCreate)
+            {
+                <Button OnClick="() => _creatingHome = true">Make the Life Groups ministry</Button>
+            }
+        </EmptyState>
+    }
+    else
+    {
+        @if (!page.MaySetUp)
+        {
+            <Notice Text="Staff who look after Life Groups set them up. You can see them here." />
+        }
+        <div class="life-groups-desk">
+            @foreach (Round round in page.Rounds.OrderBy(round => round.Sundays.FirstOrDefault()))
+            {
+                List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
+                <section class="life-groups-desk__set" @key="round.Id">
+                    <header class="life-groups-desk__head">
+                        <h2>@MinistryWords.Span(round)</h2>
+                        <Pill Tone="@Tone(round, today)">@State(round, today)</Pill>
+                    </header>
+                    <p class="hint">@Count(round.Sundays.Count, "Sunday") · @MinistryWords.Time(round.Starts) to @MinistryWords.Time(round.Ends)@(round.ShowsFrom.Length > 0 ? $" · shows in the app from {MinistryWords.Day(round.ShowsFrom)}" : "")</p>
+                    <ListGroup>
+                        @foreach (MinistrySummary group in groups)
+                        {
+                            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
+                        }
+                        @if (page.MaySetUp)
+                        {
+                            <ListRow Title="Add a group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(round.Id)" />
+                        }
+                    </ListGroup>
+                    @if (page.MaySetUp)
+                    {
+                        <div class="ui-actions" style="margin-top: 10px">
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" OnClick="() => OpenSet(round)">Sundays and time</Button>
+                            @if (groups.Count == 0)
+                            {
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => DeleteSetAsync(round)">Delete</Button>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+            <section class="life-groups-desk__set">
+                <header class="life-groups-desk__head"><h2>All year</h2></header>
+                <p class="hint">Nursery, Kids Life and Youth run every Sunday. Parents join for their children.</p>
+                <ListGroup>
+                    @foreach (MinistrySummary group in page.Groups.Where(group => group.RoundId.Length == 0))
+                    {
+                        <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
+                    }
+                    @if (page.MaySetUp)
+                    {
+                        <ListRow Title="Add an all-year group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(null)" />
+                    }
+                </ListGroup>
+            </section>
+        </div>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    }
+</LiveData>
+
+<Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and time")" Lead="People see these groups by their dates. Add the Sundays they meet; skip breaks." Wide="true">
+    <ChildContent>
+        <div class="filter-chips">
+            @foreach (string sunday in _sundays.Order())
+            {
+                <button type="button" class="filter-chip filter-chip--on" @key="sunday" aria-label="@($"Take off {MinistryWords.Day(sunday)}")" @onclick="() => _sundays.Remove(sunday)">
+                    @MinistryWords.Day(sunday) <Icon Name="x" Size="IconSize.Small" />
+                </button>
+            }
+        </div>
+        <TextField Label="First Sunday" Type="date" @bind-Value="_from" />
+        <div class="ui-actions">
+            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => AddSundays(1)">Add this Sunday</Button>
+            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => AddSundays(6)">Add six Sundays from it</Button>
+        </div>
+        <TextField Label="Starts" Type="time" @bind-Value="_starts" />
+        <TextField Label="Ends" Type="time" @bind-Value="_ends" />
+        <TextField Label="Shows in the app from" Type="date" @bind-Value="_showsFrom" Hint="Usually during the break before they start. Leave empty to show them straight away." />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="SaveSetAsync">Save</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_groupOpen" OpenChanged="open => _groupOpen = open" Title="@(_groupRound is null ? "An all-year group" : "A group")" Lead="Add its leaders, news and files on its page once it's made.">
+    <ChildContent>
+        <TextField Label="Name" @bind-Value="_groupName" MaxLength="60" Required="true" />
+        <TextField Label="In a line" @bind-Value="_groupSummary" MaxLength="140" />
+        <TextField Label="Room" @bind-Value="_groupRoom" MaxLength="60" Placeholder="Library (5)" />
+        <ToggleRow Title="Join as a parent" Description="For children's groups: parents join for their child" @bind-Checked="_groupForChildren" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="SaveGroupAsync">Add the group</Button>
+    </Actions>
+</Sheet>
+
+<MinistrySheet Open="_creatingHome" OpenChanged="open => _creatingHome = open" OnCreated="_ => ReloadAsync()" />
+
+@code {
+    private LiveData<LifeGroupsPage>? _live;
+    private LifeGroupsPage? _page;
+    private bool _mayCreate;
+    private bool _creatingHome;
+    private bool _setOpen;
+    private Round? _set;
+    private List<string> _sundays = [];
+    private string _from = "";
+    private string _starts = "09:00";
+    private string _ends = "09:45";
+    private string _showsFrom = "";
+    private bool _groupOpen;
+    private string? _groupRound;
+    private string _groupName = "";
+    private string _groupSummary = "";
+    private string _groupRoom = "";
+    private bool _groupForChildren;
+    private bool _busy;
+    private string? _problem;
+
+    private async Task<LifeGroupsPage> LoadAsync()
+    {
+        _page = await Ministries.LifeGroupsAsync();
+        if (_page.MinistryId.Length == 0)
+            _mayCreate = (await Ministries.DirectoryAsync()).MayCreate;
+        return _page;
+    }
+
+    private static string Count(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
+
+    private static string GroupLine(MinistrySummary group) =>
+        string.Join(" · ", new[] { group.Room, group.Summary, group.JoinAsParent ? "parents join for their children" : "" }.Where(part => part.Length > 0));
+
+    private static string State(Round round, DateOnly today) =>
+        Day(round.Sundays.LastOrDefault()) < today ? "Finished"
+        : Day(round.Sundays.FirstOrDefault()) <= today ? "Now on"
+        : round.ShowsFrom.Length > 0 && Day(round.ShowsFrom) > today ? $"Shows from {MinistryWords.Day(round.ShowsFrom)}"
+        : "Next";
+
+    private static PillTone Tone(Round round, DateOnly today) =>
+        State(round, today) switch { "Now on" => PillTone.Accent, "Finished" => PillTone.Quiet, _ => PillTone.Marker };
+
+    private static DateOnly Day(string? text) =>
+        DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out DateOnly day) ? day : DateOnly.MinValue;
+
+    private void OpenSet(Round? round)
+    {
+        (_set, _problem, _setOpen) = (round, null, true);
+        _sundays = round?.Sundays.ToList() ?? [];
+        (_starts, _ends, _showsFrom) = (round?.Starts ?? "09:00", round?.Ends ?? "09:45", round?.ShowsFrom ?? "");
+        DateOnly today = ChurchTime.Today(Clock);
+        _from = (_sundays.Count > 0 ? Day(_sundays.Max()).AddDays(7) : today.AddDays((7 - (int)today.DayOfWeek) % 7)).ToString("yyyy-MM-dd");
+    }
+
+    private void AddSundays(int how)
+    {
+        if (Day(_from) is var first && first == DateOnly.MinValue)
+            return;
+        for (int week = 0; week < how; week++)
+            if (first.AddDays(7 * week).ToString("yyyy-MM-dd") is var sunday && !_sundays.Contains(sunday))
+                _sundays.Add(sunday);
+        _from = first.AddDays(7 * how).ToString("yyyy-MM-dd");
+    }
+
+    private Task SaveSetAsync() =>
+        RunAsync(async () =>
+        {
+            Round round = new() { Id = _set?.Id ?? "", Sundays = _sundays.Order().ToList(), Starts = _starts, Ends = _ends, ShowsFrom = _showsFrom };
+            round.Name = MinistryWords.Span(round);
+            await Ministries.SaveRoundAsync(_page!.MinistryId, round);
+            _setOpen = false;
+        });
+
+    private Task DeleteSetAsync(Round round) => RunAsync(() => Ministries.DeleteRoundAsync(_page!.MinistryId, round.Id));
+
+    private void OpenGroup(string? roundId) =>
+        (_groupRound, _groupName, _groupSummary, _groupRoom, _groupForChildren, _problem, _groupOpen) = (roundId, "", "", "", false, null, true);
+
+    private Task SaveGroupAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.AddTeamAsync(_page!.MinistryId, new MinistryDetails
+            {
+                Kind = MinistryKinds.LifeGroup, Name = _groupName, Summary = _groupSummary, Room = _groupRoom, JoinAsParent = _groupForChildren,
+                RoundId = _groupRound ?? "", TeamJoin = Joining.Invite, AttendJoin = Joining.Open,
+            });
+            _groupOpen = false;
+        });
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+            await ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

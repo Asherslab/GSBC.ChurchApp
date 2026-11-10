@@ -1,0 +1,119 @@
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+
+<LiveData @ref="_live" TValue="PeopleList" Load="() => Ministries.PeopleAsync(Page.Ministry.Id)" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the people right now">
+    @{
+        PeopleList people = context.Value;
+        bool attending = people.Attending;
+        bool showAttendees = attending && _list == Roles.Attendee;
+        List<AskLine> asks = people.Asks.Where(ask => showAttendees ? ask.As == Places.Attending : ask.As == Places.Team || !attending).ToList();
+        List<Member> shown = (showAttendees ? people.Attendees : people.Team)
+            .Where(member => _query.Trim().Length == 0 || member.Name.Contains(_query.Trim(), StringComparison.CurrentCultureIgnoreCase)).ToList();
+    }
+    <Section First="true">
+        @if (attending)
+        {
+            <Segmented TValue="string" Label="Which list" Value="_list" ValueChanged="value => _list = value"
+                       Options="@([new(Roles.Team, "Team", Count: people.Team.Count), new(Roles.Attendee, "Attendees", Count: people.Attendees.Count)])" />
+        }
+        @if (asks.Count > 0)
+        {
+            <h3 class="ministry-box__head" style="margin-top: 18px">@(showAttendees ? "Asking to come along" : "Asking to join") · @asks.Count</h3>
+            <ListGroup>
+                @foreach (AskLine ask in asks)
+                {
+                    <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="@MinistryWords.AskDetail(ask, Clock.GetUtcNow().UtcDateTime)" Icon="users" IconTone="RowTone.Warm">
+                        <Below>
+                            @if (ask.Note.Length > 0)
+                            {
+                                <p class="ministry-item__body">“@ask.Note”</p>
+                            }
+                            <div class="ui-actions">
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(ask, false)">Not now</Button>
+                                <Button Small="true" Busy="_busy" OnClick="() => AnswerAsync(ask, true)">Yes, add them</Button>
+                            </div>
+                        </Below>
+                    </ListRow>
+                }
+            </ListGroup>
+        }
+        <div style="margin-top: 18px">
+            <SearchField Label="Find someone on the list" Placeholder="Find someone" Value="@_query" ValueChanged="value => _query = value" />
+        </div>
+        <ListGroup>
+            @foreach (Member member in shown)
+            {
+                <ListRow @key="@($"{member.PersonId}{member.Role}")" Title="@member.Name" Chevron="@(member.LeadsFrom.Length == 0)" OnClick="() => _person = member">
+                    <Leading><Avatar Name="@member.Name" /></Leading>
+                    <Below>
+                        <span class="row__subtitle">
+                            @if (member.NoParent)
+                            {
+                                <span class="ministry-flag">@(member.Age is { } age ? $"{age} · " : "")No parent linked</span>
+                            }
+                            else
+                            {
+                                @Line(member)
+                            }
+                        </span>
+                    </Below>
+                </ListRow>
+            }
+            <ListRow Title="@(showAttendees ? "Add an attendee" : "Add to the team")" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
+        </ListGroup>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </Section>
+
+    <PersonSheet @key="_person?.PersonId" Member="_person" Page="Page" MayGive="people.MayGive" OnClose="() => _person = null" OnChanged="ReloadAsync" />
+    <AddPersonSheet Open="_adding" OpenChanged="open => _adding = open" Page="Page" MayGive="people.MayGive" Role="@(showAttendees ? Roles.Attendee : Roles.Team)" OnAdded="ReloadAsync" />
+</LiveData>
+
+@code {
+    private LiveData<PeopleList>? _live;
+    private string _list = Roles.Team;
+    private string _query = "";
+    private Member? _person;
+    private bool _adding;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private static string Line(Member member)
+    {
+        List<string> parts = [];
+        if (member.Role != Roles.Attendee && member.Role != Roles.Team)
+            parts.Add(member.LeadsFrom.Length > 0 ? $"Leads {member.LeadsFrom}" : MinistryWords.Role(member.Role));
+        if (member.Age is { } age)
+            parts.Add($"{age}");
+        if (member.Parents.Count > 0)
+            parts.Add($"Parents: {MinistryWords.Names(member.Parents.Select(parent => parent.Name.Split(' ')[0]).ToList())}");
+        return parts.Count > 0 ? string.Join(" · ", parts) : MinistryWords.Role(member.Role);
+    }
+
+    private async Task AnswerAsync(AskLine ask, bool yes)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Ministries.AnswerAsync(Page.Ministry.Id, ask.Id, yes);
+            await ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+        await OnChanged.InvokeAsync();
+    }
+}

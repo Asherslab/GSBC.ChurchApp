@@ -1,0 +1,72 @@
+@inject MinistriesClient Ministries
+
+<Section First="true" Lead="@Lead">
+    <ListGroup>
+        @foreach (string sunday in Page.Round?.Sundays ?? [])
+        {
+            SessionChange? change = Page.Sessions.FirstOrDefault(session => session.Date == sunday);
+            <ListRow @key="sunday" Title="@MinistryWords.Day(sunday)" Icon="@(change?.Off == true ? "circle-off" : "calendar")" IconTone="@(change is null ? RowTone.Quiet : RowTone.Warm)"
+                     Chevron="@(Page.You.MayPostFor.Count > 0)" OnClick="() => Open(sunday)">
+                <Below>
+                    @if (change is not null)
+                    {
+                        <span class="ministry-flag">@(change.Note.Length > 0 ? change.Note : "No class this week")</span>
+                    }
+                </Below>
+            </ListRow>
+        }
+    </ListGroup>
+</Section>
+
+<Sheet Open="_date is not null" OpenChanged="open => { if (!open) _date = null; }" Title="@(_date is null ? "" : MinistryWords.Day(_date))" Lead="Tell the group about this Sunday. They see it on the group's Sundays.">
+    <ChildContent>
+        <ToggleRow Title="No class this Sunday" @bind-Checked="_off" />
+        <TextField Label="What to say" @bind-Value="_note" MaxLength="200" Placeholder="Combined with Faith at Work, in Room 2" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="SaveAsync">Save</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string? _date;
+    private bool _off;
+    private string _note = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private string? Lead => Page.Round is { } round
+        ? $"{MinistryWords.Time(round.Starts)} to {MinistryWords.Time(round.Ends)}{(Page.Ministry.Room.Length > 0 ? $", {Page.Ministry.Room}" : "")}"
+        : null;
+
+    private void Open(string date)
+    {
+        if (Page.You.MayPostFor.Count == 0)
+            return;
+        SessionChange? change = Page.Sessions.FirstOrDefault(session => session.Date == date);
+        (_date, _off, _note, _problem) = (date, change?.Off ?? false, change?.Note ?? "", null);
+    }
+
+    private async Task SaveAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Ministries.SaveSessionAsync(Page.Ministry.Id, new SessionChange { Date = _date!, Off = _off, Note = _note });
+            _date = null;
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -1,0 +1,62 @@
+@inject MinistriesClient Ministries
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Join {Page.Ministry.Name}")" Lead="@(Choices.Count > 1 ? "Who's it for?" : null)">
+    <ChildContent>
+        @foreach (JoinChoice choice in Choices)
+        {
+            bool on = Chosen == choice;
+            <button type="button" class="ministry-choice @(on ? "ministry-choice--on" : "")" aria-pressed="@(on ? "true" : "false")" disabled="@(choice.Refusal is not null)" @onclick="() => _chosen = choice">
+                <span class="ministry-choice__radio" aria-hidden="true"></span>
+                <span>
+                    <span class="ministry-choice__title">@choice.Title</span>
+                    <span class="ministry-choice__detail">@(choice.Refusal ?? choice.Detail)</span>
+                </span>
+            </button>
+        }
+        @if (Chosen is { Asks: true })
+        {
+            <TextField Label="A note for the leaders (optional)" @bind-Value="_note" Multiline="true" MaxLength="500" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" Disabled="@(Chosen is null)" OnClick="JoinAsync">@(Chosen?.Action ?? "Join")</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private JoinChoice? _chosen;
+    private string _note = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback<string> OnJoined { get; set; }
+
+    private IReadOnlyList<JoinChoice> Choices => JoinChoices.For(Page);
+
+    private JoinChoice? Chosen => _chosen ?? Choices.FirstOrDefault(choice => choice.Refusal is null);
+
+    private async Task JoinAsync()
+    {
+        if (Chosen is not { } choice)
+            return;
+        (_busy, _problem) = (true, null);
+        try
+        {
+            JoinOutcome outcome = await Ministries.JoinAsync(Page.Ministry.Id, choice.PersonId, choice.Place, _note);
+            await OpenChanged.InvokeAsync(false);
+            await OnJoined.InvokeAsync(outcome.Words);
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

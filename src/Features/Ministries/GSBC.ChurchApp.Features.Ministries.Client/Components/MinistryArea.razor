@@ -1,0 +1,31 @@
+@switch (Area)
+{
+    case MinistriesPlaces.News:
+        <NewsArea Page="Page" OnChanged="OnChanged" />
+        break;
+    case MinistriesPlaces.Calendar:
+        <CalendarArea Page="Page" OnChanged="OnChanged" />
+        break;
+    case MinistriesPlaces.Files:
+        <FilesArea Page="Page" OnChanged="OnChanged" />
+        break;
+    case MinistriesPlaces.Sundays:
+        <SundaysArea Page="Page" OnChanged="OnChanged" />
+        break;
+    case MinistriesPlaces.People:
+        <PeopleArea Page="Page" OnChanged="OnChanged" />
+        break;
+    case MinistriesPlaces.Settings:
+        <SettingsArea Page="Page" Href="Href" OnChanged="OnChanged" />
+        break;
+    default:
+        <AboutArea Page="Page" Href="Href" OnChanged="OnChanged" />
+        break;
+}
+
+@code {
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter, EditorRequired] public required string Area { get; set; }
+    [Parameter, EditorRequired] public required Func<string, string> Href { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

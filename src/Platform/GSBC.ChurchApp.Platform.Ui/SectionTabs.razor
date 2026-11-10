@@ -1,0 +1,30 @@
+@inject NavigationManager Navigation
+
+<nav class="section-tabs" aria-label="@Label">
+    @foreach (SectionTab tab in Tabs)
+    {
+        <a href="@tab.Href" class="section-tabs__tab @(tab.Selected ? "section-tabs__tab--on" : "")" aria-current="@(tab.Selected ? "page" : null)"
+           @onclick="() => Go(tab)" @onclick:preventDefault="true">
+            @if (tab.Icon is { } icon)
+            {
+                <Icon Name="@icon" Size="IconSize.Small" />
+            }
+            <span>@tab.Label</span>
+            @if (tab.Count is > 0)
+            {
+                <span class="section-tabs__count">@tab.Count</span>
+            }
+        </a>
+    }
+</nav>
+
+@code {
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SectionTab> Tabs { get; set; }
+
+    private void Go(SectionTab tab)
+    {
+        if (!tab.Selected)
+            Navigation.NavigateTo(tab.Href, replace: true);
+    }
+}

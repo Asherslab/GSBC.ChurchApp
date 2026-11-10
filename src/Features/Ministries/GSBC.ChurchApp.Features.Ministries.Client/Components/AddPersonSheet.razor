@@ -1,0 +1,59 @@
+@inject MinistriesClient Ministries
+
+<Sheet Open="Open" OpenChanged="ClosingAsync" Title="@(Role == Roles.Attendee ? "Add an attendee" : "Add to the team")" Lead="Find them by name. They need to be in the app; a child is added by their parent first.">
+    <ChildContent>
+        @if (Role != Roles.Attendee && Givable.Count > 1)
+        {
+            <Segmented TValue="string" Label="As" Value="Chosen" ValueChanged="value => _role = value"
+                       Options="Givable.Select(role => new SegmentOption<string>(role, MinistryWords.Role(role))).ToList()" />
+        }
+        <PersonFinder Find="FindAsync" ActionText="@($"Add as {MinistryWords.Role(Chosen).ToLowerInvariant()}")" Busy="@_busy" AutoFocus="true" OnChosen="AddAsync" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+</Sheet>
+
+@code {
+    private string? _role;
+    private string? _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public IReadOnlyList<string> MayGive { get; set; } = [];
+    [Parameter] public string Role { get; set; } = Roles.Team;
+    [Parameter] public EventCallback OnAdded { get; set; }
+
+    private IReadOnlyList<string> Givable => new[] { Roles.Team, Roles.Admin, Roles.Leader }.Where(MayGive.Contains).ToList();
+
+    private string Chosen => _role ?? Role;
+
+    private async Task ClosingAsync(bool open)
+    {
+        if (!open)
+            (_role, _problem) = (null, null);
+        await OpenChanged.InvokeAsync(open);
+    }
+
+    private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
+        (await Ministries.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
+
+    private async Task AddAsync(PersonChoice person)
+    {
+        (_busy, _problem) = (person.Id, null);
+        try
+        {
+            await Ministries.ChangePersonAsync(Page.Ministry.Id, person.Id, Chosen, add: true);
+            await ClosingAsync(false);
+            await OnAdded.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

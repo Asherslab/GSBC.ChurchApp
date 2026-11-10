@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Features.Media.Client;
 using GSBC.ChurchApp.Features.Notifications.App;
 using GSBC.ChurchApp.Features.ReleaseNotes.App;
 using GSBC.ChurchApp.Features.Events.App;
+using GSBC.ChurchApp.Features.Ministries.App;
 using GSBC.ChurchApp.Features.People.App;
 using GSBC.ChurchApp.Features.Sermons.App;
 using GSBC.ChurchApp.Hosts.App;
@@ -33,6 +34,7 @@ builder.Services
     .AddAccountsApp(modules)
     .AddAccessOnPhone(modules)
     .AddPeopleApp(modules)
+    .AddMinistriesApp(modules)
     .AddConfigurationApp(modules)
     .AddMediaClient()
     .AddNotificationsApp(modules)

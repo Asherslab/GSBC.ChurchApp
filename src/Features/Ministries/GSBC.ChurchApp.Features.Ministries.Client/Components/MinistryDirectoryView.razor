@@ -1,0 +1,70 @@
+@inject MinistriesClient Ministries
+@inject NavigationManager Navigation
+
+<LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
+    <ChildContent>
+        @{
+            MinistryDirectory directory = context.Value;
+            List<MinistrySummary> ministries = directory.Ministries.Where(ministry => ministry.Kind != MinistryKinds.LifeGroup).ToList();
+            List<MinistrySummary> yours = ministries.Where(ministry => ministry.Yours.Length > 0).ToList();
+            List<MinistrySummary> top = ministries.Where(ministry => ministry.ParentId.Length == 0 && !HoldsLifeGroups(directory, ministry)).ToList();
+            List<MinistrySummary> groups = directory.Ministries.Where(ministry => ministry.Kind == MinistryKinds.LifeGroup).ToList();
+            List<MinistrySummary> yourGroups = groups.Where(group => group.Yours.Length > 0).ToList();
+        }
+        @if (yours.Count > 0)
+        {
+            <Section First="true" Title="Yours">
+                <ListGroup>
+                    @foreach (MinistrySummary ministry in yours)
+                    {
+                        <ListRow @key="ministry.Id" Title="@ministry.Name" Subtitle="@(ministry.Latest.Length > 0 ? $"{ministry.Yours} · {ministry.Latest}" : ministry.Yours)"
+                                 Icon="@AboutArea.IconOf(ministry.Icon)" Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
+                    }
+                </ListGroup>
+            </Section>
+        }
+        <Section First="@(yours.Count == 0)" Title="Ministries" Lead="@(yours.Count == 0 ? "Find where you fit: serve on a team, or come along." : null)">
+            <ListGroup>
+                @foreach (MinistrySummary ministry in top)
+                {
+                    int teams = ministries.Count(child => child.ParentId == ministry.Id);
+                    <ListRow @key="ministry.Id" Title="@ministry.Name" Subtitle="@Line(ministry, teams)" Icon="@AboutArea.IconOf(ministry.Icon)" Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
+                }
+                @if (directory.MayCreate)
+                {
+                    <ListRow Title="Add a ministry" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _creating = true" />
+                }
+            </ListGroup>
+        </Section>
+        @if (groups.Count > 0)
+        {
+            <Section Title="Life Groups">
+                <ListGroup>
+                    <ListRow Title="Sunday classes at 9:00" Subtitle="@(yourGroups.Count > 0 ? $"Yours: {MinistryWords.Names(yourGroups.Select(group => group.Name).ToList())}" : "Choose a class for you or your children")"
+                             Icon="book-open" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.LifeGroups" />
+                </ListGroup>
+            </Section>
+        }
+        <MinistrySheet Open="_creating" OpenChanged="open => _creating = open" OnCreated="created => Navigation.NavigateTo(MinistriesPlaces.Of(created.Id, MinistriesPlaces.Settings))" />
+    </ChildContent>
+    <Loading>
+        <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="6" /></Section>
+    </Loading>
+</LiveData>
+
+@code {
+    private bool _creating;
+
+    private static bool HoldsLifeGroups(MinistryDirectory directory, MinistrySummary ministry) =>
+        directory.Ministries.Any(child => child.ParentId == ministry.Id && child.Kind == MinistryKinds.LifeGroup);
+
+    private static string Line(MinistrySummary ministry, int teams)
+    {
+        List<string> parts = [];
+        if (ministry.Summary.Length > 0)
+            parts.Add(ministry.Summary);
+        if (teams > 0)
+            parts.Add($"{teams} {(teams == 1 ? "team" : "teams")}");
+        return string.Join(" · ", parts);
+    }
+}

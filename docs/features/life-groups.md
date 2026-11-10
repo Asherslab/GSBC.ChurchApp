@@ -1,8 +1,26 @@
 # Life Groups
 
-Status: draft, 2026-10-26; not built yet; Life Groups became a kind of ministry on 2026-10-30. Extends
+Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26; Life Groups became a kind of ministry on 2026-10-30. Extends
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
+
+## Built (2026-11-10)
+
+- **A Life Group is a ministry of kind Life Group** under a *Life Groups* ministry, so joining, leaders, news, files and
+  the People tab are the ministries' own (the owner: "all those features are why lifegroups are a subset/type of ministry").
+- **No "round" anywhere people see it** (owner, 2026-11-10: "I wouldn't call them rounds to end users"). The app shows
+  **Now on** (with its dates), **New groups from …** with *Choose a group* (a paged sheet, one group per page, opening the
+  group to join), and **All year**. Each set of groups is kept by its Sundays, time and *shows in the app from* date; its
+  staff label is its dates.
+- **Staff set them up in the admin panel** (owner, 2026-11-10: "rounds and such for life groups will be managed/created
+  through the admin page, not through app"): People → Life Groups, *Plan the next groups* (Sundays one by one or six at a
+  time, the time, when they show), *Add a group* (name, line, room, *join as a parent*), and all-year groups. A set can be
+  deleted once it has no groups.
+- **Parents** (owner, 2026-11-10): a parent joins a children's group for their child (the child is the attendee, and the
+  parent sees it through the family link) and joins their own adult group as themselves.
+- **A group's Sundays** tab lists its Sundays; its leaders mark one *No class this Sunday* or say what's changed
+  ("Combined with Faith at Work, in Room 2").
+- **No Sunday reminder** (owner, 2026-11-10). The site map isn't built, so a group shows its room as words.
 
 ## A kind of ministry
 

@@ -1,0 +1,72 @@
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+@inject NavigationManager Navigation
+
+<LiveData TValue="LifeGroupsPage" Load="Ministries.LifeGroupsAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.life-groups" FailedTitle="Can't load Life Groups right now">
+    <ChildContent>
+        @{
+            LifeGroupSets sets = LifeGroupSets.Of(context.Value, ChurchTime.Today(Clock));
+            _choosing = sets.Next?.Groups ?? [];
+        }
+        @if (sets.Next is { Groups.Count: > 0 } next)
+        {
+            <Section First="true">
+                <Card Title="@($"New groups from {MinistryWords.Day(next.Round.Sundays[0])}")">
+                    <ChildContent>
+                        <p>@Count(next.Groups.Count, "group") on @Count(next.Round.Sundays.Count, "Sunday"), @MinistryWords.Time(next.Round.Starts) to @MinistryWords.Time(next.Round.Ends). Choose one for you, and for each of your children.</p>
+                    </ChildContent>
+                    <Footer><Button OnClick="() => _open = true">Choose a group</Button></Footer>
+                </Card>
+            </Section>
+        }
+        @if (sets.Now is { Groups.Count: > 0 } now)
+        {
+            <Section First="@(sets.Next is null)" Title="Now on" Lead="@($"{MinistryWords.Span(now.Round)}, {MinistryWords.Time(now.Round.Starts)} to {MinistryWords.Time(now.Round.Ends)}")">
+                <ListGroup>@Rows(now.Groups, $"until {MinistryWords.Day(now.Round.Sundays[^1])}")</ListGroup>
+            </Section>
+        }
+        @if (sets.AllYear.Count > 0)
+        {
+            <Section First="@(sets.Now is null && sets.Next is null)" Title="All year">
+                <ListGroup>@Rows(sets.AllYear, "")</ListGroup>
+            </Section>
+        }
+        @if (sets.Now is null && sets.Next is null && sets.AllYear.Count == 0)
+        {
+            <Section First="true"><EmptyState Icon="book-open" Title="No Life Groups on right now" Body="The next groups show here as soon as the church sets them up." /></Section>
+        }
+        <PagedSheet Open="_open" OpenChanged="open => _open = open" Count="_choosing.Count" Label="Choose a group" ItemName="Group" DoneLabel="Close">
+            <Cover Context="index">
+                <SheetHeading Icon="book-open" Title="@_choosing[index].Name" Note="@_choosing[index].Room" />
+            </Cover>
+            <Page Context="index">
+                <p>@_choosing[index].Summary</p>
+                @if (_choosing[index].JoinAsParent)
+                {
+                    <p class="hint">For children: join for your child, and you'll hear about it too.</p>
+                }
+            </Page>
+            <Action Context="index">
+                <Button Block="true" OnClick="() => Navigation.NavigateTo(MinistriesPlaces.Of(_choosing[index].Id))">See @_choosing[index].Name and join</Button>
+            </Action>
+        </PagedSheet>
+    </ChildContent>
+    <Loading>
+        <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
+    </Loading>
+</LiveData>
+
+@code {
+    private bool _open;
+    private IReadOnlyList<MinistrySummary> _choosing = [];
+
+    private static string Count(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
+
+    private RenderFragment Rows(IReadOnlyList<MinistrySummary> groups, string until) => @<text>
+        @foreach (MinistrySummary group in groups)
+        {
+            string line = string.Join(" · ", new[] { group.Room, group.Yours.Length > 0 ? group.Yours : group.Summary, until }.Where(part => part.Length > 0));
+            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@line" Icon="@AboutArea.IconOf(group.Icon)" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.Of(group.Id)" />
+        }
+    </text>;
+}

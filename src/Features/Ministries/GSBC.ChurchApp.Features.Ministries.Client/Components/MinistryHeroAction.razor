@@ -1,0 +1,25 @@
+@if (MinistryWords.Yours(Page) is { Length: > 0 } yours)
+{
+    <Pill Tone="PillTone.Masthead" Icon="check">@yours</Pill>
+}
+@if (!Page.You.SignedIn)
+{
+    @if (JoinChoices.AnyOpen(Page) || Page.Ministry.TeamJoin != Joining.Invite)
+    {
+        <Button Variant="ButtonVariant.OnMasthead" Href="/account">Sign in to join</Button>
+    }
+}
+else if (JoinChoices.AnyOpen(Page))
+{
+    bool asks = JoinChoices.For(Page).Where(choice => choice.Refusal is null).All(choice => choice.Asks);
+    <Button Variant="ButtonVariant.OnMasthead" OnClick="OnJoin">@(asks ? "Ask to join" : "Join")</Button>
+}
+else if (Page.You.Asked.Count > 0)
+{
+    <Pill Tone="PillTone.Masthead" Icon="clock">Asked · waiting for a leader</Pill>
+}
+
+@code {
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnJoin { get; set; }
+}

@@ -1,0 +1,44 @@
+@inject MinistriesClient Ministries
+
+<Section First="true" Lead="@Lead">
+    @if (Page.Calendars.Count == 0)
+    {
+        <EmptyState Icon="calendar" Title="No calendars yet" Body="Add a calendar for everyone, or one only the team sees. Its events show in people's week and their calendar links." />
+    }
+    else
+    {
+        <ListGroup>
+            @foreach (CalendarLine calendar in Page.Calendars)
+            {
+                <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@MinistryWords.Box(calendar.Audience)" Icon="calendar" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.CalendarPage(calendar)">
+                    <TrailingContent>
+                        @if (Page.You.MayEditSettings)
+                        {
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" AriaLabel="@($"Change {calendar.Name}")" OnClick="() => Open(calendar)" />
+                        }
+                    </TrailingContent>
+                </ListRow>
+            }
+        </ListGroup>
+    }
+    @if (Page.You.MayEditSettings)
+    {
+        <div class="ministry-tools" style="margin-top: 14px">
+            <Button Icon="calendar-plus" Variant="ButtonVariant.Quiet" OnClick="() => Open(null)">Add a calendar</Button>
+        </div>
+    }
+</Section>
+
+<CalendarSheet @key="_draft" Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
+
+@code {
+    private bool _open;
+    private CalendarLine _draft = new();
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private string? Lead => Page.Calendars.Count > 0 ? "Open one to see its events, or add it to your week." : null;
+
+    private void Open(CalendarLine? calendar) => (_draft, _open) = (CalendarSheet.DraftOf(calendar, Page), true);
+}

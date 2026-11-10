@@ -1,0 +1,57 @@
+@inject MinistriesClient Ministries
+
+<LiveData @ref="_live" @key="Id" TValue="MinistryPage" Load="() => Ministries.MinistryAsync(Id)" Feeds="[MinistriesFeeds.Ministries]" Remember="@($"ministries.page.{Id}")" FailedTitle="Can't load this ministry right now">
+    <ChildContent>
+        @{
+            MinistryPage page = context.Value;
+            string area = MinistryAreas.Known(page, Area);
+            MinistryDetails ministry = page.Ministry;
+            string back = page.Path.LastOrDefault() is { } parent ? MinistriesPlaces.Of(parent.Id) : ministry.Kind == MinistryKinds.LifeGroup ? MinistriesPlaces.LifeGroups : MinistriesPlaces.Directory;
+            string backLabel = page.Path.LastOrDefault()?.Name ?? (ministry.Kind == MinistryKinds.LifeGroup ? "Life Groups" : "Ministries");
+        }
+        <Page Title="@ministry.Name" BackHref="@back" BackLabel="@backLabel">
+            <Masthead Title="@ministry.Name" Note="@(MinistryWords.HeroNote(ministry) is { Length: > 0 } note ? note : null)">
+                <div class="ministry-hero__action">
+                    <MinistryHeroAction Page="page" OnJoin="() => _joining = true" />
+                </div>
+            </Masthead>
+            @if (MinistryAreas.For(page).Count > 1)
+            {
+                <SectionTabs Label="@($"{ministry.Name}'s areas")" Tabs="MinistryAreas.Tabs(page, area, key => MinistriesPlaces.Of(ministry.Id, key))" />
+            }
+            @if (_joined is not null)
+            {
+                <Section First="true"><Notice Text="@_joined" /></Section>
+            }
+            <MinistryArea Page="page" Area="@area" Href="id => MinistriesPlaces.Of(id)" OnChanged="ReloadAsync" />
+        </Page>
+        <JoinSheet @key="@($"{Id}{_joining}")" Open="_joining" OpenChanged="open => _joining = open" Page="page" OnJoined="JoinedAsync" />
+    </ChildContent>
+    <Loading>
+        <Page Title="Ministry" BackHref="@MinistriesPlaces.Directory" BackLabel="Ministries">
+            <Masthead Title=" " />
+            <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
+        </Page>
+    </Loading>
+</LiveData>
+
+@code {
+    private LiveData<MinistryPage>? _live;
+    private bool _joining;
+    private string? _joined;
+
+    [Parameter, EditorRequired] public required string Id { get; set; }
+    [Parameter] public string Area { get; set; } = MinistriesPlaces.About;
+
+    private async Task JoinedAsync(string words)
+    {
+        _joined = words;
+        await ReloadAsync();
+    }
+
+    private async Task ReloadAsync()
+    {
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

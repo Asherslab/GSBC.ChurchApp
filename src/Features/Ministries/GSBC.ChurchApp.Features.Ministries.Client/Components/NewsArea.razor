@@ -1,0 +1,66 @@
+@inject TimeProvider Clock
+
+<Section First="true">
+    @if (Page.You.MayPostFor.Count > 0)
+    {
+        <div class="ministry-tools">
+            <Button Icon="plus" OnClick="() => Open(null)">New post</Button>
+        </div>
+    }
+    @if (Page.Posts.Count == 0)
+    {
+        <EmptyState Icon="megaphone" Title="Nothing posted yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Post news here: each post is for everyone, attendees and their parents, parents, or the team." : "News from this ministry shows here.")" />
+    }
+    @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Posts.Any(post => post.Audience == audience)))
+    {
+        <MinistryBox Audience="@audience">
+            @foreach (Post post in Page.Posts.Where(post => post.Audience == audience))
+            {
+                bool mine = post.From.Length == 0 && Page.You.MayPostFor.Count > 0;
+                @if (mine)
+                {
+                    <button type="button" class="ministry-item" @key="post.Id" @onclick="() => Open(post)">@Item(post)</button>
+                }
+                else
+                {
+                    <div class="ministry-item" @key="post.Id">@Item(post)</div>
+                }
+            }
+        </MinistryBox>
+    }
+</Section>
+
+<PostSheet Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
+
+@code {
+    private bool _open;
+    private Post _draft = new();
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private void Open(Post? post) => (_draft, _open) = (PostSheet.DraftOf(post, Page), true);
+
+    private RenderFragment Item(Post post) => @<text>
+        <span class="ministry-item__title">@post.Title</span>
+        @if (post.Body.Length > 0)
+        {
+            <span class="ministry-item__body">@post.Body</span>
+        }
+        <span class="ministry-item__meta">
+            @if (post.Important)
+            {
+                <span class="ministry-item__important">Important</span>
+            }
+            @if (post.From.Length > 0)
+            {
+                <span>From @post.From</span>
+            }
+            <span>@MinistryWords.Ago(post.PostedAt, Clock.GetUtcNow().UtcDateTime)@(post.EditedAt is null ? "" : " · edited")</span>
+            @if (post.WholeChurch.Length > 0)
+            {
+                <span>@post.WholeChurch</span>
+            }
+        </span>
+    </text>;
+}

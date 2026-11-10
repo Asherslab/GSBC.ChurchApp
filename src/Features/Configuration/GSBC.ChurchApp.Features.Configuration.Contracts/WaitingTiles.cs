@@ -49,17 +49,6 @@ public static class WaitingTiles
             .. TileVariants.Pictures,
         ]);
 
-    public static readonly HubTileKind LifeGroups = new("hub.life-groups", "Life Groups",
-        "Your Life Group, or finding one", "Life Groups",
-        new TileDefaults("Life Groups", "Find a group near you", Tone: TileTones.MarkerSoft, Icon: "users", Link: ComingSoonDestinations.LifeGroups.Path,
-            TitleLabel: "Title for people not in a group"),
-        sample: true, offered: false);
-
-    public static readonly HubTileKind Ministries = new("hub.ministries", "Ministries",
-        "The church's ministries: kids, youth, music and more", "Ministries",
-        new TileDefaults("Ministries", "Kids, youth, music and more", Tone: TileTones.LiveSoft, Icon: "sparkles", Link: ComingSoonDestinations.Ministries.Path),
-        sample: true, offered: false);
-
     public static readonly HubTileKind Give = new("hub.give", "Give",
         "Opens giving online", "Giving",
         new TileDefaults("Give", "Online at baptist.com.au", Icon: "heart", Link: "https://baptist.com.au/give"), offered: false);
@@ -73,7 +62,7 @@ public static class WaitingTiles
         new TileDefaults("Visit us", "Sundays 10:30am and 6pm · 185 Old Northern Road, Albany Creek", Columns: 2, Tone: TileTones.Raised, Icon: "map-pin",
             Link: "https://maps.apple.com/?q=185+Old+Northern+Road,+Albany+Creek+QLD+4035"), offered: false);
 
-    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Outreach, Prayer, Give, Bible, LifeGroups, Ministries, Visit];
+    public static readonly IReadOnlyList<HubTileKind> All = [Bulletin, Outreach, Prayer, Give, Bible, Visit];
 
     public static SurfaceSet Surfaces => new(All.Select(kind => kind.Surface).ToList());
 }

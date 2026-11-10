@@ -57,6 +57,9 @@ public static class MinistriesApiExtensions
             ["ministries.*"], Feature: RoleFeatures.Ministries, Kits: [RoleKits.Pictures]));
 
         services.AddFeed(new FeedDefinition(MinistriesFeeds.Ministries, FeedAudience.Public));
+        services.AddDestinations(MinistriesDestinations.All);
+        services.AddDestinationSource<MinistryDestinationSource>();
+        services.AddSurfaces(MinistriesTiles.Surfaces);
         return services;
     }
 

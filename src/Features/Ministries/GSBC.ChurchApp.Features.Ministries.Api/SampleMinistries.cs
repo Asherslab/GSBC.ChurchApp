@@ -96,10 +96,10 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
             Starts = new TimeOnly(9, 0), Ends = new TimeOnly(9, 45), ShowsFrom = today,
         };
         db.Rounds.Add(round);
-        MinistryRecord first = Add(lifeGroups.Id, "Psalms of Ascent", "Four weeks in the songs pilgrims sang", "Sample group.", "", "Adults", "#009c8f", "book",
+        MinistryRecord first = Add(lifeGroups.Id, "Psalms of Ascent", "Four weeks in the songs pilgrims sang", "Sample group.", "", "Adults", "#009c8f", "book-open",
             Joining.Invite, Joining.Open, MinistryKinds.LifeGroup);
         (first.RoundId, first.Room) = (round.Id, "Library (5)");
-        MinistryRecord second = Add(lifeGroups.Id, "Faith at Work", "Living it out Monday to Friday", "Sample group.", "", "Adults", "#e7ae74", "book",
+        MinistryRecord second = Add(lifeGroups.Id, "Faith at Work", "Living it out Monday to Friday", "Sample group.", "", "Adults", "#e7ae74", "book-open",
             Joining.Invite, Joining.Open, MinistryKinds.LifeGroup);
         (second.RoundId, second.Room) = (round.Id, "Room 2");
         MinistryRecord kidsLife = Add(lifeGroups.Id, "Kids Life", "Prep to Year 6, all year", "Sample group.", "", "Prep to Year 6", "#f89833", "smile",
