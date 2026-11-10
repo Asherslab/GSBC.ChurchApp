@@ -1,6 +1,5 @@
 @using GSBC.ChurchApp.Platform.Client.Modules
 @inject AccountsClient Accounts
-@inject IPasskeyCeremonies Passkeys
 @inject IEnumerable<AccountSection> Sections
 
 <LiveData @ref="_live" TValue="AccountView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't reach the church's server">
@@ -14,7 +13,7 @@
                 <ListRow Title="@context.Value.Profile.Email" Subtitle="@(context.Value.Profile.EmailConfirmed ? "Confirmed" : "Not confirmed yet")" Icon="send" IconTone="RowTone.Quiet" />
             </ListGroup>
         </div>
-        @if (!context.Value.Profile.EmailConfirmed && !context.Value.Profile.DemoAccount)
+        @if (context.Value.Profile is { EmailConfirmed: false, DemoAccount: false })
         {
             <div class="ui-after">
                 <TextField Label="Code from the email" Value="@_code" ValueChanged="value => _code = value" AutoComplete="one-time-code" Hint="Confirming lets you get back in by email if you lose your passkeys." />
@@ -42,49 +41,15 @@
             </Card>
         </Section>
     }
-    else
-    {
-        <Section Title="Passkeys" Lead="A second passkey, on another phone or computer, means losing one device never locks you out.">
-            <ListGroup>
-                @foreach (PasskeySummary passkey in context.Value.Passkeys)
-                {
-                    <ListRow Title="@passkey.Name" Subtitle="@PasskeyLine(passkey)" Icon="key" IconTone="RowTone.Accent">
-                        <TrailingContent>
-                            @if (context.Value.Passkeys.Count > 1)
-                            {
-                                <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => RemoveAsync(passkey.Id)">Remove</Button>
-                            }
-                        </TrailingContent>
-                    </ListRow>
-                }
-            </ListGroup>
-            <div class="ui-after">
-                <Button Variant="ButtonVariant.Quiet" Icon="plus" Busy="_busy" OnClick="AddPasskeyAsync">Add a passkey on this device</Button>
-            </div>
-        </Section>
-    }
 
-    <Section Title="Where you're signed in">
+    <Section Title="Security">
         <ListGroup>
-            @foreach (SessionSummary session in context.Value.Sessions)
-            {
-                <ListRow Title="@(session.Current ? "This device" : session.DeviceName ?? session.Client)" Subtitle="@SessionLine(session)" Icon="@(IsTool(session) ? "terminal" : "smartphone")" IconTone="RowTone.Quiet">
-                    <TrailingContent>
-                        @if (!session.Current)
-                        {
-                            <Button Variant="ButtonVariant.Quiet" Small="true" Disabled="_busy" OnClick="() => EndAsync(session.Id)">Sign out</Button>
-                        }
-                    </TrailingContent>
-                </ListRow>
-            }
+            <ListRow Title="Passkeys and sign-ins" Subtitle="@SecurityLine(context.Value)" Icon="key" IconTone="RowTone.Accent" Href="@AccountsDestinations.Security.Route" />
         </ListGroup>
         <div class="ui-actions ui-after">
-            <Button Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => RunAsync(Accounts.SignOutEverywhereAsync)">Sign out everywhere</Button>
             <Button Busy="_busy" OnClick="() => RunAsync(Accounts.SignOutAsync)">Sign out</Button>
         </div>
     </Section>
-
-    @AfterSessions?.Invoke(ReloadAsync)
 
     <Section Title="Delete your account" Lead="For good. Signing out is enough to stop using it on this device.">
         <div class="ui-actions">
@@ -123,25 +88,19 @@
     private string? _message;
     private NoticeTone _messageTone = NoticeTone.Info;
 
-    [Parameter] public RenderFragment<Func<Task>>? AfterSessions { get; set; }
-
-    private Task ReloadAsync() => _live?.ReloadAsync() ?? Task.CompletedTask;
-
-    private static bool IsTool(SessionSummary session) => session.Client == "Tool";
-
-    private static string SessionLine(SessionSummary session)
+    private static string SecurityLine(AccountView view)
     {
-        string lastUsed = $"{session.LastSeenAt.ToLocalTime():d MMM, h:mm tt}";
-        return IsTool(session) ? $"A connected tool · last used {lastUsed}" : $"Last used {lastUsed}";
+        string devices = view.Sessions.Count == 1 ? "signed in on 1 device" : $"signed in on {view.Sessions.Count} devices";
+        if (view.Profile.DemoAccount)
+            return char.ToUpperInvariant(devices[0]) + devices[1..];
+        string passkeys = view.Passkeys.Count == 1 ? "1 passkey" : $"{view.Passkeys.Count} passkeys";
+        return $"{passkeys} · {devices}";
     }
 
     private async Task<AccountView> LoadAsync() => new(
         await Accounts.GetProfileAsync(),
         (await Accounts.ListPasskeysAsync()).Passkeys,
         (await Accounts.ListSessionsAsync()).Sessions);
-
-    private static string PasskeyLine(PasskeySummary passkey) =>
-        $"Added {passkey.CreatedAt.ToLocalTime():d MMM yyyy}{(passkey.BackedUp ? " · synced" : "")}";
 
     private Task SaveNameAsync() => RunAsync(async () =>
     {
@@ -161,27 +120,6 @@
     {
         await Accounts.ResendConfirmationAsync();
         Tell("A new code is on its way.");
-    });
-
-    private Task AddPasskeyAsync() => RunAsync(async () =>
-    {
-        CeremonyResult result = await Passkeys.RegisterAsync(null);
-        if (result.Ok)
-            Tell("Passkey added.");
-        else
-            Warn(result.Error ?? "That didn't work. Try again.");
-    });
-
-    private Task RemoveAsync(string id) => RunAsync(async () =>
-    {
-        await Accounts.RemovePasskeyAsync(id);
-        Tell("Passkey removed.");
-    });
-
-    private Task EndAsync(string id) => RunAsync(async () =>
-    {
-        await Accounts.EndSessionAsync(id);
-        Tell("Signed out of that device.");
     });
 
     private async Task DeleteAsync()
@@ -228,10 +166,6 @@
         catch (RpcException exception)
         {
             Warn(exception.Status.Detail);
-        }
-        catch (JSException)
-        {
-            Warn("This page couldn't start passkeys. Reload it and try again.");
         }
         finally
         {
