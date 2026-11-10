@@ -128,6 +128,8 @@ public sealed class EventOccurrence
     [ProtoMember(20)] public DateTime? ShowFrom { get; set; }
     [ProtoMember(21)] public bool Asked { get; set; }
     [ProtoMember(22)] public bool ListEveryDate { get; set; }
+    [ProtoMember(23)] public string KeptBy { get; set; } = "";
+    [ProtoMember(24)] public string OpensAt { get; set; } = "";
 }
 
 [ProtoContract]
@@ -318,6 +320,8 @@ public sealed class RegularEventDetail
     [ProtoMember(19)] public DateTime UpdatedAt { get; set; }
     [ProtoMember(21)] public List<RegularDate> Dates { get; set; } = [];
     [ProtoMember(22)] public bool ListEveryDate { get; set; }
+    [ProtoMember(23)] public string KeptBy { get; set; } = "";
+    [ProtoMember(24)] public string OpensAt { get; set; } = "";
 }
 
 [ProtoContract]

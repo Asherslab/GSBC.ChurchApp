@@ -116,6 +116,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
             throw NotHere("That regular event isn't here any more.");
         RegularEventSave request = record is null ? wanted : EditMerge.Onto(await SaveOfAsync(record, cancellationToken), wanted);
         CalendarRecord calendar = await WritableCalendarAsync(request.CalendarId, cancellationToken);
+        if (record is not null)
+            NotKept(record);
         DateTime now = time.GetUtcNow().UtcDateTime;
         if (record is not null && record.CalendarId != calendar.Id)
         {
@@ -197,6 +199,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     public async Task DeleteRegularEventAsync(ClaimsPrincipal user, RegularRef request, CancellationToken cancellationToken)
     {
         RegularEventRecord record = await RegularInAsync(request.CalendarId, request.RegularEventId, cancellationToken);
+        NotKept(record);
         await WritableCalendarAsync(request.CalendarId, cancellationToken);
         await MayChangeShownAsync(user, record, time.GetUtcNow().UtcDateTime, cancellationToken);
         List<DateOnly> specialDates = await db.Specials.Where(special => special.RegularEventId == record.Id).Select(special => special.Date).ToListAsync(cancellationToken);
@@ -217,6 +220,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     {
         RegularEventRecord regular = await RegularInAsync(wanted.CalendarId, wanted.RegularEventId, cancellationToken);
         await WritableCalendarAsync(wanted.CalendarId, cancellationToken);
+        NotKept(regular);
         DateTime now = time.GetUtcNow().UtcDateTime;
         await MayChangeShownAsync(user, regular, now, cancellationToken);
         DateOnly date = EventDates.Parse(wanted.Date) ?? throw Invalid("Choose a date.");
@@ -294,6 +298,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         Needs = record.Needs,
         RemindDaysBefore = record.RemindDaysBefore,
         ListEveryDate = record.ListEveryDate,
+        KeptBy = record.KeptBy,
+        OpensAt = record.OpensAt,
         BreakIds = breaks.Where(stop => stop.RegularEventId is null).Select(stop => stop.Id.ToString()).Order(StringComparer.Ordinal).ToList(),
         OwnBreaks = breaks.Where(stop => stop.RegularEventId == record.Id).OrderBy(stop => stop.StartDate).Select(stop => CalendarSetupService.Info(stop, [])).ToList(),
         Specials = specials.OrderBy(special => special.Date).Select(Info).ToList(),
@@ -398,6 +404,12 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         List<SpecialRecord> upcoming = await db.Specials.AsNoTracking()
             .Where(special => special.RegularEventId == record.Id && special.Date >= today).OrderBy(special => special.Date).ToListAsync(cancellationToken);
         return KeptValuesOf(record, changed, upcoming);
+    }
+
+    private static void NotKept(RegularEventRecord record)
+    {
+        if (record.Keeper is not null)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{record.KeptBy} keeps {record.Fields.Title} in step: change it in {record.KeptBy}."));
     }
 
     private async Task<CalendarRecord> WritableCalendarAsync(string calendarId, CancellationToken cancellationToken)

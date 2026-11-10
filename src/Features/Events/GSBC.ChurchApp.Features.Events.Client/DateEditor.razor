@@ -36,6 +36,7 @@ else
     private string _savedOccurrenceId = "";
     private int _aboutVersion;
     private string? _inBreak;
+    private (string By, string At) _kept = ("", "");
     private (string, DateOnly)? _loadedFor;
 
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
@@ -73,6 +74,7 @@ else
                 return;
             }
             _draft = EventDraft.From(detail, Date, Now);
+            _kept = (detail.KeptBy, detail.OpensAt);
             Stored();
             _inBreak = detail.Dates.FirstOrDefault(entry => entry.Date == EventDates.Format(Date) && entry.NotOn && !_draft.NotOnThisDate)?.NotOnReason;
             _placesUsed = await Editing.PlacesUsedAsync();
@@ -117,9 +119,17 @@ else
                 <Icon Name="repeat" Size="IconSize.Small" />
                 <p>
                     One of the @draft.Every.Fields.Title, @draft.RepeatWords.
-                    <button type="button" class="date-of__link" @onclick="OpenRegular">Edit the regular event ›</button>
+                    @if (_kept.By.Length == 0)
+                    {
+                        <button type="button" class="date-of__link" @onclick="OpenRegular">Edit the regular event ›</button>
+                    }
                 </p>
             </div>
+            @if (_kept.By.Length > 0)
+            {
+                <KeptNotice KeptBy="@_kept.By" OpensAt="@_kept.At" />
+                return;
+            }
             <div class="event-body event-body--editing">
                 @if (draft.NotOnThisDate)
                 {

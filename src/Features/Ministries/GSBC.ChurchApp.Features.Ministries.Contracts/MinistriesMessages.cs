@@ -10,6 +10,23 @@ public sealed class Done;
 public sealed class DirectoryRequest;
 
 [ProtoContract]
+public sealed class ArchivedList
+{
+    [ProtoMember(1)] public List<ArchivedLine> Ministries { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ArchivedLine
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public string Where { get; set; } = "";
+    [ProtoMember(4)] public DateTime ArchivedAt { get; set; }
+    [ProtoMember(5)] public bool ShowsInLifeGroups { get; set; }
+    [ProtoMember(6)] public bool MayRestore { get; set; }
+}
+
+[ProtoContract]
 public sealed class MinistryDirectory
 {
     [ProtoMember(1)] public List<MinistrySummary> Ministries { get; set; } = [];
@@ -79,6 +96,7 @@ public sealed class MinistryPage
     [ProtoMember(8, IsRequired = true)] public YourPlace You { get; set; } = new();
     [ProtoMember(9)] public List<SessionChange> Sessions { get; set; } = [];
     [ProtoMember(10)] public Round? Round { get; set; }
+    [ProtoMember(11)] public List<SittingOut> SittingOut { get; set; } = [];
 }
 
 [ProtoContract]
@@ -362,6 +380,40 @@ public sealed class LifeGroupsPage
     [ProtoMember(4)] public List<GroupSessions> Sessions { get; set; } = [];
     [ProtoMember(5)] public bool MayPlan { get; set; }
     [ProtoMember(6)] public List<Crumb> Under { get; set; } = [];
+    [ProtoMember(7)] public string CalendarName { get; set; } = "";
+    [ProtoMember(8)] public List<SittingOut> SittingOut { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class SittingOut
+{
+    [ProtoMember(1)] public string GroupId { get; set; } = "";
+    [ProtoMember(2)] public string RoundId { get; set; } = "";
+    [ProtoMember(3)] public string Note { get; set; } = "";
+    [ProtoMember(4)] public string InsteadId { get; set; } = "";
+    [ProtoMember(5)] public string InsteadName { get; set; } = "";
+    [ProtoMember(6)] public Round? Round { get; set; }
+}
+
+[ProtoContract]
+public sealed class SitOutSave
+{
+    [ProtoMember(1, IsRequired = true)] public SittingOut SittingOut { get; set; } = new();
+    [ProtoMember(2)] public bool Off { get; set; }
+}
+
+[ProtoContract]
+public sealed class LifeGroupsCalendar
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
+    [ProtoMember(2)] public string CalendarName { get; set; } = "";
+    [ProtoMember(3)] public List<Crumb> Choices { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class LifeGroupsCalendarChoice
+{
+    [ProtoMember(1)] public string CalendarId { get; set; } = "";
 }
 
 [ProtoContract]

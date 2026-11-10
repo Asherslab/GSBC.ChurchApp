@@ -827,6 +827,24 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 - **Left as they are:** inbox notifications that linked to the calendar open its page, which says it isn't here; a
   person's mute for *News about an event* on that calendar stays in Notifications and does nothing.
 
+## Decided while building (kept regular events, 2026-11-10)
+
+For Life Groups in the calendar ([life-groups.md](life-groups.md#life-groups-in-the-calendar-owner-2026-11-10)).
+
+- **A regular event another feature keeps** (`IKeptRegularEvents` in Platform.Api, implemented here): the feature names
+  it by a key, gives its title, About, where tapping opens, its dates with their times and the dates not on with why.
+  Events stores it as an ordinary regular event (`Keeper`, `KeptBy`, `OpensAt` on `regular_events`): weekly when the
+  dates are a weekly run, a list of dates otherwise; the usual time is the one most dates have, the rest are time-only
+  specials; each run of not-on dates with one reason is an own break, so it shows as a break does (its first two weeks
+  as not on, then left out). Every change replaces its specials and breaks in one transaction and publishes.
+- **No special cases downstream:** every feed, iCal link, the digest and notifications read it as any regular event.
+  Two differences only: a kept event's time-only dates aren't shown as specials, and an occurrence carries
+  `KeptBy`/`OpensAt`, so rows and Home open the feature's page and the event page links to it.
+- **Locked:** saving it, a date of it and deleting it are refused (`FailedPrecondition`, naming where it's changed);
+  the editors show that instead of their fields.
+- **Choosing a calendar for it** offers calendars the person edits (and publishes, if the calendar needs a publisher),
+  through Access; keeping it in step afterwards needs no one's rights.
+
 ## What the owner sets up
 
 - **Nothing new in Cloudflare for dev.** For production, the zone's Browser Cache TTL set to *Respect existing headers*

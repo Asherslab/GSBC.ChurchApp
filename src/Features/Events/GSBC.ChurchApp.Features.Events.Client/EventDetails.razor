@@ -15,6 +15,10 @@
         <p class="event-change"><strong>Changed</strong>@Occurrence.ChangeNote</p>
     }
     <div class="list event-facts">
+        @if (Occurrence.OpensAt.Length > 0)
+        {
+            <ListRow Icon="book-open" Title="@($"Open {Occurrence.KeptBy}")" Subtitle="Everything about it is there" Href="@Occurrence.OpensAt" Chevron="true" />
+        }
         @if (Occurrence.Fields.Place is { } place && (place.Name.Length > 0 || place.Address.Length > 0))
         {
             <ListRow Icon="map-pin" Title="@(place.Name.Length > 0 ? place.Name : place.Address)" Subtitle="@PlaceDetail(place)"

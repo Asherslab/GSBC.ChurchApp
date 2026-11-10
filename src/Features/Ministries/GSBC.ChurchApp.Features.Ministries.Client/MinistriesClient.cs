@@ -66,6 +66,12 @@ public sealed class MinistriesClient(ChannelBase channel)
 
     public async Task DeleteAsync(string ministryId) => await _leading.DeleteAsync(new MinistryRef { MinistryId = ministryId });
 
+    public async Task ArchiveAsync(string ministryId) => await _leading.ArchiveAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task RestoreAsync(string ministryId) => await _leading.RestoreAsync(new MinistryRef { MinistryId = ministryId });
+
+    public async Task<ArchivedList> ArchivedAsync() => await _leading.ArchivedAsync(new DirectoryRequest());
+
     public async Task SaveCalendarAsync(string ministryId, CalendarLine calendar) =>
         await _leading.SaveCalendarAsync(new CalendarSave { MinistryId = ministryId, Calendar = calendar });
 
@@ -77,6 +83,13 @@ public sealed class MinistriesClient(ChannelBase channel)
     public async Task SaveRoundAsync(Round round) => await _leading.SaveRoundAsync(new RoundSave { Round = round });
 
     public async Task DeleteRoundAsync(string id) => await _leading.DeleteRoundAsync(new RoundRef { Id = id });
+
+    public async Task SitOutAsync(SittingOut sittingOut, bool off) => await _leading.SitOutAsync(new SitOutSave { SittingOut = sittingOut, Off = off });
+
+    public async Task<LifeGroupsCalendar> LifeGroupsCalendarAsync() => await _leading.LifeGroupsCalendarAsync(new LifeGroupsRequest());
+
+    public async Task<LifeGroupsCalendar> ShowLifeGroupsInAsync(string calendarId) =>
+        await _leading.ShowLifeGroupsInAsync(new LifeGroupsCalendarChoice { CalendarId = calendarId });
 
     public async Task SaveSessionAsync(string groupId, SessionChange change) =>
         await _leading.SaveSessionAsync(new SessionSave { MinistryId = groupId, Change = change });
