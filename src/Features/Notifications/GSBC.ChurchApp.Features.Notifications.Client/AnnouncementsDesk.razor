@@ -10,6 +10,8 @@
 @inject NavigationManager Navigation
 @inject TimeProvider Clock
 
+<UnsavedGuard What="this announcement" Autosave="() => _save" Save="SaveBeforeLeavingAsync" />
+
 <TitleBand Title="Announcements" Lead="What goes out this week and next, and what you're writing. Times are church time.">
     <Actions>
         <Button Icon="plus" Href="announcements/new">New announcement</Button>
@@ -50,7 +52,7 @@
                     }
                     @if (Editable)
                     {
-                        <SaveStatus State="_save" SavedText="@(_editing.Id.Length == 0 ? "Saves as you type" : "Saved")" Detail="@StateLabel(_editing)" Retry="SaveNowAsync" />
+                        <SaveStatus State="_save" SavedText="@(_editing.Id.Length == 0 ? "Saves as you type" : "Saved")" UnsavedText="@WhyNotSaving" Detail="@StateLabel(_editing)" Retry="SaveNowAsync" />
                     }
                 </div>
 
@@ -503,11 +505,22 @@
         }
     }
 
+    private string WhyNotSaving =>
+        _editing.Title.Trim().Length == 0 ? _editing.Body.Trim().Length > 0 ? "Give it a title so it can save" : ""
+        : LinkProblem is not null ? "Not saved until what it opens is chosen"
+        : "";
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveNowAsync();
+        return _save == SaveState.Saved;
+    }
+
     private async Task SaveNowAsync()
     {
         if (!Editable || _editing.Title.Trim().Length == 0 || LinkProblem is not null)
         {
-            _save = SaveState.Saved;
+            _save = Editable && WhyNotSaving.Length > 0 ? SaveState.Unsaved : SaveState.Saved;
             StateHasChanged();
             return;
         }

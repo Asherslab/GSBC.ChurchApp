@@ -3,17 +3,17 @@
 
 <NavigationLock OnBeforeInternalNavigation="CheckAsync" ConfirmExternalNavigation="HasChanges" />
 
-<Sheet Open="_answer is not null" OpenChanged="open => { if (!open) Answer(false); }" Title="@(Save is null ? "Leave without saving?" : "Save your changes?")"
+<Sheet Open="_answer is not null" OpenChanged="open => { if (!open) Answer(false); }" Title="@(MaySave ? "Save your changes?" : "Leave without saving?")"
        Lead="@Lead">
     <ChildContent>
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        @if (Save is not null)
+        @if (MaySave)
         {
             <Button Block="true" Busy="_busy" OnClick="SaveAndGoAsync">@(IsFailed ? "Try saving again" : "Save and go on")</Button>
         }
-        <Button Block="true" Variant="@(Save is null ? ButtonVariant.Danger : ButtonVariant.Quiet)" Disabled="_busy" OnClick="() => Answer(true)">Discard the changes</Button>
+        <Button Block="true" Variant="@(MaySave ? ButtonVariant.Quiet : ButtonVariant.Danger)" Disabled="_busy" OnClick="() => Answer(true)">Discard the changes</Button>
         <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => Answer(false)">Stay here</Button>
     </Actions>
 </Sheet>
@@ -38,8 +38,13 @@
 
     private bool IsFailed => Autosave?.Invoke() == SaveState.Failed;
 
+    private bool CannotSaveYet => Autosave?.Invoke() == SaveState.Unsaved;
+
+    private bool MaySave => Save is not null && !CannotSaveYet;
+
     private string Lead =>
         IsFailed ? $"{Capital(What)} couldn't be saved. If you leave now, the last changes are lost."
+        : CannotSaveYet ? $"{Capital(What)} can't save yet. If you leave now, what you've written is lost."
         : Autosave is not null ? $"{Capital(What)} is still saving. Save it now, or leave and lose the last changes."
         : $"You've changed {What} and haven't saved yet. If you leave now, the changes are lost.";
 
