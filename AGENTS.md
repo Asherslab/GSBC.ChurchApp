@@ -168,12 +168,20 @@ People can be deleted too (owner, 2026-11-09): a feature that keeps anything abo
 details, their progress) implements `IPersonData` (Platform.Api) so deleting an account forgets it
 ([accounts.md](docs/features/accounts.md), *Deleting an account*).
 
-# Admin work stays in the admin panel
+# Where staff and leader tools live: the phone or the admin panel
 
-Staff tools (drafts, insights, roles, people, media, announcements) are built for the admin panel on
-a computer. **Before designing an admin screen for the phone, or putting one in the app, ask the owner
-and wait for a yes** (owner, 2026-11-03). The app shows staff only what they need on their phone,
-such as previewing a draft on it.
+Ask: **would someone need to do this away from a desk, as part of looking after something they're responsible for?**
+(owner, 2026-11-11, replacing "Admin work stays in the admin panel" of 2026-11-03).
+
+- **On the phone, and in the admin panel too:** the day-to-day running of something. Answering and approving (join
+  requests, roster swaps, prayer wall requests), posting and sharing (news, files, a quick event change, telling
+  people), looking after your own people (adding someone, linking a parent, giving a role in your ministry) and your
+  ministry's own settings. Built for lay leaders and approvers who may never open a computer.
+- **Admin panel only:** setting up and looking after the whole church's app. Who can do what (roles, permissions,
+  accounts), how the app looks (styling, Home, tiles), the media library, imports, analytics and health, bulk and
+  planning work (sending all invitations, planning the year's Life Groups, the sermon library), and dense work with
+  many fields, filters, tables or history (the full pastoral inbox).
+- **When it isn't clear, ask the owner and wait for a yes** before building it.
 
 # Who may see or do something: always the permission system
 
