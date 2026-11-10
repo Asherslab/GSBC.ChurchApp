@@ -213,11 +213,11 @@ internal sealed class AccountsService(
 
         return new SessionList
         {
-            Sessions = sessions.Select(session => new SessionSummary
+            Sessions = sessions.OrderByDescending(session => session.Id == sessionId).Select(session => new SessionSummary
             {
                 Id = session.Id.ToString(),
                 Client = session.Client.ToString(),
-                DeviceName = session.DeviceName,
+                DeviceName = SessionDevices.Describe(session.Client, session.DeviceName),
                 CreatedAt = session.CreatedAt,
                 LastSeenAt = session.LastSeenAt,
                 Current = session.Id == sessionId,
