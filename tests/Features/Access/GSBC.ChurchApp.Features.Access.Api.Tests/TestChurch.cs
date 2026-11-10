@@ -10,6 +10,7 @@ internal sealed class TestChurch
 {
     public const string Music = "music";
     public const string Choir = "choir";
+    public const string Altos = "altos";
 
     public static readonly Permission PostNews = new("ministries.news.post", ScopeKind.Ministry, "Post news");
     public static readonly Permission ReadNews = new("ministries.news.read", ScopeKind.Ministry, "Read news");
@@ -32,6 +33,9 @@ internal sealed class TestChurch
         new("staff", "Staff", "", ScopeKind.Global, ["ministries.*"], AssignableBy: []),
         new("follower", "Follower", "", ScopeKind.Ministry, ["ministries.notices.receive"], PhoneHoldable: true),
         new("publicity", "Publicity", "", ScopeKind.Ministry, ["ministries.news.post"], AssignableBy: ["leader", "staff"], Kits: [RoleKits.Pictures]),
+        new("parent", "Parent", "", ScopeKind.Person, [], Hidden: true),
+        new("attendee", "Attendee", "", ScopeKind.Ministry, ["ministries.news.read"], Through: [new RoleThrough("parent", "attendee-parent")]),
+        new("attendee-parent", "Attendee's parent", "", ScopeKind.Ministry, ["ministries.notices.receive"], Hidden: true),
     ];
 
     public static readonly SystemRolePatterns[] Additions = [new("member", ["ministries.notices.receive"])];
@@ -94,8 +98,16 @@ internal sealed class TestChurch
 
     public List<Assignment> Of(Guid userId) => _assignments.Where(assignment => assignment.UserId == userId).ToList();
 
-    public Task<GrantSet> GrantsAsync(Guid userId) =>
-        RoleGrants.CompileAsync(Of(userId).Select(assignment => (assignment.RoleId, assignment.ScopeObjectId)), Roles, Hierarchy, TestContext.Current.CancellationToken);
+    public Task<GrantSet> GrantsAsync(Guid userId, params IScopeAttachments[] attachments)
+    {
+        List<(Guid RoleId, string? ObjectId)> mine = Of(userId).Select(assignment => (assignment.RoleId, assignment.ScopeObjectId)).ToList();
+        mine.AddRange(RoleGrants.HeldThrough(mine, person => Of(person).Select(assignment => (assignment.RoleId, assignment.ScopeObjectId)), ThroughRules()));
+        return RoleGrants.CompileAsync(mine, Roles, Hierarchy, TestContext.Current.CancellationToken, attachments);
+    }
+
+    private List<HeldThroughRule> ThroughRules() =>
+        SystemRoles.SelectMany(role => (role.Through ?? []).Select(through =>
+            new HeldThroughRule(SystemRole(through.PersonRoleKey).Id, SystemRole(role.Key).Id, SystemRole(through.GivesRoleKey).Id))).ToList();
 
     public async Task<string?> GiveAsync(Guid actorId, Guid userId, string roleKey, string objectId)
     {
@@ -110,9 +122,9 @@ internal sealed class TestChurch
     public sealed class MusicOverChoir : IScopeHierarchy
     {
         public ValueTask<IReadOnlyList<string>> ChildrenOfAsync(ScopeKind kind, string objectId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<IReadOnlyList<string>>(objectId == Music ? [Choir] : []);
+            ValueTask.FromResult<IReadOnlyList<string>>(objectId switch { Music => [Choir], Choir => [Altos], _ => [] });
 
         public ValueTask<string?> ParentOfAsync(ScopeKind kind, string objectId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult(objectId == Choir ? Music : null);
+            ValueTask.FromResult(objectId switch { Choir => Music, Altos => Choir, _ => null });
     }
 }

@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.People;
@@ -27,6 +28,8 @@ public static class EventsApiExtensions
         services.AddScoped<EventPictures>();
         services.AddScoped<IMediaHolder>(provider => provider.GetRequiredService<EventPictures>());
         services.AddScoped<IScopeObjects, CalendarScopeObjects>();
+        services.AddScoped<IMinistryCalendars, MinistryCalendars>();
+        services.AddScoped<IScopeAttachments, MinistryCalendarAttachments>();
         services.AddScoped<IScopeObjects, RegularEventScopeObjects>();
         services.AddHostedService<EventsSchedule>();
         services.AddScoped<DetailsReminders>();

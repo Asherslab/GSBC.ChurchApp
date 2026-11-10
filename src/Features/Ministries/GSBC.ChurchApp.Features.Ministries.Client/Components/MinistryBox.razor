@@ -1,0 +1,9 @@
+<section class="ministry-box @MinistryWords.BoxClass(Audience)" aria-label="@MinistryWords.Box(Audience)">
+    <h3 class="ministry-box__head">@MinistryWords.Box(Audience)</h3>
+    @ChildContent
+</section>
+
+@code {
+    [Parameter, EditorRequired] public required string Audience { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

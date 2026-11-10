@@ -40,7 +40,7 @@ public static class FeedVisibility
         List<FeedChangeRecord> rows, ClaimsPrincipal user, IAccessEvaluator access, CancellationToken cancellationToken)
     {
         GrantSet grants = Caller.UserId(user) is { } userId ? await access.GrantsForAsync(userId, cancellationToken) : GrantSet.Empty;
-        Viewer viewer = new(IsSignedIn(user), node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
+        Viewer viewer = Viewer.Of(grants, IsSignedIn(user));
         return rows.Select(row => row.Deleted || (row.ScopeId is { } text && Audience.TryParse(text, out Audience? audience) && audience.Includes(viewer)) ? row : Gone(row))
             .ToList();
     }

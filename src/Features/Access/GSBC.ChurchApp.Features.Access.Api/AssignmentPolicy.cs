@@ -58,11 +58,21 @@ internal sealed class AssignmentPolicy(IScopeHierarchy hierarchy, PermissionCata
         if (held.Count == 0)
             return false;
 
-        string? parent = objectId is null || kind == ScopeKind.Global ? null : await hierarchy.ParentOfAsync(kind, objectId, cancellationToken);
+        List<string> above = objectId is null || kind == ScopeKind.Global ? [] : await AncestorsAsync(kind, objectId, cancellationToken);
         return held.Any(hold =>
             hold.Role.ScopeKind == ScopeKind.Global.Name
             || (objectId is not null && hold.Assignment.ScopeObjectId == objectId)
-            || (parent is not null && hold.Assignment.ScopeObjectId == parent && hold.Role.AppliesToChildren));
+            || (hold.Role.AppliesToChildren && hold.Assignment.ScopeObjectId is { } heldAt && above.Contains(heldAt)));
+    }
+
+    private async Task<List<string>> AncestorsAsync(ScopeKind kind, string objectId, CancellationToken cancellationToken)
+    {
+        List<string> above = [];
+        for (string? next = await hierarchy.ParentOfAsync(kind, objectId, cancellationToken);
+             next is not null && next != objectId && !above.Contains(next);
+             next = await hierarchy.ParentOfAsync(kind, next, cancellationToken))
+            above.Add(next);
+        return above;
     }
 
     private static string NotAnAssigner(RoleRecord role, IReadOnlyDictionary<Guid, RoleRecord> roles)

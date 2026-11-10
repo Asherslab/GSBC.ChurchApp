@@ -1,0 +1,9 @@
+@page "/ministries/{Id}"
+@page "/ministries/{Id}/{Area}"
+
+<MinistryView Id="@Id" Area="@(Area ?? MinistriesPlaces.About)" />
+
+@code {
+    [Parameter] public string Id { get; set; } = "";
+    [Parameter] public string? Area { get; set; }
+}

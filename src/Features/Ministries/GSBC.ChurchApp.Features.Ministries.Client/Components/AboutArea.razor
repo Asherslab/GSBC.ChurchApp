@@ -1,0 +1,129 @@
+@inject MinistriesClient Ministries
+@inject TimeProvider Clock
+
+@if (Page.Ministry.About.Length > 0)
+{
+    <Section First="true" Title="@(MinistryAreas.For(Page).Count > 1 ? null : "About")">
+        <p class="ministry-about">@Page.Ministry.About</p>
+    </Section>
+}
+<Section First="@(Page.Ministry.About.Length == 0)">
+    <ListGroup>
+        @if (Page.Ministry.Meets.Length > 0)
+        {
+            <ListRow Title="@Page.Ministry.Meets" Subtitle="When it meets" Icon="clock" IconTone="RowTone.Quiet" />
+        }
+        @if (Page.Ministry.Room.Length > 0)
+        {
+            <ListRow Title="@Page.Ministry.Room" Subtitle="Where it meets" Icon="map-pin" IconTone="RowTone.Quiet" />
+        }
+        @if (Page.Ministry.WhoFor.Length > 0)
+        {
+            <ListRow Title="@Page.Ministry.WhoFor" Subtitle="Who it's for" Icon="users" IconTone="RowTone.Quiet" />
+        }
+        @foreach (PersonLine leader in Page.Leaders)
+        {
+            <ListRow @key="leader.Id" Title="@leader.Name" Subtitle="Leader"><Leading><Avatar Name="@leader.Name" /></Leading></ListRow>
+        }
+    </ListGroup>
+</Section>
+
+@if (Page.You.Asked.Count > 0)
+{
+    <Section Title="Waiting for a leader">
+        <ListGroup>
+            @foreach (AskLine ask in Page.You.Asked)
+            {
+                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="@($"Asked {MinistryWords.Ago(ask.AskedAt, Clock.GetUtcNow().UtcDateTime).ToLowerInvariant()}. A leader says yes or no.")" Icon="clock" IconTone="RowTone.Quiet">
+                    <TrailingContent>
+                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.WithdrawAsync(Page.Ministry.Id, ask.Id))">Take back</Button>
+                    </TrailingContent>
+                </ListRow>
+            }
+        </ListGroup>
+    </Section>
+}
+
+@if (Page.Teams.Count > 0)
+{
+    <Section Title="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? "Groups" : "Teams")">
+        <ListGroup>
+            @foreach (MinistrySummary team in Page.Teams)
+            {
+                <ListRow @key="team.Id" Title="@team.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? team.Summary : MinistryWords.JoinLine(team))" Icon="@IconOf(team.Icon)" Chevron="true" Href="@Href(team.Id)" />
+            }
+        </ListGroup>
+    </Section>
+}
+
+@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings)
+{
+    <Section>
+        <p class="hint">@Page.Ministry.Name's news, calendar and files are for the people in it.</p>
+    </Section>
+}
+
+@if (Leaving.Count > 0)
+{
+    <Section Title="Your place">
+        <ListGroup>
+            @foreach ((string person, string place, string words) in Leaving)
+            {
+                <ListRow @key="@($"{person}{place}")" Title="@words" Icon="door-open" IconTone="RowTone.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.LeaveAsync(Page.Ministry.Id, person, place))" />
+            }
+        </ListGroup>
+    </Section>
+}
+
+<Section>
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+</Section>
+
+@code {
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter, EditorRequired] public required Func<string, string> Href { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    public static string IconOf(string icon) => icon.Length > 0 ? icon : "users";
+
+    private IReadOnlyList<(string Person, string Place, string Words)> Leaving
+    {
+        get
+        {
+            List<(string, string, string)> leaving = [];
+            if (Page.You.Roles.Contains(Roles.Team))
+                leaving.Add(("", Places.Team, "Leave the team"));
+            if (Page.You.Roles.Contains(Roles.Attendee))
+                leaving.Add(("", Places.Attending, "Stop coming along"));
+            foreach (ChildPlace child in Page.You.Children)
+            {
+                if (child.Attends)
+                    leaving.Add((child.Id, Places.Attending, $"{child.Name} stops coming"));
+                if (child.OnTeam)
+                    leaving.Add((child.Id, Places.Team, $"{child.Name} leaves the team"));
+            }
+            return leaving;
+        }
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

@@ -86,6 +86,26 @@ lets a role be held *at someone*: a parent holds the hidden *Parent or guardian*
 turns 18 ([people.md](../features/people.md)). A role held at a person isn't a sensitive grant unless its nodes are, so
 parents keep email recovery.
 
+**Held through someone** (2026-11-10, for Ministries). A role can say that whoever holds a person-scoped role at
+its holder also holds another role at the same place (`SystemRole.Through`): a young person's *Attendee* role at
+`ministry:42` gives each parent (the *Parent or guardian* role at `person:<child>`) the hidden *Attendee's parent*
+role at `ministry:42`. It is compiled with the parent's grants (and in the grants feed and `IPermissionHolders`), so
+it starts and stops with the child's role and the family link, and nothing is copied or kept in step.
+
+**Attached scopes** (2026-11-10). A feature can attach objects of another kind to a place (`IScopeAttachments`,
+Platform.Api): Events attaches a ministry's calendars to `ministry:<id>`. A role held at the ministry, or above it
+when it applies to teams, also grants its patterns at each attached object, so a ministry's leaders hold
+`events.edit` on its calendars with no assignment of their own. A feature that changes an attachment calls
+`IRoleAssignments.ScopesChangedAsync`.
+
+**Any depth** (2026-11-10). A role that applies to teams covers every place under it, however deep, and its holders
+give roles anywhere under it (`AssignmentPolicy` walks up the parents).
+
+**An audience at one thing** (2026-11-10). Besides everyone, anyone signed in and people in roles, an `Audience` can
+be a permission held at one place (`Audience.HoldingAt`, written `permission:<node>@ministry:<id>`). A ministry's
+team calendar is for `ministries.team.view` at that ministry; `Viewer.Of(grants)` checks it, and Events treats it as
+private everywhere (who sees it, *Tell people*, the weekly digest).
+
 **Holding a role** (2026-11-04). Compiling someone's grants also gives them a global
 `roles.held.<role id>` grant for each role they hold and each role it includes (`RoleMembership`), so
 "people in a role" can be an audience checked like any permission (Home's tiles use it). The node isn't

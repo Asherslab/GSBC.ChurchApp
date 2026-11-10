@@ -1,0 +1,26 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject MinistriesClient Ministries
+
+<LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn(null)</Loading>
+    <Failed>@Drawn(null)</Failed>
+</LiveData>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private RenderFragment Drawn(MinistryDirectory? directory)
+    {
+        TileLook look = TileLook.Of(MinistriesTiles.Ministries, Entry.Values);
+        TileVariant variant = MinistriesTiles.Ministries.VariantFor(look, Hub.Columns);
+        List<MinistrySummary> yours = directory?.Ministries.Where(ministry => ministry.Yours.Length > 0 && ministry.Kind != MinistryKinds.LifeGroup).ToList() ?? [];
+        string title = yours.Count > 0 ? "Your ministries" : look.Title;
+        IReadOnlyList<string> lines = yours.Count > 0
+            ? yours.Take(2).Select(ministry => ministry.Latest.Length > 0 ? $"{ministry.Name}: {ministry.Latest}" : $"{ministry.Name} · {ministry.Yours}").ToList()
+            : [look.Text];
+        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@title" Lines="lines" PlacementId="@Entry.Placement?.Id" />;
+    }
+}

@@ -49,6 +49,7 @@ public sealed class AccessStorageTests : IAsyncLifetime
             .AddScoped<IPhoneRoles>(provider => provider.GetRequiredService<RoleAssignments>())
             .AddScoped<IPermissionHolders, PermissionHolderLookup>()
             .AddScoped<GrantsFeed>()
+            .AddSingleton<HeldThroughRules>()
             .AddScoped<AccessChanges>()
             .AddSingleton(new FeedRegistry([new FeedDefinition(AccessFeeds.Grants, FeedAudience.OwnRecords)]))
             .AddSingleton<FeedChangeBroadcaster>()

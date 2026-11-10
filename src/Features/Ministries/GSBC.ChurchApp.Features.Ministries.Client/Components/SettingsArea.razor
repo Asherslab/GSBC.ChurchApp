@@ -1,0 +1,151 @@
+@inject MinistriesClient Ministries
+@inject NavigationManager Navigation
+
+<Section First="true" Title="Details">
+    <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
+    <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" Placeholder="Friday nights for ages 4 to 11" />
+    <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
+    <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" Placeholder="Fridays 6:30 to 8:30pm in school terms" />
+    <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" Placeholder="Ages 4 to 11" />
+    @if (Details.Kind == MinistryKinds.LifeGroup)
+    {
+        <TextField Label="Room" @bind-Value="Details.Room" MaxLength="60" Placeholder="Library (5)" />
+    }
+</Section>
+
+<Section Title="Joining" Lead="One setting for the team and one for coming along.">
+    <Segmented TValue="string" Label="Joining the team" Stacked="true" Value="Details.TeamJoin" ValueChanged="value => Details.TeamJoin = value" Options="TeamOptions" />
+    <Segmented TValue="string" Label="Coming along" Stacked="true" Value="Details.AttendJoin" ValueChanged="value => Details.AttendJoin = value" Options="AttendOptions" />
+    <p class="hint">@JoinHint</p>
+</Section>
+
+<Section>
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    @if (_saved)
+    {
+        <Notice Text="Saved." />
+    }
+    <Button Busy="_busy" OnClick="SaveAsync">Save the details</Button>
+</Section>
+
+@if (Page.Ministry.Kind != MinistryKinds.LifeGroup)
+{
+    <Section Title="Teams under it" Lead="@($"{Page.Ministry.Name}'s leaders lead these too.")">
+        <ListGroup>
+            @foreach (MinistrySummary team in Page.Teams)
+            {
+                <ListRow @key="team.Id" Title="@team.Name" Subtitle="@team.Summary" Chevron="true" Href="@Href(team.Id)" />
+            }
+            <ListRow Title="Add a team" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
+        </ListGroup>
+    </Section>
+}
+
+@if (Page.You.MayDelete)
+{
+    <Section Title="Delete">
+        @if (_preview is { } preview)
+        {
+            <Notice Tone="NoticeTone.Warning" Text="@DeleteWords(preview)" />
+            <div class="ui-actions ministry-actions">
+                <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete @preview.Name</Button>
+                <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _preview = null">Keep it</Button>
+            </div>
+        }
+        else
+        {
+            <ListGroup>
+                <ListRow Title="@($"Delete {Page.Ministry.Name}")" Subtitle="Shows what goes with it first" Icon="x" IconTone="RowTone.Quiet" OnClick="PreviewAsync" />
+            </ListGroup>
+        }
+    </Section>
+}
+
+<MinistrySheet Open="_adding" OpenChanged="open => _adding = open" ParentId="@Page.Ministry.Id" ParentName="@Page.Ministry.Name" OnCreated="CreatedAsync" />
+
+@code {
+    private MinistryDetails _details = new();
+    private DeletionPreview? _preview;
+    private bool _adding;
+    private bool _busy;
+    private bool _saved;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter, EditorRequired] public required Func<string, string> Href { get; set; }
+    [Parameter] public string AfterDelete { get; set; } = MinistriesPlaces.Directory;
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private static readonly IReadOnlyList<SegmentOption<string>> TeamOptions =
+        [new(Joining.Open, "Open"), new(Joining.Ask, "Ask"), new(Joining.Invite, "Invite only")];
+
+    private static readonly IReadOnlyList<SegmentOption<string>> AttendOptions =
+        [new(Joining.Open, "Open"), new(Joining.Ask, "Ask"), new(Joining.Invite, "Invite only"), new(Joining.None, "No attendees")];
+
+    private string JoinHint => (Details.TeamJoin, Details.AttendJoin) switch
+    {
+        (_, Joining.None) => $"{MinistryWords.Joining(Details.TeamJoin)} for the team. Nobody attends {(Details.Name.Length > 0 ? Details.Name : "it")}: it's a team.",
+        _ => $"Team: {MinistryWords.Joining(Details.TeamJoin).ToLowerInvariant()}. Coming along: {MinistryWords.Joining(Details.AttendJoin).ToLowerInvariant()}. Parents ask for their children.",
+    };
+
+    private MinistryDetails Details => _details.Id == Page.Ministry.Id ? _details : _details = Copy(Page.Ministry);
+
+    private static MinistryDetails Copy(MinistryDetails from) => new()
+    {
+        Id = from.Id, ParentId = from.ParentId, Kind = from.Kind, Name = from.Name, Summary = from.Summary, About = from.About, Meets = from.Meets,
+        WhoFor = from.WhoFor, Colour = from.Colour, Icon = from.Icon, TeamJoin = from.TeamJoin, AttendJoin = from.AttendJoin, RoundId = from.RoundId,
+        Room = from.Room, JoinAsParent = from.JoinAsParent, Order = from.Order,
+    };
+
+    private static string DeleteWords(DeletionPreview preview)
+    {
+        List<string> goes = [];
+        if (preview.Posts > 0) goes.Add($"{preview.Posts} {(preview.Posts == 1 ? "post" : "posts")}");
+        if (preview.Files > 0) goes.Add($"{preview.Files} {(preview.Files == 1 ? "file" : "files")}");
+        if (preview.Calendars.Count > 0) goes.Add($"the {MinistryWords.Names(preview.Calendars)} {(preview.Calendars.Count == 1 ? "calendar" : "calendars")} and {preview.Events} {(preview.Events == 1 ? "event" : "events")}");
+        if (preview.People > 0) goes.Add($"everyone's place in it ({preview.People})");
+        string what = goes.Count > 0 ? $"This deletes {MinistryWords.Names(goes)}." : "Nothing else is in it.";
+        string teams = preview.Teams > 0 ? $" Its {preview.Teams} {(preview.Teams == 1 ? "team moves" : "teams move")} up to {(preview.TeamsGoTo.Length > 0 ? preview.TeamsGoTo : "the top level")}." : "";
+        return $"{what}{teams} This can't be undone.";
+    }
+
+    private Task SaveAsync() =>
+        RunAsync(async () =>
+        {
+            _details = Copy(await Ministries.SaveMinistryAsync(Details));
+            _saved = true;
+            await OnChanged.InvokeAsync();
+        });
+
+    private Task PreviewAsync() => RunAsync(async () => _preview = await Ministries.DeletionAsync(Page.Ministry.Id));
+
+    private Task DeleteAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.DeleteAsync(Page.Ministry.Id);
+            Navigation.NavigateTo(Page.Ministry.ParentId.Length > 0 ? Href(Page.Ministry.ParentId) : AfterDelete, replace: true);
+        });
+
+    private async Task CreatedAsync(MinistryDetails created)
+    {
+        await OnChanged.InvokeAsync();
+        Navigation.NavigateTo(Href(created.Id));
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem, _saved) = (true, null, false);
+        try
+        {
+            await work();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

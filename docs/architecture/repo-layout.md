@@ -133,6 +133,14 @@ flowchart LR
         NotificationsContracts["Features.Notifications.Contracts"]
     end
 
+    subgraph Ministries["Features / Ministries"]
+        MinistriesApp["Features.Ministries.App"]
+        MinistriesAdmin["Features.Ministries.Admin"]
+        MinistriesClient["Features.Ministries.Client"]
+        MinistriesApi["Features.Ministries.Api"]
+        MinistriesContracts["Features.Ministries.Contracts"]
+    end
+
     subgraph People["Features / People"]
         PeopleApp["Features.People.App"]
         PeopleAdmin["Features.People.Admin"]
@@ -190,6 +198,7 @@ flowchart LR
         AnalyticsTests["Features.Analytics.Api.Tests"]
         NotificationsTests["Features.Notifications.Api.Tests"]
         PeopleTests["Features.People.Api.Tests"]
+        MinistriesTests["Features.Ministries.Api.Tests"]
         SermonsTests["Features.Sermons.Api.Tests"]
         SermonsImportTests["Features.Sermons.Import.Api.Tests"]
         EventsTests["Features.Events.Api.Tests"]
@@ -202,10 +211,10 @@ flowchart LR
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator & HostsWebsite
     HostsWebsite --> SermonsClient & EventsClient
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
-    HostsApp --> AccountsApp & AccessClient & PeopleApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
-    HostsApi --> AccountsApi & AccessApi & PeopleApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
-    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
+    HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
+    HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
+    HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
 
     AccountsApp --> AccountsClient
     AccountsAdmin --> AccountsClient
@@ -246,6 +255,11 @@ flowchart LR
     PeopleClient --> PeopleContracts & PlatformClient & PlatformUi & PlatformCommon
     PeopleApi --> PeopleContracts & PlatformApi & PlatformCommon
     PeopleContracts --> PlatformContracts
+    MinistriesApp --> MinistriesClient
+    MinistriesAdmin --> MinistriesClient
+    MinistriesClient --> MinistriesContracts & PlatformClient & PlatformUi & PlatformCommon
+    MinistriesApi --> MinistriesContracts & PlatformApi & PlatformCommon
+    MinistriesContracts --> PlatformContracts
     SermonsApp --> SermonsClient
     SermonsAdmin --> SermonsClient
     SermonsClient --> SermonsContracts & PlatformClient & PlatformUi & PlatformCommon
@@ -281,6 +295,7 @@ flowchart LR
     AnalyticsTests --> AnalyticsApi & Testing
     NotificationsTests --> NotificationsApi & Testing
     PeopleTests --> PeopleApi & Testing
+    MinistriesTests --> MinistriesApi & Testing
     SermonsTests --> SermonsApi & Testing
     SermonsImportTests --> SermonsImportApi & Testing
     EventsTests --> EventsApi & Testing
@@ -350,6 +365,11 @@ flowchart LR
 | `GSBC.ChurchApp.Features.People.Api` | Birth dates, family links and asks, and blue cards and Safe Ministry training (schema `people`); a child a parent adds is an account without sign-in, made through `IPeopleAccounts`; the hidden *Parent or guardian* role given at the child until they turn 18; forgetting a deleted person and the children left with no one | No |
 | `GSBC.ChurchApp.Features.People.Client` | People's gRPC calls and the Account page's *Your family* and *Blue card and training* (an `AccountSection`): adding a child, sign-in codes, asking and answering a parent, the blue card | Yes |
 | `GSBC.ChurchApp.Features.People.App` | Registers People on the phone and syncs the own-records feed that keeps the Account page current | Yes |
+| `GSBC.ChurchApp.Features.Ministries.Contracts` | The `Ministries` and `Leading` services, ministry, post, file, calendar and Life Groups messages, the audiences (`Audiences`), joining and roles in words, the `ministries` feed, Hub tiles, places and the `ministries.*` permission nodes | Yes |
+| `GSBC.ChurchApp.Features.Ministries.Api` | Ministries to any depth (schema `ministries`), asks to join, posts and files for an audience, Life Groups' Sundays; who's on a ministry is only Access roles (Leader, Admin, Team, Attendee and an attendee's parents); its calendars through `IMinistryCalendars`; deleting a ministry; dev sample ministries | No |
+| `GSBC.ChurchApp.Features.Ministries.Client` | Ministries' gRPC calls and every screen shared by the phone and the admin panel: the directory, a ministry's areas (About, News, Calendar, Files, Sundays, People, Settings), joining, the leader's sheets, Life Groups, the Hub tiles | Yes |
+| `GSBC.ChurchApp.Features.Ministries.App` | The phone's pages: `/ministries`, `/ministries/{id}` and its areas, `/life-groups` | Yes |
+| `GSBC.ChurchApp.Features.Ministries.Admin` | The admin panel's Ministries page (the tree beside the chosen ministry) and Life Groups set-up for staff | Yes |
 | `GSBC.ChurchApp.Features.People.Admin` | A person's Family and Safeguarding tabs (`PersonTab`), the Safeguarding page of who's flagged, and its lines in Home's *Needs you* | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Contracts` | The `Sermons` and `Library` services, the sermon, series, speaker and listening messages, the progress merge rule (`ListeningProgress`), YouTube links, feeds, places and the `sermons.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Api` | Sermons uploaded in the admin panel, with their audio and pictures kept in Media, the catalogue, series and speaker feeds, the podcast feed, and listening history merged per person (schema `sermons`) | No |
@@ -385,6 +405,7 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Notifications.Api.Tests` | Against Postgres: a notification about a thing must link to it, followers and members hear from their ministry (a phone without signing in), preferences stop the push but not the inbox and safety notices always push, overnight pushes wait unless urgent, pacing collapses into a summary, dead tokens are dropped and failures retried, reading reaches the other devices | No |
 | `GSBC.ChurchApp.Platform.Api.Tests` | Against a real Postgres (in a container): Sync's pruning, compaction and resets converge every phone, and a phone from another database or ahead of it starts again; the admin panel's live watch hears only what it may see, catches up after a drop, and a stream ends with its sign-in; queued email waits out its backoff and then goes | No |
 | `GSBC.ChurchApp.Features.Events.Api.Tests` | Unit: each repeat pattern's dates, breaks and dates not on, specials, the 30-day/12-month window, which feed each row goes in and with which audience, contact details, audiences together and when showing elsewhere widens them; only a publisher shows an event on a calendar that needs one or changes it once shown; this date only vs every date; a calendar for signed-in people can't be added or told to a signed-out phone; reading iCal (repeats, skipped and changed dates, other time zones) and asking with its ETag; addresses on private networks never read; writing calendar files; reminders due at 7 and 2 days and when they settle. Against Postgres: publishing sends a date leaving the window, or a calendar turning private, as deletes; Ask to publish reaches the publishers and publishing shows it; an editor can't reach another calendar's events; a copy on another calendar follows the home event; a private calendar's iCal file only through a valid link of someone it's for (not after their role goes, nor to a signed-out phone with a stale *Calendar added*); a reset link refused | No |
+| `GSBC.ChurchApp.Features.Ministries.Api.Tests` | Unit: ministries nest to any depth and can't loop; who sees each audience; joining follows the setting; a ministry without attendees posts only for everyone or its team; your place in words. Against Postgres: deleting a ministry moves its teams up and removes what's its own | No |
 | `GSBC.ChurchApp.Features.People.Api.Tests` | Unit: someone is under 18 until their birthday; which blue cards and training are flagged and when; who may unlink whom; who is left alone when a parent goes. Against Postgres: deleting a parent removes the children left with no parent and no sign-in, and forgets every link, ask and record of whoever goes | No |
 | `GSBC.ChurchApp.Features.Sermons.Api.Tests` | Against Postgres: phones hold the newest 400; listening progress merges by the rule, in any order, and reaches only its person; uploaded audio is stored once; deletes move or release what used the deleted thing; the app-only migration wipes the website's sermons | No |
 | `GSBC.ChurchApp.Features.Sermons.Import.Api.Tests` | Unit, against saved sample pages with made-up names: listing pages, a sermon's page, a series page, a guest speaker's name and honorific out of the title, the service from old and new labels. Against Postgres: a re-run skips what was brought across and retries only what failed; one recording under two addresses is one sermon | No |

@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Admin: who's waiting, by ministry</title><link rel="stylesheet" href="sketch.css">
+<style>
+.cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 20px; }
+.col { background: var(--sand); border-radius: 14px; padding: 14px; }
+.col h3 { font-size: var(--text-row); display: flex; justify-content: space-between; }
+.col h3 em { font-style: normal; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.cd { background: var(--page); border-radius: 10px; padding: 12px; margin-top: 10px; }
+.cd b { display: block; font-weight: 600; }
+.cd span { font-size: var(--text-caption); color: var(--ink-2); }
+.cd .actions { margin-top: 8px; }
+</style></head>
+<body class="admin">
+<div class="side"><div class="brand"><i></i>GSBC</div>
+  <div class="grp">Church life</div><div class="lnk on">Ministries <span class="cnt">3</span></div><div class="lnk">Life Groups</div>
+  <div class="grp">People</div><div class="lnk">People</div><div class="lnk">Safeguarding</div></div>
+<div class="work">
+  <div class="band"><div><h1>Ministries</h1><p><span>Joining across every ministry</span></p></div><span class="btn q">All ministries</span></div>
+  <div class="cols">
+    <div class="col"><h3>Asking <em>3</em></h3>
+      <div class="cd"><b>Sam Sample, 7</b><span>Impact Kids · to attend · asked by Robin</span><div class="actions"><span class="btn sm">Yes</span><span class="btn sm q">No</span></div></div>
+      <div class="cd"><b>Jordan Sample</b><span>Choir · to join the team</span><div class="actions"><span class="btn sm">Yes</span><span class="btn sm q">No</span></div></div>
+      <div class="cd"><b>Taylor Sample, 13</b><span>Impact Youth · to attend · parent said yes</span><div class="actions"><span class="btn sm">Yes</span><span class="btn sm q">No</span></div></div></div>
+    <div class="col"><h3>Invited <em>2</em></h3>
+      <div class="cd"><b>Robin Sample</b><span>Song Leading · invited by Alex, 2 days ago</span></div>
+      <div class="cd"><b>Pat Sample</b><span>Impact Kids team · invited last week</span></div></div>
+    <div class="col"><h3>Needs a parent <em>2</em></h3>
+      <div class="cd"><b>Noah Sample, 9</b><span>Impact Kids · attends</span><div class="actions"><span class="btn sm q">Link a parent</span></div></div>
+      <div class="cd"><b>Casey Sample, 15</b><span>Impact Youth · attends</span><div class="actions"><span class="btn sm q">Link a parent</span></div></div></div>
+  </div>
+</div>
+<span class="note">Sketch · sample names</span>
+</body></html>

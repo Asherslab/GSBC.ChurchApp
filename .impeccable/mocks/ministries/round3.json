@@ -1,0 +1,76 @@
+{
+  "title": "Ministries 3 of 4: the admin panel",
+  "question": "Staff and leaders at a computer: the same management as the phone, wider. Which should I build?",
+  "options": [
+    {
+      "id": "split",
+      "kind": "assigned",
+      "label": "The tree beside the ministry",
+      "lineage": "the office's filing drawers beside the open file",
+      "thesis": "Every ministry as a tree, the chosen one's tabs beside it, one person in a side panel.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "ministry tree",
+        "the phone's tabs, wider",
+        "people as a table",
+        "sand panel"
+      ],
+      "viewport": "Left: the tree with what's waiting; middle: Impact Kids' People tab as a table (age, parents, how reached, since); right: a sand panel for one child with Link a parent.",
+      "risk": "Three columns need a wide window; under it the panel drops below.",
+      "html": ".impeccable/mocks/decision/ministries/admin-split.html",
+      "kicker": "THE ROLL"
+    },
+    {
+      "id": "cards",
+      "kind": "dealt",
+      "label": "A grid of ministries",
+      "lineage": "a wall of ministry noticeboards",
+      "thesis": "A card per top ministry with its numbers and teams.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "ministry cards",
+        "counts",
+        "team chips"
+      ],
+      "viewport": "Cards for Music (teams as chips), Impact Kids (2 asking), Impact Youth, Life Groups, each with team, attendees, asking counts.",
+      "risk": "Every task is a click deeper; sub-teams are only chips.",
+      "html": ".impeccable/mocks/decision/ministries/admin-cards.html"
+    },
+    {
+      "id": "board",
+      "kind": "dealt",
+      "label": "Who's waiting, across ministries",
+      "lineage": "an in-tray sorted into piles",
+      "thesis": "Columns of asks, invitations and young people without a parent, answered in place.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "three columns",
+        "answer in place"
+      ],
+      "viewport": "Asking (3) with Yes and No, Invited (2), Needs a parent (2) with Link a parent, across every ministry.",
+      "risk": "A to-do, not the ministries themselves.",
+      "html": ".impeccable/mocks/decision/ministries/admin-board.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": {
+    "value": "code"
+  },
+  "steer": true,
+  "followup": true
+}

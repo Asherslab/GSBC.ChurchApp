@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Ministries: sketches and choices</title><link rel="stylesheet" href="sketch.css">
+<style>
+body { max-width: 1500px; margin: 0 auto; padding: 32px 24px 64px; background: var(--page); }
+h1 { font-size: var(--text-headline); letter-spacing: -0.02em; }
+.intro { color: var(--ink-2); max-width: 80ch; margin-top: 8px; }
+.intro p + p { margin-top: 8px; }
+h2 { font-size: var(--text-title-lg); margin: 46px 0 6px; letter-spacing: -0.02em; }
+.why { max-width: 90ch; color: var(--ink-2); font-size: var(--text-caption); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 18px; }
+.card { border-radius: 14px; background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.built { box-shadow: inset 0 0 0 2px var(--accent); background: rgb(0 156 143 / 0.08); }
+.card h3 { font-size: var(--text-row); font-weight: 700; }
+.card .tag { font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.card.built .tag { color: var(--accent); }
+.card p { font-size: var(--text-caption); color: var(--ink-2); }
+.frame { position: relative; overflow: hidden; border-radius: 10px; background: var(--page); box-shadow: 0 0 0 1px var(--line); height: 300px; }
+.frame iframe { border: 0; width: 1440px; height: 900px; zoom: 0.31; pointer-events: none; }
+.card a { color: var(--accent); font-weight: 600; font-size: var(--text-caption); }
+.declined { margin-top: 18px; font-size: var(--text-caption); color: var(--ink-2); }
+.declined li { margin: 4px 0 0 18px; }
+@media (max-width: 1000px) { .cards { grid-template-columns: 1fr; } .frame iframe { zoom: 0.24; } }
+</style></head>
+<body>
+<h1>Ministries (Stage 2): sketches to choose from</h1>
+<div class="intro">
+  <p>Three ways each for four places: a ministry and the directory as everyone sees them, a leader looking after their ministry on the phone (with joining), the admin panel, and Life Groups. The one with the aqua border is what the owner chose on 2026-11-10, on the impeccable decision page; it is what is built. Every sketch uses the app's real colours and type; names are made up.</p>
+  <p>Whatever you pick, underneath is the same: ministries nest to any depth, a team and attendees each with Open, Ask or Invite only, posts, events and files for Everyone, Attendees and their parents, Parents only, or Team only, and everyone's place through Access roles.</p>
+</div>
+
+<h2>1. A ministry, and the directory</h2>
+<p class="why">Shown for a visitor, a parent whose child attends, and a team member. Who sees what changes with who you are: a visitor gets the About and a way to join; a parent the families' and parents' things; the team everything.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Chosen</span><h3>The bulletin board</h3>
+    <div class="frame"><iframe src="page-bulletin.html" title="The bulletin board"></iframe></div>
+    <p>The ministry's colour header with its one action (Ask to join, Mia attends, On the team), then About, News, Calendar and Files. In each, what you can see is boxed by who it's for, team first, the way the bulletin shades its boxes. The directory: Yours, then serving teams, then Life Groups.</p>
+    <p><b>Why:</b> with four audiences, a box per audience says plainly who else reads each thing, so a parent never wonders whether a team note reached families. It's the POC's shape, which the team already liked.</p>
+    <a href="page-bulletin.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>The family tree</h3>
+    <div class="frame"><iframe src="page-tree.html" title="The family tree"></iframe></div>
+    <p>The directory is the tree itself (Music › Choir, Production…), folding open. A ministry has a Teams tab; locked tabs show what joining opens. Each item carries a coloured "Team", "Families", "Parents" word at its end.</p>
+    <p><b>Not recommended:</b> the tree is honest about the structure but buries "where I go" under it, and words at the end of rows are easy to miss.</p>
+    <a href="page-tree.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>For you first</h3>
+    <div class="frame"><iframe src="page-foryou.html" title="For you first"></iframe></div>
+    <p>Each ministry opens on one card of what's next for you ("For Mia · this Friday: space night"), then one "What's new" list; Calendar, Files and About are chips below. The directory leads with your next thing.</p>
+    <p><b>Not recommended as the whole:</b> lovely for a parent, but leaders need the areas as places. Its "next for you" card would sit at the top of About in the recommended design.</p>
+    <a href="page-foryou.html">Open full size</a></div>
+</div>
+
+<h2>2. A leader on the phone, and joining</h2>
+<p class="why">Lay leaders without a desktop: answering asks, the team and attendee lists (with each child's parents), settings, posting, teams under their ministry. Joining: a visitor, a parent for their child, a young person.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Chosen</span><h3>A People tab with two lists</h3>
+    <div class="frame"><iframe src="lead-people.html" title="People tab"></iframe></div>
+    <p>Leaders get a People tab (Team | Attendees), asks waiting at the top, each child with their parents and a flag when none is linked; a sheet per person to link a parent, move to the team or remove. Settings is a ⚙ tab. Joining asks who for: "Mia, to attend", "Me, on the team".</p>
+    <p><b>Why:</b> the lists are what a leader manages most, so they're a place, not a dialog; everything else on the page stays as members see it.</p>
+    <a href="lead-people.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Everything in place</h3>
+    <div class="frame"><iframe src="lead-inline.html" title="Inline"></iframe></div>
+    <p>No leader tabs: asks and the team sit on About, an Edit button turns the page into a form, and a Post button floats on News.</p>
+    <p><b>Not recommended:</b> About becomes a long mixed page for leaders; attendees and their parents have nowhere to live. Its floating Post is kept.</p>
+    <a href="lead-inline.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Compose first</h3>
+    <div class="frame"><iframe src="lead-compose.html" title="Compose first"></iframe></div>
+    <p>A leader's ministry opens on a box to write in, then "Waiting on you", then Team, Attendees and Settings as rows. Posting picks the audience as chips and says how many people an important post reaches.</p>
+    <p><b>Not recommended as the whole:</b> leaders post less often than they look after people. Its post sheet (audience chips, "Sends a notification to 99 people now") is kept.</p>
+    <a href="lead-compose.html">Open full size</a></div>
+</div>
+
+<h2>3. The admin panel</h2>
+<p class="why">Staff and leaders at a computer: the same management, wider.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Chosen</span><h3>The tree beside the ministry</h3>
+    <div class="frame"><iframe src="admin-split.html" title="Split"></iframe></div>
+    <p>Every ministry as a tree on the left with what's waiting, the chosen ministry's tabs in the middle (the phone's own tabs, wider, the lists as tables), a sand panel for one person on the right.</p>
+    <p><b>Why:</b> the same screens as the phone, so a leader who learned it on their phone knows it here, and staff move between ministries in one click.</p>
+    <a href="admin-split.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A grid of ministries</h3>
+    <div class="frame"><iframe src="admin-cards.html" title="Cards"></iframe></div>
+    <p>A card per top ministry with its numbers and its teams; a card opens the ministry's page.</p>
+    <p><b>Not recommended:</b> pleasant overview, but every task is a click deeper and sub-teams are chips.</p>
+    <a href="admin-cards.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Who's waiting, across ministries</h3>
+    <div class="frame"><iframe src="admin-board.html" title="Board"></iframe></div>
+    <p>Columns of asks, invitations and young people without a parent, across every ministry, answered in place.</p>
+    <p><b>Not recommended as the page:</b> it's a to-do, not the ministries. Its asks could become lines in Home's Needs you.</p>
+    <a href="admin-board.html">Open full size</a></div>
+</div>
+
+<h2>4. Life Groups</h2>
+<p class="why">Classes on Sunday at 9:00. People see what's on now, what's next and the all-year groups; the word "round" is never shown (owner). Staff set up each new set of groups (its Sundays, time, rooms, groups, and whether a group offers "join as a parent") in the admin panel only (owner). No Sunday reminder.</p>
+<div class="cards">
+  <div class="card"><span class="tag">Alternative</span><h3>The Sundays as a timetable</h3>
+    <div class="frame"><iframe src="lg-timetable.html" title="Timetable"></iframe></div>
+    <p>The round's groups down, its Sundays across, a dot per class (changed or off at a glance), the all-year groups below with "Join as a parent". A group is a ministry page with a Sundays tab. Setting up a round is one form.</p>
+    <p><b>Why:</b> a round is a grid of Sundays and groups, and changes (combined, no class) are exactly what people check.</p>
+    <a href="lg-timetable.html">Open full size</a></div>
+  <div class="card built"><span class="tag">Chosen</span><h3>Choose one, page by page</h3>
+    <div class="frame"><iframe src="lg-pages.html" title="Paged"></iframe></div>
+    <p>"Choose a group" opens a paged sheet, one group per page with Join; set-up is a list of rows.</p>
+    <p><b>Not recommended:</b> good for the choosing moment, but after that you want the round at a glance.</p>
+    <a href="lg-pages.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>On the map</h3>
+    <div class="frame"><iframe src="lg-map.html" title="Map"></iframe></div>
+    <p>The site map with each group's room pinned; rooms are given to groups on the map.</p>
+    <p><b>Not recommended now:</b> the site map isn't built yet; a group's room links to it once it is.</p>
+    <a href="lg-map.html">Open full size</a></div>
+</div>
+
+<div class="declined"><b>Also weighed and declined</b> (the design process deals a few outside ideas each round; none fit an established design on a working screen): a split-flap departure board, a transit map, a centre-rail reference page, metro tiles, a boarding pass and gate board, a convention catalogue. Each would replace the app's look rather than serve these tasks.</div>
+</body></html>

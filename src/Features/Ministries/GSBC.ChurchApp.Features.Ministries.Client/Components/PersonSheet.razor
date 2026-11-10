@@ -1,0 +1,13 @@
+<Sheet Open="Member is not null" OpenChanged="open => { if (!open) OnClose.InvokeAsync(); }" Title="@Member?.Name" Lead="@PersonActions.Lead(Member)">
+    <ChildContent>
+        <PersonActions Member="Member" Page="Page" MayGive="MayGive" OnClose="OnClose" OnChanged="OnChanged" />
+    </ChildContent>
+</Sheet>
+
+@code {
+    [Parameter] public Member? Member { get; set; }
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public IReadOnlyList<string> MayGive { get; set; } = [];
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+}

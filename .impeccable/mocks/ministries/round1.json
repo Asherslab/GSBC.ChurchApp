@@ -1,0 +1,76 @@
+{
+  "title": "Ministries 1 of 4: a ministry and the directory",
+  "question": "How a ministry looks to a visitor, a parent whose child attends, and a team member, and the directory of ministries. Underneath is the same for all three: four audiences (Everyone, Attendees and their parents, Parents only, Team only), nesting to any depth, roles through Access. Which should I build?",
+  "options": [
+    {
+      "id": "bulletin",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The bulletin board",
+      "lineage": "the Sunday bulletin's shaded boxes",
+      "thesis": "Each area boxes what you can see by who it's for, team first.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "colour header with one action",
+        "section tabs",
+        "audience boxes"
+      ],
+      "viewport": "Directory: Yours, serving teams, Life Groups. A ministry: header with its one action (Ask to join, Mia attends, On the team), then About, News, Calendar, Files; in News a box each for the team, families, parents and everyone.",
+      "risk": "A box per audience adds a little height when a ministry posts to all four.",
+      "html": ".impeccable/mocks/decision/ministries/page-bulletin.html"
+    },
+    {
+      "id": "tree",
+      "kind": "dealt",
+      "label": "The family tree",
+      "lineage": "an organisation chart folded into a list",
+      "thesis": "The directory is the ministry tree itself; items carry a coloured audience word.",
+      "palette": [
+        "#2a3d5e",
+        "#d5c9b7",
+        "#009c8f",
+        "#e7ae74"
+      ],
+      "materials": [
+        "folding tree",
+        "locked tabs",
+        "audience words"
+      ],
+      "viewport": "Directory as Music \u203a Choir, Production\u2026 folding open; a ministry with a Teams tab, locked tabs showing what joining opens; News as one list with Team, Families, Parents words at each row's end.",
+      "risk": "Buries 'where I go' under the structure; words at a row's end are easy to miss.",
+      "html": ".impeccable/mocks/decision/ministries/page-tree.html"
+    },
+    {
+      "id": "foryou",
+      "kind": "dealt",
+      "label": "For you first",
+      "lineage": "a reminder note on the fridge",
+      "thesis": "Each ministry opens on what's next for you, then one list of what's new.",
+      "palette": [
+        "#2a3d5e",
+        "#e7ae74",
+        "#d5c9b7",
+        "#ffffff"
+      ],
+      "materials": [
+        "next-for-you card",
+        "one mixed list",
+        "area chips"
+      ],
+      "viewport": "Directory leads with your next thing (Mia at Impact Kids, Friday 6:30pm); a ministry opens on 'For Mia \u00b7 this Friday', then What's new with who each is for, Calendar, Files, About as chips.",
+      "risk": "Lovely for a parent; leaders lose the areas as places.",
+      "html": ".impeccable/mocks/decision/ministries/page-foryou.html"
+    }
+  ],
+  "reroll": true,
+  "buildPath": {
+    "value": "code"
+  },
+  "steer": true,
+  "followup": true
+}

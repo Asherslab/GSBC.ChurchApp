@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Admin: a grid of ministries</title><link rel="stylesheet" href="sketch.css">
+<style>
+.grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 20px; }
+.mc { background: var(--surface, #fff); border-radius: 14px; box-shadow: var(--tile-lift); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+.mc .h { display: flex; gap: 10px; align-items: center; }
+.mc h3 { font-size: var(--text-title); }
+.mc p { font-size: var(--text-caption); color: var(--ink-2); }
+.mc .nums { display: flex; gap: 18px; font-size: var(--text-caption); color: var(--ink-2); }
+.mc .nums b { display: block; font-size: var(--text-title); color: var(--ink); font-variant-numeric: tabular-nums; }
+.mc .teams { display: flex; gap: 6px; flex-wrap: wrap; }
+</style></head>
+<body class="admin">
+<div class="side"><div class="brand"><i></i>GSBC</div>
+  <div class="grp">Church life</div><div class="lnk on">Ministries <span class="cnt">3</span></div><div class="lnk">Life Groups</div>
+  <div class="grp">People</div><div class="lnk">People</div><div class="lnk">Safeguarding</div></div>
+<div class="work">
+  <div class="band"><div><h1>Ministries</h1><p><span>9 ministries</span><span>3 asks waiting</span></p></div><span class="btn">New ministry</span></div>
+  <div class="grid">
+    <div class="mc"><div class="h"><div class="tile">♪</div><h3>Music</h3></div><p>Leads the church in song</p>
+      <div class="nums"><div><b>23</b>team</div><div><b>—</b>attendees</div><div><b>1</b>asking</div></div>
+      <div class="teams"><span class="chip sm">Choir</span><span class="chip sm">Vocal Groups</span><span class="chip sm">Song Leading</span><span class="chip sm">Production</span></div></div>
+    <div class="mc"><div class="h"><div class="tile">K</div><h3>Impact Kids</h3><span class="pill flag" style="margin-left:auto">2 asking</span></div><p>Friday nights for ages 4 to 11</p>
+      <div class="nums"><div><b>9</b>team</div><div><b>34</b>attendees</div><div><b>1</b>no parent</div></div></div>
+    <div class="mc"><div class="h"><div class="tile">Y</div><h3>Impact Youth</h3></div><p>Friday nights for high schoolers</p>
+      <div class="nums"><div><b>6</b>team</div><div><b>41</b>attendees</div><div><b>0</b>asking</div></div></div>
+    <div class="mc"><div class="h"><div class="tile act">L</div><h3>Life Groups</h3></div><p>Sundays 9:00 · Round 3 from 15 November</p>
+      <div class="nums"><div><b>4</b>groups</div><div><b>62</b>joined</div></div></div>
+  </div>
+</div>
+<span class="note">Sketch · sample names</span>
+</body></html>

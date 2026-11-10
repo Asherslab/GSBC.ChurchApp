@@ -141,4 +141,53 @@ public sealed class GrantTests
     private Task<PermissionHolders> HoldersAsync(
         IReadOnlyCollection<(Guid, Guid, string?)> people, IReadOnlyCollection<(Guid, Guid, string?)> phones, string objectId) =>
         PermissionHolderLookup.HoldersAsync(people, phones, _church.Roles, ReceiveNotices, objectId, _church.Hierarchy, TestContext.Current.CancellationToken);
+
+    [Fact]
+    public async Task ALeaderLeadsEveryMinistryUnderTheirsHoweverDeepAndGivesRolesThere()
+    {
+        Guid leader = Guid.CreateVersion7(), helper = Guid.CreateVersion7();
+        _church.Assign(leader, _church.SystemRole("leader").Id, scopeObjectId: Music);
+
+        GrantSet leads = await _church.GrantsAsync(leader);
+
+        Assert.True(leads.IsAllowed(PostNews, Altos));
+        Assert.Null(await _church.GiveAsync(leader, helper, "member", Altos));
+        Assert.NotNull(await _church.GiveAsync(helper, leader, "member", Music));
+    }
+
+    [Fact]
+    public async Task AParentHoldsWhatTheirChildsRoleGivesParentsWhereTheChildHoldsIt()
+    {
+        Guid parent = Guid.CreateVersion7(), child = Guid.CreateVersion7(), stranger = Guid.CreateVersion7();
+        _church.Assign(parent, _church.SystemRole("parent").Id, scopeObjectId: child.ToString());
+        _church.Assign(child, _church.SystemRole("attendee").Id, scopeObjectId: Music);
+
+        GrantSet parents = await _church.GrantsAsync(parent);
+
+        Assert.True(parents.IsAllowed(ReceiveNotices, Music));
+        Assert.False(parents.IsAllowed(ReadNews, Music));
+        Assert.False(parents.IsAllowed(ReceiveNotices, Choir));
+        Assert.False((await _church.GrantsAsync(stranger)).IsAllowed(ReceiveNotices, Music));
+    }
+
+    [Fact]
+    public async Task ARoleAtAMinistryReachesWhatIsAttachedToIt()
+    {
+        Guid leader = Guid.CreateVersion7();
+        _church.Assign(leader, _church.SystemRole("leader").Id, scopeObjectId: Music);
+        Permission editCalendar = new("ministries.news.post", ScopeKind.Calendar, "Post news");
+
+        GrantSet leads = await _church.GrantsAsync(leader, new ChoirCalendar());
+
+        Assert.True(leads.IsAllowed(editCalendar, "choir-calendar"));
+        Assert.False(leads.IsAllowed(editCalendar, "youth-calendar"));
+    }
+
+    private sealed class ChoirCalendar : IScopeAttachments
+    {
+        public ScopeKind AttachedTo => ScopeKind.Ministry;
+
+        public ValueTask<IReadOnlyList<Scope>> AttachedAsync(string objectId, CancellationToken cancellationToken) =>
+            ValueTask.FromResult<IReadOnlyList<Scope>>(objectId == Choir ? [Scope.Of(ScopeKind.Calendar, "choir-calendar")] : []);
+    }
 }

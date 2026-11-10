@@ -1,0 +1,54 @@
+@inject MinistriesClient Ministries
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(ParentId.Length > 0 ? $"A team under {ParentName}" : "A new ministry")"
+       Lead="@(ParentId.Length > 0 ? $"{ParentName}'s leaders lead it too. Add its own leaders and people once it's made." : "Its leaders do the rest: people, posts, files and teams under it.")">
+    <ChildContent>
+        <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(ParentId.Length > 0 ? "Choir" : "Impact Kids")" />
+        <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
+        <Segmented TValue="string" Label="Joining the team" Stacked="true" Value="_teamJoin" ValueChanged="value => _teamJoin = value"
+                   Options="@([new(Joining.Open, "Open"), new(Joining.Ask, "Ask"), new(Joining.Invite, "Invite only")])" />
+        <Segmented TValue="string" Label="Coming along" Stacked="true" Value="_attendJoin" ValueChanged="value => _attendJoin = value"
+                   Options="@([new(Joining.Open, "Open"), new(Joining.Ask, "Ask"), new(Joining.Invite, "Invite only"), new(Joining.None, "No attendees")])" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="CreateAsync">Make it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string _name = "";
+    private string _summary = "";
+    private string _teamJoin = Joining.Ask;
+    private string _attendJoin = Joining.None;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter] public string ParentId { get; set; } = "";
+    [Parameter] public string ParentName { get; set; } = "";
+    [Parameter] public string Kind { get; set; } = MinistryKinds.Ministry;
+    [Parameter] public EventCallback<MinistryDetails> OnCreated { get; set; }
+
+    private async Task CreateAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            MinistryDetails details = new() { Name = _name, Summary = _summary, TeamJoin = _teamJoin, AttendJoin = _attendJoin, Kind = Kind };
+            MinistryDetails created = ParentId.Length > 0 ? await Ministries.AddTeamAsync(ParentId, details) : await Ministries.CreateAsync(details);
+            (_name, _summary) = ("", "");
+            await OpenChanged.InvokeAsync(false);
+            await OnCreated.InvokeAsync(created);
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

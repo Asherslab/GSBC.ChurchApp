@@ -8,15 +8,17 @@ public static class CalendarAudiences
     public const string SignedInWords = "anyone signed in";
 
     public static Audience Of(string text) =>
-        Audience.TryParse(text, out Audience? audience) && audience.Node is null ? audience : Audience.SignedIn;
+        Audience.TryParse(text, out Audience? audience) && (audience.Node is null || audience.At is not null) ? audience : Audience.SignedIn;
 
     public static Audience Union(IEnumerable<Audience> audiences)
     {
         List<Audience> all = audiences.ToList();
         if (all.Contains(Audience.Everyone))
             return Audience.Everyone;
-        if (all.Count == 0 || all.Any(audience => !audience.IsForRoles))
+        if (all.Count == 0 || all.Any(audience => !audience.IsForSomeone))
             return Audience.SignedIn;
+        if (all.FirstOrDefault(audience => audience.At is not null) is { } oneGroup)
+            return oneGroup;
         return Audience.HoldingAnyRole(all.SelectMany(audience => audience.RoleIds));
     }
 

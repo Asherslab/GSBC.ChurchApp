@@ -19,7 +19,7 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
         if (choice.InYourWeek && WhyNotAdd(calendar, userId is not null, await ViewerAsync(access, userId, cancellationToken)) is { } refused)
             throw new RpcException(refused);
 
-        bool shownAnyway = calendar.ShownOnNewPhones || CalendarAudiences.Of(calendar.Audience).IsForRoles;
+        bool shownAnyway = calendar.ShownOnNewPhones || CalendarAudiences.Of(calendar.Audience).IsForSomeone;
         string objectId = calendarId.ToString();
         (string give, string takeAway) = choice.InYourWeek ? (EventsPermissions.AdderRole, EventsPermissions.TurnedOffRole) : (EventsPermissions.TurnedOffRole, EventsPermissions.AdderRole);
         bool recordGiven = choice.InYourWeek ? !shownAnyway : shownAnyway;
@@ -66,7 +66,7 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
         if (userId is not { } person)
             return Viewer.Anonymous;
         GrantSet grants = await access.GrantsForAsync(person, cancellationToken);
-        return new Viewer(true, node => PermissionNode.IsValid(node) && grants.IsAllowed(new Permission(node, ScopeKind.Global, node)));
+        return Viewer.Of(grants);
     }
 
     private static List<string> Held(IReadOnlyList<HeldRole> held, string role) =>

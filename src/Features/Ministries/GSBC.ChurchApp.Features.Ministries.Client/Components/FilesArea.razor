@@ -1,0 +1,47 @@
+<Section First="true">
+    @if (Page.You.MayPostFor.Count > 0)
+    {
+        <div class="ministry-tools">
+            <Button Icon="plus" OnClick="() => Open(null)">Add a link</Button>
+        </div>
+    }
+    @if (Page.Files.Count == 0)
+    {
+        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add links to documents, forms and recordings, each for the people who need it." : "Documents and links from this ministry show here.")" />
+    }
+    @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Files.Any(file => file.Audience == audience)))
+    {
+        <MinistryBox Audience="@audience">
+            <ListGroup>
+                @foreach (FileItem file in Page.Files.Where(file => file.Audience == audience))
+                {
+                    <ListRow @key="file.Id" Title="@file.Title" Subtitle="@Subtitle(file)" Icon="@(file.Kind == FileKinds.Document ? "file" : "link")" IconTone="RowTone.Accent"
+                             Href="@file.Url" External="true">
+                        <TrailingContent>
+                            @if (file.From.Length == 0 && Page.You.MayPostFor.Count > 0)
+                            {
+                                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" AriaLabel="@($"Change {file.Title}")" OnClick="() => Open(file)" />
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        </MinistryBox>
+    }
+</Section>
+
+<FileSheet Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
+
+@code {
+    private bool _open;
+    private FileItem _draft = new();
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private void Open(FileItem? file) => (_draft, _open) = (FileSheet.DraftOf(file, Page), true);
+
+    private static string Subtitle(FileItem file) =>
+        string.Join(" · ", new[] { file.Note, file.From.Length > 0 ? $"From {file.From}" : "", Uri.TryCreate(file.Url, UriKind.Absolute, out Uri? uri) ? uri.Host : "" }
+            .Where(part => part.Length > 0));
+}

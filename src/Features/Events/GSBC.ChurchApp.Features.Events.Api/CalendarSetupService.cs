@@ -1,13 +1,15 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Events.Api.Data;
 using GSBC.ChurchApp.Features.Events.Contracts;
+using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using Microsoft.EntityFrameworkCore;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher publisher, ICalSchedule copying, CalendarRemover remover, TimeProvider time)
+internal sealed class CalendarSetupService(
+    EventsDbContext db, EventsPublisher publisher, ICalSchedule copying, CalendarRemover remover, IRoleAssignments roles, TimeProvider time)
     : ICalendarSetupService
 {
     public const int LongestName = 60;
@@ -25,7 +27,7 @@ internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher p
         string slug = wanted.Slug.Trim().Length > 0 ? wanted.Slug.Trim().ToLowerInvariant() : CalendarLinks.SlugOf(name);
         if (!CalendarLinks.IsValidSlug(slug))
             throw Invalid($"The link name uses lowercase letters, numbers and dashes, and can't be “{CalendarLinks.Public}” or “{CalendarLinks.Mine}”.");
-        if (!Audience.TryParse(wanted.Audience, out Audience? audience) || audience.Node is not null)
+        if (!Audience.TryParse(wanted.Audience, out Audience? audience) || audience is { Node: not null, At: null })
             throw Invalid("Choose who the calendar is for: everyone, anyone signed in, or people in chosen roles.");
         string source = request.ICalSource.Trim();
         if (source.Length > 0 && !IsCalendarAddress(source))
@@ -60,6 +62,7 @@ internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher p
         calendar.Audience = audience.Text;
         calendar.ShownOnNewPhones = wanted.ShownOnNewPhones;
         calendar.NeedsPublisher = request.NeedsPublisher;
+        bool ministryChanged = calendar.MinistryId != ministry;
         calendar.MinistryId = ministry;
         bool newSource = calendar.ICalSource != (source.Length > 0 ? source : null);
         if (newSource)
@@ -71,6 +74,8 @@ internal sealed class CalendarSetupService(EventsDbContext db, EventsPublisher p
         publisher.MarkAdmin(calendar.Id, calendar.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
+        if (ministryChanged)
+            await roles.ScopesChangedAsync(cancellationToken);
         if (newSource && calendar.ICalSource is not null)
             copying.CopySoon();
         return Settings(calendar);

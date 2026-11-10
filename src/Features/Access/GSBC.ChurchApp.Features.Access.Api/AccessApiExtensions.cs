@@ -21,6 +21,7 @@ public static class AccessApiExtensions
         services.AddHttpContextAccessor().AddSingleton<ToolCallers>();
         services.AddScoped<IAccessEvaluator, AccessEvaluator>();
         services.AddScoped<GrantsFeed>();
+        services.AddSingleton<HeldThroughRules>();
         services.AddScoped<AccessChanges>();
         services.AddScoped<IPersonData, AccessPersonData>();
         services.AddHostedService<GrantsFeedSweep>();

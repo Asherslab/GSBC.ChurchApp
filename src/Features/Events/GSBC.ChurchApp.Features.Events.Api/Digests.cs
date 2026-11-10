@@ -125,9 +125,12 @@ internal static partial class Digests
         List<(string Title, Audience Audience)> items = Standing(book, sent).Select(item => (item.Item.Words.Title, AudienceOf(book, item))).ToList();
         List<(NotificationAudience Reader, Func<Audience, bool> Sees)> readers = [];
         foreach (Guid role in items.Where(item => item.Audience.IsForRoles).SelectMany(item => item.Audience.RoleIds).Distinct())
-            readers.Add((NotificationAudience.Holding(RoleMembership.Of(role)), audience => !audience.IsForRoles || audience.RoleIds.Contains(role)));
-        if (items.Any(item => item.Audience != Audience.Everyone && !item.Audience.IsForRoles))
-            readers.Add((NotificationAudience.SignedIn, audience => !audience.IsForRoles));
+            readers.Add((NotificationAudience.Holding(RoleMembership.Of(role)), audience => !audience.IsForSomeone || audience.RoleIds.Contains(role)));
+        foreach (Audience group in items.Select(item => item.Audience).Where(audience => audience.At is not null).Distinct())
+            readers.Add((NotificationAudience.Holding(new Permission(group.Node!, group.At!.Value.Kind, group.Node!), group.At.Value.ObjectId),
+                audience => !audience.IsForSomeone || audience == group));
+        if (items.Any(item => item.Audience != Audience.Everyone && !item.Audience.IsForSomeone))
+            readers.Add((NotificationAudience.SignedIn, audience => !audience.IsForSomeone));
         if (items.Any(item => item.Audience == Audience.Everyone))
             readers.Add((NotificationAudience.Everyone, audience => audience == Audience.Everyone));
 

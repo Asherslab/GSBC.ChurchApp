@@ -1,6 +1,6 @@
 # Ministries
 
-Status: Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -113,6 +113,74 @@ reminder.**
 **Open from the interview:** direct messages (who may message whom, whether DMs are auditable and by whom, whether
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
+
+## Stage 2, built (2026-11-10)
+
+What was built, with Claude's defaults marked *default* (the owner can change them). Sketches, the owner's picks and the
+alternatives: `.impeccable/mocks/ministries/decision.html`; the direction is in the surface brief for
+`Features.Ministries.Client`.
+
+**The owner's picks** (decision page, 2026-11-10): a ministry is **the bulletin board** (its colour header with its one
+action, then About, News, Calendar and Files, and in each what you may see is boxed by who it's for, team first);
+leaders get **a People tab with two lists** (Team and Attendees, asks on top, a sheet per person) and a Settings tab;
+the admin panel is **the tree beside the ministry**; Life Groups are **chosen one page at a time**. Also from the owner
+that day: Life Groups **never say "round"** to anyone (the app says *Now on*, *New groups from …* and *All year*), and a set
+of Life Groups is **set up by staff in the admin panel**, not in the app. A parent joins a children's group (Nursery, Kids
+Life, Youth) **for their child**, and joins their own adult group as themselves.
+
+**Who's in a ministry is only Access** ([permissions.md](../architecture/permissions.md)). Roles at `ministry:<id>`:
+
+| Role | Can | Given by |
+|---|---|---|
+| Leader | Everything in the ministry and every ministry under it: people, posts, files, its calendars (Events' `events.edit` and `events.publish` reach them as *attached* scopes), settings, teams under it. Listed as a leader | Leaders and admins of it or above it, Ministries Manager |
+| Admin | The same, not listed | The same |
+| Team | Sees what's for the team, attendees and parents | The same |
+| Attendee | Sees what's for attendees and their parents | The same |
+| Attendee's parent (hidden) | Sees what's for attendees and parents. **Held through the family link**: a parent holding *Parent or guardian* at a child holds it wherever the child is an attendee, so it starts and stops with both (`SystemRole.Through`) | Nobody; it follows |
+| Ministries Manager (global) | Creates and deletes top-level ministries and does everything a leader can everywhere | The Owner |
+
+- **Leaders can make leaders and admins** of their ministry and anything under it (*default*; the interview's "leaders can
+  do it all under their ministry"). Staff make the first leaders of a top-level ministry.
+- **A team member of a ministry under another sees the parent's team posts** ("From Music" on Choir) (*default*, from the
+  2026-10-30 draft). Attendee and parent posts stay with their own ministry.
+- **The team sees everything for attendees and parents too** (*default*: they run it).
+
+**Joining.** Each ministry has two settings, the team's (Open, Ask, Invite only) and coming along (Open, Ask, Invite only,
+No attendees). Join asks who it's for: you on the team, you to come along, or each child of yours under 18 to come along.
+Open gives the role at once; Ask leaves an ask that notifies the leaders and waits on the People tab; Invite only says to
+ask a leader. A yes notifies the person (if they sign in), their parents and whoever asked. A leader adds anyone the app
+knows from the People tab (finding them by name, with a masked email to tell two people apart), and links a child's parent
+from the child's sheet (through `IFamilies.LinkAsync`, only for people in that ministry). Leave is on the About.
+
+**Audiences.** Posts and links are for **everyone**, **attendees and their parents**, **parents only** or **the team**; a
+ministry with no attendees offers only everyone and the team. An **important** post notifies those it's for straight away
+(for everyone: the ministry's own people). Asking to send one to the **whole church** marks it for staff (*default*: the
+mark shows on the post; routing it to the Announcements desk is still to do).
+
+**Calendars** are Events calendars the ministry owns (`IMinistryCalendars`): Settings → Calendar adds one for everyone or
+for the team, attendees or parents. A private one's audience is `ministries.team.view` (or attendees, parents) at that
+ministry (`Audience.HoldingAt`), so Events keeps it private everywhere, and leaders edit its events with no assignment of
+their own. Removing one says how many events go with it.
+
+**Files** are **links** for now (a document, form, recording or web page), each with an audience. *Uploading a document
+into private media* is still to do.
+
+**Deleting a ministry** (Settings, for the leaders of the ministry above it, or staff for a top-level one) first says what
+goes: its teams **move up** to its parent (*default*), and its posts, files, asks, calendars and their events and everyone's
+place in it are deleted; it can't be undone. **Deleting an account** forgets its asks and clears its name from posts and files
+(`IPersonData`).
+
+**Hub:** the sample *Ministries* and *Life Groups* tiles (same keys, so Home layouts keep them) are now real: *Your
+ministries* with what's new, or *Your Life Group* this Sunday and *New groups from …*. Deep links: `/ministries/{id}` and
+`/ministries/{id}/{news|calendar|files|sundays|people|settings}`, `/life-groups`. Places in the app lists every ministry.
+*Not built yet:* Home's Today block and Simple row (Home has no Today or Simple row to add to yet).
+
+**Sample data in Development only** (`SampleMinistries`): Music with Choir, Vocal Groups, Song Leading and Production,
+Impact Kids, Impact Youth and Life Groups with four Sundays and two groups plus Kids Life, with sample posts, links and
+calendars. Never in UAT or production.
+
+**Open for the owner:** routing a whole-church ask to the Announcements desk; uploading documents to private media; whether
+young people asking to come along need a parent's yes first; Home's Today and Simple row once Home has them.
 
 ## What it is
 

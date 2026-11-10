@@ -15,7 +15,10 @@ public sealed record SystemRole(
     bool Hidden = false,
     IReadOnlyList<string>? Kits = null,
     IReadOnlyList<string>? Replaces = null,
-    IReadOnlyList<string>? StartsWithHoldersOf = null);
+    IReadOnlyList<string>? StartsWithHoldersOf = null,
+    IReadOnlyList<RoleThrough>? Through = null);
+
+public sealed record RoleThrough(string PersonRoleKey, string GivesRoleKey);
 
 public sealed record SystemRolePatterns(string RoleKey, IReadOnlyList<string> Patterns);
 

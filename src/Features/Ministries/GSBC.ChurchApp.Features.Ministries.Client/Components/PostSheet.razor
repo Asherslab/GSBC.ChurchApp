@@ -1,0 +1,66 @@
+@inject MinistriesClient Ministries
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "New post" : "Change the post")" Lead="@($"In {Page.Ministry.Name}.")">
+    <ChildContent>
+        <TextField Label="Title" @bind-Value="Draft.Title" MaxLength="120" Required="true" />
+        <TextField Label="What to say" @bind-Value="Draft.Body" Multiline="true" MaxLength="4000" />
+        <Segmented TValue="string" Label="Who it's for" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
+        <ToggleRow Title="Important" Description="Sends a notification to everyone it's for, straight away" @bind-Checked="Draft.Important" />
+        @if (Draft.Audience == Contracts.Audiences.Everyone && Draft.Important)
+        {
+            <ToggleRow Title="Ask to send it to the whole church" Description="Church staff decide, as for any announcement" @bind-Checked="Draft.AskWholeChurch" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="SaveAsync">@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")</Button>
+        @if (Draft.Id.Length > 0)
+        {
+            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the post</Button>
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter, EditorRequired] public required Post Draft { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private IReadOnlyList<SegmentOption<string>> Audiences =>
+        Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
+
+    public static Post DraftOf(Post? post, MinistryPage page) => new()
+    {
+        Id = post?.Id ?? "", Title = post?.Title ?? "", Body = post?.Body ?? "", Important = post?.Important ?? false,
+        Audience = post?.Audience ?? (page.You.MayPostFor.Contains(Contracts.Audiences.Team) ? Contracts.Audiences.Team : page.You.MayPostFor.FirstOrDefault() ?? ""),
+    };
+
+    private Task SaveAsync() => RunAsync(() => Ministries.SavePostAsync(Page.Ministry.Id, Draft));
+
+    private Task DeleteAsync() => RunAsync(() => Ministries.DeletePostAsync(Page.Ministry.Id, Draft.Id));
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+            await OpenChanged.InvokeAsync(false);
+            await OnSaved.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

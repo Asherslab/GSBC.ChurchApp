@@ -1,0 +1,62 @@
+@inject MinistriesClient Ministries
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Draft.Id.Length == 0 ? "Add a link" : "Change the link")" Lead="A document, form, recording or page on the web, for the people who need it.">
+    <ChildContent>
+        <TextField Label="Name" @bind-Value="Draft.Title" MaxLength="120" Required="true" Placeholder="Helpers' guide" />
+        <TextField Label="Web address" @bind-Value="Draft.Url" Type="url" Placeholder="https://" AutoCapitalize="off" />
+        <TextField Label="A line about it (optional)" @bind-Value="Draft.Note" MaxLength="200" />
+        <Segmented TValue="string" Label="Who it's for" Stacked="true" Options="Audiences" Value="Draft.Audience" ValueChanged="value => Draft.Audience = value" />
+        <p class="ministry-who">@MinistryWords.WhoReads(Draft.Audience, Page.Ministry.Name)</p>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="SaveAsync">@(Draft.Id.Length == 0 ? "Add it" : "Save")</Button>
+        @if (Draft.Id.Length > 0)
+        {
+            <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete it</Button>
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter, EditorRequired] public required FileItem Draft { get; set; }
+    [Parameter] public EventCallback OnSaved { get; set; }
+
+    private IReadOnlyList<SegmentOption<string>> Audiences =>
+        Page.You.MayPostFor.Select(audience => new SegmentOption<string>(audience, MinistryWords.Short(audience))).ToList();
+
+    public static FileItem DraftOf(FileItem? file, MinistryPage page) => new()
+    {
+        Id = file?.Id ?? "", Title = file?.Title ?? "", Url = file?.Url ?? "", Note = file?.Note ?? "",
+        Audience = file?.Audience ?? (page.You.MayPostFor.Contains(Contracts.Audiences.Team) ? Contracts.Audiences.Team : page.You.MayPostFor.FirstOrDefault() ?? ""),
+    };
+
+    private Task SaveAsync() => RunAsync(() => Ministries.SaveFileAsync(Page.Ministry.Id, Draft));
+
+    private Task DeleteAsync() => RunAsync(() => Ministries.DeleteFileAsync(Page.Ministry.Id, Draft.Id));
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+            await OpenChanged.InvokeAsync(false);
+            await OnSaved.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}
