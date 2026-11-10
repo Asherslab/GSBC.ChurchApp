@@ -68,6 +68,7 @@
 .event-off { display: flex; align-items: center; gap: 8px; margin: 0; padding: 11px 14px; border-radius: var(--radius-field); background: var(--sand); color: var(--ink-2); font-size: var(--text-caption); font-weight: 600; }
 .event-saved { display: flex; align-items: center; gap: 6px; margin: 0; color: var(--accent); font-size: var(--text-caption); font-weight: 600; }
 .event-facts { margin-top: 2px; }
+.event-waiting:not(:empty) { padding: 10px var(--gutter) 0; }
 .event-section { margin: 12px 0 -4px; font-size: var(--text-title); font-weight: 700; letter-spacing: -0.015em; }
 .event-body .prose { margin: 0; }
 .event-date .row__trail { color: var(--ink-3); }

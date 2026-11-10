@@ -1,0 +1,43 @@
+@inject IEventEditing Editing
+@inject TimeProvider Clock
+
+<LiveData TValue="IReadOnlyList<EventDetail>" Load="LoadAsync" Feeds="Editing.Feeds" ReloadOn="ReloadOn">
+    <ChildContent>
+        @if (context.Value.FirstOrDefault() is { } detail && _editing)
+        {
+            <EventEditor Target="new EditTarget(detail.CalendarId, EventId: detail.Id)" Closed="() => _editing = false" />
+        }
+        else if (context.Value.FirstOrDefault() is { } waiting)
+        {
+            <Page Title="@waiting.Fields.Title" BackHref="@BackHref" BackLabel="This week" TopBar="TopBarStyle.Solid">
+                <Actions>
+                    <button type="button" class="topbar__text-btn" @onclick="() => _editing = true">Edit</button>
+                </Actions>
+                <ChildContent>
+                    <EventHead Day="EventDates.Parse(waiting.Times.StartDate) ?? EventWords.Today(Clock.GetUtcNow().UtcDateTime)" Title="@waiting.Fields.Title"
+                               When="@EventDates.Times(waiting.Times.StartMinute, waiting.Times.EndMinute)" />
+                    <Section First="true">
+                        <QueuedEditStatus ItemKey="@EditKeys.Event(waiting.Id)" />
+                        <p class="hint">It's saved on this phone, and shows in the calendar for everyone once it's sent.</p>
+                    </Section>
+                </ChildContent>
+            </Page>
+        }
+        else
+        {
+            @NotFound
+        }
+    </ChildContent>
+</LiveData>
+
+@code {
+    private const ChangeKind ReloadOn = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private bool _editing;
+
+    [Parameter, EditorRequired] public required string EventId { get; set; }
+    [Parameter, EditorRequired] public required string BackHref { get; set; }
+    [Parameter, EditorRequired] public required RenderFragment NotFound { get; set; }
+
+    private async Task<IReadOnlyList<EventDetail>> LoadAsync() => await Editing.EventAsync("", EventId) is { } detail ? [detail] : [];
+}

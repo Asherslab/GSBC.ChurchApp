@@ -20,6 +20,7 @@ internal sealed class EventsSchedule(IServiceScopeFactory scopes, TimeProvider t
             {
                 await using AsyncServiceScope scope = scopes.CreateAsyncScope();
                 await scope.ServiceProvider.GetRequiredService<EventsPublisher>().PublishAsync(stoppingToken);
+                await scope.ServiceProvider.GetRequiredService<HandledRequests>().ForgetOldAsync(stoppingToken);
             }
             catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
             {

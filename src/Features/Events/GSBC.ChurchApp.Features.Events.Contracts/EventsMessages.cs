@@ -245,6 +245,8 @@ public sealed class EventSave : IScopedRequest
     [ProtoMember(6)] public DateTime? ShowFrom { get; set; }
     [ProtoMember(7)] public bool NotOn { get; set; }
     [ProtoMember(8)] public string NotOnNote { get; set; } = "";
+    [ProtoMember(9)] public string NewId { get; set; } = "";
+    [ProtoMember(10)] public EventSave? Base { get; set; }
 
     public string ScopeId => CalendarId;
 }
@@ -382,6 +384,8 @@ public sealed class RegularEventSave : IScopedRequest
     [ProtoMember(12)] public List<BreakInfo> OwnBreaks { get; set; } = [];
     [ProtoMember(13)] public bool KeepOwnConfirmed { get; set; }
     [ProtoMember(14)] public bool ListEveryDate { get; set; }
+    [ProtoMember(15)] public string NewId { get; set; } = "";
+    [ProtoMember(16)] public RegularEventSave? Base { get; set; }
 
     public string ScopeId => CalendarId;
 }
@@ -414,6 +418,7 @@ public sealed class DateSave : IScopedRequest
     [ProtoMember(6)] public int? EndMinute { get; set; }
     [ProtoMember(7)] public bool NotOn { get; set; }
     [ProtoMember(8)] public string NotOnNote { get; set; } = "";
+    [ProtoMember(9)] public DateSave? Base { get; set; }
 
     public string ScopeId => CalendarId;
 }
@@ -591,4 +596,34 @@ public sealed class CalendarRemoval
     [ProtoMember(6)] public int AddedBy { get; set; }
     [ProtoMember(7)] public bool ShownOnNewPhones { get; set; }
     [ProtoMember(8)] public bool ForEveryone { get; set; }
+}
+
+[ProtoContract]
+public sealed class EditingCalendar
+{
+    [ProtoMember(1, IsRequired = true)] public CalendarSettings Settings { get; set; } = new();
+    [ProtoMember(2)] public List<BreakInfo> Breaks { get; set; } = [];
+    [ProtoMember(3)] public List<ShowingRequest> Asked { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class EditingRegular
+{
+    [ProtoMember(1, IsRequired = true)] public RegularEventDetail Detail { get; set; } = new();
+    [ProtoMember(2, IsRequired = true)] public RegularEventSummary Summary { get; set; } = new();
+}
+
+[ProtoContract]
+public sealed class QueuedEdit
+{
+    [ProtoMember(1)] public string Key { get; set; } = "";
+    [ProtoMember(2)] public string EntryId { get; set; } = "";
+    [ProtoMember(3)] public string Method { get; set; } = "";
+    [ProtoMember(4)] public byte[] Request { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class QueuedEdits
+{
+    [ProtoMember(1)] public List<QueuedEdit> Edits { get; set; } = [];
 }

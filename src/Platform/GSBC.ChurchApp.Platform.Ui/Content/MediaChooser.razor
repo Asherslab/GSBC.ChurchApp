@@ -15,6 +15,7 @@
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
     [Parameter] public EventCallback<MediaRef> OnChosen { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
+    [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
 
     private MediaPicker? Picker => Services.GetService(typeof(MediaPicker)) as MediaPicker;
 
@@ -26,6 +27,8 @@
         builder.AddComponentParameter(3, MediaPicker.OnCancelParameter, EventCallback.Factory.Create(this, () => OnCancel.InvokeAsync()));
         builder.AddComponentParameter(4, MediaPicker.SizeParameter, Size);
         builder.AddComponentParameter(5, MediaPicker.FontsOnlyParameter, FontsOnly);
+        if (Offered is not null)
+            builder.AddComponentParameter(6, MediaPicker.OfferedParameter, Offered);
         builder.CloseComponent();
     };
 

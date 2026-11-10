@@ -1,4 +1,4 @@
-@inject CalendarEditing Editing
+@inject IEventEditing Editing
 @inject WideningWords Words
 
 <div class="show-elsewhere">
@@ -9,7 +9,7 @@
     {
         <p class="hint" role="status">@_note</p>
     }
-    <LiveData @ref="_live" TValue="ShowableList" Load="LoadAsync" Feeds="ShowableFeeds" FailedTitle="Can't find events right now">
+    <LiveData @ref="_live" TValue="ShowableList" Load="LoadAsync" Feeds="Editing.Feeds" ReloadOn="ReloadOn" FailedTitle="Can't find events right now">
         <ChildContent>
             @if (context.Value.Items.Count == 0)
             {
@@ -56,7 +56,7 @@
 </div>
 
 @code {
-    private static readonly IReadOnlyList<string> ShowableFeeds = [EventsFeeds.Admin];
+    private const ChangeKind ReloadOn = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     private LiveData<ShowableList>? _live;
     private string _search = "";
@@ -69,8 +69,7 @@
     [Parameter, EditorRequired] public required CalendarInfo Calendar { get; set; }
     [Parameter] public EventCallback Changed { get; set; }
 
-    private Task<ShowableList> LoadAsync() =>
-        Editing.Editing.ShowableAsync(new ShowableQuery { CalendarId = Calendar.Id, Search = _search }).AsTask();
+    private Task<ShowableList> LoadAsync() => Editing.ShowableAsync(Calendar.Id, _search);
 
     private async Task SearchAsync(string search)
     {
@@ -102,28 +101,23 @@
     {
         _busy = KeyOf(item);
         _problem = null;
-        try
+        EditSent sent = await Editing.ShowHereAsync(new ShowHereRequest
         {
-            ShowHereResult result = await Editing.Editing.ShowHereAsync(new ShowHereRequest
-            {
-                CalendarId = Calendar.Id, HomeCalendarId = item.HomeCalendarId, EventId = item.EventId, RegularEventId = item.RegularEventId, Show = show,
-            });
-            _note = !show ? $"No longer asking for “{item.Title}”."
-                : !result.Agreed ? $"{item.HomeCalendarName}'s editors have been asked to show “{item.Title}” on {Calendar.Name}."
-                : item.Published ? $"“{item.Title}” shows on {Calendar.Name} now."
-                : $"“{item.Title}” will show on {Calendar.Name} once it's shown on {item.HomeCalendarName}.";
-            _confirming = null;
-            if (_live is not null)
-                await _live.ReloadAsync();
-            await Changed.InvokeAsync();
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+            CalendarId = Calendar.Id, HomeCalendarId = item.HomeCalendarId, EventId = item.EventId, RegularEventId = item.RegularEventId, Show = show,
+        });
+        _busy = null;
+        if (!sent.Succeeded)
         {
-            _problem = CalendarEditing.Problem(exception);
+            _problem = sent.Problem;
+            return;
         }
-        finally
-        {
-            _busy = null;
-        }
+        _note = !show ? $"No longer asking for “{item.Title}”."
+            : !item.AgreesAtOnce ? $"{item.HomeCalendarName}'s editors have been asked to show “{item.Title}” on {Calendar.Name}."
+            : item.Published ? $"“{item.Title}” shows on {Calendar.Name} now."
+            : $"“{item.Title}” will show on {Calendar.Name} once it's shown on {item.HomeCalendarName}.";
+        _confirming = null;
+        if (_live is not null)
+            await _live.ReloadAsync();
+        await Changed.InvokeAsync();
     }
 }

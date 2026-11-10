@@ -7,6 +7,7 @@
 @inject Shell Shell
 @inject IJSRuntime Js
 @inject NavigationManager Navigation
+@inject IEventEditing Editing
 
 <LiveData TValue="Diary" Load="Diary.LoadAsync" Feeds="CalendarDiary.Feeds" Remember="@CalendarDiary.Remembered">
     <ChildContent>@Drawn(context.Value)</ChildContent>
@@ -38,12 +39,9 @@
     private RenderFragment Drawn(Diary diary)
     {
         if (diary.Find(Id) is not { } occurrence)
-            return @<Page Title="Not found" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
-                <Masthead Title="Not found" />
-                <EmptyState Icon="calendar" Title="This event isn't in the calendar" Body="It may have been taken off, be more than a month old, or be in a calendar you can't see.">
-                    <Button Variant="ButtonVariant.Quiet" Href="@EventsPlaces.Week">Back to the calendar</Button>
-                </EmptyState>
-            </Page>;
+            return EditKeys.OfOccurrence(Id) is { } key && Editing.WaitingFor(key) is not null && EventDates.TryReadOccurrenceId(Id, out Guid itemId, out DateOnly? date) && date is null
+                ? @<WaitingEventPage EventId="@itemId.ToString()" BackHref="@EventsPlaces.Week" NotFound="NotFound" />
+                : NotFound;
 
         _ = MarkSeenAsync(occurrence);
         CalendarInfo? calendar = diary.Calendar(occurrence.CalendarId);
@@ -64,6 +62,10 @@
             </Actions>
             <ChildContent>
                 <EventHead Day="EventWords.DayOf(occurrence)" Label="@EventWords.LabelOf(occurrence, calendar)" Title="@occurrence.Fields.Title" When="@EventWords.WhenLine(occurrence)" />
+                @if (canEdit && EditKeys.OfOccurrence(occurrence.Id) is { } waitingKey)
+                {
+                    <div class="event-waiting"><QueuedEditStatus ItemKey="@waitingKey" /></div>
+                }
                 @if (occurrence.Fields.Picture is { } picture)
                 {
                     <div class="event-picture"><MediaCover Media="picture" Alt="" /></div>
@@ -90,6 +92,13 @@
             </ChildContent>
         </Page>;
     }
+
+    private static RenderFragment NotFound => @<Page Title="Not found" BackHref="@EventsPlaces.Week" BackLabel="This week" TopBar="TopBarStyle.Solid">
+        <Masthead Title="Not found" />
+        <EmptyState Icon="calendar" Title="This event isn't in the calendar" Body="It may have been taken off, be more than a month old, or be in a calendar you can't see.">
+            <Button Variant="ButtonVariant.Quiet" Href="@EventsPlaces.Week">Back to the calendar</Button>
+        </EmptyState>
+    </Page>;
 
     private async Task MarkSeenAsync(EventOccurrence occurrence)
     {

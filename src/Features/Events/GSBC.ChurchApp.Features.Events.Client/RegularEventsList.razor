@@ -1,16 +1,16 @@
-@inject CalendarEditing Editor
+@inject IEventEditing Editing
 @inject TimeProvider Clock
 
-<LiveData @key="CalendarId" TValue="RegularEventList" Load="LoadAsync" Feeds="ListFeeds" FailedTitle="Can't load the regular events right now">
+<LiveData @key="CalendarId" TValue="IReadOnlyList<RegularEventSummary>" Load="() => Editing.RegularEventsAsync(CalendarId)" Feeds="Editing.Feeds" ReloadOn="ReloadOn" FailedTitle="Can't load the regular events right now">
     <ChildContent>
-        @if (context.Value.RegularEvents.Count == 0)
+        @if (context.Value.Count == 0)
         {
             <EmptyState Icon="repeat" Title="No regular events yet" Body="Things on every week or month, such as services and groups, go here." />
         }
         else
         {
             <div class="list regular-list">
-                @foreach (RegularEventSummary regular in context.Value.RegularEvents)
+                @foreach (RegularEventSummary regular in context.Value)
                 {
                     @if (Href is not null)
                     {
@@ -28,7 +28,7 @@
 </LiveData>
 
 @code {
-    private static readonly IReadOnlyList<string> ListFeeds = [EventsFeeds.Admin, EventsFeeds.Public, EventsFeeds.Private];
+    private const ChangeKind ReloadOn = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
 
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
     [Parameter] public string? SelectedId { get; set; }
@@ -38,8 +38,6 @@
     private string? Classes(RegularEventSummary regular) => regular.Id == SelectedId ? "row--selected" : regular.Ended ? "regular-list__ended" : null;
 
     private DateOnly Today => EventWords.Today(Clock.GetUtcNow().UtcDateTime);
-
-    private async Task<RegularEventList> LoadAsync() => await Editor.Editing.RegularEventsAsync(new CalendarRef { CalendarId = CalendarId });
 
     private string Line(RegularEventSummary regular) => EventWords.Join(
         Capital(regular.Repeats),

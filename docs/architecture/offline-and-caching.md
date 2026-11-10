@@ -59,6 +59,15 @@ changed, the outbox changed. Components say what they depend on and the platform
 start without one of these. Every component follows it; the rule's exemption list (`NotYetMigrated`) is
 empty and stays that way.
 
+## Editing offline
+
+Staff editing on the phone follows the same rule (built 2026-11-10 for [events](../features/events.md), *Editing on
+the phone through Sync*): a feed for editors holds what the editors need, writes queue in the outbox with a
+`gsbc-request-id` the server treats as done when it repeats (`QueuedRequest`, Platform.Api), new records get their id
+on the phone, and each save carries what the editor started from so the server changes only what that person changed
+(different things both stay; the same thing: the later save wins). A screen shows a waiting or failed save with
+`SaveStatus` (*Waiting to send*, *Couldn't save* and *Try now*).
+
 ## Personal and private data
 
 - Feeds have an audience ([permissions.md](permissions.md)). Private feeds (a ministry's members-only
