@@ -84,7 +84,8 @@ public static class PasskeyEndpoints
             OneTimeCode? code = await codes.FindTokenAsync(request.Ticket!, TicketPurposes, cancellationToken);
             if (code is null || code.UserId != user.Id)
                 return Results.Problem("That sign-up has expired. Start again.", statusCode: StatusCodes.Status401Unauthorized);
-            codes.Use(code);
+            if (!await codes.SpendTicketAsync(code, cancellationToken))
+                return Results.Problem("That link or code was already used. Ask for a new one.", statusCode: StatusCodes.Status401Unauthorized);
         }
         else if (http.User.FindFirstValue(ClaimTypes.NameIdentifier) != user.Id.ToString())
         {

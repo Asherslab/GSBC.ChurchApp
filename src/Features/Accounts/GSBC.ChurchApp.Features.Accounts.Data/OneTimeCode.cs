@@ -9,6 +9,7 @@ public sealed class OneTimeCode
     public DateTime ExpiresAt { get; set; }
     public DateTime? UsedAt { get; set; }
     public int FailedAttempts { get; set; }
+    public string? SpendsCode { get; set; }
 }
 
 public enum CodePurpose

@@ -21,11 +21,24 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
-    public string IssueToken(Guid userId, CodePurpose purpose, TimeSpan lifetime)
+    public string IssueToken(Guid userId, CodePurpose purpose, TimeSpan lifetime, OneTimeCode? spends = null)
     {
         string token = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(TokenBytes));
-        Add(Hash(token), userId, purpose, lifetime);
+        Add(Hash(token), userId, purpose, lifetime, spends?.Hash);
         return token;
+    }
+
+    public async Task<bool> SpendTicketAsync(OneTimeCode ticket, CancellationToken cancellationToken)
+    {
+        Use(ticket);
+        if (ticket.SpendsCode is not { } hash)
+            return true;
+
+        DateTime now = Now;
+        int spent = await db.Codes
+            .Where(code => code.Hash == hash && code.UsedAt == null)
+            .ExecuteUpdateAsync(code => code.SetProperty(found => found.UsedAt, now), cancellationToken);
+        return spent == 1;
     }
 
     public async Task<string> IssueShortCodeAsync(Guid userId, CodePurpose purpose, TimeSpan lifetime, CancellationToken cancellationToken)
@@ -83,7 +96,7 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
 
     public void Use(OneTimeCode code) => code.UsedAt = Now;
 
-    private void Add(string hash, Guid userId, CodePurpose purpose, TimeSpan lifetime) =>
+    private void Add(string hash, Guid userId, CodePurpose purpose, TimeSpan lifetime, string? spends = null) =>
         db.Codes.Add(new OneTimeCode
         {
             Hash = hash,
@@ -91,6 +104,7 @@ public sealed class OneTimeCodes(AccountsDbContext db, TimeProvider time)
             Purpose = purpose,
             CreatedAt = Now,
             ExpiresAt = Now + lifetime,
+            SpendsCode = spends,
         });
 
     private static string Hash(string value) => Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(value)));
