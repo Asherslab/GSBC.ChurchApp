@@ -342,7 +342,8 @@ owner. The spike uses these names; descriptions marked "sample" are written for 
   visitor sees its public stream in its own tab. Then, by the ministry's join setting:
   - **Open:** tap Join; the members-only side opens at once.
   - **Ask:** "Ask to join" sends a name, a phone number or email, and a message to the leaders, who
-    accept or decline the request.
+    accept or decline the request. Once chats exist this becomes a shortcut to a conversation with the
+    leaders (see *Asking to join is a chat*, under Chats).
   - **Invite only:** "Message the leaders"; leaders add members themselves (Song Leading: you're asked
     after serving in Choir or Vocal Groups).
 - **A member:** everything public plus the team's announcements, events and files, the chats,
@@ -574,6 +575,17 @@ shows "From Elvanto · synced 4 min ago (sample)" on the roster.
 
 Several chats per ministry; leaders create them; a setting lets members create them; a chat can be
 leaders post only. Messages are kept. In the spike chats are local and in memory: nothing is sent.
+
+### Asking to join is a chat
+
+**"Ask" is a shortcut to talk to the leaders** (owner, 2026-11-10: "this should essentially just be a shortcut to
+start a chat/conversation with the ministry leader. obviously chat isn't in yet, but that's all is basically is,
+maybe + a templated message "I would like to chat about joining the Y ministry""). When chats arrive (Stage 4),
+"Ask to join" opens a conversation with the ministry's leaders, started with a message such as "I'd like to chat
+about joining {ministry}" that the person can change before sending. Leaders then add them from the conversation;
+there's no separate list of asks to approve. Asking for a child follows the safeguarding rules below (never a
+one-to-one chat between an adult and a minor). Until chats exist, the current asks (a leader says yes or no in
+People) stay as they are (default).
 
 ## Safeguarding, for later
 
