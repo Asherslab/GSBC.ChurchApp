@@ -86,6 +86,7 @@ else
     private bool _asked;
     private (string, string?)? _loadedFor;
     private int _datesVersion;
+    private (string By, string At) _kept = ("", "");
 
     [Parameter, EditorRequired] public required string CalendarId { get; set; }
     [Parameter] public string? RegularEventId { get; set; }
@@ -135,6 +136,7 @@ else
             {
                 _draft = EventDraft.NewRegular(StartingCalendar(), Today);
                 _dates = [];
+                _kept = ("", "");
                 if (MustAsk)
                     _draft.Showing = Showing.SavedForLater;
                 Stored();
@@ -166,6 +168,7 @@ else
     {
         _draft = EventDraft.From(detail, null, Now);
         _dates = detail.Dates;
+        _kept = (detail.KeptBy, detail.OpensAt);
         Stored();
     }
 
@@ -207,11 +210,14 @@ else
                 {
                     <div class="regular-head__actions">
                         <span class="regular-head__state">@ShowingWords(draft)</span>
-                        @if (MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
+                        @if (_kept.By.Length == 0 && MustAsk && !draft.IsNew && !draft.Asked && !draft.WasShown)
                         {
                             <Button Variant="ButtonVariant.GhostOnMasthead" Small="true" Icon="send" OnClick="AskAsync">Ask to publish</Button>
                         }
-                        @SaveButton(draft, onMasthead: true)
+                        @if (_kept.By.Length == 0)
+                        {
+                            @SaveButton(draft, onMasthead: true)
+                        }
                     </div>
                 }
                 <EventHead Label="@(Fields.Label.Length > 0 ? Fields.Label : CalendarName)" Title="@(Fields.Title.Length > 0 ? Fields.Title : "New regular event")" Compact="InPanel">
@@ -220,6 +226,11 @@ else
                 <DateStrip Dates="_dates" Today="Today" Selected="@SelectedDate" Picked="PickAsync"
                            Empty="@(draft.IsNew ? "Its dates show here once it's added." : "It has no more dates. Change how it repeats to carry it on.")" />
             </div>
+            @if (_kept.By.Length > 0)
+            {
+                <KeptNotice KeptBy="@_kept.By" OpensAt="@_kept.At" />
+                return;
+            }
             <div class="regular-body">
                 @if (_asked)
                 {

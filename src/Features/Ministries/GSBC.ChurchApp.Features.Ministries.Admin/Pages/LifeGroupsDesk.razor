@@ -36,10 +36,16 @@
         {
             <Notice Text="Staff who plan Life Groups set their Sundays. You can see them here." />
         }
+        <ListGroup>
+            <ListRow Title="@(page.CalendarName.Length > 0 ? $"Shown in {page.CalendarName}" : "Not shown in a calendar")" Icon="calendar" IconTone="RowTone.Quiet"
+                     Subtitle="@(page.CalendarName.Length > 0 ? "One Life Groups entry on each Sunday they meet, kept in step with the Sundays here. Sundays between show as not on." : "Show one Life Groups entry in a calendar, such as the one for Sunday services, kept in step with the Sundays here.")"
+                     Chevron="page.MayPlan" OnClick="() => page.MayPlan ? OpenCalendarAsync() : Task.CompletedTask" />
+        </ListGroup>
         <div class="life-groups-desk">
             @foreach (Round round in page.Rounds.OrderBy(round => round.Sundays.FirstOrDefault()))
             {
                 List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
+                List<MinistrySummary> allYear = AllYear(page);
                 <section class="life-groups-desk__set" @key="round.Id">
                     <header class="life-groups-desk__head">
                         <h2>@MinistryWords.Span(round)</h2>
@@ -51,9 +57,21 @@
                         {
                             <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(page, group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
                         }
+                        @foreach (MinistrySummary group in allYear)
+                        {
+                            if (LifeGroupRounds.SitsOut(group.Id, round, page.SittingOut) is { } off)
+                            {
+                                <ListRow @key="@($"off-{group.Id}")" Title="@group.Name" Subtitle="@OffLine(off)" Icon="circle-off" IconTone="RowTone.Quiet"
+                                         Chevron="page.MayPlan" OnClick="() => { if (page.MayPlan) OpenSitOut(round, off); }" />
+                            }
+                        }
                         @if (_mayAdd)
                         {
                             <ListRow Title="Add a group" Icon="plus" IconTone="RowTone.Accent" OnClick="() => OpenGroup(round.Id)" />
+                        }
+                        @if (page.MayPlan && !Finished(round, today) && allYear.Any(group => LifeGroupRounds.Runs(group.Id, "", round, page.SittingOut)))
+                        {
+                            <ListRow Title="An all-year group isn't on these Sundays" Icon="circle-off" IconTone="RowTone.Accent" OnClick="() => OpenSitOut(round, null)" />
                         }
                     </ListGroup>
                     @if (page.MayPlan)
@@ -70,9 +88,9 @@
             }
             <section class="life-groups-desk__set">
                 <header class="life-groups-desk__head"><h2>All year</h2></header>
-                <p class="hint">Groups that meet every Sunday, wherever they sit.</p>
+                <p class="hint">Groups that meet on every set of Sundays, wherever they sit.</p>
                 <ListGroup>
-                    @foreach (MinistrySummary group in page.Groups.Where(group => page.Rounds.All(round => round.Id != group.RoundId)))
+                    @foreach (MinistrySummary group in AllYear(page))
                     {
                         <ListRow @key="group.Id" Title="@group.Name" Subtitle="@GroupLine(page, group)" Chevron="true" Href="@($"ministries/{group.Id}")" />
                     }
@@ -118,6 +136,61 @@
     </Actions>
 </Sheet>
 
+<UnsavedGuard Changed="() => _calendarOpen && !_confirmingRemoval && _calendarChoice != _calendarWas" What="where Life Groups show" />
+
+<Sheet Open="_calendarOpen" OpenChanged="open => _calendarOpen = open" Title="@(_confirmingRemoval ? $"Take Life Groups off {_calendar.CalendarName}?" : "Show Life Groups in a calendar")"
+       Lead="@(_confirmingRemoval ? "Its entry comes off every phone and calendar app that has it. You can show it in a calendar again at any time." : "One Life Groups entry on each Sunday they meet, at that set's time. Sundays between sets show as not on, and it changes by itself when the Sundays here change. Tapping it in the app opens Life Groups.")">
+    <ChildContent>
+        @if (!_confirmingRemoval)
+        {
+            <SelectField Label="Show Life Groups in" Options="CalendarOptions" @bind-Value="_calendarChoice"
+                         Hint="@(_calendar.Choices.Count == 0 ? "You can choose a calendar you add events to. Ask whoever looks after the calendar to give you that." : "Calendars you add events to.")" />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        @if (_confirmingRemoval)
+        {
+            <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="SaveCalendarAsync">Take it off</Button>
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _confirmingRemoval = false">Keep it</Button>
+        }
+        else
+        {
+            <SaveBar Block="true" Label="Save" Busy="_busy" State="SaveBar.For(_calendarChoice != _calendarWas, false)" OnSave="SaveCalendarAsync" />
+        }
+    </Actions>
+</Sheet>
+
+<UnsavedGuard Changed="() => _sitOutRound is not null && (_sitOutGroup, _sitOutNote, _sitOutInstead) != _sitOutWas" What="this group's Sundays" />
+
+<Sheet Open="_sitOutRound is not null" OpenChanged="open => { if (!open) _sitOutRound = null; }" Title="@(_sitOutRound is { } off ? $"Not on {MinistryWords.Span(off)}" : "")"
+       Lead="Its people keep their place in it and are told once, with what you write here. It's back on the next Sundays by itself.">
+    <ChildContent>
+        @if (_sitOutRound is { } round)
+        {
+            @if (_sitOutEditing)
+            {
+                <p class="hint">@NameOf(_sitOutGroup)</p>
+            }
+            else
+            {
+                <SelectField Label="Group" Options="SitOutOptions(round)" @bind-Value="_sitOutGroup" />
+            }
+            <TextField Label="What to tell its people" @bind-Value="_sitOutNote" MaxLength="200" Hint="Where to go instead, or what's happening." />
+            <SelectField Label="Point them to" Options="InsteadOptions(round)" @bind-Value="_sitOutInstead" Hint="The group shows a link to it." />
+        }
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="@(_sitOutEditing ? "Save" : "Mark it not on")" Busy="_busy" OnSave="() => SaveSitOutAsync(off: true)"
+                 Blocked="@(_sitOutGroup.Length == 0 ? "Choose the group." : null)" />
+        @if (_sitOutEditing)
+        {
+            <Button Block="true" Variant="ButtonVariant.Quiet" Busy="_busy" OnClick="() => SaveSitOutAsync(off: false)">It's on these Sundays after all</Button>
+        }
+    </Actions>
+</Sheet>
+
 <MinistrySheet Open="_groupOpen" OpenChanged="open => _groupOpen = open" InLifeGroups="true" RoundId="@(_groupRound ?? "")" OnCreated="_ => ReloadAsync()" />
 
 @code {
@@ -138,6 +211,18 @@
     private bool _busy;
     private string? _problem;
 
+    private bool _calendarOpen;
+    private bool _confirmingRemoval;
+    private LifeGroupsCalendar _calendar = new();
+    private string _calendarChoice = "";
+    private string _calendarWas = "";
+    private Round? _sitOutRound;
+    private bool _sitOutEditing;
+    private string _sitOutGroup = "";
+    private string _sitOutNote = "";
+    private string _sitOutInstead = "";
+    private (string, string, string) _sitOutWas;
+
     private async Task<LifeGroupsPage> LoadAsync()
     {
         _page = await Ministries.LifeGroupsAsync();
@@ -146,6 +231,80 @@
         StateHasChanged();
         return _page;
     }
+
+    private static List<MinistrySummary> AllYear(LifeGroupsPage page) =>
+        page.Groups.Where(group => page.Rounds.All(round => round.Id != group.RoundId)).ToList();
+
+    private static bool Finished(Round round, DateOnly today) => Day(round.Sundays.LastOrDefault()) < today;
+
+    private static string OffLine(SittingOut off) =>
+        string.Join(" · ", new[] { "Not on these Sundays", off.Note, off.InsteadName.Length > 0 ? $"pointing to {off.InsteadName}" : "" }.Where(part => part.Length > 0));
+
+    private string NameOf(string groupId) => _page?.Groups.FirstOrDefault(group => group.Id == groupId)?.Name ?? "";
+
+    private IReadOnlyList<FieldOption> CalendarOptions =>
+        new[] { new FieldOption("", "No calendar") }
+            .Concat(_calendar.CalendarId.Length > 0 && _calendar.Choices.All(choice => choice.Id != _calendar.CalendarId) ? [new FieldOption(_calendar.CalendarId, _calendar.CalendarName)] : [])
+            .Concat(_calendar.Choices.Select(choice => new FieldOption(choice.Id, choice.Name)))
+            .ToList();
+
+    private IReadOnlyList<FieldOption> SitOutOptions(Round round) =>
+        new[] { new FieldOption("", "Choose a group") }
+            .Concat(_page is null ? [] : AllYear(_page).Where(group => LifeGroupRounds.Runs(group.Id, "", round, _page.SittingOut)).Select(group => new FieldOption(group.Id, group.Name)))
+            .ToList();
+
+    private IReadOnlyList<FieldOption> InsteadOptions(Round round) =>
+        new[] { new FieldOption("", "Nowhere") }
+            .Concat(_page is null ? [] : _page.Groups.Where(group => group.Id != _sitOutGroup && LifeGroupRounds.Runs(group.Id, group.RoundId, round, _page.SittingOut))
+                .Select(group => new FieldOption(group.Id, group.Name)))
+            .ToList();
+
+    private async Task OpenCalendarAsync()
+    {
+        (_problem, _confirmingRemoval) = (null, false);
+        try
+        {
+            _calendar = await Ministries.LifeGroupsCalendarAsync();
+            (_calendarChoice, _calendarWas, _calendarOpen) = (_calendar.CalendarId, _calendar.CalendarId, true);
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+    }
+
+    private async Task SaveCalendarAsync()
+    {
+        if (_calendarChoice == _calendarWas)
+        {
+            _calendarOpen = false;
+            return;
+        }
+        if (_calendarChoice.Length == 0 && !_confirmingRemoval)
+        {
+            _confirmingRemoval = true;
+            return;
+        }
+        await RunAsync(async () =>
+        {
+            _calendar = await Ministries.ShowLifeGroupsInAsync(_calendarChoice);
+            (_calendarOpen, _confirmingRemoval) = (false, false);
+        });
+    }
+
+    private void OpenSitOut(Round round, SittingOut? off)
+    {
+        (_sitOutRound, _sitOutEditing, _problem) = (round, off is not null, null);
+        (_sitOutGroup, _sitOutNote, _sitOutInstead) = (off?.GroupId ?? "", off?.Note ?? "", off?.InsteadId ?? "");
+        _sitOutWas = (_sitOutGroup, _sitOutNote, _sitOutInstead);
+    }
+
+    private Task SaveSitOutAsync(bool off) =>
+        RunAsync(async () =>
+        {
+            await Ministries.SitOutAsync(new SittingOut { GroupId = _sitOutGroup, RoundId = _sitOutRound!.Id, Note = _sitOutNote, InsteadId = _sitOutInstead }, off);
+            _sitOutRound = null;
+        });
 
     private static string Count(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 

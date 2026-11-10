@@ -30,6 +30,15 @@ public static class MinistryParts
 
     public static bool IsOn(IEnumerable<string> partsOff, string part) => !partsOff.Contains(part);
 
+    public static bool HasTab(MinistryPage page, string part) =>
+        IsOn(page.Ministry.PartsOff, part) && part switch
+        {
+            News => page.Posts.Count > 0 || page.You.MayPostFor.Count > 0,
+            Calendar => page.Calendars.Count > 0 || page.You.MayEditSettings,
+            Files => page.Files.Count > 0 || page.You.MayPostFor.Count > 0,
+            _ => false,
+        };
+
     public static List<string> Valid(IEnumerable<string> partsOff) => All.Select(part => part.Key).Where(partsOff.Contains).ToList();
 
     public static List<string> ValidFromBelow(IEnumerable<string> partsFromBelow) =>

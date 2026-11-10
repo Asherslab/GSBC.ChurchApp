@@ -5,8 +5,18 @@ namespace GSBC.ChurchApp.Features.Ministries.Client;
 
 public sealed record LifeGroupSet(Round Round, IReadOnlyList<MinistrySummary> Groups);
 
-public sealed record LifeGroupSets(LifeGroupSet? Now, LifeGroupSet? Next, IReadOnlyList<MinistrySummary> AllYear)
+public sealed record LifeGroupSets(LifeGroupSet? Now, LifeGroupSet? Next, IReadOnlyList<MinistrySummary> AllYear, IReadOnlyList<SittingOut> SittingOut)
 {
+    public SittingOut? Off(MinistrySummary group)
+    {
+        if (group.RoundId.Length > 0 || (Now ?? Next)?.Round is not { } round)
+            return null;
+        return LifeGroupRounds.SitsOut(group.Id, round, SittingOut) is { } off ? WithRound(off, round) : null;
+    }
+
+    private static SittingOut WithRound(SittingOut off, Round round) =>
+        new() { GroupId = off.GroupId, RoundId = off.RoundId, Note = off.Note, InsteadId = off.InsteadId, InsteadName = off.InsteadName, Round = round };
+
     public IReadOnlyList<MinistrySummary> Yours =>
         new[] { Now?.Groups, Next?.Groups, AllYear }.OfType<IReadOnlyList<MinistrySummary>>().SelectMany(groups => groups)
             .Where(group => group.Yours.Length > 0).ToList();
@@ -27,7 +37,8 @@ public sealed record LifeGroupSets(LifeGroupSet? Now, LifeGroupSet? Next, IReadO
         return new LifeGroupSets(
             now is { } current ? Set(current.Round) : null,
             next is { } coming ? Set(coming.Round) : null,
-            page.Groups.Where(group => group.RoundId.Length == 0 || rounds.All(each => each.Round.Id != group.RoundId)).ToList());
+            page.Groups.Where(group => group.RoundId.Length == 0 || rounds.All(each => each.Round.Id != group.RoundId)).ToList(),
+            page.SittingOut);
     }
 
     private static DateOnly Day(string? text) =>

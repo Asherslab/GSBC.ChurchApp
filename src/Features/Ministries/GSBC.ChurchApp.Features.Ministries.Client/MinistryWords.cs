@@ -102,6 +102,9 @@ public static class MinistryWords
             ? day.ToString("d MMMM", CultureInfo.CurrentCulture)
             : isoDate;
 
+    public static string NotOn(SittingOut off) =>
+        string.Join(" · ", new[] { off.Round is { } round ? $"Not on {Span(round)}" : "Not on these Sundays", off.Note }.Where(part => part.Length > 0));
+
     public static string Span(Round round) =>
         round.Sundays.Count == 0 ? "" : round.Sundays.Count == 1 ? Day(round.Sundays[0]) : $"{Day(round.Sundays[0])} to {Day(round.Sundays[^1])}";
 
