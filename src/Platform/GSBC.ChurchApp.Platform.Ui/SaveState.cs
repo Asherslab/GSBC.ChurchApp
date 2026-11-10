@@ -6,4 +6,5 @@ public enum SaveState
     Waiting,
     Saving,
     Failed,
+    Unsaved,
 }

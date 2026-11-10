@@ -474,6 +474,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .save-status { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
 .save-status > .icon { color: var(--accent); }
 .save-status--failed, .save-status--failed > .icon { color: var(--marker-ink); }
+.save-status--unsaved > .icon { color: var(--ink-3); }
 .save-status .spinner { width: 12px; height: 12px; }
 .save-status__detail { font-weight: 400; color: var(--ink-3); }
 .save-status__retry { padding: 0; border: 0; background: none; color: var(--accent); font: inherit; text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }

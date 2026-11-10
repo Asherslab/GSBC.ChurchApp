@@ -1,31 +1,38 @@
 @inject MinistriesClient Ministries
 @inject NavigationManager Navigation
 
+<UnsavedGuard Changed="() => Changed" What="@($"{Page.Ministry.Name}'s settings")" Save="SaveBeforeLeavingAsync" />
+
 <Section First="true" Title="Details">
-    <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
-    <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" Placeholder="Friday nights for ages 4 to 11" />
-    <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
-    <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" Placeholder="Fridays 6:30 to 8:30pm in school terms" />
-    <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" Placeholder="Ages 4 to 11" />
-    @if (Details.Kind == MinistryKinds.LifeGroup)
-    {
-        <TextField Label="Room" @bind-Value="Details.Room" MaxLength="60" Placeholder="Library (5)" />
-    }
+    <div class="ministry-form">
+        <TextField Label="Name" @bind-Value="Details.Name" MaxLength="60" Required="true" />
+        <TextField Label="In a line" @bind-Value="Details.Summary" MaxLength="140" Placeholder="Friday nights for ages 4 to 11" />
+        <TextField Label="About" @bind-Value="Details.About" Multiline="true" MaxLength="4000" Hint="What it is and what happens there, for someone who's never been." />
+        <TextField Label="When and where it meets" @bind-Value="Details.Meets" MaxLength="140" Placeholder="Fridays 6:30 to 8:30pm in school terms" />
+        <TextField Label="Who it's for" @bind-Value="Details.WhoFor" MaxLength="140" Placeholder="Ages 4 to 11" />
+        @if (Details.Kind == MinistryKinds.LifeGroup)
+        {
+            <TextField Label="Room" @bind-Value="Details.Room" MaxLength="60" Placeholder="Library (5)" />
+        }
+    </div>
 </Section>
 
-<Section Title="Joining" Lead="One setting for the team and one for coming along.">
-    <Segmented TValue="string" Label="Joining the team" Stacked="true" Value="Details.TeamJoin" ValueChanged="value => Details.TeamJoin = value" Options="TeamOptions" />
-    <Segmented TValue="string" Label="Coming along" Stacked="true" Value="Details.AttendJoin" ValueChanged="value => Details.AttendJoin = value" Options="AttendOptions" />
-    <p class="hint">@JoinHint</p>
+<Section Title="Joining" Lead="@(Details.Kind == MinistryKinds.LifeGroup ? "How people get into the group." : "How people get on the team, and how they start coming along.")">
+    <JoiningFields Kind="@Details.Kind" TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
+                   AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
 </Section>
 
 <Section>
-    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    @if (_saved)
-    {
-        <Notice Text="Saved." />
-    }
-    <Button Busy="_busy" OnClick="SaveAsync">Save the details</Button>
+    <div class="ministry-form">
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        <div class="ui-actions ministry-save">
+            <Button Busy="_busy" OnClick="SaveAsync">Save the details</Button>
+            @if (Changed || _saved)
+            {
+                <SaveStatus State="@(Changed ? SaveState.Unsaved : SaveState.Saved)" />
+            }
+        </div>
+    </div>
 </Section>
 
 @if (Page.Ministry.Kind != MinistryKinds.LifeGroup)
@@ -65,10 +72,12 @@
 
 @code {
     private MinistryDetails _details = new();
+    private MinistryDetails _stored = new();
     private DeletionPreview? _preview;
     private bool _adding;
     private bool _busy;
     private bool _saved;
+    private bool _leaving;
     private string? _problem;
 
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
@@ -76,19 +85,22 @@
     [Parameter] public string AfterDelete { get; set; } = MinistriesPlaces.Directory;
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private static readonly IReadOnlyList<SegmentOption<string>> TeamOptions =
-        [new(Joining.Open, "Open"), new(Joining.Ask, "Ask"), new(Joining.Invite, "Invite only")];
+    private MinistryDetails Details => _details;
 
-    private static readonly IReadOnlyList<SegmentOption<string>> AttendOptions =
-        [new(Joining.Open, "Open"), new(Joining.Ask, "Ask"), new(Joining.Invite, "Invite only"), new(Joining.None, "No attendees")];
+    private bool Changed => !_leaving && !Same(Details, _stored);
 
-    private string JoinHint => (Details.TeamJoin, Details.AttendJoin) switch
+    protected override void OnParametersSet()
     {
-        (_, Joining.None) => $"{MinistryWords.Joining(Details.TeamJoin)} for the team. Nobody attends {(Details.Name.Length > 0 ? Details.Name : "it")}: it's a team.",
-        _ => $"Team: {MinistryWords.Joining(Details.TeamJoin).ToLowerInvariant()}. Coming along: {MinistryWords.Joining(Details.AttendJoin).ToLowerInvariant()}. Parents ask for their children.",
-    };
+        bool another = _stored.Id != Page.Ministry.Id;
+        if (another)
+            (_saved, _problem, _preview) = (false, null, null);
+        if (another || !Changed)
+            (_stored, _details) = (Page.Ministry, Copy(Page.Ministry));
+    }
 
-    private MinistryDetails Details => _details.Id == Page.Ministry.Id ? _details : _details = Copy(Page.Ministry);
+    private static bool Same(MinistryDetails one, MinistryDetails other) =>
+        (one.Name, one.Summary, one.About, one.Meets, one.WhoFor, one.Room, one.TeamJoin, one.AttendJoin)
+        == (other.Name, other.Summary, other.About, other.Meets, other.WhoFor, other.Room, other.TeamJoin, other.AttendJoin);
 
     private static MinistryDetails Copy(MinistryDetails from) => new()
     {
@@ -112,10 +124,17 @@
     private Task SaveAsync() =>
         RunAsync(async () =>
         {
-            _details = Copy(await Ministries.SaveMinistryAsync(Details));
+            _stored = await Ministries.SaveMinistryAsync(Details);
+            _details = Copy(_stored);
             _saved = true;
             await OnChanged.InvokeAsync();
         });
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveAsync();
+        return _problem is null;
+    }
 
     private Task PreviewAsync() => RunAsync(async () => _preview = await Ministries.DeletionAsync(Page.Ministry.Id));
 
@@ -123,6 +142,7 @@
         RunAsync(async () =>
         {
             await Ministries.DeleteAsync(Page.Ministry.Id);
+            _leaving = true;
             Navigation.NavigateTo(Page.Ministry.ParentId.Length > 0 ? Href(Page.Ministry.ParentId) : AfterDelete, replace: true);
         });
 

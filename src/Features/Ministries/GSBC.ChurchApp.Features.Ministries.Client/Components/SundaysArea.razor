@@ -1,5 +1,7 @@
 @inject MinistriesClient Ministries
 
+<UnsavedGuard Changed="() => _date is not null && (_off, _note) != _was" What="this Sunday" />
+
 <Section First="true" Lead="@Lead">
     <ListGroup>
         @foreach (string sunday in Page.Round?.Sundays ?? [])
@@ -33,6 +35,7 @@
     private string? _date;
     private bool _off;
     private string _note = "";
+    private (bool Off, string Note) _was;
     private bool _busy;
     private string? _problem;
 
@@ -49,6 +52,7 @@
             return;
         SessionChange? change = Page.Sessions.FirstOrDefault(session => session.Date == date);
         (_date, _off, _note, _problem) = (date, change?.Off ?? false, change?.Note ?? "", null);
+        _was = (_off, _note);
     }
 
     private async Task SaveAsync()

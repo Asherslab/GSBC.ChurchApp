@@ -1,0 +1,65 @@
+@inject NavigationManager Navigation
+
+<NavigationLock OnBeforeInternalNavigation="Check" ConfirmExternalNavigation="Changed()" />
+
+<Sheet Open="_leavingTo is not null" OpenChanged="open => { if (!open) _leavingTo = null; }" Title="@(Save is null ? "Leave without saving?" : "Save your changes?")"
+       Lead="@($"You've changed {What} and haven't saved yet. If you leave now, the changes are lost.")">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        @if (Save is not null)
+        {
+            <Button Block="true" Busy="_busy" OnClick="SaveAndLeaveAsync">Save and go on</Button>
+        }
+        <Button Block="true" Variant="@(Save is null ? ButtonVariant.Danger : ButtonVariant.Quiet)" Disabled="_busy" OnClick="Leave">Discard the changes</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _leavingTo = null">Stay here</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private string? _leavingTo;
+    private bool _letThrough;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required Func<bool> Changed { get; set; }
+    [Parameter, EditorRequired] public required string What { get; set; }
+    [Parameter] public Func<Task<bool>>? Save { get; set; }
+
+    private void Check(LocationChangingContext context)
+    {
+        if (_letThrough)
+        {
+            _letThrough = false;
+            return;
+        }
+        if (!Changed())
+            return;
+        context.PreventNavigation();
+        (_leavingTo, _problem) = (context.TargetLocation, null);
+    }
+
+    private async Task SaveAndLeaveAsync()
+    {
+        _busy = true;
+        try
+        {
+            if (await Save!())
+                Leave();
+            else
+                _problem = "It couldn't be saved. Try again, or discard the changes.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private void Leave()
+    {
+        string target = _leavingTo!;
+        (_leavingTo, _letThrough) = (null, true);
+        Navigation.NavigateTo(target);
+    }
+}

@@ -152,6 +152,13 @@ ask a leader. A yes notifies the person (if they sign in), their parents and who
 knows from the People tab (finding them by name, with a masked email to tell two people apart), and links a child's parent
 from the child's sheet (through `IFamilies.LinkAsync`, only for people in that ministry). Leave is on the About.
 
+**The join settings explain themselves** (owner, 2026-11-10: "there's nothing telling the person creating the ministry
+what they are"). Settings and *A new ministry* share `JoiningFields`: *Joining the team* and *Coming along*, each labelled
+with a hint saying what it controls, and every option saying what happens to the person joining. A Life Group shows only
+*Joining the group*, since nobody joins a Life Group's team from the app. Every Ministries and Life Groups form asks
+before you leave it with unsaved changes (owner, 2026-11-10: "can accidentally lose my progress"): Platform.Ui's
+`UnsavedGuard`, with *Save and go on* where the form saves with a button.
+
 **Audiences.** Posts and links are for **everyone**, **attendees and their parents**, **parents only** or **the team**; a
 ministry with no attendees offers only everyone and the team. An **important** post notifies those it's for straight away
 (for everyone: the ministry's own people). Asking to send one to the **whole church** marks it for staff (*default*: the
