@@ -1,21 +1,36 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
 @inject MinistryLinks Links
+@inject IServiceProvider Services
 
-<Section First="true">
-    @if (Page.You.MayEditSettings)
-    {
-        <div class="ministry-tools">
-            <Button Icon="calendar-plus" OnClick="() => Open(null)">Add a calendar</Button>
-        </div>
-    }
-    @if (Page.Calendars.Count == 0)
-    {
-        <EmptyState Icon="calendar" Title="No calendars yet" Body="Add a calendar for everyone, or one only the team sees. Its events show in people's week and their calendar links." />
-    }
-    @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Calendars.Any(calendar => calendar.Audience == audience)))
+@if (Tools)
+{
+    <Section First="true">
+        @if (Page.You.MayEditSettings)
+        {
+            <div class="ministry-tools">
+                <Button Icon="calendar-plus" OnClick="() => Open(null)">Add a calendar</Button>
+            </div>
+        }
+        @if (Page.Calendars.Count == 0)
+        {
+            <EmptyState Icon="calendar" Title="No calendars yet" Body="Add a calendar for everyone, or one only the team sees. Its events show in people's week and their calendar links." />
+        }
+    </Section>
+}
+
+@if (Page.Calendars.Count > 0 && Services.GetService(typeof(CalendarSetView)) is CalendarSetView view)
+{
+    <Section First="@(!Tools)" Title="Coming up" Lead="@(FromBelow.Count > 0 ? $"From {Page.Ministry.Name} and the ministries under it." : null)">
+        @view.ComingUp(Page.Calendars.Select(calendar => new CalendarInSet(calendar.Id, calendar.From.Length > 0 ? calendar.From : Page.Ministry.Name)).ToList())
+    </Section>
+}
+
+<Section Title="@(FromBelow.Count > 0 && Own.Any() ? "Its calendars" : null)">
+    @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Own.Any(calendar => calendar.Audience == audience)))
     {
         <MinistryBox Audience="@audience">
             <ListGroup>
-                @foreach (CalendarLine calendar in Page.Calendars.Where(calendar => calendar.Audience == audience))
+                @foreach (CalendarLine calendar in Own.Where(calendar => calendar.Audience == audience))
                 {
                     <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@Links.CalendarNote" Icon="calendar" IconTone="RowTone.Accent" Chevron="true" Href="@Links.Calendar(calendar)">
                         <TrailingContent>
@@ -31,6 +46,18 @@
     }
 </Section>
 
+@if (FromBelow.Count > 0)
+{
+    <Section Title="From the ministries under it">
+        <ListGroup>
+            @foreach (CalendarLine calendar in FromBelow)
+            {
+                <ListRow @key="calendar.Id" Title="@calendar.Name" Subtitle="@(calendar.Name == calendar.From ? MinistryWords.Box(calendar.Audience) : $"{calendar.From} · {MinistryWords.Box(calendar.Audience)}")" Icon="calendar" IconTone="RowTone.Quiet" Chevron="true" Href="@Links.Calendar(calendar)" />
+            }
+        </ListGroup>
+    </Section>
+}
+
 <CalendarSheet @key="_draft" Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
 
 @code {
@@ -39,6 +66,12 @@
 
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    private bool Tools => Page.You.MayEditSettings || Page.Calendars.Count == 0;
+
+    private IEnumerable<CalendarLine> Own => Page.Calendars.Where(calendar => calendar.From.Length == 0);
+
+    private IReadOnlyList<CalendarLine> FromBelow => Page.Calendars.Where(calendar => calendar.From.Length > 0).ToList();
 
     private void Open(CalendarLine? calendar) => (_draft, _open) = (CalendarSheet.DraftOf(calendar, Page), true);
 }

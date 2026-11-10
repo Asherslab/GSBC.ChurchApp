@@ -7,7 +7,7 @@
             MinistryDirectory directory = context.Value;
             List<MinistrySummary> ministries = directory.Ministries.Where(ministry => ministry.Kind != MinistryKinds.LifeGroup).ToList();
             List<MinistrySummary> yours = ministries.Where(ministry => ministry.Yours.Length > 0).ToList();
-            List<MinistrySummary> top = ministries.Where(ministry => ministry.ParentId.Length == 0 && !HoldsLifeGroups(directory, ministry)).ToList();
+            List<(MinistrySummary Ministry, int Depth)> tree = MinistryTrees.Walk(directory.Ministries, directory.LifeGroupsId, Deepest).ToList();
             List<MinistrySummary> groups = directory.Ministries.Where(ministry => ministry.Kind == MinistryKinds.LifeGroup).ToList();
             List<MinistrySummary> yourGroups = groups.Where(group => group.Yours.Length > 0).ToList();
         }
@@ -25,10 +25,11 @@
         }
         <Section First="@(yours.Count == 0)" Title="All ministries">
             <ListGroup>
-                @foreach (MinistrySummary ministry in top)
+                @foreach ((MinistrySummary ministry, int depth) in tree)
                 {
-                    int under = ministries.Count(child => child.ParentId == ministry.Id);
-                    <ListRow @key="ministry.Id" Title="@ministry.Name" Subtitle="@Line(ministry, under)" Icon="@AboutArea.IconOf(ministry.Icon)" Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
+                    int hidden = depth == Deepest ? MinistryTrees.Under(directory.Ministries, ministry) : 0;
+                    <ListRow @key="ministry.Id" Indent="depth" Title="@ministry.Name" Subtitle="@Line(ministry, hidden)" Icon="@AboutArea.IconOf(ministry)"
+                             Chevron="true" Href="@MinistriesPlaces.Of(ministry.Id)" />
                 }
                 @if (directory.MayCreate || directory.Ministries.Any(ministry => ministry.MayAddUnder))
                 {
@@ -53,17 +54,17 @@
 </LiveData>
 
 @code {
+    private const int Deepest = 2;
     private bool _creating;
 
-    private static bool HoldsLifeGroups(MinistryDirectory directory, MinistrySummary ministry) =>
-        directory.Ministries.Any(child => child.ParentId == ministry.Id && child.Kind == MinistryKinds.LifeGroup);
-
-    private static string Line(MinistrySummary ministry, int under)
+    private static string Line(MinistrySummary ministry, int hidden)
     {
         List<string> parts = [];
+        if (ministry.Kind == MinistryKinds.LifeGroup)
+            parts.Add("Life Group");
         if (ministry.Summary.Length > 0)
             parts.Add(ministry.Summary);
-        parts.Add(under > 0 ? $"{MinistryWords.Ministries(under)} under it" : MinistryWords.JoinLine(ministry));
+        parts.Add(hidden > 0 ? $"{MinistryWords.Ministries(hidden)} under it" : MinistryWords.JoinLine(ministry));
         return string.Join(" · ", parts);
     }
 }

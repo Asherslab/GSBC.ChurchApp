@@ -178,6 +178,7 @@ button.card { cursor: pointer; }
   transition: background 120ms;
 }
 button.row { cursor: pointer; }
+.row--indented { width: auto; margin-left: calc(var(--row-indent) * 24px); }
 .list--boxed .row { padding: 12px 16px; }
 .list--boxed .row:last-child { border-bottom: 0; }
 button.row:active, a.row:active { background: var(--line); }

@@ -200,6 +200,55 @@ calendars. Never in UAT or production.
 **Open for the owner:** routing a whole-church ask to the Announcements desk; uploading documents to private media; whether
 young people asking to come along need a parent's yes first; Home's Today and Simple row once Home has them.
 
+## Follow-ups from the phone (2026-11-10)
+
+The owner's notes after trying Stage 2 on their phone, and what was built for them.
+
+**Ministries under ministries, one tap away** (owner: "i'd like navigating to child ministries to be simpler, e.g. showing
+the child ministries under the main one like in the admin panel"). The app's *All ministries* is the tree: each ministry
+with the ones under it indented beneath, three levels deep; a third-level ministry with more under it says "2 ministries
+under it" and shows the rest on its page (*default*). A Life Group under an ordinary ministry shows there too, marked "Life
+Group". The admin desk's tree and the app's list walk the tree the same way (`MinistryTrees`). *Ministries under it* stays
+on each ministry's About.
+
+**Turning parts of a ministry on and off** (owner: "tabs at the top of a ministry, should be features that are hidden/shown
+per ministry. let the ministry (leader) enable/disable them under settings. doesn't delete them, but hides their tabs and
+such"). Settings → *What it uses*: News, Calendar and Files, each a switch that acts at once (Rosters and Chats join the
+list when they're built). About and People always stay. Decided (Claude's reading, the owner can change it):
+- **Off hides it from everyone, leaders too,** until it's turned back on; leaders and staff see the switch in Settings.
+  Nothing is deleted.
+- **Enforced on the server:** a ministry with News off returns no posts (and passes none down to the ministries under it as
+  "From …"), its posts drop out of the directory's and Home's "what's new", and new posts are refused (so no important
+  post notifies). Files the same. With Calendar off no calendars are returned and none can be added.
+- **A hidden calendar keeps its events but reaches only the ministry's leaders.** Events keeps the chosen audience aside
+  (`shown_audience`) and narrows the calendar to whoever may change the ministry's settings, so its events leave people's
+  week, the calendar feeds, iCal links and event notifications everywhere at once; turning Calendar on restores the audience
+  (including any change made meanwhile). Leaders still see the events in the admin Calendar.
+- **New ministries start with everything on** (*default*: the new-ministry sheet doesn't ask; turning a part off is one
+  switch later).
+
+**A ministry's calendar can include the ministries under it** (owner: "the kids ministries calendar should be able to show
+an amalgamation of the calendars of the ministries under it"). Settings → *Show the calendars of the ministries under it*
+(off by default). The Calendar tab then opens on **Coming up**: the next dozen events of its own calendars and those of
+every ministry under it (at any depth, skipping any with Calendar off and anything under them), each labelled with its
+ministry, followed by its calendars and *From the ministries under it*. **Audience is Events' own:** the server only lists
+calendars the person may see (`Audience.Includes`), and on the phone the events come from that person's own feed, so
+nobody sees an event they wouldn't see in that ministry. Events draws the list (`CalendarSetView`, a Platform.Client slot
+Events fills, since features don't reference each other); in the admin panel it shows the calendars the person edits.
+
+**News from the ministries under it: not built.** It would put every sub-ministry's posts on the parent's board, where the
+parent's own news would get lost, and a ministry's team already sees the team posts of the ministries above it. If the
+owner wants it, it's the same switch and the same audience check as calendars.
+
+**Life Groups under ordinary ministries** (owner: Kids Life "is a life group ministry technically, but does sit under kids
+ministries, which needs to be possible"). *A new ministry*, in the app and the admin panel, asks *What it is*: a ministry
+or a Life Group; a Life Group adds its room, its Sundays (all year or one of the dated sets) and *Join as a parent*, and
+must sit under a ministry. It shows on Life Groups with the others, under its ministry in the directory and the desk, is
+led by that ministry's leaders, and can have calendars like any ministry (which then show on the parent's combined
+calendar). **The Life Groups ministry** is the one that holds the dated sets, or else the ministry holding only Life
+Groups, never one that merely has a Life Group under it (before this, a Life Group under Kids Ministries made Kids
+Ministries vanish from the directory).
+
 ## What it is
 
 The owner's brief (2026-10-30): every ministry has leaders and members, and can have an info page, a

@@ -14,6 +14,7 @@ public sealed class MinistryDirectory
 {
     [ProtoMember(1)] public List<MinistrySummary> Ministries { get; set; } = [];
     [ProtoMember(2)] public bool MayCreate { get; set; }
+    [ProtoMember(3)] public string LifeGroupsId { get; set; } = "";
 }
 
 [ProtoContract]
@@ -66,6 +67,8 @@ public sealed class MinistryDetails
     [ProtoMember(14)] public string Room { get; set; } = "";
     [ProtoMember(15)] public bool JoinAsParent { get; set; }
     [ProtoMember(16)] public int Order { get; set; }
+    [ProtoMember(17)] public List<string> PartsOff { get; set; } = [];
+    [ProtoMember(18)] public bool CalendarsFromBelow { get; set; }
 }
 
 [ProtoContract]
@@ -163,6 +166,8 @@ public sealed class CalendarLine
     [ProtoMember(2)] public string Name { get; set; } = "";
     [ProtoMember(3)] public string Audience { get; set; } = "";
     [ProtoMember(4)] public string Slug { get; set; } = "";
+    [ProtoMember(5)] public string MinistryId { get; set; } = "";
+    [ProtoMember(6)] public string From { get; set; } = "";
 }
 
 [ProtoContract]
@@ -308,6 +313,16 @@ public sealed class MinistrySave : IScopedRequest
 {
     [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2, IsRequired = true)] public MinistryDetails Details { get; set; } = new();
+
+    public string ScopeId => MinistryId;
+}
+
+[ProtoContract]
+public sealed class PartsSave : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public List<string> PartsOff { get; set; } = [];
+    [ProtoMember(3)] public bool CalendarsFromBelow { get; set; }
 
     public string ScopeId => MinistryId;
 }

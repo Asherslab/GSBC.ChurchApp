@@ -35,6 +35,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(ItemRef))]
 [ProtoSerializable(typeof(FileSave))]
 [ProtoSerializable(typeof(MinistrySave))]
+[ProtoSerializable(typeof(PartsSave))]
 [ProtoSerializable(typeof(DeletionPreview))]
 [ProtoSerializable(typeof(CalendarSave))]
 [ProtoSerializable(typeof(CalendarRemoval))]

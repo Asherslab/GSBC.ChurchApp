@@ -50,13 +50,13 @@
         <ListGroup>
             @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? under.Summary : MinistryWords.JoinLine(under))" Icon="@IconOf(under.Icon)" Chevron="true" Href="@Href(under.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? under.Summary : MinistryWords.UnderLine(under))" Icon="@IconOf(under)" Chevron="true" Href="@Href(under.Id)" />
             }
         </ListGroup>
     </Section>
 }
 
-@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings)
+@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings && MinistryParts.All.Any(part => MinistryAreas.Uses(Page, part)))
 {
     <Section>
         <p class="hint">@Page.Ministry.Name's news, calendar and files are for the people in it.</p>
@@ -88,6 +88,8 @@
     [Parameter] public EventCallback OnChanged { get; set; }
 
     public static string IconOf(string icon) => icon.Length > 0 ? icon : "users";
+
+    public static string IconOf(MinistrySummary ministry) => ministry.Kind == MinistryKinds.LifeGroup ? "book-open" : IconOf(ministry.Icon);
 
     private IReadOnlyList<(string Person, string Place, string Words)> Leaving
     {

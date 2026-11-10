@@ -166,6 +166,7 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         Guid me = SignedIn(context);
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        TurnedOn(ministry, MinistryParts.News);
         Post wanted = request.Post;
         if (MinistryRules.WhyNotPost(wanted.Title, wanted.Body, wanted.Audience, MinistryRules.PostableAudiences(ministry.AttendJoin)) is { } problem)
             throw Invalid(problem);
@@ -214,6 +215,7 @@ internal sealed class MinistryLeadingService(
         CancellationToken cancellationToken = context.CancellationToken;
         Guid me = SignedIn(context);
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        TurnedOn(ministry, MinistryParts.Files);
         FileItem wanted = request.File;
         if (wanted.Title.Trim().Length is 0 or > MinistryRules.LongestTitle)
             throw Invalid($"Give it a name of up to {MinistryRules.LongestTitle} characters.");
@@ -262,10 +264,27 @@ internal sealed class MinistryLeadingService(
         return MinistryViews.Details(ministry);
     }
 
+    public async ValueTask<MinistryDetails> SavePartsAsync(PartsSave request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid id = Existing(await views.TreeAsync(cancellationToken), request.MinistryId).Id;
+        MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
+        bool calendarWasOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
+        (ministry.PartsOff, ministry.CalendarsFromBelow, ministry.UpdatedAt) = (MinistryParts.Valid(request.PartsOff), request.CalendarsFromBelow, Now);
+        bool calendarOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        if (calendarOn != calendarWasOn)
+            await calendars.ShowAsync(ministry.Id, calendarOn, MinistryViews.WhileHidden(ministry.Id), cancellationToken);
+        return MinistryViews.Details(ministry);
+    }
+
     public async ValueTask<MinistryDetails> AddSubMinistryAsync(MinistrySave request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryRecord parent = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        if (parent.Kind == MinistryKinds.LifeGroup)
+            throw Refused("A Life Group can't have ministries under it.");
         return await AddAsync(parent.Id, request.Details, cancellationToken);
     }
 
@@ -295,6 +314,7 @@ internal sealed class MinistryLeadingService(
     {
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        TurnedOn(ministry, MinistryParts.Calendar);
         CalendarLine wanted = request.Calendar;
         if (!MinistryRules.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who the calendar is for.");
@@ -392,6 +412,8 @@ internal sealed class MinistryLeadingService(
             wanted.Kind = MinistryKinds.Ministry;
         if (MinistryRules.WhyNotDetails(wanted, parentId is null) is { } problem)
             throw Invalid(problem);
+        if (Guid.TryParse(wanted.RoundId, out Guid round) && !await db.Rounds.AnyAsync(found => found.Id == round, cancellationToken))
+            throw Invalid("Those Sundays were deleted. Choose others.");
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
@@ -421,6 +443,12 @@ internal sealed class MinistryLeadingService(
         ministry.JoinAsParent = wanted.JoinAsParent;
         ministry.RoundId = Guid.TryParse(wanted.RoundId, out Guid round) ? round : null;
         ministry.UpdatedAt = Now;
+    }
+
+    private static void TurnedOn(MinistryRecord ministry, string part)
+    {
+        if (!MinistryViews.IsOn(ministry, part))
+            throw Refused($"{MinistryRules.PartName(part)} is turned off for {ministry.Name}. Turn it on in Settings first.");
     }
 
     private async Task MayDeleteAsync(Guid me, MinistryRecord ministry, CancellationToken cancellationToken)

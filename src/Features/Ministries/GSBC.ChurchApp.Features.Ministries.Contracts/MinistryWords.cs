@@ -6,6 +6,19 @@ public static class MinistryKinds
     public const string LifeGroup = "life-group";
 }
 
+public static class MinistryParts
+{
+    public const string News = "news";
+    public const string Calendar = "calendar";
+    public const string Files = "files";
+
+    public static readonly IReadOnlyList<string> All = [News, Calendar, Files];
+
+    public static bool IsOn(IEnumerable<string> partsOff, string part) => !partsOff.Contains(part);
+
+    public static List<string> Valid(IEnumerable<string> partsOff) => All.Where(partsOff.Contains).ToList();
+}
+
 public static class Joining
 {
     public const string Open = "open";
