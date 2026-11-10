@@ -107,7 +107,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="SaveSetAsync">Save</Button>
+        <SaveBar Block="true" Label="Save" Busy="_busy" OnSave="SaveSetAsync" Blocked="@(_sundays.Count == 0 ? "Add the Sundays they meet to save them." : null)" />
     </Actions>
 </Sheet>
 
@@ -120,7 +120,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="SaveGroupAsync">Add the group</Button>
+        <SaveBar Block="true" Label="Add the group" Busy="_busy" OnSave="SaveGroupAsync" Blocked="@(_groupName.Trim().Length == 0 ? "Give it a name to add it." : null)" />
     </Actions>
 </Sheet>
 

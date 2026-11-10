@@ -27,7 +27,7 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="SaveAsync">Save</Button>
+        <SaveBar Block="true" Label="Save" Busy="_busy" OnSave="SaveAsync" />
     </Actions>
 </Sheet>
 

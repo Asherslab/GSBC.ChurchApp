@@ -16,7 +16,8 @@
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" OnClick="SaveAsync">@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")</Button>
+        <SaveBar Block="true" Label="@(Draft.Id.Length == 0 ? MinistryWords.PostFor(Draft.Audience) : "Save")" Busy="_busy" OnSave="SaveAsync"
+                 Blocked="@(Draft.Title.Trim().Length == 0 ? "Give it a title to post it." : null)" />
         @if (Draft.Id.Length > 0)
         {
             <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the post</Button>

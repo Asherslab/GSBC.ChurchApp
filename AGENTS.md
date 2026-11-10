@@ -107,6 +107,9 @@ Before writing any Blazor UI:
 
 Two features with their own copies of the same UI is a defect: merge them into one component.
 
+**Nothing typed is lost without asking.** A form that saves uses `SaveBar` and `UnsavedGuard` (or, if it
+saves by itself, `SaveStatus` and the guard's autosave mode); see DESIGN.md, *Saving*. `SaveRules` enforces it.
+
 **Data on screen stays current by itself.** A component that loads data uses `LiveData` (or
 `RefreshOn`) and names what it depends on, so it reloads when a feed changes, the phone reconnects,
 or the session or permissions change; never load once in `OnInitialized` and leave it. See
