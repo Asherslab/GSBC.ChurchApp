@@ -41,8 +41,7 @@ public sealed class ReviewSignInTests : IAsyncLifetime
             .AddScoped<ReviewSignIns>()
             .AddAccountsData()
             .AddSyncData()
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>();
+            .AddAccountIdentity();
         _services = services.BuildServiceProvider();
 
         await using AsyncServiceScope scope = _services.CreateAsyncScope();

@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Testing;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -44,8 +45,7 @@ public sealed class FamilySignInTests : IAsyncLifetime
             .AddScoped<IPeopleAccounts, AccountsPeopleAccounts>()
             .AddAccountsData()
             .AddSyncData()
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>();
+            .AddAccountIdentity();
         services.AddOptions<AccountsOptions>();
         _services = services.BuildServiceProvider();
 
@@ -83,6 +83,17 @@ public sealed class FamilySignInTests : IAsyncLifetime
         Assert.True(madePasskey);
         Assert.False(spentAgain);
         Assert.Equal(StatusCode.NotFound, afterwards.StatusCode);
+    }
+
+    [Fact]
+    public async Task AChildWithNoEmailCanBeSavedWhenTheirPasskeyIsAdded()
+    {
+        Guid mia = await WithAsync<IPeopleAccounts, Guid>(accounts => accounts.AddWithoutSignInAsync("Mia", _parent, Cancel).AsTask());
+
+        IdentityResult saved = await WithAsync<UserManager<AccountUser>, IdentityResult>(async users =>
+            await users.UpdateAsync(await users.FindByIdAsync(mia.ToString()) ?? throw new InvalidOperationException("No child")));
+
+        Assert.True(saved.Succeeded, string.Join(" ", saved.Errors.Select(error => error.Description)));
     }
 
     [Fact]

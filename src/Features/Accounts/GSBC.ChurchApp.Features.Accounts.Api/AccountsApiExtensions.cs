@@ -23,9 +23,7 @@ public static class AccountsApiExtensions
     {
         services.Configure<AccountsOptions>(configuration.GetSection(AccountsOptions.Section));
         services.AddAccountsData();
-        services
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>();
+        services.AddAccountIdentity();
         services.AddRoleKit(new RoleKit(RoleKits.PeopleNames, [AccountsPermissions.ViewNode]));
         services.AddSystemRole(new SystemRole("people-viewer", "People Viewer", "See everyone's name and email", ScopeKind.Global,
             [AccountsPermissions.ViewNode], Feature: RoleFeatures.People));

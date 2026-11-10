@@ -34,8 +34,7 @@ public sealed class AccountDeletionTests : IAsyncLifetime
             .AddScoped<AccountDeletion>()
             .AddAccountsData()
             .AddSyncData()
-            .AddIdentityCore<AccountUser>(options => options.User.RequireUniqueEmail = true)
-            .AddEntityFrameworkStores<AccountsDbContext>();
+            .AddAccountIdentity();
         _services = services.BuildServiceProvider();
 
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
