@@ -106,9 +106,9 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
 
     private static int FlagOrder(string kind) => kind switch
     {
-        FlagKinds.RunOut => 0,
-        FlagKinds.DueSoon => 1,
-        FlagKinds.NotRecorded => 2,
+        FlagKinds.Check => 0,
+        FlagKinds.RunOut => 1,
+        FlagKinds.DueSoon => 2,
         _ => 3,
     };
 

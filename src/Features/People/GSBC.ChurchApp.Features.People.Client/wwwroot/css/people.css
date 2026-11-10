@@ -158,7 +158,8 @@
   margin-top: 8px;
 }
 
-.people-record + .people-tab__head { margin-top: 26px; }
+:is(.people-record, .facts) + .people-tab__head { margin-top: 26px; }
+.people-tab__head.ui-after { margin-top: 22px; }
 
 .people-inline {
   display: flex;

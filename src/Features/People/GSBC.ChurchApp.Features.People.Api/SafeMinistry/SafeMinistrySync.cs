@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.People.Api.Data;
 using GSBC.ChurchApp.Features.People.Contracts;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -70,7 +71,7 @@ internal sealed class SafeMinistrySync(
         record.LinkByHandOnly = false;
 
         if (Connected && await PersonOrNullAsync(smcId, cancellationToken) is { } row)
-            Sync(entry, SmcValues.From(row));
+            Sync(entry, SmcValues.From(row, ChurchTime.Today(time)));
         await families.TouchAsync([personId], safeguarding: true, cancellationToken);
         TouchList();
         await db.SaveChangesAsync(cancellationToken);
@@ -149,7 +150,7 @@ internal sealed class SafeMinistrySync(
         foreach (SafeguardingEntry entry in entries.Distinct().Where(entry => entry.Source == SafeguardingSources.SafeMinistryCheck))
         {
             SmcValues values = byId.TryGetValue(entry.ExternalId!, out SmcRow? row)
-                ? SmcValues.From(row)
+                ? SmcValues.From(row, ChurchTime.Today(time))
                 : Gone(entry);
             if (Sync(entry, values))
                 changed.Add(entry.UserId);

@@ -251,6 +251,9 @@ a { color: var(--accent); }
 .facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 8px 18px; margin: 0 0 16px; font-size: var(--text-caption); }
 .facts dt { color: var(--ink-3); font-weight: 600; }
 .facts dd { margin: 0; color: var(--ink); }
+.facts:has(> .fact) { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 28px; font-size: inherit; }
+.facts:has(> .fact) > .fact { border-top: 1px solid var(--line); }
+.facts:has(> .fact) dd { color: var(--ink-2); }
 
 
 .activity { display: grid; margin: 0; padding: 0; list-style: none; font-size: var(--text-caption); }

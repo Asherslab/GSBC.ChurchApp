@@ -57,6 +57,16 @@ public sealed class SmcValuesTests
     public void AStatusOtherThanClearedIsAReasonToCheck(string status) =>
         Assert.Equal([SmcReasons.Status(status)], Values(SmcSamples.Person("1", "Sam", "Example", status: status)).CheckReasons);
 
+    [Theory]
+    [InlineData("2026-01-31", "complete")]
+    [InlineData("2027-01-31", "in progress")]
+    public void PendingOnlyBecauseOfTrainingIsLeftToTheTrainingFlag(string nextAction, string progress)
+    {
+        Assert.Empty(Values(SmcSamples.Person("1", "Sam", "Example", status: "Pending", nextAction: nextAction, progress: progress)).CheckReasons);
+        Assert.Equal([SmcReasons.PoliceCheck],
+            Values(SmcSamples.Person("1", "Sam", "Example", status: "Pending", nextAction: nextAction, progress: progress, police: "pending")).CheckReasons);
+    }
+
     [Fact]
     public void TheirBlueCardWordsMapToOurStatuses()
     {
@@ -74,5 +84,5 @@ public sealed class SmcValuesTests
         Assert.Equal("Sam Example", page.People[0].Name);
     }
 
-    private static SmcValues Values(string person) => SmcValues.From(SmcJson.Person(person));
+    private static SmcValues Values(string person) => SmcValues.From(SmcJson.Person(person), new DateOnly(2026, 11, 10));
 }

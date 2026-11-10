@@ -35,11 +35,13 @@ internal sealed record SmcValues(
     private static readonly string[] NothingToSay = ["none", "no", "n/a", "na", "nil", "0"];
     private static readonly string[] NoPoliceCheckNeeded = ["n/a", "na", "not required", "none"];
 
-    public static SmcValues From(SmcRow row)
+    public static SmcValues From(SmcRow row, DateOnly today)
     {
         string cardNumber = row["wwcc_id"];
         string cardStatus = CardStatusOf(row["wwcc_status"]);
         string status = row["status"];
+        bool trainingOutstanding = row.Day("next_action_date") < today
+            || (row["course_progress"].Trim().Length > 0 && !SafeMinistryTraining.Finished(row["course_progress"]));
         return new SmcValues(
             Text(cardNumber, BlueCardNumberLength),
             Text(cardStatus),
@@ -51,7 +53,7 @@ internal sealed record SmcValues(
             row.Day("other_training_completed_date"),
             Text(status),
             Text(row["status_description"]),
-            Reasons(row, cardNumber, cardStatus, status));
+            Reasons(row, cardNumber, cardStatus, status, trainingOutstanding));
     }
 
     public void ApplyTo(SafeguardingEntry entry)
@@ -71,10 +73,10 @@ internal sealed record SmcValues(
             entry.CheckReasons = CheckReasons;
     }
 
-    private static List<string> Reasons(SmcRow row, string cardNumber, string cardStatus, string status)
+    private static List<string> Reasons(SmcRow row, string cardNumber, string cardStatus, string status, bool trainingOutstanding)
     {
         List<string> reasons = [];
-        if (status.Length > 0 && !Good(status))
+        if (status.Length > 0 && !Good(status) && !(trainingOutstanding && IsPending(status)))
             reasons.Add(SmcReasons.Status(Text(status, 60)!));
         if (row["wwcc_status"].Length > 0 && cardStatus.Length == 0)
             reasons.Add(SmcReasons.CardNotVerified);
@@ -99,6 +101,8 @@ internal sealed record SmcValues(
         "expired" => BlueCards.Expired,
         _ => "",
     };
+
+    private static bool IsPending(string status) => status.Trim().Equals("pending", StringComparison.OrdinalIgnoreCase);
 
     private static bool Good(string words) => AllGood.Contains(words.Trim().ToLowerInvariant());
 
