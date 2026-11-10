@@ -52,6 +52,15 @@ public interface IMinistryLeadingService
     [SignedIn]
     ValueTask<Done> DeleteAsync(MinistryRef request, CallContext context = default);
 
+    [SignedIn]
+    ValueTask<Done> ArchiveAsync(MinistryRef request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<Done> RestoreAsync(MinistryRef request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<ArchivedList> ArchivedAsync(DirectoryRequest request, CallContext context = default);
+
     [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default);
 

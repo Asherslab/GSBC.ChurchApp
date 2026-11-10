@@ -46,6 +46,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(SessionChange))]
 [ProtoSerializable(typeof(RoundSave))]
 [ProtoSerializable(typeof(SitOutSave))]
+[ProtoSerializable(typeof(ArchivedList))]
 [ProtoSerializable(typeof(LifeGroupsCalendar))]
 [ProtoSerializable(typeof(LifeGroupsCalendarChoice))]
 [ProtoSerializable(typeof(RoundRef))]

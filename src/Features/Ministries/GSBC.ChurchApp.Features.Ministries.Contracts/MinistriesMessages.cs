@@ -10,6 +10,23 @@ public sealed class Done;
 public sealed class DirectoryRequest;
 
 [ProtoContract]
+public sealed class ArchivedList
+{
+    [ProtoMember(1)] public List<ArchivedLine> Ministries { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class ArchivedLine
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public string Where { get; set; } = "";
+    [ProtoMember(4)] public DateTime ArchivedAt { get; set; }
+    [ProtoMember(5)] public bool ShowsInLifeGroups { get; set; }
+    [ProtoMember(6)] public bool MayRestore { get; set; }
+}
+
+[ProtoContract]
 public sealed class MinistryDirectory
 {
     [ProtoMember(1)] public List<MinistrySummary> Ministries { get; set; } = [];

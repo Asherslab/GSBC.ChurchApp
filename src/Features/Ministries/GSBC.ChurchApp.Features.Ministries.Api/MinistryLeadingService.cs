@@ -313,6 +313,66 @@ internal sealed class MinistryLeadingService(
         return new Done();
     }
 
+    public async ValueTask<Done> ArchiveAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
+        DateTime now = Now;
+        foreach (MinistryRecord archiving in MinistryArchive.Archiving(every, ministry))
+        {
+            await db.Ministries.Where(found => found.Id == archiving.Id).ExecuteUpdateAsync(set => set.SetProperty(found => found.ArchivedAt, now), cancellationToken);
+            await calendars.ShowAsync(archiving.Id, false, MinistryViews.WhileHidden(archiving.Id), cancellationToken);
+            changes.Touch(archiving.Id, deleted: true);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> RestoreAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(every, request.MinistryId);
+        await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
+        if (MinistryArchive.WhyNotRestore(every, ministry) is { } why)
+            throw Refused(why);
+        foreach (MinistryRecord restoring in MinistryArchive.Restoring(every, ministry))
+        {
+            await db.Ministries.Where(found => found.Id == restoring.Id).ExecuteUpdateAsync(set => set.SetProperty(found => found.ArchivedAt, (DateTime?)null), cancellationToken);
+            await calendars.ShowAsync(restoring.Id, MinistryParts.IsOn(restoring.PartsOff, MinistryParts.Calendar), MinistryViews.WhileHidden(restoring.Id), cancellationToken);
+            changes.Touch(restoring.Id);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<ArchivedList> ArchivedAsync(DirectoryRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        GrantSet grants = await views.GrantsAsync(SignedIn(context), cancellationToken);
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        return new ArchivedList
+        {
+            Ministries = every.All.Where(ministry => ministry.ArchivedAt is not null && MayFind(grants, ministry))
+                .OrderByDescending(ministry => ministry.ArchivedAt).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
+                .Select(ministry => new ArchivedLine
+                {
+                    Id = ministry.Id.ToString(), Name = ministry.Name, ArchivedAt = ministry.ArchivedAt!.Value, ShowsInLifeGroups = ministry.ShowsInLifeGroups,
+                    Where = ministry.ParentId is { } parent && every.Find(parent) is { } above ? $"Under {above.Name}" : "Top-level",
+                    MayRestore = MayDelete(grants, ministry) && MinistryArchive.WhyNotRestore(every, ministry) is null,
+                })
+                .ToList(),
+        };
+    }
+
+    private static bool MayFind(GrantSet grants, MinistryRecord ministry) =>
+        MayDelete(grants, ministry) || MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
+
+    private static bool MayDelete(GrantSet grants, MinistryRecord ministry) =>
+        ministry.ParentId is { } parent ? MinistryViews.Holds(grants, MinistriesPermissions.Settings, parent) : grants.IsAllowed(MinistriesPermissions.Create);
+
     public async ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
@@ -544,11 +604,7 @@ internal sealed class MinistryLeadingService(
 
     private async Task MayDeleteAsync(Guid me, MinistryRecord ministry, CancellationToken cancellationToken)
     {
-        GrantSet grants = await views.GrantsAsync(me, cancellationToken);
-        bool may = ministry.ParentId is { } parent
-            ? MinistryViews.Holds(grants, MinistriesPermissions.Settings, parent)
-            : grants.IsAllowed(MinistriesPermissions.Create);
-        if (!may)
+        if (!MayDelete(await views.GrantsAsync(me, cancellationToken), ministry))
             throw new RpcException(new Status(StatusCode.PermissionDenied, ministry.ParentId is null
                 ? "Only staff delete the church's top-level ministries."
                 : "Only the leaders of the ministry above this one can delete it."));

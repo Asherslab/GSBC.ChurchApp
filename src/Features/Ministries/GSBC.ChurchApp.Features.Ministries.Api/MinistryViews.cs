@@ -18,6 +18,9 @@ internal sealed class MinistryViews(
     IMinistryCalendars calendars)
 {
     public async Task<MinistryTree> TreeAsync(CancellationToken cancellationToken) =>
+        new(MinistryArchive.Active(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken)));
+
+    public async Task<MinistryTree> EveryTreeAsync(CancellationToken cancellationToken) =>
         new(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken));
 
     public async Task<GrantSet> GrantsAsync(Guid? userId, CancellationToken cancellationToken) =>

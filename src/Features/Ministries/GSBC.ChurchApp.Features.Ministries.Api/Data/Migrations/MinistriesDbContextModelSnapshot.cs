@@ -136,6 +136,10 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("about");
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
                     b.Property<string>("AttendJoin")
                         .IsRequired()
                         .HasColumnType("text")
