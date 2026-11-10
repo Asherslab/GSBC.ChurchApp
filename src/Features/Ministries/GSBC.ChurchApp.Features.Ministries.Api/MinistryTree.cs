@@ -1,5 +1,4 @@
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
-using GSBC.ChurchApp.Features.Ministries.Contracts;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 

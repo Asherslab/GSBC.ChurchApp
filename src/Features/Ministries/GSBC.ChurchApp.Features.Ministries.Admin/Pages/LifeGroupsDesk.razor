@@ -138,6 +138,7 @@
         _page = await Ministries.LifeGroupsAsync();
         MinistryDirectory directory = await Ministries.DirectoryAsync();
         _mayAdd = directory.MayCreate || directory.Ministries.Any(ministry => ministry.MayAddUnder);
+        StateHasChanged();
         return _page;
     }
 
@@ -147,7 +148,7 @@
         string.Join(" · ", new[] { Where(page, group), group.Meets, group.Summary }.Where(part => part.Length > 0));
 
     private static string Where(LifeGroupsPage page, MinistrySummary group) =>
-        page.Under.FirstOrDefault(parent => parent.Id == group.ParentId) is { } parent ? $"Under {parent.Name}" : "Top-level";
+        page.Under.FirstOrDefault(crumb => crumb.Id == group.ParentId) is { } parent ? $"Under {parent.Name}" : "Top-level";
 
     private static string State(Round round, DateOnly today) =>
         Day(round.Sundays.LastOrDefault()) < today ? "Finished"
