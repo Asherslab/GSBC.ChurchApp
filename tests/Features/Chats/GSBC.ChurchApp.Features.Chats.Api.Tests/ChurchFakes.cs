@@ -1,10 +1,10 @@
-using GSBC.ChurchApp.Platform.Contracts.Chats;
 using System.Security.Claims;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
 

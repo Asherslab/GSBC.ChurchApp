@@ -1,9 +1,9 @@
-using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 

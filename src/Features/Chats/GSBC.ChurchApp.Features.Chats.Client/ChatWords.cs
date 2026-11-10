@@ -1,6 +1,6 @@
-using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Platform.Ui;
 
 namespace GSBC.ChurchApp.Features.Chats.Client;

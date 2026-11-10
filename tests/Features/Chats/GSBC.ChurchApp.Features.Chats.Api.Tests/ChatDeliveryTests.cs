@@ -1,4 +1,3 @@
-using GSBC.ChurchApp.Platform.Contracts.Chats;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
@@ -8,6 +7,7 @@ using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Testing;
