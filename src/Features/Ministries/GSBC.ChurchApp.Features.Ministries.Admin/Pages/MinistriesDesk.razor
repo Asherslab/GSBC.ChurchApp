@@ -19,15 +19,29 @@
             <SearchField Label="Find a ministry" Placeholder="Find a ministry" Value="@_query" ValueChanged="value => _query = value" />
             @foreach ((MinistrySummary ministry, int depth) in Tree(context.Value))
             {
-                <button type="button" class="ministry-tree__item @(ministry.Id == Id ? "ministry-tree__item--on" : "")" style="@($"padding-left: {10 + depth * 20}px")"
-                        aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id, Area ?? string.Empty))">
-                    <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
-                    <span class="ministry-tree__name">@ministry.Name</span>
-                    @if (ministry.Waiting > 0)
+                <div class="ministry-tree__row" @key="ministry.Id" style="@($"padding-left: {depth * 20}px")">
+                    @if (MinistryTrees.Under(context.Value.Ministries, ministry) > 0 && _query.Trim().Length == 0)
                     {
-                        <span class="tab-strip__count" aria-label="@($"{ministry.Waiting} asking to join")">@ministry.Waiting</span>
+                        bool open = !_folded.Contains(ministry.Id);
+                        <button type="button" class="ministry-tree__fold @(open ? "ministry-tree__fold--open" : "")" aria-expanded="@(open ? "true" : "false")"
+                                aria-label="@($"{(open ? "Hide" : "Show")} the ministries under {ministry.Name}")" @onclick="() => Fold(ministry.Id)">
+                            <Icon Name="chevron-right" Size="IconSize.Small" />
+                        </button>
                     }
-                </button>
+                    else
+                    {
+                        <span class="ministry-tree__fold-space" aria-hidden="true"></span>
+                    }
+                    <button type="button" class="ministry-tree__item @(ministry.Id == Id ? "ministry-tree__item--on" : "")"
+                            aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id, Area ?? string.Empty))">
+                        <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
+                        <span class="ministry-tree__name">@ministry.Name</span>
+                        @if (ministry.Waiting > 0)
+                        {
+                            <span class="tab-strip__count" aria-label="@($"{ministry.Waiting} asking to join")">@ministry.Waiting</span>
+                        }
+                    </button>
+                </div>
             }
         </nav>
 
@@ -58,6 +72,7 @@
 @code {
     private LiveData<MinistryPage>? _live;
     private string _query = "";
+    private readonly HashSet<string> _folded = [];
 
     private bool _creating;
 
@@ -82,8 +97,15 @@
                 yield return (found, 0);
             yield break;
         }
-        foreach ((MinistrySummary, int) next in MinistryTrees.Walk(directory.Ministries))
+        IReadOnlySet<string> keepOpen = MinistryTrees.Above(directory.Ministries, Id);
+        foreach ((MinistrySummary, int) next in MinistryTrees.Walk(directory.Ministries, folded: _folded.Except(keepOpen).ToHashSet()))
             yield return next;
+    }
+
+    private void Fold(string id)
+    {
+        if (!_folded.Remove(id))
+            _folded.Add(id);
     }
 
     private async Task ReloadAsync()
