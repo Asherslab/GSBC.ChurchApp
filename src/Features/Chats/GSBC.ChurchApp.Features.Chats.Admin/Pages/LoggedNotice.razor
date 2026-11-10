@@ -1,0 +1,8 @@
+<div class="chat-logged" role="note">
+    <Icon Name="eye" />
+    <span><strong>This check is logged.</strong> @ChildContent</span>
+</div>
+
+@code {
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+}

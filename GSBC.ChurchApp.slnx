@@ -67,7 +67,10 @@
     <Project Path="src/Features/Analytics/GSBC.ChurchApp.Features.Analytics.Contracts/GSBC.ChurchApp.Features.Analytics.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Features/Chats/">
+    <Project Path="src/Features/Chats/GSBC.ChurchApp.Features.Chats.Admin/GSBC.ChurchApp.Features.Chats.Admin.csproj" />
     <Project Path="src/Features/Chats/GSBC.ChurchApp.Features.Chats.Api/GSBC.ChurchApp.Features.Chats.Api.csproj" />
+    <Project Path="src/Features/Chats/GSBC.ChurchApp.Features.Chats.App/GSBC.ChurchApp.Features.Chats.App.csproj" />
+    <Project Path="src/Features/Chats/GSBC.ChurchApp.Features.Chats.Client/GSBC.ChurchApp.Features.Chats.Client.csproj" />
     <Project Path="src/Features/Chats/GSBC.ChurchApp.Features.Chats.Contracts/GSBC.ChurchApp.Features.Chats.Contracts.csproj" />
   </Folder>
   <Folder Name="/src/Features/Configuration/">

@@ -1,0 +1,109 @@
+@inject OversightClient Oversight
+
+<UnsavedGuard Changed="() => _outcome.Trim().Length > 0" What="what was done" />
+
+<LiveData @ref="_live" TValue="Reports" Load="Oversight.ReportsAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load reports right now">
+    <SplitView Detail="@(Chosen(context.Value) is { } report ? Detail(report) : null)" DetailLabel="The report">
+        <DataTable TItem="ReportLine" Label="Reports" Items="Shown(context.Value)" Columns="Columns" Key="report => report.Id"
+                   Selected="Chosen(context.Value)" SelectedChanged="report => _chosen = report.Id" RowClass="RowClass" SortColumn="0" SortDescending="true">
+            <Toolbar>
+                <FilterChips TValue="bool" Label="Show" Options="Filters(context.Value)" Value="_handled" ValueChanged="value => _handled = value" />
+            </Toolbar>
+            <Empty>
+                <EmptyState Icon="flag" Title="@(_handled ? "Nothing handled yet" : "No reports waiting")" Body="When someone reports a message in a chat you check, it shows here." />
+            </Empty>
+        </DataTable>
+    </SplitView>
+</LiveData>
+
+@code {
+    private LiveData<Reports>? _live;
+    private string? _chosen;
+    private bool _handled;
+    private string _outcome = "";
+    private string? _problem;
+    private bool _busy;
+
+    [Parameter, EditorRequired] public required Desk Desk { get; set; }
+    [Parameter] public EventCallback<string> OnRead { get; set; }
+
+    private static readonly IReadOnlyList<TableColumn<ReportLine>> Columns =
+    [
+        new("Reported", report => @<DateLine At="report.At" Style="DateLineStyle.Short" WithTime="true" />, report => report.At, "num"),
+        new("Chat", report => @<span><span class="cell-strong">@report.ChatName</span><br /><span class="quiet">@report.MinistryName</span></span>, report => report.ChatName),
+        new("Message from", report => @<span>@report.MessageSender</span>, report => report.MessageSender),
+        new("Sent to", report => @<Pill Tone="@(report.To == ReportRoutes.Auditors ? PillTone.Danger : PillTone.Quiet)">@(report.To == ReportRoutes.Auditors ? "Safety team" : "Leaders")</Pill>, report => report.To),
+        new("By", report => @<span>@report.ReporterName</span>, report => report.ReporterName, "optional"),
+    ];
+
+    private IEnumerable<ReportLine> Shown(Reports reports) => _handled ? reports.Handled : reports.Open;
+
+    private ReportLine? Chosen(Reports reports) => reports.Open.Concat(reports.Handled).FirstOrDefault(report => report.Id == _chosen);
+
+    private static string? RowClass(ReportLine report) => report.To == ReportRoutes.Auditors && report.HandledAt is null ? "row--urgent" : null;
+
+    private static IReadOnlyList<FilterOption<bool>> Filters(Reports reports) =>
+        [new(false, "Waiting", reports.Open.Count), new(true, "Handled", reports.Handled.Count)];
+
+    private RenderFragment Detail(ReportLine report) =>
+        @<div class="chat-report">
+            <LoggedNotice>Opening a report is part of the log when you read its chat.</LoggedNotice>
+            <h2 class="chat-report__title">@(report.To == ReportRoutes.Auditors ? "Reported to the safety team" : "Reported to the leaders")</h2>
+            <p>By @report.ReporterName, <DateLine At="report.At" Style="DateLineStyle.Short" WithTime="true" />@(report.Note.Length > 0 ? $": \"{report.Note}\"" : ".")</p>
+            <blockquote class="chat-callout"><strong>@report.MessageSender</strong>@report.MessageText</blockquote>
+            <div class="ui-after">
+                <Button Variant="ButtonVariant.Quiet" Icon="eye" OnClick="() => OnRead.InvokeAsync(report.ChatId)">Read the whole chat</Button>
+                @if (Desk.Auditor && report.MessageSenderId.Length > 0)
+                {
+                    <Button Variant="ButtonVariant.Danger" Icon="pause" Busy="_busy" OnClick="() => PauseAsync(report)">Pause @ChatText.First(report.MessageSender) from chats</Button>
+                }
+            </div>
+            @if (report.HandledAt is null)
+            {
+                <TextField Label="What was done" Hint="Kept with the report and in the log." Multiline="true" Value="@_outcome" ValueChanged="value => _outcome = value" MaxLength="ChatLimits.NoteLength" />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <Button Busy="_busy" Disabled="@(_outcome.Trim().Length == 0)" OnClick="() => HandleAsync(report)">Mark as handled</Button>
+            }
+            else
+            {
+                <p class="quiet">Handled by @report.HandledBy, <DateLine At="report.HandledAt.Value" Style="DateLineStyle.Short" WithTime="true" />: @report.Outcome</p>
+            }
+        </div>;
+
+    private async Task HandleAsync(ReportLine report)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Oversight.HandleAsync(report.Id, _outcome);
+            _outcome = "";
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task PauseAsync(ReportLine report)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await Oversight.PauseAsync(report.MessageSenderId, true, $"Paused after a report in {report.ChatName}");
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

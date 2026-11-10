@@ -87,6 +87,7 @@ public sealed class Attachment
     [ProtoMember(4)] public long Bytes { get; set; }
     [ProtoMember(5)] public int Width { get; set; }
     [ProtoMember(6)] public int Height { get; set; }
+    [ProtoMember(7)] public string MediaId { get; set; } = "";
 }
 
 [ProtoContract]

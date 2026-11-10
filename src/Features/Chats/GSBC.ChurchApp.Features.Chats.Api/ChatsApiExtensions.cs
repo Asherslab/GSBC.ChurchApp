@@ -30,7 +30,7 @@ public static class ChatsApiExtensions
             [ChatsPermissions.MemberNode], AssignableBy: [], Hidden: true));
         services.AddSystemRole(new SystemRole(ChatsPermissions.AuditorRole, "Chat auditor",
             "Checks any chat in the church, gets reports sent straight to the auditors, and can pause someone from chats. Every check is logged",
-            ScopeKind.Global, [ChatsPermissions.AuditNode], Feature: RoleFeatures.Ministries));
+            ScopeKind.Global, [ChatsPermissions.AuditNode, ChatsPermissions.CheckNode], Feature: RoleFeatures.Ministries));
         services.AddSystemRole(new SystemRole(ChatsPermissions.PausedRole, "Paused from chats",
             "Can't read or write in any chat until a chat auditor lets them back in", ScopeKind.Global, [], AssignableBy: [], Hidden: true));
 

@@ -1,0 +1,65 @@
+@inject OversightClient Oversight
+@inject IPeopleDirectory People
+
+<UnsavedGuard Changed="() => _reason.Trim().Length > 0" What="why you're pausing someone" />
+
+<LiveData @ref="_live" TValue="PausedList" Load="Oversight.PausedAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load paused people right now">
+    <Section First="true" Lead="People who can't read or send in any chat, in every ministry, until someone lets them back in. Pausing and letting back in are both logged, with who and why.">
+        <TextField Label="Why (kept in the log)" Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
+        <PersonFinder Find="FindAsync" ActionText="Pause from chats" Label="Find someone to pause" Busy="@_busyId" OnChosen="PauseAsync" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </Section>
+    <Section Title="Paused now">
+        @if (context.Value.People.Count == 0)
+        {
+            <EmptyState Icon="pause" Title="Nobody is paused" Body="When a chat auditor pauses someone, they show here." />
+        }
+        else
+        {
+            <ListGroup>
+                @foreach (PausedPerson person in context.Value.People)
+                {
+                    <ListRow Title="@person.Name" Subtitle="@($"Paused by {person.ByName}{(person.Reason.Length > 0 ? $": {person.Reason}" : "")}")">
+                        <TrailingContent>
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Busy="@(_busyId == person.Id)" OnClick="() => LetBackAsync(person)">Let them back in</Button>
+                        </TrailingContent>
+                    </ListRow>
+                }
+            </ListGroup>
+        }
+    </Section>
+</LiveData>
+
+@code {
+    private LiveData<PausedList>? _live;
+    private string _reason = "";
+    private string? _busyId;
+    private string? _problem;
+
+    private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
+        (await People.SearchAsync(query)).Select(person => new PersonChoice(person.Id, person.Name, person.Email)).ToList();
+
+    private Task PauseAsync(PersonChoice person) => RunAsync(person.Id, () => Oversight.PauseAsync(person.Id, true, _reason));
+
+    private Task LetBackAsync(PausedPerson person) => RunAsync(person.Id, () => Oversight.PauseAsync(person.Id, false, ""));
+
+    private async Task RunAsync(string id, Func<Task> work)
+    {
+        (_busyId, _problem) = (id, null);
+        try
+        {
+            await work();
+            _reason = "";
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busyId = null;
+        }
+    }
+}

@@ -1259,7 +1259,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .bubble__name-note { font-weight: 400; color: var(--ink-3); }
 .bubble__body { white-space: pre-wrap; }
 .bubble__time { justify-self: end; font-size: var(--text-pill); color: var(--ink-3); font-variant-numeric: tabular-nums; }
-.bubble-row--mine .bubble__time { color: rgb(255 255 255 / 0.72); }
+.bubble-row--mine .bubble__time { color: color-mix(in srgb, var(--on-primary) 72%, transparent); }
 .bubble--removed { background: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font-style: italic; font-size: var(--text-caption); }
 .bubble-row--mine .bubble--removed { background: transparent; color: var(--ink-3); }
 .bubble-row--mine .bubble--removed .bubble__time { color: var(--ink-3); }

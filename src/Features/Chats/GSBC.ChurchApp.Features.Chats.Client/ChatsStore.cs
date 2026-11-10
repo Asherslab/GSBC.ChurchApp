@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Outbox;
@@ -30,6 +31,8 @@ public sealed record ChatLine(ChatMessage Message, LineState State, string? Outb
 
 public sealed record Conversation(ChatCard Card, IReadOnlyList<ChatLine> Lines, bool Paused);
 
+public sealed record OpenedChat(Conversation? Chat);
+
 public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferences preferences, TimeProvider time)
 {
     public const string Remembered = "chats.home";
@@ -38,6 +41,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
     private const int MostChats = 200;
     private const int MostMessages = 400;
     private readonly Dictionary<string, long> _markedRead = [];
+    private readonly Dictionary<string, string> _drafts = [];
 
     public static IReadOnlyList<string> Feeds => ChatsFeeds.Mine;
 
@@ -98,6 +102,16 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         await SaveAsync(pending);
     }
 
+    public string DraftOf(string chatId) => _drafts.GetValueOrDefault(chatId, "");
+
+    public void KeepDraft(string chatId, string text)
+    {
+        if (text.Length == 0)
+            _drafts.Remove(chatId);
+        else
+            _drafts[chatId] = text;
+    }
+
     public ValueTask RetryAsync(ChatLine line) => line.OutboxId is { } id ? outbox.RetryAsync(id) : ValueTask.CompletedTask;
 
     public async Task DiscardAsync(ChatLine line)
@@ -148,7 +162,7 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         await EnqueueAsync("MarkRead", new MarkRead { ChatId = card.Id, UpToSeq = upTo });
     }
 
-    private async Task EnqueueAsync<T>(string method, T request) where T : class =>
+    private async Task EnqueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request) where T : class =>
         await outbox.EnqueueAsync(Service + method, request, ChatsContractsModel.Instance);
 
     private static ChatMessage Draft(PendingSend send, ChatCard card) => new()
@@ -171,5 +185,5 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
         await preferences.SetAsync(PendingKey, pending.Sends.Count == 0 ? null : Convert.ToBase64String(stream.ToArray()));
     }
 
-    private static T Decode<T>(byte[] payload) => ChatsContractsModel.Instance.Deserialize<T>(new MemoryStream(payload));
+    private static T Decode<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(byte[] payload) => ChatsContractsModel.Instance.Deserialize<T>(new MemoryStream(payload));
 }

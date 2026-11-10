@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Chats.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Chats.Client;
 
+[AdminOnly]
 public sealed class OversightClient(ChannelBase channel)
 {
     private readonly IChatOversightService _oversight = channel.CreateGrpcService<IChatOversightService>();

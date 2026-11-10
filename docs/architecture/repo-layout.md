@@ -142,6 +142,9 @@ flowchart LR
     end
 
     subgraph Chats["Features / Chats"]
+        ChatsApp["Features.Chats.App"]
+        ChatsAdmin["Features.Chats.Admin"]
+        ChatsClient["Features.Chats.Client"]
         ChatsApi["Features.Chats.Api"]
         ChatsContracts["Features.Chats.Contracts"]
     end
@@ -217,8 +220,8 @@ flowchart LR
     HostsAppHost --> HostsApi & HostsGateway & HostsMigrator & HostsWebsite
     HostsWebsite --> SermonsClient & EventsClient
     HostsGateway --> HostsAdmin & AccountsGateway & EventsGateway
-    HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
-    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
+    HostsApp --> AccountsApp & AccessClient & PeopleApp & MinistriesApp & ChatsApp & ConfigurationApp & PlatformUi & MediaClient & ReleaseNotesApp & AnalyticsApp & NotificationsApp & SermonsApp & EventsApp
+    HostsAdmin --> PlatformUi & AccountsAdmin & AccessAdmin & PeopleAdmin & MinistriesAdmin & ChatsAdmin & ConfigurationAdmin & MediaAdmin & AnalyticsAdmin & NotificationsAdmin & SermonsAdmin & SermonsImportAdmin & EventsAdmin
     HostsApi --> AccountsApi & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi & PlatformApi
     HostsMigrator --> PlatformData & AccountsData & AccessApi & PeopleApi & MinistriesApi & ChatsApi & ConfigurationApi & MediaApi & AnalyticsApi & NotificationsApi & SermonsApi & SermonsImportApi & EventsApi
 
@@ -266,6 +269,9 @@ flowchart LR
     MinistriesClient --> MinistriesContracts & PlatformClient & PlatformUi & PlatformCommon
     MinistriesApi --> MinistriesContracts & PlatformApi & PlatformCommon
     MinistriesContracts --> PlatformContracts
+    ChatsApp --> ChatsClient
+    ChatsAdmin --> ChatsClient
+    ChatsClient --> ChatsContracts & PlatformClient & PlatformUi & PlatformCommon
     ChatsApi --> ChatsContracts & PlatformApi & PlatformCommon
     ChatsContracts --> PlatformContracts
     SermonsApp --> SermonsClient
@@ -380,6 +386,9 @@ flowchart LR
 | `GSBC.ChurchApp.Features.Ministries.App` | The phone's pages: `/ministries`, `/ministries/{id}` and its areas, `/life-groups` | Yes |
 | `GSBC.ChurchApp.Features.Chats.Contracts` | The `Chats` and `Oversight` services, chat, message and report messages, the per-person `chats.chats` and `chats.messages` feeds and the `chats.oversight` markers, notification kinds and the `chats.*` permission nodes | Yes |
 | `GSBC.ChurchApp.Features.Chats.Api` | Chats in a ministry (schema `chats`): who's in each is worked out from Access (an audience at the ministry, or *Chat member* at the chat) with the minors' rules (a parent's yes, parents reading, two adults with a blue card), and every message is written to each recipient's own Sync rows; every version kept; logged checks, reports and pausing (*Chats paused* role); the full audit | No |
+| `GSBC.ChurchApp.Features.Chats.Client` | The phone's chats from the local store (`ChatsStore`: the list, a conversation with pending and failed sends, every write through the outbox) and the shared screens: the list, a conversation (bubbles, replies, reactions, mentions, read receipts, a parent's yes, reporting), starting a chat, the Hub tile; the admin panel's `OversightClient` (`[AdminOnly]`) | Yes |
+| `GSBC.ChurchApp.Features.Chats.App` | The phone's pages: `/chats` and `/chats/{id}` | Yes |
+| `GSBC.ChurchApp.Features.Chats.Admin` | The admin panel's Chats desk: reports, chats you may check (reading one is logged with a reason), paused people and the checks log | Yes |
 | `GSBC.ChurchApp.Features.Ministries.Admin` | The admin panel's Ministries page (the tree beside the chosen ministry) and Life Groups set-up for staff | Yes |
 | `GSBC.ChurchApp.Features.People.Admin` | A person's Family and Safeguarding tabs (`PersonTab`), the Safeguarding page of who's flagged, and its lines in Home's *Needs you* | Yes |
 | `GSBC.ChurchApp.Features.Sermons.Contracts` | The `Sermons` and `Library` services, the sermon, series, speaker and listening messages, the progress merge rule (`ListeningProgress`), YouTube links, feeds, places and the `sermons.*` permission nodes | Yes |
