@@ -11,13 +11,23 @@ public sealed class PrayerOnPhone(ILocalFeeds feeds, IOutbox outbox, ILocalPrefe
 {
     public static readonly IReadOnlyList<string> Feeds = [PrayerFeeds.Wall, PrayerFeeds.Mine];
 
-    private const string Service = "/gsbc.prayer.Prayer/";
+    public const string Service = "/gsbc.prayer.Prayer/";
     private const string KeptKey = "prayer.kept";
     private const int Page = 200;
     private static readonly TimeSpan KeptFor = TimeSpan.FromDays(365);
     private readonly SemaphoreSlim _keeping = new(1, 1);
 
     public bool CanSend => outbox.IsAvailable;
+
+    public static string Describe(string method) => method[Service.Length..] switch
+    {
+        "Send" => "your prayer request",
+        "Pray" => "your prayer",
+        "Answered" => "that it was answered",
+        "TakeDown" => "taking it off the prayer wall",
+        "Delete" => "deleting your request",
+        _ => "a change",
+    };
 
     public async Task<PrayerView> LoadAsync()
     {

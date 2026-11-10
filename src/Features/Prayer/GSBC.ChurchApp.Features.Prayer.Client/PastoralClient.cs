@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Prayer.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Prayer.Client;
 
+[AdminOnly]
 public sealed class PastoralClient(ChannelBase channel)
 {
     private readonly IPastoralService _pastoral = channel.CreateGrpcService<IPastoralService>();

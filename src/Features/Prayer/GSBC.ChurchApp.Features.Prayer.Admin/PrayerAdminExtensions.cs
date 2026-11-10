@@ -13,6 +13,6 @@ public static class PrayerAdminExtensions
             [new NavEntry("Prayer", "prayer", "prayer", PrayerPermissions.Wall, Area: NavAreas.People,
                 Summary: "Prayer requests from the app, for the pastoral team, and what the prayer wall shows")],
             [PrayerFeeds.Inbox], []));
-        return services.AddPastoralClient();
+        return services.AddPrayerClient().AddSingleton<PastoralClient>();
     }
 }

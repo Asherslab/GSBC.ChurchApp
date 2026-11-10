@@ -29,6 +29,7 @@
                     <Notice Tone="NoticeTone.Warning" Text="@($"It couldn't be sent: {problem}")" />
                 }
             </Section>
+            <WaitingToSend MethodsUnder="@PrayerOnPhone.Service" Describe="PrayerOnPhone.Describe" />
             <Section>
                 <ListGroup>
                     @if (line.Sending == Sending.CouldNotSend)

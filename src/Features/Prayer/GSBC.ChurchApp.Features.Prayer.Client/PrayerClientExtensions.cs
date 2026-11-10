@@ -15,7 +15,4 @@ public static class PrayerClientExtensions
         services
             .AddDestinations(PrayerDestinations.All)
             .AddHubTile<PrayerTile>(PrayerTiles.Prayer);
-
-    public static IServiceCollection AddPastoralClient(this IServiceCollection services) =>
-        services.AddPrayerClient().AddSingleton<PastoralClient>();
 }
