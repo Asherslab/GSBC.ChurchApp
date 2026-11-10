@@ -94,6 +94,13 @@
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Contracts/GSBC.ChurchApp.Features.Events.Contracts.csproj" />
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Gateway/GSBC.ChurchApp.Features.Events.Gateway.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Ministries/">
+    <Project Path="src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Admin/GSBC.ChurchApp.Features.Ministries.Admin.csproj" />
+    <Project Path="src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api/GSBC.ChurchApp.Features.Ministries.Api.csproj" />
+    <Project Path="src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.App/GSBC.ChurchApp.Features.Ministries.App.csproj" />
+    <Project Path="src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Client/GSBC.ChurchApp.Features.Ministries.Client.csproj" />
+    <Project Path="src/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Contracts/GSBC.ChurchApp.Features.Ministries.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Features/People/">
     <Project Path="src/Features/People/GSBC.ChurchApp.Features.People.Admin/GSBC.ChurchApp.Features.People.Admin.csproj" />
     <Project Path="src/Features/People/GSBC.ChurchApp.Features.People.Api/GSBC.ChurchApp.Features.People.Api.csproj" />
@@ -163,6 +170,9 @@
   <Folder Name="/tests/Features/Events/">
     <Project Path="tests/Features/Events/GSBC.ChurchApp.Features.Events.Api.Tests/GSBC.ChurchApp.Features.Events.Api.Tests.csproj" />
     <Project Path="tests/Features/Events/GSBC.ChurchApp.Features.Events.Client.Tests/GSBC.ChurchApp.Features.Events.Client.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Ministries/">
+    <Project Path="tests/Features/Ministries/GSBC.ChurchApp.Features.Ministries.Api.Tests/GSBC.ChurchApp.Features.Ministries.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/People/">
     <Project Path="tests/Features/People/GSBC.ChurchApp.Features.People.Api.Tests/GSBC.ChurchApp.Features.People.Api.Tests.csproj" />
