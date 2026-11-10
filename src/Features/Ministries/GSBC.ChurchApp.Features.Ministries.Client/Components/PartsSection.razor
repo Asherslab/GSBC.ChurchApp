@@ -1,0 +1,89 @@
+@inject MinistriesClient Ministries
+
+<Section Title="What it uses" Lead="Turn off what this ministry doesn't use. Its tab and everything in it are hidden from everyone, leaders too, until you turn it back on. Nothing is deleted.">
+    @foreach (string part in MinistryParts.All)
+    {
+        <ToggleRow @key="part" Title="@Title(part)" Description="@Description(part)" Checked="@(!Off.Contains(part))" Disabled="_busy" CheckedChanged="on => TurnAsync(part, on)" />
+    }
+    @if (!Off.Contains(MinistryParts.Calendar) && Page.SubMinistries.Count > 0)
+    {
+        <ToggleRow Title="Show the calendars of the ministries under it" Description="Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry."
+                   Checked="FromBelow" Disabled="_busy" CheckedChanged="FromBelowAsync" />
+    }
+    <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+</Section>
+
+@code {
+    private List<string> _off = [];
+    private bool _fromBelow;
+    private MinistryDetails? _seen;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private List<string> Off
+    {
+        get
+        {
+            FollowPage();
+            return _off;
+        }
+    }
+
+    private bool FromBelow
+    {
+        get
+        {
+            FollowPage();
+            return _fromBelow;
+        }
+    }
+
+    private void FollowPage()
+    {
+        if (ReferenceEquals(_seen, Page.Ministry) || _busy)
+            return;
+        _seen = Page.Ministry;
+        (_off, _fromBelow) = ([.. Page.Ministry.PartsOff], Page.Ministry.CalendarsFromBelow);
+    }
+
+    private static string Title(string part) => part switch
+    {
+        MinistryParts.News => "News",
+        MinistryParts.Calendar => "Calendar",
+        _ => "Files",
+    };
+
+    private static string Description(string part) => part switch
+    {
+        MinistryParts.News => "Posts from its leaders, for everyone or for its people",
+        MinistryParts.Calendar => "Its calendars, with their events in people's week and calendar links",
+        _ => "Documents and links, such as a code of conduct or practice recordings",
+    };
+
+    private Task TurnAsync(string part, bool on) =>
+        SaveAsync(on ? Off.Where(off => off != part).ToList() : [.. Off, part], FromBelow);
+
+    private Task FromBelowAsync(bool on) => SaveAsync(Off, on);
+
+    private async Task SaveAsync(List<string> off, bool fromBelow)
+    {
+        (List<string> before, bool beforeFromBelow) = (_off, _fromBelow);
+        (_off, _fromBelow, _busy, _problem) = (off, fromBelow, true, null);
+        try
+        {
+            await Ministries.SavePartsAsync(Page.Ministry.Id, off, fromBelow);
+            await OnChanged.InvokeAsync();
+        }
+        catch (RpcException exception)
+        {
+            (_off, _fromBelow, _problem) = (before, beforeFromBelow, MinistriesClient.Problem(exception));
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

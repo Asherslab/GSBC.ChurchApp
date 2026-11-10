@@ -59,7 +59,7 @@ internal sealed class CalendarSetupService(
         calendar.Name = name;
         calendar.Slug = slug;
         calendar.Description = wanted.Description.Trim();
-        calendar.Audience = audience.Text;
+        CalendarHiding.Choose(calendar, audience.Text);
         calendar.ShownOnNewPhones = wanted.ShownOnNewPhones;
         calendar.NeedsPublisher = request.NeedsPublisher;
         bool ministryChanged = calendar.MinistryId != ministry;

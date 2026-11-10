@@ -13,12 +13,13 @@
     [Parameter] public bool Selected { get; set; }
     [Parameter] public bool Highlight { get; set; }
     [Parameter] public EventCallback OnClick { get; set; }
+    [Parameter] public string? From { get; set; }
 
     private bool Quiet => Occurrence.Kind == OccurrenceKind.Regular && !NewChange && !(ShowNeeds && Occurrence.Missing.Count > 0);
 
     private bool Past => NowUtc != default && Occurrence.EndsAt < NowUtc;
 
-    private string? Label => Quiet ? null : EventWords.LabelOf(Occurrence, Calendar);
+    private string? Label => From is { Length: > 0 } from ? from : Quiet ? null : EventWords.LabelOf(Occurrence, Calendar);
 
     private string? Needs => ShowNeeds && Occurrence.Missing.Count > 0 ? EventWords.NeedsLine(Occurrence.Missing) : null;
 

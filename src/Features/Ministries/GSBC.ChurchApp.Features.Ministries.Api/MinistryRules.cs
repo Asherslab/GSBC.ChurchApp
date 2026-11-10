@@ -56,6 +56,13 @@ internal static class MinistryRules
         return details.Kind is MinistryKinds.Ministry or MinistryKinds.LifeGroup ? null : "That isn't a kind of ministry.";
     }
 
+    public static string PartName(string part) => part switch
+    {
+        MinistryParts.News => "News",
+        MinistryParts.Calendar => "Calendar",
+        _ => "Files",
+    };
+
     public static string Yours(IReadOnlyCollection<string> roles, IReadOnlyCollection<string> childrenAttending, bool leadsFromAbove) =>
         roles.Contains(Roles.Leader) || leadsFromAbove ? "You lead it"
         : roles.Contains(Roles.Admin) ? "You look after it"

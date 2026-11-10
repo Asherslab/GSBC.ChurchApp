@@ -20,6 +20,9 @@ Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26
   parent sees it through the family link) and joins their own adult group as themselves.
 - **A group's Sundays** tab lists its Sundays; its leaders mark one *No class this Sunday* or say what's changed
   ("Combined with Faith at Work, in Room 2").
+- **A Life Group can sit under any ministry** (owner, 2026-11-10: Kids Life "does sit under kids ministries, which needs to
+  be possible"): made from *A new ministry* (*What it is: A Life Group*) in the app or the admin panel. It still shows on
+  Life Groups with its Sundays, and its leaders are that ministry's ([ministries.md](ministries.md), *Follow-ups*).
 - **No Sunday reminder** (owner, 2026-11-10). The site map isn't built, so a group shows its room as words.
 
 ## A kind of ministry

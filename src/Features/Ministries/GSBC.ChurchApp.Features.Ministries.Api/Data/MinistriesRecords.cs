@@ -18,6 +18,8 @@ public sealed class MinistryRecord
     public string Room { get; set; } = "";
     public bool JoinAsParent { get; set; }
     public int Order { get; set; }
+    public List<string> PartsOff { get; set; } = [];
+    public bool CalendarsFromBelow { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 }

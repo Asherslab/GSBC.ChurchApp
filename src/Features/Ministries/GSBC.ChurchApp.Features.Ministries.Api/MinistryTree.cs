@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
+using GSBC.ChurchApp.Features.Ministries.Contracts;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 
@@ -35,6 +36,19 @@ internal sealed class MinistryTree(IEnumerable<MinistryRecord> ministries)
                     waiting.Enqueue(child.Id);
                 }
         return below;
+    }
+
+    public Guid? LifeGroupsHome(IEnumerable<Guid> roundOwners)
+    {
+        foreach (Guid owner in roundOwners)
+            if (_byId.ContainsKey(owner))
+                return owner;
+        return _byId.Values.Where(group => group is { Kind: MinistryKinds.LifeGroup, ParentId: not null })
+            .GroupBy(group => group.ParentId!.Value)
+            .Where(parent => ChildrenOf(parent.Key).All(child => child.Kind == MinistryKinds.LifeGroup))
+            .OrderByDescending(parent => parent.Count()).ThenBy(parent => Find(parent.Key)?.Order ?? 0)
+            .Select(parent => (Guid?)parent.Key)
+            .FirstOrDefault();
     }
 
     public bool WouldLoop(Guid id, Guid? newParent) =>

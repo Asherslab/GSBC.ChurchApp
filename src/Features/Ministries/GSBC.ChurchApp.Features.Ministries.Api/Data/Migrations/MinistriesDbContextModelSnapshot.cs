@@ -141,6 +141,10 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("attend_join");
 
+                    b.Property<bool>("CalendarsFromBelow")
+                        .HasColumnType("boolean")
+                        .HasColumnName("calendars_from_below");
+
                     b.Property<string>("Colour")
                         .IsRequired()
                         .HasColumnType("text")
@@ -181,6 +185,11 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                     b.Property<Guid?>("ParentId")
                         .HasColumnType("uuid")
                         .HasColumnName("parent_id");
+
+                    b.PrimitiveCollection<List<string>>("PartsOff")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("parts_off");
 
                     b.Property<string>("Room")
                         .IsRequired()

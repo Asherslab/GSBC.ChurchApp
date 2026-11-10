@@ -20,6 +20,9 @@ internal sealed class MinistryViews(
     public async Task<MinistryTree> TreeAsync(CancellationToken cancellationToken) =>
         new(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken));
 
+    public async Task<Guid?> LifeGroupsHomeAsync(MinistryTree tree, CancellationToken cancellationToken) =>
+        tree.LifeGroupsHome(await db.Rounds.AsNoTracking().OrderBy(round => round.MinistryId).Select(round => round.MinistryId).Distinct().ToListAsync(cancellationToken));
+
     public async Task<GrantSet> GrantsAsync(Guid? userId, CancellationToken cancellationToken) =>
         userId is { } person ? await access.GrantsForAsync(person, cancellationToken) : GrantSet.Empty;
 
@@ -62,10 +65,16 @@ internal sealed class MinistryViews(
             .ToList();
     }
 
+    public static bool IsOn(MinistryRecord ministry, string part) => MinistryParts.IsOn(ministry.PartsOff, part);
+
+    public static List<Guid> Showing(MinistryTree tree, Guid ministryId, string part) =>
+        IsOn(tree.Find(ministryId)!, part)
+            ? [ministryId, .. tree.Above(ministryId).Where(place => IsOn(place, part)).Select(place => place.Id)]
+            : [];
+
     public async Task<List<Post>> PostsAsync(MinistryTree tree, Guid ministryId, GrantSet grants, CancellationToken cancellationToken)
     {
-        List<MinistryRecord> places = [tree.Find(ministryId)!, .. tree.Above(ministryId)];
-        List<Guid> ids = places.Select(place => place.Id).ToList();
+        List<Guid> ids = Showing(tree, ministryId, MinistryParts.News);
         List<PostRecord> records = await db.Posts.AsNoTracking().Where(post => ids.Contains(post.MinistryId))
             .OrderByDescending(post => post.PostedAt).Take(200).ToListAsync(cancellationToken);
         return records
@@ -77,7 +86,7 @@ internal sealed class MinistryViews(
 
     public async Task<List<FileItem>> FilesAsync(MinistryTree tree, Guid ministryId, GrantSet grants, CancellationToken cancellationToken)
     {
-        List<Guid> ids = [ministryId, .. tree.Above(ministryId).Select(place => place.Id)];
+        List<Guid> ids = Showing(tree, ministryId, MinistryParts.Files);
         List<FileRecord> records = await db.Files.AsNoTracking().Where(file => ids.Contains(file.MinistryId))
             .OrderBy(file => file.Title).ToListAsync(cancellationToken);
         return records
@@ -87,22 +96,43 @@ internal sealed class MinistryViews(
             .ToList();
     }
 
-    public async Task<List<CalendarLine>> CalendarsAsync(Guid ministryId, GrantSet grants, bool signedIn, CancellationToken cancellationToken)
+    public async Task<List<CalendarLine>> CalendarsAsync(MinistryTree tree, Guid ministryId, GrantSet grants, bool signedIn, CancellationToken cancellationToken)
     {
+        List<Guid> shown = [.. CalendarsShown(tree, ministryId)];
+        if (shown.Count == 0)
+            return [];
         Viewer viewer = Viewer.Of(grants, signedIn);
-        return (await calendars.OfAsync(ministryId, cancellationToken))
-            .Where(calendar => calendar.Audience.Includes(viewer))
-            .Select(Calendar)
+        return (await calendars.OfAsync(shown, cancellationToken))
+            .Where(calendar => !calendar.Hidden && calendar.Audience.Includes(viewer))
+            .OrderBy(calendar => shown.IndexOf(calendar.MinistryId))
+            .Select(calendar => Calendar(calendar, calendar.MinistryId == ministryId ? "" : tree.Find(calendar.MinistryId)?.Name ?? ""))
             .ToList();
     }
+
+    public static IReadOnlyList<Guid> CalendarsShown(MinistryTree tree, Guid ministryId)
+    {
+        MinistryRecord ministry = tree.Find(ministryId)!;
+        if (!IsOn(ministry, MinistryParts.Calendar))
+            return [];
+        if (!ministry.CalendarsFromBelow)
+            return [ministryId];
+        return [ministryId, .. tree.Below(ministryId).Where(below => IsOn(below, MinistryParts.Calendar) && Shows(tree, below, ministryId)).Select(below => below.Id)];
+    }
+
+    private static bool Shows(MinistryTree tree, MinistryRecord below, Guid top) =>
+        tree.Above(below.Id).TakeWhile(above => above.Id != top).All(above => IsOn(above, MinistryParts.Calendar));
 
     public async Task<IReadOnlyDictionary<Guid, FamilyFacts>> FactsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
         await families.FactsAsync(ids, cancellationToken);
 
-    public static CalendarLine Calendar(MinistryCalendar calendar) => new()
+    public static CalendarLine Calendar(MinistryCalendar calendar, string from = "") => new()
     {
         Id = calendar.Id.ToString(), Name = calendar.Name, Slug = calendar.Slug, Audience = AudienceOf(calendar.Audience),
+        MinistryId = calendar.MinistryId.ToString(), From = from,
     };
+
+    public static Audience WhileHidden(Guid ministryId) =>
+        Audience.HoldingAt(MinistriesPermissions.SettingsNode, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
 
     public static string AudienceOf(Audience audience) => audience.Node switch
     {
@@ -124,6 +154,7 @@ internal sealed class MinistryViews(
         Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, WhoFor = ministry.WhoFor, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, RoundId = ministry.RoundId?.ToString() ?? "",
         Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Order = ministry.Order,
+        PartsOff = [.. ministry.PartsOff], CalendarsFromBelow = ministry.CalendarsFromBelow,
     };
 
     public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "", int waiting = 0) => new()

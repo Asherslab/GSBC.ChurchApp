@@ -2,15 +2,15 @@
 
 @if (Href is not null && !External && !Disabled)
 {
-    <a class="row @ReadingClass @Class" href="@Href" @onclick="TapAsync">@Body</a>
+    <a class="row @ReadingClass @Class" style="@IndentStyle" href="@Href" @onclick="TapAsync">@Body</a>
 }
 else if (Disabled || (Href is null && !OnClick.HasDelegate))
 {
-    <div class="row @(Disabled ? "row--disabled" : "") @ReadingClass @Class" aria-disabled="@(Disabled ? "true" : null)">@Body</div>
+    <div class="row @(Disabled ? "row--disabled" : "") @ReadingClass @Class" style="@IndentStyle" aria-disabled="@(Disabled ? "true" : null)">@Body</div>
 }
 else
 {
-    <button type="button" class="row @ReadingClass @Class" @onclick="ActivateAsync">@Body</button>
+    <button type="button" class="row @ReadingClass @Class" style="@IndentStyle" @onclick="ActivateAsync">@Body</button>
 }
 
 @code {
@@ -31,8 +31,11 @@ else
     [Parameter] public bool Reading { get; set; }
     [Parameter] public bool? Unread { get; set; }
     [Parameter] public bool Chevron { get; set; }
+    [Parameter] public int Indent { get; set; }
 
-    private string ReadingClass => string.Join(" ", new[] { Reading ? "row--reading" : null, Unread switch { true => "row--unread", false => "row--read", _ => null } }.OfType<string>());
+    private string? IndentStyle => Indent > 0 ? $"--row-indent: {Indent}" : null;
+
+    private string ReadingClass => string.Join(" ", new[] { Reading ? "row--reading" : null, Indent > 0 ? "row--indented" : null, Unread switch { true => "row--unread", false => "row--read", _ => null } }.OfType<string>());
 
     private bool Navigates => !Disabled && (Href is not null || Chevron);
 

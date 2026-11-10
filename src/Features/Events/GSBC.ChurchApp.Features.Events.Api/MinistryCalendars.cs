@@ -17,6 +17,32 @@ internal sealed class MinistryCalendars(EventsDbContext db, EventsPublisher publ
         .Select(Of)
         .ToList();
 
+    public async ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken) =>
+        (await db.Calendars.AsNoTracking().Where(calendar => calendar.MinistryId != null && ministryIds.Contains(calendar.MinistryId.Value))
+            .OrderBy(calendar => calendar.Order).ToListAsync(cancellationToken))
+        .Select(Of)
+        .ToList();
+
+    public async ValueTask ShowAsync(Guid ministryId, bool shown, Audience whileHidden, CancellationToken cancellationToken)
+    {
+        List<CalendarRecord> owned = await db.Calendars.Where(calendar => calendar.MinistryId == ministryId).ToListAsync(cancellationToken);
+        List<CalendarRecord> changing = owned.Where(calendar => CalendarHiding.IsHidden(calendar) == shown).ToList();
+        if (changing.Count == 0)
+            return;
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        foreach (CalendarRecord calendar in changing)
+        {
+            if (shown)
+                CalendarHiding.Show(calendar);
+            else
+                CalendarHiding.Hide(calendar, whileHidden.Text);
+            calendar.UpdatedAt = now;
+            publisher.MarkAdmin(calendar.Id, calendar.Id);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        await publisher.PublishAsync(cancellationToken);
+    }
+
     public async ValueTask<MinistryCalendar> CreateAsync(Guid ministryId, string name, Audience audience, CancellationToken cancellationToken)
     {
         string wanted = Named(name);
@@ -41,7 +67,8 @@ internal sealed class MinistryCalendars(EventsDbContext db, EventsPublisher publ
         string wanted = Named(name);
         if (wanted != calendar.Name)
             calendar.Slug = await FreeSlugAsync(CalendarLinks.SlugOf(wanted), calendar.Id, cancellationToken);
-        (calendar.Name, calendar.Audience, calendar.UpdatedAt) = (wanted, audience.Text, time.GetUtcNow().UtcDateTime);
+        (calendar.Name, calendar.UpdatedAt) = (wanted, time.GetUtcNow().UtcDateTime);
+        CalendarHiding.Choose(calendar, audience.Text);
         publisher.MarkAdmin(calendar.Id, calendar.Id);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(cancellationToken);
@@ -85,7 +112,8 @@ internal sealed class MinistryCalendars(EventsDbContext db, EventsPublisher publ
         }
     }
 
-    private static MinistryCalendar Of(CalendarRecord calendar) => new(calendar.Id, calendar.Name, calendar.Slug, CalendarAudiences.Of(calendar.Audience));
+    private static MinistryCalendar Of(CalendarRecord calendar) =>
+        new(calendar.Id, calendar.MinistryId ?? Guid.Empty, calendar.Name, calendar.Slug, CalendarAudiences.Of(CalendarHiding.Chosen(calendar)), CalendarHiding.IsHidden(calendar));
 }
 
 internal sealed class MinistryCalendarAttachments(EventsDbContext db) : IScopeAttachments

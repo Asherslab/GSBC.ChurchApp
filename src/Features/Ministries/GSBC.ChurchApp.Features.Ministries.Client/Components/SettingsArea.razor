@@ -29,6 +29,8 @@
     </div>
 </Section>
 
+<PartsSection Page="Page" OnChanged="OnChanged" />
+
 @if (Page.Ministry.Kind != MinistryKinds.LifeGroup)
 {
     <Section Title="Ministries under it" Lead="@($"{MinistryWords.Possessive(Page.Ministry.Name)} leaders lead these too.")">

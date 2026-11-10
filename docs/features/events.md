@@ -843,6 +843,13 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 - **The weekly digest** (decision 18): built; to show staff. *Digest maker* is given like any role, to whoever the
   owner chooses; *What's Next* goes out through Elvanto for now (under review).
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
+- **A ministry can hide its calendars** (2026-11-10, Ministries' *What it uses*): `IMinistryCalendars.ShowAsync` narrows each
+  of its calendars to the ministry's leaders and keeps the chosen audience in `shown_audience` until it's shown again, so
+  every feed, iCal link and notification follows without a special case. Changing a hidden calendar's audience (from
+  Ministries or Calendar setup) changes the kept one.
+- **A set of calendars as one list** (`CalendarSetList`, offered to other features as Platform.Client's `CalendarSetView`):
+  the next events of chosen calendars, regular ones included, each labelled with where it's from. Ministries uses it for a
+  ministry and the ministries under it.
 - **An app person as a contact** keeps the name, phone and email entered with their id; keeping them current needs a
   Platform lookup of a person's details, which doesn't exist yet.
 - **A calendar for a role a phone can hold** (such as *Calendar added*) would let *Tell people* reach phones and be

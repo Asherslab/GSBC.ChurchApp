@@ -38,6 +38,9 @@ public interface IMinistryLeadingService
     ValueTask<MinistryDetails> SaveMinistryAsync(MinistrySave request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<MinistryDetails> SavePartsAsync(PartsSave request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<MinistryDetails> AddSubMinistryAsync(MinistrySave request, CallContext context = default);
 
     [Requires(MinistriesPermissions.CreateNode)]

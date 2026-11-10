@@ -1,8 +1,8 @@
 @inject MinistriesClient Ministries
 
-<UnsavedGuard Changed="() => Open && (_name.Length > 0 || _summary.Length > 0)" What="the new ministry" />
+<UnsavedGuard Changed="() => Open && (_name.Length > 0 || _summary.Length > 0 || _room.Length > 0)" What="@(LifeGroup ? "the new Life Group" : "the new ministry")" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="A new ministry" Lead="Its leaders do the rest: people, posts, files and the ministries under it.">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(LifeGroup ? "A new Life Group" : "A new ministry")" Lead="@(LifeGroup ? "Its leaders do the rest: people, posts and files." : "Its leaders do the rest: people, posts, files and the ministries under it.")">
     <ChildContent>
         <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
             <ChildContent>
@@ -12,15 +12,25 @@
                 <SearchPicker TItem="MinistrySummary" Label="Sits under" Items="Places" Text="PathOf" Value="Under" ValueChanged="Choose"
                               NoneText="@(_directory.MayCreate ? "Nothing: it's a top-level ministry" : null)" Placeholder="Find a ministry"
                               Hint="Its leaders lead the new ministry too." />
-                <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(Under is null ? "Impact Kids" : "Choir")" />
+                <Segmented TValue="string" Label="What it is" ShowLabel="true" Stacked="true" Options="Kinds" Value="@_kind" ValueChanged="ChooseKind" />
+                <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(LifeGroup ? "Kids Life" : Under is null ? "Impact Kids" : "Choir")" />
                 <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
-                <JoiningFields Kind="@Kind" TeamJoin="@_teamJoin" TeamJoinChanged="value => _teamJoin = value" AttendJoin="@_attendJoin" AttendJoinChanged="value => _attendJoin = value" />
+                @if (LifeGroup)
+                {
+                    <TextField Label="Room" @bind-Value="_room" MaxLength="60" Placeholder="Library (5)" />
+                    <LiveData TValue="LifeGroupsPage" Context="groups" Load="Ministries.LifeGroupsAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.life-groups" FailedTitle="Can't load the Life Groups' Sundays right now">
+                        <Segmented TValue="string" Label="Its Sundays" ShowLabel="true" Stacked="true" Options="Sundays(groups.Value)" Value="@_roundId" ValueChanged="value => _roundId = value"
+                                   Hint="It shows on Life Groups with the other groups on those Sundays." />
+                    </LiveData>
+                    <ToggleRow Title="Join as a parent" Description="For children's groups: parents join for their child" @bind-Checked="_joinAsParent" />
+                }
+                <JoiningFields Kind="@_kind" TeamJoin="@_teamJoin" TeamJoinChanged="value => _teamJoin = value" AttendJoin="@_attendJoin" AttendJoinChanged="value => _attendJoin = value" />
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </ChildContent>
         </LiveData>
     </ChildContent>
     <Actions>
-        <SaveBar Block="true" Label="Add the ministry" Busy="_busy" OnSave="CreateAsync" Blocked="@Blocked" />
+        <SaveBar Block="true" Label="@(LifeGroup ? "Add the Life Group" : "Add the ministry")" Busy="_busy" OnSave="CreateAsync" Blocked="@Blocked" />
     </Actions>
 </Sheet>
 
@@ -32,13 +42,22 @@
     private string _summary = "";
     private string _teamJoin = Joining.Ask;
     private string _attendJoin = Joining.None;
+    private string _kind = MinistryKinds.Ministry;
+    private string _room = "";
+    private string _roundId = "";
+    private bool _joinAsParent;
+
+    private static readonly IReadOnlyList<SegmentOption<string>> Kinds =
+    [
+        new(MinistryKinds.Ministry, "A ministry") { Detail = "A team, and the people who come along." },
+        new(MinistryKinds.LifeGroup, "A Life Group") { Detail = "A Sunday class people choose on Life Groups, such as Kids Life." },
+    ];
     private bool _busy;
     private string? _problem;
 
     [Parameter] public bool Open { get; set; }
     [Parameter] public EventCallback<bool> OpenChanged { get; set; }
     [Parameter] public string UnderId { get; set; } = "";
-    [Parameter] public string Kind { get; set; } = MinistryKinds.Ministry;
     [Parameter] public EventCallback<MinistryDetails> OnCreated { get; set; }
 
     private IReadOnlyList<MinistrySummary> Places =>
@@ -49,12 +68,24 @@
     private string? Blocked =>
         _name.Trim().Length == 0 ? "Give it a name to add it."
         : Under is null && !_directory.MayCreate ? "Choose the ministry it sits under to add it."
+        : Under is null && LifeGroup ? "Choose the ministry it sits under to add a Life Group."
         : null;
+
+    private bool LifeGroup => _kind == MinistryKinds.LifeGroup;
+
+    private static IReadOnlyList<SegmentOption<string>> Sundays(LifeGroupsPage page) =>
+    [
+        new("", "All year"),
+        .. page.Rounds.Select(round => new SegmentOption<string>(round.Id, MinistryWords.Span(round))),
+    ];
+
+    private void ChooseKind(string kind) =>
+        (_kind, _teamJoin, _attendJoin) = kind == MinistryKinds.LifeGroup ? (kind, Joining.Invite, Joining.Open) : (kind, Joining.Ask, Joining.None);
 
     protected override void OnParametersSet()
     {
         if (Open && !_opened)
-            (_underId, _problem) = (null, null);
+            (_underId, _problem, _kind, _room, _roundId, _joinAsParent, _teamJoin, _attendJoin) = (null, null, MinistryKinds.Ministry, "", "", false, Joining.Ask, Joining.None);
         _opened = Open;
     }
 
@@ -76,9 +107,13 @@
         (_busy, _problem) = (true, null);
         try
         {
-            MinistryDetails details = new() { Name = _name, Summary = _summary, TeamJoin = _teamJoin, AttendJoin = _attendJoin, Kind = Kind };
+            MinistryDetails details = new()
+            {
+                Name = _name, Summary = _summary, TeamJoin = _teamJoin, AttendJoin = _attendJoin, Kind = _kind,
+                Room = LifeGroup ? _room : "", RoundId = LifeGroup ? _roundId : "", JoinAsParent = LifeGroup && _joinAsParent,
+            };
             MinistryDetails created = Under is { } under ? await Ministries.AddSubMinistryAsync(under.Id, details) : await Ministries.CreateAsync(details);
-            (_name, _summary) = ("", "");
+            (_name, _summary, _room) = ("", "", "");
             await OpenChanged.InvokeAsync(false);
             await OnCreated.InvokeAsync(created);
         }

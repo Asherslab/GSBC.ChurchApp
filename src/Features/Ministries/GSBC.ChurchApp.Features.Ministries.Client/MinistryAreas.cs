@@ -13,11 +13,11 @@ public static class MinistryAreas
         List<(string, string, int?)> areas = [(MinistriesPlaces.About, "About", null)];
         if (lifeGroup && page.Round is not null)
             areas.Add((MinistriesPlaces.Sundays, "Sundays", null));
-        if (page.Posts.Count > 0 || posts)
+        if (Uses(page, MinistryParts.News) && (page.Posts.Count > 0 || posts))
             areas.Add((MinistriesPlaces.News, "News", null));
-        if (!lifeGroup && (page.Calendars.Count > 0 || you.MayEditSettings))
+        if (Uses(page, MinistryParts.Calendar) && (page.Calendars.Count > 0 || you.MayEditSettings))
             areas.Add((MinistriesPlaces.Calendar, "Calendar", null));
-        if (page.Files.Count > 0 || posts)
+        if (Uses(page, MinistryParts.Files) && (page.Files.Count > 0 || posts))
             areas.Add((MinistriesPlaces.Files, "Files", null));
         if (you.MayManagePeople)
             areas.Add((MinistriesPlaces.People, "People", you.Waiting));
@@ -25,6 +25,8 @@ public static class MinistryAreas
             areas.Add((MinistriesPlaces.Settings, "Settings", null));
         return areas;
     }
+
+    public static bool Uses(MinistryPage page, string part) => MinistryParts.IsOn(page.Ministry.PartsOff, part);
 
     public static string Known(MinistryPage page, string area) =>
         For(page).Any(each => each.Key == area) ? area : MinistriesPlaces.About;

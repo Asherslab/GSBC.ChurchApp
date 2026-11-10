@@ -147,6 +147,16 @@ window.gsbcShell = (() => {
       document.getElementById(id)?.scrollIntoView({ block: 'nearest' });
     },
 
+    revealTab(strip) {
+      const tab = strip?.querySelector('[aria-current="page"], [aria-selected="true"]');
+      if (!tab || strip.scrollWidth <= strip.clientWidth) return;
+      const start = tab.offsetLeft - strip.offsetLeft;
+      const end = start + tab.offsetWidth;
+      const margin = 24;
+      if (start - margin < strip.scrollLeft) strip.scrollTo({ left: Math.max(0, start - margin), behavior: 'smooth' });
+      else if (end + margin > strip.scrollLeft + strip.clientWidth) strip.scrollTo({ left: end + margin - strip.clientWidth, behavior: 'smooth' });
+    },
+
     restoreFocus() {
       const before = focusBeforeModal.pop();
       if (before?.isConnected) before.focus({ preventScroll: true });

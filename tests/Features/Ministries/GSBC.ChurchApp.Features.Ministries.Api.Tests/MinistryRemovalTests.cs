@@ -128,7 +128,11 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
         public Dictionary<Guid, List<Guid>> Owned { get; } = [];
 
         public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(Guid ministryId, CancellationToken cancellationToken) =>
-            ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>(Owned.GetValueOrDefault(ministryId, []).Select(id => new MinistryCalendar(id, "Choir", "choir", Audience.Everyone)).ToList());
+            ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>(Owned.GetValueOrDefault(ministryId, []).Select(id => new MinistryCalendar(id, ministryId, "Choir", "choir", Audience.Everyone, false)).ToList());
+
+        public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask ShowAsync(Guid ministryId, bool shown, Audience whileHidden, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken)
         {

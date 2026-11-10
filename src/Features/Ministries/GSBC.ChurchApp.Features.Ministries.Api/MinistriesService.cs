@@ -35,6 +35,7 @@ internal sealed class MinistriesService(
                 .Select(group => new { group.Key, Count = group.Count() }).ToListAsync(cancellationToken))
             .Where(group => MinistryViews.Holds(grants, MinistriesPermissions.People, group.Key))
             .ToDictionary(group => group.Key, group => group.Count);
+        Guid? lifeGroups = await views.LifeGroupsHomeAsync(tree, cancellationToken);
         return new MinistryDirectory
         {
             Ministries = tree.All.OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
@@ -42,6 +43,7 @@ internal sealed class MinistriesService(
                     waiting.GetValueOrDefault(ministry.Id)), ministry, grants))
                 .ToList(),
             MayCreate = grants.IsAllowed(MinistriesPermissions.Create),
+            LifeGroupsId = lifeGroups?.ToString() ?? "",
         };
     }
 
@@ -66,7 +68,7 @@ internal sealed class MinistriesService(
             Path = tree.Above(ministry.Id).Reverse().Select(above => new Crumb { Id = above.Id.ToString(), Name = above.Name }).ToList(),
             Posts = await views.PostsAsync(tree, ministry.Id, grants, cancellationToken),
             Files = await views.FilesAsync(tree, ministry.Id, grants, cancellationToken),
-            Calendars = await views.CalendarsAsync(ministry.Id, grants, me is not null, cancellationToken),
+            Calendars = await views.CalendarsAsync(tree, ministry.Id, grants, me is not null, cancellationToken),
             You = await YouAsync(me, tree, ministry, grants, cancellationToken),
         };
         if (ministry.Kind == MinistryKinds.LifeGroup)
@@ -84,7 +86,7 @@ internal sealed class MinistriesService(
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         List<MinistryRecord> groups = tree.All.Where(ministry => ministry.Kind == MinistryKinds.LifeGroup).OrderBy(group => group.Order).ThenBy(group => group.Name).ToList();
-        Guid? home = groups.Select(group => group.ParentId).FirstOrDefault(above => above is not null);
+        Guid? home = await views.LifeGroupsHomeAsync(tree, cancellationToken);
         List<Guid> groupIds = groups.Select(group => group.Id).ToList();
         List<SessionRecord> sessions = await db.Sessions.AsNoTracking().Where(session => groupIds.Contains(session.GroupId)).ToListAsync(cancellationToken);
         GrantSet grants = await views.GrantsAsync(Me(context), cancellationToken);
@@ -277,7 +279,7 @@ internal sealed class MinistriesService(
 
     private async Task<Dictionary<Guid, string>> LatestAsync(MinistryTree tree, IEnumerable<Guid> ministries, GrantSet grants, CancellationToken cancellationToken)
     {
-        List<Guid> ids = ministries.ToList();
+        List<Guid> ids = ministries.Where(id => tree.Find(id) is { } ministry && MinistryViews.IsOn(ministry, MinistryParts.News)).ToList();
         if (ids.Count == 0)
             return [];
         List<PostRecord> posts = await db.Posts.AsNoTracking().Where(post => ids.Contains(post.MinistryId))

@@ -21,7 +21,7 @@
             {
                 <button type="button" class="ministry-tree__item @(ministry.Id == Id ? "ministry-tree__item--on" : "")" style="@($"padding-left: {10 + depth * 20}px")"
                         aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id))">
-                    <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
+                    <Icon Name="@AboutArea.IconOf(ministry)" Size="IconSize.Small" />
                     <span class="ministry-tree__name">@ministry.Name</span>
                     @if (ministry.Waiting > 0)
                     {
@@ -82,17 +82,8 @@
                 yield return (found, 0);
             yield break;
         }
-        ILookup<string, MinistrySummary> children = directory.Ministries.ToLookup(ministry => ministry.ParentId);
-        Stack<(MinistrySummary, int)> waiting = new(children[""].Reverse().Select(ministry => (ministry, 0)));
-        HashSet<string> seen = [];
-        while (waiting.TryPop(out (MinistrySummary Ministry, int Depth) next))
-        {
-            if (!seen.Add(next.Ministry.Id))
-                continue;
+        foreach ((MinistrySummary, int) next in MinistryTrees.Walk(directory.Ministries))
             yield return next;
-            foreach (MinistrySummary child in children[next.Ministry.Id].Reverse())
-                waiting.Push((child, next.Depth + 1));
-        }
     }
 
     private async Task ReloadAsync()

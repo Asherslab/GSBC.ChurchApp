@@ -6,7 +6,7 @@
     <div class="list">
         @foreach (EventOccurrence occurrence in Occurrences)
         {
-            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="IsNewChange(occurrence)" />
+            <OccurrenceRow @key="occurrence.Id" Occurrence="occurrence" Calendar="Diary.Calendar(occurrence.CalendarId)" NowUtc="NowUtc" Highlight="true" NewChange="IsNewChange(occurrence)" From="@FromOf?.Invoke(occurrence)" />
         }
     </div>
 </section>
@@ -18,6 +18,7 @@
     [Parameter, EditorRequired] public required Diary Diary { get; set; }
     [Parameter] public DateTime NowUtc { get; set; }
     [Parameter] public Func<EventOccurrence, bool> IsNewChange { get; set; } = _ => false;
+    [Parameter] public Func<EventOccurrence, string?>? FromOf { get; set; }
 
     private string HeadingId => $"day-{EventDates.Format(Day)}";
 }
