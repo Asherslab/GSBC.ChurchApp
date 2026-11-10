@@ -108,6 +108,13 @@
     <Project Path="src/Features/People/GSBC.ChurchApp.Features.People.Client/GSBC.ChurchApp.Features.People.Client.csproj" />
     <Project Path="src/Features/People/GSBC.ChurchApp.Features.People.Contracts/GSBC.ChurchApp.Features.People.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Rosters/">
+    <Project Path="src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Admin/GSBC.ChurchApp.Features.Rosters.Admin.csproj" />
+    <Project Path="src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Api/GSBC.ChurchApp.Features.Rosters.Api.csproj" />
+    <Project Path="src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.App/GSBC.ChurchApp.Features.Rosters.App.csproj" />
+    <Project Path="src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Client/GSBC.ChurchApp.Features.Rosters.Client.csproj" />
+    <Project Path="src/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Contracts/GSBC.ChurchApp.Features.Rosters.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Features/Sermons/">
     <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Admin/GSBC.ChurchApp.Features.Sermons.Admin.csproj" />
     <Project Path="src/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api/GSBC.ChurchApp.Features.Sermons.Api.csproj" />
@@ -176,6 +183,9 @@
   </Folder>
   <Folder Name="/tests/Features/People/">
     <Project Path="tests/Features/People/GSBC.ChurchApp.Features.People.Api.Tests/GSBC.ChurchApp.Features.People.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Rosters/">
+    <Project Path="tests/Features/Rosters/GSBC.ChurchApp.Features.Rosters.Api.Tests/GSBC.ChurchApp.Features.Rosters.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Sermons/">
     <Project Path="tests/Features/Sermons/GSBC.ChurchApp.Features.Sermons.Api.Tests/GSBC.ChurchApp.Features.Sermons.Api.Tests.csproj" />
