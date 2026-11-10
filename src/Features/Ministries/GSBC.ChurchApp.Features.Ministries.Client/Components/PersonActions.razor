@@ -64,9 +64,9 @@
         if (member.Role == Roles.Team && MayGive.Contains(Roles.Admin))
             yield return (Roles.Admin, "Make an admin", true);
         if (member.Role == Roles.Leader && MayGive.Contains(Roles.Leader))
-            yield return (Roles.Leader, "Stop being a leader", false);
+            yield return (Roles.Leader, "Stop leading, stay on the team", false);
         if (member.Role == Roles.Admin && MayGive.Contains(Roles.Admin))
-            yield return (Roles.Admin, "Stop being an admin", false);
+            yield return (Roles.Admin, "Stop being an admin, stay on the team", false);
         if (member.Role == Roles.Team && MayGive.Contains(Roles.Team))
             yield return (Roles.Team, "Take off the team", false);
     }

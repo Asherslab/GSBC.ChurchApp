@@ -20,7 +20,7 @@
             @foreach ((MinistrySummary ministry, int depth) in Tree(context.Value))
             {
                 <button type="button" class="ministry-tree__item @(ministry.Id == Id ? "ministry-tree__item--on" : "")" style="@($"padding-left: {10 + depth * 20}px")"
-                        aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id))">
+                        aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id, Area ?? ""))">
                     <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
                     <span class="ministry-tree__name">@ministry.Name</span>
                     @if (ministry.Waiting > 0)

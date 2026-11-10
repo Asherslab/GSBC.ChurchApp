@@ -122,6 +122,9 @@ internal sealed class MinistryLeadingService(
             : await roles.TakeAwayAsync(me, person, key, ministry.Id.ToString(), cancellationToken);
         if (outcome.Refusal is { } refusal)
             throw Refused(refusal);
+        if (!request.Add && Roles.KeptAfterTakingOff(request.Role) is { } kept
+            && (await roles.GiveAsync(me, person, Roles.KeyOf(kept), ministry.Id.ToString(), null, cancellationToken)).Refusal is { } keptRefusal)
+            throw Refused(keptRefusal);
         if (request.Add)
             await db.Asks.Where(ask => ask.MinistryId == ministry.Id && ask.PersonId == person
                 && ask.As == (request.Role == Roles.Attendee ? Places.Attending : Places.Team)).ExecuteDeleteAsync(cancellationToken);

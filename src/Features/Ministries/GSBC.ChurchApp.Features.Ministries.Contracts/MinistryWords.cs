@@ -83,6 +83,8 @@ public static class Roles
 
     public static bool IsValid(string value) => value is Leader or Admin or Team or Attendee;
 
+    public static string? KeptAfterTakingOff(string role) => role is Leader or Admin ? Team : null;
+
     public static string KeyOf(string role) => role switch
     {
         Leader => MinistriesPermissions.LeaderRole,

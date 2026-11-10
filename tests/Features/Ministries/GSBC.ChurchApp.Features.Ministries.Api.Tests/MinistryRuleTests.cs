@@ -10,6 +10,14 @@ public sealed class MinistryRuleTests
     private static readonly MinistryRecord Altos = new() { Id = Guid.CreateVersion7(), ParentId = Choir.Id, Name = "Altos" };
     private static readonly MinistryRecord Youth = new() { Id = Guid.CreateVersion7(), Name = "Impact Youth" };
 
+    [Theory]
+    [InlineData(Roles.Leader, Roles.Team)]
+    [InlineData(Roles.Admin, Roles.Team)]
+    [InlineData(Roles.Team, null)]
+    [InlineData(Roles.Attendee, null)]
+    public void TakingOffALeaderOrAdminKeepsThemOnTheTeam(string takenOff, string? kept) =>
+        Assert.Equal(kept, Roles.KeptAfterTakingOff(takenOff));
+
     [Fact]
     public void MinistriesNestToAnyDepthAndCannotBeMovedUnderThemselves()
     {
