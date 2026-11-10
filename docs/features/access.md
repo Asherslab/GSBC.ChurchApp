@@ -219,6 +219,7 @@ Roles are jobs people already know, declared in code by features. The staff role
 | **Leader** | per ministry, applies to its teams too | Ministries | Everything a Member can, plus run the ministry: post, start chats, roster, settings, add and remove members. Shown as a leader on the ministry's About |
 | **Admin** | per ministry, applies to its teams too | Ministries | Exactly what a Leader can, without the title: not shown as a leader. For the person who does a ministry's tech (owner, 2026-11-02) |
 | **Staff** | everywhere | Ministries | Everything a Leader can, in every ministry, plus message all serving teams |
+| **Life Groups planner** | everywhere | Ministries | Plan the Life Groups' sets of Sundays, their time and when they show (`ministries.lifegroups.plan`; Staff have it too). Added 2026-11-10 |
 | **Owner** | everywhere | Access | Everything |
 
 **Applies to its teams too** is a property of the role: a Leader of Music is a Leader of Choir, Vocal

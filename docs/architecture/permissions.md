@@ -23,7 +23,7 @@ Nodes are typed objects, not strings with placeholders, so the phone can check t
 reflection, regex or template rendering (AOT-safe). On start-up the API reconciles every registered
 node into the database, so the admin panel can list and describe them.
 
-**Scope.** Either global, or one object: `ministry:42`. Life Groups are a kind of ministry
+**Scope.** Either global, or one object: `ministry:42`. Life Groups are ministries
 ([ministries decisions](../features/ministries.md)), so one scope kind covers both. A grant at
 global covers every object of that kind. New scope kinds are added in Platform.Permissions when a
 feature needs one.
