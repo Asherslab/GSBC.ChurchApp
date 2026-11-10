@@ -48,7 +48,7 @@ public sealed class StoredEditingTests
     private static StoredEventEditing Editing(Outbox outbox, EventDetail stored)
     {
         Feeds feeds = new([new StoredRecord($"event/{stored.Id}", 1, Encode(stored), null, null, null, Calendar)]);
-        return new StoredEventEditing(feeds, new QueuedEventEdits(outbox, new Preferences()), new Editor(), new CalendarDiary(new Services()), TimeProvider.System);
+        return new StoredEventEditing(feeds, new QueuedEventEdits(outbox, new Preferences()), new Editor(), new CalendarDiary(new Services()), new Clock());
     }
 
     private static byte[] Encode<T>(T message)
@@ -86,7 +86,7 @@ public sealed class StoredEditingTests
         public ValueTask<string> EnqueueAsync(string method, byte[] request)
         {
             string id = Guid.NewGuid().ToString();
-            Entries.Add(new OutboxEntry(id, method, DateTime.UtcNow, 0, null, false));
+            Entries.Add(new OutboxEntry(id, method, DateTime.UnixEpoch, 0, null, false));
             return ValueTask.FromResult(id);
         }
 
@@ -136,6 +136,11 @@ public sealed class StoredEditingTests
         public bool Can(Permission permission, string? objectId = null) => permission.Node == EventsPermissions.EditNode;
 
         public bool CanSomewhere(Permission permission) => Can(permission);
+    }
+
+    private sealed class Clock : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(2026, 12, 1, 0, 0, 0, TimeSpan.Zero);
     }
 
     private sealed class Services : IServiceProvider
