@@ -17,6 +17,13 @@ public sealed class DeletingRules
             SermonDeletion.UploadedAudioKey("https://media.example/sermons/audio/0123456789abcdef0123456789abcdef.mp3"));
         Assert.Null(SermonDeletion.UploadedAudioKey("https://files.example/2026/11/04/walking-in-the-light.mp3"));
     }
+
+    [Fact]
+    public void ARecordingOrPictureTheAppKeepsCanBeDeletedFromMediaOnceNothingUsesIt()
+    {
+        Assert.True(SermonMedia.Audio.StaffDeleteUnused);
+        Assert.True(SermonMedia.Pictures.StaffDeleteUnused);
+    }
 }
 
 [Integration("Deleting a speaker or series rewrites every sermon that points at it in one transaction, and publishes the deletion")]
