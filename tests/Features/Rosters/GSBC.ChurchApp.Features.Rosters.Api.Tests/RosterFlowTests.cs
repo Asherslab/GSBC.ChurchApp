@@ -6,6 +6,7 @@ using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Testing;
@@ -84,7 +85,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
     public async Task ALeaderCanPutSomeoneOnWhoIsAwayAndUncardedAndSeesItFlagged()
     {
         await SetUpAsync(new Position { Name = "Sound", NeedsBlueCard = true });
-        DateOnly day = GSBC.ChurchApp.Platform.Common.ChurchTime.DayOf(_events.Events[Sunday].StartsAt);
+        DateOnly day = ChurchTime.DayOf(_events.Events[Sunday].StartsAt);
         await Run(service => service.SaveAwayAsync(_jo, new AwaySave { AwayId = Guid.CreateVersion7().ToString(), From = Wire(day), To = Wire(day) }, Cancel));
 
         await AssignAsync(_jo);

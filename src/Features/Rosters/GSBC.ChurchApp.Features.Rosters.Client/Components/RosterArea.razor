@@ -9,7 +9,7 @@
             RosterView view = context.Value;
             DateTime now = Clock.GetUtcNow().UtcDateTime;
             IReadOnlyList<YourDate> yours = RosterLines.Yours(view, now);
-            IReadOnlyList<(RosterDate Date, Assignment Assignment)> open = RosterLines.OpenToYou(view, now);
+            IReadOnlyList<(RosterDate Date, Assignment Assignment)> openSwaps = RosterLines.OpenToYou(view, now);
             List<(RosterDate Date, Assignment Assignment)> offered = view.MayEdit
                 ? view.Dates.SelectMany(date => date.Assignments.Where(each => each.Swap?.State == SwapStates.Offered).Select(each => (date, each))).ToList()
                 : [];
@@ -35,11 +35,11 @@
                     </ListGroup>
                 </Section>
             }
-            @if (open.Count > 0)
+            @if (openSwaps.Count > 0)
             {
                 <Section First="@(yours.Count == 0)" Title="Can you take one of these?">
                     <ListGroup>
-                        @foreach ((RosterDate date, Assignment assignment) in open)
+                        @foreach ((RosterDate date, Assignment assignment) in openSwaps)
                         {
                             <ListRow @key="assignment.Id" Title="@($"{assignment.PositionName} · {RosterLines.When(date)}")"
                                      Subtitle="@($"{date.Title}. {RosterLines.First(assignment.Name)} asked for a swap{(assignment.Swap!.Note.Length > 0 ? $": “{assignment.Swap.Note}”" : ".")}")"
@@ -61,7 +61,7 @@
             }
             @if (offered.Count > 0)
             {
-                <Section First="@(yours.Count == 0 && open.Count == 0)" Title="Waiting for a leader">
+                <Section First="@(yours.Count == 0 && openSwaps.Count == 0)" Title="Waiting for a leader">
                     <ListGroup>
                         @foreach ((RosterDate date, Assignment assignment) in offered)
                         {
@@ -76,7 +76,7 @@
                     </ListGroup>
                 </Section>
             }
-            <Section First="@(yours.Count == 0 && open.Count == 0 && offered.Count == 0 && !view.Archived)" Title="The roster">
+            <Section First="@(yours.Count == 0 && openSwaps.Count == 0 && offered.Count == 0 && !view.Archived)" Title="The roster">
                 @if (view.MayEdit)
                 {
                     <div class="roster-tools">

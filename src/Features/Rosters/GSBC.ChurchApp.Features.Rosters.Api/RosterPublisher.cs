@@ -60,9 +60,9 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(everyone, cancellationToken);
 
         Dictionary<string, (Guid Scope, byte[] Payload)> wanted = [];
-        foreach ((Guid recipient, List<Guid> people) in covers)
+        foreach ((Guid recipient, List<Guid> household) in covers)
         {
-            List<Guid> shown = people.Where(person => person == recipient || coveredFacts.GetValueOrDefault(person) is { Minor: true }).ToList();
+            List<Guid> shown = household.Where(person => person == recipient || coveredFacts.GetValueOrDefault(person) is { Minor: true }).ToList();
             if (!shown.Any(person => spans[person].Any()))
                 continue;
             AwayList list = new()

@@ -32,8 +32,6 @@ internal sealed class RosterBook(
 
     public RosterSettings Settings { get; } = RosterRules.SettingsOf(settings);
 
-    public IReadOnlyList<MinistryMember> Team => team;
-
     public string NameOf(Guid? person) => person is { } id ? names.GetValueOrDefault(id) ?? "Someone" : RosterDefaults.FormerMember;
 
     public IReadOnlyDictionary<Guid, Recipient> Recipients()

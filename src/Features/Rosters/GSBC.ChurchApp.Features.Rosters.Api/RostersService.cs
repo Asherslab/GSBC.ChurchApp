@@ -210,15 +210,15 @@ internal sealed class RostersService(
     {
         MinistryFacts ministry = await ChangeableAsync(request.MinistryId, cancellationToken);
         Guid id = IdOf(request.Id, "date");
-        if (await db.Dates.SingleOrDefaultAsync(date => date.Id == id && date.MinistryId == ministry.Id, cancellationToken) is not { } date)
+        if (await db.Dates.SingleOrDefaultAsync(date => date.Id == id && date.MinistryId == ministry.Id, cancellationToken) is not { } removed)
             return new Done();
 
         List<(AssignmentRecord, DateRecord)> coming = await ComingAsync(db.Assignments.Where(each => each.DateId == id), time.GetUtcNow().UtcDateTime, cancellationToken);
-        await TakeOffAsync(ministry, coming, $"{ministry.Name} isn't rostering {date.Title} on {RosterText.Day(date.StartsAt)} any more.", cancellationToken);
+        await TakeOffAsync(ministry, coming, $"{ministry.Name} isn't rostering {removed.Title} on {RosterText.Day(removed.StartsAt)} any more.", cancellationToken);
         List<Guid> assignments = await db.Assignments.Where(each => each.DateId == id).Select(each => each.Id).ToListAsync(cancellationToken);
         await db.Swaps.Where(swap => assignments.Contains(swap.AssignmentId)).ExecuteDeleteAsync(cancellationToken);
         await db.Assignments.Where(each => each.DateId == id).ExecuteDeleteAsync(cancellationToken);
-        db.Dates.Remove(date);
+        db.Dates.Remove(removed);
         await db.SaveChangesAsync(cancellationToken);
         await publisher.PublishAsync(ministry.Id, cancellationToken);
         return new Done();
