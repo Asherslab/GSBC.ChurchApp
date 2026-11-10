@@ -89,7 +89,7 @@
 
 <UnsavedGuard Changed="() => _setOpen && SetShape != _setWas" What="these groups' Sundays and time" />
 
-<Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and time")" Lead="People see these groups by their dates. Add the Sundays they meet; skip breaks." Wide="true">
+<Sheet Open="_setOpen" OpenChanged="open => _setOpen = open" Title="@(_set is null ? "Plan the next groups" : "Sundays and time")" Lead="People see these groups by their dates. Add the Sundays from a date range, then take off any they don't meet." Wide="true">
     <ChildContent>
         <div class="filter-chips">
             @foreach (string sunday in _sundays.Order())
@@ -99,13 +99,17 @@
                 </button>
             }
         </div>
-        <TextField Label="First Sunday" Type="date" @bind-Value="_from" />
-        <div class="ui-actions">
-            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => AddSundays(1)">Add this Sunday</Button>
-            <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => AddSundays(6)">Add six Sundays from it</Button>
+        <div class="ui-pair">
+            <TextField Label="From" Type="date" @bind-Value="_from" />
+            <TextField Label="To" Type="date" @bind-Value="_to" />
         </div>
-        <TextField Label="Starts" Type="time" @bind-Value="_starts" />
-        <TextField Label="Ends" Type="time" @bind-Value="_ends" />
+        <div class="ui-actions">
+            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="plus" Disabled="@(Day(_from) == DateOnly.MinValue || Day(_to) < Day(_from))" OnClick="AddSundays">Add the Sundays in these dates</Button>
+        </div>
+        <div class="ui-pair">
+            <TextField Label="Starts" Type="time" @bind-Value="_starts" />
+            <TextField Label="Ends" Type="time" @bind-Value="_ends" />
+        </div>
         <TextField Label="Shows in the app from" Type="date" @bind-Value="_showsFrom" Hint="Usually during the break before they start. Leave empty to show them straight away." />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
@@ -124,6 +128,7 @@
     private Round? _set;
     private List<string> _sundays = [];
     private string _from = "";
+    private string _to = "";
     private string _starts = "09:00";
     private string _ends = "09:45";
     private string _showsFrom = "";
@@ -169,19 +174,26 @@
         (_starts, _ends, _showsFrom) = (round?.Starts ?? "09:00", round?.Ends ?? "09:45", round?.ShowsFrom ?? "");
         DateOnly today = ChurchTime.Today(Clock);
         _setWas = SetShape;
-        _from = (_sundays.Count > 0 ? Day(_sundays.Max()).AddDays(7) : today.AddDays((7 - (int)today.DayOfWeek) % 7)).ToString("yyyy-MM-dd");
+        SuggestRange(_sundays.Count > 0 ? Day(_sundays.Max()).AddDays(7) : today.AddDays((7 - (int)today.DayOfWeek) % 7));
     }
+
+    private void SuggestRange(DateOnly firstSunday) =>
+        (_from, _to) = (firstSunday.ToString("yyyy-MM-dd"), firstSunday.AddDays(7 * (SundaysInASet - 1)).ToString("yyyy-MM-dd"));
 
     private string SetShape => string.Join(" ", [.. _sundays.Order(), _starts, _ends, _showsFrom]);
 
-    private void AddSundays(int how)
+    private const int SundaysInASet = 6;
+
+    private void AddSundays()
     {
-        if (Day(_from) is var first && first == DateOnly.MinValue)
+        (DateOnly from, DateOnly to) = (Day(_from), Day(_to));
+        if (from == DateOnly.MinValue || to < from)
             return;
-        for (int week = 0; week < how; week++)
-            if (first.AddDays(7 * week).ToString("yyyy-MM-dd") is var sunday && !_sundays.Contains(sunday))
-                _sundays.Add(sunday);
-        _from = first.AddDays(7 * how).ToString("yyyy-MM-dd");
+        DateOnly sunday = from.AddDays((7 - (int)from.DayOfWeek) % 7);
+        for (; sunday <= to; sunday = sunday.AddDays(7))
+            if (sunday.ToString("yyyy-MM-dd") is var day && !_sundays.Contains(day))
+                _sundays.Add(day);
+        SuggestRange(sunday);
     }
 
     private Task SaveSetAsync() =>
