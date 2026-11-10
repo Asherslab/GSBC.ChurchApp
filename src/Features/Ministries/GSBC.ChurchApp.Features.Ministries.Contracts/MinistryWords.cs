@@ -1,10 +1,19 @@
 namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 
+public static class MinistryNames
+{
+    public static string Possessive(string name) => name.EndsWith('s') ? $"{name}'" : $"{name}'s";
+}
+
 public static class MinistryKinds
 {
     public const string Ministry = "ministry";
     public const string LifeGroup = "life-group";
 }
+
+public sealed record MinistryPart(string Key, string Name, string Does, PartFromBelow? FromBelow = null);
+
+public sealed record PartFromBelow(string Title, string Does);
 
 public static class MinistryParts
 {
@@ -12,11 +21,25 @@ public static class MinistryParts
     public const string Calendar = "calendar";
     public const string Files = "files";
 
-    public static readonly IReadOnlyList<string> All = [News, Calendar, Files];
+    public static readonly IReadOnlyList<MinistryPart> All =
+    [
+        new(News, "News", "Posts from its leaders, for everyone or for its people",
+            new PartFromBelow("Show news from the ministries under it",
+                "Their posts show here too, each saying which ministry it's from. People see only the posts they'd see in that ministry.")),
+        new(Calendar, "Calendar", "Its calendars, with their events in people's week and calendar links",
+            new PartFromBelow("Show the calendars of the ministries under it",
+                "Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry.")),
+        new(Files, "Files", "Documents and links, such as a code of conduct or practice recordings"),
+    ];
+
+    public static MinistryPart Of(string key) => All.Single(part => part.Key == key);
 
     public static bool IsOn(IEnumerable<string> partsOff, string part) => !partsOff.Contains(part);
 
-    public static List<string> Valid(IEnumerable<string> partsOff) => All.Where(partsOff.Contains).ToList();
+    public static List<string> Valid(IEnumerable<string> partsOff) => All.Select(part => part.Key).Where(partsOff.Contains).ToList();
+
+    public static List<string> ValidFromBelow(IEnumerable<string> partsFromBelow) =>
+        All.Where(part => part.FromBelow is not null).Select(part => part.Key).Where(partsFromBelow.Contains).ToList();
 }
 
 public static class Joining

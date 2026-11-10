@@ -48,4 +48,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Contracts;
 [ProtoSerializable(typeof(SessionSave))]
 [ProtoSerializable(typeof(WaitingRequest))]
 [ProtoSerializable(typeof(WaitingList))]
+[ProtoSerializable(typeof(MoveRequest))]
+[ProtoSerializable(typeof(MovePreview))]
+[ProtoSerializable(typeof(LeadChange))]
 public partial class MinistriesContractsModel : TypeModel;

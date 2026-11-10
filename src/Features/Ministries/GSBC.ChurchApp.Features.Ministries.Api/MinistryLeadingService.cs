@@ -18,6 +18,7 @@ internal sealed class MinistryLeadingService(
     MinistryViews views,
     MinistryChanges changes,
     MinistryRemover remover,
+    MinistryMover mover,
     IRoleAssignments roles,
     IFamilies families,
     IPeopleIndex people,
@@ -270,7 +271,7 @@ internal sealed class MinistryLeadingService(
         Guid id = Existing(await views.TreeAsync(cancellationToken), request.MinistryId).Id;
         MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
         bool calendarWasOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
-        (ministry.PartsOff, ministry.CalendarsFromBelow, ministry.UpdatedAt) = (MinistryParts.Valid(request.PartsOff), request.CalendarsFromBelow, Now);
+        (ministry.PartsOff, ministry.PartsFromBelow, ministry.UpdatedAt) = (MinistryParts.Valid(request.PartsOff), MinistryParts.ValidFromBelow(request.PartsFromBelow), Now);
         bool calendarOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -308,6 +309,22 @@ internal sealed class MinistryLeadingService(
         await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
         await remover.RemoveAsync(tree, ministry, cancellationToken);
         return new Done();
+    }
+
+    public async ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        (MinistryRecord ministry, MinistryRecord? under) = await MayMoveAsync(SignedIn(context), tree, request, cancellationToken);
+        return await mover.PreviewAsync(tree, ministry, under, cancellationToken);
+    }
+
+    public async ValueTask<MinistryDetails> MoveAsync(MoveRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        (MinistryRecord ministry, MinistryRecord? under) = await MayMoveAsync(SignedIn(context), tree, request, cancellationToken);
+        return MinistryViews.Details(await mover.MoveAsync(tree, ministry, under, cancellationToken));
     }
 
     public async ValueTask<CalendarLine> SaveCalendarAsync(CalendarSave request, CallContext context = default)
@@ -448,7 +465,7 @@ internal sealed class MinistryLeadingService(
     private static void TurnedOn(MinistryRecord ministry, string part)
     {
         if (!MinistryViews.IsOn(ministry, part))
-            throw Refused($"{MinistryRules.PartName(part)} is turned off for {ministry.Name}. Turn it on in Settings first.");
+            throw Refused($"{MinistryParts.Of(part).Name} is turned off for {ministry.Name}. Turn it on in Settings first.");
     }
 
     private async Task MayDeleteAsync(Guid me, MinistryRecord ministry, CancellationToken cancellationToken)
@@ -462,6 +479,19 @@ internal sealed class MinistryLeadingService(
                 ? "Only staff delete the church's top-level ministries."
                 : "Only the leaders of the ministry above this one can delete it."));
     }
+
+    private async Task<(MinistryRecord Ministry, MinistryRecord? Under)> MayMoveAsync(Guid me, MinistryTree tree, MoveRequest request, CancellationToken cancellationToken)
+    {
+        MinistryRecord ministry = Existing(tree, request.MinistryId);
+        MinistryRecord? under = request.UnderId.Length > 0 ? Existing(tree, request.UnderId) : null;
+        GrantSet grants = await views.GrantsAsync(me, cancellationToken);
+        if (MinistryRules.WhyNotMove(tree, ministry, under, place => MayAddUnder(grants, place)) is { } refusal)
+            throw MayAddUnder(grants, under) ? Refused(refusal) : new RpcException(new Status(StatusCode.PermissionDenied, refusal));
+        return (ministry, under);
+    }
+
+    private static bool MayAddUnder(GrantSet grants, MinistryRecord? place) =>
+        place is null ? grants.IsAllowed(MinistriesPermissions.Create) : MinistryViews.Holds(grants, MinistriesPermissions.Settings, place.Id);
 
     private static Permission ImportantReaders(string audience) => audience switch
     {

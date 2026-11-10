@@ -74,11 +74,13 @@ internal sealed class MinistryViews(
 
     public async Task<List<Post>> PostsAsync(MinistryTree tree, Guid ministryId, GrantSet grants, CancellationToken cancellationToken)
     {
-        List<Guid> ids = Showing(tree, ministryId, MinistryParts.News);
+        List<Guid> above = Showing(tree, ministryId, MinistryParts.News);
+        List<Guid> below = [.. Gathered(tree, ministryId, MinistryParts.News).Where(id => id != ministryId)];
+        List<Guid> ids = [.. above, .. below];
         List<PostRecord> records = await db.Posts.AsNoTracking().Where(post => ids.Contains(post.MinistryId))
             .OrderByDescending(post => post.PostedAt).Take(200).ToListAsync(cancellationToken);
         return records
-            .Where(post => post.MinistryId == ministryId || post.Audience != Audiences.Everyone)
+            .Where(post => post.MinistryId == ministryId || below.Contains(post.MinistryId) || post.Audience != Audiences.Everyone)
             .Where(post => MaySee(post.Audience, grants, tree, post.MinistryId))
             .Select(post => Post(post, post.MinistryId == ministryId ? "" : tree.Find(post.MinistryId)?.Name ?? ""))
             .ToList();
@@ -109,18 +111,20 @@ internal sealed class MinistryViews(
             .ToList();
     }
 
-    public static IReadOnlyList<Guid> CalendarsShown(MinistryTree tree, Guid ministryId)
+    public static IReadOnlyList<Guid> CalendarsShown(MinistryTree tree, Guid ministryId) => Gathered(tree, ministryId, MinistryParts.Calendar);
+
+    public static IReadOnlyList<Guid> Gathered(MinistryTree tree, Guid ministryId, string part)
     {
         MinistryRecord ministry = tree.Find(ministryId)!;
-        if (!IsOn(ministry, MinistryParts.Calendar))
+        if (!IsOn(ministry, part))
             return [];
-        if (!ministry.CalendarsFromBelow)
+        if (!ministry.PartsFromBelow.Contains(part))
             return [ministryId];
-        return [ministryId, .. tree.Below(ministryId).Where(below => IsOn(below, MinistryParts.Calendar) && Shows(tree, below, ministryId)).Select(below => below.Id)];
+        return [ministryId, .. tree.Below(ministryId).Where(below => IsOn(below, part) && Reaches(tree, below, ministryId, part)).Select(below => below.Id)];
     }
 
-    private static bool Shows(MinistryTree tree, MinistryRecord below, Guid top) =>
-        tree.Above(below.Id).TakeWhile(above => above.Id != top).All(above => IsOn(above, MinistryParts.Calendar));
+    private static bool Reaches(MinistryTree tree, MinistryRecord below, Guid top, string part) =>
+        tree.Above(below.Id).TakeWhile(above => above.Id != top).All(above => IsOn(above, part));
 
     public async Task<IReadOnlyDictionary<Guid, FamilyFacts>> FactsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
         await families.FactsAsync(ids, cancellationToken);
@@ -154,7 +158,7 @@ internal sealed class MinistryViews(
         Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, WhoFor = ministry.WhoFor, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, RoundId = ministry.RoundId?.ToString() ?? "",
         Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Order = ministry.Order,
-        PartsOff = [.. ministry.PartsOff], CalendarsFromBelow = ministry.CalendarsFromBelow,
+        PartsOff = [.. ministry.PartsOff], PartsFromBelow = [.. ministry.PartsFromBelow],
     };
 
     public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "", int waiting = 0) => new()

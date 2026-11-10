@@ -56,7 +56,7 @@
     </Section>
 }
 
-@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings && MinistryParts.All.Any(part => MinistryAreas.Uses(Page, part)))
+@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings && MinistryParts.All.Any(part => MinistryAreas.Uses(Page, part.Key)))
 {
     <Section>
         <p class="hint">@Page.Ministry.Name's news, calendar and files are for the people in it.</p>

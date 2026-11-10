@@ -1,0 +1,41 @@
+<SearchPicker TItem="MinistrySummary" Label="Sits under" Items="Places" Text="PathOf" Value="Under" ValueChanged="ChooseAsync"
+              NoneText="@(Directory.MayCreate && TopLevelAllowed ? "Nothing: it's a top-level ministry" : null)" Placeholder="Find a ministry"
+              Hint="@Hint" Disabled="Disabled" />
+
+@code {
+    [Parameter, EditorRequired] public required MinistryDirectory Directory { get; set; }
+    [Parameter] public string UnderId { get; set; } = "";
+    [Parameter] public EventCallback<string> UnderIdChanged { get; set; }
+    [Parameter] public string LeaveOut { get; set; } = "";
+    [Parameter] public bool TopLevelAllowed { get; set; } = true;
+    [Parameter] public string? Hint { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+
+    private IReadOnlyList<MinistrySummary> Places =>
+        Directory.Ministries.Where(ministry => ministry.MayAddUnder && !Within(ministry)).OrderBy(PathOf, StringComparer.CurrentCulture).ToList();
+
+    private MinistrySummary? Under => Places.FirstOrDefault(ministry => ministry.Id == UnderId);
+
+    private bool Within(MinistrySummary ministry)
+    {
+        if (LeaveOut.Length == 0)
+            return false;
+        for (MinistrySummary? place = ministry; place is not null; place = Parent(place))
+            if (place.Id == LeaveOut)
+                return true;
+        return false;
+    }
+
+    private Task ChooseAsync(MinistrySummary? ministry) => UnderIdChanged.InvokeAsync(ministry?.Id ?? "");
+
+    public string PathOf(MinistrySummary ministry)
+    {
+        List<string> names = [ministry.Name];
+        for (MinistrySummary? above = Parent(ministry); above is not null && names.Count <= Directory.Ministries.Count; above = Parent(above))
+            names.Insert(0, above.Name);
+        return string.Join(" › ", names);
+    }
+
+    private MinistrySummary? Parent(MinistrySummary ministry) =>
+        ministry.ParentId.Length == 0 ? null : Directory.Ministries.FirstOrDefault(candidate => candidate.Id == ministry.ParentId);
+}

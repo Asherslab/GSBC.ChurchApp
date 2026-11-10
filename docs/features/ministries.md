@@ -236,10 +236,6 @@ calendars the person may see (`Audience.Includes`), and on the phone the events 
 nobody sees an event they wouldn't see in that ministry. Events draws the list (`CalendarSetView`, a Platform.Client slot
 Events fills, since features don't reference each other); in the admin panel it shows the calendars the person edits.
 
-**News from the ministries under it: not built.** It would put every sub-ministry's posts on the parent's board, where the
-parent's own news would get lost, and a ministry's team already sees the team posts of the ministries above it. If the
-owner wants it, it's the same switch and the same audience check as calendars.
-
 **Life Groups under ordinary ministries** (owner: Kids Life "is a life group ministry technically, but does sit under kids
 ministries, which needs to be possible"). *A new ministry*, in the app and the admin panel, asks *What it is*: a ministry
 or a Life Group; a Life Group adds its room, its Sundays (all year or one of the dated sets) and *Join as a parent*, and
@@ -248,6 +244,41 @@ led by that ministry's leaders, and can have calendars like any ministry (which 
 calendar). **The Life Groups ministry** is the one that holds the dated sets, or else the ministry holding only Life
 Groups, never one that merely has a Life Group under it (before this, a Life Group under Kids Ministries made Kids
 Ministries vanish from the directory).
+
+## Parts, combined news and moving a ministry (owner, 2026-11-10)
+
+**A part that's off is off for leaders too** (owner, 2026-11-10: "nope, point is that we can clean up the tabs per ministry
+so they only get what they actually use. some features might only be used by a single ministry for e.g."). This confirms
+*Off hides it from everyone, leaders too* above as the owner's decision. *What it uses* is ready to grow: every part is one
+entry in `MinistryParts.All` (its key, its name, what it holds, and, if it can gather from the ministries under it, that
+switch's words), and Settings, the server's refusals and the tab labels all read from it. A feature only one ministry uses
+is added there, then turned on in that ministry and off everywhere else. The part's own tab and server checks are still
+the feature's to build.
+
+**News from the ministries under it** (owner, 2026-11-10: "configurable"). Settings → *Show news from the ministries under
+it*, off by default, beside the calendar one (both are now `PartsFromBelow` on the ministry, from the same list). With it on,
+the News tab also shows the posts of every ministry under it, at any depth, skipping any with News off and anything under
+them, each labelled "From …". **Audience is the same as in that ministry:** each post is checked against the person's grants
+at the ministry it was posted in, so nobody sees a post they wouldn't see there, and the sub-ministry's posts for everyone
+show too. **Important posts notify only the ministry they were posted in**, never again through a ministry gathering them.
+Home's and the directory's "what's new" line still shows each ministry's own posts only (*default*).
+
+**Moving a ministry** (owner, 2026-11-10: "yes you should add it, there's been a couple small restructurings in the past").
+Settings → *Where it sits*, in the app and the admin panel (the same Settings), with the *Sits under* picker. Rules
+(`MinistryRules.WhyNotMove`, gRPC `Leading.Moving` and `Leading.Move`):
+- **Who may:** whoever may change the ministry's settings (`ministries.settings.edit` there, through Access) **and** may add
+  under the new place (the same permission there; `ministries.create` to make it top-level, so staff only). Never under
+  itself or anything under it, never under a Life Group, and a Life Group never at the top level.
+- **It says what changes first,** in sentences: where it goes and how many ministries under it go with it, the leaders (and
+  admins) of the ministries it leaves who won't lead it any more, those of its new place who will, and whose combined news or
+  calendar it joins or leaves. Its own people, posts, files and calendars move with it unchanged.
+- **Everything from the tree follows by itself:** only the ministry's parent changes, and Access reads the tree for inherited
+  roles (`MinistryHierarchy`), so the move tells Access the scopes changed (grants are recompiled and each person's feeds reset,
+  which carries calendars, iCal links and event notifications), and touches the moved ministry, everything under it and both
+  parents on the Ministries feed, so the directory, the desk's tree, combined news and calendars, Life Groups' home and every
+  open ministry page reload. A Life Group moves the same way.
+- **Drag and drop in the admin tree: not built** (*default*): the Settings picker does it, with the preview; dragging would
+  skip the preview and needs a keyboard way to be accessible.
 
 ## What it is
 

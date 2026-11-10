@@ -9,9 +9,7 @@
                 @{
                     _directory = context.Value;
                 }
-                <SearchPicker TItem="MinistrySummary" Label="Sits under" Items="Places" Text="PathOf" Value="Under" ValueChanged="Choose"
-                              NoneText="@(_directory.MayCreate ? "Nothing: it's a top-level ministry" : null)" Placeholder="Find a ministry"
-                              Hint="Its leaders lead the new ministry too." />
+                <SitsUnderPicker Directory="_directory" UnderId="@(Under?.Id ?? "")" UnderIdChanged="id => _underId = id" Hint="Its leaders lead the new ministry too." />
                 <Segmented TValue="string" Label="What it is" ShowLabel="true" Stacked="true" Options="Kinds" Value="@_kind" ValueChanged="ChooseKind" />
                 <TextField Label="Name" @bind-Value="_name" MaxLength="60" Required="true" Placeholder="@(LifeGroup ? "Kids Life" : Under is null ? "Impact Kids" : "Choir")" />
                 <TextField Label="In a line" @bind-Value="_summary" MaxLength="140" />
@@ -60,10 +58,8 @@
     [Parameter] public string UnderId { get; set; } = "";
     [Parameter] public EventCallback<MinistryDetails> OnCreated { get; set; }
 
-    private IReadOnlyList<MinistrySummary> Places =>
-        _directory.Ministries.Where(ministry => ministry.MayAddUnder).OrderBy(PathOf, StringComparer.CurrentCulture).ToList();
-
-    private MinistrySummary? Under => Places.FirstOrDefault(ministry => ministry.Id == (_underId ?? UnderId));
+    private MinistrySummary? Under =>
+        _directory.Ministries.FirstOrDefault(ministry => ministry.MayAddUnder && ministry.Id == (_underId ?? UnderId));
 
     private string? Blocked =>
         _name.Trim().Length == 0 ? "Give it a name to add it."
@@ -88,19 +84,6 @@
             (_underId, _problem, _kind, _room, _roundId, _joinAsParent, _teamJoin, _attendJoin) = (null, null, MinistryKinds.Ministry, "", "", false, Joining.Ask, Joining.None);
         _opened = Open;
     }
-
-    private void Choose(MinistrySummary? ministry) => _underId = ministry?.Id ?? "";
-
-    private string PathOf(MinistrySummary ministry)
-    {
-        List<string> names = [ministry.Name];
-        for (MinistrySummary? above = Parent(ministry); above is not null; above = Parent(above))
-            names.Insert(0, above.Name);
-        return string.Join(" › ", names);
-    }
-
-    private MinistrySummary? Parent(MinistrySummary ministry) =>
-        ministry.ParentId.Length == 0 ? null : _directory.Ministries.FirstOrDefault(candidate => candidate.Id == ministry.ParentId);
 
     private async Task CreateAsync()
     {

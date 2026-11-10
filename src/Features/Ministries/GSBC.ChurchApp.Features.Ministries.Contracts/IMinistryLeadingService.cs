@@ -53,6 +53,12 @@ public interface IMinistryLeadingService
     ValueTask<Done> DeleteAsync(MinistryRef request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<MinistryDetails> MoveAsync(MoveRequest request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<CalendarLine> SaveCalendarAsync(CalendarSave request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]

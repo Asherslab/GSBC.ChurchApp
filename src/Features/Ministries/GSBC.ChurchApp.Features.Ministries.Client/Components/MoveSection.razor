@@ -1,0 +1,81 @@
+@inject MinistriesClient Ministries
+
+<UnsavedGuard Changed="() => _chosen is not null" What="@($"moving {Page.Ministry.Name}")" Save="MoveBeforeLeavingAsync" />
+
+<Section Title="Where it sits" Lead="@Lead">
+    <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
+        <div class="ministry-form">
+            <SitsUnderPicker Directory="context.Value" UnderId="@(_chosen ?? Page.Ministry.ParentId)" UnderIdChanged="ChooseAsync" LeaveOut="@Page.Ministry.Id"
+                             TopLevelAllowed="@(Page.Ministry.Kind != MinistryKinds.LifeGroup)" Disabled="_busy"
+                             Hint="To move it, choose where it goes. You'll see what changes before anything moves." />
+            @if (_preview is { } preview)
+            {
+                <Notice Tone="NoticeTone.Info" Text="@MoveWords.Of(preview)" />
+                <div class="ui-actions ministry-actions">
+                    <Button Busy="_busy" OnClick="MoveAsync">Move @preview.Name</Button>
+                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="Keep">Keep it where it is</Button>
+                </div>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </div>
+    </LiveData>
+</Section>
+
+@code {
+    private string? _chosen;
+    private MovePreview? _preview;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private string Lead =>
+        Page.Path.Count > 0
+            ? $"Under {string.Join(" › ", Page.Path.Select(crumb => crumb.Name))}. Its people, posts, files and calendars move with it."
+            : "A top-level ministry. Its people, posts, files and calendars move with it.";
+
+    private async Task ChooseAsync(string underId)
+    {
+        if (underId == Page.Ministry.ParentId)
+        {
+            Keep();
+            return;
+        }
+        _chosen = underId;
+        await RunAsync(async () => _preview = await Ministries.MovingAsync(Page.Ministry.Id, underId));
+    }
+
+    private void Keep() => (_chosen, _preview, _problem) = (null, null, null);
+
+    private Task MoveAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.MoveAsync(Page.Ministry.Id, _chosen ?? "");
+            Keep();
+            await OnChanged.InvokeAsync();
+        });
+
+    private async Task<bool> MoveBeforeLeavingAsync()
+    {
+        await MoveAsync();
+        return _problem is null;
+    }
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            await work();
+        }
+        catch (RpcException exception)
+        {
+            (_preview, _problem) = (null, MinistriesClient.Problem(exception));
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

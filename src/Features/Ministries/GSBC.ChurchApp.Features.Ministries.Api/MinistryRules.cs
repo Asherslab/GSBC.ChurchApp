@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
@@ -56,12 +57,20 @@ internal static class MinistryRules
         return details.Kind is MinistryKinds.Ministry or MinistryKinds.LifeGroup ? null : "That isn't a kind of ministry.";
     }
 
-    public static string PartName(string part) => part switch
+    public static string? WhyNotMove(MinistryTree tree, MinistryRecord ministry, MinistryRecord? under, Func<MinistryRecord?, bool> mayAddUnder)
     {
-        MinistryParts.News => "News",
-        MinistryParts.Calendar => "Calendar",
-        _ => "Files",
-    };
+        if (under?.Id == ministry.ParentId)
+            return under is null ? "It's already a top-level ministry." : $"It already sits under {under.Name}.";
+        if (tree.WouldLoop(ministry.Id, under?.Id))
+            return "A ministry can't sit under itself or under a ministry that's under it.";
+        if (under?.Kind == MinistryKinds.LifeGroup)
+            return "A Life Group can't have ministries under it.";
+        if (under is null && ministry.Kind == MinistryKinds.LifeGroup)
+            return "A Life Group sits under a ministry. Choose one.";
+        if (!mayAddUnder(under))
+            return under is null ? "Only staff make a ministry top-level." : $"You can't add ministries under {under.Name}.";
+        return null;
+    }
 
     public static string Yours(IReadOnlyCollection<string> roles, IReadOnlyCollection<string> childrenAttending, bool leadsFromAbove) =>
         roles.Contains(Roles.Leader) || leadsFromAbove ? "You lead it"
