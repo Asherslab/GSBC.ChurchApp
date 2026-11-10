@@ -64,7 +64,7 @@ foreach (JsonNode? localization in localizations)
 }
 Console.WriteLine($"What to Test is set on build {version} ({buildNumber}).");
 
-JsonNode group = (await GetAsync($"apps/{appId}/betaGroups?filter[name]={Uri.EscapeDataString(groupName)}&limit=1"))["data"]!.AsArray().FirstOrDefault()
+JsonNode group = (await GetAsync($"betaGroups?filter[app]={appId}&filter[name]={Uri.EscapeDataString(groupName)}&limit=1"))["data"]!.AsArray().FirstOrDefault()
     ?? throw new InvalidOperationException($"GSBC UAT has no TestFlight group named \"{groupName}\"; add the build to its testers by hand.");
 string groupId = group["id"]!.GetValue<string>();
 bool isInternal = group["attributes"]?["isInternalGroup"]?.GetValue<bool>() ?? false;
