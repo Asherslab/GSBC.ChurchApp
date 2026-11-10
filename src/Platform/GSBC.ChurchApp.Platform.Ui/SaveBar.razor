@@ -1,5 +1,5 @@
 <div class="save-bar @(OnMasthead ? "save-bar--on-masthead" : "") @(Block ? "save-bar--block" : "") @Class">
-    <Button Block="Block" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="OnSave">@Label</Button>
+    <Button Type="@(Submit ? "submit" : "button")" Block="Block" Variant="@(OnMasthead ? ButtonVariant.OnMasthead : ButtonVariant.Primary)" Busy="Busy" Disabled="@(Blocked is not null)" OnClick="@(Submit ? default : OnSave)">@Label</Button>
     @if (Blocked is not null)
     {
         <p class="save-bar__why">@Blocked</p>
@@ -20,6 +20,7 @@
     [Parameter] public string SavedText { get; set; } = "Saved";
     [Parameter] public bool OnMasthead { get; set; }
     [Parameter] public bool Block { get; set; }
+    [Parameter] public bool Submit { get; set; }
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment? ChildContent { get; set; }
 

@@ -1,5 +1,8 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject UnsavedChanges Unsaved
+
+<UnsavedGuard Changed="() => Changed" What="the demo account" />
 
 <h2 class="panel-title">Make a demo account</h2>
 <p class="panel-lead">An account with no real data for Apple's reviewers. Give it an email of its own, such as review@@ your church's domain. Nothing is sent to it. It can only sign in with a sign-in code and never gets a passkey.</p>
@@ -7,15 +10,14 @@
     <TextField Label="Name" @bind-Value="_name" AutoComplete="off" Required="true" Hint="Shown in the app while signed in, such as App Review" />
     <TextField Label="Email" Type="email" @bind-Value="_email" AutoComplete="off" Required="true" Hint="Goes in App Store Connect's user name field" />
     <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-    <Notice Text="@_made" />
-    <div class="panel-actions">
+    <SaveBar Class="panel-actions" Submit="true" Label="Make the demo account" Busy="_busy" Blocked="@(_name.Trim().Length == 0 || _email.Trim().Length == 0 ? "Give it a name and an email to make it." : null)"
+             State="SaveBar.For(Changed, _made is not null)" SavedText="@(_made ?? "")">
         @if (_made is not null)
         {
             <Button Icon="key" OnClick="OnMakeCode">Make a code for it</Button>
         }
-        <Button Type="submit" Icon="plus" Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)">Make the demo account</Button>
-        <Button Variant="ButtonVariant.Quiet" OnClick="OnCancel">Close</Button>
-    </div>
+        <Button Variant="ButtonVariant.Quiet" OnClick="CloseAsync">Close</Button>
+    </SaveBar>
 </form>
 
 @code {
@@ -28,6 +30,14 @@
     [Parameter] public EventCallback OnMade { get; set; }
     [Parameter] public EventCallback OnCancel { get; set; }
     [Parameter] public EventCallback OnMakeCode { get; set; }
+
+    private bool Changed => _email.Trim().Length > 0;
+
+    private async Task CloseAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            await OnCancel.InvokeAsync();
+    }
 
     private async Task MakeAsync()
     {

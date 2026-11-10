@@ -4,6 +4,8 @@
 @inject ISignInCodes Codes
 @inject IEnumerable<ISignUpQuestion> Questions
 
+<UnsavedGuard Changed="() => _mode == Mode.SignUp && !_busy && (_name.Trim().Length > 0 || _email.Trim().Length > 0)" What="your new account's details" />
+
 @if (_supported is false)
 {
     <Section First="true">
