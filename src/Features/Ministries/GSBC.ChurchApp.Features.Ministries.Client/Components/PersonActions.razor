@@ -1,4 +1,5 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 
 @if (Member is { } member)
 {
@@ -72,7 +73,7 @@
     }
 
     private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
-        (await Ministries.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
+        (await Lookups.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
 
     private Task LinkAsync(PersonChoice parent) =>
         RunAsync(async () =>
@@ -99,7 +100,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

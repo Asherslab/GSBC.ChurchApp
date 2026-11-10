@@ -64,6 +64,7 @@ public sealed class MinistryDetails
     [ProtoMember(16)] public int Order { get; set; }
     [ProtoMember(17)] public List<string> PartsOff { get; set; } = [];
     [ProtoMember(19)] public List<string> PartsFromBelow { get; set; } = [];
+    [ProtoMember(21)] public bool New { get; set; }
 }
 
 [ProtoContract]
@@ -137,6 +138,7 @@ public sealed class Post
     [ProtoMember(10)] public string From { get; set; } = "";
     [ProtoMember(11)] public bool AskWholeChurch { get; set; }
     [ProtoMember(12)] public string WholeChurch { get; set; } = "";
+    [ProtoMember(13)] public bool New { get; set; }
 }
 
 [ProtoContract]
@@ -152,6 +154,7 @@ public sealed class FileItem
     [ProtoMember(8)] public DateTime AddedAt { get; set; }
     [ProtoMember(9)] public string Note { get; set; } = "";
     [ProtoMember(10)] public string From { get; set; } = "";
+    [ProtoMember(11)] public bool New { get; set; }
 }
 
 [ProtoContract]
@@ -197,6 +200,7 @@ public sealed class AskLine
     [ProtoMember(8)] public DateTime AskedAt { get; set; }
     [ProtoMember(9)] public string MinistryId { get; set; } = "";
     [ProtoMember(10)] public string MinistryName { get; set; } = "";
+    [ProtoMember(11)] public string AskedById { get; set; } = "";
 }
 
 [ProtoContract]
@@ -447,4 +451,44 @@ public sealed class LeadChange
 {
     [ProtoMember(1)] public string Ministry { get; set; } = "";
     [ProtoMember(2)] public List<string> People { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MinistryCard
+{
+    [ProtoMember(1, IsRequired = true)] public MinistryDetails Ministry { get; set; } = new();
+    [ProtoMember(2)] public List<PersonLine> Leaders { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class MinistryPeople
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2, IsRequired = true)] public PeopleList People { get; set; } = new();
+}
+
+[ProtoContract]
+public sealed class YourMinistries
+{
+    [ProtoMember(1)] public List<ChildFacts> Children { get; set; } = [];
+    [ProtoMember(2)] public List<YourRoles> Places { get; set; } = [];
+    [ProtoMember(3)] public List<AskLine> Asked { get; set; } = [];
+    [ProtoMember(4)] public string PersonId { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class ChildFacts
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Name { get; set; } = "";
+    [ProtoMember(3)] public int? Age { get; set; }
+}
+
+[ProtoContract]
+public sealed class YourRoles
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public List<string> Roles { get; set; } = [];
+    [ProtoMember(3)] public List<string> ChildrenAttending { get; set; } = [];
+    [ProtoMember(4)] public List<string> ChildrenOnTeam { get; set; } = [];
 }

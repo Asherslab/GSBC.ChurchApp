@@ -1,4 +1,4 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
 @inject TimeProvider Clock
 
 @if (Page.Ministry.About.Length > 0)
@@ -115,7 +115,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

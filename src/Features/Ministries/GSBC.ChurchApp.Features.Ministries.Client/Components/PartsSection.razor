@@ -1,4 +1,4 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
 
 <Section Title="What it uses" Lead="Turn off what this ministry doesn't use. Its tab and everything in it are hidden from everyone, leaders too, until you turn it back on. Nothing is deleted.">
     @foreach (MinistryPart part in MinistryParts.All)
@@ -69,7 +69,7 @@
         }
         catch (RpcException exception)
         {
-            (_off, _fromBelow, _problem) = (before, beforeFromBelow, MinistriesClient.Problem(exception));
+            (_off, _fromBelow, _problem) = (before, beforeFromBelow, MinistryLookups.Problem(exception));
         }
         finally
         {

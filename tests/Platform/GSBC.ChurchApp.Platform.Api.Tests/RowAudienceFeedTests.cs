@@ -69,6 +69,27 @@ public sealed class RowAudienceFeedTests : IAsyncLifetime
         Assert.Empty(change.Payload);
     }
 
+    [Fact]
+    public async Task SomeoneWhoLeavesATeamStartsTheFeedAgainWithoutItsPosts()
+    {
+        Scope ministry = Scope.Of(ScopeKind.Ministry, Guid.CreateVersion7().ToString());
+        Grant onTheTeam = new(PermissionPattern.Parse(TeamView), ministry);
+        Guid id = Guid.CreateVersion7();
+        _grants[id] = new GrantSet([onTheTeam]);
+        ClaimsPrincipal helper = new(new ClaimsIdentity([new Claim(Caller.UserIdClaim, id.ToString()), new Claim(Caller.SessionIdClaim, "phone")], "test"));
+        await AddAsync("rehearsal moved", Audience.HoldingAt(TeamView, ministry));
+        FeedBatch first = (await ReadAsync(helper)).Feeds.Single();
+        Assert.Equal("rehearsal moved", Assert.Single(first.Changes).Id);
+
+        _grants[id] = GrantSet.Empty;
+
+        FeedBatch after = (await ReadAsync(helper, first.Cursor)).Feeds.Single();
+        Assert.True(after.Reset);
+        Assert.DoesNotContain((await ReadAsync(helper)).Feeds.Single().Changes, change => !change.Deleted);
+    }
+
+    private const string TeamView = "ministries.team.view";
+
     private ClaimsPrincipal Person(params Guid[] roles)
     {
         Guid id = Guid.CreateVersion7();

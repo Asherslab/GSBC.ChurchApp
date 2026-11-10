@@ -1,6 +1,6 @@
 @page "/life-groups"
 @using System.Globalization
-@inject MinistriesClient Ministries
+@inject OnlineMinistries Ministries
 @inject TimeProvider Clock
 
 <TitleBand Title="Life Groups" Lead="Every ministry shown in Life Groups, wherever it sits. People see the next groups in the app from the date you choose.">
@@ -16,7 +16,7 @@
     </Actions>
 </TitleBand>
 
-<LiveData @ref="_live" TValue="LifeGroupsPage" Load="LoadAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load Life Groups right now">
+<LiveData @ref="_live" TValue="LifeGroupsPage" Load="LoadAsync" Feeds="Ministries.Feeds" FailedTitle="Can't load Life Groups right now">
     @{
         LifeGroupsPage page = context.Value;
         DateOnly today = ChurchTime.Today(Clock);
@@ -219,7 +219,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

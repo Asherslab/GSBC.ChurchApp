@@ -1,4 +1,5 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 @inject NavigationManager Navigation
 
 <UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} settings")" Save="SaveBeforeLeavingAsync" />
@@ -144,7 +145,7 @@
         return _problem is null;
     }
 
-    private Task PreviewAsync() => RunAsync(async () => _preview = await Ministries.DeletionAsync(Page.Ministry.Id));
+    private Task PreviewAsync() => RunAsync(async () => _preview = await Lookups.DeletionAsync(Page.Ministry.Id));
 
     private Task DeleteAsync() =>
         RunAsync(async () =>
@@ -169,7 +170,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

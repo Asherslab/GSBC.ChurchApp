@@ -1,0 +1,48 @@
+@using GSBC.ChurchApp.Platform.Client.Outbox
+@inject IServiceProvider Services
+
+@if (Services.GetService(typeof(IOutbox)) is IOutbox { IsAvailable: true } outbox)
+{
+    <LiveData TValue="IReadOnlyList<OutboxEntry>" Load="() => WaitingAsync(outbox)" ReloadOn="ChangeKind.Outbox | ChangeKind.Session | ChangeKind.Reconnected">
+        <ChildContent>
+            @{
+                IReadOnlyList<OutboxEntry> waiting = context.Value;
+                int sending = waiting.Count(entry => !entry.Failed);
+            }
+            @if (waiting.Count > 0)
+            {
+                <Section First="First">
+                    <ListGroup>
+                        @if (sending > 0)
+                        {
+                            <ListRow Title="@(sending == 1 ? "1 change waiting to send" : $"{sending} changes waiting to send")"
+                                     Subtitle="It goes as soon as there's a signal, and shows here once the church has it." Icon="send" IconTone="RowTone.Quiet" />
+                        }
+                        @foreach (OutboxEntry entry in waiting.Where(entry => entry.Failed))
+                        {
+                            <ListRow @key="entry.Id" Title="@($"Couldn't send {What(entry.Method)}")" Subtitle="@entry.LastError" Icon="alert" IconTone="RowTone.Warm">
+                                <TrailingContent>
+                                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => outbox.RetryAsync(entry.Id).AsTask()">Try again</Button>
+                                    <Button Variant="ButtonVariant.Danger" Small="true" OnClick="() => outbox.DiscardAsync(entry.Id).AsTask()">Discard</Button>
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </Section>
+            }
+        </ChildContent>
+        <Loading />
+        <Failed />
+    </LiveData>
+}
+
+@code {
+    [Parameter, EditorRequired] public required string MethodsUnder { get; set; }
+    [Parameter] public Func<string, string>? Describe { get; set; }
+    [Parameter] public bool First { get; set; }
+
+    private string What(string method) => Describe?.Invoke(method) ?? "a change";
+
+    private async Task<IReadOnlyList<OutboxEntry>> WaitingAsync(IOutbox outbox) =>
+        (await outbox.ListAsync()).Where(entry => entry.Method.StartsWith(MethodsUnder, StringComparison.Ordinal)).ToList();
+}
