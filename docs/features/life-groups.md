@@ -4,6 +4,55 @@ Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
 
+## Life Groups in the calendar (owner, 2026-11-10)
+
+The owner: "Life Groups - their calendars are technically automatic. they run any time a life group round is on. maybe
+make a way to link a calendar as the calendar life group timings auto show in (e.g. Services), with times between life
+group rounds being set as "not on" automatically and such." Asked how, the owner chose **one "Life Groups" entry** in the
+linked calendar: "i do want it to actually display when a life group "isn't on" - i.e. how breaks display for normal
+regular events". And **all-year groups only follow the sets of Sundays**, for now.
+
+- **Show Life Groups in** (admin → Life Groups, the row at the top): a calendar, or none. Choosing one makes a single
+  regular event, *Life Groups*, in it; choosing another moves it; choosing none takes it off, after asking. Only someone
+  who may plan Life Groups and adds events to that calendar (and publishes, if it needs a publisher) can choose it,
+  through Access; the picker offers just those calendars. Removing the calendar removes the entry, and Life Groups then
+  says *Not shown in a calendar*.
+- **It's kept in step automatically** on every change to the sets of Sundays (planning, *Sundays and time*, taking a
+  Sunday off, deleting a set). Every Sunday in a set is on at that set's time. Every Sunday from the first planned Sunday
+  to the last that isn't in a set shows as not on, as a break does: *Between groups* between sets, *No Life Groups this
+  Sunday* for one taken off inside a set. **Horizon** (*default*): the first planned Sunday through the last; nothing
+  is added before or after. A set's *shows in the app from* date doesn't hide its Sundays: the calendar says when Life
+  Groups meet, not which groups.
+- **Times:** the time most Sundays have is the entry's own; other sets' times are those dates' own times, shown as plain
+  dates, not as specials.
+- **Owned by Life Groups:** Calendar shows it with "Life Groups keeps this in step with its own dates and times" and
+  *Change it in Life Groups*, and the server refuses editing, a date's changes and deleting it there. *Tell people* and
+  everything else that reads the calendar treat it as any regular event: people's week, Home's *Coming up*, iCal links,
+  the digest and notifications.
+- **Tapping it** in the app (the week, the month, Home) opens Life Groups; its own page, reached from a link, has *Open
+  Life Groups*.
+- **All-year groups add no Sundays of their own**: the entry comes only from the sets.
+
+## An all-year group can be off for a set of Sundays (owner, 2026-11-10)
+
+The owner: "we do need to handle an "all year" lifegroup being cancelled for a specific round", for example an all-year
+group joining one of that set's groups.
+
+- **On the desk**, under a set of Sundays that hasn't finished, *An all-year group isn't on these Sundays* marks one off,
+  with what to tell its people and, optionally, a group of that set to point them to. Opening it again changes the note,
+  or *It's on these Sundays after all* undoes it. Planning permission, as for the sets.
+- **Shown, not hidden** (*default*): Life Groups in the app keeps the group under *All year* (and *Your groups*) with
+  "Not on 8 November to 29 November · the note", so someone looking for it learns why; the desk lists it under the set
+  as not on. The group's own page starts with the same words and *Go to* the group it points to.
+- **Its people keep their place**; nothing about the group changes. It's back on the next set by itself.
+- **Told once:** marking it off (while the set hasn't finished) sends one *Important* notification to everyone who sees
+  what it shares with attendees (its attendees and their parents), with the note. Editing the note doesn't send another.
+- Deleting the set removes its marks; deleting the group pointed to leaves the note without the link.
+- **The calendar's Life Groups entry is unaffected** (the other groups still meet).
+- **Not done:** marking the group's own calendar events not on for that set. A group's calendars are ordinary Events
+  calendars with events staff add, and nothing ties their dates to a set of Sundays; doing it needs a decision on which
+  events count (open below).
+
 ## Show in Life Groups (owner, 2026-11-10)
 
 The owner saw the admin Life Groups page say "No Life Groups yet" although Kids Life (under Kids Ministries) existed, asked
@@ -284,6 +333,10 @@ and the safeguarding rules exist.
   class (2026-10-26).
 
 ## Open questions
+
+0. **An all-year group off for a set: its own calendar events.** Should its calendars' events on that set's Sundays show
+   as not on too? They're events staff add by hand, so it needs a rule for which ones (for example, every date of its
+   regular events that falls on one of the set's Sundays). Recommendation: yes, for regular events on those Sundays only.
 
 1. **Room names:** the map only numbers rooms. What are they called (for example, the Library's east
    wing)? The spike uses placeholders.
