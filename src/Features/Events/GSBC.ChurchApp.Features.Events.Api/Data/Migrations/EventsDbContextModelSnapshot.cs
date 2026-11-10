@@ -372,6 +372,26 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                     b.ToTable("events", "events");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.HandledRequestRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("HandledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("handled_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_handled_requests");
+
+                    b.HasIndex("HandledAt")
+                        .HasDatabaseName("ix_handled_requests_handled_at");
+
+                    b.ToTable("handled_requests", "events");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.PublishedRow", b =>
                 {
                     b.Property<string>("Feed")

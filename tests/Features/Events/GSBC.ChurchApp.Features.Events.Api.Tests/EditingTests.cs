@@ -51,7 +51,7 @@ public sealed class EditingTests
         };
         Timed everyAfter = new(Fields("Morning service", "Fellowship Area"), 11 * 60, 12 * 60);
 
-        List<KeptValue> kept = EventWriter.KeptValues(morning, FieldValues.Differences(every, everyAfter), [special]);
+        List<KeptValue> kept = EventWriter.KeptValuesOf(morning, FieldValues.Differences(every, everyAfter), [special]);
         (morning.Fields, morning.StartMinute) = (everyAfter.Fields, everyAfter.StartMinute);
         List<EventOccurrence> dates = new EventsBook([services], [], [morning], [special], [], [], [])
             .Occurrences(anniversary, anniversary.AddDays(7), _ => true).OrderBy(occurrence => occurrence.StartsAt).ToList();
