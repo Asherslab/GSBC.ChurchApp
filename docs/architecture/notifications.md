@@ -154,6 +154,10 @@ NotificationAudience.Person(userId)
 NotificationAudience.Holding(permission, scopeId?)    // people and phones holding it there
 ```
 
+**Nobody hears anything before they're invited** (2026-11-10): whatever the audience, people staff added without sending
+their invitation yet are left out (`IPeopleIndex.NotInvitedYetAsync`, [accounts.md](../features/accounts.md)), so no inbox
+row or push is made for them, and an announcement's reach doesn't count them.
+
 There is no list of recipients anywhere in a feature. "Members of Music" is
 `Holding("ministries.notices.receive", "music")` once Ministries exists; "people who can publish the Hub" is
 `Holding(HubSurfaces.PublishNode)`.

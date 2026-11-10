@@ -40,6 +40,8 @@ public sealed class InvitationTests : IAsyncLifetime
             .AddScoped<DemoAccounts>()
             .AddScoped<Invitations>()
             .AddScoped<AccountDeletion>()
+            .AddScoped<ReviewSignIns>()
+            .AddScoped<AccountsService>()
             .AddSingleton<IPersonData>(_forgotten)
             .AddAccountsData()
             .AddSyncData()
@@ -107,6 +109,66 @@ public sealed class InvitationTests : IAsyncLifetime
         Assert.True(await WithAsync<AccountsDbContext, bool>(db => db.Users.AnyAsync(user => user.Id == invitee, TestContext.Current.CancellationToken)));
     }
 
+    [Fact]
+    public async Task SomeoneAddedWithoutAnInvitationHearsNothingAndIsKeptUntilItIsSent()
+    {
+        await GivePasskeyAsync(_staff);
+        Guid leader = await HoldAsync("deborah@example.com");
+        _clock.Advance(AccountsCleanup.AbandonedAfter + TimeSpan.FromDays(30));
+        await WithAsync<AccountsDbContext>(db => AccountsCleanup.CleanAsync(db, _clock.UtcNow, [], TestContext.Current.CancellationToken));
+
+        Assert.Empty(_sent.To);
+        InvitationInfo listed = Assert.Single(await ListAsync());
+        Assert.Equal((leader.ToString(), true, "Ruth"), (listed.UserId, listed.Held, listed.InvitedBy));
+    }
+
+    [Fact]
+    public async Task SendingTheHeldInvitationsEmailsOnlyThoseHeldAndEachOnce()
+    {
+        await HoldAsync("deborah@example.com");
+        await HoldAsync("barak@example.com");
+        await InviteAsync("jael@example.com");
+        _sent.To.Clear();
+
+        RpcException stale = await Assert.ThrowsAsync<RpcException>(() => SendHeldAsync(expected: 3));
+        int sent = await SendHeldAsync(expected: 2);
+        int again = await SendHeldAsync(expected: 0);
+
+        Assert.Equal(StatusCode.FailedPrecondition, stale.StatusCode);
+        Assert.Equal((2, 0), (sent, again));
+        Assert.Equal(["barak@example.com", "deborah@example.com"], _sent.To.Order());
+        Assert.All(await ListAsync(), invitation => Assert.False(invitation.Held));
+    }
+
+    [Fact]
+    public async Task SigningUpWithTheEmailOfSomeoneAddedSendsTheirInvitationInsteadOfHandingOverTheAccount()
+    {
+        Guid leader = await HoldAsync("deborah@example.com");
+
+        TicketReply reply = await WithAsync<AccountsService, TicketReply>(service =>
+            service.StartSignUpAsync(new StartSignUpRequest { DisplayName = "Not Deborah", Email = "deborah@example.com" }).AsTask());
+
+        Assert.Equal((true, ""), (reply.LinkEmailed, reply.Ticket));
+        Assert.Equal(["deborah@example.com"], _sent.To);
+        Assert.NotNull(await FindAsync(_sent.LastLink));
+        AccountUser account = await WithAsync<AccountsDbContext, AccountUser>(db => db.Users.SingleAsync(user => user.Id == leader, TestContext.Current.CancellationToken));
+        Assert.Equal(("deborah@example.com", false), (account.DisplayName, account.InvitationHeld));
+    }
+
+    private async Task<Guid> HoldAsync(string email)
+    {
+        Guid id = await NewAccountAsync(email, email);
+        await WithAsync<IServiceProvider>(async provider =>
+        {
+            AccountUser user = (await provider.GetRequiredService<UserManager<AccountUser>>().FindByIdAsync(id.ToString()))!;
+            await provider.GetRequiredService<Invitations>().HoldAsync(user, _staff, TestContext.Current.CancellationToken);
+        });
+        return id;
+    }
+
+    private Task<int> SendHeldAsync(int expected) =>
+        WithAsync<Invitations, int>(invitations => invitations.SendHeldAsync(expected, _staff, TestContext.Current.CancellationToken));
+
     private async Task<Guid> InviteAsync(string email)
     {
         Guid id = await NewAccountAsync(email, email);
@@ -164,8 +226,11 @@ public sealed class InvitationTests : IAsyncLifetime
     {
         public string LastLink { get; private set; } = "";
 
+        public List<string> To { get; } = [];
+
         public Task SendAsync(EmailMessage message, CancellationToken cancellationToken)
         {
+            To.Add(message.To);
             LastLink = message.Body.Split('\n').Last(line => line.Contains("code=", StringComparison.Ordinal));
             return Task.CompletedTask;
         }

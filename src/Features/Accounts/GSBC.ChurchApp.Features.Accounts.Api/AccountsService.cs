@@ -41,6 +41,11 @@ internal sealed class AccountsService(
         string name = ValidName(request.DisplayName);
         string address = ValidEmail(request.Email);
         CancellationToken cancellationToken = context.CancellationToken;
+        if (await MadeByStaffAsync(address, cancellationToken) is { } waiting)
+        {
+            await invitations.SendAsync(waiting, null, AuditActions.InvitationAskedFor, cancellationToken);
+            return new TicketReply { LinkEmailed = true };
+        }
 
         AccountUser user = await FindAbandonedOrCreateAsync(name, address, cancellationToken);
         string ticket = codes.IssueToken(user.Id, CodePurpose.RegisterPasskey, OneTimeCodes.TicketLifetime);
@@ -269,6 +274,20 @@ internal sealed class AccountsService(
         return new Done();
     }
 
+    public async ValueTask<AddedPerson> AddPersonAsync(InviteRequest request, CallContext context = default)
+    {
+        string name = ValidName(request.DisplayName);
+        string address = ValidEmail(request.Email);
+        CancellationToken cancellationToken = context.CancellationToken;
+
+        AccountUser user = await FindAbandonedOrCreateAsync(name, address, cancellationToken);
+        await invitations.HoldAsync(user, Caller(context).UserId, cancellationToken);
+        return new AddedPerson { UserId = user.Id.ToString() };
+    }
+
+    public async ValueTask<SentInvitations> SendHeldInvitationsAsync(SendHeldInvitationsRequest request, CallContext context = default) =>
+        new() { Sent = await invitations.SendHeldAsync(request.Expected, Caller(context).UserId, context.CancellationToken) };
+
     public async ValueTask<InvitationList> ListInvitationsAsync(Nothing request, CallContext context = default) =>
         await invitations.ListAsync(context.CancellationToken);
 
@@ -419,6 +438,14 @@ internal sealed class AccountsService(
             }).ToList(),
         };
     }
+
+    private async Task<AccountUser?> MadeByStaffAsync(string address, CancellationToken cancellationToken) =>
+        await users.FindByEmailAsync(address) is { Disabled: false } existing
+        && (await users.GetPasskeysAsync(existing)).Count == 0
+        && !await demo.IsDemoAsync(existing.Id, cancellationToken)
+        && await invitations.AwaitsInvitationAsync(existing, cancellationToken)
+            ? existing
+            : null;
 
     private async Task<AccountUser> FindAbandonedOrCreateAsync(string name, string address, CancellationToken cancellationToken)
     {

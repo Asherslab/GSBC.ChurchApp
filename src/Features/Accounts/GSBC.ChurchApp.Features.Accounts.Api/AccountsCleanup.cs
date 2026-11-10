@@ -10,7 +10,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Api;
 internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider time, ILogger<AccountsCleanup> logger) : BackgroundService
 {
     public static readonly TimeSpan AbandonedAfter = TimeSpan.FromDays(7);
-    public static readonly TimeSpan CodesKeptFor = TimeSpan.FromDays(30);
+    private static readonly TimeSpan CodesKeptFor = TimeSpan.FromDays(30);
     private static readonly TimeSpan Interval = TimeSpan.FromHours(6);
     private const long AdvisoryLockKey = 0x6773_6263_636c_6e75;
 
@@ -45,6 +45,7 @@ internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider 
         return db.Users.Where(user => user.CreatedAt < abandoned
             && user.DeletedAt == null
             && !user.AddedByFamily
+            && !user.InvitationHeld
             && !demoAccounts.Contains(user.Id)
             && !db.Set<IdentityUserPasskey<Guid>>().Any(passkey => passkey.UserId == user.Id)
             && !db.Codes.Any(code => code.UserId == user.Id && code.UsedAt == null && code.ExpiresAt > now

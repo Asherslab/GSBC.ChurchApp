@@ -19,6 +19,7 @@ public sealed class StartSignUpRequest
 public sealed class TicketReply
 {
     [ProtoMember(1)] public string Ticket { get; set; } = "";
+    [ProtoMember(2)] public bool LinkEmailed { get; set; }
 }
 
 [ProtoContract]
@@ -278,6 +279,25 @@ public sealed class InvitationInfo
     [ProtoMember(4)] public string? InvitedBy { get; set; }
     [ProtoMember(5)] public DateTime InvitedAt { get; set; }
     [ProtoMember(6)] public DateTime ExpiresAt { get; set; }
+    [ProtoMember(7)] public bool Held { get; set; }
+}
+
+[ProtoContract]
+public sealed class AddedPerson
+{
+    [ProtoMember(1)] public string UserId { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class SendHeldInvitationsRequest
+{
+    [ProtoMember(1)] public int Expected { get; set; }
+}
+
+[ProtoContract]
+public sealed class SentInvitations
+{
+    [ProtoMember(1)] public int Sent { get; set; }
 }
 
 [ProtoContract]

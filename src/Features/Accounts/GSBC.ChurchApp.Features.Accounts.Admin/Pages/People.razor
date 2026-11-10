@@ -1,4 +1,5 @@
 @page "/people"
+@using Grpc.Core
 @using GSBC.ChurchApp.Platform.Client.Access
 @implements IDisposable
 @inject AccountsClient Accounts
@@ -8,23 +9,31 @@
 <TitleBand Title="People" Lead="Everyone with an account. Choose someone to give them roles, send them a recovery link, or turn their account off.">
     <Actions>
         <Can Permission="AccountsPermissions.Manage">
-            <Button Icon="plus" OnClick="StartInvite">Invite someone</Button>
+            <Button Icon="plus" OnClick="StartInvite">Add someone</Button>
         </Can>
     </Actions>
 </TitleBand>
 
-<SplitView Detail="@Detail" DetailLabel="Invite someone">
+<SplitView Detail="@Detail" DetailLabel="Add someone">
     <LiveData @ref="_live" TValue="PeopleView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't load people right now">
         <DataTable TItem="PersonInfo" Label="People" Items="Shown(context.Value)" Columns="Columns" Key="person => person.Id"
                    SelectedChanged="Open" SortColumn="0">
             <Toolbar>
                 <SearchField Label="Find someone" Placeholder="Find someone by name or email" Value="@_query" ValueChanged="SearchAsync" />
                 <FilterChips TValue="PeopleFilter" Label="Show" Options="Filters(context.Value)" @bind-Value="_filter" />
+                @if (_filter == PeopleFilter.NotInvitedYet && context.Value.NotInvitedYet.Count > 0 && Access.Can(AccountsPermissions.Manage))
+                {
+                    <Button Icon="send" OnClick="() => AskToSendAll(context.Value.NotInvitedYet.Count)">Send @Invitations(context.Value.NotInvitedYet.Count)…</Button>
+                }
             </Toolbar>
             <Empty>
                 @if (_filter == PeopleFilter.Invited && _query.Length == 0)
                 {
                     <EmptyState Icon="send" Title="No invitations waiting" Body="People you invite show here until they set up their sign-in." />
+                }
+                else if (_filter == PeopleFilter.NotInvitedYet && _query.Length == 0)
+                {
+                    <EmptyState Icon="clock" Title="Everyone's been invited" Body="People you add without inviting show here until you send their invitations." />
                 }
                 else
                 {
@@ -35,12 +44,28 @@
     </LiveData>
 </SplitView>
 
+<Sheet Open="_sendingAll" OpenChanged="open => _sendingAll = open" Title="@($"Send {Invitations(_waiting)}?")">
+    <ChildContent>
+        <p class="sheet__lead">@(_waiting == 1 ? "1 person gets" : $"{_waiting} people each get") an email with a link to set up their sign-in, working for 7 days. Emails can't be taken back once they're sent.</p>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Icon="send" Busy="_busy" OnClick="SendAllAsync">Send @Invitations(_waiting)</Button>
+        <Button Variant="ButtonVariant.Quiet" OnClick="() => _sendingAll = false">Not yet</Button>
+    </Actions>
+</Sheet>
+
 @code {
     private LiveData<PeopleView>? _live;
     private Dictionary<string, InvitationInfo> _invitations = [];
     private string _query = "";
     private PeopleFilter _filter = PeopleFilter.Everyone;
     private bool _inviting;
+    private bool _sendingAll;
+    private bool _busy;
+    private string? _problem;
+
+    private int _waiting;
 
     [SupplyParameterFromQuery] public string? Show { get; set; }
     [SupplyParameterFromQuery(Name = "person")] public string? PersonId { get; set; }
@@ -61,12 +86,17 @@
     {
         if (PersonId is { } linked)
             Navigation.NavigateTo($"people/{Uri.EscapeDataString(linked)}", new NavigationOptions { ReplaceHistoryEntry = true });
-        if (Show == InvitedQuery)
-            _filter = PeopleFilter.Invited;
+        _filter = Show switch
+        {
+            InvitedQuery => PeopleFilter.Invited,
+            NotInvitedYetQuery => PeopleFilter.NotInvitedYet,
+            _ => PeopleFilter.Everyone,
+        };
         Access.Changed += OnAccessChanged;
     }
 
     private const string InvitedQuery = "invited";
+    private const string NotInvitedYetQuery = "not-invited";
 
     private async Task<PeopleView> LoadAsync()
     {
@@ -76,7 +106,9 @@
         List<InvitationInfo> invitations = (await listing).Invitations;
         List<PersonInfo> people = (await searching).People;
         _invitations = invitations.ToDictionary(invitation => invitation.UserId);
-        return new PeopleView(people, invitations.Select(AsPerson).ToList());
+        return new PeopleView(people,
+            invitations.Where(invitation => !invitation.Held).Select(AsPerson).ToList(),
+            invitations.Where(invitation => invitation.Held).Select(AsPerson).ToList());
     }
 
     private static PersonInfo AsPerson(InvitationInfo invitation) => new()
@@ -87,15 +119,21 @@
         CreatedAt = invitation.InvitedAt,
     };
 
-    private IEnumerable<PersonInfo> Shown(PeopleView view) => _filter == PeopleFilter.Invited
-        ? view.Invited.Where(person => _query.Length == 0 || person.DisplayName.Contains(_query, StringComparison.OrdinalIgnoreCase) || person.Email.Contains(_query, StringComparison.OrdinalIgnoreCase))
-        : view.People.Where(person => Matches(person, _filter));
+    private IEnumerable<PersonInfo> Shown(PeopleView view) => _filter switch
+    {
+        PeopleFilter.Invited => Searched(view.Invited),
+        PeopleFilter.NotInvitedYet => Searched(view.NotInvitedYet),
+        _ => view.People.Where(person => Matches(person, _filter)),
+    };
+
+    private IEnumerable<PersonInfo> Searched(List<PersonInfo> people) =>
+        people.Where(person => _query.Length == 0 || person.DisplayName.Contains(_query, StringComparison.OrdinalIgnoreCase) || person.Email.Contains(_query, StringComparison.OrdinalIgnoreCase));
 
     private bool Matches(PersonInfo person, PeopleFilter filter) => filter switch
     {
-        PeopleFilter.Invited => _invitations.ContainsKey(person.Id),
-        PeopleFilter.NoPasskey => !person.HasPasskey && !person.Disabled && !_invitations.ContainsKey(person.Id),
-        PeopleFilter.Unconfirmed => !person.EmailConfirmed && !person.Disabled && !_invitations.ContainsKey(person.Id),
+        PeopleFilter.Invited or PeopleFilter.NotInvitedYet => _invitations.ContainsKey(person.Id),
+        PeopleFilter.NoPasskey => person is { HasPasskey: false, Disabled: false } && !_invitations.ContainsKey(person.Id),
+        PeopleFilter.Unconfirmed => person is { EmailConfirmed: false, Disabled: false } && !_invitations.ContainsKey(person.Id),
         PeopleFilter.TurnedOff => person.Disabled,
         _ => true,
     };
@@ -103,6 +141,7 @@
     private static string FilterLabel(PeopleFilter filter) => filter switch
     {
         PeopleFilter.Invited => "Invited",
+        PeopleFilter.NotInvitedYet => "Not invited yet",
         PeopleFilter.NoPasskey => "No passkey yet",
         PeopleFilter.Unconfirmed => "Email not confirmed",
         PeopleFilter.TurnedOff => "Turned off",
@@ -120,7 +159,43 @@
 
     private IReadOnlyList<FilterOption<PeopleFilter>> Filters(PeopleView view) =>
         Enum.GetValues<PeopleFilter>().Select(filter => new FilterOption<PeopleFilter>(filter, FilterLabel(filter),
-            filter == PeopleFilter.Invited ? view.Invited.Count : view.People.Count(person => Matches(person, filter)))).ToList();
+            filter switch
+            {
+                PeopleFilter.Invited => view.Invited.Count,
+                PeopleFilter.NotInvitedYet => view.NotInvitedYet.Count,
+                _ => view.People.Count(person => Matches(person, filter)),
+            })).ToList();
+
+    private void AskToSendAll(int count)
+    {
+        _waiting = count;
+        _problem = null;
+        _sendingAll = true;
+    }
+
+    private static string Invitations(int count) => count == 1 ? "1 invitation" : $"{count} invitations";
+
+    private async Task SendAllAsync()
+    {
+        _busy = true;
+        _problem = null;
+        try
+        {
+            await Accounts.SendHeldInvitationsAsync(_waiting);
+            _sendingAll = false;
+            _filter = PeopleFilter.Invited;
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
 
     private void Open(PersonInfo person) => Navigation.NavigateTo($"people/{Uri.EscapeDataString(person.Id)}");
 
@@ -140,10 +215,11 @@
     {
         Everyone,
         Invited,
+        NotInvitedYet,
         NoPasskey,
         Unconfirmed,
         TurnedOff,
     }
 
-    private sealed record PeopleView(List<PersonInfo> People, List<PersonInfo> Invited);
+    private sealed record PeopleView(List<PersonInfo> People, List<PersonInfo> Invited, List<PersonInfo> NotInvitedYet);
 }
