@@ -29,7 +29,7 @@ public static class MinistryParts
         new(Calendar, "Calendar", "Its calendars, with their events in people's week and calendar links",
             new PartFromBelow("Show the calendars of the ministries under it",
                 "Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry.")),
-        new(Files, "Files", "Documents and links, such as a code of conduct or practice recordings"),
+        new(Files, "Files", "Documents and links for its people"),
     ];
 
     public static MinistryPart Of(string key) => All.Single(part => part.Key == key);

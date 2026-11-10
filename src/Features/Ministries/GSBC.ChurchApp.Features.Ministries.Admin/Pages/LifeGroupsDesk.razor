@@ -115,7 +115,7 @@
     <ChildContent>
         <TextField Label="Name" @bind-Value="_groupName" MaxLength="60" Required="true" />
         <TextField Label="In a line" @bind-Value="_groupSummary" MaxLength="140" />
-        <TextField Label="Room" @bind-Value="_groupRoom" MaxLength="60" Placeholder="Library (5)" />
+        <TextField Label="Room" @bind-Value="_groupRoom" MaxLength="60" />
         <ToggleRow Title="Join as a parent" Description="For children's groups: parents join for their child" @bind-Checked="_groupForChildren" />
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>

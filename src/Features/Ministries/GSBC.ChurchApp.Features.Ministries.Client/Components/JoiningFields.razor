@@ -3,7 +3,7 @@
                Hint="@(Kind == MinistryKinds.LifeGroup ? "The team runs the group: its leaders, helpers and anyone on the roster. How does someone get on it?" : "The team runs it: its leaders, helpers and anyone on the roster. How does someone get on it?")"
                Options="TeamOptions" Value="TeamJoin" ValueChanged="TeamJoinChanged" />
     <Segmented TValue="string" Label="@(Kind == MinistryKinds.LifeGroup ? "Joining the group" : "Coming along")" ShowLabel="true" Stacked="true"
-               Hint="@(Kind == MinistryKinds.LifeGroup ? "How someone gets into the group. Parents join for their children." : "Attendees are the people it's for, like the kids on a Friday night. How does someone start coming? Parents join for their children.")"
+               Hint="@(Kind == MinistryKinds.LifeGroup ? "How someone gets into the group. Parents join for their children." : "Attendees are the people it's for. How does someone start coming? Parents join for their children.")"
                Options="@(Kind == MinistryKinds.LifeGroup ? GroupOptions : AttendOptions)" Value="AttendJoin" ValueChanged="AttendJoinChanged" />
 </div>
 
@@ -20,7 +20,7 @@
         new(Joining.Open, "Open") { Detail = "Anyone can tap Join and they're in, straight away." },
         new(Joining.Ask, "Ask") { Detail = "People ask to come along, and a leader says yes." },
         new(Joining.Invite, "Invite only") { Detail = "Nobody can ask. Leaders add the people who come." },
-        new(Joining.None, "No attendees") { Detail = "Only the team serves in it, like the welcome team. Nobody comes along, so posts are for everyone or the team." },
+        new(Joining.None, "No attendees") { Detail = "Only the team serves in it. Nobody comes along, so posts are for everyone or the team." },
     ];
 
     private static readonly IReadOnlyList<SegmentOption<string>> GroupOptions = AttendOptions.Where(option => option.Value != Joining.None).ToList();

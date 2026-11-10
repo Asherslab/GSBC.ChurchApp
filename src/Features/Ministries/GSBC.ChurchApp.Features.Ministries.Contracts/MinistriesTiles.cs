@@ -6,7 +6,7 @@ public static class MinistriesTiles
 {
     public static readonly HubTileKind Ministries = new("hub.ministries", "Ministries",
         "Your ministries and what's new in them, or finding one: kids, youth, music and more", "Ministries",
-        new TileDefaults("Ministries", "Kids, youth, music and more", Tone: TileTones.LiveSoft, Icon: "users", Link: MinistriesDestinations.Directory.Path,
+        new TileDefaults("Ministries", "The ministries you're in, and every other", Tone: TileTones.LiveSoft, Icon: "users", Link: MinistriesDestinations.Directory.Path,
             TitleLabel: "Title for people in no ministry"));
 
     public static readonly HubTileKind LifeGroups = new("hub.life-groups", "Life Groups",
