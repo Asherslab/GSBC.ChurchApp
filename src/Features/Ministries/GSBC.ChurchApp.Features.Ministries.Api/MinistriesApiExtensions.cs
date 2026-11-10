@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
@@ -16,12 +17,14 @@ public static class MinistriesApiExtensions
     private const string PeopleParentRole = "parent-or-guardian";
     private const string EditCalendarsNode = "events.edit";
     private const string PublishCalendarsNode = "events.publish";
+    private const string ManageChatsNode = "chats.manage";
+    private const string CheckChatsNode = "chats.check";
 
     internal static readonly IReadOnlyList<string> LeaderPatterns =
     [
         MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode,
         MinistriesPermissions.PostNode, MinistriesPermissions.PeopleNode, MinistriesPermissions.SettingsNode,
-        EditCalendarsNode, PublishCalendarsNode,
+        EditCalendarsNode, PublishCalendarsNode, ManageChatsNode, CheckChatsNode,
     ];
 
     public static IServiceCollection AddMinistriesApi(this IServiceCollection services)
@@ -31,6 +34,7 @@ public static class MinistriesApiExtensions
         services.AddSingleton<IScopeHierarchy, MinistryHierarchy>();
         services.AddScoped<IScopeObjects, MinistryScopeObjects>();
         services.AddScoped<IPersonData, MinistriesPersonData>();
+        services.AddScoped<IChatPlaces, MinistryChatPlaces>();
         services.AddHostedService<SampleMinistries>();
         services.AddPermissions(MinistriesPermissions.All);
         services.AddNotificationKinds(MinistriesNotifications.All);

@@ -9,8 +9,9 @@ public readonly record struct ScopeKind(string Name)
     public static readonly ScopeKind Calendar = new("calendar");
     public static readonly ScopeKind RegularEvent = new("regular-event");
     public static readonly ScopeKind Person = new("person");
+    public static readonly ScopeKind Chat = new("chat");
 
-    public static readonly IReadOnlyList<ScopeKind> Known = [Global, Ministry, Draft, SermonSeries, Calendar, RegularEvent, Person];
+    public static readonly IReadOnlyList<ScopeKind> Known = [Global, Ministry, Draft, SermonSeries, Calendar, RegularEvent, Person, Chat];
 
     public static bool TryParse(string name, out ScopeKind kind)
     {

@@ -15,6 +15,7 @@ public sealed class SyncDbContext(DbContextOptions<SyncDbContext> options) : Fea
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+        modelBuilder.Entity<FeedChangeRecord>().HasIndex(change => new { change.Feed, change.ScopeId, change.Cursor });
         modelBuilder.Entity<FeedHorizon>(entity =>
         {
             entity.ToTable("feed_horizons");
