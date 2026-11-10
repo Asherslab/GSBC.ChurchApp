@@ -27,7 +27,8 @@ Client, as it does for permissions, surfaces and notification kinds. Features ne
 - **The shell's own pages** (Home, More, What's new, Appearance, Storage) are in `ShellDestinations`.
   What's new belongs to ReleaseNotes, which has no Contracts project, so it is declared with the shell.
 - `DestinationCatalog` resolves any link to its page or its kind and id, however it is written: `/x`,
-  `/x?y`, `/open/x`, or `https://<app host>/open/x`. Two features claiming the same path fail at start-up.
+  `/x?y`, `/open/x`, or `https://<app host>/open/x`. Two features claiming the same path fail at start-up. A page and a
+  kind may share a prefix, a list and its items (2026-11-10): `/ministries` is the directory, `/ministries/<id>` a ministry.
 - `DestinationRules` (Architecture tests) fails when a declared page isn't a route in the app.
 
 **Places that aren't built yet** (2026-11-04; Sermons built 2026-11-05): Home's feature tiles open `/sunday`, `/week`,

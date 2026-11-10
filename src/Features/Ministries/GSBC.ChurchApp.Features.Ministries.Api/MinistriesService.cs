@@ -62,7 +62,7 @@ internal sealed class MinistriesService(
         {
             page.Sessions = (await db.Sessions.AsNoTracking().Where(session => session.GroupId == ministry.Id).OrderBy(session => session.Date).ToListAsync(cancellationToken))
                 .Select(MinistryViews.Session).ToList();
-            if (ministry.RoundId is { } roundId && await db.Rounds.AsNoTracking().SingleOrDefaultAsync(round => round.Id == roundId, cancellationToken) is { } round)
+            if (ministry.RoundId is { } roundId && await db.Rounds.AsNoTracking().SingleOrDefaultAsync(found => found.Id == roundId, cancellationToken) is { } round)
                 page.Round = MinistryViews.Round(round);
         }
         return page;
@@ -73,7 +73,7 @@ internal sealed class MinistriesService(
         CancellationToken cancellationToken = context.CancellationToken;
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         List<MinistryRecord> groups = tree.All.Where(ministry => ministry.Kind == MinistryKinds.LifeGroup).OrderBy(group => group.Order).ThenBy(group => group.Name).ToList();
-        Guid? home = groups.Select(group => group.ParentId).FirstOrDefault(parent => parent is not null);
+        Guid? home = groups.Select(group => group.ParentId).FirstOrDefault(above => above is not null);
         List<Guid> groupIds = groups.Select(group => group.Id).ToList();
         List<SessionRecord> sessions = await db.Sessions.AsNoTracking().Where(session => groupIds.Contains(session.GroupId)).ToListAsync(cancellationToken);
         GrantSet grants = await views.GrantsAsync(Me(context), cancellationToken);
@@ -180,7 +180,7 @@ internal sealed class MinistriesService(
     {
         List<Guid> ids = asks.SelectMany(ask => new[] { ask.PersonId, ask.AskedBy }).Distinct().ToList();
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(ids, cancellationToken);
-        IReadOnlyDictionary<Guid, Platform.Api.People.FamilyFacts> facts = await views.FactsAsync(asks.Select(ask => ask.PersonId).Distinct().ToList(), cancellationToken);
+        IReadOnlyDictionary<Guid, FamilyFacts> facts = await views.FactsAsync(asks.Select(ask => ask.PersonId).Distinct().ToList(), cancellationToken);
         return asks.Select(ask => new AskLine
         {
             Id = ask.Id.ToString(), PersonId = ask.PersonId.ToString(), Name = names.GetValueOrDefault(ask.PersonId) ?? "Someone",

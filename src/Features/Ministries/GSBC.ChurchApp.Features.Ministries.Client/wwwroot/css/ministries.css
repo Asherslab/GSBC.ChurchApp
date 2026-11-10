@@ -21,7 +21,7 @@
 .ministry-box--parents { background: color-mix(in srgb, var(--marker) 18%, var(--page)); }
 .ministry-box--parents .ministry-box__head { color: var(--marker-ink); }
 .ministry-box--everyone { background: var(--sand); }
-.ministry-box--everyone .ministry-box__head { color: var(--ink-3); }
+.ministry-box--everyone .ministry-box__head { color: var(--ink-2); }
 
 .ministry-item {
   display: block;
@@ -60,7 +60,7 @@ button.ministry-item { cursor: pointer; }
   gap: 4px 8px;
   margin-top: 4px;
   font-size: var(--text-caption);
-  color: var(--ink-3);
+  color: var(--ink-2);
 }
 
 .ministry-item__important {
@@ -196,3 +196,5 @@ button.ministry-item { cursor: pointer; }
 }
 
 .life-groups-desk__head h2 { font-size: var(--text-title); letter-spacing: -0.015em; }
+
+.ministry-tree .search-field { flex: none; max-width: none; margin-bottom: 8px; }

@@ -224,7 +224,7 @@ internal sealed class MinistryLeadingService(
         if (media is null && !IsWebAddress(url))
             throw Invalid("Add a document, or a link that starts with https://.");
 
-        FileRecord? file = wanted.Id.Length > 0
+        FileRecord file = wanted.Id.Length > 0
             ? await db.Files.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That file was deleted."))
             : db.Files.Add(new FileRecord { Id = Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
@@ -331,18 +331,18 @@ internal sealed class MinistryLeadingService(
         MinistryRecord home = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         Round wanted = request.Round;
         if (wanted.Name.Trim().Length is 0 or > MinistryRules.LongestName)
-            throw Invalid($"Give the round a name of up to {MinistryRules.LongestName} characters.");
+            throw Invalid($"Name them in up to {MinistryRules.LongestName} characters.");
         List<DateOnly> sundays = wanted.Sundays.Select(DateOf).Distinct().Order().ToList();
         if (sundays.Count == 0)
-            throw Invalid("Choose the round's Sundays.");
+            throw Invalid("Choose their Sundays.");
         TimeOnly starts = TimeOf(wanted.Starts, new TimeOnly(9, 0));
         TimeOnly ends = TimeOf(wanted.Ends, new TimeOnly(9, 45));
         if (ends <= starts)
             throw Invalid("A class can't end before it starts.");
 
-        RoundRecord? round = wanted.Id.Length > 0
+        RoundRecord round = wanted.Id.Length > 0
             ? await db.Rounds.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == home.Id, cancellationToken)
-              ?? throw new RpcException(new Status(StatusCode.NotFound, "That round was deleted."))
+              ?? throw new RpcException(new Status(StatusCode.NotFound, "Those groups' dates were deleted."))
             : db.Rounds.Add(new RoundRecord { Id = Guid.CreateVersion7(), MinistryId = home.Id }).Entity;
         (round.Name, round.Sundays, round.Starts, round.Ends) = (wanted.Name.Trim(), sundays, starts, ends);
         round.ShowsFrom = wanted.ShowsFrom.Length > 0 ? DateOf(wanted.ShowsFrom) : null;
@@ -357,7 +357,7 @@ internal sealed class MinistryLeadingService(
         MinistryRecord home = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
         Guid id = ParseId(request.Id);
         if (await db.Ministries.AnyAsync(group => group.RoundId == id, cancellationToken))
-            throw Refused("Delete this round's groups, or move them to another round, first.");
+            throw Refused("Delete these groups, or move them, first.");
         await db.Rounds.Where(round => round.Id == id && round.MinistryId == home.Id).ExecuteDeleteAsync(cancellationToken);
         changes.Touch(home.Id);
         await db.SaveChangesAsync(cancellationToken);

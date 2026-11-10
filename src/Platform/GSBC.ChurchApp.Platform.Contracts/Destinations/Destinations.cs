@@ -43,7 +43,7 @@ public sealed class DestinationCatalog
 
         _kinds = new Dictionary<string, DestinationKind>(StringComparer.OrdinalIgnoreCase);
         foreach (DestinationKind kind in Kinds)
-            if (!_kinds.TryAdd(kind.PathPrefix, kind) || _pages.ContainsKey(kind.PathPrefix))
+            if (!_kinds.TryAdd(kind.PathPrefix, kind))
                 throw new ArgumentException($"'/{kind.PathPrefix}' is declared twice as a place in the app.", nameof(sets));
 
         Areas = Pages.Select(page => page.Area).Concat(Kinds.Select(kind => kind.Area))

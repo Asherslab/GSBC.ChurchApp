@@ -51,7 +51,16 @@ public sealed class DestinationCatalogTests
     {
         Assert.Throws<ArgumentException>(() => new DestinationCatalog([ShellDestinations.All, ShellDestinations.All]));
         Assert.Throws<ArgumentException>(() => new DestinationCatalog([new DestinationSet([Settings], [Event, Event])]));
-        Assert.Throws<ArgumentException>(() => new DestinationCatalog([new DestinationSet([new("/events", "Events", "calendar", Events, "", Audience.Everyone)], [Event])]));
+    }
+
+    [Fact]
+    public void AListAndItsItemsShareAPrefix()
+    {
+        DestinationPage list = new("/events", "Events", "calendar", Events, "", Audience.Everyone);
+        DestinationCatalog catalog = new([new DestinationSet([list], [Event])]);
+
+        Assert.Equal(list, Assert.IsType<ResolvedPage>(catalog.Resolve("/events")).Page);
+        Assert.Equal(Event, Assert.IsType<ResolvedItem>(catalog.Resolve("/events/42")).Kind);
     }
 
     [Theory]
