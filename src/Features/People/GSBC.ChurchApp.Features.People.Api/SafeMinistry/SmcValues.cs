@@ -29,7 +29,7 @@ internal sealed record SmcValues(
     string? StatusWords,
     List<string> CheckReasons)
 {
-    public const int BlueCardNumberLength = 30;
+    private const int BlueCardNumberLength = 30;
     private const int LongestText = 300;
 
     private static readonly string[] AllGood = ["approved", "complete", "completed", "current", "active", "cleared", "valid", "verified"];

@@ -11,8 +11,8 @@ internal sealed class SmcGate
 
 internal sealed class SafeMinistryClient(HttpClient http, IOptions<SafeMinistryOptions> options, SmcGate gate, TimeProvider time)
 {
-    public const int PageSize = 1000;
-    public static readonly TimeSpan Spacing = TimeSpan.FromMilliseconds(250);
+    private const int PageSize = 1000;
+    private static readonly TimeSpan Spacing = TimeSpan.FromMilliseconds(250);
     private const int MostPages = 100;
     private const int MostTries = 4;
     private static readonly TimeSpan BusyWait = TimeSpan.FromSeconds(2);

@@ -80,9 +80,9 @@ internal static class SmcMatching
         return new SmcMatches(found, unmatched);
     }
 
-    public static string Email(string? email) => email?.Trim().ToUpperInvariant() ?? "";
+    private static string Email(string? email) => email?.Trim().ToUpperInvariant() ?? "";
 
-    public static string Name(string name)
+    private static string Name(string name)
     {
         StringBuilder plain = new();
         foreach (char letter in name.Normalize(NormalizationForm.FormD))

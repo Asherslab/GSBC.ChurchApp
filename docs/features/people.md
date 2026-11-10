@@ -16,7 +16,7 @@ are, how to reach them, and who holds a current blue card and Safe Ministry trai
 | A young person (under 18) | Ask a parent by email to link to them; take an ask back; see their parents. Can't unlink a parent while under 18 |
 | An adult with a parent linked | Unlink them |
 | Staff with *Safeguarding Viewer* | See anyone's birth date, family, blue card and training, and the Safeguarding page |
-| Staff with *Safeguarding Manager* | All of that, and link and unlink families, add a child for a parent, take back asks, make sign-in codes, set how a young person is reached, record and remove blue cards and training |
+| Staff with *Safeguarding Manager* | All of that, and link and unlink families, add a child for a parent, take back asks, make sign-in codes, set how a young person is reached, record and remove blue cards and training, link and unlink Safe Ministry Check records, Sync now |
 
 ## How it's modelled
 
@@ -87,25 +87,80 @@ Rosters and chats themselves are Stages 3 and 4.
 
 Per person: blue card number, status (Current, Exemption card, Applied for, Suspended, Cancelled, Expired), expiry and
 when the office last checked it; Safe Ministry training done and due again (**a year after it was done unless a date
-is given**, owner, 2026-11-10). The period and the due dates are **placeholders until they come from Safe Ministry
-Check**, which will decide them. **Entered by hand** by Safeguarding Managers on the person's Safeguarding tab, shown to
-the person on their Account page (the card drawn as a card), and **flagged, never blocking**
-(`SafeguardingFlags`):
+is given**, owner, 2026-11-10). They come **from Safe Ministry Check** for everyone linked to a record there (below), and
+are **entered by hand** by Safeguarding Managers on the person's Safeguarding tab for everyone else. They're shown to the
+person on their Account page (the card drawn as a card), and **flagged, never blocking** (`SafeguardingFlags`):
 
 - *Run out*: a card past its expiry or with a status other than Current or Exemption; training past its due date.
 - *Due soon*: within 60 days (*default*).
-- *Not recorded*: a card but no training, or training but no card. Someone with neither isn't flagged: Stage 2 adds
-  "serves on a team that needs one".
+- *Not recorded*: a card but no training, or training but no card; training Safe Ministry Check says isn't finished.
+  Someone with neither isn't flagged: Stage 2 adds "serves on a team that needs one".
 - *No parent*: under 18 with no parent linked (with when they asked, if they have).
+- *Check Safe Ministry Check*: something there needs looking at (below).
 
 **Safeguarding** (People → Safeguarding, Safeguarding Viewer) lists everyone flagged, run out first, then by date;
 chips filter by kind and count each. Anything run out and every young person without a parent also shows in Home's
 *Needs you*.
 
-**Shaped for an import later** (*default*): each row has a `source` (`hand`, `safe-ministry-check`, `elvanto`) and an
-`external_id`, indexed together, so an import can fill and update rows it owns; saving by hand marks a row `hand`.
-Safe Ministry Check has no published API yet (it runs an API-key MCP server at mcp.safeministrycheck.com.au and syncs
-these fields into Elvanto); nothing is integrated.
+## Safe Ministry Check (owner, 2026-11-10)
+
+The church has Safe Ministry Check API access ([docs](https://documenter.getpostman.com/view/13693981/2sB2x9hqEa)):
+`GET https://<subdomain>.safeministrycheck.com.au/api/people?page=&limit=` with an `X-API-Key` header, 5 requests a
+second (429 above that), no webhooks. The owner's decisions:
+
+1. **Read only.** "we'll just record their safe ministry id against their person on our side, instead of writing it to
+   their other system id side. so do read only". The app never creates or updates anything in Safe Ministry Check; the
+   `smc_id` is kept on our side (`people.safeguarding`, `source = safe-ministry-check`, `external_id`).
+2. **Matching by email, or by name and birth date, both automatically.** A link, once made, is kept (a changed email
+   doesn't break it). Safeguarding Managers see, fix or unlink a match on the person's Safeguarding tab and link an
+   unmatched record by hand there or on **People → Safe Ministry Check**, which lists the records still to match and why.
+3. **Only the blue card and training come across:** `wwcc_id`, `wwcc_expiry`, `wwcc_status` (mapped to our statuses),
+   `wwcc_checked`, `course_progress`, `next_action_date` (training due), `other_training_name` and
+   `other_training_completed_date`, and the overall `status` and `status_description`. Every other field is read only to
+   decide whether to raise **one plain flag, "Check Safe Ministry Check"**, with short generic reasons ("their police
+   check isn't cleared"); their values and the admin notes are never stored.
+4. **Their due date wins** over the yearly rule: `next_action_date` is the training's due date.
+5. **Synced values replace hand-entered ones** for linked people, and the screens say where they came from ("From Safe
+   Ministry Check, 3 hours ago").
+6. Who sees it is Access: the Safeguarding Viewer and Manager roles. Deleting an account forgets its link and synced
+   data (`IPersonData`), and a link can be removed (create means delete).
+
+**How it runs.** Nightly at 2am Brisbane (`SafeMinistrySchedule`), once on start if a night was missed, and when a
+Safeguarding Manager presses **Sync now**: all outbound, so no new inbound path. A Postgres advisory lock keeps one sync
+at a time across API instances; requests are spaced 250 ms apart and a 429 is retried after its `Retry-After`. A failed
+sync changes nothing and the page says why. Everyone's name, email and birth date from Safe Ministry Check are kept in
+`people.smc_people` (to match and to list the unmatched), dropped when they leave Safe Ministry Check unless linked.
+
+**Defaults (Claude's, the owner can change them):**
+
+- **Synced fields can't be edited** in the app (the tab shows them read-only and points to Safe Ministry Check; the
+  server refuses a hand save). Hand entry stays for anyone not linked.
+- **Unlinking clears** the synced blue card and training, and that record **isn't matched automatically again**; it waits
+  under *Still to match* ("Unlinked by staff") until someone links it by hand. Linking by hand reads that one record
+  straight away.
+- **Ambiguity is left for staff:** an email two people in the app share, a name and birth date two people share, or two
+  records that match the same person are all listed as still to match, never guessed.
+- **Someone who leaves Safe Ministry Check** keeps their link and last values, flagged "they're no longer in Safe
+  Ministry Check".
+- **What counts as a problem** (to confirm against real data): an overall `status` other than Approved, Complete, Current,
+  Active, Cleared, Valid or Verified; a police check other than cleared; a referee answer not starting "positive"; a blue
+  card photo not approved; any `wwcc_status_description` or an unrecognised `wwcc_status`; a disclosure other than none;
+  working with children with no blue card. `paperwork_process_status` isn't used: its values ("0", "") don't say what
+  they mean.
+- **The person doesn't see the flag or the status** on their Account page, only their card and training and that they
+  came from Safe Ministry Check; following up is the office's.
+
+**Configuration.** `People:SafeMinistryCheck:Subdomain` and `People:SafeMinistryCheck:ApiKey` are secrets: never in the
+repo, chat or logs (the HTTP client logs nothing, as the address names the church's subdomain). Without both, the page
+says *Not connected* and nothing runs. **Development:** the AppHost's user-secrets, which it passes to the API:
+
+```bash
+dotnet user-secrets --id gsbc-churchapp-apphost set "People:SafeMinistryCheck:Subdomain" "<subdomain>"
+dotnet user-secrets --id gsbc-churchapp-apphost set "People:SafeMinistryCheck:ApiKey" "<key>"
+```
+
+**UAT and production:** a cluster secret through `gsbc.argo`, as `People__SafeMinistryCheck__Subdomain` and
+`People__SafeMinistryCheck__ApiKey`, given to the API as `envFrom` with `optional: true`.
 
 ## Deleting
 
@@ -129,17 +184,21 @@ Through `IPersonData` when an account is deleted:
   to reach them, details, another parent, remove or stop looking after.
 - **Admin, a person's page:** *Family* and *Safeguarding* tabs (`PersonTab`) beside Roles and Account. Family: birth
   date, how ministries reach a young person, what's waiting, children, parents, the shared `PersonFinder` to link.
-  Safeguarding: flags, the card and training as fields, a preview of the card as the person sees it.
-- **Admin, People → Safeguarding:** the flagged list.
+  Safeguarding: flags, the card and training as fields (read-only when they come from Safe Ministry Check, with the
+  record, how it was linked, its status and Unlink), linking to a Safe Ministry Check record, a preview of the card.
+- **Admin, People → Safeguarding:** the flagged list, with a line saying when Safe Ministry Check last synced.
+- **Admin, People → Safe Ministry Check:** when it last synced, Sync now, and the records still to match.
 
 ## Open for the owner
 
 - Stage 2: leaders setting families from their team and attendee lists (a leader role giving the `people.family.*`
   nodes for people in their ministry), and "this team needs a blue card" so *missing* can be flagged for people with
   nothing recorded.
-- Getting blue card and training data from Safe Ministry Check (ask them for access) or Elvanto.
+- Safe Ministry Check's real values for `status`, `wwcc_status`, `wwcc_photo_status`, `police_check_status` and
+  `paperwork_process_status`: the problem rules above are from their sample; check them once real data has synced.
 - The Simulator can't make a passkey against a local backend, so a child signing in with a code was checked up to the
   passkey (the code is accepted and a ticket issued); it wants a try on a real phone on dev.
 
-Tests: `AgeTests`, `SafeguardingFlagTests`, `FamilyRulesTests`, `ReachTests`, `FamilyDeletionTests` (People) and
+Tests: `AgeTests`, `SafeguardingFlagTests`, `FamilyRulesTests`, `ReachTests`, `FamilyDeletionTests`, `SmcValuesTests`,
+`SmcMatchingTests`, `SafeMinistryClientTests`, `SafeMinistryScheduleTests`, `SafeMinistrySyncTests` (People) and
 `FamilySignInTests` (Accounts).

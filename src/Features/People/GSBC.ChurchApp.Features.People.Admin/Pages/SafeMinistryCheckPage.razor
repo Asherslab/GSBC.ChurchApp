@@ -10,7 +10,7 @@
 <LiveData @ref="_live" TValue="PageData" Feeds="[PeopleFeeds.Safeguarding]" Load="LoadAsync" FailedTitle="Can't show Safe Ministry Check right now">
     @{ SmcSyncStatus status = context.Value.Status; }
     <Section First="true" Title="@Heading(status)" Lead="@Summary(status)">
-        @if (status.Connected && status.LastSucceededAt is not null)
+        @if (status is { Connected: true, LastSucceededAt: not null })
         {
             <div class="stat-tiles">
                 <StatTile Value="@status.People.ToString("N0")" Label="people in Safe Ministry Check" />
@@ -92,10 +92,10 @@
         _ => "Not synced yet",
     };
 
-    private string Summary(SmcSyncStatus status) => status switch
+    private static string Summary(SmcSyncStatus status) => status switch
     {
         { Connected: false } => "The app doesn't have the church's Safe Ministry Check API key yet, so nothing comes across. Ask whoever looks after the app's server to add it. Until then, record blue cards and training by hand on each person's Safeguarding tab.",
-        { NextRunAt: { } next } => $"It syncs again {ChurchDates.Describe(next, DateLineStyle.Relative, withTime: true, Now).ToLowerInvariant()}. People are matched by email, or by name and birth date; a match is kept once it's made.",
+        { NextRunAt: { } next } => $"People are matched by email, or by name and birth date, and a match is kept once it's made. The next sync is at {ChurchDates.Time(ChurchTime.ToChurch(next))}.",
         _ => "",
     };
 

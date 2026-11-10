@@ -8,7 +8,7 @@ public sealed class SafeMinistryScheduleTests
     [InlineData("2026-11-10T15:59:00Z", "2026-11-10T16:00:00Z")]
     [InlineData("2026-11-10T16:00:00Z", "2026-11-11T16:00:00Z")]
     [InlineData("2026-11-10T03:00:00Z", "2026-11-10T16:00:00Z")]
-    public void ItSyncsAt2amInBrisbaneEachNight(string now, string next) =>
+    public void ItSyncsAtTwoInTheMorningInBrisbaneEachNight(string now, string next) =>
         Assert.Equal(DateTime.Parse(next).ToUniversalTime(), SafeMinistrySchedule.NextRun(DateTime.Parse(now).ToUniversalTime()));
 
     [Fact]

@@ -18,7 +18,7 @@ internal sealed class SafeMinistrySync(
     TimeProvider time,
     ILogger<SafeMinistrySync> logger)
 {
-    public const string ListRecordId = "safe-ministry-check";
+    private const string ListRecordId = "safe-ministry-check";
     private const long AdvisoryLockKey = 0x7065_6f70_6c65_736d;
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
@@ -127,7 +127,7 @@ internal sealed class SafeMinistrySync(
     {
         Dictionary<string, SmcPersonRecord> directory = await db.SmcPeople.ToDictionaryAsync(person => person.SmcId, cancellationToken);
         List<SafeguardingEntry> entries = await db.Safeguarding.ToListAsync(cancellationToken);
-        Dictionary<string, Guid> linked = entries.Where(entry => entry.Source == SafeguardingSources.SafeMinistryCheck && entry.ExternalId is not null)
+        Dictionary<string, Guid> linked = entries.Where(entry => entry is { Source: SafeguardingSources.SafeMinistryCheck, ExternalId: not null })
             .ToDictionary(entry => entry.ExternalId!, entry => entry.UserId);
 
         SmcMatches matches = SmcMatching.Match(

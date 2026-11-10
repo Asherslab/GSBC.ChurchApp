@@ -7,7 +7,7 @@ namespace GSBC.ChurchApp.Features.People.Api.SafeMinistry;
 
 internal sealed class SafeMinistrySchedule(IServiceScopeFactory scopes, TimeProvider time, ILogger<SafeMinistrySchedule> logger) : BackgroundService
 {
-    public static readonly TimeOnly NightlyAt = new(2, 0);
+    private static readonly TimeOnly NightlyAt = new(2, 0);
     private static readonly TimeSpan MissedAfter = TimeSpan.FromHours(25);
 
     public static DateTime NextRun(DateTime nowUtc)
