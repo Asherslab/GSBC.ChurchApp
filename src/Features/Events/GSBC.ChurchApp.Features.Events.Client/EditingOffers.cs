@@ -22,10 +22,11 @@ public static class EditingOffers
             .Take(MostPlacesUsed)
             .ToList();
 
-    public static IReadOnlyList<MediaRef> PicturesUsed(EditingBook book, string calendarId) =>
+    public static IReadOnlyList<MediaRef> PicturesUsed(EditingBook book, Diary diary, string calendarId) =>
         book.Events.Values.Where(detail => detail.CalendarId == calendarId).OrderByDescending(detail => detail.UpdatedAt).Select(detail => detail.Fields.Picture)
             .Concat(book.Regulars.Values.Select(regular => regular.Detail).Where(detail => detail.CalendarId == calendarId).OrderByDescending(detail => detail.UpdatedAt)
                 .SelectMany(detail => detail.Specials.Select(special => special.Fields.Picture).Prepend(detail.Fields.Picture)))
+            .Concat(diary.Occurrences.OrderBy(occurrence => occurrence.CalendarId != calendarId).Select(occurrence => occurrence.Fields.Picture))
             .OfType<MediaRef>()
             .DistinctBy(picture => picture.Id)
             .ToList();

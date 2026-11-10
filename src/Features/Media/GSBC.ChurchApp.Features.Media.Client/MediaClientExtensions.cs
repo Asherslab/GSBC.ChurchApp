@@ -9,13 +9,7 @@ namespace GSBC.ChurchApp.Features.Media.Client;
 
 public static class MediaClientExtensions
 {
-    public static IServiceCollection AddMediaClient(this IServiceCollection services) =>
-        services.AddMediaShared().AddSingleton(new MediaPicker(typeof(MediaChoice)));
-
-    public static IServiceCollection AddMediaOnPhone(this IServiceCollection services) =>
-        services.AddMediaShared().AddSingleton(new MediaPicker(typeof(MediaReuse)));
-
-    private static IServiceCollection AddMediaShared(this IServiceCollection services)
+    public static IServiceCollection AddMediaClient(this IServiceCollection services)
     {
         services.TryAddSingleton(TimeProvider.System);
         return services
@@ -24,6 +18,7 @@ public static class MediaClientExtensions
             .AddSingleton<IPrivateMediaLinks, PrivateMediaLinks>()
             .AddSingleton<MediaFolderMemory>()
             .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))
+            .AddSingleton(new MediaPicker(typeof(MediaChoice)))
             .AddSingleton<IClientStartupTask, PrivateMediaGuard>();
     }
 }

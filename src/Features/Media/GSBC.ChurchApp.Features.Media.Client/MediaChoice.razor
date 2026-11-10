@@ -1,5 +1,6 @@
 @inject MediaClient Media
 @inject MediaFolderMemory Memory
+@inject ClientSignals Signals
 
 <div class="media-choice">
     <div class="media-choice__tools">
@@ -11,57 +12,56 @@
     {
         <MediaUpload Label="@(FontsOnly ? "Choose a font file (.woff2, .woff, .ttf or .otf)" : ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" FontsOnly="FontsOnly" FolderId="@(Searching ? null : _folderId)" OnUploaded="UploadedAsync" />
     }
-    <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
-        @if (Searching)
-        {
-            <p class="media-choice__where">Results for “@_query” in every folder</p>
-        }
-        else
-        {
-            <Breadcrumbs Label="Where you are" Trail="Trail(tree.Value)" OnOpen="crumb => OpenAsync(crumb.Key)" />
-            <FolderTiles Compact="true" Folders="tree.Value.ChildrenOf(_folderId, system: false).ToList()" Subfolders="folder => tree.Value.ChildrenOf(folder.Id, system: false).Count()" OnOpen="folder => OpenAsync(folder.Id)" />
-        }
-        <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
-            @if (context.Value.Items is { Count: > 0 } shown)
+    @if (OnThisPhone is { Count: > 0 } here)
+    {
+        <p class="media-choice__where">On this phone</p>
+        <div class="media-choice__grid" role="listbox" aria-label="Pictures on this phone">
+            @foreach (MediaRef media in here)
             {
-                <div class="media-choice__grid" role="listbox" aria-label="@(FontsOnly ? "Font files" : ImagesOnly ? "Pictures" : "Files")">
-                    @foreach (MediaItemInfo item in shown)
-                    {
-                        MediaRef media = item.Media!;
-                        bool on = media.Id == _selected?.Id;
-                        <button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="media-choice__item @(on ? "media-choice__item--on" : "")"
-                                @onclick="() => _selected = media" @ondblclick="() => OnPick.InvokeAsync(media)">
-                            <span class="media-choice__thumb">
-                                @if (media.IsImage)
-                                {
-                                    <MediaImage Media="media" Size="MediaSizeName.Thumbnail" Class="media-choice__image" />
-                                }
-                                else
-                                {
-                                    <Icon Name="file" />
-                                }
-                                @if (on)
-                                {
-                                    <span class="media-choice__tick" aria-hidden="true"><Icon Name="check" Size="IconSize.Small" /></span>
-                                }
-                            </span>
-                            <span class="media-choice__name">@NameOf(media)</span>
-                            <span class="media-choice__used">@(Searching ? $"In {tree.Value.PathName(item.FolderId)}" : MediaWords.UsedIn(item.Uses))</span>
-                        </button>
-                    }
-                </div>
-                @if (context.Value.HasMore)
-                {
-                    <div class="media-more"><Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button></div>
-                }
+                @Choice(media, "Works offline")
+            }
+        </div>
+        <p class="media-choice__where">The whole library</p>
+    }
+    <RefreshOn On="ChangeKind.Reconnected | ChangeKind.Disconnected" Changed="_ => StateHasChanged()" />
+    @if (Offered is not null && !Signals.Online)
+    {
+        <p class="hint">Browsing the whole library needs a connection.@(OnThisPhone is { Count: > 0 } ? " The pictures above work offline." : "")</p>
+    }
+    else
+    {
+        <LiveData @ref="_treeLive" TValue="FolderMap" Feeds="[MediaFeeds.Library]" Load="LoadTreeAsync" FailedTitle="Can't load the library right now" Context="tree">
+            @if (Searching)
+            {
+                <p class="media-choice__where">Results for “@_query” in every folder</p>
             }
             else
             {
-                <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? (ImagesOnly ? "No pictures yet" : "No files yet") : (ImagesOnly ? "No pictures in this folder" : "This folder is empty"))"
-                            Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
+                <Breadcrumbs Label="Where you are" Trail="Trail(tree.Value)" OnOpen="crumb => OpenAsync(crumb.Key)" />
+                <FolderTiles Compact="true" Folders="tree.Value.ChildrenOf(_folderId, system: false).ToList()" Subfolders="folder => tree.Value.ChildrenOf(folder.Id, system: false).Count()" OnOpen="folder => OpenAsync(folder.Id)" />
             }
+            <LiveData @ref="_live" TValue="MediaList" Feeds="[MediaFeeds.Library]" Load="LoadAsync" FailedTitle="Can't load the library right now">
+                @if (context.Value.Items is { Count: > 0 } shown)
+                {
+                    <div class="media-choice__grid" role="listbox" aria-label="@(FontsOnly ? "Font files" : ImagesOnly ? "Pictures" : "Files")">
+                        @foreach (MediaItemInfo item in shown)
+                        {
+                            @Choice(item.Media!, Searching ? $"In {tree.Value.PathName(item.FolderId)}" : MediaWords.UsedIn(item.Uses))
+                        }
+                    </div>
+                    @if (context.Value.HasMore)
+                    {
+                        <div class="media-more"><Button Variant="ButtonVariant.Quiet" Icon="chevron-down" OnClick="MoreAsync">Show more</Button></div>
+                    }
+                }
+                else
+                {
+                    <EmptyState Icon="image" Title="@(Searching ? "Nothing matches" : FontsOnly ? (_folderId is null ? "No font files here" : "No font files in this folder") : _folderId is null ? (ImagesOnly ? "No pictures yet" : "No files yet") : (ImagesOnly ? "No pictures in this folder" : "This folder is empty"))"
+                                Body="@(Searching ? "Try another word." : FontsOnly ? "Upload the church's font file, or open the folder it's in. Only use a font the church is licensed to use in an app." : _folderId is null ? "Upload one, and it's kept in Media for any tile or page." : "Open another folder, or upload one into this folder.")" />
+                }
+            </LiveData>
         </LiveData>
-    </LiveData>
+    }
     <div class="media-choice__foot">
         <span class="media-choice__chosen">
             <span class="media-choice__chosen-name">@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
@@ -92,6 +92,33 @@
     [Parameter] public bool ImagesOnly { get; set; }
     [Parameter] public bool FontsOnly { get; set; }
     [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public IReadOnlyList<MediaRef>? Offered { get; set; }
+
+    private IReadOnlyList<MediaRef>? OnThisPhone => Offered?.Where(media => !FontsOnly && (!ImagesOnly || media.IsImage) && (_query.Length == 0 || NameOf(media).Contains(_query, StringComparison.CurrentCultureIgnoreCase))).ToList();
+
+    private RenderFragment Choice(MediaRef media, string line)
+    {
+        bool on = media.Id == _selected?.Id;
+        return @<button type="button" role="option" aria-selected="@(on ? "true" : "false")" class="media-choice__item @(on ? "media-choice__item--on" : "")"
+                        @onclick="() => _selected = media" @ondblclick="() => OnPick.InvokeAsync(media)">
+            <span class="media-choice__thumb">
+                @if (media.IsImage)
+                {
+                    <MediaImage Media="media" Size="MediaSizeName.Thumbnail" Class="media-choice__image" />
+                }
+                else
+                {
+                    <Icon Name="file" />
+                }
+                @if (on)
+                {
+                    <span class="media-choice__tick" aria-hidden="true"><Icon Name="check" Size="IconSize.Small" /></span>
+                }
+            </span>
+            <span class="media-choice__name">@NameOf(media)</span>
+            <span class="media-choice__used">@line</span>
+        </button>;
+    }
 
     private bool Searching => _query.Length > 0;
 
