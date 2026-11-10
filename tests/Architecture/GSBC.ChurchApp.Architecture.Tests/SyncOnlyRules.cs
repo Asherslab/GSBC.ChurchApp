@@ -130,6 +130,8 @@ public sealed partial class SyncOnlyRules
         foreach (Match create in Creates().Matches(text))
             if (!understood.Contains(create.Index))
                 yield return $"{create.Groups["service"].Value} handed out";
+        foreach (Match _ in Invoker().Matches(text))
+            yield return "a call invoker of its own";
         foreach (Match raw in RawCall().Matches(text))
         {
             string path = Regex.Match(text, $@"\b{raw.Groups["constant"].Value}\s*=\s*""(?<path>/[^""]+)""").Groups["path"].Value;
@@ -190,6 +192,9 @@ public sealed partial class SyncOnlyRules
 
     [GeneratedRegex(@"CreateGrpcService<(?<service>I\w+)>")]
     private static partial Regex Creates();
+
+    [GeneratedRegex(@"\bCreateCallInvoker\(|\bAsyncUnaryCall\(")]
+    private static partial Regex Invoker();
 
     [GeneratedRegex(@"\.UnaryAsync\((?<constant>\w+)")]
     private static partial Regex RawCall();

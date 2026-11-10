@@ -1,11 +1,12 @@
 @inject PeopleClient People
+@inject PeopleOfficeClient Office
 @inject IPeopleDirectory Directory
 @inject IAccess Access
 @inject TimeProvider Clock
 
 <UnsavedGuard Changed="() => Changed" What="their family details" />
 
-<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Family]" Load="() => People.GetPersonAsync(Person.Id).AsTask()" FailedTitle="Can't load this family right now">
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Family]" Load="() => Office.GetPersonAsync(Person.Id).AsTask()" FailedTitle="Can't load this family right now">
     @{
         PersonFamily family = context.Value;
         DateOnly today = ChurchTime.Today(Clock);
@@ -68,7 +69,7 @@
                                     {
                                         <div class="ui-actions">
                                             <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => People.WithdrawAsync(ask.Id).AsTask())">Take it back</Button>
-                                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => People.LinkAsync(family.Id, ask.ChildId).AsTask())">Link them</Button>
+                                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => Office.LinkAsync(family.Id, ask.ChildId).AsTask())">Link them</Button>
                                         </div>
                                     }
                                 </TrailingContent>
@@ -268,7 +269,7 @@
     private async Task LinkAsync(string parentId, string childId)
     {
         _busyFor = parentId == Person.Id ? childId : parentId;
-        await RunAsync(() => People.LinkAsync(parentId, childId).AsTask());
+        await RunAsync(() => Office.LinkAsync(parentId, childId).AsTask());
         _busyFor = null;
     }
 

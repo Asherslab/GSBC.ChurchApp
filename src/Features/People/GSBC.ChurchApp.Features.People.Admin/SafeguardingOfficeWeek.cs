@@ -5,7 +5,7 @@ using GSBC.ChurchApp.Platform.Client.Modules;
 
 namespace GSBC.ChurchApp.Features.People.Admin;
 
-internal sealed class SafeguardingOfficeWeek(PeopleClient people, IAccess access, TimeProvider clock) : IOfficeWeekSource
+internal sealed class SafeguardingOfficeWeek(PeopleOfficeClient Office, IAccess access, TimeProvider clock) : IOfficeWeekSource
 {
     public IReadOnlyCollection<string> Feeds { get; } = [PeopleFeeds.Safeguarding, PeopleFeeds.Family];
 
@@ -15,7 +15,7 @@ internal sealed class SafeguardingOfficeWeek(PeopleClient people, IAccess access
             return OfficeWeek.Nothing;
 
         DateTime now = clock.GetUtcNow().UtcDateTime;
-        List<OfficeTask> tasks = (await people.GetFlaggedAsync())
+        List<OfficeTask> tasks = (await Office.GetFlaggedAsync())
             .Where(flagged => flagged.Kind is FlagKinds.RunOut or FlagKinds.NoParent)
             .Select(flagged => new OfficeTask(flagged.Name, flagged.Words, "safeguarding",
                 flagged.Kind == FlagKinds.NoParent ? "Link a parent" : "Record the new one", flagged.When ?? now))

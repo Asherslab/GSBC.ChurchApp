@@ -18,9 +18,11 @@ internal sealed class AccountsPeopleAccounts(AccountsDbContext db, OneTimeCodes 
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
 
-    public async ValueTask<Guid> AddWithoutSignInAsync(string name, Guid addedBy, CancellationToken cancellationToken)
+    public ValueTask<Guid> AddWithoutSignInAsync(string name, Guid addedBy, CancellationToken cancellationToken) =>
+        AddWithoutSignInAsync(Guid.CreateVersion7(), name, addedBy, cancellationToken);
+
+    public async ValueTask<Guid> AddWithoutSignInAsync(Guid id, string name, Guid addedBy, CancellationToken cancellationToken)
     {
-        Guid id = Guid.CreateVersion7();
         string userName = $"family-{id:N}";
         db.Users.Add(new AccountUser
         {
