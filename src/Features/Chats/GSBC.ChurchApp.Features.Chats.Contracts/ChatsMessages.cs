@@ -53,6 +53,7 @@ public sealed class ChatCard
     [ProtoMember(22)] public PersonRef? Asker { get; set; }
     [ProtoMember(23)] public bool HasMinors { get; set; }
     [ProtoMember(24)] public long FirstSeq { get; set; }
+    [ProtoMember(25)] public string You { get; set; } = "";
 }
 
 [ProtoContract]
@@ -391,3 +392,19 @@ public sealed class PausedList
 
 [ProtoContract]
 public sealed class Nothing;
+
+[ProtoContract]
+public sealed class PendingSend
+{
+    [ProtoMember(1)] public string OutboxId { get; set; } = "";
+    [ProtoMember(2, IsRequired = true)] public SendMessage Message { get; set; } = new();
+    [ProtoMember(3)] public DateTime At { get; set; }
+    [ProtoMember(4)] public string ReplyName { get; set; } = "";
+    [ProtoMember(5)] public string ReplySnippet { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class PendingSends
+{
+    [ProtoMember(1)] public List<PendingSend> Sends { get; set; } = [];
+}

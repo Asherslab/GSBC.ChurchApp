@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
 using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
@@ -381,6 +382,8 @@ internal sealed class ChatActions(
             SentAt = time.GetUtcNow().UtcDateTime, Text = text, ReplyToId = replyTo, Mentions = mentions, Attachments = attachments,
         };
         db.Messages.Add(message);
+        if (await db.Participants.FindAsync([chat.Id, sender], cancellationToken) is { } participant)
+            participant.ReadSeq = chat.LastSeq;
         await AddVersionAsync(message, AuditActions.Sent, sender, cancellationToken);
         if (kind == MessageKinds.Text)
             audit.Record(sender, AuditActions.Sent, forPerson is null ? "Sent a message" : "Sent a message for their child", chat.Id, message.Id);

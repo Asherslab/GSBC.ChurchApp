@@ -1,0 +1,81 @@
+@implements IDisposable
+
+<div class="bubble-row @(Mine ? "bubble-row--mine" : "") @(FirstOfRun ? "bubble-row--first" : "") @(Dimmed ? "bubble-row--dimmed" : "") @Class" id="@Id">
+    @if (!Mine)
+    {
+        <span class="bubble-row__avatar">
+            @if (FirstOfRun && Name is not null)
+            {
+                <Avatar Name="@Name" Size="30" />
+            }
+        </span>
+    }
+    <div class="bubble-row__stack">
+        <div class="bubble @(Removed ? "bubble--removed" : "")" role="group" aria-label="@AriaLabel"
+             @onpointerdown="Pressed" @onpointerup="Released" @onpointerleave="Released" @onpointercancel="Released"
+             @oncontextmenu="OpenAsync" @oncontextmenu:preventDefault="OnLongPress.HasDelegate">
+            @if (FirstOfRun && !Mine && Name is not null)
+            {
+                <span class="bubble__name">@Name@if (NameNote is not null)
+                    {
+                        <span class="bubble__name-note"> · @NameNote</span>
+                    }</span>
+            }
+            @Quote
+            <span class="bubble__body">@ChildContent</span>
+            <span class="bubble__time">@Time</span>
+        </div>
+        @Reactions
+        @Status
+    </div>
+</div>
+
+@code {
+    private static readonly TimeSpan LongPress = TimeSpan.FromMilliseconds(450);
+    private CancellationTokenSource? _press;
+
+    [Parameter] public bool Mine { get; set; }
+    [Parameter] public bool FirstOfRun { get; set; } = true;
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? NameNote { get; set; }
+    [Parameter] public string? Time { get; set; }
+    [Parameter] public bool Dimmed { get; set; }
+    [Parameter] public bool Removed { get; set; }
+    [Parameter] public string? Id { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment? Quote { get; set; }
+    [Parameter] public RenderFragment? Reactions { get; set; }
+    [Parameter] public RenderFragment? Status { get; set; }
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+    [Parameter] public EventCallback OnLongPress { get; set; }
+
+    private string AriaLabel => Mine ? $"You, {Time}" : $"{Name}, {Time}";
+
+    private async Task Pressed()
+    {
+        if (!OnLongPress.HasDelegate)
+            return;
+        Released();
+        _press = new CancellationTokenSource();
+        CancellationToken token = _press.Token;
+        try
+        {
+            await Task.Delay(LongPress, token);
+            await OpenAsync();
+        }
+        catch (TaskCanceledException)
+        {
+        }
+    }
+
+    private void Released()
+    {
+        _press?.Cancel();
+        _press?.Dispose();
+        _press = null;
+    }
+
+    private Task OpenAsync() => OnLongPress.HasDelegate ? OnLongPress.InvokeAsync() : Task.CompletedTask;
+
+    public void Dispose() => Released();
+}

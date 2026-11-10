@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Chats;

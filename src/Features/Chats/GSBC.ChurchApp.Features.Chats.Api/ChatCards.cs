@@ -50,6 +50,7 @@ internal static class ChatCards
             Asker = chat.AskerId is { } asker ? Person(asker, names) : null,
             HasMinors = plan.HasMinors,
             FirstSeq = 1,
+            You = you.PersonId.ToString(),
         };
     }
 

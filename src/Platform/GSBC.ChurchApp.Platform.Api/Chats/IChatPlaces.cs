@@ -11,14 +11,6 @@ public interface IChatPlaces
 
 public sealed record ChatPlace(Guid MinistryId, string Name, bool ChatsOn, IReadOnlyDictionary<string, Audience> Audiences);
 
-public static class ChatAudiences
-{
-    public const string Team = "team";
-    public const string Attendees = "attendees";
-    public const string Parents = "parents";
-    public const string Chosen = "chosen";
-}
-
 internal sealed class NoChatPlaces : IChatPlaces
 {
     public ValueTask<IReadOnlyDictionary<Guid, ChatPlace>> PlacesAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken) =>

@@ -47,4 +47,6 @@ namespace GSBC.ChurchApp.Features.Chats.Contracts;
 [ProtoSerializable(typeof(PauseRequest))]
 [ProtoSerializable(typeof(PausedPerson))]
 [ProtoSerializable(typeof(PausedList))]
+[ProtoSerializable(typeof(PendingSend))]
+[ProtoSerializable(typeof(PendingSends))]
 public partial class ChatsContractsModel : TypeModel;

@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Contracts.Chats;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Chats.Api.Data;
