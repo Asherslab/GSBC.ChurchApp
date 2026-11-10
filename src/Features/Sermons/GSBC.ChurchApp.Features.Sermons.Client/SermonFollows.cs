@@ -1,17 +1,19 @@
-using Grpc.Core;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
+using GSBC.ChurchApp.Platform.Client.Access;
+using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Notifications;
+using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Client.Signals;
-using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Sermons.Client;
 
-public sealed class SermonFollows(ChannelBase channel, ILocalPreferences preferences, ClientSignals signals) : IFollowedScopes, IClientStartupTask, IDisposable
+public sealed class SermonFollows(ILocalFeeds feeds, IAccess access, IOutbox outbox, ILocalPreferences preferences, ClientSignals signals)
+    : IFollowedScopes, IClientStartupTask, IDisposable
 {
-    private const string Remembered = "sermons.follows";
-    private readonly ISermonsService _sermons = channel.CreateGrpcService<ISermonsService>();
+    private const string OnThisPhone = "sermons.follows";
+    private const string FollowMethod = "/gsbc.sermons.Sermons/Follow";
     private HashSet<string> _scopes = [];
 
     public event Action? Changed;
@@ -24,54 +26,51 @@ public sealed class SermonFollows(ChannelBase channel, ILocalPreferences prefere
 
     public async Task RunAsync()
     {
-        _scopes = (await preferences.GetAsync(Remembered) ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet();
         signals.Changed += OnSignals;
-        _ = RefreshAsync();
+        await LoadAsync();
     }
 
     public async Task<string?> SetAsync(string? seriesId, bool follow)
     {
-        try
-        {
-            await TakeAsync(await _sermons.FollowAsync(new FollowRequest { SeriesId = seriesId, Follow = follow }));
-            return null;
-        }
-        catch (RpcException exception) when (exception.StatusCode is StatusCode.Unavailable or StatusCode.DeadlineExceeded)
-        {
-            return "That needs a connection. Try again when you're online.";
-        }
-        catch (RpcException exception)
-        {
-            return exception.Status.Detail;
-        }
+        string scope = seriesId ?? SermonsNotifications.AllSermonsScope;
+        HashSet<string> scopes = [.. _scopes];
+        if (follow)
+            scopes.Add(scope);
+        else
+            scopes.Remove(scope);
+        await outbox.EnqueueAsync(FollowMethod, new FollowRequest { SeriesId = seriesId, Follow = follow }, SermonsContractsModel.Instance);
+        if (!access.SignedIn)
+            await preferences.SetAsync(OnThisPhone, string.Join(',', scopes));
+        Take(scopes);
+        return null;
     }
 
     public void Dispose() => signals.Changed -= OnSignals;
 
-    private async Task RefreshAsync()
+    private async Task LoadAsync()
     {
-        try
+        if (!access.SignedIn)
         {
-            await TakeAsync(await _sermons.FollowsAsync(new Done()));
+            Take((await preferences.GetAsync(OnThisPhone) ?? "").Split(',', StringSplitOptions.RemoveEmptyEntries).ToHashSet());
+            return;
         }
-        catch (RpcException)
-        {
-        }
-    }
-
-    private async Task TakeAsync(Follows follows)
-    {
+        IReadOnlyList<StoredRecord> mine = await feeds.ReadPageAsync(new FeedPageQuery(SermonsFeeds.Follows, Limit: 1));
+        Follows follows = mine.Count == 0 ? new Follows() : SermonsContractsModel.Instance.Deserialize<Follows>(new MemoryStream(mine[0].Payload));
         HashSet<string> scopes = [.. follows.SeriesIds];
         if (follows.NewSermons)
             scopes.Add(SermonsNotifications.AllSermonsScope);
+        Take(scopes);
+    }
+
+    private void Take(HashSet<string> scopes)
+    {
         _scopes = scopes;
-        await preferences.SetAsync(Remembered, string.Join(',', scopes));
         Changed?.Invoke();
     }
 
     private void OnSignals(ClientChange change)
     {
-        if (change.Concerns(ChangeKind.Session | ChangeKind.Reconnected, null))
-            _ = RefreshAsync();
+        if (change.Concerns(ChangeKind.Session | ChangeKind.Feeds, [SermonsFeeds.Follows]))
+            _ = LoadAsync();
     }
 }

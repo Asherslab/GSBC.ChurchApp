@@ -1,9 +1,11 @@
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 
 <UnsavedGuard Changed="() => _chosen is not null" What="@($"moving {Page.Ministry.Name}")" Save="MoveBeforeLeavingAsync" />
 
 <Section Title="Where it sits" Lead="@Lead">
-    <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
+    <LiveData TValue="MinistryDirectory" Load="Reads.DirectoryAsync" Feeds="Reads.Feeds" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
         <div class="ministry-form">
             <SitsUnderPicker Directory="context.Value" UnderId="@(_chosen ?? Page.Ministry.ParentId)" UnderIdChanged="ChooseAsync" LeaveOut="@Page.Ministry.Id"
                              Disabled="_busy"
@@ -43,7 +45,7 @@
             return;
         }
         _chosen = underId;
-        await RunAsync(async () => _preview = await Ministries.MovingAsync(Page.Ministry.Id, underId));
+        await RunAsync(async () => _preview = await Lookups.MovingAsync(Page.Ministry.Id, underId));
     }
 
     private void Keep() => (_chosen, _preview, _problem) = (null, null, null);
@@ -71,7 +73,7 @@
         }
         catch (RpcException exception)
         {
-            (_preview, _problem) = (null, MinistriesClient.Problem(exception));
+            (_preview, _problem) = (null, MinistryLookups.Problem(exception));
         }
         finally
         {

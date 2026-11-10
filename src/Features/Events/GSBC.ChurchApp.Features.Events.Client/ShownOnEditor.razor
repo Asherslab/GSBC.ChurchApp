@@ -1,5 +1,5 @@
 @using GSBC.ChurchApp.Platform.Contracts.Configuration
-@inject CalendarEditing Editing
+@inject IEventEditing Editing
 @inject WideningWords Words
 
 <div class="field shown-on">
@@ -97,30 +97,25 @@
     {
         _busy = true;
         _problem = null;
-        try
+        string otherId = other.Calendar.Id;
+        EditSent sent = await Editing.ShowOnAsync(new ShowOnRequest
         {
-            string otherId = other.Calendar.Id;
-            await Editing.Editing.ShowOnAsync(new ShowOnRequest
-            {
-                CalendarId = Draft.CalendarId, EventId = Draft.EventId, RegularEventId = Draft.RegularEventId, OtherCalendarId = otherId, Show = show,
-            });
-            bool theyAsked = Draft.AlsoOn.Any(showing => showing.CalendarId == otherId && IsAskingUs(showing));
-            Draft.AlsoOn.RemoveAll(showing => showing.CalendarId == otherId);
-            bool agreed = theyAsked || Desk.Calendars.Any(calendar => calendar.Settings.Calendar.Id == otherId && calendar.CanEdit);
-            if (show)
-                Draft.AlsoOn.Add(new ShowingOn { CalendarId = otherId, Agreed = agreed });
-            _note = !show ? $"Taken off {other.Calendar.Name}."
-                : agreed ? $"Shown on {other.Calendar.Name} too, once it's shown."
-                : $"{other.Calendar.Name}'s editors have been asked.";
-            _confirming = null;
-        }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+            CalendarId = Draft.CalendarId, EventId = Draft.EventId, RegularEventId = Draft.RegularEventId, OtherCalendarId = otherId, Show = show,
+        });
+        _busy = false;
+        if (!sent.Succeeded)
         {
-            _problem = CalendarEditing.Problem(exception);
+            _problem = sent.Problem;
+            return;
         }
-        finally
-        {
-            _busy = false;
-        }
+        bool theyAsked = Draft.AlsoOn.Any(showing => showing.CalendarId == otherId && IsAskingUs(showing));
+        Draft.AlsoOn.RemoveAll(showing => showing.CalendarId == otherId);
+        bool agreed = theyAsked || Desk.Calendars.Any(calendar => calendar.Settings.Calendar.Id == otherId && calendar.CanEdit);
+        if (show)
+            Draft.AlsoOn.Add(new ShowingOn { CalendarId = otherId, Agreed = agreed });
+        _note = !show ? $"Taken off {other.Calendar.Name}."
+            : agreed ? $"Shown on {other.Calendar.Name} too, once it's shown."
+            : $"{other.Calendar.Name}'s editors have been asked.";
+        _confirming = null;
     }
 }

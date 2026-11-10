@@ -16,8 +16,9 @@ public sealed class LifeGroupsPlanningTests
 
         Assert.False(leader.IsAllowed(MinistriesPermissions.PlanLifeGroups));
         Assert.True(manager.IsAllowed(MinistriesPermissions.PlanLifeGroups));
-        Assert.All([nameof(IMinistryLeadingService.SaveRoundAsync), nameof(IMinistryLeadingService.DeleteRoundAsync)], method =>
+        Assert.All([nameof(IMinistryLeadingService.SaveRoundAsync), nameof(IMinistryLeadingService.DeleteRoundAsync), nameof(IMinistryLeadingService.SitOutAsync),
+            nameof(IMinistryLeadingService.LifeGroupsCalendarAsync), nameof(IMinistryLeadingService.ShowLifeGroupsInAsync)], method =>
             Assert.Equal(MinistriesPermissions.PlanLifeGroupsNode, typeof(IMinistryLeadingService).GetMethod(method)!.GetCustomAttribute<RequiresAttribute>()!.Node));
-        Assert.False(typeof(IScopedRequest).IsAssignableFrom(typeof(RoundSave)));
+        Assert.All([typeof(RoundSave), typeof(SitOutSave), typeof(LifeGroupsCalendarChoice)], request => Assert.False(typeof(IScopedRequest).IsAssignableFrom(request)));
     }
 }

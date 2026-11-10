@@ -18,6 +18,9 @@ internal sealed class MinistryViews(
     IMinistryCalendars calendars)
 {
     public async Task<MinistryTree> TreeAsync(CancellationToken cancellationToken) =>
+        new(MinistryArchive.Active(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken)));
+
+    public async Task<MinistryTree> EveryTreeAsync(CancellationToken cancellationToken) =>
         new(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken));
 
     public async Task<GrantSet> GrantsAsync(Guid? userId, CancellationToken cancellationToken) =>
@@ -26,7 +29,7 @@ internal sealed class MinistryViews(
     public static bool Holds(GrantSet grants, Permission permission, Guid ministryId) => grants.IsAllowed(permission, ministryId.ToString());
 
     public static bool MaySee(string audience, GrantSet grants, MinistryTree tree, Guid ministryId) =>
-        MinistryRules.MaySee(
+        MinistryLogic.MaySee(
             audience,
             node => grants.IsAllowed(Permission(node), ministryId.ToString()),
             node => tree.Below(ministryId).Any(below => grants.IsAllowed(Permission(node), below.Id.ToString())));
@@ -38,6 +41,16 @@ internal sealed class MinistryViews(
             if ((await roles.HoldersAsync(Roles.KeyOf(role), ministryId.ToString(), cancellationToken)).Any(holder => holder.UserId == userId))
                 held.Add(role);
         return held;
+    }
+
+    public async Task<MinistryHoldings> HoldingsAsync(IReadOnlyCollection<MinistryRecord> places, CancellationToken cancellationToken)
+    {
+        List<string> ids = places.Select(place => place.Id.ToString()).ToList();
+        List<(string, Guid, Guid)> all = [];
+        foreach (string role in MinistryHoldings.AllRoles)
+            all.AddRange((await roles.HoldingsAsync(Roles.KeyOf(role), ids, cancellationToken))
+                .Select(holding => (role, holding.UserId, Guid.Parse(holding.ObjectId))));
+        return MinistryHoldings.From(all);
     }
 
     public async Task<IReadOnlyList<Guid>> HoldersAsync(string role, Guid ministryId, CancellationToken cancellationToken) =>
@@ -183,6 +196,14 @@ internal sealed class MinistryViews(
     {
         Id = round.Id.ToString(), Name = round.Name, Sundays = round.Sundays.Order().Select(day => day.ToString("yyyy-MM-dd")).ToList(),
         Starts = round.Starts.ToString("HH:mm"), Ends = round.Ends.ToString("HH:mm"), ShowsFrom = round.ShowsFrom?.ToString("yyyy-MM-dd") ?? "",
+    };
+
+    public static SittingOut SittingOut(SitOutRecord sitOut, RoundRecord? round, MinistryTree tree) => new()
+    {
+        GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString(), Note = sitOut.Note,
+        InsteadId = sitOut.InsteadId is { } instead && tree.Find(instead) is not null ? instead.ToString() : "",
+        InsteadName = sitOut.InsteadId is { } other ? tree.Find(other)?.Name ?? "" : "",
+        Round = round is null ? null : Round(round),
     };
 
     public static SessionChange Session(SessionRecord session) => new() { Date = session.Date.ToString("yyyy-MM-dd"), Off = session.Off, Note = session.Note };

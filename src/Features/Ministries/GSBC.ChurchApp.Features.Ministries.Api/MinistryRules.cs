@@ -9,14 +9,7 @@ internal static class MinistryRules
     private const int LongestSummary = 140;
     private const int LongestText = 4000;
     public const int LongestTitle = 120;
-
-    public static bool MaySee(string audience, Func<string, bool> holdsHere, Func<string, bool> holdsBelow) => audience switch
-    {
-        Audiences.Everyone => true,
-        Audiences.Team => holdsHere(MinistriesPermissions.TeamViewNode) || holdsBelow(MinistriesPermissions.TeamViewNode),
-        _ when Audiences.NodeOf(audience) is { } node => holdsHere(node),
-        _ => false,
-    };
+    public const int LongestLine = 200;
 
     public static JoinDecision Decide(string joining, string place) => joining switch
     {
@@ -38,9 +31,6 @@ internal static class MinistryRules
             return "Choose who it's for.";
         return mayPostFor.Contains(audience) ? null : "This ministry can't post to that audience.";
     }
-
-    public static IReadOnlyList<string> PostableAudiences(string attendJoin) =>
-        attendJoin == Joining.None ? [Audiences.Everyone, Audiences.Team] : Audiences.All;
 
     public static string? WhyNotDetails(MinistryDetails details)
     {
@@ -65,17 +55,6 @@ internal static class MinistryRules
             return under is null ? "Only staff make a ministry top-level." : $"You can't add ministries under {under.Name}.";
         return null;
     }
-
-    public static string Yours(IReadOnlyCollection<string> roles, IReadOnlyCollection<string> childrenAttending, bool leadsFromAbove) =>
-        roles.Contains(Roles.Leader) || leadsFromAbove ? "You lead it"
-        : roles.Contains(Roles.Admin) ? "You look after it"
-        : roles.Contains(Roles.Team) ? "On the team"
-        : childrenAttending.Count > 0 ? $"{Names(childrenAttending)} {(childrenAttending.Count == 1 ? "attends" : "attend")}"
-        : roles.Contains(Roles.Attendee) ? "You come along"
-        : "";
-
-    private static string Names(IReadOnlyCollection<string> names) =>
-        names.Count <= 1 ? names.FirstOrDefault() ?? "" : $"{string.Join(", ", names.Take(names.Count - 1))} and {names.Last()}";
 }
 
 internal sealed record JoinDecision(bool Joins, bool Asks, string? Refusal)

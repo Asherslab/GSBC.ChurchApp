@@ -1,4 +1,5 @@
 @inject PeopleClient People
+@inject PeopleOfficeClient Office
 @inject SafeMinistryCheckClient SafeMinistryCheck
 @inject IAccess Access
 @inject TimeProvider Clock
@@ -169,7 +170,7 @@
 
     private async Task<TabData> LoadAsync()
     {
-        PersonFamily family = await People.GetPersonAsync(Person.Id);
+        PersonFamily family = await Office.GetPersonAsync(Person.Id);
         SmcSyncStatus status = await SafeMinistryCheck.GetStatusAsync();
         bool mayLink = status.Connected && family.Safeguarding?.FromSafeMinistryCheck != true && Access.Can(PeoplePermissions.SafeguardingEdit, Person.Id);
         IReadOnlyList<SmcPerson> unmatched = mayLink ? await SafeMinistryCheck.GetUnmatchedAsync() : [];
@@ -237,7 +238,7 @@
 
     private Task SaveAsync(SafeguardingRecord record) => ChangeAsync(async () =>
     {
-        await People.SetSafeguardingAsync(Person.Id, record);
+        await Office.SetSafeguardingAsync(Person.Id, record);
         (_dirty, _saved) = (false, true);
     });
 

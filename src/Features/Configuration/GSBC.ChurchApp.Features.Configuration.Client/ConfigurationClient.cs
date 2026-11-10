@@ -1,10 +1,12 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Configuration.Client;
 
+[AdminOnly]
 public sealed class ConfigurationClient(ChannelBase channel)
 {
     private readonly IConfigurationService _configuration = channel.CreateGrpcService<IConfigurationService>();

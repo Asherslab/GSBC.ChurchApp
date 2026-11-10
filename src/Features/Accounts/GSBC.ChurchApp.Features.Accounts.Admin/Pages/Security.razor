@@ -1,7 +1,8 @@
 @page "/account/security"
 @inject AccountsClient Accounts
+@inject OnlineAccount Online
 
-<LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()" FailedTitle="Can't reach the church's server">
+<LiveData TValue="CurrentSession" Load="() => Online.GetCurrentSessionAsync().AsTask()" FailedTitle="Can't reach the church's server">
     @if (context.Value.SignedIn)
     {
         <TitleBand Title="Security" Lead="Your passkeys, and the devices and tools you're signed in on." BackHref="@AccountsDestinations.Account.Route" BackText="Account" />

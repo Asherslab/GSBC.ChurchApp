@@ -1,9 +1,11 @@
 using GSBC.ChurchApp.Features.Accounts.Contracts;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.Online;
 
 namespace GSBC.ChurchApp.Features.Accounts.Client;
 
-public sealed class AccountPinnedPages(AccountsClient accounts) : IPinnedPages
+[AdminOnly]
+public sealed class AccountPinnedPages(AccountsOfficeClient accounts) : IPinnedPages
 {
     public IReadOnlyCollection<string> Feeds { get; } = [AccountsFeeds.Pins];
 

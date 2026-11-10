@@ -10,6 +10,10 @@ internal sealed class EventsPersonData(EventsDbContext db, EventsPublisher publi
     public async Task ForgetAsync(Guid userId, CancellationToken cancellationToken)
     {
         await db.CalendarLinks.Where(link => link.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        db.FeedChanges.Add(new GSBC.ChurchApp.Platform.Data.FeedChangeRecord
+        {
+            Feed = EventsFeeds.Mine, RecordId = userId.ToString(), ScopeId = userId.ToString(), Version = time.GetUtcNow().UtcDateTime.Ticks, Deleted = true,
+        });
 
         string personId = userId.ToString();
         DateTime now = time.GetUtcNow().UtcDateTime;

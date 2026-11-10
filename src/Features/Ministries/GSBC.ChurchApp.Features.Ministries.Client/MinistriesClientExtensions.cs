@@ -9,12 +9,17 @@ namespace GSBC.ChurchApp.Features.Ministries.Client;
 
 public static class MinistriesClientExtensions
 {
-    public static readonly IReadOnlyList<string> Feeds = [MinistriesFeeds.Ministries];
+
+    public static IServiceCollection AddMinistriesOnPhone(this IServiceCollection services) =>
+        services
+            .AddMinistriesClient()
+            .AddSingleton<IMinistryReads, StoredMinistries>()
+            .AddSingleton<IMinistryWrites, QueuedMinistryWrites>();
 
     public static IServiceCollection AddMinistriesClient(this IServiceCollection services) =>
         services
             .AddDestinations(MinistriesDestinations.All)
-            .AddSingleton<MinistriesClient>()
+            .AddSingleton<MinistryLookups>()
             .AddSingleton<IScopeNamer, MinistryScopeNames>()
             .AddHubTile<MinistriesTile>(MinistriesTiles.Ministries)
             .AddHubTile<LifeGroupsTile>(MinistriesTiles.LifeGroups);

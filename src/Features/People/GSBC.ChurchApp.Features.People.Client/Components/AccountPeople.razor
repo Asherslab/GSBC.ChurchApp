@@ -1,7 +1,7 @@
 @inject PeopleClient People
 @inject TimeProvider Clock
 
-<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Mine]" Load="People.GetMineAsync" FailedTitle="Can't load your family right now">
+<LiveData @ref="_live" TValue="PersonFamily" Feeds="[PeopleFeeds.Me]" Load="People.GetMineAsync" FailedTitle="Can't load your family right now">
     @{
         PersonFamily me = context.Value;
         DateOnly today = ChurchTime.Today(Clock);

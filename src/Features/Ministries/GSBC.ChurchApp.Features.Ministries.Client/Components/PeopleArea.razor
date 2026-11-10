@@ -1,7 +1,8 @@
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
+@inject IMinistryWrites Ministries
 @inject TimeProvider Clock
 
-<LiveData @ref="_live" TValue="PeopleList" Load="() => Ministries.PeopleAsync(Page.Ministry.Id)" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the people right now">
+<LiveData @ref="_live" TValue="PeopleList" Load="() => Reads.PeopleAsync(Page.Ministry.Id)" Feeds="Reads.Feeds" FailedTitle="Can't load the people right now">
     @{
         PeopleList people = context.Value;
         bool attending = people.Attending;
@@ -133,7 +134,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

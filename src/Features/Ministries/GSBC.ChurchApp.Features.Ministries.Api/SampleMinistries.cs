@@ -27,6 +27,7 @@ internal sealed class SampleMinistries(IServiceScopeFactory scopes, IHostEnviron
             IMinistryCalendars calendars = scope.ServiceProvider.GetRequiredService<IMinistryCalendars>();
             foreach ((Guid ministry, string name, string audience) in samples.Calendars)
                 await calendars.CreateAsync(ministry, name, MinistryViews.CalendarAudience(audience, ministry), stoppingToken);
+            await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(stoppingToken);
         }
         catch (Exception exception) when (!stoppingToken.IsCancellationRequested)
         {

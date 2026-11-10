@@ -1,4 +1,5 @@
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 
 <section class="person-page__account" aria-label="@($"What happened on {Person.DisplayName}'s account")">
     <LiveData TValue="List<AuditInfo>" Feeds="[AccountsFeeds.People]" Load="LoadAuditAsync" FailedTitle="Can't load their activity">
@@ -24,7 +25,7 @@
 @code {
     [Parameter, EditorRequired] public required PersonInfo Person { get; set; }
 
-    private async Task<List<AuditInfo>> LoadAuditAsync() => (await Accounts.ListAuditAsync(Person.Id)).Entries;
+    private async Task<List<AuditInfo>> LoadAuditAsync() => (await Office.ListAuditAsync(Person.Id)).Entries;
 
     private static string Words(string action) => action switch
     {

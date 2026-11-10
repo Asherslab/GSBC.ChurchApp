@@ -45,6 +45,9 @@ public static class AccountsApiExtensions
         services.AddScoped<ISignedInSessions, AccountSessionCheck>();
         services.AddFeed(new FeedDefinition(AccountsFeeds.People, FeedAudience.Holding(AccountsPermissions.View)));
         services.AddFeed(new FeedDefinition(AccountsFeeds.Pins, FeedAudience.OwnRecords));
+        services.AddFeed(new FeedDefinition(AccountsFeeds.Mine, FeedAudience.OwnRecords));
+        services.AddScoped<MyAccountFeed>();
+        services.AddHostedService<MyAccountUpkeep>();
         services.AddScoped<IAccountEmails, AccountEmailLookup>();
         services.AddDestinations(AccountsDestinations.All);
         return services.AddPermissions(AccountsPermissions.All);

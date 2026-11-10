@@ -19,6 +19,7 @@ internal sealed class SermonsPersonData(SermonsDbContext db, TimeProvider time) 
                 Feed = SermonsFeeds.Progress, RecordId = $"{userId:N}-{progress.SermonId:N}", ScopeId = userId.ToString(), Version = version, Deleted = true,
             });
         }
+        db.FeedChanges.Add(new FeedChangeRecord { Feed = SermonsFeeds.Follows, RecordId = userId.ToString(), ScopeId = userId.ToString(), Version = version, Deleted = true });
         await db.SaveChangesAsync(cancellationToken);
     }
 }

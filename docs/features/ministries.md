@@ -244,6 +244,23 @@ can be listed in Life Groups.
 **A Life Group is a full ministry** (owner, 2026-11-10: "they're a full ministry, just more temporary. should have all the
 stuff normal ministries do, that's why they're a subset of them"). Taken further the same day: see *Show in Life Groups*.
 
+## Archiving (owner, 2026-11-10)
+
+The owner: "the ministries added as life groups as they come and go. need a way to life-cycle them out, probably without
+deleting them. but allow them to be found when desired". Built for **any ministry** (*default*, the orchestrator's
+proposal; the owner hadn't confirmed it):
+
+- **Archive** sits beside *Delete* in a ministry's Settings, for whoever may delete it (through Access). It takes the
+  ministries under it along (*default*).
+- **What it does:** the ministry (`ArchivedAt`) leaves the tree every screen reads, so it's gone from the directory, Life
+  Groups, pickers, places and the app's feed, and nothing can be posted, joined or changed in it, so no notifications.
+  Its calendars narrow to its leaders (as *What it uses* hides them). Its people, posts, files and calendars are kept.
+- **Finding it again:** *Archived* (`Leading.Archived`) lists what the caller may restore or leads; the Ministries desk shows it as *Archived* (title band) and Life Groups as *Archived groups*. **Restore** brings back the ministry and what was archived with it (not what was archived on its own
+  before), and its calendars as *What it uses* says. Restoring one under an archived ministry asks to restore that first
+  (*default*).
+- **Not built yet:** reading an archived ministry's page (it isn't found once archived), and search across archived ones. *Archive their groups* on a finished set of Sundays is the only bulk
+  archive; nothing archives by itself.
+
 ## Show in Life Groups (owner, 2026-11-10)
 
 The owner, asked how Kids Life (under Kids Ministries) fits a Life Groups page built around one "Life Groups" ministry,
@@ -300,6 +317,36 @@ Settings → *Where it sits*, in the app and the admin panel (the same Settings)
   open ministry page reload. A ministry shown in Life Groups moves the same way.
 - **Drag and drop in the admin tree: not built** (*default*): the Settings picker does it, with the preview; dragging would
   skip the preview and needs a keyboard way to be accessible.
+
+## On the phone through Sync (owner, 2026-11-10)
+
+The owner opened a Life Group while the dev backend restarted and got a blank "Can't load this ministry right now":
+"shouldn't these already be pre-fetched in the background? ... nothing should do that ... make sure that's a hard
+rule". Ministries now reads only from the phone's store (AGENTS.md, *HARD RULE: the app reads data only through
+Sync*), so a ministry or Life Group opens at once, offline too.
+
+- **Feeds** (`MinistriesFeeds`), written by `MinistriesPublisher`, which rebuilds them and writes only what changed:
+  after every Ministries change (the `ministries` marker), when someone's grants, a ministry calendar, a name or a
+  family changes, and every 5 minutes. Archived ministries, and their posts, files, asks and Sundays, are never
+  published.
+
+  | Feed | Audience | What |
+  |---|---|---|
+  | `ministries.directory` | Everyone | Each ministry's details and leaders |
+  | `ministries.posts`, `.files`, `.calendars` | Everyone | What's for everyone |
+  | `ministries.posts.private`, `.files.private`, `.calendars.private` | Each row: its audience at its ministry | Team, attendee and parent posts, files and calendars. A team post is also written once per ministry under it, for that ministry's team, since teams below see their parents' team posts |
+  | `ministries.rounds`, `.sessions`, `.sitting-out`, `.lifegroups` | Everyone | Life Groups sets, each group's Sundays, groups not on a set, the calendar they show in |
+  | `ministries.people` | Each row: `ministries.people.manage` at the ministry | Its team, attendees and asks, for whoever manages its people |
+  | `ministries.yours` | Your own | Your roles, your children's places and your asks |
+
+- **Pages are built on the phone** (`StoredMinistries`) from those feeds and the phone's own grants, the same way the
+  server builds them; `MinistryFeedTests` checks they match for a visitor, a sub-team member and a leader.
+- **Every change goes through the outbox** (`QueuedMinistryWrites`) and the page shows it as waiting to send, or
+  couldn't send with *Try again*. A new post, file or ministry gets its id on the phone, so a resend isn't doubled.
+  Joining shows "You're in" or "Asked" at once.
+- **Still online, as approved exceptions:** searching the church's people to add someone, and the "what goes"
+  previews before deleting or moving a ministry or removing a calendar (`MinistryLookups`).
+- **The admin panel** stays online (`OnlineMinistries`); the archived list and Life Groups planning are there only.
 
 ## What it is
 

@@ -1,4 +1,4 @@
-@inject CalendarEditing Editor
+@inject IEventEditing Editing
 
 <Sheet Open="Open" OpenChanged="ToggledAsync" Title="Tell people?" Lead="@($"A notification to everyone who has {CalendarName}, opening the event.")">
     <ChildContent>
@@ -50,18 +50,13 @@
     {
         _telling = true;
         _problem = null;
-        try
+        EditSent sent = await Editing.TellPeopleAsync(new TellPeople { CalendarId = CalendarId, OccurrenceId = OccurrenceId, Title = _title.Trim(), Body = _body.Trim() });
+        _telling = false;
+        if (!sent.Succeeded)
         {
-            await Editor.Editing.TellPeopleAsync(new TellPeople { CalendarId = CalendarId, OccurrenceId = OccurrenceId, Title = _title.Trim(), Body = _body.Trim() });
-            await Done.InvokeAsync("Saved, and people have been told.");
+            _problem = sent.Problem;
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-            _problem = CalendarEditing.Problem(exception);
-        }
-        finally
-        {
-            _telling = false;
-        }
+        await Done.InvokeAsync(sent.Queued ? "Saved. People are told as soon as it's sent." : "Saved, and people have been told.");
     }
 }

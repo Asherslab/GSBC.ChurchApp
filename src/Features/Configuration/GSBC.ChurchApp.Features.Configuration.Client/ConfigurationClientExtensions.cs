@@ -16,7 +16,6 @@ public static class ConfigurationClientExtensions
     public static IServiceCollection AddConfigurationClient(this IServiceCollection services)
     {
         services.AddDestinations(ConfigurationDestinations.All).AddDestinations(ComingSoonDestinations.All)
-            .AddSingleton<ConfigurationClient>().AddSingleton<DraftsClient>().AddSingleton<DatedChanges>()
             .AddSurfaces(HubSurfaces.All).AddSurfaces(AppearanceSurfaces.All).AddSurfaces(TabBarSurfaces.All)
             .AddHubTile<BulletinTile>(WaitingTiles.Bulletin)
             .AddHubTile<OutreachTile>(WaitingTiles.Outreach);

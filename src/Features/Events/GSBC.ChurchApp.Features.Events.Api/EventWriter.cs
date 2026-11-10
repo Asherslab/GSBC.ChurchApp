@@ -38,10 +38,14 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         return (item, await db.Calendars.SingleAsync(calendar => calendar.Id == item.CalendarId, cancellationToken));
     }
 
-    public async Task<EventDetail> SaveEventAsync(ClaimsPrincipal user, EventSave request, CancellationToken cancellationToken)
+    public async Task<EventDetail> SaveEventAsync(ClaimsPrincipal user, EventSave wanted, CancellationToken cancellationToken)
     {
+        Guid? chosenId = IdOf(wanted.EventId, wanted.NewId);
+        EventRecord? record = chosenId is { } known ? await db.Events.SingleOrDefaultAsync(found => found.Id == known, cancellationToken) : null;
+        if (record is null && wanted.EventId.Length > 0)
+            throw NotHere("That event isn't here any more.");
+        EventSave request = record is null ? wanted : EditMerge.Onto(SaveOf(record), wanted);
         CalendarRecord calendar = await WritableCalendarAsync(request.CalendarId, cancellationToken);
-        EventRecord? record = request.EventId.Length > 0 ? await db.Events.SingleOrDefaultAsync(found => found.Id == ParseId(request.EventId), cancellationToken) ?? throw NotHere("That event isn't here any more.") : null;
         DateTime now = time.GetUtcNow().UtcDateTime;
         if (record is not null && record.CalendarId != calendar.Id)
         {
@@ -60,7 +64,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         bool isNew = record is null;
         if (record is null)
         {
-            record = new EventRecord { Id = Guid.CreateVersion7(), CalendarId = calendar.Id, CreatedAt = now };
+            record = new EventRecord { Id = chosenId ?? Guid.CreateVersion7(), CalendarId = calendar.Id, CreatedAt = now };
             db.Events.Add(record);
         }
         else if (EventsBook.IsShown(record, now) && Shown(request.Showing, request.ShowFrom, now))
@@ -104,12 +108,16 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         await publisher.PublishAsync(cancellationToken);
     }
 
-    public async Task<RegularEventSaved> SaveRegularEventAsync(ClaimsPrincipal user, RegularEventSave request, CancellationToken cancellationToken)
+    public async Task<RegularEventSaved> SaveRegularEventAsync(ClaimsPrincipal user, RegularEventSave wanted, CancellationToken cancellationToken)
     {
+        Guid? chosenId = IdOf(wanted.RegularEventId, wanted.NewId);
+        RegularEventRecord? record = chosenId is { } known ? await db.RegularEvents.SingleOrDefaultAsync(found => found.Id == known, cancellationToken) : null;
+        if (record is null && wanted.RegularEventId.Length > 0)
+            throw NotHere("That regular event isn't here any more.");
+        RegularEventSave request = record is null ? wanted : EditMerge.Onto(await SaveOfAsync(record, cancellationToken), wanted);
         CalendarRecord calendar = await WritableCalendarAsync(request.CalendarId, cancellationToken);
-        RegularEventRecord? record = request.RegularEventId.Length > 0
-            ? await db.RegularEvents.SingleOrDefaultAsync(found => found.Id == ParseId(request.RegularEventId), cancellationToken) ?? throw NotHere("That regular event isn't here any more.")
-            : null;
+        if (record is not null)
+            NotKept(record);
         DateTime now = time.GetUtcNow().UtcDateTime;
         if (record is not null && record.CalendarId != calendar.Id)
         {
@@ -150,7 +158,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         bool isNew = record is null;
         if (record is null)
         {
-            record = new RegularEventRecord { Id = Guid.CreateVersion7(), CalendarId = calendar.Id, CreatedAt = now };
+            record = new RegularEventRecord { Id = chosenId ?? Guid.CreateVersion7(), CalendarId = calendar.Id, CreatedAt = now };
             db.RegularEvents.Add(record);
         }
         Guid previousCalendar = record.CalendarId;
@@ -191,6 +199,7 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
     public async Task DeleteRegularEventAsync(ClaimsPrincipal user, RegularRef request, CancellationToken cancellationToken)
     {
         RegularEventRecord record = await RegularInAsync(request.CalendarId, request.RegularEventId, cancellationToken);
+        NotKept(record);
         await WritableCalendarAsync(request.CalendarId, cancellationToken);
         await MayChangeShownAsync(user, record, time.GetUtcNow().UtcDateTime, cancellationToken);
         List<DateOnly> specialDates = await db.Specials.Where(special => special.RegularEventId == record.Id).Select(special => special.Date).ToListAsync(cancellationToken);
@@ -207,24 +216,30 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         await publisher.PublishAsync(cancellationToken);
     }
 
-    public async Task<RegularEventDetail> SaveDateAsync(ClaimsPrincipal user, DateSave request, CancellationToken cancellationToken)
+    public async Task<RegularEventDetail> SaveDateAsync(ClaimsPrincipal user, DateSave wanted, CancellationToken cancellationToken)
     {
-        RegularEventRecord regular = await RegularInAsync(request.CalendarId, request.RegularEventId, cancellationToken);
-        await WritableCalendarAsync(request.CalendarId, cancellationToken);
+        RegularEventRecord regular = await RegularInAsync(wanted.CalendarId, wanted.RegularEventId, cancellationToken);
+        await WritableCalendarAsync(wanted.CalendarId, cancellationToken);
+        NotKept(regular);
         DateTime now = time.GetUtcNow().UtcDateTime;
         await MayChangeShownAsync(user, regular, now, cancellationToken);
-        DateOnly date = EventDates.Parse(request.Date) ?? throw Invalid("Choose a date.");
+        DateOnly date = EventDates.Parse(wanted.Date) ?? throw Invalid("Choose a date.");
         if (!Expansion.DatesOf(regular.Pattern, date, date).Contains(date))
             throw Invalid($"{date.ToString("d MMMM yyyy", System.Globalization.CultureInfo.InvariantCulture)} isn't one of {regular.Fields.Title}'s dates.");
 
+        SpecialRecord? special = await db.Specials.SingleOrDefaultAsync(found => found.RegularEventId == regular.Id && found.Date == date, cancellationToken);
+        Timed every = new(regular.Fields, regular.StartMinute, regular.EndMinute);
+        Timed before = special is null ? every : Effective(regular, special);
+        DateSave request = EditMerge.Onto(new DateSave
+        {
+            CalendarId = wanted.CalendarId, RegularEventId = wanted.RegularEventId, Date = wanted.Date, Fields = before.Fields,
+            StartMinute = before.StartMinute, EndMinute = before.EndMinute, NotOn = special?.NotOn == true, NotOnNote = special?.NotOnNote ?? "",
+        }, wanted);
         EventFields fields = await CheckedAsync(request.Fields, cancellationToken);
         (int? startMinute, int? endMinute) = Minutes(request.StartMinute, request.EndMinute);
-        Timed every = new(regular.Fields, regular.StartMinute, regular.EndMinute);
         Timed thisDate = new(fields, startMinute, endMinute);
         List<string> changed = FieldValues.Differences(every, thisDate);
 
-        SpecialRecord? special = await db.Specials.SingleOrDefaultAsync(found => found.RegularEventId == regular.Id && found.Date == date, cancellationToken);
-        Timed before = special is null ? every : Effective(regular, special);
         bool wasNotOn = special?.NotOn == true;
         if (changed.Count == 0 && !request.NotOn)
         {
@@ -262,37 +277,39 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
 
     public async Task<RegularEventDetail> DetailAsync(RegularEventRecord record, CancellationToken cancellationToken)
     {
-        List<SpecialRecord> specials = await db.Specials.AsNoTracking().Where(special => special.RegularEventId == record.Id).OrderBy(special => special.Date).ToListAsync(cancellationToken);
+        List<SpecialRecord> specials = await db.Specials.AsNoTracking().Where(special => special.RegularEventId == record.Id).ToListAsync(cancellationToken);
         List<Guid> named = await db.RegularEventBreaks.AsNoTracking().Where(link => link.RegularEventId == record.Id).Select(link => link.BreakId).ToListAsync(cancellationToken);
-        List<BreakRecord> own = await db.Breaks.AsNoTracking().Where(stop => stop.RegularEventId == record.Id).OrderBy(stop => stop.StartDate).ToListAsync(cancellationToken);
-        List<BreakRecord> namedBreaks = await db.Breaks.AsNoTracking().Where(stop => named.Contains(stop.Id)).ToListAsync(cancellationToken);
+        List<BreakRecord> breaks = await db.Breaks.AsNoTracking().Where(stop => stop.RegularEventId == record.Id || named.Contains(stop.Id)).ToListAsync(cancellationToken);
         List<ShowingRecord> showings = await db.Showings.AsNoTracking().Where(showing => showing.RegularEventId == record.Id).ToListAsync(cancellationToken);
-        DateOnly today = ChurchTime.Today(time);
-        return new RegularEventDetail
-        {
-            Id = record.Id.ToString(),
-            CalendarId = record.CalendarId.ToString(),
-            Fields = record.Fields,
-            Pattern = record.Pattern,
-            StartMinute = record.StartMinute,
-            EndMinute = record.EndMinute,
-            Showing = record.Showing,
-            ShowFrom = record.ShowFrom,
-            Asked = record.AskedAt is not null,
-            Needs = record.Needs,
-            RemindDaysBefore = record.RemindDaysBefore,
-            ListEveryDate = record.ListEveryDate,
-            BreakIds = named.Select(id => id.ToString()).ToList(),
-            OwnBreaks = own.Select(stop => CalendarSetupService.Info(stop, [])).ToList(),
-            Specials = specials.Select(Info).ToList(),
-            Repeats = RepeatWords.Of(record.Pattern),
-            AlsoOn = showings.Select(showing => new ShowingOn { CalendarId = showing.CalendarId.ToString(), Agreed = showing.AgreedAt is not null, AskedByOther = showing.AskedByOther }).ToList(),
-            ChangeNote = record.ChangeNote,
-            ChangedAt = record.ChangedAt,
-            UpdatedAt = record.UpdatedAt,
-            Dates = Expansion.RunOf(record, specials.ToDictionary(special => special.Date), [.. namedBreaks, .. own], today, today.AddMonths(EventsFeeds.MonthsAhead)).ToList(),
-        };
+        return Detail(record, specials, breaks, showings, ChurchTime.Today(time));
     }
+
+    public static RegularEventDetail Detail(RegularEventRecord record, IReadOnlyList<SpecialRecord> specials, IReadOnlyList<BreakRecord> breaks, IReadOnlyList<ShowingRecord> showings, DateOnly today) => new()
+    {
+        Id = record.Id.ToString(),
+        CalendarId = record.CalendarId.ToString(),
+        Fields = record.Fields,
+        Pattern = record.Pattern,
+        StartMinute = record.StartMinute,
+        EndMinute = record.EndMinute,
+        Showing = record.Showing,
+        ShowFrom = record.ShowFrom,
+        Asked = record.AskedAt is not null,
+        Needs = record.Needs,
+        RemindDaysBefore = record.RemindDaysBefore,
+        ListEveryDate = record.ListEveryDate,
+        KeptBy = record.KeptBy,
+        OpensAt = record.OpensAt,
+        BreakIds = breaks.Where(stop => stop.RegularEventId is null).Select(stop => stop.Id.ToString()).Order(StringComparer.Ordinal).ToList(),
+        OwnBreaks = breaks.Where(stop => stop.RegularEventId == record.Id).OrderBy(stop => stop.StartDate).Select(stop => CalendarSetupService.Info(stop, [])).ToList(),
+        Specials = specials.OrderBy(special => special.Date).Select(Info).ToList(),
+        Repeats = RepeatWords.Of(record.Pattern),
+        AlsoOn = showings.Select(showing => new ShowingOn { CalendarId = showing.CalendarId.ToString(), Agreed = showing.AgreedAt is not null, AskedByOther = showing.AskedByOther }).ToList(),
+        ChangeNote = record.ChangeNote,
+        ChangedAt = record.ChangedAt,
+        UpdatedAt = record.UpdatedAt,
+        Dates = Expansion.RunOf(record, specials.ToDictionary(special => special.Date), breaks, today, today.AddMonths(EventsFeeds.MonthsAhead)).ToList(),
+    };
 
     public static EventDetail Detail(EventRecord record, IReadOnlyList<ShowingRecord> showings, CalendarRecord calendar) => new()
     {
@@ -318,20 +335,52 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         ReadOnly = calendar.ICalSource is { Length: > 0 },
     };
 
+    public static EventSave SaveOf(EventRecord record) => new()
+    {
+        CalendarId = record.CalendarId.ToString(),
+        EventId = record.Id.ToString(),
+        Fields = record.Fields,
+        Times = new EventTimes
+        {
+            StartDate = EventDates.Format(record.StartDate),
+            EndDate = record.EndDate is { } end ? EventDates.Format(end) : "",
+            StartMinute = record.StartMinute,
+            EndMinute = record.EndMinute,
+        },
+        Showing = record.Showing,
+        ShowFrom = record.ShowFrom,
+        NotOn = record.NotOn,
+        NotOnNote = record.NotOnNote,
+    };
+
+    private async Task<RegularEventSave> SaveOfAsync(RegularEventRecord record, CancellationToken cancellationToken) => new()
+    {
+        CalendarId = record.CalendarId.ToString(),
+        RegularEventId = record.Id.ToString(),
+        Fields = record.Fields,
+        Pattern = record.Pattern,
+        StartMinute = record.StartMinute,
+        EndMinute = record.EndMinute,
+        Showing = record.Showing,
+        ShowFrom = record.ShowFrom,
+        Needs = record.Needs,
+        RemindDaysBefore = record.RemindDaysBefore,
+        ListEveryDate = record.ListEveryDate,
+        BreakIds = await db.RegularEventBreaks.AsNoTracking().Where(link => link.RegularEventId == record.Id).Select(link => link.BreakId.ToString()).ToListAsync(cancellationToken),
+        OwnBreaks = (await db.Breaks.AsNoTracking().Where(stop => stop.RegularEventId == record.Id).OrderBy(stop => stop.StartDate).ToListAsync(cancellationToken))
+            .Select(stop => CalendarSetupService.Info(stop, [])).ToList(),
+    };
+
     internal static string EventOwner(Guid id) => $"events/event/{id}";
 
     internal static string RegularOwner(Guid id) => $"events/regular/{id}";
 
     internal static string SpecialOwner(Guid regularEventId, DateOnly date) => $"events/regular/{regularEventId}/{EventDates.Format(date)}";
 
-    private static Timed Effective(RegularEventRecord regular, SpecialRecord special)
-    {
-        bool ownTime = special.Changed.Contains(EventFieldKeys.Time);
-        return new Timed(FieldValues.Overlay(regular.Fields, special.Fields, special.Changed),
-            ownTime ? special.StartMinute : regular.StartMinute, ownTime ? special.EndMinute : regular.EndMinute);
-    }
+    private static Timed Effective(RegularEventRecord regular, SpecialRecord special) =>
+        KeptValues.Effective(new Timed(regular.Fields, regular.StartMinute, regular.EndMinute), Info(special));
 
-    private static SpecialInfo Info(SpecialRecord special) => new()
+    public static SpecialInfo Info(SpecialRecord special) => new()
     {
         Date = EventDates.Format(special.Date),
         Changed = special.Changed,
@@ -344,14 +393,8 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         ChangedAt = special.ChangedAt,
     };
 
-    public static List<KeptValue> KeptValues(RegularEventRecord record, IReadOnlyCollection<string> changed, IEnumerable<SpecialRecord> upcoming) =>
-        upcoming.SelectMany(special => changed.Where(special.Changed.Contains).Select(field => new KeptValue
-        {
-            Date = EventDates.Format(special.Date),
-            Title = Effective(record, special).Fields.Title,
-            Field = field,
-            Value = FieldValues.Words(Effective(record, special), field),
-        })).ToList();
+    public static List<KeptValue> KeptValuesOf(RegularEventRecord record, IReadOnlyCollection<string> changed, IEnumerable<SpecialRecord> upcoming) =>
+        KeptValues.Of(new Timed(record.Fields, record.StartMinute, record.EndMinute), changed, upcoming.Select(Info));
 
     private async Task<List<KeptValue>> KeptValuesAsync(RegularEventRecord record, List<string> changed, CancellationToken cancellationToken)
     {
@@ -360,7 +403,13 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
         DateOnly today = ChurchTime.Today(time);
         List<SpecialRecord> upcoming = await db.Specials.AsNoTracking()
             .Where(special => special.RegularEventId == record.Id && special.Date >= today).OrderBy(special => special.Date).ToListAsync(cancellationToken);
-        return KeptValues(record, changed, upcoming);
+        return KeptValuesOf(record, changed, upcoming);
+    }
+
+    private static void NotKept(RegularEventRecord record)
+    {
+        if (record.Keeper is not null)
+            throw new RpcException(new Status(StatusCode.FailedPrecondition, $"{record.KeptBy} keeps {record.Fields.Title} in step: change it in {record.KeptBy}."));
     }
 
     private async Task<CalendarRecord> WritableCalendarAsync(string calendarId, CancellationToken cancellationToken)
@@ -520,6 +569,9 @@ internal sealed class EventWriter(EventsDbContext db, EventsPublisher publisher,
 
     private static bool IsWebAddress(string text) =>
         Uri.TryCreate(text, UriKind.Absolute, out Uri? uri) && uri.Scheme is "https" or "http";
+
+    private static Guid? IdOf(string existing, string newId) =>
+        existing.Length > 0 ? ParseId(existing) : Guid.TryParse(newId, out Guid chosen) && chosen != Guid.Empty ? chosen : null;
 
     private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw NotHere("That isn't here any more.");
 
