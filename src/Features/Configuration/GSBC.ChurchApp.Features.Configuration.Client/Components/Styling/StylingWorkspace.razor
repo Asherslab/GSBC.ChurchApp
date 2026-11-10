@@ -11,6 +11,8 @@
 @inject IEnumerable<HubTileKind> TileKinds
 @inject IServiceProvider Services
 
+<UnsavedGuard What="this draft" Autosave="() => DraftSaving" Save="SaveBeforeLeavingAsync" />
+
 <RefreshOn Feeds="[ConfigurationFeeds.Drafts, ConfigurationFeeds.Placements]" Changed="RefreshAsync" />
 
 @if (_list is null && _loadProblem is not null)
@@ -1419,6 +1421,14 @@ else
             return;
         }
         await InvokeAsync(SaveNowAsync);
+    }
+
+    private SaveState DraftSaving => _session is { HasUnsaved: true } && _save == SaveState.Saved ? SaveState.Waiting : _save;
+
+    private async Task<bool> SaveBeforeLeavingAsync()
+    {
+        await SaveNowAsync();
+        return DraftSaving == SaveState.Saved;
     }
 
     private async Task SaveNowAsync()
