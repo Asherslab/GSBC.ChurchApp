@@ -22,6 +22,7 @@ public static class MinistryMethods
     public const string AddSubMinistry = Leading + "AddSubMinistry";
     public const string Create = Leading + "Create";
     public const string Delete = Leading + "Delete";
+    public const string Archive = Leading + "Archive";
     public const string SaveCalendar = Leading + "SaveCalendar";
     public const string RemoveCalendar = Leading + "RemoveCalendar";
     public const string SaveSession = Leading + "SaveSession";
@@ -41,6 +42,7 @@ public static class MinistryMethods
         "Move" => "moving it",
         "AddSubMinistry" or "Create" => "a new ministry",
         "Delete" => "deleting it",
+        "Archive" => "archiving it",
         "SaveCalendar" or "RemoveCalendar" => "a calendar change",
         "SaveSession" => "a Sunday change",
         _ => "a change",

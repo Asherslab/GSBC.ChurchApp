@@ -7,6 +7,7 @@
 <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="Ministries.Feeds" FailedTitle="Can't load the ministries right now">
     <TitleBand Title="Ministries" Lead="@Lead(context.Value)">
         <Actions>
+            <Button Variant="ButtonVariant.Quiet" Icon="archive" OnClick="() => _archivedOpen = true">Archived</Button>
             @if (context.Value.MayCreate || context.Value.Ministries.Any(ministry => ministry.MayAddUnder))
             {
                 <Button Icon="plus" OnClick="() => _creating = true">New ministry</Button>
@@ -67,6 +68,8 @@
 </div>
 </LiveData>
 
+<ArchivedSheet Open="_archivedOpen" OpenChanged="open => _archivedOpen = open" />
+
 <MinistrySheet Open="_creating" OpenChanged="open => _creating = open" UnderId="@(Id ?? "")" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
 
 @code {
@@ -75,6 +78,7 @@
     private readonly HashSet<string> _folded = [];
 
     private bool _creating;
+    private bool _archivedOpen;
 
     [Parameter] public string? Id { get; set; }
     [Parameter] public string? Area { get; set; }

@@ -36,6 +36,8 @@ public interface IMinistryWrites
 
     Task DeleteAsync(string ministryId);
 
+    Task ArchiveAsync(string ministryId);
+
     Task SaveCalendarAsync(string ministryId, CalendarLine calendar);
 
     Task RemoveCalendarAsync(string ministryId, string id);

@@ -10,6 +10,7 @@ using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -64,6 +65,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddSingleton<IMinistryCalendars>(new NoCalendars())
             .AddSingleton<IAccessEvaluator>(new Granted(_grants))
             .AddSingleton<INotifications>(new NoNotifications())
+            .AddSingleton<IKeptRegularEvents>(new KeptInSundays())
             .AddScoped<MinistryViews>()
             .AddScoped<MinistryChanges>()
             .AddScoped<MinistriesPublisher>()
@@ -82,6 +84,14 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         _grants[_bandMember] = Grants((_band.Id, [MinistriesPermissions.TeamViewNode, MinistriesPermissions.AttendeesViewNode, MinistriesPermissions.ParentsViewNode]));
         _grants[_visitor] = GrantSet.Empty;
 
+        RoundRecord term = new()
+        {
+            Id = Guid.CreateVersion7(), Name = "Term 4", Sundays = [ChurchDay(7), ChurchDay(14)], Starts = new TimeOnly(9, 30), Ends = new TimeOnly(10, 15),
+        };
+        _band.ShowsInLifeGroups = true;
+        _band.RoundId = term.Id;
+        db.Rounds.Add(term);
+        db.SitOuts.Add(new SitOutRecord { GroupId = _band.Id, RoundId = term.Id, Note = "Camp weekend", MarkedAt = _clock.UtcNow });
         db.Ministries.AddRange(_youth, _band);
         db.Posts.AddRange(Post(_youth, "Welcome, everyone", Audiences.Everyone, 1), Post(_youth, "Team rehearsal moved", Audiences.Team, 2));
         await db.SaveChangesAsync(Cancel);
@@ -114,6 +124,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             foreach (MinistryRecord ministry in new[] { _youth, _band })
                 Assert.Equal(Bytes(await ServerPageAsync(person, ministry.Id)), Bytes(await phone.Ministries.MinistryAsync(ministry.Id.ToString())));
             Assert.Equal(Bytes(await ServerDirectoryAsync(person)), Bytes(await phone.Ministries.DirectoryAsync()));
+            Assert.Equal(Bytes(await ServerLifeGroupsAsync(person)), Bytes(await phone.Ministries.LifeGroupsAsync()));
         }
     }
 
@@ -136,7 +147,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
                 else
                     rows[row.RecordId] = row;
         }
-        return new Phone(stored, new StoredMinistries(new Store(stored), new PhoneAccess(_grants[person])));
+        return new Phone(stored, new StoredMinistries(new Store(stored), new PhoneAccess(_grants[person]), _clock));
     }
 
     private static IEnumerable<FeedDefinition> FeedsOnTheServer()
@@ -151,6 +162,12 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     {
         await using AsyncServiceScope scope = _services.CreateAsyncScope();
         return await scope.ServiceProvider.GetRequiredService<MinistriesService>().MinistryAsync(new MinistryRef { MinistryId = ministry.ToString() }, Call(person));
+    }
+
+    private async Task<LifeGroupsPage> ServerLifeGroupsAsync(Guid person)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<MinistriesService>().LifeGroupsAsync(new LifeGroupsRequest(), Call(person));
     }
 
     private async Task<MinistryDirectory> ServerDirectoryAsync(Guid person)
@@ -183,6 +200,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         Id = Guid.CreateVersion7(), ParentId = parent, Name = name, TeamJoin = Joining.Ask, AttendJoin = Joining.None,
         CreatedAt = _clock.UtcNow, UpdatedAt = _clock.UtcNow,
     };
+
+    private DateOnly ChurchDay(int daysAhead) => ChurchTime.Today(_clock).AddDays(daysAhead);
 
     private PostRecord Post(MinistryRecord ministry, string title, string audience, int minutes) => new()
     {
@@ -321,6 +340,20 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public ValueTask<MinistryCalendarRemoval> WhatGoesAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    }
+
+    private sealed class KeptInSundays : IKeptRegularEvents
+    {
+        public ValueTask<KeptCalendar?> WhereAsync(string keeper, CancellationToken cancellationToken) =>
+            ValueTask.FromResult<KeptCalendar?>(new KeptCalendar(Guid.CreateVersion7(), "Sundays"));
+
+        public ValueTask<IReadOnlyList<KeptCalendar>> ChoicesAsync(ClaimsPrincipal user, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask PutInAsync(ClaimsPrincipal user, Guid calendarId, KeptRegularEvent wanted, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask KeepInStepAsync(KeptRegularEvent wanted, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public ValueTask RemoveAsync(string keeper, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class NoNotifications : INotifications

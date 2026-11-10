@@ -1,12 +1,14 @@
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
-public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access) : IMinistryReads
+public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access, TimeProvider time) : IMinistryReads
 {
     private const int Page = 500;
     private const int MostPosts = 200;
@@ -71,6 +73,11 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access) : IMinis
         {
             page.Sessions = (await AllAsync<GroupSessions>(MinistriesFeeds.Sessions)).FirstOrDefault(group => group.GroupId == id)?.Changes ?? [];
             page.Round = (await AllAsync<Round>(MinistriesFeeds.Rounds)).FirstOrDefault(round => round.Id == ministry.RoundId);
+            string today = ChurchTime.Today(time).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            page.SittingOut = (await AllAsync<SittingOut>(MinistriesFeeds.SittingOut))
+                .Where(sitOut => sitOut.GroupId == id && sitOut.Round is { Sundays.Count: > 0 } round && string.CompareOrdinal(round.Sundays.Max(), today) >= 0)
+                .OrderBy(sitOut => sitOut.Round!.Sundays.Min(), StringComparer.Ordinal)
+                .ToList();
         }
         return page;
     }
@@ -83,6 +90,8 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access) : IMinis
         Dictionary<string, string> words = Words(map, groups, await YoursAsync());
         return new LifeGroupsPage
         {
+            CalendarName = (await AllAsync<LifeGroupsCalendar>(MinistriesFeeds.LifeGroups)).FirstOrDefault()?.CalendarName ?? "",
+            SittingOut = (await AllAsync<SittingOut>(MinistriesFeeds.SittingOut)).Where(sitOut => groupIds.Contains(sitOut.GroupId)).Select(WithoutRound).ToList(),
             Rounds = (await AllAsync<Round>(MinistriesFeeds.Rounds)).OrderBy(round => round.Sundays.DefaultIfEmpty("").Min(StringComparer.Ordinal), StringComparer.Ordinal).ToList(),
             Groups = groups.Select(group => Summary(group.Ministry, words.GetValueOrDefault(group.Ministry.Id) ?? "")).ToList(),
             Sessions = (await AllAsync<GroupSessions>(MinistriesFeeds.Sessions)).Where(group => groupIds.Contains(group.GroupId)).ToList(),
@@ -151,6 +160,12 @@ public sealed class StoredMinistries(ILocalFeeds feeds, IAccess access) : IMinis
                 words[id] = said;
         }
         return words;
+    }
+
+    private static SittingOut WithoutRound(SittingOut sitOut)
+    {
+        sitOut.Round = null;
+        return sitOut;
     }
 
     private bool MaySee(MinistryMap map, string audience, string ministryId) =>

@@ -136,6 +136,10 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("about");
 
+                    b.Property<DateTime?>("ArchivedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("archived_at");
+
                     b.Property<string>("AttendJoin")
                         .IsRequired()
                         .HasColumnType("text")
@@ -335,6 +339,38 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasName("pk_sessions");
 
                     b.ToTable("sessions", "ministries");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Ministries.Api.Data.SitOutRecord", b =>
+                {
+                    b.Property<Guid>("GroupId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("group_id");
+
+                    b.Property<Guid>("RoundId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("round_id");
+
+                    b.Property<Guid?>("InsteadId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("instead_id");
+
+                    b.Property<DateTime>("MarkedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("marked_at");
+
+                    b.Property<string>("Note")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("note");
+
+                    b.HasKey("GroupId", "RoundId")
+                        .HasName("pk_sit_outs");
+
+                    b.HasIndex("RoundId")
+                        .HasDatabaseName("ix_sit_outs_round_id");
+
+                    b.ToTable("sit_outs", "ministries");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Platform.Data.FeedChangeRecord", b =>

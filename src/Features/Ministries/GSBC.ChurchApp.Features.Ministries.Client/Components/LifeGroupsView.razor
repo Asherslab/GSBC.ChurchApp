@@ -8,6 +8,7 @@
             LifeGroupSets sets = LifeGroupSets.Of(context.Value, ChurchTime.Today(Clock));
             _choosing = sets.Next?.Groups ?? [];
             _set = sets.Next?.Round;
+            _sets = sets;
         }
         @if (sets.Yours.Count > 0)
         {
@@ -82,6 +83,7 @@
     private bool _open;
     private IReadOnlyList<MinistrySummary> _choosing = [];
     private Round? _set;
+    private LifeGroupSets? _sets;
     private MinistryPage? _joining;
     private string? _loading;
     private string? _problem;
@@ -115,7 +117,15 @@
         @foreach (MinistrySummary group in groups)
         {
             string line = string.Join(" · ", new[] { group.Meets, group.Yours.Length > 0 ? group.Yours : group.Summary, until }.Where(part => part.Length > 0));
-            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@line" Icon="@AboutArea.IconOf(group.Icon)" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.Of(group.Id)" />
+            SittingOut? off = _sets?.Off(group);
+            <ListRow @key="group.Id" Title="@group.Name" Subtitle="@line" Icon="@AboutArea.IconOf(group.Icon)" IconTone="@(off is null ? RowTone.Accent : RowTone.Quiet)" Chevron="true" Href="@MinistriesPlaces.Of(group.Id)">
+                <Below>
+                    @if (off is not null)
+                    {
+                        <span class="ministry-flag">@MinistryWords.NotOn(off)</span>
+                    }
+                </Below>
+            </ListRow>
         }
     </text>;
 }

@@ -12,10 +12,12 @@ public static class MinistriesFeeds
     public const string PrivateCalendars = "ministries.calendars.private";
     public const string Rounds = "ministries.rounds";
     public const string Sessions = "ministries.sessions";
+    public const string SittingOut = "ministries.sitting-out";
+    public const string LifeGroups = "ministries.lifegroups";
     public const string People = "ministries.people";
     public const string Yours = "ministries.yours";
 
-    public static readonly IReadOnlyList<string> OnPhones = [Directory, Posts, Files, Calendars, Rounds, Sessions];
+    public static readonly IReadOnlyList<string> OnPhones = [Directory, Posts, Files, Calendars, Rounds, Sessions, SittingOut, LifeGroups];
     public static readonly IReadOnlyList<string> PrivateOnPhones = [PrivatePosts, PrivateFiles, PrivateCalendars, People, Yours];
     public static readonly IReadOnlyList<string> Published = [.. OnPhones, .. PrivateOnPhones];
 }

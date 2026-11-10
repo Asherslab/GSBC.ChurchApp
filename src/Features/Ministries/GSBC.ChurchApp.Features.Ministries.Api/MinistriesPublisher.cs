@@ -10,10 +10,11 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 
 internal sealed class MinistriesPublisher(
-    MinistriesDbContext db, MinistryViews views, IFamilies families, IPeopleIndex people, IMinistryCalendars calendars, TimeProvider time)
+    MinistriesDbContext db, MinistryViews views, IFamilies families, IPeopleIndex people, IMinistryCalendars calendars, IKeptRegularEvents kept, TimeProvider time)
 {
     private const long AdvisoryLockKey = 0x6d69_6e69_7374_7279;
     public const int PostsKept = 100;
+    public const string LifeGroupsRow = "calendar";
 
     internal sealed record Row(string Feed, string RecordId, byte[] Payload, string? Audience = null, string? GroupKey = null);
 
@@ -52,11 +53,14 @@ internal sealed class MinistriesPublisher(
     {
         MinistryTree tree = await views.TreeAsync(cancellationToken);
         MinistryHoldings holdings = await views.HoldingsAsync(tree.All, cancellationToken);
-        List<PostRecord> posts = await db.Posts.AsNoTracking().ToListAsync(cancellationToken);
-        List<FileRecord> files = await db.Files.AsNoTracking().ToListAsync(cancellationToken);
-        List<AskRecord> asks = await db.Asks.AsNoTracking().OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken);
-        List<SessionRecord> sessions = await db.Sessions.AsNoTracking().ToListAsync(cancellationToken);
+        HashSet<Guid> active = [.. tree.All.Select(ministry => ministry.Id)];
+        List<PostRecord> posts = (await db.Posts.AsNoTracking().ToListAsync(cancellationToken)).Where(post => active.Contains(post.MinistryId)).ToList();
+        List<FileRecord> files = (await db.Files.AsNoTracking().ToListAsync(cancellationToken)).Where(file => active.Contains(file.MinistryId)).ToList();
+        List<AskRecord> asks = (await db.Asks.AsNoTracking().OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken)).Where(ask => active.Contains(ask.MinistryId)).ToList();
+        List<SessionRecord> sessions = (await db.Sessions.AsNoTracking().ToListAsync(cancellationToken)).Where(session => active.Contains(session.GroupId)).ToList();
+        List<SitOutRecord> sitOuts = (await db.SitOuts.AsNoTracking().ToListAsync(cancellationToken)).Where(sitOut => active.Contains(sitOut.GroupId)).ToList();
         List<RoundRecord> rounds = await db.Rounds.AsNoTracking().ToListAsync(cancellationToken);
+        Dictionary<Guid, RoundRecord> roundsById = rounds.ToDictionary(round => round.Id);
         IReadOnlyList<MinistryCalendar> shownCalendars = await calendars.OfAsync(tree.All.Select(ministry => ministry.Id).ToList(), cancellationToken);
 
         List<Guid> everyone = [.. (await people.EveryoneAsync(cancellationToken)), .. holdings.People, .. asks.SelectMany(ask => new[] { ask.PersonId, ask.AskedBy })];
@@ -92,6 +96,11 @@ internal sealed class MinistriesPublisher(
         {
             GroupId = group.Key.ToString(), Changes = group.OrderBy(session => session.Date).Select(MinistryViews.Session).ToList(),
         })));
+
+        rows.AddRange(sitOuts.Select(sitOut => Encoded(MinistriesFeeds.SittingOut, $"{sitOut.GroupId}@{sitOut.RoundId}",
+            MinistryViews.SittingOut(sitOut, roundsById.GetValueOrDefault(sitOut.RoundId), tree))));
+        rows.Add(Encoded(MinistriesFeeds.LifeGroups, LifeGroupsRow,
+            new LifeGroupsCalendar { CalendarName = (await kept.WhereAsync(LifeGroupSundays.Keeper, cancellationToken))?.Name ?? "" }));
 
         foreach (Guid person in everyone.Distinct())
             if (Yours(person, tree, holdings, facts, names, askLines) is { } yours)

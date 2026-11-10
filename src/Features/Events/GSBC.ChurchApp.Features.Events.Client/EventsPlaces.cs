@@ -11,6 +11,8 @@ public static class EventsPlaces
 
     public static string EventPath(string occurrenceId) => EventsDestinations.Event.PathOf(occurrenceId);
 
+    public static string Open(EventOccurrence occurrence) => occurrence.OpensAt.Length > 0 ? occurrence.OpensAt : EventPath(occurrence.Id);
+
     public static string CalendarPath(CalendarInfo calendar) => EventsDestinations.Calendar.PathOf(calendar.Slug.Length > 0 ? calendar.Slug : calendar.Id);
 
     public static string NewEventIn(string calendarId) => $"{NewEvent}?calendar={Uri.EscapeDataString(calendarId)}";

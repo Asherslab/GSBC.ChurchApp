@@ -47,6 +47,7 @@ public sealed class EventsDbContext(DbContextOptions<EventsDbContext> options) :
             entity.ToTable("regular_events");
             entity.HasKey(record => record.Id);
             entity.HasIndex(record => record.CalendarId);
+            entity.HasIndex(record => record.Keeper).IsUnique().HasFilter("keeper IS NOT NULL");
             Json(entity.Property(record => record.Fields));
             Json(entity.Property(record => record.Pattern));
         });

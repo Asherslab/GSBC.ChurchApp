@@ -244,6 +244,23 @@ can be listed in Life Groups.
 **A Life Group is a full ministry** (owner, 2026-11-10: "they're a full ministry, just more temporary. should have all the
 stuff normal ministries do, that's why they're a subset of them"). Taken further the same day: see *Show in Life Groups*.
 
+## Archiving (owner, 2026-11-10)
+
+The owner: "the ministries added as life groups as they come and go. need a way to life-cycle them out, probably without
+deleting them. but allow them to be found when desired". Built for **any ministry** (*default*, the orchestrator's
+proposal; the owner hadn't confirmed it):
+
+- **Archive** sits beside *Delete* in a ministry's Settings, for whoever may delete it (through Access). It takes the
+  ministries under it along (*default*).
+- **What it does:** the ministry (`ArchivedAt`) leaves the tree every screen reads, so it's gone from the directory, Life
+  Groups, pickers, places and the app's feed, and nothing can be posted, joined or changed in it, so no notifications.
+  Its calendars narrow to its leaders (as *What it uses* hides them). Its people, posts, files and calendars are kept.
+- **Finding it again:** *Archived* (`Leading.Archived`) lists what the caller may restore or leads; the Ministries desk shows it as *Archived* (title band) and Life Groups as *Archived groups*. **Restore** brings back the ministry and what was archived with it (not what was archived on its own
+  before), and its calendars as *What it uses* says. Restoring one under an archived ministry asks to restore that first
+  (*default*).
+- **Not built yet:** reading an archived ministry's page (it isn't found once archived), and search across archived ones. *Archive their groups* on a finished set of Sundays is the only bulk
+  archive; nothing archives by itself.
+
 ## Show in Life Groups (owner, 2026-11-10)
 
 The owner, asked how Kids Life (under Kids Ministries) fits a Life Groups page built around one "Life Groups" ministry,

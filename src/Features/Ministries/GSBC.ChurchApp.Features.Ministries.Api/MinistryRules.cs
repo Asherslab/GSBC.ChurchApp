@@ -9,6 +9,7 @@ internal static class MinistryRules
     private const int LongestSummary = 140;
     private const int LongestText = 4000;
     public const int LongestTitle = 120;
+    public const int LongestLine = 200;
 
     public static JoinDecision Decide(string joining, string place) => joining switch
     {

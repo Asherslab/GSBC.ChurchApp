@@ -18,6 +18,9 @@ internal sealed class MinistryViews(
     IMinistryCalendars calendars)
 {
     public async Task<MinistryTree> TreeAsync(CancellationToken cancellationToken) =>
+        new(MinistryArchive.Active(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken)));
+
+    public async Task<MinistryTree> EveryTreeAsync(CancellationToken cancellationToken) =>
         new(await db.Ministries.AsNoTracking().ToListAsync(cancellationToken));
 
     public async Task<GrantSet> GrantsAsync(Guid? userId, CancellationToken cancellationToken) =>
@@ -193,6 +196,14 @@ internal sealed class MinistryViews(
     {
         Id = round.Id.ToString(), Name = round.Name, Sundays = round.Sundays.Order().Select(day => day.ToString("yyyy-MM-dd")).ToList(),
         Starts = round.Starts.ToString("HH:mm"), Ends = round.Ends.ToString("HH:mm"), ShowsFrom = round.ShowsFrom?.ToString("yyyy-MM-dd") ?? "",
+    };
+
+    public static SittingOut SittingOut(SitOutRecord sitOut, RoundRecord? round, MinistryTree tree) => new()
+    {
+        GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString(), Note = sitOut.Note,
+        InsteadId = sitOut.InsteadId is { } instead && tree.Find(instead) is not null ? instead.ToString() : "",
+        InsteadName = sitOut.InsteadId is { } other ? tree.Find(other)?.Name ?? "" : "",
+        Round = round is null ? null : Round(round),
     };
 
     public static SessionChange Session(SessionRecord session) => new() { Date = session.Date.ToString("yyyy-MM-dd"), Off = session.Off, Note = session.Note };
