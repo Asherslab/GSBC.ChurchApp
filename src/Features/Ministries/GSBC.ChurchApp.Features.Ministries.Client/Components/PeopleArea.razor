@@ -18,7 +18,7 @@
         }
         @if (asks.Count > 0)
         {
-            <h3 class="ministry-box__head" style="margin-top: 18px">@(showAttendees ? "Asking to come along" : "Asking to join") · @asks.Count</h3>
+            <h3 class="ministry-people-head">@(showAttendees ? "Asking to come along" : "Asking to join") (@asks.Count)</h3>
             <ListGroup>
                 @foreach (AskLine ask in asks)
                 {
@@ -37,9 +37,24 @@
                 }
             </ListGroup>
         }
-        <div style="margin-top: 18px">
+        <div class="ministry-people-tools">
             <SearchField Label="Find someone on the list" Placeholder="Find someone" Value="@_query" ValueChanged="value => _query = value" />
+            @if (Wide)
+            {
+                <Button Icon="plus" Variant="ButtonVariant.Quiet" OnClick="() => _adding = true">@(showAttendees ? "Add an attendee" : "Add to the team")</Button>
+            }
         </div>
+        @if (Wide)
+        {
+            <SplitView DetailLabel="@(_person?.Name ?? "Someone")" Detail="@(_person is null ? null : Panel(people))">
+                <DataTable TItem="Member" Label="@(showAttendees ? "Attendees" : "Team")" Items="shown" Key="member => member.PersonId + member.Role" Columns="Columns"
+                           Selected="_person" SelectedChanged="member => _person = member">
+                    <Empty><EmptyState Icon="users" Title="@(showAttendees ? "No attendees yet" : "No one on the team yet")" /></Empty>
+                </DataTable>
+            </SplitView>
+        }
+        else
+        {
         <ListGroup>
             @foreach (Member member in shown)
             {
@@ -61,10 +76,11 @@
             }
             <ListRow Title="@(showAttendees ? "Add an attendee" : "Add to the team")" Icon="plus" IconTone="RowTone.Accent" OnClick="() => _adding = true" />
         </ListGroup>
+        }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </Section>
 
-    <PersonSheet @key="_person?.PersonId" Member="_person" Page="Page" MayGive="people.MayGive" OnClose="() => _person = null" OnChanged="ReloadAsync" />
+    <PersonSheet @key="_person?.PersonId" Member="@(Wide ? null : _person)" Page="Page" MayGive="people.MayGive" OnClose="() => _person = null" OnChanged="ReloadAsync" />
     <AddPersonSheet Open="_adding" OpenChanged="open => _adding = open" Page="Page" MayGive="people.MayGive" Role="@(showAttendees ? Roles.Attendee : Roles.Team)" OnAdded="ReloadAsync" />
 </LiveData>
 
@@ -79,6 +95,21 @@
 
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public bool Wide { get; set; }
+
+    private IReadOnlyList<TableColumn<Member>> Columns =>
+    [
+        new("Name", member => @<b>@member.Name</b>, member => member.Name),
+        new("Role", member => @<text>@(member.LeadsFrom.Length > 0 ? $"Leads {member.LeadsFrom}" : MinistryWords.Role(member.Role))</text>, member => member.Role),
+        new("Age", member => @<text>@member.Age</text>, member => member.Age, "num"),
+        new("Parents", member => @<text>@if (member.NoParent) { <Pill Tone="PillTone.Marker">No parent linked</Pill> } else { @MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList()) }</text>),
+    ];
+
+    private RenderFragment Panel(PeopleList people) => @<div>
+        <h3 class="ministry-panel__title">@_person!.Name</h3>
+        <p class="hint">@PersonActions.Lead(_person)</p>
+        <PersonActions @key="_person.PersonId" Member="_person" Page="Page" MayGive="people.MayGive" OnClose="() => _person = null" OnChanged="ReloadAsync" />
+    </div>;
 
     private static string Line(Member member)
     {

@@ -23,7 +23,7 @@
                 </ListGroup>
             </Section>
         }
-        <Section First="@(yours.Count == 0)" Title="Ministries" Lead="@(yours.Count == 0 ? "Find where you fit: serve on a team, or come along." : null)">
+        <Section First="@(yours.Count == 0)" Title="All ministries">
             <ListGroup>
                 @foreach (MinistrySummary ministry in top)
                 {
@@ -40,7 +40,7 @@
         {
             <Section Title="Life Groups">
                 <ListGroup>
-                    <ListRow Title="Sunday classes at 9:00" Subtitle="@(yourGroups.Count > 0 ? $"Yours: {MinistryWords.Names(yourGroups.Select(group => group.Name).ToList())}" : "Choose a class for you or your children")"
+                    <ListRow Title="Sunday classes" Subtitle="@(yourGroups.Count > 0 ? $"Yours: {MinistryWords.Names(yourGroups.Select(group => group.Name).ToList())}" : "Choose a class for you or your children")"
                              Icon="book-open" IconTone="RowTone.Accent" Chevron="true" Href="@MinistriesPlaces.LifeGroups" />
                 </ListGroup>
             </Section>
@@ -63,8 +63,7 @@
         List<string> parts = [];
         if (ministry.Summary.Length > 0)
             parts.Add(ministry.Summary);
-        if (teams > 0)
-            parts.Add($"{teams} {(teams == 1 ? "team" : "teams")}");
+        parts.Add(teams > 0 ? $"{teams} {(teams == 1 ? "team" : "teams")}" : MinistryWords.JoinLine(ministry));
         return string.Join(" · ", parts);
     }
 }

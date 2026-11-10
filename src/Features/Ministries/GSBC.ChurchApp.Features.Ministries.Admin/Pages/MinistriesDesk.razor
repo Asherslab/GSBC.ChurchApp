@@ -4,17 +4,17 @@
 @inject MinistriesClient Ministries
 @inject NavigationManager Navigation
 
-<TitleBand Title="Ministries" Lead="Every ministry and the teams under it. Leaders see and change their own here and on their phone.">
-    <Actions>
-        @if (_mayCreate)
-        {
-            <Button Icon="plus" OnClick="() => _creating = true">New ministry</Button>
-        }
-    </Actions>
-</TitleBand>
+<LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the ministries right now">
+    <TitleBand Title="Ministries" Lead="@Lead(context.Value)">
+        <Actions>
+            @if (context.Value.MayCreate)
+            {
+                <Button Icon="plus" OnClick="() => _creating = true">New ministry</Button>
+            }
+        </Actions>
+    </TitleBand>
 
-<div class="ministry-desk">
-    <LiveData TValue="MinistryDirectory" Load="LoadDirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load the ministries right now">
+    <div class="ministry-desk">
         <nav class="ministry-tree" aria-label="Ministries">
             <SearchField Label="Find a ministry" Placeholder="Find a ministry" Value="@_query" ValueChanged="value => _query = value" />
             @foreach ((MinistrySummary ministry, int depth) in Tree(context.Value))
@@ -23,27 +23,26 @@
                         aria-current="@(ministry.Id == Id ? "page" : null)" @onclick="() => Navigation.NavigateTo(Href(ministry.Id))">
                     <Icon Name="@AboutArea.IconOf(ministry.Icon)" Size="IconSize.Small" />
                     <span class="ministry-tree__name">@ministry.Name</span>
-                    @if (ministry.Yours.Length > 0)
+                    @if (ministry.Waiting > 0)
                     {
-                        <Pill Tone="PillTone.Quiet">@ministry.Yours</Pill>
+                        <span class="tab-strip__count" aria-label="@($"{ministry.Waiting} asking to join")">@ministry.Waiting</span>
                     }
                 </button>
             }
         </nav>
-    </LiveData>
 
     <div>
         @if (Id is { Length: > 0 } id)
         {
-            <LiveData @key="id" @ref="_live" TValue="MinistryPage" Load="() => Ministries.MinistryAsync(id)" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load this ministry right now">
+            <LiveData @key="id" @ref="_live" TValue="MinistryPage" Context="live" Load="() => Ministries.MinistryAsync(id)" Feeds="[MinistriesFeeds.Ministries]" FailedTitle="Can't load this ministry right now">
                 @{
-                    MinistryPage shown = context.Value;
+                    MinistryPage shown = live.Value;
                     string area = MinistryAreas.Known(shown, Area ?? MinistriesPlaces.About);
                 }
                 <h2 class="title-band__title">@shown.Ministry.Name</h2>
                 <p class="title-band__lead">@(string.Join(" · ", new[] { shown.Path.Count > 0 ? $"Under {string.Join(" › ", shown.Path.Select(crumb => crumb.Name))}" : "", MinistryWords.HeroNote(shown.Ministry) }.Where(part => part.Length > 0)))</p>
-                <SectionTabs Label="@($"{shown.Ministry.Name}'s areas")" Tabs="MinistryAreas.Tabs(shown, area, key => Href(shown.Ministry.Id, key))" />
-                <MinistryArea Page="shown" Area="@area" Href="ministry => Href(ministry)" OnChanged="ReloadAsync" />
+                <TabStrip TValue="string" Label="@($"{shown.Ministry.Name}'s areas")" Options="MinistryAreas.Tabs(shown)" Value="@area" Href="key => Href(shown.Ministry.Id, key)" />
+                <MinistryArea Page="shown" Area="@area" Wide="true" Href="ministry => Href(ministry)" OnChanged="ReloadAsync" />
             </LiveData>
         }
         else
@@ -52,13 +51,14 @@
         }
     </div>
 </div>
+</LiveData>
 
 <MinistrySheet Open="_creating" OpenChanged="open => _creating = open" OnCreated="created => Navigation.NavigateTo(Href(created.Id, MinistriesPlaces.Settings))" />
 
 @code {
     private LiveData<MinistryPage>? _live;
     private string _query = "";
-    private bool _mayCreate;
+
     private bool _creating;
 
     [Parameter] public string? Id { get; set; }
@@ -66,11 +66,11 @@
 
     private static string Href(string id, string area = "") => area.Length == 0 ? $"ministries/{id}" : $"ministries/{id}/{area}";
 
-    private async Task<MinistryDirectory> LoadDirectoryAsync()
+    private static string Lead(MinistryDirectory directory)
     {
-        MinistryDirectory directory = await Ministries.DirectoryAsync();
-        _mayCreate = directory.MayCreate;
-        return directory;
+        int waiting = directory.Ministries.Sum(ministry => ministry.Waiting);
+        string ministries = $"{directory.Ministries.Count} {(directory.Ministries.Count == 1 ? "ministry" : "ministries")}";
+        return waiting > 0 ? $"{ministries} · {waiting} {(waiting == 1 ? "ask" : "asks")} waiting for an answer" : ministries;
     }
 
     private IEnumerable<(MinistrySummary Ministry, int Depth)> Tree(MinistryDirectory directory)

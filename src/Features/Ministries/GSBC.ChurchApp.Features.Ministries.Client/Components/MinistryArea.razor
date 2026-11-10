@@ -13,7 +13,7 @@
         <SundaysArea Page="Page" OnChanged="OnChanged" />
         break;
     case MinistriesPlaces.People:
-        <PeopleArea Page="Page" OnChanged="OnChanged" />
+        <PeopleArea Page="Page" Wide="Wide" OnChanged="OnChanged" />
         break;
     case MinistriesPlaces.Settings:
         <SettingsArea Page="Page" Href="Href" OnChanged="OnChanged" />
@@ -28,4 +28,5 @@
     [Parameter, EditorRequired] public required string Area { get; set; }
     [Parameter, EditorRequired] public required Func<string, string> Href { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+    [Parameter] public bool Wide { get; set; }
 }

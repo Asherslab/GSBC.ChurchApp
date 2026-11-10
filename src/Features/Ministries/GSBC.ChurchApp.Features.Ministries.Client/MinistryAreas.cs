@@ -29,7 +29,6 @@ public static class MinistryAreas
     public static string Known(MinistryPage page, string area) =>
         For(page).Any(each => each.Key == area) ? area : MinistriesPlaces.About;
 
-    public static IReadOnlyList<SectionTab> Tabs(MinistryPage page, string area, Func<string, string> href) =>
-        For(page).Select(each => new SectionTab(each.Label, href(each.Key), each.Key == area,
-            Icon: each.Key == MinistriesPlaces.Settings ? "sliders" : null, Count: each.Count)).ToList();
+    public static IReadOnlyList<TabOption<string>> Tabs(MinistryPage page) =>
+        For(page).Select(each => new TabOption<string>(each.Key, each.Label, each.Count)).ToList();
 }

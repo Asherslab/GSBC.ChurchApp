@@ -25,9 +25,9 @@ public static class MinistryWords
 
     public static string WhoReads(string audience, string ministry) => audience switch
     {
-        Audiences.Team => $"Only {ministry}'s team sees this.",
-        Audiences.Attendees => $"{ministry}'s attendees, their parents and the team see this.",
-        Audiences.Parents => $"Only parents of {ministry}'s attendees, and the team, see this.",
+        Audiences.Team => $"Only the {ministry} team sees this.",
+        Audiences.Attendees => $"Attendees of {ministry}, their parents and the team see this.",
+        Audiences.Parents => $"Only parents of attendees of {ministry}, and the team, see this.",
         _ => "Anyone with the app sees this, including visitors.",
     };
 
@@ -71,8 +71,14 @@ public static class MinistryWords
         _ => "Attends",
     };
 
-    public static string HeroNote(MinistryDetails ministry) =>
-        string.Join(" · ", new[] { ministry.WhoFor, ministry.Meets }.Where(part => part.Length > 0));
+    public static string HeroNote(MinistryDetails ministry) => ministry.Summary.Length > 0 ? ministry.Summary : ministry.Meets;
+
+    public static string JoinLine(MinistrySummary ministry) => ministry.TeamJoin switch
+    {
+        Contracts.Joining.Open => "Open to join",
+        Contracts.Joining.Ask => "Ask to join",
+        _ => "Invite only",
+    };
 
     public static string Yours(MinistryPage page)
     {

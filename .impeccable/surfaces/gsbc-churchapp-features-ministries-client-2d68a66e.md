@@ -33,7 +33,8 @@ pages through the next Life Groups.
 FIRST VIEWPORT: Phone: hero with its action, tabs About · News · Calendar · Files (· People · ⚙ for leaders), then the first
 audience box. Directory: Yours, serving teams, Life Groups. Admin: tree 300px, the ministry's tabs, a sand person panel 340px.
 
-FORM: ministry page 5 of 7 ("bulletin board"), seed: none (unavailable); leading 4 of 7 ("People tab, two lists"); admin 3 of 7
-("tree beside the ministry"); Life Groups 7 of 7 ("choose one, page by page").
+FORM: ministry page 5 of 7 ("bulletin board"), seed: none (unavailable); leading 4 of 7 ("People tab, two lists"),
+seed: none (unavailable); admin 3 of 7 ("tree beside the ministry"), seed: none (unavailable); Life Groups 7 of 7 ("choose one,
+page by page"), seed: none (unavailable).
 
 FINISH: unreviewed and undocumented is unfinished; this build ends with the finish review, the verdict, DESIGN.md, and every shipping raster carrying its provenance

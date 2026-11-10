@@ -1,16 +1,18 @@
 @typeparam TValue
+@inject NavigationManager Navigation
 
-<div class="tab-strip" role="tablist" aria-label="@Label">
+<div class="tab-strip @(Sticky ? "tab-strip--sticky" : "")" role="@(Href is null ? "tablist" : null)" aria-label="@Label">
     @foreach (TabOption<TValue> option in Options)
     {
         bool selected = EqualityComparer<TValue>.Default.Equals(option.Value, Value);
-        <button type="button" role="tab" class="tab-strip__tab" aria-selected="@(selected ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(option.Value)">
-            @option.Label
-            @if (option.Count is > 0)
-            {
-                <span class="tab-strip__count">@option.Count</span>
-            }
-        </button>
+        @if (Href is { } href)
+        {
+            <a href="@href(option.Value)" class="tab-strip__tab" aria-current="@(selected ? "page" : null)" @onclick="() => GoAsync(option.Value, href)" @onclick:preventDefault="true">@Tab(option)</a>
+        }
+        else
+        {
+            <button type="button" role="tab" class="tab-strip__tab" aria-selected="@(selected ? "true" : "false")" @onclick="() => ValueChanged.InvokeAsync(option.Value)">@Tab(option)</button>
+        }
     }
     @Trailing
 </div>
@@ -21,4 +23,22 @@
     [Parameter] public TValue Value { get; set; } = default!;
     [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
     [Parameter] public RenderFragment? Trailing { get; set; }
+    [Parameter] public Func<TValue, string>? Href { get; set; }
+    [Parameter] public bool Sticky { get; set; }
+
+    private static RenderFragment Tab(TabOption<TValue> option) => @<text>
+        @option.Label
+        @if (option.Count is > 0)
+        {
+            <span class="tab-strip__count">@option.Count</span>
+        }
+    </text>;
+
+    private async Task GoAsync(TValue value, Func<TValue, string> href)
+    {
+        if (EqualityComparer<TValue>.Default.Equals(value, Value))
+            return;
+        await ValueChanged.InvokeAsync(value);
+        Navigation.NavigateTo(href(value), replace: true);
+    }
 }

@@ -17,7 +17,7 @@
             </Masthead>
             @if (MinistryAreas.For(page).Count > 1)
             {
-                <SectionTabs Label="@($"{ministry.Name}'s areas")" Tabs="MinistryAreas.Tabs(page, area, key => MinistriesPlaces.Of(ministry.Id, key))" />
+                <TabStrip TValue="string" Label="@($"{ministry.Name}'s areas")" Options="MinistryAreas.Tabs(page)" Value="@area" Sticky="true" Href="key => MinistriesPlaces.Of(ministry.Id, key)" />
             }
             @if (_joined is not null)
             {

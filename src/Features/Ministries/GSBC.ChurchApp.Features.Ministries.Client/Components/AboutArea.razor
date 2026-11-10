@@ -1,13 +1,13 @@
 @inject MinistriesClient Ministries
 @inject TimeProvider Clock
 
-@if (Page.Ministry.About.Length > 0 || Page.Ministry.Summary.Length > 0)
+@if (Page.Ministry.About.Length > 0)
 {
-    <Section First="true" Title="About">
-        <p class="ministry-about">@(Page.Ministry.About.Length > 0 ? Page.Ministry.About : Page.Ministry.Summary)</p>
+    <Section First="true" Title="@(MinistryAreas.For(Page).Count > 1 ? null : "About")">
+        <p class="ministry-about">@Page.Ministry.About</p>
     </Section>
 }
-<Section First="@(Page.Ministry.About.Length == 0 && Page.Ministry.Summary.Length == 0)">
+<Section First="@(Page.Ministry.About.Length == 0)">
     <ListGroup>
         @if (Page.Ministry.Meets.Length > 0)
         {
@@ -50,9 +50,16 @@
         <ListGroup>
             @foreach (MinistrySummary team in Page.Teams)
             {
-                <ListRow @key="team.Id" Title="@team.Name" Subtitle="@(team.Summary.Length > 0 ? team.Summary : MinistryWords.JoinShort(team.TeamJoin))" Icon="@IconOf(team.Icon)" Chevron="true" Href="@Href(team.Id)" />
+                <ListRow @key="team.Id" Title="@team.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? team.Summary : MinistryWords.JoinLine(team))" Icon="@IconOf(team.Icon)" Chevron="true" Href="@Href(team.Id)" />
             }
         </ListGroup>
+    </Section>
+}
+
+@if (MinistryAreas.For(Page).Count == 1 && !Page.You.MayEditSettings)
+{
+    <Section>
+        <p class="hint">@Page.Ministry.Name's news, calendar and files are for the people in it.</p>
     </Section>
 }
 

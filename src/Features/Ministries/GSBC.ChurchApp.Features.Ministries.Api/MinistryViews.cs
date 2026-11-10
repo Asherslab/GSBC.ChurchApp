@@ -126,12 +126,12 @@ internal sealed class MinistryViews(
         Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Order = ministry.Order,
     };
 
-    public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "") => new()
+    public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "", int waiting = 0) => new()
     {
         Id = ministry.Id.ToString(), ParentId = ministry.ParentId?.ToString() ?? "", Kind = ministry.Kind, Name = ministry.Name,
         Summary = ministry.Summary, Meets = ministry.Meets, Colour = ministry.Colour, Icon = ministry.Icon, TeamJoin = ministry.TeamJoin,
         AttendJoin = ministry.AttendJoin, Order = ministry.Order, Yours = yours, RoundId = ministry.RoundId?.ToString() ?? "",
-        Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Latest = latest,
+        Room = ministry.Room, JoinAsParent = ministry.JoinAsParent, Latest = latest, Waiting = waiting,
     };
 
     public static Post Post(PostRecord post, string from = "") => new()

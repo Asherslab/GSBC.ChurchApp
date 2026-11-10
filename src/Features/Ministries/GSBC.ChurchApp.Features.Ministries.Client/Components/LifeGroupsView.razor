@@ -7,6 +7,7 @@
         @{
             LifeGroupSets sets = LifeGroupSets.Of(context.Value, ChurchTime.Today(Clock));
             _choosing = sets.Next?.Groups ?? [];
+            _set = sets.Next?.Round;
         }
         @if (sets.Next is { Groups.Count: > 0 } next)
         {
@@ -40,16 +41,35 @@
                 <SheetHeading Icon="book-open" Title="@_choosing[index].Name" Note="@_choosing[index].Room" />
             </Cover>
             <Page Context="index">
-                <p>@_choosing[index].Summary</p>
+                @if (_choosing[index].Summary.Length > 0)
+                {
+                    <p>@_choosing[index].Summary</p>
+                }
+                <ListGroup>
+                    @if (_set is { } set)
+                    {
+                        <ListRow Title="@MinistryWords.Span(set)" Subtitle="@($"Sundays, {MinistryWords.Time(set.Starts)} to {MinistryWords.Time(set.Ends)}")" Icon="clock" IconTone="RowTone.Quiet" />
+                    }
+                    @if (_choosing[index].Room.Length > 0)
+                    {
+                        <ListRow Title="@_choosing[index].Room" Subtitle="Where it meets" Icon="map-pin" IconTone="RowTone.Quiet" />
+                    }
+                    <ListRow Title="More about it" Subtitle="Its leaders, news and files" Icon="book-open" IconTone="RowTone.Quiet" Chevron="true" Href="@MinistriesPlaces.Of(_choosing[index].Id)" />
+                </ListGroup>
                 @if (_choosing[index].JoinAsParent)
                 {
                     <p class="hint">For children: join for your child, and you'll hear about it too.</p>
                 }
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
             </Page>
             <Action Context="index">
-                <Button Block="true" OnClick="() => Navigation.NavigateTo(MinistriesPlaces.Of(_choosing[index].Id))">See @_choosing[index].Name and join</Button>
+                <Button Block="true" Busy="@(_loading == _choosing[index].Id)" OnClick="() => JoinAsync(_choosing[index])">Join @_choosing[index].Name</Button>
             </Action>
         </PagedSheet>
+        @if (_joining is { } joining)
+        {
+            <JoinSheet @key="joining.Ministry.Id" Open="true" OpenChanged="open => { if (!open) _joining = null; }" Page="joining" OnJoined="_ => _joining = null" />
+        }
     </ChildContent>
     <Loading>
         <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Section>
@@ -59,6 +79,33 @@
 @code {
     private bool _open;
     private IReadOnlyList<MinistrySummary> _choosing = [];
+    private Round? _set;
+    private MinistryPage? _joining;
+    private string? _loading;
+    private string? _problem;
+
+    private async Task JoinAsync(MinistrySummary group)
+    {
+        (_loading, _problem) = (group.Id, null);
+        try
+        {
+            MinistryPage page = await Ministries.MinistryAsync(group.Id);
+            if (!page.You.SignedIn)
+            {
+                Navigation.NavigateTo("/account");
+                return;
+            }
+            (_open, _joining) = (false, page);
+        }
+        catch (RpcException exception)
+        {
+            _problem = MinistriesClient.Problem(exception);
+        }
+        finally
+        {
+            _loading = null;
+        }
+    }
 
     private static string Count(int count, string noun) => $"{count} {noun}{(count == 1 ? "" : "s")}";
 

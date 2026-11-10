@@ -3,7 +3,7 @@
 @inject MinistriesClient Ministries
 @inject TimeProvider Clock
 
-<TitleBand Title="Life Groups" Lead="What's on now, what's next and the all-year groups. People in the app see each set of groups by its dates: “Now on”, “New groups from …”.">
+<TitleBand Title="Life Groups" Lead="Set up the next groups and the all-year groups. People see new groups in the app from the date you choose.">
     <Actions>
         @if (_page is { MaySetUp: true, MinistryId.Length: > 0 })
         {
@@ -54,7 +54,7 @@
                     </ListGroup>
                     @if (page.MaySetUp)
                     {
-                        <div class="ui-actions" style="margin-top: 10px">
+                        <div class="ui-actions ministry-actions">
                             <Button Small="true" Variant="ButtonVariant.Quiet" Icon="pencil" OnClick="() => OpenSet(round)">Sundays and time</Button>
                             @if (groups.Count == 0)
                             {
@@ -66,7 +66,7 @@
             }
             <section class="life-groups-desk__set">
                 <header class="life-groups-desk__head"><h2>All year</h2></header>
-                <p class="hint">Nursery, Kids Life and Youth run every Sunday. Parents join for their children.</p>
+                <p class="hint">Groups that meet every Sunday. A children's group lets parents join for their child.</p>
                 <ListGroup>
                     @foreach (MinistrySummary group in page.Groups.Where(group => group.RoundId.Length == 0))
                     {

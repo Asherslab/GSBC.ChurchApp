@@ -31,10 +31,15 @@ internal sealed class MinistriesService(
         GrantSet grants = await views.GrantsAsync(me, cancellationToken);
         Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, tree, grants, cancellationToken) : [];
         Dictionary<Guid, string> latest = await LatestAsync(tree, yours.Keys, grants, cancellationToken);
+        Dictionary<Guid, int> waiting = me is null ? [] : (await db.Asks.AsNoTracking().GroupBy(ask => ask.MinistryId)
+                .Select(group => new { group.Key, Count = group.Count() }).ToListAsync(cancellationToken))
+            .Where(group => MinistryViews.Holds(grants, MinistriesPermissions.People, group.Key))
+            .ToDictionary(group => group.Key, group => group.Count);
         return new MinistryDirectory
         {
             Ministries = tree.All.OrderBy(ministry => ministry.Order).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
-                .Select(ministry => MinistryViews.Summary(ministry, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? ""))
+                .Select(ministry => MinistryViews.Summary(ministry, yours.GetValueOrDefault(ministry.Id) ?? "", latest.GetValueOrDefault(ministry.Id) ?? "",
+                    waiting.GetValueOrDefault(ministry.Id)))
                 .ToList(),
             MayCreate = grants.IsAllowed(MinistriesPermissions.Create),
         };

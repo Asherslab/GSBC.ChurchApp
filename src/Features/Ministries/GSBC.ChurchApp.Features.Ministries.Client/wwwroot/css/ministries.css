@@ -5,6 +5,7 @@
 }
 
 .ministry-box__head {
+  margin: 0;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -198,3 +199,11 @@ button.ministry-item { cursor: pointer; }
 .life-groups-desk__head h2 { font-size: var(--text-title); letter-spacing: -0.015em; }
 
 .ministry-tree .search-field { flex: none; max-width: none; margin-bottom: 8px; }
+
+.ministry-people-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 18px 0 4px; }
+.ministry-people-head { margin: 22px 0 6px; font-size: var(--text-row); font-weight: 700; }
+.ministry-panel__title { font-size: var(--text-title); letter-spacing: -0.015em; }
+
+.ministry-actions { margin-top: 10px; }
+.life-groups-desk__head h2 { margin: 0; }
+.life-groups-desk__set .hint { margin-top: 4px; }

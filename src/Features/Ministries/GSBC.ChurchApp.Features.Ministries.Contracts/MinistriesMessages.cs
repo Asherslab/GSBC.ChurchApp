@@ -35,6 +35,7 @@ public sealed class MinistrySummary
     [ProtoMember(14)] public string Room { get; set; } = "";
     [ProtoMember(15)] public bool JoinAsParent { get; set; }
     [ProtoMember(16)] public string Latest { get; set; } = "";
+    [ProtoMember(17)] public int Waiting { get; set; }
 }
 
 [ProtoContract]

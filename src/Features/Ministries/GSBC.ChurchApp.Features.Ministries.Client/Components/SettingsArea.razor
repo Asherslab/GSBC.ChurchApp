@@ -47,7 +47,7 @@
         @if (_preview is { } preview)
         {
             <Notice Tone="NoticeTone.Warning" Text="@DeleteWords(preview)" />
-            <div class="ui-actions" style="margin-top: 10px">
+            <div class="ui-actions ministry-actions">
                 <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete @preview.Name</Button>
                 <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _preview = null">Keep it</Button>
             </div>

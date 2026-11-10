@@ -1,113 +1,13 @@
-@inject MinistriesClient Ministries
-
-<Sheet Open="Member is not null" OpenChanged="open => { if (!open) OnClose.InvokeAsync(); }" Title="@Member?.Name" Lead="@Lead">
+<Sheet Open="Member is not null" OpenChanged="open => { if (!open) OnClose.InvokeAsync(); }" Title="@Member?.Name" Lead="@PersonActions.Lead(Member)">
     <ChildContent>
-        @if (Member is { } member)
-        {
-            @if (member.LeadsFrom.Length > 0)
-            {
-                <p class="hint">@member.Name leads @member.LeadsFrom, so they lead everything under it too. Change that in @member.LeadsFrom.</p>
-            }
-            else if (_linking)
-            {
-                <PersonFinder Find="FindAsync" ActionText="Link as their parent" Label="Find their parent or guardian by name" Busy="@_busyId" AutoFocus="true"
-                              Leave="member.Parents.Select(parent => parent.Id).Append(member.PersonId).ToList()" OnChosen="LinkAsync" />
-                <p class="hint">Their parent sees what @Page.Ministry.Name shares with families, and hears about @member.Name.Split(' ')[0].</p>
-            }
-            else
-            {
-                <ListGroup>
-                    @if (member.Role == Roles.Attendee || member.Age is not null)
-                    {
-                        <ListRow Title="@(member.NoParent ? "No parent linked" : $"Parents: {MinistryWords.Names(member.Parents.Select(parent => parent.Name).ToList())}")"
-                                 Subtitle="@(member.NoParent ? $"Nobody hears about {Page.Ministry.Name} for them yet" : "Link another parent or guardian")"
-                                 Icon="users" IconTone="@(member.NoParent ? RowTone.Warm : RowTone.Quiet)" OnClick="() => _linking = true" Chevron="true" />
-                    }
-                    @foreach ((string role, string words, bool add) in Changes(member))
-                    {
-                        <ListRow @key="@($"{role}{add}")" Title="@words" Icon="@(add ? "plus" : "minus")" IconTone="@(add ? RowTone.Accent : RowTone.Quiet)" Disabled="_busy"
-                                 OnClick="() => ChangeAsync(role, add)" />
-                    }
-                </ListGroup>
-                <p class="hint">Only @Page.Ministry.Name's leaders and the church office see this.</p>
-            }
-            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
-        }
+        <PersonActions Member="Member" Page="Page" MayGive="MayGive" OnClose="OnClose" OnChanged="OnChanged" />
     </ChildContent>
 </Sheet>
 
 @code {
-    private bool _linking;
-    private bool _busy;
-    private string? _busyId;
-    private string? _problem;
-
     [Parameter] public Member? Member { get; set; }
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter] public IReadOnlyList<string> MayGive { get; set; } = [];
     [Parameter] public EventCallback OnClose { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
-
-    private string? Lead => Member is { } member
-        ? string.Join(" · ", new[] { member.Age is { } age ? $"{age}" : "", MinistryWords.Role(member.Role), member.CanSignIn ? "" : "no sign-in of their own" }.Where(part => part.Length > 0))
-        : null;
-
-    private IEnumerable<(string Role, string Words, bool Add)> Changes(Member member)
-    {
-        string first = member.Name.Split(' ')[0];
-        if (member.Role == Roles.Attendee)
-        {
-            if (MayGive.Contains(Roles.Team))
-                yield return (Roles.Team, "Add to the team as well", true);
-            if (MayGive.Contains(Roles.Attendee))
-                yield return (Roles.Attendee, $"{first} stops coming", false);
-            yield break;
-        }
-        if (member.Role != Roles.Leader && MayGive.Contains(Roles.Leader))
-            yield return (Roles.Leader, "Make a leader", true);
-        if (member.Role == Roles.Team && MayGive.Contains(Roles.Admin))
-            yield return (Roles.Admin, "Make an admin", true);
-        if (member.Role == Roles.Leader && MayGive.Contains(Roles.Leader))
-            yield return (Roles.Leader, "Stop being a leader", false);
-        if (member.Role == Roles.Admin && MayGive.Contains(Roles.Admin))
-            yield return (Roles.Admin, "Stop being an admin", false);
-        if (member.Role == Roles.Team && MayGive.Contains(Roles.Team))
-            yield return (Roles.Team, "Take off the team", false);
-    }
-
-    private async Task<IReadOnlyList<PersonChoice>> FindAsync(string query) =>
-        (await Ministries.FindAsync(Page.Ministry.Id, query)).Select(person => new PersonChoice(person.Id, person.Name, person.Detail)).ToList();
-
-    private Task LinkAsync(PersonChoice parent) =>
-        RunAsync(async () =>
-        {
-            _busyId = parent.Id;
-            await Ministries.LinkParentAsync(Page.Ministry.Id, Member!.PersonId, parent.Id);
-            await OnClose.InvokeAsync();
-        });
-
-    private Task ChangeAsync(string role, bool add) =>
-        RunAsync(async () =>
-        {
-            await Ministries.ChangePersonAsync(Page.Ministry.Id, Member!.PersonId, role, add);
-            await OnClose.InvokeAsync();
-        });
-
-    private async Task RunAsync(Func<Task> work)
-    {
-        (_busy, _problem) = (true, null);
-        try
-        {
-            await work();
-            await OnChanged.InvokeAsync();
-        }
-        catch (RpcException exception)
-        {
-            _problem = MinistriesClient.Problem(exception);
-        }
-        finally
-        {
-            (_busy, _busyId) = (false, null);
-        }
-    }
 }
