@@ -167,6 +167,27 @@ button.ministry-item { cursor: pointer; }
   cursor: pointer;
 }
 
+.ministry-tree__row { display: flex; align-items: center; gap: 2px; }
+.ministry-tree__row .ministry-tree__item { flex: 1; min-width: 0; }
+
+.ministry-tree__fold,
+.ministry-tree__fold-space { flex: none; width: 28px; height: 28px; }
+
+.ministry-tree__fold {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.ministry-tree__fold:hover { background: color-mix(in srgb, var(--sand) 60%, transparent); color: var(--ink); }
+.ministry-tree__fold .icon { transition: transform 160ms var(--ease-out); }
+.ministry-tree__fold--open .icon { transform: rotate(90deg); }
+
 .ministry-tree__item:hover { background: color-mix(in srgb, var(--sand) 60%, transparent); }
 .ministry-tree__item--on { background: var(--selected-fill); }
 .ministry-tree__name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
