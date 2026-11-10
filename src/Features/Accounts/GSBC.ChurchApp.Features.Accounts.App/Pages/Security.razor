@@ -1,0 +1,17 @@
+@page "/account/security"
+@inject AccountsClient Accounts
+
+<Page Title="Security" BackHref="@AccountsDestinations.Account.Route" BackLabel="Account">
+    <Masthead Title="Security" Note="Your passkeys and where you're signed in" />
+
+    <LiveData TValue="CurrentSession" Load="() => Accounts.GetCurrentSessionAsync().AsTask()" FailedTitle="Can't reach the church's server">
+        @if (context.Value.SignedIn)
+        {
+            <AccountSecurity />
+        }
+        else
+        {
+            <SignIn />
+        }
+    </LiveData>
+</Page>

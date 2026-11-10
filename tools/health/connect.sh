@@ -9,7 +9,7 @@ esac
 service="gsbc-tool-$environment"
 
 if [[ -t 0 ]]; then
-  read -rsp "Paste the session secret from the $environment admin panel's Account page: " secret
+  read -rsp "Paste the session secret from the $environment admin panel's Account → Security page: " secret
   echo
 else
   secret="$(pbpaste | tr -d '[:space:]')"
