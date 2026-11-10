@@ -1,0 +1,9 @@
+<div class="event-body">
+    <p class="event-off"><Icon Name="lock" Size="IconSize.Small" />@KeptBy keeps this in step with its own dates and times, so it's changed there, not here.</p>
+    <a class="text-link" href="@OpensAt">Change it in @KeptBy <Icon Name="chevron-right" Size="IconSize.Small" /></a>
+</div>
+
+@code {
+    [Parameter, EditorRequired] public required string KeptBy { get; set; }
+    [Parameter, EditorRequired] public required string OpensAt { get; set; }
+}

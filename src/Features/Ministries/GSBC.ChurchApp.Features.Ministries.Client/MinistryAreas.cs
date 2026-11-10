@@ -8,16 +8,12 @@ public static class MinistryAreas
     public static IReadOnlyList<(string Key, string Label, int? Count)> For(MinistryPage page)
     {
         YourPlace you = page.You;
-        bool posts = you.MayPostFor.Count > 0;
         List<(string, string, int?)> areas = [(MinistriesPlaces.About, "About", null)];
         if (page.Round is not null)
             areas.Add((MinistriesPlaces.Sundays, "Sundays", null));
-        if (Uses(page, MinistryParts.News) && (page.Posts.Count > 0 || posts))
-            areas.Add((MinistriesPlaces.News, MinistryParts.Of(MinistryParts.News).Name, null));
-        if (Uses(page, MinistryParts.Calendar) && (page.Calendars.Count > 0 || you.MayEditSettings))
-            areas.Add((MinistriesPlaces.Calendar, MinistryParts.Of(MinistryParts.Calendar).Name, null));
-        if (Uses(page, MinistryParts.Files) && (page.Files.Count > 0 || posts))
-            areas.Add((MinistriesPlaces.Files, MinistryParts.Of(MinistryParts.Files).Name, null));
+        foreach ((string part, string place) in new[] { (MinistryParts.News, MinistriesPlaces.News), (MinistryParts.Calendar, MinistriesPlaces.Calendar), (MinistryParts.Files, MinistriesPlaces.Files) })
+            if (MinistryParts.HasTab(page, part))
+                areas.Add((place, MinistryParts.Of(part).Name, null));
         if (you.MayManagePeople)
             areas.Add((MinistriesPlaces.People, "People", you.Waiting));
         if (you.MayEditSettings)

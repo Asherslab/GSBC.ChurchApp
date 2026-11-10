@@ -1,13 +1,25 @@
 @inject MinistriesClient Ministries
 @inject TimeProvider Clock
 
+@if (Page.SittingOut.FirstOrDefault() is { } off)
+{
+    <Section First="true">
+        <Notice>
+            <strong>@MinistryWords.NotOn(off)</strong>
+            @if (off.InsteadId.Length > 0)
+            {
+                <a class="text-link" href="@MinistriesPlaces.Of(off.InsteadId)">Go to @off.InsteadName <Icon Name="chevron-right" Size="IconSize.Small" /></a>
+            }
+        </Notice>
+    </Section>
+}
 @if (Page.Ministry.About.Length > 0)
 {
-    <Section First="true" Title="@(MinistryAreas.For(Page).Count > 1 ? null : "About")">
+    <Section First="@(Page.SittingOut.Count == 0)" Title="@(MinistryAreas.For(Page).Count > 1 ? null : "About")">
         <p class="ministry-about">@Page.Ministry.About</p>
     </Section>
 }
-<Section First="@(Page.Ministry.About.Length == 0)">
+<Section First="@(Page.Ministry.About.Length == 0 && Page.SittingOut.Count == 0)">
     <ListGroup>
         @if (Page.Ministry.Meets.Length > 0)
         {

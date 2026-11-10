@@ -18,6 +18,7 @@ public sealed class MinistryRecord
     public int Order { get; set; }
     public List<string> PartsOff { get; set; } = [];
     public List<string> PartsFromBelow { get; set; } = [];
+    public DateTime? ArchivedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
 
@@ -77,6 +78,15 @@ public sealed class RoundRecord
     public TimeOnly Starts { get; set; }
     public TimeOnly Ends { get; set; }
     public DateOnly? ShowsFrom { get; set; }
+}
+
+public sealed class SitOutRecord
+{
+    public Guid GroupId { get; set; }
+    public Guid RoundId { get; set; }
+    public string Note { get; set; } = "";
+    public Guid? InsteadId { get; set; }
+    public DateTime MarkedAt { get; set; }
 }
 
 public sealed class SessionRecord

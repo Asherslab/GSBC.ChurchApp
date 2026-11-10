@@ -14,13 +14,14 @@ internal sealed class MinistryDestinationSource(MinistriesDbContext db) : IDesti
     public async Task<IReadOnlyList<FoundPlace>> SearchAsync(string text, int take, CancellationToken cancellationToken)
     {
         List<MinistryRecord> found = await db.Ministries.AsNoTracking()
+            .Where(ministry => ministry.ArchivedAt == null)
             .Where(ministry => text.Length == 0 || EF.Functions.ILike(ministry.Name, "%" + text.Replace("%", "").Replace("_", "") + "%"))
             .OrderBy(ministry => ministry.Name).Take(take).ToListAsync(cancellationToken);
         return found.Select(Place).ToList();
     }
 
     public async Task<FoundPlace?> FindAsync(string id, CancellationToken cancellationToken) =>
-        Guid.TryParse(id, out Guid ministryId) && await db.Ministries.AsNoTracking().SingleOrDefaultAsync(ministry => ministry.Id == ministryId, cancellationToken) is { } found
+        Guid.TryParse(id, out Guid ministryId) && await db.Ministries.AsNoTracking().SingleOrDefaultAsync(ministry => ministry.Id == ministryId && ministry.ArchivedAt == null, cancellationToken) is { } found
             ? Place(found)
             : null;
 

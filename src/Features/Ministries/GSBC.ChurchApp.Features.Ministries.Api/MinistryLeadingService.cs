@@ -1,8 +1,10 @@
 using System.Globalization;
+using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
@@ -23,6 +25,7 @@ internal sealed class MinistryLeadingService(
     IFamilies families,
     IPeopleIndex people,
     IMinistryCalendars calendars,
+    IKeptRegularEvents keptEvents,
     INotifications notifications,
     TimeProvider time) : IMinistryLeadingService
 {
@@ -310,6 +313,66 @@ internal sealed class MinistryLeadingService(
         return new Done();
     }
 
+    public async ValueTask<Done> ArchiveAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
+        DateTime now = Now;
+        foreach (MinistryRecord archiving in MinistryArchive.Archiving(every, ministry))
+        {
+            await db.Ministries.Where(found => found.Id == archiving.Id).ExecuteUpdateAsync(set => set.SetProperty(found => found.ArchivedAt, now), cancellationToken);
+            await calendars.ShowAsync(archiving.Id, false, MinistryViews.WhileHidden(archiving.Id), cancellationToken);
+            changes.Touch(archiving.Id, deleted: true);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> RestoreAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        MinistryRecord ministry = Existing(every, request.MinistryId);
+        await MayDeleteAsync(SignedIn(context), ministry, cancellationToken);
+        if (MinistryArchive.WhyNotRestore(every, ministry) is { } why)
+            throw Refused(why);
+        foreach (MinistryRecord restoring in MinistryArchive.Restoring(every, ministry))
+        {
+            await db.Ministries.Where(found => found.Id == restoring.Id).ExecuteUpdateAsync(set => set.SetProperty(found => found.ArchivedAt, (DateTime?)null), cancellationToken);
+            await calendars.ShowAsync(restoring.Id, MinistryParts.IsOn(restoring.PartsOff, MinistryParts.Calendar), MinistryViews.WhileHidden(restoring.Id), cancellationToken);
+            changes.Touch(restoring.Id);
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<ArchivedList> ArchivedAsync(DirectoryRequest request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        GrantSet grants = await views.GrantsAsync(SignedIn(context), cancellationToken);
+        MinistryTree every = await views.EveryTreeAsync(cancellationToken);
+        return new ArchivedList
+        {
+            Ministries = every.All.Where(ministry => ministry.ArchivedAt is not null && MayFind(grants, ministry))
+                .OrderByDescending(ministry => ministry.ArchivedAt).ThenBy(ministry => ministry.Name, StringComparer.CurrentCulture)
+                .Select(ministry => new ArchivedLine
+                {
+                    Id = ministry.Id.ToString(), Name = ministry.Name, ArchivedAt = ministry.ArchivedAt!.Value, ShowsInLifeGroups = ministry.ShowsInLifeGroups,
+                    Where = ministry.ParentId is { } parent && every.Find(parent) is { } above ? $"Under {above.Name}" : "Not under another ministry",
+                    MayRestore = MayDelete(grants, ministry) && MinistryArchive.WhyNotRestore(every, ministry) is null,
+                })
+                .ToList(),
+        };
+    }
+
+    private static bool MayFind(GrantSet grants, MinistryRecord ministry) =>
+        MayDelete(grants, ministry) || MinistryViews.Holds(grants, MinistriesPermissions.Settings, ministry.Id);
+
+    private static bool MayDelete(GrantSet grants, MinistryRecord ministry) =>
+        ministry.ParentId is { } parent ? MinistryViews.Holds(grants, MinistriesPermissions.Settings, parent) : grants.IsAllowed(MinistriesPermissions.Create);
+
     public async ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;
@@ -383,6 +446,7 @@ internal sealed class MinistryLeadingService(
         round.ShowsFrom = wanted.ShowsFrom.Length > 0 ? DateOf(wanted.ShowsFrom) : null;
         changes.Touch(round.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await KeepCalendarInStepAsync(cancellationToken);
         return MinistryViews.Round(round);
     }
 
@@ -392,11 +456,82 @@ internal sealed class MinistryLeadingService(
         Guid id = ParseId(request.Id);
         if (await db.Ministries.AnyAsync(group => group.RoundId == id, cancellationToken))
             throw Refused("Delete these groups, or move them, first.");
+        await db.SitOuts.Where(sitOut => sitOut.RoundId == id).ExecuteDeleteAsync(cancellationToken);
         await db.Rounds.Where(round => round.Id == id).ExecuteDeleteAsync(cancellationToken);
         changes.Touch(id);
         await db.SaveChangesAsync(cancellationToken);
+        await KeepCalendarInStepAsync(cancellationToken);
         return new Done();
     }
+
+    public async ValueTask<Done> SitOutAsync(SitOutSave request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryRecord group = Existing(tree, request.SittingOut.GroupId);
+        if (!group.ShowsInLifeGroups || group.RoundId is not null)
+            throw Refused($"{group.Name} isn't an all-year Life Group.");
+        Guid roundId = ParseId(request.SittingOut.RoundId);
+        RoundRecord round = await db.Rounds.AsNoTracking().SingleOrDefaultAsync(found => found.Id == roundId, cancellationToken)
+                            ?? throw new RpcException(new Status(StatusCode.NotFound, "Those groups' dates were deleted."));
+        string note = request.SittingOut.Note.Trim();
+        if (note.Length > MinistryRules.LongestLine)
+            throw Invalid($"Keep the note to {MinistryRules.LongestLine} characters.");
+        Guid? instead = request.SittingOut.InsteadId.Length > 0 ? Existing(tree, request.SittingOut.InsteadId).Id : null;
+        if (instead == group.Id)
+            throw Invalid("Choose another group for them to join.");
+
+        SitOutRecord? sitOut = await db.SitOuts.SingleOrDefaultAsync(found => found.GroupId == group.Id && found.RoundId == roundId, cancellationToken);
+        bool newlyOff = request.Off && sitOut is null;
+        if (!request.Off)
+        {
+            if (sitOut is not null)
+                db.SitOuts.Remove(sitOut);
+        }
+        else
+        {
+            sitOut ??= db.SitOuts.Add(new SitOutRecord { GroupId = group.Id, RoundId = roundId, MarkedAt = Now }).Entity;
+            (sitOut.Note, sitOut.InsteadId) = (note, instead);
+        }
+        changes.Touch(group.Id);
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (newlyOff && round.Sundays.Count > 0 && round.Sundays.Max() >= ChurchTime.Today(time))
+            await notifications.RaiseAsync(new Notification(
+                MinistriesNotifications.Important, NotificationAudience.Holding(MinistriesPermissions.AttendeesView, group.Id.ToString()),
+                $"{group.Name} isn't on {Span(round)}", note.Length > 0 ? note : "The group is back after these Sundays.",
+                $"/ministries/{group.Id}", Subject: $"ministries/sit-out/{group.Id:N}/{roundId:N}", ScopeId: group.Id.ToString()), cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<LifeGroupsCalendar> LifeGroupsCalendarAsync(LifeGroupsRequest request, CallContext context = default) =>
+        await CalendarChoiceAsync(UserOf(context), context.CancellationToken);
+
+    public async ValueTask<LifeGroupsCalendar> ShowLifeGroupsInAsync(LifeGroupsCalendarChoice request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        ClaimsPrincipal user = UserOf(context);
+        if (request.CalendarId.Length == 0)
+            await keptEvents.RemoveAsync(LifeGroupSundays.Keeper, cancellationToken);
+        else
+            await keptEvents.PutInAsync(user, ParseId(request.CalendarId), LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+        return await CalendarChoiceAsync(user, cancellationToken);
+    }
+
+    private async Task<LifeGroupsCalendar> CalendarChoiceAsync(ClaimsPrincipal user, CancellationToken cancellationToken)
+    {
+        KeptCalendar? where = await keptEvents.WhereAsync(LifeGroupSundays.Keeper, cancellationToken);
+        return new LifeGroupsCalendar
+        {
+            CalendarId = where?.Id.ToString() ?? "", CalendarName = where?.Name ?? "",
+            Choices = (await keptEvents.ChoicesAsync(user, cancellationToken)).Select(choice => new Crumb { Id = choice.Id.ToString(), Name = choice.Name }).ToList(),
+        };
+    }
+
+    private async Task KeepCalendarInStepAsync(CancellationToken cancellationToken) =>
+        await keptEvents.KeepInStepAsync(LifeGroupSundays.Plan(await db.Rounds.AsNoTracking().ToListAsync(cancellationToken)), cancellationToken);
+
+    private static ClaimsPrincipal UserOf(CallContext context) => context.ServerCallContext?.GetHttpContext().User ?? new ClaimsPrincipal();
 
     public async ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default)
     {
@@ -469,11 +604,7 @@ internal sealed class MinistryLeadingService(
 
     private async Task MayDeleteAsync(Guid me, MinistryRecord ministry, CancellationToken cancellationToken)
     {
-        GrantSet grants = await views.GrantsAsync(me, cancellationToken);
-        bool may = ministry.ParentId is { } parent
-            ? MinistryViews.Holds(grants, MinistriesPermissions.Settings, parent)
-            : grants.IsAllowed(MinistriesPermissions.Create);
-        if (!may)
+        if (!MayDelete(await views.GrantsAsync(me, cancellationToken), ministry))
             throw new RpcException(new Status(StatusCode.PermissionDenied, ministry.ParentId is null
                 ? "Only staff delete the church's top-level ministries."
                 : "Only the leaders of the ministry above this one can delete it."));
@@ -509,6 +640,11 @@ internal sealed class MinistryLeadingService(
 
     private static int RoleOrder(string role) => role switch { Roles.Leader => 0, Roles.Admin => 1, _ => 2 };
 
+    private static string Span(RoundRecord round) =>
+        round.Sundays.Min() == round.Sundays.Max()
+            ? $"on {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)}"
+            : $"from {round.Sundays.Min().ToString("d MMMM", CultureInfo.InvariantCulture)} to {round.Sundays.Max().ToString("d MMMM", CultureInfo.InvariantCulture)}";
+
     private static string Shortened(string body) => body.Length <= 140 ? body : body[..137].TrimEnd() + "…";
 
     private static bool IsWebAddress(string url) =>
@@ -525,7 +661,7 @@ internal sealed class MinistryLeadingService(
 
     private static TimeOnly TimeOf(string text, TimeOnly fallback) =>
         text.Length == 0 ? fallback
-        : TimeOnly.TryParseExact(text, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
+        : TimeOnly.TryParseExact(text, ["HH:mm", "HH:mm:ss"], CultureInfo.InvariantCulture, DateTimeStyles.None, out TimeOnly value) ? value
         : throw Invalid("That isn't a time.");
 
     private static Guid ParseId(string id) => Guid.TryParse(id, out Guid parsed) ? parsed : throw Invalid("That isn't here any more.");

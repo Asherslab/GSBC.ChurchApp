@@ -52,6 +52,15 @@ public interface IMinistryLeadingService
     [SignedIn]
     ValueTask<Done> DeleteAsync(MinistryRef request, CallContext context = default);
 
+    [SignedIn]
+    ValueTask<Done> ArchiveAsync(MinistryRef request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<Done> RestoreAsync(MinistryRef request, CallContext context = default);
+
+    [SignedIn]
+    ValueTask<ArchivedList> ArchivedAsync(DirectoryRequest request, CallContext context = default);
+
     [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<MovePreview> MovingAsync(MoveRequest request, CallContext context = default);
 
@@ -72,6 +81,15 @@ public interface IMinistryLeadingService
 
     [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
     ValueTask<Done> DeleteRoundAsync(RoundRef request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<Done> SitOutAsync(SitOutSave request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<LifeGroupsCalendar> LifeGroupsCalendarAsync(LifeGroupsRequest request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PlanLifeGroupsNode)]
+    ValueTask<LifeGroupsCalendar> ShowLifeGroupsInAsync(LifeGroupsCalendarChoice request, CallContext context = default);
 
     [Requires(MinistriesPermissions.PostNode)]
     ValueTask<Done> SaveSessionAsync(SessionSave request, CallContext context = default);

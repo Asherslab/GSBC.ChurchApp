@@ -3,6 +3,8 @@ using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -19,6 +21,7 @@ internal sealed class MinistriesService(
     IFamilies families,
     IPeopleIndex people,
     INotifications notifications,
+    IKeptRegularEvents kept,
     TimeProvider time) : IMinistriesService
 {
     private const int LongestNote = 500;
@@ -75,6 +78,13 @@ internal sealed class MinistriesService(
                 .Select(MinistryViews.Session).ToList();
             if (ministry.RoundId is { } roundId && await db.Rounds.AsNoTracking().SingleOrDefaultAsync(found => found.Id == roundId, cancellationToken) is { } round)
                 page.Round = MinistryViews.Round(round);
+            List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => sitOut.GroupId == ministry.Id).ToListAsync(cancellationToken);
+            List<Guid> roundIds = sitOuts.Select(sitOut => sitOut.RoundId).ToList();
+            Dictionary<Guid, RoundRecord> rounds = await db.Rounds.AsNoTracking().Where(found => roundIds.Contains(found.Id)).ToDictionaryAsync(found => found.Id, cancellationToken);
+            DateOnly today = ChurchTime.Today(time);
+            page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? set) && set.Sundays.Count > 0 && set.Sundays.Max() >= today)
+                .OrderBy(sitOut => rounds[sitOut.RoundId].Sundays.Min())
+                .Select(sitOut => MinistryViews.SittingOut(sitOut, rounds[sitOut.RoundId], tree)).ToList();
         }
         return page;
     }
@@ -89,8 +99,11 @@ internal sealed class MinistriesService(
         List<SessionRecord> sessions = await db.Sessions.AsNoTracking().Where(session => groupIds.Contains(session.GroupId)).ToListAsync(cancellationToken);
         GrantSet grants = await views.GrantsAsync(me, cancellationToken);
         Dictionary<Guid, string> yours = me is { } person ? await YoursAsync(person, groups, grants, cancellationToken) : [];
+        List<SitOutRecord> sitOuts = await db.SitOuts.AsNoTracking().Where(sitOut => groupIds.Contains(sitOut.GroupId)).ToListAsync(cancellationToken);
         return new LifeGroupsPage
         {
+            CalendarName = (await kept.WhereAsync(LifeGroupSundays.Keeper, cancellationToken))?.Name ?? "",
+            SittingOut = sitOuts.Select(sitOut => MinistryViews.SittingOut(sitOut, null, tree)).ToList(),
             Rounds = (await db.Rounds.AsNoTracking().ToListAsync(cancellationToken))
                 .OrderBy(round => round.Sundays.DefaultIfEmpty().Min()).Select(MinistryViews.Round).ToList(),
             Groups = groups.Select(group => MinistryViews.Summary(group, yours.GetValueOrDefault(group.Id) ?? "")).ToList(),
