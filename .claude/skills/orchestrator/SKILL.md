@@ -98,7 +98,8 @@ dotnet run --no-build --project src/Hosts/GSBC.ChurchApp.Hosts.AppHost --launch-
 - **Before you report:** check the release note exists in `changelog/unreleased/` with `added:` and the
   Changed/Where/Try parts; `git grep` the merge for real names or emails that crept into docs or fixtures (the repo is
   public); for anything web-facing, check it through Cloudflare (below).
-- **Then clean up:** close the station's node and group (`close --node a,b,c`, one confirmation for the owner), run
+- **Then clean up:** shut down any Simulator still booted for it (`xcrun simctl list devices booted`; a booted one holds
+  about 8 GB of memory, owner 2026-11-10), close the station's node and group (`close --node a,b,c`, one confirmation for the owner), run
   `tools/dev/prune-worktrees.sh` (Docker needs the sandbox off), and delete the station's temp folder
   (`/private/tmp/claude-*/…-worktrees-<name>`). Do this at the end of every merge round, not when the disk fills.
 - If a later station needs the merged work, message it: "merged into skeleton/backbone (<sha>); merge it, then …".
