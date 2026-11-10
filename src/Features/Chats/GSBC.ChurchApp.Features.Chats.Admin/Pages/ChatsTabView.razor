@@ -28,9 +28,19 @@
 
     [Parameter, EditorRequired] public required Desk Desk { get; set; }
     [Parameter] public string? Reading { get; set; }
-    [Parameter] public EventCallback<string?> ReadingChanged { get; set; }
 
-    private DeskChat? Chosen => Desk.Chats.FirstOrDefault(chat => chat.Id == Reading);
+    private string? _chosenId;
+    private string? _readingSeen;
+
+    private DeskChat? Chosen => Desk.Chats.FirstOrDefault(chat => chat.Id == _chosenId);
+
+    protected override void OnParametersSet()
+    {
+        if (Reading == _readingSeen)
+            return;
+        _readingSeen = Reading;
+        _chosenId = Reading;
+    }
 
     private static readonly IReadOnlyList<TableColumn<DeskChat>> Columns =
     [
@@ -41,18 +51,16 @@
         new("Needs", chat => @<span class="chat-flag">@(chat.OpenReports > 0 ? $"{chat.OpenReports} report{(chat.OpenReports == 1 ? "" : "s")}" : chat.Flags.FirstOrDefault())</span>, chat => chat.OpenReports),
     ];
 
+    private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
+
     private static string? RowClass(DeskChat chat) => chat.OpenReports > 0 ? "row--urgent" : null;
 
-    private async Task Choose(DeskChat chat)
-    {
-        (_checked, _reason, _problem, _deleting) = (null, "", null, false);
-        await ReadingChanged.InvokeAsync(chat.Id);
-    }
+    private void Choose(DeskChat chat) => (_chosenId, _checked, _reason, _problem, _deleting) = (chat.Id, null, "", null, false);
 
     private RenderFragment Detail(DeskChat chat) =>
         @<div class="chat-report">
             <h2 class="chat-report__title">@chat.Name</h2>
-            <p class="quiet">@chat.MinistryName · @ChatText.Audience(chat.Audience) · @chat.People people · @chat.Messages messages@(chat.HasMinors ? " · parents can read it" : "")</p>
+            <p class="quiet">@chat.MinistryName · @ChatText.Audience(chat.Audience) · @Count(chat.People, "person", "people") · @Count(chat.Messages, "message", "messages")@(chat.HasMinors ? " · parents can read it" : "")</p>
             @foreach (string flag in chat.Flags)
             {
                 <Notice Tone="NoticeTone.Warning">@flag</Notice>
@@ -115,7 +123,7 @@
         try
         {
             await Oversight.DeleteAsync(chat.Id);
-            await ReadingChanged.InvokeAsync(null);
+            _chosenId = null;
         }
         catch (RpcException exception)
         {

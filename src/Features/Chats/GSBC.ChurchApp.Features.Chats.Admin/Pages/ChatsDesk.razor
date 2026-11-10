@@ -14,7 +14,7 @@
             <ReportsTab Desk="context.Value" OnRead="ReadFromReport" />
             break;
         case ChatsTab:
-            <ChatsTabView Desk="context.Value" Reading="_reading" ReadingChanged="chat => _reading = chat" />
+            <ChatsTabView Desk="context.Value" Reading="@_reading" />
             break;
         case Paused:
             <PausedTab />

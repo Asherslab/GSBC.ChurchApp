@@ -9,7 +9,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api;
 
 internal sealed record Published(ChatRecord Chat, ChatPlace? Place, MembershipPlan Plan, MembershipFacts Facts);
 
-internal sealed class ChatPublisher(ChatsDbContext db, ChatFacts facts, IPeopleIndex people, TimeProvider time)
+internal sealed class ChatPublisher(ChatsDbContext db, ChatFacts facts, IPeopleIndex people, OversightMarks marks, TimeProvider time)
 {
     public async Task<Published> PlanAsync(ChatRecord chat, CancellationToken cancellationToken)
     {
@@ -35,6 +35,9 @@ internal sealed class ChatPublisher(ChatsDbContext db, ChatFacts facts, IPeopleI
         bool flagsChanged = !chat.Flags.SequenceEqual(plan.Flags) || chat.HasMinors != plan.HasMinors;
         chat.Flags = plan.Flags.ToList();
         chat.HasMinors = plan.HasMinors;
+
+        if (membershipChanged || flagsChanged)
+            marks.Touch(chat);
 
         if (!membershipChanged && !flagsChanged && changedMessages.Count == 0 && !cards)
         {
