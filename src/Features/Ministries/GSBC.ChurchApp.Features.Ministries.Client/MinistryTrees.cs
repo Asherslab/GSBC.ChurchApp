@@ -7,19 +7,19 @@ public static class MinistryTrees
     public static IEnumerable<(MinistrySummary Ministry, int Depth)> Walk(IReadOnlyList<MinistrySummary> ministries, int deepest = int.MaxValue, IReadOnlySet<string>? folded = null, IReadOnlySet<string>? path = null)
     {
         ILookup<string, MinistrySummary> children = ministries.ToLookup(ministry => ministry.ParentId);
-        Stack<(MinistrySummary, int)> waiting = new(children[""].Reverse().Select(ministry => (ministry, 0)));
+        Stack<(MinistrySummary, int, bool)> waiting = new(children[""].Reverse().Select(ministry => (ministry, 0, false)));
         HashSet<string> seen = [];
-        while (waiting.TryPop(out (MinistrySummary Ministry, int Depth) next))
+        while (waiting.TryPop(out (MinistrySummary Ministry, int Depth, bool InFolded) next))
         {
             if (!seen.Add(next.Ministry.Id))
                 continue;
-            yield return next;
+            yield return (next.Ministry, next.Depth);
             if (next.Depth >= deepest)
                 continue;
-            bool isFolded = folded?.Contains(next.Ministry.Id) == true;
+            bool onlyThePath = next.InFolded || folded?.Contains(next.Ministry.Id) == true;
             foreach (MinistrySummary child in children[next.Ministry.Id].Reverse())
-                if (!isFolded || path?.Contains(child.Id) == true)
-                    waiting.Push((child, next.Depth + 1));
+                if (!onlyThePath || path?.Contains(child.Id) == true)
+                    waiting.Push((child, next.Depth + 1, onlyThePath));
         }
     }
 
