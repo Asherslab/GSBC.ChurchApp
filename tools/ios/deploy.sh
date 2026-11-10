@@ -21,7 +21,9 @@ team_file="$shell/.team"
 
 environment="$shell/ios/environments/Dev.xcconfig"
 setting() { sed -n "s/^$1 = //p" "$environment"; }
-gateway="${GSBC_GATEWAY:-http://$(scutil --get LocalHostName).local:5300}"
+if [ "${target:-device}" = simulator ]; then default_gateway="http://$(scutil --get LocalHostName).local:5300"
+else default_gateway="$(setting GSBC_GATEWAY_SCHEME)://$(setting GSBC_GATEWAY)"; fi
+gateway="${GSBC_GATEWAY:-$default_gateway}"
 case "$gateway" in http://*|https://*) ;; *) gateway="http://$gateway" ;; esac
 gateway_scheme="${gateway%%://*}"
 gateway_host="${gateway#*://}"

@@ -6,8 +6,10 @@ email="${1:?usage: make-owner.sh <email of someone who has already signed up>}"
 if [ -n "${DATABASE_URL:-}" ]; then
   psql() { command psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -q "$@"; }
 else
-  container="$(docker ps --format '{{.Names}}' | grep -m1 '^postgres' || true)"
-  [ -n "$container" ] || { echo "No Postgres container, and DATABASE_URL isn't set. Start the AppHost, or point DATABASE_URL at the database."; exit 1; }
+  project="$(git -C "$(dirname "$0")" rev-parse --show-toplevel)/src/Hosts/GSBC.ChurchApp.Hosts.AppHost/GSBC.ChurchApp.Hosts.AppHost.csproj"
+  volume="gsbc.churchapp.hosts.apphost-$(printf %s "$project" | tr '[:upper:]' '[:lower:]' | shasum -a 256 | cut -c1-10)-postgres-data"
+  container="$(docker ps --filter "volume=$volume" --format '{{.Names}}' | head -1)"
+  [ -n "$container" ] || { echo "This checkout's Postgres isn't running, and DATABASE_URL isn't set. Start its AppHost, or point DATABASE_URL at the database."; exit 1; }
   psql() { docker exec -i "$container" sh -c 'PGPASSWORD="$POSTGRES_PASSWORD" exec psql -h localhost -U postgres -d churchapp -v ON_ERROR_STOP=1 -q "$@"' psql "$@"; }
 fi
 
