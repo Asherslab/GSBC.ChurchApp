@@ -45,15 +45,13 @@
             Diary diary = await Diary.LoadAsync();
             return CalendarDiary.ComingUp(diary.In(yours.Showing(diary.Calendars)), Now, Wanted);
         }
-        if (Services.GetService(typeof(CalendarEditing)) is not CalendarEditing editing)
+        if (Services.GetService(typeof(IOnlineAgenda)) is not IOnlineAgenda online)
             return [];
-        CalendarDesk desk = await editing.DeskAsync();
-        List<string> defaults = desk.Calendars.Where(calendar => calendar.Settings.Calendar.ShownOnNewPhones).Select(calendar => calendar.Settings.Calendar.Id).ToList();
+        IReadOnlyList<string> defaults = await online.ShownOnNewPhonesAsync();
         if (defaults.Count == 0)
             return [];
         DateOnly today = EventWords.Today(Now);
-        Agenda agenda = await editing.AgendaAsync(defaults, today, today.AddDays(7 * AdminWeeksAhead));
-        return CalendarDiary.ComingUp(agenda.Occurrences, Now, Wanted);
+        return CalendarDiary.ComingUp(await online.AgendaAsync(defaults, today, today.AddDays(7 * AdminWeeksAhead)), Now, Wanted);
     }
 
     private RenderFragment Drawn(IReadOnlyList<EventOccurrence> coming)

@@ -1,11 +1,12 @@
 @using GSBC.ChurchApp.Platform.Contracts.Content
 @using GSBC.ChurchApp.Platform.Ui.Content
-@inject CalendarEditing Editor
+@inject IEventEditing Editing
 @inject TimeProvider Clock
 @inject Shell Shell
 @inject UnsavedChanges Unsaved
 
 <UnsavedGuard Changed="() => Changed" What="this date" Save="SaveBeforeLeavingAsync" />
+<RefreshOn Feeds="Editing.Feeds" On="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox" Changed="_ => RefreshAsync()" />
 
 @if (InPanel)
 {
@@ -25,7 +26,8 @@ else
     private EventDraft? _draft;
     private CalendarDesk _desk = new();
     private IReadOnlyList<EventPlace> _placesUsed = [];
-    private Exception? _loadFailure;
+    private string? _loadProblem;
+    private DateSave? _base;
     private string? _problem;
     private bool _saving;
     private bool _telling;
@@ -56,38 +58,49 @@ else
             return;
         _loadedFor = (RegularEventId, Date);
         _draft = null;
-        _loadFailure = null;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _loadProblem = null;
         try
         {
-            _desk = await Editor.DeskAsync();
-            RegularEventDetail detail = await Editor.Editing.RegularEventAsync(new RegularRef { CalendarId = CalendarId, RegularEventId = RegularEventId });
+            _desk = await Editing.DeskAsync();
+            if (await Editing.RegularEventAsync(CalendarId, RegularEventId) is not { } detail)
+            {
+                _loadProblem = "It isn't on this phone. It may have been deleted, or you may no longer edit its calendar.";
+                return;
+            }
             _draft = EventDraft.From(detail, Date, Now);
             Stored();
             _inBreak = detail.Dates.FirstOrDefault(entry => entry.Date == EventDates.Format(Date) && entry.NotOn && !_draft.NotOnThisDate)?.NotOnReason;
-            _ = LoadPlacesAsync();
+            _placesUsed = await Editing.PlacesUsedAsync();
         }
         catch (Exception exception) when (exception is not OperationCanceledException)
         {
-            _loadFailure = exception;
+            _loadProblem = Editing.Explain(exception);
         }
     }
 
-    private async Task LoadPlacesAsync()
+    private async Task RefreshAsync()
     {
-        try
+        if (_saving || _telling || _draft is null)
+            return;
+        if (!Changed)
         {
-            _placesUsed = (await Editor.PlacesUsedAsync()).Places;
-            StateHasChanged();
+            string? said = _savedWords;
+            await LoadAsync();
+            _savedWords = said;
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
-        {
-        }
+        _placesUsed = await Editing.PlacesUsedAsync();
     }
 
     private RenderFragment Body => @<text>
-        @if (_loadFailure is not null)
+        @if (_loadProblem is not null)
         {
-            <EmptyState Icon="cloud-off" Title="Can't open this date" Body="@CalendarEditing.Problem(_loadFailure)">
+            <EmptyState Icon="cloud-off" Title="Can't open this date" Body="@_loadProblem">
                 <Button Variant="ButtonVariant.Quiet" OnClick="Closed">Back</Button>
             </EmptyState>
         }
@@ -136,7 +149,8 @@ else
             <div class="editor-foot @(InPanel ? "editor-foot--panel" : "")">
                 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
                 <div class="editor-foot__actions">
-                    <SaveBar Block="true" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords" />
+                    <SaveBar Block="true" Label="Save this date" Busy="_saving" OnSave="() => SaveAsync(draft.NotOnThisDate)" Blocked="@(OnDate.Fields.Title.Trim().Length == 0 ? "Give it a title to save it." : null)" State="SaveLine" SavedText="@SavedWords"
+                             WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@Waiting?.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
                     <Button Variant="ButtonVariant.Quiet" Busy="_saving" OnClick="() => SaveAsync(!draft.NotOnThisDate)">@(draft.NotOnThisDate ? "On again" : "Not on this date")</Button>
                 </div>
             </div>
@@ -148,11 +162,19 @@ else
 
     private bool Changed => _draft is not null && _stored is not null && Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)) != _stored;
 
-    private SaveState? SaveLine => SaveBar.For(Changed, _savedWords is not null);
+    private string ItemKey => EditKeys.Date(RegularEventId, EventDates.Format(Date));
+
+    private EditWaiting? Waiting => _draft is null || Changed ? null : Editing.WaitingFor(ItemKey);
+
+    private SaveState? SaveLine => Waiting?.State ?? SaveBar.For(Changed, _savedWords is not null);
 
     private string SavedWords => (_savedWords ?? "Saved").TrimEnd('.');
 
-    private void Stored() => (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+    private void Stored()
+    {
+        (_stored, _savedWords) = (_draft is null ? null : Fingerprint.Of(EventsContractsModel.Instance, SaveMessage(_draft)), null);
+        _base = _draft is null ? null : EditSaves.Copy(SaveMessage(_draft));
+    }
 
     private async Task<bool> SaveBeforeLeavingAsync()
     {
@@ -188,31 +210,30 @@ else
             return;
         _saving = true;
         _problem = null;
-        try
+        bool wasShown = draft.WasShown;
+        DateSave? before = _base;
+        DateSave save = draft.ToDateSave(notOn);
+        save.Base = before;
+        EditSent sent = await Editing.SaveDateAsync(save);
+        _saving = false;
+        if (!sent.Succeeded)
         {
-            bool wasShown = draft.WasShown;
-            RegularEventDetail saved = await Editor.Editing.SaveDateAsync(draft.ToDateSave(notOn));
-            draft.NotOnThisDate = notOn;
-            Stored();
-            await Shell.HapticAsync(Haptic.Success);
-            _savedOccurrenceId = draft.OccurrenceId(saved);
-            if (wasShown && _savedOccurrenceId.Length > 0)
-            {
-                _tellTitle = notOn ? $"{OnDate.Fields.Title} isn't on" : $"Changed: {OnDate.Fields.Title}";
-                _tellBody = notOn ? $"{EventWords.LongDate(Date)}." : saved.Specials.FirstOrDefault(special => special.Date == EventDates.Format(Date))?.ChangeNote ?? "";
-                _telling = true;
-                return;
-            }
-            await FinishAsync(TellPeopleSheet.SavedWords);
+            _problem = sent.Problem;
+            return;
         }
-        catch (Exception exception) when (exception is not OperationCanceledException)
+        draft.NotOnThisDate = notOn;
+        Stored();
+        await Shell.HapticAsync(Haptic.Success);
+        _savedOccurrenceId = draft.OccurrenceId();
+        if (wasShown && _savedOccurrenceId.Length > 0)
         {
-            _problem = CalendarEditing.Problem(exception);
+            _tellTitle = notOn ? $"{OnDate.Fields.Title} isn't on" : $"Changed: {OnDate.Fields.Title}";
+            _tellBody = notOn || before is null ? $"{EventWords.LongDate(Date)}."
+                : FieldValues.ChangeNote(new Timed(before.Fields, before.StartMinute, before.EndMinute), new Timed(save.Fields, save.StartMinute, save.EndMinute));
+            _telling = true;
+            return;
         }
-        finally
-        {
-            _saving = false;
-        }
+        await FinishAsync(TellPeopleSheet.SavedWords);
     }
 
     private async Task FinishAsync(string done)

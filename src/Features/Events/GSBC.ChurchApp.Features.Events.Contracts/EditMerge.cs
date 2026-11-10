@@ -1,9 +1,8 @@
-using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Contracts;
 
-namespace GSBC.ChurchApp.Features.Events.Api;
+namespace GSBC.ChurchApp.Features.Events.Contracts;
 
-internal static class EditMerge
+public static class EditMerge
 {
     public static EventSave Onto(EventSave current, EventSave wanted)
     {
