@@ -24,6 +24,8 @@
         List<Round> unfinished = page.Rounds.Where(round => LifeGroupRounds.StageOf(round, today) != RoundStage.Finished).OrderBy(round => LifeGroupRounds.Day(round.Sundays.FirstOrDefault())).ToList();
         List<int> years = stages[RoundStage.Finished].Select(round => LifeGroupRounds.Day(round.Sundays.Last()).Year).Distinct().OrderDescending().ToList();
         int year = _year is { } chosen && years.Contains(chosen) ? chosen : years.FirstOrDefault(today.Year);
+        Round? next = stages[RoundStage.BeingPlanned].Concat(stages[RoundStage.ShownInTheApp]).FirstOrDefault();
+        List<Round> finished = stages[RoundStage.Finished].Where(round => LifeGroupRounds.Day(round.Sundays.Last()).Year == year).Reverse().ToList();
     }
     @if (page.Groups.Count == 0 && page.Rounds.Count == 0)
     {
@@ -51,14 +53,14 @@
             {
                 Round? offFor = unfinished.FirstOrDefault(round => LifeGroupRounds.SitsOut(group.Id, round, page.SittingOut) is not null);
                 <a @key="group.Id" class="lg-chip @(offFor is null ? "" : "lg-chip--off")" href="@($"ministries/{group.Id}")">
-                    <b>@group.Name</b>@if (offFor is not null) {<span>· not on @MinistryWords.Span(offFor)</span>}
+                    <b>@group.Name</b>@if (offFor is not null) {<span>not on @MinistryWords.Short(offFor)</span>}
                 </a>
             }
             @if (_mayAdd)
             {
                 <button type="button" class="lg-chip lg-chip--add" @onclick="() => OpenGroup(null)"><Icon Name="plus" Size="IconSize.Small" />Add an all-year group</button>
             }
-            <button type="button" class="text-link lg-all-year__archived" @onclick="() => _archivedOpen = true">Archived groups <Icon Name="chevron-right" Size="IconSize.Small" /></button>
+            <button type="button" class="text-link lg-all-year__archived" @onclick="() => _archivedOpen = true">Archived groups@(_archived > 0 ? $" ({_archived})" : "") <Icon Name="chevron-right" Size="IconSize.Small" /></button>
         </div>
         <div class="lg-board">
             @foreach (RoundStage stage in new[] { RoundStage.BeingPlanned, RoundStage.ShownInTheApp, RoundStage.NowOn })
@@ -67,7 +69,7 @@
                     <h2 class="lg-col__head" id="@($"lg-{stage}")">@StageName(stage) <span class="lg-col__count">@stages[stage].Count()</span></h2>
                     @foreach (Round round in stages[stage])
                     {
-                        @SetCard(page, round, stage, allYear, today)
+                        @SetCard(page, round, stage, allYear, today, round == next)
                     }
                     @if (!stages[stage].Any())
                     {
@@ -81,12 +83,7 @@
                 </h2>
                 @if (years.Count > 1)
                 {
-                    <div class="lg-years">
-                        @foreach (int each in years)
-                        {
-                            <button type="button" class="lg-year @(each == year ? "lg-year--on" : "")" aria-pressed="@(each == year)" @onclick="() => _year = each">@each</button>
-                        }
-                    </div>
+                    <Segmented TValue="int" Label="Which year" Options="@years.Select(each => new SegmentOption<int>(each, each.ToString())).ToList()" Value="year" ValueChanged="each => _year = each" />
                 }
                 @if (years.Count == 0)
                 {
@@ -95,14 +92,14 @@
                 else
                 {
                     <div class="lg-card lg-card--finished">
-                        @foreach (Round round in stages[RoundStage.Finished].Where(round => LifeGroupRounds.Day(round.Sundays.Last()).Year == year).Reverse())
+                        @foreach (Round round in _allFinished ? finished : finished.Take(FinishedShown))
                         {
                             List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
                             bool open = _openFinished == round.Id;
                             <div class="lg-finished" @key="round.Id">
                                 <button type="button" class="lg-finished__line" aria-expanded="@open" @onclick="() => _openFinished = open ? null : round.Id">
                                     <Icon Name="@(open ? "chevron-down" : "chevron-right")" Size="IconSize.Small" />
-                                    <b>@MinistryWords.Span(round)</b><span>@Count(groups.Count, "group")</span>
+                                    <b>@MinistryWords.Short(round)</b><span>@Count(groups.Count, "group")</span>
                                 </button>
                                 @if (open)
                                 {
@@ -118,10 +115,14 @@
                                     }
                                     else if (page.MayPlan)
                                     {
-                                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => DeleteSetAsync(round)">Delete these Sundays</Button>
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => _deletingSet = round">Delete these Sundays</Button>
                                     }
                                 }
                             </div>
+                        }
+                        @if (!_allFinished && finished.Count > FinishedShown)
+                        {
+                            <button type="button" class="lg-finished__line" @onclick="() => _allFinished = true"><Icon Name="chevron-right" Size="IconSize.Small" />@(finished.Count - FinishedShown) more</button>
                         }
                     </div>
                 }
@@ -132,6 +133,17 @@
 </LiveData>
 
 <ArchivedSheet Open="_archivedOpen" OpenChanged="open => _archivedOpen = open" LifeGroupsOnly="true" OnRestored="ReloadAsync" />
+
+<Sheet Open="_deletingSet is not null" OpenChanged="open => { if (!open) _deletingSet = null; }" Title="@(_deletingSet is { } doomed ? $"Delete the Sundays {MinistryWords.Span(doomed)}?" : "")"
+       Lead="They come off Life Groups, the app and the calendar. This can't be undone; you can plan them again.">
+    <ChildContent>
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteSetAsync">Delete these Sundays</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _deletingSet = null">Keep them</Button>
+    </Actions>
+</Sheet>
 
 <Sheet Open="_archivingSet is not null" OpenChanged="open => { if (!open) _archivingSet = null; }" Title="@(_archivingSet is { } set ? $"Archive the groups from {MinistryWords.Span(set)}?" : "")"
        Lead="They leave Life Groups, the app and every list, and nothing more can be posted in them. Their people, news, files and calendars are kept, and you can restore any of them from Archived groups.">
@@ -172,6 +184,17 @@
     </ChildContent>
     <Actions>
         <SaveBar Block="true" Label="Save" Busy="_busy" OnSave="SaveSetAsync" Blocked="@(_sundays.Count == 0 ? "Add the Sundays they meet to save them." : null)" />
+        @if (_set is { } set && _page is { } page)
+        {
+            @if (AllYear(page).Any(group => LifeGroupRounds.Runs(group.Id, "", set, page.SittingOut)))
+            {
+                <Button Block="true" Variant="ButtonVariant.Quiet" Icon="circle-off" OnClick="() => { _setOpen = false; OpenSitOut(set, null); }">An all-year group isn't on these Sundays</Button>
+            }
+            @if (page.Groups.All(group => group.RoundId != set.Id) && LifeGroupRounds.StageOf(set, ChurchTime.Today(Clock)) != RoundStage.NowOn)
+            {
+                <Button Block="true" Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => { _setOpen = false; _deletingSet = set; }">Delete these Sundays</Button>
+            }
+        }
     </Actions>
 </Sheet>
 
@@ -265,12 +288,17 @@
     private string? _openFinished;
     private bool _archivedOpen;
     private Round? _archivingSet;
+    private Round? _deletingSet;
+    private bool _allFinished;
+    private int _archived;
+    private const int FinishedShown = 3;
 
     private async Task<LifeGroupsPage> LoadAsync()
     {
         _page = await Ministries.LifeGroupsAsync();
         MinistryDirectory directory = await Ministries.DirectoryAsync();
         _mayAdd = directory.MayCreate || directory.Ministries.Any(ministry => ministry.MayAddUnder);
+        _archived = (await Ministries.ArchivedAsync()).Ministries.Count(line => line.ShowsInLifeGroups);
         StateHasChanged();
         return _page;
     }
@@ -306,12 +334,19 @@
         return $"{Count(round.Sundays.Count, "Sunday")} · {time}{shows}";
     }
 
-    private RenderFragment SetCard(LifeGroupsPage page, Round round, RoundStage stage, List<MinistrySummary> allYear, DateOnly today) => @<article @key="round.Id" class="@($"lg-card lg-card--{stage.ToString().ToLowerInvariant()}")" aria-label="@MinistryWords.Span(round)">
+    private RenderFragment SetCard(LifeGroupsPage page, Round round, RoundStage stage, List<MinistrySummary> allYear, DateOnly today, bool isNext) => @<article @key="round.Id" class="@($"lg-card lg-card--{stage.ToString().ToLowerInvariant()}{(isNext ? " lg-card--next" : "")}")" aria-label="@MinistryWords.Span(round)">
         @{
             List<MinistrySummary> groups = page.Groups.Where(group => group.RoundId == round.Id).ToList();
             List<(MinistrySummary Group, SittingOut Off)> off = allYear.Select(group => (group, LifeGroupRounds.SitsOut(group.Id, round, page.SittingOut))).Where(each => each.Item2 is not null).Select(each => (each.group, each.Item2!)).ToList();
         }
-        <h3 class="lg-card__title">@MinistryWords.Span(round)</h3>
+        @if (page.MayPlan)
+        {
+            <button type="button" class="lg-card__title" title="Sundays and time" @onclick="() => OpenSet(round)">@MinistryWords.Short(round) <Icon Name="pencil" Size="IconSize.Small" /></button>
+        }
+        else
+        {
+            <h3 class="lg-card__title">@MinistryWords.Short(round)</h3>
+        }
         <p class="lg-card__facts">@Facts(round, stage, today)</p>
         @if (groups.Count > 0 || off.Count > 0)
         {
@@ -335,28 +370,14 @@
                 }
             </ul>
         }
-        else
+        @if (groups.Count == 0)
         {
-            <p class="lg-card__facts">No groups yet.</p>
+            <p class="lg-card__needs">@(stage == RoundStage.ShownInTheApp ? "No groups yet, and people can already see these Sundays." : "No groups yet.")</p>
         }
-        <div class="lg-card__actions">
-            @if (_mayAdd)
-            {
-                <Button Small="true" Variant="ButtonVariant.Quiet" Icon="plus" OnClick="() => OpenGroup(round.Id)">Add a group</Button>
-            }
-            @if (page.MayPlan)
-            {
-                <button type="button" class="lg-action" @onclick="() => OpenSet(round)">Sundays and time</button>
-                @if (stage != RoundStage.NowOn && allYear.Any(group => LifeGroupRounds.Runs(group.Id, "", round, page.SittingOut)))
-                {
-                    <button type="button" class="lg-action" @onclick="() => OpenSitOut(round, null)">An all-year group isn't on</button>
-                }
-                @if (groups.Count == 0)
-                {
-                    <button type="button" class="lg-action" @onclick="() => DeleteSetAsync(round)">Delete</button>
-                }
-            }
-        </div>
+        @if (_mayAdd)
+        {
+            <div class="lg-card__actions"><Button Small="true" Variant="ButtonVariant.Quiet" Icon="plus" OnClick="() => OpenGroup(round.Id)">Add a group</Button></div>
+        }
     </article>;
 
     private Task ArchiveSetAsync() =>
@@ -478,7 +499,12 @@
             _setOpen = false;
         });
 
-    private Task DeleteSetAsync(Round round) => RunAsync(() => Ministries.DeleteRoundAsync(round.Id));
+    private Task DeleteSetAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.DeleteRoundAsync(_deletingSet!.Id);
+            _deletingSet = null;
+        });
 
     private void OpenGroup(string? roundId) => (_groupRound, _problem, _groupOpen) = (roundId, null, true);
 

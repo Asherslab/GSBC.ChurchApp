@@ -360,7 +360,7 @@ internal sealed class MinistryLeadingService(
                 .Select(ministry => new ArchivedLine
                 {
                     Id = ministry.Id.ToString(), Name = ministry.Name, ArchivedAt = ministry.ArchivedAt!.Value, ShowsInLifeGroups = ministry.ShowsInLifeGroups,
-                    Where = ministry.ParentId is { } parent && every.Find(parent) is { } above ? $"Under {above.Name}" : "Top-level",
+                    Where = ministry.ParentId is { } parent && every.Find(parent) is { } above ? $"Under {above.Name}" : "Not under another ministry",
                     MayRestore = MayDelete(grants, ministry) && MinistryArchive.WhyNotRestore(every, ministry) is null,
                 })
                 .ToList(),
