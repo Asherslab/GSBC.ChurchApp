@@ -54,6 +54,13 @@ public static class RosterLines
         return date.AllDay ? day : $"{day}, {ChurchDates.Time(local)} to {ChurchDates.Time(ChurchTime.ToChurch(date.EndsAt))}";
     }
 
+    public static string Days(RosterDate first, RosterDate last)
+    {
+        string from = ChurchTime.ToChurch(first.StartsAt).ToString("ddd d MMM", CultureInfo.InvariantCulture);
+        string to = ChurchTime.ToChurch(last.StartsAt).ToString("ddd d MMM", CultureInfo.InvariantCulture);
+        return from == to ? from : $"{from} to {to}";
+    }
+
     public static string DayNumber(RosterDate date) => ChurchTime.ToChurch(date.StartsAt).Day.ToString(CultureInfo.InvariantCulture);
 
     public static string Weekday(RosterDate date, DateTime nowUtc)

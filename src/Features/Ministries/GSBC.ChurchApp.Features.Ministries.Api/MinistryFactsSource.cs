@@ -7,14 +7,14 @@ namespace GSBC.ChurchApp.Features.Ministries.Api;
 internal sealed class MinistryFactsSource(MinistryViews views) : IMinistryFacts
 {
     public async ValueTask<MinistryFacts?> FindAsync(Guid ministryId, CancellationToken cancellationToken) =>
-        (await views.TreeAsync(cancellationToken)).Find(ministryId) is { } ministry ? Facts(ministry) : null;
+        (await views.EveryTreeAsync(cancellationToken)).Find(ministryId) is { } ministry ? Facts(ministry) : null;
 
     public async ValueTask<IReadOnlyList<MinistryFacts>> UsingAsync(string part, CancellationToken cancellationToken) =>
-        (await views.TreeAsync(cancellationToken)).All.Where(ministry => MinistryViews.IsOn(ministry, part)).Select(Facts).ToList();
+        (await views.EveryTreeAsync(cancellationToken)).All.Where(ministry => MinistryViews.IsOn(ministry, part)).Select(Facts).ToList();
 
     public async ValueTask<IReadOnlyList<MinistryMember>> TeamAsync(Guid ministryId, CancellationToken cancellationToken)
     {
-        MinistryTree tree = await views.TreeAsync(cancellationToken);
+        MinistryTree tree = await views.EveryTreeAsync(cancellationToken);
         if (tree.Find(ministryId) is null)
             return [];
 
@@ -28,5 +28,5 @@ internal sealed class MinistryFactsSource(MinistryViews views) : IMinistryFacts
         return team.Select(member => new MinistryMember(member.Key, member.Value)).ToList();
     }
 
-    private static MinistryFacts Facts(MinistryRecord ministry) => new(ministry.Id, ministry.Name, Archived: false, ministry.PartsOff);
+    private static MinistryFacts Facts(MinistryRecord ministry) => new(ministry.Id, ministry.Name, Archived: ministry.ArchivedAt is not null, ministry.PartsOff);
 }

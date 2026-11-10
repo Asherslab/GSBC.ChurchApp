@@ -1,6 +1,8 @@
 @inject IRosterReads Reads
 @inject RosterWrites Writes
 
+@if (View.You.Count > 0)
+{
 <LiveData TValue="AwayList" Load="Reads.AwayAsync" Feeds="Reads.Feeds" Remember="rosters.away">
     <ChildContent>
         @{
@@ -30,6 +32,7 @@
     </ChildContent>
     <Loading />
 </LiveData>
+}
 
 <AwaySheet @key="@($"away-{_adding}")" Open="_adding" OpenChanged="open => _adding = open" People="View.You" YourId="@View.YourId" />
 

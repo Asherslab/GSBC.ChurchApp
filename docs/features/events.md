@@ -893,6 +893,11 @@ through Sync and writes through the outbox). So on the phone:
 - **The weekly digest** (decision 18): built; to show staff. *Digest maker* is given like any role, to whoever the
   owner chooses; *What's Next* goes out through Elvanto for now (under review).
 - **A ministry's calendars for its team** (decision 15) waits for Ministries: calendars carry `MinistryId` for it.
+- **Rosters hang off events** (2026-11-11, Ministries Stage 3): Events answers `IRosterableEvents` (Platform.Api): the events
+  a person may see in a range, and an event by its occurrence key (one-off or a regular event's date), so a ministry's
+  roster can use any event in the app. On the phone, Events fills Platform.Client's `IEventChoices` from the phone's own
+  calendar store for a leader adding a roster date. A roster keeps the event's title and time and follows changes every
+  10 minutes; a date taken off the calendar shows as not on.
 - **A ministry can hide its calendars** (2026-11-10, Ministries' *What it uses*): `IMinistryCalendars.ShowAsync` narrows each
   of its calendars to the ministry's leaders and keeps the chosen audience in `shown_audience` until it's shown again, so
   every feed, iCal link and notification follows without a special case. Changing a hidden calendar's audience (from

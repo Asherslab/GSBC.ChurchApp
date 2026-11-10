@@ -85,8 +85,6 @@ internal sealed class RosterBook(
         };
     }
 
-    public RosterView Everything(Guid viewer) => ViewFor(viewer, new Recipient(true, []));
-
     private Position PositionOf(PositionRecord position, bool leads) => new()
     {
         Id = position.Id.ToString(), Name = position.Name, Needed = position.Needed, Order = position.Order,

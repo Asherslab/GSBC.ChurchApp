@@ -3,7 +3,7 @@
 }
 <div class="roster-grid__bar">
     <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-left" AriaLabel="Earlier dates" Disabled="@(_from == 0)" OnClick="() => _from = Math.Max(0, _from - PerPage)" />
-    <span class="roster-grid__range">@(shown.Count == 0 ? "" : shown.Count == 1 ? RosterLines.When(shown[0]) : $"{RosterLines.When(shown[0])} to {RosterLines.When(shown[^1])}")</span>
+    <span class="roster-grid__range">@(shown.Count == 0 ? "" : RosterLines.Days(shown[0], shown[^1]))</span>
     <Button Small="true" Variant="ButtonVariant.Quiet" Icon="chevron-right" AriaLabel="Later dates" Disabled="@(_from + PerPage >= Dates.Count)" OnClick="() => _from += PerPage" />
 </div>
 <div class="roster-grid" role="region" aria-label="The roster as a grid" tabindex="0">

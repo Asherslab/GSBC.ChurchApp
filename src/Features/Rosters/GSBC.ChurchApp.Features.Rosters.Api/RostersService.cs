@@ -36,13 +36,10 @@ internal sealed class RostersService(
         MinistryFacts ministry = await RosteringAsync(request.MinistryId, cancellationToken);
         RosterBook book = await views.LoadAsync(ministry.Id, cancellationToken, DayOrNull(request.From), DayOrNull(request.To)?.AddDays(1))
                           ?? throw NotHere();
+        Recipient? recipient = book.Recipients().GetValueOrDefault(me);
         if ((await access.GrantsForAsync(me, cancellationToken)).IsAllowed(RostersPermissions.Edit, ministry.Id.ToString()))
-        {
-            RosterView everything = book.Everything(me);
-            everything.MayEdit = !ministry.Archived;
-            return everything;
-        }
-        return book.Recipients().TryGetValue(me, out Recipient? recipient)
+            return book.ViewFor(me, (recipient ?? new Recipient(true, [])) with { Leads = true });
+        return recipient is not null
             ? book.ViewFor(me, recipient)
             : throw new RpcException(new Status(StatusCode.PermissionDenied, $"Only {ministry.Name}'s team sees its roster."));
     }
