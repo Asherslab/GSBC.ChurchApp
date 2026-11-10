@@ -4,6 +4,8 @@ using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
+using GSBC.ChurchApp.Platform.Client.Uploads;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Platform.Ui;
 
@@ -45,10 +47,78 @@ public sealed class StoredEditingTests
         Assert.Null(editing.WaitingFor(EditKeys.Event(EventId)));
     }
 
-    private static StoredEventEditing Editing(Outbox outbox, EventDetail stored)
+    [Fact]
+    public async Task APictureChosenOfflineGoesWithItsSaveAndDeletingTheEventFirstDropsBoth()
+    {
+        Outbox outbox = new();
+        FileUploads uploads = new(new Shelf(), new Services());
+        StoredEventEditing editing = Editing(outbox, new EventDetail { Id = EventId, CalendarId = Calendar, Fields = new EventFields { Title = "Carols night" } }, uploads);
+
+        MediaRef picture = (await uploads.KeepAsync(default, "carols.jpg", "image/jpeg", imagesOnly: true)).Media!;
+        EventSave save = EditSaves.SaveOf(EditSaves.Copy((await editing.EventAsync(Calendar, EventId))!));
+        save.Fields.Picture = picture;
+        await editing.SaveEventAsync(save);
+
+        (OutboxEntry entry, IReadOnlyList<QueuedUpload> sent) = Assert.Single(outbox.Queued);
+        Assert.Equal(QueuedEventEdits.SaveEvent, entry.Method);
+        Assert.Equal([3, 3, 1], Assert.Single(Assert.Single(sent).Slots).Path);
+        Assert.Equal(picture.Url, (await editing.EventAsync(Calendar, EventId))!.Fields.Picture?.Url);
+
+        outbox.UploadPending();
+        await editing.DeleteEventAsync(new EventRef { CalendarId = Calendar, EventId = EventId });
+
+        Assert.Equal([entry.Id], outbox.Discarded);
+        Assert.Equal(QueuedEventEdits.DeleteEvent, Assert.Single(outbox.Entries).Method);
+    }
+
+    [Fact]
+    public async Task ANewEventDeletedWhileItsPictureWaitsIsNeverSent()
+    {
+        Outbox outbox = new();
+        FileUploads uploads = new(new Shelf(), new Services());
+        StoredEventEditing editing = Editing(outbox, new EventDetail { Id = EventId, CalendarId = Calendar }, uploads);
+        string newId = Guid.CreateVersion7().ToString();
+
+        EventSave save = new() { CalendarId = Calendar, NewId = newId, Fields = new EventFields { Title = "Picnic" } };
+        save.Fields.Picture = (await uploads.KeepAsync(default, "picnic.png", "image/png", imagesOnly: true)).Media;
+        await editing.SaveEventAsync(save);
+        outbox.UploadPending();
+        await editing.DeleteEventAsync(new EventRef { CalendarId = Calendar, EventId = newId });
+
+        Assert.Empty(outbox.Entries);
+    }
+
+    [Fact]
+    public void TheMediaIdThePhoneAddsToAQueuedSaveFillsInThePictureAndKeepsTheRest()
+    {
+        EventSave save = new()
+        {
+            CalendarId = Calendar, EventId = EventId,
+            Fields = new EventFields { Title = "Carols night", Picture = new MediaRef { FileName = "carols.jpg", ContentType = "image/jpeg", AltText = "Candles" } },
+        };
+        string mediaId = Guid.CreateVersion7().ToString();
+
+        EventSave sent = EventsContractsModel.Instance.Deserialize<EventSave>(new MemoryStream([.. Encode(save), .. Spliced(mediaId, EventPictureSlots.EventSave.Path)]));
+
+        Assert.Equal(mediaId, sent.Fields.Picture?.Id);
+        Assert.Equal(("Carols night", "carols.jpg", "Candles", EventId), (sent.Fields.Title, sent.Fields.Picture?.FileName, sent.Fields.Picture?.AltText, sent.EventId));
+    }
+
+    private static byte[] Spliced(string value, IReadOnlyList<int> path)
+    {
+        byte[] inner = [.. Field(path[^1], System.Text.Encoding.UTF8.GetBytes(value))];
+        for (int depth = path.Count - 2; depth >= 0; depth--)
+            inner = [.. Field(path[depth], inner)];
+        return inner;
+    }
+
+    private static IEnumerable<byte> Field(int number, byte[] value) => [(byte)(number << 3 | 2), (byte)value.Length, .. value];
+
+    private static StoredEventEditing Editing(Outbox outbox, EventDetail stored, FileUploads? uploads = null)
     {
         Feeds feeds = new([new StoredRecord($"event/{stored.Id}", 1, Encode(stored), null, null, null, Calendar)]);
-        return new StoredEventEditing(feeds, new QueuedEventEdits(outbox, new Preferences()), new Editor(), new CalendarDiary(new Services()), new Clock());
+        return new StoredEventEditing(feeds, new QueuedEventEdits(outbox, new Preferences()), new Editor(), new CalendarDiary(new Services()),
+            uploads ?? new FileUploads(new NoFileShelf(), new Services()), new Clock());
     }
 
     private static byte[] Encode<T>(T message)
@@ -79,15 +149,29 @@ public sealed class StoredEditingTests
     private sealed class Outbox : IOutbox
     {
         public List<OutboxEntry> Entries { get; } = [];
+        public List<(OutboxEntry Entry, IReadOnlyList<QueuedUpload> Uploads)> Queued { get; } = [];
+        public List<string> Discarded { get; } = [];
         public bool IsAvailable => true;
 
         public event Action? Changed;
 
-        public ValueTask<string> EnqueueAsync(string method, byte[] request)
+        public ValueTask<string> EnqueueAsync(string method, byte[] request) => EnqueueAsync(method, request, []);
+
+        public ValueTask<string> EnqueueAsync(string method, byte[] request, IReadOnlyList<QueuedUpload> uploads)
         {
-            string id = Guid.NewGuid().ToString();
-            Entries.Add(new OutboxEntry(id, method, DateTime.UnixEpoch, 0, null, false));
-            return ValueTask.FromResult(id);
+            OutboxEntry entry = new(Guid.NewGuid().ToString(), method, DateTime.UnixEpoch, 0, null, false);
+            Entries.Add(entry);
+            Queued.Add((entry, uploads));
+            return ValueTask.FromResult(entry.Id);
+        }
+
+        public void UploadPending()
+        {
+            HashSet<string> waiting = [.. Queued.Where(queued => queued.Uploads.Count > 0).Select(queued => queued.Entry.Id)];
+            for (int index = 0; index < Entries.Count; index++)
+                if (waiting.Contains(Entries[index].Id))
+                    Entries[index] = Entries[index] with { WaitsForUpload = true };
+            Changed?.Invoke();
         }
 
         public ValueTask<string> EnqueueAsync<T>(string method, T request, ProtoBuf.Meta.TypeModel model) => throw new NotSupportedException();
@@ -100,7 +184,12 @@ public sealed class StoredEditingTests
 
         public ValueTask RetryAsync(string id) => ValueTask.CompletedTask;
 
-        public ValueTask DiscardAsync(string id) => ValueTask.CompletedTask;
+        public ValueTask DiscardAsync(string id)
+        {
+            Discarded.Add(id);
+            Entries.RemoveAll(entry => entry.Id == id);
+            return ValueTask.CompletedTask;
+        }
 
         public void Fail(string error)
         {
@@ -145,6 +234,31 @@ public sealed class StoredEditingTests
 
     private sealed class Services : IServiceProvider
     {
-        public object? GetService(Type serviceType) => null;
+        public object? GetService(Type serviceType) => serviceType == typeof(IUploadRequests) ? new Requests() : null;
+    }
+
+    private sealed class Shelf : IFileShelf
+    {
+        public bool IsAvailable => true;
+
+        public ValueTask<StagedFile?> KeepAsync(Microsoft.AspNetCore.Components.ElementReference input, string contentType)
+        {
+            string token = Guid.NewGuid().ToString();
+            return ValueTask.FromResult<StagedFile?>(new StagedFile(token, "picture", contentType, 1200, "ab12", $"capacitor://localhost/_capacitor_file_/Uploads/{token}"));
+        }
+
+        public ValueTask ForgetAsync(string token) => ValueTask.CompletedTask;
+    }
+
+    private sealed class Requests : IUploadRequests
+    {
+        public string Accepted(bool imagesOnly) => "image/jpeg,image/png";
+
+        public string? ContentTypeOf(string fileName, string reported, bool imagesOnly) => reported;
+
+        public string Unusable(string fileName, bool imagesOnly) => "No.";
+
+        public QueuedUpload For(StagedFile file, UploadTarget target, IReadOnlyList<MediaSlot> slots) =>
+            new(file, new QueuedCall("find", []), new QueuedCall("begin", []), new QueuedCall("complete", []), slots);
     }
 }

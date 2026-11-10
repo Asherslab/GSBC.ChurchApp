@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using GSBC.ChurchApp.Platform.Ui;
 
 namespace GSBC.ChurchApp.Features.Events.Client;
@@ -37,7 +38,7 @@ public sealed class QueuedEventEdits : IDisposable
 
     public bool CanQueue => _outbox.IsAvailable;
 
-    public async Task QueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request)
+    public async Task QueueAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request, QueuedUpload? upload = null)
     {
         using MemoryStream body = new();
         EventsContractsModel.Instance.Serialize(body, request);
@@ -46,7 +47,7 @@ public sealed class QueuedEventEdits : IDisposable
         try
         {
             List<QueuedEdit> edits = await EditsAsync();
-            string entryId = await _outbox.EnqueueAsync(method, bytes);
+            string entryId = await _outbox.EnqueueAsync(method, bytes, upload is null ? [] : [upload]);
             edits.Add(new QueuedEdit { Key = key, EntryId = entryId, Method = method, Request = bytes });
             await RememberAsync(edits);
         }
@@ -79,6 +80,15 @@ public sealed class QueuedEventEdits : IDisposable
         foreach (QueuedEdit edit in (_edits ?? []).Where(edit => Concerns(edit.Key, key) || Concerns(key, edit.Key)).ToList())
             if (_entries.TryGetValue(edit.EntryId, out OutboxEntry? entry) && entry.Failed)
                 await _outbox.RetryAsync(entry.Id);
+    }
+
+    public bool WaitsForUpload(QueuedEdit edit) => _entries.TryGetValue(edit.EntryId, out OutboxEntry? entry) && entry.WaitsForUpload;
+
+    public async Task DiscardAsync(IReadOnlyList<QueuedEdit> discarded)
+    {
+        foreach (QueuedEdit edit in discarded)
+            await _outbox.DiscardAsync(edit.EntryId);
+        await RefreshAsync();
     }
 
     public static T Read<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(QueuedEdit edit) =>

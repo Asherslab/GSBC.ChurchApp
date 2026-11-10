@@ -1,0 +1,41 @@
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using Microsoft.AspNetCore.Components.Forms
+@inject FileUploads Uploads
+
+<label class="add-row file-pick @(_busy ? "file-pick--busy" : "") @Class">
+    <Icon Name="@(ImagesOnly ? "image" : "file")" Size="IconSize.Small" />
+    <span>@(_busy ? "Keeping it on this phone…" : Label)</span>
+    <InputFile @ref="_input" OnChange="PickAsync" accept="@Uploads.Accepted(ImagesOnly)" disabled="@_busy" class="visually-hidden" />
+</label>
+<Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+@code {
+    private InputFile? _input;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter] public bool ImagesOnly { get; set; } = true;
+    [Parameter] public string AltText { get; set; } = "";
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public EventCallback<MediaRef> OnPicked { get; set; }
+
+    private async Task PickAsync(InputFileChangeEventArgs args)
+    {
+        if (_input?.Element is not { } input)
+            return;
+        (_busy, _problem) = (true, null);
+        try
+        {
+            PickedFile picked = await Uploads.KeepAsync(input, args.File.Name, args.File.ContentType, ImagesOnly, AltText);
+            _problem = picked.Problem;
+            if (picked.Media is { } media)
+                await OnPicked.InvokeAsync(media);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

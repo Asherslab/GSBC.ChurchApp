@@ -18,9 +18,6 @@ public sealed partial class SyncOnlyRules
         "INotificationsService.RegisterDevice",
         "IPeopleService.MakeSignInCode",
         "IMediaService.GetLink",
-        "IMediaService.FindByHash",
-        "IMediaService.BeginUpload",
-        "IMediaService.CompleteUpload",
         "ICalendarFilesService.Link",
         "ICalendarFilesService.ResetLink",
         "IDestinationsService.Describe",
@@ -34,6 +31,15 @@ public sealed partial class SyncOnlyRules
         "IMediaService.List",
         "IMediaFoldersService.List",
     ];
+
+    private static readonly string[] MadeOnlyByTheOutboxWorker =
+    [
+        "IMediaService.FindByHash",
+        "IMediaService.BeginUpload",
+        "IMediaService.CompleteUpload",
+    ];
+
+    private const string QueuedUploadCalls = "src/Features/Media/GSBC.ChurchApp.Features.Media.Client/MediaUploadRequests.cs";
 
     private static readonly string[] NotYetOnSync =
     [
@@ -60,6 +66,18 @@ public sealed partial class SyncOnlyRules
             .ToList();
 
         Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
+    [Fact]
+    public void UploadsAreQueuedForTheOutboxWorkerAndNeverCalledByAScreen()
+    {
+        Dictionary<string, string> services = ServicesByPath();
+        string text = File.ReadAllText(Path.Combine(RepoRoot.Path, QueuedUploadCalls));
+        string service = services[QueuedService().Match(text).Groups["path"].Value];
+        List<string> queued = QueuedMethod().Matches(text).Select(match => $"{service}.{match.Groups["method"].Value}").ToList();
+
+        Assert.Equal(MadeOnlyByTheOutboxWorker.Order(), queued.Order());
+        Assert.Empty(MadeOnlyByTheOutboxWorker.Intersect(ApprovedDirectCalls));
     }
 
     [Fact]
@@ -179,6 +197,12 @@ public sealed partial class SyncOnlyRules
             return new AppFile(relative, text, adminOnly, types);
         }
     }
+
+    [GeneratedRegex(@"\bService\s*=\s*""/(?<path>[\w.]+)/""")]
+    private static partial Regex QueuedService();
+
+    [GeneratedRegex(@"=\s*Service\s*\+\s*""(?<method>\w+)""")]
+    private static partial Regex QueuedMethod();
 
     [GeneratedRegex(@"(?<access>private|public|internal|protected)?\s*(?:static\s+)?(?:readonly\s+)?(?<service>I\w+)\s+(?<name>\w+)\s*(?:\{\s*get;\s*\})?\s*=\s*[^;]*?(?<create>CreateGrpcService)<\k<service>>\(\)\s*;")]
     private static partial Regex ProxyField();

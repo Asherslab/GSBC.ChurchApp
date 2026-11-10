@@ -38,12 +38,15 @@ public sealed class FileUploads(IFileShelf shelf, IServiceProvider services)
         return new PickedFile(Placeholder(kept, altText), null);
     }
 
-    public bool IsWaiting(MediaRef? media) => media is { Id.Length: 0, Url: { } preview } && _kept.ContainsKey(preview);
+    public static bool IsWaiting(MediaRef? media) => media is { Id.Length: 0, Key.Length: 0, Url.Length: > 0 };
 
     public QueuedUpload? For(MediaRef? media, MediaSlot slot, UploadTarget? target = null) =>
-        media is { Id.Length: 0, Url: { } preview } && _kept.TryGetValue(preview, out StagedFile? file) && Requests is { } requests
-            ? requests.For(file, target ?? new UploadTarget(media.AltText), [slot])
-            : null;
+        IsWaiting(media) && Requests is { } requests ? requests.For(KeptFile(media!), target ?? new UploadTarget(media!.AltText), [slot]) : null;
+
+    private StagedFile KeptFile(MediaRef media) =>
+        _kept.TryGetValue(media.Url!, out StagedFile? file)
+            ? file
+            : new StagedFile(Uri.UnescapeDataString(media.Url!.Split('/', '?')[^1]), media.FileName, media.ContentType, media.Bytes, "", media.Url);
 
     public async ValueTask ForgetAsync(MediaRef? media)
     {

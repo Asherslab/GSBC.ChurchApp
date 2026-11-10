@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using GSBC.ChurchApp.Platform.Client.Feeds;
 using GSBC.ChurchApp.Platform.Client.Native;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using Microsoft.JSInterop;
 using ProtoBuf.Meta;
 
@@ -29,6 +30,20 @@ public sealed class NativeOutbox(NativeBridge bridge, IJSRuntime js) : IOutbox, 
             ? await js.InvokeAsync<string>("gsbcNative.enqueue", method, Convert.ToBase64String(request), false)
             : throw new InvalidOperationException("Queued writes need the phone app's data layer.");
 
+    public async ValueTask<string> EnqueueAsync(string method, byte[] request, IReadOnlyList<QueuedUpload> uploads)
+    {
+        if (!IsAvailable)
+            throw new InvalidOperationException("Queued writes need the phone app's data layer.");
+        string json = JsonSerializer.Serialize(uploads.Select(Json).ToArray(), NativeJson.Default.QueuedUploadJsonArray);
+        return await js.InvokeAsync<string>("gsbcNative.enqueueWithUploads", method, Convert.ToBase64String(request), json);
+    }
+
+    private static QueuedUploadJson Json(QueuedUpload upload) => new(
+        upload.File.Token, upload.File.Name, upload.File.ContentType, upload.File.Bytes,
+        Json(upload.Find), Json(upload.Begin), Json(upload.Complete), [.. upload.Slots.Select(slot => slot.Text)]);
+
+    private static QueuedCallJson Json(QueuedCall call) => new(call.Method, Convert.ToBase64String(call.Request));
+
     public async ValueTask EnqueueQuietlyAsync(string method, byte[] request)
     {
         if (IsAvailable)
@@ -55,7 +70,7 @@ public sealed class NativeOutbox(NativeBridge bridge, IJSRuntime js) : IOutbox, 
 
         return (JsonSerializer.Deserialize(await js.InvokeAsync<string>("gsbcNative.outbox"), NativeJson.Default.OutboxEntryJsonArray) ?? [])
             .Select(entry => new OutboxEntry(entry.Id, entry.Method, DateTime.UnixEpoch.AddMilliseconds(entry.CreatedAt),
-                entry.Attempts, entry.LastError, entry.Failed))
+                entry.Attempts, entry.LastError, entry.Failed, entry.WaitsForUpload, entry.Upload?.FileName))
             .ToList();
     }
 

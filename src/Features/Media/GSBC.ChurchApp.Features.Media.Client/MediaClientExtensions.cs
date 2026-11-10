@@ -2,6 +2,7 @@ using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -14,10 +15,11 @@ public static class MediaClientExtensions
         services.TryAddSingleton(TimeProvider.System);
         return services
             .AddDestinations(MediaDestinations.All)
-            .AddSingleton(provider => new MediaClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
+            .AddSingleton(provider => new MediaClient(provider.GetRequiredService<Grpc.Core.ChannelBase>()))
             .AddSingleton<IPrivateMediaLinks, PrivateMediaLinks>()
             .AddSingleton<MediaFolderMemory>()
             .AddSingleton(new MediaPicker(typeof(MediaChoice)))
+            .AddSingleton<IUploadRequests, MediaUploadRequests>()
             .AddSingleton<IClientStartupTask, PrivateMediaGuard>();
     }
 }
