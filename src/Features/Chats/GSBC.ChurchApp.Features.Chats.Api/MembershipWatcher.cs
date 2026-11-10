@@ -7,7 +7,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api;
 
 internal sealed class MembershipWatcher(IServiceScopeFactory scopes, FeedChangeBroadcaster broadcaster, ILogger<MembershipWatcher> logger) : BackgroundService
 {
-    internal static readonly IReadOnlyList<string> Follows = ["access.grants", "ministries", "people.safeguarding", "people.family"];
+    internal static readonly IReadOnlyList<string> Follows = ["access.grants", "ministries", "ministries.directory", "people.safeguarding", "people.family"];
     private static readonly TimeSpan Settle = TimeSpan.FromSeconds(2);
     private static readonly TimeSpan Sweep = TimeSpan.FromHours(1);
 

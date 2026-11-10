@@ -354,6 +354,7 @@ internal sealed class ChatActions(
             open = new ChatRecord
             {
                 Id = chatId, MinistryId = ministryId, Kind = ChatKinds.Ask, Audience = ChatAudiences.Chosen, AskerId = asker, CreatedBy = me,
+                AskedAs = request.Place is "team" or "attend" ? request.Place : "",
                 CreatedAt = time.GetUtcNow().UtcDateTime, Name = NameOf($"{names.GetValueOrDefault(asker, "Someone")} about joining"),
             };
             db.Chats.Add(open);

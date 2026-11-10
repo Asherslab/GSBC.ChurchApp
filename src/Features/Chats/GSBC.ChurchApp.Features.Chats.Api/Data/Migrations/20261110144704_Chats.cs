@@ -45,6 +45,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api.Data.Migrations
                     kind = table.Column<string>(type: "text", nullable: false),
                     audience = table.Column<string>(type: "text", nullable: false),
                     asker_id = table.Column<Guid>(type: "uuid", nullable: true),
+                    asked_as = table.Column<string>(type: "text", nullable: false),
                     created_by = table.Column<Guid>(type: "uuid", nullable: true),
                     created_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     deleted_at = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),

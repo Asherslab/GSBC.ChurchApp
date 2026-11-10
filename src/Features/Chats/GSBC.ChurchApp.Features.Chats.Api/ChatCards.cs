@@ -51,6 +51,7 @@ internal static class ChatCards
             HasMinors = plan.HasMinors,
             FirstSeq = 1,
             You = you.PersonId.ToString(),
+            AskedAs = chat.AskedAs,
         };
     }
 

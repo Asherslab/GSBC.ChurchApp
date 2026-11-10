@@ -1,8 +1,11 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
 @inject IMinistryWrites Ministries
+@inject IServiceProvider Services
 
-<UnsavedGuard Changed="() => Open && _note.Trim().Length > 0" What="your note for the leaders" />
+<UnsavedGuard Changed="() => Open && (_note.Trim().Length > 0 || _message != Template)" What="@(InChat ? "your message for the leaders" : "your note for the leaders")" />
 
-<Sheet Open="Open" OpenChanged="OpenChanged" Title="@($"Join {Page.Ministry.Name}")" Lead="@(Choices.Count > 1 ? "Who's it for?" : null)">
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="@(Chosen is { Asks: true } && InChat ? $"Ask to join {Page.Ministry.Name}" : $"Join {Page.Ministry.Name}")"
+       Lead="@(Chosen is { Asks: true } && InChat ? $"This starts a chat with {Page.Ministry.Name}'s leaders." : Choices.Count > 1 ? "Who's it for?" : null)">
     <ChildContent>
         @foreach (JoinChoice choice in Choices)
         {
@@ -15,20 +18,41 @@
                 </span>
             </button>
         }
-        @if (Chosen is { Asks: true })
+        @if (Chosen is { Asks: true } && InChat)
+        {
+            <TextField Label="Your first message" @bind-Value="_message" Multiline="true" MaxLength="4000" Required="true" />
+            <p class="hint">Church staff can check messages in chats.@(Chosen.PersonId.Length > 0 ? " You'll be in the chat with your child, and the leaders." : "")</p>
+        }
+        else if (Chosen is { Asks: true })
         {
             <TextField Label="A note for the leaders (optional)" @bind-Value="_note" Multiline="true" MaxLength="500" />
         }
         <Notice Tone="NoticeTone.Warning" Text="@_problem" />
     </ChildContent>
     <Actions>
-        <Button Block="true" Busy="_busy" Disabled="@(Chosen is null)" OnClick="JoinAsync">@(Chosen?.Action ?? "Join")</Button>
+        <Button Block="true" Busy="_busy" Disabled="@(Chosen is null || (Chosen.Asks && InChat && _message.Trim().Length == 0))" OnClick="JoinAsync">@(Chosen is { Asks: true } && InChat ? $"Send to {MinistryWords.Possessive(Page.Ministry.Name)} leaders" : Chosen?.Action ?? "Join")</Button>
     </Actions>
 </Sheet>
 
 @code {
     private JoinChoice? _chosen;
     private string _note = "";
+    private string? _messageFor;
+    private string _message = "";
+
+    private MinistryChatsView? Chats => Services.GetService(typeof(MinistryChatsView)) as MinistryChatsView;
+
+    private bool InChat => Chats is not null && MinistryParts.IsOn(Page.Ministry.PartsOff, MinistryParts.Chats);
+
+    private string Template => $"I'd like to chat about joining {Page.Ministry.Name}.";
+
+    protected override void OnParametersSet()
+    {
+        if (_messageFor == Page.Ministry.Id)
+            return;
+        _messageFor = Page.Ministry.Id;
+        _message = Template;
+    }
     private bool _busy;
     private string? _problem;
 
@@ -48,6 +72,14 @@
         (_busy, _problem) = (true, null);
         try
         {
+            if (choice.Asks && InChat)
+            {
+                await Chats!.AskAsync(new AskInChat(Page.Ministry.Id, choice.PersonId, choice.Place, _message));
+                _message = Template;
+                await OpenChanged.InvokeAsync(false);
+                await OnJoined.InvokeAsync("Sent to the leaders. Your conversation with them is in Chats.");
+                return;
+            }
             JoinOutcome outcome = await Ministries.JoinAsync(Page.Ministry, choice.PersonId, choice.Place, _note);
             await OpenChanged.InvokeAsync(false);
             await OnJoined.InvokeAsync(outcome.Words);

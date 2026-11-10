@@ -78,6 +78,11 @@ namespace GSBC.ChurchApp.Features.Chats.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("id");
 
+                    b.Property<string>("AskedAs")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("asked_as");
+
                     b.Property<Guid?>("AskerId")
                         .HasColumnType("uuid")
                         .HasColumnName("asker_id");

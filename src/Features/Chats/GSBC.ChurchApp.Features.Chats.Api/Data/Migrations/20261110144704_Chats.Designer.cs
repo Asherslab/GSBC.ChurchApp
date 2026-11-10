@@ -13,7 +13,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GSBC.ChurchApp.Features.Chats.Api.Data.Migrations
 {
     [DbContext(typeof(ChatsDbContext))]
-    [Migration("20261110142713_Chats")]
+    [Migration("20261110144704_Chats")]
     partial class Chats
     {
         /// <inheritdoc />
@@ -80,6 +80,11 @@ namespace GSBC.ChurchApp.Features.Chats.Api.Data.Migrations
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid")
                         .HasColumnName("id");
+
+                    b.Property<string>("AskedAs")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("asked_as");
 
                     b.Property<Guid?>("AskerId")
                         .HasColumnType("uuid")

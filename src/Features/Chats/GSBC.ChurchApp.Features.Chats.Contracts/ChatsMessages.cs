@@ -54,6 +54,7 @@ public sealed class ChatCard
     [ProtoMember(23)] public bool HasMinors { get; set; }
     [ProtoMember(24)] public long FirstSeq { get; set; }
     [ProtoMember(25)] public string You { get; set; } = "";
+    [ProtoMember(26)] public string AskedAs { get; set; } = "";
 }
 
 [ProtoContract]
@@ -218,6 +219,7 @@ public sealed class AskToJoin : IScopedRequest
     [ProtoMember(2)] public string MinistryId { get; set; } = "";
     [ProtoMember(3)] public string ForPersonId { get; set; } = "";
     [ProtoMember(4)] public string Text { get; set; } = "";
+    [ProtoMember(5)] public string Place { get; set; } = "";
 
     public string ScopeId => MinistryId;
 }

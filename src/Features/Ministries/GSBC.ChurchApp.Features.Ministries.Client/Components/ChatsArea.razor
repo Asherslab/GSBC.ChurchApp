@@ -1,0 +1,19 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject IServiceProvider Services
+
+@if (Services.GetService(typeof(MinistryChatsView)) is MinistryChatsView view)
+{
+    @view.Area(new MinistryChatsPlace(Page.Ministry.Id, Page.Ministry.Name, Page.You.MayEditSettings, Page.Ministry.AttendJoin != Joining.None))
+}
+else
+{
+    <Section First="true">
+        <EmptyState Icon="message-square" Title="Chats are in the app" Body="People chat on their phones. In the admin panel, leaders check this ministry's chats on the Chats page.">
+            <Button Variant="ButtonVariant.Quiet" Href="chats/all">Open Chats</Button>
+        </EmptyState>
+    </Section>
+}
+
+@code {
+    [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
+}

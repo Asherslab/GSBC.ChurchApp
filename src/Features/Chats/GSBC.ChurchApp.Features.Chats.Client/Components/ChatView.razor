@@ -1,6 +1,7 @@
 @inject ChatsStore Store
 @inject TimeProvider Clock
 @inject Shell Shell
+@inject IServiceProvider Services
 
 <Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
     <Actions>
@@ -38,7 +39,21 @@
                     }
                     @if (card.Asker is { } asker && asker.Id != card.You && card.YouMayManage)
                     {
-                        <Notice Tone="NoticeTone.Info"><strong>@asker.Name asked to join @card.MinistryName.</strong> Add them from the ministry's People tab, or keep chatting here.</Notice>
+                        <Notice Tone="NoticeTone.Info">
+                            <strong>@asker.Name asked to @(card.AskedAs == "team" ? "join the team" : card.AskedAs == "attend" ? "come along" : $"join {card.MinistryName}").</strong>
+                            @if (_added.Contains(card.Id))
+                            {
+                                <span> Added. They'll see the ministry's chats once the change reaches them.</span>
+                            }
+                            else if (card.AskedAs.Length > 0 && Services.GetService(typeof(IMinistryPeopleWrites)) is IMinistryPeopleWrites people)
+                            {
+                                <span class="ui-after"><Button Small="true" OnClick="() => AddAsync(people, card, asker)">@(card.AskedAs == "team" ? "Add to the team" : $"Add {ChatText.First(asker.Name)}")</Button></span>
+                            }
+                            else
+                            {
+                                <span> Add them from the ministry's People tab, or keep chatting here.</span>
+                            }
+                        </Notice>
                     }
                     @foreach ((ChatLine line, bool newDay, bool first) in ChatRuns.Of(chat.Lines))
                     {
@@ -145,6 +160,7 @@
     [Parameter] public string BackLabel { get; set; } = "Chats";
 
     private string _title = "Chat";
+    private readonly HashSet<string> _added = [];
     private bool _people;
 
     private ChatCard? _card;
@@ -183,6 +199,12 @@
         _acting = null;
         _replyingTo = null;
         _editing = message;
+    }
+
+    private async Task AddAsync(IMinistryPeopleWrites people, ChatCard card, PersonRef asker)
+    {
+        await people.AddAsync(card.MinistryId, asker.Id, card.AskedAs);
+        _added.Add(card.Id);
     }
 
     private void Done()

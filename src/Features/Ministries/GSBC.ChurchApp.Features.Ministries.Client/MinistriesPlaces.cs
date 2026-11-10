@@ -8,6 +8,7 @@ public static class MinistriesPlaces
     public const string News = "news";
     public const string Calendar = "calendar";
     public const string Files = "files";
+    public const string Chats = "chats";
     public const string Sundays = "sundays";
     public const string People = "people";
     public const string Settings = "settings";

@@ -10,8 +10,6 @@ namespace GSBC.ChurchApp.Features.Ministries.Api;
 
 internal sealed class MinistryChatPlaces(MinistriesDbContext db) : IChatPlaces
 {
-    public const string ChatsPart = "chats";
-
     public async ValueTask<IReadOnlyDictionary<Guid, ChatPlace>> PlacesAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken)
     {
         List<MinistryRecord> ministries = await db.Ministries.AsNoTracking().Where(ministry => ministryIds.Contains(ministry.Id)).ToListAsync(cancellationToken);
@@ -32,6 +30,6 @@ internal sealed class MinistryChatPlaces(MinistriesDbContext db) : IChatPlaces
             audiences[ChatAudiences.Attendees] = Audience.HoldingAt(MinistriesPermissions.AttendeesViewNode, at);
             audiences[ChatAudiences.Parents] = Audience.HoldingAt(MinistriesPermissions.ParentsViewNode, at);
         }
-        return new ChatPlace(ministry.Id, ministry.Name, MinistryParts.IsOn(ministry.PartsOff, ChatsPart), audiences);
+        return new ChatPlace(ministry.Id, ministry.Name, MinistryParts.IsOn(ministry.PartsOff, MinistryParts.Chats), audiences);
     }
 }

@@ -8,6 +8,7 @@ public sealed class ChatRecord
     public string Kind { get; set; } = "";
     public string Audience { get; set; } = "";
     public Guid? AskerId { get; set; }
+    public string AskedAs { get; set; } = "";
     public Guid? CreatedBy { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? DeletedAt { get; set; }

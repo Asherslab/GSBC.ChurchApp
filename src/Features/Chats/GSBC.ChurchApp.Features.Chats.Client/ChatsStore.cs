@@ -147,10 +147,10 @@ public sealed class ChatsStore(ILocalFeeds feeds, IOutbox outbox, ILocalPreferen
     public Task ChangePeopleAsync(ChatCard card, IReadOnlyCollection<string> add, IReadOnlyCollection<string> remove) =>
         EnqueueAsync("ChangePeople", new ChatPeopleChange { ChatId = card.Id, Add = add.ToList(), Remove = remove.ToList() });
 
-    public async Task<string> AskToJoinAsync(string ministryId, string forPersonId, string text)
+    public async Task<string> AskToJoinAsync(string ministryId, string forPersonId, string place, string text)
     {
         string chatId = Guid.NewGuid().ToString();
-        await EnqueueAsync("AskToJoin", new AskToJoin { ChatId = chatId, MinistryId = ministryId, ForPersonId = forPersonId, Text = text });
+        await EnqueueAsync("AskToJoin", new AskToJoin { ChatId = chatId, MinistryId = ministryId, ForPersonId = forPersonId, Place = place, Text = text });
         return chatId;
     }
 
