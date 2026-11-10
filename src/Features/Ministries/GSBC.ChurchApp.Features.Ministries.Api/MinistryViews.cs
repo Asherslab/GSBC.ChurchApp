@@ -57,7 +57,7 @@ internal sealed class MinistryViews(
         return [];
     }
 
-    public async Task<List<PersonLine>> LinesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
+    private async Task<List<PersonLine>> LinesAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken)
     {
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(ids, cancellationToken);
         return ids.Select(id => new PersonLine { Id = id.ToString(), Name = names.GetValueOrDefault(id) ?? "Someone" })
@@ -138,7 +138,7 @@ internal sealed class MinistryViews(
     public static Audience WhileHidden(Guid ministryId) =>
         Audience.HoldingAt(MinistriesPermissions.SettingsNode, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
 
-    public static string AudienceOf(Audience audience) => audience.Node switch
+    private static string AudienceOf(Audience audience) => audience.Node switch
     {
         MinistriesPermissions.TeamViewNode => Audiences.Team,
         MinistriesPermissions.ParentsViewNode => Audiences.Parents,
@@ -149,7 +149,7 @@ internal sealed class MinistryViews(
     public static Audience CalendarAudience(string audience, Guid ministryId) =>
         Audiences.NodeOf(audience) is { } node ? Audience.HoldingAt(node, Scope.Of(ScopeKind.Ministry, ministryId.ToString())) : Audience.Everyone;
 
-    public static Permission Permission(string node) =>
+    private static Permission Permission(string node) =>
         MinistriesPermissions.All.FirstOrDefault(permission => permission.Node == node) ?? new Permission(node, ScopeKind.Ministry, node);
 
     public static MinistryDetails Details(MinistryRecord ministry) => new()

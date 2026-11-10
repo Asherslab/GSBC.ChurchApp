@@ -1,13 +1,10 @@
 <div class="ministry-joining">
-    @if (Kind != MinistryKinds.LifeGroup)
-    {
-        <Segmented TValue="string" Label="Joining the team" ShowLabel="true" Stacked="true"
-                   Hint="The team runs it: its leaders, helpers and anyone on the roster. How does someone get on it?"
-                   Options="TeamOptions" Value="TeamJoin" ValueChanged="TeamJoinChanged" />
-    }
+    <Segmented TValue="string" Label="Joining the team" ShowLabel="true" Stacked="true"
+               Hint="@(Kind == MinistryKinds.LifeGroup ? "The team runs the group: its leaders, helpers and anyone on the roster. How does someone get on it?" : "The team runs it: its leaders, helpers and anyone on the roster. How does someone get on it?")"
+               Options="TeamOptions" Value="TeamJoin" ValueChanged="TeamJoinChanged" />
     <Segmented TValue="string" Label="@(Kind == MinistryKinds.LifeGroup ? "Joining the group" : "Coming along")" ShowLabel="true" Stacked="true"
                Hint="@(Kind == MinistryKinds.LifeGroup ? "How someone gets into the group. Parents join for their children." : "Attendees are the people it's for, like the kids on a Friday night. How does someone start coming? Parents join for their children.")"
-               Options="AttendOptions" Value="AttendJoin" ValueChanged="AttendJoinChanged" />
+               Options="@(Kind == MinistryKinds.LifeGroup ? GroupOptions : AttendOptions)" Value="AttendJoin" ValueChanged="AttendJoinChanged" />
 </div>
 
 @code {
@@ -25,6 +22,8 @@
         new(Joining.Invite, "Invite only") { Detail = "Nobody can ask. Leaders add the people who come." },
         new(Joining.None, "No attendees") { Detail = "Only the team serves in it, like the welcome team. Nobody comes along, so posts are for everyone or the team." },
     ];
+
+    private static readonly IReadOnlyList<SegmentOption<string>> GroupOptions = AttendOptions.Where(option => option.Value != Joining.None).ToList();
 
     [Parameter] public string Kind { get; set; } = MinistryKinds.Ministry;
     [Parameter, EditorRequired] public required string TeamJoin { get; set; }

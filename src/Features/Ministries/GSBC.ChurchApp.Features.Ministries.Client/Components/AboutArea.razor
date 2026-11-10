@@ -46,11 +46,11 @@
 
 @if (Page.SubMinistries.Count > 0)
 {
-    <Section Title="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? "Groups" : "Ministries under it")">
+    <Section Title="Ministries under it">
         <ListGroup>
             @foreach (MinistrySummary under in Page.SubMinistries)
             {
-                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@(Page.Ministry.Kind == MinistryKinds.LifeGroup ? under.Summary : MinistryWords.UnderLine(under))" Icon="@IconOf(under)" Chevron="true" Href="@Href(under.Id)" />
+                <ListRow @key="under.Id" Title="@under.Name" Subtitle="@MinistryWords.UnderLine(under)" Icon="@IconOf(under)" Chevron="true" Href="@Href(under.Id)" />
             }
         </ListGroup>
     </Section>

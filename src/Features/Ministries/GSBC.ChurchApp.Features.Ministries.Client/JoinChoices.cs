@@ -18,7 +18,7 @@ public static class JoinChoices
             if (ministry.AttendJoin != Joining.None && !child.Attends)
                 choices.Add(Choice(child.Id, Places.Attending, lifeGroup ? child.Name : $"{child.Name}, to come along", ministry.AttendJoin, child.Name,
                     child.Asked, child.Age is { } age ? $"{age}" : ""));
-        if (!lifeGroup && !you.Roles.Contains(Roles.Team) && !you.Roles.Contains(Roles.Leader) && !you.Roles.Contains(Roles.Admin))
+        if (!you.Roles.Contains(Roles.Team) && !you.Roles.Contains(Roles.Leader) && !you.Roles.Contains(Roles.Admin))
             choices.Add(Choice("", Places.Team, "Me, on the team", ministry.TeamJoin, "", Waiting(you, "", Places.Team)));
         return choices;
     }

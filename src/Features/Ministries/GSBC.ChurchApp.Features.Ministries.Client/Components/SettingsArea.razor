@@ -17,7 +17,7 @@
     </div>
 </Section>
 
-<Section Title="Joining" Lead="@(Details.Kind == MinistryKinds.LifeGroup ? "How people get into the group." : "How people get on the team, and how they start coming along.")">
+<Section Title="Joining" Lead="@(Details.Kind == MinistryKinds.LifeGroup ? "How people get on the team, and how they get into the group." : "How people get on the team, and how they start coming along.")">
     <JoiningFields Kind="@Details.Kind" TeamJoin="@Details.TeamJoin" TeamJoinChanged="value => Details.TeamJoin = value"
                    AttendJoin="@Details.AttendJoin" AttendJoinChanged="value => Details.AttendJoin = value" />
 </Section>

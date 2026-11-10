@@ -257,7 +257,7 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
         MinistryDetails wanted = request.Details;
         wanted.Kind = ministry.Kind;
-        if (MinistryRules.WhyNotDetails(wanted, ministry.ParentId is null) is { } problem)
+        if (MinistryRules.WhyNotDetails(wanted) is { } problem)
             throw Invalid(problem);
         Apply(ministry, wanted);
         changes.Touch(ministry.Id);
@@ -427,7 +427,7 @@ internal sealed class MinistryLeadingService(
     {
         if (wanted.Kind.Length == 0)
             wanted.Kind = MinistryKinds.Ministry;
-        if (MinistryRules.WhyNotDetails(wanted, parentId is null) is { } problem)
+        if (MinistryRules.WhyNotDetails(wanted) is { } problem)
             throw Invalid(problem);
         if (Guid.TryParse(wanted.RoundId, out Guid round) && !await db.Rounds.AnyAsync(found => found.Id == round, cancellationToken))
             throw Invalid("Those Sundays were deleted. Choose others.");

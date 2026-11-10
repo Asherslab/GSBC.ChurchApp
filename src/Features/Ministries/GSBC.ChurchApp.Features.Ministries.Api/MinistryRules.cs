@@ -6,8 +6,8 @@ namespace GSBC.ChurchApp.Features.Ministries.Api;
 internal static class MinistryRules
 {
     public const int LongestName = 60;
-    public const int LongestSummary = 140;
-    public const int LongestText = 4000;
+    private const int LongestSummary = 140;
+    private const int LongestText = 4000;
     public const int LongestTitle = 120;
 
     public static bool MaySee(string audience, Func<string, bool> holdsHere, Func<string, bool> holdsBelow) => audience switch
@@ -42,7 +42,7 @@ internal static class MinistryRules
     public static IReadOnlyList<string> PostableAudiences(string attendJoin) =>
         attendJoin == Joining.None ? [Audiences.Everyone, Audiences.Team] : Audiences.All;
 
-    public static string? WhyNotDetails(MinistryDetails details, bool topLevel)
+    public static string? WhyNotDetails(MinistryDetails details)
     {
         if (details.Name.Trim().Length is 0 or > LongestName)
             return $"Give it a name of up to {LongestName} characters.";
@@ -52,8 +52,8 @@ internal static class MinistryRules
             return $"Keep the about to {LongestText} characters.";
         if (!Joining.IsValid(details.TeamJoin, noneAllowed: false))
             return "Choose how people join the team.";
-        if (!Joining.IsValid(details.AttendJoin, noneAllowed: true))
-            return "Choose how people come along.";
+        if (!Joining.IsValid(details.AttendJoin, noneAllowed: details.Kind != MinistryKinds.LifeGroup))
+            return details.Kind == MinistryKinds.LifeGroup ? "Choose how people get into the group." : "Choose how people come along.";
         return details.Kind is MinistryKinds.Ministry or MinistryKinds.LifeGroup ? null : "That isn't a kind of ministry.";
     }
 
@@ -80,7 +80,7 @@ internal static class MinistryRules
         : roles.Contains(Roles.Attendee) ? "You come along"
         : "";
 
-    public static string Names(IReadOnlyCollection<string> names) =>
+    private static string Names(IReadOnlyCollection<string> names) =>
         names.Count <= 1 ? names.FirstOrDefault() ?? "" : $"{string.Join(", ", names.Take(names.Count - 1))} and {names.Last()}";
 }
 

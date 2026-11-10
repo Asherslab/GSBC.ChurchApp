@@ -78,14 +78,6 @@ public static class Audiences
         Team => MinistriesPermissions.TeamViewNode,
         _ => null,
     };
-
-    public static string Words(string audience) => audience switch
-    {
-        Attendees => "For attendees and their parents",
-        Parents => "For parents",
-        Team => "For the team",
-        _ => "For everyone",
-    };
 }
 
 public static class Roles
