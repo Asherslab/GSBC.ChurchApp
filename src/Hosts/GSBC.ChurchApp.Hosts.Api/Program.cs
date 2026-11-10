@@ -18,7 +18,7 @@ builder.AddPlatformApi();
 builder.Services.AddAccountTokenValidation(builder.Configuration);
 builder.Services.AddAccountsApi(builder.Configuration);
 builder.Services.AddAccessApi();
-builder.Services.AddPeopleApi();
+builder.Services.AddPeopleApi(builder.Configuration);
 builder.Services.AddConfigurationApi();
 builder.Services.AddMediaApi(builder.Configuration);
 builder.Services.AddAnalyticsApi();

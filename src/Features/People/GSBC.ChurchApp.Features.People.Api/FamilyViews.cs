@@ -6,10 +6,18 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.People.Api;
 
+internal enum Shown
+{
+    Hidden,
+    Own,
+    Office,
+}
+
 internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, IAccountEmails emails)
 {
-    public async Task<PersonFamily> FamilyAsync(Guid personId, bool safeguardingShown, CancellationToken cancellationToken)
+    public async Task<PersonFamily> FamilyAsync(Guid personId, Shown shown, CancellationToken cancellationToken)
     {
+        bool safeguardingShown = shown != Shown.Hidden;
         List<FamilyLink> links = await db.Links.AsNoTracking().Where(link => link.ChildId == personId || link.ParentId == personId).ToListAsync(cancellationToken);
         List<LinkAskRecord> asks = await db.Asks.AsNoTracking().Where(ask => ask.ChildId == personId || ask.AskedBy == personId)
             .OrderBy(ask => ask.AskedAt).ToListAsync(cancellationToken);
@@ -38,7 +46,7 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
             Asks = await AsksAsync(asks, cancellationToken),
             AskedOfThem = await AsksAsync(askedOfThem, cancellationToken),
             SafeguardingShown = safeguardingShown,
-            Safeguarding = safeguarding is null ? null : await RecordAsync(safeguarding, cancellationToken),
+            Safeguarding = safeguarding is null ? null : await RecordAsync(safeguarding, shown == Shown.Office, cancellationToken),
         };
     }
 
@@ -104,11 +112,21 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
         _ => 3,
     };
 
-    private async Task<SafeguardingRecord> RecordAsync(SafeguardingEntry entry, CancellationToken cancellationToken)
+    private async Task<SafeguardingRecord> RecordAsync(SafeguardingEntry entry, bool forOffice, CancellationToken cancellationToken)
     {
         SafeguardingRecord record = Record(entry);
-        if (entry.UpdatedBy is { } by)
-            record.UpdatedBy = (await accounts.GetAsync([by], cancellationToken)).GetValueOrDefault(by)?.Name;
+        if (!forOffice)
+        {
+            (record.SmcId, record.SmcStatus, record.SmcStatusWords, record.CheckReasons) = ("", "", "", []);
+            return record;
+        }
+
+        List<Guid> who = new[] { entry.UpdatedBy, entry.LinkedBy }.OfType<Guid>().ToList();
+        IReadOnlyDictionary<Guid, PersonAccount> names = await accounts.GetAsync(who, cancellationToken);
+        record.UpdatedBy = entry.UpdatedBy is { } by ? names.GetValueOrDefault(by)?.Name : null;
+        record.LinkedBy = entry.LinkedBy is { } linker ? names.GetValueOrDefault(linker)?.Name : null;
+        if (entry.ExternalId is { } smcId)
+            record.SmcName = (await db.SmcPeople.AsNoTracking().SingleOrDefaultAsync(person => person.SmcId == smcId, cancellationToken))?.Name ?? "";
         return record;
     }
 
@@ -122,6 +140,16 @@ internal sealed class FamilyViews(PeopleDbContext db, IPeopleAccounts accounts, 
         TrainingDue = WireDates.ToWire(entry.TrainingDue),
         Source = entry.Source,
         UpdatedAt = entry.UpdatedAt,
+        SmcId = entry.Source == SafeguardingSources.SafeMinistryCheck ? entry.ExternalId ?? "" : "",
+        LinkedHow = entry.LinkedHow ?? "",
+        LinkedAt = entry.LinkedAt,
+        SyncedAt = entry.SyncedAt,
+        TrainingProgress = entry.TrainingProgress ?? "",
+        OtherTrainingName = entry.OtherTrainingName ?? "",
+        OtherTrainingDone = WireDates.ToWire(entry.OtherTrainingDone),
+        SmcStatus = entry.SmcStatus ?? "",
+        SmcStatusWords = entry.SmcStatusWords ?? "",
+        CheckReasons = [.. entry.CheckReasons],
     };
 
     private async Task<Dictionary<Guid, PersonRecord>> RecordsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>

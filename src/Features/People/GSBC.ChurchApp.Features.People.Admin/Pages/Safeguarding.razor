@@ -1,9 +1,12 @@
 @page "/safeguarding"
+@using GSBC.ChurchApp.Features.People.Admin.Components
 @inject PeopleClient People
 @inject NavigationManager Navigation
 @inject TimeProvider Clock
 
-<TitleBand Title="Safeguarding" Lead="Blue cards and Safe Ministry training that have run out or are due, and young people no parent has linked. Nothing here stops anyone serving; it's who to follow up, soonest first." />
+<TitleBand Title="Safeguarding" Lead="Blue cards and Safe Ministry training that have run out or are due, young people no parent has linked, and anything to check in Safe Ministry Check. Nothing here stops anyone serving; it's who to follow up, soonest first." />
+
+<SafeMinistryCheckLine />
 
 <LiveData TValue="IReadOnlyList<FlaggedPerson>" Feeds="[PeopleFeeds.Safeguarding, PeopleFeeds.Family]" Load="People.GetFlaggedAsync" FailedTitle="Can't load who's flagged right now">
     <DataTable TItem="FlaggedPerson" Label="Who's flagged" Items="Shown(context.Value)" Columns="Columns(ChurchTime.Today(Clock))" Key="Key" SelectedChanged="Open">
@@ -33,6 +36,7 @@
         (FlagKinds.DueSoon, $"Due in {SafeguardingFlags.SoonDays} days"),
         (FlagKinds.NotRecorded, "Not recorded"),
         (FlagKinds.NoParent, "Young people without a parent"),
+        (FlagKinds.Check, SafeguardingFlags.CheckWords),
     ];
 
     private static string Key(FlaggedPerson flagged) => $"{flagged.PersonId}-{flagged.Words}";

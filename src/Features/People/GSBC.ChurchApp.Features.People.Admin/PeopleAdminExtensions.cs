@@ -18,7 +18,9 @@ public static class PeopleAdminExtensions
     {
         modules.Add(new ClientModule("People", typeof(PeopleAdminExtensions).Assembly,
             [new NavEntry("Safeguarding", "safeguarding", "shield-check", PeoplePermissions.SafeguardingView, Area: NavAreas.People,
-                Summary: "Blue cards and training that have run out or are due, and young people without a parent")],
+                Summary: "Blue cards and training that have run out or are due, and young people without a parent"),
+             new NavEntry("Safe Ministry Check", "safe-ministry-check", "refresh", PeoplePermissions.SafeguardingView, Area: NavAreas.People,
+                Summary: "Blue cards and training brought across from Safe Ministry Check, and records still to match")],
             [PeopleFeeds.Family, PeopleFeeds.Safeguarding], [PeopleFeeds.Mine]));
         services.AddSingleton(new PersonTab(FamilyTab, "Family", FamilyOrder, Family, PeoplePermissions.FamilyView));
         services.AddSingleton(new PersonTab(SafeguardingTab, "Safeguarding", SafeguardingOrder, Safeguarding, PeoplePermissions.SafeguardingView));

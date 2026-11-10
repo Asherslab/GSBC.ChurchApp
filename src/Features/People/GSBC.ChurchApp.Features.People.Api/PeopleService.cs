@@ -32,7 +32,7 @@ internal sealed class PeopleService(
 
     public async ValueTask<MyPeople> GetMineAsync(MineRequest request, CallContext context = default)
     {
-        return new MyPeople { Me = await views.FamilyAsync(Me(context), safeguardingShown: true, context.CancellationToken) };
+        return new MyPeople { Me = await views.FamilyAsync(Me(context), Shown.Own, context.CancellationToken) };
     }
 
     public async ValueTask<Done> SetMyBirthDateAsync(BirthDateRequest request, CallContext context = default)
@@ -75,7 +75,7 @@ internal sealed class PeopleService(
         db.People.Add(new PersonRecord { UserId = childId, BirthDate = born, UpdatedAt = Now });
         await db.SaveChangesAsync(cancellationToken);
         await families.LinkAsync(parentId, childId, forSomeoneElse ? LinkHow.Office : LinkHow.Added, me, cancellationToken);
-        return (await views.FamilyAsync(parentId, safeguardingShown: false, cancellationToken)).Children.Single(child => child.Id == childId.ToString());
+        return (await views.FamilyAsync(parentId, Shown.Hidden, cancellationToken)).Children.Single(child => child.Id == childId.ToString());
     }
 
     public async ValueTask<Done> AskToLinkAsync(AskRequest request, CallContext context = default)
@@ -170,7 +170,7 @@ internal sealed class PeopleService(
         RefuseTools(context);
         Guid personId = ParseId(request.PersonId);
         bool safeguarding = await AllowedAsync(context, PeoplePermissions.SafeguardingViewNode, personId.ToString(), cancellationToken);
-        return await views.FamilyAsync(personId, safeguarding, cancellationToken);
+        return await views.FamilyAsync(personId, safeguarding ? Shown.Office : Shown.Hidden, cancellationToken);
     }
 
     public async ValueTask<Done> UpdatePersonAsync(UpdatePersonRequest request, CallContext context = default)
@@ -246,6 +246,8 @@ internal sealed class PeopleService(
         Guid personId = ParseId(request.PersonId);
         SafeguardingRecord record = request.Record;
         SafeguardingEntry? entry = await db.Safeguarding.SingleOrDefaultAsync(found => found.UserId == personId, cancellationToken);
+        if (entry?.Source == SafeguardingSources.SafeMinistryCheck)
+            throw Refused("Their blue card and training come from Safe Ministry Check. Change them there, or unlink them to enter them by hand.");
 
         if (record is { HasCard: false, HasTraining: false })
         {
@@ -287,7 +289,6 @@ internal sealed class PeopleService(
         entry.TrainingDone = done;
         entry.TrainingDue = FamilyRules.TrainingDue(done, WireDates.FromWire(record.TrainingDue));
         entry.Source = SafeguardingSources.ByHand;
-        entry.ExternalId = null;
         entry.UpdatedAt = Now;
         entry.UpdatedBy = me;
     }

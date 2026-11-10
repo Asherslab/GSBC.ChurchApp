@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.People.Api.Data;
+using GSBC.ChurchApp.Features.People.Api.SafeMinistry;
 using GSBC.ChurchApp.Features.People.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
@@ -7,16 +8,22 @@ using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.People.Api;
 
 public static class PeopleApiExtensions
 {
-    public static IServiceCollection AddPeopleApi(this IServiceCollection services)
+    public static IServiceCollection AddPeopleApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddPeopleData();
         services.AddScoped<Families>().AddScoped<FamilyViews>();
+        services.Configure<SafeMinistryOptions>(configuration.GetSection(SafeMinistryOptions.Section));
+        services.AddSingleton<SmcGate>();
+        services.AddHttpClient<SafeMinistryClient>(client => client.Timeout = TimeSpan.FromMinutes(1)).RemoveAllLoggers();
+        services.AddScoped<SafeMinistrySync>();
+        services.AddHostedService<SafeMinistrySchedule>();
         services.AddScoped<IPersonData, PeoplePersonData>();
         services.AddScoped<IFamilies, PeopleFamilies>();
         services.AddPermissions(PeoplePermissions.All);
@@ -42,6 +49,7 @@ public static class PeopleApiExtensions
     public static IEndpointRouteBuilder MapPeopleApi(this IEndpointRouteBuilder endpoints)
     {
         endpoints.MapGrpcService<PeopleService>();
+        endpoints.MapGrpcService<SafeMinistryCheckService>();
         return endpoints;
     }
 }

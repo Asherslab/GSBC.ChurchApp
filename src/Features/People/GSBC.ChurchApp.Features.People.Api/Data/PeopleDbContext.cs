@@ -11,6 +11,8 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options) :
     public DbSet<FamilyLink> Links => Set<FamilyLink>();
     public DbSet<LinkAskRecord> Asks => Set<LinkAskRecord>();
     public DbSet<SafeguardingEntry> Safeguarding => Set<SafeguardingEntry>();
+    public DbSet<SmcPersonRecord> SmcPeople => Set<SmcPersonRecord>();
+    public DbSet<SmcSyncState> SmcSync => Set<SmcSyncState>();
 
     protected override string Schema => SchemaName;
 
@@ -42,7 +44,18 @@ public sealed class PeopleDbContext(DbContextOptions<PeopleDbContext> options) :
             entity.ToTable("safeguarding");
             entity.HasKey(entry => entry.UserId);
             entity.Property(entry => entry.UserId).ValueGeneratedNever();
-            entity.HasIndex(entry => new { entry.Source, entry.ExternalId });
+            entity.HasIndex(entry => new { entry.Source, entry.ExternalId }).IsUnique().HasFilter("external_id IS NOT NULL");
+        });
+        modelBuilder.Entity<SmcPersonRecord>(entity =>
+        {
+            entity.ToTable("smc_people");
+            entity.HasKey(person => person.SmcId);
+        });
+        modelBuilder.Entity<SmcSyncState>(entity =>
+        {
+            entity.ToTable("smc_sync");
+            entity.HasKey(state => state.Id);
+            entity.Property(state => state.Id).ValueGeneratedNever();
         });
     }
 }

@@ -80,10 +80,24 @@ public sealed class SafeguardingRecord
     [ProtoMember(7), DefaultValue(SafeguardingSources.ByHand)] public string Source { get; set; } = SafeguardingSources.ByHand;
     [ProtoMember(8)] public DateTime? UpdatedAt { get; set; }
     [ProtoMember(9)] public string? UpdatedBy { get; set; }
+    [ProtoMember(10)] public string SmcId { get; set; } = "";
+    [ProtoMember(11)] public string SmcName { get; set; } = "";
+    [ProtoMember(12)] public string LinkedHow { get; set; } = "";
+    [ProtoMember(13)] public DateTime? LinkedAt { get; set; }
+    [ProtoMember(14)] public string? LinkedBy { get; set; }
+    [ProtoMember(15)] public DateTime? SyncedAt { get; set; }
+    [ProtoMember(16)] public string TrainingProgress { get; set; } = "";
+    [ProtoMember(17)] public string OtherTrainingName { get; set; } = "";
+    [ProtoMember(18)] public DateTime? OtherTrainingDone { get; set; }
+    [ProtoMember(19)] public string SmcStatus { get; set; } = "";
+    [ProtoMember(20)] public string SmcStatusWords { get; set; } = "";
+    [ProtoMember(21)] public List<string> CheckReasons { get; set; } = [];
 
     public bool HasCard => CardNumber.Length > 0 || CardStatus.Length > 0 || CardExpires is not null;
 
-    public bool HasTraining => TrainingDone is not null || TrainingDue is not null;
+    public bool HasTraining => TrainingDone is not null || TrainingDue is not null || TrainingProgress.Length > 0;
+
+    public bool FromSafeMinistryCheck => Source == SafeguardingSources.SafeMinistryCheck;
 }
 
 public static class SafeguardingSources

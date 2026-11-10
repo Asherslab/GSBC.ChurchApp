@@ -20,6 +20,10 @@
             <ListRow Title="No Safe Ministry training recorded" Subtitle="If you've done it, tell the church office when" Icon="alert" IconTone="RowTone.Warm" />
         }
     </ListGroup>
+    @if (Record.FromSafeMinistryCheck)
+    {
+        <p class="hint">From Safe Ministry Check@(Record.SyncedAt is { } at ? $", {PeopleWords.When(at)}" : ""). If something's wrong, change it there or tell the church office.</p>
+    }
 </div>
 
 @code {
@@ -33,6 +37,7 @@
         string.Join(" · ", new[]
         {
             Record.TrainingDone is null ? null : $"Done {PeopleWords.Day(Record.TrainingDone)}",
+            Record.TrainingProgress.Length == 0 ? null : SafeMinistryTraining.Words(Record.TrainingProgress),
             Record.TrainingDue is null ? null : $"due again {PeopleWords.Day(Record.TrainingDue)}",
         }.OfType<string>());
 }

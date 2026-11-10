@@ -5,4 +5,5 @@ namespace GSBC.ChurchApp.Features.People.Client;
 
 [ProtoGrpc(Model = typeof(PeopleContractsModel))]
 [ProtoService(typeof(IPeopleService))]
+[ProtoService(typeof(ISafeMinistryCheckService))]
 public sealed partial class PeopleGrpcClients : ClientFactory;

@@ -45,4 +45,21 @@ public static class ChurchDates
         > 1 and < 7 => day.ToString("dddd", English),
         _ => day.ToString("ddd d MMM", English),
     };
+
+    public static string Ago(DateTime utc, DateTime nowUtc)
+    {
+        TimeSpan since = nowUtc - utc;
+        DateTime at = ChurchTime.ToChurch(utc);
+        DateTime today = ChurchTime.ToChurch(nowUtc).Date;
+        return since switch
+        {
+            { TotalMinutes: < 1 } => "just now",
+            { TotalMinutes: < 2 } => "a minute ago",
+            { TotalHours: < 1 } => $"{(int)since.TotalMinutes} minutes ago",
+            { TotalHours: < 2 } => "an hour ago",
+            _ when at.Date == today => $"{(int)since.TotalHours} hours ago",
+            _ when at.Date == today.AddDays(-1) => $"yesterday at {Time(at)}",
+            _ => $"on {at.ToString(at.Year == today.Year ? "ddd d MMM" : "d MMM yyyy", English)}",
+        };
+    }
 }
