@@ -1,6 +1,9 @@
+@using GSBC.ChurchApp.Platform.Client.Online
+@attribute [AdminOnly]
 @using GSBC.ChurchApp.Platform.Client.Destinations
 @using GSBC.ChurchApp.Platform.Contracts.Destinations
 @inject DestinationsClient Destinations
+@inject DestinationSearching Searching
 
 <div class="place-directory">
     <div class="place-directory__tools">
@@ -62,7 +65,7 @@
         [new("", "All"), .. Destinations.Catalog.Areas.Select(area => new FilterOption<string>(area.Key, area.Title))];
 
     private Task<DestinationResults> LoadAsync() =>
-        Destinations.SearchAsync(_text, _area.Length == 0 ? null : _area, OpenableBy).AsTask();
+        Searching.SearchAsync(_text, _area.Length == 0 ? null : _area, OpenableBy).AsTask();
 
     private async Task SearchAsync(string text)
     {

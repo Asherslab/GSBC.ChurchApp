@@ -372,6 +372,26 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                     b.ToTable("events", "events");
                 });
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.HandledRequestRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("HandledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("handled_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_handled_requests");
+
+                    b.HasIndex("HandledAt")
+                        .HasDatabaseName("ix_handled_requests_handled_at");
+
+                    b.ToTable("handled_requests", "events");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Events.Api.Data.PublishedRow", b =>
                 {
                     b.Property<string>("Feed")
@@ -457,6 +477,15 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .HasColumnType("jsonb")
                         .HasColumnName("fields");
 
+                    b.Property<string>("Keeper")
+                        .HasColumnType("text")
+                        .HasColumnName("keeper");
+
+                    b.Property<string>("KeptBy")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kept_by");
+
                     b.Property<bool>("ListEveryDate")
                         .HasColumnType("boolean")
                         .HasColumnName("list_every_date");
@@ -465,6 +494,11 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("needs");
+
+                    b.Property<string>("OpensAt")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("opens_at");
 
                     b.Property<string>("Pattern")
                         .IsRequired()
@@ -497,6 +531,11 @@ namespace GSBC.ChurchApp.Features.Events.Api.Data.Migrations
 
                     b.HasIndex("CalendarId")
                         .HasDatabaseName("ix_regular_events_calendar_id");
+
+                    b.HasIndex("Keeper")
+                        .IsUnique()
+                        .HasDatabaseName("ix_regular_events_keeper")
+                        .HasFilter("keeper IS NOT NULL");
 
                     b.ToTable("regular_events", "events");
                 });

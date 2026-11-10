@@ -14,7 +14,12 @@ public static class MinistriesAdminExtensions
                 Summary: "Each ministry's people, news, calendars, files and the ministries under it, for its leaders and for staff"),
              new NavEntry("Life Groups", "life-groups", "book-open", MinistriesPermissions.Settings, Area: NavAreas.People,
                 Summary: "The Sunday classes: what's on now, what's next, and the all-year groups")],
-            MinistriesClientExtensions.Feeds, []));
-        return services.AddMinistriesClient().AddSingleton(MinistryLinks.Admin);
+            [MinistriesFeeds.Ministries], []));
+        return services
+            .AddMinistriesClient()
+            .AddSingleton<OnlineMinistries>()
+            .AddSingleton<IMinistryReads>(provider => provider.GetRequiredService<OnlineMinistries>())
+            .AddSingleton<IMinistryWrites>(provider => provider.GetRequiredService<OnlineMinistries>())
+            .AddSingleton(MinistryLinks.Admin);
     }
 }

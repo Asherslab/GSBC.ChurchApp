@@ -1,5 +1,6 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject TimeProvider Clock
 
 <dl class="facts">
@@ -147,7 +148,7 @@ else
     private Task ResendAsync() => RunAsync(async () =>
     {
         bool first = Invitation is { Held: true };
-        await Accounts.ResendInvitationAsync(Person.Id);
+        await Office.ResendInvitationAsync(Person.Id);
         _sent = first
             ? $"Their invitation is on its way to {Person.Email}."
             : $"A new invitation is on its way to {Person.Email}. The old link no longer works.";
@@ -156,23 +157,23 @@ else
 
     private Task WithdrawAsync() => RunAsync(async () =>
     {
-        await Accounts.WithdrawInvitationAsync(Person.Id);
+        await Office.WithdrawInvitationAsync(Person.Id);
         _withdrawing = false;
         await OnRemoved.InvokeAsync();
     });
 
     private Task DeleteAsync() => RunAsync(async () =>
     {
-        await Accounts.DeleteAccountAsync(Person.Id);
+        await Office.DeleteAccountAsync(Person.Id);
         _deleting = false;
         await OnRemoved.InvokeAsync();
     });
 
-    private Task IssueAsync() => RunAsync(async () => _link = await Accounts.IssueRecoveryCodeAsync(Person.Id));
+    private Task IssueAsync() => RunAsync(async () => _link = await Office.IssueRecoveryCodeAsync(Person.Id));
 
     private Task ToggleAsync() => RunAsync(async () =>
     {
-        await Accounts.SetDisabledAsync(Person.Id, !Person.Disabled);
+        await Office.SetDisabledAsync(Person.Id, !Person.Disabled);
         Person.Disabled = !Person.Disabled;
         await OnChanged.InvokeAsync();
     });

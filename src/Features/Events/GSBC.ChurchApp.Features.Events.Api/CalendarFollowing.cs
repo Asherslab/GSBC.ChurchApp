@@ -5,11 +5,12 @@ using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
+using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Events.Api;
 
-internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments roles, IPhoneRoles phoneRoles, IAccessEvaluator access)
+internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments roles, IPhoneRoles phoneRoles, IAccessEvaluator access, TimeProvider time)
 {
     public async Task<MyCalendars> ChooseAsync(Guid installId, ClaimsPrincipal user, CalendarChoice choice, CancellationToken cancellationToken)
     {
@@ -29,7 +30,35 @@ internal sealed class CalendarFollowing(EventsDbContext db, IRoleAssignments rol
             await GiveAsync(installId, userId, give, objectId, cancellationToken);
         else
             await TakeAwayAsync(installId, userId, give, objectId, cancellationToken);
+        if (userId is { } person)
+            await PublishAsync([person], cancellationToken);
         return await MineAsync(installId, userId, cancellationToken);
+    }
+
+    public async Task PublishAsync(IReadOnlyCollection<Guid>? people, CancellationToken cancellationToken)
+    {
+        List<string> calendars = await db.Calendars.AsNoTracking().Select(calendar => calendar.Id.ToString()).ToListAsync(cancellationToken);
+        List<Guid> everyone = people?.ToList() ?? [
+            .. (await roles.HoldingsAsync(EventsPermissions.AdderRole, calendars, cancellationToken)).Select(holding => holding.UserId),
+            .. (await roles.HoldingsAsync(EventsPermissions.TurnedOffRole, calendars, cancellationToken)).Select(holding => holding.UserId)];
+        List<string> ids = everyone.Distinct().Select(person => person.ToString()).ToList();
+        Dictionary<string, FeedChangeRecord> published = (await db.FeedChanges.AsNoTracking()
+                .Where(change => change.Feed == EventsFeeds.Mine && (people == null || ids.Contains(change.RecordId)))
+                .GroupBy(change => change.RecordId)
+                .Select(versions => versions.OrderByDescending(change => change.Cursor).First())
+                .ToListAsync(cancellationToken))
+            .ToDictionary(change => change.RecordId);
+        long version = time.GetUtcNow().UtcDateTime.Ticks;
+        foreach (Guid person in everyone.Distinct())
+        {
+            using MemoryStream stream = new();
+            EventsContractsModel.Instance.Serialize(stream, await MineAsync(Guid.Empty, person, cancellationToken));
+            byte[] payload = stream.ToArray();
+            if (published.GetValueOrDefault(person.ToString()) is { Deleted: false } before && before.Payload.AsSpan().SequenceEqual(payload))
+                continue;
+            db.FeedChanges.Add(new FeedChangeRecord { Feed = EventsFeeds.Mine, RecordId = person.ToString(), ScopeId = person.ToString(), Version = version, Payload = payload });
+        }
+        await db.SaveChangesAsync(cancellationToken);
     }
 
     public async Task<MyCalendars> MineAsync(Guid installId, Guid? userId, CancellationToken cancellationToken)

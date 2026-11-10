@@ -1,0 +1,17 @@
+@implements IDisposable
+@inject IEventEditing Editing
+
+@if (Editing.WaitingFor(ItemKey) is { } waiting)
+{
+    <SaveStatus State="waiting.State" WaitingText="@EditWaiting.WaitingWords" FailedText="@EditWaiting.FailedWords" Detail="@waiting.Problem" Retry="() => Editing.RetryAsync(ItemKey)" />
+}
+
+@code {
+    [Parameter, EditorRequired] public required string ItemKey { get; set; }
+
+    protected override void OnInitialized() => Editing.WaitingChanged += OnWaitingChanged;
+
+    private void OnWaitingChanged() => InvokeAsync(StateHasChanged);
+
+    public void Dispose() => Editing.WaitingChanged -= OnWaitingChanged;
+}

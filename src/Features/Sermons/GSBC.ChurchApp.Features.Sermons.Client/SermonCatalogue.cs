@@ -1,8 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.Sermons.Contracts;
-using Grpc.Core;
 using GSBC.ChurchApp.Platform.Client.Feeds;
-using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Sermons.Client;
 
@@ -49,9 +47,7 @@ public sealed class SermonCatalogue(IServiceProvider services)
     {
         if (IsOnThisDevice)
             return (await LoadAsync()).Sermons.Take(count).ToList();
-        if (services.GetService(typeof(ChannelBase)) is not ChannelBase channel)
-            return [];
-        return (await channel.CreateGrpcService<ISermonsService>().LatestAsync(new LatestQuery { Count = count })).Sermons;
+        return services.GetService(typeof(ILatestSermonsOnline)) is ILatestSermonsOnline online ? await online.LatestAsync(count) : [];
     }
 
     public async Task<SermonShelf> LoadAsync()

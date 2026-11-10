@@ -1,10 +1,11 @@
-@inject MinistriesClient Ministries
+@inject IMinistryReads Reads
+@inject IMinistryWrites Ministries
 
 <UnsavedGuard Changed="() => Open && (_name.Length > 0 || _summary.Length > 0 || _meets.Length > 0)" What="@(_shows ? "the new Life Group" : "the new ministry")" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="@(_shows ? "A new Life Group" : "A new ministry")" Lead="It's a ministry like any other. Its leaders do the rest: people, posts, files and the ministries under it.">
     <ChildContent>
-        <LiveData TValue="MinistryDirectory" Load="Ministries.DirectoryAsync" Feeds="[MinistriesFeeds.Ministries]" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
+        <LiveData TValue="MinistryDirectory" Load="Reads.DirectoryAsync" Feeds="Reads.Feeds" Remember="ministries.directory" FailedTitle="Can't load the ministries right now">
             <ChildContent>
                 @{
                     _directory = context.Value;
@@ -78,7 +79,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

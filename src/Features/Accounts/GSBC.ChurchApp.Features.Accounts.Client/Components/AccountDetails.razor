@@ -1,16 +1,18 @@
 @using GSBC.ChurchApp.Platform.Client.Modules
 @inject AccountsClient Accounts
+@inject IAccountReads Reads
+@inject ClientSignals Signals
 @inject IEnumerable<AccountSection> Sections
 
 <UnsavedGuard Changed="() => _name is not null || _code.Trim().Length > 0" What="@(_name is not null ? "your name" : "the code from the email")" Save="@(_name is not null ? SaveNameBeforeLeavingAsync : null)" />
 
-<LiveData @ref="_live" TValue="AccountView" Feeds="[AccountsFeeds.People]" Load="LoadAsync" FailedTitle="Can't reach the church's server">
+<LiveData @ref="_live" TValue="AccountView" Feeds="Reads.Feeds" Load="LoadAsync" FailedTitle="Can't reach the church's server">
     <Section First="true" Title="You">
         <TextField Label="Name" Value="@(_name ?? context.Value.Profile.DisplayName)" ValueChanged="value => _name = value" AutoComplete="name" />
         @if (_name is not null)
         {
             <SaveBar Class="ui-after" Label="Save name" Busy="_busy" OnSave="SaveNameAsync" State="SaveState.Unsaved"
-                     Blocked="@(_name.Trim().Length == 0 ? "Give your name to save it." : null)" />
+                     Blocked="@(!Signals.Online ? "Needs a connection." : _name.Trim().Length == 0 ? "Give your name to save it." : null)" />
         }
         <div class="ui-after">
             <ListGroup>
@@ -101,10 +103,11 @@
         return $"{passkeys} · {devices}";
     }
 
-    private async Task<AccountView> LoadAsync() => new(
-        await Accounts.GetProfileAsync(),
-        (await Accounts.ListPasskeysAsync()).Passkeys,
-        (await Accounts.ListSessionsAsync()).Sessions);
+    private async Task<AccountView> LoadAsync()
+    {
+        MyAccount mine = await Reads.MineAsync();
+        return new AccountView(mine.Profile, mine.Passkeys.Passkeys, mine.Sessions.Sessions);
+    }
 
     private async Task<bool> SaveNameBeforeLeavingAsync()
     {

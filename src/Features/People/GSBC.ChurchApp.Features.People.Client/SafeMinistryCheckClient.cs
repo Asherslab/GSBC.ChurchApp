@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.People.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.People.Client;
 
+[AdminOnly]
 public sealed class SafeMinistryCheckClient(ChannelBase channel)
 {
     private readonly ISafeMinistryCheckService _smc = channel.CreateGrpcService<ISafeMinistryCheckService>();

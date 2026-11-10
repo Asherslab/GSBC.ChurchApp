@@ -6,7 +6,7 @@
     }
     else if (State is { } state)
     {
-        <SaveStatus State="state" SavedText="@SavedText" />
+        <SaveStatus State="state" SavedText="@SavedText" WaitingText="@WaitingText" FailedText="@FailedText" Detail="@Detail" Retry="Retry" />
     }
     @ChildContent
 </div>
@@ -18,6 +18,10 @@
     [Parameter] public string? Blocked { get; set; }
     [Parameter] public SaveState? State { get; set; }
     [Parameter] public string SavedText { get; set; } = "Saved";
+    [Parameter] public string WaitingText { get; set; } = "Saving…";
+    [Parameter] public string FailedText { get; set; } = "Couldn't save. Trying again by itself.";
+    [Parameter] public string? Detail { get; set; }
+    [Parameter] public EventCallback Retry { get; set; }
     [Parameter] public bool OnMasthead { get; set; }
     [Parameter] public bool Block { get; set; }
     [Parameter] public bool Submit { get; set; }

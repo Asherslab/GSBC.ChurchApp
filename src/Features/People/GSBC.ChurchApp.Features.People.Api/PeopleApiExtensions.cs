@@ -18,7 +18,8 @@ public static class PeopleApiExtensions
     public static IServiceCollection AddPeopleApi(this IServiceCollection services, IConfiguration configuration)
     {
         services.AddPeopleData();
-        services.AddScoped<Families>().AddScoped<FamilyViews>();
+        services.AddScoped<Families>().AddScoped<FamilyViews>().AddScoped<MyFamilyFeed>();
+        services.AddHostedService<MyFamilyUpkeep>();
         services.Configure<SafeMinistryOptions>(configuration.GetSection(SafeMinistryOptions.Section));
         services.AddSingleton<SmcGate>();
         services.AddHttpClient<SafeMinistryClient>(client => client.Timeout = TimeSpan.FromMinutes(1)).RemoveAllLoggers();
@@ -41,6 +42,7 @@ public static class PeopleApiExtensions
             ScopeKind.Global, ["people.*", $"-{PeoplePermissions.ActForNode}"], Feature: RoleFeatures.People, Kits: [RoleKits.PeopleNames]));
 
         services.AddFeed(new FeedDefinition(PeopleFeeds.Mine, FeedAudience.OwnRecords));
+        services.AddFeed(new FeedDefinition(PeopleFeeds.Me, FeedAudience.OwnRecords));
         services.AddFeed(new FeedDefinition(PeopleFeeds.Family, FeedAudience.Holding(PeoplePermissions.FamilyView)));
         services.AddFeed(new FeedDefinition(PeopleFeeds.Safeguarding, FeedAudience.Holding(PeoplePermissions.SafeguardingView)));
         return services;

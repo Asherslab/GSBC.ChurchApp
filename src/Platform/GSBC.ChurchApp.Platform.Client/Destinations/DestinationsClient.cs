@@ -12,9 +12,6 @@ public sealed class DestinationsClient(ChannelBase channel, DestinationCatalog c
 
     public IReadOnlyCollection<string> Feeds => catalog.Kinds.SelectMany(kind => kind.Feeds ?? []).ToHashSet();
 
-    public ValueTask<DestinationResults> SearchAsync(string text, string? area = null, string? openableBy = null, int take = 0) =>
-        _destinations.SearchAsync(new DestinationSearch { Text = text, Area = area, OpenableBy = openableBy, Take = take });
-
     public ValueTask<Destination> DescribeAsync(string path) =>
         _destinations.DescribeAsync(new DestinationRequest { Path = path });
 }

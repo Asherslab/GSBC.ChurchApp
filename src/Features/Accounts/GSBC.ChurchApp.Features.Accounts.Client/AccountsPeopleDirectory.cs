@@ -1,9 +1,11 @@
 using GSBC.ChurchApp.Features.Accounts.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using GSBC.ChurchApp.Platform.Client.People;
 
 namespace GSBC.ChurchApp.Features.Accounts.Client;
 
-internal sealed class AccountsPeopleDirectory(AccountsClient accounts) : IPeopleDirectory
+[AdminOnly]
+public sealed class AccountsPeopleDirectory(AccountsOfficeClient accounts) : IPeopleDirectory
 {
     public async Task<IReadOnlyList<PersonSummary>> SearchAsync(string query) => Map(await accounts.SearchPeopleAsync(query));
 

@@ -231,9 +231,10 @@ internal sealed class AccountsService(
 
     public async ValueTask<Done> EndSessionAsync(EndSessionRequest request, CallContext context = default)
     {
-        (Guid userId, _) = Caller(context);
-        if (!Guid.TryParse(request.Id, out Guid id))
-            throw new RpcException(new Status(StatusCode.InvalidArgument, "That isn't a session."));
+        (Guid userId, Guid? current) = Caller(context);
+        Guid id = request.Id.Length == 0 && current is { } mine ? mine
+            : Guid.TryParse(request.Id, out Guid parsed) ? parsed
+            : throw new RpcException(new Status(StatusCode.InvalidArgument, "That isn't a session."));
 
         await db.Sessions.Where(session => session.Id == id && session.UserId == userId).ExecuteDeleteAsync(context.CancellationToken);
         audit.Record(AuditActions.SessionEnded, userId);

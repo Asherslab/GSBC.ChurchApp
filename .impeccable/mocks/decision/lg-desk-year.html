@@ -1,0 +1,59 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><title>The year as a strip</title><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet"><style>*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:1440px;height:900px;overflow:hidden}
+body{font-family:Montserrat,system-ui,sans-serif;color:#18233a;background:#fff;display:flex;font-size:14px;line-height:1.4}
+.side{width:248px;background:#2a3d5e;color:#fff;padding:24px 14px;flex:none}
+.brand{font-weight:700;font-size:18px;padding:0 10px 22px}
+.jump{background:rgb(255 255 255/.1);border-radius:10px;padding:10px 12px;font-size:13px;color:rgb(255 255 255/.8);margin-bottom:22px}
+.nav{font-weight:600;font-size:14px;padding:9px 10px;border-radius:10px;color:rgb(255 255 255/.92)}
+.nav.sub{font-weight:500;padding-left:32px}.nav.on{background:rgb(255 255 255/.14)}
+main{flex:1;padding:28px 40px;overflow:hidden}
+.band{display:flex;justify-content:space-between;align-items:flex-start;gap:24px;padding-bottom:16px;border-bottom:1px solid rgb(42 61 94/.12)}
+h1{font-size:28px;font-weight:700;letter-spacing:-.01em}
+.lead{color:#545e70;margin-top:6px;max-width:620px}
+.acts{display:flex;gap:10px}
+.btn{border-radius:999px;padding:11px 18px;font-weight:600;font-size:14px;background:#2a3d5e;color:#fff;white-space:nowrap}
+.btn.q{background:#f4efe7;color:#18233a}.btn.s{padding:7px 13px;font-size:13px}
+.row{display:flex;align-items:center;gap:12px;padding:11px 0;border-top:1px solid rgb(42 61 94/.12)}
+.tile{width:34px;height:34px;border-radius:10px;background:#f4efe7;display:grid;place-items:center;font-weight:700;color:#2a3d5e;flex:none;font-size:13px}
+.tile.a{background:rgb(0 119 109/.16);color:#00776d}.tile.w{background:rgb(231 174 116/.3);color:#8a5422}
+.t{flex:1;min-width:0}.t b{display:block;font-weight:600}.t span{color:#545e70;font-size:13px}
+.chev{color:#6b7384}
+.pill{border-radius:999px;font-size:12px;font-weight:700;padding:3px 10px;background:rgb(0 119 109/.14);color:#00776d;white-space:nowrap}
+.pill.m{background:rgb(231 174 116/.3);color:#8a5422}.pill.q{background:#f4efe7;color:#545e70}
+.card{border:1px solid rgb(42 61 94/.12);border-radius:14px;padding:18px 20px;background:#fff}
+h2{font-size:18px;font-weight:700}
+.k{font-size:12px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#6b7384}
+.hint{color:#545e70;font-size:13px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.d{width:46px;border-radius:9px;background:#fff;border:1px solid rgb(42 61 94/.16);text-align:center;padding:4px 0;font-size:11px;font-weight:700;color:#6b7384}
+.d b{display:block;font-size:17px;color:#18233a}
+.d.off{border-style:dashed;background:transparent;opacity:.75}.d.off b{color:#6b7384}
+.link{color:#00776d;font-weight:600}
+.yr{margin:18px 0 6px;position:relative}
+.months{display:grid;grid-template-columns:repeat(12,1fr);font-size:12px;font-weight:700;color:#6b7384;margin-bottom:6px}
+.track{position:relative;height:56px;border-radius:12px;background:repeating-linear-gradient(-45deg,#f4efe7 0 6px,#fff 6px 12px);border:1px solid rgb(42 61 94/.12)}
+.blk{position:absolute;top:6px;bottom:6px;border-radius:9px;background:#2a3d5e;color:#fff;font-size:12px;font-weight:600;padding:6px 8px;overflow:hidden;white-space:nowrap}
+.blk.past{opacity:.35}.blk.now{background:#00776d}.blk.sel{background:#e7ae74;color:#18233a;outline:3px solid #2a3d5e;outline-offset:2px}
+.today{position:absolute;top:-6px;bottom:-6px;width:2px;background:#d64545}
+.legend{display:flex;gap:18px;font-size:12px;color:#545e70;margin:10px 0 18px}
+.lay{display:grid;grid-template-columns:1fr 320px;gap:24px}</style></head><body><nav class="side"><div class="brand">Good Shepherd</div><div class="jump">Jump to… ⌘K</div>
+<div class="nav">Home</div><div class="nav">Sundays &amp; sermons</div><div class="nav">Calendar &amp; news</div><div class="nav">The app</div>
+<div class="nav">People</div><div class="nav sub on">Life Groups</div><div class="nav sub">Ministries</div><div class="nav sub">People</div><div class="nav">Technical</div></nav><main><div class="band"><div><h1>Life Groups</h1><p class="lead">Every ministry shown in Life Groups, wherever it sits. People see the next groups in the app from the date you choose.</p></div>
+<div class="acts"><span class="btn q">Plan the next groups</span><span class="btn">+ Add a Life Group</span></div></div>
+<div class="row" style="border-top:0;margin-top:6px"><span class="tile">▦</span><div class="t"><b>Shown in Services</b><span>The strip below is what the calendar shows: blocks on, stripes not on.</span></div><span class="chev">›</span></div>
+<div class="yr"><div class="months"><span>Jan</span><span>Feb</span><span>Mar</span><span>Apr</span><span>May</span><span>Jun</span><span>Jul</span><span>Aug</span><span>Sep</span><span>Oct</span><span>Nov</span><span>Dec</span></div>
+<div class="track"><span class="blk past" style="left:2%;width:9%">Romans</span><span class="blk past" style="left:14%;width:9%">Psalms</span><span class="blk past" style="left:27%;width:10%">Acts</span><span class="blk past" style="left:42%;width:10%">Prayer</span><span class="blk past" style="left:56%;width:10%">Ruth</span><span class="blk past" style="left:68%;width:9%">Romans</span><span class="blk past" style="left:80%;width:4%"></span><span class="blk now" style="left:85%;width:7%">Summer Fit</span><span class="blk sel" style="left:95%;width:5%">Next</span><span class="today" style="left:87%"></span></div></div>
+<div class="legend"><span>■ Finished</span><span style="color:#00776d">■ Now on</span><span style="color:#8a5422">■ Selected: Next</span><span>▨ Not on</span><span style="color:#d64545">| Today</span><span style="flex:1"></span><span class="link">Archived groups (12) ›</span></div>
+<div class="lay"><section class="card">
+ <div style="display:flex;justify-content:space-between;align-items:center"><div><span class="k">Next · shows in the app from 29 November</span><h2>13 December to 17 January</h2></div><span class="btn q s">Sundays and time</span></div>
+ <div class="chips" style="margin:12px 0 6px"><span class="d">DEC<b>13</b>SUN</span><span class="d">DEC<b>20</b>SUN</span><span class="d off">DEC<b>27</b>SUN</span><span class="d">JAN<b>3</b>SUN</span><span class="d">JAN<b>10</b>SUN</span><span class="d">JAN<b>17</b>SUN</span></div><p class="hint" style="margin-bottom:8px">5 Sundays · 9:15am to 10am · 27 December taken off</p>
+ <div class="row"><span class="tile a">J</span><div class="t"><b>Job: suffering and hope</b><span>Top-level · Auditorium</span></div><span class="chev">›</span></div>
+ <div class="row"><span class="tile a">L</span><div class="t"><b>Ladies' study</b><span>Top-level · Library</span></div><span class="chev">›</span></div>
+ <div class="row"><span class="tile a">M</span><div class="t"><b>Men's breakfast study</b><span>Top-level · no room yet</span></div><span class="chev">›</span></div>
+ <div class="row"><span class="tile w">Y</span><div class="t"><b>Youth Life</b><span>All year · not on these Sundays · joins a group this time</span></div><span class="chev">›</span></div>
+ <div class="row"><span class="tile a">+</span><div class="t"><b>Add a group</b></div></div>
+</section><aside class="card"><span class="k">All year</span>
+ <div class="row"><span class="tile">K</span><div class="t"><b>Kids Life</b><span>Under Kids Ministries</span></div></div>
+ <div class="row"><span class="tile">N</span><div class="t"><b>Nursery</b><span>Under Kids Ministries</span></div></div>
+ <div class="row"><span class="tile w">Y</span><div class="t"><b>Youth Life</b><span>Off for Next</span></div></div>
+ <div class="row"><span class="tile a">+</span><div class="t"><b>Add an all-year group</b></div></div></aside></div></main></body></html>

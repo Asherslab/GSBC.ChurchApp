@@ -827,6 +827,56 @@ approved mocks (surface briefs `.impeccable/surfaces/tures-events-admin-pages-di
 - **Left as they are:** inbox notifications that linked to the calendar open its page, which says it isn't here; a
   person's mute for *News about an event* on that calendar stays in Notifications and does nothing.
 
+## Decided while building (kept regular events, 2026-11-10)
+
+For Life Groups in the calendar ([life-groups.md](life-groups.md#life-groups-in-the-calendar-owner-2026-11-10)).
+
+- **A regular event another feature keeps** (`IKeptRegularEvents` in Platform.Api, implemented here): the feature names
+  it by a key, gives its title, About, where tapping opens, its dates with their times and the dates not on with why.
+  Events stores it as an ordinary regular event (`Keeper`, `KeptBy`, `OpensAt` on `regular_events`): weekly when the
+  dates are a weekly run, a list of dates otherwise; the usual time is the one most dates have, the rest are time-only
+  specials; each run of not-on dates with one reason is an own break, so it shows as a break does (its first two weeks
+  as not on, then left out). Every change replaces its specials and breaks in one transaction and publishes.
+- **No special cases downstream:** every feed, iCal link, the digest and notifications read it as any regular event.
+  Two differences only: a kept event's time-only dates aren't shown as specials, and an occurrence carries
+  `KeptBy`/`OpensAt`, so rows and Home open the feature's page and the event page links to it.
+- **Locked:** saving it, a date of it and deleting it are refused (`FailedPrecondition`, naming where it's changed);
+  the editors show that instead of their fields.
+- **Choosing a calendar for it** offers calendars the person edits (and publishes, if the calendar needs a publisher),
+  through Access; keeping it in step afterwards needs no one's rights.
+
+## Editing on the phone through Sync (owner, 2026-11-10 and 2026-11-11)
+
+The owner: "event editing should've always been built correctly" (no exception to the rule that the app reads only
+through Sync and writes through the outbox). So on the phone:
+
+- **The editors read the phone's own copy.** A feed for editors, `events.editing` (audience: `events.edit` at the row's
+  calendar, through Access, so nobody else's phone ever gets a row), holds for each calendar its settings and named
+  breaks (`calendar/{id}`), every one-off event from 30 days back on, shown or not (`event/{id}`, an `EventDetail`), and
+  every regular event with its list summary (`regular/{id}`, an `EditingRegular`). The editors, a date, the regular
+  events list, *Also shown on* and *Show from elsewhere* all read it (with the calendars and events the phone already
+  has), so they open and work with no signal.
+- **Saves wait in the outbox** and show *Waiting to send* by the Save button and on the event's page, or *Couldn't
+  save* with the reason and *Try now*. Reopening something whose save is waiting shows the waiting version. A new
+  event gets its id on the phone, so its page opens at once (*It shows in the calendar for everyone once it's sent*).
+  *Ask to publish*, *Tell people*, *Also shown on*, *Show here* and deleting queue the same way, in order.
+- **Sent twice, applied once:** every queued write carries `gsbc-request-id`; Events keeps the ids it has handled for
+  7 days (`events.handled_requests`) and treats a repeat as done.
+- **Two people editing the same thing (decided while building):** each save carries what the editor opened (`Base`),
+  and the server changes only what that person changed. Different things both stay; the same thing changed by both:
+  the later save wins. A save for something deleted meanwhile fails with "isn't here any more". The admin panel sends
+  the same, so it behaves the same.
+- **"Some dates keep their own" and the *Tell people* wording** are worked out on the device from what it opened, so
+  neither needs the server first.
+- **The admin panel stays online** and uses the same components: they read through `IEventEditing`, which the phone
+  answers from its store and outbox (`StoredEventEditing`) and the admin panel over gRPC (`OnlineEventEditing`).
+- **Pictures (owner, 2026-11-11):** "those that *are* synced already (as some will be) can be browsed offline.
+  otherwise online." The chooser shows *On this phone* first (pictures on events the phone holds, this calendar's
+  first), which work offline; the whole library is browsed live when online, as in the admin panel, and offline says
+  it needs a connection. Uploading stays a direct call (approved). Uploading offline, kept and sent later (owner,
+  2026-11-11), waits for the shared piece being built in Platform.Client.
+- **Not changed yet:** the week and month don't show a waiting change until it's sent and synced back.
+
 ## What the owner sets up
 
 - **Nothing new in Cloudflare for dev.** For production, the zone's Browser Cache TTL set to *Respect existing headers*

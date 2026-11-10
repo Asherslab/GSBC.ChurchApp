@@ -15,6 +15,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Contracts;
 [ProtoSerializable(typeof(RedeemRequest))]
 [ProtoSerializable(typeof(RequestRecoveryRequest))]
 [ProtoSerializable(typeof(Profile))]
+[ProtoSerializable(typeof(MyAccount))]
 [ProtoSerializable(typeof(UpdateNameRequest))]
 [ProtoSerializable(typeof(PinnedPages))]
 [ProtoSerializable(typeof(ConfirmEmailRequest))]

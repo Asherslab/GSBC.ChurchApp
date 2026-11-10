@@ -1,5 +1,6 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject NavigationManager Navigation
 
 <UnsavedGuard Changed="() => _secret is null && _name.Trim().Length > 0" What="the tool you were connecting" />
@@ -47,7 +48,7 @@
         _problem = null;
         try
         {
-            ToolConnection connection = await Accounts.ConnectToolAsync(_name.Trim());
+            ToolConnection connection = await Office.ConnectToolAsync(_name.Trim());
             _connectedName = _name.Trim();
             _secret = connection.Session;
             _name = "";

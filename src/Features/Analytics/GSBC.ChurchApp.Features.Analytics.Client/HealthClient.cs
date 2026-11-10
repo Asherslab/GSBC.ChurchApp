@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Analytics.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Analytics.Client;
 
+[AdminOnly]
 public sealed class HealthClient(ChannelBase channel)
 {
     private readonly IHealthService _health = channel.CreateGrpcService<IHealthService>();

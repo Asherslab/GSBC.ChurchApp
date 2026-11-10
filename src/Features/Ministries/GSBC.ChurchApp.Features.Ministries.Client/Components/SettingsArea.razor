@@ -1,4 +1,5 @@
-@inject MinistriesClient Ministries
+@inject IMinistryWrites Ministries
+@inject MinistryLookups Lookups
 @inject NavigationManager Navigation
 
 <UnsavedGuard Changed="() => Changed" What="@($"{MinistryWords.Possessive(Page.Ministry.Name)} settings")" Save="SaveBeforeLeavingAsync" />
@@ -45,6 +46,22 @@
 
 @if (Page.You.MayDelete)
 {
+    <Section Title="Archive">
+        <ListGroup>
+            @if (_archiving)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="@ArchiveWords" />
+                <div class="ui-actions ministry-actions">
+                    <Button Busy="_busy" OnClick="ArchiveAsync">Archive @Page.Ministry.Name</Button>
+                    <Button Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => _archiving = false">Keep it</Button>
+                </div>
+            }
+            else
+            {
+                <ListRow Title="@($"Archive {Page.Ministry.Name}")" Subtitle="Puts it away without deleting anything. It can be restored as it was." Icon="archive" IconTone="RowTone.Quiet" OnClick="() => _archiving = true" />
+            }
+        </ListGroup>
+    </Section>
     <Section Title="Delete">
         @if (_preview is { } preview)
         {
@@ -71,6 +88,7 @@
     private MinistryDetails? _seen;
     private DeletionPreview? _preview;
     private bool _adding;
+    private bool _archiving;
     private bool _busy;
     private bool _saved;
     private bool _leaving;
@@ -144,7 +162,18 @@
         return _problem is null;
     }
 
-    private Task PreviewAsync() => RunAsync(async () => _preview = await Ministries.DeletionAsync(Page.Ministry.Id));
+    private Task PreviewAsync() => RunAsync(async () => _preview = await Lookups.DeletionAsync(Page.Ministry.Id));
+
+    private string ArchiveWords =>
+        $"{Page.Ministry.Name}{(Page.SubMinistries.Count > 0 ? $" and the {MinistryWords.Ministries(Page.SubMinistries.Count)} under it" : "")} leave every list and the app, and nothing more can be posted. Its people, news, files and calendars are kept, and staff can restore it from Archived.";
+
+    private Task ArchiveAsync() =>
+        RunAsync(async () =>
+        {
+            await Ministries.ArchiveAsync(Page.Ministry.Id);
+            _leaving = true;
+            Navigation.NavigateTo(Page.Ministry.ParentId.Length > 0 ? Href(Page.Ministry.ParentId) : AfterDelete, replace: true);
+        });
 
     private Task DeleteAsync() =>
         RunAsync(async () =>
@@ -169,7 +198,7 @@
         }
         catch (RpcException exception)
         {
-            _problem = MinistriesClient.Problem(exception);
+            _problem = MinistryLookups.Problem(exception);
         }
         finally
         {

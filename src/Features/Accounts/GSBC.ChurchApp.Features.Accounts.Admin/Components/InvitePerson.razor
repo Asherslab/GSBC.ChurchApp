@@ -1,5 +1,6 @@
 @using Grpc.Core
 @inject AccountsClient Accounts
+@inject AccountsOfficeClient Office
 @inject UnsavedChanges Unsaved
 
 <UnsavedGuard Changed="() => Changed" What="the person you were adding" />
@@ -40,13 +41,13 @@
 
     private Task SendAsync() => RunAsync(async (name, email) =>
     {
-        await Accounts.InviteAsync(name, email);
+        await Office.InviteAsync(name, email);
         return $"Invitation sent to {email}.";
     });
 
     private Task AddAsync() => RunAsync(async (name, email) =>
     {
-        await Accounts.AddPersonAsync(name, email);
+        await Office.AddPersonAsync(name, email);
         return $"{name} is added. They won't hear anything until you send their invitation.";
     });
 

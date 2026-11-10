@@ -25,7 +25,18 @@ internal sealed class EventsBook
             .Concat(links.Where(link => named.ContainsKey(link.BreakId)).Select(link => (link.RegularEventId, named[link.BreakId])))
             .ToLookup(pair => pair.Item1, pair => pair.Item2);
         _showings = showings.ToLookup(showing => showing.EventId ?? showing.RegularEventId ?? Guid.Empty);
+        AllShowings = showings;
+        NamedBreaks = named.Values.OrderBy(stop => stop.StartDate).ToList();
+        _usedBy = links.ToLookup(link => link.BreakId, link => link.RegularEventId);
     }
+
+    private readonly ILookup<Guid, Guid> _usedBy;
+
+    public IReadOnlyList<BreakRecord> NamedBreaks { get; }
+
+    public IReadOnlyList<ShowingRecord> AllShowings { get; }
+
+    public IReadOnlyList<Guid> UsersOf(Guid breakId) => _usedBy[breakId].ToList();
 
     public IReadOnlyDictionary<Guid, CalendarRecord> Calendars { get; }
 

@@ -36,6 +36,7 @@ public sealed class EventDraft
     public string CalendarId { get; set; } = "";
     public string? EventId { get; private init; }
     public string? RegularEventId { get; private init; }
+    public string NewId { get; private init; } = Guid.CreateVersion7().ToString();
     public DateOnly? Date { get; private init; }
     public bool Repeating { get; set; }
     public DraftScope Scope { get; set; } = DraftScope.Every;
@@ -60,6 +61,8 @@ public sealed class EventDraft
     public List<ShowingOn> AlsoOn { get; private init; } = [];
 
     public bool IsNew => EventId is null && RegularEventId is null;
+
+    public string ItemId => EventId ?? RegularEventId ?? NewId;
 
     public bool IsDateOfRegular => RegularEventId is not null && Date is not null;
 
@@ -172,6 +175,7 @@ public sealed class EventDraft
     {
         CalendarId = CalendarId,
         EventId = EventId ?? "",
+        NewId = IsNew ? NewId : "",
         Fields = Every.Fields,
         Times = new EventTimes
         {
@@ -192,6 +196,7 @@ public sealed class EventDraft
         {
             CalendarId = CalendarId,
             RegularEventId = RegularEventId ?? "",
+            NewId = IsNew ? NewId : "",
             Fields = Every.Fields,
             Pattern = Pattern,
             StartMinute = Every.StartMinute,
@@ -221,9 +226,9 @@ public sealed class EventDraft
 
     public string OccurrenceId(RegularEventDetail? saved = null)
     {
-        if (EventId is { } eventId && Guid.TryParse(eventId, out Guid id))
+        if (!Repeating && Guid.TryParse(EventId ?? NewId, out Guid id))
             return EventDates.OccurrenceId(id);
-        if (Guid.TryParse(saved?.Id ?? RegularEventId, out Guid regular))
+        if (Guid.TryParse(saved?.Id ?? RegularEventId ?? NewId, out Guid regular))
         {
             DateOnly day = Date ?? (saved?.Dates.Where(date => !date.NotOn).Select(date => EventDates.Parse(date.Date)).FirstOrDefault(found => found is not null) ?? StartDate);
             return EventDates.OccurrenceId(regular, day);

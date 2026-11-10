@@ -1,7 +1,9 @@
 using GSBC.ChurchApp.Platform.Client.People;
+using GSBC.ChurchApp.Platform.Client.Online;
 
 namespace GSBC.ChurchApp.Features.Access.Client;
 
+[AdminOnly]
 internal sealed class AccessRoleDirectory(AccessClient access) : IRoleDirectory
 {
     public async Task<IReadOnlyList<RoleSummary>> ListAsync() =>

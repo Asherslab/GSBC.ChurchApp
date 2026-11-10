@@ -1,9 +1,11 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Configuration.Contracts;
+using GSBC.ChurchApp.Platform.Client.Online;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Configuration.Client;
 
+[AdminOnly]
 public sealed class DraftsClient(ChannelBase channel)
 {
     private readonly IDraftsService _drafts = channel.CreateGrpcService<IDraftsService>();

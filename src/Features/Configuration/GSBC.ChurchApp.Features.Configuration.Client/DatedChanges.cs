@@ -1,10 +1,12 @@
 using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
+using GSBC.ChurchApp.Platform.Client.Online;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Configuration.Client;
 
+[AdminOnly]
 public sealed class DatedChanges(ConfigurationClient configuration, SurfaceCatalog surfaces, IAccess access)
 {
     private const string EventLayer = "Event layer";
