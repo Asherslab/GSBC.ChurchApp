@@ -24,7 +24,9 @@ Every non-gRPC step is one of the approved passkey ceremonies at the gateway (AG
 account and returns a sign-up ticket (single-use, 15 minutes). The client runs the *register a
 passkey* ceremony with the ticket; on success the gateway starts a session. A 6-digit code is emailed;
 `Accounts.ConfirmEmail(code)` marks the email confirmed. Until then the account works but can't
-recover by email.
+recover by email. Other features add questions to the form through `ISignUpQuestion` (Platform.Client) and save
+their answers once the passkey is made and the session started: People asks for a birth date or *I'm 18 or older*,
+and an under-18's parent ([people.md](people.md)). Accounts itself stores none of it.
 
 **Sign in.** The *sign in* ceremony with a discoverable passkey (no username to type; the browser's
 autofill offers passkeys). On success the gateway starts a session.

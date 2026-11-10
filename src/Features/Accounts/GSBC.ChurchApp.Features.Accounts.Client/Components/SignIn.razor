@@ -1,6 +1,8 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
 @inject AccountsClient Accounts
 @inject IPasskeyCeremonies Passkeys
 @inject ISignInCodes Codes
+@inject IEnumerable<ISignUpQuestion> Questions
 
 @if (_supported is false)
 {
@@ -57,9 +59,13 @@ else if (_mode == Mode.SignUp)
         <div class="ui-after">
             <TextField Label="Email" Type="email" Value="@_email" ValueChanged="value => _email = value" AutoComplete="email" Hint="For getting back in if you lose your passkeys" />
         </div>
+        @foreach (ISignUpQuestion question in Questions.OrderBy(question => question.Order))
+        {
+            @question.Ask(EventCallback.Factory.Create(this, StateHasChanged))
+        }
         <div class="ui-actions ui-after">
             <Button Variant="ButtonVariant.Quiet" OnClick="() => Switch(Mode.SignIn)">Back</Button>
-            <Button Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0)" OnClick="SignUpAsync">Create a passkey</Button>
+            <Button Busy="_busy" Disabled="@(_name.Trim().Length == 0 || _email.Trim().Length == 0 || !Questions.All(question => question.Answered))" OnClick="SignUpAsync">Create a passkey</Button>
         </div>
     </Section>
 }
@@ -127,8 +133,23 @@ else
     private Task SignUpAsync() => RunAsync(async () =>
     {
         TicketReply reply = await Accounts.StartSignUpAsync(_name, _email);
-        await FinishAsync(await Passkeys.RegisterAsync(reply.Ticket));
+        CeremonyResult result = await Passkeys.RegisterAsync(reply.Ticket);
+        if (result.Ok)
+            foreach (ISignUpQuestion question in Questions)
+                await SaveOrLeaveForAccountPageAsync(question);
+        await FinishAsync(result);
     });
+
+    private static async Task SaveOrLeaveForAccountPageAsync(ISignUpQuestion question)
+    {
+        try
+        {
+            await question.SaveAsync();
+        }
+        catch (RpcException)
+        {
+        }
+    }
 
     private Task RecoverAsync() => RunAsync(async () =>
     {
