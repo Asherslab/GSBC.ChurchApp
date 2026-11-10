@@ -247,6 +247,14 @@ Ministries vanish from the directory).
 
 ## Parts, combined news and moving a ministry (owner, 2026-11-10)
 
+**A Life Group is a full ministry** (owner, 2026-11-10: "they're a full ministry, just more temporary. should have all the
+stuff normal ministries do, that's why they're a subset of them"): its own team with *Joining the team*, the group with
+*Joining the group* (never "No attendees"), and every team tool a ministry has. Details in
+[life-groups.md](life-groups.md), *Built*.
+
+**No real ministries as examples in the copy** (owner, 2026-11-10: "i don't really want direct mentions of it in the
+frontend as being as/for kids life"): placeholders and hints are generic; the rule is in DESIGN.md, *Examples in copy*.
+
 **A part that's off is off for leaders too** (owner, 2026-11-10: "nope, point is that we can clean up the tabs per ministry
 so they only get what they actually use. some features might only be used by a single ministry for e.g."). This confirms
 *Off hides it from everyone, leaders too* above as the owner's decision. *What it uses* is ready to grow: every part is one
@@ -277,6 +285,7 @@ Settings → *Where it sits*, in the app and the admin panel (the same Settings)
   which carries calendars, iCal links and event notifications), and touches the moved ministry, everything under it and both
   parents on the Ministries feed, so the directory, the desk's tree, combined news and calendars, Life Groups' home and every
   open ministry page reload. A Life Group moves the same way.
+- **Moving a Life Group works the same** (it needs a ministry to sit under).
 - **Drag and drop in the admin tree: not built** (*default*): the Settings picker does it, with the preview; dragging would
   skip the preview and needs a keyboard way to be accessible.
 
