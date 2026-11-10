@@ -132,8 +132,8 @@
     private bool Matches(PersonInfo person, PeopleFilter filter) => filter switch
     {
         PeopleFilter.Invited or PeopleFilter.NotInvitedYet => _invitations.ContainsKey(person.Id),
-        PeopleFilter.NoPasskey => !person.HasPasskey && !person.Disabled && !_invitations.ContainsKey(person.Id),
-        PeopleFilter.Unconfirmed => !person.EmailConfirmed && !person.Disabled && !_invitations.ContainsKey(person.Id),
+        PeopleFilter.NoPasskey => person is { HasPasskey: false, Disabled: false } && !_invitations.ContainsKey(person.Id),
+        PeopleFilter.Unconfirmed => person is { EmailConfirmed: false, Disabled: false } && !_invitations.ContainsKey(person.Id),
         PeopleFilter.TurnedOff => person.Disabled,
         _ => true,
     };

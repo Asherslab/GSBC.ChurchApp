@@ -21,8 +21,8 @@ internal sealed class Invitations(
     private const string NotOpen = "That invitation was already accepted or withdrawn.";
     private const string AlreadyWaiting = "They're already on the list. Find them on People to send or withdraw their invitation.";
     private const string ListChanged = "The list changed while you were looking. Check it again before sending.";
-    private static readonly string[] InvitingActions = [AuditActions.Invited, AuditActions.InvitationResent];
-    private static readonly string[] AddingActions = [AuditActions.AddedWithoutInvitation];
+    private static readonly IReadOnlyList<string> InvitingActions = [AuditActions.Invited, AuditActions.InvitationResent];
+    private static readonly IReadOnlyList<string> AddingActions = [AuditActions.AddedWithoutInvitation];
 
     public async Task HoldAsync(AccountUser user, Guid actorId, CancellationToken cancellationToken)
     {
@@ -122,7 +122,7 @@ internal sealed class Invitations(
         };
     }
 
-    private async Task<Dictionary<Guid, Guid?>> LatestActorsAsync(List<Guid> userIds, string[] actions, CancellationToken cancellationToken) =>
+    private async Task<Dictionary<Guid, Guid?>> LatestActorsAsync(List<Guid> userIds, IReadOnlyList<string> actions, CancellationToken cancellationToken) =>
         (await db.Audit.AsNoTracking()
             .Where(entry => entry.UserId != null && userIds.Contains(entry.UserId.Value) && actions.Contains(entry.Action))
             .Select(entry => new { UserId = entry.UserId!.Value, entry.ActorId, entry.Id })

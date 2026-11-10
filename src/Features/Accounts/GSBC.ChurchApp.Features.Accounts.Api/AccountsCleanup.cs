@@ -10,7 +10,7 @@ namespace GSBC.ChurchApp.Features.Accounts.Api;
 internal sealed class AccountsCleanup(IServiceScopeFactory scopes, TimeProvider time, ILogger<AccountsCleanup> logger) : BackgroundService
 {
     public static readonly TimeSpan AbandonedAfter = TimeSpan.FromDays(7);
-    public static readonly TimeSpan CodesKeptFor = TimeSpan.FromDays(30);
+    private static readonly TimeSpan CodesKeptFor = TimeSpan.FromDays(30);
     private static readonly TimeSpan Interval = TimeSpan.FromHours(6);
     private const long AdvisoryLockKey = 0x6773_6263_636c_6e75;
 
