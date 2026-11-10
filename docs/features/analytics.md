@@ -455,7 +455,7 @@ tools/health/errors.sh --env dev       # error kinds and failed calls, the last 
 tools/health/errors.sh --env dev 0195f0aa   # one error in full: type, where, frames, routes, platforms, builds, by day
 ```
 
-- **Connecting a tool:** the admin panel's Account page → *Connect a tool* (people holding
+- **Connecting a tool:** the admin panel's Account → Security → *Connect a tool* (people holding
   `accounts.tools.connect`: the Developer role and Owner). It shows a session secret once, with a copy button.
   The tool is listed under *Where you're signed in* and is signed out like any device.
 - **The secret lives only in the login Keychain**, as `gsbc-tool-<env>`. `connect.sh` reads it with

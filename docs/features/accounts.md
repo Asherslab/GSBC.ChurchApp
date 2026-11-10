@@ -55,7 +55,7 @@ started with one names it (`sessions.review_code_id`).
 **Recovery.** `Accounts.RequestRecovery(email)` (public, rate-limited, always answers the same so it
 doesn't reveal who has an account) emails a code when allowed. Staff can issue one with
 `Accounts.IssueRecoveryCode(userId)`. Either way, `Accounts.Redeem(code)` and the ceremony, as above.
-Recovering never removes existing passkeys; the person removes lost ones afterwards.
+Recovering never removes existing passkeys; the person removes lost ones afterwards, on Account → Security.
 
 **Deleting an account** (owner, 2026-11-09: "yes staff can delete, also let people delete their own account? no reason
 not to"). `Accounts.DeleteAccount(userId)` (`accounts.manage`, from the person's page on People (Account tab), never your own) and
@@ -95,6 +95,20 @@ and the deletion sheet says so. Tests: `FamilySignInTests`.
 
 **What other features add to your Account page** (2026-11-10): an `AccountSection` (Platform.Client) shown after *You*,
 in the app and the admin panel (not for demo accounts). People adds *Your family* and *Blue card and training*.
+
+**Account and Security** (2026-11-10; the owner: "Where you're signed in" was getting long, so put it and passkeys
+"behind an extra security screen"; the layout below is a *default* the owner can change). Both hosts have two pages, each
+one shared component in Accounts.Client:
+
+- **Account** (`/account`, `AccountDetails`): *You* (name, email), the features' `AccountSection`s, the demo-account
+  notice, a *Security* row ("2 passkeys · signed in on 5 devices"; a demo account shows only the devices), *Sign out*,
+  and *Delete your account* at the bottom.
+- **Security** (`/account/security`, `AccountSecurity`; in the app with a back link to Account): *Passkeys* (add,
+  remove; not for a demo account), *Where you're signed in*, every session, this device first and then the most recently used (sign one out,
+  *Sign out everywhere*), and in the admin panel *Connect a tool* through `AfterSessions`. The whole list, no paging:
+  off the main page its length no longer crowds anything (*default*). A browser is named by its browser and system
+  ("Safari on a Mac", `SessionDevices`), not its user agent, which is what made each row three lines long; the user
+  agent is still what's stored. A notification can link to `account/security`.
 
 ## A person's page (2026-11-09)
 

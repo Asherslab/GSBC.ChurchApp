@@ -91,7 +91,7 @@ health from the terminal*). It's a third kind of session, not an API key (decide
 - **Who:** people holding `accounts.tools.connect` (sensitive): the Developer role (Accounts adds it to
   Analytics' role with `AddToSystemRole`) and Owner. People Managers and App Review Managers hold their
   nodes by name, so not this.
-- **Connecting** is `Accounts.ConnectTool(name)` in the admin panel's Account page; the secret is shown once.
+- **Connecting** is `Accounts.ConnectTool(name)` on the admin panel's Account → Security page; the secret is shown once.
   The phone's native layer refuses the method, so the WebView never receives one.
 - **It acts as its account but never with anything sensitive.** The gateway marks the API token
   (`tool: True`), and Access adds a deny for every sensitive permission to a tool's grants, wherever they're
