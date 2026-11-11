@@ -9,7 +9,7 @@ public interface IChatPlaces
     ValueTask<IReadOnlyList<ChatPlace>> AllAsync(CancellationToken cancellationToken);
 }
 
-public sealed record ChatPlace(Guid MinistryId, string Name, bool ChatsOn, IReadOnlyDictionary<string, Audience> Audiences);
+public sealed record ChatPlace(Guid MinistryId, string Name, bool ChatsOn, IReadOnlyDictionary<string, Audience> Audiences, bool TeamMayStart = false);
 
 internal sealed class NoChatPlaces : IChatPlaces
 {

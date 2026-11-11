@@ -19,7 +19,7 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("ministries")
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -145,6 +145,11 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("attend_join");
 
+                    b.Property<string>("ChatStarters")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("chat_starters");
+
                     b.Property<string>("Colour")
                         .IsRequired()
                         .HasColumnType("text")
@@ -186,6 +191,11 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text[]")
                         .HasColumnName("parts_off");
+
+                    b.PrimitiveCollection<List<string>>("PartsOrder")
+                        .IsRequired()
+                        .HasColumnType("text[]")
+                        .HasColumnName("parts_order");
 
                     b.Property<Guid?>("RoundId")
                         .HasColumnType("uuid")

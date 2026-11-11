@@ -168,7 +168,8 @@ internal sealed class MinistryViews(
         Summary = ministry.Summary, About = ministry.About, Meets = ministry.Meets, WhoFor = ministry.WhoFor, Colour = ministry.Colour,
         Icon = ministry.Icon, TeamJoin = ministry.TeamJoin, AttendJoin = ministry.AttendJoin, RoundId = ministry.RoundId?.ToString() ?? "",
         ShowsInLifeGroups = ministry.ShowsInLifeGroups, Order = ministry.Order,
-        PartsOff = [.. ministry.PartsOff], PartsFromBelow = [.. ministry.PartsFromBelow],
+        PartsOff = [.. ministry.PartsOff], PartsFromBelow = [.. ministry.PartsFromBelow], PartsOrder = MinistryParts.Ordered(ministry.PartsOrder),
+        ChatStarters = ChatStarters.IsValid(ministry.ChatStarters) ? ministry.ChatStarters : ChatStarters.Leaders,
     };
 
     public static MinistrySummary Summary(MinistryRecord ministry, string yours = "", string latest = "", int waiting = 0) => new()

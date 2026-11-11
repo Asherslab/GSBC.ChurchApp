@@ -39,5 +39,6 @@
     [Parameter] public EventCallback OnChanged { get; set; }
     [Parameter] public bool Wide { get; set; }
 
-    private MinistryOnPage OnPage => new(Page.Ministry.Id, Page.Ministry.Name, Wide, Page.You.MayEditSettings, Page.Ministry.AttendJoin != Joining.None);
+    private MinistryOnPage OnPage => new(Page.Ministry.Id, Page.Ministry.Name, Wide, Page.You.MayEditSettings, Page.Ministry.AttendJoin != Joining.None,
+        Page.You.MayEditSettings || (Page.Ministry.ChatStarters == ChatStarters.Team && Page.You.Roles.Contains(Roles.Team)));
 }

@@ -56,6 +56,10 @@ internal sealed class ChatFacts(
                 .Where(standing => standing.HoldsBlueCard).Select(standing => standing.PersonId).ToHashSet());
     }
 
+    public async Task<bool> InAudienceAsync(Guid userId, ChatPlace place, string audience, CancellationToken cancellationToken) =>
+        place.Audiences.TryGetValue(audience, out Audience? found) && found is { Node: { } node, At: { } at }
+        && await IsAllowedAsync(userId, new Permission(node, at.Kind, node), at.ObjectId, cancellationToken);
+
     public async Task<bool> IsAllowedAsync(Guid userId, Permission permission, string? objectId, CancellationToken cancellationToken) =>
         (await access.GrantsForAsync(userId, cancellationToken)).IsAllowed(permission, objectId);
 

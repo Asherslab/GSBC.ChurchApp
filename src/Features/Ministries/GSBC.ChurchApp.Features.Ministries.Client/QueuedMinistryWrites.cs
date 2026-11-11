@@ -51,21 +51,25 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
         return details;
     }
 
-    public Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow) =>
-        SendAsync(MinistryMethods.SaveParts, new PartsSave { MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow] });
+    public Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "",
+        IEnumerable<string>? partsOrder = null) =>
+        SendAsync(MinistryMethods.SaveParts, new PartsSave
+        {
+            MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow], ChatStarters = chatStarters, PartsOrder = [.. partsOrder ?? []],
+        });
 
     public Task MoveAsync(string ministryId, string underId) => SendAsync(MinistryMethods.Move, new MoveRequest { MinistryId = ministryId, UnderId = underId });
 
     public async Task<MinistryDetails> AddSubMinistryAsync(string parentId, MinistryDetails details)
     {
-        Minted(details, "", id => (details.Id, details.New, details.ParentId) = (id, true, parentId));
+        Minted(details, "", id => (details.Id, details.New, details.ParentId, details.PartsOff) = (id, true, parentId, MinistryParts.OffWhenNew()));
         await SendAsync(MinistryMethods.AddSubMinistry, new MinistrySave { MinistryId = parentId, Details = details });
         return details;
     }
 
     public async Task<MinistryDetails> CreateAsync(MinistryDetails details)
     {
-        Minted(details, "", id => (details.Id, details.New) = (id, true));
+        Minted(details, "", id => (details.Id, details.New, details.PartsOff) = (id, true, MinistryParts.OffWhenNew()));
         await SendAsync(MinistryMethods.Create, new MinistrySave { Details = details });
         return details;
     }

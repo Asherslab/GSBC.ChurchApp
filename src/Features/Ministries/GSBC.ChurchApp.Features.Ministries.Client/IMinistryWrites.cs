@@ -27,7 +27,7 @@ public interface IMinistryWrites
 
     Task<MinistryDetails> SaveMinistryAsync(MinistryDetails details);
 
-    Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow);
+    Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "", IEnumerable<string>? partsOrder = null);
 
     Task MoveAsync(string ministryId, string underId);
 

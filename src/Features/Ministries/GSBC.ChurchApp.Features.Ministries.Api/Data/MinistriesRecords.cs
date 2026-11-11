@@ -18,6 +18,8 @@ public sealed class MinistryRecord
     public int Order { get; set; }
     public List<string> PartsOff { get; set; } = [];
     public List<string> PartsFromBelow { get; set; } = [];
+    public List<string> PartsOrder { get; set; } = [];
+    public string ChatStarters { get; set; } = Contracts.ChatStarters.Leaders;
     public DateTime? ArchivedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }

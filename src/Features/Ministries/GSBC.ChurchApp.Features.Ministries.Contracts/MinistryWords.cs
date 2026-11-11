@@ -30,7 +30,17 @@ public static class MinistryParts
         new(Chats, "Chats", "Group chats and channels for its people, with the church's safeguarding rules"),
     ];
 
+    public static readonly IReadOnlyList<string> OnWhenNew = [News, Calendar, Chats];
+
     public static MinistryPart Of(string key) => All.Single(part => part.Key == key);
+
+    public static List<string> OffWhenNew() => All.Select(part => part.Key).Where(key => !OnWhenNew.Contains(key)).ToList();
+
+    public static List<string> Ordered(IEnumerable<string> partsOrder)
+    {
+        List<string> keys = All.Select(part => part.Key).ToList();
+        return partsOrder.Where(keys.Contains).Distinct().Concat(keys).Distinct().ToList();
+    }
 
     public static bool IsOn(IEnumerable<string> partsOff, string part) => !partsOff.Contains(part);
 
@@ -50,6 +60,14 @@ public static class MinistryParts
 
     public static List<string> ValidFromBelow(IEnumerable<string> partsFromBelow) =>
         All.Where(part => part.FromBelow is not null).Select(part => part.Key).Where(partsFromBelow.Contains).ToList();
+}
+
+public static class ChatStarters
+{
+    public const string Leaders = "leaders";
+    public const string Team = "team";
+
+    public static bool IsValid(string value) => value is Leaders or Team;
 }
 
 public static class Joining

@@ -258,6 +258,10 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
         bool calendarWasOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
         (ministry.PartsOff, ministry.PartsFromBelow, ministry.UpdatedAt) = (MinistryParts.Valid(request.PartsOff), MinistryParts.ValidFromBelow(request.PartsFromBelow), Now);
+        if (request.PartsOrder.Count > 0)
+            ministry.PartsOrder = MinistryParts.Ordered(request.PartsOrder);
+        if (ChatStarters.IsValid(request.ChatStarters))
+            ministry.ChatStarters = request.ChatStarters;
         bool calendarOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -546,7 +550,7 @@ internal sealed class MinistryLeadingService(
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
-            Id = chosenId ?? Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
+            Id = chosenId ?? Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now, PartsOff = MinistryParts.OffWhenNew(),
             Order = await db.Ministries.Where(other => other.ParentId == parentId).Select(other => (int?)other.Order).MaxAsync(cancellationToken) + 1 ?? 0,
         };
         Apply(ministry, wanted);

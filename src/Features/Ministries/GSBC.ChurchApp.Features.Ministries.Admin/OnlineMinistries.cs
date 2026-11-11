@@ -50,8 +50,12 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
     public async Task<MinistryDetails> SaveMinistryAsync(MinistryDetails details) =>
         await _leading.SaveMinistryAsync(new MinistrySave { MinistryId = details.Id, Details = details });
 
-    public async Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow) =>
-        await _leading.SavePartsAsync(new PartsSave { MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow] });
+    public async Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "",
+        IEnumerable<string>? partsOrder = null) =>
+        await _leading.SavePartsAsync(new PartsSave
+        {
+            MinistryId = ministryId, PartsOff = [.. partsOff], PartsFromBelow = [.. partsFromBelow], ChatStarters = chatStarters, PartsOrder = [.. partsOrder ?? []],
+        });
 
     public async Task MoveAsync(string ministryId, string underId) => await _leading.MoveAsync(new MoveRequest { MinistryId = ministryId, UnderId = underId });
 

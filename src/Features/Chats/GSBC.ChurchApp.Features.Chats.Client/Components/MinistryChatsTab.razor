@@ -1,7 +1,7 @@
 @using GSBC.ChurchApp.Platform.Client.Modules
 
 <Section First="true">
-    @if (On.MayManage)
+    @if (On.MayManage || On.MayStartChats)
     {
         <div class="ui-tools">
             <Button Icon="plus" OnClick="() => _starting = true">New chat</Button>
@@ -9,9 +9,9 @@
     }
     <ChatsList MinistryId="@On.Id" />
 </Section>
-@if (On.MayManage)
+@if (On.MayManage || On.MayStartChats)
 {
-    <NewChatSheet Open="_starting" OpenChanged="open => _starting = open" MinistryId="@On.Id" MinistryName="@On.Name" HasAttendees="On.HasAttendees" />
+    <NewChatSheet Open="_starting" OpenChanged="open => _starting = open" MinistryId="@On.Id" MinistryName="@On.Name" HasAttendees="On.HasAttendees" Leads="On.MayManage" />
 }
 
 @code {

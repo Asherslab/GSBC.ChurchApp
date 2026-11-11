@@ -82,6 +82,8 @@ public sealed class MinistryDetails
     [ProtoMember(17)] public List<string> PartsOff { get; set; } = [];
     [ProtoMember(19)] public List<string> PartsFromBelow { get; set; } = [];
     [ProtoMember(21)] public bool New { get; set; }
+    [ProtoMember(22)] public List<string> PartsOrder { get; set; } = [];
+    [ProtoMember(23)] public string ChatStarters { get; set; } = "";
 }
 
 [ProtoContract]
@@ -340,6 +342,8 @@ public sealed class PartsSave : IScopedRequest
     [ProtoMember(1)] public string MinistryId { get; set; } = "";
     [ProtoMember(2)] public List<string> PartsOff { get; set; } = [];
     [ProtoMember(4)] public List<string> PartsFromBelow { get; set; } = [];
+    [ProtoMember(5)] public List<string> PartsOrder { get; set; } = [];
+    [ProtoMember(6)] public string ChatStarters { get; set; } = "";
 
     public string ScopeId => MinistryId;
 }
