@@ -74,7 +74,7 @@
   transition: background 150ms, transform 150ms;
 }
 .icon-btn:active { background: var(--masthead-chip); transform: scale(0.94); }
-.icon-btn:disabled { opacity: 0.55; cursor: default; transform: none; }
+.icon-btn:disabled { box-shadow: inset 0 0 0 1.5px currentColor; cursor: default; transform: none; }
 .icon-btn--back { width: auto; max-width: 100%; min-width: 0; padding: 0 10px 0 4px; display: inline-flex; align-items: center; overflow: hidden; white-space: nowrap; font-size: var(--text-body); font-weight: 500; }
 .icon-btn--back .icon { flex: none; }
 .badge-count {
@@ -198,6 +198,7 @@ button.row:active, a.row:active { background: var(--line); }
 .row__title-extra { display: inline-flex; vertical-align: middle; margin-left: 8px; }
 .text-link { display: inline-flex; align-items: center; gap: 2px; min-height: var(--touch); font-size: var(--text-label); font-weight: 600; color: var(--accent); text-decoration: none; }
 button.text-link { padding: 0; border: 0; background: none; font-family: inherit; cursor: pointer; -webkit-appearance: none; appearance: none; }
+button.text-link:disabled { color: var(--ink-3); cursor: default; }
 
 .pull { position: relative; --pull: 0px; --pull-n: 0; }
 .pull__content { transform: translateY(var(--pull)); transition: transform 280ms var(--ease-out); }
@@ -733,6 +734,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .filter-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 12px; border: 0; border-radius: var(--radius-full); background: var(--field); color: var(--ink-2); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out); }
 .filter-chip:hover { color: var(--ink); }
 .filter-chip--on, .filter-chip--on:hover { background: var(--primary); color: var(--on-primary); }
+.filter-chip:disabled { background: none; box-shadow: inset 0 0 0 1.5px var(--ink-3); color: var(--ink-2); cursor: default; }
 .breadcrumbs__list { display: flex; flex-wrap: wrap; align-items: center; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .breadcrumbs__item { display: inline-flex; align-items: center; gap: 2px; min-width: 0; }
 .breadcrumbs__sep { color: var(--ink-3); }
@@ -748,6 +750,7 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .selection-tray__actions { display: flex; gap: 8px; }
 .selection-tray .btn--quiet { background: color-mix(in srgb, var(--on-primary) 14%, transparent); color: var(--on-primary); }
 .selection-tray .btn--primary { background: var(--surface); color: var(--ink); }
+.selection-tray .btn:disabled:not([aria-busy="true"]) { background: none; box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--on-primary) 60%, transparent); color: var(--on-primary); }
 @keyframes selection-tray-in { from { transform: translateY(10px); opacity: 0.4; } }
 @media (prefers-reduced-motion: reduce) { .selection-tray { animation: none; } }
 .filter-chip__count { font-variant-numeric: tabular-nums; }
@@ -1256,7 +1259,9 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .bubble-row--first { margin-top: 12px; }
 .bubble-row__avatar { align-self: start; }
 .bubble-row--mine { grid-template-columns: minmax(0, 1fr); justify-items: end; }
-.bubble-row--dimmed .bubble { opacity: 0.6; }
+.bubble-row--dimmed .bubble, .bubble-row--mine.bubble-row--dimmed .bubble { background: none; box-shadow: inset 0 0 0 1.5px var(--ink-3); color: var(--ink-2); }
+.bubble-row--dimmed .bubble :is(.bubble__time, .chat-file) { color: var(--ink-3); }
+.bubble-row--dimmed .bubble .chat-file { background: var(--sand); color: var(--ink); }
 .bubble-row__stack { display: grid; justify-items: start; gap: 4px; max-width: min(82%, 520px); }
 .bubble-row--mine .bubble-row__stack { justify-items: end; }
 .bubble { position: relative; display: grid; gap: 4px; padding: 8px 12px 7px; border-radius: 18px; background: var(--sand); color: var(--ink); font-size: var(--text-body); line-height: 1.38; overflow-wrap: anywhere; -webkit-user-select: text; user-select: text; -webkit-touch-callout: none; }

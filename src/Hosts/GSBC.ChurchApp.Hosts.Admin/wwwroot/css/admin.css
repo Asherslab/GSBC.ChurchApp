@@ -492,7 +492,7 @@ button.link {
 }
 
 button:disabled { cursor: default; }
-button:disabled:not(.btn, .icon-btn) { color: var(--ink-3); }
+:where(button:disabled:not(.btn, .icon-btn)) { color: var(--ink-3); }
 
 .account-panel {
     margin-bottom: 16px;

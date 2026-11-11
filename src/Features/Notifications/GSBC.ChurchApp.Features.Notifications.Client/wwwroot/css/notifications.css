@@ -7,7 +7,7 @@
   min-height: 34px;
   padding: 7px 12px;
   border-radius: var(--radius-full);
-  background: color-mix(in srgb, var(--marker) 32%, var(--surface));
+  background: color-mix(in srgb, var(--marker) 24%, var(--surface));
   color: var(--marker-ink);
   font-size: var(--text-caption);
   text-decoration: none;
@@ -16,7 +16,7 @@
 .announcement-chip:active { transform: scale(0.98); }
 .announcement-chip[aria-current="page"] { outline: 2px solid var(--marker); outline-offset: 2px; }
 .announcement-chip__title { max-width: 28ch; overflow: hidden; font-weight: 600; white-space: nowrap; text-overflow: ellipsis; }
-.announcement-chip__state { font-size: var(--text-pill); opacity: 0.85; }
+.announcement-chip__state { font-size: var(--text-pill); }
 
 .announcement-desk {
   display: grid;
