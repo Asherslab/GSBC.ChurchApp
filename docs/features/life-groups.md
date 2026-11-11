@@ -4,6 +4,16 @@ Status: built 2026-11-10 as part of Ministries Stage 2 (below); draft 2026-10-26
 [SPEC.md](../../SPEC.md) and [ministries.md](ministries.md); the site map it uses is
 [site-map.md](site-map.md).
 
+## A linked calendar instead of the Sundays tab (owner, 2026-11-12)
+
+The owner (#15): "I can't attach a linked calendar on a life group. that's the missing piece, not just 'add calendar' but
+also 'link existing calendar'. then 'Sundays' tab isn't needed... it'd technically also show the life groups for the next
+round in the current round's life group... needs to be something of a filtered one... only shows the Sundays that the life
+group is rostered on for", and "sounds about right" to: drop the Sundays tab; a group links an existing calendar, filtered
+to its sets' Sundays; all-year groups like Kids Life follow the breaks too. Built: see [ministries.md](ministries.md),
+*Wave 1*. A group's Calendar tab shows its linked calendars' events on its own Sundays only, then *Its Sundays* with the
+"No class this Sunday" notes leaders set.
+
 ## The desk by stage (owner, 2026-11-11)
 
 The owner: "this page feels like it's going to get very busy later into the year, with a lot of rounds added / etc.

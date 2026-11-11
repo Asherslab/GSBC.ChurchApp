@@ -13,6 +13,12 @@ for the owner to redirect.
   audiences as posts, and membership follows the audience by itself. *Chosen people* chats exist on the server (a
   *Chat member* role at the chat) and are used for asking to join; choosing people by hand isn't in the start sheet
   yet.
+- **Who can start a chat is per ministry** (owner, 2026-11-12: "make it configurable per ministry"; default leaders
+  only). Settings → What it uses → *Who can start a chat*: leaders, or the team too. Team members start **group chats
+  for the team**; channels and chats with attendees or parents stay with leaders, who also change and delete chats.
+  `Chats.Start` is `[SignedIn]` and checks it (`ChatPlace.TeamMayStart`).
+- **A ministry's people changing reaches its chats at once** (2026-11-12): Chats handles Platform's
+  `IMinistryPeopleChanged` as well as watching grants.
 - **Where:** *Chats* (`/chats`: every chat you're in, newest first, a parent's yes waiting on top), a ministry's
   **Chats tab**, a Hub tile, and in the admin panel the **Chats desk**. Deep links: `/chats/{id}`;
   `/ministries/{id}/chats`.
@@ -123,7 +129,7 @@ From the decision page, each built:
 Also picked: a grant held everywhere isn't membership; leaders of the ministries above are in the ministry's audience
 chats; a paused person loses their chats (not read-only); **earlier versions of an edited message are shown only to
 people checking**, not to everyone in the chat (the sketch showed them to all); mentions notify through mute; members
-can't start chats (leaders only).
+can't start chats (leaders only; per ministry since 2026-11-12, above).
 
 ## Not built yet
 
