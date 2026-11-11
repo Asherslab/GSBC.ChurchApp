@@ -42,5 +42,10 @@ internal static class PrayedTimes
         return past == 0 ? $"{shown}{half}" : $"{shown}:{past:00}{half}";
     }
 
+    public static IEnumerable<(int Minutes, int Gap)> Gaps(IReadOnlyList<int> after) =>
+        after.Select((minutes, index) => (minutes, minutes - (index == 0 ? 0 : after[index - 1])));
+
+    public static string Weight(int gap) => Math.Clamp(Math.Sqrt(gap / 15.0), 1, 4).ToString("0.##", CultureInfo.InvariantCulture);
+
     private static string Plural(int count, string unit) => count == 1 ? $"1 {unit}" : $"{count} {unit}s";
 }

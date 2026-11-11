@@ -34,15 +34,11 @@ public sealed record DigestSchedule(IReadOnlyList<TimeSpan> After, TimeOnly? Dai
     public override int GetHashCode() => HashCode.Combine(After.Count, DailyAt);
 }
 
-public sealed record NotificationOpens
+public sealed record NotificationOpens(params IReadOnlyList<string> Routes)
 {
-    public static readonly NotificationOpens ChosenByStaff = new([]) { AnyPlace = true };
+    public static readonly NotificationOpens ChosenByStaff = new() { AnyPlace = true };
 
-    public NotificationOpens(params IReadOnlyList<string> routes) => Routes = routes;
-
-    public IReadOnlyList<string> Routes { get; }
-
-    public bool AnyPlace { get; private init; }
+    private bool AnyPlace { get; init; }
 
     public bool Allows(string link) =>
         AnyPlace || (DestinationPaths.RouteOf(link) is { } route && Routes.Any(template => RouteTemplates.Match(template, route)));

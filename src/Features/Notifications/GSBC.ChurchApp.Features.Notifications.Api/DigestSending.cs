@@ -3,7 +3,6 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Notifications;
-using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -49,7 +48,7 @@ internal sealed class DigestSending(
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public static IEnumerable<(int Count, Recipients Recipients)> Counted(Recipients everyone, IReadOnlyCollection<DigestItemRecord> items)
+    private static IEnumerable<(int Count, Recipients Recipients)> Counted(Recipients everyone, IReadOnlyCollection<DigestItemRecord> items)
     {
         Dictionary<int, List<Guid>> byCount = everyone.People
             .GroupBy(person => items.Count(item => item.ActorId != person))

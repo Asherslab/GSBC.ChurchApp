@@ -11,20 +11,12 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Tests;
 
 internal sealed class RecordedNotifications : INotifications
 {
-    public List<Notification> Raised { get; } = [];
     public List<string> Settled { get; } = [];
 
-    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
-    {
-        Raised.Add(NotificationLinks.Checked(notification));
-        return Task.CompletedTask;
-    }
+    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.FromResult(NotificationLinks.Checked(notification));
 
-    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
-    {
-        Raised.AddRange(mostSpecificFirst.Select(NotificationLinks.Checked));
-        return Task.CompletedTask;
-    }
+    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) =>
+        Task.FromResult(mostSpecificFirst.Select(NotificationLinks.Checked).ToList());
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken)
     {

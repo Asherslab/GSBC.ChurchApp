@@ -8,7 +8,7 @@ namespace GSBC.ChurchApp.Features.Notifications.Api;
 
 internal sealed class DigestSchedulesService(DigestSchedules schedules, IAccessEvaluator access) : IDigestSchedulesService
 {
-    public const int MostEarlyDigests = 12;
+    private const int MostEarlyDigests = 12;
     private static readonly TimeSpan LongestWait = TimeSpan.FromDays(7);
 
     public async ValueTask<DigestScheduleMessage> GetAsync(DigestScheduleRequest request, CallContext context = default) =>

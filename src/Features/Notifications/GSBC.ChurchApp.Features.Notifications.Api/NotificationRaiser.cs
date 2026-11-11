@@ -227,11 +227,7 @@ internal sealed class NotificationRaiser(
             .Select(group => new { group.Key, Count = group.Count() })
             .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
 
-    private sealed class StartedDigest
-    {
-        public Guid Id { get; init; }
-        public DateTime StartedAt { get; init; }
-    }
+    private sealed record StartedDigest(Guid Id, DateTime StartedAt);
 
     private sealed record Raised(NotificationKind Kind, Notification Notification, NotificationRecord Record, Recipients Recipients)
     {

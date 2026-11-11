@@ -1,6 +1,5 @@
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
 using GSBC.ChurchApp.Features.Notifications.Api.Push;
-using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Destinations;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Tests;
@@ -26,7 +25,7 @@ public sealed class PushRulesTests
 
         Assert.Equal(
             ["/sermon/12", PushRules.InboxLink, "https://example.org/camp", PushRules.InboxLink],
-            new string?[] { "/sermon/12", "/announcements/7", "https://example.org/camp", null }.Select(link => PushRules.OnThePhone(link, places)));
+            new[] { "/sermon/12", "/announcements/7", "https://example.org/camp", null }.Select(link => PushRules.OnThePhone(link, places)));
     }
 
     [Fact]

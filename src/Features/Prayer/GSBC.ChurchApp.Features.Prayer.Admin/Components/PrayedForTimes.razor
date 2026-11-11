@@ -2,7 +2,7 @@
 @using GSBC.ChurchApp.Platform.Contracts.Notifications
 @inject DigestSchedulesClient Schedules
 
-<UnsavedGuard Changed="() => _form is not null && _form != _saved" What="the times" />
+<UnsavedGuard Changed="() => _mayChange && _form is not null && _form != _saved" What="the times" />
 
 <LiveData TValue="DigestScheduleMessage" Load="LoadAsync" FailedTitle="Can't load the times right now">
     @{ Shape(context.Value); }
@@ -12,9 +12,9 @@
 
         <ol class="prayed-times__line" aria-label="When they're told">
             <li class="prayed-times__stop prayed-times__stop--start"><span>On the wall</span></li>
-            @foreach (int minutes in _form!.After)
+            @foreach ((int minutes, int gap) in PrayedTimes.Gaps(_form!.After))
             {
-                <li class="prayed-times__stop"><span>@PrayedTimes.Short(minutes)</span></li>
+                <li class="prayed-times__stop" style="flex-grow: @PrayedTimes.Weight(gap)"><span>@PrayedTimes.Short(minutes)</span></li>
             }
             @if (_form.DailyAt is { } daily)
             {
@@ -22,29 +22,29 @@
             }
         </ol>
 
-        <div class="prayed-times__group">
-            <h3 class="prayed-times__heading">A few times after it goes on the wall</h3>
-            <p class="prayed-times__hint">Each one says how many prayed since the last. Nothing goes when nobody did.</p>
-            <ChipPicker TItem="int" Label="Times after it goes on the wall" Items="PrayedTimes.Choices" Text="PrayedTimes.Long" Chosen="_form.After"
-                        ChosenChanged="ChooseTimes" Placeholder="Add a time" Empty="Every time is chosen" />
-        </div>
-
-        <div class="prayed-times__group">
-            <ToggleRow Title="Then once a day" Description="While people keep praying for it" Checked="@(_form.DailyAt is not null)" CheckedChanged="ChooseDaily" />
-            @if (_form.DailyAt is { } at)
-            {
-                <SelectField Label="Each day at" Options="PrayedTimes.DayTimes" Value="@at.ToString(System.Globalization.CultureInfo.InvariantCulture)"
-                             ValueChanged="ChooseDayTime" Hint="Church time. Before 7am or after 9pm, phones buzz at 7am." />
-            }
-        </div>
-
         @if (context.Value.MayChange)
         {
+            <div class="prayed-times__group">
+                <h3 class="prayed-times__heading">A few times after it goes on the wall</h3>
+                <p class="prayed-times__hint">Each one says how many prayed since the last. Nothing goes when nobody did. Any that fall between 9pm and 7am wait until 7am.</p>
+                <ChipPicker TItem="int" Label="Times after it goes on the wall" Items="PrayedTimes.Choices" Text="PrayedTimes.Long" Chosen="_form.After"
+                            ChosenChanged="ChooseTimes" Placeholder="Add a time" Empty="Every time is chosen" />
+            </div>
+
+            <div class="prayed-times__group">
+                <ToggleRow Title="Then once a day" Description="While people keep praying for it" Checked="@(_form.DailyAt is not null)" CheckedChanged="ChooseDaily" />
+                @if (_form.DailyAt is { } at)
+                {
+                    <SelectField Label="Each day at" Options="PrayedTimes.DayTimes" Value="@at.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                                 ValueChanged="ChooseDayTime" Hint="Church time." />
+                }
+            </div>
+
             <div class="prayed-times__actions">
-                <SaveBar Label="Save" Busy="_busy" OnSave="SaveAsync" Blocked="@Problem" />
+                <SaveBar Label="Save" Busy="_busy" OnSave="SaveAsync" Blocked="@Problem" State="SaveBar.For(_form != _saved, _justSaved)" />
                 @if (_form != Usual(context.Value))
                 {
-                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _form = Usual(context.Value)">Back to the usual times</Button>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => Change(Usual(context.Value))">Back to the usual times</Button>
                 }
             </div>
         }
@@ -60,6 +60,8 @@
     private Times? _saved;
     private Times? _form;
     private bool _busy;
+    private bool _justSaved;
+    private bool _mayChange;
 
     private string? Problem => _form is { After.Count: 0, DailyAt: null } ? "Choose at least one time." : null;
 
@@ -67,6 +69,7 @@
 
     private void Shape(DigestScheduleMessage schedule)
     {
+        _mayChange = schedule.MayChange;
         Times stored = new([.. schedule.AfterMinutes], schedule.DailyAtMinute);
         if (_form is null || _form == _saved)
             _form = stored;
@@ -75,11 +78,17 @@
 
     private static Times Usual(DigestScheduleMessage schedule) => new([.. schedule.DefaultAfterMinutes], schedule.DefaultDailyAtMinute);
 
-    private void ChooseTimes(IReadOnlyList<int> chosen) => _form = _form! with { After = [.. chosen.Order()] };
+    private void Change(Times times)
+    {
+        _form = times;
+        _justSaved = false;
+    }
 
-    private void ChooseDaily(bool on) => _form = _form! with { DailyAt = on ? _saved?.DailyAt ?? PrayedTimes.Midday : null };
+    private void ChooseTimes(IReadOnlyList<int> chosen) => Change(_form! with { After = [.. chosen.Order()] });
 
-    private void ChooseDayTime(string minute) => _form = _form! with { DailyAt = int.Parse(minute, System.Globalization.CultureInfo.InvariantCulture) };
+    private void ChooseDaily(bool on) => Change(_form! with { DailyAt = on ? _saved?.DailyAt ?? PrayedTimes.Midday : null });
+
+    private void ChooseDayTime(string minute) => Change(_form! with { DailyAt = int.Parse(minute, System.Globalization.CultureInfo.InvariantCulture) });
 
     private async Task SaveAsync()
     {
@@ -91,6 +100,7 @@
                 Kind = PrayerNotifications.PrayedFor.Key, AfterMinutes = [.. _form!.After], DailyAtMinute = _form.DailyAt,
             });
             _saved = _form = new Times([.. saved.AfterMinutes], saved.DailyAtMinute);
+            _justSaved = true;
         }
         finally
         {

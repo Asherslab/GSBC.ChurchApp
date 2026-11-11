@@ -7,9 +7,9 @@ public static class ChatsDestinations
 {
     public static readonly DestinationPage Chats = new("/chats", "Chats", "message-square", DestinationAreas.Pages, "Chats", Audience.SignedIn, Rank: 42);
 
-    public static readonly DestinationArea Area = new("chats", "Chats", "message-square", 42);
+    private static readonly DestinationArea Area = new("chats", "Chats", "message-square", 42);
 
-    public static readonly DestinationKind OneChat = new("chats.chat", Area, "Chat", "message-square", "chats");
+    private static readonly DestinationKind OneChat = new("chats.chat", Area, "Chat", "message-square", "chats");
 
     public static readonly DestinationSet All = new([Chats], [OneChat]);
 
