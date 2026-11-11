@@ -1,7 +1,7 @@
 @inject PastoralClient Pastoral
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="HasChanges" What="@(_note.Trim().Length > 0 ? "your note" : "the words for the prayer wall")" />
+<UnsavedGuard Changed="() => _note.Trim().Length > 0" What="your note" />
 
 <LiveData @ref="_live" TValue="RequestDetails" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't open this request right now">
     @{ RequestDetails request = context.Value; InboxLine line = request.Line; }
@@ -47,34 +47,7 @@
 
             @if (line.Wall != WallState.NotAsked)
             {
-                <section class="prayer-request__wall" aria-label="The prayer wall">
-                    <h2>The prayer wall</h2>
-                    <p class="prayer-request__lead">@WallLead(request)</p>
-                    @if (MayShow(line.Wall))
-                    {
-                        <TextField Label="As the wall shows it" Multiline="true" MaxLength="2000" @bind-Value="_wallText"
-                                   Hint="Change the words if they say more than the church should read, such as someone else's name. What they wrote stays as it is." />
-                        @if (request.ShowName && request.FirstName.Length > 0)
-                        {
-                            <Segmented TValue="bool" Label="Name" ShowLabel="true" Options="Names(request.FirstName)" @bind-Value="_showName"
-                                       Hint="@(line.Minor ? "They're under 18. No name is safer unless they'd like it." : null)" />
-                        }
-                        else
-                        {
-                            <p class="prayer-request__lead">They asked for no name, so the wall shows none.</p>
-                        }
-                        <TextField Label="Shows until" Type="date" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
-                        <div class="prayer-request__actions">
-                            <SaveBar Label="@(line.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" State="@(WallChanged ? SaveState.Unsaved : null)" Busy="@(_busy == "wall")" Blocked="@WallBlocked" OnSave="ShowAsync" />
-                            @if (line.Wall is WallState.Waiting or WallState.Shown)
-                            {
-                                <Button Variant="ButtonVariant.Quiet" Busy="@(_busy == "private")" OnClick="KeepPrivateAsync">
-                                    @(line.Wall == WallState.Shown ? "Take it off the wall" : "Keep it private")
-                                </Button>
-                            }
-                        </div>
-                    }
-                </section>
+                <WallChoice Case="WallCaseOf(request)" Show="ShowAsync" OnKeepPrivate="KeepPrivateAsync" Busy="_wallBusy" />
             }
         </article>
 
@@ -145,66 +118,38 @@
 </Sheet>
 
 @code {
-    private const int WallDays = 30;
     private static readonly IReadOnlyList<string> Feeds = [PrayerFeeds.Inbox];
 
     [Parameter, EditorRequired] public required string Id { get; set; }
     [Parameter] public EventCallback OnGone { get; set; }
 
     private LiveData<RequestDetails>? _live;
-    private (string Text, bool ShowName, string Until)? _wallWas;
-    private string _wallText = "";
-    private bool _showName;
-    private string _until = "";
     private string _note = "";
     private string _answeredNote = "";
     private bool _answering;
     private bool _deleting;
     private string? _busy;
+    private WallAction? _wallBusy;
     private string? _problem;
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    private DateOnly Today => ChurchTime.Today(Clock);
-
-    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
-
-    private static IReadOnlyList<SegmentOption<bool>> Names(string firstName) => [new(false, PrayerWords.NoName), new(true, firstName)];
-
-    private static bool MayShow(WallState wall) => wall is not WallState.TakenDown;
-
-    private bool WallChanged => _wallWas is { } was && (_wallText, _showName, _until) != was;
-
-    private bool HasChanges() => _note.Trim().Length > 0 || WallChanged;
-
-    private string? WallBlocked => _wallText.Trim().Length == 0
-        ? "Give the wall some words to show."
-        : !DateOnly.TryParse(_until, out DateOnly until) || until <= Today ? "Choose a day after today for it to leave the wall." : null;
-
-    private static string WallLead(RequestDetails request) => request.Line.Wall switch
+    private static WallCase WallCaseOf(RequestDetails request) => new()
     {
-        WallState.Waiting => "They asked for it to be shown. Nothing is shown until you put it on the wall.",
-        WallState.Shown => $"On the wall until {PrayerWords.Day(request.WallUntil ?? request.Line.SentAt)}. {PrayerWords.Prayed(request.Prayed)}.",
-        WallState.KeptPrivate => "They asked for the wall, and it was kept private. You can still put it on.",
-        WallState.Ended => "It was on the wall and its time is up. Choose a new day to show it again.",
-        WallState.TakenDown => "They took it off the wall themselves, so it stays off.",
-        _ => "",
+        Id = request.Line.Id,
+        Text = request.Line.Text,
+        SentAt = request.Line.SentAt,
+        Wall = request.Line.Wall,
+        Minor = request.Line.Minor,
+        FirstName = request.ShowName ? request.FirstName : "",
+        WallText = request.WallText,
+        WallShowsName = request.WallName.Length > 0,
+        WallUntil = request.WallUntil,
+        Prayed = request.Prayed,
+        ChangedAt = request.Line.ChangedAt,
     };
 
-    private async Task<RequestDetails> LoadAsync()
-    {
-        RequestDetails request = await Pastoral.RequestAsync(Id);
-        if (!WallChanged)
-        {
-            DateOnly until = request.Line.Wall == WallState.Shown && request.WallUntil is { } shownUntil
-                ? ChurchTime.DayOf(shownUntil)
-                : Today.AddDays(WallDays);
-            bool showName = request.Line.Wall == WallState.Shown ? request.WallName.Length > 0 : request.ShowName;
-            (_wallText, _showName, _until) = (request.WallText, showName, Day(until));
-            _wallWas = (_wallText, _showName, _until);
-        }
-        return request;
-    }
+    private Task<RequestDetails> LoadAsync() => Pastoral.RequestAsync(Id);
 
     private Task CareAsync(CareState care) => DoAsync("care", async () =>
     {
@@ -220,23 +165,40 @@
 
     private Task DeleteNoteAsync(string noteId) => DoAsync("note", () => Pastoral.DeleteNoteAsync(Id, noteId));
 
-    private Task ShowAsync() => DoAsync("wall", async () =>
+    private async Task<bool> ShowAsync(WallSave save)
     {
-        DateOnly day = DateOnly.Parse(_until);
-        await Pastoral.ShowOnWallAsync(Id, _wallText, _showName, ChurchTime.ToUtc(day.ToDateTime(new TimeOnly(23, 59))));
-        _wallWas = (_wallText, _showName, _until);
-    });
+        _wallBusy = WallAction.Show;
+        try
+        {
+            return await DoAsync("wall", () => Pastoral.ShowOnWallAsync(Id, save.Text, save.ShowName, save.Until));
+        }
+        finally
+        {
+            _wallBusy = null;
+        }
+    }
 
-    private Task KeepPrivateAsync() => DoAsync("private", () => Pastoral.KeepPrivateAsync(Id));
+    private async Task KeepPrivateAsync()
+    {
+        _wallBusy = WallAction.KeepPrivate;
+        try
+        {
+            await DoAsync("private", () => Pastoral.KeepPrivateAsync(Id));
+        }
+        finally
+        {
+            _wallBusy = null;
+        }
+    }
 
     private Task DeleteAsync() => DoAsync("delete", async () =>
     {
         await Pastoral.DeleteAsync(Id);
-        (_deleting, _note, _wallWas) = (false, "", (_wallText, _showName, _until));
+        (_deleting, _note) = (false, "");
         await OnGone.InvokeAsync();
     });
 
-    private async Task DoAsync(string what, Func<Task> work)
+    private async Task<bool> DoAsync(string what, Func<Task> work)
     {
         (_busy, _problem) = (what, null);
         try
@@ -244,10 +206,12 @@
             await work();
             if (_live is not null && what != "delete")
                 await _live.ReloadAsync();
+            return true;
         }
         catch (RpcException exception)
         {
             _problem = exception.Status.Detail;
+            return false;
         }
         finally
         {

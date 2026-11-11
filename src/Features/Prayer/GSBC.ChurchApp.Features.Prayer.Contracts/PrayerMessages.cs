@@ -108,6 +108,20 @@ public sealed class KeptOnPhone
 }
 
 [ProtoContract]
+public sealed class StaffQueue
+{
+    [ProtoMember(1)] public List<QueuedOnPhone> Queued { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class QueuedOnPhone
+{
+    [ProtoMember(1)] public string RequestId { get; set; } = "";
+    [ProtoMember(2)] public string OutboxId { get; set; } = "";
+    [ProtoMember(3)] public string What { get; set; } = "";
+}
+
+[ProtoContract]
 public sealed class InboxRequest
 {
     [ProtoMember(1)] public string Search { get; set; } = "";
@@ -199,4 +213,38 @@ public sealed class WallSave
     [ProtoMember(2)] public string Text { get; set; } = "";
     [ProtoMember(3)] public bool ShowName { get; set; }
     [ProtoMember(4)] public DateTime Until { get; set; }
+}
+
+[ProtoContract]
+public sealed class WallCase
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Text { get; set; } = "";
+    [ProtoMember(3)] public DateTime SentAt { get; set; }
+    [ProtoMember(4)] public WallState Wall { get; set; }
+    [ProtoMember(5)] public bool Minor { get; set; }
+    [ProtoMember(6)] public string FirstName { get; set; } = "";
+    [ProtoMember(7)] public string WallText { get; set; } = "";
+    [ProtoMember(8)] public bool WallShowsName { get; set; }
+    [ProtoMember(9)] public DateTime? WallUntil { get; set; }
+    [ProtoMember(10)] public int Prayed { get; set; }
+    [ProtoMember(11)] public DateTime ChangedAt { get; set; }
+}
+
+[ProtoContract]
+public sealed class CareCase
+{
+    [ProtoMember(1)] public string Id { get; set; } = "";
+    [ProtoMember(2)] public string Text { get; set; } = "";
+    [ProtoMember(3)] public string From { get; set; } = "";
+    [ProtoMember(4)] public DateTime SentAt { get; set; }
+    [ProtoMember(5)] public CareState Care { get; set; }
+    [ProtoMember(6)] public WallState Wall { get; set; }
+    [ProtoMember(7)] public bool Minor { get; set; }
+    [ProtoMember(8)] public bool SignedIn { get; set; }
+    [ProtoMember(9)] public bool WantsContact { get; set; }
+    [ProtoMember(10)] public string Contact { get; set; } = "";
+    [ProtoMember(11)] public string AnsweredNote { get; set; } = "";
+    [ProtoMember(12)] public List<CareNote> Notes { get; set; } = [];
+    [ProtoMember(13)] public DateTime ChangedAt { get; set; }
 }

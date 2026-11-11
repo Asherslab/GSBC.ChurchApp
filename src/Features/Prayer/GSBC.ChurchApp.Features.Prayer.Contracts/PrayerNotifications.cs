@@ -5,10 +5,10 @@ namespace GSBC.ChurchApp.Features.Prayer.Contracts;
 public static class PrayerNotifications
 {
     public static readonly NotificationKind NewRequest = new(
-        "prayer.new", "Someone sends a prayer request", "Prayer", Waits: true, For: PrayerPermissions.Read, InAdminPanel: true);
+        "prayer.new", "Someone sends a prayer request", "Prayer", Waits: true, For: PrayerPermissions.Read);
 
     public static readonly NotificationKind WaitingForWall = new(
-        "prayer.wall.waiting", "A prayer request asks to be on the prayer wall", "Prayer", Waits: true, For: PrayerPermissions.Wall, InAdminPanel: true);
+        "prayer.wall.waiting", "A prayer request asks to be on the prayer wall", "Prayer", Waits: true, For: PrayerPermissions.Wall);
 
     public static readonly NotificationKind PrayedFor = new(
         "prayer.prayed", "Someone prays for your prayer request", "Prayer");

@@ -1,0 +1,70 @@
+@page "/prayer/approve"
+@inject PrayerApprovals Approvals
+@inject TimeProvider Clock
+
+<Page Title="To approve" BackHref="prayer" BackLabel="Prayer" TopBar="TopBarStyle.Solid">
+    <LiveData TValue="StaffView" Load="Approvals.LoadAsync" Feeds="PrayerApprovals.Feeds" ReloadOn="Reload" Remember="prayer.staff">
+        @if (!Approvals.MayApprove)
+        {
+            <Section First="true">
+                <EmptyState Icon="lock" Title="This is for the prayer wall team" Body="People with the Prayer wall or Pastoral team role approve requests here." />
+            </Section>
+        }
+        else
+        {
+            <Section First="true" Title="Asking for the prayer wall" Lead="Nothing is shown until you put it on the wall.">
+                @if (context.Value.ForTheWall.Count == 0)
+                {
+                    <EmptyState Icon="check" Title="Nothing waiting for the wall" Body="When someone asks for the prayer wall, it's here for you to read first." />
+                }
+                else
+                {
+                    <ListGroup>
+                        @foreach (StaffCase item in context.Value.ForTheWall)
+                        {
+                            <StaffRow @key="item.Id" Item="item" Now="Now" />
+                        }
+                    </ListGroup>
+                }
+            </Section>
+            @if (context.Value.MayCare)
+            {
+                <Section Title="New for the pastoral team" Lead="Only the pastoral team reads these.">
+                    @if (context.Value.New.Count == 0)
+                    {
+                        <EmptyState Icon="check" Title="Nothing new" Body="Every request has been followed up." />
+                    }
+                    else
+                    {
+                        <ListGroup>
+                            @foreach (StaffCase item in context.Value.New)
+                            {
+                                <StaffRow @key="item.Id" Item="item" Now="Now" />
+                            }
+                        </ListGroup>
+                    }
+                </Section>
+            }
+            @if (context.Value.OnTheWall.Count > 0)
+            {
+                <Section Title="On the prayer wall now" Lead="Change the words or the day it leaves, or take it down.">
+                    <ListGroup>
+                        @foreach (StaffCase item in context.Value.OnTheWall)
+                        {
+                            <StaffRow @key="item.Id" Item="item" Now="Now" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+            <Section>
+                <p class="prayer-staff__more">The full inbox, with notes, history and everything followed up, is in the admin panel under Prayer.</p>
+            </Section>
+        }
+    </LiveData>
+</Page>
+
+@code {
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+}

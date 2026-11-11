@@ -54,7 +54,7 @@ internal sealed class PrayerRequests(
         };
         record.Steps.Add(new StepRecord { At = now, What = send.ForWall ? "Sent, asking for the prayer wall" : "Sent" });
         db.Requests.Add(record);
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await telling.NewRequestAsync(record, cancellationToken);
     }
@@ -89,7 +89,7 @@ internal sealed class PrayerRequests(
             record.Prayed = Math.Max(0, record.Prayed - 1);
         }
 
-        publisher.Publish(record, now);
+        await publisher.PublishAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         if (tell)
             await telling.PrayedForAsync(record, cancellationToken);
@@ -104,7 +104,7 @@ internal sealed class PrayerRequests(
         record.AnsweredNote = PrayerRules.Clip(save.Note, PrayerRules.LongestAnsweredNote);
         record.ChangedAt = now;
         record.Steps.Add(new StepRecord { At = now, What = "They said it was answered" });
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 
@@ -117,7 +117,7 @@ internal sealed class PrayerRequests(
         record.Wall = WallState.TakenDown;
         record.ChangedAt = now;
         record.Steps.Add(new StepRecord { At = now, What = "They took it off the prayer wall" });
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await telling.SettledAsync(record, cancellationToken);
     }

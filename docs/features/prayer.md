@@ -75,6 +75,34 @@ is the owner's is marked so.
 - **What's logged** (*Claude's default*): every change, with who and when (sent, followed up, answered, notes added or
   deleted, put on or taken off the wall, changed). **Reading isn't logged.**
 
+## On the phone for staff
+
+**Owner, 2026-11-11:** "Prayer wall approvals and such should be able to be done on the phone" (AGENTS.md's
+*Where staff and leader tools live* puts approving on the phone). Built 2026-11-11.
+
+- **To approve** (`/prayer/approve`, from a row at the top of Prayer that shows how many are waiting), for holders of
+  `prayer.wall.moderate`: *Asking for the prayer wall*, *On the prayer wall now*, and for the pastoral team *New for
+  the pastoral team*. Each opens `/prayer/requests/{id}`: their words, *Under 18* with the reminder, and the same wall
+  form as the admin desk (`WallChoice`, Prayer.Client): the words (starting from theirs; theirs never change), the name
+  (*No name* to start, on the phone and the desk, *Claude's default*), the day it leaves, then *Put it on the wall* or
+  *Not for the wall*; once shown, *Save the changes* (a later day extends it) or *Take it off the wall*.
+- **Pastoral team extras** (*Claude's default*, what's useful on a phone): *Mark followed up*, *Mark answered* (with
+  words for the wall), the notes with *Add a note*, and *Getting in touch* (their number or email, tapped to call or
+  write). Not on the phone: deleting a request or a note, *Mark new again*, the history, search and the other tabs; those
+  are in the admin panel. *Mark answered* stays the pastoral team's (`prayer.requests.read`), as on the desk (owner to
+  confirm).
+- **Data:** two feeds with a permission audience, so they're private, gone on sign-out and reset when the role
+  changes. `prayer.approving` (`prayer.wall.moderate`) carries a request only while it waits for the wall or is on
+  it: their words, *Under 18*, their first name only if they allowed it, and what the wall shows; never their full
+  name, contact or notes. `prayer.care` (`prayer.requests.read`) carries a request while it's new or waiting for or on
+  the wall, with their name, contact and the notes; once followed up and off the wall it leaves the phones (*Claude's
+  default*: phones carry what needs doing, the admin panel keeps the rest).
+- **Writes** go through the outbox (`PrayerApprovals`), so the request shows *Waiting to send* or *Couldn't send* with
+  *Try now*. The server applies each queued action once by its `gsbc-request-id` (`HandledRequests`, kept 7 days).
+  An approval that arrives after the person took the request off the wall leaves it off.
+- **Notifications:** `prayer.wall.waiting` opens *To approve* and `prayer.new` opens the request, on the phone and
+  in the admin panel (which answers the same paths); neither carries the words. Nothing goes into analytics.
+
 ## Notifications
 
 | Kind | Who | When |
@@ -84,7 +112,7 @@ is the owner's is marked so.
 | `prayer.prayed` *Someone prays for your prayer request* | the person | at most once a day per request (*Claude's default*) |
 | `prayer.answered` *The pastoral team marks your prayer request answered* | the person | staff mark it answered |
 
-Neither staff kind puts the words in the notification; it says to read it in the admin panel. The person's kinds
+Neither staff kind puts the words in the notification; it opens the request in the app or the admin panel. The person's kinds
 reach signed-in people only (a signed-out phone sees the count in the app instead); both can be turned off.
 
 ## Keeping and deleting

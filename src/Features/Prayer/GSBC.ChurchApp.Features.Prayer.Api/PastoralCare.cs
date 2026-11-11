@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
-internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, IPeopleIndex people, TimeProvider time)
+internal sealed class PastoralCare(
+    PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, IPeopleIndex people, TimeProvider time)
 {
     public async Task<Inbox> InboxAsync(bool mayRead, string search, CancellationToken cancellationToken)
     {
@@ -66,8 +67,10 @@ internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher
         return details;
     }
 
-    public async Task CareAsync(Guid staff, CareChange change, CancellationToken cancellationToken)
+    public async Task CareAsync(Guid staff, CareChange change, string? queuedId, CancellationToken cancellationToken)
     {
+        if (await handled.AlreadyAsync(queuedId, cancellationToken))
+            return;
         RequestRecord record = await FindAsync(change.Id, cancellationToken);
         if (record.Care == change.Care && record.AnsweredNote == change.AnsweredNote.Trim())
             return;
@@ -82,7 +85,7 @@ internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher
             CareState.Answered => "Marked answered",
             _ => "Marked new again",
         });
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         if (change.Care != CareState.New)
             await telling.CaredForAsync(record, cancellationToken);
@@ -90,8 +93,10 @@ internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher
             await telling.AnsweredAsync(record, cancellationToken);
     }
 
-    public async Task AddNoteAsync(Guid staff, NoteSave save, CancellationToken cancellationToken)
+    public async Task AddNoteAsync(Guid staff, NoteSave save, string? queuedId, CancellationToken cancellationToken)
     {
+        if (await handled.AlreadyAsync(queuedId, cancellationToken))
+            return;
         string text = save.Text.Trim();
         if (text.Length == 0 || text.Length > PrayerRules.LongestNote)
             throw new RpcException(new Status(StatusCode.InvalidArgument, $"Write a note of up to {PrayerRules.LongestNote} characters."));
@@ -99,12 +104,14 @@ internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher
         DateTime now = time.GetUtcNow().UtcDateTime;
         db.Notes.Add(new NoteRecord { Id = Guid.NewGuid(), RequestId = record.Id, AuthorId = staff, Text = text, At = now });
         Step(record, staff, now, "Added a note");
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task DeleteNoteAsync(Guid staff, NoteRef note, CancellationToken cancellationToken)
+    public async Task DeleteNoteAsync(Guid staff, NoteRef note, string? queuedId, CancellationToken cancellationToken)
     {
+        if (await handled.AlreadyAsync(queuedId, cancellationToken))
+            return;
         RequestRecord record = await FindAsync(note.RequestId, cancellationToken);
         if (!Guid.TryParse(note.NoteId, out Guid noteId)
             || await db.Notes.FirstOrDefaultAsync(row => row.Id == noteId && row.RequestId == record.Id, cancellationToken) is not { } found)
@@ -112,15 +119,19 @@ internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher
         DateTime now = time.GetUtcNow().UtcDateTime;
         db.Notes.Remove(found);
         Step(record, staff, now, "Deleted a note");
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
     }
 
-    public async Task ShowOnWallAsync(Guid staff, WallSave save, CancellationToken cancellationToken)
+    public async Task ShowOnWallAsync(Guid staff, WallSave save, string? queuedId, CancellationToken cancellationToken)
     {
+        if (await handled.AlreadyAsync(queuedId, cancellationToken))
+            return;
         RequestRecord record = await FindAsync(save.Id, cancellationToken);
         if (!PrayerRules.MayModerate(record))
             throw new RpcException(new Status(StatusCode.FailedPrecondition, "They didn't ask for the prayer wall, so it stays with the pastoral team."));
+        if (!PrayerRules.MayGoOnTheWall(record))
+            return;
         string text = save.Text.Trim();
         if (text.Length == 0 || text.Length > PrayerRules.LongestText)
             throw new RpcException(new Status(StatusCode.InvalidArgument, $"Give the wall up to {PrayerRules.LongestText} characters to show."));
@@ -135,20 +146,22 @@ internal sealed class PastoralCare(PrayerDbContext db, PrayerPublisher publisher
         record.WallUntil = until;
         record.WallShownAt ??= now;
         Step(record, staff, now, $"{(wasShown ? "Changed it on the prayer wall" : "Put it on the prayer wall")}, until {ChurchTime.ToChurch(until):d MMMM}");
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await telling.WallDecidedAsync(record, cancellationToken);
     }
 
-    public async Task KeepPrivateAsync(Guid staff, RequestRef request, CancellationToken cancellationToken)
+    public async Task KeepPrivateAsync(Guid staff, RequestRef request, string? queuedId, CancellationToken cancellationToken)
     {
+        if (await handled.AlreadyAsync(queuedId, cancellationToken))
+            return;
         RequestRecord record = await FindAsync(request.Id, cancellationToken);
         if (record.Wall is not (WallState.Waiting or WallState.Shown))
             return;
         DateTime now = time.GetUtcNow().UtcDateTime;
         Step(record, staff, now, record.Wall == WallState.Shown ? "Took it off the prayer wall" : "Kept it off the prayer wall");
         record.Wall = WallState.KeptPrivate;
-        publisher.Changed(record, now);
+        await publisher.ChangedAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
         await telling.WallDecidedAsync(record, cancellationToken);
     }

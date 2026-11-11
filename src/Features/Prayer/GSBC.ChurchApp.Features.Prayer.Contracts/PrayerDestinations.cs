@@ -9,5 +9,9 @@ public static class PrayerDestinations
 
     public static readonly DestinationPage Ask = new("/prayer/ask", "Ask for prayer", "prayer", DestinationAreas.Pages, "Prayer → Ask for prayer", Audience.Everyone, Rank: 46);
 
+    public const string Approve = "/prayer/approve";
+
+    public static string Request(string id) => $"/prayer/requests/{id}";
+
     public static readonly DestinationSet All = DestinationSet.Of([Prayer, Ask]);
 }

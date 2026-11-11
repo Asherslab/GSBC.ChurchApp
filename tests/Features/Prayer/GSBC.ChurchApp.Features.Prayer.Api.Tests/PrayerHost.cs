@@ -35,7 +35,7 @@ public abstract class PrayerHost : IAsyncLifetime
         services.AddSingleton<INotifications>(Told);
         services.AddSingleton<IPeopleIndex>(People);
         services.AddSingleton<IFamilies>(People);
-        services.AddScoped<PrayerPublisher>().AddScoped<PrayerTelling>().AddScoped<PrayerRequests>().AddScoped<PastoralCare>().AddScoped<PrayerKeeping>();
+        services.AddScoped<PrayerPublisher>().AddScoped<PrayerTelling>().AddScoped<PrayerRequests>().AddScoped<PastoralCare>().AddScoped<PrayerKeeping>().AddScoped<HandledRequests>();
         services.AddScoped<PrayerPersonData>();
         services.AddSyncData();
         services.AddPrayerData();
@@ -76,8 +76,8 @@ public abstract class PrayerHost : IAsyncLifetime
         return id;
     }
 
-    protected Task ShowAsync(string id, bool showName = true) => StaffAsync(care => care.ShowOnWallAsync(Staff,
-        new WallSave { Id = id, Text = "Please pray for us.", ShowName = showName, Until = Clock.GetUtcNow().UtcDateTime.AddDays(30) }, Cancel));
+    protected Task ShowAsync(string id, bool showName = true, string? queuedId = null) => StaffAsync(care => care.ShowOnWallAsync(Staff,
+        new WallSave { Id = id, Text = "Please pray for us.", ShowName = showName, Until = Clock.GetUtcNow().UtcDateTime.AddDays(30) }, queuedId, Cancel));
 
     protected async Task<List<FeedChangeRecord>> RowsAsync(string feed) =>
         await WithAsync(provider => provider.GetRequiredService<PrayerDbContext>().FeedChanges.AsNoTracking()

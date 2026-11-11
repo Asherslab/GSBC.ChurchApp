@@ -2,6 +2,7 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Prayer.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
+using GSBC.ChurchApp.Platform.Api.Sync;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
@@ -16,31 +17,31 @@ internal sealed class PastoralService(PastoralCare care, IAccessEvaluator access
 
     public async ValueTask<Done> CareAsync(CareChange request, CallContext context = default)
     {
-        await care.CareAsync(Staff(context), request, context.CancellationToken);
+        await care.CareAsync(Staff(context), request, QueuedRequest.IdOf(context), context.CancellationToken);
         return new Done();
     }
 
     public async ValueTask<Done> AddNoteAsync(NoteSave request, CallContext context = default)
     {
-        await care.AddNoteAsync(Staff(context), request, context.CancellationToken);
+        await care.AddNoteAsync(Staff(context), request, QueuedRequest.IdOf(context), context.CancellationToken);
         return new Done();
     }
 
     public async ValueTask<Done> DeleteNoteAsync(NoteRef request, CallContext context = default)
     {
-        await care.DeleteNoteAsync(Staff(context), request, context.CancellationToken);
+        await care.DeleteNoteAsync(Staff(context), request, QueuedRequest.IdOf(context), context.CancellationToken);
         return new Done();
     }
 
     public async ValueTask<Done> ShowOnWallAsync(WallSave request, CallContext context = default)
     {
-        await care.ShowOnWallAsync(Staff(context), request, context.CancellationToken);
+        await care.ShowOnWallAsync(Staff(context), request, QueuedRequest.IdOf(context), context.CancellationToken);
         return new Done();
     }
 
     public async ValueTask<Done> KeepPrivateAsync(RequestRef request, CallContext context = default)
     {
-        await care.KeepPrivateAsync(Staff(context), request, context.CancellationToken);
+        await care.KeepPrivateAsync(Staff(context), request, QueuedRequest.IdOf(context), context.CancellationToken);
         return new Done();
     }
 

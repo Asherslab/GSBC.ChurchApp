@@ -44,7 +44,7 @@ internal sealed class SamplePrayer(IServiceScopeFactory scopes, IHostEnvironment
                 };
                 request.Steps.Add(new StepRecord { At = sent, What = "Sent" });
                 db.Requests.Add(request);
-                publisher.Changed(request, now);
+                await publisher.ChangedAsync(request, now, stoppingToken);
             }
             await db.SaveChangesAsync(stoppingToken);
         }

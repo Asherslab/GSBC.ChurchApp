@@ -21,7 +21,7 @@ internal sealed class PrayerPersonData(PrayerDbContext db, PrayerPublisher publi
         foreach (RequestRecord request in await db.Requests.Where(request => prayedFor.Contains(request.Id) && request.UserId != userId).ToListAsync(cancellationToken))
         {
             request.Prayed = Math.Max(0, request.Prayed - 1);
-            publisher.Publish(request, now);
+            await publisher.PublishAsync(request, now, cancellationToken);
         }
 
         await db.SaveChangesAsync(cancellationToken);

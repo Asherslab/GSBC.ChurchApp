@@ -53,3 +53,9 @@ public sealed class PrayedRecord
     public Guid? UserId { get; set; }
     public DateTime At { get; set; }
 }
+
+public sealed class HandledRequestRecord
+{
+    public required string Id { get; set; }
+    public DateTime HandledAt { get; set; }
+}

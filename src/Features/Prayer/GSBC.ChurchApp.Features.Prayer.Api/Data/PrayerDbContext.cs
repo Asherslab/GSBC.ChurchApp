@@ -1,3 +1,4 @@
+using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Data;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,6 +12,7 @@ public sealed class PrayerDbContext(DbContextOptions<PrayerDbContext> options) :
     public DbSet<NoteRecord> Notes => Set<NoteRecord>();
     public DbSet<StepRecord> Steps => Set<StepRecord>();
     public DbSet<PrayedRecord> Prayed => Set<PrayedRecord>();
+    public DbSet<HandledRequestRecord> HandledRequests => Set<HandledRequestRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -46,6 +48,13 @@ public sealed class PrayerDbContext(DbContextOptions<PrayerDbContext> options) :
             entity.HasIndex(prayed => new { prayed.InstallId, prayed.At });
             entity.HasIndex(prayed => prayed.UserId);
             entity.HasOne<RequestRecord>().WithMany().HasForeignKey(prayed => prayed.RequestId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<HandledRequestRecord>(entity =>
+        {
+            entity.ToTable("handled_requests");
+            entity.HasKey(request => request.Id);
+            entity.Property(request => request.Id).HasMaxLength(QueuedRequest.LongestId);
+            entity.HasIndex(request => request.HandledAt);
         });
     }
 }

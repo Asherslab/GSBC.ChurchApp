@@ -49,6 +49,21 @@ public static class PrayerWords
     public static string WhoAndWhen(WallPost post, DateTime now) =>
         $"{(post.Name.Length > 0 ? post.Name : NoName)} · {ChurchDates.Ago(post.ShownAt, now)}";
 
+    public static string Waiting(int count) => count switch
+    {
+        0 => "Nothing waiting",
+        1 => "1 waiting",
+        _ => $"{count} waiting",
+    };
+
+    public static string Staff(StaffCase item, DateTime now)
+    {
+        if (item.Pending is { } pending)
+            return pending.Failed ? $"Couldn't send: {pending.What.ToLowerInvariant()}" : $"{pending.What}. Waiting to send";
+        string from = item.Care?.From ?? (item.Wall is { FirstName.Length: > 0 } wall ? wall.FirstName : NoName);
+        return $"{from} · {ChurchDates.Ago(item.SentAt, now)}";
+    }
+
     public static string Care(CareState care) => care switch
     {
         CareState.FollowedUp => "Followed up",
