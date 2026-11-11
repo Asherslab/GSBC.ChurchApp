@@ -25,7 +25,8 @@ public sealed class SettingsRecord
 {
     public Guid MinistryId { get; set; }
     public bool Replies { get; set; } = true;
-    public List<string> SwapWays { get; set; } = [];
+    public string OpenSwaps { get; set; } = Contracts.OpenSwaps.Team;
+    public bool DirectSwaps { get; set; }
     public string WhoSees { get; set; } = "";
     public int RemindDaysBefore { get; set; }
     public int NudgeAfterDays { get; set; }

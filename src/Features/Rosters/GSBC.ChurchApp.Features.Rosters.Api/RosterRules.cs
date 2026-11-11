@@ -57,11 +57,15 @@ internal static class RosterRules
         !mayAct ? "Only they, or a parent of theirs, can answer for this date."
         : WhyNotChange(archived, startsAt, now) ?? (repliesOn ? null : "This roster doesn't ask for answers.");
 
-    public static string? WhyNotAskSwap(bool mayAct, bool archived, IReadOnlyCollection<string> ways, string way, string state, bool alreadyAsked,
-        DateTime startsAt, DateTime now, bool toIsOnTeam) =>
+    public static string? WayFor(RosterSettings settings, string asked) =>
+        asked == SwapWays.Direct ? settings.DirectSwaps ? SwapWays.Direct : null
+        : settings.OpenSwaps == OpenSwaps.Off ? null
+        : settings.OpenSwaps;
+
+    public static string? WhyNotAskSwap(bool mayAct, bool archived, string? way, string state, bool alreadyAsked, DateTime startsAt, DateTime now, bool toIsOnTeam) =>
         !mayAct ? "Only they, or a parent of theirs, can ask for a swap."
         : WhyNotChange(archived, startsAt, now)
-          ?? (!ways.Contains(way) ? "This roster doesn't swap that way."
+          ?? (way is null ? "This roster doesn't swap that way."
               : !Replies.Fills(state) ? "They've said they can't do it, so a leader finds someone else."
               : alreadyAsked ? "A swap is already asked for this date."
               : way == SwapWays.Direct && !toIsOnTeam ? "Choose someone on the team to ask."
@@ -89,17 +93,19 @@ internal static class RosterRules
     public static RosterSettings Normalised(RosterSettings settings) => new()
     {
         Replies = settings.Replies,
-        SwapWays = SwapWays.All.Where(settings.SwapWays.Contains).ToList(),
+        OpenSwaps = OpenSwaps.Valid(settings.OpenSwaps) ? settings.OpenSwaps : OpenSwaps.Team,
+        DirectSwaps = settings.DirectSwaps,
         WhoSees = WhoSees.Valid(settings.WhoSees) ? settings.WhoSees : WhoSees.Everything,
         RemindDaysBefore = Math.Clamp(settings.RemindDaysBefore, 0, MostDaysBefore),
         NudgeAfterDays = Math.Clamp(settings.NudgeAfterDays, 0, MostDaysBefore),
     };
 
     public static RosterSettings SettingsOf(SettingsRecord? record) => record is null
-        ? new RosterSettings { SwapWays = [SwapWays.Team] }
+        ? new RosterSettings()
         : new RosterSettings
         {
-            Replies = record.Replies, SwapWays = [.. record.SwapWays], WhoSees = WhoSees.Valid(record.WhoSees) ? record.WhoSees : WhoSees.Everything,
+            Replies = record.Replies, OpenSwaps = OpenSwaps.Valid(record.OpenSwaps) ? record.OpenSwaps : OpenSwaps.Team, DirectSwaps = record.DirectSwaps,
+            WhoSees = WhoSees.Valid(record.WhoSees) ? record.WhoSees : WhoSees.Everything,
             RemindDaysBefore = record.RemindDaysBefore, NudgeAfterDays = record.NudgeAfterDays,
         };
 

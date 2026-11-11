@@ -171,7 +171,7 @@ internal sealed class RostersService(
         if (record is null)
             db.Settings.Add(record = new SettingsRecord { MinistryId = ministry.Id });
         record.Replies = settings.Replies;
-        record.SwapWays = settings.SwapWays;
+        (record.OpenSwaps, record.DirectSwaps) = (settings.OpenSwaps, settings.DirectSwaps);
         record.WhoSees = settings.WhoSees;
         record.RemindDaysBefore = settings.RemindDaysBefore;
         record.NudgeAfterDays = settings.NudgeAfterDays;
@@ -369,16 +369,17 @@ internal sealed class RostersService(
         DateRecord date = await db.Dates.AsNoTracking().SingleAsync(each => each.Id == assignment.DateId, cancellationToken);
         RosterSettings settings = RosterRules.SettingsOf(await db.Settings.AsNoTracking().SingleOrDefaultAsync(each => each.MinistryId == ministry.Id, cancellationToken));
         IReadOnlyList<MinistryMember> team = await ministries.TeamAsync(ministry.Id, cancellationToken);
-        Guid? to = request.Way == SwapWays.Direct && Guid.TryParse(request.ToPersonId, out Guid chosen) ? chosen : null;
+        string? way = RosterRules.WayFor(settings, request.Way);
+        Guid? to = way == SwapWays.Direct && Guid.TryParse(request.ToPersonId, out Guid chosen) ? chosen : null;
         bool mayAct = assignment.PersonId is { } person && await families.MayActForAsync(me, person, cancellationToken);
         bool asked = await db.Swaps.AnyAsync(each => each.AssignmentId == id && (each.State == SwapStates.Open || each.State == SwapStates.Offered), cancellationToken);
-        if (RosterRules.WhyNotAskSwap(mayAct, ministry.Archived, settings.SwapWays, request.Way, assignment.State, asked, date.StartsAt, time.GetUtcNow().UtcDateTime,
+        if (RosterRules.WhyNotAskSwap(mayAct, ministry.Archived, way, assignment.State, asked, date.StartsAt, time.GetUtcNow().UtcDateTime,
                 to is { } toPerson && toPerson != assignment.PersonId && team.Any(member => member.PersonId == toPerson)) is { } why)
             throw Refused(why);
 
         db.Swaps.Add(new SwapRecord
         {
-            Id = swapId, AssignmentId = id, MinistryId = ministry.Id, Way = request.Way, State = SwapStates.Open, AskedBy = me, AskedTo = to,
+            Id = swapId, AssignmentId = id, MinistryId = ministry.Id, Way = way!, State = SwapStates.Open, AskedBy = me, AskedTo = to,
             Note = request.Note.Trim(), AskedAt = time.GetUtcNow().UtcDateTime,
         });
         await db.SaveChangesAsync(cancellationToken);
@@ -395,7 +396,7 @@ internal sealed class RostersService(
                 await messenger.TellAsync(member.PersonId, RostersNotifications.Swaps, $"Can anyone take {name}'s place?", $"{line}.{note}", ministry.Id,
                     $"rosters/swap/{swapId:N}", cancellationToken, "See the roster");
         await messenger.TellLeadersAsync(ministry.Id, RostersNotifications.ForLeaders, $"{name} asked for a swap",
-            to is null ? $"{line}. The team can pick it up." : $"{line}. They asked someone directly.", $"rosters/swap-asked/{swapId:N}", cancellationToken);
+            to is not null ? $"{line}. They asked someone directly." : way == SwapWays.Approve ? $"{line}. Someone on the team can offer, and you say yes." : $"{line}. The team can pick it up.", $"rosters/swap-asked/{swapId:N}", cancellationToken);
         return new Done();
     }
 

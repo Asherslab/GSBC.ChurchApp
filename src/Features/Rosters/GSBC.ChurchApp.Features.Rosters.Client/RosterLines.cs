@@ -144,6 +144,13 @@ public static class RosterLines
         _ => way,
     };
 
+    public static string WaysWords(string way, RosterSettings settings) => WaysWords(way == SwapWays.Open ? settings.OpenSwaps : way);
+
+    public static string OpenSwapsWords(string openSwaps) => openSwaps == OpenSwaps.Off ? "Not to the whole team" : WaysWords(openSwaps);
+
+    public static IReadOnlyList<string> WaysOpenTo(RosterSettings settings) =>
+        [.. settings.OpenSwaps != OpenSwaps.Off ? [SwapWays.Open] : Array.Empty<string>(), .. settings.DirectSwaps ? [SwapWays.Direct] : Array.Empty<string>()];
+
     public static string WhoSeesWords(string whoSees) => whoSees switch
     {
         WhoSees.WithYou => "Their own dates, and who's on with them",

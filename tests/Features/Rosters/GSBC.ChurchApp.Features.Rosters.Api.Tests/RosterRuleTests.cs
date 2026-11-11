@@ -84,10 +84,21 @@ public sealed class RosterRuleTests
     [Fact]
     public void ASwapCanOnlyBeAskedTheWaysTheMinistryAllows()
     {
-        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, [SwapWays.Team], SwapWays.Direct, Replies.Accepted, false, Later, Now, toIsOnTeam: true));
-        Assert.Null(RosterRules.WhyNotAskSwap(true, false, [SwapWays.Team, SwapWays.Direct], SwapWays.Direct, Replies.Accepted, false, Later, Now, toIsOnTeam: true));
-        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, [SwapWays.Direct], SwapWays.Direct, Replies.Accepted, false, Later, Now, toIsOnTeam: false));
+        RosterSettings teamOnly = new() { OpenSwaps = OpenSwaps.Team };
+        RosterSettings both = new() { OpenSwaps = OpenSwaps.Team, DirectSwaps = true };
+        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(teamOnly, SwapWays.Direct), Replies.Accepted, false, Later, Now, toIsOnTeam: true));
+        Assert.Null(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(both, SwapWays.Direct), Replies.Accepted, false, Later, Now, toIsOnTeam: true));
+        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(both, SwapWays.Direct), Replies.Accepted, false, Later, Now, toIsOnTeam: false));
+        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(new RosterSettings { OpenSwaps = OpenSwaps.Off, DirectSwaps = true }, SwapWays.Open),
+            Replies.Accepted, false, Later, Now, toIsOnTeam: false));
     }
+
+    [Theory]
+    [InlineData(OpenSwaps.Team, SwapWays.Approve, SwapWays.Team)]
+    [InlineData(OpenSwaps.Approve, SwapWays.Team, SwapWays.Approve)]
+    [InlineData(OpenSwaps.Approve, SwapWays.Open, SwapWays.Approve)]
+    public void WhetherALeaderConfirmsIsTheMinistrysChoiceNeverTheAskers(string ministryChose, string askedFor, string swapGoes) =>
+        Assert.Equal(swapGoes, RosterRules.WayFor(new RosterSettings { OpenSwaps = ministryChose }, askedFor));
 
     [Theory]
     [InlineData(SwapWays.Team, SwapStates.Done)]

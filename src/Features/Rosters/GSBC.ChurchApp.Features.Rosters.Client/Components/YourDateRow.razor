@@ -47,7 +47,7 @@
                     {
                         <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _why = true">@(assignment.State == Replies.Accepted ? "I can't now" : "Can't do it")</Button>
                     }
-                    @if (swap is null && view.Settings.SwapWays.Count > 0)
+                    @if (swap is null && view.Settings.SwapsOn)
                     {
                         <Button Small="true" Variant="ButtonVariant.Quiet" Icon="repeat" Disabled="Busy" OnClick="OnSwap">Ask for a swap</Button>
                     }

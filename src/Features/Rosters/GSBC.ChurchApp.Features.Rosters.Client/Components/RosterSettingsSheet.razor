@@ -6,11 +6,10 @@
     <ChildContent>
         <ToggleRow Title="Ask people to answer" Description="They say whether they can do each date, and you hear when they can't" @bind-Checked="_draft.Replies" />
         <h3 class="roster-position">Swaps</h3>
-        @foreach (string way in SwapWays.All)
-        {
-            <ToggleRow @key="way" Title="@RosterLines.WaysWords(way)" Checked="_draft.SwapWays.Contains(way)" CheckedChanged="on => Toggle(way, on)" />
-        }
-        <p class="roster-hint">@(_draft.SwapWays.Count > 1 ? "Someone asking for a swap chooses which way." : _draft.SwapWays.Count == 0 ? "Nobody can ask for a swap; they tell a leader instead." : "Leaders hear of every swap.")</p>
+        <Segmented TValue="string" Label="When someone asks the team" ShowLabel="true" Stacked="true" Value="@_draft.OpenSwaps" ValueChanged="value => _draft.OpenSwaps = value"
+                   Options="@([.. OpenSwaps.All.Select(value => new SegmentOption<string>(value, RosterLines.OpenSwapsWords(value)))])" />
+        <ToggleRow Title="@RosterLines.WaysWords(SwapWays.Direct)" Description="They choose who to ask, and that person says yes or can't" @bind-Checked="_draft.DirectSwaps" />
+        <p class="roster-hint">@(!_draft.SwapsOn ? "Nobody can ask for a swap; they tell a leader instead." : "Leaders hear of every swap.")</p>
         <Segmented TValue="string" Label="What the team sees" ShowLabel="true" Stacked="true" Value="@_draft.WhoSees" ValueChanged="value => _draft.WhoSees = value"
                    Options="@([.. new[] { WhoSees.Everything, WhoSees.WithYou, WhoSees.Yours }.Select(value => new SegmentOption<string>(value, RosterLines.WhoSeesWords(value)))])"
                    Hint="Leaders always see the whole roster." />
@@ -44,17 +43,10 @@
     [Parameter, EditorRequired] public required RosterView View { get; set; }
 
     private bool Changed =>
-        (_draft.Replies, _draft.WhoSees, _draft.RemindDaysBefore, _draft.NudgeAfterDays, string.Join(",", _draft.SwapWays.Order()))
-        != (View.Settings.Replies, View.Settings.WhoSees, View.Settings.RemindDaysBefore, View.Settings.NudgeAfterDays, string.Join(",", View.Settings.SwapWays.Order()));
+        (_draft.Replies, _draft.WhoSees, _draft.RemindDaysBefore, _draft.NudgeAfterDays, _draft.OpenSwaps, _draft.DirectSwaps)
+        != (View.Settings.Replies, View.Settings.WhoSees, View.Settings.RemindDaysBefore, View.Settings.NudgeAfterDays, View.Settings.OpenSwaps, View.Settings.DirectSwaps);
 
     protected override void OnInitialized() => _draft = RostersContractsModel.Instance.DeepClone(View.Settings);
-
-    private void Toggle(string way, bool on)
-    {
-        _draft.SwapWays.Remove(way);
-        if (on)
-            _draft.SwapWays.Add(way);
-    }
 
     private async Task<bool> SaveAsync()
     {

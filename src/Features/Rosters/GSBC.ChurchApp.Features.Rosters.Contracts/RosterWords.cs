@@ -19,11 +19,21 @@ public static class Replies
 
 public static class SwapWays
 {
+    public const string Open = "open";
     public const string Team = "team";
     public const string Approve = "approve";
     public const string Direct = "direct";
+}
 
-    public static readonly IReadOnlyList<string> All = [Team, Approve, Direct];
+public static class OpenSwaps
+{
+    public const string Off = "off";
+    public const string Team = SwapWays.Team;
+    public const string Approve = SwapWays.Approve;
+
+    public static readonly IReadOnlyList<string> All = [Off, Team, Approve];
+
+    public static bool Valid(string value) => All.Contains(value);
 }
 
 public static class SwapStates

@@ -29,10 +29,13 @@ public sealed class RosterView
 public sealed class RosterSettings
 {
     [ProtoMember(1, IsRequired = true)] public bool Replies { get; set; } = true;
-    [ProtoMember(2)] public List<string> SwapWays { get; set; } = [];
     [ProtoMember(3, IsRequired = true)] public string WhoSees { get; set; } = Contracts.WhoSees.Everything;
     [ProtoMember(4, IsRequired = true)] public int RemindDaysBefore { get; set; } = RosterDefaults.RemindDaysBefore;
     [ProtoMember(5, IsRequired = true)] public int NudgeAfterDays { get; set; } = RosterDefaults.NudgeAfterDays;
+    [ProtoMember(6, IsRequired = true)] public string OpenSwaps { get; set; } = Contracts.OpenSwaps.Team;
+    [ProtoMember(7)] public bool DirectSwaps { get; set; }
+
+    public bool SwapsOn => OpenSwaps != Contracts.OpenSwaps.Off || DirectSwaps;
 }
 
 [ProtoContract]

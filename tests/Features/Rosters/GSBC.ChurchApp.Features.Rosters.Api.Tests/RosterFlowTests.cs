@@ -66,7 +66,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
             .AddSingleton<INotifications>(_notifications)
             .AddSingleton<IAccessEvaluator>(new LeadersOf(_ministry, _leader))
             .AddScoped<RosterViews>().AddScoped<RosterPublisher>().AddScoped<RosterMessenger>().AddScoped<RosterReminders>()
-            .AddScoped<RostersService>().AddScoped<RostersPersonData>()
+            .AddScoped<RostersService>().AddScoped<RostersPersonData>().AddScoped<RostersMinistryPeople>()
             .AddRostersData()
             .AddSyncData();
         _services = services.BuildServiceProvider();
@@ -118,7 +118,7 @@ public sealed class RosterFlowTests : IAsyncLifetime
     [Fact]
     public async Task EachPhoneGetsOnlyWhatTheMinistryLetsItsTeamSee()
     {
-        await SetUpAsync(new Position { Name = "Sound", Needed = 3 }, new RosterSettings { WhoSees = WhoSees.Yours, SwapWays = [SwapWays.Team] });
+        await SetUpAsync(new Position { Name = "Sound", Needed = 3 }, new RosterSettings { WhoSees = WhoSees.Yours, OpenSwaps = OpenSwaps.Team });
         await AssignAsync(_jo);
         await AssignAsync(_tom);
 
@@ -132,15 +132,15 @@ public sealed class RosterFlowTests : IAsyncLifetime
     [Fact]
     public async Task AnApprovedSwapMovesThePlaceOnlyWhenALeaderSaysYes()
     {
-        await SetUpAsync(new Position { Name = "Sound" }, new RosterSettings { SwapWays = [SwapWays.Approve] });
+        await SetUpAsync(new Position { Name = "Sound" }, new RosterSettings { OpenSwaps = OpenSwaps.Approve });
         await AssignAsync(_jo);
         Guid assignment = await OnlyAssignmentAsync();
         Guid swap = Guid.CreateVersion7();
 
         await Assert.ThrowsAsync<RpcException>(() => Run(service => service.AskSwapAsync(_jo,
-            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = Guid.CreateVersion7().ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Team }, Cancel)));
+            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = Guid.CreateVersion7().ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Direct }, Cancel)));
         await Run(service => service.AskSwapAsync(_jo,
-            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = swap.ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Approve }, Cancel));
+            new SwapAsk { MinistryId = _ministry.ToString(), SwapId = swap.ToString(), AssignmentId = assignment.ToString(), Way = SwapWays.Team }, Cancel));
         await Run(service => service.TakeSwapAsync(_sam, new SwapTake { MinistryId = _ministry.ToString(), SwapId = swap.ToString() }, Cancel));
 
         Assert.Equal("Jo Sample", (await ViewAsync(_leader)).Dates.Single().Assignments.Single().Name);
@@ -196,6 +196,20 @@ public sealed class RosterFlowTests : IAsyncLifetime
         Assert.Equal(["Sam Sample", RosterDefaults.FormerMember], leader.Dates.Single(date => date.Id == _date.ToString()).Assignments.Select(each => each.Name).Order());
         Assert.Empty(leader.Dates.Single(date => date.Id == next.ToString()).Assignments);
         Assert.Null(await RowAsync(_jo));
+    }
+
+    [Fact]
+    public async Task SomeoneAddedToTheTeamHasTheRosterAsSoonAsTheMinistrySaysItsPeopleChanged()
+    {
+        await SetUpAsync(new Position { Name = "Sound", NeedsTrained = true });
+        _ministries.Teams[_ministry].Add(new MinistryMember(_stranger, false));
+        Assert.Null(await RowAsync(_stranger));
+
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+            await scope.ServiceProvider.GetRequiredService<RostersMinistryPeople>().ChangedAsync([_ministry], Cancel);
+
+        Assert.NotNull(await RowAsync(_stranger));
+        Assert.Contains((await ViewAsync(_leader)).Team, member => member.PersonId == _stranger.ToString());
     }
 
     private async Task SetUpAsync(Position position, RosterSettings? settings = null)
