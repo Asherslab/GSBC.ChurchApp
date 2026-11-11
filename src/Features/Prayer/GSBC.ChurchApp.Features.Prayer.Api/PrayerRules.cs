@@ -42,6 +42,12 @@ internal static class PrayerRules
 
     public static bool MayModerate(RequestRecord request) => request.Wall != WallState.NotAsked;
 
+    public static bool IsForApprovers(RequestRecord request) => request.Wall is WallState.Waiting or WallState.Shown;
+
+    public static bool IsForThePastoralTeamsPhones(RequestRecord request) => request.Care == CareState.New || IsForApprovers(request);
+
+    public static bool MayGoOnTheWall(RequestRecord request) => MayModerate(request) && request.Wall != WallState.TakenDown;
+
     public static bool ShowsNameOnTheWall(RequestRecord request, bool staffShowName) => staffShowName && request.ShowName && request.Name.Length > 0;
 
     public static bool IsDueForDeletion(RequestRecord request, DateTime now) => request.ChangedAt <= now - KeptFor;
@@ -76,6 +82,39 @@ internal static class PrayerRules
         AnsweredNote = request.AnsweredNote,
         WallName = request.Wall == WallState.Shown && request.WallShowsName ? FirstName(request.Name) : "",
         WallText = request.Wall == WallState.Shown ? request.WallText : "",
+    };
+
+    public static WallCase ForApprovers(RequestRecord request) => new()
+    {
+        Id = request.Id.ToString(),
+        Text = request.Text,
+        SentAt = request.SentAt,
+        Wall = request.Wall,
+        Minor = request.Minor,
+        FirstName = request.ShowName ? FirstName(request.Name) : "",
+        WallText = request.WallText,
+        WallShowsName = request.WallShowsName,
+        WallUntil = request.Wall == WallState.Shown ? request.WallUntil : null,
+        Prayed = request.Prayed,
+        ChangedAt = request.ChangedAt,
+    };
+
+    public static CareCase ForThePastoralTeam(RequestRecord request, IEnumerable<NoteRecord> notes, IReadOnlyDictionary<Guid, string> names) => new()
+    {
+        Id = request.Id.ToString(),
+        Text = request.Text,
+        From = From(request),
+        SentAt = request.SentAt,
+        Care = request.Care,
+        Wall = request.Wall,
+        Minor = request.Minor,
+        SignedIn = request.UserId is not null,
+        WantsContact = request.WantsContact,
+        Contact = request.Contact,
+        AnsweredNote = request.AnsweredNote,
+        Notes = notes.Select(note => new CareNote { Id = note.Id.ToString(), Text = note.Text, Author = names.GetValueOrDefault(note.AuthorId, "Someone"), At = note.At })
+            .ToList(),
+        ChangedAt = request.ChangedAt,
     };
 
     public static string From(RequestRecord request) => request.Name.Length > 0 ? request.Name : "No name";

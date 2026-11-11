@@ -26,4 +26,7 @@ namespace GSBC.ChurchApp.Features.Prayer.Contracts;
 [ProtoSerializable(typeof(NoteSave))]
 [ProtoSerializable(typeof(NoteRef))]
 [ProtoSerializable(typeof(WallSave))]
+[ProtoSerializable(typeof(WallCase))]
+[ProtoSerializable(typeof(CareCase))]
+[ProtoSerializable(typeof(QueuedOnPhone))]
 public partial class PrayerContractsModel : TypeModel;

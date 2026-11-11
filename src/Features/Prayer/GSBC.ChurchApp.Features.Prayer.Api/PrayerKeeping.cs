@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api;
 
-internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, TimeProvider time)
+internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publisher, PrayerTelling telling, HandledRequests handled, TimeProvider time)
 {
     public async Task RunAsync(CancellationToken cancellationToken)
     {
@@ -15,7 +15,7 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
             request.Wall = WallState.Ended;
             request.ChangedAt = now;
             request.Steps.Add(new StepRecord { At = now, What = "Left the prayer wall" });
-            publisher.Changed(request, now);
+            await publisher.ChangedAsync(request, now, cancellationToken);
         }
 
         DateTime keptSince = now - PrayerRules.KeptFor;
@@ -28,6 +28,7 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
         }
 
         await db.SaveChangesAsync(cancellationToken);
+        await handled.ForgetOldAsync(cancellationToken);
         foreach (RequestRecord request in old)
             await telling.SettledAsync(request, cancellationToken);
     }

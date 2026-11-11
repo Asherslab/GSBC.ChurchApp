@@ -23,6 +23,26 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Prayer.Api.Data.HandledRequestRecord", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)")
+                        .HasColumnName("id");
+
+                    b.Property<DateTime>("HandledAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("handled_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_handled_requests");
+
+                    b.HasIndex("HandledAt")
+                        .HasDatabaseName("ix_handled_requests_handled_at");
+
+                    b.ToTable("handled_requests", "prayer");
+                });
+
             modelBuilder.Entity("GSBC.ChurchApp.Features.Prayer.Api.Data.NoteRecord", b =>
                 {
                     b.Property<Guid>("Id")
