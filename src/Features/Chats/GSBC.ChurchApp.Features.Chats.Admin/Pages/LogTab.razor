@@ -1,0 +1,52 @@
+@inject OversightClient Oversight
+
+<LiveData TValue="Log" Load="() => Oversight.LogAsync()" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load the log right now">
+    <DataTable TItem="LogLine" Label="Checks log" Items="Shown(context.Value)" Columns="Columns" Key="line => line.Id" SortColumn="0" SortDescending="true">
+        <Toolbar>
+            <FilterChips TValue="string" Label="Show" Options="Filters" Value="_filter" ValueChanged="value => _filter = value" />
+        </Toolbar>
+        <Empty>
+            <EmptyState Icon="eye" Title="Nothing logged yet" Body="Every chat read here, report, pause and change to a chat is kept here." />
+        </Empty>
+    </DataTable>
+    <p class="hint">Kept forever. Leaders see what happened in their own ministries' chats; the church's chat auditors see everything.</p>
+</LiveData>
+
+@code {
+    private const string Everything = "";
+    private string _filter = Everything;
+
+    private static readonly IReadOnlyList<FilterOption<string>> Filters =
+        [new(Everything, "Everything"), new("checked", "Chats read"), new("reported", "Reports"), new("paused", "Pauses")];
+
+    private static readonly IReadOnlyList<TableColumn<LogLine>> Columns =
+    [
+        new("When", line => @<DateLine At="line.At" Style="DateLineStyle.Short" WithTime="true" />, line => line.At, "num"),
+        new("Who", line => @<span class="cell-strong">@line.ActorName</span>, line => line.ActorName),
+        new("Did", line => @<span>@Did(line.Action)</span>, line => line.Action),
+        new("Chat", line => @<span>@line.ChatName</span>, line => line.ChatName, "optional"),
+        new("Why or what", line => @<span>@line.Words</span>, line => line.Words),
+    ];
+
+    private IEnumerable<LogLine> Shown(Log log) => _filter == Everything
+        ? log.Lines
+        : log.Lines.Where(line => line.Action == _filter || (_filter == "reported" && line.Action == "handled") || (_filter == "paused" && line.Action == "unpaused"));
+
+    private static string Did(string action) => action switch
+    {
+        "checked" => "Read the chat",
+        "started" => "Started the chat",
+        "changed" => "Changed the chat",
+        "deleted" => "Deleted the chat",
+        "people" => "Changed who's in it",
+        "sent" => "Sent a message",
+        "edited" => "Edited a message",
+        "message-deleted" => "Deleted a message",
+        "consent" => "Answered for their child",
+        "reported" => "Reported a message",
+        "handled" => "Handled a report",
+        "paused" => "Paused someone",
+        "unpaused" => "Let someone back in",
+        _ => action,
+    };
+}

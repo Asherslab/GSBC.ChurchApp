@@ -1,0 +1,241 @@
+@inject ChatsStore Store
+@inject TimeProvider Clock
+@inject Shell Shell
+@inject IServiceProvider Services
+
+<Page Title="@_title" BackHref="@BackHref" BackLabel="@BackLabel" TopBar="TopBarStyle.Solid">
+    <Actions>
+        @if (_card is not null)
+        {
+            <button type="button" class="icon-btn" aria-label="People and settings" @onclick="() => _people = true"><Icon Name="users" /></button>
+        }
+    </Actions>
+    <ChildContent>
+<LiveData TValue="OpenedChat" Load="LoadAsync" Feeds="ChatsStore.Feeds" ReloadOn="ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox">
+    @if (context.Value.Chat is not { } chat)
+    {
+        <EmptyState Icon="message-square" Title="This chat isn't here" Body="It may have been deleted, or you may not be in it any more." />
+    }
+    else
+    {
+        ChatCard card = chat.Card;
+        _card = card;
+        <div class="chat">
+            <div class="chat__scroll">
+                <div class="chat__lines">
+                    <p class="chat__start">
+                        <Icon Name="@(card.ParentsCanRead ? "eye" : "shield")" Size="IconSize.Small" />
+                        @(card.ParentsCanRead
+                            ? "Parents of the young people here can read this chat. Church staff can check it too."
+                            : card.Kind == ChatKinds.Ask ? $"A chat with {card.MinistryName}'s leaders. {ChatCopy.StaffCanCheck}" : ChatCopy.StaffCanCheck)
+                    </p>
+                    @foreach (string flag in card.Flags)
+                    {
+                        <Notice Tone="NoticeTone.Warning">@flag</Notice>
+                    }
+                    @if (card.YouMayManage && card.People.Count(person => person.State == ChatStates.AwaitingConsent) is > 0 and var waiting)
+                    {
+                        <Notice Tone="NoticeTone.Info"><strong>@(waiting == 1 ? "One young person is" : $"{waiting} young people are") waiting for a parent's yes.</strong> They get the chat, with everything so far, once a parent approves.</Notice>
+                    }
+                    @if (card.Asker is { } asker && asker.Id != card.You && card.YouMayManage)
+                    {
+                        <Notice Tone="NoticeTone.Info">
+                            <strong>@asker.Name asked to @(card.AskedAs == "team" ? "join the team" : card.AskedAs == "attend" ? "come along" : $"join {card.MinistryName}").</strong>
+                            @if (_added.Contains(card.Id))
+                            {
+                                <span> Added. They'll see the ministry's chats once the change reaches them.</span>
+                            }
+                            else if (card.AskedAs.Length > 0 && Services.GetService(typeof(IMinistryPeopleWrites)) is IMinistryPeopleWrites people)
+                            {
+                                <span class="ui-after"><Button Small="true" OnClick="() => AddAsync(people, card, asker)">@(card.AskedAs == "team" ? "Add to the team" : $"Add {ChatText.First(asker.Name)}")</Button></span>
+                            }
+                            else
+                            {
+                                <span> Add them from the ministry's People tab, or keep chatting here.</span>
+                            }
+                        </Notice>
+                    }
+                    @foreach ((ChatLine line, bool newDay, bool first) in ChatRuns.Of(chat.Lines))
+                    {
+                        ChatMessage message = line.Message;
+                        if (newDay)
+                        {
+                            <p class="chat__day">@ChatText.Day(message.SentAt, Clock.GetUtcNow().UtcDateTime)</p>
+                        }
+                        if (message.Kind == MessageKinds.Event)
+                        {
+                            <p class="chat__event"><Icon Name="check" Size="IconSize.Small" />@message.Text</p>
+                            continue;
+                        }
+                        bool mine = message.SenderId == card.You;
+                        <MessageBubble Mine="mine" FirstOfRun="first" Name="@NameOf(message, mine)" NameNote="@RoleNote(card, message)"
+                                       Time="@TimeOf(message)" Dimmed="@(line.State != LineState.Sent || _editing?.Id == message.Id)" Removed="message.Deleted"
+                                       Id="@($"m-{message.Id}")" OnLongPress="() => OpenActions(line)">
+                            <Quote>
+                                @if (message.ReplyTo is { } quote && !message.Deleted)
+                                {
+                                    <span class="chat-quote"><strong>@quote.SenderName</strong><span>@quote.Snippet</span></span>
+                                }
+                            </Quote>
+                            <Reactions>
+                                @if (message.Reactions.Count > 0)
+                                {
+                                    <span class="chat-reactions">
+                                        @foreach (Reaction reaction in message.Reactions)
+                                        {
+                                            bool yours = reaction.People.Contains(card.You);
+                                            <button type="button" class="chat-reaction @(yours ? "chat-reaction--yours" : "")" disabled="@(!card.YouMaySend)"
+                                                    aria-label="@($"{reaction.Emoji} {reaction.People.Count}")" @onclick="() => Store.ReactAsync(message, reaction.Emoji, !yours)">
+                                                @reaction.Emoji <span>@reaction.People.Count</span>
+                                            </button>
+                                        }
+                                    </span>
+                                }
+                            </Reactions>
+                            <Status>
+                                @if (line.State == LineState.Sending)
+                                {
+                                    <span class="chat-status"><Icon Name="clock" Size="IconSize.Small" />Sending</span>
+                                }
+                                else if (line.State == LineState.Failed)
+                                {
+                                    <span class="chat-status chat-status--failed"><Icon Name="alert" Size="IconSize.Small" />Couldn't send ·
+                                        <button type="button" class="text-link" @onclick="() => Store.RetryAsync(line)">Try again</button> ·
+                                        <button type="button" class="text-link" @onclick="() => Store.DiscardAsync(line)">Delete</button></span>
+                                }
+                                else if (mine && ReferenceEquals(line, LastOfMine(chat)) && SeenBy(card, message) is > 0 and var seen)
+                                {
+                                    <button type="button" class="chat-status chat-status--seen" @onclick="() => ShowSeen(message)"><Icon Name="check" Size="IconSize.Small" />Seen by @seen</button>
+                                }
+                            </Status>
+                            <ChildContent>
+                                @if (message.Deleted)
+                                {
+                                    @(mine ? "You deleted this message" : $"{ChatText.First(message.SenderName)} deleted this message")
+                                }
+                                else
+                                {
+                                    <ChatAttachments Attachments="message.Attachments" />
+                                    @foreach ((string text, bool mention, bool you) in ChatMentions.Split(message, card))
+                                    {
+                                        if (mention)
+                                        {
+                                            <span class="chat-mention @(you ? "chat-mention--you" : "")">@text</span>
+                                        }
+                                        else
+                                        {
+                                            @text
+                                        }
+                                    }
+                                }
+                            </ChildContent>
+                        </MessageBubble>
+                    }
+                </div>
+            </div>
+            <ChatComposer Chat="chat" Editing="_editing" ReplyingTo="_replyingTo" OnDone="Done" />
+        </div>
+        <MessageActions Card="card" Line="_acting" OnClose="() => _acting = null" OnReply="Reply" OnEdit="Edit" />
+        <ChatPeopleSheet Card="card" Open="_people" OpenChanged="open => _people = open" />
+        <Sheet Open="_seen is not null" OpenChanged="open => { if (!open) _seen = null; }" Title="Seen by">
+            @if (_seen is not null)
+            {
+                <ListGroup>
+                    @foreach (ChatPerson person in card.People.Where(person => person.Id != card.You && person.ReadSeq >= _seen.Seq))
+                    {
+                        <ListRow Title="@person.Name">
+                            <Leading><Avatar Name="@person.Name" Size="32" /></Leading>
+                        </ListRow>
+                    }
+                </ListGroup>
+            }
+        </Sheet>
+    }
+</LiveData>
+    </ChildContent>
+</Page>
+
+@code {
+    [Parameter, EditorRequired] public required string ChatId { get; set; }
+    [Parameter] public string BackHref { get; set; } = "chats";
+    [Parameter] public string BackLabel { get; set; } = "Chats";
+
+    private string _title = "Chat";
+    private readonly HashSet<string> _added = [];
+    private bool _people;
+
+    private ChatCard? _card;
+    private ChatLine? _acting;
+    private ChatMessage? _editing;
+    private ChatMessage? _replyingTo;
+    private ChatMessage? _seen;
+
+    private async Task<OpenedChat> LoadAsync()
+    {
+        Conversation? chat = await Store.ChatAsync(ChatId);
+        if (chat is { Paused: false } && chat.Card.YourRole.Length > 0)
+            await Store.MarkReadAsync(chat.Card, chat.Card.LastSeq);
+        if (chat is not null && (ChatText.Title(chat.Card) != _title || _card is null))
+        {
+            _title = ChatText.Title(chat.Card);
+            _card = chat.Card;
+            _ = InvokeAsync(StateHasChanged);
+        }
+        return new OpenedChat(chat);
+    }
+
+    private async Task OpenActions(ChatLine line)
+    {
+        if (line.Message.Deleted || line.State != LineState.Sent)
+            return;
+        await Shell.HapticAsync(Haptic.Light);
+        _acting = line;
+    }
+
+    private void Reply(ChatMessage message)
+    {
+        _acting = null;
+        _editing = null;
+        _replyingTo = message;
+    }
+
+    private void Edit(ChatMessage message)
+    {
+        _acting = null;
+        _replyingTo = null;
+        _editing = message;
+    }
+
+    private async Task AddAsync(IMinistryPeopleWrites people, ChatCard card, PersonRef asker)
+    {
+        await people.AddAsync(card.MinistryId, asker.Id, card.AskedAs);
+        _added.Add(card.Id);
+    }
+
+    private void Done()
+    {
+        _editing = null;
+        _replyingTo = null;
+    }
+
+    private void ShowSeen(ChatMessage message) => _seen = message;
+
+    private static string? NameOf(ChatMessage message, bool mine) =>
+        mine ? null : message.ForName.Length > 0 ? $"{message.SenderName}, for {ChatText.First(message.ForName)}" : message.SenderName;
+
+    private static string? RoleNote(ChatCard card, ChatMessage message) =>
+        card.People.FirstOrDefault(person => person.Id == message.SenderId)?.Role == ChatRoles.Leader ? "leader" : null;
+
+    private string TimeOf(ChatMessage message)
+    {
+        string time = ChurchDates.Time(ChurchTime.ToChurch(message.SentAt));
+        string forChild = message.SenderId == _card?.You && message.ForName.Length > 0 ? $"for {ChatText.First(message.ForName)} · " : "";
+        return message.EditedAt is not null && !message.Deleted ? $"{forChild}{time} · edited" : forChild + time;
+    }
+
+    private static ChatLine? LastOfMine(Conversation chat) =>
+        chat.Lines.LastOrDefault(line => line.Message.SenderId == chat.Card.You && line.State == LineState.Sent && line.Message.Kind == MessageKinds.Text);
+
+    private static int SeenBy(ChatCard card, ChatMessage message) =>
+        card.People.Count(person => person.Id != card.You && person.State == ChatStates.Active && person.ReadSeq >= message.Seq);
+}

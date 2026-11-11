@@ -1,0 +1,27 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject ChatsStore Store
+
+<LiveData TValue="ChatsHome" Load="Store.HomeAsync" Feeds="ChatsStore.Feeds" Remember="@ChatsStore.Remembered">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn(ChatsHome.Empty)</Loading>
+    <Failed>@Drawn(ChatsHome.Empty)</Failed>
+</LiveData>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private RenderFragment Drawn(ChatsHome home)
+    {
+        TileLook look = TileLook.Of(ChatsTiles.Chats, Entry.Values);
+        TileVariant variant = ChatsTiles.Chats.VariantFor(look, Hub.Columns);
+        ChatSummary? newest = home.Chats.FirstOrDefault(chat => chat.WaitingForYou || (chat.Unread > 0 && !chat.Card.Muted));
+        string title = home.Unread > 0 ? $"{home.Unread} unread" : home.Waiting > 0 ? "Waiting for you" : look.Title;
+        IReadOnlyList<string> lines = newest is null
+            ? [look.Text]
+            : [newest.WaitingForYou ? $"{newest.Card.Name}: a parent's yes" : $"{ChatText.First(newest.Card.LastSender)} in {newest.Card.Name}: {newest.Card.LastPreview}"];
+        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@title" Lines="lines"
+                         Unread="@(newest is not null)" PlacementId="@Entry.Placement?.Id" />;
+    }
+}

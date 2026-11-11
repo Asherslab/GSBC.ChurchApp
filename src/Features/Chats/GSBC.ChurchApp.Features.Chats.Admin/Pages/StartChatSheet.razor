@@ -1,0 +1,73 @@
+@inject OversightClient Oversight
+
+<UnsavedGuard Changed="() => Open" Editing="_draft" State="() => Shape" What="this chat" />
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="New chat">
+    <ChildContent>
+        <SelectField Label="Ministry" Options="Ministries" Value="@_draft.MinistryId" ValueChanged="value => _draft.MinistryId = value" />
+        <TextField Label="Name" Value="@_draft.Name" ValueChanged="value => _draft.Name = value" MaxLength="ChatLimits.NameLength" Required="true" />
+        <Segmented TValue="string" Label="Kind" ShowLabel="true" Stacked="true" Options="Kinds" Value="_draft.Kind" ValueChanged="value => _draft.Kind = value" />
+        <Segmented TValue="string" Label="Who it's for" ShowLabel="true" Stacked="true" Options="Audiences" Value="_draft.Audience" ValueChanged="value => _draft.Audience = value" />
+        @if (_draft.Audience != ChatAudiences.Team)
+        {
+            <Notice Tone="NoticeTone.Warning"><strong>Parents say yes first.</strong> Your first message goes to each young person's parents. Their child gets the chat once a parent approves.</Notice>
+        }
+        <TextField Label="First message: why you're starting this chat" Multiline="true" Value="@_draft.FirstMessage" ValueChanged="value => _draft.FirstMessage = value" MaxLength="ChatLimits.TextLength" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="Start the chat" Busy="_busy" OnSave="StartAsync" Blocked="@Blocked" />
+    </Actions>
+</Sheet>
+
+@code {
+    private StartChat _draft = new() { Kind = ChatKinds.Group, Audience = ChatAudiences.Team };
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required Desk Desk { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private object Shape => (_draft.MinistryId, _draft.Name, _draft.Kind, _draft.Audience, _draft.FirstMessage);
+
+    private IReadOnlyList<FieldOption> Ministries =>
+        [new("", "Choose a ministry"), .. Desk.Ministries.Where(ministry => ministry.MayManage && ministry.ChatsOn).Select(ministry => new FieldOption(ministry.Id, ministry.Name))];
+
+    private static readonly IReadOnlyList<SegmentOption<string>> Kinds =
+    [
+        new(ChatKinds.Group, "Group chat", Detail: "Everyone in it can write."),
+        new(ChatKinds.Channel, "Leaders post only", Detail: "Only the leaders write. Everyone can react."),
+    ];
+
+    private IReadOnlyList<SegmentOption<string>> Audiences =>
+        (Desk.Ministries.FirstOrDefault(ministry => ministry.Id == _draft.MinistryId)?.Audiences ?? [ChatAudiences.Team])
+        .Where(audience => audience != ChatAudiences.Chosen)
+        .Select(audience => new SegmentOption<string>(audience, ChatText.Audience(audience)))
+        .ToList();
+
+    private string? Blocked => _draft.MinistryId.Length == 0 ? "Choose the ministry to start it."
+        : _draft.Name.Trim().Length == 0 ? "Give it a name to start it."
+        : _draft.FirstMessage.Trim().Length == 0 ? "Write the first message to start it."
+        : null;
+
+    private async Task StartAsync()
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            _draft.ChatId = Guid.NewGuid().ToString();
+            await Oversight.StartAsync(_draft);
+            _draft = new StartChat { Kind = ChatKinds.Group, Audience = ChatAudiences.Team };
+            await OpenChanged.InvokeAsync(false);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

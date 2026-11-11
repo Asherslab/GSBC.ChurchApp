@@ -11,7 +11,7 @@ public static class MinistryAreas
         List<(string, string, int?)> areas = [(MinistriesPlaces.About, "About", null)];
         if (page.Round is not null)
             areas.Add((MinistriesPlaces.Sundays, "Sundays", null));
-        foreach ((string part, string place) in new[] { (MinistryParts.News, MinistriesPlaces.News), (MinistryParts.Calendar, MinistriesPlaces.Calendar), (MinistryParts.Files, MinistriesPlaces.Files), (MinistryParts.Rosters, MinistriesPlaces.Roster) })
+        foreach ((string part, string place) in new[] { (MinistryParts.News, MinistriesPlaces.News), (MinistryParts.Calendar, MinistriesPlaces.Calendar), (MinistryParts.Files, MinistriesPlaces.Files), (MinistryParts.Rosters, MinistriesPlaces.Roster), (MinistryParts.Chats, MinistriesPlaces.Chats) })
             if (MinistryParts.HasTab(page, part))
                 areas.Add((place, MinistryParts.Of(part).Name, null));
         if (you.MayManagePeople)
