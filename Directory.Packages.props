@@ -4,7 +4,7 @@
     <AspNetCoreVersion>10.0.12</AspNetCoreVersion>
     <ServerAspNetCoreVersion>10.0.14</ServerAspNetCoreVersion>
     <GrpcVersion>2.84.0</GrpcVersion>
-    <AspireVersion>13.6.4</AspireVersion>
+    <AspireVersion>13.6.5</AspireVersion>
   </PropertyGroup>
 
   <ItemGroup Label="protobuf-net: pinned, the AOT generators are a preview (SPEC §9)">
