@@ -77,8 +77,8 @@ is the owner's is marked so.
 
 ## On the phone for staff
 
-**Owner, 2026-11-11:** "Prayer wall approvals and such should be able to be done on the phone" (an exception to
-*Admin work stays in the admin panel*, AGENTS.md). In progress on `feature/prayer-on-phone`. The plan:
+**Owner, 2026-11-11:** "Prayer wall approvals and such should be able to be done on the phone" (AGENTS.md's
+*Where staff and leader tools live* now puts approving on the phone). In progress on `feature/prayer-on-phone`. The plan:
 
 - **To approve** in Prayer, for holders of `prayer.wall.moderate`: the requests that ask for the wall, each opening to
   the same moderation as the admin desk (the words, starting from theirs; the name, none by default; *Under 18*; how
