@@ -149,7 +149,12 @@ with phone data to download the store copy. `--env local` reaches a station's ba
 
 | Kind | Who | When |
 |---|---|---|
-| `feedback.new` *Someone sends feedback from the app* | holders of `feedback.triage` | a ticket arrives; waits until it leaves New. It names the number, who, and the first line, and opens the ticket in the admin panel (on the phone it says to look in the admin panel) |
+| `feedback.new` *New feedback, once a day at midday when there is any* | holders of `feedback.triage` | a digest at 12pm church time when tickets arrived since the last one: "New feedback today: 3 reports", opening the board in the admin panel (on the phone it opens the notifications list, whose row says to look in the admin panel). Nothing on a day without feedback, and your own feedback isn't counted for you |
+
+Owner, 2026-11-12 (feedback #16): "Spammy. Would rather maybe a daily digest if there was any feedback today. Feedback
+isn't urgent." Once a day at midday (owner, 2026-11-12), built on the platform's digests
+([notifications.md](../architecture/notifications.md), *Digests*); it replaced one waiting notification per ticket.
+Waiting rows already sent still settle when their ticket leaves New.
 
 Staff settings and quiet hours apply as for every staff notification.
 
