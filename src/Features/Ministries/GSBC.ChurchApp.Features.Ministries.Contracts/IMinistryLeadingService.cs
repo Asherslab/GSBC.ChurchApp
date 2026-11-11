@@ -17,6 +17,9 @@ public interface IMinistryLeadingService
     ValueTask<Done> ChangePersonAsync(PersonChange request, CallContext context = default);
 
     [Requires(MinistriesPermissions.PeopleNode)]
+    ValueTask<Done> SetRoleAsync(PersonChange request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.PeopleNode)]
     ValueTask<FoundPeople> FindAsync(FindRequest request, CallContext context = default);
 
     [Requires(MinistriesPermissions.PeopleNode)]

@@ -17,6 +17,8 @@ public interface IMinistryWrites
 
     Task ChangePersonAsync(string ministryId, string personId, string role, bool add);
 
+    Task SetRoleAsync(string ministryId, string personId, string role);
+
     Task LinkParentAsync(string ministryId, string childId, string parentId);
 
     Task SavePostAsync(string ministryId, Post post);

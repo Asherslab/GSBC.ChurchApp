@@ -12,6 +12,7 @@ public static class MinistryMethods
     public const string ParentAnswer = Ministries + "ParentAnswer";
     public const string Answer = Leading + "Answer";
     public const string ChangePerson = Leading + "ChangePerson";
+    public const string SetRole = Leading + "SetRole";
     public const string LinkParent = Leading + "LinkParent";
     public const string SavePost = Leading + "SavePost";
     public const string DeletePost = Leading + "DeletePost";
@@ -35,7 +36,7 @@ public static class MinistryMethods
         "Withdraw" => "taking back your ask",
         "ParentAnswer" => "your answer for your child",
         "Answer" => "your answer to an ask",
-        "ChangePerson" or "LinkParent" => "a change to its people",
+        "ChangePerson" or "SetRole" or "LinkParent" => "a change to its people",
         "SavePost" => "a post",
         "DeletePost" => "deleting a post",
         "SaveFile" => "a file",

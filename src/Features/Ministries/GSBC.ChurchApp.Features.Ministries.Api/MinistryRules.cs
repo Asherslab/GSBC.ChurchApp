@@ -21,6 +21,13 @@ internal static class MinistryRules
         _ => JoinDecision.Refuse("This ministry doesn't take attendees."),
     };
 
+    public static string WhyNotChangeRole(string role) => role switch
+    {
+        Roles.Leader => "Only the leaders above this ministry, or staff, can make or unmake a leader here.",
+        Roles.Admin => "Only the leaders above this ministry, or staff, can make or unmake an admin here.",
+        _ => "You can't change who's in this ministry.",
+    };
+
     public static bool NeedsParentsYes(string place, bool minor, bool askingForThemselves) => place == Places.Team && minor && askingForThemselves;
 
     public static string? WhyNotPost(string title, string body, string audience, IReadOnlyCollection<string> mayPostFor)

@@ -28,6 +28,9 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
 
     public Task AnswerAsync(string ministryId, string askId, bool yes) => SendAsync(MinistryMethods.Answer, new AskRef { MinistryId = ministryId, AskId = askId, Yes = yes });
 
+    public Task SetRoleAsync(string ministryId, string personId, string role) =>
+        SendAsync(MinistryMethods.SetRole, new PersonChange { MinistryId = ministryId, PersonId = personId, Role = role });
+
     public Task ChangePersonAsync(string ministryId, string personId, string role, bool add) =>
         SendAsync(MinistryMethods.ChangePerson, new PersonChange { MinistryId = ministryId, PersonId = personId, Role = role, Add = add });
 

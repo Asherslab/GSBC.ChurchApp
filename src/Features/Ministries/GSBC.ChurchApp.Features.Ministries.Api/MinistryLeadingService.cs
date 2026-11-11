@@ -112,6 +112,35 @@ internal sealed class MinistryLeadingService(
         return new Done();
     }
 
+    public async ValueTask<Done> SetRoleAsync(PersonChange request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid me = SignedIn(context);
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        if (request.Role.Length > 0 && !Roles.IsValid(request.Role))
+            throw Invalid("Choose a role.");
+        Guid person = Guid.TryParse(request.PersonId, out Guid parsed) ? parsed : throw Invalid("That isn't a person in the app.");
+        string place = ministry.Id.ToString();
+        IReadOnlyList<string> held = await views.RolesAsync(person, ministry.Id, cancellationToken);
+        List<string> taking = held.Where(role => role != request.Role).ToList();
+        bool giving = request.Role.Length > 0 && !held.Contains(request.Role);
+        foreach (string role in taking.Concat(giving ? [request.Role] : []))
+            if (!await roles.MayGiveAsync(me, Roles.KeyOf(role), place, cancellationToken))
+                throw new RpcException(new Status(StatusCode.PermissionDenied, MinistryRules.WhyNotChangeRole(role)));
+
+        if (giving && (await roles.GiveAsync(me, person, Roles.KeyOf(request.Role), place, null, cancellationToken)).Refusal is { } refusal)
+            throw Refused(refusal);
+        foreach (string role in taking)
+            if ((await roles.TakeAwayAsync(me, person, Roles.KeyOf(role), place, cancellationToken)).Refusal is { } takeRefusal)
+                throw Refused(takeRefusal);
+        if (request.Role.Length > 0)
+            await db.Asks.Where(ask => ask.MinistryId == ministry.Id && ask.PersonId == person
+                && ask.As == (request.Role == Roles.Attendee ? Places.Attending : Places.Team)).ExecuteDeleteAsync(cancellationToken);
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
     public async ValueTask<FoundPeople> FindAsync(FindRequest request, CallContext context = default)
     {
         string query = request.Query.Trim();

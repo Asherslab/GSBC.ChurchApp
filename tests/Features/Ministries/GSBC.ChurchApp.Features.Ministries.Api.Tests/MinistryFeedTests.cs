@@ -72,6 +72,8 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddScoped<MinistryChanges>()
             .AddScoped<MinistriesPublisher>()
             .AddScoped<MinistriesService>()
+            .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<MinistryViews>(),
+                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, new NoCalendars(), new KeptInSundays(), _told, null!, _clock))
             .AddMinistriesData()
             .AddSyncData()
             .BuildServiceProvider();
@@ -157,6 +159,26 @@ public sealed class MinistryFeedTests : IAsyncLifetime
 
         Assert.True(_roles.Holds(Roles.Team, teen, _youth.Id));
         Assert.Contains(_told.Raised, told => told.Kind == MinistriesNotifications.YoungJoined && told.Body.Contains("Olly said yes", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task OneRoleChoiceMovesSomeoneBetweenRolesOrChangesNothingWhenItCant()
+    {
+        _roles.Givable.UnionWith([Roles.KeyOf(Roles.Team), Roles.KeyOf(Roles.Attendee)]);
+        await SetRoleAsync(_bandMember, Roles.Attendee);
+        Assert.Equal((false, true), (_roles.Holds(Roles.Team, _bandMember, _band.Id), _roles.Holds(Roles.Attendee, _bandMember, _band.Id)));
+
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => SetRoleAsync(_bandMember, Roles.Leader));
+
+        Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
+        Assert.Equal((false, true), (_roles.Holds(Roles.Leader, _bandMember, _band.Id), _roles.Holds(Roles.Attendee, _bandMember, _band.Id)));
+    }
+
+    private async Task SetRoleAsync(Guid person, string role)
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        await scope.ServiceProvider.GetRequiredService<MinistryLeadingService>()
+            .SetRoleAsync(new PersonChange { MinistryId = _band.Id.ToString(), PersonId = person.ToString(), Role = role }, Call(_leader));
     }
 
     private async Task ParentAnswerAsync(Guid person, string askId)
@@ -323,7 +345,9 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) =>
             ValueTask.FromResult<IReadOnlyList<RoleHolder>>(_held.Where(held => held.Role == roleKey && held.Place == objectId).Select(held => new RoleHolder(held.Person)).ToList());
 
-        public ValueTask<bool> MayGiveAsync(Guid actorId, string roleKey, string? objectId, CancellationToken cancellationToken) => ValueTask.FromResult(false);
+        public HashSet<string> Givable { get; } = [];
+
+        public ValueTask<bool> MayGiveAsync(Guid actorId, string roleKey, string? objectId, CancellationToken cancellationToken) => ValueTask.FromResult(Givable.Contains(roleKey));
 
         public ValueTask ScopesChangedAsync(CancellationToken cancellationToken) => ValueTask.CompletedTask;
 
@@ -331,11 +355,17 @@ public sealed class MinistryFeedTests : IAsyncLifetime
 
         public ValueTask<int> HoldingCountAsync(string roleKey, string objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public ValueTask<AssignmentOutcome> GiveAsync(Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
+        public ValueTask<AssignmentOutcome> GiveAsync(Guid actorId, Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
+        {
+            _held.Add((roleKey, userId, objectId ?? ""));
+            return ValueTask.FromResult(AssignmentOutcome.Success);
+        }
 
-        public ValueTask<AssignmentOutcome> TakeAwayAsync(Guid actorId, Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken) =>
-            throw new NotSupportedException();
+        public ValueTask<AssignmentOutcome> TakeAwayAsync(Guid actorId, Guid userId, string roleKey, string? objectId, CancellationToken cancellationToken)
+        {
+            _held.Remove((roleKey, userId, objectId ?? ""));
+            return ValueTask.FromResult(AssignmentOutcome.Success);
+        }
 
         public ValueTask GiveAsFeatureAsync(Guid userId, string roleKey, string? objectId, DateTime? expiresAt, CancellationToken cancellationToken)
         {

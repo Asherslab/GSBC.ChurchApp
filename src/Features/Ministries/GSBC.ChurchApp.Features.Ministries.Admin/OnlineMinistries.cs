@@ -35,6 +35,9 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
     public async Task AnswerAsync(string ministryId, string askId, bool yes) =>
         await _leading.AnswerAsync(new AskRef { MinistryId = ministryId, AskId = askId, Yes = yes });
 
+    public async Task SetRoleAsync(string ministryId, string personId, string role) =>
+        await _leading.SetRoleAsync(new PersonChange { MinistryId = ministryId, PersonId = personId, Role = role });
+
     public async Task ChangePersonAsync(string ministryId, string personId, string role, bool add) =>
         await _leading.ChangePersonAsync(new PersonChange { MinistryId = ministryId, PersonId = personId, Role = role, Add = add });
 
