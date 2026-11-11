@@ -131,7 +131,7 @@
             if (Bridge.AppVersion is { Length: > 0 } version)
                 parts.Add($"app {version} ({Bridge.AppBuild})");
             if (Bridge.Model is { Length: > 0 } model)
-                parts.Add(model);
+                parts.Add(PhoneModels.Name(model));
             if (Bridge.OsVersion is { Length: > 0 } os)
                 parts.Add($"{(Bridge.Platform == "android" ? "Android" : "iOS")} {os}");
             if (Recent.Last.Length > 1)

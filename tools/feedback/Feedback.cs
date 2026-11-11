@@ -215,7 +215,7 @@ static void PrintTicket(Ticket ticket, string folder, IReadOnlyList<string> save
     Console.WriteLine($"  from:     {line.From}");
     Console.WriteLine($"  sent:     {When(line.SentAt)}");
     Console.WriteLine($"  app:      {phone.AppVersion} ({phone.AppBuild}), {ticket.Environment}{(phone.DevelopmentBuild ? ", a development build" : "")}");
-    Console.WriteLine($"  phone:    {phone.Model}, {phone.Platform} {phone.OsVersion}");
+    Console.WriteLine($"  phone:    {PhoneModels.Name(phone.Model)} ({phone.Model}), {phone.Platform} {phone.OsVersion}");
     Console.WriteLine($"  page:     {(ticket.Page.Length > 0 ? ticket.Page : "(not known)")}");
     Console.WriteLine($"  phone id: {(ticket.InstallId.Length > 0 ? $"{ticket.InstallId}, {ticket.FromThisPhone} sent{(ticket.Blocked ? $", blocked: {ticket.BlockedBecause}" : "")}" : "(not a verified phone)")}");
     Console.WriteLine();

@@ -148,7 +148,7 @@
                 @if (ticket.State.Length > 0)
                 {
                     <details class="ticket__state">
-                        <summary>The phone's state</summary>
+                        <summary><Icon Name="chevron-right" Size="IconSize.Small" />The phone's state</summary>
                         <pre>@ticket.State</pre>
                     </details>
                 }
@@ -214,7 +214,8 @@
     {
         PhoneDetails phone = ticket.Phone ?? new PhoneDetails();
         string system = $"{FeedbackWords.Platform(phone)} {phone.OsVersion}".Trim();
-        return string.Join(" · ", new[] { phone.Model, system }.Where(part => part.Length > 0)) is { Length: > 0 } line ? line : "Not known";
+        string model = phone.Model.Length > 0 && PhoneModels.Name(phone.Model) != phone.Model ? $"{PhoneModels.Name(phone.Model)} ({phone.Model})" : phone.Model;
+        return string.Join(" · ", new[] { model, system }.Where(part => part.Length > 0)) is { Length: > 0 } line ? line : "Not known";
     }
 
     private Task SetStatusAsync(Ticket ticket, TicketStatus status) =>

@@ -1,4 +1,4 @@
-<a class="feedback-card @(Open ? "is-open" : "")" href="@FeedbackDestinations.Ticket(Ticket.Number).TrimStart('/')" draggable="true"
+<a class="feedback-card @(Open ? "is-open" : "") @(Ticket.Status is TicketStatus.Resolved or TicketStatus.NotDoing ? "is-closed" : "")" href="@FeedbackDestinations.Ticket(Ticket.Number).TrimStart('/')" draggable="true"
    aria-current="@(Open ? "true" : null)" @onclick="OnOpen" @onclick:preventDefault @ondragstart="OnDrag">
     @if (Ticket.Cover is { } cover)
     {
@@ -13,11 +13,15 @@
         }
         @if (Ticket.Model.Length > 0)
         {
-            <span class="feedback-label">@Ticket.Model</span>
+            <span class="feedback-label">@PhoneModels.Name(Ticket.Model)</span>
         }
         @if (Ticket.Attachments > 0)
         {
-            <span class="feedback-label feedback-label--accent"><Icon Name="paperclip" Size="IconSize.Small" />@Ticket.Attachments</span>
+            <span class="feedback-label feedback-label--accent"><Icon Name="paperclip" Size="IconSize.Small" />@(Ticket.Attachments == 1 ? "1 file" : $"{Ticket.Attachments} files")</span>
+        }
+        else if (Ticket.AttachmentsDeleted)
+        {
+            <span class="feedback-label">Pictures deleted</span>
         }
     </span>
 </a>
