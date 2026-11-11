@@ -139,6 +139,23 @@ buckets from `GSBC.ChurchApp.Testing` (never its own container), reads time from
 for the signal it expects, never for time to pass. **A flake is a bug:** find the cause and fix it,
 never retry, skip, lengthen a timeout or blame load. `TestRules` enforces what it can.
 
+# Design work: the impeccable process, every time
+
+**Any UI work (a new screen, a redesign, a layout or styling fix, a visual choice) runs the `impeccable` skill's own
+process** (owner, 2026-11-11: "Use impeccable properly for all the design stuff"). Invoke the skill (Skill tool,
+`impeccable:impeccable`) before touching UI and follow its steps in order; never draw your own mockups, skip its
+interview or substitute your judgement for its decision round. "Lightly" or "quickly" is not an option.
+
+- **New screens or surfaces:** `impeccable context` → its playbook (`shape.md`; `new-work.md` for a whole surface) →
+  the discovery interview (AskUserQuestion, text only) → a `concept-seed --scope surface` round on the decision page
+  (`serve-question`) with several real HTML sketches in the app's or admin panel's look, kept in
+  `.impeccable/mocks/<feature>/` → **wait for the owner's pick in the browser page** (never re-ask in chat, never ASCII
+  previews) → the surface brief with its direction contract → build, reading `craft-floor.md` just before UI edits →
+  `impeccable detect` → the `impeccable-finish-reviewer` agent, fixing what it finds → the documenter for DESIGN.md.
+- **Changes to an existing screen:** the matching command (`layout`, `polish`, `clarify`, `adapt`, `harden`, …) with
+  its reference, `craft-floor.md` before editing, then `impeccable detect` and a look at the rendered result at the
+  sizes it ships at. A choice with more than one reasonable look goes to the decision page.
+
 # Components: reuse first, then generic
 
 Before writing any Blazor UI:

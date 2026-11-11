@@ -34,8 +34,12 @@ Write it to a file in your scratchpad and start the station with `--prompt-file`
    owner's images). Describe what's on screen and what's wrong, with the exact labels.
 4. **Decisions already made** (the owner's answers to your questions), and **defaults you picked** where they left a
    choice open, so the station doesn't ask again.
-5. **What to build or review,** numbered. For UI with real choices: "Use the full impeccable process. Mocks first:
-   show the owner and wait for their pick before building." For bugs: "Report the cause of each in a sentence."
+5. **What to build or review,** numbered. For any UI work: "Invoke the `impeccable:impeccable` skill and run its full
+   process (AGENTS.md, *Design work*): interview, decision page with HTML sketches, wait for the owner's pick in the
+   browser, surface brief, build, detector, finish reviewer, documenter." Name the surfaces it covers. **Never write
+   "lightly", "quick sketches" or "two or three options" as a shortcut**, and never let a station draw its own mockups
+   or ask visual choices in AskUserQuestion (owner, 2026-11-11: agents kept not using impeccable properly). For bugs:
+   "Report the cause of each in a sentence."
 6. **Who else is working nearby,** and the order (e.g. "the Roles station will merge first; merge `skeleton/backbone`
    before touching X; I'll message you").
 7. **The shared bar,** appended verbatim from [station-bar.md](station-bar.md), with the date for release notes and
