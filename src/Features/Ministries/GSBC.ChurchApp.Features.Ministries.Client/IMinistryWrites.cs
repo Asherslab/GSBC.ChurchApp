@@ -47,5 +47,7 @@ public interface IMinistryWrites
 
     Task RemoveCalendarAsync(string ministryId, string id);
 
+    Task LinkCalendarAsync(string ministryId, string calendarId, bool linked);
+
     Task SaveSessionAsync(string groupId, SessionChange change);
 }

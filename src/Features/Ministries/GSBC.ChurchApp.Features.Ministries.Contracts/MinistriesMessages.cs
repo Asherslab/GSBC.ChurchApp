@@ -100,6 +100,7 @@ public sealed class MinistryPage
     [ProtoMember(9)] public List<SessionChange> Sessions { get; set; } = [];
     [ProtoMember(10)] public Round? Round { get; set; }
     [ProtoMember(11)] public List<SittingOut> SittingOut { get; set; } = [];
+    [ProtoMember(12)] public List<string> Sundays { get; set; } = [];
 }
 
 [ProtoContract]
@@ -188,6 +189,25 @@ public sealed class CalendarLine
     [ProtoMember(4)] public string Slug { get; set; } = "";
     [ProtoMember(5)] public string MinistryId { get; set; } = "";
     [ProtoMember(6)] public string From { get; set; } = "";
+    [ProtoMember(7)] public bool Linked { get; set; }
+    [ProtoMember(8)] public List<string> Days { get; set; } = [];
+    [ProtoMember(9)] public bool OnItsDays { get; set; }
+}
+
+[ProtoContract]
+public sealed class CalendarLinkSave : IScopedRequest
+{
+    [ProtoMember(1)] public string MinistryId { get; set; } = "";
+    [ProtoMember(2)] public string CalendarId { get; set; } = "";
+    [ProtoMember(3)] public bool Linked { get; set; }
+
+    public string ScopeId => MinistryId;
+}
+
+[ProtoContract]
+public sealed class LinkableCalendars
+{
+    [ProtoMember(1)] public List<Crumb> Calendars { get; set; } = [];
 }
 
 [ProtoContract]

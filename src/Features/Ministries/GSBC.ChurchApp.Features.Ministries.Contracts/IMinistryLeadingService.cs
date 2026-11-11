@@ -74,6 +74,12 @@ public interface IMinistryLeadingService
     ValueTask<CalendarLine> SaveCalendarAsync(CalendarSave request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<Done> LinkCalendarAsync(CalendarLinkSave request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
+    ValueTask<LinkableCalendars> LinkableCalendarsAsync(MinistryRef request, CallContext context = default);
+
+    [Requires(MinistriesPermissions.SettingsNode)]
     ValueTask<CalendarRemoval> CalendarRemovalAsync(ItemRef request, CallContext context = default);
 
     [Requires(MinistriesPermissions.SettingsNode)]

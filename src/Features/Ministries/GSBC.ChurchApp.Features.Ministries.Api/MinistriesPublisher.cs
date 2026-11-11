@@ -104,6 +104,10 @@ internal sealed class MinistriesPublisher(
             rows.AddRange(ForAudience(MinistriesFeeds.Posts, MinistriesFeeds.PrivatePosts, post.Id, post.MinistryId, post.Audience, tree, MinistryViews.Post(post)));
         foreach (FileRecord file in files)
             rows.AddRange(ForAudience(MinistriesFeeds.Files, MinistriesFeeds.PrivateFiles, file.Id, file.MinistryId, file.Audience, tree, MinistryViews.File(file)));
+        IReadOnlyList<MinistryCalendar> forEveryone = tree.All.Any(ministry => ministry.LinkedCalendars.Count > 0) ? await calendars.ForEveryoneAsync(cancellationToken) : [];
+        foreach (MinistryRecord ministry in tree.All.Where(ministry => MinistryViews.IsOn(ministry, MinistryParts.Calendar)))
+            foreach (MinistryCalendar linked in forEveryone.Where(calendar => ministry.LinkedCalendars.Contains(calendar.Id)))
+                rows.Add(Encoded(MinistriesFeeds.Calendars, $"{linked.Id}@{ministry.Id}", MinistryViews.Linked(linked, ministry.Id, null)) with { GroupKey = ministry.Id.ToString() });
         foreach (MinistryCalendar calendar in shownCalendars.Where(calendar => !calendar.Hidden))
             rows.Add(Encoded(calendar.Audience == Audience.Everyone ? MinistriesFeeds.Calendars : MinistriesFeeds.PrivateCalendars, calendar.Id.ToString(),
                     MinistryViews.Calendar(calendar), calendar.Audience == Audience.Everyone ? null : calendar.Audience.Text) with { GroupKey = calendar.MinistryId.ToString() });

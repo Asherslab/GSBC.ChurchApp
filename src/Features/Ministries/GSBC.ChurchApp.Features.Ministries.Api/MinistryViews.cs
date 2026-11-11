@@ -145,6 +145,24 @@ internal sealed class MinistryViews(
         MinistryId = calendar.MinistryId.ToString(), From = from,
     };
 
+    public static CalendarLine Linked(MinistryCalendar calendar, Guid ministryId, IReadOnlyList<string>? days) => new()
+    {
+        Id = calendar.Id.ToString(), Name = calendar.Name, Slug = calendar.Slug, Audience = Audiences.Everyone, MinistryId = ministryId.ToString(), Linked = true,
+        Days = [.. days ?? []], OnItsDays = days is not null,
+    };
+
+    public async Task<List<CalendarLine>> LinkedAsync(MinistryRecord ministry, IReadOnlyList<string>? days, CancellationToken cancellationToken) =>
+        !IsOn(ministry, MinistryParts.Calendar) || ministry.LinkedCalendars.Count == 0
+            ? []
+            : (await calendars.ForEveryoneAsync(cancellationToken)).Where(calendar => ministry.LinkedCalendars.Contains(calendar.Id))
+                .OrderBy(calendar => calendar.Name, StringComparer.Ordinal)
+                .Select(calendar => Linked(calendar, ministry.Id, days))
+                .ToList();
+
+    public static List<string> SundaysOf(MinistryRecord group, IEnumerable<RoundRecord> rounds, IEnumerable<SitOutRecord> sitOuts) =>
+        LifeGroupRounds.SundaysOf(group.Id.ToString(), group.RoundId?.ToString() ?? "", rounds.Select(Round),
+            sitOuts.Where(sitOut => sitOut.GroupId == group.Id).Select(sitOut => new Contracts.SittingOut { GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString() }));
+
     public static Audience WhileHidden(Guid ministryId) =>
         Audience.HoldingAt(MinistriesPermissions.SettingsNode, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
 

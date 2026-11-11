@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
@@ -31,6 +32,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
     private readonly Holdings _roles = new();
     private readonly People _people = new();
     private readonly Told _told = new();
+    private readonly NoCalendars _calendars = new();
     private readonly Dictionary<Guid, GrantSet> _grants = [];
     private TestDatabase _database = null!;
     private ServiceProvider _services = null!;
@@ -64,7 +66,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddSingleton<IRoleAssignments>(_roles)
             .AddSingleton<IPeopleIndex>(_people)
             .AddSingleton<IFamilies>(_people)
-            .AddSingleton<IMinistryCalendars>(new NoCalendars())
+            .AddSingleton<IMinistryCalendars>(_calendars)
             .AddSingleton<IAccessEvaluator>(new Granted(_grants))
             .AddSingleton<INotifications>(_told)
             .AddSingleton<IKeptRegularEvents>(new KeptInSundays())
@@ -73,7 +75,7 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             .AddScoped<MinistriesPublisher>()
             .AddScoped<MinistriesService>()
             .AddScoped(provider => new MinistryLeadingService(provider.GetRequiredService<MinistriesDbContext>(), provider.GetRequiredService<MinistryViews>(),
-                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, new NoCalendars(), new KeptInSundays(), _told, null!, _clock))
+                provider.GetRequiredService<MinistryChanges>(), null!, null!, _roles, _people, _people, _calendars, new KeptInSundays(), _told, null!, _clock))
             .AddMinistriesData()
             .AddSyncData()
             .BuildServiceProvider();
@@ -129,6 +131,28 @@ public sealed class MinistryFeedTests : IAsyncLifetime
                 Assert.Equal(Bytes(await ServerPageAsync(person, ministry.Id)), Bytes(await phone.Ministries.MinistryAsync(ministry.Id.ToString())));
             Assert.Equal(Bytes(await ServerDirectoryAsync(person)), Bytes(await phone.Ministries.DirectoryAsync()));
             Assert.Equal(Bytes(await ServerLifeGroupsAsync(person)), Bytes(await phone.Ministries.LifeGroupsAsync()));
+        }
+    }
+
+    [Fact]
+    public async Task ALifeGroupsLinkedCalendarReachesEveryPhoneFilteredToItsSundaysAsTheServerShowsIt()
+    {
+        MinistryCalendar services = new(Guid.CreateVersion7(), Guid.Empty, "Services", "services", Audience.Everyone, Hidden: false);
+        _calendars.ForEveryone.Add(services);
+        await using (AsyncServiceScope scope = _services.CreateAsyncScope())
+        {
+            await scope.ServiceProvider.GetRequiredService<MinistryLeadingService>()
+                .LinkCalendarAsync(new CalendarLinkSave { MinistryId = _band.Id.ToString(), CalendarId = services.Id.ToString(), Linked = true }, Call(_leader));
+            await scope.ServiceProvider.GetRequiredService<MinistriesPublisher>().PublishAsync(Cancel);
+        }
+
+        foreach (Guid person in new[] { _visitor, _bandMember, _leader })
+        {
+            MinistryPage server = await ServerPageAsync(person, _band.Id);
+            CalendarLine linked = Assert.Single(server.Calendars, calendar => calendar.Linked);
+            Assert.True(linked.OnItsDays);
+            Assert.Equal([ChurchDay(7).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), ChurchDay(14).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)], linked.Days);
+            Assert.Equal(Bytes(server), Bytes(await (await PhoneOfAsync(person)).Ministries.MinistryAsync(_band.Id.ToString())));
         }
     }
 
@@ -424,6 +448,10 @@ public sealed class MinistryFeedTests : IAsyncLifetime
 
     private sealed class NoCalendars : IMinistryCalendars
     {
+        public List<MinistryCalendar> ForEveryone { get; } = [];
+
+        public ValueTask<IReadOnlyList<MinistryCalendar>> ForEveryoneAsync(CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>(ForEveryone);
+
         public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(Guid ministryId, CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>([]);
 
         public ValueTask<IReadOnlyList<MinistryCalendar>> OfAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken) =>

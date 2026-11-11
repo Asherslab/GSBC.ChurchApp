@@ -12,14 +12,11 @@
     case MinistriesPlaces.News:
         <NewsArea Page="Page" OnChanged="OnChanged" />
         break;
-    case MinistriesPlaces.Calendar:
+    case MinistriesPlaces.Calendar or MinistriesPlaces.Sundays:
         <CalendarArea Page="Page" OnChanged="OnChanged" />
         break;
     case MinistriesPlaces.Files:
         <FilesArea Page="Page" OnChanged="OnChanged" />
-        break;
-    case MinistriesPlaces.Sundays:
-        <SundaysArea Page="Page" OnChanged="OnChanged" />
         break;
     case MinistriesPlaces.People:
         <PeopleArea Page="Page" Wide="Wide" OnChanged="OnChanged" />

@@ -88,6 +88,9 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
 
     public Task SaveCalendarAsync(string ministryId, CalendarLine calendar) => SendAsync(MinistryMethods.SaveCalendar, new CalendarSave { MinistryId = ministryId, Calendar = calendar });
 
+    public Task LinkCalendarAsync(string ministryId, string calendarId, bool linked) =>
+        SendAsync(MinistryMethods.LinkCalendar, new CalendarLinkSave { MinistryId = ministryId, CalendarId = calendarId, Linked = linked });
+
     public Task RemoveCalendarAsync(string ministryId, string id) => SendAsync(MinistryMethods.RemoveCalendar, new ItemRef { MinistryId = ministryId, Id = id });
 
     public Task SaveSessionAsync(string groupId, SessionChange change) => SendAsync(MinistryMethods.SaveSession, new SessionSave { MinistryId = groupId, Change = change });

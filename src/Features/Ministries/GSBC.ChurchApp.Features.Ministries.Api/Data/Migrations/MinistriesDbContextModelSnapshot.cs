@@ -168,6 +168,11 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("icon");
 
+                    b.PrimitiveCollection<List<Guid>>("LinkedCalendars")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("linked_calendars");
+
                     b.Property<string>("Meets")
                         .IsRequired()
                         .HasColumnType("text")

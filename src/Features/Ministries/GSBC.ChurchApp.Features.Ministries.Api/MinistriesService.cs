@@ -86,7 +86,9 @@ internal sealed class MinistriesService(
             page.SittingOut = sitOuts.Where(sitOut => rounds.TryGetValue(sitOut.RoundId, out RoundRecord? set) && set.Sundays.Count > 0 && set.Sundays.Max() >= today)
                 .OrderBy(sitOut => rounds[sitOut.RoundId].Sundays.Min())
                 .Select(sitOut => MinistryViews.SittingOut(sitOut, rounds[sitOut.RoundId], tree)).ToList();
+            page.Sundays = MinistryViews.SundaysOf(ministry, await db.Rounds.AsNoTracking().ToListAsync(cancellationToken), sitOuts);
         }
+        page.Calendars.AddRange(await views.LinkedAsync(ministry, ministry.ShowsInLifeGroups ? page.Sundays : null, cancellationToken));
         return page;
     }
 

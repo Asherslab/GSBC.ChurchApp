@@ -15,8 +15,6 @@ public static class MinistryAreas
     {
         YourPlace you = page.You;
         List<(string, string, int?)> areas = [(MinistriesPlaces.About, "About", null)];
-        if (page.Round is not null)
-            areas.Add((MinistriesPlaces.Sundays, "Sundays", null));
         foreach (string part in MinistryParts.Ordered(page.Ministry.PartsOrder))
             if (MinistryParts.HasTab(page, part))
                 areas.Add((PlaceOf[part], MinistryParts.Of(part).Name, null));
@@ -29,8 +27,11 @@ public static class MinistryAreas
 
     public static bool Uses(MinistryPage page, string part) => MinistryParts.IsOn(page.Ministry.PartsOff, part);
 
-    public static string Known(MinistryPage page, string area) =>
-        For(page).Any(each => each.Key == area) ? area : MinistriesPlaces.About;
+    public static string Known(MinistryPage page, string area)
+    {
+        string wanted = area == MinistriesPlaces.Sundays ? MinistriesPlaces.Calendar : area;
+        return For(page).Any(each => each.Key == wanted) ? wanted : MinistriesPlaces.About;
+    }
 
     public static IReadOnlyList<TabOption<string>> Tabs(MinistryPage page) =>
         For(page).Select(each => new TabOption<string>(each.Key, each.Label, each.Count)).ToList();

@@ -6,7 +6,7 @@ using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Ministries.Admin;
 
-public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMinistryWrites
+public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMinistryWrites, ILinkableCalendars
 {
     private readonly IMinistriesService _ministries = channel.CreateGrpcService<IMinistriesService>();
     private readonly IMinistryLeadingService _leading = channel.CreateGrpcService<IMinistryLeadingService>();
@@ -80,6 +80,12 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task SaveCalendarAsync(string ministryId, CalendarLine calendar) =>
         await _leading.SaveCalendarAsync(new CalendarSave { MinistryId = ministryId, Calendar = calendar });
+
+    public async Task LinkCalendarAsync(string ministryId, string calendarId, bool linked) =>
+        await _leading.LinkCalendarAsync(new CalendarLinkSave { MinistryId = ministryId, CalendarId = calendarId, Linked = linked });
+
+    public async Task<IReadOnlyList<Crumb>> ChoicesAsync(string ministryId) =>
+        (await _leading.LinkableCalendarsAsync(new MinistryRef { MinistryId = ministryId })).Calendars;
 
     public async Task RemoveCalendarAsync(string ministryId, string id) => await _leading.RemoveCalendarAsync(new ItemRef { MinistryId = ministryId, Id = id });
 

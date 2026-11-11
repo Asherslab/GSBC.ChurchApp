@@ -426,6 +426,41 @@ internal sealed class MinistryLeadingService(
         return MinistryViews.Calendar(saved);
     }
 
+    public async ValueTask<Done> LinkCalendarAsync(CalendarLinkSave request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid id = Existing(await views.TreeAsync(cancellationToken), request.MinistryId).Id;
+        MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
+        Guid calendarId = ParseId(request.CalendarId);
+        if (request.Linked)
+        {
+            TurnedOn(ministry, MinistryParts.Calendar);
+            if ((await calendars.ForEveryoneAsync(cancellationToken)).All(calendar => calendar.Id != calendarId || calendar.MinistryId == ministry.Id))
+                throw Refused("Only a calendar for everyone, and not one of this ministry's own, can be linked.");
+            if (!ministry.LinkedCalendars.Contains(calendarId))
+                ministry.LinkedCalendars = [.. ministry.LinkedCalendars, calendarId];
+        }
+        else
+            ministry.LinkedCalendars = ministry.LinkedCalendars.Where(linked => linked != calendarId).ToList();
+        ministry.UpdatedAt = Now;
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<LinkableCalendars> LinkableCalendarsAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        return new LinkableCalendars
+        {
+            Calendars = (await calendars.ForEveryoneAsync(cancellationToken))
+                .Where(calendar => calendar.MinistryId != ministry.Id && !ministry.LinkedCalendars.Contains(calendar.Id))
+                .Select(calendar => new Crumb { Id = calendar.Id.ToString(), Name = calendar.Name })
+                .ToList(),
+        };
+    }
+
     public async ValueTask<CalendarRemoval> CalendarRemovalAsync(ItemRef request, CallContext context = default)
     {
         CancellationToken cancellationToken = context.CancellationToken;

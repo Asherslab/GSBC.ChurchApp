@@ -8,6 +8,17 @@ namespace GSBC.ChurchApp.Features.Ministries.Api.Tests;
 public sealed class LifeGroupsPlanningTests
 {
     [Fact]
+    public void AGroupsLinkedCalendarShowsOnlyItsOwnSundaysAndAnAllYearGroupFollowsTheBreaks()
+    {
+        Round term3 = new() { Id = "t3", Sundays = ["2026-07-19", "2026-07-26"] }, term4 = new() { Id = "t4", Sundays = ["2026-10-11", "2026-10-18"] };
+        Round[] rounds = [term4, term3];
+
+        Assert.Equal(["2026-10-11", "2026-10-18"], LifeGroupRounds.SundaysOf("youth", "t4", rounds, []));
+        Assert.Equal(["2026-07-19", "2026-07-26", "2026-10-11", "2026-10-18"], LifeGroupRounds.SundaysOf("kids-life", "", rounds, []));
+        Assert.Equal(["2026-10-11", "2026-10-18"], LifeGroupRounds.SundaysOf("kids-life", "", rounds, [new SittingOut { GroupId = "kids-life", RoundId = "t3" }]));
+    }
+
+    [Fact]
     public void PlanningTheLifeGroupsSundaysIsChurchWideAndLeadingAMinistryDoesNotGiveIt()
     {
         Scope lifeGroups = Scope.Of(ScopeKind.Ministry, Guid.CreateVersion7().ToString());

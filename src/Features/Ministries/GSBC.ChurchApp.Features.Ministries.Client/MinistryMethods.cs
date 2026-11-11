@@ -27,6 +27,7 @@ public static class MinistryMethods
     public const string Archive = Leading + "Archive";
     public const string SaveCalendar = Leading + "SaveCalendar";
     public const string RemoveCalendar = Leading + "RemoveCalendar";
+    public const string LinkCalendar = Leading + "LinkCalendar";
     public const string SaveSession = Leading + "SaveSession";
 
     public static string Describe(string method) => method[(method.LastIndexOf('/') + 1)..] switch
@@ -46,7 +47,7 @@ public static class MinistryMethods
         "AddSubMinistry" or "Create" => "a new ministry",
         "Delete" => "deleting it",
         "Archive" => "archiving it",
-        "SaveCalendar" or "RemoveCalendar" => "a calendar change",
+        "SaveCalendar" or "RemoveCalendar" or "LinkCalendar" => "a calendar change",
         "SaveSession" => "a Sunday change",
         _ => "a change",
     };

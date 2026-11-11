@@ -1,10 +1,11 @@
 @inject IMinistryWrites Ministries
+@inject TimeProvider Clock
 
 <UnsavedGuard Changed="() => _date is not null && (_off, _note) != _was" What="this Sunday" />
 
-<Section First="true" Lead="@Lead">
+<Section Title="Its Sundays" Lead="@Lead">
     <ListGroup>
-        @foreach (string sunday in Page.Round?.Sundays ?? [])
+        @foreach (string sunday in Page.Sundays.Where(sunday => string.CompareOrdinal(sunday, Today) >= 0))
         {
             SessionChange? change = Page.Sessions.FirstOrDefault(session => session.Date == sunday);
             <ListRow @key="sunday" Title="@MinistryWords.Day(sunday)" Icon="@(change?.Off == true ? "circle-off" : "calendar")" IconTone="@(change is null ? RowTone.Quiet : RowTone.Warm)"
@@ -41,6 +42,8 @@
 
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
+
+    private string Today => ChurchTime.Today(Clock).ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture);
 
     private string? Lead => Page.Round is { } round
         ? $"{MinistryWords.Time(round.Starts)} to {MinistryWords.Time(round.Ends)}{(Page.Ministry.Meets.Length > 0 ? $", {Page.Ministry.Meets}" : "")}"
