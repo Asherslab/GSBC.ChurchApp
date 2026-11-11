@@ -145,7 +145,7 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
-        Raised.Add(notification);
+        Raised.Add(NotificationLinks.Checked(notification));
         return Task.CompletedTask;
     }
 

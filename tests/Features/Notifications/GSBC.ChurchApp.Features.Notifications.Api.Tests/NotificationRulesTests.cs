@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Tests;
 
@@ -17,6 +18,18 @@ public sealed class NotificationRulesTests
             Link: "https://example.com", Subject: "ministry/music/notice/1") { Actor = null }));
 
         Validated(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Room change", "", Link: "/ministries/music/news", Subject: "ministry/music/notice/1") { Actor = null });
+    }
+
+    [Fact]
+    public void ANotificationOpensOnlyThePlacesItsKindDeclares()
+    {
+        NotificationKind request = new("prayer.new", "Someone sends a prayer request", "Prayer", Opens: new("/prayer/requests/{id}"));
+        NotificationKindCatalog kinds = new([new NotificationKindSet([request])]);
+
+        Assert.Throws<ArgumentException>(() => NotificationRules.Validated(kinds,
+            new Notification(request, NotificationAudience.Everyone, "A new prayer request", "", Link: "/prayer/requests/7/extra", Subject: "prayer/7") { Actor = null }));
+        NotificationRules.Validated(kinds,
+            new Notification(request, NotificationAudience.Everyone, "A new prayer request", "", Link: "/prayer/requests/7", Subject: "prayer/7") { Actor = null });
     }
 
     [Fact]

@@ -102,7 +102,7 @@ internal sealed class SentNotifications : INotifications
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
-        Sent.Add(notification);
+        Sent.Add(NotificationLinks.Checked(notification));
         return Task.CompletedTask;
     }
 

@@ -95,9 +95,10 @@ internal sealed class NoEmails : IAccountEmails
 
 internal sealed class QuietNotifications : INotifications
 {
-    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.FromResult(NotificationLinks.Checked(notification));
 
-    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => Task.CompletedTask;
+    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) =>
+        Task.FromResult(mostSpecificFirst.Select(NotificationLinks.Checked).ToList());
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
 }

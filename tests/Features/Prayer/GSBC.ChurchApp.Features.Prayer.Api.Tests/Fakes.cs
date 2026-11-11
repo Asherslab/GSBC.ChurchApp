@@ -10,13 +10,13 @@ internal sealed class RecordedNotifications : INotifications
 
     public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
     {
-        Raised.Add(notification);
+        Raised.Add(NotificationLinks.Checked(notification));
         return Task.CompletedTask;
     }
 
     public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
     {
-        Raised.AddRange(mostSpecificFirst);
+        Raised.AddRange(mostSpecificFirst.Select(NotificationLinks.Checked));
         return Task.CompletedTask;
     }
 

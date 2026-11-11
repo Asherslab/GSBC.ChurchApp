@@ -47,6 +47,7 @@ internal static class NotificationRules
             throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(notification));
         if (notification.Link is { } link && !LinkTargets.IsSafe(link))
             throw new ArgumentException($"'{link}' isn't a safe link.", nameof(notification));
+        NotificationLinks.Checked(notification);
         if (notification.Urgent && !kind.MayBeUrgent)
             throw new ArgumentException($"'{kind.Key}' notifications can't be urgent.", nameof(notification));
         return kind;

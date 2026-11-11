@@ -33,14 +33,14 @@ internal sealed class PrayerTelling(INotifications notifications)
             ? notifications.RaiseAsync(new Notification(PrayerNotifications.PrayedFor, NotificationAudience.Person(owner),
                 "Someone prayed for your request",
                 request.Prayed == 1 ? "The first prayer for it on the prayer wall." : $"{request.Prayed} prayers for it on the prayer wall so far.",
-                PrayerDestinations.Prayer.Path, $"prayer/{request.Id:N}/prayed/{request.Prayed}") { Actor = null }, cancellationToken)
+                PrayerDestinations.Yours(request.Id), $"prayer/{request.Id:N}/prayed/{request.Prayed}") { Actor = null }, cancellationToken)
             : Task.CompletedTask;
 
     public Task AnsweredAsync(RequestRecord request, CancellationToken cancellationToken) =>
         request.UserId is { } owner
             ? notifications.RaiseAsync(new Notification(PrayerNotifications.Answered, NotificationAudience.Person(owner),
                 "Your prayer request is marked answered", "The pastoral team marked it answered. Praise God with us.",
-                PrayerDestinations.Prayer.Path, $"prayer/{request.Id:N}/answered") { Actor = null }, cancellationToken)
+                PrayerDestinations.Yours(request.Id), $"prayer/{request.Id:N}/answered") { Actor = null }, cancellationToken)
             : Task.CompletedTask;
 
     public Task CaredForAsync(RequestRecord request, CancellationToken cancellationToken) =>

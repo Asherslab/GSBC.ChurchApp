@@ -8,10 +8,10 @@ public static class SermonsNotifications
     public const string AllSermonsScope = "sermons";
 
     public static readonly NotificationKind NewSermon = new(
-        "sermons.new", "A new sermon is out", "Sermons", For: SermonsPermissions.HearNew);
+        "sermons.new", "A new sermon is out", "Sermons", For: SermonsPermissions.HearNew, Opens: new("/sermon/{id}"));
 
     public static readonly NotificationKind NewInSeries = new(
-        "sermons.series.new", "A series you follow has a new sermon", "Sermons", PerScope: ScopeKind.SermonSeries, For: SermonsPermissions.HearSeries);
+        "sermons.series.new", "A series you follow has a new sermon", "Sermons", PerScope: ScopeKind.SermonSeries, For: SermonsPermissions.HearSeries, Opens: new("/sermon/{id}"));
 
     public static readonly IReadOnlyList<NotificationKind> All = [NewSermon, NewInSeries];
 }

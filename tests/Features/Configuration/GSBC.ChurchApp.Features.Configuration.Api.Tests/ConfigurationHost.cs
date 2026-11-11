@@ -184,11 +184,12 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
         public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
         {
-            Raised.Add(notification);
+            Raised.Add(NotificationLinks.Checked(notification));
             return Task.CompletedTask;
         }
 
-        public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) =>
+            Task.FromResult(mostSpecificFirst.Select(NotificationLinks.Checked).ToList());
 
         public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
     }

@@ -1,4 +1,6 @@
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
+using GSBC.ChurchApp.Platform.Contracts.Content;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Push;
 
@@ -8,7 +10,7 @@ internal static class PushRules
     private static readonly TimeSpan GiveUpAfter = TimeSpan.FromHours(1);
     private static readonly TimeSpan LongestBackoff = TimeSpan.FromMinutes(16);
 
-    public static PushMessage Message(List<Delivery> deliveries, int? badge)
+    public static PushMessage Message(List<Delivery> deliveries, int? badge, DestinationCatalog places)
     {
         Delivery first = deliveries[0];
         if (first.Kind == DeliveryKind.Background)
@@ -23,9 +25,16 @@ internal static class PushRules
         }
 
         string title = latest.Test ? $"Test · {latest.Title}" : latest.Title;
-        return new PushMessage(title, latest.Body, latest.Link ?? InboxLink, latest.Id.ToString(), thread, latest.Subject,
+        return new PushMessage(title, latest.Body, OnThePhone(latest.InAdminPanel ? null : latest.Link, places), latest.Id.ToString(), thread, latest.Subject,
             badge, latest.Urgent, Background: false);
     }
+
+    public static string OnThePhone(string? link, DestinationCatalog places) => link switch
+    {
+        null => InboxLink,
+        _ when LinkTargets.KindOf(link) == LinkKind.InApp && places.Resolve(link) is null => InboxLink,
+        _ => link,
+    };
 
     public static void Record(List<Delivery> deliveries, PushResult result, DateTime now)
     {

@@ -8,7 +8,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api;
 
 internal sealed class ChatNotifier(ChatsDbContext db, INotifications notifications, IPeopleIndex people, TimeProvider time)
 {
-    public static string Link(Guid chat) => $"/chats/{chat}";
+    public static string Link(Guid chat) => ChatsDestinations.Chat(chat.ToString());
 
     public static string ConsentSubject(Guid chat, Guid child) => $"chats/{chat:N}/consent/{child:N}";
 

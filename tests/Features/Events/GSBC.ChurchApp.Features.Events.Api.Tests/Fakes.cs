@@ -35,7 +35,7 @@ internal sealed class RecordedNotifications : INotifications
         foreach (Notification notification in mostSpecificFirst)
             if (notification.Subject is not null && LinkTargets.InAppRoute(notification.Link ?? "") is null)
                 throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(mostSpecificFirst));
-        Raised.AddRange(mostSpecificFirst);
+        Raised.AddRange(mostSpecificFirst.Select(NotificationLinks.Checked));
         return Task.CompletedTask;
     }
 
