@@ -26,6 +26,13 @@ public sealed class TicketRecord
     public byte[]? PhoneData { get; set; }
     public bool HadPhoneData { get; set; }
     public bool AttachmentsDeleted { get; set; }
+    public FeedbackSource Source { get; set; }
+    public string Browser { get; set; } = "";
+    public string BrowserSystem { get; set; } = "";
+    public string Window { get; set; } = "";
+    public string ColourScheme { get; set; } = "";
+    public string PageTitle { get; set; } = "";
+    public string RecentPages { get; set; } = "";
     public List<AttachmentRecord> Attachments { get; set; } = [];
     public List<NoteRecord> Notes { get; set; } = [];
     public List<StepRecord> Steps { get; set; } = [];

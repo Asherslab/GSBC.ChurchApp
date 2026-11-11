@@ -19,6 +19,12 @@ internal sealed class FeedbackDesk(
             DeskFilter.Closed => tickets.Where(ticket => ticket.Status == TicketStatus.Resolved || ticket.Status == TicketStatus.NotDoing),
             _ => tickets,
         };
+        tickets = query.Source switch
+        {
+            SourceFilter.App => tickets.Where(ticket => ticket.Source == FeedbackSource.App),
+            SourceFilter.AdminPanel => tickets.Where(ticket => ticket.Source == FeedbackSource.AdminPanel),
+            _ => tickets,
+        };
         string search = query.Search.Trim();
         if (search.Length > 0)
             tickets = int.TryParse(search.TrimStart('#'), out int number)
@@ -42,11 +48,18 @@ internal sealed class FeedbackDesk(
         {
             Line = Line(ticket),
             Attachments = ticket.Attachments.OrderBy(attachment => attachment.Position).Select(attachment => FeedbackPayloads.Decode<MediaRef>(attachment.Media)).ToList(),
-            Phone = new PhoneDetails
+            Phone = ticket.Source == FeedbackSource.AdminPanel ? null : new PhoneDetails
             {
                 AppVersion = ticket.AppVersion, AppBuild = ticket.AppBuild, Platform = ticket.Platform, OsVersion = ticket.OsVersion, Model = ticket.Model,
                 DevelopmentBuild = ticket.DevelopmentBuild,
             },
+            Browser = ticket.Source == FeedbackSource.AdminPanel
+                ? new BrowserDetails
+                {
+                    Browser = ticket.Browser, System = ticket.BrowserSystem, Window = ticket.Window, ColourScheme = ticket.ColourScheme, Version = ticket.AppVersion,
+                    PageTitle = ticket.PageTitle, RecentPages = ticket.RecentPages.Split('\n', StringSplitOptions.RemoveEmptyEntries).ToList(),
+                }
+                : null,
             Environment = ticket.Environment,
             Page = ticket.Page,
             State = ticket.State,
@@ -231,7 +244,9 @@ internal sealed class FeedbackDesk(
         Attachments = ticket.Attachments.Count,
         Cover = ticket.Attachments.OrderBy(attachment => attachment.Position).Select(attachment => FeedbackPayloads.Decode<MediaRef>(attachment.Media))
             .FirstOrDefault(attachment => attachment.IsImage),
-        AppBuild = ticket.AppVersion.Length > 0 ? $"{ticket.AppVersion} ({ticket.AppBuild})" : "",
+        AppBuild = ticket.Source == FeedbackSource.AdminPanel ? ticket.AppVersion : ticket.AppVersion.Length > 0 ? $"{ticket.AppVersion} ({ticket.AppBuild})" : "",
+        Source = ticket.Source,
+        Browser = ticket.Browser,
         Model = ticket.Model,
         ChangedAt = ticket.ChangedAt,
         AttachmentsDeleted = ticket.AttachmentsDeleted,

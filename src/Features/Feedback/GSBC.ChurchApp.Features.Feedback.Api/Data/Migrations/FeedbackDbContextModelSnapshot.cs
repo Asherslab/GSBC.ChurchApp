@@ -188,6 +188,16 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                         .HasColumnType("boolean")
                         .HasColumnName("attachments_deleted");
 
+                    b.Property<string>("Browser")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("browser");
+
+                    b.Property<string>("BrowserSystem")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("browser_system");
+
                     b.Property<DateTime>("ChangedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("changed_at");
@@ -195,6 +205,11 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                     b.Property<DateTime?>("ClosedAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("closed_at");
+
+                    b.Property<string>("ColourScheme")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("colour_scheme");
 
                     b.Property<bool>("DevelopmentBuild")
                         .HasColumnType("boolean")
@@ -235,6 +250,11 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("page");
 
+                    b.Property<string>("PageTitle")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("page_title");
+
                     b.Property<byte[]>("PhoneData")
                         .HasColumnType("bytea")
                         .HasColumnName("phone_data");
@@ -244,6 +264,11 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("platform");
 
+                    b.Property<string>("RecentPages")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("recent_pages");
+
                     b.Property<string>("SenderName")
                         .IsRequired()
                         .HasColumnType("text")
@@ -252,6 +277,10 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("sent_at");
+
+                    b.Property<int>("Source")
+                        .HasColumnType("integer")
+                        .HasColumnName("source");
 
                     b.Property<string>("State")
                         .IsRequired()
@@ -271,6 +300,11 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("user_id");
 
+                    b.Property<string>("Window")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("window");
+
                     b.HasKey("Id")
                         .HasName("pk_tickets");
 
@@ -283,6 +317,9 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Data.Migrations
 
                     b.HasIndex("InstallId", "SentAt")
                         .HasDatabaseName("ix_tickets_install_id_sent_at");
+
+                    b.HasIndex("Source", "SentAt")
+                        .HasDatabaseName("ix_tickets_source_sent_at");
 
                     b.HasIndex("UserId", "SentAt")
                         .HasDatabaseName("ix_tickets_user_id_sent_at");

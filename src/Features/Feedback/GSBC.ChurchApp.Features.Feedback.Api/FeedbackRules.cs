@@ -21,6 +21,7 @@ internal static class FeedbackRules
     public const int LongestPage = 300;
     public const int LongestState = 64 * 1024;
     public const int LongestDetail = 80;
+    public const int MostRecentPages = 8;
     public const int MostAttachments = FeedbackLimits.MostAttachments;
     public const int UploadAsksADay = 80;
     public const long LargestPicture = FeedbackLimits.LargestPicture;
@@ -41,6 +42,12 @@ internal static class FeedbackRules
             return SendVerdict.Blocked;
         return sentInTheLastDay < DailyLimit(sender) ? SendVerdict.Allowed : SendVerdict.TooMany;
     }
+
+    public static SendVerdict MaySendFrom(FeedbackSource source, Sender sender, int sentInTheLastDay) =>
+        source == FeedbackSource.AdminPanel && sender is not { HoldsTheRole: true, User: not null } ? SendVerdict.NotHere : MaySend(sender, sentInTheLastDay);
+
+    public static string RecentPages(IEnumerable<string> pages) =>
+        string.Join('\n', pages.Select(page => Clip(page, LongestPage)).Where(page => page.Length > 0).Take(MostRecentPages));
 
     public static bool IsClosed(TicketStatus status) => status is TicketStatus.Resolved or TicketStatus.NotDoing;
 
@@ -69,4 +76,6 @@ internal static class FeedbackRules
     };
 
     public static string From(TicketRecord ticket) => ticket.SenderName.Length > 0 ? ticket.SenderName : "Not signed in";
+
+    public static string SourceName(FeedbackSource source) => source == FeedbackSource.AdminPanel ? "the admin panel" : "the app";
 }

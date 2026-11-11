@@ -20,6 +20,15 @@ public sealed class FeedbackRulesTests
     }
 
     [Fact]
+    public void FromTheAdminPanelOnlySomeoneSignedInWithTheRoleSends()
+    {
+        Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(Phone, null, false, false), 0));
+        Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, false, false), 0));
+        Assert.Equal(SendVerdict.Allowed, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, true, false), 49));
+        Assert.Equal(SendVerdict.TooMany, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, true, false), 50));
+    }
+
+    [Fact]
     public void AClosedTicketIsDeletedOnlyOnceItHasBeenClosedFor180Days()
     {
         DateTime now = new(2026, 11, 11, 0, 0, 0, DateTimeKind.Utc);

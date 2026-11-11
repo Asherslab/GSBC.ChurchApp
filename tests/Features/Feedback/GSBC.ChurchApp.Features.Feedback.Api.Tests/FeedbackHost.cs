@@ -77,12 +77,13 @@ public abstract class FeedbackHost : IAsyncLifetime
     private static ClaimsPrincipal SignedIn(Guid person) => new(new ClaimsIdentity([new Claim(Caller.UserIdClaim, person.ToString())], "test"));
 
     protected async Task<string> SendAsync(Guid? install, Guid? person, string text = "The Save button is cut off", IReadOnlyList<string>? attachments = null,
-        string phoneData = "", string? id = null)
+        string phoneData = "", string? id = null, FeedbackSource source = FeedbackSource.App)
     {
         FeedbackSend send = new()
         {
-            Id = id ?? Guid.NewGuid().ToString(), Text = text, AttachmentIds = [.. attachments ?? []], PhoneDataId = phoneData,
+            Id = id ?? Guid.NewGuid().ToString(), Text = text, AttachmentIds = [.. attachments ?? []], PhoneDataId = phoneData, Source = source,
             Phone = new PhoneDetails { AppVersion = "1.4", AppBuild = "212", Platform = "ios", OsVersion = "18.1", Model = "iPhone15,4" },
+            Browser = new BrowserDetails { Browser = "Safari 18", System = "macOS 15", Window = "1440 × 900", ColourScheme = "light", PageTitle = "Media", RecentPages = ["/media", "/"] },
         };
         await WithAsync(async provider =>
         {

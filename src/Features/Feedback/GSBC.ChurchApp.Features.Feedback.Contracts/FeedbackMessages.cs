@@ -15,6 +15,19 @@ public enum TicketStatus
     NotDoing = 4,
 }
 
+public enum FeedbackSource
+{
+    App = 0,
+    AdminPanel = 1,
+}
+
+public enum SourceFilter
+{
+    Both = 0,
+    App = 1,
+    AdminPanel = 2,
+}
+
 public enum DeskFilter
 {
     Open = 0,
@@ -34,6 +47,18 @@ public sealed class PhoneDetails
 }
 
 [ProtoContract]
+public sealed class BrowserDetails
+{
+    [ProtoMember(1)] public string Browser { get; set; } = "";
+    [ProtoMember(2)] public string System { get; set; } = "";
+    [ProtoMember(3)] public string Window { get; set; } = "";
+    [ProtoMember(4)] public string ColourScheme { get; set; } = "";
+    [ProtoMember(5)] public string Version { get; set; } = "";
+    [ProtoMember(6)] public string PageTitle { get; set; } = "";
+    [ProtoMember(7)] public List<string> RecentPages { get; set; } = [];
+}
+
+[ProtoContract]
 public sealed class FeedbackSend
 {
     [ProtoMember(1)] public string Id { get; set; } = "";
@@ -43,6 +68,8 @@ public sealed class FeedbackSend
     [ProtoMember(5)] public PhoneDetails? Phone { get; set; }
     [ProtoMember(6)] public string Page { get; set; } = "";
     [ProtoMember(7)] public string State { get; set; } = "";
+    [ProtoMember(8)] public FeedbackSource Source { get; set; }
+    [ProtoMember(9)] public BrowserDetails? Browser { get; set; }
 }
 
 [ProtoContract]
@@ -50,6 +77,7 @@ public sealed class DeskQuery
 {
     [ProtoMember(1)] public DeskFilter Filter { get; set; }
     [ProtoMember(2)] public string Search { get; set; } = "";
+    [ProtoMember(3)] public SourceFilter Source { get; set; }
 }
 
 [ProtoContract]
@@ -81,6 +109,8 @@ public sealed class TicketLine
     [ProtoMember(10)] public string Model { get; set; } = "";
     [ProtoMember(11)] public DateTime ChangedAt { get; set; }
     [ProtoMember(12)] public bool AttachmentsDeleted { get; set; }
+    [ProtoMember(13)] public FeedbackSource Source { get; set; }
+    [ProtoMember(14)] public string Browser { get; set; } = "";
 }
 
 [ProtoContract]
@@ -109,6 +139,7 @@ public sealed class Ticket
     [ProtoMember(14)] public MediaRef? PhoneData { get; set; }
     [ProtoMember(15)] public bool HadPhoneData { get; set; }
     [ProtoMember(16)] public DateTime? ClosedAt { get; set; }
+    [ProtoMember(17)] public BrowserDetails? Browser { get; set; }
 }
 
 [ProtoContract]

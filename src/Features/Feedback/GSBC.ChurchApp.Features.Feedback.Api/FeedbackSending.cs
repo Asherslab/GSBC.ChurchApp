@@ -29,7 +29,7 @@ internal sealed class FeedbackSending(
             throw new RpcException(new Status(StatusCode.AlreadyExists, "That feedback was already sent."));
         }
 
-        switch (FeedbackRules.MaySend(sender, await senders.SentTodayAsync(sender, cancellationToken)))
+        switch (FeedbackRules.MaySendFrom(send.Source, sender, await senders.SentTodayAsync(sender, cancellationToken)))
         {
             case SendVerdict.NotHere or SendVerdict.Blocked:
                 throw new RpcException(new Status(StatusCode.PermissionDenied, FeedbackLimits.NotAvailable));
@@ -41,27 +41,36 @@ internal sealed class FeedbackSending(
         IReadOnlyList<MediaRef> attachments = await media.VerifyAsync(send.AttachmentIds.Distinct().ToList(), cancellationToken);
         MediaRef? phoneData = send.PhoneDataId.Length > 0 ? (await media.VerifyAsync([send.PhoneDataId], cancellationToken)).SingleOrDefault() : null;
         DateTime now = time.GetUtcNow().UtcDateTime;
-        PhoneDetails phone = send.Phone ?? new PhoneDetails();
+        bool fromAdmin = send.Source == FeedbackSource.AdminPanel;
+        PhoneDetails phone = (fromAdmin ? null : send.Phone) ?? new PhoneDetails();
+        BrowserDetails browser = (fromAdmin ? send.Browser : null) ?? new BrowserDetails();
         TicketRecord ticket = new()
         {
             Id = id,
             Text = text,
             SentAt = now,
             ChangedAt = now,
-            InstallId = sender.Install,
             UserId = sender.User,
             SenderName = sender.User is { } person ? (await people.NamesAsync([person], cancellationToken)).GetValueOrDefault(person, "") : "",
-            AppVersion = FeedbackRules.Clip(phone.AppVersion, FeedbackRules.LongestDetail),
+            Source = fromAdmin ? FeedbackSource.AdminPanel : FeedbackSource.App,
+            InstallId = fromAdmin ? null : sender.Install,
+            AppVersion = FeedbackRules.Clip(fromAdmin ? browser.Version : phone.AppVersion, FeedbackRules.LongestDetail),
             AppBuild = FeedbackRules.Clip(phone.AppBuild, FeedbackRules.LongestDetail),
             Platform = FeedbackRules.Clip(phone.Platform, FeedbackRules.LongestDetail),
             OsVersion = FeedbackRules.Clip(phone.OsVersion, FeedbackRules.LongestDetail),
             Model = FeedbackRules.Clip(phone.Model, FeedbackRules.LongestDetail),
             DevelopmentBuild = phone.DevelopmentBuild,
             Environment = environment.EnvironmentName,
+            Browser = FeedbackRules.Clip(browser.Browser, FeedbackRules.LongestDetail),
+            BrowserSystem = FeedbackRules.Clip(browser.System, FeedbackRules.LongestDetail),
+            Window = FeedbackRules.Clip(browser.Window, FeedbackRules.LongestDetail),
+            ColourScheme = FeedbackRules.Clip(browser.ColourScheme, FeedbackRules.LongestDetail),
+            PageTitle = FeedbackRules.Clip(browser.PageTitle, FeedbackRules.LongestPage),
+            RecentPages = FeedbackRules.RecentPages(browser.RecentPages),
             Page = FeedbackRules.Clip(send.Page, FeedbackRules.LongestPage),
             State = FeedbackRules.Clip(send.State, FeedbackRules.LongestState),
-            PhoneData = phoneData is null ? null : FeedbackPayloads.Encode(phoneData),
-            HadPhoneData = phoneData is not null,
+            PhoneData = phoneData is null || fromAdmin ? null : FeedbackPayloads.Encode(phoneData),
+            HadPhoneData = phoneData is not null && !fromAdmin,
         };
         ticket.Attachments.AddRange(attachments.Select((attachment, position) =>
             new AttachmentRecord { Position = position, MediaId = attachment.Id, Media = FeedbackPayloads.Encode(attachment) }));
