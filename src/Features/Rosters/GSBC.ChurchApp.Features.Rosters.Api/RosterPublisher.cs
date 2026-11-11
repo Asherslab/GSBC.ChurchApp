@@ -23,7 +23,17 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
         List<Guid> away = await db.Away.AsNoTracking().Select(span => span.PersonId)
             .Union(db.Published.AsNoTracking().Where(row => row.Feed == RostersFeeds.Away).Select(row => row.ScopeId))
             .ToListAsync(cancellationToken);
-        await PublishAwayAsync(away, cancellationToken);
+        foreach (MinistryFacts ministry in inUse)
+            away.AddRange((await ministries.TeamAsync(ministry.Id, cancellationToken)).Select(member => member.PersonId));
+        await PublishAwayAsync(away.Distinct().ToList(), cancellationToken);
+    }
+
+    public async Task PublishTeamsAwayAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken)
+    {
+        List<Guid> team = [];
+        foreach (Guid ministry in ministryIds)
+            team.AddRange((await ministries.TeamAsync(ministry, cancellationToken)).Select(member => member.PersonId));
+        await PublishAwayAsync(team.Distinct().ToList(), cancellationToken);
     }
 
     public async Task PublishAsync(Guid ministryId, CancellationToken cancellationToken)
@@ -63,10 +73,9 @@ internal sealed class RosterPublisher(RostersDbContext db, RosterViews views, IM
         foreach ((Guid recipient, List<Guid> household) in covers)
         {
             List<Guid> shown = household.Where(person => person == recipient || coveredFacts.GetValueOrDefault(person) is { Minor: true }).ToList();
-            if (!shown.Any(person => spans[person].Any()))
-                continue;
             AwayList list = new()
             {
+                YourId = recipient.ToString(),
                 People = shown.Select(person => new AwayOf
                 {
                     PersonId = person.ToString(), Name = names.GetValueOrDefault(person) ?? "Someone",

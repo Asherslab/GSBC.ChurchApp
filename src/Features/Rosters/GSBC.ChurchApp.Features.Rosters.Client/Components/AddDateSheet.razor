@@ -23,7 +23,7 @@
                     @if (hasOwn)
                     {
                         <FilterChips TValue="bool" Label="Which calendars" Value="ownOnly" ValueChanged="value => _ownOnly = value"
-                                     Options="@([new FilterOption<bool>(true, $"{View.MinistryName}'s calendars"), new FilterOption<bool>(false, "Every calendar")])" />
+                                     Options="@([new FilterOption<bool>(true, View.Settings.Calendars.Count > 0 ? "The roster's calendars" : $"{View.MinistryName}'s calendars"), new FilterOption<bool>(false, "Every calendar")])" />
                     }
                     <SearchField Label="Find an event" @bind-Value="_find" />
                     @if (shown.Count == 0)

@@ -18,6 +18,9 @@ public sealed class MinistryRecord
     public int Order { get; set; }
     public List<string> PartsOff { get; set; } = [];
     public List<string> PartsFromBelow { get; set; } = [];
+    public List<string> PartsOrder { get; set; } = [];
+    public List<Guid> LinkedCalendars { get; set; } = [];
+    public string ChatStarters { get; set; } = Contracts.ChatStarters.Leaders;
     public DateTime? ArchivedAt { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime UpdatedAt { get; set; }
@@ -39,6 +42,7 @@ public sealed class AskRecord
     public Guid AskedBy { get; set; }
     public string Note { get; set; } = "";
     public DateTime AskedAt { get; set; }
+    public bool WaitingForParent { get; set; }
 }
 
 public sealed class PostRecord

@@ -7,7 +7,7 @@ namespace GSBC.ChurchApp.Features.Chats.Contracts;
 [Service("gsbc.chats.Chats")]
 public interface IChatsService
 {
-    [Requires(ChatsPermissions.ManageNode)]
+    [SignedIn]
     ValueTask<Done> StartAsync(StartChat request, CallContext context = default);
 
     [SignedIn]

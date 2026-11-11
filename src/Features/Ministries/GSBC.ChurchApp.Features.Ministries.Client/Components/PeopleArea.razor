@@ -31,7 +31,14 @@
                             }
                             <div class="ui-actions">
                                 <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => AnswerAsync(ask, false)">Not now</Button>
-                                <Button Small="true" Busy="_busy" OnClick="() => AnswerAsync(ask, true)">Yes, add them</Button>
+                                @if (ask.WaitingForParent)
+                                {
+                                    <span class="hint">Under 18: waiting for a parent's yes</span>
+                                }
+                                else
+                                {
+                                    <Button Small="true" Busy="_busy" OnClick="() => AnswerAsync(ask, true)">Yes, add them</Button>
+                                }
                             </div>
                         </Below>
                     </ListRow>

@@ -101,6 +101,7 @@
     private static string Detail(Assignment assignment) =>
         string.Join(" · ", ((string[])
         [
+            assignment.Training && !assignment.Flags.Contains(Training.AloneFlag) ? "Training, with someone trained" : "",
             assignment.RepliedBy.Length > 0 ? $"Answered by {assignment.RepliedBy}" : "",
             assignment.Reason.Length > 0 ? $"“{assignment.Reason}”" : "",
             assignment.Swap is { } swap && SwapStates.Live(swap.State) ? swap.State == SwapStates.Offered ? $"{RosterLines.First(swap.OfferedByName)} offers to take it" : "Asked for a swap" : "",

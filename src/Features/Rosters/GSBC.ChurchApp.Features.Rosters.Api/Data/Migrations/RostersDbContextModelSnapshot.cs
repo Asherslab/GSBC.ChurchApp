@@ -19,7 +19,7 @@ namespace GSBC.ChurchApp.Features.Rosters.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("rosters")
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -292,9 +292,23 @@ namespace GSBC.ChurchApp.Features.Rosters.Api.Data.Migrations
                         .HasColumnType("uuid")
                         .HasColumnName("ministry_id");
 
+                    b.PrimitiveCollection<List<Guid>>("Calendars")
+                        .IsRequired()
+                        .HasColumnType("uuid[]")
+                        .HasColumnName("calendars");
+
+                    b.Property<bool>("DirectSwaps")
+                        .HasColumnType("boolean")
+                        .HasColumnName("direct_swaps");
+
                     b.Property<int>("NudgeAfterDays")
                         .HasColumnType("integer")
                         .HasColumnName("nudge_after_days");
+
+                    b.Property<string>("OpenSwaps")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("open_swaps");
 
                     b.Property<int>("RemindDaysBefore")
                         .HasColumnType("integer")
@@ -303,11 +317,6 @@ namespace GSBC.ChurchApp.Features.Rosters.Api.Data.Migrations
                     b.Property<bool>("Replies")
                         .HasColumnType("boolean")
                         .HasColumnName("replies");
-
-                    b.PrimitiveCollection<List<string>>("SwapWays")
-                        .IsRequired()
-                        .HasColumnType("text[]")
-                        .HasColumnName("swap_ways");
 
                     b.Property<DateTime>("UpdatedAt")
                         .HasColumnType("timestamp with time zone")

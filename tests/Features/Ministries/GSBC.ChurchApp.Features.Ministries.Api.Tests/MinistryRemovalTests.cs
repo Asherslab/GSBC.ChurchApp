@@ -43,6 +43,7 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
             .AddScoped<MinistryFileMedia>()
             .AddSingleton<IMediaReferences>(_media)
             .AddSingleton<IMediaSystemFolders>(_media)
+            .AddSingleton<IMediaAudiences>(_media)
             .AddMinistriesData()
             .AddSyncData();
         _services = services.BuildServiceProvider();
@@ -132,8 +133,11 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
         public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
-    private sealed class UsedMedia : IMediaReferences, IMediaSystemFolders
+    private sealed class UsedMedia : IMediaReferences, IMediaSystemFolders, IMediaAudiences
     {
+        public Task<bool> ShareAsync(MediaSystemArea area, string mediaId, string owner, string? permissionNode, string? scopeId, CancellationToken cancellationToken) =>
+            Task.FromResult(true);
+
         public List<string> Released { get; } = [];
 
         public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>

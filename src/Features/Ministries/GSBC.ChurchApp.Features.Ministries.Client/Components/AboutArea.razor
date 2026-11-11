@@ -36,13 +36,32 @@
     </ListGroup>
 </Section>
 
+@if (Page.You.ForYourYes.Count > 0)
+{
+    <Section Title="Waiting for your yes">
+        <ListGroup>
+            @foreach (AskLine ask in Page.You.ForYourYes)
+            {
+                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="They're under 18, so a parent says yes first. Its leaders know they asked." Icon="users" IconTone="RowTone.Warm">
+                    <Below>
+                        <div class="ui-actions">
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.ParentAnswerAsync(Page.Ministry.Id, ask.Id, false))">Not yet</Button>
+                            <Button Small="true" Busy="_busy" OnClick="() => RunAsync(() => Ministries.ParentAnswerAsync(Page.Ministry.Id, ask.Id, true))">Yes</Button>
+                        </div>
+                    </Below>
+                </ListRow>
+            }
+        </ListGroup>
+    </Section>
+}
+
 @if (Page.You.Asked.Count > 0)
 {
     <Section Title="Waiting for a leader">
         <ListGroup>
             @foreach (AskLine ask in Page.You.Asked)
             {
-                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="@($"Asked {MinistryWords.Ago(ask.AskedAt, Clock.GetUtcNow().UtcDateTime).ToLowerInvariant()}. A leader says yes or no.")" Icon="clock" IconTone="RowTone.Quiet">
+                <ListRow @key="ask.Id" Title="@MinistryWords.AskTitle(ask)" Subtitle="@($"Asked {MinistryWords.Ago(ask.AskedAt, Clock.GetUtcNow().UtcDateTime).ToLowerInvariant()}. {(ask.WaitingForParent ? "A parent of yours says yes first." : "A leader says yes or no.")}")" Icon="clock" IconTone="RowTone.Quiet">
                     <TrailingContent>
                         <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Ministries.WithdrawAsync(Page.Ministry.Id, ask.Id))">Take back</Button>
                     </TrailingContent>

@@ -232,6 +232,22 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
         Assert.Equal(("I'll bring the urn", ChatCopy.DeletedAccount, ""), (kept.Text, kept.SenderName, kept.SenderId));
     }
 
+    [Fact]
+    public async Task TheTeamStartsAGroupChatForTheTeamOnlyWhereTheMinistryLetsIt()
+    {
+        StartChat Chat(string kind) => new()
+        {
+            ChatId = Guid.NewGuid().ToString(), MinistryId = _church.MinistryId.ToString(), Name = "Setup crew", Kind = kind, Audience = ChatAudiences.Team, FirstMessage = "Who's in?",
+        };
+
+        await RefusedAsync(actions => actions.StartAsync(_helper, Chat(ChatKinds.Group), Cancel));
+        _church.TeamMayStart = true;
+        await RefusedAsync(actions => actions.StartAsync(_helper, Chat(ChatKinds.Channel), Cancel));
+        await RefusedAsync(actions => actions.StartAsync(_outsider, Chat(ChatKinds.Group), Cancel));
+
+        await ActAsync(actions => actions.StartAsync(_helper, Chat(ChatKinds.Group), Cancel));
+    }
+
     private async Task<Guid> StartAsync(string name, string first)
     {
         Guid chat = Guid.NewGuid();

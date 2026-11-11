@@ -20,6 +20,7 @@ public static class MinistriesAdminExtensions
             .AddSingleton<OnlineMinistries>()
             .AddSingleton<IMinistryReads>(provider => provider.GetRequiredService<OnlineMinistries>())
             .AddSingleton<IMinistryWrites>(provider => provider.GetRequiredService<OnlineMinistries>())
+            .AddSingleton<ILinkableCalendars>(provider => provider.GetRequiredService<OnlineMinistries>())
             .AddSingleton(MinistryLinks.Admin);
     }
 }

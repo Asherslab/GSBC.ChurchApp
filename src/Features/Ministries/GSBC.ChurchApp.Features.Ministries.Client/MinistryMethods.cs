@@ -9,8 +9,10 @@ public static class MinistryMethods
     public const string Join = Ministries + "Join";
     public const string Leave = Ministries + "Leave";
     public const string Withdraw = Ministries + "Withdraw";
+    public const string ParentAnswer = Ministries + "ParentAnswer";
     public const string Answer = Leading + "Answer";
     public const string ChangePerson = Leading + "ChangePerson";
+    public const string SetRole = Leading + "SetRole";
     public const string LinkParent = Leading + "LinkParent";
     public const string SavePost = Leading + "SavePost";
     public const string DeletePost = Leading + "DeletePost";
@@ -25,6 +27,7 @@ public static class MinistryMethods
     public const string Archive = Leading + "Archive";
     public const string SaveCalendar = Leading + "SaveCalendar";
     public const string RemoveCalendar = Leading + "RemoveCalendar";
+    public const string LinkCalendar = Leading + "LinkCalendar";
     public const string SaveSession = Leading + "SaveSession";
 
     public static string Describe(string method) => method[(method.LastIndexOf('/') + 1)..] switch
@@ -32,8 +35,9 @@ public static class MinistryMethods
         "Join" => "your ask to join",
         "Leave" => "leaving",
         "Withdraw" => "taking back your ask",
+        "ParentAnswer" => "your answer for your child",
         "Answer" => "your answer to an ask",
-        "ChangePerson" or "LinkParent" => "a change to its people",
+        "ChangePerson" or "SetRole" or "LinkParent" => "a change to its people",
         "SavePost" => "a post",
         "DeletePost" => "deleting a post",
         "SaveFile" => "a file",
@@ -43,7 +47,7 @@ public static class MinistryMethods
         "AddSubMinistry" or "Create" => "a new ministry",
         "Delete" => "deleting it",
         "Archive" => "archiving it",
-        "SaveCalendar" or "RemoveCalendar" => "a calendar change",
+        "SaveCalendar" or "RemoveCalendar" or "LinkCalendar" => "a calendar change",
         "SaveSession" => "a Sunday change",
         _ => "a change",
     };

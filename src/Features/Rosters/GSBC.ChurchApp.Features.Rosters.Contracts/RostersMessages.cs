@@ -29,10 +29,16 @@ public sealed class RosterView
 public sealed class RosterSettings
 {
     [ProtoMember(1, IsRequired = true)] public bool Replies { get; set; } = true;
-    [ProtoMember(2)] public List<string> SwapWays { get; set; } = [];
     [ProtoMember(3, IsRequired = true)] public string WhoSees { get; set; } = Contracts.WhoSees.Everything;
     [ProtoMember(4, IsRequired = true)] public int RemindDaysBefore { get; set; } = RosterDefaults.RemindDaysBefore;
     [ProtoMember(5, IsRequired = true)] public int NudgeAfterDays { get; set; } = RosterDefaults.NudgeAfterDays;
+    [ProtoMember(6, IsRequired = true)] public string OpenSwaps { get; set; } = Contracts.OpenSwaps.Team;
+    [ProtoMember(7)] public bool DirectSwaps { get; set; }
+    [ProtoMember(8)] public List<string> Calendars { get; set; } = [];
+
+    public bool SwapsOn => OpenSwaps != Contracts.OpenSwaps.Off || DirectSwaps;
+
+    public bool DrawsFrom(string calendarId, bool ministrysOwn) => Calendars.Count > 0 ? Calendars.Contains(calendarId) : ministrysOwn;
 }
 
 [ProtoContract]
@@ -76,6 +82,9 @@ public sealed class Assignment
     [ProtoMember(8)] public string RepliedBy { get; set; } = "";
     [ProtoMember(9)] public List<string> Flags { get; set; } = [];
     [ProtoMember(10)] public SwapLine? Swap { get; set; }
+    [ProtoMember(11)] public bool Training { get; set; }
+
+    public bool Fills => Replies.Fills(State) && !Training;
 }
 
 [ProtoContract]
@@ -124,6 +133,13 @@ public sealed class AwaySpan
 public sealed class AwayList
 {
     [ProtoMember(1)] public List<AwayOf> People { get; set; } = [];
+    [ProtoMember(2)] public string YourId { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class PersonRef
+{
+    [ProtoMember(1)] public string PersonId { get; set; } = "";
 }
 
 [ProtoContract]
@@ -159,6 +175,7 @@ public sealed class EventChoice
     [ProtoMember(5)] public DateTime EndsAt { get; set; }
     [ProtoMember(6)] public bool AllDay { get; set; }
     [ProtoMember(7)] public bool Own { get; set; }
+    [ProtoMember(8)] public string CalendarId { get; set; } = "";
 }
 
 [ProtoContract]

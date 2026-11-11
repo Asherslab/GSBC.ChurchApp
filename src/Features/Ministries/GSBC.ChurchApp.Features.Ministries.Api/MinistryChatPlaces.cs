@@ -30,6 +30,6 @@ internal sealed class MinistryChatPlaces(MinistriesDbContext db) : IChatPlaces
             audiences[ChatAudiences.Attendees] = Audience.HoldingAt(MinistriesPermissions.AttendeesViewNode, at);
             audiences[ChatAudiences.Parents] = Audience.HoldingAt(MinistriesPermissions.ParentsViewNode, at);
         }
-        return new ChatPlace(ministry.Id, ministry.Name, MinistryParts.IsOn(ministry.PartsOff, MinistryParts.Chats), audiences);
+        return new ChatPlace(ministry.Id, ministry.Name, MinistryParts.IsOn(ministry.PartsOff, MinistryParts.Chats), audiences, ministry.ChatStarters == ChatStarters.Team);
     }
 }

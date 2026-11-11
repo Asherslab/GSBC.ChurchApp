@@ -17,6 +17,8 @@ public interface IMinistryCalendars
     ValueTask<MinistryCalendarRemoval> WhatGoesAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken);
 
     ValueTask RemoveAsync(Guid ministryId, Guid calendarId, CancellationToken cancellationToken);
+
+    ValueTask<IReadOnlyList<MinistryCalendar>> ForEveryoneAsync(CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<MinistryCalendar>>([]);
 }
 
 public sealed record MinistryCalendar(Guid Id, Guid MinistryId, string Name, string Slug, Audience Audience, bool Hidden);

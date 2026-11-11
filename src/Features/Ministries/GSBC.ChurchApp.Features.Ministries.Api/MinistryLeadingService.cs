@@ -64,6 +64,8 @@ internal sealed class MinistryLeadingService(
         Guid id = Guid.TryParse(request.AskId, out Guid parsed) ? parsed : Guid.Empty;
         AskRecord ask = await db.Asks.SingleOrDefaultAsync(found => found.Id == id && found.MinistryId == ministry.Id, cancellationToken)
                         ?? throw new RpcException(new Status(StatusCode.NotFound, "That ask was already answered or taken back."));
+        if (request.Yes && ask.WaitingForParent)
+            throw Refused("They're under 18, so a parent says yes first. You'll hear when they do.");
         db.Asks.Remove(ask);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -103,6 +105,35 @@ internal sealed class MinistryLeadingService(
             && (await roles.GiveAsync(me, person, Roles.KeyOf(kept), ministry.Id.ToString(), null, cancellationToken)).Refusal is { } keptRefusal)
             throw Refused(keptRefusal);
         if (request.Add)
+            await db.Asks.Where(ask => ask.MinistryId == ministry.Id && ask.PersonId == person
+                && ask.As == (request.Role == Roles.Attendee ? Places.Attending : Places.Team)).ExecuteDeleteAsync(cancellationToken);
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<Done> SetRoleAsync(PersonChange request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid me = SignedIn(context);
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        if (request.Role.Length > 0 && !Roles.IsValid(request.Role))
+            throw Invalid("Choose a role.");
+        Guid person = Guid.TryParse(request.PersonId, out Guid parsed) ? parsed : throw Invalid("That isn't a person in the app.");
+        string place = ministry.Id.ToString();
+        IReadOnlyList<string> held = await views.RolesAsync(person, ministry.Id, cancellationToken);
+        List<string> taking = held.Where(role => role != request.Role).ToList();
+        bool giving = request.Role.Length > 0 && !held.Contains(request.Role);
+        foreach (string role in taking.Concat(giving ? [request.Role] : []))
+            if (!await roles.MayGiveAsync(me, Roles.KeyOf(role), place, cancellationToken))
+                throw new RpcException(new Status(StatusCode.PermissionDenied, MinistryRules.WhyNotChangeRole(role)));
+
+        if (giving && (await roles.GiveAsync(me, person, Roles.KeyOf(request.Role), place, null, cancellationToken)).Refusal is { } refusal)
+            throw Refused(refusal);
+        foreach (string role in taking)
+            if ((await roles.TakeAwayAsync(me, person, Roles.KeyOf(role), place, cancellationToken)).Refusal is { } takeRefusal)
+                throw Refused(takeRefusal);
+        if (request.Role.Length > 0)
             await db.Asks.Where(ask => ask.MinistryId == ministry.Id && ask.PersonId == person
                 && ask.As == (request.Role == Roles.Attendee ? Places.Attending : Places.Team)).ExecuteDeleteAsync(cancellationToken);
         changes.Touch(ministry.Id);
@@ -217,6 +248,9 @@ internal sealed class MinistryLeadingService(
             ? await db.Files.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That file was deleted."))
             : db.Files.Add(new FileRecord { Id = chosenId ?? Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
+        if (media is { } kept && kept == file.MediaId && file.Audience != wanted.Audience
+            && !await fileMedia.ShareAsync(file.Id, kept, wanted.Audience, ministry.Id, cancellationToken))
+            throw Refused("This document is used somewhere else too, so who it's for can't change here. Add it again for the new people.");
         (file.Title, file.Kind, file.Url, file.MediaId, file.Audience, file.Note) =
             (wanted.Title.Trim(), media is null ? FileKinds.Link : FileKinds.Document, media is null ? url : "", media, wanted.Audience, wanted.Note.Trim());
         changes.Touch(ministry.Id);
@@ -258,6 +292,10 @@ internal sealed class MinistryLeadingService(
         MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
         bool calendarWasOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
         (ministry.PartsOff, ministry.PartsFromBelow, ministry.UpdatedAt) = (MinistryParts.Valid(request.PartsOff), MinistryParts.ValidFromBelow(request.PartsFromBelow), Now);
+        if (request.PartsOrder.Count > 0)
+            ministry.PartsOrder = MinistryParts.Ordered(request.PartsOrder);
+        if (ChatStarters.IsValid(request.ChatStarters))
+            ministry.ChatStarters = request.ChatStarters;
         bool calendarOn = MinistryViews.IsOn(ministry, MinistryParts.Calendar);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
@@ -386,6 +424,41 @@ internal sealed class MinistryLeadingService(
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
         return MinistryViews.Calendar(saved);
+    }
+
+    public async ValueTask<Done> LinkCalendarAsync(CalendarLinkSave request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        Guid id = Existing(await views.TreeAsync(cancellationToken), request.MinistryId).Id;
+        MinistryRecord ministry = await db.Ministries.SingleAsync(found => found.Id == id, cancellationToken);
+        Guid calendarId = ParseId(request.CalendarId);
+        if (request.Linked)
+        {
+            TurnedOn(ministry, MinistryParts.Calendar);
+            if ((await calendars.ForEveryoneAsync(cancellationToken)).All(calendar => calendar.Id != calendarId || calendar.MinistryId == ministry.Id))
+                throw Refused("Only a calendar for everyone, and not one of this ministry's own, can be linked.");
+            if (!ministry.LinkedCalendars.Contains(calendarId))
+                ministry.LinkedCalendars = [.. ministry.LinkedCalendars, calendarId];
+        }
+        else
+            ministry.LinkedCalendars = ministry.LinkedCalendars.Where(linked => linked != calendarId).ToList();
+        ministry.UpdatedAt = Now;
+        changes.Touch(ministry.Id);
+        await db.SaveChangesAsync(cancellationToken);
+        return new Done();
+    }
+
+    public async ValueTask<LinkableCalendars> LinkableCalendarsAsync(MinistryRef request, CallContext context = default)
+    {
+        CancellationToken cancellationToken = context.CancellationToken;
+        MinistryRecord ministry = Existing(await views.TreeAsync(cancellationToken), request.MinistryId);
+        return new LinkableCalendars
+        {
+            Calendars = (await calendars.ForEveryoneAsync(cancellationToken))
+                .Where(calendar => calendar.MinistryId != ministry.Id && !ministry.LinkedCalendars.Contains(calendar.Id))
+                .Select(calendar => new Crumb { Id = calendar.Id.ToString(), Name = calendar.Name })
+                .ToList(),
+        };
     }
 
     public async ValueTask<CalendarRemoval> CalendarRemovalAsync(ItemRef request, CallContext context = default)
@@ -546,7 +619,7 @@ internal sealed class MinistryLeadingService(
         DateTime now = Now;
         MinistryRecord ministry = new()
         {
-            Id = chosenId ?? Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now,
+            Id = chosenId ?? Guid.CreateVersion7(), ParentId = parentId, CreatedAt = now, PartsOff = MinistryParts.OffWhenNew(),
             Order = await db.Ministries.Where(other => other.ParentId == parentId).Select(other => (int?)other.Order).MaxAsync(cancellationToken) + 1 ?? 0,
         };
         Apply(ministry, wanted);

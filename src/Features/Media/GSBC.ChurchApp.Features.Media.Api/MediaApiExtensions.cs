@@ -26,6 +26,7 @@ public static class MediaApiExtensions
         services.AddScoped<MediaFolders>();
         services.AddScoped<IMediaSystemFolders>(provider => provider.GetRequiredService<MediaFolders>());
         services.AddScoped<IMediaReferences, MediaReferences>();
+        services.AddScoped<IMediaAudiences, MediaAudiences>();
         services.AddDestinations(MediaDestinations.All);
         services.AddDestinationSource<MediaDestinationSource>();
         services.AddPermissions(MediaPermissions.All);

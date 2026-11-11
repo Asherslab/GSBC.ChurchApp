@@ -16,9 +16,9 @@ public sealed class RosterRuleTests
     {
         PositionRecord cameras = new() { Name = "Cameras", NeedsBlueCard = true, NeedsTraining = true, NeedsTrained = true };
         IReadOnlyList<string> flags = RosterRules.Flags(cameras, Sunday, [new AwayDays(Sunday.AddDays(-1), Sunday)],
-            new SafeguardingStanding(Guid.NewGuid(), HoldsBlueCard: false, TrainingCurrent: false), trained: false, alsoOn: ["Sound"]);
+            new SafeguardingStanding(Guid.NewGuid(), HoldsBlueCard: false, TrainingCurrent: false), aloneTraining: true, alsoOn: ["Presenter PC"]);
 
-        Assert.Equal([RosterRules.AwayFlag, RosterRules.NoBlueCardFlag, RosterRules.NoTrainingFlag, "Not trained for cameras", "Also on sound that day"], flags);
+        Assert.Equal([RosterRules.AwayFlag, RosterRules.NoBlueCardFlag, RosterRules.NoTrainingFlag, Training.AloneFlag, "Also on Presenter PC that day"], flags);
     }
 
     [Fact]
@@ -27,8 +27,23 @@ public sealed class RosterRuleTests
         PositionRecord cameras = new() { Name = "Cameras", NeedsBlueCard = true, NeedsTraining = true, NeedsTrained = true };
 
         Assert.Empty(RosterRules.Flags(cameras, Sunday, [new AwayDays(Sunday.AddDays(1), Sunday.AddDays(3))],
-            new SafeguardingStanding(Guid.NewGuid(), HoldsBlueCard: true, TrainingCurrent: true), trained: true, alsoOn: []));
+            new SafeguardingStanding(Guid.NewGuid(), HoldsBlueCard: true, TrainingCurrent: true), aloneTraining: false, alsoOn: []));
     }
+
+    [Fact]
+    public void ATraineeNeedsSomeoneTrainedOnTheSamePositionWhicheverWasPutOnFirst()
+    {
+        Assert.Equal(["tom"], Training.Alone([("tom", "sound", true, true)]));
+        Assert.Empty(Training.Alone([("tom", "sound", true, true), ("jo", "sound", true, false)]));
+        Assert.Empty(Training.Alone([("jo", "sound", true, false), ("tom", "sound", true, true)]));
+        Assert.Equal(["tom"], Training.Alone([("tom", "sound", true, true), ("jo", "cameras", true, false)]));
+        Assert.Equal(["tom"], Training.Alone([("tom", "sound", true, true), ("jo", "sound", false, false)]));
+        Assert.Equal(["lily", "tom"], Training.Alone([("tom", "sound", true, true), ("lily", "sound", true, true)]).Order());
+    }
+
+    [Fact]
+    public void ATraineeDoesntFillAPlace() =>
+        Assert.False(new Assignment { State = Replies.Accepted, Training = true }.Fills);
 
     [Theory]
     [InlineData(WhoSees.Everything, 3)]
@@ -84,10 +99,21 @@ public sealed class RosterRuleTests
     [Fact]
     public void ASwapCanOnlyBeAskedTheWaysTheMinistryAllows()
     {
-        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, [SwapWays.Team], SwapWays.Direct, Replies.Accepted, false, Later, Now, toIsOnTeam: true));
-        Assert.Null(RosterRules.WhyNotAskSwap(true, false, [SwapWays.Team, SwapWays.Direct], SwapWays.Direct, Replies.Accepted, false, Later, Now, toIsOnTeam: true));
-        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, [SwapWays.Direct], SwapWays.Direct, Replies.Accepted, false, Later, Now, toIsOnTeam: false));
+        RosterSettings teamOnly = new() { OpenSwaps = OpenSwaps.Team };
+        RosterSettings both = new() { OpenSwaps = OpenSwaps.Team, DirectSwaps = true };
+        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(teamOnly, SwapWays.Direct), Replies.Accepted, false, Later, Now, toIsOnTeam: true));
+        Assert.Null(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(both, SwapWays.Direct), Replies.Accepted, false, Later, Now, toIsOnTeam: true));
+        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(both, SwapWays.Direct), Replies.Accepted, false, Later, Now, toIsOnTeam: false));
+        Assert.NotNull(RosterRules.WhyNotAskSwap(true, false, RosterRules.WayFor(new RosterSettings { OpenSwaps = OpenSwaps.Off, DirectSwaps = true }, SwapWays.Open),
+            Replies.Accepted, false, Later, Now, toIsOnTeam: false));
     }
+
+    [Theory]
+    [InlineData(OpenSwaps.Team, SwapWays.Approve, SwapWays.Team)]
+    [InlineData(OpenSwaps.Approve, SwapWays.Team, SwapWays.Approve)]
+    [InlineData(OpenSwaps.Approve, SwapWays.Open, SwapWays.Approve)]
+    public void WhetherALeaderConfirmsIsTheMinistrysChoiceNeverTheAskers(string ministryChose, string askedFor, string swapGoes) =>
+        Assert.Equal(swapGoes, RosterRules.WayFor(new RosterSettings { OpenSwaps = ministryChose }, askedFor));
 
     [Theory]
     [InlineData(SwapWays.Team, SwapStates.Done)]

@@ -17,6 +17,8 @@ public sealed class OnlineRosters(ChannelBase channel) : IRosterReads
 
     public async Task<AwayList> AwayAsync() => await _rosters.AwayAsync(new Nothing());
 
+    public async Task<AwayList> AwayOfAsync(string personId) => await _rosters.AwayOfAsync(new PersonRef { PersonId = personId });
+
     public async Task<IReadOnlyList<EventChoice>> EventChoicesAsync(string ministryId) =>
         (await _rosters.EventChoicesAsync(new RosterQuery { MinistryId = ministryId })).Events;
 }

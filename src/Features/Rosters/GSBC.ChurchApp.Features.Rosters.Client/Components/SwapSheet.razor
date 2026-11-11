@@ -4,7 +4,7 @@
 
 @if (Date is { } date)
 {
-    IReadOnlyList<string> ways = date.View.Settings.SwapWays;
+    IReadOnlyList<string> ways = RosterLines.WaysOpenTo(date.View.Settings);
     string way = _way ?? ways.FirstOrDefault() ?? "";
     <Sheet Open="true" OpenChanged="open => Close(open)" Title="Ask for a swap"
            Lead="@($"{date.Assignment.PositionName} · {date.Date.Title}, {RosterLines.LongWhen(date.Date)}.{(date.Yourself ? "" : $" For {RosterLines.First(date.For.Name)}.")}")">
@@ -12,11 +12,11 @@
             @if (ways.Count > 1)
             {
                 <Segmented TValue="string" Label="How" ShowLabel="true" Stacked="true" Value="way" ValueChanged="value => _way = value"
-                           Options="ways.Select(each => new SegmentOption<string>(each, Short(each), Detail: RosterLines.WaysWords(each))).ToList()" />
+                           Options="ways.Select(each => new SegmentOption<string>(each, Short(each), Detail: RosterLines.WaysWords(each, date.View.Settings))).ToList()" />
             }
             else
             {
-                <p class="roster-hint">@RosterLines.WaysWords(way). You stay on until someone takes it.</p>
+                <p class="roster-hint">@RosterLines.WaysWords(way, date.View.Settings). You stay on until someone takes it.</p>
             }
             @if (way == SwapWays.Direct)
             {
@@ -43,12 +43,7 @@
     [Parameter] public YourDate? Date { get; set; }
     [Parameter] public EventCallback OnClose { get; set; }
 
-    private static string Short(string way) => way switch
-    {
-        SwapWays.Team => "The team picks it up",
-        SwapWays.Approve => "The team, then a leader",
-        _ => "Someone I choose",
-    };
+    private static string Short(string way) => way == SwapWays.Direct ? "Someone I choose" : "Anyone on the team";
 
     private async Task Close(bool open)
     {

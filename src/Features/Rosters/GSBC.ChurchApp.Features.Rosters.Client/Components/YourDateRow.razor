@@ -6,7 +6,7 @@
 }
 <UnsavedGuard Changed="() => _why && _reason.Trim().Length > 0" What="why you can't do it" />
 
-<ListRow Title="@($"{assignment.PositionName} · {RosterLines.When(Date.Date)}")"
+<ListRow Title="@($"{assignment.PositionName}{(assignment.Training ? " (training)" : "")} · {RosterLines.When(Date.Date)}")"
          Subtitle="@(Date.Yourself ? Date.Date.Title : $"For {RosterLines.First(Date.For.Name)} · {Date.Date.Title}")" IconTone="RowTone.Warm" Class="roster-yours">
     <Leading><span class="roster-day roster-day--warm" aria-hidden="true">@RosterLines.DayNumber(Date.Date)</span></Leading>
     <TrailingContent>
@@ -47,7 +47,7 @@
                     {
                         <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="Busy" OnClick="() => _why = true">@(assignment.State == Replies.Accepted ? "I can't now" : "Can't do it")</Button>
                     }
-                    @if (swap is null && view.Settings.SwapWays.Count > 0)
+                    @if (swap is null && view.Settings.SwapsOn)
                     {
                         <Button Small="true" Variant="ButtonVariant.Quiet" Icon="repeat" Disabled="Busy" OnClick="OnSwap">Ask for a swap</Button>
                     }

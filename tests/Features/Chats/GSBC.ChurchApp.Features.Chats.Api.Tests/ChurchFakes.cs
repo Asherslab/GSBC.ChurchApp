@@ -27,6 +27,8 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
 
     public bool ChatsOn { get; set; } = true;
 
+    public bool TeamMayStart { get; set; }
+
     public List<Notification> Raised { get; } = [];
 
     public List<(string Scope, string Name, string MediaId)> Filed { get; } = [];
@@ -131,7 +133,7 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
     public ValueTask<IReadOnlyList<ChatPlace>> AllAsync(CancellationToken cancellationToken) => ValueTask.FromResult<IReadOnlyList<ChatPlace>>([Place]);
 
     private ChatPlace Place => new(MinistryId, "Sample Ministry", ChatsOn,
-        new Dictionary<string, Audience> { [ChatAudiences.Team] = Audience.HoldingAt(TeamNode, Scope.Of(ScopeKind.Ministry, MinistryId.ToString())) });
+        new Dictionary<string, Audience> { [ChatAudiences.Team] = Audience.HoldingAt(TeamNode, Scope.Of(ScopeKind.Ministry, MinistryId.ToString())) }, TeamMayStart);
 
     public ValueTask<IReadOnlyDictionary<Guid, string>> NamesAsync(IReadOnlyCollection<Guid> people, CancellationToken cancellationToken) =>
         ValueTask.FromResult<IReadOnlyDictionary<Guid, string>>(people.Where(_names.ContainsKey).Distinct().ToDictionary(person => person, person => _names[person]));

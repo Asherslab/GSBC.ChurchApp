@@ -5,7 +5,9 @@ namespace GSBC.ChurchApp.Features.Ministries.Client;
 
 public interface IMinistryWrites
 {
-    Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note);
+    Task<JoinOutcome> JoinAsync(MinistryDetails ministry, string personId, string place, string note, bool parentFirst = false);
+
+    Task ParentAnswerAsync(string ministryId, string askId, bool yes);
 
     Task LeaveAsync(string ministryId, string personId, string place);
 
@@ -14,6 +16,8 @@ public interface IMinistryWrites
     Task AnswerAsync(string ministryId, string askId, bool yes);
 
     Task ChangePersonAsync(string ministryId, string personId, string role, bool add);
+
+    Task SetRoleAsync(string ministryId, string personId, string role);
 
     Task LinkParentAsync(string ministryId, string childId, string parentId);
 
@@ -27,7 +31,7 @@ public interface IMinistryWrites
 
     Task<MinistryDetails> SaveMinistryAsync(MinistryDetails details);
 
-    Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow);
+    Task SavePartsAsync(string ministryId, IEnumerable<string> partsOff, IEnumerable<string> partsFromBelow, string chatStarters = "", IEnumerable<string>? partsOrder = null);
 
     Task MoveAsync(string ministryId, string underId);
 
@@ -42,6 +46,8 @@ public interface IMinistryWrites
     Task SaveCalendarAsync(string ministryId, CalendarLine calendar);
 
     Task RemoveCalendarAsync(string ministryId, string id);
+
+    Task LinkCalendarAsync(string ministryId, string calendarId, bool linked);
 
     Task SaveSessionAsync(string groupId, SessionChange change);
 }

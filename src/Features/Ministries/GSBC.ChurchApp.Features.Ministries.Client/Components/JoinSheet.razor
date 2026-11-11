@@ -80,7 +80,8 @@
                 await OnJoined.InvokeAsync("Sent to the leaders. Your conversation with them is in Chats.");
                 return;
             }
-            JoinOutcome outcome = await Ministries.JoinAsync(Page.Ministry, choice.PersonId, choice.Place, _note);
+            JoinOutcome outcome = await Ministries.JoinAsync(Page.Ministry, choice.PersonId, choice.Place, _note,
+                parentFirst: Page.You.Minor && choice.PersonId.Length == 0 && choice.Place == Places.Team);
             await OpenChanged.InvokeAsync(false);
             await OnJoined.InvokeAsync(outcome.Words);
         }

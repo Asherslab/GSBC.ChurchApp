@@ -35,4 +35,5 @@ namespace GSBC.ChurchApp.Features.Rosters.Contracts;
 [ProtoSerializable(typeof(SwapDecision))]
 [ProtoSerializable(typeof(AwaySave))]
 [ProtoSerializable(typeof(AwayRef))]
+[ProtoSerializable(typeof(PersonRef))]
 public partial class RostersContractsModel : TypeModel;

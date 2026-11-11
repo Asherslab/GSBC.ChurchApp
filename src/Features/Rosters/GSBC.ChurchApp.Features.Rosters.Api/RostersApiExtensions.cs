@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Rosters.Api.Data;
 using GSBC.ChurchApp.Features.Rosters.Contracts;
 using GSBC.ChurchApp.Platform.Api.Hosting;
+using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using Microsoft.AspNetCore.Builder;
@@ -20,6 +21,7 @@ public static class RostersApiExtensions
         services.AddRostersData();
         services.AddScoped<RosterViews>().AddScoped<RosterPublisher>().AddScoped<RosterMessenger>().AddScoped<RosterReminders>().AddScoped<RosterRefresh>();
         services.AddScoped<IPersonData, RostersPersonData>();
+        services.AddMinistryPeopleHandler<RostersMinistryPeople>();
         services.AddHostedService<RostersSchedule>();
         services.AddPermissions(RostersPermissions.All);
         services.AddNotificationKinds(RostersNotifications.All);
