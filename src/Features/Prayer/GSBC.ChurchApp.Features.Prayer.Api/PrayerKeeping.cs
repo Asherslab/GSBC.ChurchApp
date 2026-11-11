@@ -31,7 +31,7 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
         await db.SaveChangesAsync(cancellationToken);
         await handled.ForgetOldAsync(cancellationToken);
         foreach (RequestRecord request in old)
-            await telling.SettledAsync(request, cancellationToken);
+            await telling.DeletedAsync(request, cancellationToken);
     }
 
     private async Task FillStaffFeedsAsync(DateTime now, CancellationToken cancellationToken)

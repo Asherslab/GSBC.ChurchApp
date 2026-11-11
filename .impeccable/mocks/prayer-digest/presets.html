@@ -1,0 +1,50 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><style>:root{--nav:#2a3d5e;--note:#d5c9b7;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#4a5468;--ink3:#6b7385;--accent:#00776d;--marker:#e7ae74;--mink:#8a5422;--line:rgba(42,61,94,.14)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--page);font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);display:grid;grid-template-columns:248px 1fr;font-size:16px;position:relative}
+.side{background:var(--nav);color:rgba(255,255,255,.76);padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;font-weight:600}
+.brand{color:#fff;font-weight:700;display:flex;gap:10px;align-items:center;margin-bottom:14px}.brand i{width:30px;height:30px;border-radius:50%;border:5px solid var(--note)}
+.jump{background:rgba(255,255,255,.12);border-radius:9px;padding:9px 12px;margin-bottom:12px}
+.area{color:#fff;font-weight:700;padding:8px 6px 4px}.lnk{padding:9px 12px 9px 24px;border-radius:9px;display:flex;justify-content:space-between}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 3px 0 0 var(--marker)}
+.cnt{background:var(--marker);color:#2a1a08;border-radius:10px;font-size:12px;font-weight:700;padding:1px 7px}
+.wb{display:grid;grid-template-columns:320px 1fr;height:900px}
+.aside{background:var(--sand);padding:24px 18px;display:flex;flex-direction:column;gap:14px;border-right:1px solid var(--line)}
+.aside h1{font-size:27px;font-weight:700;letter-spacing:-.02em}.lead{font-size:14px;color:var(--ink2);line-height:1.45}
+.chips{display:flex;flex-wrap:wrap;gap:6px}.chip{height:34px;border-radius:17px;background:#fff;color:var(--ink2);font-size:13.5px;font-weight:600;padding:0 13px;display:flex;align-items:center;gap:6px}.chip.on{background:var(--nav);color:#fff}
+.chip em{font-style:normal;background:var(--marker);color:#2a1a08;border-radius:9px;font-size:11.5px;padding:0 6px}
+.search{height:42px;border-radius:12px;background:#fff;box-shadow:inset 0 0 0 1px var(--line);color:var(--ink3);font-size:14px;display:flex;align-items:center;padding:0 14px}
+.pick{background:transparent;border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;font-size:13px;color:var(--ink3)}.pick b{color:var(--ink);font-size:14px;font-weight:600}
+.pick.on{background:#fff}
+.pill{font-size:11.5px;font-weight:700;border-radius:8px;padding:1px 7px;display:inline-block;background:#fff;color:var(--ink2);margin-right:4px}.pill.a{background:rgba(0,119,109,.12);color:var(--accent)}.pill.m{background:rgba(231,174,116,.3);color:var(--mink)}
+.main{padding:28px 40px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+h2{font-size:22px;font-weight:700;letter-spacing:-.01em}h3{font-size:15px;font-weight:700}
+.cap{font-size:13.5px;color:var(--ink3);line-height:1.45}.body{font-size:15px;color:var(--ink2);line-height:1.5;max-width:620px}
+.times{display:flex;flex-wrap:wrap;gap:8px}
+.time{height:40px;border-radius:12px;background:var(--sand);display:flex;align-items:center;gap:10px;padding:0 6px 0 14px;font-size:14.5px;font-weight:600}
+.time i{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-style:normal;color:var(--ink3);font-size:15px}
+.add{height:40px;border-radius:12px;box-shadow:inset 0 0 0 1.5px var(--line);display:flex;align-items:center;padding:0 14px;font-size:14px;font-weight:600;color:var(--accent)}
+.row{display:flex;align-items:center;gap:14px;min-height:56px;border-top:1px solid var(--line);padding:10px 0}
+.sw{width:46px;height:28px;border-radius:14px;background:var(--accent);position:relative;flex:none}.sw:after{content:"";position:absolute;right:3px;top:3px;width:22px;height:22px;border-radius:50%;background:#fff}
+.field{height:42px;border-radius:12px;background:var(--sand);box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;padding:0 14px;font-size:15px;font-weight:600;min-width:130px;justify-content:space-between;gap:12px}
+.savebar{display:flex;align-items:center;gap:14px;margin-top:6px}.btn{height:42px;border-radius:21px;background:var(--sand);font-size:14.5px;font-weight:600;padding:0 18px;display:inline-flex;align-items:center}.btn.p{background:var(--nav);color:#fff}
+.link{font-size:14px;font-weight:600;color:var(--ink2);text-decoration:underline;text-underline-offset:3px}
+.example{background:var(--sand);border-radius:14px;padding:14px 16px;font-size:14px;color:var(--ink2);line-height:1.5;max-width:620px}
+.example b{color:var(--ink)}
+.tl{display:flex;align-items:center;gap:0;margin:6px 0 2px;max-width:640px}.tl span{flex:1;height:3px;background:var(--sand2)}.tl i{width:12px;height:12px;border-radius:50%;background:var(--accent);flex:none}.tl i.d{background:var(--nav)}
+.tlab{display:flex;justify-content:space-between;max-width:640px;font-size:12px;color:var(--ink3);font-weight:600}
+.scrim{position:absolute;inset:0;background:rgba(24,35,58,.38)}
+.sheet{position:absolute;top:0;right:0;width:520px;height:900px;background:#fff;box-shadow:-12px 0 40px rgba(24,35,58,.18);padding:28px 32px;display:flex;flex-direction:column;gap:18px}
+.sheet .top{display:flex;justify-content:space-between;align-items:center}.x{width:36px;height:36px;border-radius:50%;background:var(--sand);display:grid;place-items:center;color:var(--ink2)}
+.choice{border-radius:14px;box-shadow:inset 0 0 0 1.5px var(--line);padding:14px 16px;display:flex;gap:12px;align-items:flex-start}
+.choice.on{box-shadow:inset 0 0 0 2px var(--accent);background:rgba(0,119,109,.05)}
+.dot{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 0 0 2px var(--ink3);flex:none;margin-top:2px}.choice.on .dot{box-shadow:inset 0 0 0 6px var(--accent)}
+.choice b{display:block;font-size:15px}.choice span{font-size:13.5px;color:var(--ink3);line-height:1.45}
+.gear{display:flex;align-items:center;gap:8px;font-size:14px;font-weight:600;color:var(--ink2);height:36px;border-radius:18px;background:#fff;padding:0 14px;align-self:flex-start}
+</style><title>Prayer settings: choose a rhythm</title></head><body><nav class="side"><div class="brand"><i></i>Good Shepherd</div><div class="jump">Jump to…</div><div class="area">People</div><div class="lnk">People</div><div class="lnk on">Prayer <span class="cnt">2</span></div><div class="lnk">Safeguarding</div><div class="area">The app</div><div class="lnk">Announcements</div><div class="lnk">Feedback</div></nav>
+<div class="wb"><div class="aside"><h1>Prayer</h1><p class="lead">Requests from the app. Only the pastoral team reads them, and the prayer wall shows only what you share.</p><span class="gear">⚙ Prayer settings</span><div class="chips"><span class="chip on">New <em>1</em></span><span class="chip">For the wall <em>1</em></span><span class="chip">On the wall</span><span class="chip">Followed up</span><span class="chip">Answered</span><span class="chip">Everything</span></div><div class="search">Words or a name</div><div class="pick on"><b>For my mum, who goes into surgery on Thursday…</b>Anonymous · 2 hours ago<span><span class="pill a">Asks for the wall</span></span></div><div class="pick"><b>Please pray for our family as we move house</b>Sam · yesterday<span><span class="pill">New</span><span class="pill m">Get in touch</span></span></div><div class="pick"><b>Thanks for praying, the job came through!</b>Anonymous · 3 days ago</div></div>
+<div class="main"><h2>For my mum, who goes into surgery on Thursday</h2><p class="body">Anonymous · 2 hours ago · asks for the prayer wall</p></div></div>
+<div class="scrim"></div><div class="sheet"><div class="top"><h2>Prayer settings</h2><span class="x">✕</span></div><div><h3 style="font-size:17px">When people hear someone prayed</h3><p class="cap" style="margin-top:6px">Each message says how many prayed since the last. None goes when nobody did.</p></div>
+<div class="choice on"><i class="dot"></i><div><b>Often at first, then once a day</b><span>15, 30 and 45 minutes, 1, 3 and 6 hours after it goes on the wall, then every day at 12pm</span></div></div>
+<div class="choice"><i class="dot"></i><div><b>Once a day</b><span>Every day at 12pm</span></div></div>
+<div class="choice"><i class="dot"></i><div><b>Choose the times</b><span>Your own times after it goes on the wall, and a time each day</span></div></div>
+<div class="savebar"><span class="btn p">Save</span></div><p class="cap">They can still turn these off in Notification settings.</p></div></body></html>

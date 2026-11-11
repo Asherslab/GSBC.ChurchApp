@@ -27,6 +27,7 @@ public static class ChatsApiExtensions
         services.AddHostedService<MembershipWatcher>();
         services.AddPermissions(ChatsPermissions.All);
         services.AddNotificationKinds(ChatsNotifications.All);
+        services.AddDestinations(ChatsDestinations.All);
 
         services.AddSystemRole(new SystemRole(ChatsPermissions.MemberRole, "Chat member",
             "In this chat because a leader chose them, or because they asked to join its ministry", ScopeKind.Chat,

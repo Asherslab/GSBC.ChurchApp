@@ -13,6 +13,9 @@ public sealed class NotificationsDbContext(DbContextOptions<NotificationsDbConte
     public DbSet<Preference> Preferences => Set<Preference>();
     public DbSet<Delivery> Deliveries => Set<Delivery>();
     public DbSet<AnnouncementRecord> Announcements => Set<AnnouncementRecord>();
+    public DbSet<DigestRecord> Digests => Set<DigestRecord>();
+    public DbSet<DigestItemRecord> DigestItems => Set<DigestItemRecord>();
+    public DbSet<DigestScheduleRecord> DigestSchedules => Set<DigestScheduleRecord>();
 
     protected override string Schema => SchemaName;
 
@@ -62,6 +65,25 @@ public sealed class NotificationsDbContext(DbContextOptions<NotificationsDbConte
             entity.HasKey(announcement => announcement.Id);
             entity.Property(announcement => announcement.State).HasConversion<string>();
             entity.HasIndex(announcement => new { announcement.State, announcement.SendAt });
+        });
+        modelBuilder.Entity<DigestRecord>(entity =>
+        {
+            entity.ToTable("digests");
+            entity.HasKey(digest => digest.Id);
+            entity.HasIndex(digest => new { digest.Kind, digest.GroupKey }).IsUnique();
+            entity.HasIndex(digest => digest.DueAt);
+        });
+        modelBuilder.Entity<DigestItemRecord>(entity =>
+        {
+            entity.ToTable("digest_items");
+            entity.HasKey(item => item.Id);
+            entity.HasIndex(item => new { item.DigestId, item.Id });
+            entity.HasOne<DigestRecord>().WithMany().HasForeignKey(item => item.DigestId).OnDelete(DeleteBehavior.Cascade);
+        });
+        modelBuilder.Entity<DigestScheduleRecord>(entity =>
+        {
+            entity.ToTable("digest_schedules");
+            entity.HasKey(schedule => schedule.Kind);
         });
     }
 }

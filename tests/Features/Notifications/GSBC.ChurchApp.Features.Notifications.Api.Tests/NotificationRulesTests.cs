@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Common;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Tests;
 
@@ -12,11 +13,23 @@ public sealed class NotificationRulesTests
     public void ANotificationAboutAThingMustOpenThatThing()
     {
         Assert.Throws<ArgumentException>(() => Validated(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Room change", "",
-            Subject: "ministry/music/notice/1")));
+            Subject: "ministry/music/notice/1") { Actor = null }));
         Assert.Throws<ArgumentException>(() => Validated(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Room change", "",
-            Link: "https://example.com", Subject: "ministry/music/notice/1")));
+            Link: "https://example.com", Subject: "ministry/music/notice/1") { Actor = null }));
 
-        Validated(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Room change", "", Link: "/ministries/music/news", Subject: "ministry/music/notice/1"));
+        Validated(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Room change", "", Link: "/ministries/music/news", Subject: "ministry/music/notice/1") { Actor = null });
+    }
+
+    [Fact]
+    public void ANotificationOpensOnlyThePlacesItsKindDeclares()
+    {
+        NotificationKind request = new("prayer.new", "Someone sends a prayer request", "Prayer", Opens: new("/prayer/requests/{id}"));
+        NotificationKindCatalog kinds = new([new NotificationKindSet([request])]);
+
+        Assert.Throws<ArgumentException>(() => NotificationRules.Validated(kinds,
+            new Notification(request, NotificationAudience.Everyone, "A new prayer request", "", Link: "/prayer/requests/7/extra", Subject: "prayer/7") { Actor = null }));
+        NotificationRules.Validated(kinds,
+            new Notification(request, NotificationAudience.Everyone, "A new prayer request", "", Link: "/prayer/requests/7", Subject: "prayer/7") { Actor = null });
     }
 
     [Fact]
@@ -28,7 +41,7 @@ public sealed class NotificationRulesTests
         Device[] devices = [Phone(followingPhone, null), Phone(otherPhone, null), Phone(Guid.CreateVersion7(), member), Phone(Guid.CreateVersion7(), outsider)];
 
         Recipients recipients = await NotificationRules.RecipientsAsync(new Notification(TestKinds.Notice,
-            NotificationAudience.Holding(TestKinds.ReceiveNotices, TestKinds.Music), "No practice tonight", ""), holders, holders, TestContext.Current.CancellationToken);
+            NotificationAudience.Holding(TestKinds.ReceiveNotices, TestKinds.Music), "No practice tonight", "") { Actor = null }, holders, holders, TestContext.Current.CancellationToken);
 
         Assert.Equal([member], recipients.People);
         Assert.True(recipients.Public);
@@ -44,9 +57,9 @@ public sealed class NotificationRulesTests
         holders.Grant(TestKinds.ReceiveNotices, TestKinds.Music, people: [leader, notInvitedYet], phones: []);
 
         Recipients members = await NotificationRules.RecipientsAsync(new Notification(TestKinds.Notice,
-            NotificationAudience.Holding(TestKinds.ReceiveNotices, TestKinds.Music), "No practice tonight", ""), holders, holders, TestContext.Current.CancellationToken);
+            NotificationAudience.Holding(TestKinds.ReceiveNotices, TestKinds.Music), "No practice tonight", "") { Actor = null }, holders, holders, TestContext.Current.CancellationToken);
         Recipients justThem = await NotificationRules.RecipientsAsync(new Notification(TestKinds.Notice,
-            NotificationAudience.Person(notInvitedYet), "You're in Music", ""), holders, holders, TestContext.Current.CancellationToken);
+            NotificationAudience.Person(notInvitedYet), "You're in Music", "") { Actor = null }, holders, holders, TestContext.Current.CancellationToken);
 
         Assert.Equal([leader], members.People);
         Assert.Empty(justThem.People);
@@ -72,14 +85,14 @@ public sealed class NotificationRulesTests
     {
         DateTime lateAtNight = ChurchTime.ToUtc(new DateTime(2026, 11, 8, 22, 30, 0));
 
-        Assert.Equal(ChurchTime.ToUtc(new DateTime(2026, 11, 9, 7, 0, 0)), DueAt(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Bring a plate on Sunday", ""), lateAtNight));
-        Assert.Equal(lateAtNight, DueAt(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Tonight's service is cancelled", "", Urgent: true), lateAtNight));
+        Assert.Equal(ChurchTime.ToUtc(new DateTime(2026, 11, 9, 7, 0, 0)), DueAt(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Bring a plate on Sunday", "") { Actor = null }, lateAtNight));
+        Assert.Equal(lateAtNight, DueAt(new Notification(TestKinds.Notice, NotificationAudience.Everyone, "Tonight's service is cancelled", "", Urgent: true) { Actor = null }, lateAtNight));
     }
 
     [Fact]
     public void PastAKindsPaceTheRestWaitToBeSummarised()
     {
-        Notification notice = new(TestKinds.Notice, NotificationAudience.Everyone, "Notice", "", ScopeId: TestKinds.Music);
+        Notification notice = new(TestKinds.Notice, NotificationAudience.Everyone, "Notice", "", ScopeId: TestKinds.Music) { Actor = null };
 
         Assert.Equal((false, Morning), NotificationRules.Scheduled(TestKinds.Notice, notice, recentPushes: 2, Morning));
         Assert.Equal((true, Morning.AddMinutes(10)), NotificationRules.Scheduled(TestKinds.Notice, notice, recentPushes: 3, Morning));

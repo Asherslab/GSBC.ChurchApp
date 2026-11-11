@@ -29,7 +29,13 @@ Client, as it does for permissions, surfaces and notification kinds. Features ne
 - `DestinationCatalog` resolves any link to its page or its kind and id, however it is written: `/x`,
   `/x?y`, `/open/x`, or `https://<app host>/open/x`. Two features claiming the same path fail at start-up. A page and a
   kind may share a prefix, a list and its items (2026-11-10): `/ministries` is the directory, `/ministries/<id>` a ministry.
-- `DestinationRules` (Architecture tests) fails when a declared page isn't a route in the app.
+- **Deeper places** (2026-11-12): a kind's prefix may have more than one segment (`prayer/requests`), and a kind may
+  name its **sections**, pages under an item (`/ministries/{id}/news`, `/roster`, `/people` …), which resolve to that
+  item. A kind needs no `IDestinationSource` to be a place the phone opens (a chat, your own prayer request); without
+  one it isn't listed in Places in the app.
+- `DestinationRules` (Architecture tests) fails when a declared page isn't a route in the app, and `NotificationLinkRules`
+  when a notification kind can open something that isn't a place ([notifications.md](notifications.md), *Where a
+  notification opens*).
 
 **Places that aren't built yet** (2026-11-04; Sermons built 2026-11-05, Prayer 2026-11-11): Home's feature tiles open `/sunday`, `/week`,
 `/outreach`, `/life-groups` and `/ministries`, declared in `ComingSoonDestinations`

@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Configuration.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
@@ -184,13 +185,18 @@ public abstract class ConfigurationHost : IAsyncLifetime
 
         public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
         {
-            Raised.Add(notification);
+            Raised.Add(NotificationLinks.Checked(notification));
             return Task.CompletedTask;
         }
 
-        public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => Task.CompletedTask;
+        public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) =>
+            Task.FromResult(mostSpecificFirst.Select(NotificationLinks.Checked).ToList());
 
         public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
     }
 
     protected sealed class FakeAccess(PermissionCatalog catalog) : IAccessEvaluator, IRoleAssignments

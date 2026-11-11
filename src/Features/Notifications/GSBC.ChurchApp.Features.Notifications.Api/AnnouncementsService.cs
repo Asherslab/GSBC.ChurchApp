@@ -118,7 +118,7 @@ internal sealed class AnnouncementsService(
             $"“{record.Title}” is waiting to be sent",
             "Check it in the admin panel, then send or schedule it.",
             Link: $"/announcements/{record.Id}",
-            Subject: Subject(record)), context.CancellationToken);
+            Subject: Subject(record)) { Actor = Actor(context) }, context.CancellationToken);
         return Message(record);
     }
 
@@ -221,7 +221,7 @@ internal sealed class AnnouncementsService(
         db.FeedChanges.Add(FeedChangeRecord.Marker(NotificationsFeeds.Announcements, record.Id.ToString(), time.GetUtcNow().UtcDateTime, deleted));
 
     private static Notification Notification(AnnouncementRecord record, NotificationAudience audience) =>
-        new(AnnouncementNotifications.Announcement, audience, record.Title, record.Body, Link: record.Link, Urgent: record.Urgent);
+        new(AnnouncementNotifications.Announcement, audience, record.Title, record.Body, Link: record.Link, Urgent: record.Urgent) { Actor = record.AuthorId };
 
     private NotificationAudience AudienceOf(AnnouncementRecord record) => AudienceOf(new AudienceMessage
     {

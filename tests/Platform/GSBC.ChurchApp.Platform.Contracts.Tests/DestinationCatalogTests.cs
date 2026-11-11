@@ -63,6 +63,24 @@ public sealed class DestinationCatalogTests
         Assert.Equal(Event, Assert.IsType<ResolvedItem>(catalog.Resolve("/events/42")).Kind);
     }
 
+    [Fact]
+    public void AnItemsDeclaredSectionsAndADeeperPrefixAreItsPlacesToo()
+    {
+        DestinationKind ministry = new("ministries.ministry", Events, "Ministry", "users", "ministries", Sections: ["news"]);
+        DestinationKind request = new("prayer.request", Events, "Prayer request", "prayer", "prayer/requests");
+        DestinationPage approve = new("/prayer/approve", "To approve", "prayer", Events, "", Audience.Everyone);
+        DestinationCatalog catalog = new([new DestinationSet([approve], [ministry, request])]);
+
+        Assert.Equal((ministry, "music"), Item(catalog.Resolve("/ministries/music/news")));
+        Assert.Null(catalog.Resolve("/ministries/music/somewhere"));
+        Assert.Equal((request, "7"), Item(catalog.Resolve("/prayer/requests/7")));
+        Assert.Equal(approve, Assert.IsType<ResolvedPage>(catalog.Resolve("/prayer/approve")).Page);
+        Assert.Null(catalog.Resolve("/prayer/requests"));
+    }
+
+    private static (DestinationKind, string) Item(ResolvedDestination? resolved) =>
+        Assert.IsType<ResolvedItem>(resolved) is var item ? (item.Kind, item.Id) : default;
+
     [Theory]
     [InlineData("everyone", null, "everyone", true)]
     [InlineData("signed-in", null, "everyone", false)]

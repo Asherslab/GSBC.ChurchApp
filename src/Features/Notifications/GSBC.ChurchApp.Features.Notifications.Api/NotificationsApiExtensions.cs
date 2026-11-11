@@ -25,6 +25,8 @@ public static class NotificationsApiExtensions
         services.AddScoped<NotificationRaiser>();
         services.AddScoped<INotifications>(provider => provider.GetRequiredService<NotificationRaiser>());
         services.AddScoped<AnnouncementsService>();
+        services.AddScoped<DigestSchedules>();
+        services.AddScoped<DigestSending>();
         services.AddScoped<IPersonData, NotificationsPersonData>();
         services.AddScoped<PushDispatcher>();
 
@@ -38,6 +40,7 @@ public static class NotificationsApiExtensions
         services.AddHostedService<SyncNudger>();
         services.AddHostedService<KindsFeed>();
         services.AddHostedService<AnnouncementScheduler>();
+        services.AddHostedService<DigestSender>();
 
         services.AddNotificationKinds(AnnouncementNotifications.All);
         services.AddMeasures(NotificationsMeasures.All);
@@ -63,6 +66,7 @@ public static class NotificationsApiExtensions
     {
         endpoints.MapGrpcService<NotificationsService>();
         endpoints.MapGrpcService<AnnouncementsService>();
+        endpoints.MapGrpcService<DigestSchedulesService>();
         return endpoints;
     }
 }

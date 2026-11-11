@@ -30,6 +30,15 @@ internal static class TestKinds
     public static readonly NotificationKind NewInSeries = new("sermons.series.new", "A series you follow has a new sermon", "Sermons",
         PerScope: ScopeKind.SermonSeries, For: HearSeries);
 
+    public static readonly Permission ChangePrayerSettings = new("prayer.settings.change", ScopeKind.Global, "Choose when people hear that someone prayed");
+
+    public static readonly NotificationKind Prayed = new("prayer.prayed", "Someone prays for your prayer request", "Prayer",
+        Digest: new NotificationDigest("Someone prayed for your request", "{0} prayers for your request", "On the prayer wall.",
+            new DigestSchedule([TimeSpan.FromMinutes(15), TimeSpan.FromMinutes(30), TimeSpan.FromHours(1)], new TimeOnly(12, 0)), ChangedBy: ChangePrayerSettings));
+
+    public static readonly NotificationKind NewNotices = new("ministries.notices.digest", "New notices, once a day", "Ministries",
+        Digest: new NotificationDigest("A new notice today", "{0} new notices today", "Read them in Music.", DigestSchedule.Daily(new TimeOnly(12, 0))));
+
     public static NotificationKindCatalog Catalog =>
-        new([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, NewSermon, NewInSeries, .. AnnouncementNotifications.All])]);
+        new([new NotificationKindSet([Notice, NewPasskey, ChatMessage, RosterSwap, NewSermon, NewInSeries, Prayed, NewNotices, .. AnnouncementNotifications.All])]);
 }

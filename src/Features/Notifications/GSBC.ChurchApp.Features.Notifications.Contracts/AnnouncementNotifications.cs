@@ -6,11 +6,11 @@ public static class AnnouncementNotifications
 {
     public static readonly NotificationKind Announcement = new(
         "notifications.announcement", "Announcements from the church", "Announcements",
-        MayBeUrgent: true, Pacing: new NotificationPacing(3, TimeSpan.FromHours(1)));
+        MayBeUrgent: true, Pacing: new NotificationPacing(3, TimeSpan.FromHours(1)), Opens: NotificationOpens.ChosenByStaff);
 
     public static readonly NotificationKind WaitingToSend = new(
         "notifications.announcement.waiting", "An announcement is waiting for you to send", "Announcements",
-        Waits: true, For: NotificationsPermissions.Send, InAdminPanel: true);
+        Waits: true, For: NotificationsPermissions.Send, InAdminPanel: true, Opens: new("/announcements/{id}"));
 
     public static readonly IReadOnlyList<NotificationKind> All = [Announcement, WaitingToSend];
 }

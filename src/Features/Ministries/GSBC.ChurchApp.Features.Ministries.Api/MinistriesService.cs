@@ -156,7 +156,7 @@ internal sealed class MinistriesService(
         await notifications.RaiseAsync(new Notification(
             MinistriesNotifications.Asked, NotificationAudience.Holding(MinistriesPermissions.People, ministry.Id.ToString()),
             $"{name} asks to {(request.As == Places.Team ? "join the team" : "come along")}", $"In {ministry.Name}. Answer in the app.",
-            $"/ministries/{ministry.Id}/people", Subject: $"ministries/asks/{ministry.Id:N}"), cancellationToken);
+            $"/ministries/{ministry.Id}/people", Subject: $"ministries/asks/{ministry.Id:N}") { Actor = me }, cancellationToken);
         return new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
     }
 

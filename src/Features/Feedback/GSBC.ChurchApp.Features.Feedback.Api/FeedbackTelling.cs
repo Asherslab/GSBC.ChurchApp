@@ -9,10 +9,11 @@ internal sealed class FeedbackTelling(INotifications notifications)
 {
     private static string Subject(Guid ticket) => $"feedback/{ticket:N}";
 
+    private const string TheBoard = "board";
+
     public Task NewAsync(TicketRecord ticket, CancellationToken cancellationToken) =>
-        notifications.RaiseAsync(new Notification(FeedbackNotifications.New, NotificationAudience.Holding(FeedbackPermissions.Triage),
-            $"New feedback #{ticket.Number} from {FeedbackRules.SourceName(ticket.Source)}", $"{FeedbackRules.From(ticket)}: {FeedbackRules.FirstLine(ticket.Text)}",
-            FeedbackDestinations.Ticket(ticket.Number), Subject(ticket.Id), Action: "Look at it"), cancellationToken);
+        notifications.CollectAsync(new NotificationDigestItem(FeedbackNotifications.New, NotificationAudience.Holding(FeedbackPermissions.Triage), TheBoard,
+            FeedbackDestinations.Desk, Action: "Open the board") { Actor = ticket.UserId }, cancellationToken);
 
     public Task SettledAsync(TicketRecord ticket, CancellationToken cancellationToken) => notifications.SettleAsync(Subject(ticket.Id), cancellationToken);
 }

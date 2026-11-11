@@ -47,6 +47,7 @@ internal static class NotificationRules
             throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(notification));
         if (notification.Link is { } link && !LinkTargets.IsSafe(link))
             throw new ArgumentException($"'{link}' isn't a safe link.", nameof(notification));
+        NotificationLinks.Checked(notification);
         if (notification.Urgent && !kind.MayBeUrgent)
             throw new ArgumentException($"'{kind.Key}' notifications can't be urgent.", nameof(notification));
         return kind;
@@ -60,7 +61,8 @@ internal static class NotificationRules
 
         Recipients found = await AudienceAsync(notification, holders, people, cancellationToken);
         IReadOnlySet<Guid> notInvitedYet = await people.NotInvitedYetAsync(found.People, cancellationToken);
-        return notInvitedYet.Count == 0 ? found : found with { People = found.People.Where(person => !notInvitedYet.Contains(person)).ToList() };
+        Guid? actor = notification.Test ? null : notification.Actor;
+        return found with { People = found.People.Where(person => person != actor && !notInvitedYet.Contains(person)).ToList() };
     }
 
     private static async Task<Recipients> AudienceAsync(

@@ -144,7 +144,7 @@ internal static partial class Digests
         string things = titles.Count == 1 ? "One thing" : $"{titles.Count} things";
         string named = Listed(titles.Count > 2 ? [.. titles.Take(2), "more"] : titles);
         return new Notification(EventsNotifications.DigestOut, audience, "What's next at Good Shepherd", $"{things} coming up: {named}.",
-            Link: EventsDestinations.WhatsNext.Path, Subject: subject, Action: "Open");
+            Link: EventsDestinations.WhatsNext.Path, Subject: subject, Action: "Open") { Actor = null };
     }
 
     public static string When(IReadOnlyList<DateOnly> dates, DateOnly start)

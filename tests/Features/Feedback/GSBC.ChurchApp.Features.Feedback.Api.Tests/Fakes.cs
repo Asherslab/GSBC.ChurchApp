@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -10,26 +11,28 @@ namespace GSBC.ChurchApp.Features.Feedback.Api.Tests;
 
 internal sealed class RecordedNotifications : INotifications
 {
-    public List<Notification> Raised { get; } = [];
     public List<string> Settled { get; } = [];
 
-    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken)
-    {
-        Raised.Add(notification);
-        return Task.CompletedTask;
-    }
+    public Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => Task.FromResult(NotificationLinks.Checked(notification));
 
-    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
-    {
-        Raised.AddRange(mostSpecificFirst);
-        return Task.CompletedTask;
-    }
+    public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) =>
+        Task.FromResult(mostSpecificFirst.Select(NotificationLinks.Checked).ToList());
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken)
     {
         Settled.Add(subject);
         return Task.CompletedTask;
     }
+
+    public List<NotificationDigestItem> Collected { get; } = [];
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken)
+    {
+        Collected.Add(item);
+        return Task.CompletedTask;
+    }
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 internal sealed class Grants : IAccessEvaluator

@@ -9,9 +9,23 @@ public sealed record DestinationPage(string Path, string Title, string Icon, Des
     public string Route => DestinationPaths.Trim(Path);
 }
 
-public sealed record DestinationKind(string Key, DestinationArea Area, string Noun, string Icon, string PathPrefix, bool OpensOutside = false, IReadOnlyList<string>? Feeds = null)
+public sealed record DestinationKind(
+    string Key, DestinationArea Area, string Noun, string Icon, string PathPrefix, bool OpensOutside = false, IReadOnlyList<string>? Feeds = null,
+    IReadOnlyList<string>? Sections = null)
 {
     public string PathOf(string id) => $"/{PathPrefix}/{Uri.EscapeDataString(id)}";
+
+    public string? IdIn(string route)
+    {
+        if (!route.StartsWith(PathPrefix + "/", StringComparison.OrdinalIgnoreCase))
+            return null;
+        return route[(PathPrefix.Length + 1)..].Split('/') switch
+        {
+            [{ Length: > 0 } id] => Uri.UnescapeDataString(id),
+            [{ Length: > 0 } id, var section] when Sections?.Contains(section, StringComparer.OrdinalIgnoreCase) == true => Uri.UnescapeDataString(id),
+            _ => null,
+        };
+    }
 }
 
 public sealed record DestinationSet(IReadOnlyList<DestinationPage> Pages, IReadOnlyList<DestinationKind> Kinds)
@@ -65,9 +79,9 @@ public sealed class DestinationCatalog
         if (_pages.TryGetValue(route, out DestinationPage? page))
             return new ResolvedPage(page);
 
-        string[] segments = route.Split('/');
-        return segments is [var prefix, { Length: > 0 } id] && _kinds.TryGetValue(prefix, out DestinationKind? kind)
-            ? new ResolvedItem(kind, Uri.UnescapeDataString(id))
-            : null;
+        foreach (DestinationKind kind in _kinds.Values.OrderByDescending(kind => kind.PathPrefix.Length))
+            if (kind.IdIn(route) is { } id)
+                return new ResolvedItem(kind, id);
+        return null;
     }
 }

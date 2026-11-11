@@ -1,10 +1,11 @@
 using GSBC.ChurchApp.Features.Notifications.Api.Data;
+using GSBC.ChurchApp.Platform.Contracts.Destinations;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Push;
 
-internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport transport, ILogger<PushDispatcher> logger)
+internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport transport, DestinationCatalog places, ILogger<PushDispatcher> logger)
 {
     private const int BatchSize = 100;
     private static readonly TimeSpan Lease = TimeSpan.FromMinutes(2);
@@ -43,7 +44,7 @@ internal sealed class PushDispatcher(NotificationsDbContext db, IPushTransport t
 
             PushResult result = await transport.SendAsync(
                 new PushTarget(device.Platform, device.AppId, device.Environment, device.Token),
-                PushRules.Message(deliveries, device.UserId is { } userId ? unread.GetValueOrDefault(userId) : null),
+                PushRules.Message(deliveries, device.UserId is { } userId ? unread.GetValueOrDefault(userId) : null, places),
                 cancellationToken);
             Record(deliveries, result, now);
             if (result.Outcome == PushOutcome.DeadToken)

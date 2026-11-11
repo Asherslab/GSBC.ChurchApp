@@ -10,7 +10,8 @@ using Microsoft.EntityFrameworkCore;
 namespace GSBC.ChurchApp.Features.Notifications.Api;
 
 internal sealed class NotificationRaiser(
-    NotificationsDbContext db, NotificationKindCatalog kinds, IPermissionHolders holders, IPeopleIndex people, PushSignal signal, TimeProvider time)
+    NotificationsDbContext db, NotificationKindCatalog kinds, DigestSchedules schedules, IPermissionHolders holders, IPeopleIndex people, PushSignal signal,
+    TimeProvider time)
     : INotifications
 {
     public async Task RaiseAsync(Notification notification, CancellationToken cancellationToken) => await RaisedAsync(notification, cancellationToken);
@@ -21,7 +22,37 @@ internal sealed class NotificationRaiser(
     public async Task<Guid> RaisedAsync(Notification notification, CancellationToken cancellationToken) =>
         (await RaisedAsync([notification], cancellationToken))[0];
 
-    private async Task<IReadOnlyList<Guid>> RaisedAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken)
+    public async Task RaiseToAsync(Notification digest, Recipients recipients, CancellationToken cancellationToken) =>
+        await RaisedAsync([digest], cancellationToken, recipients);
+
+    public async Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken)
+    {
+        NotificationKind kind = schedules.Kind(item.Kind.Key);
+        NotificationLinks.Checked(new Notification(kind, item.Audience, "", "", item.Link) { Actor = item.Actor });
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        DigestRecord fields = new() { Kind = kind.Key, GroupKey = item.Group, AudienceKind = "", Link = item.Link, ScopeId = item.ScopeId, Action = item.Action };
+        DigestAudiences.Write(item.Audience, fields);
+
+        StartedDigest digest = (await db.Database.SqlQuery<StartedDigest>($"""
+            INSERT INTO notifications.digests (id, kind, group_key, audience_kind, audience_user_id, audience_node, audience_object_id, link, scope_id, action, started_at, sent_through)
+            VALUES ({Guid.CreateVersion7()}, {fields.Kind}, {fields.GroupKey}, {fields.AudienceKind}, {fields.AudienceUserId}, {fields.AudienceNode}, {fields.AudienceObjectId},
+                    {fields.Link}, {fields.ScopeId}, {fields.Action}, {item.StartedAt ?? now}, 0)
+            ON CONFLICT (kind, group_key) DO UPDATE SET audience_kind = excluded.audience_kind, audience_user_id = excluded.audience_user_id,
+                audience_node = excluded.audience_node, audience_object_id = excluded.audience_object_id, link = excluded.link, scope_id = excluded.scope_id,
+                action = excluded.action
+            RETURNING id, started_at
+            """).ToListAsync(cancellationToken)).Single();
+        db.DigestItems.Add(new DigestItemRecord { DigestId = digest.Id, ActorId = item.Actor, At = now });
+        await db.SaveChangesAsync(cancellationToken);
+
+        if (DigestTimes.Next(await schedules.OfAsync(kind, cancellationToken), digest.StartedAt, now) is { } due)
+            await db.Database.ExecuteSqlAsync($"UPDATE notifications.digests SET due_at = {due} WHERE id = {digest.Id} AND due_at IS NULL", cancellationToken);
+    }
+
+    public async Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) =>
+        await db.Digests.Where(digest => digest.Kind == kind.Key && digest.GroupKey == group).ExecuteDeleteAsync(cancellationToken);
+
+    private async Task<IReadOnlyList<Guid>> RaisedAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken, Recipients? only = null)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
         Guid? oneOf = mostSpecificFirst.Count > 1 ? Guid.CreateVersion7() : null;
@@ -29,7 +60,9 @@ internal sealed class NotificationRaiser(
         foreach ((int rank, Notification notification) in mostSpecificFirst.Index())
         {
             NotificationKind kind = NotificationRules.Validated(kinds, notification);
-            Recipients recipients = await NotificationRules.RecipientsAsync(notification, holders, people, cancellationToken);
+            if (kind.Digest is not null && only is null)
+                throw new InvalidOperationException($"'{kind.Key}' notifications come as a digest: collect them with CollectAsync.");
+            Recipients recipients = only ?? await NotificationRules.RecipientsAsync(notification, holders, people, cancellationToken);
             NotificationRecord record = RecordOf(kind, notification, now, oneOf, rank);
             db.Notifications.Add(record);
             if (recipients.Public)
@@ -108,7 +141,7 @@ internal sealed class NotificationRaiser(
     public async Task<(int People, int Phones)> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken)
     {
         Recipients recipients = await NotificationRules.RecipientsAsync(
-            new Notification(AnnouncementNotifications.Announcement, audience, "", ""), holders, people, cancellationToken);
+            new Notification(AnnouncementNotifications.Announcement, audience, "", "") { Actor = null }, holders, people, cancellationToken);
         List<Device> devices = await DevicesAsync(recipients, cancellationToken);
         return (recipients.People.Count, devices.Count);
     }
@@ -193,6 +226,8 @@ internal sealed class NotificationRaiser(
             .GroupBy(delivery => delivery.DeviceId)
             .Select(group => new { group.Key, Count = group.Count() })
             .ToDictionaryAsync(group => group.Key, group => group.Count, cancellationToken);
+
+    private sealed record StartedDigest(Guid Id, DateTime StartedAt);
 
     private sealed record Raised(NotificationKind Kind, Notification Notification, NotificationRecord Record, Recipients Recipients)
     {
