@@ -30,7 +30,7 @@
         }
 
         <div class="ticket__status">
-            <Segmented TValue="TicketStatus" Label="Status" Options="StatusOptions" Value="line.Status" ValueChanged="status => SetStatusAsync(ticket, status)" />
+            <StagePipeline TValue="TicketStatus" Label="Status" Stages="StatusOptions" Value="line.Status" Disabled="@(_busy is not null)" ValueChanged="status => SetStatusAsync(ticket, status)" />
             <div class="ticket__status-line">
                 @if (line.Status == TicketStatus.NotDoing)
                 {
@@ -192,7 +192,7 @@
 @code {
     private static readonly IReadOnlyCollection<string> DeskFeeds = [FeedbackFeeds.Desk];
     private static readonly IReadOnlyList<SegmentOption<TicketStatus>> StatusOptions =
-        FeedbackWords.Board.Select(status => new SegmentOption<TicketStatus>(status, FeedbackWords.Step(status))).ToList();
+        FeedbackWords.Board.Select(status => new SegmentOption<TicketStatus>(status, FeedbackWords.Status(status))).ToList();
 
     private LiveData<Ticket>? _live;
     private string _note = "";

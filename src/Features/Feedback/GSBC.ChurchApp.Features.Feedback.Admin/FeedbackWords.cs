@@ -17,8 +17,6 @@ internal static class FeedbackWords
         _ => "Not doing",
     };
 
-    public static string Step(TicketStatus status) => status == TicketStatus.FixedToCheck ? "Fixed" : Status(status);
-
     public static bool SaysMore(string text) => text.Trim().Length > 0 && Title(text) != text.Trim();
 
     public static string Title(string text)

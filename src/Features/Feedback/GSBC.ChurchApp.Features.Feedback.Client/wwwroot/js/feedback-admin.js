@@ -17,7 +17,7 @@ export function describe() {
     browser: named(brands, agent, true) || 'A browser',
     system: named(systems, agent, false) || navigator.platform || '',
     window: `${innerWidth} × ${innerHeight}`,
-    colourScheme: document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
+    colourScheme: document.documentElement.dataset.scheme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'),
     title: document.title.split(' · ')[0],
   };
 }
@@ -26,10 +26,17 @@ export function canCapture() {
   return !!navigator.mediaDevices?.getDisplayMedia;
 }
 
-function nextFrame(video) {
+const settle = 600;
+
+function frameOrTimeout(video) {
   return new Promise((resolve) => {
-    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(() => resolve());
-    else requestAnimationFrame(() => requestAnimationFrame(resolve));
+    const done = setTimeout(resolve, settle);
+    const next = () => {
+      clearTimeout(done);
+      resolve();
+    };
+    if (video.requestVideoFrameCallback) video.requestVideoFrameCallback(next);
+    else requestAnimationFrame(() => requestAnimationFrame(next));
   });
 }
 
@@ -49,8 +56,10 @@ export async function capture(input, layer, name) {
     const video = document.createElement('video');
     video.muted = true;
     video.srcObject = stream;
-    await video.play();
-    for (let frame = 0; frame < 3; frame++) await nextFrame(video);
+    await Promise.race([video.play(), new Promise((resolve) => setTimeout(resolve, settle))]);
+    await frameOrTimeout(video);
+    await frameOrTimeout(video);
+    if (!video.videoWidth) return 'failed';
     const canvas = document.createElement('canvas');
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
