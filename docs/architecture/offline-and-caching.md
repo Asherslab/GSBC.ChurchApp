@@ -83,6 +83,40 @@ on the phone, and each save carries what the editor started from so the server c
 (different things both stay; the same thing: the later save wins). A screen shows a waiting or failed save with
 `SaveStatus` (*Waiting to send*, *Couldn't save* and *Try now*).
 
+## Files in the outbox
+
+Built 2026-11-11 (owner: "uploads can work offline? keep it and send it when online?"). A picture or document chosen
+on the phone is kept on the phone and sent by the outbox with the save that uses it, offline or not. Screens never
+call the upload methods themselves (AGENTS.md, *Uploads are not an exception*).
+
+- **Choosing keeps the file.** `FilePick` (Platform.Ui) reads the chosen file into the native layer's upload shelf
+  (`Application Support/DataLayer/Uploads`, not a cache the OS may clear), hashes it there (SHA-256) and hands back a
+  placeholder `MediaRef`: no id, its `Url` the file on the phone, so `MediaImage` shows it at once. `FileUploads`
+  (Platform.Client) is the one service features use.
+- **A save waits for its file.** The feature queues the save with `IOutbox.EnqueueAsync(method, bytes, uploads)`,
+  where each upload is `FileUploads.For(placeholder, slot, target)`. The slot says where the media id goes in the
+  save (`MediaSlot.Ref(...)` for a `MediaRef`'s id, `MediaSlot.Id(...)` for a string), by protobuf field numbers;
+  the target says who may see it and which feature area it's for (Media, *Uploads from features*). The upload is an
+  outbox entry of its own; the save isn't sent until it's done.
+- **The native worker does the upload** (`Outbox.swift`): the duplicate check (`Media.FindByHash`), then
+  `BeginUpload`, the PUT to the signed address and `CompleteUpload`, one stage at a time and remembered, so a closed
+  app or a lost reply resumes where it was. A file the library already has is used rather than sent again. A
+  completion whose reply was lost goes back to the duplicate check, which finds what it made. The media id is then
+  added to the end of each waiting save's bytes at its slot. Protobuf merges a repeated field, so the native side
+  needs no knowledge of the message (`StoredEditingTests`, `QueuedFileTests` hold protobuf-net to it).
+- **Pending, sending, couldn't send.** A waiting save shows as waiting like any other (`SaveStatus`,
+  `WaitingToSend`). If the file can't be sent (refused, or three days without success), its saves fail with the
+  reason, and **Try again** on the save tries the file too. More → Storage lists files waiting to go.
+- **Discarding drops both.** Discarding a file discards the saves waiting for it. Discarding a save discards its file
+  unless another save waits for it. A record deleted while its picture still waits drops those saves and the file;
+  if the record was only ever made in the queue, the delete isn't sent either (Events).
+- **Files are cleaned up.** A file leaves the shelf once every save that used it is sent or discarded. Files chosen
+  but never saved are cleared the next time the app starts.
+- **Two saves of one file share one upload.**
+- **Not yet:** a background transfer session for the PUT (iOS `URLSession` background uploads). Today the PUT runs
+  while the app or a background sync wakes it, and resumes from the stage it reached. Android's data layer is still a
+  stub, so none of this exists there yet.
+
 ## Personal and private data
 
 - Feeds have an audience ([permissions.md](permissions.md)). Private feeds (a ministry's members-only

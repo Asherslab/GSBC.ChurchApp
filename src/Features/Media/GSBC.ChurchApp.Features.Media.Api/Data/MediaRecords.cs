@@ -19,6 +19,7 @@ public sealed class MediaItem
     public Guid UploadedBy { get; set; }
     public DateTime UploadedAt { get; set; }
     public Guid? FolderId { get; set; }
+    public string? Area { get; set; }
     public PictureSizing Sizing { get; set; }
     public DateTime? OriginalRemovedAt { get; set; }
 
@@ -69,6 +70,7 @@ public sealed class PendingUpload
     public string? AudienceScopeId { get; set; }
     public DateTime ExpiresAt { get; set; }
     public Guid? FolderId { get; set; }
+    public string? Area { get; set; }
 
     public string StagingKey => $"uploads/{Id:N}";
 }

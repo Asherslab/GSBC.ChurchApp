@@ -56,6 +56,11 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
 
     public Task<Guid?> UploadFolderAsync(string? id, CancellationToken cancellationToken) => StaffFolderAsync(id, cancellationToken);
 
+    public MediaSystemArea? Area(string key) => _areas.GetValueOrDefault(key);
+
+    public async Task<Guid> AreaFolderAsync(MediaSystemArea area, CancellationToken cancellationToken) =>
+        (await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken)).Id;
+
     public async Task<FolderInfo> CreateAsync(ClaimsPrincipal user, CreateFolderRequest request, CancellationToken cancellationToken)
     {
         string name = NameOf(request.Name);

@@ -15,7 +15,7 @@ public sealed partial class HostLinkRules
         string[] links =
         [
             MinistryLinks.App.Calendar(SampleCalendar), MinistriesPlaces.Directory, MinistriesPlaces.LifeGroups,
-            .. new[] { MinistriesPlaces.About, MinistriesPlaces.News, MinistriesPlaces.Calendar, MinistriesPlaces.Files, MinistriesPlaces.Sundays, MinistriesPlaces.People, MinistriesPlaces.Settings }
+            .. new[] { MinistriesPlaces.About, MinistriesPlaces.News, MinistriesPlaces.Calendar, MinistriesPlaces.Files, MinistriesPlaces.Roster, MinistriesPlaces.Sundays, MinistriesPlaces.People, MinistriesPlaces.Settings }
                 .Select(area => MinistriesPlaces.Of(ministry, area)),
         ];
 

@@ -9,6 +9,7 @@ using GSBC.ChurchApp.Platform.Client.Native;
 using GSBC.ChurchApp.Platform.Client.Outbox;
 using GSBC.ChurchApp.Platform.Client.Preferences;
 using GSBC.ChurchApp.Platform.Client.Sessions;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using GSBC.ChurchApp.Platform.Contracts.Sync;
 using Microsoft.Extensions.DependencyInjection;
 using ProtoBuf.Grpc.Client;
@@ -34,6 +35,7 @@ public static class TransportServiceCollectionExtensions
             .AddSingleton<IOutbox>(provider => provider.GetRequiredService<NativeOutbox>())
             .AddSingleton<IWrites, QueuedWrites>()
             .AddSingleton<IMediaFiles, NativeMediaFiles>()
+            .AddSingleton<IFileShelf, NativeFileShelf>()
             .AddSingleton<IDeviceSession, NativeDeviceSession>()
             .AddSingleton<ILocalPreferences, NativeLocalPreferences>()
             .AddSingleton<ChannelBase>(provider =>

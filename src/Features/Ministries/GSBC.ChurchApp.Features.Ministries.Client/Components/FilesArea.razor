@@ -1,13 +1,23 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@inject FileUploads Uploads
+@inject Shell Shell
+@inject IServiceProvider Services
+
 <Section First="true">
     @if (Page.You.MayPostFor.Count > 0)
     {
         <div class="ministry-tools">
             <Button Icon="plus" OnClick="() => Open(null)">Add a link</Button>
+            @if (Uploads.CanQueue)
+            {
+                <Button Icon="file" Variant="ButtonVariant.Quiet" OnClick="() => Open(null, document: true)">Add a file</Button>
+            }
         </div>
     }
     @if (Page.Files.Count == 0)
     {
-        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add links to documents, forms and recordings, each for the people who need it." : "Documents and links from this ministry show here.")" />
+        <EmptyState Icon="folder" Title="No files yet" Body="@(Page.You.MayPostFor.Count > 0 ? "Add documents from this phone, and links to forms and recordings, each for the people who need it." : "Documents and links from this ministry show here.")" />
     }
     @foreach (string audience in MinistryWords.BoxOrder.Where(audience => Page.Files.Any(file => file.Audience == audience)))
     {
@@ -16,7 +26,7 @@
                 @foreach (FileItem file in Page.Files.Where(file => file.Audience == audience))
                 {
                     <ListRow @key="file.Id" Title="@file.Title" Subtitle="@Subtitle(file)" Icon="@(file.Kind == FileKinds.Document ? "file" : "link")" IconTone="RowTone.Accent"
-                             Href="@file.Url" External="true">
+                             Href="@(file.Kind == FileKinds.Document ? null : file.Url)" External="true" OnClick="() => OpenDocumentAsync(file)">
                         <TrailingContent>
                             @if (file.From.Length == 0 && Page.You.MayPostFor.Count > 0)
                             {
@@ -30,16 +40,41 @@
     }
 </Section>
 
+<Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
 <FileSheet Open="_open" OpenChanged="open => _open = open" Page="Page" Draft="_draft" OnSaved="OnChanged" />
 
 @code {
     private bool _open;
+    private string? _problem;
+
+    private IPrivateMediaLinks? Links => Services.GetService(typeof(IPrivateMediaLinks)) as IPrivateMediaLinks;
     private FileItem _draft = new();
 
     [Parameter, EditorRequired] public required MinistryPage Page { get; set; }
     [Parameter] public EventCallback OnChanged { get; set; }
 
-    private void Open(FileItem? file) => (_draft, _open) = (FileSheet.DraftOf(file, Page), true);
+    private void Open(FileItem? file, bool document = false) => (_draft, _open) = (FileSheet.DraftOf(file, Page, document), true);
+
+    private async Task OpenDocumentAsync(FileItem file)
+    {
+        if (file.Kind != FileKinds.Document)
+            return;
+        _problem = null;
+        string? link;
+        try
+        {
+            link = Links is null ? null : await Links.LinkAsync(file.MediaId, "");
+        }
+        catch (RpcException)
+        {
+            link = null;
+        }
+        if (link is null)
+            _problem = $"{file.Title} can't be opened right now. Opening a document needs a connection.";
+        else
+            await Shell.OpenExternalAsync(link);
+    }
 
     private static string Subtitle(FileItem file) =>
         string.Join(" · ", new[] { file.Note, file.From.Length > 0 ? $"From {file.From}" : "", Uri.TryCreate(file.Url, UriKind.Absolute, out Uri? uri) ? uri.Host : "" }

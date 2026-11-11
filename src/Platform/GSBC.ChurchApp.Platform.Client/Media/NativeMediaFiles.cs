@@ -13,6 +13,9 @@ public sealed class NativeMediaFiles(NativeBridge bridge, IJSRuntime js, IServic
         if (!bridge.IsNative)
             return media.IsPrivate ? await WebMediaFiles.PrivateLinkAsync(services, media) : media.Url;
 
+        if (media is { Id.Length: 0, Key.Length: 0 })
+            return media.Url;
+
         if (await js.InvokeAsync<string?>("gsbcNative.cachedMedia", media.Key, media.IsPrivate) is { } cached)
             return cached;
 

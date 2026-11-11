@@ -1,0 +1,182 @@
+@inject IRosterReads Reads
+@inject RosterWrites Writes
+@inject TimeProvider Clock
+
+<LiveData @ref="_live" @key="On.Id" TValue="RosterView" Load="() => Reads.RosterAsync(On.Id)" Feeds="Reads.Feeds" Remember="@($"rosters.{On.Id}")"
+          FailedTitle="Can't show the roster right now">
+    <ChildContent>
+        @{
+            RosterView view = context.Value;
+            DateTime now = Clock.GetUtcNow().UtcDateTime;
+            IReadOnlyList<YourDate> yours = RosterLines.Yours(view, now);
+            IReadOnlyList<(RosterDate Date, Assignment Assignment)> openSwaps = RosterLines.OpenToYou(view, now);
+            List<(RosterDate Date, Assignment Assignment)> offered = view.MayEdit
+                ? view.Dates.SelectMany(date => date.Assignments.Where(each => each.Swap?.State == SwapStates.Offered).Select(each => (date, each))).ToList()
+                : [];
+            List<RosterDate> coming = view.Dates.Where(date => date.EndsAt > now).ToList();
+            <WaitingToSend MethodsUnder="@RosterMethods.Under" Describe="RosterMethods.Describe" First="true" />
+            @if (view.Archived)
+            {
+                <Section First="true"><Notice Text="This ministry is archived, so its roster is read only and sends nothing." /></Section>
+            }
+            @if (_problem is not null)
+            {
+                <Section First="true"><Notice Tone="NoticeTone.Warning" Text="@_problem" /></Section>
+            }
+            @if (yours.Count > 0)
+            {
+                <Section First="true" Title="@(yours.All(each => each.Yourself) ? "You're on" : "On the roster")">
+                    <ListGroup>
+                        @foreach (YourDate date in yours)
+                        {
+                            <YourDateRow @key="date.Assignment.Id" Date="date" Busy="_busy" OnAnswer="answer => AnswerAsync(date, answer.Accept, answer.Reason)"
+                                         OnSwap="() => _swapping = date" OnWithdraw="() => RunAsync(() => Writes.WithdrawSwapAsync(view.MinistryId, date.Assignment.Swap!.Id))" />
+                        }
+                    </ListGroup>
+                </Section>
+            }
+            @if (openSwaps.Count > 0)
+            {
+                <Section First="@(yours.Count == 0)" Title="Can you take one of these?">
+                    <ListGroup>
+                        @foreach ((RosterDate date, Assignment assignment) in openSwaps)
+                        {
+                            <ListRow @key="assignment.Id" Title="@($"{assignment.PositionName} · {RosterLines.When(date)}")"
+                                     Subtitle="@($"{date.Title}. {RosterLines.First(assignment.Name)} asked for a swap{(assignment.Swap!.Note.Length > 0 ? $": “{assignment.Swap.Note}”" : ".")}")"
+                                     Icon="repeat" IconTone="RowTone.Warm">
+                                <TrailingContent>
+                                    @foreach (PersonLine person in Takers(view, assignment))
+                                    {
+                                        <Button Small="true" Disabled="_busy" OnClick="() => TakeAsync(view, assignment, person, true)">@(person.Id == view.YourId ? "Take it" : $"{RosterLines.First(person.Name)} takes it")</Button>
+                                    }
+                                    @if (assignment.Swap.Way == SwapWays.Direct)
+                                    {
+                                        <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => TakeAsync(view, assignment, Takers(view, assignment)[0], false)">Can't</Button>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </Section>
+            }
+            @if (offered.Count > 0)
+            {
+                <Section First="@(yours.Count == 0 && openSwaps.Count == 0)" Title="Waiting for a leader">
+                    <ListGroup>
+                        @foreach ((RosterDate date, Assignment assignment) in offered)
+                        {
+                            <ListRow @key="assignment.Id" Title="@($"{RosterLines.First(assignment.Swap!.OfferedByName)} offers to take {RosterLines.First(assignment.Name)}'s place")"
+                                     Subtitle="@($"{assignment.PositionName} · {date.Title}, {RosterLines.When(date)}")" Icon="repeat" IconTone="RowTone.Warm">
+                                <TrailingContent>
+                                    <Button Small="true" Variant="ButtonVariant.Quiet" Disabled="_busy" OnClick="() => RunAsync(() => Writes.DecideSwapAsync(view.MinistryId, assignment.Swap.Id, false))">Not now</Button>
+                                    <Button Small="true" Disabled="_busy" OnClick="() => RunAsync(() => Writes.DecideSwapAsync(view.MinistryId, assignment.Swap.Id, true))">Yes</Button>
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </Section>
+            }
+            <Section First="@(yours.Count == 0 && openSwaps.Count == 0 && offered.Count == 0 && !view.Archived)" Title="The roster">
+                @if (view.MayEdit)
+                {
+                    <div class="roster-tools">
+                        <Button Icon="plus" OnClick="() => _adding = true">Add a date</Button>
+                        <Button Variant="ButtonVariant.Quiet" Icon="list" OnClick="() => _positions = true">Positions</Button>
+                        <Button Variant="ButtonVariant.Quiet" Icon="sliders" OnClick="() => _settings = true">How it works</Button>
+                    </div>
+                }
+                @if (view.MayEdit && view.Positions.Count == 0)
+                {
+                    <EmptyState Icon="list" Title="Add its positions first" Body="The jobs people do on a date, like running sound or welcoming. Each can need a blue card or training.">
+                        <Button OnClick="() => _positions = true">Add a position</Button>
+                    </EmptyState>
+                }
+                else if (coming.Count == 0)
+                {
+                    <EmptyState Icon="calendar" Title="No dates on the roster yet"
+                                Body="@(view.MayEdit ? "Add a date by choosing an event from any calendar in the app." : "When a leader puts you on a date, it shows here.")" />
+                }
+                else
+                {
+                    <Segmented TValue="string" Label="Show the roster" Options="Shapes" Value="@Shape(view)" ValueChanged="value => _shape = value" Class="roster-shape" />
+                    @if (Shape(view) == Grid)
+                    {
+                        <RosterGrid View="view" Dates="coming" Wide="On.Wide" OnOpen="date => _date = date.Id" />
+                    }
+                    else
+                    {
+                        <ListGroup>
+                            @foreach (RosterDate date in coming)
+                            {
+                                int gaps = RosterLines.Gaps(view, date);
+                                <ListRow @key="date.Id" Title="@($"{RosterLines.When(date)} · {date.Title}")" Subtitle="@(date.NotOn ? "Not on: it's off the calendar" : RosterLines.Summary(view, date))"
+                                         IconTone="@(date.NotOn ? RowTone.Quiet : gaps > 0 && view.MayEdit ? RowTone.Warm : RowTone.Primary)" Chevron="true" OnClick="() => _date = date.Id">
+                                    <Leading><span class="roster-day" aria-hidden="true">@RosterLines.DayNumber(date)</span></Leading>
+                                    <TrailingContent>
+                                        @if (view.MayEdit && gaps > 0 && !date.NotOn)
+                                        {
+                                            <Pill>@(gaps == 1 ? "1 gap" : $"{gaps} gaps")</Pill>
+                                        }
+                                    </TrailingContent>
+                                </ListRow>
+                            }
+                        </ListGroup>
+                    }
+                }
+            </Section>
+            <AwaySection View="view" />
+            <DateSheet @key="@($"date-{_date}")" View="view" DateId="@_date" OnClose="() => _date = null" />
+            <SwapSheet @key="@($"swap-{_swapping?.Assignment.Id}")" Date="_swapping" OnClose="() => _swapping = null" />
+            @if (view.MayEdit)
+            {
+                <AddDateSheet Open="_adding" OpenChanged="open => _adding = open" View="view" />
+                <PositionsSheet Open="_positions" OpenChanged="open => _positions = open" View="view" />
+                <RosterSettingsSheet @key="@($"settings-{_settings}")" Open="_settings" OpenChanged="open => _settings = open" View="view" />
+            }
+        }
+    </ChildContent>
+    <Failed>
+        <Section First="true">
+            <EmptyState Icon="calendar" Title="The roster isn't on your phone yet" Body="@(context is RosterNotHereException ? "It shows here as soon as your phone has it." : "It shows here once the church can be reached.")" />
+        </Section>
+    </Failed>
+    <Loading>
+        <Section First="true"><Skeleton Shape="SkeletonShape.Lines" Count="4" /></Section>
+    </Loading>
+</LiveData>
+
+@code {
+    private const string ByDate = "dates";
+    private const string Grid = "grid";
+
+    private static readonly IReadOnlyList<SegmentOption<string>> Shapes = [new(ByDate, "By date"), new(Grid, "Grid")];
+
+    private LiveData<RosterView>? _live;
+    private string? _shape;
+    private string? _date;
+    private YourDate? _swapping;
+    private bool _adding, _positions, _settings, _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public required MinistryOnPage On { get; set; }
+
+    private string Shape(RosterView view) => _shape ?? (On.Wide && view.MayEdit ? Grid : ByDate);
+
+    private static IReadOnlyList<PersonLine> Takers(RosterView view, Assignment assignment) =>
+        assignment.Swap?.Way == SwapWays.Direct ? view.You.Where(person => person.Id == assignment.Swap.AskedToId).ToList() : view.You;
+
+    private Task AnswerAsync(YourDate date, bool accept, string reason) =>
+        RunAsync(() => Writes.ReplyAsync(date.View.MinistryId, date.Assignment.Id, accept, reason));
+
+    private Task TakeAsync(RosterView view, Assignment assignment, PersonLine person, bool yes) =>
+        RunAsync(() => Writes.TakeSwapAsync(view.MinistryId, assignment.Swap!.Id, person.Id, yes));
+
+    private async Task RunAsync(Func<Task> work)
+    {
+        (_busy, _problem) = (true, null);
+        _problem = await RosterProblems.TryAsync(work);
+        _busy = false;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

@@ -14,6 +14,7 @@ public static class MinistryParts
     public const string News = "news";
     public const string Calendar = "calendar";
     public const string Files = "files";
+    public const string Rosters = "rosters";
 
     public static readonly IReadOnlyList<MinistryPart> All =
     [
@@ -24,6 +25,7 @@ public static class MinistryParts
             new PartFromBelow("Show the calendars of the ministries under it",
                 "Their events show on this calendar too, each saying which ministry it's from. People see only what they'd see in that ministry.")),
         new(Files, "Files", "Documents and links for its people"),
+        new(Rosters, "Roster", "Who's on for each date, with replies, swaps and the dates people are away"),
     ];
 
     public static MinistryPart Of(string key) => All.Single(part => part.Key == key);
@@ -36,6 +38,8 @@ public static class MinistryParts
             News => page.Posts.Count > 0 || page.You.MayPostFor.Count > 0,
             Calendar => page.Calendars.Count > 0 || page.You.MayEditSettings,
             Files => page.Files.Count > 0 || page.You.MayPostFor.Count > 0,
+            Rosters => page.You.MayEditSettings || page.You.LeadsFromAbove || page.You.Roles.Any(role => role is Roles.Leader or Roles.Admin or Roles.Team)
+                       || page.You.Children.Any(child => child.OnTeam),
             _ => false,
         };
 

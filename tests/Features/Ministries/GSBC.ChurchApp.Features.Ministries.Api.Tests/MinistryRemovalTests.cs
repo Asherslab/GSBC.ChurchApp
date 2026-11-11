@@ -2,6 +2,8 @@ using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Calendars;
+using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -12,13 +14,14 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api.Tests;
 
-[Integration("Deleting a ministry moves its teams up to its parent and removes its posts, files and asks in one transaction, then forgets its roles and calendars")]
+[Integration("Deleting a ministry moves its teams up to its parent and removes its posts, files and asks in one transaction, then forgets its roles and calendars and lets go of its documents")]
 public sealed class MinistryRemovalTests : IAsyncLifetime
 {
     private TestDatabase _database = null!;
     private readonly TestClock _clock = new();
     private readonly ForgettingRoles _roles = new();
     private readonly OwnedCalendars _calendars = new();
+    private readonly UsedMedia _media = new();
     private ServiceProvider _services = null!;
 
     private static CancellationToken Cancel => TestContext.Current.CancellationToken;
@@ -37,6 +40,9 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
             .AddSingleton<IMinistryCalendars>(_calendars)
             .AddScoped<MinistryChanges>()
             .AddScoped<MinistryRemover>()
+            .AddScoped<MinistryFileMedia>()
+            .AddSingleton<IMediaReferences>(_media)
+            .AddSingleton<IMediaSystemFolders>(_media)
             .AddMinistriesData()
             .AddSyncData();
         _services = services.BuildServiceProvider();
@@ -48,6 +54,7 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
     [Fact]
     public async Task AMinistrysTeamsMoveUpAndEverythingElseOfItsGoes()
     {
+        Guid guide = Guid.CreateVersion7();
         MinistryRecord music = Ministry("Music", null), choir = Ministry("Choir", music.Id), altos = Ministry("Altos", choir.Id), youth = Ministry("Impact Youth", null);
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())
         {
@@ -56,6 +63,7 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
             db.Posts.Add(new PostRecord { Id = Guid.CreateVersion7(), MinistryId = choir.Id, Title = "Rehearsal moved", Audience = Audiences.Team, PostedAt = _clock.UtcNow });
             db.Posts.Add(new PostRecord { Id = Guid.CreateVersion7(), MinistryId = youth.Id, Title = "Camp", Audience = Audiences.Everyone, PostedAt = _clock.UtcNow });
             db.Files.Add(new FileRecord { Id = Guid.CreateVersion7(), MinistryId = choir.Id, Title = "Score", Kind = FileKinds.Link, Url = "https://example.com", Audience = Audiences.Team });
+            db.Files.Add(new FileRecord { Id = guide, MinistryId = choir.Id, Title = "Helpers' guide", Kind = FileKinds.Document, MediaId = Guid.CreateVersion7(), Audience = Audiences.Team });
             db.Asks.Add(new AskRecord { Id = Guid.CreateVersion7(), MinistryId = choir.Id, PersonId = Guid.CreateVersion7(), As = Places.Team, AskedAt = _clock.UtcNow });
             await db.SaveChangesAsync(Cancel);
         }
@@ -77,6 +85,7 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
         Assert.False(await after.Asks.AnyAsync(Cancel));
         Assert.Equal([choir.Id.ToString()], _roles.Forgotten);
         Assert.Empty(_calendars.Owned[choir.Id]);
+        Assert.Equal([$"ministries.file/{guide}"], _media.Released);
     }
 
     public async ValueTask DisposeAsync()
@@ -121,6 +130,29 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
         public ValueTask<IReadOnlyList<RoleHolder>> HoldersAsync(string roleKey, string? objectId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public ValueTask MoveScopeAsync(ScopeKind kind, string fromObjectId, string toObjectId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    }
+
+    private sealed class UsedMedia : IMediaReferences, IMediaSystemFolders
+    {
+        public List<string> Released { get; } = [];
+
+        public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
+            Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
+
+        public Task UseAsync(string owner, IReadOnlyCollection<MediaRef> verified, CancellationToken cancellationToken)
+        {
+            if (verified.Count == 0)
+                Released.Add(owner);
+            return Task.CompletedTask;
+        }
+
+        public Task FileAsync(MediaSystemArea area, string? scopeId, string scopeName, IReadOnlyCollection<MediaRef> media, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class OwnedCalendars : IMinistryCalendars

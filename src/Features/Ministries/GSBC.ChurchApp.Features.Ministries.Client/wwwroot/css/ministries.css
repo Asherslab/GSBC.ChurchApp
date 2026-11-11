@@ -83,6 +83,19 @@ button.ministry-item { cursor: pointer; }
   margin-bottom: 4px;
 }
 
+.ministry-picked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.ministry-picked__about {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+
 .ministry-who {
   margin-top: 10px;
   padding: 10px 12px;

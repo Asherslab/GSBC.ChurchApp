@@ -1,6 +1,7 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Ministries.Client;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using ProtoBuf.Grpc.Client;
 
 namespace GSBC.ChurchApp.Features.Ministries.Admin;
@@ -41,7 +42,8 @@ public sealed class OnlineMinistries(ChannelBase channel) : IMinistryReads, IMin
 
     public async Task DeletePostAsync(string ministryId, string id) => await _leading.DeletePostAsync(new ItemRef { MinistryId = ministryId, Id = id });
 
-    public async Task SaveFileAsync(string ministryId, FileItem file) => await _leading.SaveFileAsync(new FileSave { MinistryId = ministryId, File = file });
+    public async Task SaveFileAsync(string ministryId, FileItem file, QueuedUpload? upload = null) =>
+        await _leading.SaveFileAsync(new FileSave { MinistryId = ministryId, File = upload is null ? file : throw new InvalidOperationException("Adding a file from this computer isn't built yet. Add a link instead.") });
 
     public async Task DeleteFileAsync(string ministryId, string id) => await _leading.DeleteFileAsync(new ItemRef { MinistryId = ministryId, Id = id });
 

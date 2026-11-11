@@ -103,10 +103,16 @@ Every entry needs the owner's explicit approval in chat first.
 | What | Calls | Why it can't go through Sync or the outbox | Approved |
 |---|---|---|---|
 | Sign-in and account actions: sign up, redeem a family or invitation code, account recovery, resend or confirm an email code, sign out (ending this or another device's session) and sign out everywhere, delete my account, register the phone for push and claim the install, make a child's sign-in code | `IAccountsService.Redeem`, `StartSignUp`, `RequestRecovery`, `ResendConfirmation`, `ConfirmEmail`, `SignOutEverywhere`, `EndSession`, `DeleteMyAccount`; `IInstallsService.Claim`; `INotificationsService.RegisterDevice`; `IPeopleService.MakeSignInCode` | Each needs the server's yes or no at that moment and means nothing offline | 2026-11-10 |
-| Links and uploads: signed links to private pictures and files, uploading a file (duplicate check, begin, complete), your private calendar-subscription link and a new one, opening a link to something outside the app | `IMediaService.GetLink`, `FindByHash`, `BeginUpload`, `CompleteUpload`; `ICalendarFilesService.Link`, `ResetLink`; `IDestinationsService.Describe` | The server hands out a link or receives bytes; there is nothing to store. Uploads move to the outbox with the Offline uploads station (owner, 2026-11-11), which narrows this entry | 2026-11-10 |
+| Links: signed links to private pictures and files, your private calendar-subscription link and a new one, opening a link to something outside the app | `IMediaService.GetLink`; `ICalendarFilesService.Link`, `ResetLink`; `IDestinationsService.Describe` | The server hands out a link; there is nothing to store | 2026-11-10 |
 | Leader lookups: searching the church's people to add someone to a ministry, the "what goes" previews before deleting or moving a ministry or removing its calendar, and *Tell people* | `IMinistryLeadingService.Find`, `Deletion`, `Moving`, `CalendarRemoval`; `IEventEditingService.TellPeople` | Searching everyone's names can't be synced to every phone, and a preview must be the server's current answer | 2026-11-10 |
 | Account security changes: changing your name and removing a passkey (ending a device's session is above); your account itself syncs and shows offline, read only | `IAccountsService.UpdateName`, `RemovePasskey` | The owner: "Account and security is read only offline" | 2026-11-11 |
 | Event editors: browsing the Media library beyond what's synced, online only | `IMediaService.List`; `IMediaFoldersService.List` | The owner: "those that *are* synced already (as some will be) can be browsed offline. otherwise online" | 2026-11-11 |
+
+**Uploads are not an exception** (narrowed 2026-11-11; owner: "uploads can work offline? keep it and send it when
+online?"): the app queues a file with the save that uses it, and only the native outbox worker calls
+`IMediaService.FindByHash`, `BeginUpload` and `CompleteUpload` (docs/architecture/offline-and-caching.md, *Files in the
+outbox*). No screen may call them; the test's `MadeOnlyByTheOutboxWorker` checks it. The admin panel's direct upload is
+`[AdminOnly]`.
 
 **Not yet on Sync** (temporary; the test's `NotYetOnSync`): nothing. The list stays empty; it is never an approval.
 
@@ -168,12 +174,20 @@ People can be deleted too (owner, 2026-11-09): a feature that keeps anything abo
 details, their progress) implements `IPersonData` (Platform.Api) so deleting an account forgets it
 ([accounts.md](docs/features/accounts.md), *Deleting an account*).
 
-# Admin work stays in the admin panel
+# Where staff and leader tools live: the phone or the admin panel
 
-Staff tools (drafts, insights, roles, people, media, announcements) are built for the admin panel on
-a computer. **Before designing an admin screen for the phone, or putting one in the app, ask the owner
-and wait for a yes** (owner, 2026-11-03). The app shows staff only what they need on their phone,
-such as previewing a draft on it.
+Ask: **would someone need to do this away from a desk, as part of looking after something they're responsible for?**
+(owner, 2026-11-11, replacing "Admin work stays in the admin panel" of 2026-11-03).
+
+- **On the phone, and in the admin panel too:** the day-to-day running of something. Answering and approving (join
+  requests, roster swaps, prayer wall requests), posting and sharing (news, files, a quick event change, telling
+  people), looking after your own people (adding someone, linking a parent, giving a role in your ministry) and your
+  ministry's own settings. Built for lay leaders and approvers who may never open a computer.
+- **Admin panel only:** setting up and looking after the whole church's app. Who can do what (roles, permissions,
+  accounts), how the app looks (styling, Home, tiles), the media library, imports, analytics and health, bulk and
+  planning work (sending all invitations, planning the year's Life Groups, the sermon library), and dense work with
+  many fields, filters, tables or history (the full pastoral inbox).
+- **When it isn't clear, ask the owner and wait for a yes** before building it.
 
 **Exception, Prayer** (owner, 2026-11-11: "Prayer wall approvals and such should be able to be done on the phone"):
 people holding *Prayer wall* or *Pastoral team* approve wall requests and do the pastoral team's everyday steps on the

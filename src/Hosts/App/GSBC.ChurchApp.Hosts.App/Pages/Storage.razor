@@ -47,7 +47,7 @@
                     <ListGroup>
                         @foreach (OutboxEntry entry in _outbox)
                         {
-                            <ListRow Title="@entry.Method" Subtitle="@Describe(entry)" Icon="send" IconTone="@(entry.Failed ? RowTone.Warm : RowTone.Quiet)">
+                            <ListRow Title="@(entry.FileName is { } file ? $"The file {file}" : entry.Method)" Subtitle="@Describe(entry)" Icon="@(entry.FileName is null ? "send" : "file")" IconTone="@(entry.Failed ? RowTone.Warm : RowTone.Quiet)">
                                 <TrailingContent>
                                     @if (entry.Failed)
                                     {
@@ -114,7 +114,9 @@
     }
 
     private static string Describe(OutboxEntry entry) =>
-        entry.Failed ? $"Couldn't send: {entry.LastError}" : entry.Attempts == 0 ? "Sending" : $"Retrying ({entry.Attempts} tries; {entry.LastError})";
+        entry.Failed ? $"Couldn't send: {entry.LastError}"
+        : entry.WaitsForUpload ? "Waiting for its file to be sent"
+        : entry.Attempts == 0 ? "Sending" : $"Retrying ({entry.Attempts} tries; {entry.LastError})";
 
     private async Task QueueTestSendAsync() => await Outbox.EnqueueAsync("/gsbc.accounts.Session/GetCurrent", []);
 

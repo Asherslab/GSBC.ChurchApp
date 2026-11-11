@@ -140,7 +140,7 @@ The plugin does four things:
 | **Transport** | Makes a gRPC call: method path + request bytes in, response bytes (or a stream of them) out. gRPC-Web over the platform's HTTP client (`URLSession` on iOS), not grpc-swift; see below | URLs, auth headers, retries |
 | **Store** | SQLite (the platform's own: GRDB on iOS, Room on Android; there's no .NET on the native side, and two generic tables need no more) holding `(feed, id, version, payload)` plus a few generic index columns the server fills in per feed (`sort_key`, `starts_at`, `ends_at`, `group_key`), and a sync cursor per feed | Nothing about the payload |
 | **Sync** | Gets changes from one generic `Sync` service, writes them to the store, then tells the UI which feeds changed. **While the app is open it holds a live stream** (below). When closed, it pulls from a silent push and from the OS's background scheduler (BGTaskScheduler / WorkManager) | Feed names |
-| **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be | Method paths |
+| **Outbox** | Queues writes made offline (a prayer request at church with no signal) and sends them through Transport when the network returns, in the background if need be. Also sends files kept on the phone and adds their media ids to the saves waiting for them ([offline-and-caching.md](docs/architecture/offline-and-caching.md), *Files in the outbox*) | Method paths; field numbers to put a media id at |
 
 **Transport decided 2026-11-01, for the owner to veto:** the native layer speaks gRPC-Web (SPEC §10's
 fallback) through `URLSession` rather than native gRPC through grpc-swift. It covers everything the
