@@ -5,7 +5,7 @@ namespace GSBC.ChurchApp.Features.Feedback.Api;
 
 internal sealed class HandledRequests(FeedbackDbContext db, TimeProvider time)
 {
-    public static readonly TimeSpan KeptFor = TimeSpan.FromDays(7);
+    private static readonly TimeSpan KeptFor = TimeSpan.FromDays(7);
 
     public async Task<bool> AlreadyAsync(string? requestId, CancellationToken cancellationToken)
     {

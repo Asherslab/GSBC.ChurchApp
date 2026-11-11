@@ -1,0 +1,48 @@
+@inject FeedbackDeskClient Desk
+@inject TimeProvider Clock
+
+<LiveData @ref="_live" TValue="BlockedPhones" Feeds="DeskFeeds" Load="Desk.BlockedAsync" FailedTitle="Can't load blocked phones right now">
+    @if (context.Value.Phones.Count == 0)
+    {
+        <EmptyState Icon="shield-check" Title="No phones are blocked" Body="Block a phone from one of its pieces of feedback if it's misused. It can be unblocked here." />
+    }
+    else
+    {
+        <ListGroup>
+            @foreach (BlockedPhone phone in context.Value.Phones)
+            {
+                <div class="blocked-row">
+                    <span class="blocked-row__tile"><Icon Name="smartphone" /></span>
+                    <div class="blocked-row__words">
+                        <strong>@(phone.Model.Length > 0 ? phone.Model : "A phone") · @(phone.Sent == 1 ? "1 sent" : $"{phone.Sent} sent")</strong>
+                        <span>@phone.Reason</span>
+                        <span class="blocked-row__when">Blocked by @phone.BlockedBy, @ChurchDates.Ago(phone.BlockedAt, Clock.GetUtcNow().UtcDateTime)@if (phone.LastNumber > 0)
+                            { <text> · last </text><a href="@FeedbackDestinations.Ticket(phone.LastNumber).TrimStart('/')">#@phone.LastNumber</a> }</span>
+                    </div>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == phone.InstallId)" OnClick="() => UnblockAsync(phone.InstallId)">Unblock</Button>
+                </div>
+            }
+        </ListGroup>
+    }
+</LiveData>
+
+@code {
+    private static readonly IReadOnlyCollection<string> DeskFeeds = [FeedbackFeeds.Desk];
+    private LiveData<BlockedPhones>? _live;
+    private string? _busy;
+
+    private async Task UnblockAsync(string installId)
+    {
+        _busy = installId;
+        try
+        {
+            await Desk.UnblockAsync(installId);
+            if (_live is not null)
+                await _live.ReloadAsync();
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

@@ -116,7 +116,7 @@ internal sealed class FeedbackDesk(
     public async Task DeleteNoteAsync(Guid staff, NoteRef reference, CancellationToken cancellationToken)
     {
         TicketRecord ticket = await FindAsync(new TicketRef { Id = reference.TicketId }, tracking: true, cancellationToken);
-        if (!Guid.TryParse(reference.NoteId, out Guid noteId) || ticket.Notes.FirstOrDefault(note => note.Id == noteId) is not { } note)
+        if (!Guid.TryParse(reference.NoteId, out Guid noteId) || ticket.Notes.FirstOrDefault(candidate => candidate.Id == noteId) is not { } note)
             return;
         DateTime now = time.GetUtcNow().UtcDateTime;
         db.Notes.Remove(note);
@@ -167,7 +167,7 @@ internal sealed class FeedbackDesk(
     public async Task UnblockAsync(PhoneRef phone, CancellationToken cancellationToken)
     {
         if (!Guid.TryParse(phone.InstallId, out Guid install)
-            || await db.Blocks.FirstOrDefaultAsync(block => block.InstallId == install, cancellationToken) is not { } block)
+            || await db.Blocks.FirstOrDefaultAsync(row => row.InstallId == install, cancellationToken) is not { } block)
             return;
         db.Blocks.Remove(block);
         FeedbackMarks.PhoneChanged(db, install, time.GetUtcNow().UtcDateTime);
@@ -220,7 +220,7 @@ internal sealed class FeedbackDesk(
 
     private static string NameOf(IReadOnlyDictionary<Guid, string> names, Guid? who) => who is { } id ? names.GetValueOrDefault(id, "Someone") : "Someone";
 
-    public static TicketLine Line(TicketRecord ticket) => new()
+    private static TicketLine Line(TicketRecord ticket) => new()
     {
         Id = ticket.Id.ToString(),
         Number = ticket.Number,

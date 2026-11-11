@@ -3,8 +3,8 @@ set -euo pipefail
 
 environment="${1:-}"
 case "$environment" in
-  dev|uat) ;;
-  *) echo "usage: tools/health/connect.sh dev|uat" >&2; exit 2 ;;
+  dev|uat|local) ;;
+  *) echo "usage: tools/health/connect.sh dev|uat|local" >&2; exit 2 ;;
 esac
 service="gsbc-tool-$environment"
 

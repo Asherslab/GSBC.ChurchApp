@@ -4,9 +4,16 @@
 @inject FileUploads Uploads
 
 <label class="add-row file-pick @(_busy ? "file-pick--busy" : "") @Class">
-    <Icon Name="@(ImagesOnly ? "image" : "file")" Size="IconSize.Small" />
-    <span>@(_busy ? "Keeping it on this phone…" : Label)</span>
-    <InputFile @ref="_input" OnChange="PickAsync" accept="@Uploads.Accepted(ImagesOnly)" disabled="@_busy" class="visually-hidden" />
+    @if (ChildContent is null)
+    {
+        <Icon Name="@(Chosen == PickableFiles.Pictures ? "image" : "file")" Size="IconSize.Small" />
+        <span>@(_busy ? "Keeping it on this phone…" : Label)</span>
+    }
+    else
+    {
+        @ChildContent(_busy)
+    }
+    <InputFile @ref="_input" OnChange="PickAsync" accept="@Uploads.Accepted(Chosen)" multiple="@Multiple" disabled="@_busy" class="visually-hidden" aria-label="@Label" />
 </label>
 <Notice Tone="NoticeTone.Warning" Text="@_problem" />
 
@@ -17,25 +24,50 @@
 
     [Parameter, EditorRequired] public required string Label { get; set; }
     [Parameter] public bool ImagesOnly { get; set; } = true;
+    [Parameter] public PickableFiles? Kinds { get; set; }
+    [Parameter] public bool Multiple { get; set; }
+    [Parameter] public int Limit { get; set; } = 1;
+    [Parameter] public Func<string, long, string?>? TooLarge { get; set; }
     [Parameter] public string AltText { get; set; } = "";
     [Parameter] public string? Class { get; set; }
+    [Parameter] public RenderFragment<bool>? ChildContent { get; set; }
     [Parameter] public EventCallback<MediaRef> OnPicked { get; set; }
+
+    private PickableFiles Chosen => Kinds ?? (ImagesOnly ? PickableFiles.Pictures : PickableFiles.PicturesAndDocuments);
 
     private async Task PickAsync(InputFileChangeEventArgs args)
     {
         if (_input?.Element is not { } input)
             return;
         (_busy, _problem) = (true, null);
+        List<string> problems = [];
+        List<MediaRef> kept = [];
         try
         {
-            PickedFile picked = await Uploads.KeepAsync(input, args.File.Name, args.File.ContentType, ImagesOnly, AltText);
-            _problem = picked.Problem;
-            if (picked.Media is { } media)
-                await OnPicked.InvokeAsync(media);
+            IReadOnlyList<IBrowserFile> files = Multiple ? args.GetMultipleFiles(int.MaxValue) : [args.File];
+            if (files.Count > Limit)
+                problems.Add(Limit == 1 ? "Choose one at a time." : $"Only the first {Limit} were kept; that's the most at once.");
+            for (int index = 0; index < Math.Min(files.Count, Limit); index++)
+            {
+                IBrowserFile file = files[index];
+                if (Uploads.ContentTypeOf(file.Name, file.ContentType, Chosen) is { } contentType && TooLarge?.Invoke(contentType, file.Size) is { } tooLarge)
+                {
+                    problems.Add(tooLarge);
+                    continue;
+                }
+                PickedFile picked = await Uploads.KeepAsync(input, file.Name, file.ContentType, Chosen, AltText, index);
+                if (picked.Problem is { } problem)
+                    problems.Add(problem);
+                if (picked.Media is { } media)
+                    kept.Add(media);
+            }
         }
         finally
         {
             _busy = false;
+            _problem = problems.Count == 0 ? null : string.Join(" ", problems);
         }
+        foreach (MediaRef media in kept)
+            await OnPicked.InvokeAsync(media);
     }
 }

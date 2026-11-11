@@ -16,7 +16,9 @@ public sealed class ClosingTests : FeedbackHost
         string id = await SendAsync(Phone, null, attachments: ["a1", "a2"], phoneData: "store");
         Assert.Equal(["a1", "a2"], Media.Uses[FeedbackMedia.AttachmentsOwner(Guid.Parse(id))]);
 
+        Assert.Empty(Told.Settled);
         await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.InProgress }, null, Cancel));
+        Assert.Single(Told.Settled);
         Assert.Empty(Media.Forgotten);
         await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.Resolved }, null, Cancel));
 

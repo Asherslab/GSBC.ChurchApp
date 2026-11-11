@@ -38,6 +38,7 @@ img { display: block; max-width: 100%; }
 .small { font-size: var(--text-caption); }
 .footer-note { display: grid; justify-items: center; gap: 12px; padding: 40px var(--gutter) 8px; text-align: center; font-size: var(--text-caption); color: var(--ink-3); }
 .footer-note .brand-mark { width: 30px; }
+.footer-note__mark { display: inline-grid; place-items: center; padding: 7px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; -webkit-user-select: none; user-select: none; }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: 1ms !important; animation-iteration-count: 1 !important; transition-duration: 1ms !important; }

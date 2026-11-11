@@ -22,6 +22,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         "discardOutbox",
         "discardQuietOutbox",
         "stageUpload",
+        "copyStore",
         "appendUpload",
         "finishUpload",
         "forgetUpload",
@@ -230,6 +231,7 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         call.resolve(["state": runtime.state.rawValue, "developmentBuild": runtime.isDevelopmentBuild, "signedIn": runtime.signedIn,
                       "version": info?["CFBundleShortVersionString"] as? String ?? "", "build": info?["CFBundleVersion"] as? String ?? "",
                       "platform": "ios", "osMajor": ProcessInfo.processInfo.operatingSystemVersion.majorVersion,
+                      "osVersion": UIDevice.current.systemVersion, "model": Self.model,
                       "gateway": transport?.gateway.absoluteString ?? ""])
     }
 
@@ -342,6 +344,30 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         } catch {
             call.reject(error.localizedDescription)
         }
+    }
+
+    @objc func copyStore(_ call: CAPPluginCall) {
+        guard let shelf = runtime.shelf, let store = runtime.store else { return call.reject("This build can't copy its stored data.") }
+        do {
+            let token = try shelf.begin(extension: "sqlite")
+            do {
+                try store.copy(to: shelf.file(token))
+                let staged = try shelf.finish(token)
+                call.resolve(["token": staged.token, "bytes": staged.bytes, "sha256": staged.sha256, "path": staged.url.path])
+            } catch {
+                shelf.forget(token)
+                throw error
+            }
+        } catch {
+            call.reject(error.localizedDescription)
+        }
+    }
+
+    private static var model: String {
+        if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated }
+        var system = utsname()
+        uname(&system)
+        return withUnsafeBytes(of: &system.machine) { bytes in String(decoding: bytes.prefix(while: { $0 != 0 }), as: UTF8.self) }
     }
 
     @objc func forgetUpload(_ call: CAPPluginCall) {

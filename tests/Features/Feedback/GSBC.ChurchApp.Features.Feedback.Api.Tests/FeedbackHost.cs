@@ -74,7 +74,7 @@ public abstract class FeedbackHost : IAsyncLifetime
         return true;
     });
 
-    protected static ClaimsPrincipal SignedIn(Guid person) => new(new ClaimsIdentity([new Claim(Caller.UserIdClaim, person.ToString())], "test"));
+    private static ClaimsPrincipal SignedIn(Guid person) => new(new ClaimsIdentity([new Claim(Caller.UserIdClaim, person.ToString())], "test"));
 
     protected async Task<string> SendAsync(Guid? install, Guid? person, string text = "The Save button is cut off", IReadOnlyList<string>? attachments = null,
         string phoneData = "", string? id = null)

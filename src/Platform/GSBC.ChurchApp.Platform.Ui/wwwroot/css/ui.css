@@ -1266,3 +1266,12 @@ button.text-link { padding: 0; border: 0; background: none; font-family: inherit
 .bubble--removed { background: transparent; box-shadow: inset 0 0 0 1px var(--line); color: var(--ink-3); font-style: italic; font-size: var(--text-caption); }
 .bubble-row--mine .bubble--removed { background: transparent; color: var(--ink-3); }
 .bubble-row--mine .bubble--removed .bubble__time { color: var(--ink-3); }
+
+.editor-foot { position: sticky; bottom: -32px; z-index: 5; display: grid; gap: 10px; padding: 12px var(--gutter); border-top: 1px solid var(--line); background: var(--bar); backdrop-filter: blur(18px) saturate(1.4); -webkit-backdrop-filter: blur(18px) saturate(1.4); }
+.editor-foot__actions { display: flex; gap: 8px; }
+.editor-foot__actions .btn--block { flex: 1 1 auto; min-width: 0; }
+.editor-foot__actions > .save-bar--block { flex: 1 1 auto; min-width: 0; }
+.editor-foot__actions .btn:not(.btn--block) { flex: none; }
+.editor-foot__delete { justify-self: start; min-height: var(--touch); padding: 0; border: 0; background: none; color: var(--danger); font: inherit; font-size: var(--text-caption); font-weight: 600; cursor: pointer; }
+.editor-foot--panel { position: sticky; bottom: 0; padding: 14px 16px 16px; background: var(--surface); backdrop-filter: none; -webkit-backdrop-filter: none; }
+.media-file { display: inline-flex; align-items: center; gap: 6px; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }

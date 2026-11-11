@@ -169,6 +169,15 @@ hold `media.upload`, so a feature's **area** says who may upload into it:
 - **Ministry files** (`ministry-files`, *Ministry files*, seen by the ministry's team, staff may delete unused ones)
   are the first. Chats' area follows on its branch.
 
+**Areas name their own files** (2026-11-11, for [feedback](feedback.md)). `MediaSystemArea.Files` lists the content
+types an area takes, each with its largest size; an area that lists them takes only those (Feedback: pictures up to
+25 MB, MP4 and QuickTime videos up to 150 MB; its phone-data area: SQLite copies up to 100 MB), and video and SQLite
+are taken nowhere else. `BeginUpload` and `CompleteUpload` both check it. **An install can upload** where the area's
+`IMediaAreaAccess.MayUploadFromInstallAsync` allows it: the three upload methods are `[AppInstallOrSignedIn]`, and a
+file uploaded by an install records the install's id as its uploader. **A feature deletes what it filed:**
+`IMediaSystemFolders.ForgetAsync(area, ids)` deletes those files of its area that nothing uses (after the feature drops
+its uses), and `ForgetUnusedAsync(area, before)` the area's unused files uploaded before a time.
+
 Abandoned uploads: the pending row is pruned after a day, and the staged object by the bucket's
 lifecycle rule (below).
 

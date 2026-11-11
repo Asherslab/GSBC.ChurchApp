@@ -1,0 +1,22 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+@if (Media.IsVideo)
+{
+    <MediaVideo Media="Media" Controls="Controls" Class="@Class" />
+}
+else if (Media.IsImage)
+{
+    <MediaImage Media="Media" Size="Size" Alt="@(Alt ?? Media.FileName)" Class="@Class" />
+}
+else
+{
+    <span class="media-file @Class"><Icon Name="file" Size="IconSize.Small" />@Media.FileName</span>
+}
+
+@code {
+    [Parameter, EditorRequired] public required MediaRef Media { get; set; }
+    [Parameter] public bool Controls { get; set; } = true;
+    [Parameter] public MediaSizeName Size { get; set; } = MediaSizeName.ForPhones;
+    [Parameter] public string? Alt { get; set; }
+    [Parameter] public string? Class { get; set; }
+}

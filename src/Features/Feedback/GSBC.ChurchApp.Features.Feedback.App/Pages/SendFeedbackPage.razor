@@ -1,0 +1,191 @@
+@page "/feedback/send"
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject FeedbackOnPhone Feedback
+
+<UnsavedGuard Changed="() => _sentId is null && (_text.Trim().Length > 0 || _picked.Count > 0)" What="your feedback" />
+<RefreshOn On="ChangeKind.Outbox | ChangeKind.Session | ChangeKind.Access" Changed="LoadAsync" />
+
+<Page Title="Send feedback" BackHref="more" BackLabel="More">
+    <Masthead Title="Send feedback" Note="Something broken, looking wrong, or an idea? Tell us." />
+    @if (_here is null || _allowed is null)
+    {
+        <Section First="true"><Skeleton /></Section>
+    }
+    else if (_allowed == false || _here.Refused)
+    {
+        <Section First="true">
+            <EmptyState Icon="lock" Title="Feedback isn't available on this phone" Body="If you think that's a mistake, speak to the church office." />
+        </Section>
+    }
+    else if (_sentId is not null)
+    {
+        <Section First="true">
+            <EmptyState Icon="check" Title="@(Waiting ? "Thanks, it's on its way" : "Thanks, it's sent")" Body="@SentBody">
+                <div class="feedback-sent__actions">
+                    @if (!_here.OverTheLimit)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" OnClick="Again">Send another</Button>
+                    }
+                    <Button Href="more">Done</Button>
+                </div>
+            </EmptyState>
+        </Section>
+    }
+    else if (_here.OverTheLimit)
+    {
+        <Section First="true">
+            <EmptyState Icon="clock" Title="@($"This phone has sent {_here.DailyLimit} today")" Body="That's the most for a day. You can send more tomorrow." />
+        </Section>
+    }
+    else if (!Feedback.CanQueue)
+    {
+        <Section First="true">
+            <EmptyState Icon="smartphone" Title="Send it from the app" Body="Feedback is sent from the church app on a phone, with its screenshots and videos." />
+        </Section>
+    }
+    else
+    {
+        <Section First="true">
+            @if (_picked.Count == 0)
+            {
+                <FilePick Label="Choose screenshots or videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments"
+                          TooLarge="FeedbackLimits.TooLarge" Class="feedback-empty" OnPicked="Picked">
+                    <span class="feedback-empty__tile"><Icon Name="image" /></span>
+                    <span class="feedback-empty__title">@(context ? "Keeping it on this phone…" : "Choose screenshots or videos")</span>
+                    <span class="feedback-empty__hint">From your photo library. Up to @FeedbackLimits.MostAttachments.</span>
+                </FilePick>
+            }
+            else
+            {
+                <div class="feedback-stage">
+                    <div class="feedback-stage__shown">
+                        <MediaPreview Media="Chosen" Controls="true" Class="feedback-stage__media" />
+                        <button type="button" class="feedback-stage__remove" aria-label="@($"Don't send {Chosen.FileName}")" @onclick="() => UnpickAsync(Chosen)"><Icon Name="x" Size="IconSize.Small" /></button>
+                    </div>
+                    <div class="feedback-strip" role="listbox" aria-label="Chosen screenshots and videos">
+                        @foreach (MediaRef media in _picked)
+                        {
+                            <button type="button" role="option" aria-selected="@(media == Chosen)" class="feedback-strip__item @(media == Chosen ? "feedback-strip__item--on" : "")"
+                                    aria-label="@media.FileName" @onclick="() => _chosen = media">
+                                <MediaPreview Media="media" Controls="false" Class="feedback-strip__media" />
+                                @if (media.IsVideo)
+                                {
+                                    <span class="feedback-strip__play"><Icon Name="play" Size="IconSize.Small" /></span>
+                                }
+                            </button>
+                        }
+                        @if (_picked.Count < FeedbackLimits.MostAttachments)
+                        {
+                            <FilePick Label="Add another screenshot or video" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments - _picked.Count"
+                                      TooLarge="FeedbackLimits.TooLarge" Class="feedback-strip__add" OnPicked="Picked">
+                                <Icon Name="@(context ? "clock" : "plus")" />
+                            </FilePick>
+                        }
+                    </div>
+                </div>
+                <p class="feedback-count">@_picked.Count chosen · up to @FeedbackLimits.MostAttachments</p>
+            }
+        </Section>
+        <Section>
+            <TextField Label="Tell us about it" Multiline="true" MaxLength="FeedbackLimits.LongestText" AutoCapitalize="sentences" @bind-Value="_text"
+                       Hint="What happened, what you expected, or your idea. Your own words are fine." />
+            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+        </Section>
+        <div class="editor-foot">
+            <div class="editor-foot__actions">
+                <SaveBar Block="true" Label="Send" Busy="_sending" OnSave="SendAsync" Blocked="@Blocked" />
+            </div>
+        </div>
+    }
+</Page>
+
+@code {
+    private readonly List<MediaRef> _picked = [];
+    private MediaRef? _chosen;
+    private string _text = "";
+    private string? _sentId;
+    private bool _sending;
+    private bool? _allowed;
+    private FeedbackHere? _here;
+
+    [Inject] private Platform.Client.Native.NativeBridge Bridge { get; set; } = null!;
+    [Inject] private RecentPages Recent { get; set; } = null!;
+
+    private MediaRef Chosen => _chosen is { } chosen && _picked.Contains(chosen) ? chosen : _picked[0];
+
+    private bool Waiting => _here?.Last is { State: not Sending.Sent };
+
+    private string SentBody => Waiting
+        ? "No signal right now, so it waits on this phone with what you chose and goes by itself when you're back online."
+        : "Thank you. It's gone to the people who look after the app.";
+
+    private string? Blocked => _text.Trim().Length == 0 && _picked.Count == 0 ? "Write something or add a picture." : null;
+
+    private string SentWith
+    {
+        get
+        {
+            List<string> parts = [];
+            if (Bridge.AppVersion is { Length: > 0 } version)
+                parts.Add($"app {version} ({Bridge.AppBuild})");
+            if (Bridge.Model is { Length: > 0 } model)
+                parts.Add(model);
+            if (Bridge.OsVersion is { Length: > 0 } os)
+                parts.Add($"{(Bridge.Platform == "android" ? "Android" : "iOS")} {os}");
+            if (Recent.Last.Length > 1)
+                parts.Add($"from {Recent.Last}");
+            parts.Add("and this phone's state, with a copy of what it has stored");
+            return string.Join(", ", parts) + ".";
+        }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadAsync();
+        _allowed = Feedback.HoldsTheRole || await Feedback.ProvenHereAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        _here = await Feedback.HereAsync();
+        if (Feedback.HoldsTheRole)
+            _allowed = true;
+    }
+
+    private void Picked(MediaRef media)
+    {
+        if (_picked.Count >= FeedbackLimits.MostAttachments)
+            return;
+        _picked.Add(media);
+        _chosen ??= media;
+    }
+
+    private async Task UnpickAsync(MediaRef media)
+    {
+        _picked.Remove(media);
+        if (_chosen == media)
+            _chosen = _picked.FirstOrDefault();
+        await Feedback.ForgetAsync(media);
+    }
+
+    private async Task SendAsync()
+    {
+        _sending = true;
+        try
+        {
+            _sentId = await Feedback.SendAsync(_text, _picked.ToList());
+            _picked.Clear();
+            _chosen = null;
+            _text = "";
+            _here = await Feedback.HereAsync();
+        }
+        finally
+        {
+            _sending = false;
+        }
+    }
+
+    private void Again() => _sentId = null;
+}

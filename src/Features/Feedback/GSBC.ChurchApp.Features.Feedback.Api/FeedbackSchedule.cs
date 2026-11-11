@@ -8,7 +8,7 @@ namespace GSBC.ChurchApp.Features.Feedback.Api;
 
 internal sealed class FeedbackSchedule(IServiceScopeFactory scopes, TimeProvider time, ILogger<FeedbackSchedule> logger) : BackgroundService
 {
-    public static readonly TimeSpan Every = TimeSpan.FromHours(1);
+    private static readonly TimeSpan Every = TimeSpan.FromHours(1);
     private const long AdvisoryLockKey = 0x6665_6564_6261_636b;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)

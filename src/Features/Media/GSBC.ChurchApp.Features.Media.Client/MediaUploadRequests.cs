@@ -11,17 +11,20 @@ public sealed class MediaUploadRequests : IUploadRequests
     public const string BeginUpload = Service + "BeginUpload";
     public const string CompleteUpload = Service + "CompleteUpload";
 
-    public string Accepted(bool imagesOnly) => string.Join(",", Usable(imagesOnly));
+    public string Accepted(PickableFiles kinds) => string.Join(",", Usable(kinds));
 
-    public string? ContentTypeOf(string fileName, string reported, bool imagesOnly)
+    public string? ContentTypeOf(string fileName, string reported, PickableFiles kinds)
     {
         string contentType = MediaTypes.ContentTypeOf(fileName, reported).ToLowerInvariant();
-        return Usable(imagesOnly).Contains(contentType) ? contentType : null;
+        return Usable(kinds).Contains(contentType) ? contentType : null;
     }
 
-    public string Unusable(string fileName, bool imagesOnly) => imagesOnly
-        ? $"{fileName} isn't a picture this app can use. Choose a JPEG, PNG, WebP or GIF."
-        : $"{fileName} isn't a picture or PDF this app can use.";
+    public string Unusable(string fileName, PickableFiles kinds) => kinds switch
+    {
+        PickableFiles.Pictures => $"{fileName} isn't a picture this app can use. Choose a JPEG, PNG, WebP or GIF.",
+        PickableFiles.PicturesAndVideos => $"{fileName} isn't a picture or video this app can send. Choose a screenshot, photo or screen recording.",
+        _ => $"{fileName} isn't a picture or PDF this app can use.",
+    };
 
     public QueuedUpload For(StagedFile file, UploadTarget target, IReadOnlyList<MediaSlot> slots)
     {
@@ -40,8 +43,14 @@ public sealed class MediaUploadRequests : IUploadRequests
             slots);
     }
 
-    private static IEnumerable<string> Usable(bool imagesOnly) =>
-        MediaTypes.Accepted.Where(type => !MediaTypes.IsFont(type) && (!imagesOnly || type.StartsWith("image/", StringComparison.Ordinal)));
+    private static IEnumerable<string> Usable(PickableFiles kinds) => kinds switch
+    {
+        PickableFiles.Pictures => MediaTypes.Accepted.Where(IsPicture),
+        PickableFiles.PicturesAndVideos => [.. MediaTypes.Accepted.Where(IsPicture), MediaTypes.Mp4, MediaTypes.QuickTime],
+        _ => MediaTypes.Accepted.Where(type => !MediaTypes.IsFont(type)),
+    };
+
+    private static bool IsPicture(string type) => type.StartsWith("image/", StringComparison.Ordinal);
 
     private static byte[] Encode<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T message)
     {

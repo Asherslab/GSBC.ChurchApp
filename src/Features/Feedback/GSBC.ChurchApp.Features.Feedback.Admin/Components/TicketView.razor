@@ -1,0 +1,273 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@inject FeedbackDeskClient Desk
+@inject IMediaFiles Files
+@inject IJSRuntime Js
+@inject TimeProvider Clock
+
+<UnsavedGuard Changed="() => _note.Trim().Length > 0 || _blockReason.Trim().Length > 0" What="@(_blockReason.Trim().Length > 0 ? "why you're blocking this phone" : "your note")" />
+
+<LiveData @ref="_live" TValue="Ticket" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load this feedback right now">
+    @{
+        Ticket ticket = context.Value;
+        TicketLine line = ticket.Line;
+    }
+    <article class="ticket @(Docked ? "ticket--docked" : "ticket--page")" aria-label="@($"Feedback #{line.Number}")">
+        @if (Docked)
+        {
+            <header class="ticket__head">
+                <p class="ticket__meta">#@line.Number · @line.From · @ChurchDates.Ago(line.SentAt, Now)</p>
+                <div class="ticket__head-actions">
+                    <a class="text-link" href="@FeedbackDestinations.Ticket(line.Number).TrimStart('/')" target="_blank" rel="noopener">Open as a page<Icon Name="external-link" Size="IconSize.Small" /></a>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Close this feedback" OnClick="OnClose" />
+                </div>
+                <h2 class="ticket__title" id="ticket-title-@line.Number">@FeedbackWords.Title(line.Text)</h2>
+            </header>
+        }
+        else
+        {
+            <TitleBand Title="@FeedbackWords.Title(line.Text)" Lead="@($"#{line.Number} · {line.From} · {ChurchDates.Ago(line.SentAt, Now)}")"
+                       BackHref="feedback" BackText="Feedback" BrowserTitle="@($"Feedback #{line.Number}")" />
+        }
+
+        <div class="ticket__status">
+            <Segmented TValue="TicketStatus" Label="Status" Options="StatusOptions" Value="line.Status" ValueChanged="status => SetStatusAsync(ticket, status)" />
+            <div class="ticket__status-line">
+                @if (line.Status == TicketStatus.NotDoing)
+                {
+                    <Pill Tone="PillTone.Quiet">Not doing</Pill>
+                }
+                else
+                {
+                    <button type="button" class="ticket__quiet-action" disabled="@(_busy is not null)" @onclick="() => SetStatusAsync(ticket, TicketStatus.NotDoing)">Mark not doing</button>
+                }
+                <span class="ticket__hint">@(FeedbackWords.IsClosed(line.Status)
+                    ? $"Closed {ChurchDates.Ago(ticket.ClosedAt ?? line.ChangedAt, Now)}. Deleted entirely 180 days after it closed."
+                    : "Its pictures, videos and phone data are deleted once it's Resolved or Not doing.")</span>
+            </div>
+        </div>
+
+        <div class="ticket__body">
+            <div class="ticket__main">
+                @if (ticket.Attachments.Count > 0)
+                {
+                    <div class="ticket__pictures" aria-label="Screenshots and videos">
+                        @foreach (MediaRef media in ticket.Attachments)
+                        {
+                            <figure class="ticket__picture">
+                                <MediaPreview Media="media" Size="MediaSizeName.Original" Class="ticket__media" />
+                                <figcaption>@(media.IsVideo ? "Video" : "Screenshot") · @FeedbackWords.Size(media.Bytes)</figcaption>
+                            </figure>
+                        }
+                    </div>
+                }
+                else if (line.AttachmentsDeleted)
+                {
+                    <p class="ticket__gone"><Icon Name="trash" Size="IconSize.Small" />Its pictures and videos were deleted when it closed.</p>
+                }
+                @if (FeedbackWords.SaysMore(line.Text))
+                {
+                    <p class="ticket__words">@line.Text</p>
+                }
+
+                <section class="ticket__timeline" aria-labelledby="ticket-history-@line.Number">
+                    <h3 id="ticket-history-@line.Number">What's happened</h3>
+                    <ol class="timeline">
+                        @foreach (TimelineItem item in Timeline(ticket))
+                        {
+                            @if (item.Note is { } note)
+                            {
+                                <li class="timeline__note">
+                                    <p>@note.Text</p>
+                                    <span class="timeline__by">@note.Author · @ChurchDates.Ago(note.At, Now)
+                                        <button type="button" class="timeline__delete" aria-label="Delete this note" @onclick="() => DeleteNoteAsync(ticket, note.Id)"><Icon Name="x" Size="IconSize.Small" /></button>
+                                    </span>
+                                </li>
+                            }
+                            else if (item.Step is { } step)
+                            {
+                                <li class="timeline__step"><strong>@step.Who</strong> @step.What.ToLowerInvariant() · @ChurchDates.Ago(step.At, Now)</li>
+                            }
+                        }
+                    </ol>
+                    <TextField Label="Add a note" Multiline="true" MaxLength="2000" @bind-Value="_note" />
+                    <SaveBar Label="Add the note" Busy="@(_busy == "note")" Blocked="@(_note.Trim().Length == 0 ? "Write the note to add it." : null)" OnSave="() => AddNoteAsync(ticket)" />
+                </section>
+            </div>
+
+            <aside class="ticket__side" aria-label="What came with it">
+                <h3>Sent with it</h3>
+                <dl class="ticket__facts">
+                    <dt>From</dt><dd>@line.From</dd>
+                    <dt>Sent</dt><dd>@ChurchDates.Describe(line.SentAt, DateLineStyle.Long, true, Now)</dd>
+                    <dt>App</dt><dd>@AppLine(ticket)</dd>
+                    <dt>Phone</dt><dd>@PhoneLine(ticket)</dd>
+                    @if (ticket.Page.Length > 0)
+                    {
+                        <dt>Page</dt><dd>@ticket.Page</dd>
+                    }
+                </dl>
+
+                <h3>This phone</h3>
+                @if (ticket.InstallId.Length == 0)
+                {
+                    <p class="ticket__note">Sent by someone with the Feedback role from a phone that hasn't proved itself, so there's no phone to block.</p>
+                }
+                else if (ticket.Blocked)
+                {
+                    <p class="ticket__note"><Pill Tone="PillTone.Danger">Blocked</Pill> @ticket.BlockedBecause</p>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == "block")" OnClick="() => UnblockAsync(ticket)">Unblock this phone</Button>
+                }
+                else
+                {
+                    <p class="ticket__note">@(ticket.FromThisPhone == 1 ? "This is the only feedback from this phone." : $"{ticket.FromThisPhone} pieces of feedback from this phone.")</p>
+                    @if (_blocking)
+                    {
+                        <TextField Label="Why block it?" Hint="Only people who look after feedback see this." MaxLength="300" @bind-Value="_blockReason" />
+                        <div class="ticket__actions">
+                            <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Say why to block it." : null)" OnSave="() => BlockAsync(ticket)" />
+                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => (_blocking, _blockReason) = (false, string.Empty)">Cancel</Button>
+                        </div>
+                    }
+                    else
+                    {
+                        <button type="button" class="ticket__danger-link" @onclick="() => _blocking = true">Block this phone</button>
+                    }
+                }
+
+                @if (ticket.PhoneData is { } data)
+                {
+                    <h3>Its stored data</h3>
+                    <Button Variant="ButtonVariant.Quiet" Small="true" Icon="database" Busy="@(_busy == "data")" OnClick="() => DownloadAsync(data)">Download a copy (@FeedbackWords.Size(data.Bytes))</Button>
+                    <p class="ticket__hint">Everything the phone had synced, for finding a bug. It can hold the person's private things.</p>
+                }
+                else if (ticket.HadPhoneData && !line.AttachmentsDeleted)
+                {
+                    <p class="ticket__hint">A copy of the phone's stored data came with it; downloading it needs the phone data permission.</p>
+                }
+
+                @if (ticket.State.Length > 0)
+                {
+                    <details class="ticket__state">
+                        <summary>The phone's state</summary>
+                        <pre>@ticket.State</pre>
+                    </details>
+                }
+
+                <button type="button" class="ticket__danger-link" @onclick="() => _deleting = true">Delete this feedback</button>
+            </aside>
+        </div>
+    </article>
+
+    <Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="@($"Delete #{line.Number}?")"
+           Lead="Its words, pictures, videos and notes go. This can't be undone.">
+        <Actions>
+            <Button Variant="ButtonVariant.Danger" Block="true" Busy="@(_busy == "delete")" OnClick="() => DeleteAsync(ticket)">Delete it</Button>
+            <Button Variant="ButtonVariant.Quiet" Block="true" OnClick="() => _deleting = false">Keep it</Button>
+        </Actions>
+    </Sheet>
+</LiveData>
+<Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+@code {
+    private static readonly IReadOnlyCollection<string> DeskFeeds = [FeedbackFeeds.Desk];
+    private static readonly IReadOnlyList<SegmentOption<TicketStatus>> StatusOptions =
+        FeedbackWords.Board.Select(status => new SegmentOption<TicketStatus>(status, FeedbackWords.Step(status))).ToList();
+
+    private LiveData<Ticket>? _live;
+    private string _note = "";
+    private string _blockReason = "";
+    private bool _blocking;
+    private bool _deleting;
+    private string? _busy;
+    private string? _problem;
+
+    [Parameter, EditorRequired] public int Number { get; set; }
+    [Parameter] public bool Docked { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback OnGone { get; set; }
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private Task<Ticket> LoadAsync() => Desk.TicketAsync(Number);
+
+    private sealed record TimelineItem(DateTime At, TicketNote? Note, TicketStep? Step);
+
+    private static IEnumerable<TimelineItem> Timeline(Ticket ticket) =>
+        ticket.History.Select(step => new TimelineItem(step.At, null, step))
+            .Concat(ticket.Notes.Select(note => new TimelineItem(note.At, note, null)))
+            .OrderBy(item => item.At);
+
+    private static string AppLine(Ticket ticket)
+    {
+        PhoneDetails phone = ticket.Phone ?? new PhoneDetails();
+        List<string> parts = [];
+        if (phone.AppVersion.Length > 0)
+            parts.Add($"{phone.AppVersion} ({phone.AppBuild})");
+        if (ticket.Environment.Length > 0)
+            parts.Add(ticket.Environment);
+        if (phone.DevelopmentBuild)
+            parts.Add("a development build");
+        return parts.Count == 0 ? "Not known" : string.Join(" · ", parts);
+    }
+
+    private static string PhoneLine(Ticket ticket)
+    {
+        PhoneDetails phone = ticket.Phone ?? new PhoneDetails();
+        string system = $"{FeedbackWords.Platform(phone)} {phone.OsVersion}".Trim();
+        return string.Join(" · ", new[] { phone.Model, system }.Where(part => part.Length > 0)) is { Length: > 0 } line ? line : "Not known";
+    }
+
+    private Task SetStatusAsync(Ticket ticket, TicketStatus status) =>
+        status == ticket.Line.Status ? Task.CompletedTask : DoAsync("status", () => Desk.SetStatusAsync(ticket.Line.Id, status));
+
+    private Task AddNoteAsync(Ticket ticket) => DoAsync("note", async () =>
+    {
+        await Desk.AddNoteAsync(ticket.Line.Id, _note);
+        _note = "";
+    });
+
+    private Task DeleteNoteAsync(Ticket ticket, string noteId) => DoAsync("note", () => Desk.DeleteNoteAsync(ticket.Line.Id, noteId));
+
+    private Task BlockAsync(Ticket ticket) => DoAsync("block", async () =>
+    {
+        await Desk.BlockAsync(ticket.Line.Id, _blockReason);
+        (_blocking, _blockReason) = (false, "");
+    });
+
+    private Task UnblockAsync(Ticket ticket) => DoAsync("block", () => Desk.UnblockAsync(ticket.InstallId));
+
+    private async Task DeleteAsync(Ticket ticket)
+    {
+        await DoAsync("delete", () => Desk.DeleteAsync(ticket.Line.Id), reload: false);
+        if (_problem is null)
+        {
+            _deleting = false;
+            await OnGone.InvokeAsync();
+        }
+    }
+
+    private Task DownloadAsync(MediaRef data) => DoAsync("data", async () =>
+    {
+        if (await Files.SourceOfAsync(data) is { } link)
+            await Js.InvokeVoidAsync("open", link, "_blank");
+    }, reload: false);
+
+    private async Task DoAsync(string what, Func<Task> work, bool reload = true)
+    {
+        (_busy, _problem) = (what, null);
+        try
+        {
+            await work();
+            if (reload && _live is not null)
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

@@ -11,8 +11,6 @@ namespace GSBC.ChurchApp.Features.Feedback.Api;
 internal sealed class FeedbackSending(
     FeedbackDbContext db, FeedbackSenders senders, FeedbackMedia media, FeedbackTelling telling, IPeopleIndex people, IHostEnvironment environment, TimeProvider time)
 {
-    public const string NotAvailable = "Feedback isn't available on this phone.";
-
     public async Task SendAsync(Sender sender, FeedbackSend send, CancellationToken cancellationToken)
     {
         Guid id = Guid.TryParse(send.Id, out Guid parsed) && parsed != Guid.Empty ? parsed : throw Invalid("Feedback needs its id.");
@@ -34,7 +32,7 @@ internal sealed class FeedbackSending(
         switch (FeedbackRules.MaySend(sender, await senders.SentTodayAsync(sender, cancellationToken)))
         {
             case SendVerdict.NotHere or SendVerdict.Blocked:
-                throw new RpcException(new Status(StatusCode.PermissionDenied, NotAvailable));
+                throw new RpcException(new Status(StatusCode.PermissionDenied, FeedbackLimits.NotAvailable));
             case SendVerdict.TooMany:
                 throw new RpcException(new Status(StatusCode.ResourceExhausted,
                     $"This phone has sent {FeedbackRules.DailyLimit(sender)} today, the most for a day. It sends this one tomorrow."));

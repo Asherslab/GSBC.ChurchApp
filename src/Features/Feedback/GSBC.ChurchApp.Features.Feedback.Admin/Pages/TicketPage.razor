@@ -1,0 +1,8 @@
+@page "/feedback/{Number:int}"
+@inject NavigationManager Navigation
+
+<TicketView @key="Number" Number="Number" OnGone="() => Navigation.NavigateTo(FeedbackDestinations.Desk.TrimStart('/'))" />
+
+@code {
+    [Parameter] public int Number { get; set; }
+}

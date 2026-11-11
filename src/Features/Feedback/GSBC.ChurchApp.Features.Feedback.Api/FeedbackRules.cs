@@ -15,29 +15,27 @@ internal sealed record Sender(Guid? Install, Guid? User, bool HoldsTheRole, bool
 
 internal static class FeedbackRules
 {
-    public const int LongestText = 4000;
+    public const int LongestText = FeedbackLimits.LongestText;
     public const int LongestNote = 2000;
     public const int LongestReason = 300;
     public const int LongestPage = 300;
     public const int LongestState = 64 * 1024;
     public const int LongestDetail = 80;
-    public const int MostAttachments = 6;
-    public const int PerPhoneADay = 5;
-    public const int WithTheRoleADay = 50;
+    public const int MostAttachments = FeedbackLimits.MostAttachments;
     public const int UploadAsksADay = 80;
-    public const long LargestPicture = 25L * 1024 * 1024;
-    public const long LargestVideo = 150L * 1024 * 1024;
-    public const long LargestPhoneData = 100L * 1024 * 1024;
+    public const long LargestPicture = FeedbackLimits.LargestPicture;
+    public const long LargestVideo = FeedbackLimits.LargestVideo;
+    public const long LargestPhoneData = FeedbackLimits.LargestPhoneData;
 
     public static readonly TimeSpan Day = TimeSpan.FromDays(1);
     public static readonly TimeSpan KeptAfterClosing = TimeSpan.FromDays(180);
     public static readonly TimeSpan UnsentUploadsKeptFor = TimeSpan.FromDays(4);
 
-    public static int DailyLimit(Sender sender) => sender.HoldsTheRole ? WithTheRoleADay : PerPhoneADay;
+    public static int DailyLimit(Sender sender) => sender.HoldsTheRole ? FeedbackLimits.WithTheRoleADay : FeedbackLimits.PerPhoneADay;
 
     public static SendVerdict MaySend(Sender sender, int sentInTheLastDay)
     {
-        if (!sender.HoldsTheRole && sender.Install is null)
+        if (sender is { HoldsTheRole: false, Install: null })
             return SendVerdict.NotHere;
         if (sender.Blocked)
             return SendVerdict.Blocked;

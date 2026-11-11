@@ -27,9 +27,7 @@ public static class MediaTypes
 
     public const string Mp4 = "video/mp4";
     public const string QuickTime = "video/quicktime";
-    public const string Sqlite = "application/vnd.sqlite3";
-
-    public static bool IsVideo(string contentType) => contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+    private const string Sqlite = "application/vnd.sqlite3";
 
     public static bool IsFont(string contentType) => contentType.StartsWith("font/", StringComparison.OrdinalIgnoreCase);
 
@@ -49,7 +47,15 @@ public static class MediaTypes
     public static string AcceptedFiles(bool fontsOnly) =>
         string.Join(",", fontsOnly ? FontFileExtensions : Accepted.Concat(FontFileExtensions));
 
-    public static string ContentTypeOf(string fileName, string reported) => FontTypeOf(fileName) ?? reported;
+    public static string ContentTypeOf(string fileName, string reported) =>
+        FontTypeOf(fileName) ?? (reported.Length > 0 ? reported : VideoTypeOf(fileName) ?? reported);
+
+    private static string? VideoTypeOf(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
+    {
+        ".mov" => QuickTime,
+        ".mp4" or ".m4v" => Mp4,
+        _ => null,
+    };
 
     public static bool TryGetExtension(string contentType, out string extension) =>
         ExtensionByType.TryGetValue(contentType, out extension!) || AreaOnlyExtensionByType.TryGetValue(contentType, out extension!);

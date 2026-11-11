@@ -7,7 +7,7 @@ namespace GSBC.ChurchApp.Features.Feedback.Api;
 
 internal sealed class FeedbackTelling(INotifications notifications)
 {
-    public static string Subject(Guid ticket) => $"feedback/{ticket:N}";
+    private static string Subject(Guid ticket) => $"feedback/{ticket:N}";
 
     public Task NewAsync(TicketRecord ticket, CancellationToken cancellationToken) =>
         notifications.RaiseAsync(new Notification(FeedbackNotifications.New, NotificationAudience.Holding(FeedbackPermissions.Triage),

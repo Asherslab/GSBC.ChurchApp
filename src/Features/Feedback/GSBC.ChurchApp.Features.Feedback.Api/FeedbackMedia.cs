@@ -30,7 +30,7 @@ internal sealed class FeedbackMedia(IMediaReferences references, IMediaSystemFol
 
     public static string AttachmentsOwner(Guid ticket) => $"feedback.ticket/{ticket}";
 
-    public static string PhoneDataOwner(Guid ticket) => $"feedback.phone-data/{ticket}";
+    private static string PhoneDataOwner(Guid ticket) => $"feedback.phone-data/{ticket}";
 
     public async Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<string> ids, CancellationToken cancellationToken) =>
         ids.Count == 0 ? [] : await references.VerifyAsync(ids.Select(id => new MediaRef { Id = id }).ToList(), cancellationToken);

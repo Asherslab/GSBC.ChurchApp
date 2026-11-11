@@ -1,4 +1,7 @@
 @page "/more"
+@using GSBC.ChurchApp.Features.Feedback.Contracts
+@inject NavigationManager Navigation
+@inject TimeProvider Time
 
 <Page Title="More">
     <Masthead Title="More" Note="Your account, this phone and the app's settings" />
@@ -8,7 +11,24 @@
     </Section>
 
     <footer class="footer-note">
-        <BrandMark />
+        <span class="footer-note__mark" @onclick="Tapped"><BrandMark /></span>
         <span>Good Shepherd Baptist Church, Albany Creek</span>
     </footer>
 </Page>
+
+@code {
+    private static readonly TimeSpan TapsWithin = TimeSpan.FromSeconds(1.2);
+    private readonly Queue<DateTimeOffset> _taps = new();
+
+    private void Tapped()
+    {
+        DateTimeOffset now = Time.GetUtcNow();
+        _taps.Enqueue(now);
+        while (_taps.Count > 0 && now - _taps.Peek() > TapsWithin)
+            _taps.Dequeue();
+        if (_taps.Count < 3)
+            return;
+        _taps.Clear();
+        Navigation.NavigateTo(FeedbackDestinations.Send.TrimStart('/'));
+    }
+}

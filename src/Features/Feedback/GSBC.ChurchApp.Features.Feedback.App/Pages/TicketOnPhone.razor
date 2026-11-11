@@ -1,0 +1,12 @@
+@page "/feedback/{Number:int}"
+
+<Page Title="@($"Feedback #{Number}")" BackHref="more" BackLabel="More">
+    <Masthead Title="@($"Feedback #{Number}")" Note="Someone sent feedback from the app" />
+    <Section First="true">
+        <EmptyState Icon="message-square" Title="Look at it in the admin panel" Body="Feedback, with its screenshots and videos, is looked after on the admin panel's Feedback page." />
+    </Section>
+</Page>
+
+@code {
+    [Parameter] public int Number { get; set; }
+}

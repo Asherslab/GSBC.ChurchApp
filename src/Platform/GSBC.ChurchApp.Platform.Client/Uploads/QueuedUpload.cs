@@ -18,17 +18,24 @@ public sealed record MediaSlot(IReadOnlyList<int> Path)
     public string Text => string.Join('.', Path);
 }
 
+public enum PickableFiles
+{
+    Pictures,
+    PicturesAndDocuments,
+    PicturesAndVideos,
+}
+
 public sealed record QueuedCall(string Method, byte[] Request);
 
 public sealed record QueuedUpload(StagedFile File, QueuedCall Find, QueuedCall Begin, QueuedCall Complete, IReadOnlyList<MediaSlot> Slots);
 
 public interface IUploadRequests
 {
-    string Accepted(bool imagesOnly);
+    string Accepted(PickableFiles kinds);
 
-    string? ContentTypeOf(string fileName, string reported, bool imagesOnly);
+    string? ContentTypeOf(string fileName, string reported, PickableFiles kinds);
 
-    string Unusable(string fileName, bool imagesOnly);
+    string Unusable(string fileName, PickableFiles kinds);
 
     QueuedUpload For(StagedFile file, UploadTarget target, IReadOnlyList<MediaSlot> slots);
 }

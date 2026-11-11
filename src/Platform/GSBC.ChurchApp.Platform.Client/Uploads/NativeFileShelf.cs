@@ -10,15 +10,16 @@ public sealed class NativeFileShelf(NativeBridge bridge, IJSRuntime js) : IFileS
 {
     public bool IsAvailable => bridge.IsNative;
 
-    public async ValueTask<StagedFile?> KeepAsync(ElementReference input, string contentType)
-    {
-        if (!IsAvailable)
-            return null;
-        string? kept = await js.InvokeAsync<string?>("gsbcNative.keepFile", input);
-        return kept is null || JsonSerializer.Deserialize(kept, NativeJson.Default.StagedFileJson) is not { } file
+    public async ValueTask<StagedFile?> KeepAsync(ElementReference input, string contentType, int index = 0) =>
+        IsAvailable ? Staged(await js.InvokeAsync<string?>("gsbcNative.keepFile", input, index), contentType) : null;
+
+    public async ValueTask<StagedFile?> CopyStoreAsync(string contentType) =>
+        IsAvailable ? Staged(await js.InvokeAsync<string?>("gsbcNative.copyStore"), contentType) : null;
+
+    private static StagedFile? Staged(string? kept, string contentType) =>
+        kept is null || JsonSerializer.Deserialize(kept, NativeJson.Default.StagedFileJson) is not { } file
             ? null
             : new StagedFile(file.Token, file.Name, contentType, file.Bytes, file.Sha256, file.Preview);
-    }
 
     public async ValueTask ForgetAsync(string token)
     {
