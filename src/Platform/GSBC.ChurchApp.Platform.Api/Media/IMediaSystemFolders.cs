@@ -11,4 +11,8 @@ public interface IMediaSystemFolders
     Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken);
 
     Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken);
+
+    Task ForgetAsync(MediaSystemArea area, IReadOnlyCollection<string> mediaIds, CancellationToken cancellationToken);
+
+    Task ForgetUnusedAsync(MediaSystemArea area, DateTime uploadedBefore, CancellationToken cancellationToken);
 }

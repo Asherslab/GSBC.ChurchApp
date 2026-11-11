@@ -1,0 +1,48 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><title>Feedback desk: lanes by build</title><style>:root{--nav:#2a3d5e;--note:#d5c9b7;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#4a5468;--ink3:#7d8596;--accent:#00776d;--marker:#e7ae74;--mink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--page);font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);display:grid;grid-template-columns:248px 1fr;font-size:16px}
+.side{background:var(--nav);color:rgba(255,255,255,.76);padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;font-weight:600}
+.brand{color:#fff;font-weight:700;display:flex;gap:10px;align-items:center;margin-bottom:14px}.brand i{width:30px;height:30px;border-radius:50%;border:5px solid var(--note)}
+.jump{background:rgba(255,255,255,.12);border-radius:9px;padding:9px 12px;margin-bottom:12px}
+.area{color:#fff;font-weight:700;padding:8px 6px 4px}.lnk{padding:9px 12px 9px 24px;border-radius:9px;display:flex;justify-content:space-between}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 3px 0 0 var(--marker)}
+.cnt{background:var(--marker);color:#2a1a08;border-radius:10px;font-size:12px;font-weight:700;padding:1px 7px}
+.band{padding:28px 40px 0}.band h1{font-size:27px;font-weight:700;letter-spacing:-.02em}.band p{font-size:14px;color:var(--ink2);margin-top:6px}
+.tabs{display:flex;gap:22px;font-size:14.5px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--line);margin-top:16px}
+.tabs span{padding:12px 0}.tabs .on{color:var(--ink);box-shadow:inset 0 -3px 0 var(--marker)}
+.tabs em{font-style:normal;background:var(--marker);color:#2a1a08;font-size:12px;border-radius:10px;padding:1px 7px;margin-left:6px}
+.chips{display:flex;gap:6px;margin-top:16px}.chip{height:34px;border-radius:17px;background:var(--sand);color:var(--ink2);font-size:14px;font-weight:600;padding:0 14px;display:flex;align-items:center}.chip.on{background:var(--nav);color:#fff}
+.shot{border-radius:10px;background:linear-gradient(170deg,#dfe7f0 0 15%,#2a3d5e 15% 27%,#fff 27% 100%);box-shadow:0 0 0 1px var(--line);position:relative}
+.shot.v{background:linear-gradient(165deg,#3b4a63,#18233a)}
+.pill{font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px;display:inline-block}
+.new{background:rgba(0,119,109,.12);color:var(--accent)}.prog{background:rgba(231,174,116,.28);color:var(--mink)}.quiet{background:var(--sand);color:var(--ink2)}
+h3{font-size:15px;font-weight:700;margin-bottom:8px}
+.facts div{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:7px 0;border-top:1px solid var(--line)}.facts dt{color:var(--ink3);font-weight:600}
+.seg{display:flex;background:var(--sand);border-radius:12px;padding:3px;font-size:13px;font-weight:600;color:var(--ink2)}.seg span{flex:1;text-align:center;padding:7px 4px}.seg .on{background:#fff;border-radius:9px;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.btn{height:40px;border-radius:20px;background:var(--sand);font-size:14px;font-weight:600;padding:0 16px;display:inline-flex;align-items:center}.btn.p{background:var(--nav);color:#fff}
+.notes{background:var(--sand);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:6px}.notes i{display:block;font-style:normal;color:var(--ink3);font-size:13px;margin-top:2px}
+.danger{color:#b4372f;font-size:14px;font-weight:600}
+.work{position:relative;overflow:hidden}
+.board{display:grid;grid-template-columns:110px repeat(4,1fr);gap:10px;padding:16px 40px;width:1192px}
+.ch{font-size:14px;font-weight:700;padding:6px 4px}.ch em{font-style:normal;color:var(--ink3);font-weight:600;margin-left:4px}
+.lane{font-size:13px;font-weight:700;color:var(--ink2);padding:10px 4px}.lane span{display:block;font-weight:400;color:var(--ink3)}
+.col{background:var(--sand);border-radius:12px;padding:8px;min-height:250px;display:flex;flex-direction:column;gap:8px}
+.card{background:#fff;border-radius:10px;padding:9px;font-size:13px;color:var(--ink3);box-shadow:0 1px 0 var(--line);display:grid;grid-template-columns:30px 1fr;gap:8px}
+.card b{display:block;color:var(--ink);font-size:13.5px;font-weight:600;line-height:1.3}.card .shot{width:30px;height:52px;border-radius:5px}
+.card.on{box-shadow:0 0 0 2px var(--marker)}
+.drawer{position:absolute;right:0;top:0;bottom:0;width:400px;background:#fff;box-shadow:-18px 0 32px -18px rgba(24,35,58,.35);padding:28px 24px;display:flex;flex-direction:column;gap:14px}
+.drawer .pair{display:flex;gap:10px}.drawer .pair .shot{width:150px;height:266px}
+</style></head><body><nav class="side"><div class="brand"><i></i>Good Shepherd</div><div class="jump">Jump to…</div><div class="area">The app</div><div class="lnk">App styling</div><div class="lnk on">Feedback <span class="cnt">4</span></div><div class="lnk">Places in the app</div><div class="area">Technical</div><div class="lnk">App health</div><div class="lnk">App review</div></nav>
+<div class="work"><div class="band"><h1>Feedback</h1><div class="chips"><span class="chip on">All builds</span><span class="chip">Has pictures</span><span class="chip">From staff</span><span class="chip">Blocked phones</span></div></div>
+<div class="board">
+ <div></div><div class="ch">New<em>4</em></div><div class="ch">In progress<em>2</em></div><div class="ch">Fixed, to check<em>1</em></div><div class="ch">Resolved<em>9</em></div>
+ <div class="lane">1.4 (212)<span>this week</span></div>
+ <div class="col"><div class="card on"><div class="shot"></div><div><b>Save button cut off…</b>#42 · Sam</div></div><div class="card"><div class="shot v"></div><div><b>Audio stops on lock</b>#41 · Jo</div></div></div>
+ <div class="col"><div class="card"><div class="shot"></div><div><b>Rosters blank after sign-in</b>#38 · Pat</div></div></div>
+ <div class="col"></div><div class="col"><div class="card" style="opacity:.6"><div></div><div><b>Dark mode icon missing</b>#30</div></div></div>
+ <div class="lane">1.4 (210)<span>last week</span></div>
+ <div class="col"><div class="card"><div></div><div><b>Sermon notes offline?</b>#40 · not signed in</div></div></div>
+ <div class="col"></div><div class="col"><div class="card"><div class="shot"></div><div><b>Tile text overlaps</b>#36 · Riley</div></div></div><div class="col"></div>
+</div>
+<div class="drawer"><span class="num" style="font-size:14px;color:var(--ink3);font-weight:600">#42 · Sam Sample · 9:40am</span><div class="pair"><div class="shot"></div><div class="shot v"></div></div><p style="font-size:16px;line-height:1.5">The Save button on the event page is cut off at the bottom, under the tab bar.</p><div class="seg"><span class="on">New</span><span>In progress</span><span>Fixed</span><span>Resolved</span></div><dl class="facts"><div><dt>Phone</dt><dd>iPhone 15 · iOS 18.1</dd></div><div><dt>Page</dt><dd>Events → Youth night</dd></div></dl></div>
+</div></body></html>

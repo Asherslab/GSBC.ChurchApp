@@ -18,6 +18,19 @@ public static class MediaTypes
         ["font/otf"] = "otf",
     };
 
+    private static readonly Dictionary<string, string> AreaOnlyExtensionByType = new(StringComparer.OrdinalIgnoreCase)
+    {
+        [Mp4] = "mp4",
+        [QuickTime] = "mov",
+        [Sqlite] = "sqlite",
+    };
+
+    public const string Mp4 = "video/mp4";
+    public const string QuickTime = "video/quicktime";
+    public const string Sqlite = "application/vnd.sqlite3";
+
+    public static bool IsVideo(string contentType) => contentType.StartsWith("video/", StringComparison.OrdinalIgnoreCase);
+
     public static bool IsFont(string contentType) => contentType.StartsWith("font/", StringComparison.OrdinalIgnoreCase);
 
     private static string? FontTypeOf(string fileName) => Path.GetExtension(fileName).ToLowerInvariant() switch
@@ -39,7 +52,9 @@ public static class MediaTypes
     public static string ContentTypeOf(string fileName, string reported) => FontTypeOf(fileName) ?? reported;
 
     public static bool TryGetExtension(string contentType, out string extension) =>
-        ExtensionByType.TryGetValue(contentType, out extension!);
+        ExtensionByType.TryGetValue(contentType, out extension!) || AreaOnlyExtensionByType.TryGetValue(contentType, out extension!);
+
+    public static bool IsStandard(string contentType) => ExtensionByType.ContainsKey(contentType);
 
     private static bool IsLarge(long bytes) => bytes > LargeFileBytes;
 

@@ -153,6 +153,10 @@ public sealed class MinistryRemovalTests : IAsyncLifetime
         public Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task ForgetAsync(MediaSystemArea area, IReadOnlyCollection<string> mediaIds, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task ForgetUnusedAsync(MediaSystemArea area, DateTime uploadedBefore, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class OwnedCalendars : IMinistryCalendars

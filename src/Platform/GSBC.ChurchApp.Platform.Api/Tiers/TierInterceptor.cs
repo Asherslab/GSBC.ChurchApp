@@ -76,6 +76,13 @@ public sealed class TierInterceptor(TierCatalog catalog, IAccessEvaluator access
             case AppInstallAttribute:
                 await ProveInstallAsync(http, context.CancellationToken);
                 return;
+            case AppInstallOrSignedInAttribute when signedIn:
+                if (InstallProofMiddleware.ProofOf(http) is { } proof && await installs.VerifyAsync(proof, context.CancellationToken) is { } proven)
+                    CallingInstall.Set(http, proven);
+                return;
+            case AppInstallOrSignedInAttribute:
+                await ProveInstallAsync(http, context.CancellationToken);
+                return;
             default:
                 throw new RpcException(new Status(StatusCode.PermissionDenied, "Unknown tier."));
         }

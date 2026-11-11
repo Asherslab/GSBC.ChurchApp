@@ -174,4 +174,8 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
     public Task<MediaRef> KeepStoredAsync(MediaSystemArea area, StoredFile file, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+    public Task ForgetAsync(MediaSystemArea area, IReadOnlyCollection<string> mediaIds, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetUnusedAsync(MediaSystemArea area, DateTime uploadedBefore, CancellationToken cancellationToken) => Task.CompletedTask;
 }

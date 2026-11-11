@@ -1,6 +1,7 @@
 using System.Security.Claims;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using Grpc.Core;
+using GSBC.ChurchApp.Platform.Api.Installs;
 using ProtoBuf.Grpc;
 
 namespace GSBC.ChurchApp.Features.Media.Api;
@@ -8,13 +9,13 @@ namespace GSBC.ChurchApp.Features.Media.Api;
 internal sealed class MediaService(MediaLibrary library) : IMediaService
 {
     public async ValueTask<UploadTicket> BeginUploadAsync(BeginUploadRequest request, CallContext context = default) =>
-        await library.BeginUploadAsync(UserOf(context), request, context.CancellationToken);
+        await library.BeginUploadAsync(UserOf(context), CallingInstall.Find(context), request, context.CancellationToken);
 
     public async ValueTask<UploadedMedia> CompleteUploadAsync(CompleteUploadRequest request, CallContext context = default) =>
-        await library.CompleteUploadAsync(UserOf(context), request, context.CancellationToken);
+        await library.CompleteUploadAsync(UserOf(context), CallingInstall.Find(context), request, context.CancellationToken);
 
     public async ValueTask<MediaMatches> FindByHashAsync(FindByHashRequest request, CallContext context = default) =>
-        await library.FindByHashAsync(UserOf(context), request, context.CancellationToken);
+        await library.FindByHashAsync(UserOf(context), CallingInstall.Find(context), request, context.CancellationToken);
 
     public async ValueTask<MediaLink> GetLinkAsync(LinkRequest request, CallContext context = default) =>
         await library.GetLinkAsync(UserOf(context), request, context.CancellationToken);

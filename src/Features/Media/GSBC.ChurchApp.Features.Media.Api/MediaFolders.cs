@@ -186,6 +186,33 @@ internal sealed class MediaFolders(MediaDbContext db, IAccessEvaluator access, I
         await db.SaveChangesAsync(cancellationToken);
     }
 
+    public async Task ForgetAsync(MediaSystemArea area, IReadOnlyCollection<string> mediaIds, CancellationToken cancellationToken)
+    {
+        List<Guid> ids = mediaIds.Select(id => Guid.TryParse(id, out Guid parsed) ? parsed : Guid.Empty).Where(id => id != Guid.Empty).ToList();
+        if (ids.Count > 0)
+            await ForgetWhereAsync(db.Items.Where(item => item.Area == area.Key && ids.Contains(item.Id)), cancellationToken);
+    }
+
+    public Task ForgetUnusedAsync(MediaSystemArea area, DateTime uploadedBefore, CancellationToken cancellationToken) =>
+        ForgetWhereAsync(db.Items.Where(item => item.Area == area.Key && item.UploadedAt < uploadedBefore), cancellationToken);
+
+    private async Task ForgetWhereAsync(IQueryable<MediaItem> candidates, CancellationToken cancellationToken)
+    {
+        List<MediaItem> items = await candidates.Where(item => !db.Uses.Any(use => use.MediaId == item.Id)).ToListAsync(cancellationToken);
+        if (items.Count == 0)
+            return;
+        List<Guid> ids = items.Select(item => item.Id).ToList();
+        List<string> renditions = await db.Renditions.Where(rendition => ids.Contains(rendition.MediaId)).Select(rendition => rendition.Key).ToListAsync(cancellationToken);
+        foreach (MediaItem item in items)
+        {
+            db.Items.Remove(item);
+            db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, item.Id.ToString(), Now, deleted: true));
+        }
+        await db.SaveChangesAsync(cancellationToken);
+        foreach (IGrouping<bool, MediaItem> privacy in items.GroupBy(item => item.IsPrivate))
+            await MediaRemoval.DeleteUnlistedAsync(db, blobs, privacy.Key, [.. privacy.Select(item => item.Key), .. privacy.Key ? renditions : []], cancellationToken);
+    }
+
     public async Task<MediaRef> KeepAsync(MediaSystemArea area, KeptFile file, CancellationToken cancellationToken)
     {
         MediaFolder folder = await SystemFolderAsync(area.Key, null, area.Name, null, cancellationToken);

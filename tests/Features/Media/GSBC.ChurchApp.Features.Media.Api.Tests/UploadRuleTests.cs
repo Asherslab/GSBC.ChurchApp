@@ -1,5 +1,7 @@
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Contracts;
+using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Media.Api.Tests;
 
@@ -26,6 +28,19 @@ public sealed class UploadRuleTests
         MediaLibrary.CheckUpload(font, knownAudience: false, amongAudience: false, mayUploadFonts: true);
         font.PrivateTo = Group;
         Assert.Equal(StatusCode.InvalidArgument, Refused(font, knownAudience: true, amongAudience: true, mayUploadFonts: true));
+    }
+
+    [Fact]
+    public void AnAreaTakesOnlyItsOwnFileTypesEachUpToItsSizeAndElsewhereOnlyTheLibrarysTypes()
+    {
+        MediaSystemArea videos = new("clips", "Clips", "Made by the app", new Permission("clips.read", ScopeKind.Global, "Read clips"),
+            Files: [new AreaFileType(MediaTypes.Mp4, 100), new AreaFileType("image/png", 10)]);
+
+        MediaLibrary.CheckAreaFile(videos, MediaTypes.Mp4, 100);
+        Assert.Throws<RpcException>(() => MediaLibrary.CheckAreaFile(videos, MediaTypes.Mp4, 101));
+        Assert.Throws<RpcException>(() => MediaLibrary.CheckAreaFile(videos, "application/pdf", 1));
+        Assert.Throws<RpcException>(() => MediaLibrary.CheckAreaFile(null, MediaTypes.Mp4, 1));
+        MediaLibrary.CheckAreaFile(null, "application/pdf", long.MaxValue);
     }
 
     private static StatusCode Refused(BeginUploadRequest request, bool knownAudience = false, bool amongAudience = false, bool mayUploadFonts = false) =>

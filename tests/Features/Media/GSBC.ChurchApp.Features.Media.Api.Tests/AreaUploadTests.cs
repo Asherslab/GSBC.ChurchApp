@@ -30,10 +30,10 @@ public sealed class AreaUploadTests : MediaLibraryHost
 
         Assert.True(added.IsPrivate);
         Assert.Equal(MinistryFiles.Key, await AreaFolderOfAsync(added.Id));
-        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.BeginUploadAsync(stranger, guide, Cancellation)));
+        RpcException refused = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.BeginUploadAsync(stranger, null, guide, Cancellation)));
         Assert.Equal(StatusCode.PermissionDenied, refused.StatusCode);
         RpcException noCheck = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library =>
-            library.FindByHashAsync(stranger, new FindByHashRequest { Sha256 = new string('a', 64), ContentType = "application/pdf", Area = MinistryFiles.Key, AreaScopeId = Ministry }, Cancellation)));
+            library.FindByHashAsync(stranger, null, new FindByHashRequest { Sha256 = new string('a', 64), ContentType = "application/pdf", Area = MinistryFiles.Key, AreaScopeId = Ministry }, Cancellation)));
         Assert.Equal(StatusCode.PermissionDenied, noCheck.StatusCode);
     }
 
@@ -52,7 +52,7 @@ public sealed class AreaUploadTests : MediaLibraryHost
         Assert.NotEmpty(link.Url);
         RpcException notAMember = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(outsider, new LinkRequest { Id = shared.Id }, Cancellation)));
         Assert.Equal(StatusCode.PermissionDenied, notAMember.StatusCode);
-        await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.BeginUploadAsync(outsider, photo, Cancellation)));
+        await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.BeginUploadAsync(outsider, null, photo, Cancellation)));
     }
 
     private async Task<string?> AreaFolderOfAsync(string mediaId)

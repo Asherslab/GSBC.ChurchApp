@@ -21,9 +21,10 @@ internal sealed class MediaLibrary(
     private static readonly TimeSpan PendingKeptFor = TimeSpan.FromDays(1);
     private const int MaximumPage = 200;
 
-    public async Task<UploadTicket> BeginUploadAsync(ClaimsPrincipal user, BeginUploadRequest request, CancellationToken cancellationToken)
+    public async Task<UploadTicket> BeginUploadAsync(ClaimsPrincipal user, Guid? install, BeginUploadRequest request, CancellationToken cancellationToken)
     {
-        AreaUpload? area = await MayUploadAsync(user, request.Area, request.AreaScopeId, cancellationToken);
+        AreaUpload? area = await MayUploadAsync(user, install, request.Area, request.AreaScopeId, cancellationToken);
+        CheckAreaFile(area?.Area, request.ContentType, request.Bytes);
         if (area is { Access: not null })
             request.PrivateTo = new MediaAudience { Permission = area.Area.Audience.Node, ScopeId = area.ScopeId };
         else if (area is not null && MediaTypes.IsFont(request.ContentType))
@@ -40,7 +41,7 @@ internal sealed class MediaLibrary(
         PendingUpload pending = new()
         {
             Id = Guid.CreateVersion7(),
-            UploadedBy = CallerId(user),
+            UploadedBy = Uploader(user, install),
             ContentType = request.ContentType.ToLowerInvariant(),
             FileName = request.FileName.Trim(),
             AltText = request.AltText.Trim(),
@@ -57,7 +58,7 @@ internal sealed class MediaLibrary(
         return new UploadTicket { UploadId = pending.Id.ToString(), Url = url.ToString(), ContentType = pending.ContentType, ExpiresAt = pending.ExpiresAt };
     }
 
-    private async Task<AreaUpload?> MayUploadAsync(ClaimsPrincipal user, string? areaKey, string? scopeId, CancellationToken cancellationToken)
+    private async Task<AreaUpload?> MayUploadAsync(ClaimsPrincipal user, Guid? install, string? areaKey, string? scopeId, CancellationToken cancellationToken)
     {
         if (string.IsNullOrEmpty(areaKey))
         {
@@ -70,17 +71,32 @@ internal sealed class MediaLibrary(
         string scope = NullIfEmpty(scopeId) ?? throw Invalid("Say where the file is going.");
         IMediaAreaAccess? own = areaAccess.FirstOrDefault(candidate => candidate.Area == area.Key);
         bool allowed = own is not null
-            ? await own.MayUploadAsync(user, scope, cancellationToken)
+            ? await own.MayUploadAsync(user, scope, cancellationToken) || install is { } phone && await own.MayUploadFromInstallAsync(phone, scope, cancellationToken)
             : area.Uploaders is { } uploaders && await access.IsAllowedAsync(user, uploaders.Node, scope, cancellationToken);
         return allowed ? new AreaUpload(area, scope, own) : throw new RpcException(new Status(StatusCode.PermissionDenied, "Not permitted."));
     }
 
     private sealed record AreaUpload(MediaSystemArea Area, string ScopeId, IMediaAreaAccess? Access);
 
+    internal static void CheckAreaFile(MediaSystemArea? area, string contentType, long bytes)
+    {
+        if (area?.Files is not { } files)
+        {
+            if (!MediaTypes.IsStandard(contentType))
+                throw Invalid($"'{contentType}' files can't be uploaded. Use one of: {string.Join(", ", MediaTypes.Accepted)}.");
+            return;
+        }
+
+        AreaFileType type = files.FirstOrDefault(file => string.Equals(file.ContentType, contentType, StringComparison.OrdinalIgnoreCase))
+            ?? throw Invalid($"'{contentType}' files can't be added here. Use one of: {string.Join(", ", files.Select(file => file.ContentType))}.");
+        if (bytes > type.LargestBytes)
+            throw Invalid($"That file is {MediaSize(bytes)}; files here can be up to {MediaSize(type.LargestBytes)}.");
+    }
+
+    private static string MediaSize(long bytes) => bytes >= 1024 * 1024 ? $"{bytes / (1024 * 1024)} MB" : $"{Math.Max(1, bytes / 1024)} KB";
+
     internal static void CheckUpload(BeginUploadRequest request, bool knownAudience, bool amongAudience, bool mayUploadFonts)
     {
-        if (!MediaTypes.TryGetExtension(request.ContentType, out _))
-            throw Invalid($"'{request.ContentType}' files can't be uploaded. Use one of: {string.Join(", ", MediaTypes.Accepted)}.");
         if (request.FileName.Length > MediaRefs.MaximumTextLength || request.AltText.Length > MediaRefs.MaximumTextLength)
             throw Invalid("Keep the file name and description under 200 characters.");
         if (request.PrivateTo is { } audience && !knownAudience)
@@ -93,9 +109,9 @@ internal sealed class MediaLibrary(
             throw Invalid("Fonts are public: anyone using the app downloads them.");
     }
 
-    public async Task<UploadedMedia> CompleteUploadAsync(ClaimsPrincipal user, CompleteUploadRequest request, CancellationToken cancellationToken)
+    public async Task<UploadedMedia> CompleteUploadAsync(ClaimsPrincipal user, Guid? install, CompleteUploadRequest request, CancellationToken cancellationToken)
     {
-        Guid caller = CallerId(user);
+        Guid caller = Uploader(user, install);
         PendingUpload pending = await db.PendingUploads
             .SingleOrDefaultAsync(upload => upload.Id == ParseId(request.UploadId) && upload.UploadedBy == caller, cancellationToken)
             ?? throw new RpcException(new Status(StatusCode.NotFound, "That upload has expired. Start again."));
@@ -111,6 +127,16 @@ internal sealed class MediaLibrary(
         {
             await DiscardAsync(pending, cancellationToken);
             throw Invalid($"That file isn't really {pending.ContentType}.");
+        }
+
+        try
+        {
+            CheckAreaFile(pending.Area is { } areaKey ? folders.Area(areaKey) : null, pending.ContentType, content.Bytes);
+        }
+        catch (RpcException)
+        {
+            await DiscardAsync(pending, cancellationToken);
+            throw;
         }
 
         if (!request.AddAgain && pending.Area is null)
@@ -215,24 +241,15 @@ internal sealed class MediaLibrary(
                 "Somewhere that uses it, such as a draft that isn't published yet, can't switch to a smaller size by itself. Publish or close the draft first."));
     }
 
-    private async Task DeleteUnlistedAsync(bool isPrivate, IEnumerable<string> keys, CancellationToken cancellationToken)
-    {
-        foreach (string key in keys.Distinct())
-        {
-            bool listed = await db.Items.AnyAsync(other => other.Key == key && other.OriginalRemovedAt == null && (other.AudiencePermission == null) != isPrivate, cancellationToken)
-                || await db.Renditions.AnyAsync(rendition => rendition.Key == key
-                    && db.Items.Any(other => other.Id == rendition.MediaId && (other.AudiencePermission == null) != isPrivate), cancellationToken);
-            if (!listed)
-                await blobs.DeleteAsync(isPrivate ? BlobBucket.Private : BlobBucket.Public, key, cancellationToken);
-        }
-    }
+    private Task DeleteUnlistedAsync(bool isPrivate, IEnumerable<string> keys, CancellationToken cancellationToken) =>
+        MediaRemoval.DeleteUnlistedAsync(db, blobs, isPrivate, keys, cancellationToken);
 
-    public async Task<MediaMatches> FindByHashAsync(ClaimsPrincipal user, FindByHashRequest request, CancellationToken cancellationToken)
+    public async Task<MediaMatches> FindByHashAsync(ClaimsPrincipal user, Guid? install, FindByHashRequest request, CancellationToken cancellationToken)
     {
         string sha256 = request.Sha256.Trim().ToLowerInvariant();
         if (!ContentAddress.IsSha256(sha256))
             throw Invalid("That isn't a SHA-256 hash.");
-        if (await MayUploadAsync(user, request.Area, request.AreaScopeId, cancellationToken) is not null)
+        if (await MayUploadAsync(user, install, request.Area, request.AreaScopeId, cancellationToken) is not null)
             return new MediaMatches();
 
         List<MediaItem> matches = await SameContentAsync(user, sha256, request.ContentType.ToLowerInvariant(),
@@ -421,6 +438,9 @@ internal sealed class MediaLibrary(
     private void Mark(Guid mediaId, bool deleted = false) => db.FeedChanges.Add(FeedChangeRecord.Marker(MediaFeeds.Library, mediaId.ToString(), Now, deleted));
 
     private DateTime Now => time.GetUtcNow().UtcDateTime;
+
+    private static Guid Uploader(ClaimsPrincipal user, Guid? install) =>
+        Caller.UserId(user) ?? install ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
 
     private static Guid CallerId(ClaimsPrincipal user) =>
         Caller.UserId(user) ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in first."));
