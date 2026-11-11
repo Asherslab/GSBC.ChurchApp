@@ -1,0 +1,59 @@
+@inject RosterWrites Writes
+@inject TimeProvider Clock
+
+<UnsavedGuard Changed="() => Open && (_from.Length > 0 || _note.Length > 0)" What="the days away" />
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Days away" Lead="Always allowed. Leaders see them when they fill the roster.">
+    <ChildContent>
+        @if (People.Count > 1)
+        {
+            <Segmented TValue="string" Label="Who's away" ShowLabel="true" Value="@Who" ValueChanged="value => _who = value"
+                       Options="Choices" />
+        }
+        <TextField Label="First day" Type="date" @bind-Value="_from" Min="@Today" />
+        <TextField Label="Last day" Type="date" Value="@LastDay" ValueChanged="value => _to = value" Min="@EarliestLastDay" />
+        <TextField Label="A note for the leaders (if you like)" @bind-Value="_note" MaxLength="200" />
+        <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="Add the days" Busy="_busy" OnSave="SaveAsync" Blocked="@(_from.Length == 0 ? "Choose the first day." : null)" />
+    </Actions>
+</Sheet>
+
+@code {
+    private string? _who;
+    private string _from = "", _to = "", _note = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<PersonLine> People { get; set; }
+    [Parameter, EditorRequired] public required string YourId { get; set; }
+
+    private IReadOnlyList<SegmentOption<string>> Choices =>
+        People.Select(person => new SegmentOption<string>(person.Id, person.Id == YourId ? "Me" : RosterLines.First(person.Name))).ToList();
+
+    private string Who => _who ?? People.FirstOrDefault()?.Id ?? "";
+
+    private string Today => RosterLines.Wire(ChurchTime.Today(Clock));
+
+    private string LastDay => _to.Length > 0 ? _to : _from;
+
+    private string EarliestLastDay => _from.Length > 0 ? _from : Today;
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(() => Writes.SaveAwayAsync(new AwaySave
+        {
+            PersonId = Who, From = _from, To = LastDay, Note = _note.Trim(),
+        }));
+        _busy = false;
+        if (_problem is null)
+        {
+            (_from, _to, _note) = ("", "", "");
+            await OpenChanged.InvokeAsync(false);
+        }
+    }
+}

@@ -1,0 +1,37 @@
+@using GSBC.ChurchApp.Platform.Contracts.Configuration
+@using GSBC.ChurchApp.Platform.Ui.Surfaces
+@inject IRosterReads Reads
+@inject TimeProvider Clock
+
+<LiveData TValue="IReadOnlyList<RosterView>" Load="Reads.YoursAsync" Feeds="Reads.Feeds" Remember="rosters.yours">
+    <ChildContent>@Drawn(context.Value)</ChildContent>
+    <Loading>@Drawn([])</Loading>
+    <Failed>@Drawn([])</Failed>
+</LiveData>
+
+@code {
+    [CascadingParameter] public HubContext Hub { get; set; } = HubContext.Still;
+    [Parameter, EditorRequired] public required ArrangedSurface Entry { get; set; }
+
+    private RenderFragment Drawn(IReadOnlyList<RosterView> views)
+    {
+        TileLook look = TileLook.Of(RostersTiles.Roster, Entry.Values);
+        TileVariant variant = RostersTiles.Roster.VariantFor(look, Hub.Columns);
+        DateTime now = Clock.GetUtcNow().UtcDateTime;
+        IReadOnlyList<YourDate> yours = RosterLines.Yours(views, now);
+        YourDate? waiting = yours.FirstOrDefault(each => each.View.Settings.Replies && each.Assignment.State == Replies.Asked);
+        YourDate? next = waiting ?? yours.FirstOrDefault();
+        if (next is null)
+            return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />;
+
+        string who = next.Yourself ? "You're" : $"{RosterLines.First(next.For.Name)} is";
+        string title = $"{who} on {RosterLines.Weekday(next.Date, now)}";
+        List<string> lines = [$"{next.Assignment.PositionName} · {next.Date.Title}, {RosterLines.When(next.Date)}"];
+        if (next == waiting)
+            lines.Add(next.Yourself ? "Say whether you can do it" : $"Answer for {RosterLines.First(next.For.Name)}");
+        else if (yours.Count > 1)
+            lines.Add(yours.Count == 2 ? "And 1 more date" : $"And {yours.Count - 1} more dates");
+        return @<HubTile Look="@(variant.Key == TileVariants.WordsKey ? look with { Image = null } : look)" Layout="WordsTileView.ShapeOf(variant)" Title="@title" Lines="lines"
+                         Href="@($"/ministries/{next.View.MinistryId}/roster")" Unread="@(next == waiting)" PlacementId="@Entry.Placement?.Id" />;
+    }
+}

@@ -1,0 +1,115 @@
+@inject RosterWrites Writes
+
+<UnsavedGuard Changed="() => _editing is not null && Changed" What="the position" Save="SaveAsync" />
+
+<Sheet Open="Open" OpenChanged="CloseAsync" Title="@(_editing is null ? "Positions" : _editing.Id.Length == 0 ? "A new position" : _editing.Name)"
+       Lead="@(_editing is null ? "The jobs people do on each date. What a position needs is flagged when someone is put on, but never stops them." : null)">
+    <ChildContent>
+        @if (_editing is { } position)
+        {
+            <TextField Label="Name" @bind-Value="position.Name" MaxLength="60" Required="true" />
+            <SelectField Label="How many people on each date" Value="@position.Needed.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                         ValueChanged="value => position.Needed = int.Parse(value, System.Globalization.CultureInfo.InvariantCulture)" Options="Counts" />
+            <ToggleRow Title="Needs a current blue card" Description="Read from Safe Ministry Check, or the church office's records" @bind-Checked="position.NeedsBlueCard" />
+            <ToggleRow Title="Needs Safe Ministry training" Description="Current training, from the same records" @bind-Checked="position.NeedsTraining" />
+            <ToggleRow Title="Needs to be trained for it" Description="You choose below who's trained" @bind-Checked="position.NeedsTrained" />
+            @if (position.NeedsTrained && position.Id.Length > 0)
+            {
+                <h3 class="roster-position">Trained for it</h3>
+                <ListGroup>
+                    @foreach (TeamMember member in View.Team)
+                    {
+                        bool trained = position.Trained.Contains(member.PersonId);
+                        <ToggleRow @key="member.PersonId" Title="@member.Name" Checked="trained" CheckedChanged="value => TrainAsync(position, member, value)" />
+                    }
+                </ListGroup>
+                <p class="roster-hint">Ticking someone takes effect straight away.</p>
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+        else
+        {
+            <ListGroup>
+                @foreach (Position position in View.Positions)
+                {
+                    <ListRow @key="position.Id" Title="@position.Name" Subtitle="@RosterLines.Needs(position)" Chevron="true" OnClick="() => Edit(position)" />
+                }
+                <ListRow Title="Add a position" Icon="plus" IconTone="RowTone.Accent" OnClick="() => Edit(null)" />
+            </ListGroup>
+        }
+    </ChildContent>
+    <Actions>
+        @if (_editing is { } position)
+        {
+            <SaveBar Block="true" Label="@(position.Id.Length == 0 ? "Add the position" : "Save")" Busy="_busy" OnSave="SaveAsync"
+                     Blocked="@(position.Name.Trim().Length == 0 ? "Give it a name to save it." : null)" />
+            @if (position.Id.Length > 0)
+            {
+                <Button Block="true" Variant="ButtonVariant.Danger" Disabled="_busy" OnClick="DeleteAsync">Delete the position</Button>
+                <p class="roster-hint">Deleting it takes everyone off it on dates to come and tells them. Past dates keep it.</p>
+            }
+            <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _editing = null">Back to the positions</Button>
+        }
+    </Actions>
+</Sheet>
+
+@code {
+    private static readonly IReadOnlyList<FieldOption> Counts =
+        Enumerable.Range(1, 10).Select(count => new FieldOption(count.ToString(System.Globalization.CultureInfo.InvariantCulture), count == 1 ? "1 person" : $"{count} people")).ToList();
+
+    private Position? _editing;
+    private Position? _original;
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required RosterView View { get; set; }
+
+    private bool Changed => _editing is { } now && (_original is null
+        ? now.Name.Trim().Length > 0
+        : (now.Name, now.Needed, now.NeedsBlueCard, now.NeedsTraining, now.NeedsTrained) != (_original.Name, _original.Needed, _original.NeedsBlueCard, _original.NeedsTraining, _original.NeedsTrained));
+
+    private void Edit(Position? position)
+    {
+        _original = position;
+        _editing = position is null ? new Position() : RostersContractsModel.Instance.DeepClone(position);
+        _problem = null;
+    }
+
+    private async Task CloseAsync(bool open)
+    {
+        _editing = null;
+        await OpenChanged.InvokeAsync(open);
+    }
+
+    private async Task<bool> SaveAsync()
+    {
+        if (_editing is not { } position)
+            return true;
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(() => Writes.SavePositionAsync(View.MinistryId, position));
+        _busy = false;
+        if (_problem is null)
+            _editing = null;
+        return _problem is null;
+    }
+
+    private async Task DeleteAsync()
+    {
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(() => Writes.DeletePositionAsync(View.MinistryId, _editing!.Id));
+        _busy = false;
+        if (_problem is null)
+            _editing = null;
+    }
+
+    private async Task TrainAsync(Position position, TeamMember member, bool trained)
+    {
+        if (trained)
+            position.Trained.Add(member.PersonId);
+        else
+            position.Trained.Remove(member.PersonId);
+        _problem = await RosterProblems.TryAsync(() => Writes.SetTrainedAsync(View.MinistryId, position.Id, member.PersonId, trained));
+    }
+}

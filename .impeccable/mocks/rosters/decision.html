@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Rosters: sketches and choices</title><link rel="stylesheet" href="sketch.css">
+<style>
+body { max-width: 1500px; margin: 0 auto; padding: 32px 24px 64px; background: var(--page); }
+h1 { font-size: var(--text-headline); letter-spacing: -0.02em; }
+.intro { color: var(--ink-2); max-width: 80ch; margin-top: 8px; }
+.intro p + p { margin-top: 8px; }
+h2 { font-size: var(--text-title-lg); margin: 46px 0 6px; letter-spacing: -0.02em; }
+.why { max-width: 90ch; color: var(--ink-2); font-size: var(--text-caption); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 18px; }
+.card { border-radius: 14px; background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.built { box-shadow: inset 0 0 0 2px var(--accent); background: rgb(0 156 143 / 0.08); }
+.card h3 { font-size: var(--text-row); font-weight: 700; }
+.card .tag { font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.card.built .tag { color: var(--accent); }
+.card p { font-size: var(--text-caption); color: var(--ink-2); }
+.frame { position: relative; overflow: hidden; border-radius: 10px; background: var(--page); box-shadow: 0 0 0 1px var(--line); height: 300px; }
+.frame iframe { border: 0; width: 1440px; height: 900px; zoom: 0.31; pointer-events: none; }
+.card a { color: var(--accent); font-weight: 600; font-size: var(--text-caption); }
+.picks { max-width: 100ch; margin-top: 12px; font-size: var(--text-caption); color: var(--ink-2); }
+.picks li { margin: 6px 0 0 18px; }
+.picks b { color: var(--ink); }
+@media (max-width: 1000px) { .cards { grid-template-columns: 1fr; } .frame iframe { zoom: 0.24; } }
+</style></head>
+<body>
+<h1>Rosters (Ministries Stage 3): sketches, and what Claude picked</h1>
+<div class="intro">
+  <p>You were asleep (2026-11-11), so Claude picked the recommended option for each place and built it. The one with the aqua border is what's built. Every pick is listed below so you can redirect any of them in the morning; changing one is a design change, not a rebuild of the data underneath.</p>
+  <p>Underneath every option is the same: positions per ministry (each can need a blue card, Safe Ministry training, or being trained for it), roster dates against any event in the app, replies, swaps, dates you're away, and who sees the roster as a ministry setting. Names are made up.</p>
+</div>
+
+<h2>1. A ministry's Roster tab, on the phone</h2>
+<p class="why">For a team member, a parent of a young person on the team, and a leader. Shown at the ministry's <code>/ministries/{id}/roster</code>.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Picked and built</span><h3>A row per date, a sheet per date</h3>
+    <div class="frame"><iframe src="a-dates.html" title="A row per date"></iframe></div>
+    <p><i>You're on</i> first, each with Accept and Can't do it (and Swap where the ministry allows it), then the roster as one row per date with its positions on a line. A date opens a sheet with each position and its people. Leaders put people on from there, and see flags (away, no blue card, not trained) next to names but are never stopped. A parent sees "Tom is on" and replies for him. <i>By date | Grid</i> switches to the grid (as in the admin panel).</p>
+    <p><b>Why:</b> what a volunteer opens the tab for is "when am I on, and do I say yes", so that's first. One row per date stays readable on a narrow phone with many positions; the detail sits in a sheet.</p>
+    <a href="a-dates.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Every date as a box</h3>
+    <div class="frame"><iframe src="a-cards.html" title="Every date as a box"></iframe></div>
+    <p>Each date is a bulletin box listing its positions and people, your line highlighted with its buttons inside the box.</p>
+    <p><b>Not picked:</b> it matches the ministry's boxes, but a term of Sundays with five positions each becomes a very long scroll, and your own dates get lost among everyone's.</p>
+    <a href="a-cards.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>By person</h3>
+    <div class="frame"><iframe src="a-people.html" title="By person"></iframe></div>
+    <p>A row per team member with their dates; tap a person for their dates and to put them on more.</p>
+    <p><b>Not picked:</b> good for checking fairness, but nobody can see who's on this Sunday without opening several people.</p>
+    <a href="a-people.html">Open full size</a></div>
+</div>
+
+<h2>2. Filling a term, at a computer (the admin panel)</h2>
+<p class="why">The ministry's Roster tab in the admin panel (the same tab, wider). Dates across, positions down was asked for in the interview.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Picked and built</span><h3>The term as a grid</h3>
+    <div class="frame"><iframe src="b-grid.html" title="The grid"></iframe></div>
+    <p>Dates across (a few weeks at a time, with ‹ ›), positions down, each cell its people tinted by their reply, a "+ Put on" in each gap, and flags in the cell. Choosing a cell opens a panel to find someone on the team, with flags beside each name.</p>
+    <p><b>Why:</b> it's the shape rosters have always had on paper, so it's what leaders expect; gaps and declines show at a glance.</p>
+    <a href="b-grid.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Fill the term, step by step</h3>
+    <div class="frame"><iframe src="b-wizard.html" title="Step by step"></iframe></div>
+    <p>Choose the dates, see who's away, fill each date with a suggestion, then send it all.</p>
+    <p><b>Not picked:</b> a wizard is slower for the small changes leaders make every week, and "send it all" means people hear later. Suggesting someone is a good idea for later.</p>
+    <a href="b-wizard.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A column per date</h3>
+    <div class="frame"><iframe src="b-board.html" title="Columns"></iframe></div>
+    <p>Each date is a column of position cards; drag people from the team column onto a card.</p>
+    <p><b>Not picked:</b> dragging needs a keyboard way to be accessible, and a term of dates scrolls a long way sideways.</p>
+    <a href="b-board.html">Open full size</a></div>
+</div>
+
+<h2>3. Everything else Claude decided (the defaults)</h2>
+<ul class="picks">
+  <li><b>Where it lives:</b> its own feature (Rosters). It shows as a <i>Roster</i> tab on a ministry when the ministry uses Rosters (<i>What it uses</i>) and you're on its team, are a parent of someone who is, or lead it. Off hides it from everyone, leaders too.</li>
+  <li><b>Positions:</b> each ministry has its own list (Sound, Lights…), in an order, each with how many people it needs (1 unless changed) and what it needs: a current blue card, Safe Ministry training, being trained for it. Who's trained for a position is a list the leaders keep on the position. Deleting a position takes it off every date to come and tells the people on it; past dates keep it.</li>
+  <li><b>Dates:</b> a leader adds dates by choosing events from any calendar in the app (the ministry's own first, then a search across all). Several ministries can roster the same event. Removing a date tells the people who were on it.</li>
+  <li><b>Replies:</b> on by default (Accept, Can't do it with an optional reason). A ministry can turn them off; then being put on is simply being on.</li>
+  <li><b>Swaps:</b> three ways, each a switch: <i>the team can pick it up</i> (anyone on the team takes it, the leaders hear), <i>the team can pick it up, a leader says yes</i>, and <i>ask someone directly</i> (they say yes, the leaders hear). Default: only "the team can pick it up". With more than one on, the person chooses.</li>
+  <li><b>Dates you're away:</b> belong to the person, not the ministry (away is away), so every ministry you're on sees them. Always allowed, from the Roster tab. Leaders may still put you on; the date is flagged, and if you mark yourself away on a date you're on, the leaders hear.</li>
+  <li><b>Who sees the roster:</b> the whole roster (default), your dates and who's on with you, or only your dates. What isn't yours to see never reaches your phone.</li>
+  <li><b>Notifications:</b> when you're put on (or taken off); a reminder 2 days before (the ministry can change it, or turn it off); a nudge if you haven't replied after 3 days; the leaders hear of declines, swaps asked and taken, and away dates that clash. An archived ministry's roster is read-only and sends nothing.</li>
+  <li><b>Young people:</b> rostered as themselves. Whatever reaches them reaches their parents too when the family chose "through their parents" or "both", labelled "For Tom: …". A parent can accept, decline or swap for their child; it shows as "Sarah, for Tom".</li>
+  <li><b>Today and Home:</b> the Hub has a <i>Roster</i> tile: "You're on Sunday · Sound desk · 10:30am" with an answer waiting, or your next date; "Tom is on Sunday" for a parent. It opens the ministry's Roster tab.</li>
+  <li><b>Deleting an account:</b> forgets their dates to come, their away dates, their replies and their training records. Past dates keep the position as filled, shown as "Someone who has left".</li>
+</ul>
+</body></html>
