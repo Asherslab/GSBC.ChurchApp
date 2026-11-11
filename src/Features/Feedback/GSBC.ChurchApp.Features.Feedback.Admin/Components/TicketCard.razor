@@ -9,11 +9,11 @@
     <span class="feedback-card__labels">
         @if (Ticket.AppBuild.Length > 0)
         {
-            <span class="feedback-label">@Ticket.AppBuild</span>
+            <span class="feedback-label" title="@Ticket.AppBuild">@Ticket.AppBuild</span>
         }
         @if (Ticket.Model.Length > 0)
         {
-            <span class="feedback-label">@PhoneModels.Name(Ticket.Model)</span>
+            <span class="feedback-label" title="@PhoneModels.Name(Ticket.Model)">@PhoneModels.Name(Ticket.Model)</span>
         }
         @if (Ticket.Attachments > 0)
         {
@@ -21,7 +21,7 @@
         }
         else if (Ticket.AttachmentsDeleted)
         {
-            <span class="feedback-label">Pictures deleted</span>
+            <span class="feedback-label" title="Pictures deleted">Pictures deleted</span>
         }
     </span>
 </a>

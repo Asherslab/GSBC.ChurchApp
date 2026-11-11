@@ -15,7 +15,7 @@
         @if (Docked)
         {
             <header class="ticket__head">
-                <p class="ticket__meta">#@line.Number · @line.From · @ChurchDates.Ago(line.SentAt, Now)</p>
+                <p class="ticket__meta">#@line.Number · @ChurchDates.Ago(line.SentAt, Now)</p>
                 <div class="ticket__head-actions">
                     <a class="text-link" href="@FeedbackDestinations.Ticket(line.Number).TrimStart('/')" target="_blank" rel="noopener">Open as a page<Icon Name="external-link" Size="IconSize.Small" /></a>
                     <Button Variant="ButtonVariant.Quiet" Small="true" Icon="x" AriaLabel="Close this feedback" OnClick="OnClose" />

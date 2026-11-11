@@ -64,18 +64,20 @@
                         <MediaPreview Media="Chosen" Controls="true" Class="feedback-stage__media" />
                         <button type="button" class="feedback-stage__remove" aria-label="@($"Don't send {Chosen.FileName}")" @onclick="() => UnpickAsync(Chosen)"><Icon Name="x" Size="IconSize.Small" /></button>
                     </div>
-                    <div class="feedback-strip" role="listbox" aria-label="Chosen screenshots and videos">
-                        @foreach (MediaRef media in _picked)
-                        {
-                            <button type="button" role="option" aria-selected="@(media == Chosen)" class="feedback-strip__item @(media == Chosen ? "feedback-strip__item--on" : "")"
-                                    aria-label="@media.FileName" @onclick="() => _chosen = media">
-                                <MediaPreview Media="media" Controls="false" Class="feedback-strip__media" />
-                                @if (media.IsVideo)
-                                {
-                                    <span class="feedback-strip__play"><Icon Name="play" Size="IconSize.Small" /></span>
-                                }
-                            </button>
-                        }
+                    <div class="feedback-strip-col">
+                        <div class="feedback-strip" role="listbox" aria-label="Chosen screenshots and videos">
+                            @foreach (MediaRef media in _picked)
+                            {
+                                <button type="button" role="option" aria-selected="@(media == Chosen)" class="feedback-strip__item @(media == Chosen ? "feedback-strip__item--on" : "")"
+                                        aria-label="@media.FileName" @onclick="() => _chosen = media">
+                                    <MediaPreview Media="media" Controls="false" Class="feedback-strip__media" />
+                                    @if (media.IsVideo)
+                                    {
+                                        <span class="feedback-strip__play"><Icon Name="play" Size="IconSize.Small" /></span>
+                                    }
+                                </button>
+                            }
+                        </div>
                         @if (_picked.Count < FeedbackLimits.MostAttachments)
                         {
                             <FilePick Label="Add another screenshot or video" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="FeedbackLimits.MostAttachments - _picked.Count"
@@ -90,13 +92,13 @@
         </Section>
         <Section>
             <TextField Label="Tell us about it" Multiline="true" MaxLength="FeedbackLimits.LongestText" AutoCapitalize="sentences" @bind-Value="_text"
-                       Hint="What happened, what you expected, or your idea. Your own words are fine." />
-            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+                       Placeholder="What happened, what you expected, or your idea" />
         </Section>
         <div class="editor-foot">
             <div class="editor-foot__actions">
                 <SaveBar Block="true" Label="Send" Busy="_sending" OnSave="SendAsync" Blocked="@Blocked" />
             </div>
+            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
         </div>
     }
 </Page>
@@ -111,7 +113,6 @@
     private FeedbackHere? _here;
 
     [Inject] private Platform.Client.Native.NativeBridge Bridge { get; set; } = null!;
-    [Inject] private RecentPages Recent { get; set; } = null!;
 
     private MediaRef Chosen => _chosen is { } chosen && _picked.Contains(chosen) ? chosen : _picked[0];
 
@@ -134,9 +135,7 @@
                 parts.Add(PhoneModels.Name(model));
             if (Bridge.OsVersion is { Length: > 0 } os)
                 parts.Add($"{(Bridge.Platform == "android" ? "Android" : "iOS")} {os}");
-            if (Recent.Last.Length > 1)
-                parts.Add($"from {Recent.Last}");
-            parts.Add("and this phone's state, with a copy of what it has stored");
+            parts.Add("the page you came from and this phone's state");
             return string.Join(", ", parts) + ".";
         }
     }
