@@ -13,7 +13,22 @@ public sealed record Notification(
     bool Urgent = false,
     string? ScopeId = null,
     bool Test = false,
-    string? Action = null);
+    string? Action = null)
+{
+    public required Guid? Actor { get; init; }
+}
+
+public sealed record NotificationDigestItem(
+    NotificationKind Kind,
+    NotificationAudience Audience,
+    string Group,
+    string Link,
+    DateTime? StartedAt = null,
+    string? ScopeId = null,
+    string? Action = null)
+{
+    public required Guid? Actor { get; init; }
+}
 
 public abstract record NotificationAudience
 {
@@ -40,6 +55,10 @@ public interface INotifications
     Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken);
 
     Task SettleAsync(string subject, CancellationToken cancellationToken);
+
+    Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken);
+
+    Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken);
 }
 
 internal sealed class NoNotifications : INotifications
@@ -49,6 +68,10 @@ internal sealed class NoNotifications : INotifications
     public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => Task.CompletedTask;
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 public sealed record NotificationKindSet(IReadOnlyList<NotificationKind> Kinds);

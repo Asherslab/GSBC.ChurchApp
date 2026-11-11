@@ -217,7 +217,7 @@ internal sealed class DraftEditor(
         draft.AskedAt = Now;
         Touch(draft);
         await SaveAsync(draft, cancellationToken, changes);
-        if (draftRules.WaitingToPublish(draft, changes, NameOf(caller)) is { } waiting)
+        if (draftRules.WaitingToPublish(draft, changes, Caller.UserId(caller), NameOf(caller)) is { } waiting)
             await notifications.RaiseAsync(waiting, cancellationToken);
         return await ToMessageAsync(draft, changes, caller, cancellationToken);
     }
@@ -463,7 +463,7 @@ internal sealed class DraftEditor(
         if (sharing)
         {
             await roles.GiveAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), null, cancellationToken);
-            await notifications.RaiseAsync(DraftRules.SharedWith(draft, person, NameOf(caller)), cancellationToken);
+            await notifications.RaiseAsync(DraftRules.SharedWith(draft, person, Caller.UserId(caller), NameOf(caller)), cancellationToken);
         }
         else
             await roles.TakeAwayAsFeatureAsync(person, ConfigurationPermissions.DraftReviewerRole, draft.Id.ToString(), cancellationToken);

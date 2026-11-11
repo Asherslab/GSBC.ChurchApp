@@ -38,9 +38,9 @@ internal sealed class SermonAnnouncer(SermonsDbContext db, INotifications notifi
         List<Notification> announcements = [];
         if (payload.SeriesId is { } seriesId)
             announcements.Add(new Notification(SermonsNotifications.NewInSeries, NotificationAudience.Holding(SermonsPermissions.HearSeries, seriesId),
-                $"New in {payload.SeriesName}: {payload.Title}", body, Link: link, Subject: subject, ScopeId: seriesId, Action: "Listen"));
+                $"New in {payload.SeriesName}: {payload.Title}", body, Link: link, Subject: subject, ScopeId: seriesId, Action: "Listen") { Actor = null });
         announcements.Add(new Notification(SermonsNotifications.NewSermon, NotificationAudience.Holding(SermonsPermissions.HearNew),
-            $"New sermon: {payload.Title}", body, Link: link, Subject: subject, ScopeId: SermonsNotifications.AllSermonsScope, Action: "Listen"));
+            $"New sermon: {payload.Title}", body, Link: link, Subject: subject, ScopeId: SermonsNotifications.AllSermonsScope, Action: "Listen") { Actor = null });
         return announcements;
     }
 }

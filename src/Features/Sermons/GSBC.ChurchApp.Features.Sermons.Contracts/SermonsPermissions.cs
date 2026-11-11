@@ -23,7 +23,7 @@ public static class SermonsPermissions
         new(EditNode, ScopeKind.Global, "Correct sermons and look after series and speakers", area: "Sermons");
 
     public static readonly Permission Upload =
-        new(UploadNode, ScopeKind.Global, "Add sermons by uploading their audio", area: "Sermons");
+        new(UploadNode, ScopeKind.Global, "Add sermons by uploading their audio", area: "Sermons", opensAdminArea: true);
 
     public static readonly IReadOnlyList<Permission> All = [Edit, Upload, HearNew, HearSeries];
 }

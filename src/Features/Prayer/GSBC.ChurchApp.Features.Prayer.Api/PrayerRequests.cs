@@ -71,7 +71,6 @@ internal sealed class PrayerRequests(
         if (mark.Prayed == prayed is not null)
             return;
 
-        bool tell = false;
         if (mark.Prayed)
         {
             int prayedToday = await db.Prayed.CountAsync(row => row.InstallId == install && row.At > now - PrayerRules.Day, cancellationToken);
@@ -79,9 +78,6 @@ internal sealed class PrayerRequests(
                 return;
             db.Prayed.Add(new PrayedRecord { RequestId = id, InstallId = install, UserId = user, At = now });
             record.Prayed++;
-            tell = PrayerRules.TellAboutPrayers(record, user, now);
-            if (tell)
-                record.PrayedToldAt = now;
         }
         else
         {
@@ -91,8 +87,8 @@ internal sealed class PrayerRequests(
 
         await publisher.PublishAsync(record, now, cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
-        if (tell)
-            await telling.PrayedForAsync(record, cancellationToken);
+        if (mark.Prayed)
+            await telling.PrayedForAsync(record, user, cancellationToken);
     }
 
     public async Task AnsweredAsync(Guid install, Guid? user, AnsweredSave save, CancellationToken cancellationToken)
@@ -130,7 +126,7 @@ internal sealed class PrayerRequests(
         db.Requests.Remove(record);
         publisher.Deleted(record, now);
         await db.SaveChangesAsync(cancellationToken);
-        await telling.SettledAsync(record, cancellationToken);
+        await telling.DeletedAsync(record, cancellationToken);
     }
 
     private async Task<RequestRecord?> TheirsAsync(Guid install, Guid? user, string id, CancellationToken cancellationToken) =>

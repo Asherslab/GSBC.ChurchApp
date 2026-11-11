@@ -60,6 +60,47 @@ window.gsbcShell = (() => {
   };
   edgeSwipe();
 
+  const typing = 'input, textarea, select, [contenteditable]:not([contenteditable="false"])';
+
+  const keepFieldInView = () => {
+    const field = document.activeElement;
+    if (!(field instanceof HTMLElement) || !field.matches(typing)) return;
+    const scroller = field.closest('.sheet, .page-scroll');
+    const foot = scroller?.querySelector('.editor-foot');
+    scroller?.style.setProperty('--foot', `${foot && !foot.contains(field) ? foot.offsetHeight : 0}px`);
+    field.scrollIntoView({ block: 'nearest' });
+  };
+
+  const followKeyboard = () => {
+    const keyboard = plugin('Keyboard');
+    if (!keyboard) return;
+    const root = document.documentElement;
+    const overlaysPage = cap().getPlatform() === 'ios';
+    const afterLayout = (then) => requestAnimationFrame(() => requestAnimationFrame(then));
+    keyboard.setAccessoryBarVisible({ isVisible: true }).catch(() => { });
+    keyboard.addListener('keyboardWillShow', ({ keyboardHeight }) => {
+      root.style.setProperty('--kb', `${overlaysPage ? keyboardHeight : 0}px`);
+      root.classList.add('keyboard-open');
+      afterLayout(keepFieldInView);
+    });
+    keyboard.addListener('keyboardDidShow', keepFieldInView);
+    keyboard.addListener('keyboardWillHide', () => {
+      root.classList.remove('keyboard-open');
+      root.style.setProperty('--kb', '0px');
+    });
+    document.addEventListener('focusin', () => {
+      if (root.classList.contains('keyboard-open')) afterLayout(keepFieldInView);
+    });
+  };
+  followKeyboard();
+
+  const holdAutofocus = (dialog) => {
+    if (!dialog.classList.contains('sheet-layer')) return () => { };
+    const fields = [...dialog.querySelectorAll('[autofocus]')];
+    fields.forEach((field) => field.removeAttribute('autofocus'));
+    return () => fields.forEach((field) => field.setAttribute('autofocus', ''));
+  };
+
   return {
     isNative,
 
@@ -163,7 +204,20 @@ window.gsbcShell = (() => {
     },
 
     focusFirst(sheet) {
-      (sheet.querySelector('[autofocus]') ?? sheet).focus({ preventScroll: true });
+      sheet.focus({ preventScroll: true });
+      const field = sheet.querySelector('[autofocus]');
+      if (!field) return;
+      const longestOpening = 400;
+      let done = false;
+      const focusField = () => {
+        if (done) return;
+        done = true;
+        sheet.removeEventListener('animationend', arrived);
+        if (field.isConnected && document.activeElement === sheet) field.focus({ preventScroll: true });
+      };
+      const arrived = (event) => { if (event.target === sheet) focusField(); };
+      sheet.addEventListener('animationend', arrived);
+      setTimeout(focusField, longestOpening);
     },
 
     onReturn(receiver) {
@@ -196,7 +250,9 @@ window.gsbcShell = (() => {
       if (!dialog || dialog.open || typeof dialog.showModal !== 'function') return;
       focusBeforeModal.push(document.activeElement);
       dialog.addEventListener('cancel', (event) => event.preventDefault());
+      const restoreAutofocus = holdAutofocus(dialog);
       dialog.showModal();
+      restoreAutofocus();
     },
 
     async copy(text) {

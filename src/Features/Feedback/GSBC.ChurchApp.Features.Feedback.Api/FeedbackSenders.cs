@@ -7,21 +7,22 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Feedback.Api;
 
-internal sealed class FeedbackSenders(FeedbackDbContext db, IAccessEvaluator access, TimeProvider time)
+internal sealed class FeedbackSenders(FeedbackDbContext db, IAccessEvaluator access, AdminPanelAccess adminPanel, TimeProvider time)
 {
-    public async Task<Sender> WhoAsync(ClaimsPrincipal user, Guid? install, CancellationToken cancellationToken)
+    public async Task<Sender> WhoAsync(ClaimsPrincipal user, Guid? install, FeedbackSource source, CancellationToken cancellationToken)
     {
         Guid? person = Caller.UserId(user);
         bool holdsTheRole = person is not null && await access.IsAllowedAsync(user, FeedbackPermissions.SendNode, null, cancellationToken);
         bool blocked = install is { } phone && await db.Blocks.AsNoTracking().AnyAsync(block => block.InstallId == phone, cancellationToken);
-        return new Sender(install, person, holdsTheRole, blocked);
+        bool usesTheAdminPanel = source == FeedbackSource.AdminPanel && await adminPanel.MayUseAsync(user, cancellationToken);
+        return new Sender(install, person, holdsTheRole, blocked, usesTheAdminPanel);
     }
 
     public async Task<int> SentTodayAsync(Sender sender, CancellationToken cancellationToken)
     {
         DateTime since = time.GetUtcNow().UtcDateTime - FeedbackRules.Day;
         IQueryable<TicketRecord> recent = db.Tickets.AsNoTracking().Where(ticket => ticket.SentAt > since);
-        return sender is { HoldsTheRole: true, User: { } person }
+        return sender is { CountsByPerson: true, User: { } person }
             ? await recent.CountAsync(ticket => ticket.UserId == person, cancellationToken)
             : await recent.CountAsync(ticket => ticket.InstallId == sender.Install, cancellationToken);
     }
@@ -39,14 +40,15 @@ internal sealed class FeedbackSenders(FeedbackDbContext db, IAccessEvaluator acc
     }
 }
 
-internal abstract class FeedbackAreaAccess(FeedbackSenders senders, IAccessEvaluator access) : IMediaAreaAccess
+internal abstract class FeedbackAreaAccess(FeedbackSenders senders, IAccessEvaluator access, AdminPanelAccess adminPanel) : IMediaAreaAccess
 {
     public abstract string Area { get; }
 
     protected abstract string ReadNode { get; }
 
     public async Task<bool> MayUploadAsync(ClaimsPrincipal user, string scopeId, CancellationToken cancellationToken) =>
-        Caller.UserId(user) is not null && await access.IsAllowedAsync(user, FeedbackPermissions.SendNode, null, cancellationToken);
+        Caller.UserId(user) is not null
+        && (await access.IsAllowedAsync(user, FeedbackPermissions.SendNode, null, cancellationToken) || await adminPanel.MayUseAsync(user, cancellationToken));
 
     public async Task<bool> MayReadAsync(ClaimsPrincipal user, string scopeId, CancellationToken cancellationToken) =>
         await access.IsAllowedAsync(user, ReadNode, null, cancellationToken);
@@ -55,14 +57,16 @@ internal abstract class FeedbackAreaAccess(FeedbackSenders senders, IAccessEvalu
         senders.MayUploadFromInstallAsync(install, cancellationToken);
 }
 
-internal sealed class FeedbackAttachmentAccess(FeedbackSenders senders, IAccessEvaluator access) : FeedbackAreaAccess(senders, access)
+internal sealed class FeedbackAttachmentAccess(FeedbackSenders senders, IAccessEvaluator access, AdminPanelAccess adminPanel)
+    : FeedbackAreaAccess(senders, access, adminPanel)
 {
     public override string Area => FeedbackAreas.Attachments;
 
     protected override string ReadNode => FeedbackPermissions.TriageNode;
 }
 
-internal sealed class FeedbackPhoneDataAccess(FeedbackSenders senders, IAccessEvaluator access) : FeedbackAreaAccess(senders, access)
+internal sealed class FeedbackPhoneDataAccess(FeedbackSenders senders, IAccessEvaluator access, AdminPanelAccess adminPanel)
+    : FeedbackAreaAccess(senders, access, adminPanel)
 {
     public override string Area => FeedbackAreas.PhoneData;
 

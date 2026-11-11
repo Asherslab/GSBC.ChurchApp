@@ -345,7 +345,7 @@ flowchart LR
     PlatformApi --> PlatformContracts & PlatformData
     PlatformContracts --> PlatformPermissions
 
-    ArchitectureTests --> HostsApi & HostsGateway & HostsWebsite & PlatformUi & MinistriesClient
+    ArchitectureTests --> HostsApi & HostsGateway & HostsWebsite & HostsAdmin & PlatformUi & MinistriesClient
     PermissionsTests --> PlatformPermissions
     ContractsTests --> PlatformContracts
     ApiTests --> PlatformApi & PlatformClient & Testing
@@ -480,7 +480,7 @@ flowchart LR
 | `GSBC.ChurchApp.Hosts.Migrator` | Applies every feature's migrations, then exits | No |
 | `GSBC.ChurchApp.Hosts.Website` | The website embeds at `embed.baptist.com.au` (approved non-gRPC pages): events and sermons for the church website's iframes, rendered on the server from the public feeds it watches over `Sync.Watch` ([website.md](../features/website.md)) | No |
 | `GSBC.ChurchApp.Hosts.AppHost` | Aspire, local development only: Postgres, a SeaweedFS S3 store for media, migrator, API and gateway together, plus the Cloudflare tunnel when this Mac has one | No |
-| `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, this map | No |
+| `GSBC.ChurchApp.Architecture.Tests` | The rules: feature isolation, gRPC-only endpoints, one tier per method, admin areas the server knows, this map | No |
 | `GSBC.ChurchApp.Platform.Permissions.Tests` | How grants resolve: scope, most specific wins, deny wins a tie | No |
 | `GSBC.ChurchApp.Features.Accounts.Gateway.Tests` | The real passkey ceremonies with a software authenticator, against Postgres: sign-up, sign-in, tokens, ending sessions, replay, origin, disabled accounts | No |
 | `GSBC.ChurchApp.Features.Accounts.Api.Tests` | Against Postgres: a review sign-in code works only while live, never reaches an account that isn't a demo account, and wrong guesses are throttled. App Attest: a genuine attestation is accepted, and refused for another challenge, app or root; an assertion only for its own request, once | No |

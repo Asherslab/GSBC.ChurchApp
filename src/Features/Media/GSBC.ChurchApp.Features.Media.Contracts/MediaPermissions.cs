@@ -12,7 +12,7 @@ public static class MediaPermissions
     public const string SystemViewNode = "media.system.view";
 
     public static readonly Permission View =
-        new(ViewNode, ScopeKind.Global, "See the media library: every uploaded image and file");
+        new(ViewNode, ScopeKind.Global, "See the media library: every uploaded image and file", opensAdminArea: true);
 
     public static readonly Permission Upload =
         new(UploadNode, ScopeKind.Global, "Upload images and files");

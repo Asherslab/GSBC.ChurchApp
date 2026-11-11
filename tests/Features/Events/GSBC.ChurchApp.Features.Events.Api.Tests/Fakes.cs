@@ -2,6 +2,7 @@ using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Contracts.Content;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -35,11 +36,15 @@ internal sealed class RecordedNotifications : INotifications
         foreach (Notification notification in mostSpecificFirst)
             if (notification.Subject is not null && LinkTargets.InAppRoute(notification.Link ?? "") is null)
                 throw new ArgumentException($"A notification about '{notification.Subject}' must link to it in the app.", nameof(mostSpecificFirst));
-        Raised.AddRange(mostSpecificFirst);
+        Raised.AddRange(mostSpecificFirst.Select(NotificationLinks.Checked));
         return Task.CompletedTask;
     }
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 }
 
 internal sealed class RecordedRoles : IRoleAssignments, IPhoneRoles

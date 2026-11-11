@@ -6,6 +6,7 @@ public static class PrayerPermissions
 {
     public const string ReadNode = "prayer.requests.read";
     public const string WallNode = "prayer.wall.moderate";
+    public const string SettingsNode = "prayer.settings.change";
 
     public const string PastoralTeamRole = "pastoral-team";
     public const string WallRole = "prayer-wall";
@@ -14,7 +15,10 @@ public static class PrayerPermissions
         new(ReadNode, ScopeKind.Global, "Read every prayer request, keep notes on them, follow them up and delete them", isSensitive: true, area: "Prayer");
 
     public static readonly Permission Wall =
-        new(WallNode, ScopeKind.Global, "Read the prayer requests that ask for the prayer wall, and choose what the wall shows", area: "Prayer");
+        new(WallNode, ScopeKind.Global, "Read the prayer requests that ask for the prayer wall, and choose what the wall shows", area: "Prayer", opensAdminArea: true);
 
-    public static readonly IReadOnlyList<Permission> All = [Read, Wall];
+    public static readonly Permission Settings =
+        new(SettingsNode, ScopeKind.Global, "Choose when people hear that someone prayed for their request", area: "Prayer");
+
+    public static readonly IReadOnlyList<Permission> All = [Read, Wall, Settings];
 }

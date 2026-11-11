@@ -147,7 +147,7 @@ internal sealed class MinistriesService(
             await TellParentsAsync(ministry, askId, name, facts, cancellationToken);
             await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to join the team",
                 facts.Parents.Count > 0 ? "They're under 18, so a parent says yes first. You'll hear when they do." : "They're under 18 and no parent is linked to them yet. Link one in People.",
-                $"ministries/young-asks/{askId:N}", cancellationToken);
+                $"ministries/young-asks/{askId:N}", me, cancellationToken);
             return new JoinOutcome { Asked = true, Words = "Asked. A parent of yours says yes first, and you'll hear in the app." };
         }
         if (decision.Joins)
@@ -162,7 +162,7 @@ internal sealed class MinistriesService(
 
         await AskAsync(ministry, person, request.As, me, note, waitingForParent: false, cancellationToken);
         await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to {(request.As == Places.Team ? "join the team" : "come along")}",
-            $"In {ministry.Name}. Answer in the app.", $"ministries/asks/{ministry.Id:N}", cancellationToken);
+            $"In {ministry.Name}. Answer in the app.", $"ministries/asks/{ministry.Id:N}", me, cancellationToken);
         return new JoinOutcome { Asked = true, Words = "Asked. A leader says yes or no, and you'll hear in the app." };
     }
 
@@ -188,9 +188,9 @@ internal sealed class MinistriesService(
             await db.SaveChangesAsync(cancellationToken);
             await notifications.RaiseAsync(new Notification(MinistriesNotifications.Answered, NotificationAudience.Person(ask.PersonId),
                 $"Not {ministry.Name}'s team for now", "A parent of yours said not yet. Talk with them about it.", $"/ministries/{ministry.Id}",
-                Subject: $"ministries/parent-no/{ask.Id:N}"), cancellationToken);
+                Subject: $"ministries/parent-no/{ask.Id:N}") { Actor = me }, cancellationToken);
             await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{First(name)}'s parent said not yet",
-                $"They won't join {ministry.Name}'s team for now.", $"ministries/young-asks/{ask.Id:N}", cancellationToken);
+                $"They won't join {ministry.Name}'s team for now.", $"ministries/young-asks/{ask.Id:N}", me, cancellationToken);
             return new Done();
         }
 
@@ -202,7 +202,7 @@ internal sealed class MinistriesService(
             await db.SaveChangesAsync(cancellationToken);
             await notifications.RaiseAsync(new Notification(MinistriesNotifications.Answered, NotificationAudience.Person(ask.PersonId),
                 $"You're in {ministry.Name}", "A parent of yours said yes to joining the team.", $"/ministries/{ministry.Id}",
-                Subject: $"ministries/parent-yes/{ask.Id:N}"), cancellationToken);
+                Subject: $"ministries/parent-yes/{ask.Id:N}") { Actor = me }, cancellationToken);
             await TellLeadersYoungJoinedAsync(ministry, ask.PersonId, name, me, cancellationToken);
             return new Done();
         }
@@ -211,7 +211,7 @@ internal sealed class MinistriesService(
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
         await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to join the team",
-            "A parent said yes. Answer in the app.", $"ministries/asks/{ministry.Id:N}", cancellationToken);
+            "A parent said yes. Answer in the app.", $"ministries/asks/{ministry.Id:N}", me, cancellationToken);
         return new Done();
     }
 
@@ -234,19 +234,19 @@ internal sealed class MinistriesService(
         foreach (Guid parent in child.Parents)
             await notifications.RaiseAsync(new Notification(MinistriesNotifications.ForYourYes, NotificationAudience.Person(parent),
                 $"{First(name)} asks to join {ministry.Name}'s team", "Say yes or not yet in the app. Its leaders know they asked.", $"/ministries/{ministry.Id}",
-                Subject: $"ministries/parent/{askId:N}", Action: "Answer"), cancellationToken);
+                Subject: $"ministries/parent/{askId:N}", Action: "Answer") { Actor = child.PersonId }, cancellationToken);
     }
 
     private async Task TellLeadersYoungJoinedAsync(MinistryRecord ministry, Guid person, string name, Guid saidYes, CancellationToken cancellationToken)
     {
         string parent = (await people.NamesAsync([saidYes], cancellationToken)).GetValueOrDefault(saidYes) ?? "A parent";
         await TellLeadersAsync(MinistriesNotifications.YoungJoined, ministry, $"{name} joined the team",
-            $"They're under 18; {First(parent)} said yes. Follow up with them and their family.", $"ministries/young-joined/{ministry.Id:N}/{person:N}", cancellationToken);
+            $"They're under 18; {First(parent)} said yes. Follow up with them and their family.", $"ministries/young-joined/{ministry.Id:N}/{person:N}", saidYes, cancellationToken);
     }
 
-    private async Task TellLeadersAsync(NotificationKind kind, MinistryRecord ministry, string title, string body, string subject, CancellationToken cancellationToken) =>
+    private async Task TellLeadersAsync(NotificationKind kind, MinistryRecord ministry, string title, string body, string subject, Guid actor, CancellationToken cancellationToken) =>
         await notifications.RaiseAsync(new Notification(kind, NotificationAudience.Holding(MinistriesPermissions.People, ministry.Id.ToString()),
-            title, body, $"/ministries/{ministry.Id}/people", Subject: subject), cancellationToken);
+            title, body, $"/ministries/{ministry.Id}/people", Subject: subject) { Actor = actor }, cancellationToken);
 
     private static string First(string name) => name.Split(' ', StringSplitOptions.RemoveEmptyEntries).FirstOrDefault() ?? name;
 

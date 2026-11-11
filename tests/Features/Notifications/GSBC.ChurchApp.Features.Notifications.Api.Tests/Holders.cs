@@ -1,10 +1,11 @@
+using System.Security.Claims;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Tests;
 
-internal sealed class Holders : IPermissionHolders, IPeopleIndex
+internal sealed class Holders : IPermissionHolders, IPeopleIndex, IAccessEvaluator
 {
     private readonly Dictionary<(string, string?), PermissionHolders> _granted = [];
 
@@ -19,6 +20,11 @@ internal sealed class Holders : IPermissionHolders, IPeopleIndex
 
     public ValueTask<PermissionHolders> HoldersAsync(Permission permission, string? objectId, CancellationToken cancellationToken) =>
         ValueTask.FromResult(_granted.GetValueOrDefault((permission.Node, objectId), PermissionHolders.None));
+
+    public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(Caller.UserId(user) is { } person && _granted.Any(grant => grant.Key.Item1 == node && grant.Value.People.Contains(person)));
+
+    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => throw new NotSupportedException();
 
     public ValueTask<IReadOnlyList<Guid>> EveryoneAsync(CancellationToken cancellationToken) => ValueTask.FromResult(Everyone);
 

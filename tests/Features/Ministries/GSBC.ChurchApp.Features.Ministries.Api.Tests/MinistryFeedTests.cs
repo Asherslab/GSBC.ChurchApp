@@ -8,6 +8,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Client.Access;
@@ -496,6 +497,10 @@ public sealed class MinistryFeedTests : IAsyncLifetime
         public Task RaiseOneOfAsync(IReadOnlyList<Notification> mostSpecificFirst, CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+        public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
     private sealed class Context(ClaimsPrincipal person) : ServerCallContext

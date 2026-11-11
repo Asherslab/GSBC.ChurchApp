@@ -10,13 +10,13 @@ public static class AccountsPermissions
     public const string ConnectToolNode = "accounts.tools.connect";
 
     public static readonly Permission View =
-        new(ViewNode, ScopeKind.Global, "See everyone's name and email", isSensitive: true, area: "People");
+        new(ViewNode, ScopeKind.Global, "See everyone's name and email", isSensitive: true, area: "People", opensAdminArea: true);
 
     public static readonly Permission Manage =
         new(ManageNode, ScopeKind.Global, "Invite people, give recovery codes, disable accounts, read the audit log", isSensitive: true, area: "People");
 
     public static readonly Permission ReviewAccess =
-        new(ReviewAccessNode, ScopeKind.Global, "Make sign-in codes for Apple's app reviewers", isSensitive: true, area: "People");
+        new(ReviewAccessNode, ScopeKind.Global, "Make sign-in codes for Apple's app reviewers", isSensitive: true, area: "People", opensAdminArea: true);
 
     public static readonly Permission ConnectTool =
         new(ConnectToolNode, ScopeKind.Global, "Connect a tool, such as Claude on a computer, to their own account; it can't use anything sensitive", isSensitive: true);

@@ -69,7 +69,7 @@ internal sealed class DetailsReminders(EventsDbContext db, INotifications notifi
             : NotificationAudience.Holding(EventsPermissions.Edit, regular.CalendarId.ToString());
         return new Notification(EventsNotifications.DetailsNeeded, audience, Title(occurrence, date),
             "Add it in the calendar so people know before they come.",
-            Link: $"/event/{occurrence.Id}", Subject: Subject(occurrence.Id), ScopeId: regular.CalendarId.ToString(), Action: "Add details");
+            Link: $"/event/{occurrence.Id}", Subject: Subject(occurrence.Id), ScopeId: regular.CalendarId.ToString(), Action: "Add details") { Actor = null };
     }
 
     public static string Title(EventOccurrence occurrence, DateOnly date) =>

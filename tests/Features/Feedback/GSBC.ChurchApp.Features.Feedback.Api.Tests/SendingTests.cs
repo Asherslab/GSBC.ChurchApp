@@ -56,7 +56,7 @@ public sealed class SendingTests : FeedbackHost
         await SendAsync(Phone, null, id: id);
         await SendAsync(Phone, null, id: id);
 
-        Assert.Single(Told.Raised);
+        Assert.Single(Told.Collected);
         Assert.NotNull(await RecordAsync(id));
     }
 }

@@ -34,8 +34,9 @@ internal sealed class FeedbackSending(
             case SendVerdict.NotHere or SendVerdict.Blocked:
                 throw new RpcException(new Status(StatusCode.PermissionDenied, FeedbackLimits.NotAvailable));
             case SendVerdict.TooMany:
-                throw new RpcException(new Status(StatusCode.ResourceExhausted,
-                    $"This phone has sent {FeedbackRules.DailyLimit(sender)} today, the most for a day. It sends this one tomorrow."));
+                throw new RpcException(new Status(StatusCode.ResourceExhausted, send.Source == FeedbackSource.AdminPanel
+                    ? $"You've sent {FeedbackRules.DailyLimit(sender)} today, the most for a day. Send this one tomorrow."
+                    : $"This phone has sent {FeedbackRules.DailyLimit(sender)} today, the most for a day. It sends this one tomorrow."));
         }
 
         IReadOnlyList<MediaRef> attachments = await media.VerifyAsync(send.AttachmentIds.Distinct().ToList(), cancellationToken);

@@ -11,6 +11,10 @@ internal sealed class NotificationsPersonData(NotificationsDbContext db) : IPers
         await db.Deliveries.Where(delivery => delivery.UserId == userId && delivery.SentAt == null && delivery.GaveUpAt == null).ExecuteDeleteAsync(cancellationToken);
         await db.Inbox.Where(entry => entry.UserId == userId).ExecuteDeleteAsync(cancellationToken);
         await db.Preferences.Where(preference => preference.UserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.Digests.Where(digest => digest.AudienceUserId == userId).ExecuteDeleteAsync(cancellationToken);
+        await db.DigestItems.Where(item => item.ActorId == userId).ExecuteUpdateAsync(set => set.SetProperty(item => item.ActorId, (Guid?)null), cancellationToken);
+        await db.DigestSchedules.Where(schedule => schedule.ChangedBy == userId)
+            .ExecuteUpdateAsync(set => set.SetProperty(schedule => schedule.ChangedBy, (Guid?)null), cancellationToken);
         await db.Announcements.Where(announcement => announcement.RecalledById == userId)
             .ExecuteUpdateAsync(set => set.SetProperty(announcement => announcement.RecalledById, (Guid?)null), cancellationToken);
         await db.Devices.Where(device => device.UserId == userId).ExecuteUpdateAsync(set => set.SetProperty(device => device.UserId, (Guid?)null), cancellationToken);
