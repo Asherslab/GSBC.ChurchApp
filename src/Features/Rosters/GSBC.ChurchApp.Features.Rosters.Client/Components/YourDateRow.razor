@@ -6,7 +6,7 @@
 }
 <UnsavedGuard Changed="() => _why && _reason.Trim().Length > 0" What="why you can't do it" />
 
-<ListRow Title="@($"{assignment.PositionName} · {RosterLines.When(Date.Date)}")"
+<ListRow Title="@($"{assignment.PositionName}{(assignment.Training ? " (training)" : "")} · {RosterLines.When(Date.Date)}")"
          Subtitle="@(Date.Yourself ? Date.Date.Title : $"For {RosterLines.First(Date.For.Name)} · {Date.Date.Title}")" IconTone="RowTone.Warm" Class="roster-yours">
     <Leading><span class="roster-day roster-day--warm" aria-hidden="true">@RosterLines.DayNumber(Date.Date)</span></Leading>
     <TrailingContent>

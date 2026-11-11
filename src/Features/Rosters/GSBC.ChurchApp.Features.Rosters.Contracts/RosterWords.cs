@@ -17,6 +17,20 @@ public static class Replies
     public static bool Waiting(string state) => state == Asked;
 }
 
+public static class Training
+{
+    public const string AloneFlag = "Training: needs someone trained on with them";
+
+    public static bool IsTrainee(bool positionNeedsTrained, bool trained) => positionNeedsTrained && !trained;
+
+    public static IReadOnlySet<T> Alone<T>(IEnumerable<(T Id, T Position, bool On, bool Trainee)> places) where T : notnull
+    {
+        List<(T Id, T Position, bool On, bool Trainee)> on = places.Where(place => place.On).ToList();
+        HashSet<T> partnered = on.Where(place => !place.Trainee).Select(place => place.Position).ToHashSet();
+        return on.Where(place => place.Trainee && !partnered.Contains(place.Position)).Select(place => place.Id).ToHashSet();
+    }
+}
+
 public static class SwapWays
 {
     public const string Open = "open";

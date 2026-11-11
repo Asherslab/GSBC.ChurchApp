@@ -102,6 +102,12 @@ internal sealed class RosterBook(
         };
     }
 
+    public bool IsTrainee(Guid positionId, Guid? person) =>
+        person is { } id && _positions.TryGetValue(positionId, out PositionRecord? position) && Training.IsTrainee(position.NeedsTrained, _trained.Contains((positionId, id)));
+
+    private IReadOnlySet<Guid> AloneOn(IEnumerable<AssignmentRecord> sameDate) =>
+        Training.Alone(sameDate.Select(each => (each.Id, each.PositionId, each.PersonId is not null && Replies.Fills(each.State), IsTrainee(each.PositionId, each.PersonId))));
+
     private Assignment AssignmentOf(AssignmentRecord assignment, DateOnly day, IReadOnlyList<AssignmentRecord> sameDate, bool leads)
     {
         string name = NameOf(assignment.PersonId);
@@ -112,6 +118,7 @@ internal sealed class RosterBook(
             PersonId = assignment.PersonId?.ToString() ?? "", Name = name, State = assignment.State, Reason = assignment.Reason,
             RepliedBy = assignment.RepliedBy is { } by && by != assignment.PersonId ? RosterRules.ForWords(NameOf(by), name) : "",
             Flags = leads && assignment.PersonId is { } person && Replies.Fills(assignment.State) ? FlagsOf(assignment, person, day, sameDate) : [],
+            Training = IsTrainee(assignment.PositionId, assignment.PersonId),
             Swap = swap is null ? null : new SwapLine
             {
                 Id = swap.Id.ToString(), Way = swap.Way, State = swap.State, Note = swap.Note,
@@ -123,7 +130,7 @@ internal sealed class RosterBook(
 
     private List<string> FlagsOf(AssignmentRecord assignment, Guid person, DateOnly day, IReadOnlyList<AssignmentRecord> sameDate) =>
         _positions.TryGetValue(assignment.PositionId, out PositionRecord? position)
-            ? RosterRules.Flags(position, day, _away[person], standings.GetValueOrDefault(person), _trained.Contains((position.Id, person)),
+            ? RosterRules.Flags(position, day, _away[person], standings.GetValueOrDefault(person), AloneOn(sameDate).Contains(assignment.Id),
                 sameDate.Where(other => other.Id != assignment.Id && other.PersonId == person && Replies.Fills(other.State)).Select(other => other.PositionName)).ToList()
             : [];
 

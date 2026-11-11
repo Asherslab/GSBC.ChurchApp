@@ -199,6 +199,31 @@ public sealed class RosterFlowTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task ATraineeIsOnWithSomeoneTrainedAndLeadersHearWhenTheyreLeftWithNobody()
+    {
+        await SetUpAsync(new Position { Name = "Presenter PC", Needed = 1, NeedsTrained = true });
+        await Run(service => service.SetTrainedAsync(_leader, new TrainedChange { MinistryId = _ministry.ToString(), PositionId = _sound.ToString(), PersonId = _jo.ToString(), Trained = true }, Cancel));
+        await AssignAsync(_sam);
+
+        Assignment alone = (await ViewAsync(_leader)).Dates.Single().Assignments.Single();
+        Assert.Equal((true, false), (alone.Training, alone.Fills));
+        Assert.Equal([Training.AloneFlag], alone.Flags);
+        Assert.Contains(_notifications.Sent, sent => sent.Audience == NotificationAudience.Person(_sam) && sent.Title.EndsWith(": Presenter PC (training)", StringComparison.Ordinal));
+
+        await AssignAsync(_jo);
+        RosterDate partnered = (await ViewAsync(_leader)).Dates.Single();
+        Assert.Empty(partnered.Assignments.Single(each => each.PersonId == _sam.ToString()).Flags);
+        Assert.Equal(1, partnered.Assignments.Count(each => each.Fills));
+
+        Guid jos = Guid.Parse(partnered.Assignments.Single(each => each.PersonId == _jo.ToString()).Id);
+        _notifications.Sent.Clear();
+        await Run(service => service.ReplyAsync(_jo, new ReplyRequest { MinistryId = _ministry.ToString(), AssignmentId = jos.ToString(), Accept = false }, Cancel));
+
+        Assert.Contains(_notifications.Sent, sent => sent.Audience == NotificationAudience.Person(_leader) && sent.Title.StartsWith("Sam is training on", StringComparison.Ordinal));
+        Assert.Equal([Training.AloneFlag], (await ViewAsync(_leader)).Dates.Single().Assignments.Single(each => each.PersonId == _sam.ToString()).Flags);
+    }
+
+    [Fact]
     public async Task SomeoneAddedToTheTeamHasTheRosterAsSoonAsTheMinistrySaysItsPeopleChanged()
     {
         await SetUpAsync(new Position { Name = "Sound", NeedsTrained = true });

@@ -16,7 +16,7 @@ internal static class RosterRules
     public const string NoBlueCardFlag = "No current blue card";
     public const string NoTrainingFlag = "Safe Ministry training not current";
 
-    public static IReadOnlyList<string> Flags(PositionRecord position, DateOnly day, IEnumerable<AwayDays> away, SafeguardingStanding? standing, bool trained,
+    public static IReadOnlyList<string> Flags(PositionRecord position, DateOnly day, IEnumerable<AwayDays> away, SafeguardingStanding? standing, bool aloneTraining,
         IEnumerable<string> alsoOn)
     {
         List<string> flags = [];
@@ -26,9 +26,9 @@ internal static class RosterRules
             flags.Add(NoBlueCardFlag);
         if (position.NeedsTraining && standing?.TrainingCurrent != true)
             flags.Add(NoTrainingFlag);
-        if (position.NeedsTrained && !trained)
-            flags.Add($"Not trained for {position.Name.ToLowerInvariant()}");
-        flags.AddRange(alsoOn.Select(other => $"Also on {other.ToLowerInvariant()} that day"));
+        if (aloneTraining)
+            flags.Add(Training.AloneFlag);
+        flags.AddRange(alsoOn.Select(other => $"Also on {other} that day"));
         return flags;
     }
 

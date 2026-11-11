@@ -79,6 +79,9 @@ public sealed class Assignment
     [ProtoMember(8)] public string RepliedBy { get; set; } = "";
     [ProtoMember(9)] public List<string> Flags { get; set; } = [];
     [ProtoMember(10)] public SwapLine? Swap { get; set; }
+    [ProtoMember(11)] public bool Training { get; set; }
+
+    public bool Fills => Replies.Fills(State) && !Training;
 }
 
 [ProtoContract]
