@@ -4,6 +4,7 @@
 .chat-row--waiting { background: color-mix(in srgb, var(--marker) 14%, transparent); }
 
 .chat { display: flex; flex-direction: column; height: calc(100dvh - var(--top-h) - var(--sat) - var(--tab-h) - var(--sab)); }
+.keyboard-open .chat { height: calc(100dvh - var(--top-h) - var(--sat) - var(--kb, 0px)); }
 .chat__scroll { flex: 1; min-height: 0; display: flex; flex-direction: column-reverse; overflow-y: auto; overscroll-behavior: contain; }
 .chat__lines { display: grid; gap: 0; padding: 8px var(--gutter) 16px; }
 .chat__start { display: flex; gap: 6px; justify-content: center; align-items: center; margin: 4px auto 12px; max-width: 34ch; text-align: center; font-size: var(--text-caption); color: var(--ink-3); }
@@ -30,7 +31,7 @@
 .chat-status--failed .text-link { padding: 0; border: 0; background: none; font: inherit; color: var(--accent); }
 
 .chat-composer, .chat-stop, .chat-consent { flex: none; padding: 10px var(--gutter) 12px; border-top: 1px solid var(--line); background: var(--bar); -webkit-backdrop-filter: saturate(1.6) blur(16px); backdrop-filter: saturate(1.6) blur(16px); }
-.chat-composer { display: grid; gap: 8px; }
+.chat-composer { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .chat-composer__context { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; font-size: var(--text-caption); color: var(--ink-2); }
 .chat-composer__context > span { flex: 1; min-width: 0; }
 .chat-composer__quote { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 3px 10px; border-radius: var(--radius-full); background: var(--sand); }
