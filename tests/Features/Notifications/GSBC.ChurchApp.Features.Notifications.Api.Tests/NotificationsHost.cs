@@ -39,6 +39,8 @@ public abstract class NotificationsHost : IAsyncLifetime
             .AddSingleton<PushSignal>()
             .AddSingleton<IPermissionHolders>(Holders)
             .AddSingleton<IPeopleIndex>(Holders)
+            .AddSingleton<IAccessEvaluator>(Holders)
+            .AddScoped<DigestSchedulesService>()
             .AddSingleton<IPushTransport>(Transport)
             .AddScoped<NotificationRaiser>()
             .AddScoped<DigestSchedules>()

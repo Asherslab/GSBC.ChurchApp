@@ -66,6 +66,7 @@ public static class NotificationsApiExtensions
     {
         endpoints.MapGrpcService<NotificationsService>();
         endpoints.MapGrpcService<AnnouncementsService>();
+        endpoints.MapGrpcService<DigestSchedulesService>();
         return endpoints;
     }
 }

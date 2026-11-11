@@ -1,4 +1,6 @@
+using Grpc.Core;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Testing;
 
 namespace GSBC.ChurchApp.Features.Notifications.Api.Tests;
@@ -57,6 +59,24 @@ public sealed class DigestTests : NotificationsHost
 
         Assert.Equal(["A new notice today"], await TitlesAsync(poster));
         Assert.Equal(["2 new notices today"], await TitlesAsync(reader));
+    }
+
+    [Fact]
+    public async Task OnlyThoseAllowedChangeWhenADigestGoesAndTheNextOneFollowsIt()
+    {
+        Guid pastor = Guid.CreateVersion7(), member = Guid.CreateVersion7();
+        Holders.Grant(TestKinds.ChangePrayerSettings, null, people: [pastor], phones: []);
+        DigestScheduleChange everyFiveMinutes = new() { Kind = TestKinds.Prayed.Key, AfterMinutes = [5] };
+
+        await Assert.ThrowsAsync<RpcException>(() => WithAsync<DigestSchedulesService, DigestScheduleMessage>(service => service.ChangeAsync(everyFiveMinutes, CallAs(member)).AsTask()));
+        DigestScheduleMessage changed = await WithAsync<DigestSchedulesService, DigestScheduleMessage>(service => service.ChangeAsync(everyFiveMinutes, CallAs(pastor)).AsTask());
+        DateTime made = Clock.UtcNow;
+        await PrayedAsync(made, by: null);
+        await At(made.AddMinutes(5));
+
+        Assert.Equal([5], changed.AfterMinutes);
+        Assert.Equal(((int?)null, true), (changed.DailyAtMinute, changed.MayChange));
+        Assert.Equal(["Someone prayed for your request"], await TitlesAsync(_owner));
     }
 
     private Task PrayedAsync(DateTime made, Guid? by) =>
