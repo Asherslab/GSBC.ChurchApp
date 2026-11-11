@@ -211,7 +211,7 @@ internal sealed class MinistriesService(
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
         await TellLeadersAsync(MinistriesNotifications.Asked, ministry, $"{name} asks to join the team",
-            $"A parent said yes. Answer in the app.", $"ministries/asks/{ministry.Id:N}", cancellationToken);
+            "A parent said yes. Answer in the app.", $"ministries/asks/{ministry.Id:N}", cancellationToken);
         return new Done();
     }
 

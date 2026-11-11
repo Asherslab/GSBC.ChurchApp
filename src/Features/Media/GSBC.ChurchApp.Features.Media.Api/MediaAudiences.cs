@@ -11,7 +11,7 @@ internal sealed class MediaAudiences(MediaDbContext db, IBlobStore blobs, TimePr
 {
     public async Task<bool> ShareAsync(MediaSystemArea area, string mediaId, string owner, string? permissionNode, string? scopeId, CancellationToken cancellationToken)
     {
-        if (!Guid.TryParse(mediaId, out Guid id) || await db.Items.SingleOrDefaultAsync(item => item.Id == id && item.Area == area.Key, cancellationToken) is not { } item)
+        if (!Guid.TryParse(mediaId, out Guid id) || await db.Items.SingleOrDefaultAsync(found => found.Id == id && found.Area == area.Key, cancellationToken) is not { } item)
             return false;
         if (await db.Uses.AnyAsync(use => use.MediaId == id && use.Owner != owner, cancellationToken))
             return false;

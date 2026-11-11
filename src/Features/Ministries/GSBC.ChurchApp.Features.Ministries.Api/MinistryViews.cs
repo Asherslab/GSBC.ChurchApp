@@ -161,7 +161,7 @@ internal sealed class MinistryViews(
 
     public static List<string> SundaysOf(MinistryRecord group, IEnumerable<RoundRecord> rounds, IEnumerable<SitOutRecord> sitOuts) =>
         LifeGroupRounds.SundaysOf(group.Id.ToString(), group.RoundId?.ToString() ?? "", rounds.Select(Round),
-            sitOuts.Where(sitOut => sitOut.GroupId == group.Id).Select(sitOut => new Contracts.SittingOut { GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString() }));
+            sitOuts.Where(sitOut => sitOut.GroupId == group.Id).Select(sitOut => new SittingOut { GroupId = sitOut.GroupId.ToString(), RoundId = sitOut.RoundId.ToString() }));
 
     public static Audience WhileHidden(Guid ministryId) =>
         Audience.HoldingAt(MinistriesPermissions.SettingsNode, Scope.Of(ScopeKind.Ministry, ministryId.ToString()));
