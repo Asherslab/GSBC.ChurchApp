@@ -30,7 +30,7 @@ One web app, packaged for both stores from a single build:
 The app is not published as a website for now. The only public site is the staff admin panel (§10).
 
 **Capacitor, with one native plugin of our own.** Nothing in scope needs native UI. Device features
-come from official plugins: Push Notifications, Haptics, Share, Browser, App (Android back button,
+come from official plugins: Push Notifications, Haptics, Keyboard, Share, Browser, App (Android back button,
 deep links), Preferences and Splash Screen. The one plugin we write is the data layer (§5), in Swift
 and Kotlin. It is generic, so it is written once per platform, not once per feature. Since 2026-11-05 it
 also plays audio (AVPlayer, the lock screen's controls and a playback journal) for Sermons, still generic:
