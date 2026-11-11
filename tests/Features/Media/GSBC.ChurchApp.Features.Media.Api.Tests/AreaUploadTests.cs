@@ -2,7 +2,9 @@ using System.Security.Claims;
 using Grpc.Core;
 using GSBC.ChurchApp.Features.Media.Api.Data;
 using GSBC.ChurchApp.Features.Media.Contracts;
+using GSBC.ChurchApp.Platform.Api.Media;
 using GSBC.ChurchApp.Platform.Contracts.Media;
+using GSBC.ChurchApp.Platform.Storage;
 using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -53,6 +55,37 @@ public sealed class AreaUploadTests : MediaLibraryHost
         RpcException notAMember = await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.GetLinkAsync(outsider, new LinkRequest { Id = shared.Id }, Cancellation)));
         Assert.Equal(StatusCode.PermissionDenied, notAMember.StatusCode);
         await Assert.ThrowsAsync<RpcException>(() => LibraryCallAsync(library => library.BeginUploadAsync(outsider, null, photo, Cancellation)));
+    }
+
+    [Fact]
+    public async Task ChangingWhoAMinistryDocumentIsForMovesItBetweenPublicAndPrivateUnlessSomethingElseUsesIt()
+    {
+        ClaimsPrincipal leader = Person();
+        Access.Grant(leader, PostFiles.Node, Ministry);
+        Access.Grant(leader, ReadFiles.Node, Ministry);
+        MediaRef guide = (await SendAsync(leader, SamplePdf, new BeginUploadRequest
+        {
+            FileName = "helpers-guide.pdf", ContentType = "application/pdf", Bytes = SamplePdf.Length,
+            PrivateTo = new MediaAudience { Permission = ReadFiles.Node, ScopeId = Ministry }, Area = MinistryFiles.Key, AreaScopeId = Ministry,
+        })).Item!.Media!;
+        await ReferencesCallAsync(references => Done(references.UseAsync("ministries.file/1", [guide], Cancellation)));
+
+        Assert.True(await ShareAsync(guide.Id, "ministries.file/1", null));
+
+        IBlobStore blobs = Services.GetRequiredService<IBlobStore>();
+        Assert.NotNull(await blobs.FindAsync(BlobBucket.Public, guide.Key, Cancellation));
+        Assert.Null(await blobs.FindAsync(BlobBucket.Private, guide.Key, Cancellation));
+        Assert.False((await ReferencesCallAsync(references => references.VerifyAsync([guide], Cancellation)))[0].IsPrivate);
+
+        await ReferencesCallAsync(references => Done(references.UseAsync("ministries.file/2", [guide], Cancellation)));
+        Assert.False(await ShareAsync(guide.Id, "ministries.file/1", ReadFiles.Node));
+        Assert.NotNull(await blobs.FindAsync(BlobBucket.Public, guide.Key, Cancellation));
+    }
+
+    private async Task<bool> ShareAsync(string mediaId, string owner, string? permission)
+    {
+        await using AsyncServiceScope scope = Services.CreateAsyncScope();
+        return await scope.ServiceProvider.GetRequiredService<IMediaAudiences>().ShareAsync(MinistryFiles, mediaId, owner, permission, Ministry, Cancellation);
     }
 
     private async Task<string?> AreaFolderOfAsync(string mediaId)

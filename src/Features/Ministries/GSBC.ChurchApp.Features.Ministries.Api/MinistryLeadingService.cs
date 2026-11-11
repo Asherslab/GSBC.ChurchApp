@@ -248,6 +248,9 @@ internal sealed class MinistryLeadingService(
             ? await db.Files.SingleOrDefaultAsync(found => found.Id == ParseId(wanted.Id) && found.MinistryId == ministry.Id, cancellationToken)
               ?? throw new RpcException(new Status(StatusCode.NotFound, "That file was deleted."))
             : db.Files.Add(new FileRecord { Id = chosenId ?? Guid.CreateVersion7(), MinistryId = ministry.Id, AddedBy = me, AddedAt = Now }).Entity;
+        if (media is { } kept && kept == file.MediaId && file.Audience != wanted.Audience
+            && !await fileMedia.ShareAsync(file.Id, kept, wanted.Audience, ministry.Id, cancellationToken))
+            throw Refused("This document is used somewhere else too, so who it's for can't change here. Add it again for the new people.");
         (file.Title, file.Kind, file.Url, file.MediaId, file.Audience, file.Note) =
             (wanted.Title.Trim(), media is null ? FileKinds.Link : FileKinds.Document, media is null ? url : "", media, wanted.Audience, wanted.Note.Trim());
         changes.Touch(ministry.Id);
