@@ -9,12 +9,12 @@
             <div class="feedback-send__take">
                 @if (_canCapture)
                 {
-                    <Button Variant="ButtonVariant.Quiet" Icon="camera" Busy="_capturing" Disabled="Room == 0" OnClick="CaptureAsync">Capture this page</Button>
+                    <Button Variant="ButtonVariant.Tinted" Icon="camera" Busy="_capturing" Disabled="Room == 0" OnClick="CaptureAsync">Capture this page</Button>
                 }
                 @if (Room > 0)
                 {
-                    <FilePick @ref="_pick" Label="Choose files" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room" TooLarge="FeedbackLimits.TooLarge"
-                              TakesPaste="true" DropOn=".feedback-send" Class="feedback-send__choose" OnChosen="ChosenAsync">
+                    <FilePick Label="Choose files" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room" TooLarge="FeedbackLimits.TooLarge"
+                              Class="feedback-send__choose" OnChosen="ChosenAsync">
                         <Icon Name="paperclip" Size="IconSize.Small" /><span>@(context ? "Sending…" : "Choose files")</span>
                     </FilePick>
                 }
@@ -26,7 +26,10 @@
                 }
                 @if (Room > 0)
                 {
-                    <p class="feedback-send__drop"><strong>Paste <kbd>@(_commandKey ? "⌘V" : "Ctrl V")</kbd> or drop screenshots and videos</strong><span>Up to @FeedbackLimits.MostAttachments</span></p>
+                    <FilePick @ref="_pick" Label="Paste, drop or choose screenshots and videos" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room"
+                              TooLarge="FeedbackLimits.TooLarge" TakesPaste="true" DropOn=".feedback-send" Class="feedback-send__drop" OnChosen="ChosenAsync">
+                        <strong>Paste <kbd>@(_commandKey ? "⌘V" : "Ctrl V")</kbd> or drop screenshots and videos</strong><span>@(context ? "Sending…" : $"Or click to choose. Up to {FeedbackLimits.MostAttachments}")</span>
+                    </FilePick>
                 }
             </div>
             <Notice Tone="NoticeTone.Warning" Text="@_captureProblem" />

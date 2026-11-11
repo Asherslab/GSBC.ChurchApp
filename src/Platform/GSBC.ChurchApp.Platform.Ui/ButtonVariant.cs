@@ -8,4 +8,5 @@ public enum ButtonVariant
     GhostOnMasthead,
     Live,
     Danger,
+    Tinted,
 }
