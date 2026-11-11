@@ -28,7 +28,8 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
 
 | Who | What |
 |---|---|
-| The **Feedback** role (`feedback.send`) | Sees *Send feedback* in More on any phone they sign in on; sends up to 50 a day |
+| The **Feedback** role (`feedback.send`) | Sees *Send feedback* in More on any phone they sign in on; sends up to 50 a day. It's about the phone; the admin panel doesn't need it |
+| Anyone with a page in the admin panel (2026-11-11) | Sends feedback from the admin panel's sidebar; up to 50 a day |
 | Anyone else, signed in or not | Reaches *Send feedback* by tapping the church logo at the foot of More three times, **only on a phone the app has verified** (App Attest); up to 5 a day per phone |
 | **Feedback Triage** (`feedback.triage`, with `feedback.send`) | The admin panel's Feedback board: reads feedback with its pictures and videos, moves it along, keeps notes, blocks and unblocks a phone, deletes a ticket; gets the *New feedback* notification |
 | **Feedback Triage, with phone data** (`feedback.*`) | Everything above, and downloads the copy of a phone's stored data that comes with each ticket (`feedback.phonedata.read`) |
@@ -69,8 +70,14 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
 The owner: "how do i submit feedback in the admin dash? (i.e. for admin dash feedback)", then "sure, send feedback just
 above account in bottom left."
 
-- **Who:** anyone signed in to the admin panel who holds `feedback.send`: the Owner, and the Feedback, Feedback Triage and
-  Feedback Triage with phone data roles. No triple tap and no per-phone limit; the 50 a day the role has is the guard.
+- **Who** (owner, 2026-11-11: "anyone who has access to admin can feedback in admin"): anyone signed in to the admin
+  panel with at least one page of it in their sidebar, whatever their role: staff, a ministry leader, the Owner. A
+  member with nothing there besides Home and *Places in the app* can't. It's asked through Access
+  ([permissions.md](../architecture/permissions.md), *Using the admin panel at all*), on the sidebar and on the server.
+  No triple tap and no per-phone limit; 50 a day per person is the guard. The phone is unchanged: `feedback.send` still
+  shows *Send feedback* in More, and everyone else uses the triple tap on a verified phone, 5 a day. (Until this
+  date the admin panel also needed `feedback.send`.)
+- **Capture this page** works in Safari (owner, 2026-11-11: "capture this page worked in safari fine").
 - **Where:** *Send feedback* in the sidebar's foot, just above Account. A feature adds a sidebar entry like it with a
   `SidebarAction` (Platform.Client), whose sheet the sidebar shows over the page.
 - **The sheet**, chosen on the decision page (2026-11-11, *A sheet over the page*): *Capture this page* (the browser
@@ -165,7 +172,7 @@ own file types and sizes (videos and SQLite only where an area asks), uploads fr
 phone's model and OS version.
 
 Tests in `Feedback.Api.Tests`: who may send and how many a day; a blocked phone can't send or upload until unblocked;
-a resent ticket is stored once; files go 7 days after closing (kept if it is reopened, at once if it is deleted) and the words stay; 180 days after closing; from the admin panel only with the role, its files in the same area, and the board filtering by where it came from; deleting an
+a resent ticket is stored once; files go 7 days after closing (kept if it is reopened, at once if it is deleted) and the words stay; 180 days after closing; from the admin panel for anyone with a page there and not for a member with none, without the role, its files in the same area, and the board filtering by where it came from; deleting an
 account; the phone data only for those who may read it. In `Media.Api.Tests`: an area takes only its own file types and
 sizes.
 

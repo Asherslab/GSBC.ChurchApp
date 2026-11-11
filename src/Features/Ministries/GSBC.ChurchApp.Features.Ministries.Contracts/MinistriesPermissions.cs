@@ -34,10 +34,10 @@ public static class MinistriesPermissions
         new(PostNode, ScopeKind.Ministry, "Post news and add files and links to a ministry", area: "Ministries");
 
     public static readonly Permission People =
-        new(PeopleNode, ScopeKind.Ministry, "Add and remove a ministry's team and attendees, answer asks to join and link their families", area: "Ministries");
+        new(PeopleNode, ScopeKind.Ministry, "Add and remove a ministry's team and attendees, answer asks to join and link their families", area: "Ministries", opensAdminArea: true);
 
     public static readonly Permission Settings =
-        new(SettingsNode, ScopeKind.Ministry, "Change a ministry's details, joining and calendars, and add and delete the ministries under it", area: "Ministries");
+        new(SettingsNode, ScopeKind.Ministry, "Change a ministry's details, joining and calendars, and add and delete the ministries under it", area: "Ministries", opensAdminArea: true);
 
     public static readonly Permission Create =
         new(CreateNode, ScopeKind.Global, "Create and delete the church's top-level ministries", area: "Ministries");
