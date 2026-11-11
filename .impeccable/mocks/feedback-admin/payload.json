@@ -1,0 +1,43 @@
+{
+  "title": "Send feedback in the admin panel: choose its shape",
+  "question": "Send feedback sits just above Account at the bottom left. You chose: offer Capture this page, thanks and close, no list of what you've sent. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "capture-first",
+      "kind": "assigned",
+      "kicker": "THE ROLL",
+      "label": "The page is the screenshot",
+      "thesis": "Send feedback asks to capture the page you're on first, then the work area becomes the composer: the capture large on the left, your words on the right.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["sand stage", "captured still", "filmstrip with marker ring", "words column"],
+      "viewport": "Sidebar stays; the work area turns into a sand stage holding 'This page, captured' at large size with a strip of other files under it, and Send feedback with Tell us about it, Sent with it and Send on the right.",
+      "risk": "Every open starts with the browser's share-this-tab prompt; someone who only wants to type a sentence has to say no to it first (it would offer to skip).",
+      "html": ".impeccable/mocks/feedback-admin/capture-first.html"
+    },
+    {
+      "id": "sheet",
+      "kind": "dealt",
+      "label": "A sheet over the page",
+      "thesis": "The same sheet as Jump to: near the top of the window over a dim scrim, with Capture this page and Choose files, a drop and paste frame, the words, and Send.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["shared Sheet", "dashed drop frame", "thumbnails", "SaveBar"],
+      "viewport": "Dimmed Media page; a 600px sheet: Send feedback, a lead, Capture this page and Choose files, two chosen thumbnails beside 'Paste ⌘V or drop', Tell us about it, Sent with it, Cancel and Send.",
+      "risk": "Familiar but blocks the page while open, so you can't look back at the problem without closing it (what you've typed and chosen stays).",
+      "html": ".impeccable/mocks/feedback-admin/sheet.html"
+    },
+    {
+      "id": "popover",
+      "kind": "dealt",
+      "label": "Rises from the sidebar",
+      "thesis": "A small card grows up from the Send feedback row and stays beside it; the page isn't dimmed, so you can keep looking, scrolling and dropping files onto it.",
+      "palette": ["#2a3d5e", "#f4efe7", "#e7ae74", "#00776d", "#ffffff"],
+      "materials": ["anchored card with a notch", "words first", "small This page and Files tiles"],
+      "viewport": "Media page untouched; a 420px card at the bottom left pointing at Send feedback: the words field first, a row of a chosen thumbnail, This page and Files tiles, 'or paste ⌘V / drop anywhere', Sent with it, and Send.",
+      "risk": "Small: screenshots show as thumbnails only, and the card covers part of the page's lower left while open.",
+      "html": ".impeccable/mocks/feedback-admin/popover.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

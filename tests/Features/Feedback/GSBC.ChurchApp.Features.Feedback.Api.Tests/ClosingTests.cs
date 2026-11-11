@@ -5,13 +5,13 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Feedback.Api.Tests;
 
-[Integration("Closing a ticket deletes its files from Media in the same change, keeping and deleting accounts work over stored tickets")]
+[Integration("Files of a closed ticket go from Media a week after it closed, keeping and deleting accounts work over stored tickets")]
 public sealed class ClosingTests : FeedbackHost
 {
     private static readonly Guid Phone = Guid.CreateVersion7();
 
     [Fact]
-    public async Task ResolvingATicketDeletesItsPicturesVideosAndPhoneDataButKeepsTheWords()
+    public async Task AResolvedTicketKeepsItsFilesForSevenDaysThenDeletesThemButKeepsTheWords()
     {
         string id = await SendAsync(Phone, null, attachments: ["a1", "a2"], phoneData: "store");
         Assert.Equal(["a1", "a2"], Media.Uses[FeedbackMedia.AttachmentsOwner(Guid.Parse(id))]);
@@ -19,9 +19,15 @@ public sealed class ClosingTests : FeedbackHost
         Assert.Empty(Told.Settled);
         await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.InProgress }, null, Cancel));
         Assert.Single(Told.Settled);
-        Assert.Empty(Media.Forgotten);
         await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.Resolved }, null, Cancel));
 
+        Clock.Advance(TimeSpan.FromDays(7) - TimeSpan.FromMinutes(1));
+        await KeepAsync();
+        Assert.Empty(Media.Forgotten);
+        Assert.Equal(2, (await RecordAsync(id))?.Attachments.Count);
+
+        Clock.Advance(TimeSpan.FromMinutes(1));
+        await KeepAsync();
         Assert.Equal(["a1", "a2", "store"], Media.Forgotten.Order());
         Assert.Empty(Media.Uses[FeedbackMedia.AttachmentsOwner(Guid.Parse(id))]);
         TicketRecord ticket = Assert.IsType<TicketRecord>(await RecordAsync(id));
@@ -32,17 +38,51 @@ public sealed class ClosingTests : FeedbackHost
     }
 
     [Fact]
+    public async Task ReopeningWithinTheSevenDaysKeepsTheFilesAndClosingAgainStartsTheWeekAgain()
+    {
+        string id = await SendAsync(Phone, null, attachments: ["a1"]);
+        await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.Resolved }, null, Cancel));
+        Clock.Advance(TimeSpan.FromDays(3));
+        await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.InProgress }, null, Cancel));
+
+        Clock.Advance(TimeSpan.FromDays(10));
+        await KeepAsync();
+        Assert.Empty(Media.Forgotten);
+
+        await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.NotDoing }, null, Cancel));
+        Clock.Advance(TimeSpan.FromDays(6));
+        await KeepAsync();
+        Assert.Empty(Media.Forgotten);
+
+        Clock.Advance(TimeSpan.FromDays(1));
+        await KeepAsync();
+        Assert.Equal(["a1"], Media.Forgotten);
+    }
+
+    [Fact]
+    public async Task DeletingATicketDeletesItsFilesAtOnce()
+    {
+        string id = await SendAsync(Phone, null, attachments: ["a1"], phoneData: "store");
+        await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.Resolved }, null, Cancel));
+
+        await DeskAsync(desk => desk.DeleteAsync(new TicketRef { Id = id }, Cancel));
+
+        Assert.Equal(["a1", "store"], Media.Forgotten.Order());
+        Assert.Null(await RecordAsync(id));
+    }
+
+    [Fact]
     public async Task AClosedTicketIsDeletedEntirely180DaysAfterItClosed()
     {
         string id = await SendAsync(Phone, null);
         await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.NotDoing }, null, Cancel));
 
         Clock.Advance(TimeSpan.FromDays(179));
-        await WithAsync(provider => provider.GetRequiredService<FeedbackKeeping>().RunAsync(Cancel));
+        await KeepAsync();
         Assert.NotNull(await RecordAsync(id));
 
         Clock.Advance(TimeSpan.FromDays(1));
-        await WithAsync(provider => provider.GetRequiredService<FeedbackKeeping>().RunAsync(Cancel));
+        await KeepAsync();
         Assert.Null(await RecordAsync(id));
     }
 
@@ -74,4 +114,6 @@ public sealed class ClosingTests : FeedbackHost
         Assert.True(triage.HadPhoneData);
         Assert.Equal("store", developer.PhoneData?.Id);
     }
+
+    private Task KeepAsync() => WithAsync(provider => provider.GetRequiredService<FeedbackKeeping>().RunAsync(Cancel));
 }

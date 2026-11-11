@@ -21,6 +21,7 @@ internal static class FeedbackRules
     public const int LongestPage = 300;
     public const int LongestState = 64 * 1024;
     public const int LongestDetail = 80;
+    private const int MostRecentPages = 8;
     public const int MostAttachments = FeedbackLimits.MostAttachments;
     public const int UploadAsksADay = 80;
     public const long LargestPicture = FeedbackLimits.LargestPicture;
@@ -29,6 +30,8 @@ internal static class FeedbackRules
 
     public static readonly TimeSpan Day = TimeSpan.FromDays(1);
     public static readonly TimeSpan KeptAfterClosing = TimeSpan.FromDays(180);
+    public static readonly TimeSpan FilesKeptAfterClosing = TimeSpan.FromDays(FeedbackLimits.FilesKeptDaysAfterClosing);
+    public const string SentStep = "Sent";
     public static readonly TimeSpan UnsentUploadsKeptFor = TimeSpan.FromDays(4);
 
     public static int DailyLimit(Sender sender) => sender.HoldsTheRole ? FeedbackLimits.WithTheRoleADay : FeedbackLimits.PerPhoneADay;
@@ -42,10 +45,23 @@ internal static class FeedbackRules
         return sentInTheLastDay < DailyLimit(sender) ? SendVerdict.Allowed : SendVerdict.TooMany;
     }
 
+    public static SendVerdict MaySendFrom(FeedbackSource source, Sender sender, int sentInTheLastDay) =>
+        source == FeedbackSource.AdminPanel && sender is not { HoldsTheRole: true, User: not null } ? SendVerdict.NotHere : MaySend(sender, sentInTheLastDay);
+
+    public static string RecentPages(IEnumerable<string> pages) =>
+        string.Join('\n', pages.Select(page => Clip(page, LongestPage)).Where(page => page.Length > 0).Take(MostRecentPages));
+
     public static bool IsClosed(TicketStatus status) => status is TicketStatus.Resolved or TicketStatus.NotDoing;
 
     public static bool IsDueForDeletion(TicketRecord ticket, DateTime now) =>
         IsClosed(ticket.Status) && ticket.ClosedAt is { } closed && closed <= now - KeptAfterClosing;
+
+    public static DateTime? FilesGoAt(TicketRecord ticket) =>
+        IsClosed(ticket.Status) && ticket is { ClosedAt: { } closed, AttachmentsDeleted: false } && (ticket.Attachments.Count > 0 || ticket.PhoneData is not null)
+            ? closed + FilesKeptAfterClosing
+            : null;
+
+    public static bool FilesAreDue(TicketRecord ticket, DateTime now) => FilesGoAt(ticket) is { } goes && goes <= now;
 
     public static string Clip(string? value, int longest)
     {
@@ -69,4 +85,6 @@ internal static class FeedbackRules
     };
 
     public static string From(TicketRecord ticket) => ticket.SenderName.Length > 0 ? ticket.SenderName : "Not signed in";
+
+    public static string SourceName(FeedbackSource source) => source == FeedbackSource.AdminPanel ? "the admin panel" : "the app";
 }

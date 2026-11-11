@@ -1,0 +1,39 @@
+@typeparam TValue
+
+<ol class="stage-pipeline @Class" aria-label="@Label">
+    @for (int index = 0; index < Stages.Count; index++)
+    {
+        SegmentOption<TValue> stage = Stages[index];
+        StageState state = index < Current ? StageState.Passed : index == Current ? StageState.Current : StageState.Ahead;
+        <li class="stage-pipeline__step">
+            <button type="button" class="stage-pipeline__stage stage-pipeline__stage--@state.ToString().ToLowerInvariant()" aria-current="@(state == StageState.Current ? "step" : null)"
+                    disabled="@Disabled" @onclick="() => MoveAsync(stage.Value)">
+                @if (state == StageState.Passed)
+                {
+                    <Icon Name="check" Size="IconSize.Small" />
+                }
+                <span>@stage.Label</span>
+            </button>
+        </li>
+    }
+</ol>
+
+@code {
+    private enum StageState
+    {
+        Passed,
+        Current,
+        Ahead,
+    }
+
+    [Parameter, EditorRequired] public required string Label { get; set; }
+    [Parameter, EditorRequired] public required IReadOnlyList<SegmentOption<TValue>> Stages { get; set; }
+    [Parameter] public TValue Value { get; set; } = default!;
+    [Parameter] public EventCallback<TValue> ValueChanged { get; set; }
+    [Parameter] public bool Disabled { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    private int Current => Stages.ToList().FindIndex(stage => EqualityComparer<TValue>.Default.Equals(stage.Value, Value));
+
+    private Task MoveAsync(TValue value) => EqualityComparer<TValue>.Default.Equals(value, Value) ? Task.CompletedTask : ValueChanged.InvokeAsync(value);
+}

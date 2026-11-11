@@ -135,6 +135,7 @@ a { color: var(--accent); }
     transition: background-color 160ms var(--ease-out), color 160ms var(--ease-out);
 }
 
+button.module-nav__link { width: 100%; border: 0; background: none; font-family: inherit; text-align: left; cursor: pointer; }
 .module-nav__link:hover { background: color-mix(in srgb, var(--masthead-chip) 60%, transparent); color: var(--on-masthead); }
 .module-nav__link.active { background: var(--masthead-chip); color: var(--on-masthead); }
 .module-nav__link::before {

@@ -70,11 +70,7 @@
                             {
                                 <button type="button" role="option" aria-selected="@(media == Chosen)" class="feedback-strip__item @(media == Chosen ? "feedback-strip__item--on" : "")"
                                         aria-label="@media.FileName" @onclick="() => _chosen = media">
-                                    <MediaPreview Media="media" Controls="false" Class="feedback-strip__media" />
-                                    @if (media.IsVideo)
-                                    {
-                                        <span class="feedback-strip__play"><Icon Name="play" Size="IconSize.Small" /></span>
-                                    }
+                                    <AttachmentThumb Media="media" Class="feedback-strip__thumb" />
                                 </button>
                             }
                         </div>

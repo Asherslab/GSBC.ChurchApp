@@ -1,0 +1,43 @@
+{
+  "title": "A ticket's status: show it moving along",
+  "question": "You said the status row looks like tabs, not a progression. Three ways to show a ticket moving New → In progress → Fixed, to check → Resolved, in the docked ticket and its page. Each says the files go 7 days after closing. Lock one, steer it, or ask for another hand.",
+  "options": [
+    {
+      "id": "track",
+      "kind": "assigned",
+      "kicker": "FIRST",
+      "label": "Stage track with a next step",
+      "thesis": "The four stages as a track of dots joined by a line: passed ones filled in deep aqua, the current one ringed. Under it, one primary button for the next step (Mark fixed, to check →) and Mark not doing. Click any stage to jump there.",
+      "palette": ["#00776d", "#2a3d5e", "#f4efe7", "#e7ae74", "#ffffff"],
+      "materials": ["stepper dots and line", "one next-step button", "text link"],
+      "viewport": "Docked ticket: title and #42, the track with New done and In progress current, Mark fixed, to check → beside Mark not doing, the 7-day line.",
+      "risk": "Takes two rows instead of one; the stage labels are small at the dock's narrowest (360px).",
+      "html": ".impeccable/mocks/feedback-status/track.html"
+    },
+    {
+      "id": "next",
+      "kind": "dealt",
+      "label": "One button: the next step",
+      "thesis": "Where it is now as a status pill with who moved it and when, then one primary button for the obvious next step and a Move to… menu for anything else.",
+      "palette": ["#2a3d5e", "#e7ae74", "#f4efe7", "#ffffff"],
+      "materials": ["status pill", "primary next-step button", "Move to… menu"],
+      "viewport": "Docked ticket: the In progress pill with 'since 9:52am, by Claude', Mark fixed, to check, Move to…, Not doing, the 7-day line.",
+      "risk": "You don't see all the stages at a glance; going back a step is in a menu.",
+      "html": ".impeccable/mocks/feedback-status/next.html"
+    },
+    {
+      "id": "chevrons",
+      "kind": "dealt",
+      "label": "Pipeline of arrows",
+      "thesis": "Arrow-shaped stages left to right: passed ones ticked and tinted, the current one filled in deep aqua. Click a stage to move it there; Mark not doing under it.",
+      "palette": ["#00776d", "#f4efe7", "#2a3d5e", "#ffffff"],
+      "materials": ["arrow segments", "tick on passed stages", "text link"],
+      "viewport": "Docked ticket: the arrows with New ticked and In progress filled, Mark not doing, the 7-day line.",
+      "risk": "Still one row of four clickable parts; labels wrap to two lines in the narrow dock.",
+      "html": ".impeccable/mocks/feedback-status/chevrons.html"
+    }
+  ],
+  "reroll": true,
+  "steer": true,
+  "buildPath": { "value": "code" }
+}

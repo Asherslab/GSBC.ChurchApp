@@ -1,0 +1,29 @@
+@using GSBC.ChurchApp.Platform.Contracts.Media
+
+<span class="feedback-thumb @(Media is null ? "feedback-thumb--waiting" : "") @Class">
+    @if (Media is not null)
+    {
+        <MediaPreview Media="Media" Controls="false" Class="feedback-thumb__media" />
+        @if (Media.IsVideo)
+        {
+            <span class="feedback-thumb__play"><Icon Name="play" Size="IconSize.Small" /></span>
+        }
+    }
+    else
+    {
+        <span class="feedback-thumb__note"><Icon Name="arrow-up" Size="IconSize.Small" /><span>@Name</span></span>
+    }
+    @if (OnRemove.HasDelegate)
+    {
+        <button type="button" class="feedback-thumb__remove" aria-label="@($"Don't send {Name}")" @onclick="OnRemove"><Icon Name="x" Size="IconSize.Small" /></button>
+    }
+</span>
+
+@code {
+    [Parameter] public MediaRef? Media { get; set; }
+    [Parameter] public string? FileName { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public EventCallback OnRemove { get; set; }
+
+    private string Name => Media?.FileName is { Length: > 0 } name ? name : FileName ?? "this file";
+}

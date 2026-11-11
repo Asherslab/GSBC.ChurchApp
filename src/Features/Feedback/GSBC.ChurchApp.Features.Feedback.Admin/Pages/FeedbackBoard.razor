@@ -19,6 +19,9 @@
             }
             else
             {
+                <div class="feedback-desk__sources">
+                    <FilterChips TValue="SourceFilter" Label="Sent from" Options="Sources" Value="_source" ValueChanged="SourceAsync" />
+                </div>
                 <div class="feedback-board" role="list">
                     @foreach (TicketStatus status in FeedbackWords.Board)
                     {
@@ -89,7 +92,11 @@
 
     private static readonly IReadOnlyList<TabOption<DeskView>> Views = [new(DeskView.Board, "Board"), new(DeskView.Blocked, "Blocked phones")];
 
+    private static readonly IReadOnlyList<FilterOption<SourceFilter>> Sources =
+        [new(SourceFilter.Both, "Everywhere"), new(SourceFilter.App, "The app"), new(SourceFilter.AdminPanel, "The admin panel")];
+
     private LiveData<DeskList>? _live;
+    private SourceFilter _source;
     private DeskView _view = DeskView.Board;
     private string _query = "";
     private int? _open;
@@ -97,7 +104,7 @@
     private TicketLine? _dragging;
     private TicketStatus? _dropping;
 
-    private Task<DeskList> LoadAsync() => Desk.ListAsync(DeskFilter.Everything, _query);
+    private Task<DeskList> LoadAsync() => Desk.ListAsync(DeskFilter.Everything, _query, _source);
 
     private static List<TicketLine> In(DeskList list, TicketStatus status) =>
         list.Tickets.Where(ticket => ticket.Status == status).OrderByDescending(ticket => FeedbackWords.IsClosed(status) ? ticket.ChangedAt : ticket.SentAt).ToList();
@@ -106,6 +113,13 @@
     {
         int Count(TicketStatus status) => list.Counts.FirstOrDefault(count => count.Status == status)?.Count ?? 0;
         return $"{Count(TicketStatus.New)} new · {Count(TicketStatus.InProgress)} in progress · {Count(TicketStatus.FixedToCheck)} fixed, to check";
+    }
+
+    private async Task SourceAsync(SourceFilter source)
+    {
+        _source = source;
+        if (_live is not null)
+            await _live.ReloadAsync();
     }
 
     private async Task SearchAsync(string query)

@@ -1,6 +1,6 @@
 # Feedback
 
-Status: built 2026-11-11. Staff and testers report a problem or an idea from the app, with screenshots and videos;
+Status: built 2026-11-11. Staff and testers report a problem or an idea from the app or the admin panel, with screenshots and videos;
 staff look after it on a board in the admin panel; Claude reads and moves it from the terminal. It works in the
 production app, not through TestFlight. Choices marked *Claude's default* are the owner's to change.
 
@@ -64,6 +64,30 @@ production app, not through TestFlight. Choices marked *Claude's default* are th
   from an install (`IMediaAreaAccess.MayUploadFromInstallAsync`). Feedback allows an install that isn't blocked and is
   under the day's limit, and caps upload calls per phone a day.
 
+## Sending from the admin panel (2026-11-11)
+
+The owner: "how do i submit feedback in the admin dash? (i.e. for admin dash feedback)", then "sure, send feedback just
+above account in bottom left."
+
+- **Who:** anyone signed in to the admin panel who holds `feedback.send`: the Owner, and the Feedback, Feedback Triage and
+  Feedback Triage with phone data roles. No triple tap and no per-phone limit; the 50 a day the role has is the guard.
+- **Where:** *Send feedback* in the sidebar's foot, just above Account. A feature adds a sidebar entry like it with a
+  `SidebarAction` (Platform.Client), whose sheet the sidebar shows over the page.
+- **The sheet**, chosen on the decision page (2026-11-11, *A sheet over the page*): *Capture this page* (the browser
+  asks to share the tab, then the sheet hides while it takes one frame; the owner wanted it offered), *Choose files*,
+  and ⌘V or a drop anywhere on the sheet, up to 6 pictures and videos; *Tell us about it*; a line of what goes with it;
+  Cancel and Send. Closing it keeps what you wrote and chose until you send. After sending it closes and the sidebar
+  says *Thanks, it's sent* for a few seconds (owner: thanks and close, no ticket number, no list of what you've sent).
+- **Recorded by itself:** the page (route and title), the last 8 pages opened, the browser and system, the window size,
+  light or dark, the admin panel's version (its build's informational version), the environment (on the server) and
+  the account. No phone state or store copy.
+- **Files** upload as soon as they're chosen, straight from the browser (`IDirectUploads`, Platform.Client, filled by
+  Media's `[AdminOnly]` direct upload) into the ticket's own *Made by the app* Feedback area, private to
+  `feedback.triage`; one removed or never sent goes with the 4-day clean-up. All calls are gRPC
+  (`Feedback.Send` with `Source = AdminPanel`).
+- **Shared pieces:** `FilePick` takes paste and drops and can hand the chosen files to its caller; the thumbnail
+  (`AttachmentThumb`) is the phone's filmstrip's too.
+
 ## The board (admin panel)
 
 Chosen on the decision page (2026-11-11) after two re-rolls steered by the owner ("more kanban, more GitHub like"), then:
@@ -72,9 +96,14 @@ Chosen on the decision page (2026-11-11) after two re-rolls steered by the owner
 - **Technical → Feedback** (`/feedback`): numbered tickets as cards in columns New, In progress, Fixed to check and
   Resolved (the 20 most recent; find older ones by number or words), with Not doing folded at the end. A card shows
   its first picture, `#number`, who, the first line, the app build, the phone and how many files.
+- **Where it came from:** a card from the admin panel is labelled *Admin panel* with its browser instead of an app build
+  and phone; *Everywhere*, *The app* and *The admin panel* above the board filter by it. Its ticket shows the browser,
+  window, page and the pages before it instead of *This phone*.
 - **Click** a card to dock the ticket beside the board; **⌘-click or Ctrl-click** (or middle-click, or *Open as a page*)
   opens `/feedback/{number}` in a new tab. **Drag** a card to another column to change its status, or use the
-  ticket's status control.
+  ticket's status: its stages as a row of arrows, passed ones ticked, the current one filled; click one to move it there
+  (owner, 2026-11-11: the segmented row "look like tabs, not progression buttons"; *Pipeline of arrows* chosen on the
+  decision page).
 - **The ticket:** its pictures (full size) and videos (playable), the words, *What's happened* (status changes and
   notes, with who and when), *Add a note*, what was sent with it, this phone (how many it sent, *Block this phone*
   with a reason, or *Unblock*), *Download a copy* of its stored data for phone-data holders, the phone's state
@@ -93,16 +122,23 @@ login Keychain as `gsbc-tool-<env>`, `tools/health/connect.sh <env>`). All calls
 tools/feedback/feedback.sh --env dev                       # open feedback, newest first (--all for closed too)
 tools/feedback/feedback.sh --env dev 42                    # #42 in full; saves its files and the phone's state to a folder it prints
 tools/feedback/feedback.sh --env dev 42 --status in-progress --note "Reproduced on an SE"
+tools/feedback/feedback.sh --env dev --source admin            # only what came from the admin panel (--source app for the app)
 ```
+
+Each ticket's line says where it came from; one from the admin panel prints its browser, window, page and the pages
+before it. A closed ticket says the day its files go.
 
 Statuses: `new`, `in-progress`, `fixed`, `resolved`, `not-doing`. The account needs Feedback Triage, and Feedback Triage
 with phone data to download the store copy. `--env local` reaches a station's backend on `localhost:5400`.
 
 ## Keeping and deleting
 
-- **Closing deletes the files:** when a ticket is Resolved or Not doing, its pictures, videos and the store copy are
-  deleted from Media (`IMediaSystemFolders.ForgetAsync`); the words, details, phone state and notes stay as a short
-  record (owner, 2026-11-11). Reopening keeps them gone.
+- **Closing deletes the files a week later** (owner, 2026-11-11: "it should auto delete after say 7 days, unless an
+  admin directly deletes the feedback. only because it is possible someone might *accidentally* move it to resolved
+  before it is"). 7 days after a ticket is Resolved or Not doing, the hourly clean-up deletes its pictures, videos and
+  store copy from Media (`IMediaSystemFolders.ForgetAsync`); the words, details, phone state and notes stay as a short
+  record. Reopening within the week keeps them, and closing again starts the week again. The board's card, the
+  ticket and the terminal tool say the day they go. Deleting a ticket removes everything at once.
 - **A closed ticket is deleted entirely 180 days after it closed** (*Claude's default*); staff can delete one at any
   time.
 - **Files sent but never used** (a send that was refused or discarded) are deleted after 4 days.
@@ -129,7 +165,7 @@ own file types and sizes (videos and SQLite only where an area asks), uploads fr
 phone's model and OS version.
 
 Tests in `Feedback.Api.Tests`: who may send and how many a day; a blocked phone can't send or upload until unblocked;
-a resent ticket is stored once; closing deletes the files and keeps the words; 180 days after closing; deleting an
+a resent ticket is stored once; files go 7 days after closing (kept if it is reopened, at once if it is deleted) and the words stay; 180 days after closing; from the admin panel only with the role, its files in the same area, and the board filtering by where it came from; deleting an
 account; the phone data only for those who may read it. In `Media.Api.Tests`: an area takes only its own file types and
 sizes.
 

@@ -19,10 +19,12 @@ public sealed class FileUploads(IFileShelf shelf, IServiceProvider services)
 
     public string? ContentTypeOf(string fileName, string reportedType, PickableFiles kinds) => Requests?.ContentTypeOf(fileName, reportedType, kinds);
 
+    public string Unusable(string fileName, PickableFiles kinds) => Requests?.Unusable(fileName, kinds) ?? $"{fileName} can't be sent from here.";
+
     public async Task<PickedFile> KeepAsync(ElementReference input, string fileName, string reportedType, PickableFiles kinds, string altText = "", int index = 0)
     {
         if (Requests?.ContentTypeOf(fileName, reportedType, kinds) is not { } contentType)
-            return new PickedFile(null, Requests?.Unusable(fileName, kinds) ?? $"{fileName} can't be sent from this app.");
+            return new PickedFile(null, Unusable(fileName, kinds));
 
         StagedFile? kept;
         try

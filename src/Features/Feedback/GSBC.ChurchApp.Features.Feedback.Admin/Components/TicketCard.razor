@@ -7,13 +7,24 @@
     <span class="feedback-card__number">#@Ticket.Number · @Ticket.From</span>
     <strong class="feedback-card__title">@FeedbackWords.Title(Ticket.Text)</strong>
     <span class="feedback-card__labels">
-        @if (Ticket.AppBuild.Length > 0)
+        @if (Ticket.Source == FeedbackSource.AdminPanel)
         {
-            <span class="feedback-label" title="@Ticket.AppBuild">@Ticket.AppBuild</span>
+            <span class="feedback-label feedback-label--admin">Admin panel</span>
+            @if (Ticket.Browser.Length > 0)
+            {
+                <span class="feedback-label feedback-label--clip" title="@Ticket.Browser">@Ticket.Browser</span>
+            }
         }
-        @if (Ticket.Model.Length > 0)
+        else
         {
-            <span class="feedback-label" title="@PhoneModels.Name(Ticket.Model)">@PhoneModels.Name(Ticket.Model)</span>
+            @if (Ticket.AppBuild.Length > 0)
+            {
+                <span class="feedback-label feedback-label--clip" title="@Ticket.AppBuild">@Ticket.AppBuild</span>
+            }
+            @if (Ticket.Model.Length > 0)
+            {
+                <span class="feedback-label feedback-label--clip" title="@PhoneModels.Name(Ticket.Model)">@PhoneModels.Name(Ticket.Model)</span>
+            }
         }
         @if (Ticket.Attachments > 0)
         {
@@ -22,6 +33,10 @@
         else if (Ticket.AttachmentsDeleted)
         {
             <span class="feedback-label" title="Pictures deleted">Pictures deleted</span>
+        }
+        @if (Ticket.FilesGoAt is { } goes)
+        {
+            <span class="feedback-label" title="@FeedbackWords.FilesGo(goes)">@FeedbackWords.FilesGoShort(goes)</span>
         }
     </span>
 </a>

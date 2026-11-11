@@ -31,6 +31,7 @@ public sealed class FeedbackDbContext(DbContextOptions<FeedbackDbContext> option
             entity.HasIndex(ticket => new { ticket.InstallId, ticket.SentAt });
             entity.HasIndex(ticket => new { ticket.UserId, ticket.SentAt });
             entity.HasIndex(ticket => ticket.ClosedAt);
+            entity.HasIndex(ticket => new { ticket.Source, ticket.SentAt });
             entity.HasMany(ticket => ticket.Attachments).WithOne().HasForeignKey(attachment => attachment.TicketId).OnDelete(DeleteBehavior.Cascade);
             entity.HasMany(ticket => ticket.Notes).WithOne().HasForeignKey(note => note.TicketId).OnDelete(DeleteBehavior.Cascade);
             entity.HasMany(ticket => ticket.Steps).WithOne().HasForeignKey(step => step.TicketId).OnDelete(DeleteBehavior.Cascade);
