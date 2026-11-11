@@ -41,7 +41,7 @@ public sealed class ChatDeliveryTests : IAsyncLifetime
             .AddSingleton<TimeProvider>(_clock)
             .AddLogging()
             .AddSingleton<IPermissionHolders>(_church).AddSingleton<IAccessEvaluator>(_church).AddSingleton<IRoleAssignments>(_church)
-            .AddSingleton<IFamilies>(_church).AddSingleton<IBlueCards>(_church).AddSingleton<IChatPlaces>(_church)
+            .AddSingleton<IFamilies>(_church).AddSingleton<ISafeguardingStandings>(_church).AddSingleton<IChatPlaces>(_church)
             .AddSingleton<IPeopleIndex>(_church).AddSingleton<INotifications>(_church)
             .AddScoped<ChatFacts>().AddScoped<ChatPublisher>().AddScoped<ChatNotifier>().AddScoped<ChatAudit>().AddScoped<OversightMarks>()
             .AddScoped<ChatActions>().AddScoped<ChatOversight>().AddScoped<ChatsPersonData>()

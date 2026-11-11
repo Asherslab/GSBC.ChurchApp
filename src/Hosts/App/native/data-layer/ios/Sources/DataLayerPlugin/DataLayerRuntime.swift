@@ -11,6 +11,7 @@ final class DataLayerRuntime: @unchecked Sendable {
     let transport: GrpcWebTransport?
     let store: FeedStore?
     let media: MediaCache?
+    let shelf: UploadShelf?
     private(set) var engine: SyncEngine?
     private(set) var outbox: Outbox?
     private(set) var state = SyncState.stopped
@@ -36,9 +37,14 @@ final class DataLayerRuntime: @unchecked Sendable {
         store = try? FeedStore(directory: Self.storeDirectory())
         let media = try? MediaCache(directory: Self.mediaDirectory())
         self.media = media
+        let shelf = try? UploadShelf(directory: Self.uploadsDirectory())
+        self.shelf = shelf
         guard let transport, let store else { return }
 
-        outbox = Outbox(database: store.database, transport: transport, onChanged: { [weak self] in
+        if let kept = try? Outbox.keptFiles(in: store.database) {
+            shelf?.sweep(keeping: kept)
+        }
+        outbox = Outbox(database: store.database, transport: transport, shelf: shelf, onChanged: { [weak self] in
             self?.outboxChanged?()
         })
         engine = SyncEngine(
@@ -98,6 +104,10 @@ final class DataLayerRuntime: @unchecked Sendable {
 
     private static func mediaDirectory() -> URL {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask)[0].appendingPathComponent("Media")
+    }
+
+    private static func uploadsDirectory() -> URL {
+        storeDirectory().appendingPathComponent("Uploads")
     }
 
     private static func storeDirectory() -> URL {

@@ -1,10 +1,12 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Analytics;
+using GSBC.ChurchApp.Platform.Api.Calendars;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.RateLimiting;
@@ -60,8 +62,10 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IPeopleIndex, NoPeople>();
         services.TryAddScoped<IPeopleAccounts, NoPeopleAccounts>();
         services.TryAddScoped<IFamilies, NoFamilies>();
+        services.TryAddScoped<ISafeguardingStandings, NoSafeguardingStandings>();
+        services.TryAddScoped<IMinistryFacts, NoMinistryFacts>();
+        services.TryAddScoped<IRosterableEvents, NoRosterableEvents>();
         services.TryAddScoped<IPermissionHolders, NoPermissionHolders>();
-        services.TryAddScoped<IBlueCards, NoBlueCards>();
         services.TryAddScoped<IChatPlaces, NoChatPlaces>();
         services.TryAddScoped<IAccountEmails, NoAccountEmails>();
         services.AddSingleton<PermissionCatalog>();

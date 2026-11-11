@@ -12,7 +12,7 @@ namespace GSBC.ChurchApp.Features.Chats.Api;
 
 internal sealed class ChatFacts(
     ChatsDbContext db, IChatPlaces places, IPermissionHolders holders, IAccessEvaluator access, IRoleAssignments roles, IFamilies families,
-    IBlueCards blueCards, TimeProvider time)
+    ISafeguardingStandings standings, TimeProvider time)
 {
     private readonly Dictionary<(string Node, string Scope), IReadOnlyList<Guid>> _holders = [];
     private IReadOnlySet<Guid>? _paused;
@@ -52,7 +52,8 @@ internal sealed class ChatFacts(
 
         return new MembershipFacts(
             true, chat.Kind == ChatKinds.Ask, inAudience, leaders, people, consents, await PausedAsync(cancellationToken),
-            await blueCards.HoldingCurrentAsync(everyone.Concat(parents).Distinct().ToList(), today, cancellationToken));
+            (await standings.OfAsync(everyone.Concat(parents).Distinct().ToList(), today, cancellationToken)).Values
+                .Where(standing => standing.HoldsBlueCard).Select(standing => standing.PersonId).ToHashSet());
     }
 
     public async Task<bool> IsAllowedAsync(Guid userId, Permission permission, string? objectId, CancellationToken cancellationToken) =>

@@ -113,6 +113,39 @@ public final class FeedStore: Sendable {
         migrator.registerMigration("v5-origin") { db in
             try db.execute(sql: "CREATE TABLE origin (only INTEGER PRIMARY KEY CHECK (only = 1), origin TEXT NOT NULL)")
         }
+        migrator.registerMigration("v6-uploads") { db in
+            try db.execute(sql: """
+                ALTER TABLE outbox ADD COLUMN kind TEXT NOT NULL DEFAULT 'call';
+                CREATE TABLE uploads (
+                    id TEXT PRIMARY KEY NOT NULL,
+                    file TEXT NOT NULL,
+                    file_name TEXT NOT NULL,
+                    content_type TEXT NOT NULL,
+                    bytes INTEGER NOT NULL,
+                    find_method TEXT NOT NULL,
+                    find_request BLOB NOT NULL,
+                    begin_method TEXT NOT NULL,
+                    begin_request BLOB NOT NULL,
+                    complete_method TEXT NOT NULL,
+                    complete_request BLOB NOT NULL,
+                    stage TEXT NOT NULL,
+                    upload_id TEXT,
+                    put_url TEXT,
+                    put_content_type TEXT,
+                    put_expires_at INTEGER,
+                    media_id TEXT
+                );
+                CREATE INDEX uploads_by_file ON uploads (file);
+                CREATE TABLE outbox_waits (
+                    entry_id TEXT NOT NULL,
+                    upload_id TEXT NOT NULL,
+                    path TEXT NOT NULL,
+                    done INTEGER NOT NULL DEFAULT 0,
+                    PRIMARY KEY (entry_id, upload_id, path)
+                );
+                CREATE INDEX outbox_waits_by_upload ON outbox_waits (upload_id);
+                """)
+        }
         return migrator
     }
 

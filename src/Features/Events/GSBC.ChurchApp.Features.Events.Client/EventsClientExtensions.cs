@@ -18,6 +18,7 @@ public static class EventsClientExtensions
             .AddSingleton<QueuedEventEdits>()
             .AddSingleton<IEventEditing, StoredEventEditing>()
             .AddSingleton<IYourCalendarLink, PhoneCalendarLink>()
+            .AddSingleton<IEventChoices, DiaryEventChoices>()
             .AddSingleton<IClientStartupTask>(provider => provider.GetRequiredService<YourCalendars>());
 
     public static IServiceCollection AddEventsClient(this IServiceCollection services) =>

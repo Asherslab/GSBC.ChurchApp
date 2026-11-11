@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace GSBC.ChurchApp.Features.Ministries.Api;
 
-internal sealed class MinistryRemover(MinistriesDbContext db, MinistryChanges changes, IRoleAssignments roles, IMinistryCalendars calendars)
+internal sealed class MinistryRemover(MinistriesDbContext db, MinistryChanges changes, IRoleAssignments roles, IMinistryCalendars calendars, MinistryFileMedia fileMedia)
 {
     public async Task<DeletionPreview> PreviewAsync(MinistryTree tree, MinistryRecord ministry, CancellationToken cancellationToken)
     {
@@ -35,6 +35,7 @@ internal sealed class MinistryRemover(MinistriesDbContext db, MinistryChanges ch
         foreach (MinistryCalendar calendar in await calendars.OfAsync(ministry.Id, cancellationToken))
             await calendars.RemoveAsync(ministry.Id, calendar.Id, cancellationToken);
 
+        List<Guid> files = await db.Files.Where(file => file.MinistryId == ministry.Id && file.MediaId != null).Select(file => file.Id).ToListAsync(cancellationToken);
         await using (var transaction = await db.Database.BeginTransactionAsync(cancellationToken))
         {
             await db.Ministries.Where(child => child.ParentId == ministry.Id).ExecuteUpdateAsync(set => set.SetProperty(child => child.ParentId, ministry.ParentId), cancellationToken);
@@ -52,6 +53,7 @@ internal sealed class MinistryRemover(MinistriesDbContext db, MinistryChanges ch
             await transaction.CommitAsync(cancellationToken);
         }
 
+        await fileMedia.ReleaseAsync(files, cancellationToken);
         await roles.ForgetScopeAsync(ScopeKind.Ministry, [ministry.Id.ToString()], cancellationToken);
         await roles.ScopesChangedAsync(cancellationToken);
     }

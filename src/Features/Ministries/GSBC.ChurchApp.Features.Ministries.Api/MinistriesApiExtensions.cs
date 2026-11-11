@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Hosting;
+using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -30,10 +31,12 @@ public static class MinistriesApiExtensions
     public static IServiceCollection AddMinistriesApi(this IServiceCollection services)
     {
         services.AddMinistriesData();
-        services.AddScoped<MinistryViews>().AddScoped<MinistriesPublisher>().AddScoped<MinistryChanges>().AddScoped<MinistryRemover>().AddScoped<MinistryMover>();
+        services.AddScoped<MinistryViews>().AddScoped<MinistriesPublisher>().AddScoped<MinistryChanges>().AddScoped<MinistryRemover>().AddScoped<MinistryMover>().AddScoped<MinistryFileMedia>();
+        services.AddMediaSystemArea(MinistryFileMedia.Area);
         services.AddSingleton<IScopeHierarchy, MinistryHierarchy>();
         services.AddScoped<IScopeObjects, MinistryScopeObjects>();
         services.AddScoped<IPersonData, MinistriesPersonData>();
+        services.AddScoped<IMinistryFacts, MinistryFactsSource>();
         services.AddScoped<IChatPlaces, MinistryChatPlaces>();
         services.AddHostedService<SampleMinistries>();
         services.AddHostedService<MinistriesFeedUpkeep>();

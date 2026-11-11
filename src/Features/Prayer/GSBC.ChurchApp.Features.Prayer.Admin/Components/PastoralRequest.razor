@@ -1,0 +1,257 @@
+@inject PastoralClient Pastoral
+@inject TimeProvider Clock
+
+<UnsavedGuard Changed="HasChanges" What="@(_note.Trim().Length > 0 ? "your note" : "the words for the prayer wall")" />
+
+<LiveData @ref="_live" TValue="RequestDetails" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't open this request right now">
+    @{ RequestDetails request = context.Value; InboxLine line = request.Line; }
+    <div class="prayer-request">
+        <article class="prayer-request__main">
+            <p class="prayer-request__meta">
+                <span>Sent @ChurchDates.Describe(line.SentAt, DateLineStyle.Short, withTime: true, Now)</span>
+                <span>@(request.SignedIn ? line.From : line.From == PrayerWords.NoName ? "Not signed in, no name given" : $"{line.From}, not signed in")</span>
+                @if (line.Minor)
+                {
+                    <Pill Tone="PillTone.Marker">Under 18</Pill>
+                }
+            </p>
+            <p class="prayer-request__text">@line.Text</p>
+            @if (line.Minor)
+            {
+                <Notice Tone="NoticeTone.Warning" Text="They're under 18. Take extra care with what's shared, and follow the church's child safety policy if anything in it worries you." />
+            }
+            @if (request.MayRead)
+            {
+                <div class="prayer-request__care">
+                    <Pill Tone="@(line.Care == CareState.New ? PillTone.Marker : PillTone.Accent)">@PrayerWords.Care(line.Care)</Pill>
+                    @if (line.Care == CareState.New)
+                    {
+                        <Button Icon="check" Busy="@(_busy == "care")" OnClick="() => CareAsync(CareState.FollowedUp)">Mark followed up</Button>
+                    }
+                    @if (line.Care != CareState.Answered)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" OnClick="() => _answering = true">Mark answered</Button>
+                    }
+                    @if (line.Care != CareState.New)
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Busy="@(_busy == "care")" OnClick="() => CareAsync(CareState.New)">Mark new again</Button>
+                    }
+                    <Button Variant="ButtonVariant.Quiet" Icon="x" OnClick="() => _deleting = true">Delete</Button>
+                </div>
+                @if (line.Care == CareState.Answered && request.AnsweredNote.Length > 0)
+                {
+                    <p class="prayer-request__answered">Answered: @request.AnsweredNote</p>
+                }
+            }
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+
+            @if (line.Wall != WallState.NotAsked)
+            {
+                <section class="prayer-request__wall" aria-label="The prayer wall">
+                    <h2>The prayer wall</h2>
+                    <p class="prayer-request__lead">@WallLead(request)</p>
+                    @if (MayShow(line.Wall))
+                    {
+                        <TextField Label="As the wall shows it" Multiline="true" MaxLength="2000" @bind-Value="_wallText"
+                                   Hint="Change the words if they say more than the church should read, such as someone else's name. What they wrote stays as it is." />
+                        @if (request.ShowName && request.FirstName.Length > 0)
+                        {
+                            <Segmented TValue="bool" Label="Name" ShowLabel="true" Options="Names(request.FirstName)" @bind-Value="_showName"
+                                       Hint="@(line.Minor ? "They're under 18. No name is safer unless they'd like it." : null)" />
+                        }
+                        else
+                        {
+                            <p class="prayer-request__lead">They asked for no name, so the wall shows none.</p>
+                        }
+                        <TextField Label="Shows until" Type="date" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
+                        <div class="prayer-request__actions">
+                            <SaveBar Label="@(line.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" State="@(WallChanged ? SaveState.Unsaved : null)" Busy="@(_busy == "wall")" Blocked="@WallBlocked" OnSave="ShowAsync" />
+                            @if (line.Wall is WallState.Waiting or WallState.Shown)
+                            {
+                                <Button Variant="ButtonVariant.Quiet" Busy="@(_busy == "private")" OnClick="KeepPrivateAsync">
+                                    @(line.Wall == WallState.Shown ? "Take it off the wall" : "Keep it private")
+                                </Button>
+                            }
+                        </div>
+                    }
+                </section>
+            }
+        </article>
+
+        @if (request.MayRead)
+        {
+            <aside class="prayer-request__side" aria-label="For the pastoral team">
+                <section>
+                    <h2>Notes for the pastoral team</h2>
+                    <p class="prayer-request__lead">Only people who can read prayer requests see these. The person never does.</p>
+                    @foreach (CareNote note in request.Notes)
+                    {
+                        <div class="prayer-note" @key="note.Id">
+                            <p>@note.Text</p>
+                            <span>@note.Author · @ChurchDates.Ago(note.At, Now)</span>
+                            <Button Small="true" Variant="ButtonVariant.Quiet" Icon="x" AriaLabel="Delete this note" OnClick="() => DeleteNoteAsync(note.Id)" />
+                        </div>
+                    }
+                    <TextField Label="Add a note" Multiline="true" MaxLength="2000" @bind-Value="_note" />
+                    <SaveBar Label="Add the note" Busy="@(_busy == "note")" Blocked="@(_note.Trim().Length == 0 ? "Write the note to add it." : null)" OnSave="AddNoteAsync" />
+                </section>
+                <section>
+                    <h2>Getting in touch</h2>
+                    @if (line.WantsContact)
+                    {
+                        <p><strong>They'd like someone to get in touch.</strong></p>
+                    }
+                    @if (request.Contact.Length > 0)
+                    {
+                        <p>@request.Contact</p>
+                    }
+                    @if (request.PersonId.Length > 0)
+                    {
+                        <p><a class="text-link" href="people/@request.PersonId">@line.From in People</a></p>
+                    }
+                    else if (request.Contact.Length == 0)
+                    {
+                        <p class="prayer-request__lead">They didn't sign in or leave a way to reach them.</p>
+                    }
+                </section>
+                <section>
+                    <h2>What's happened</h2>
+                    <ol class="prayer-steps">
+                        @foreach (CareStep step in request.History)
+                        {
+                            <li><strong>@step.What</strong> <span>@step.Who · @ChurchDates.Ago(step.At, Now)</span></li>
+                        }
+                    </ol>
+                </section>
+            </aside>
+        }
+    </div>
+</LiveData>
+
+<Sheet Open="_answering" OpenChanged="open => _answering = open" Title="Mark it answered" Lead="Anything to say? If it's on the prayer wall, the wall shows it under the request, and the person hears it was answered.">
+    <ChildContent>
+        <TextField Label="Words for the wall" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_answeredNote" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="Mark it answered" Busy="@(_busy == "care")" OnSave="() => CareAsync(CareState.Answered)" />
+    </Actions>
+</Sheet>
+
+<Sheet Open="_deleting" OpenChanged="open => _deleting = open" Title="Delete this prayer request?" Lead="It goes from the pastoral team, the prayer wall and the person's phone, with its notes. This can't be undone.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="@(_busy == "delete")" OnClick="DeleteAsync">Delete it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private const int WallDays = 30;
+    private static readonly IReadOnlyList<string> Feeds = [PrayerFeeds.Inbox];
+
+    [Parameter, EditorRequired] public required string Id { get; set; }
+    [Parameter] public EventCallback OnGone { get; set; }
+
+    private LiveData<RequestDetails>? _live;
+    private (string Text, bool ShowName, string Until)? _wallWas;
+    private string _wallText = "";
+    private bool _showName;
+    private string _until = "";
+    private string _note = "";
+    private string _answeredNote = "";
+    private bool _answering;
+    private bool _deleting;
+    private string? _busy;
+    private string? _problem;
+
+    private DateTime Now => Clock.GetUtcNow().UtcDateTime;
+
+    private DateOnly Today => ChurchTime.Today(Clock);
+
+    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
+
+    private static IReadOnlyList<SegmentOption<bool>> Names(string firstName) => [new(false, PrayerWords.NoName), new(true, firstName)];
+
+    private static bool MayShow(WallState wall) => wall is not WallState.TakenDown;
+
+    private bool WallChanged => _wallWas is { } was && (_wallText, _showName, _until) != was;
+
+    private bool HasChanges() => _note.Trim().Length > 0 || WallChanged;
+
+    private string? WallBlocked => _wallText.Trim().Length == 0
+        ? "Give the wall some words to show."
+        : !DateOnly.TryParse(_until, out DateOnly until) || until <= Today ? "Choose a day after today for it to leave the wall." : null;
+
+    private static string WallLead(RequestDetails request) => request.Line.Wall switch
+    {
+        WallState.Waiting => "They asked for it to be shown. Nothing is shown until you put it on the wall.",
+        WallState.Shown => $"On the wall until {PrayerWords.Day(request.WallUntil ?? request.Line.SentAt)}. {PrayerWords.Prayed(request.Prayed)}.",
+        WallState.KeptPrivate => "They asked for the wall, and it was kept private. You can still put it on.",
+        WallState.Ended => "It was on the wall and its time is up. Choose a new day to show it again.",
+        WallState.TakenDown => "They took it off the wall themselves, so it stays off.",
+        _ => "",
+    };
+
+    private async Task<RequestDetails> LoadAsync()
+    {
+        RequestDetails request = await Pastoral.RequestAsync(Id);
+        if (!WallChanged)
+        {
+            DateOnly until = request.Line.Wall == WallState.Shown && request.WallUntil is { } shownUntil
+                ? ChurchTime.DayOf(shownUntil)
+                : Today.AddDays(WallDays);
+            bool showName = request.Line.Wall == WallState.Shown ? request.WallName.Length > 0 : request.ShowName;
+            (_wallText, _showName, _until) = (request.WallText, showName, Day(until));
+            _wallWas = (_wallText, _showName, _until);
+        }
+        return request;
+    }
+
+    private Task CareAsync(CareState care) => DoAsync("care", async () =>
+    {
+        await Pastoral.CareAsync(Id, care, care == CareState.Answered ? _answeredNote : "");
+        (_answering, _answeredNote) = (false, "");
+    });
+
+    private Task AddNoteAsync() => DoAsync("note", async () =>
+    {
+        await Pastoral.AddNoteAsync(Id, _note);
+        _note = "";
+    });
+
+    private Task DeleteNoteAsync(string noteId) => DoAsync("note", () => Pastoral.DeleteNoteAsync(Id, noteId));
+
+    private Task ShowAsync() => DoAsync("wall", async () =>
+    {
+        DateOnly day = DateOnly.Parse(_until);
+        await Pastoral.ShowOnWallAsync(Id, _wallText, _showName, ChurchTime.ToUtc(day.ToDateTime(new TimeOnly(23, 59))));
+        _wallWas = (_wallText, _showName, _until);
+    });
+
+    private Task KeepPrivateAsync() => DoAsync("private", () => Pastoral.KeepPrivateAsync(Id));
+
+    private Task DeleteAsync() => DoAsync("delete", async () =>
+    {
+        await Pastoral.DeleteAsync(Id);
+        (_deleting, _note, _wallWas) = (false, "", (_wallText, _showName, _until));
+        await OnGone.InvokeAsync();
+    });
+
+    private async Task DoAsync(string what, Func<Task> work)
+    {
+        (_busy, _problem) = (what, null);
+        try
+        {
+            await work();
+            if (_live is not null && what != "delete")
+                await _live.ReloadAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = null;
+        }
+    }
+}

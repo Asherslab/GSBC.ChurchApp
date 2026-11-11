@@ -10,7 +10,7 @@ using GSBC.ChurchApp.Platform.Permissions;
 
 namespace GSBC.ChurchApp.Features.Chats.Api.Tests;
 
-internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssignments, IFamilies, IBlueCards, IChatPlaces, IPeopleIndex, INotifications
+internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssignments, IFamilies, ISafeguardingStandings, IChatPlaces, IPeopleIndex, INotifications
 {
     public const string TeamNode = "ministries.team.view";
 
@@ -114,8 +114,9 @@ internal sealed class Church : IPermissionHolders, IAccessEvaluator, IRoleAssign
 
     public ValueTask LinkAsync(Guid parentId, Guid childId, Guid linkedBy, CancellationToken cancellationToken) => throw new NotSupportedException();
 
-    public ValueTask<IReadOnlySet<Guid>> HoldingCurrentAsync(IReadOnlyCollection<Guid> people, DateOnly today, CancellationToken cancellationToken) =>
-        ValueTask.FromResult<IReadOnlySet<Guid>>(people.Where(_carded.Contains).ToHashSet());
+    public ValueTask<IReadOnlyDictionary<Guid, SafeguardingStanding>> OfAsync(IReadOnlyCollection<Guid> people, DateOnly on, CancellationToken cancellationToken) =>
+        ValueTask.FromResult<IReadOnlyDictionary<Guid, SafeguardingStanding>>(
+            people.Distinct().ToDictionary(person => person, person => new SafeguardingStanding(person, _carded.Contains(person), false)));
 
     public ValueTask<IReadOnlyDictionary<Guid, ChatPlace>> PlacesAsync(IReadOnlyCollection<Guid> ministryIds, CancellationToken cancellationToken) =>
         ValueTask.FromResult<IReadOnlyDictionary<Guid, ChatPlace>>(ministryIds.Contains(MinistryId) ? new Dictionary<Guid, ChatPlace> { [MinistryId] = Place } : []);

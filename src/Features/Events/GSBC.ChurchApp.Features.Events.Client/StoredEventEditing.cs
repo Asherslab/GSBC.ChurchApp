@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Events.Contracts;
 using GSBC.ChurchApp.Platform.Client.Access;
 using GSBC.ChurchApp.Platform.Client.Feeds;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 
@@ -34,7 +35,7 @@ public sealed record EditingBook(
     public EditingCalendar? Calendar(string id) => Calendars.FirstOrDefault(calendar => calendar.Settings.Calendar.Id == id);
 }
 
-public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue, IAccess access, CalendarDiary diary, TimeProvider clock) : IEventEditing
+public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue, IAccess access, CalendarDiary diary, FileUploads uploads, TimeProvider clock) : IEventEditing
 {
     private const int Page = 500;
     private const string NeedsTheApp = "Saving needs the app. Try again on your phone.";
@@ -106,17 +107,25 @@ public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue
         EditingOffers.Showable(await diary.LoadAsync(), await ReadAsync(), calendarId, search, Today, id => access.Can(EventsPermissions.Edit, id));
 
     public Task<EditSent> SaveEventAsync(EventSave save) =>
-        QueueAsync(EditKeys.Event(save.EventId.Length > 0 ? save.EventId : save.NewId), QueuedEventEdits.SaveEvent, save);
+        QueueAsync(EditKeys.Event(save.EventId.Length > 0 ? save.EventId : save.NewId), QueuedEventEdits.SaveEvent, save,
+            uploads.For(save.Fields.Picture, EventPictureSlots.EventSave));
 
     public Task<EditSent> SaveRegularEventAsync(RegularEventSave save) =>
-        QueueAsync(EditKeys.Regular(save.RegularEventId.Length > 0 ? save.RegularEventId : save.NewId), QueuedEventEdits.SaveRegularEvent, save);
+        QueueAsync(EditKeys.Regular(save.RegularEventId.Length > 0 ? save.RegularEventId : save.NewId), QueuedEventEdits.SaveRegularEvent, save,
+            uploads.For(save.Fields.Picture, EventPictureSlots.RegularEventSave));
 
-    public Task<EditSent> SaveDateAsync(DateSave save) => QueueAsync(EditKeys.Date(save.RegularEventId, save.Date), QueuedEventEdits.SaveDate, save);
+    public Task<EditSent> SaveDateAsync(DateSave save) =>
+        QueueAsync(EditKeys.Date(save.RegularEventId, save.Date), QueuedEventEdits.SaveDate, save, uploads.For(save.Fields.Picture, EventPictureSlots.DateSave));
 
-    public Task<EditSent> DeleteEventAsync(EventRef target) => QueueAsync(EditKeys.Event(target.EventId), QueuedEventEdits.DeleteEvent, target);
+    public async Task<EditSent> DeleteEventAsync(EventRef target) =>
+        await DropPictureSavesAsync(EditKeys.Event(target.EventId), edit => edit.Method == QueuedEventEdits.SaveEvent && QueuedEventEdits.Read<EventSave>(edit).EventId.Length == 0)
+            ? EditSent.Waiting
+            : await QueueAsync(EditKeys.Event(target.EventId), QueuedEventEdits.DeleteEvent, target);
 
-    public Task<EditSent> DeleteRegularEventAsync(RegularRef target) =>
-        QueueAsync(EditKeys.Regular(target.RegularEventId), QueuedEventEdits.DeleteRegularEvent, target);
+    public async Task<EditSent> DeleteRegularEventAsync(RegularRef target) =>
+        await DropPictureSavesAsync(EditKeys.Regular(target.RegularEventId), edit => edit.Method == QueuedEventEdits.SaveRegularEvent && QueuedEventEdits.Read<RegularEventSave>(edit).RegularEventId.Length == 0)
+            ? EditSent.Waiting
+            : await QueueAsync(EditKeys.Regular(target.RegularEventId), QueuedEventEdits.DeleteRegularEvent, target);
 
     public Task<EditSent> AskToPublishAsync(ItemRef item) => QueueAsync(KeyOf(item.EventId, item.RegularEventId), QueuedEventEdits.AskToPublish, item);
 
@@ -133,12 +142,23 @@ public sealed class StoredEventEditing(ILocalFeeds feeds, QueuedEventEdits queue
 
     public string Explain(Exception exception) => "Something went wrong. Try again in a moment.";
 
-    private async Task<EditSent> QueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request)
+    private async Task<EditSent> QueueAsync<[System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)] T>(string key, string method, T request, QueuedUpload? upload = null)
     {
         if (!queue.CanQueue)
             return new EditSent(NeedsTheApp);
-        await queue.QueueAsync(key, method, request);
+        await queue.QueueAsync(key, method, request, upload);
         return EditSent.Waiting;
+    }
+
+    private async Task<bool> DropPictureSavesAsync(string key, Func<QueuedEdit, bool> creates)
+    {
+        IReadOnlyList<QueuedEdit> queued = await QueuedForAsync(key);
+        List<QueuedEdit> waiting = queued.Where(queue.WaitsForUpload).ToList();
+        if (waiting.Count == 0)
+            return false;
+        bool neverSent = waiting.Any(creates);
+        await queue.DiscardAsync(neverSent ? queued : waiting);
+        return neverSent;
     }
 
     private static string KeyOf(string? eventId, string? regularEventId) =>

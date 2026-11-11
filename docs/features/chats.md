@@ -54,7 +54,7 @@ All of it is plain code in `ChatMembership.Decide`, unit tested (`ChatMembership
 - **Parents read** every chat their child is in (team chats too: the interview's "parents can read the chats their
   child is in"), and the chat says so. **A parent can write for their child** once the child is in ("Sarah Example,
   for Tom"), never in a channel.
-- **Two adults with a current blue card** (`IBlueCards`, answered by People from Safe Ministry Check and hand-entered
+- **Two adults with a current blue card** (`ISafeguardingStandings`, answered by People from Safe Ministry Check and hand-entered
   cards): a chat with young people and fewer than two such adults (parents reading don't count) is **flagged** to its
   leaders and on the desk, never blocked.
 - **Checking:** a ministry's leaders check every chat in their ministry and those under it (`chats.check`); the

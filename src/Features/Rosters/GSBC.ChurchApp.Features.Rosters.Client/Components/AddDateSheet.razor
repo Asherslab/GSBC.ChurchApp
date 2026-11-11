@@ -1,0 +1,77 @@
+@inject IRosterReads Reads
+@inject RosterWrites Writes
+
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Add a date" Lead="Choose the event people are rostered for. Any event in the app can have this roster, and other ministries can roster it too.">
+    <ChildContent>
+        @if (Open)
+        {
+            <LiveData TValue="IReadOnlyList<EventChoice>" Load="() => Reads.EventChoicesAsync(View.MinistryId)" Feeds="Reads.Feeds">
+                <ChildContent>
+                    @{
+                        IReadOnlyList<EventChoice> choices = context.Value;
+                        bool hasOwn = choices.Any(choice => choice.Own);
+                        bool ownOnly = _ownOnly ?? hasOwn;
+                        HashSet<string> added = View.Dates.Select(date => date.EventKey).ToHashSet();
+                        List<EventChoice> shown = choices
+                            .Where(choice => !ownOnly || choice.Own)
+                            .Where(choice => _find.Length == 0 || choice.Title.Contains(_find, StringComparison.CurrentCultureIgnoreCase)
+                                             || choice.CalendarName.Contains(_find, StringComparison.CurrentCultureIgnoreCase))
+                            .OrderBy(choice => choice.StartsAt)
+                            .Take(MostShown)
+                            .ToList();
+                    }
+                    @if (hasOwn)
+                    {
+                        <FilterChips TValue="bool" Label="Which calendars" Value="ownOnly" ValueChanged="value => _ownOnly = value"
+                                     Options="@([new FilterOption<bool>(true, $"{View.MinistryName}'s calendars"), new FilterOption<bool>(false, "Every calendar")])" />
+                    }
+                    <SearchField Label="Find an event" @bind-Value="_find" />
+                    @if (shown.Count == 0)
+                    {
+                        <EmptyState Icon="calendar" Title="No events to choose" Body="Events in the next three months show here. Add the event to a calendar first." />
+                    }
+                    <ListGroup>
+                        @foreach (EventChoice choice in shown)
+                        {
+                            bool on = added.Contains(choice.Key);
+                            <ListRow @key="choice.Key" Title="@($"{When(choice)} · {choice.Title}")" Subtitle="@(on ? "On the roster" : choice.CalendarName)"
+                                     IconTone="@(on ? RowTone.Quiet : RowTone.Primary)" Disabled="@(on || _busy)" OnClick="() => AddAsync(choice)">
+                                <TrailingContent>
+                                    @if (!on)
+                                    {
+                                        <span class="roster-add">Add</span>
+                                    }
+                                </TrailingContent>
+                            </ListRow>
+                        }
+                    </ListGroup>
+                </ChildContent>
+                <Loading><Skeleton Shape="SkeletonShape.Lines" Count="5" /></Loading>
+            </LiveData>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        }
+    </ChildContent>
+</Sheet>
+
+@code {
+    private const int MostShown = 60;
+
+    private bool? _ownOnly;
+    private string _find = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+    [Parameter, EditorRequired] public required RosterView View { get; set; }
+
+    private static string When(EventChoice choice) =>
+        RosterLines.When(new RosterDate { StartsAt = choice.StartsAt, EndsAt = choice.EndsAt, AllDay = choice.AllDay });
+
+    private async Task AddAsync(EventChoice choice)
+    {
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(() => Writes.AddDateAsync(View.MinistryId, choice.Key));
+        _busy = false;
+    }
+}

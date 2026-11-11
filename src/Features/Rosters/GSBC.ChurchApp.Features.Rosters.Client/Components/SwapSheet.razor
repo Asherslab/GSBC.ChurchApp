@@ -1,0 +1,70 @@
+@inject RosterWrites Writes
+
+<UnsavedGuard Changed="() => Date is not null && _note.Trim().Length > 0" What="your swap" />
+
+@if (Date is { } date)
+{
+    IReadOnlyList<string> ways = date.View.Settings.SwapWays;
+    string way = _way ?? ways.FirstOrDefault() ?? "";
+    <Sheet Open="true" OpenChanged="open => Close(open)" Title="Ask for a swap"
+           Lead="@($"{date.Assignment.PositionName} · {date.Date.Title}, {RosterLines.LongWhen(date.Date)}.{(date.Yourself ? "" : $" For {RosterLines.First(date.For.Name)}.")}")">
+        <ChildContent>
+            @if (ways.Count > 1)
+            {
+                <Segmented TValue="string" Label="How" ShowLabel="true" Stacked="true" Value="way" ValueChanged="value => _way = value"
+                           Options="ways.Select(each => new SegmentOption<string>(each, Short(each), Detail: RosterLines.WaysWords(each))).ToList()" />
+            }
+            else
+            {
+                <p class="roster-hint">@RosterLines.WaysWords(way). You stay on until someone takes it.</p>
+            }
+            @if (way == SwapWays.Direct)
+            {
+                <SelectField Label="Who to ask" Value="@_to" ValueChanged="value => _to = value"
+                             Options="@(date.View.TeamNames.Where(person => person.Id != date.For.Id).Select(person => new FieldOption(person.Id, person.Name)).Prepend(new FieldOption("", "Choose someone")).ToList())" />
+            }
+            <TextField Label="A note for them (if you like)" @bind-Value="_note" MaxLength="200" />
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </ChildContent>
+        <Actions>
+            <SaveBar Block="true" Label="Ask for the swap" Busy="_busy" OnSave="() => AskAsync(date, way)"
+                     Blocked="@(way == SwapWays.Direct && _to.Length == 0 ? "Choose who to ask." : null)" />
+        </Actions>
+    </Sheet>
+}
+
+@code {
+    private string? _way;
+    private string _to = "";
+    private string _note = "";
+    private bool _busy;
+    private string? _problem;
+
+    [Parameter] public YourDate? Date { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static string Short(string way) => way switch
+    {
+        SwapWays.Team => "The team picks it up",
+        SwapWays.Approve => "The team, then a leader",
+        _ => "Someone I choose",
+    };
+
+    private async Task Close(bool open)
+    {
+        if (!open)
+            await OnClose.InvokeAsync();
+    }
+
+    private async Task AskAsync(YourDate date, string way)
+    {
+        _busy = true;
+        _problem = await RosterProblems.TryAsync(() => Writes.AskSwapAsync(date.View.MinistryId, date.Assignment.Id, way, way == SwapWays.Direct ? _to : "", _note.Trim()));
+        _busy = false;
+        if (_problem is null)
+        {
+            _note = "";
+            await OnClose.InvokeAsync();
+        }
+    }
+}

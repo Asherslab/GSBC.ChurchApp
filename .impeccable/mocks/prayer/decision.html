@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Prayer: sketches and choices</title><link rel="stylesheet" href="sketch.css">
+<style>
+body { max-width: 1500px; margin: 0 auto; padding: 32px 24px 64px; background: var(--page); }
+h1 { font-size: var(--text-headline); letter-spacing: -0.02em; }
+.intro { color: var(--ink-2); max-width: 80ch; margin-top: 8px; }
+.intro p + p { margin-top: 8px; }
+h2 { font-size: var(--text-title-lg); margin: 46px 0 6px; letter-spacing: -0.02em; }
+.why { max-width: 90ch; color: var(--ink-2); font-size: var(--text-caption); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; margin-top: 18px; }
+.card { border-radius: 14px; background: var(--sand); padding: 14px; display: flex; flex-direction: column; gap: 10px; }
+.card.built { box-shadow: inset 0 0 0 2px var(--accent); background: rgb(0 156 143 / 0.08); }
+.card h3 { font-size: var(--text-row); font-weight: 700; }
+.card .tag { font-size: var(--text-pill); font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); }
+.card.built .tag { color: var(--accent); }
+.card p { font-size: var(--text-caption); color: var(--ink-2); }
+.frame { position: relative; overflow: hidden; border-radius: 10px; background: var(--page); box-shadow: 0 0 0 1px var(--line); height: 300px; }
+.frame iframe { border: 0; width: 1440px; height: 900px; zoom: 0.31; pointer-events: none; }
+.card a { color: var(--accent); font-weight: 600; font-size: var(--text-caption); }
+.declined { margin-top: 18px; font-size: var(--text-caption); color: var(--ink-2); }
+.declined li { margin: 4px 0 0 18px; }
+@media (max-width: 1000px) { .cards { grid-template-columns: 1fr; } .frame iframe { zoom: 0.24; } }
+</style></head>
+</head>
+<body>
+<h1>Prayer: sketches, and what was built</h1>
+<div class="intro">
+  <p>Three ways each for four places: the Prayer page in the app, asking for prayer, the pastoral inbox in the admin panel, and putting a request on the prayer wall. The owner was asleep (2026-11-11), so each card with the aqua border is <b>Claude's pick, built as the default</b>; every pick is listed at the end so it can be changed in the morning. Every sketch uses the app's real colours and type; names are made up.</p>
+  <p>Whatever is picked, underneath is the same: a request goes privately to the pastoral team unless the person asks for the wall; nothing reaches the wall until staff approve it; who can read requests is a permission through Access; the phone sends through the outbox, so it works with no signal.</p>
+</div>
+
+<h2>1. The Prayer page in the app</h2>
+<p class="why">What opens from the Hub tile and <code>/prayer</code>. It has three jobs: ask, see what happened to yours, and pray for others. DESIGN.md already says Prayer is short enough to need neither section tabs nor a band.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick · built</span><h3>One page: ask, yours, the wall</h3>
+    <div class="frame"><iframe src="page-one.html" title="One page"></iframe></div>
+    <p>The masthead, a sand callout with <i>Ask for prayer</i>, then <i>Yours</i> (only when you've sent something: where each one is, waiting to send, on the wall, prayed count), then the wall as plain reading rows with a Pray button that turns aqua once you've prayed.</p>
+    <p><b>Why:</b> the bulletin's single column; asking is the first thing, as SPEC puts it; the wall reads as words, not a feed of cards.</p>
+    <a href="page-one.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>The wall first</h3>
+    <div class="frame"><iframe src="page-wall.html" title="Wall first"></iframe></div>
+    <p>The wall is the page, as a grid of cards, with <i>Yours</i> behind a switch and a floating Ask button.</p>
+    <p><b>Not recommended:</b> leads with other people's requests when most people come to ask; a grid of cards is the generic church-app look DESIGN.md rejects.</p>
+    <a href="page-wall.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Two doors</h3>
+    <div class="frame"><iframe src="page-doors.html" title="Two doors"></iframe></div>
+    <p>Two big panels, <i>Ask for prayer</i> and <i>Pray for others</i>, each its own page.</p>
+    <p><b>Not recommended:</b> a tap more for everything, and the wall hides behind a door.</p>
+    <a href="page-doors.html">Open full size</a></div>
+</div>
+
+<h2>2. Asking for prayer</h2>
+<p class="why">Signed in or not (SPEC §6: nobody needs to sign in). Private by default. Works with no signal: it waits on the phone and goes by itself.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick · built</span><h3>A page of its own</h3>
+    <div class="frame"><iframe src="ask-page.html" title="Page"></iframe></div>
+    <p>The request, then <i>Who reads it</i> as two stacked choices that say what each means (the pastoral team, or the team and the wall); with the wall, a switch for <i>your first name</i> or <i>no name</i>. Not signed in: an optional name, and "I'd like someone to get in touch" with a phone or email. One Send button; sent with no signal says so plainly.</p>
+    <p><b>Why:</b> "who reads this" is the question people worry about, so it's spelled out rather than a switch; a page gives the keyboard room and the unsaved-changes guard works as everywhere else.</p>
+    <a href="ask-page.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A sheet with switches</h3>
+    <div class="frame"><iframe src="ask-sheet.html" title="Sheet"></iframe></div>
+    <p>The POC's form in a sheet: two switches, <i>Share on the prayer wall</i> and <i>Hide my name</i>.</p>
+    <p><b>Not recommended:</b> switches hide what "off" means, and a sheet with a keyboard leaves little room to write.</p>
+    <a href="ask-sheet.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>In three steps</h3>
+    <div class="frame"><iframe src="ask-steps.html" title="Steps"></iframe></div>
+    <p>Write, then who reads it, then how it shows, with a preview.</p>
+    <p><b>Not recommended:</b> three screens for a few lines of text; most people keep it private and would step through for nothing.</p>
+    <a href="ask-steps.html">Open full size</a></div>
+</div>
+
+<h2>3. The pastoral inbox (admin panel)</h2>
+<p class="why">For staff with the Pastoral team role. New requests appear live. Notes are for the pastoral team only; the person never sees them.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick · built</span><h3>A workbench</h3>
+    <div class="frame"><iframe src="inbox-workbench.html" title="Workbench"></iframe></div>
+    <p>Tabs (New, Following up, For the wall, On the wall, Answered, Everything) over a sand list, the request to read in the middle with its actions, and the notes and how to get in touch on the right.</p>
+    <p><b>Why:</b> the admin panel's own workbench pattern; a prayer request is read, not scanned, so it gets room.</p>
+    <a href="inbox-workbench.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A board</h3>
+    <div class="frame"><iframe src="inbox-board.html" title="Board"></iframe></div>
+    <p>Columns from New to Answered; a card moves along as it's cared for.</p>
+    <p><b>Not recommended:</b> turns people's needs into tickets, and cards cut the words short.</p>
+    <a href="inbox-board.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>A table</h3>
+    <div class="frame"><iframe src="inbox-table.html" title="Table"></iframe></div>
+    <p>One row per request, opening in place for notes and actions.</p>
+    <p><b>Not recommended:</b> good for many; a church gets a handful a week, and requests deserve to be read whole.</p>
+    <a href="inbox-table.html">Open full size</a></div>
+</div>
+
+<h2>4. Putting a request on the wall</h2>
+<p class="why">Nothing an app write creates is public until staff approve it (SPEC §6). A child's request may be public, but must be approved (owner, 2026-11-11); the approver sees that the person is under 18.</p>
+<div class="cards">
+  <div class="card built"><span class="tag">Claude's pick · built</span><h3>Choose the words, then show it</h3>
+    <div class="frame"><iframe src="wall-edit.html" title="Edit"></iframe></div>
+    <p>What they wrote on the left (it stays with the pastoral team); on the right, the words the wall will show, which staff may change (someone else's name, too much detail), the name or no name, and how long it shows (30 days to start). <i>Put it on the wall</i> or <i>Keep it private</i>.</p>
+    <p><b>Why:</b> people often name others in a request; staff can share the need without sharing someone else's story, and the original is never changed.</p>
+    <a href="wall-edit.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Yes or no</h3>
+    <div class="frame"><iframe src="wall-quick.html" title="Quick"></iframe></div>
+    <p>A list with Approve and Decline.</p>
+    <p><b>Not recommended:</b> fast, but a request that names someone else can only be refused.</p>
+    <a href="wall-quick.html">Open full size</a></div>
+  <div class="card"><span class="tag">Alternative</span><h3>Beside the phone</h3>
+    <div class="frame"><iframe src="wall-preview.html" title="Preview"></iframe></div>
+    <p>Waiting requests beside the wall as the phone shows it.</p>
+    <p><b>Not recommended as the page:</b> nice to see, but the phone frame takes room the words need. The pick shows the words as they'll read.</p>
+    <a href="wall-preview.html">Open full size</a></div>
+</div>
+
+<h2>Every pick, for the owner to change</h2>
+<div class="intro"><ol style="margin-left:20px">
+<li>The four picks above.</li>
+<li><b>Two roles</b> (Prayer, in Access): <i>Pastoral team</i> reads every request, keeps notes, follows up, marks answered, deletes, and runs the wall; <i>Prayer wall</i> only sees requests that asked for the wall, and approves, edits, extends and takes down wall posts. Nobody else, staff included, can read a request.</li>
+<li><b>Reading isn't logged;</b> every change is (who and when: followed up, answered, approved, edited, notes, deleted), shown on the request.</li>
+<li><b>Requests are kept for 12 months</b> after their last change, then deleted; the person or staff can delete one any time (SPEC §11).</li>
+<li><b>The wall:</b> 30 days from approval, staff can change the date; the person can take theirs down or delete it; once it's answered, a line of thanks shows under it.</li>
+<li><b>Name on the wall:</b> no name by default, for everyone (the phone can't tell a child from an adult, and anonymous is the safer start); the person can choose their first name, and staff can hide it but never show one the person didn't allow. <b>A child's request may be public, but must be approved</b> (the owner, 2026-11-11); the approver sees "Under 18".</li>
+<li><b>"Pray":</b> one mark per phone per request, tapping again takes it back; the count is all anyone sees. Signed-in requesters get "People prayed for your request" at most once a day per request, and "Your request was marked answered"; both can be turned off. A phone that isn't signed in sees the count in the app instead.</li>
+<li><b>Yours:</b> signed in, from a private feed on every phone you use; not signed in, kept on that phone only.</li>
+<li><b>Limits for the app:</b> 5 requests per phone a day and 300 prayers a day.</li>
+<li><b>Deleting an account</b> deletes that person's requests, their wall posts and their prayers.</li>
+<li><b>Never in analytics:</b> nothing about prayer is counted.</li>
+</ol></div>
+
+<div class="declined"><b>Also weighed and declined:</b> a candle-lighting animation, a "praying now" live counter, and a map of requests. Each makes prayer a spectacle or reveals more than people asked to share.</div>
+</body></html>

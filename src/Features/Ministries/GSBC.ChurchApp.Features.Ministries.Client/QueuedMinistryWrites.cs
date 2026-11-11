@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Outbox;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -36,10 +37,10 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
 
     public Task DeletePostAsync(string ministryId, string id) => SendAsync(MinistryMethods.DeletePost, new ItemRef { MinistryId = ministryId, Id = id });
 
-    public Task SaveFileAsync(string ministryId, FileItem file)
+    public Task SaveFileAsync(string ministryId, FileItem file, QueuedUpload? upload = null)
     {
         FileItem sent = MinistriesContractsModel.Instance.DeepClone(file);
-        return SendAsync(MinistryMethods.SaveFile, new FileSave { MinistryId = ministryId, File = Minted(sent, sent.Id, id => (sent.Id, sent.New) = (id, true)) });
+        return SendAsync(MinistryMethods.SaveFile, new FileSave { MinistryId = ministryId, File = Minted(sent, sent.Id, id => (sent.Id, sent.New) = (id, true)) }, upload);
     }
 
     public Task DeleteFileAsync(string ministryId, string id) => SendAsync(MinistryMethods.DeleteFile, new ItemRef { MinistryId = ministryId, Id = id });
@@ -86,6 +87,10 @@ public sealed class QueuedMinistryWrites(IOutbox outbox) : IMinistryWrites
         return item;
     }
 
-    private async Task SendAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request) =>
-        await outbox.EnqueueAsync(method, request, MinistriesContractsModel.Instance);
+    private async Task SendAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string method, T request, QueuedUpload? upload = null)
+    {
+        using MemoryStream body = new();
+        MinistriesContractsModel.Instance.Serialize(body, request);
+        await outbox.EnqueueAsync(method, body.ToArray(), upload is null ? [] : [upload]);
+    }
 }

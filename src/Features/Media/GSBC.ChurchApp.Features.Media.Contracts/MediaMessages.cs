@@ -12,6 +12,8 @@ public sealed class BeginUploadRequest
     [ProtoMember(6)] public string AltText { get; set; } = "";
     [ProtoMember(7)] public MediaAudience? PrivateTo { get; set; }
     [ProtoMember(8)] public string? FolderId { get; set; }
+    [ProtoMember(9)] public string? Area { get; set; }
+    [ProtoMember(10)] public string? AreaScopeId { get; set; }
 }
 
 [ProtoContract]
@@ -52,6 +54,8 @@ public sealed class FindByHashRequest
     [ProtoMember(1)] public string Sha256 { get; set; } = "";
     [ProtoMember(2)] public string ContentType { get; set; } = "";
     [ProtoMember(3)] public MediaAudience? PrivateTo { get; set; }
+    [ProtoMember(4)] public string? Area { get; set; }
+    [ProtoMember(5)] public string? AreaScopeId { get; set; }
 }
 
 [ProtoContract]

@@ -27,7 +27,7 @@ public static class PeopleApiExtensions
         services.AddHostedService<SafeMinistrySchedule>();
         services.AddScoped<IPersonData, PeoplePersonData>();
         services.AddScoped<IFamilies, PeopleFamilies>();
-        services.AddScoped<IBlueCards, PeopleBlueCards>();
+        services.AddScoped<ISafeguardingStandings, SafeguardingStandings>();
         services.AddPermissions(PeoplePermissions.All);
         services.AddNotificationKinds(PeopleNotifications.All);
 

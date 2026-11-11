@@ -40,7 +40,7 @@
     private string? _messageFor;
     private string _message = "";
 
-    private MinistryChatsView? Chats => Services.GetService(typeof(MinistryChatsView)) as MinistryChatsView;
+    private ChatAsks? Chats => Services.GetService(typeof(ChatAsks)) as ChatAsks;
 
     private bool InChat => Chats is not null && MinistryParts.IsOn(Page.Ministry.PartsOff, MinistryParts.Chats);
 

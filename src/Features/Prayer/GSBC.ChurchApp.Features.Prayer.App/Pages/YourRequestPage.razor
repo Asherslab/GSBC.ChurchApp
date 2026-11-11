@@ -1,0 +1,126 @@
+@page "/prayer/yours/{Id}"
+@inject PrayerOnPhone Prayer
+@inject NavigationManager Navigation
+
+<UnsavedGuard Changed="() => _asking == Ask.Answered && _note.Trim().Length > 0" What="your words of thanks" />
+
+<Page Title="Your request" BackHref="prayer" BackLabel="Prayer" TopBar="TopBarStyle.Solid">
+    <LiveData TValue="PrayerView" Load="Prayer.LoadAsync" Feeds="PrayerOnPhone.Feeds" ReloadOn="Reload" Remember="prayer.view">
+        @if (context.Value.Find(Id) is not { } line)
+        {
+            <Section First="true">
+                <EmptyState Icon="prayer" Title="This request isn't here any more" Body="It may have been deleted, or kept a year and then removed.">
+                    <Button Variant="ButtonVariant.Quiet" Href="prayer">Back to Prayer</Button>
+                </EmptyState>
+            </Section>
+        }
+        else
+        {
+            <Section First="true">
+                <p class="prayer-yours__status @(line.Sending == Sending.Sent ? "" : "is-waiting")">@PrayerWords.Status(line)</p>
+                <p class="prayer-yours__text">@line.Text</p>
+                <p class="prayer-yours__meta">@(line.Sending == Sending.Sent ? "Sent" : "Written") @PrayerWords.Day(line.SentAt)@(line.Wall == WallState.Shown ? $" · Shown as {(line.WallName.Length > 0 ? line.WallName : PrayerWords.NoName.ToLowerInvariant())}" : "")</p>
+                @if (line.Answered && line.AnsweredNote.Length > 0)
+                {
+                    <Card Class="prayer-yours__answered" Title="Answered"><p>@line.AnsweredNote</p></Card>
+                }
+                @if (line.Problem is { Length: > 0 } problem)
+                {
+                    <Notice Tone="NoticeTone.Warning" Text="@problem" />
+                }
+            </Section>
+            <Section>
+                <ListGroup>
+                    @if (line.Sending == Sending.CouldNotSend)
+                    {
+                        <ListRow Title="Try sending it again" Icon="send" OnClick="() => Prayer.RetryAsync(line.Id)" />
+                    }
+                    @if (!line.Answered && line.Sending != Sending.CouldNotSend)
+                    {
+                        <ListRow Title="It was answered" Subtitle="@(line.Wall == WallState.Shown ? "Add a few words of thanks for the prayer wall" : "Let the pastoral team know")"
+                                 Icon="check" IconTone="RowTone.Accent" Chevron="true" OnClick="() => Open(Ask.Answered)" />
+                    }
+                    @if (line.Wall is WallState.Shown or WallState.Waiting && line.Sending != Sending.CouldNotSend)
+                    {
+                        <ListRow Title="Take it off the prayer wall" Subtitle="The pastoral team still has it" Icon="eye-off" Chevron="true" OnClick="() => Open(Ask.TakeDown)" />
+                    }
+                    <ListRow Title="Delete it" Subtitle="From the pastoral team and the prayer wall" Icon="x" IconTone="RowTone.Warm" Chevron="true"
+                             OnClick="() => Open(Ask.Delete)" />
+                </ListGroup>
+            </Section>
+        }
+    </LiveData>
+</Page>
+
+<Sheet Open="_asking == Ask.Answered" OpenChanged="Closed" Title="It was answered" Lead="Praise God. Anything you'd like to say? The prayer wall shows it under your request.">
+    <ChildContent>
+        <TextField Label="Words of thanks" Hint="Optional" Multiline="true" MaxLength="500" @bind-Value="_note" />
+    </ChildContent>
+    <Actions>
+        <SaveBar Block="true" Label="Mark it answered" Busy="_busy" OnSave="AnsweredAsync" />
+    </Actions>
+</Sheet>
+
+<Sheet Open="_asking == Ask.TakeDown" OpenChanged="Closed" Title="Take it off the prayer wall?" Lead="It stays with the pastoral team. It can't go back on the wall.">
+    <Actions>
+        <Button Block="true" Busy="_busy" OnClick="TakeDownAsync">Take it off the wall</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Closed(false)">Keep it up</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_asking == Ask.Delete" OpenChanged="Closed" Title="Delete this request?" Lead="The pastoral team won't have it any more, and it comes off the prayer wall. This can't be undone.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" Busy="_busy" OnClick="DeleteAsync">Delete it</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => Closed(false)">Keep it</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private enum Ask
+    {
+        Nothing,
+        Answered,
+        TakeDown,
+        Delete,
+    }
+
+    private const ChangeKind Reload = ChangeKind.Reconnected | ChangeKind.Session | ChangeKind.Access | ChangeKind.Outbox;
+
+    [Parameter] public string Id { get; set; } = "";
+
+    private Ask _asking;
+    private string _note = "";
+    private bool _busy;
+
+    private void Open(Ask ask) => (_asking, _note) = (ask, "");
+
+    private void Closed(bool open)
+    {
+        if (!open)
+            _asking = Ask.Nothing;
+    }
+
+    private Task AnsweredAsync() => DoAsync(() => Prayer.AnsweredAsync(Id, _note));
+
+    private Task TakeDownAsync() => DoAsync(() => Prayer.TakeDownAsync(Id));
+
+    private async Task DeleteAsync()
+    {
+        await DoAsync(() => Prayer.DeleteAsync(Id));
+        Navigation.NavigateTo("prayer");
+    }
+
+    private async Task DoAsync(Func<Task> work)
+    {
+        _busy = true;
+        try
+        {
+            await work();
+            _asking = Ask.Nothing;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

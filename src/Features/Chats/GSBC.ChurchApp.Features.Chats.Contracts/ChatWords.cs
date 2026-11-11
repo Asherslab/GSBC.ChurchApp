@@ -1,5 +1,10 @@
 namespace GSBC.ChurchApp.Features.Chats.Contracts;
 
+public static class ChatsParts
+{
+    public const string Key = "chats";
+}
+
 public static class ChatKinds
 {
     public const string Group = "group";

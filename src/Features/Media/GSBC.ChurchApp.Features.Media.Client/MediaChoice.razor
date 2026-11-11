@@ -1,16 +1,26 @@
 @inject MediaClient Media
 @inject MediaFolderMemory Memory
 @inject ClientSignals Signals
+@inject FileUploads Uploads
+@inject IServiceProvider Services
 
 <div class="media-choice">
     <div class="media-choice__tools">
         <SearchField Label="@FindLabel" Placeholder="@FindLabel"
                      Value="@_query" ValueChanged="SearchAsync" SettleMilliseconds="200" />
-        <Button Variant="ButtonVariant.Quiet" Icon="@(_uploading ? "x" : "arrow-up")" OnClick="() => _uploading = !_uploading">@(_uploading ? "Close upload" : "Upload")</Button>
+        @if (PhoneUpload || DirectUpload is not null)
+        {
+            <Button Variant="ButtonVariant.Quiet" Icon="@(_uploading ? "x" : "arrow-up")" OnClick="() => _uploading = !_uploading">@(_uploading ? "Close upload" : "Upload")</Button>
+        }
     </div>
-    @if (_uploading)
+    @if (_uploading && PhoneUpload)
     {
-        <MediaUpload Label="@(FontsOnly ? "Choose a font file (.woff2, .woff, .ttf or .otf)" : ImagesOnly ? "Choose a picture" : "Choose a picture or PDF")" FontsOnly="FontsOnly" FolderId="@(Searching ? null : _folderId)" OnUploaded="UploadedAsync" />
+        <FilePick Label="@(ImagesOnly ? "Choose a picture from this phone" : "Choose a picture or PDF from this phone")" ImagesOnly="ImagesOnly" OnPicked="media => OnPick.InvokeAsync(media)" />
+        <p class="hint">It's sent with your save, as soon as the phone is online.</p>
+    }
+    else if (_uploading && DirectUpload is { } direct)
+    {
+        @RenderDirect(direct)
     }
     @if (OnThisPhone is { Count: > 0 } here)
     {
@@ -119,6 +129,20 @@
             <span class="media-choice__used">@line</span>
         </button>;
     }
+
+    private bool PhoneUpload => Uploads.CanQueue && !FontsOnly;
+
+    private MediaDirectUpload? DirectUpload => Services.GetService(typeof(MediaDirectUpload)) as MediaDirectUpload;
+
+    private RenderFragment RenderDirect(MediaDirectUpload direct) => builder =>
+    {
+        builder.OpenComponent(0, direct.Component);
+        builder.AddComponentParameter(1, MediaDirectUpload.LabelParameter, FontsOnly ? "Choose a font file (.woff2, .woff, .ttf or .otf)" : ImagesOnly ? "Choose a picture" : "Choose a picture or PDF");
+        builder.AddComponentParameter(2, MediaDirectUpload.FontsOnlyParameter, FontsOnly);
+        builder.AddComponentParameter(3, MediaDirectUpload.FolderIdParameter, Searching ? null : _folderId);
+        builder.AddComponentParameter(4, MediaDirectUpload.OnUploadedParameter, EventCallback.Factory.Create<UploadedMedia>(this, UploadedAsync));
+        builder.CloseComponent();
+    };
 
     private bool Searching => _query.Length > 0;
 

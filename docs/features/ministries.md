@@ -1,6 +1,6 @@
 # Ministries
 
-Status: Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
+Status: Stage 3 (rosters) built 2026-11-11, below; Stage 2 (ministries, team and attendees, joining, audiences, posts, files, calendars, Life Groups) built 2026-11-10, below; Stage 1 (People) built 2026-11-10, in [people.md](people.md); interviewed 2026-11-10 (below, supersedes the draft); draft 2026-10-30; not built yet (Home has sample *Ministries* and *Life Groups* tiles that open *coming soon*); areas separated into tabs 2026-10-31; who sees each module chosen per
 ministry 2026-10-31. Extends [SPEC.md](../../SPEC.md), where v1's "Groups" line ("ministries,
 each with a contact or 'I'm interested' button") was the placeholder. A POC is in the PWA spike
 (`spikes/app-poc`, More → Ministries and a Hub tile). Everything in it is sample data.
@@ -114,8 +114,60 @@ reminder.**
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
 auditors' coordination chat. (Blue card and training data from Safe Ministry Check: built 2026-11-10.)
 
-## Stage 4, Chats, built (2026-11-11)
+## Stage 3, built (2026-11-11)
 
+Rosters, built overnight while the owner was asleep, so **every design pick is Claude's recommendation** (marked *default*);
+the sketches, the alternatives and the list of picks are on `.impeccable/mocks/rosters/decision.html`. Rosters is its own
+feature (`Features/Rosters`) and reaches Ministries, Events and People only through Platform interfaces: `IMinistryFacts`
+(a ministry's name, parts, archived, team and who leads it), `IRosterableEvents` (events by key, and those a person may see)
+and `ISafeguardingStandings` (blue card and Safe Ministry training, from People's records and Safe Ministry Check).
+
+- **Where it lives:** a *Roster* tab on a ministry, in the app and the admin panel (`/ministries/{id}/roster`). It is a
+  part in *What it uses* (off hides it from everyone, leaders too, and the server refuses its changes), and the tab shows to
+  leaders, the team and a parent of a young person on the team. Ministries hosts it through Platform.Client's
+  `MinistryPartView`, so Ministries doesn't reference Rosters. The tab: *You're on* (your dates and your children's, each
+  with its answer and swap), *Can you take one of these?* (swaps open to you), *Waiting for a leader* (offers to approve),
+  then *The roster* **one row per date with its positions on a line, or as a grid** (*By date | Grid*; the admin panel
+  starts on the grid), then *Days away* (*default*: the picks on the decision page).
+- **Positions** per ministry, in order, each with how many people it needs and what it needs: a current blue card, Safe
+  Ministry training, being trained for it (leaders tick who's trained on the position). Deleting one takes people off it on
+  dates to come and tells them; past dates keep its name.
+- **Dates** are events from **any calendar in the app** (the ministry's own calendars first when it has any). Several
+  ministries can roster the same event. Removing a date tells whoever was on it. A date keeps the event's title and time
+  and follows it (every 10 minutes); an event taken off the calendar shows as *Not on*.
+- **Putting people on:** leaders choose from the ministry's team (and leaders above). **Unmet requirements flag, never
+  block:** away that day, no current blue card, training not current, not trained for it, already on that day are words
+  beside the name, and the leader can always put them on. Everyone put on hears at once.
+- **Answers:** *I can do it* and *Can't do it* (with an optional reason the leaders see); a ministry can turn answers off
+  (*How it works*), and then being put on is simply being on.
+- **Swaps, the ways the ministry allows** (*default*: only *the team can pick it up*): the team picks it up (done, the
+  leaders hear); the team offers and a leader says yes; ask someone on the team directly (they say yes or can't). With more
+  than one on, the person chooses. You stay on until it's taken.
+- **Days away belong to the person, not a ministry** (*default*: away is away), always allowed, set for yourself or your
+  child; every ministry's leaders see them in the flags. If you mark days away while you're on a date, its leaders hear.
+- **Who sees the roster** (*How it works*): the whole roster (*default*), your dates and who's on with you, or only your
+  dates. **Enforced on the server:** each person's phone gets one row per ministry (`rosters.ministries`, their own) holding
+  only what they may see, so nothing else reaches their store. Leaders always see it all, with the flags.
+- **Notifications:** put on or taken off; a reminder before the date (*default* 2 days, the ministry chooses or turns it
+  off); a nudge if there's no answer (*default* after 3 days); leaders hear of *can't do it*, swaps asked, taken or offered,
+  and days away that clash. **Young people are rostered as themselves**; what's for them goes to them and, as the family
+  chose, to their parents ("For Tom: …"). A parent answers, swaps and sets days away for their child, shown as "Sarah, for Tom".
+- **An archived ministry's roster is read only and sends nothing.**
+- **Deleting an account** forgets their dates to come, their days away, their answers and swaps, and their training for
+  positions; a past date keeps the place filled, shown as *Someone who has left* (*default*).
+- **Offline:** the phone reads the roster only from its store and every change goes through the outbox (*waiting to send*
+  above the tab); the admin panel reads and writes online, and reloads when any roster it may manage changes
+  (`rosters.changes`, markers for those who may manage that ministry's roster).
+- **Hub:** a *Your roster* tile: "You're on Sunday" (or "Tom is on Sunday") with the position and event, and "Say whether
+  you can do it" while an answer waits; it opens that ministry's Roster tab. *Not built:* Home's Today block and Simple row
+  (Home has neither yet).
+- **Permissions:** `ministries.roster.edit` (leaders and admins, and staff with Ministries Manager) and
+  `ministries.roster.reply` (the team), added to Ministries' roles with `AddToSystemRole`.
+
+**Open for the owner:** every *default* above; suggesting who to put on (from the wizard sketch); Home's Today block;
+archiving a ministry reaches the roster within 10 minutes rather than at once; staff who aren't on a ministry's team use the
+admin panel for its roster (the phone's rows go to its team, leaders and parents).
+## Stage 4, Chats, built (2026-11-11)
 Chats are their own feature: [chats.md](chats.md) has the design, the rules and what's still to do. Chats is a part in
 *What it uses* (`MinistryParts.Chats`, on by default); off hides the tab and every chat of the ministry from everyone,
 leaders included, and the server delivers nothing for it. **Asking to join is a chat** where the ministry uses chats:
@@ -188,8 +240,22 @@ for the team, attendees or parents. A private one's audience is `ministries.team
 ministry (`Audience.HoldingAt`), so Events keeps it private everywhere, and leaders edit its events with no assignment of
 their own. Removing one says how many events go with it.
 
-**Files** are **links** for now (a document, form, recording or web page), each with an audience. *Uploading a document
-into private media* is still to do.
+**Files** are **links** (a document, form, recording or web page) or **documents and pictures added from the phone**
+(built 2026-11-11 with offline uploads, at the orchestrator's request), each with an audience. On the phone, Files →
+*Add a file* keeps the chosen PDF or picture on the phone and queues it with the file's save. Both go when there's a
+signal (offline-and-caching.md, *Files in the outbox*). Defaults chosen while the owner was asleep (2026-11-11), for
+the owner to confirm:
+
+- **Who may add one:** whoever may post in the ministry (`ministries.posts.write`), through Media's *Ministry files*
+  area. Nobody needs `media.upload`.
+- **Who may open one:** the file's own audience. Everyone's documents are public media; Team, Attendees and Parents
+  documents are private to that permission at the ministry and open through a short-lived link (`Media.GetLink`), so
+  opening a document needs a connection.
+- **Changing who it's for** isn't offered for a document (the stored file keeps the audience it was added with).
+  Delete it and add it again.
+- **Where it's kept:** Media → *Made by the app* → *Ministry files* → the ministry, seen by its team and by staff
+  with oversight. Deleting the file, or the ministry, lets go of it, and staff may then delete it from Media.
+- **The admin panel** still adds links only.
 
 **Deleting a ministry** (Settings, for the leaders of the ministry above it, or staff for a top-level one) first says what
 goes: the ministries under it **move up** to its parent (*default*), and its posts, files, asks, calendars and their events and everyone's
@@ -605,6 +671,8 @@ Have a Kids leader post one thing to each stream, then ask a helper and a parent
 defaults per ministry are guesses from the brief; each ministry's leaders should confirm theirs.
 
 ## Rosters and Elvanto
+
+*History only:* replaced by the interview's *No Elvanto, for now* (2026-11-10) and built as *Stage 3, built* above.
 
 Elvanto stays the source of truth, and stays usable directly (owner, 2026-10-30). The app is a
 front end to it, never a second roster.
