@@ -10,7 +10,7 @@
     <Masthead Title="Appearance" Note="How the app looks on this phone" />
 
     <Section First="true" Title="Light or dark" Lead="Automatic follows your phone's setting, including at night.">
-        <Segmented TValue="ColourScheme" Label="Light or dark" Options="Schemes" Value="Appearance.Scheme" ValueChanged="Appearance.SetSchemeAsync" />
+        <SchemeChoice />
     </Section>
 
     @if (CanPreview && PreviewingADraft)
@@ -49,13 +49,6 @@
 </Page>
 
 @code {
-    private static readonly IReadOnlyList<SegmentOption<ColourScheme>> Schemes =
-    [
-        new(ColourScheme.Automatic, "Automatic", "smartphone"),
-        new(ColourScheme.Light, "Light", "sun"),
-        new(ColourScheme.Dark, "Dark", "moon"),
-    ];
-
     private bool CanPreview => Access.Can(AppearanceSurfaces.Edit);
 
     private bool PreviewingADraft => Preview.Current?.DraftId is not null;
