@@ -15,6 +15,7 @@ using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Contracts.Media;
 using ProtoBuf.Grpc;
 using ProtoBuf.Grpc.Client;
+using SourceFilter = GSBC.ChurchApp.Features.Feedback.Contracts.SourceFilter;
 
 const string Usage = """
     usage: tools/feedback/feedback.sh --env dev|uat|local [<number>] [--status <status>] [--note "..."] [--all] [--source app|admin]
@@ -67,11 +68,12 @@ for (int index = 0; index < args.Length; index++)
             note = args[++index];
             break;
         case "--source" when index + 1 < args.Length:
-            if (!sources.TryGetValue(args[++index], out source))
+            if (!sources.TryGetValue(args[++index], out SourceFilter chosen))
             {
                 Console.Error.WriteLine($"'{args[index]}' isn't a source. Use app or admin.");
                 return 2;
             }
+            source = chosen;
             break;
         case "--all":
             all = true;

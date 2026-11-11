@@ -19,13 +19,13 @@ public sealed class FeedbackFromAdmin(ChannelBase channel, IDirectUploads upload
 
     public string Page => "/" + navigation.ToBaseRelativePath(navigation.Uri).Split('?', '#')[0];
 
-    public static string Version
+    private static string Version
     {
         get
         {
             string version = Assembly.GetEntryAssembly()?.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "";
             string[] parts = version.Split('+', 2);
-            return parts.Length == 2 && parts[1].Length > ShortCommit ? $"{parts[0]}+{parts[1][..ShortCommit]}" : version;
+            return parts is [_, { Length: > ShortCommit }] ? $"{parts[0]}+{parts[1][..ShortCommit]}" : version;
         }
     }
 

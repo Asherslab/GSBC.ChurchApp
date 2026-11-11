@@ -21,7 +21,7 @@ internal static class FeedbackRules
     public const int LongestPage = 300;
     public const int LongestState = 64 * 1024;
     public const int LongestDetail = 80;
-    public const int MostRecentPages = 8;
+    private const int MostRecentPages = 8;
     public const int MostAttachments = FeedbackLimits.MostAttachments;
     public const int UploadAsksADay = 80;
     public const long LargestPicture = FeedbackLimits.LargestPicture;
@@ -57,7 +57,7 @@ internal static class FeedbackRules
         IsClosed(ticket.Status) && ticket.ClosedAt is { } closed && closed <= now - KeptAfterClosing;
 
     public static DateTime? FilesGoAt(TicketRecord ticket) =>
-        IsClosed(ticket.Status) && ticket.ClosedAt is { } closed && !ticket.AttachmentsDeleted && (ticket.Attachments.Count > 0 || ticket.PhoneData is not null)
+        IsClosed(ticket.Status) && ticket is { ClosedAt: { } closed, AttachmentsDeleted: false } && (ticket.Attachments.Count > 0 || ticket.PhoneData is not null)
             ? closed + FilesKeptAfterClosing
             : null;
 
