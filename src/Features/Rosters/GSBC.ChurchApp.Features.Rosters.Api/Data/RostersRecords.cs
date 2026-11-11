@@ -27,6 +27,7 @@ public sealed class SettingsRecord
     public bool Replies { get; set; } = true;
     public string OpenSwaps { get; set; } = Contracts.OpenSwaps.Team;
     public bool DirectSwaps { get; set; }
+    public List<Guid> Calendars { get; set; } = [];
     public string WhoSees { get; set; } = "";
     public int RemindDaysBefore { get; set; }
     public int NudgeAfterDays { get; set; }

@@ -19,6 +19,6 @@ public sealed class DiaryEventChoices(CalendarDiary diary) : IEventChoices
     private static EventChoiceLine Line(Diary diary, EventOccurrence occurrence)
     {
         CalendarInfo? calendar = diary.Calendar(occurrence.CalendarId);
-        return new EventChoiceLine(occurrence.Id, occurrence.Fields.Title, calendar?.Name ?? "", calendar?.MinistryId, occurrence.StartsAt, occurrence.EndsAt, occurrence.AllDay);
+        return new EventChoiceLine(occurrence.Id, occurrence.Fields.Title, calendar?.Name ?? "", calendar?.MinistryId, occurrence.StartsAt, occurrence.EndsAt, occurrence.AllDay, occurrence.CalendarId);
     }
 }

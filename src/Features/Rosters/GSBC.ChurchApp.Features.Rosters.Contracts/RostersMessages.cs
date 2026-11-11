@@ -34,8 +34,11 @@ public sealed class RosterSettings
     [ProtoMember(5, IsRequired = true)] public int NudgeAfterDays { get; set; } = RosterDefaults.NudgeAfterDays;
     [ProtoMember(6, IsRequired = true)] public string OpenSwaps { get; set; } = Contracts.OpenSwaps.Team;
     [ProtoMember(7)] public bool DirectSwaps { get; set; }
+    [ProtoMember(8)] public List<string> Calendars { get; set; } = [];
 
     public bool SwapsOn => OpenSwaps != Contracts.OpenSwaps.Off || DirectSwaps;
+
+    public bool DrawsFrom(string calendarId, bool ministrysOwn) => Calendars.Count > 0 ? Calendars.Contains(calendarId) : ministrysOwn;
 }
 
 [ProtoContract]
@@ -172,6 +175,7 @@ public sealed class EventChoice
     [ProtoMember(5)] public DateTime EndsAt { get; set; }
     [ProtoMember(6)] public bool AllDay { get; set; }
     [ProtoMember(7)] public bool Own { get; set; }
+    [ProtoMember(8)] public string CalendarId { get; set; } = "";
 }
 
 [ProtoContract]

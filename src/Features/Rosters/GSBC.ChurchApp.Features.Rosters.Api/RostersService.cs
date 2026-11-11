@@ -53,6 +53,7 @@ internal sealed class RostersService(
         DateOnly from = DayOf(request.From) ?? today;
         DateOnly to = DayOf(request.To) ?? today.AddDays(EventChoiceWeeks * 7);
         HashSet<Guid> own = (await calendars.OfAsync(ministry.Id, cancellationToken)).Select(calendar => calendar.Id).ToHashSet();
+        RosterSettings settings = RosterRules.SettingsOf(await db.Settings.AsNoTracking().SingleOrDefaultAsync(each => each.MinistryId == ministry.Id, cancellationToken));
         DateTime now = time.GetUtcNow().UtcDateTime;
         return new EventChoices
         {
@@ -61,7 +62,8 @@ internal sealed class RostersService(
                 .Select(found => new EventChoice
                 {
                     Key = found.Key, Title = found.Title, CalendarName = found.CalendarName, StartsAt = found.StartsAt, EndsAt = found.EndsAt,
-                    AllDay = found.AllDay, Own = own.Contains(found.CalendarId),
+                    AllDay = found.AllDay, Own = settings.DrawsFrom(found.CalendarId.ToString(), own.Contains(found.CalendarId)),
+                    CalendarId = found.CalendarId.ToString(),
                 })
                 .ToList(),
         };
@@ -186,7 +188,7 @@ internal sealed class RostersService(
         if (record is null)
             db.Settings.Add(record = new SettingsRecord { MinistryId = ministry.Id });
         record.Replies = settings.Replies;
-        (record.OpenSwaps, record.DirectSwaps) = (settings.OpenSwaps, settings.DirectSwaps);
+        (record.OpenSwaps, record.DirectSwaps, record.Calendars) = (settings.OpenSwaps, settings.DirectSwaps, settings.Calendars.Select(Guid.Parse).ToList());
         record.WhoSees = settings.WhoSees;
         record.RemindDaysBefore = settings.RemindDaysBefore;
         record.NudgeAfterDays = settings.NudgeAfterDays;

@@ -1,10 +1,25 @@
 @inject RosterWrites Writes
+@inject IRosterReads Reads
 
 <UnsavedGuard Changed="() => Open && Changed" What="how the roster works" Save="SaveAsync" />
 
 <Sheet Open="Open" OpenChanged="OpenChanged" Title="How the roster works" Lead="@($"For {View.MinistryName}. Days away are always allowed.")">
     <ChildContent>
         <ToggleRow Title="Ask people to answer" Description="They say whether they can do each date, and you hear when they can't" @bind-Checked="_draft.Replies" />
+        <h3 class="roster-position">Calendars it rosters from</h3>
+        <p class="roster-hint">Add a date starts with these calendars' events. Every calendar is still there.</p>
+        @if (Open)
+        {
+            <LiveData TValue="IReadOnlyList<EventChoice>" Load="() => Reads.EventChoicesAsync(View.MinistryId)" Feeds="Reads.Feeds">
+                <ChildContent>
+                    @foreach ((string id, string name) in Calendars(context.Value))
+                    {
+                        <ToggleRow @key="id" Title="@name" Checked="_draft.Calendars.Contains(id)" CheckedChanged="on => ToggleCalendar(id, on)" />
+                    }
+                </ChildContent>
+                <Loading><Skeleton Shape="SkeletonShape.Lines" Count="3" /></Loading>
+            </LiveData>
+        }
         <h3 class="roster-position">Swaps</h3>
         <Segmented TValue="string" Label="When someone asks the team" ShowLabel="true" Stacked="true" Value="@_draft.OpenSwaps" ValueChanged="value => _draft.OpenSwaps = value"
                    Options="@([.. OpenSwaps.All.Select(value => new SegmentOption<string>(value, RosterLines.OpenSwapsWords(value)))])" />
@@ -43,8 +58,22 @@
     [Parameter, EditorRequired] public required RosterView View { get; set; }
 
     private bool Changed =>
-        (_draft.Replies, _draft.WhoSees, _draft.RemindDaysBefore, _draft.NudgeAfterDays, _draft.OpenSwaps, _draft.DirectSwaps)
-        != (View.Settings.Replies, View.Settings.WhoSees, View.Settings.RemindDaysBefore, View.Settings.NudgeAfterDays, View.Settings.OpenSwaps, View.Settings.DirectSwaps);
+        (_draft.Replies, _draft.WhoSees, _draft.RemindDaysBefore, _draft.NudgeAfterDays, _draft.OpenSwaps, _draft.DirectSwaps, string.Join(",", _draft.Calendars.Order()))
+        != (View.Settings.Replies, View.Settings.WhoSees, View.Settings.RemindDaysBefore, View.Settings.NudgeAfterDays, View.Settings.OpenSwaps, View.Settings.DirectSwaps,
+            string.Join(",", View.Settings.Calendars.Order()));
+
+    private IEnumerable<(string Id, string Name)> Calendars(IReadOnlyList<EventChoice> choices) =>
+        choices.Where(choice => choice.CalendarId.Length > 0).Select(choice => (choice.CalendarId, choice.CalendarName))
+            .Concat(View.Settings.Calendars.Select(id => (id, "A calendar with nothing coming up")))
+            .DistinctBy(calendar => calendar.Item1)
+            .OrderBy(calendar => calendar.Item2, StringComparer.CurrentCulture);
+
+    private void ToggleCalendar(string id, bool on)
+    {
+        _draft.Calendars.Remove(id);
+        if (on)
+            _draft.Calendars.Add(id);
+    }
 
     protected override void OnInitialized() => _draft = RostersContractsModel.Instance.DeepClone(View.Settings);
 

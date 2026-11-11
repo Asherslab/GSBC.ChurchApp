@@ -224,6 +224,23 @@ public sealed class RosterFlowTests : IAsyncLifetime
     }
 
     [Fact]
+    public async Task AddingADateStartsWithTheCalendarsTheMinistryRostersFrom()
+    {
+        RosterableEvent sunday = _events.Events[Sunday];
+        _events.Events["kids-night"] = sunday with { Key = "kids-night", Title = "Kids night", CalendarId = Guid.CreateVersion7(), CalendarName = "Kids" };
+        await Run(service => service.SaveSettingsAsync(_leader, new SettingsSave
+        {
+            MinistryId = _ministry.ToString(), Settings = new RosterSettings { Calendars = [sunday.CalendarId.ToString(), "not a calendar"] },
+        }, Cancel));
+
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        EventChoices choices = await scope.ServiceProvider.GetRequiredService<RostersService>().EventChoicesAsync(_leader, new RosterQuery { MinistryId = _ministry.ToString() }, Cancel);
+
+        Assert.Equal([(Sunday, true), ("kids-night", false)], choices.Events.OrderBy(choice => choice.Title).Select(choice => (choice.Key, choice.Own)).Reverse());
+        Assert.Equal([sunday.CalendarId.ToString()], (await ViewAsync(_leader)).Settings.Calendars);
+    }
+
+    [Fact]
     public async Task DaysAwayAreThePersonsAndOnlyTheyTheirParentOrTheOfficeSetThem()
     {
         await using (AsyncServiceScope scope = _services.CreateAsyncScope())

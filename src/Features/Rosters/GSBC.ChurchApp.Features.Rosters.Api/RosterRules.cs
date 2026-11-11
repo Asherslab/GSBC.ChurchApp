@@ -95,6 +95,8 @@ internal static class RosterRules
         Replies = settings.Replies,
         OpenSwaps = OpenSwaps.Valid(settings.OpenSwaps) ? settings.OpenSwaps : OpenSwaps.Team,
         DirectSwaps = settings.DirectSwaps,
+        Calendars = settings.Calendars.Select(id => Guid.TryParse(id, out Guid calendar) ? calendar : Guid.Empty).Where(id => id != Guid.Empty).Distinct()
+            .Select(id => id.ToString()).ToList(),
         WhoSees = WhoSees.Valid(settings.WhoSees) ? settings.WhoSees : WhoSees.Everything,
         RemindDaysBefore = Math.Clamp(settings.RemindDaysBefore, 0, MostDaysBefore),
         NudgeAfterDays = Math.Clamp(settings.NudgeAfterDays, 0, MostDaysBefore),
@@ -105,6 +107,7 @@ internal static class RosterRules
         : new RosterSettings
         {
             Replies = record.Replies, OpenSwaps = OpenSwaps.Valid(record.OpenSwaps) ? record.OpenSwaps : OpenSwaps.Team, DirectSwaps = record.DirectSwaps,
+            Calendars = record.Calendars.Select(id => id.ToString()).ToList(),
             WhoSees = WhoSees.Valid(record.WhoSees) ? record.WhoSees : WhoSees.Everything,
             RemindDaysBefore = record.RemindDaysBefore, NudgeAfterDays = record.NudgeAfterDays,
         };
