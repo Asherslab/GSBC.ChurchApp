@@ -27,6 +27,21 @@ export function canCapture() {
 }
 
 const settle = 600;
+const starting = 3000;
+
+function sized(video) {
+  return new Promise((resolve) => {
+    if (video.videoWidth) return resolve();
+    const done = setTimeout(resolve, starting);
+    const ready = () => {
+      if (!video.videoWidth) return;
+      clearTimeout(done);
+      resolve();
+    };
+    video.addEventListener('loadedmetadata', ready);
+    video.addEventListener('resize', ready);
+  });
+}
 
 function frameOrTimeout(video) {
   return new Promise((resolve) => {
@@ -56,7 +71,8 @@ export async function capture(input, layer, name) {
     const video = document.createElement('video');
     video.muted = true;
     video.srcObject = stream;
-    await Promise.race([video.play(), new Promise((resolve) => setTimeout(resolve, settle))]);
+    video.play().catch(() => {});
+    await sized(video);
     await frameOrTimeout(video);
     await frameOrTimeout(video);
     if (!video.videoWidth) return 'failed';
