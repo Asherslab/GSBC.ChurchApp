@@ -1,0 +1,149 @@
+@inject ChatsStore Store
+@inject Shell Shell
+
+<Sheet Open="@(Line is not null && _step == Step.Actions)" OpenChanged="Closed" Label="What to do with this message">
+    @if (Line is not null)
+    {
+        ChatMessage message = Line.Message;
+        bool mine = message.SenderId == Card.You;
+        @if (Card.YouMaySend || Card.ForChildren.Count > 0)
+        {
+            <div class="chat-react-row" role="group" aria-label="React">
+                @foreach (string emoji in Reactions)
+                {
+                    bool yours = message.Reactions.Any(reaction => reaction.Emoji == emoji && reaction.People.Contains(Card.You));
+                    <button type="button" class="chat-react-row__emoji @(yours ? "chat-react-row__emoji--on" : "")" aria-label="@emoji" @onclick="() => ReactAsync(message, emoji, !yours)">@emoji</button>
+                }
+            </div>
+        }
+        <ListGroup>
+            @if (Card.YouMaySend || Card.ForChildren.Count > 0)
+            {
+                <ListRow Title="Reply" Icon="reply" OnClick="() => OnReply.InvokeAsync(message)" />
+            }
+            @if (message.Text.Length > 0)
+            {
+                <ListRow Title="Copy the text" Icon="copy" OnClick="() => CopyAsync(message)" />
+            }
+            @if (mine && Card.YouMaySend || mine && message.ForName.Length > 0)
+            {
+                <ListRow Title="Edit" Icon="pencil" OnClick="() => OnEdit.InvokeAsync(message)" />
+                <ListRow Title="Delete" Icon="trash" Class="row--danger" OnClick="() => _step = Step.Delete" />
+            }
+            else if (Card.YouMayManage)
+            {
+                <ListRow Title="Delete, as a leader" Icon="trash" Class="row--danger" OnClick="() => _step = Step.Delete" />
+            }
+            @if (!mine)
+            {
+                <ListRow Title="Report this message" Icon="flag" OnClick="() => _step = Step.Report" />
+            }
+        </ListGroup>
+    }
+</Sheet>
+
+<Sheet Open="@(Line is not null && _step == Step.Delete)" OpenChanged="Closed" Title="Delete this message?"
+       Lead="Everyone will see that it was deleted. The church keeps a copy, so staff checking the chat can still read it.">
+    <Actions>
+        <Button Block="true" Variant="ButtonVariant.Danger" OnClick="DeleteAsync">Delete the message</Button>
+        <Button Block="true" Variant="ButtonVariant.Quiet" OnClick="() => _step = Step.Actions">Keep it</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="@(Line is not null && _step == Step.Report)" OpenChanged="Closed" Title="Report this message">
+    <ChildContent>
+        @if (Line is not null)
+        {
+            <blockquote class="chat-callout"><strong>@Line.Message.SenderName</strong> @Line.Message.Text</blockquote>
+        }
+        <Segmented TValue="string" Label="Who should see it?" ShowLabel="true" Stacked="true" Options="Routes" Value="_to" ValueChanged="value => _to = value" />
+        <TextField Label="Anything to add? (optional)" Multiline="true" MaxLength="ChatLimits.NoteLength" Value="@_note" ValueChanged="value => _note = value" />
+        <p class="hint">@(Line is null ? "" : ChatText.First(Line.Message.SenderName)) isn't told who reported it. If anyone is in danger, call 000.</p>
+    </ChildContent>
+    <Actions>
+        <Button Block="true" OnClick="ReportAsync">Send the report</Button>
+    </Actions>
+</Sheet>
+
+<Sheet Open="_reported" OpenChanged="open => _reported = open" Title="Thanks, it's reported"
+       Lead="@(_to == ReportRoutes.Auditors ? "The church's safety team is told straight away. Someone will look at it soon." : "The ministry's leaders are told. Someone will look at it soon.")">
+    <Actions>
+        <Button Block="true" OnClick="() => _reported = false">Done</Button>
+    </Actions>
+</Sheet>
+
+@code {
+    private enum Step
+    {
+        Actions,
+        Delete,
+        Report,
+    }
+
+    private static readonly string[] Reactions = ["👍", "❤️", "🙏", "😂", "🙌", "😮"];
+    private Step _step = Step.Actions;
+    private string _to = ReportRoutes.Leaders;
+    private string _note = "";
+    private bool _reported;
+
+    [Parameter, EditorRequired] public required ChatCard Card { get; set; }
+    [Parameter] public ChatLine? Line { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<ChatMessage> OnReply { get; set; }
+    [Parameter] public EventCallback<ChatMessage> OnEdit { get; set; }
+
+    private IReadOnlyList<SegmentOption<string>> Routes =>
+    [
+        new(ReportRoutes.Leaders, $"{Card.MinistryName}'s leaders", Detail: "For things the leaders can sort out."),
+        new(ReportRoutes.Auditors, "The church's safety team", Detail: "Staff and pastors who look after safety in chats. They're told straight away and can pause someone from chats."),
+    ];
+
+    private string? _lineId;
+
+    protected override void OnParametersSet()
+    {
+        if (Line?.Message.Id == _lineId)
+            return;
+        _lineId = Line?.Message.Id;
+        _step = Step.Actions;
+        _note = "";
+        _to = Card.People.FirstOrDefault(person => person.Id == Line?.Message.SenderId)?.Role == ChatRoles.Leader ? ReportRoutes.Auditors : ReportRoutes.Leaders;
+    }
+
+    private async Task Closed(bool open)
+    {
+        if (!open)
+            await OnClose.InvokeAsync();
+    }
+
+    private async Task ReactAsync(ChatMessage message, string emoji, bool on)
+    {
+        await Store.ReactAsync(message, emoji, on);
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task CopyAsync(ChatMessage message)
+    {
+        await Shell.CopyAsync(message.Text);
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task DeleteAsync()
+    {
+        if (Line is not null)
+            await Store.DeleteAsync(Line.Message);
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task ReportAsync()
+    {
+        if (Line is not null)
+        {
+            if (Card.People.FirstOrDefault(person => person.Id == Line.Message.SenderId)?.Role == ChatRoles.Leader && _to == ReportRoutes.Leaders)
+                _to = ReportRoutes.Auditors;
+            await Store.ReportAsync(Line.Message, _to, _note);
+            _reported = true;
+        }
+        await OnClose.InvokeAsync();
+    }
+}

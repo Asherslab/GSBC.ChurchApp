@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Analytics;
 using GSBC.ChurchApp.Platform.Api.Calendars;
+using GSBC.ChurchApp.Platform.Api.Chats;
 using GSBC.ChurchApp.Platform.Api.Destinations;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Installs;
@@ -65,6 +66,7 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IMinistryFacts, NoMinistryFacts>();
         services.TryAddScoped<IRosterableEvents, NoRosterableEvents>();
         services.TryAddScoped<IPermissionHolders, NoPermissionHolders>();
+        services.TryAddScoped<IChatPlaces, NoChatPlaces>();
         services.TryAddScoped<IAccountEmails, NoAccountEmails>();
         services.AddSingleton<PermissionCatalog>();
         services.AddSingleton<MeasureCatalog>();

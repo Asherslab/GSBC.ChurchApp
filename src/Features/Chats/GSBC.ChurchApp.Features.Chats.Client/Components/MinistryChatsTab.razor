@@ -1,0 +1,21 @@
+@using GSBC.ChurchApp.Platform.Client.Modules
+
+<Section First="true">
+    @if (On.MayManage)
+    {
+        <div class="ui-tools">
+            <Button Icon="plus" OnClick="() => _starting = true">New chat</Button>
+        </div>
+    }
+    <ChatsList MinistryId="@On.Id" />
+</Section>
+@if (On.MayManage)
+{
+    <NewChatSheet Open="_starting" OpenChanged="open => _starting = open" MinistryId="@On.Id" MinistryName="@On.Name" HasAttendees="On.HasAttendees" />
+}
+
+@code {
+    private bool _starting;
+
+    [Parameter, EditorRequired] public required MinistryOnPage On { get; set; }
+}

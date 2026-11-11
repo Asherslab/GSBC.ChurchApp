@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Message actions: a menu by the message</title><link rel="stylesheet" href="sketch.css"></head>
+<body class="board three">
+
+<div class="dev"><div class="cap">B · Long-press lifts the message, reactions above it and a menu below (iOS style)</div><div class="screen">
+  <div class="top"><span class="bk"><i class="ic ic-back"></i> Chats</span><span class="ttl"><b>Sound Team</b><small>Team · 8 people</small></span><span class="end"></span></div>
+  <div class="convo blur"><div class="msgs">
+    <div class="m first"><span class="av">SE</span><div class="bub"><span class="nm">Sam Example</span>Can someone cover 6pm?<span class="tm">9:20am</span></div></div>
+    <div class="m first"><span class="av">JP</span><div class="bub"><span class="nm">Jordan Placeholder</span>I'm away sorry<span class="tm">9:22am</span></div></div>
+  </div></div>
+  <div style="position:absolute;right:14px;top:250px;display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div class="reactbar" style="width:300px;box-shadow:var(--lift);background:var(--page)"><span>👍</span><span>❤️</span><span>🙏</span><span>😂</span><span>🙌</span><span class="more"><i class="ic ic-smile"></i></span></div>
+    <div class="m me first"><div class="bub">Yes, I'll be there by 5:15.<span class="tm">9:40am · edited</span></div></div>
+    <div class="ctxmenu">
+      <div class="actrow">Reply<i class="ic ic-reply"></i></div>
+      <div class="actrow">Copy<i class="ic ic-copy"></i></div>
+      <div class="actrow">Edit<i class="ic ic-pencil"></i></div>
+      <div class="actrow">Earlier versions<i class="ic ic-history"></i></div>
+      <div class="actrow danger">Delete<i class="ic ic-trash"></i></div>
+    </div>
+  </div>
+</div></div>
+
+<div class="dev"><div class="cap">B · Earlier versions open under the message, in place</div><div class="screen">
+  <div class="top"><span class="bk"><i class="ic ic-back"></i> Chats</span><span class="ttl"><b>Sound Team</b><small>Team · 8 people</small></span><span class="end"></span></div>
+  <div class="convo"><div class="msgs">
+    <div class="m first"><span class="av">AS</span><div class="bub"><span class="nm">Alex Sample</span>Rehearsal moved to 5:30 this Sunday.<span class="tm">9:12am · edited</span></div></div>
+    <div style="margin:4px 0 0 38px;background:var(--sand);border-radius:12px;padding:10px 12px;font-size:var(--text-caption);color:var(--ink-2)">
+      <b style="color:var(--ink)">Before 9:44am</b><br>Rehearsal moved to 5:00 this Sunday.<br><a class="add">Hide earlier versions</a></div>
+  </div>
+  <div class="composer"><span class="cb"><i class="ic ic-plus"></i></span><span class="cin">Message</span><span class="go off"><i class="ic ic-send"></i></span></div></div>
+</div></div>
+
+<div class="dev"><div class="cap">B · Editing happens in the composer</div><div class="screen">
+  <div class="top"><span class="bk"><i class="ic ic-back"></i> Chats</span><span class="ttl"><b>Sound Team</b><small>Team · 8 people</small></span><span class="end"></span></div>
+  <div class="convo"><div class="msgs">
+    <div class="m me first" style="opacity:.55"><div class="bub">Yes, I'll be there by 5:15.<span class="tm">9:40am</span></div></div>
+  </div>
+  <div class="composer-wrap"><div class="ctx"><i class="ic ic-pencil" style="color:var(--accent)"></i><span>Editing your message. Everyone can see earlier versions.</span><i class="ic ic-x x"></i></div>
+  <div class="composer"><span class="cin typed">Yes, I'll be there by 5:00.</span><span class="go"><i class="ic ic-check"></i></span></div></div></div>
+</div></div>
+
+<span class="note">Sketch · sample names</span>
+</body></html>

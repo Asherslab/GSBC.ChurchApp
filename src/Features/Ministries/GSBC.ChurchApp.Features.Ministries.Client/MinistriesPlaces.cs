@@ -9,6 +9,7 @@ public static class MinistriesPlaces
     public const string Calendar = "calendar";
     public const string Files = "files";
     public const string Roster = "roster";
+    public const string Chats = "chats";
     public const string Sundays = "sundays";
     public const string People = "people";
     public const string Settings = "settings";

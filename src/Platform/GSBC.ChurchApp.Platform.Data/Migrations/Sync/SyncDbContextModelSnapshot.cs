@@ -115,6 +115,9 @@ namespace GSBC.ChurchApp.Platform.Data.Migrations.Sync
                     b.HasIndex("Feed", "Cursor")
                         .HasDatabaseName("ix_feed_changes_feed_cursor");
 
+                    b.HasIndex("Feed", "ScopeId", "Cursor")
+                        .HasDatabaseName("ix_feed_changes_feed_scope_id_cursor");
+
                     b.ToTable("feed_changes", "sync");
                 });
 

@@ -1,0 +1,128 @@
+@inject OversightClient Oversight
+
+<UnsavedGuard Changed="() => _reason.Trim().Length > 0 && _checked is null" What="why you're reading the chat" />
+
+<SplitView Detail="@(Chosen is { } chat ? Detail(chat) : null)" DetailLabel="The chat">
+    <DataTable TItem="DeskChat" Label="Chats" Items="Desk.Chats" Columns="Columns" Key="chat => chat.Id" Selected="Chosen" SelectedChanged="Choose" RowClass="RowClass">
+        <Toolbar>
+            @if (Desk.Ministries.Any(ministry => ministry.MayManage && ministry.ChatsOn))
+            {
+                <Button Icon="plus" OnClick="() => _starting = true">New chat</Button>
+            }
+        </Toolbar>
+        <Empty>
+            <EmptyState Icon="message-square" Title="No chats yet" Body="Chats that leaders start in the ministries you check show here." />
+        </Empty>
+    </DataTable>
+</SplitView>
+
+<StartChatSheet Desk="Desk" Open="_starting" OpenChanged="open => _starting = open" />
+
+@code {
+    private CheckedChat? _checked;
+    private string _reason = "";
+    private string? _problem;
+    private bool _busy;
+    private bool _starting;
+    private bool _deleting;
+
+    [Parameter, EditorRequired] public required Desk Desk { get; set; }
+    [Parameter] public string? Reading { get; set; }
+
+    private string? _chosenId;
+
+    private DeskChat? Chosen => Desk.Chats.FirstOrDefault(chat => chat.Id == (_chosenId ?? Reading));
+
+    private static readonly IReadOnlyList<TableColumn<DeskChat>> Columns =
+    [
+        new("Chat", chat => @<span><span class="cell-strong">@chat.Name</span><br /><span class="quiet">@chat.MinistryName</span></span>, chat => chat.Name),
+        new("For", chat => @<span>@(chat.Kind == ChatKinds.Ask ? "Asking to join" : $"{ChatText.Audience(chat.Audience)}{(chat.Kind == ChatKinds.Channel ? " · leaders post" : "")}")</span>, chat => chat.Audience),
+        new("People", chat => @<span>@chat.People</span>, chat => chat.People, "num"),
+        new("Last message", chat => chat.LastAt is { } at ? @<DateLine At="at" Style="DateLineStyle.Short" WithTime="true" /> : @<span class="quiet">None yet</span>, chat => chat.LastAt, "num optional"),
+        new("Needs", chat => @<span class="chat-flag">@(chat.OpenReports > 0 ? $"{chat.OpenReports} report{(chat.OpenReports == 1 ? "" : "s")}" : chat.Flags.FirstOrDefault())</span>, chat => chat.OpenReports),
+    ];
+
+    private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
+
+    private static string? RowClass(DeskChat chat) => chat.OpenReports > 0 ? "row--urgent" : null;
+
+    private void Choose(DeskChat chat) => (_chosenId, _checked, _reason, _problem, _deleting) = (chat.Id, null, "", null, false);
+
+    private RenderFragment Detail(DeskChat chat) =>
+        @<div class="chat-report">
+            <h2 class="chat-report__title">@chat.Name</h2>
+            <p class="quiet">@chat.MinistryName · @ChatText.Audience(chat.Audience) · @Count(chat.People, "person", "people") · @Count(chat.Messages, "message", "messages")@(chat.HasMinors ? " · parents can read it" : "")</p>
+            @foreach (string flag in chat.Flags)
+            {
+                <Notice Tone="NoticeTone.Warning">@flag</Notice>
+            }
+            @if (_checked?.Chat.Id == chat.Id)
+            {
+                <LoggedNotice>You're reading @chat.Name. The leaders of @chat.MinistryName and the church's chat auditors can see the log.</LoggedNotice>
+                <CheckedMessages Messages="_checked.Messages" />
+                <h3 class="chat-report__sub">Checks of this chat</h3>
+                <ul class="chat-log">
+                    @foreach (LogLine line in _checked.Checks)
+                    {
+                        <li><DateLine At="line.At" Style="DateLineStyle.Short" WithTime="true" /> · @line.ActorName: @line.Words</li>
+                    }
+                </ul>
+            }
+            else
+            {
+                <TextField Label="Why are you reading this chat?" Hint="Kept in the log with your name and the time." Value="@_reason" ValueChanged="value => _reason = value" MaxLength="ChatLimits.NoteLength" />
+                <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+                <Button Icon="eye" Busy="_busy" Disabled="@(_reason.Trim().Length == 0)" OnClick="() => ReadAsync(chat)">Read this chat</Button>
+            }
+            @if (chat.MayManage)
+            {
+                <div class="ui-after">
+                    @if (_deleting)
+                    {
+                        <p class="hint">Everyone loses the chat. The church keeps its messages and the log.</p>
+                        <Button Variant="ButtonVariant.Danger" Busy="_busy" OnClick="() => DeleteAsync(chat)">Delete the chat</Button>
+                        <Button Variant="ButtonVariant.Quiet" OnClick="() => _deleting = false">Keep it</Button>
+                    }
+                    else
+                    {
+                        <Button Variant="ButtonVariant.Quiet" Icon="trash" OnClick="() => _deleting = true">Delete the chat</Button>
+                    }
+                </div>
+            }
+        </div>;
+
+    private async Task ReadAsync(DeskChat chat)
+    {
+        (_busy, _problem) = (true, null);
+        try
+        {
+            _checked = await Oversight.CheckAsync(chat.Id, _reason);
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task DeleteAsync(DeskChat chat)
+    {
+        _busy = true;
+        try
+        {
+            await Oversight.DeleteAsync(chat.Id);
+            _chosenId = "";
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.Status.Detail;
+        }
+        finally
+        {
+            (_busy, _deleting) = (false, false);
+        }
+    }
+}

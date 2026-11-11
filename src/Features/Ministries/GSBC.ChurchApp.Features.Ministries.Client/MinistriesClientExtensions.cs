@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Ministries.Client.Components;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Client.Destinations;
+using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Scopes;
 using GSBC.ChurchApp.Platform.Ui.Surfaces;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +15,8 @@ public static class MinistriesClientExtensions
         services
             .AddMinistriesClient()
             .AddSingleton<IMinistryReads, StoredMinistries>()
-            .AddSingleton<IMinistryWrites, QueuedMinistryWrites>();
+            .AddSingleton<IMinistryWrites, QueuedMinistryWrites>()
+            .AddSingleton<IMinistryPeopleWrites, MinistryPeopleWrites>();
 
     public static IServiceCollection AddMinistriesClient(this IServiceCollection services) =>
         services

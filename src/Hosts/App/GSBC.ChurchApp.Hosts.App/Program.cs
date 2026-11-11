@@ -9,6 +9,7 @@ using GSBC.ChurchApp.Features.Events.App;
 using GSBC.ChurchApp.Features.Ministries.App;
 using GSBC.ChurchApp.Features.Prayer.App;
 using GSBC.ChurchApp.Features.Rosters.App;
+using GSBC.ChurchApp.Features.Chats.App;
 using GSBC.ChurchApp.Features.People.App;
 using GSBC.ChurchApp.Features.Sermons.App;
 using GSBC.ChurchApp.Hosts.App;
@@ -39,6 +40,7 @@ builder.Services
     .AddMinistriesApp(modules)
     .AddPrayerApp(modules)
     .AddRostersApp(modules)
+    .AddChatsApp(modules)
     .AddConfigurationApp(modules)
     .AddMediaClient()
     .AddNotificationsApp(modules)

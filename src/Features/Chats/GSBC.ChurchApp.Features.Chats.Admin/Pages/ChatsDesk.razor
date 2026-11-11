@@ -1,0 +1,57 @@
+@page "/chats"
+@page "/chats/{Tab}"
+@inject OversightClient Oversight
+@inject IPeopleDirectory People
+@inject NavigationManager Navigation
+
+<TitleBand Title="Chats" Lead="Reports about messages, every ministry chat you may check, and people paused from chats. Opening a chat here is logged with your name and the time." />
+
+<LiveData @ref="_live" TValue="Desk" Load="Oversight.DeskAsync" Feeds="[ChatsFeeds.Oversight]" FailedTitle="Can't load chats right now">
+    <TabStrip TValue="string" Label="Chats desk" Options="Tabs(context.Value)" Value="@Current" Href="TabHref" />
+    @switch (Current)
+    {
+        case Reports:
+            <ReportsTab Desk="context.Value" OnRead="ReadFromReport" />
+            break;
+        case ChatsTab:
+            <ChatsTabView Desk="context.Value" Reading="@_reading" />
+            break;
+        case Paused:
+            <PausedTab />
+            break;
+        default:
+            <LogTab />
+            break;
+    }
+</LiveData>
+
+@code {
+    private const string Base = "chats";
+    private const string Reports = "reports";
+    private const string ChatsTab = "all";
+    private const string Paused = "paused";
+    private const string Log = "log";
+
+    private LiveData<Desk>? _live;
+    private string? _reading;
+
+    [Parameter] public string? Tab { get; set; }
+
+    private string Current => Tab ?? Reports;
+
+    private static string TabHref(string tab) => tab == Reports ? Base : $"{Base}/{tab}";
+
+    private static IReadOnlyList<TabOption<string>> Tabs(Desk desk) =>
+    [
+        new(Reports, "Reports", desk.OpenReports > 0 ? desk.OpenReports : null),
+        new(ChatsTab, "Chats"),
+        .. desk.Auditor ? new[] { new TabOption<string>(Paused, "Paused people") } : [],
+        new(Log, "Checks log"),
+    ];
+
+    private void ReadFromReport(string chatId)
+    {
+        _reading = chatId;
+        Navigation.NavigateTo($"{Base}/{ChatsTab}");
+    }
+}

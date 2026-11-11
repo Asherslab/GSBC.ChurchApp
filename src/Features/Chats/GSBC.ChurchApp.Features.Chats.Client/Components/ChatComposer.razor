@@ -1,0 +1,235 @@
+@using GSBC.ChurchApp.Platform.Client.Uploads
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Ui.Content
+@inject ChatsStore Store
+@inject FileUploads Uploads
+
+@if (Chat.Paused)
+{
+    <div class="chat-stop">
+        <span class="chat-stop__tile"><Icon Name="pause" /></span>
+        <span><strong>You can't send messages for now.</strong> The church has paused your chats while it looks into something. Questions: speak to the church office.</span>
+    </div>
+}
+else if (Card.AwaitingYourConsent.Count > 0)
+{
+    <div class="chat-consent">
+        <p class="chat-consent__ask">Can @Names(Card.AwaitingYourConsent) join this chat?</p>
+        <p class="chat-consent__about">@Card.Name in @(Card.MinistryName). @Adults You'll be able to read everything they see.</p>
+        @foreach (PersonRef child in Card.AwaitingYourConsent)
+        {
+            <div class="chat-consent__child">
+                <Avatar Name="@child.Name" Size="32" />
+                <span class="chat-consent__name">@child.Name</span>
+                <Button Small="true" Variant="ButtonVariant.Quiet" OnClick="() => Store.ConsentAsync(Card, child.Id, false)">Not now</Button>
+                <Button Small="true" OnClick="() => Store.ConsentAsync(Card, child.Id, true)">Yes, @ChatText.First(child.Name) can join</Button>
+            </div>
+        }
+    </div>
+}
+else if (!Card.YouMaySend && WritableChildren.Count == 0)
+{
+    <div class="chat-stop">
+        <span class="chat-stop__tile"><Icon Name="@(Card.Kind == ChatKinds.Channel ? "lock" : "eye")" /></span>
+        @if (Card.Kind == ChatKinds.Channel)
+        {
+            <span><strong>Only the leaders post here.</strong> You can react to their messages.</span>
+        }
+        else if (Card.YourRole == ChatRoles.ParentReader)
+        {
+            <span><strong>You can read this chat.</strong> Once your child is in it, you can write for them here.</span>
+        }
+        else
+        {
+            <span><strong>You can read this chat.</strong></span>
+        }
+    </div>
+}
+else
+{
+    <div class="chat-composer">
+        @if (Editing is not null)
+        {
+            <div class="chat-composer__context">
+                <Icon Name="pencil" Size="IconSize.Small" /><span>Editing your message. The church keeps the earlier version.</span>
+                <button type="button" class="icon-btn" aria-label="Stop editing" @onclick="StopAsync"><Icon Name="x" /></button>
+            </div>
+        }
+        else if (ReplyingTo is not null)
+        {
+            <div class="chat-composer__context">
+                <Icon Name="reply" Size="IconSize.Small" /><span class="chat-composer__quote"><strong>@ReplyingTo.SenderName</strong> · @ReplyingTo.Text</span>
+                <button type="button" class="icon-btn" aria-label="Stop replying" @onclick="StopAsync"><Icon Name="x" /></button>
+            </div>
+        }
+        @if (WritableChildren.Count > 0 && !Card.YouMaySend)
+        {
+            <div class="chat-composer__context">
+                @foreach (PersonRef child in WritableChildren)
+                {
+                    <button type="button" class="chat-for @(child.Id == _forChild ? "chat-for--on" : "")" @onclick="() => _forChild = child.Id">For @ChatText.First(child.Name)</button>
+                }
+                <span class="chat-composer__note">Others see it as written by you, for your child.</span>
+            </div>
+        }
+        @if (Suggestions.Count > 0)
+        {
+            <div class="chat-mentions" role="listbox" aria-label="People in this chat">
+                @foreach (ChatPerson person in Suggestions)
+                {
+                    <button type="button" role="option" class="chat-mentions__person" @onclick="() => Mention(person)"><Avatar Name="@person.Name" Size="24" />@person.Name</button>
+                }
+            </div>
+        }
+        @if (_picked.Count > 0)
+        {
+            <div class="chat-picked" aria-label="Photos and files to send">
+                @foreach (MediaRef media in _picked)
+                {
+                    <span class="chat-picked__item">
+                        @if (media.ContentType.StartsWith("image/", StringComparison.Ordinal))
+                        {
+                            <MediaImage Media="media" Alt="@media.FileName" Class="chat-picked__photo" />
+                        }
+                        else
+                        {
+                            <span class="chat-picked__file"><Icon Name="file" Size="IconSize.Small" />@media.FileName</span>
+                        }
+                        <button type="button" class="chat-picked__remove" aria-label="@($"Don't send {media.FileName}")" @onclick="() => UnpickAsync(media)"><Icon Name="x" Size="IconSize.Small" /></button>
+                    </span>
+                }
+            </div>
+        }
+        <div class="chat-composer__bar">
+            @if (Editing is null && Store.CanAttach && _picked.Count < ChatLimits.AttachmentsPerMessage)
+            {
+                <FilePick Label="Add a photo or file" ImagesOnly="false" Class="chat-composer__attach" OnPicked="Picked" />
+            }
+            <textarea class="chat-composer__field" rows="1" placeholder="@Placeholder" aria-label="Message" maxlength="@ChatLimits.TextLength"
+                      value="@_text" @oninput="Typed"></textarea>
+            <button type="button" class="chat-composer__send" aria-label="@(Editing is null ? "Send" : "Save the change")" disabled="@(_text.Trim().Length == 0 && (_picked.Count == 0 || Editing is not null))" @onclick="SendAsync">
+                <Icon Name="@(Editing is null ? "send" : "check")" />
+            </button>
+        </div>
+    </div>
+}
+
+@code {
+    private string _text = "";
+    private string _forChild = "";
+    private string? _editingId;
+    private readonly Dictionary<string, string> _mentions = [];
+    private readonly List<MediaRef> _picked = [];
+
+    [Parameter, EditorRequired] public required Conversation Chat { get; set; }
+    [Parameter] public ChatMessage? Editing { get; set; }
+    [Parameter] public ChatMessage? ReplyingTo { get; set; }
+    [Parameter] public EventCallback OnDone { get; set; }
+
+    private ChatCard Card => Chat.Card;
+
+    private List<PersonRef> WritableChildren => Card.Kind == ChatKinds.Channel
+        ? []
+        : Card.ForChildren.Where(child => Card.People.Any(person => person.Id == child.Id && person.State == ChatStates.Active)).ToList();
+
+    private string Placeholder => WritableChildren.Count > 0 && !Card.YouMaySend
+        ? $"Message for {ChatText.First(WritableChildren.FirstOrDefault(child => child.Id == _forChild)?.Name ?? "your child")}"
+        : "Message";
+
+    private string Adults
+    {
+        get
+        {
+            List<string> carded = Card.People.Where(person => person.BlueCard).Select(person => person.Name).ToList();
+            return carded.Count == 0 ? "" : $"{string.Join(" and ", carded.Take(2))} {(carded.Count == 1 ? "has" : "have")} a current blue card.";
+        }
+    }
+
+    private List<ChatPerson> Suggestions
+    {
+        get
+        {
+            int at = _text.LastIndexOf('@');
+            if (at < 0 || (at > 0 && !char.IsWhiteSpace(_text[at - 1])))
+                return [];
+            string typed = _text[(at + 1)..];
+            if (typed.Contains('\n') || typed.Length > 30)
+                return [];
+            return Card.People
+                .Where(person => person.Id != Card.You && person.State == ChatStates.Active && person.Name.StartsWith(typed, StringComparison.OrdinalIgnoreCase))
+                .Take(5)
+                .ToList();
+        }
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (Editing?.Id != _editingId)
+        {
+            _editingId = Editing?.Id;
+            _text = Editing?.Text ?? Store.DraftOf(Card.Id);
+        }
+        else if (_text.Length == 0)
+        {
+            _text = Store.DraftOf(Card.Id);
+        }
+        if (_forChild.Length == 0 || WritableChildren.All(child => child.Id != _forChild))
+            _forChild = WritableChildren.FirstOrDefault()?.Id ?? "";
+    }
+
+    private void Typed(ChangeEventArgs change)
+    {
+        _text = change.Value?.ToString() ?? "";
+        if (Editing is null)
+            Store.KeepDraft(Card.Id, _text);
+    }
+
+    private void Picked(MediaRef media) => _picked.Add(media);
+
+    private async Task UnpickAsync(MediaRef media)
+    {
+        _picked.Remove(media);
+        await Uploads.ForgetAsync(media);
+    }
+
+    private void Mention(ChatPerson person)
+    {
+        int at = _text.LastIndexOf('@');
+        _text = $"{_text[..at]}@{person.Name} ";
+        _mentions[person.Id] = person.Name;
+        Store.KeepDraft(Card.Id, _text);
+    }
+
+    private async Task SendAsync()
+    {
+        string text = _text.Trim();
+        if (Editing is not null)
+        {
+            if (text.Length == 0)
+                return;
+            await Store.EditAsync(Editing, text);
+        }
+        else
+        {
+            if (text.Length == 0 && _picked.Count == 0)
+                return;
+            await Store.SendAsync(Card, text, ReplyingTo, ChatMentions.Kept(text, _mentions), Card.YouMaySend ? "" : _forChild, _picked.ToList());
+            _picked.Clear();
+        }
+        _text = "";
+        _mentions.Clear();
+        Store.KeepDraft(Card.Id, "");
+        _editingId = null;
+        await OnDone.InvokeAsync();
+    }
+
+    private async Task StopAsync()
+    {
+        if (Editing is not null)
+            _text = Store.DraftOf(Card.Id);
+        await OnDone.InvokeAsync();
+    }
+
+    private static string Names(IReadOnlyList<PersonRef> people) =>
+        people.Count == 1 ? ChatText.First(people[0].Name) : $"{string.Join(", ", people.SkipLast(1).Select(person => ChatText.First(person.Name)))} and {ChatText.First(people[^1].Name)}";
+}

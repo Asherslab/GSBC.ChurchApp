@@ -155,9 +155,14 @@ public sealed class SyncService(
 
     private async Task<FeedBatch> ReadBatchAsync(FeedDefinition feed, long after, ClaimsPrincipal user, CancellationToken cancellationToken)
     {
-        List<FeedChangeRecord> rows = await db.FeedChanges
-            .AsNoTracking()
-            .Where(change => change.Feed == feed.Name && change.Cursor > after)
+        IQueryable<FeedChangeRecord> changes = db.FeedChanges.AsNoTracking().Where(change => change.Feed == feed.Name && change.Cursor > after);
+        if (feed.Audience is FeedAudience.OwnRecordsAudience)
+        {
+            string owner = Caller.UserId(user)?.ToString() ?? "";
+            changes = changes.Where(change => change.ScopeId == owner);
+        }
+
+        List<FeedChangeRecord> rows = await changes
             .OrderBy(change => change.Cursor)
             .Take(PageSize + 1)
             .ToListAsync(cancellationToken);

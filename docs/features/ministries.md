@@ -108,7 +108,7 @@ reminder.**
 2. **Ministries:** structure, team and attendees, join settings, audiences, posts, files, Events calendars, Life
    Groups.
 3. **Rosters.**
-4. **Chats** with safeguarding, reporting and audit.
+4. **Chats** with safeguarding, reporting and audit. **Built 2026-11-11** ([chats.md](chats.md)).
 
 **Open from the interview:** direct messages (who may message whom, whether DMs are auditable and by whom, whether
 they belong to a ministry); how long the church wants anything kept if "forever" changes; the shape of the
@@ -167,6 +167,13 @@ and `ISafeguardingStandings` (blue card and Safe Ministry training, from People'
 **Open for the owner:** every *default* above; suggesting who to put on (from the wizard sketch); Home's Today block;
 archiving a ministry reaches the roster within 10 minutes rather than at once; staff who aren't on a ministry's team use the
 admin panel for its roster (the phone's rows go to its team, leaders and parents).
+## Stage 4, Chats, built (2026-11-11)
+Chats are their own feature: [chats.md](chats.md) has the design, the rules and what's still to do. Chats is a part in
+*What it uses* (`MinistryParts.Chats`, on by default); off hides the tab and every chat of the ministry from everyone,
+leaders included, and the server delivers nothing for it. **Asking to join is a chat** where the ministry uses chats:
+the Join sheet's Ask sends an editable first message ("I'd like to chat about joining {ministry}.") to a chat with the
+asker and the ministry's leaders, and leaders add the person from that chat (*Add to the team*). With Chats off, the old
+ask stays. Ministries' leaders and admins hold `chats.manage` and `chats.check` at their ministry (in `LeaderPatterns`).
 
 ## Stage 2, built (2026-11-10)
 
