@@ -28,12 +28,10 @@ internal sealed class PrayerTelling(INotifications notifications)
         await notifications.RaiseOneOfAsync([arrived, forTheWall], cancellationToken);
     }
 
-    public Task PrayedForAsync(RequestRecord request, CancellationToken cancellationToken) =>
+    public Task PrayedForAsync(RequestRecord request, Guid? prayingUser, CancellationToken cancellationToken) =>
         request.UserId is { } owner
-            ? notifications.RaiseAsync(new Notification(PrayerNotifications.PrayedFor, NotificationAudience.Person(owner),
-                "Someone prayed for your request",
-                request.Prayed == 1 ? "The first prayer for it on the prayer wall." : $"{request.Prayed} prayers for it on the prayer wall so far.",
-                PrayerDestinations.Yours(request.Id), $"prayer/{request.Id:N}/prayed/{request.Prayed}") { Actor = null }, cancellationToken)
+            ? notifications.CollectAsync(new NotificationDigestItem(PrayerNotifications.PrayedFor, NotificationAudience.Person(owner), request.Id.ToString("N"),
+                PrayerDestinations.Yours(request.Id), request.WallShownAt ?? request.SentAt) { Actor = prayingUser }, cancellationToken)
             : Task.CompletedTask;
 
     public Task AnsweredAsync(RequestRecord request, CancellationToken cancellationToken) =>
@@ -48,6 +46,12 @@ internal sealed class PrayerTelling(INotifications notifications)
 
     public Task WallDecidedAsync(RequestRecord request, CancellationToken cancellationToken) =>
         notifications.SettleAsync(WallSubject(request.Id), cancellationToken);
+
+    public async Task DeletedAsync(RequestRecord request, CancellationToken cancellationToken)
+    {
+        await SettledAsync(request, cancellationToken);
+        await notifications.ForgetDigestAsync(PrayerNotifications.PrayedFor, request.Id.ToString("N"), cancellationToken);
+    }
 
     public async Task SettledAsync(RequestRecord request, CancellationToken cancellationToken)
     {

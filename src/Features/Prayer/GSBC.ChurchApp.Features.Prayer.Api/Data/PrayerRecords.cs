@@ -23,7 +23,6 @@ public sealed class RequestRecord
     public DateTime? WallShownAt { get; set; }
     public DateTime? WallUntil { get; set; }
     public int Prayed { get; set; }
-    public DateTime? PrayedToldAt { get; set; }
     public List<NoteRecord> Notes { get; set; } = [];
     public List<StepRecord> Steps { get; set; } = [];
 }

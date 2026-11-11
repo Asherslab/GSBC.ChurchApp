@@ -15,9 +15,24 @@ public sealed record NotificationKind(
     bool Waits = false,
     Permission? For = null,
     bool InAdminPanel = false,
-    NotificationOpens? Opens = null);
+    NotificationOpens? Opens = null,
+    NotificationDigest? Digest = null);
 
 public sealed record NotificationPacing(int Pushes, TimeSpan Per);
+
+public sealed record NotificationDigest(string One, string Many, string Body, DigestSchedule Schedule, Permission? ChangedBy = null)
+{
+    public string Title(int count) => count == 1 ? One : string.Format(System.Globalization.CultureInfo.InvariantCulture, Many, count);
+}
+
+public sealed record DigestSchedule(IReadOnlyList<TimeSpan> After, TimeOnly? DailyAt)
+{
+    public static DigestSchedule Daily(TimeOnly at) => new([], at);
+
+    public bool Equals(DigestSchedule? other) => other is not null && After.SequenceEqual(other.After) && DailyAt == other.DailyAt;
+
+    public override int GetHashCode() => HashCode.Combine(After.Count, DailyAt);
+}
 
 public sealed record NotificationOpens
 {

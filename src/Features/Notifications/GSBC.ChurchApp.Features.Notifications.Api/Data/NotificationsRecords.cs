@@ -112,3 +112,38 @@ public enum AnnouncementState
     Cancelled,
     Recalled,
 }
+
+public sealed class DigestRecord
+{
+    public Guid Id { get; init; }
+    public required string Kind { get; init; }
+    public required string GroupKey { get; init; }
+    public required string AudienceKind { get; set; }
+    public Guid? AudienceUserId { get; set; }
+    public string? AudienceNode { get; set; }
+    public string? AudienceObjectId { get; set; }
+    public required string Link { get; set; }
+    public string? ScopeId { get; set; }
+    public string? Action { get; set; }
+    public DateTime StartedAt { get; init; }
+    public DateTime? DueAt { get; set; }
+    public long SentThrough { get; set; }
+    public DateTime? LastSentAt { get; set; }
+}
+
+public sealed class DigestItemRecord
+{
+    public long Id { get; init; }
+    public Guid DigestId { get; init; }
+    public Guid? ActorId { get; init; }
+    public DateTime At { get; init; }
+}
+
+public sealed class DigestScheduleRecord
+{
+    public required string Kind { get; init; }
+    public int[] AfterMinutes { get; set; } = [];
+    public TimeOnly? DailyAt { get; set; }
+    public DateTime ChangedAt { get; set; }
+    public Guid? ChangedBy { get; set; }
+}

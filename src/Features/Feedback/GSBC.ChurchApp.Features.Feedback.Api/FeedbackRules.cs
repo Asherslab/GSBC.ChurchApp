@@ -69,12 +69,6 @@ internal static class FeedbackRules
         return trimmed.Length <= longest ? trimmed : trimmed[..longest];
     }
 
-    public static string FirstLine(string text)
-    {
-        string line = text.Split('\n', 2)[0].Trim();
-        return line.Length <= 120 ? line : $"{line[..117].TrimEnd()}…";
-    }
-
     public static string StatusName(TicketStatus status) => status switch
     {
         TicketStatus.New => "New",
@@ -85,6 +79,4 @@ internal static class FeedbackRules
     };
 
     public static string From(TicketRecord ticket) => ticket.SenderName.Length > 0 ? ticket.SenderName : "Not signed in";
-
-    public static string SourceName(FeedbackSource source) => source == FeedbackSource.AdminPanel ? "the admin panel" : "the app";
 }

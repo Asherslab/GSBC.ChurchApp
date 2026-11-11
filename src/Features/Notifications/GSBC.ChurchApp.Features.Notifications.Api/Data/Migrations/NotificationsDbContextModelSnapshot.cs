@@ -18,7 +18,7 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("notifications")
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -250,6 +250,141 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasDatabaseName("ix_devices_user_id");
 
                     b.ToTable("devices", "notifications");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Notifications.Api.Data.DigestItemRecord", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<Guid?>("ActorId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("actor_id");
+
+                    b.Property<DateTime>("At")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("at");
+
+                    b.Property<Guid>("DigestId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("digest_id");
+
+                    b.HasKey("Id")
+                        .HasName("pk_digest_items");
+
+                    b.HasIndex("DigestId", "Id")
+                        .HasDatabaseName("ix_digest_items_digest_id_id");
+
+                    b.ToTable("digest_items", "notifications");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Notifications.Api.Data.DigestRecord", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid")
+                        .HasColumnName("id");
+
+                    b.Property<string>("Action")
+                        .HasColumnType("text")
+                        .HasColumnName("action");
+
+                    b.Property<string>("AudienceKind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("audience_kind");
+
+                    b.Property<string>("AudienceNode")
+                        .HasColumnType("text")
+                        .HasColumnName("audience_node");
+
+                    b.Property<string>("AudienceObjectId")
+                        .HasColumnType("text")
+                        .HasColumnName("audience_object_id");
+
+                    b.Property<Guid?>("AudienceUserId")
+                        .HasColumnType("uuid")
+                        .HasColumnName("audience_user_id");
+
+                    b.Property<DateTime?>("DueAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("due_at");
+
+                    b.Property<string>("GroupKey")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("group_key");
+
+                    b.Property<string>("Kind")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.Property<DateTime?>("LastSentAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("last_sent_at");
+
+                    b.Property<string>("Link")
+                        .IsRequired()
+                        .HasColumnType("text")
+                        .HasColumnName("link");
+
+                    b.Property<string>("ScopeId")
+                        .HasColumnType("text")
+                        .HasColumnName("scope_id");
+
+                    b.Property<long>("SentThrough")
+                        .HasColumnType("bigint")
+                        .HasColumnName("sent_through");
+
+                    b.Property<DateTime>("StartedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("started_at");
+
+                    b.HasKey("Id")
+                        .HasName("pk_digests");
+
+                    b.HasIndex("DueAt")
+                        .HasDatabaseName("ix_digests_due_at");
+
+                    b.HasIndex("Kind", "GroupKey")
+                        .IsUnique()
+                        .HasDatabaseName("ix_digests_kind_group_key");
+
+                    b.ToTable("digests", "notifications");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Notifications.Api.Data.DigestScheduleRecord", b =>
+                {
+                    b.Property<string>("Kind")
+                        .HasColumnType("text")
+                        .HasColumnName("kind");
+
+                    b.PrimitiveCollection<int[]>("AfterMinutes")
+                        .IsRequired()
+                        .HasColumnType("integer[]")
+                        .HasColumnName("after_minutes");
+
+                    b.Property<DateTime>("ChangedAt")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("changed_at");
+
+                    b.Property<Guid?>("ChangedBy")
+                        .HasColumnType("uuid")
+                        .HasColumnName("changed_by");
+
+                    b.Property<TimeOnly?>("DailyAt")
+                        .HasColumnType("time without time zone")
+                        .HasColumnName("daily_at");
+
+                    b.HasKey("Kind")
+                        .HasName("pk_digest_schedules");
+
+                    b.ToTable("digest_schedules", "notifications");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Notifications.Api.Data.InboxEntry", b =>
@@ -497,6 +632,16 @@ namespace GSBC.ChurchApp.Features.Notifications.Api.Data.Migrations
                         .HasConstraintName("fk_deliveries_notifications_notification_id");
 
                     b.Navigation("Notification");
+                });
+
+            modelBuilder.Entity("GSBC.ChurchApp.Features.Notifications.Api.Data.DigestItemRecord", b =>
+                {
+                    b.HasOne("GSBC.ChurchApp.Features.Notifications.Api.Data.DigestRecord", null)
+                        .WithMany()
+                        .HasForeignKey("DigestId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired()
+                        .HasConstraintName("fk_digest_items_digests_digest_id");
                 });
 
             modelBuilder.Entity("GSBC.ChurchApp.Features.Notifications.Api.Data.InboxEntry", b =>

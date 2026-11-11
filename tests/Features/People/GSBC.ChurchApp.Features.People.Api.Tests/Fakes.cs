@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Email;
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Permissions;
 using Microsoft.Extensions.DependencyInjection;
@@ -101,4 +102,8 @@ internal sealed class QuietNotifications : INotifications
         Task.FromResult(mostSpecificFirst.Select(NotificationLinks.Checked).ToList());
 
     public Task SettleAsync(string subject, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken) => Task.CompletedTask;
 }

@@ -18,7 +18,7 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
 #pragma warning disable 612, 618
             modelBuilder
                 .HasDefaultSchema("prayer")
-                .HasAnnotation("ProductVersion", "10.0.14")
+                .HasAnnotation("ProductVersion", "10.0.15")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -145,10 +145,6 @@ namespace GSBC.ChurchApp.Features.Prayer.Api.Data.Migrations
                     b.Property<int>("Prayed")
                         .HasColumnType("integer")
                         .HasColumnName("prayed");
-
-                    b.Property<DateTime?>("PrayedToldAt")
-                        .HasColumnType("timestamp with time zone")
-                        .HasColumnName("prayed_told_at");
 
                     b.Property<DateTime>("SentAt")
                         .HasColumnType("timestamp with time zone")

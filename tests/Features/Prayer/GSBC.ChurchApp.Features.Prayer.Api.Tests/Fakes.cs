@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Platform.Api.Notifications;
+using GSBC.ChurchApp.Platform.Contracts.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api.Tests;
@@ -23,6 +24,22 @@ internal sealed class RecordedNotifications : INotifications
     public Task SettleAsync(string subject, CancellationToken cancellationToken)
     {
         Settled.Add(subject);
+        return Task.CompletedTask;
+    }
+
+    public List<NotificationDigestItem> Collected { get; } = [];
+
+    public Task CollectAsync(NotificationDigestItem item, CancellationToken cancellationToken)
+    {
+        Collected.Add(item);
+        return Task.CompletedTask;
+    }
+
+    public List<string> Forgotten { get; } = [];
+
+    public Task ForgetDigestAsync(NotificationKind kind, string group, CancellationToken cancellationToken)
+    {
+        Forgotten.Add(group);
         return Task.CompletedTask;
     }
 }

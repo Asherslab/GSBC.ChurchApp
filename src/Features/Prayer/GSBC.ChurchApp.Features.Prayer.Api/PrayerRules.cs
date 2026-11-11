@@ -52,9 +52,6 @@ internal static class PrayerRules
 
     public static bool IsDueForDeletion(RequestRecord request, DateTime now) => request.ChangedAt <= now - KeptFor;
 
-    public static bool TellAboutPrayers(RequestRecord request, Guid? prayingUser, DateTime now) =>
-        request.UserId is { } owner && owner != prayingUser && (request.PrayedToldAt is not { } told || told <= now - Day);
-
     public static DateTime? ClampedUntil(DateTime until, DateTime now) =>
         until <= now || until > now + LongestOnTheWall ? null : until;
 
