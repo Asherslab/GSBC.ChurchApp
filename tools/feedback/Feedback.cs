@@ -22,7 +22,7 @@ const string Usage = """
       With no number: the open feedback, newest first (--all includes closed; --source only what came from the app or the admin panel).
       With a number: that feedback in full; its screenshots, videos and (from the app) the phone's state are saved to a folder it prints.
       With --status: move it to new, in-progress, fixed (fixed, to check), resolved or not-doing, with an optional note.
-      Resolved and not-doing delete its pictures, videos and phone data.
+      Resolved and not-doing delete its pictures, videos and phone data 7 days later (reopening keeps them).
     """;
 
 Dictionary<string, Uri> gateways = new()
@@ -134,7 +134,7 @@ try
     {
         await desk.SetStatusAsync(new StatusChange { Id = ticket.Line.Id, Status = status, Note = note }, signedIn);
         Console.WriteLine($"#{wanted} is now {Name(status)}.{(note.Length > 0 ? " The note was added." : "")}"
-            + (status is TicketStatus.Resolved or TicketStatus.NotDoing && ticket.Attachments.Count > 0 ? " Its pictures, videos and phone data were deleted." : ""));
+            + (status is TicketStatus.Resolved or TicketStatus.NotDoing && ticket.Attachments.Count > 0 ? $" Its pictures, videos and phone data are deleted on {Day(DateTime.UtcNow.AddDays(FeedbackLimits.FilesKeptDaysAfterClosing))}." : ""));
         return 0;
     }
 
@@ -256,7 +256,9 @@ static void PrintTicket(Ticket ticket, string folder, IReadOnlyList<string> save
     }
     Console.WriteLine();
     if (line.AttachmentsDeleted)
-        Console.WriteLine("Its pictures, videos and phone data were deleted when it closed.");
+        Console.WriteLine("Its pictures, videos and phone data were deleted a week after it closed.");
+    else if (line.FilesGoAt is { } goes)
+        Console.WriteLine($"Its pictures, videos and phone data are deleted on {Day(goes)}.");
     else if (ticket.HadPhoneData && ticket.PhoneData is null)
         Console.WriteLine("A copy of the phone's stored data came with it; downloading it needs the phone data permission.");
     Console.WriteLine(saved.Count == 0 ? "No files with it." : $"Saved to {folder}:");
@@ -276,7 +278,7 @@ static string Name(TicketStatus status) => status switch
 };
 
 static string Details(TicketLine line) =>
-    string.Join(" · ", new[] { SourceName(line.Source), line.AppBuild, line.Source == FeedbackSource.AdminPanel ? line.Browser : line.Model, line.Attachments > 0 ? $"{line.Attachments} attached" : "", line.AttachmentsDeleted ? "files deleted" : "" }
+    string.Join(" · ", new[] { SourceName(line.Source), line.AppBuild, line.Source == FeedbackSource.AdminPanel ? line.Browser : line.Model, line.Attachments > 0 ? $"{line.Attachments} attached" : "", line.AttachmentsDeleted ? "files deleted" : "", line.FilesGoAt is { } goes ? $"files go {Day(goes)}" : "" }
         .Where(part => part.Length > 0));
 
 static string SourceName(FeedbackSource source) => source == FeedbackSource.AdminPanel ? "admin panel" : "app";
@@ -292,5 +294,7 @@ static string SafeName(string fileName, string key)
     string name = string.Concat((fileName.Length > 0 ? fileName : key).Select(c => char.IsLetterOrDigit(c) || c is '.' or '-' or '_' ? c : '-'));
     return name.Length > 0 ? name : "file";
 }
+
+static string Day(DateTime at) => DateTime.SpecifyKind(at, DateTimeKind.Utc).ToLocalTime().ToString("d MMM");
 
 static string When(DateTime at) => DateTime.SpecifyKind(at, DateTimeKind.Utc).ToLocalTime().ToString("yyyy-MM-dd HH:mm");

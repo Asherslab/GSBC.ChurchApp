@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Feedback.Api.Tests;
 
-[Integration("The board's list filters tickets by where they were sent from")]
+[Integration("The board's list filters stored tickets by where they were sent from, and an admin-panel ticket's files go from Media like a phone's")]
 public sealed class AdminPanelTests : FeedbackHost
 {
     [Fact]
@@ -27,5 +27,21 @@ public sealed class AdminPanelTests : FeedbackHost
         Assert.Null(ticket.Phone);
         Assert.Equal("", ticket.InstallId);
         Assert.Equal(["/media", "/"], ticket.Browser?.RecentPages);
+    }
+
+    [Fact]
+    public async Task AdminPanelScreenshotsAreTheTicketsOwnFilesAndGoAWeekAfterItIsResolved()
+    {
+        Guid person = Guid.CreateVersion7();
+        Access.Held[person] = [FeedbackPermissions.SendNode];
+        string id = await SendAsync(null, person, attachments: ["shot"], phoneData: "not-from-a-phone", source: FeedbackSource.AdminPanel);
+        Assert.Equal(["shot"], Media.Uses[FeedbackMedia.AttachmentsOwner(Guid.Parse(id))]);
+
+        await DeskAsync(desk => desk.SetStatusAsync(Staff, new StatusChange { Id = id, Status = TicketStatus.Resolved }, null, Cancel));
+        Clock.Advance(TimeSpan.FromDays(7));
+        await WithAsync(provider => provider.GetRequiredService<FeedbackKeeping>().RunAsync(Cancel));
+
+        Assert.Equal(["shot"], Media.Forgotten);
+        Assert.False((await RecordAsync(id))?.HadPhoneData);
     }
 }

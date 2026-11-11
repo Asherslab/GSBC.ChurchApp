@@ -41,8 +41,8 @@
                     <button type="button" class="ticket__quiet-action" disabled="@(_busy is not null)" @onclick="() => SetStatusAsync(ticket, TicketStatus.NotDoing)">Mark not doing</button>
                 }
                 <span class="ticket__hint">@(FeedbackWords.IsClosed(line.Status)
-                    ? $"Closed {ChurchDates.Ago(ticket.ClosedAt ?? line.ChangedAt, Now)}. Deleted entirely 180 days after it closed."
-                    : "Its pictures, videos and phone data are deleted once it's Resolved or Not doing.")</span>
+                    ? $"Closed {ChurchDates.Ago(ticket.ClosedAt ?? line.ChangedAt, Now)}. {(line.FilesGoAt is { } goes ? FeedbackWords.FilesGo(goes) + " " : "")}Deleted entirely 180 days after it closed."
+                    : $"Its pictures, videos and phone data are deleted {FeedbackLimits.FilesKeptDaysAfterClosing} days after it's Resolved or Not doing.")</span>
             </div>
         </div>
 
@@ -62,7 +62,7 @@
                 }
                 else if (line.AttachmentsDeleted)
                 {
-                    <p class="ticket__gone"><Icon Name="trash" Size="IconSize.Small" />Its pictures and videos were deleted when it closed.</p>
+                    <p class="ticket__gone"><Icon Name="trash" Size="IconSize.Small" />Its pictures and videos were deleted a week after it closed.</p>
                 }
                 @if (FeedbackWords.SaysMore(line.Text))
                 {
@@ -99,38 +99,59 @@
                 <dl class="ticket__facts">
                     <dt>From</dt><dd>@line.From</dd>
                     <dt>Sent</dt><dd>@ChurchDates.Describe(line.SentAt, DateLineStyle.Long, true, Now)</dd>
-                    <dt>App</dt><dd>@AppLine(ticket)</dd>
-                    <dt>Phone</dt><dd>@PhoneLine(ticket)</dd>
-                    @if (ticket.Page.Length > 0)
+                    @if (ticket.Browser is { } browser)
                     {
-                        <dt>Page</dt><dd>@ticket.Page</dd>
-                    }
-                </dl>
-
-                <h3>This phone</h3>
-                @if (ticket.InstallId.Length == 0)
-                {
-                    <p class="ticket__note">Sent by someone with the Feedback role from a phone that hasn't proved itself, so there's no phone to block.</p>
-                }
-                else if (ticket.Blocked)
-                {
-                    <p class="ticket__note"><Pill Tone="PillTone.Danger">Blocked</Pill> @ticket.BlockedBecause</p>
-                    <Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == "block")" OnClick="() => UnblockAsync(ticket)">Unblock this phone</Button>
-                }
-                else
-                {
-                    <p class="ticket__note">@(ticket.FromThisPhone == 1 ? "This is the only feedback from this phone." : $"{ticket.FromThisPhone} pieces of feedback from this phone.")</p>
-                    @if (_blocking)
-                    {
-                        <TextField Label="Why block it?" Hint="Only people who look after feedback see this." MaxLength="300" @bind-Value="_blockReason" />
-                        <div class="ticket__actions">
-                            <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Say why to block it." : null)" OnSave="() => BlockAsync(ticket)" />
-                            <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => (_blocking, _blockReason) = (false, string.Empty)">Cancel</Button>
-                        </div>
+                        <dt>Where</dt><dd>The admin panel</dd>
+                        <dt>Version</dt><dd>@(string.Join(" · ", new[] { browser.Version, ticket.Environment }.Where(part => part.Length > 0)) is { Length: > 0 } version ? version : "Not known")</dd>
+                        <dt>Browser</dt><dd>@(string.Join(" · ", new[] { browser.Browser, browser.System }.Where(part => part.Length > 0)))</dd>
+                        <dt>Window</dt><dd>@(string.Join(" · ", new[] { browser.Window, browser.ColourScheme.Length > 0 ? $"{browser.ColourScheme} mode" : "" }.Where(part => part.Length > 0)))</dd>
+                        @if (ticket.Page.Length > 0)
+                        {
+                            <dt>Page</dt><dd>@(browser.PageTitle.Length > 0 ? $"{browser.PageTitle} ({ticket.Page})" : ticket.Page)</dd>
+                        }
+                        @if (browser.RecentPages.Count > 1)
+                        {
+                            <dt>Before</dt><dd>@string.Join(", ", browser.RecentPages.Skip(1))</dd>
+                        }
                     }
                     else
                     {
-                        <button type="button" class="ticket__danger-link" @onclick="() => _blocking = true">Block this phone</button>
+                        <dt>App</dt><dd>@AppLine(ticket)</dd>
+                        <dt>Phone</dt><dd>@PhoneLine(ticket)</dd>
+                        @if (ticket.Page.Length > 0)
+                        {
+                            <dt>Page</dt><dd>@ticket.Page</dd>
+                        }
+                    }
+                </dl>
+
+                @if (ticket.Browser is null)
+                {
+                    <h3>This phone</h3>
+                    @if (ticket.InstallId.Length == 0)
+                    {
+                        <p class="ticket__note">Sent by someone with the Feedback role from a phone that hasn't proved itself, so there's no phone to block.</p>
+                    }
+                    else if (ticket.Blocked)
+                    {
+                        <p class="ticket__note"><Pill Tone="PillTone.Danger">Blocked</Pill> @ticket.BlockedBecause</p>
+                        <Button Variant="ButtonVariant.Quiet" Small="true" Busy="@(_busy == "block")" OnClick="() => UnblockAsync(ticket)">Unblock this phone</Button>
+                    }
+                    else
+                    {
+                        <p class="ticket__note">@(ticket.FromThisPhone == 1 ? "This is the only feedback from this phone." : $"{ticket.FromThisPhone} pieces of feedback from this phone.")</p>
+                        @if (_blocking)
+                        {
+                            <TextField Label="Why block it?" Hint="Only people who look after feedback see this." MaxLength="300" @bind-Value="_blockReason" />
+                            <div class="ticket__actions">
+                                <SaveBar Label="Block this phone" Busy="@(_busy == "block")" Blocked="@(_blockReason.Trim().Length == 0 ? "Say why to block it." : null)" OnSave="() => BlockAsync(ticket)" />
+                                <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => (_blocking, _blockReason) = (false, string.Empty)">Cancel</Button>
+                            </div>
+                        }
+                        else
+                        {
+                            <button type="button" class="ticket__danger-link" @onclick="() => _blocking = true">Block this phone</button>
+                        }
                     }
                 }
 

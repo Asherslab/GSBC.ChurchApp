@@ -1,7 +1,9 @@
 @using GSBC.ChurchApp.Platform.Client.Uploads
 @using GSBC.ChurchApp.Platform.Contracts.Media
 @using Microsoft.AspNetCore.Components.Forms
+@implements IAsyncDisposable
 @inject FileUploads Uploads
+@inject IJSRuntime JS
 
 <label class="add-row file-pick @(_busy ? "file-pick--busy" : "") @Class">
     @if (ChildContent is null)
@@ -19,6 +21,7 @@
 
 @code {
     private InputFile? _input;
+    private IJSObjectReference? _listening;
     private bool _busy;
     private string? _problem;
 
@@ -32,8 +35,21 @@
     [Parameter] public string? Class { get; set; }
     [Parameter] public RenderFragment<bool>? ChildContent { get; set; }
     [Parameter] public EventCallback<MediaRef> OnPicked { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<ChosenFile>> OnChosen { get; set; }
+    [Parameter] public bool TakesPaste { get; set; }
+    [Parameter] public string? DropOn { get; set; }
+
+    public ElementReference? Input => _input?.Element;
 
     private PickableFiles Chosen => Kinds ?? (ImagesOnly ? PickableFiles.Pictures : PickableFiles.PicturesAndDocuments);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender || (!TakesPaste && DropOn is null) || _input?.Element is not { } input)
+            return;
+        await using IJSObjectReference module = await JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Platform.Ui/js/file-pick.js");
+        _listening = await module.InvokeAsync<IJSObjectReference>("listen", input, DropOn, TakesPaste);
+    }
 
     private async Task PickAsync(InputFileChangeEventArgs args)
     {
@@ -47,12 +63,22 @@
             IReadOnlyList<IBrowserFile> files = Multiple ? args.GetMultipleFiles(int.MaxValue) : [args.File];
             if (files.Count > Limit)
                 problems.Add(Limit == 1 ? "Choose one at a time." : $"Only the first {Limit} were kept; that's the most at once.");
+            List<ChosenFile> chosen = [];
             for (int index = 0; index < Math.Min(files.Count, Limit); index++)
             {
                 IBrowserFile file = files[index];
-                if (Uploads.ContentTypeOf(file.Name, file.ContentType, Chosen) is { } contentType && TooLarge?.Invoke(contentType, file.Size) is { } tooLarge)
+                string? contentType = Uploads.ContentTypeOf(file.Name, file.ContentType, Chosen);
+                if (contentType is not null && TooLarge?.Invoke(contentType, file.Size) is { } tooLarge)
                 {
                     problems.Add(tooLarge);
+                    continue;
+                }
+                if (OnChosen.HasDelegate)
+                {
+                    if (contentType is null)
+                        problems.Add(Uploads.Unusable(file.Name, Chosen));
+                    else
+                        chosen.Add(new ChosenFile(file, contentType));
                     continue;
                 }
                 PickedFile picked = await Uploads.KeepAsync(input, file.Name, file.ContentType, Chosen, AltText, index);
@@ -61,6 +87,8 @@
                 if (picked.Media is { } media)
                     kept.Add(media);
             }
+            if (chosen.Count > 0)
+                await OnChosen.InvokeAsync(chosen);
         }
         finally
         {
@@ -69,5 +97,19 @@
         }
         foreach (MediaRef media in kept)
             await OnPicked.InvokeAsync(media);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_listening is null)
+            return;
+        try
+        {
+            await _listening.InvokeVoidAsync("dispose");
+            await _listening.DisposeAsync();
+        }
+        catch (JSDisconnectedException)
+        {
+        }
     }
 }

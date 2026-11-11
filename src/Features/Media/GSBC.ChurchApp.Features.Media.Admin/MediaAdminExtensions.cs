@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Media.Client;
 using GSBC.ChurchApp.Features.Media.Contracts;
 using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Media.Admin;
@@ -17,6 +18,7 @@ public static class MediaAdminExtensions
             .AddSingleton<MediaLibraryClient>()
             .AddSingleton(provider => new MediaUploadClient(provider.GetRequiredService<Grpc.Core.ChannelBase>(), new HttpClient()))
             .AddSingleton(new MediaDirectUpload(typeof(MediaUpload)))
+            .AddSingleton<IDirectUploads, MediaDirectUploads>()
             .AddSingleton<IFontLibrary>(provider => new FontLibrary(provider.GetRequiredService<Grpc.Core.ChannelBase>(), provider.GetRequiredService<GSBC.ChurchApp.Platform.Client.Access.IAccess>()))
             .AddPlaceAction(new PlaceAction("Open in Media", "image", place => place.Kind == MediaDestinations.File.Key ? "media" : null, MediaPermissions.View, Leads: true));
     }

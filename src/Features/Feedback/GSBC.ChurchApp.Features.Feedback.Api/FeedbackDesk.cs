@@ -71,7 +71,7 @@ internal sealed class FeedbackDesk(
             Notes = ticket.Notes.OrderBy(note => note.At)
                 .Select(note => new TicketNote { Id = note.Id.ToString(), Text = note.Text, Author = NameOf(names, note.AuthorId), At = note.At }).ToList(),
             History = ticket.Steps.OrderBy(step => step.At).ThenBy(step => step.Id)
-                .Select(step => new TicketStep { What = step.What, Who = step.WhoId is null ? FeedbackRules.From(ticket) : NameOf(names, step.WhoId), At = step.At }).ToList(),
+                .Select(step => new TicketStep { What = step.What, Who = WhoTook(ticket, step, names), At = step.At }).ToList(),
             PhoneData = mayReadPhoneData && ticket.PhoneData is { } data ? FeedbackPayloads.Decode<MediaRef>(data) : null,
             HadPhoneData = ticket.HadPhoneData,
             ClosedAt = ticket.ClosedAt,
@@ -87,7 +87,6 @@ internal sealed class FeedbackDesk(
         if (ticket.Status == change.Status && note.Length == 0)
             return;
         DateTime now = time.GetUtcNow().UtcDateTime;
-        bool closing = FeedbackRules.IsClosed(change.Status) && !FeedbackRules.IsClosed(ticket.Status);
         bool leavingNew = ticket.Status == TicketStatus.New && change.Status != TicketStatus.New;
         if (ticket.Status != change.Status)
         {
@@ -97,18 +96,9 @@ internal sealed class FeedbackDesk(
         }
         if (note.Length > 0)
             db.Notes.Add(new NoteRecord { Id = Guid.NewGuid(), TicketId = ticket.Id, AuthorId = staff, Text = note, At = now });
-        List<string> attachments = closing ? ticket.Attachments.Select(attachment => attachment.MediaId).ToList() : [];
-        string? phoneData = closing && ticket.PhoneData is { } data ? FeedbackPayloads.Decode<MediaRef>(data).Id : null;
-        if (closing)
-            ClearMedia(ticket, staff, now);
         ticket.ChangedAt = now;
         FeedbackMarks.Changed(db, ticket.Id, now);
         await db.SaveChangesAsync(cancellationToken);
-        if (closing)
-        {
-            await media.ForgetAttachmentsAsync(ticket.Id, attachments, cancellationToken);
-            await media.ForgetPhoneDataAsync(ticket.Id, phoneData, cancellationToken);
-        }
         if (leavingNew)
             await telling.SettledAsync(ticket, cancellationToken);
     }
@@ -206,14 +196,19 @@ internal sealed class FeedbackDesk(
         return phones;
     }
 
-    private void ClearMedia(TicketRecord ticket, Guid staff, DateTime now)
+    public async Task ForgetFilesAsync(TicketRecord ticket, CancellationToken cancellationToken)
     {
-        if (ticket.Attachments.Count == 0 && ticket.PhoneData is null)
-            return;
+        List<string> attachments = ticket.Attachments.Select(attachment => attachment.MediaId).ToList();
+        string? phoneData = ticket.PhoneData is { } data ? FeedbackPayloads.Decode<MediaRef>(data).Id : null;
+        DateTime now = time.GetUtcNow().UtcDateTime;
         db.Attachments.RemoveRange(ticket.Attachments);
         ticket.PhoneData = null;
         ticket.AttachmentsDeleted = true;
-        Step(ticket, staff, now, "Its pictures, videos and phone data were deleted");
+        Step(ticket, null, now, $"Deleted its pictures, videos and phone data, {FeedbackRules.FilesKeptAfterClosing.Days} days after it closed");
+        FeedbackMarks.Changed(db, ticket.Id, now);
+        await db.SaveChangesAsync(cancellationToken);
+        await media.ForgetAttachmentsAsync(ticket.Id, attachments, cancellationToken);
+        await media.ForgetPhoneDataAsync(ticket.Id, phoneData, cancellationToken);
     }
 
     private void Step(TicketRecord ticket, Guid? staff, DateTime now, string what) =>
@@ -231,6 +226,10 @@ internal sealed class FeedbackDesk(
         return reference.Number > 0 ? await tickets.FirstOrDefaultAsync(ticket => ticket.Number == reference.Number, cancellationToken) : null;
     }
 
+    private static string WhoTook(TicketRecord ticket, StepRecord step, IReadOnlyDictionary<Guid, string> names) => step.WhoId is not null
+        ? NameOf(names, step.WhoId)
+        : step.What == FeedbackRules.SentStep ? FeedbackRules.From(ticket) : "The app";
+
     private static string NameOf(IReadOnlyDictionary<Guid, string> names, Guid? who) => who is { } id ? names.GetValueOrDefault(id, "Someone") : "Someone";
 
     private static TicketLine Line(TicketRecord ticket) => new()
@@ -246,6 +245,7 @@ internal sealed class FeedbackDesk(
             .FirstOrDefault(attachment => attachment.IsImage),
         AppBuild = ticket.Source == FeedbackSource.AdminPanel ? ticket.AppVersion : ticket.AppVersion.Length > 0 ? $"{ticket.AppVersion} ({ticket.AppBuild})" : "",
         Source = ticket.Source,
+        FilesGoAt = FeedbackRules.FilesGoAt(ticket),
         Browser = ticket.Browser,
         Model = ticket.Model,
         ChangedAt = ticket.ChangedAt,

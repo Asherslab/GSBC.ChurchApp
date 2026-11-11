@@ -111,6 +111,7 @@ public sealed class TicketLine
     [ProtoMember(12)] public bool AttachmentsDeleted { get; set; }
     [ProtoMember(13)] public FeedbackSource Source { get; set; }
     [ProtoMember(14)] public string Browser { get; set; } = "";
+    [ProtoMember(15)] public DateTime? FilesGoAt { get; set; }
 }
 
 [ProtoContract]

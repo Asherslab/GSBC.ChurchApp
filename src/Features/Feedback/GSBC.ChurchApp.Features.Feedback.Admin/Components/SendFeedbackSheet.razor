@@ -1,0 +1,213 @@
+@implements IDisposable
+@inject FeedbackFromAdmin Feedback
+@inject IJSRuntime JS
+
+<UnsavedGuard Changed="() => HasDraft" What="your feedback" />
+<Sheet Open="Open" OpenChanged="OpenChanged" Title="Send feedback" Lead="About the admin panel: something broken, looking wrong, or an idea?" LayerClass="feedback-send-layer">
+    <ChildContent>
+        <div class="feedback-send" @ref="_zone">
+            <div class="feedback-send__take">
+                @if (_canCapture)
+                {
+                    <Button Variant="ButtonVariant.Quiet" Icon="camera" Busy="_capturing" Disabled="Room == 0" OnClick="CaptureAsync">Capture this page</Button>
+                }
+                @if (Room > 0)
+                {
+                    <FilePick @ref="_pick" Label="Choose files" Kinds="PickableFiles.PicturesAndVideos" Multiple="true" Limit="Room" TooLarge="FeedbackLimits.TooLarge"
+                              TakesPaste="true" DropOn=".feedback-send" Class="feedback-send__choose" OnChosen="ChosenAsync">
+                        <Icon Name="paperclip" Size="IconSize.Small" /><span>@(context ? "Sending…" : "Choose files")</span>
+                    </FilePick>
+                }
+            </div>
+            <div class="feedback-send__files">
+                @foreach (Attached file in _files)
+                {
+                    <AttachmentThumb Media="file.Media" FileName="@file.Name" Class="feedback-send__thumb" OnRemove="() => _files.Remove(file)" />
+                }
+                @if (Room > 0)
+                {
+                    <p class="feedback-send__drop"><strong>Paste <kbd>@(_commandKey ? "⌘V" : "Ctrl V")</kbd> or drop screenshots and videos</strong><span>Up to @FeedbackLimits.MostAttachments</span></p>
+                }
+            </div>
+            <Notice Tone="NoticeTone.Warning" Text="@_captureProblem" />
+            <TextField Label="Tell us about it" Multiline="true" MaxLength="FeedbackLimits.LongestText" @bind-Value="_text"
+                       Placeholder="What happened, what you expected, or your idea" />
+            <p class="feedback-sentwith"><Icon Name="info" Size="IconSize.Small" /><span>Sent with it: @SentWith</span></p>
+            <Notice Tone="NoticeTone.Warning" Text="@_problem" />
+        </div>
+    </ChildContent>
+    <Actions>
+        <div class="feedback-send__actions">
+            <Button Variant="ButtonVariant.Quiet" OnClick="() => OpenChanged.InvokeAsync(false)">Cancel</Button>
+            <SaveBar Label="Send" Busy="_sending" OnSave="SendAsync" Blocked="@Blocked" />
+        </div>
+    </Actions>
+</Sheet>
+@if (_thanks)
+{
+    <p class="feedback-send__thanks" role="status"><Icon Name="check" Size="IconSize.Small" /><span>Thanks, it's sent.</span></p>
+}
+
+@code {
+    private static readonly TimeSpan ThanksFor = TimeSpan.FromSeconds(5);
+    private readonly List<Attached> _files = [];
+    private readonly CancellationTokenSource _gone = new();
+    private string _ticketId = Guid.NewGuid().ToString();
+    private string _text = "";
+    private ElementReference _zone;
+    private FilePick? _pick;
+    private BrowserHere? _here;
+    private bool _canCapture;
+    private bool _capturing;
+    private bool _commandKey = true;
+    private bool _sending;
+    private bool _thanks;
+    private bool _described;
+    private string? _problem;
+    private string? _captureProblem;
+
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
+    private sealed class Attached(string name)
+    {
+        public string Name { get; } = name;
+        public MediaRef? Media { get; set; }
+    }
+
+    private int Room => FeedbackLimits.MostAttachments - _files.Count;
+
+    private bool HasDraft => _text.Trim().Length > 0 || _files.Count > 0;
+
+    private string? Blocked =>
+        _files.Any(file => file.Media is null) ? "Wait for the files to finish sending."
+        : HasDraft ? null : "Write something or add a picture.";
+
+    private string SentWith
+    {
+        get
+        {
+            string page = _here is { Title.Length: > 0 } here ? $"this page ({here.Title}, {Feedback.Page})" : $"this page ({Feedback.Page})";
+            string browser = _here is null ? "your browser" : $"{_here.Browser} on {_here.System}, a {_here.Window} window in {_here.ColourScheme} mode";
+            return $"{page} and the last few you opened, {browser}, the admin panel's version and your account.";
+        }
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (!Open)
+        {
+            _described = false;
+            return;
+        }
+        _thanks = false;
+        if (_described)
+            return;
+        _described = true;
+        await DescribeAsync();
+    }
+
+    private async Task DescribeAsync()
+    {
+        await using IJSObjectReference module = await ModuleAsync();
+        _here = await module.InvokeAsync<BrowserHere>("describe");
+        _canCapture = await module.InvokeAsync<bool>("canCapture");
+        _commandKey = !_here.System.StartsWith("Windows", StringComparison.Ordinal) && !_here.System.StartsWith("Linux", StringComparison.Ordinal)
+                      && !_here.System.StartsWith("ChromeOS", StringComparison.Ordinal);
+    }
+
+    private ValueTask<IJSObjectReference> ModuleAsync() =>
+        JS.InvokeAsync<IJSObjectReference>("import", "./_content/GSBC.ChurchApp.Features.Feedback.Client/js/feedback-admin.js");
+
+    private async Task CaptureAsync()
+    {
+        if (_pick?.Input is not { } input)
+            return;
+        (_capturing, _captureProblem) = (true, null);
+        try
+        {
+            await using IJSObjectReference module = await ModuleAsync();
+            string name = $"{(_here?.Title is { Length: > 0 } title ? title : "Admin panel")} {_files.Count + 1}.png";
+            _captureProblem = await module.InvokeAsync<string>("capture", input, _zone, name) switch
+            {
+                "refused" => "The browser didn't share this page, so nothing was captured. Paste or choose a screenshot instead.",
+                "unsupported" => "This browser can't capture the page. Paste or choose a screenshot instead.",
+                "failed" => "The page couldn't be captured. Try again, or paste a screenshot.",
+                _ => null,
+            };
+        }
+        finally
+        {
+            _capturing = false;
+        }
+    }
+
+    private async Task ChosenAsync(IReadOnlyList<ChosenFile> chosen)
+    {
+        _problem = null;
+        List<(Attached Slot, ChosenFile File)> sending = chosen.Take(Room).Select(file => (new Attached(file.File.Name), file)).ToList();
+        _files.AddRange(sending.Select(pair => pair.Slot));
+        StateHasChanged();
+        foreach ((Attached slot, ChosenFile file) in sending)
+        {
+            try
+            {
+                await using Stream content = file.File.OpenReadStream(FeedbackLimits.LargestVideo);
+                slot.Media = await Feedback.UploadAsync(_ticketId, content, file.File.Name, file.ContentType, file.File.Size, _gone.Token);
+            }
+            catch (Exception exception) when (exception is RpcException or HttpRequestException or IOException)
+            {
+                _files.Remove(slot);
+                _problem = $"{file.File.Name} couldn't be sent: {(exception is RpcException rpc ? rpc.Status.Detail : exception.Message)}";
+            }
+            StateHasChanged();
+        }
+    }
+
+    private async Task SendAsync()
+    {
+        (_sending, _problem) = (true, null);
+        try
+        {
+            await DescribeAsync();
+            await Feedback.SendAsync(_ticketId, _text, _files.Select(file => file.Media).OfType<MediaRef>().ToList(), _here!);
+            _files.Clear();
+            _text = "";
+            _ticketId = Guid.NewGuid().ToString();
+            await OpenChanged.InvokeAsync(false);
+            _ = ThankAsync();
+        }
+        catch (RpcException exception)
+        {
+            _problem = exception.StatusCode == StatusCode.ResourceExhausted
+                ? $"You've sent {FeedbackLimits.WithTheRoleADay} today, the most for a day. Your words and files are kept here; send it tomorrow."
+                : $"It couldn't be sent: {exception.Status.Detail} Your words and files are kept here.";
+        }
+        finally
+        {
+            _sending = false;
+        }
+    }
+
+    private async Task ThankAsync()
+    {
+        _thanks = true;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(ThanksFor, _gone.Token);
+        }
+        catch (OperationCanceledException)
+        {
+            return;
+        }
+        _thanks = false;
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        _gone.Cancel();
+        _gone.Dispose();
+    }
+}

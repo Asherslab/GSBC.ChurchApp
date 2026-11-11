@@ -39,9 +39,9 @@ internal sealed class FeedbackSending(
         }
 
         IReadOnlyList<MediaRef> attachments = await media.VerifyAsync(send.AttachmentIds.Distinct().ToList(), cancellationToken);
-        MediaRef? phoneData = send.PhoneDataId.Length > 0 ? (await media.VerifyAsync([send.PhoneDataId], cancellationToken)).SingleOrDefault() : null;
-        DateTime now = time.GetUtcNow().UtcDateTime;
         bool fromAdmin = send.Source == FeedbackSource.AdminPanel;
+        MediaRef? phoneData = !fromAdmin && send.PhoneDataId.Length > 0 ? (await media.VerifyAsync([send.PhoneDataId], cancellationToken)).SingleOrDefault() : null;
+        DateTime now = time.GetUtcNow().UtcDateTime;
         PhoneDetails phone = (fromAdmin ? null : send.Phone) ?? new PhoneDetails();
         BrowserDetails browser = (fromAdmin ? send.Browser : null) ?? new BrowserDetails();
         TicketRecord ticket = new()
@@ -69,12 +69,12 @@ internal sealed class FeedbackSending(
             RecentPages = FeedbackRules.RecentPages(browser.RecentPages),
             Page = FeedbackRules.Clip(send.Page, FeedbackRules.LongestPage),
             State = FeedbackRules.Clip(send.State, FeedbackRules.LongestState),
-            PhoneData = phoneData is null || fromAdmin ? null : FeedbackPayloads.Encode(phoneData),
-            HadPhoneData = phoneData is not null && !fromAdmin,
+            PhoneData = phoneData is null ? null : FeedbackPayloads.Encode(phoneData),
+            HadPhoneData = phoneData is not null,
         };
         ticket.Attachments.AddRange(attachments.Select((attachment, position) =>
             new AttachmentRecord { Position = position, MediaId = attachment.Id, Media = FeedbackPayloads.Encode(attachment) }));
-        ticket.Steps.Add(new StepRecord { At = now, What = "Sent" });
+        ticket.Steps.Add(new StepRecord { At = now, What = FeedbackRules.SentStep });
         db.Tickets.Add(ticket);
         FeedbackMarks.Changed(db, ticket.Id, now);
         await db.SaveChangesAsync(cancellationToken);

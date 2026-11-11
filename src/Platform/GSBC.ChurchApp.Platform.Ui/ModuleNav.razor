@@ -4,6 +4,7 @@
 @inject SidebarPins Pins
 @inject NavigationManager Navigation
 @inject Shell Shell
+@inject IEnumerable<SidebarAction> Actions
 
 <nav class="module-nav" aria-label="Main">
     <button type="button" class="module-nav__jump" aria-keyshortcuts="Meta+K Control+K" @ref="_first" @onclick="() => _jumping = true">
@@ -78,9 +79,21 @@
         </div>
     }
 
-    @if (Plan.Foot.Count > 0)
+    @if (Plan.Foot.Count > 0 || PermittedActions.Count > 0)
     {
         <div class="module-nav__group module-nav__foot">
+            @foreach (SidebarAction action in PermittedActions)
+            {
+                bool open = _opened == action;
+                <div class="module-nav__row">
+                    <button type="button" class="module-nav__link @(open ? "active" : "")" aria-haspopup="dialog" aria-expanded="@(open ? "true" : "false")"
+                            @onclick="() => _opened = action">
+                        <Icon Name="@action.Icon" Size="IconSize.Small" />
+                        <span class="module-nav__title">@action.Title</span>
+                    </button>
+                </div>
+                @action.Sheet(new SidebarSheet(open, EventCallback.Factory.Create<bool>(this, isOpen => _opened = isOpen ? action : null)))
+            }
             @foreach (NavEntry entry in Plan.Foot)
             {
                 @Link(entry, marksHere: true)
@@ -101,10 +114,13 @@
     private WindowChannel? _jumpKey;
     private bool _commandKey = true;
     private bool _jumping;
+    private SidebarAction? _opened;
 
     [Parameter] public IReadOnlyDictionary<string, int>? Counts { get; set; }
 
     private IReadOnlyList<NavEntry> Permitted => SidebarPlan.InOrder(Modules.Navigation.Where(entry => entry.Requires is null || Access.CanSomewhere(entry.Requires)));
+
+    private IReadOnlyList<SidebarAction> PermittedActions => Actions.Where(action => Access.CanSomewhere(action.Requires)).ToList();
 
     private SidebarPlan Plan => SidebarPlan.Of(Permitted, Pins.Hrefs, _folds, _here, Counts);
 

@@ -30,6 +30,8 @@ internal static class FeedbackRules
 
     public static readonly TimeSpan Day = TimeSpan.FromDays(1);
     public static readonly TimeSpan KeptAfterClosing = TimeSpan.FromDays(180);
+    public static readonly TimeSpan FilesKeptAfterClosing = TimeSpan.FromDays(FeedbackLimits.FilesKeptDaysAfterClosing);
+    public const string SentStep = "Sent";
     public static readonly TimeSpan UnsentUploadsKeptFor = TimeSpan.FromDays(4);
 
     public static int DailyLimit(Sender sender) => sender.HoldsTheRole ? FeedbackLimits.WithTheRoleADay : FeedbackLimits.PerPhoneADay;
@@ -53,6 +55,13 @@ internal static class FeedbackRules
 
     public static bool IsDueForDeletion(TicketRecord ticket, DateTime now) =>
         IsClosed(ticket.Status) && ticket.ClosedAt is { } closed && closed <= now - KeptAfterClosing;
+
+    public static DateTime? FilesGoAt(TicketRecord ticket) =>
+        IsClosed(ticket.Status) && ticket.ClosedAt is { } closed && !ticket.AttachmentsDeleted && (ticket.Attachments.Count > 0 || ticket.PhoneData is not null)
+            ? closed + FilesKeptAfterClosing
+            : null;
+
+    public static bool FilesAreDue(TicketRecord ticket, DateTime now) => FilesGoAt(ticket) is { } goes && goes <= now;
 
     public static string Clip(string? value, int longest)
     {

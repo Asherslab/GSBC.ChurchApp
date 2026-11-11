@@ -10,6 +10,8 @@ public static class FeedbackLimits
     public const long LargestVideo = 150L * 1024 * 1024;
     public const long LargestPhoneData = 100L * 1024 * 1024;
 
+    public const int FilesKeptDaysAfterClosing = 7;
+
     public const string NotAvailable = "Feedback isn't available on this phone.";
 
     public static string? TooLarge(string contentType, long bytes)

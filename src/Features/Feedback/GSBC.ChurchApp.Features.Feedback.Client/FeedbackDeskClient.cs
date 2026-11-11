@@ -10,7 +10,8 @@ public sealed class FeedbackDeskClient(ChannelBase channel)
 {
     private readonly IFeedbackDeskService _desk = channel.CreateGrpcService<IFeedbackDeskService>();
 
-    public async Task<DeskList> ListAsync(DeskFilter filter, string search = "") => await _desk.ListAsync(new DeskQuery { Filter = filter, Search = search });
+    public async Task<DeskList> ListAsync(DeskFilter filter, string search = "", SourceFilter source = SourceFilter.Both) =>
+        await _desk.ListAsync(new DeskQuery { Filter = filter, Search = search, Source = source });
 
     public async Task<Ticket> TicketAsync(int number) => await _desk.TicketAsync(new TicketRef { Number = number });
 
