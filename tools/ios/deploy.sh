@@ -85,7 +85,7 @@ dotnet publish "$app" -c "$configuration" -o "$root/out/app" -nologo > "$root/ou
   || { tail -30 "$root/out/app.publish.log"; exit 1; }
 
 echo "== Syncing the iOS shell"
-[ -d "$shell/node_modules" ] || (cd "$shell" && npm ci --include=dev)
+[ "$shell/node_modules/.package-lock.json" -nt "$shell/package-lock.json" ] || (cd "$shell" && npm ci --include=dev)
 (cd "$shell" && npx cap sync ios >/dev/null)
 
 echo "== Building for $target $device"

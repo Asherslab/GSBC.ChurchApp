@@ -1314,3 +1314,15 @@ button.text-link:disabled { color: var(--ink-3); cursor: default; }
   .stage-pipeline__stage svg { display: none; }
   .stage-pipeline__stage { padding-left: calc(var(--notch) + 4px); padding-right: calc(var(--notch) + 2px); }
 }
+
+:root.keyboard-open { --tab-h: 0px; --sab: 0px; }
+.keyboard-open body { background: var(--page); }
+.keyboard-open .shell { bottom: var(--kb, 0px); }
+.keyboard-open .tabbar, .keyboard-open .preview-banner { display: none; }
+.keyboard-open .sheet { bottom: var(--kb, 0px); max-height: calc(100dvh - var(--kb, 0px) - var(--sat) - 12px); }
+.keyboard-open .editor-foot { bottom: 0; }
+.keyboard-open .editor-foot > :not(.editor-foot__actions, .notice) { display: none; }
+.keyboard-open :focus { scroll-margin-bottom: calc(var(--foot, 0px) + 16px); }
+@media (min-width: 720px) {
+  .keyboard-open .sheet { bottom: calc(50% + var(--kb, 0px) / 2); }
+}
