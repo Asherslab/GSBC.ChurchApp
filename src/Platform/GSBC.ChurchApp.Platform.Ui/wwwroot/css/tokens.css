@@ -20,7 +20,7 @@
   --segment-on: var(--surface);
   --ink: #18233a;
   --ink-2: #545e70;
-  --ink-3: #6b7384;
+  --ink-3: #626a79;
   --line: rgb(42 61 94 / 0.12);
   --scrim: rgb(0 0 0 / 0.38);
   --video-ground: #000;
@@ -39,7 +39,7 @@
   --primary: #2a3d5e;
   --on-primary: #ffffff;
   --accent: #00776d;
-  --live: #00877c;
+  --live: #008176;
   --on-live: #ffffff;
   --marker: #e7ae74;
   --marker-ink: #8a5422;

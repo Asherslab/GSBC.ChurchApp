@@ -17,7 +17,6 @@
 .month-steps__year { margin-right: auto; font-size: var(--text-label); }
 .month-steps .segmented { margin-right: 6px; }
 .month-steps .icon-btn { color: var(--on-masthead); }
-.month-steps .icon-btn:disabled { opacity: 0.35; }
 .month-body { padding: 12px 0 0; }
 .month-swipe .month-grid { padding: 0 14px; }
 .month-body .month-key { margin-inline: 14px; }
@@ -28,7 +27,8 @@
 .month-grid__day:hover { background: var(--sand); }
 .month-grid__date { font-size: var(--text-row); font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .month-grid__day--past { color: var(--ink-3); }
-.month-grid__day--outside { opacity: 0.45; }
+.month-grid__day--outside { color: var(--ink-3); }
+.month-grid__day--outside .month-grid__date { font-weight: 400; }
 .month-grid__day[aria-selected="true"] { box-shadow: inset 0 0 0 2px var(--primary); }
 .month-grid__day--today, .month-grid__day--today:hover { background: var(--primary); color: var(--on-primary); }
 .month-grid__marks { display: flex; gap: 3px; height: 6px; }
@@ -292,7 +292,6 @@ a.whats-next-card__title:active { opacity: 0.7; }
 .digest-row__moves { display: flex; justify-content: flex-end; }
 .digest-row__moves .icon-btn { width: 32px; height: 32px; color: var(--ink-3); transition: color 140ms var(--ease-out), background 140ms var(--ease-out); }
 .digest-row__moves .icon-btn:hover:not(:disabled) { background: var(--sand); color: var(--ink); }
-.digest-row__moves .icon-btn:disabled { opacity: 0.3; cursor: default; }
 .digest-row__moves .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .digest-row--chosen .digest-row__moves .icon-btn:hover:not(:disabled) { background: var(--sand-strong); }
 .digest-row--left-out .digest-row__thumb { opacity: 0.5; }
