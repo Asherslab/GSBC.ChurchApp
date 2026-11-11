@@ -1,0 +1,107 @@
+@using GSBC.ChurchApp.Platform.Client.Notifications
+@using GSBC.ChurchApp.Platform.Contracts.Notifications
+@inject DigestSchedulesClient Schedules
+
+<UnsavedGuard Changed="() => _form is not null && _form != _saved" What="the times" />
+
+<LiveData TValue="DigestScheduleMessage" Load="LoadAsync" FailedTitle="Can't load the times right now">
+    @{ Shape(context.Value); }
+    <section class="prayed-times" aria-labelledby="prayed-times-title">
+        <h2 id="prayed-times-title" class="prayed-times__title">When people hear someone prayed</h2>
+        <p class="prayed-times__lead">When someone prays for a request on the prayer wall, the person who asked hears about it in the app. These are the times their phone tells them, counted from when it went on the wall.</p>
+
+        <ol class="prayed-times__line" aria-label="When they're told">
+            <li class="prayed-times__stop prayed-times__stop--start"><span>On the wall</span></li>
+            @foreach (int minutes in _form!.After)
+            {
+                <li class="prayed-times__stop"><span>@PrayedTimes.Short(minutes)</span></li>
+            }
+            @if (_form.DailyAt is { } daily)
+            {
+                <li class="prayed-times__stop prayed-times__stop--daily"><span>Then every day at @PrayedTimes.Clock(daily)</span></li>
+            }
+        </ol>
+
+        <div class="prayed-times__group">
+            <h3 class="prayed-times__heading">A few times after it goes on the wall</h3>
+            <p class="prayed-times__hint">Each one says how many prayed since the last. Nothing goes when nobody did.</p>
+            <ChipPicker TItem="int" Label="Times after it goes on the wall" Items="PrayedTimes.Choices" Text="PrayedTimes.Long" Chosen="_form.After"
+                        ChosenChanged="ChooseTimes" Placeholder="Add a time" Empty="Every time is chosen" />
+        </div>
+
+        <div class="prayed-times__group">
+            <ToggleRow Title="Then once a day" Description="While people keep praying for it" Checked="@(_form.DailyAt is not null)" CheckedChanged="ChooseDaily" />
+            @if (_form.DailyAt is { } at)
+            {
+                <SelectField Label="Each day at" Options="PrayedTimes.DayTimes" Value="@at.ToString(System.Globalization.CultureInfo.InvariantCulture)"
+                             ValueChanged="ChooseDayTime" Hint="Church time. Before 7am or after 9pm, phones buzz at 7am." />
+            }
+        </div>
+
+        @if (context.Value.MayChange)
+        {
+            <div class="prayed-times__actions">
+                <SaveBar Label="Save" Busy="_busy" OnSave="SaveAsync" Blocked="@Problem" />
+                @if (_form != Usual(context.Value))
+                {
+                    <Button Variant="ButtonVariant.Quiet" Small="true" OnClick="() => _form = Usual(context.Value)">Back to the usual times</Button>
+                }
+            </div>
+        }
+        else
+        {
+            <Notice Text="Only the pastoral team can change these." />
+        }
+        <p class="prayed-times__hint">People can turn these off in Notification settings.</p>
+    </section>
+</LiveData>
+
+@code {
+    private Times? _saved;
+    private Times? _form;
+    private bool _busy;
+
+    private string? Problem => _form is { After.Count: 0, DailyAt: null } ? "Choose at least one time." : null;
+
+    private Task<DigestScheduleMessage> LoadAsync() => Schedules.GetAsync(PrayerNotifications.PrayedFor.Key);
+
+    private void Shape(DigestScheduleMessage schedule)
+    {
+        Times stored = new([.. schedule.AfterMinutes], schedule.DailyAtMinute);
+        if (_form is null || _form == _saved)
+            _form = stored;
+        _saved = stored;
+    }
+
+    private static Times Usual(DigestScheduleMessage schedule) => new([.. schedule.DefaultAfterMinutes], schedule.DefaultDailyAtMinute);
+
+    private void ChooseTimes(IReadOnlyList<int> chosen) => _form = _form! with { After = [.. chosen.Order()] };
+
+    private void ChooseDaily(bool on) => _form = _form! with { DailyAt = on ? _saved?.DailyAt ?? PrayedTimes.Midday : null };
+
+    private void ChooseDayTime(string minute) => _form = _form! with { DailyAt = int.Parse(minute, System.Globalization.CultureInfo.InvariantCulture) };
+
+    private async Task SaveAsync()
+    {
+        _busy = true;
+        try
+        {
+            DigestScheduleMessage saved = await Schedules.ChangeAsync(new DigestScheduleChange
+            {
+                Kind = PrayerNotifications.PrayedFor.Key, AfterMinutes = [.. _form!.After], DailyAtMinute = _form.DailyAt,
+            });
+            _saved = _form = new Times([.. saved.AfterMinutes], saved.DailyAtMinute);
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private sealed record Times(IReadOnlyList<int> After, int? DailyAt)
+    {
+        public bool Equals(Times? other) => other is not null && After.SequenceEqual(other.After) && DailyAt == other.DailyAt;
+
+        public override int GetHashCode() => HashCode.Combine(After.Count, DailyAt);
+    }
+}
