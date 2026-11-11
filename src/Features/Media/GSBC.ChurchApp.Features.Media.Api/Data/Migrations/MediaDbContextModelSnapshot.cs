@@ -104,6 +104,10 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .HasColumnType("text")
                         .HasColumnName("alt_text");
 
+                    b.Property<string>("Area")
+                        .HasColumnType("text")
+                        .HasColumnName("area");
+
                     b.Property<string>("AudiencePermission")
                         .HasColumnType("text")
                         .HasColumnName("audience_permission");
@@ -266,6 +270,10 @@ namespace GSBC.ChurchApp.Features.Media.Api.Data.Migrations
                         .IsRequired()
                         .HasColumnType("text")
                         .HasColumnName("alt_text");
+
+                    b.Property<string>("Area")
+                        .HasColumnType("text")
+                        .HasColumnName("area");
 
                     b.Property<string>("AudiencePermission")
                         .HasColumnType("text")

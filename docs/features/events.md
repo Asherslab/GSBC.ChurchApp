@@ -873,8 +873,9 @@ through Sync and writes through the outbox). So on the phone:
 - **Pictures (owner, 2026-11-11):** "those that *are* synced already (as some will be) can be browsed offline.
   otherwise online." The chooser shows *On this phone* first (pictures on events the phone holds, this calendar's
   first), which work offline; the whole library is browsed live when online, as in the admin panel, and offline says
-  it needs a connection. Uploading stays a direct call (approved). Uploading offline, kept and sent later (owner,
-  2026-11-11), waits for the shared piece being built in Platform.Client.
+  it needs a connection. Uploading on the phone keeps the picture on the phone and sends it with
+  the save (owner, 2026-11-11; built the same day, offline-and-caching.md, *Files in the outbox*): the editor shows it
+  at once, the save waits for it, and deleting the event before it's sent drops both.
 - **Not changed yet:** the week and month don't show a waiting change until it's sent and synced back.
 
 ## What the owner sets up

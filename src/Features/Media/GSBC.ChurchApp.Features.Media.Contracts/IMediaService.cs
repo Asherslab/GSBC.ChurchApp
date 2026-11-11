@@ -7,13 +7,13 @@ namespace GSBC.ChurchApp.Features.Media.Contracts;
 [Service("gsbc.media.Media")]
 public interface IMediaService
 {
-    [Requires(MediaPermissions.UploadNode)]
+    [SignedIn]
     ValueTask<UploadTicket> BeginUploadAsync(BeginUploadRequest request, CallContext context = default);
 
-    [Requires(MediaPermissions.UploadNode)]
+    [SignedIn]
     ValueTask<UploadedMedia> CompleteUploadAsync(CompleteUploadRequest request, CallContext context = default);
 
-    [Requires(MediaPermissions.UploadNode)]
+    [SignedIn]
     ValueTask<MediaMatches> FindByHashAsync(FindByHashRequest request, CallContext context = default);
 
     [SignedIn]

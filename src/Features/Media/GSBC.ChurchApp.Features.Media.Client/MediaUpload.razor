@@ -1,4 +1,7 @@
+@using GSBC.ChurchApp.Platform.Client.Online
+@attribute [AdminOnly]
 @inject MediaClient Media
+@inject MediaUploadClient Uploads
 @inject IJSRuntime JS
 
 <UnsavedGuard Changed="() => _file is not null" What="@(_busy ? "the upload that's still going" : "the picture you chose")" />
@@ -153,7 +156,7 @@
         if (_picker?.Element is not { } input)
             return null;
         await using IJSObjectReference module = await ImportAsync();
-        return await module.InvokeAsync<string?>("sha256", input) is { } sha256 ? await Media.FindAsync(sha256, ContentTypeOf(file), PrivateTo) : null;
+        return await module.InvokeAsync<string?>("sha256", input) is { } sha256 ? await Uploads.FindAsync(sha256, ContentTypeOf(file), PrivateTo) : null;
     }
 
     private async Task UseExistingAsync()
@@ -186,7 +189,7 @@
         try
         {
             await using Stream content = _file.OpenReadStream(maxAllowedSize: long.MaxValue);
-            UploadedMedia uploaded = await Media.UploadAsync(new BeginUploadRequest
+            UploadedMedia uploaded = await Uploads.UploadAsync(new BeginUploadRequest
             {
                 FileName = _file.Name,
                 ContentType = ContentTypeOf(_file),

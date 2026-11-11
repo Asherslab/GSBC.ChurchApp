@@ -21,6 +21,10 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         "retryOutbox",
         "discardOutbox",
         "discardQuietOutbox",
+        "stageUpload",
+        "appendUpload",
+        "finishUpload",
+        "forgetUpload",
         "takeCrashes",
         "cachedMedia",
         "fetchMedia",
@@ -298,12 +302,53 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
         guard let method = call.getString("method"), let request = Data(base64Encoded: call.getString("request") ?? "") else {
             return call.reject("enqueue needs a method and a base64 request")
         }
+        guard let uploads = Self.uploads(call.getArray("uploads") as? [[String: Any]] ?? []) else {
+            return call.reject("enqueue's uploads need a file, its name, type and size, three calls and where the file goes")
+        }
         Task {
             do {
-                call.resolve(["id": try await outbox.enqueue(method: method, request: request, quiet: call.getBool("quiet") ?? false)])
+                call.resolve(["id": try await outbox.enqueue(method: method, request: request, quiet: call.getBool("quiet") ?? false, uploads: uploads)])
             } catch {
                 call.reject(error.localizedDescription)
             }
+        }
+    }
+
+    @objc func stageUpload(_ call: CAPPluginCall) {
+        guard let shelf = runtime.shelf else { return call.reject("This build can't keep files for sending.") }
+        do {
+            call.resolve(["token": try shelf.begin(extension: call.getString("extension") ?? "")])
+        } catch {
+            call.reject(error.localizedDescription)
+        }
+    }
+
+    @objc func appendUpload(_ call: CAPPluginCall) {
+        guard let shelf = runtime.shelf, let token = call.getString("token"),
+              let data = Data(base64Encoded: call.getString("data") ?? "") else { return call.reject("appendUpload needs a token and base64 data") }
+        do {
+            try shelf.append(token, data)
+            call.resolve()
+        } catch {
+            call.reject(error.localizedDescription)
+        }
+    }
+
+    @objc func finishUpload(_ call: CAPPluginCall) {
+        guard let shelf = runtime.shelf, let token = call.getString("token") else { return call.reject("finishUpload needs a token") }
+        do {
+            let staged = try shelf.finish(token)
+            call.resolve(["token": staged.token, "bytes": staged.bytes, "sha256": staged.sha256, "path": staged.url.path])
+        } catch {
+            call.reject(error.localizedDescription)
+        }
+    }
+
+    @objc func forgetUpload(_ call: CAPPluginCall) {
+        guard let shelf = runtime.shelf, let token = call.getString("token") else { return call.resolve() }
+        Task {
+            if await (try? outbox?.isKept(token)) != true { shelf.forget(token) }
+            call.resolve()
         }
     }
 
@@ -313,8 +358,11 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
             do {
                 let entries = try await outbox.entries().map { entry -> [String: Any] in
                     var json: [String: Any] = ["id": entry.id, "method": entry.method, "createdAt": entry.createdAt,
-                                               "attempts": entry.attempts, "failed": entry.failed]
+                                               "attempts": entry.attempts, "failed": entry.failed, "waitsForUpload": entry.waitsForUpload]
                     json["lastError"] = entry.lastError
+                    if let upload = entry.upload {
+                        json["upload"] = ["file": upload.file, "fileName": upload.fileName, "bytes": upload.bytes] as [String: Any]
+                    }
                     return json
                 }
                 call.resolve(["json": Self.json(entries)])
@@ -397,6 +445,25 @@ public class DataLayerPlugin: CAPPlugin, CAPBridgedPlugin {
                 call.reject(error.localizedDescription)
             }
         }
+    }
+
+    private static func uploads(_ items: [[String: Any]]) -> [QueuedUpload]? {
+        var uploads: [QueuedUpload] = []
+        for item in items {
+            guard let file = item["file"] as? String, let fileName = item["fileName"] as? String,
+                  let contentType = item["contentType"] as? String, let bytes = (item["bytes"] as? NSNumber)?.int64Value,
+                  let find = queuedCall(item["find"]), let begin = queuedCall(item["begin"]), let complete = queuedCall(item["complete"]),
+                  let paths = (item["paths"] as? [String])?.compactMap(UploadMessages.path), !paths.isEmpty else { return nil }
+            uploads.append(QueuedUpload(file: file, fileName: fileName, contentType: contentType, bytes: bytes,
+                                        find: find, begin: begin, complete: complete, paths: paths))
+        }
+        return uploads
+    }
+
+    private static func queuedCall(_ value: Any?) -> QueuedCall? {
+        guard let call = value as? [String: Any], let method = call["method"] as? String,
+              let request = Data(base64Encoded: call["request"] as? String ?? "") else { return nil }
+        return QueuedCall(method: method, request: request)
     }
 
     private func resolve(_ call: CAPPluginCall, _ result: GrpcResult) {

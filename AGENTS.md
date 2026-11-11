@@ -103,10 +103,16 @@ Every entry needs the owner's explicit approval in chat first.
 | What | Calls | Why it can't go through Sync or the outbox | Approved |
 |---|---|---|---|
 | Sign-in and account actions: sign up, redeem a family or invitation code, account recovery, resend or confirm an email code, sign out (ending this or another device's session) and sign out everywhere, delete my account, register the phone for push and claim the install, make a child's sign-in code | `IAccountsService.Redeem`, `StartSignUp`, `RequestRecovery`, `ResendConfirmation`, `ConfirmEmail`, `SignOutEverywhere`, `EndSession`, `DeleteMyAccount`; `IInstallsService.Claim`; `INotificationsService.RegisterDevice`; `IPeopleService.MakeSignInCode` | Each needs the server's yes or no at that moment and means nothing offline | 2026-11-10 |
-| Links and uploads: signed links to private pictures and files, uploading a file (duplicate check, begin, complete), your private calendar-subscription link and a new one, opening a link to something outside the app | `IMediaService.GetLink`, `FindByHash`, `BeginUpload`, `CompleteUpload`; `ICalendarFilesService.Link`, `ResetLink`; `IDestinationsService.Describe` | The server hands out a link or receives bytes; there is nothing to store. Uploads move to the outbox with the Offline uploads station (owner, 2026-11-11), which narrows this entry | 2026-11-10 |
+| Links: signed links to private pictures and files, your private calendar-subscription link and a new one, opening a link to something outside the app | `IMediaService.GetLink`; `ICalendarFilesService.Link`, `ResetLink`; `IDestinationsService.Describe` | The server hands out a link; there is nothing to store | 2026-11-10 |
 | Leader lookups: searching the church's people to add someone to a ministry, the "what goes" previews before deleting or moving a ministry or removing its calendar, and *Tell people* | `IMinistryLeadingService.Find`, `Deletion`, `Moving`, `CalendarRemoval`; `IEventEditingService.TellPeople` | Searching everyone's names can't be synced to every phone, and a preview must be the server's current answer | 2026-11-10 |
 | Account security changes: changing your name and removing a passkey (ending a device's session is above); your account itself syncs and shows offline, read only | `IAccountsService.UpdateName`, `RemovePasskey` | The owner: "Account and security is read only offline" | 2026-11-11 |
 | Event editors: browsing the Media library beyond what's synced, online only | `IMediaService.List`; `IMediaFoldersService.List` | The owner: "those that *are* synced already (as some will be) can be browsed offline. otherwise online" | 2026-11-11 |
+
+**Uploads are not an exception** (narrowed 2026-11-11; owner: "uploads can work offline? keep it and send it when
+online?"): the app queues a file with the save that uses it, and only the native outbox worker calls
+`IMediaService.FindByHash`, `BeginUpload` and `CompleteUpload` (docs/architecture/offline-and-caching.md, *Files in the
+outbox*). No screen may call them; the test's `MadeOnlyByTheOutboxWorker` checks it. The admin panel's direct upload is
+`[AdminOnly]`.
 
 **Not yet on Sync** (temporary; the test's `NotYetOnSync`): nothing. The list stays empty; it is never an approval.
 

@@ -1,4 +1,5 @@
 @using GSBC.ChurchApp.Platform.Contracts.Media
+@using GSBC.ChurchApp.Platform.Client.Uploads
 @inject IServiceProvider Services
 
 <div class="field picture-field @Class">
@@ -19,7 +20,11 @@
                 <span class="picture-field__preview picture-field__preview--whole"><MediaImage Media="chosen" Size="Size" Alt="" /></span>
             }
             <div class="picture-field__about">
-                @if (chosen.IsImage)
+                @if (FileUploads.IsWaiting(chosen))
+                {
+                    <span class="picture-field__waiting">On this phone. It's sent when you save, as soon as the phone is online.</span>
+                }
+                else if (chosen.IsImage)
                 {
                     <MediaShownAt Media="chosen" Size="Size" Class="picture-field__shown" />
                 }

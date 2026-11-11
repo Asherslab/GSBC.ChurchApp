@@ -27,6 +27,7 @@ internal sealed class MinistryLeadingService(
     IMinistryCalendars calendars,
     IKeptRegularEvents keptEvents,
     INotifications notifications,
+    MinistryFileMedia fileMedia,
     TimeProvider time) : IMinistryLeadingService
 {
     private const int MostFound = 12;
@@ -204,7 +205,7 @@ internal sealed class MinistryLeadingService(
             throw Invalid($"Give it a name of up to {MinistryRules.LongestTitle} characters.");
         if (!MinistryLogic.PostableAudiences(ministry.AttendJoin).Contains(wanted.Audience))
             throw Invalid("Choose who it's for.");
-        Guid? media = Guid.TryParse(wanted.MediaId, out Guid mediaId) ? mediaId : null;
+        Guid? media = await fileMedia.VerifyAsync(Guid.TryParse(wanted.MediaId, out Guid mediaId) ? mediaId : null, cancellationToken);
         string url = wanted.Url.Trim();
         if (media is null && !IsWebAddress(url))
             throw Invalid("Add a document, or a link that starts with https://.");
@@ -220,6 +221,7 @@ internal sealed class MinistryLeadingService(
             (wanted.Title.Trim(), media is null ? FileKinds.Link : FileKinds.Document, media is null ? url : "", media, wanted.Audience, wanted.Note.Trim());
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await fileMedia.UseAsync(file.Id, media, ministry.Id, ministry.Name, cancellationToken);
         return MinistryViews.File(file);
     }
 
@@ -231,6 +233,7 @@ internal sealed class MinistryLeadingService(
         await db.Files.Where(file => file.Id == id && file.MinistryId == ministry.Id).ExecuteDeleteAsync(cancellationToken);
         changes.Touch(ministry.Id);
         await db.SaveChangesAsync(cancellationToken);
+        await fileMedia.ReleaseAsync([id], cancellationToken);
         return new Done();
     }
 

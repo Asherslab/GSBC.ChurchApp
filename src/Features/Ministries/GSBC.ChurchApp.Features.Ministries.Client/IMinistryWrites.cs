@@ -1,4 +1,5 @@
 using GSBC.ChurchApp.Features.Ministries.Contracts;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 
 namespace GSBC.ChurchApp.Features.Ministries.Client;
 
@@ -20,7 +21,7 @@ public interface IMinistryWrites
 
     Task DeletePostAsync(string ministryId, string id);
 
-    Task SaveFileAsync(string ministryId, FileItem file);
+    Task SaveFileAsync(string ministryId, FileItem file, QueuedUpload? upload = null);
 
     Task DeleteFileAsync(string ministryId, string id);
 

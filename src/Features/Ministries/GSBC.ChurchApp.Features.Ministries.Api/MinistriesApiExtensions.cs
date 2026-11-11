@@ -27,7 +27,8 @@ public static class MinistriesApiExtensions
     public static IServiceCollection AddMinistriesApi(this IServiceCollection services)
     {
         services.AddMinistriesData();
-        services.AddScoped<MinistryViews>().AddScoped<MinistriesPublisher>().AddScoped<MinistryChanges>().AddScoped<MinistryRemover>().AddScoped<MinistryMover>();
+        services.AddScoped<MinistryViews>().AddScoped<MinistriesPublisher>().AddScoped<MinistryChanges>().AddScoped<MinistryRemover>().AddScoped<MinistryMover>().AddScoped<MinistryFileMedia>();
+        services.AddMediaSystemArea(MinistryFileMedia.Area);
         services.AddSingleton<IScopeHierarchy, MinistryHierarchy>();
         services.AddScoped<IScopeObjects, MinistryScopeObjects>();
         services.AddScoped<IPersonData, MinistriesPersonData>();

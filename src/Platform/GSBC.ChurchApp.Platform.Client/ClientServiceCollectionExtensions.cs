@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Client.Media;
 using GSBC.ChurchApp.Platform.Client.Modules;
 using GSBC.ChurchApp.Platform.Client.Sessions;
 using GSBC.ChurchApp.Platform.Client.Signals;
+using GSBC.ChurchApp.Platform.Client.Uploads;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
@@ -24,6 +25,8 @@ public static class ClientServiceCollectionExtensions
         services.TryAddSingleton<IScopeNames, ScopeNames>();
         services.TryAddSingleton<IMediaFiles, WebMediaFiles>();
         services.TryAddSingleton<IDeviceSession, CookieSession>();
+        services.TryAddSingleton<IFileShelf, NoFileShelf>();
+        services.AddSingleton<FileUploads>();
         services.AddSingleton<CurrentPage>();
         services.AddSingleton<OpeningSheets>();
         services.TryAddSingleton<IUsage, NoUsage>();

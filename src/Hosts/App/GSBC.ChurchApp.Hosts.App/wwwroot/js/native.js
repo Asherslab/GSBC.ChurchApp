@@ -3,6 +3,12 @@ window.gsbcNative = (() => {
   const isNative = () => !!capacitor()?.isNativePlatform?.();
   const dataLayer = () => capacitor().Plugins.DataLayer;
   const outcome = (result) => (result.ok ? null : result.error || 'Something went wrong. Try again.');
+  const fileChunk = 384 * 1024;
+  const base64 = (bytes) => {
+    let text = '';
+    for (let at = 0; at < bytes.length; at += 0x8000) text += String.fromCharCode.apply(null, bytes.subarray(at, at + 0x8000));
+    return btoa(text);
+  };
 
   return {
     isNative,
@@ -28,6 +34,26 @@ window.gsbcNative = (() => {
       dataLayer().readPage({ feed, order, descending, limit, offset, groupKey }).then((result) => result.json),
     storeInfo: () => dataLayer().storeInfo().then((result) => result.json),
     enqueue: (method, request, quiet) => dataLayer().enqueue({ method, request, quiet }).then((result) => result.id),
+    enqueueWithUploads: (method, request, uploads) =>
+      dataLayer().enqueue({ method, request, quiet: false, uploads: JSON.parse(uploads) }).then((result) => result.id),
+    keepFile: async (input) => {
+      const file = input && input.files && input.files[0];
+      if (!file) return null;
+      const extension = file.name.includes('.') ? file.name.split('.').pop() : '';
+      const { token } = await dataLayer().stageUpload({ extension });
+      try {
+        for (let at = 0; at < file.size; at += fileChunk) {
+          const bytes = new Uint8Array(await file.slice(at, at + fileChunk).arrayBuffer());
+          await dataLayer().appendUpload({ token, data: base64(bytes) });
+        }
+        const kept = await dataLayer().finishUpload({ token });
+        return JSON.stringify({ token, name: file.name, bytes: kept.bytes, sha256: kept.sha256, preview: capacitor().convertFileSrc(kept.path) });
+      } catch (error) {
+        await dataLayer().forgetUpload({ token });
+        throw error;
+      }
+    },
+    forgetFile: (token) => dataLayer().forgetUpload({ token }),
     discardQuietOutbox: () => dataLayer().discardQuietOutbox(),
     takeCrashes: () => (isNative() ? dataLayer().takeCrashes().then((result) => result.json) : '[]'),
     outbox: () => dataLayer().outbox().then((result) => result.json),

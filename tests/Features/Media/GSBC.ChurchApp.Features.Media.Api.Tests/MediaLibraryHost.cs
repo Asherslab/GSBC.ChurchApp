@@ -22,12 +22,16 @@ public abstract class MediaLibraryHost : IAsyncLifetime
 
     private protected static readonly Permission ReadFiles = new("ministries.files.read", ScopeKind.Ministry, "Read a ministry's files");
     private protected static readonly MediaSystemArea Chats = new("chats", "Chats", "Made by the app: files people share in group chats", ReadFiles);
+    private protected static readonly Permission PostFiles = new("ministries.posts.write", ScopeKind.Ministry, "Add files to a ministry");
+    private protected static readonly MediaSystemArea MinistryFiles =
+        new("ministry-files", "Ministry files", "Made by the app: documents leaders add to their ministries", ReadFiles, Uploaders: PostFiles);
 
     private protected TestBuckets Buckets { get; private set; } = null!;
     private TestDatabase _database = null!;
     private readonly TestClock _clock = new();
     private protected GrantedEvaluator Access { get; } = new();
     private protected TileHolder Tiles { get; } = new();
+    private protected ChatMembers Members { get; } = new();
     private protected HttpClient Http { get; } = new();
     private protected ServiceProvider Services { get; private set; } = null!;
 
@@ -52,7 +56,7 @@ public abstract class MediaLibraryHost : IAsyncLifetime
             .AddSingleton(configuration)
             .AddLogging()
             .AddSingleton<TimeProvider>(_clock)
-            .AddSingleton(new PermissionCatalog([new PermissionSet([.. MediaPermissions.All, ReadFiles])]))
+            .AddSingleton(new PermissionCatalog([new PermissionSet([.. MediaPermissions.All, ReadFiles, PostFiles])]))
             .AddSingleton<IAccessEvaluator>(Access)
             .AddBlobStore(configuration)
             .AddMediaData()
@@ -62,6 +66,8 @@ public abstract class MediaLibraryHost : IAsyncLifetime
             .AddScoped<MediaHolders>()
             .AddSingleton<IMediaHolder>(Tiles)
             .AddSingleton(Chats)
+            .AddSingleton(MinistryFiles)
+            .AddSingleton<IMediaAreaAccess>(Members)
             .AddScoped<MediaFolders>()
             .AddScoped<IMediaReferences, MediaReferences>()
             .BuildServiceProvider();
@@ -81,13 +87,13 @@ public abstract class MediaLibraryHost : IAsyncLifetime
     private protected async Task<UploadedMedia> UploadAgainAsync(
         ClaimsPrincipal user, byte[] bytes, string contentType, MediaAudience? privateTo = null, string fileName = "file", bool addAgain = false)
     {
-        UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, new BeginUploadRequest
-        {
-            FileName = fileName,
-            ContentType = contentType,
-            Bytes = bytes.Length,
-            PrivateTo = privateTo,
-        }, Cancellation));
+        Access.Grant(user, MediaPermissions.UploadNode, null);
+        return await SendAsync(user, bytes, new BeginUploadRequest { FileName = fileName, ContentType = contentType, Bytes = bytes.Length, PrivateTo = privateTo }, addAgain);
+    }
+
+    private protected async Task<UploadedMedia> SendAsync(ClaimsPrincipal user, byte[] bytes, BeginUploadRequest request, bool addAgain = false)
+    {
+        UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, request, Cancellation));
 
         using ByteArrayContent body = new(bytes);
         body.Headers.ContentType = new MediaTypeHeaderValue(ticket.ContentType);
@@ -144,6 +150,21 @@ public abstract class MediaLibraryHost : IAsyncLifetime
         Http.Dispose();
         await Services.DisposeAsync();
         await _database.DisposeAsync();
+    }
+
+    private protected sealed class ChatMembers : IMediaAreaAccess
+    {
+        private readonly HashSet<(string User, string Chat)> _members = [];
+
+        public string Area => Chats.Key;
+
+        public void Add(ClaimsPrincipal user, string chat) => _members.Add((user.FindFirstValue(Caller.UserIdClaim)!, chat));
+
+        public Task<bool> MayUploadAsync(ClaimsPrincipal user, string scopeId, CancellationToken cancellationToken) => Task.FromResult(IsMember(user, scopeId));
+
+        public Task<bool> MayReadAsync(ClaimsPrincipal user, string scopeId, CancellationToken cancellationToken) => Task.FromResult(IsMember(user, scopeId));
+
+        private bool IsMember(ClaimsPrincipal user, string chat) => _members.Contains((user.FindFirstValue(Caller.UserIdClaim)!, chat));
     }
 
     private protected sealed class TileHolder : IMediaHolder

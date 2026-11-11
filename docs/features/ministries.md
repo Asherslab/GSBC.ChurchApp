@@ -179,8 +179,22 @@ for the team, attendees or parents. A private one's audience is `ministries.team
 ministry (`Audience.HoldingAt`), so Events keeps it private everywhere, and leaders edit its events with no assignment of
 their own. Removing one says how many events go with it.
 
-**Files** are **links** for now (a document, form, recording or web page), each with an audience. *Uploading a document
-into private media* is still to do.
+**Files** are **links** (a document, form, recording or web page) or **documents and pictures added from the phone**
+(built 2026-11-11 with offline uploads, at the orchestrator's request), each with an audience. On the phone, Files →
+*Add a file* keeps the chosen PDF or picture on the phone and queues it with the file's save. Both go when there's a
+signal (offline-and-caching.md, *Files in the outbox*). Defaults chosen while the owner was asleep (2026-11-11), for
+the owner to confirm:
+
+- **Who may add one:** whoever may post in the ministry (`ministries.posts.write`), through Media's *Ministry files*
+  area. Nobody needs `media.upload`.
+- **Who may open one:** the file's own audience. Everyone's documents are public media; Team, Attendees and Parents
+  documents are private to that permission at the ministry and open through a short-lived link (`Media.GetLink`), so
+  opening a document needs a connection.
+- **Changing who it's for** isn't offered for a document (the stored file keeps the audience it was added with).
+  Delete it and add it again.
+- **Where it's kept:** Media → *Made by the app* → *Ministry files* → the ministry, seen by its team and by staff
+  with oversight. Deleting the file, or the ministry, lets go of it, and staff may then delete it from Media.
+- **The admin panel** still adds links only.
 
 **Deleting a ministry** (Settings, for the leaders of the ministry above it, or staff for a top-level one) first says what
 goes: the ministries under it **move up** to its parent (*default*), and its posts, files, asks, calendars and their events and everyone's
