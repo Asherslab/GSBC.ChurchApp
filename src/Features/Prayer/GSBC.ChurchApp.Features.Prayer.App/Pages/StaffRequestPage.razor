@@ -2,7 +2,7 @@
 @inject PrayerApprovals Approvals
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="HasChanges" What="@(_note.Trim().Length > 0 ? "your note" : "the words for the prayer wall")" />
+<UnsavedGuard Changed="() => _note.Trim().Length > 0" What="your note" />
 
 <Page Title="Prayer request" BackHref="prayer/approve" BackLabel="To approve" TopBar="TopBarStyle.Solid">
     <LiveData TValue="StaffView" Load="Approvals.LoadAsync" Feeds="PrayerApprovals.Feeds" ReloadOn="Reload" Remember="prayer.staff">
@@ -56,7 +56,7 @@
             @if (item.Wall is { } wall)
             {
                 <Section>
-                    <WallChoice @ref="_wall" Case="wall" Show="save => ShowAsync(save, wall)" OnKeepPrivate="() => Approvals.KeepPrivateAsync(Id, wall.Wall == WallState.Shown)" />
+                    <WallChoice Case="wall" Show="save => ShowAsync(save, wall)" OnKeepPrivate="() => Approvals.KeepPrivateAsync(Id, wall.Wall == WallState.Shown)" />
                 </Section>
             }
             @if (item.Care is { } pastoral)
@@ -106,14 +106,11 @@
 
     [Parameter] public string Id { get; set; } = "";
 
-    private WallChoice? _wall;
     private string _note = "";
     private string _answeredNote = "";
     private bool _answering;
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
-
-    private bool HasChanges() => _note.Trim().Length > 0 || _wall?.HasChanges == true;
 
     private static string From(StaffCase item) => item.Care is { } care
         ? care.SignedIn || care.From == PrayerWords.NoName ? care.From : $"{care.From}, not signed in"

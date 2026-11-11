@@ -1,7 +1,7 @@
 @inject PastoralClient Pastoral
 @inject TimeProvider Clock
 
-<UnsavedGuard Changed="HasChanges" What="@(_note.Trim().Length > 0 ? "your note" : "the words for the prayer wall")" />
+<UnsavedGuard Changed="() => _note.Trim().Length > 0" What="your note" />
 
 <LiveData @ref="_live" TValue="RequestDetails" Load="LoadAsync" Feeds="Feeds" FailedTitle="Can't open this request right now">
     @{ RequestDetails request = context.Value; InboxLine line = request.Line; }
@@ -47,7 +47,7 @@
 
             @if (line.Wall != WallState.NotAsked)
             {
-                <WallChoice @ref="_wall" Case="WallCaseOf(request)" Show="ShowAsync" OnKeepPrivate="KeepPrivateAsync" Busy="_wallBusy" />
+                <WallChoice Case="WallCaseOf(request)" Show="ShowAsync" OnKeepPrivate="KeepPrivateAsync" Busy="_wallBusy" />
             }
         </article>
 
@@ -124,7 +124,6 @@
     [Parameter] public EventCallback OnGone { get; set; }
 
     private LiveData<RequestDetails>? _live;
-    private WallChoice? _wall;
     private string _note = "";
     private string _answeredNote = "";
     private bool _answering;
@@ -134,8 +133,6 @@
     private string? _problem;
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
-
-    private bool HasChanges() => _note.Trim().Length > 0 || _wall?.HasChanges == true;
 
     private static WallCase WallCaseOf(RequestDetails request) => new()
     {
