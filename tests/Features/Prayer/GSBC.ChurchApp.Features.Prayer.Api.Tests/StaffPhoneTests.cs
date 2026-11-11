@@ -4,6 +4,7 @@ using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace GSBC.ChurchApp.Features.Prayer.Api.Tests;
@@ -94,6 +95,21 @@ public sealed class StaffPhoneTests : PrayerHost
 
         await StaffAsync(care => care.CareAsync(Staff, new CareChange { Id = id, Care = CareState.FollowedUp }, null, Cancel));
         Assert.Empty(await LiveRowsAsync(PrayerFeeds.Care));
+    }
+
+    [Fact]
+    public async Task RequestsSentBeforeStaffPhonesSyncedReachThemOnce()
+    {
+        string waiting = await SendAsync(Phone, null, "For the wall", forWall: true);
+        string onlyPastors = await SendAsync(Phone, null, "Only the pastors");
+        await WithAsync(provider => provider.GetRequiredService<Data.PrayerDbContext>().FeedChanges
+            .Where(change => change.Feed == PrayerFeeds.Approving || change.Feed == PrayerFeeds.Care).ExecuteDeleteAsync(Cancel));
+
+        await WithAsync(provider => provider.GetRequiredService<PrayerKeeping>().RunAsync(Cancel));
+        await WithAsync(provider => provider.GetRequiredService<PrayerKeeping>().RunAsync(Cancel));
+
+        Assert.Equal([waiting], (await RowsAsync(PrayerFeeds.Approving)).Select(row => row.RecordId));
+        Assert.Equal([waiting, onlyPastors], (await RowsAsync(PrayerFeeds.Care)).Select(row => row.RecordId));
     }
 
     [Fact]

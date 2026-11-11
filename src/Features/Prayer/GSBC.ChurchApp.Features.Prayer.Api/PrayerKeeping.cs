@@ -9,6 +9,7 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
     public async Task RunAsync(CancellationToken cancellationToken)
     {
         DateTime now = time.GetUtcNow().UtcDateTime;
+        await FillStaffFeedsAsync(now, cancellationToken);
         List<RequestRecord> leaving = await db.Requests.Where(request => request.Wall == WallState.Shown && request.WallUntil <= now).ToListAsync(cancellationToken);
         foreach (RequestRecord request in leaving.Where(request => PrayerRules.HasLeftTheWall(request, now)))
         {
@@ -31,5 +32,15 @@ internal sealed class PrayerKeeping(PrayerDbContext db, PrayerPublisher publishe
         await handled.ForgetOldAsync(cancellationToken);
         foreach (RequestRecord request in old)
             await telling.SettledAsync(request, cancellationToken);
+    }
+
+    private async Task FillStaffFeedsAsync(DateTime now, CancellationToken cancellationToken)
+    {
+        if (await db.FeedChanges.AnyAsync(change => change.Feed == PrayerFeeds.Approving || change.Feed == PrayerFeeds.Care, cancellationToken))
+            return;
+        foreach (RequestRecord request in await db.Requests.Where(request => request.Care == CareState.New || request.Wall == WallState.Waiting || request.Wall == WallState.Shown)
+                     .ToListAsync(cancellationToken))
+            await publisher.PublishAsync(request, now, cancellationToken);
+        await db.SaveChangesAsync(cancellationToken);
     }
 }
