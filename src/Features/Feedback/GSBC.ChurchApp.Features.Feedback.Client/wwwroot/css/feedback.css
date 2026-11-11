@@ -46,7 +46,7 @@
 .feedback-col--folded:hover { color: var(--ink); }
 
 .feedback-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; padding: 10px 12px 12px; border-radius: var(--radius-tile); background: var(--surface); box-shadow: 0 1px 0 var(--line); color: var(--ink-2); text-decoration: none; font-size: var(--text-caption); cursor: pointer; transition: box-shadow 160ms ease-out, transform 120ms ease-out; }
-.feedback-card:hover { box-shadow: 0 1px 0 var(--line), 0 6px 16px -10px color-mix(in srgb, var(--ink) 40%, transparent); }
+.feedback-card:hover { box-shadow: 0 0 0 1px color-mix(in srgb, var(--ink-3) 45%, transparent); }
 .feedback-card:active { transform: scale(0.98); }
 .feedback-card.is-open { box-shadow: 0 0 0 2px var(--marker); }
 .feedback-card.is-closed:not(.is-open) { opacity: 0.62; }
