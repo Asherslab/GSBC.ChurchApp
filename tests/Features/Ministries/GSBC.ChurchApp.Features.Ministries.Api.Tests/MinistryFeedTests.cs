@@ -5,6 +5,7 @@ using GSBC.ChurchApp.Features.Ministries.Client;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Calendars;
+using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
@@ -126,6 +127,23 @@ public sealed class MinistryFeedTests : IAsyncLifetime
             Assert.Equal(Bytes(await ServerDirectoryAsync(person)), Bytes(await phone.Ministries.DirectoryAsync()));
             Assert.Equal(Bytes(await ServerLifeGroupsAsync(person)), Bytes(await phone.Ministries.LifeGroupsAsync()));
         }
+    }
+
+    [Fact]
+    public async Task SomeoneJoiningATeamSignalsThatMinistryAndThoseUnderItAtOnceAndNothingElse()
+    {
+        await using AsyncServiceScope scope = _services.CreateAsyncScope();
+        SyncDbContext sync = scope.ServiceProvider.GetRequiredService<SyncDbContext>();
+        MinistriesPublisher publisher = scope.ServiceProvider.GetRequiredService<MinistriesPublisher>();
+        long before = await MinistryPeopleChanges.LatestAsync(sync, Cancel);
+
+        await publisher.PublishAsync(Cancel);
+        Assert.Empty((await MinistryPeopleChanges.SinceAsync(sync, before, Cancel)).Ministries);
+
+        _roles.Give(Roles.Team, _visitor, _youth.Id);
+        await publisher.PublishAsync(Cancel);
+
+        Assert.Equal(new[] { _youth.Id, _band.Id }.Order(), (await MinistryPeopleChanges.SinceAsync(sync, before, Cancel)).Ministries.Order());
     }
 
     private async Task<Phone> PhoneOfAsync(Guid person)

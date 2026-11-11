@@ -3,6 +3,7 @@ using GSBC.ChurchApp.Features.Chats.Contracts;
 using GSBC.ChurchApp.Platform.Api.Access;
 using GSBC.ChurchApp.Platform.Api.Hosting;
 using GSBC.ChurchApp.Platform.Api.Media;
+using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Api.Sync;
 using GSBC.ChurchApp.Platform.Permissions;
@@ -25,6 +26,7 @@ public static class ChatsApiExtensions
         services.AddScoped<IScopeObjects, ChatScopeObjects>();
         services.AddScoped<IPersonData, ChatsPersonData>();
         services.AddHostedService<MembershipWatcher>();
+        services.AddMinistryPeopleHandler<ChatsMinistryPeople>();
         services.AddPermissions(ChatsPermissions.All);
         services.AddNotificationKinds(ChatsNotifications.All);
 

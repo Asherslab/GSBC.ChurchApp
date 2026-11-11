@@ -1,6 +1,7 @@
 using GSBC.ChurchApp.Features.Ministries.Api.Data;
 using GSBC.ChurchApp.Features.Ministries.Contracts;
 using GSBC.ChurchApp.Platform.Api.Calendars;
+using GSBC.ChurchApp.Platform.Api.Ministries;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Contracts.Configuration;
 using GSBC.ChurchApp.Platform.Data;
@@ -31,9 +32,15 @@ internal sealed class MinistriesPublisher(
             .ToListAsync(cancellationToken);
         Dictionary<(string, string), FeedChangeRecord> published = latest.Where(change => !change.Deleted).ToDictionary(change => (change.Feed, change.RecordId));
 
-        long version = time.GetUtcNow().UtcDateTime.Ticks;
+        DateTime now = time.GetUtcNow().UtcDateTime;
+        long version = now.Ticks;
+        HashSet<string> peopleChanged = [];
         foreach ((string feed, string recordId) in published.Keys.Where(key => !wanted.ContainsKey(key)))
+        {
             db.FeedChanges.Add(new FeedChangeRecord { Feed = feed, RecordId = recordId, Version = version, Deleted = true });
+            if (SignalsPeople(feed))
+                peopleChanged.Add(recordId);
+        }
         foreach (((string, string) key, Row row) in wanted)
         {
             if (published.TryGetValue(key, out FeedChangeRecord? before) && before.ScopeId == row.Audience && before.GroupKey == row.GroupKey
@@ -43,11 +50,21 @@ internal sealed class MinistriesPublisher(
             {
                 Feed = row.Feed, RecordId = row.RecordId, Version = version, Payload = row.Payload, ScopeId = row.Audience, GroupKey = row.GroupKey,
             });
+            if (SignalsPeople(row.Feed))
+                peopleChanged.Add(row.RecordId);
+        }
+        if (peopleChanged.Count > 0)
+        {
+            MinistryTree tree = await views.TreeAsync(cancellationToken);
+            foreach (Guid ministry in peopleChanged.Select(Guid.Parse).SelectMany(changed => tree.Below(changed).Select(below => below.Id).Prepend(changed)).Distinct())
+                db.FeedChanges.Add(MinistryPeopleChanges.Signal(ministry, now));
         }
 
         await db.SaveChangesAsync(cancellationToken);
         await transaction.CommitAsync(cancellationToken);
     }
+
+    private static bool SignalsPeople(string feed) => feed is MinistriesFeeds.People or MinistriesFeeds.Directory;
 
     public async Task<IReadOnlyList<Row>> RowsAsync(CancellationToken cancellationToken)
     {

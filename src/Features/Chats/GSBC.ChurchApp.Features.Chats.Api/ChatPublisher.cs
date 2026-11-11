@@ -99,6 +99,14 @@ internal sealed class ChatPublisher(ChatsDbContext db, ChatFacts facts, IPeopleI
         return chats.Count;
     }
 
+    public async Task PublishInAsync(IReadOnlyCollection<Guid> ministries, CancellationToken cancellationToken)
+    {
+        List<Guid> chats = await db.Chats.AsNoTracking().Where(chat => ministries.Contains(chat.MinistryId) && chat.DeletedAt == null)
+            .Select(chat => chat.Id).ToListAsync(cancellationToken);
+        foreach (Guid chat in chats)
+            await PublishAsync(chat, [], false, cancellationToken);
+    }
+
     private bool Reconcile(Guid chatId, List<ParticipantRecord> stored, MembershipPlan plan, DateTime now)
     {
         bool changed = false;
