@@ -110,9 +110,15 @@ public static class ThemeDerivation
     [
         ("ink", "page", "text"),
         ("ink-2", "page", "secondary text"),
+        ("ink-2", "sand", "secondary text in shaded boxes and fields"),
+        ("ink-3", "page", "quiet text"),
+        ("ink-3", "sand", "quiet text in shaded boxes and fields"),
         ("on-masthead", "masthead", "text on the masthead"),
+        ("on-masthead-2", "masthead", "quieter text on the masthead"),
+        ("on-masthead", "masthead-chip", "text on buttons on the masthead"),
         ("masthead-note", "masthead", "the note line on the masthead"),
         ("on-primary", "primary", "text on main buttons"),
+        ("danger", "sand", "danger text in shaded boxes"),
         ("accent", "page", "links"),
         ("marker-ink", "page", "marker text"),
         ("on-marker", "marker", "text on the marker"),
@@ -124,7 +130,7 @@ public static class ThemeDerivation
         Rgb primary = Rgb.Parse(keys.Primary);
         Rgb accent = Rgb.Parse(keys.Accent);
         Rgb marker = Rgb.Parse(keys.Marker);
-        Rgb tint = Rgb.Parse(keys.Tint);
+        Rgb tint = LightEnough(Rgb.Parse(keys.Tint));
         Rgb page = White;
         Rgb ink = Readable(masthead.Mix(Black, 0.45), page);
         Rgb onMasthead = TextOn(masthead);
@@ -136,8 +142,8 @@ public static class ThemeDerivation
             ["sand"] = tint.ToString(),
             ["sand-strong"] = tint.Mix(masthead, 0.08).ToString(),
             ["ink"] = ink.ToString(),
-            ["ink-2"] = Readable(ink.Mix(White, 0.3), page).ToString(),
-            ["ink-3"] = Readable(ink.Mix(White, 0.42), page).ToString(),
+            ["ink-2"] = Readable(ink.Mix(White, 0.3), page, tint).ToString(),
+            ["ink-3"] = Readable(ink.Mix(White, 0.42), page, tint).ToString(),
             ["line"] = page.Mix(masthead, 0.12).ToString(),
             ["masthead"] = masthead.ToString(),
             ["masthead-deep"] = masthead.Mix(Black, 0.15).ToString(),
@@ -151,7 +157,7 @@ public static class ThemeDerivation
             ["marker"] = marker.ToString(),
             ["marker-ink"] = Readable(marker.Mix(Black, 0.4), page).ToString(),
             ["on-marker"] = TextOn(marker).ToString(),
-            ["danger"] = "#b4372f",
+            ["danger"] = Readable(Rgb.Parse("#b4372f"), page, tint).ToString(),
         };
         return WithDetails(Apply(roles, overrides), ThemeScheme.Light);
     }
@@ -162,8 +168,8 @@ public static class ThemeDerivation
         Rgb primary = Rgb.Parse(keys.Primary);
         Rgb accent = Rgb.Parse(keys.Accent);
         Rgb marker = Rgb.Parse(keys.Marker);
-        Rgb tint = Rgb.Parse(keys.Tint);
         Rgb page = DarkEnough(masthead.Mix(Black, 0.5));
+        Rgb tint = DarkEnough(Rgb.Parse(keys.Tint), DarkPanel);
         Rgb ink = Readable(White.Mix(marker, 0.06), page);
         Rgb onMasthead = TextOn(masthead);
 
@@ -174,8 +180,8 @@ public static class ThemeDerivation
             ["sand"] = tint.ToString(),
             ["sand-strong"] = tint.Mix(White, 0.06).ToString(),
             ["ink"] = ink.ToString(),
-            ["ink-2"] = Readable(ink.Mix(page, 0.3), page).ToString(),
-            ["ink-3"] = Readable(ink.Mix(page, 0.45), page).ToString(),
+            ["ink-2"] = Readable(ink.Mix(page, 0.3), page, tint).ToString(),
+            ["ink-3"] = Readable(ink.Mix(page, 0.45), page, tint).ToString(),
             ["line"] = page.Mix(White, 0.09).ToString(),
             ["masthead"] = masthead.ToString(),
             ["masthead-deep"] = masthead.Mix(Black, 0.2).ToString(),
@@ -189,7 +195,7 @@ public static class ThemeDerivation
             ["marker"] = marker.ToString(),
             ["marker-ink"] = Readable(marker.Mix(White, 0.3), page).ToString(),
             ["on-marker"] = TextOn(marker).ToString(),
-            ["danger"] = "#f08a80",
+            ["danger"] = Readable(Rgb.Parse("#f08a80"), page, tint).ToString(),
         };
         return WithDetails(Apply(roles, overrides), ThemeScheme.Dark);
     }
@@ -200,13 +206,14 @@ public static class ThemeDerivation
         Rgb accent = Rgb.Parse(light.Accent);
         Rgb marker = Rgb.Parse(light.Marker);
         Rgb darkPage = DarkEnough(masthead.Mix(Black, 0.5));
-        Rgb brightAccent = Readable(accent, darkPage);
+        Rgb darkTint = DarkEnough(darkPage.Mix(masthead, 0.35), DarkPanel);
+        Rgb brightAccent = Readable(accent, darkPage, darkTint);
         return new ThemeKeys(
             masthead.Mix(Black, 0.08).ToString(),
             brightAccent.ToString(),
             brightAccent.ToString(),
             marker.ToString(),
-            darkPage.Mix(masthead, 0.35).ToString());
+            darkTint.ToString());
     }
 
     public static IReadOnlyList<string> Problems(ThemeSpec theme) => ProblemsOf(theme).Select(problem => problem.ToString()).ToList();
@@ -266,8 +273,8 @@ public static class ThemeDerivation
     {
         Rgb masthead = Rgb.Parse(roles["masthead"]);
         Rgb onMasthead = Rgb.Parse(roles["on-masthead"]);
-        roles["on-masthead-2"] = onMasthead.Mix(masthead, 0.24).ToString();
-        roles["masthead-chip"] = masthead.Mix(onMasthead, scheme == ThemeScheme.Light ? 0.12 : 0.1).ToString();
+        roles["on-masthead-2"] = Readable(onMasthead.Mix(masthead, 0.24), masthead).ToString();
+        roles["masthead-chip"] = MastheadChip(masthead, onMasthead, scheme == ThemeScheme.Light ? 0.12 : 0.1).ToString();
         roles["segment-on"] = scheme == ThemeScheme.Light ? roles["surface"] : Rgb.Parse(roles["surface"]).Mix(White, 0.14).ToString();
         roles["selected-fill"] = scheme == ThemeScheme.Light ? roles["sand"] : roles["segment-on"];
         roles["fill-on-surface"] = scheme == ThemeScheme.Light ? roles["sand"] : roles["sand-strong"];
@@ -296,20 +303,40 @@ public static class ThemeDerivation
         return dark.ContrastWith(background) >= ReadableText ? dark : Black;
     }
 
-    private static Rgb DarkEnough(Rgb page)
+    private const double DarkPage = 0.02;
+    private const double DarkPanel = 0.04;
+    private const double LightPanel = 0.7;
+
+    private static Rgb DarkEnough(Rgb colour, double luminance = DarkPage)
     {
-        const double darkPage = 0.02;
-        Rgb adjusted = page;
-        for (int step = 1; step <= 20 && adjusted.Luminance > darkPage; step++)
-            adjusted = page.Mix(Black, step * 0.05);
+        Rgb adjusted = colour;
+        for (int step = 1; step <= 20 && adjusted.Luminance > luminance; step++)
+            adjusted = colour.Mix(Black, step * 0.05);
         return adjusted;
     }
 
-    private static Rgb Readable(Rgb colour, Rgb background)
+    private static Rgb LightEnough(Rgb colour)
     {
-        Rgb towards = Black.ContrastWith(background) > White.ContrastWith(background) ? Black : White;
         Rgb adjusted = colour;
-        for (int step = 1; step <= 20 && adjusted.ContrastWith(background) < ReadableText; step++)
+        for (int step = 1; step <= 20 && adjusted.Luminance < LightPanel; step++)
+            adjusted = colour.Mix(White, step * 0.05);
+        return adjusted;
+    }
+
+    private static Rgb MastheadChip(Rgb masthead, Rgb onMasthead, double amount)
+    {
+        Rgb towardsText = masthead.Mix(onMasthead, amount);
+        if (onMasthead.ContrastWith(towardsText) >= ReadableText)
+            return towardsText;
+        Rgb awayFromText = Black.ContrastWith(onMasthead) > White.ContrastWith(onMasthead) ? Black : White;
+        return masthead.Mix(awayFromText, amount);
+    }
+
+    private static Rgb Readable(Rgb colour, params Rgb[] backgrounds)
+    {
+        Rgb towards = Black.ContrastWith(backgrounds[0]) > White.ContrastWith(backgrounds[0]) ? Black : White;
+        Rgb adjusted = colour;
+        for (int step = 1; step <= 20 && backgrounds.Any(background => adjusted.ContrastWith(background) < ReadableText); step++)
             adjusted = colour.Mix(towards, step * 0.05);
         return adjusted;
     }
