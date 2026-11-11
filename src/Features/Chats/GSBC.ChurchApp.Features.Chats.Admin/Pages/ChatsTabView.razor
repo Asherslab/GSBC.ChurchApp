@@ -30,17 +30,8 @@
     [Parameter] public string? Reading { get; set; }
 
     private string? _chosenId;
-    private string? _readingSeen;
 
-    private DeskChat? Chosen => Desk.Chats.FirstOrDefault(chat => chat.Id == _chosenId);
-
-    protected override void OnParametersSet()
-    {
-        if (Reading == _readingSeen)
-            return;
-        _readingSeen = Reading;
-        _chosenId = Reading;
-    }
+    private DeskChat? Chosen => Desk.Chats.FirstOrDefault(chat => chat.Id == (_chosenId ?? Reading));
 
     private static readonly IReadOnlyList<TableColumn<DeskChat>> Columns =
     [
@@ -123,7 +114,7 @@
         try
         {
             await Oversight.DeleteAsync(chat.Id);
-            _chosenId = null;
+            _chosenId = "";
         }
         catch (RpcException exception)
         {
