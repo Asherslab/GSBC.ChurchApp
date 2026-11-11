@@ -13,6 +13,8 @@
   --device-bezel: #000000;
   --selected-fill: var(--sand);
   --fill-on-surface: var(--sand);
+  --field: var(--sand);
+  --field-edge: color-mix(in srgb, var(--ink-3) 70%, transparent);
   --page: #ffffff;
   --surface: #ffffff;
   --sand: #f4efe7;
@@ -99,6 +101,7 @@
   --tile-warm-go: var(--ink);
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
+  --field: #2d374d;
   --page: #141d31;
   --surface: #1d2840;
   --sand: #1d2840;
@@ -106,7 +109,7 @@
   --segment-on: #34446a;
   --ink: #f2ede4;
   --ink-2: #b2b8c5;
-  --ink-3: #8a92a3;
+  --ink-3: #9ca2b1;
   --line: rgb(255 255 255 / 0.09);
   --scrim: rgb(0 0 0 / 0.55);
   --masthead: #283c62;

@@ -110,9 +110,11 @@ public static class ThemeDerivation
     [
         ("ink", "page", "text"),
         ("ink-2", "page", "secondary text"),
-        ("ink-2", "sand", "secondary text in shaded boxes and fields"),
+        ("ink-2", "sand", "secondary text in shaded boxes"),
         ("ink-3", "page", "quiet text"),
-        ("ink-3", "sand", "quiet text in shaded boxes and fields"),
+        ("ink-3", "sand", "quiet text in shaded boxes"),
+        ("ink-2", "field", "secondary text in fields"),
+        ("ink-3", "field", "quiet text in fields"),
         ("on-masthead", "masthead", "text on the masthead"),
         ("on-masthead-2", "masthead", "quieter text on the masthead"),
         ("on-masthead", "masthead-chip", "text on buttons on the masthead"),
@@ -155,7 +157,7 @@ public static class ThemeDerivation
             ["live"] = accent.ToString(),
             ["on-live"] = TextOn(accent).ToString(),
             ["marker"] = marker.ToString(),
-            ["marker-ink"] = Readable(marker.Mix(Black, 0.4), page).ToString(),
+            ["marker-ink"] = Readable(marker.Mix(Black, 0.4), page, page.Mix(marker, 0.3)).ToString(),
             ["on-marker"] = TextOn(marker).ToString(),
             ["danger"] = Readable(Rgb.Parse("#b4372f"), page, tint).ToString(),
         };
@@ -180,8 +182,8 @@ public static class ThemeDerivation
             ["sand"] = tint.ToString(),
             ["sand-strong"] = tint.Mix(White, 0.06).ToString(),
             ["ink"] = ink.ToString(),
-            ["ink-2"] = Readable(ink.Mix(page, 0.3), page, tint).ToString(),
-            ["ink-3"] = Readable(ink.Mix(page, 0.45), page, tint).ToString(),
+            ["ink-2"] = Readable(ink.Mix(page, 0.3), page, tint, DarkField(tint)).ToString(),
+            ["ink-3"] = Readable(ink.Mix(page, 0.45), page, tint, DarkField(tint)).ToString(),
             ["line"] = page.Mix(White, 0.09).ToString(),
             ["masthead"] = masthead.ToString(),
             ["masthead-deep"] = masthead.Mix(Black, 0.2).ToString(),
@@ -193,7 +195,7 @@ public static class ThemeDerivation
             ["live"] = accent.ToString(),
             ["on-live"] = TextOn(accent).ToString(),
             ["marker"] = marker.ToString(),
-            ["marker-ink"] = Readable(marker.Mix(White, 0.3), page).ToString(),
+            ["marker-ink"] = Readable(marker.Mix(White, 0.3), page, page.Mix(marker, 0.3)).ToString(),
             ["on-marker"] = TextOn(marker).ToString(),
             ["danger"] = Readable(Rgb.Parse("#f08a80"), page, tint).ToString(),
         };
@@ -278,6 +280,7 @@ public static class ThemeDerivation
         roles["segment-on"] = scheme == ThemeScheme.Light ? roles["surface"] : Rgb.Parse(roles["surface"]).Mix(White, 0.14).ToString();
         roles["selected-fill"] = scheme == ThemeScheme.Light ? roles["sand"] : roles["segment-on"];
         roles["fill-on-surface"] = scheme == ThemeScheme.Light ? roles["sand"] : roles["sand-strong"];
+        roles["field"] = scheme == ThemeScheme.Light ? roles["sand"] : DarkField(Rgb.Parse(roles["surface"])).ToString();
         roles["knob"] = scheme == ThemeScheme.Light ? "#ffffff" : roles["ink"];
         roles["bar"] = $"color-mix(in srgb, {roles["page"]} 90%, transparent)";
         return roles;
@@ -314,6 +317,8 @@ public static class ThemeDerivation
             adjusted = colour.Mix(Black, step * 0.05);
         return adjusted;
     }
+
+    private static Rgb DarkField(Rgb surface) => surface.Mix(White, 0.07);
 
     private static Rgb LightEnough(Rgb colour)
     {
