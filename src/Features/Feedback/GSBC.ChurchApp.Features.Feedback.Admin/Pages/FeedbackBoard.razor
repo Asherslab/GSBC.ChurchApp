@@ -1,0 +1,147 @@
+@page "/feedback"
+@inject FeedbackDeskClient Desk
+@inject UnsavedChanges Unsaved
+@inject IJSRuntime Js
+
+<LiveData @ref="_live" TValue="DeskList" Feeds="DeskFeeds" Load="LoadAsync" FailedTitle="Can't load feedback right now">
+    <div class="feedback-desk @(_open is null ? "" : "feedback-desk--docked")">
+        <div class="feedback-desk__main">
+            <TitleBand Title="Feedback" Lead="@Lead(context.Value)">
+                <Actions>
+                    <SearchField Label="Find feedback" Placeholder="Words or #number" Value="@_query" ValueChanged="SearchAsync" Class="feedback-desk__search" />
+                </Actions>
+            </TitleBand>
+            <TabStrip TValue="DeskView" Label="Show" Options="Views" Value="_view" ValueChanged="view => _view = view" />
+
+            @if (_view == DeskView.Blocked)
+            {
+                <BlockedPhonesList />
+            }
+            else
+            {
+                <div class="feedback-board" role="list">
+                    @foreach (TicketStatus status in FeedbackWords.Board)
+                    {
+                        List<TicketLine> tickets = In(context.Value, status);
+                        <section class="feedback-col @(status == TicketStatus.Resolved ? "feedback-col--narrow" : "") @(_dropping == status ? "is-dropping" : "")"
+                                 role="listitem" aria-labelledby="col-@status"
+                                 @ondragover:preventDefault @ondragenter="() => _dropping = status" @ondrop="() => DropAsync(status)">
+                            <h2 class="feedback-col__head" id="col-@status">@FeedbackWords.Status(status)<span class="feedback-col__count">@tickets.Count</span></h2>
+                            @foreach (TicketLine ticket in tickets.Take(status == TicketStatus.Resolved ? ResolvedShown : int.MaxValue))
+                            {
+                                <TicketCard Ticket="ticket" Open="ticket.Number == _open" OnOpen="args => OpenAsync(args, ticket)" OnDrag="() => _dragging = ticket" />
+                            }
+                            @if (tickets.Count == 0)
+                            {
+                                <p class="feedback-col__empty">@(status == TicketStatus.New ? "Nothing new." : "Nothing here.")</p>
+                            }
+                            else if (status == TicketStatus.Resolved && tickets.Count > ResolvedShown)
+                            {
+                                <p class="feedback-col__empty">And @(tickets.Count - ResolvedShown) more. Find one by its number or words.</p>
+                            }
+                        </section>
+                    }
+                    @{ List<TicketLine> notDoing = In(context.Value, TicketStatus.NotDoing); }
+                    @if (_showNotDoing)
+                    {
+                        <section class="feedback-col feedback-col--narrow @(_dropping == TicketStatus.NotDoing ? "is-dropping" : "")" role="listitem" aria-labelledby="col-not-doing"
+                                 @ondragover:preventDefault @ondragenter="() => _dropping = TicketStatus.NotDoing" @ondrop="() => DropAsync(TicketStatus.NotDoing)">
+                            <h2 class="feedback-col__head" id="col-not-doing">
+                                <button type="button" class="feedback-col__fold" aria-expanded="true" @onclick="() => _showNotDoing = false">Not doing</button>
+                                <span class="feedback-col__count">@notDoing.Count</span>
+                            </h2>
+                            @foreach (TicketLine ticket in notDoing.Take(ResolvedShown))
+                            {
+                                <TicketCard Ticket="ticket" Open="ticket.Number == _open" OnOpen="args => OpenAsync(args, ticket)" OnDrag="() => _dragging = ticket" />
+                            }
+                        </section>
+                    }
+                    else
+                    {
+                        <button type="button" class="feedback-col feedback-col--folded @(_dropping == TicketStatus.NotDoing ? "is-dropping" : "")" aria-expanded="false"
+                                @onclick="() => _showNotDoing = true" @ondragover:preventDefault @ondragenter="() => _dropping = TicketStatus.NotDoing"
+                                @ondrop="() => DropAsync(TicketStatus.NotDoing)">
+                            <span>Not doing · @notDoing.Count</span>
+                        </button>
+                    }
+                </div>
+                <p class="feedback-desk__hint">Drag a card to another column to move it along, or open it and choose its status. ⌘-click or Ctrl-click a card to open it in a new tab.</p>
+            }
+        </div>
+        @if (_open is { } number)
+        {
+            <aside class="feedback-desk__dock" aria-label="@($"Feedback #{number}")">
+                <TicketView @key="number" Number="number" Docked="true" OnClose="CloseAsync" OnGone="() => _open = null" />
+            </aside>
+        }
+    </div>
+</LiveData>
+
+@code {
+    private const int ResolvedShown = 20;
+    private static readonly IReadOnlyCollection<string> DeskFeeds = [FeedbackFeeds.Desk];
+
+    private enum DeskView
+    {
+        Board,
+        Blocked,
+    }
+
+    private static readonly IReadOnlyList<TabOption<DeskView>> Views = [new(DeskView.Board, "Board"), new(DeskView.Blocked, "Blocked phones")];
+
+    private LiveData<DeskList>? _live;
+    private DeskView _view = DeskView.Board;
+    private string _query = "";
+    private int? _open;
+    private bool _showNotDoing;
+    private TicketLine? _dragging;
+    private TicketStatus? _dropping;
+
+    private Task<DeskList> LoadAsync() => Desk.ListAsync(DeskFilter.Everything, _query);
+
+    private static List<TicketLine> In(DeskList list, TicketStatus status) =>
+        list.Tickets.Where(ticket => ticket.Status == status).OrderByDescending(ticket => FeedbackWords.IsClosed(status) ? ticket.ChangedAt : ticket.SentAt).ToList();
+
+    private static string Lead(DeskList list)
+    {
+        int Count(TicketStatus status) => list.Counts.FirstOrDefault(count => count.Status == status)?.Count ?? 0;
+        return $"{Count(TicketStatus.New)} new · {Count(TicketStatus.InProgress)} in progress · {Count(TicketStatus.FixedToCheck)} fixed, to check";
+    }
+
+    private async Task SearchAsync(string query)
+    {
+        _query = query;
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+
+    private async Task OpenAsync(MouseEventArgs args, TicketLine ticket)
+    {
+        if (args.MetaKey || args.CtrlKey || args.ShiftKey)
+        {
+            await Js.InvokeVoidAsync("open", FeedbackDestinations.Ticket(ticket.Number).TrimStart('/'), "_blank");
+            return;
+        }
+        if (ticket.Number == _open || !await Unsaved.MayLeaveAsync())
+            return;
+        _open = ticket.Number;
+    }
+
+    private async Task CloseAsync()
+    {
+        if (await Unsaved.MayLeaveAsync())
+            _open = null;
+    }
+
+    private async Task DropAsync(TicketStatus status)
+    {
+        TicketLine? moving = _dragging;
+        (_dragging, _dropping) = (null, null);
+        if (moving is null || moving.Status == status)
+            return;
+        moving.Status = status;
+        await Desk.SetStatusAsync(moving.Id, status);
+        if (_live is not null)
+            await _live.ReloadAsync();
+    }
+}

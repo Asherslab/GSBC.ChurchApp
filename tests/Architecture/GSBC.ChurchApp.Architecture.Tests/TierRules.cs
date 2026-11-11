@@ -29,12 +29,12 @@ public sealed class TierRules
     }
 
     [Fact]
-    public void ThePhoneIsToldToSignEveryServedAppInstallMethodAndNothingElse()
+    public void ThePhoneIsToldToSignEveryServedMethodAnInstallMayCallAndNothingElse()
     {
         using RoutesOnly<ApiHost::Program> api = new();
 
         IEnumerable<string> appInstallMethods = ServedOperations(api)
-            .Where(operation => operation.Tiers is [AppInstallAttribute])
+            .Where(operation => operation.Tiers is [AppInstallAttribute] or [AppInstallOrSignedInAttribute])
             .Select(operation => operation.Path)
             .Distinct()
             .ToList();

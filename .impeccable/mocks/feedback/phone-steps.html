@@ -1,0 +1,43 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><title>Send feedback: write, add, check, send</title>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><style>:root{--masthead:#2a3d5e;--note:#d5c9b7;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#4a5468;--ink3:#7d8596;--accent:#00776d;--marker:#e7ae74;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:390px;height:844px;overflow:hidden;background:var(--page);font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);position:relative;font-size:16px}
+.mast{background:var(--masthead);color:#fff;padding:54px 20px 22px;position:relative;overflow:hidden}
+.mast .bar{display:flex;align-items:center;gap:4px;font-size:16px;font-weight:600;margin:-8px 0 22px -4px}
+.mast .bar svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:2.2}
+.mast h1{font-size:40px;font-weight:700;letter-spacing:-.03em;line-height:1.02;max-width:9ch}
+.mast p{color:var(--note);font-weight:600;font-size:14.5px;margin-top:10px;max-width:30ch}
+.mast .ring{position:absolute;right:-60px;top:30px;width:210px;height:210px;border-radius:50%;border:26px solid rgba(255,255,255,.07)}
+.sec{padding:22px 20px 0}
+label,.lab{display:block;font-size:14px;font-weight:600;color:var(--ink2);margin-bottom:8px}
+.field{background:var(--sand);border-radius:14px;padding:13px 14px;font-size:16px;line-height:1.45;min-height:120px}
+.ph{color:var(--ink3)}
+.details{font-size:13.5px;color:var(--ink3);line-height:1.4;margin-top:12px;display:flex;gap:6px}
+.details svg{flex:none;width:15px;height:15px;stroke:var(--ink3);fill:none;stroke-width:2;margin-top:1px}
+.foot{position:absolute;left:0;right:0;bottom:0;padding:12px 20px 34px;background:rgba(255,255,255,.92);border-top:1px solid var(--line)}
+.btn{height:52px;border-radius:14px;background:var(--masthead);color:#fff;font-weight:600;display:flex;align-items:center;justify-content:center;font-size:16px}
+.thumb{border-radius:10px;background:linear-gradient(165deg,#dfe7f0 0 18%,#2a3d5e 18% 30%,#fff 30% 100%);box-shadow:0 0 0 1px var(--line);position:relative;flex:none}
+.thumb.v{background:linear-gradient(165deg,#3b4a63,#18233a)}
+.thumb.v::after{content:"0:14";position:absolute;left:6px;bottom:6px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);border-radius:6px;padding:1px 5px}
+.add{border-radius:10px;background:var(--sand);display:flex;align-items:center;justify-content:center;color:var(--accent);flex:none}
+.add svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:2.2}
+.mast{padding-bottom:18px}.mast h1{font-size:34px;max-width:none}
+.part{display:grid;grid-template-columns:28px 1fr;gap:10px;padding:14px 0;border-top:1px solid var(--line)}
+.part:first-child{border-top:0;padding-top:0}
+.n{width:26px;height:26px;border-radius:13px;background:var(--sand);font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center;color:var(--masthead)}
+.n.done{background:var(--accent);color:#fff}
+.part h3{font-size:15.5px;font-weight:700;margin-bottom:8px}
+.field{min-height:64px;font-size:15px}
+.thumbs{display:flex;gap:8px}.thumbs .thumb{width:46px;height:78px}.thumbs .add{width:46px;height:78px}
+.facts div{display:flex;justify-content:space-between;font-size:13.5px;padding:5px 0;border-top:1px solid var(--line)}
+.facts div:first-child{border-top:0}.facts dt{color:var(--ink3);font-weight:600}.facts dd{color:var(--ink)}
+</style></head><body>
+<div class="mast"><div class="ring"></div><div class="bar"><svg viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>More</div><h1>Send feedback</h1><p>Three quick parts, then send.</p></div>
+<div class="sec">
+  <div class="part"><span class="n done">✓</span><div><h3>What's wrong?</h3><div class="field">The Save button on the event page is cut off under the tab bar.</div></div></div>
+  <div class="part"><span class="n done">✓</span><div><h3>Pictures and videos</h3><div class="thumbs"><div class="thumb"></div><div class="thumb v"></div><div class="add"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div></div></div></div>
+  <div class="part"><span class="n">3</span><div><h3>Sent with it</h3><dl class="facts">
+    <div><dt>App</dt><dd>1.4 (212)</dd></div><div><dt>Phone</dt><dd>iPhone 15 · iOS 18.1</dd></div><div><dt>From</dt><dd>Events → Youth night</dd></div><div><dt>Signed in as</dt><dd>Sam Sample</dd></div><div><dt>This phone's state</dt><dd>Included</dd></div></dl></div></div>
+</div>
+<div class="foot"><div class="btn">Send</div></div>
+</body></html>

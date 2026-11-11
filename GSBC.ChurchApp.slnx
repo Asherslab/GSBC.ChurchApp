@@ -93,6 +93,13 @@
     <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Client/GSBC.ChurchApp.Features.Notifications.Client.csproj" />
     <Project Path="src/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Contracts/GSBC.ChurchApp.Features.Notifications.Contracts.csproj" />
   </Folder>
+  <Folder Name="/src/Features/Feedback/">
+    <Project Path="src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Admin/GSBC.ChurchApp.Features.Feedback.Admin.csproj" />
+    <Project Path="src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Api/GSBC.ChurchApp.Features.Feedback.Api.csproj" />
+    <Project Path="src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.App/GSBC.ChurchApp.Features.Feedback.App.csproj" />
+    <Project Path="src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Client/GSBC.ChurchApp.Features.Feedback.Client.csproj" />
+    <Project Path="src/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Contracts/GSBC.ChurchApp.Features.Feedback.Contracts.csproj" />
+  </Folder>
   <Folder Name="/src/Features/Events/">
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Admin/GSBC.ChurchApp.Features.Events.Admin.csproj" />
     <Project Path="src/Features/Events/GSBC.ChurchApp.Features.Events.Api/GSBC.ChurchApp.Features.Events.Api.csproj" />
@@ -190,6 +197,9 @@
   </Folder>
   <Folder Name="/tests/Features/Notifications/">
     <Project Path="tests/Features/Notifications/GSBC.ChurchApp.Features.Notifications.Api.Tests/GSBC.ChurchApp.Features.Notifications.Api.Tests.csproj" />
+  </Folder>
+  <Folder Name="/tests/Features/Feedback/">
+    <Project Path="tests/Features/Feedback/GSBC.ChurchApp.Features.Feedback.Api.Tests/GSBC.ChurchApp.Features.Feedback.Api.Tests.csproj" />
   </Folder>
   <Folder Name="/tests/Features/Events/">
     <Project Path="tests/Features/Events/GSBC.ChurchApp.Features.Events.Api.Tests/GSBC.ChurchApp.Features.Events.Api.Tests.csproj" />

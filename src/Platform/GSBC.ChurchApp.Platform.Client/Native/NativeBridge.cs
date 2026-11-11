@@ -24,6 +24,10 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
     public int OsMajor { get; private set; }
 
+    public string? OsVersion { get; private set; }
+
+    public string? Model { get; private set; }
+
     public event Action<bool>? AppStateChanged;
 
     public event Action? CrashesArrived;
@@ -37,7 +41,8 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
         IsDevelopmentBuild = await js.InvokeAsync<bool>("gsbcNative.isDevelopmentBuild");
         SignedIn = await js.InvokeAsync<bool>("gsbcNative.isSignedIn");
         (AppVersion, AppBuild) = await js.InvokeAsync<NativeAppVersion>("gsbcNative.appVersion");
-        (Platform, OsMajor) = await js.InvokeAsync<NativeDevice>("gsbcNative.device");
+        NativeDevice device = await js.InvokeAsync<NativeDevice>("gsbcNative.device");
+        (Platform, OsMajor, OsVersion, Model) = (device.Platform, device.OsMajor, device.OsVersion, device.Model);
         Gateway = Uri.TryCreate(await js.InvokeAsync<string?>("gsbcNative.gateway"), UriKind.Absolute, out Uri? gateway) ? gateway : null;
         _receiver = DotNetObjectReference.Create(this);
         await js.InvokeVoidAsync("gsbcNative.listenSession", _receiver);
@@ -94,7 +99,7 @@ public sealed class NativeBridge(IJSRuntime js, SessionSignal session) : IDispos
 
 public sealed record NativeAppVersion(string? Version, string? Build);
 
-public sealed record NativeDevice(string? Platform, int OsMajor);
+public sealed record NativeDevice(string? Platform, int OsMajor, string? OsVersion, string? Model);
 
 public sealed record NativePushRegistration(string Permission, string? Token, string? Environment, string? AppId);
 

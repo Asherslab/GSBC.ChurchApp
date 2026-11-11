@@ -62,6 +62,12 @@ public final class FeedStore: Sendable {
         try Self.migrator.migrate(database)
     }
 
+    public func copy(to url: URL) throws {
+        let copy = try DatabaseQueue(path: url.path)
+        try database.backup(to: copy)
+        try copy.close()
+    }
+
     private static var migrator: DatabaseMigrator {
         var migrator = DatabaseMigrator()
         migrator.registerMigration("v1") { db in

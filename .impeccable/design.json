@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-08T00:00:00+00:00",
+  "generatedAt": "2026-11-11T00:00:00+00:00",
   "title": "Design System: GSBC Church App",
   "extensions": {
     "colorMeta": {
@@ -974,7 +974,7 @@
       {
         "name": "admin-office-stack",
         "value": "1228px",
-        "purpose": "Office week columns stack; the seven-day rail scrolls sideways (days at least 84px); the announcements desk drops its proof under the writing column (980px work area + 248px sidebar)."
+        "purpose": "Office week columns stack; the seven-day rail scrolls sideways (days at least 84px); the announcements desk drops its proof under the writing column; the Feedback board's docked ticket leaves the grid and floats over the board at the right edge (980px work area + 248px sidebar)."
       },
       {
         "name": "admin-access-stack",
@@ -1010,6 +1010,11 @@
         "name": "sheet-centred",
         "value": "720px",
         "purpose": "Sheets centre on the screen; a sheet without a cover hides its grabber."
+      },
+      {
+        "name": "feedback-ticket-page-stack",
+        "value": "1100px",
+        "purpose": "A Feedback ticket opened as a page drops its side under its main column."
       }
     ],
     "themes": {
@@ -1484,6 +1489,22 @@
       "description": "Toolbar of fill-on-surface capsules (primary when pressed) over a sand field with the inset accent focus ring, then \"How it looks\" as a plain caption over the preview.",
       "html": "<div class=\"ds-rte\"><div class=\"ds-rte__tools\"><button aria-pressed=\"true\">B</button><button aria-pressed=\"false\"><i>I</i></button><button aria-pressed=\"false\">Heading</button><button aria-pressed=\"false\">• List</button><button aria-pressed=\"false\">Link</button></div><textarea class=\"ds-rte__input\" rows=\"3\">We meet for prayer and a short devotional, then head out in pairs.</textarea><div class=\"ds-rte__preview\"><span>How it looks</span><p>We meet for prayer and a short devotional, then head out in pairs.</p></div></div>",
       "css": ".ds-rte { display: grid; gap: 8px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-rte__tools { display: flex; flex-wrap: wrap; gap: 4px; } .ds-rte__tools button { min-height: 36px; padding: 0 10px; border: 0; border-radius: 9px; background: var(--fill-on-surface, #f4efe7); color: var(--ink-2, #545e70); font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; transition: background-color 140ms cubic-bezier(0.22, 1, 0.36, 1), color 140ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-rte__tools button:hover { color: var(--ink, #18233a); } .ds-rte__tools button[aria-pressed=\"true\"] { background: var(--primary, #2a3d5e); color: var(--on-primary, #fff); } .ds-rte__tools button:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-rte__input { width: 100%; box-sizing: border-box; padding: 13px 14px; border: 0; border-radius: 12px; background: var(--fill-on-surface, #f4efe7); color: var(--ink, #18233a); caret-color: var(--accent, #00776d); font: inherit; font-size: 16px; line-height: 1.5; resize: vertical; } .ds-rte__input:focus { outline: none; box-shadow: inset 0 0 0 2px var(--accent, #00776d); } .ds-rte__preview { padding: 12px; border: 1px dashed var(--line, rgb(42 61 94 / 0.12)); border-radius: 9px; } .ds-rte__preview span { display: block; margin-bottom: 6px; color: var(--ink-2, #545e70); font-size: 14px; font-weight: 600; } .ds-rte__preview p { margin: 0; line-height: 1.5; }"
+    },
+    {
+      "name": "Send feedback: stage and filmstrip",
+      "kind": "custom",
+      "refersTo": "feedback-strip-thumb",
+      "description": "The chosen screenshot in its own shape (up to 14rem tall, min(40vw, 9rem) wide) beside a vertical filmstrip of 46px thumbnails, the chosen one ringed 3px in marker, with the add tile under it.",
+      "html": "<div class=\"ds-fb-stage\"><div class=\"ds-fb-shown\"><div class=\"ds-fb-shot\"></div><button class=\"ds-fb-remove\" aria-label=\"Don't send this\">&#x2715;</button></div><div class=\"ds-fb-col\"><div class=\"ds-fb-strip\"><button class=\"ds-fb-thumb ds-fb-thumb--on\" aria-label=\"Screenshot 1\"></button><button class=\"ds-fb-thumb\" aria-label=\"Screenshot 2\"></button></div><button class=\"ds-fb-add\" aria-label=\"Add another\"><svg width=\"20\" height=\"20\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\"><path d=\"M12 5v14M5 12h14\"/></svg></button></div></div><p class=\"ds-fb-count\">2 chosen · up to 6</p>",
+      "css": ".ds-fb-stage { display: flex; align-items: flex-end; gap: 12px; font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-fb-shown { position: relative; border-radius: 14px; overflow: hidden; background: var(--sand-strong, #e9e1d4); } .ds-fb-shot { width: 9rem; height: 14rem; background: linear-gradient(180deg, var(--primary, #2a3d5e) 0 22%, var(--surface, #fff) 22%); } .ds-fb-remove { position: absolute; top: 8px; right: 8px; width: 36px; height: 36px; border: 0; border-radius: 50%; background: rgb(0 0 0 / 0.55); color: #fff; cursor: pointer; } .ds-fb-remove:active { transform: scale(0.94); } .ds-fb-col, .ds-fb-strip { display: flex; flex-direction: column; gap: 8px; } .ds-fb-thumb { width: 46px; aspect-ratio: 9 / 16; padding: 0; border: 0; border-radius: 10px; background: linear-gradient(180deg, var(--primary, #2a3d5e) 0 22%, var(--sand-strong, #e9e1d4) 22%); opacity: 0.72; cursor: pointer; transition: opacity 160ms ease-out, box-shadow 160ms ease-out; } .ds-fb-thumb:hover { opacity: 0.9; } .ds-fb-thumb--on { opacity: 1; box-shadow: 0 0 0 3px var(--marker, #e7ae74); } .ds-fb-thumb:focus-visible, .ds-fb-add:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-fb-add { display: grid; place-items: center; width: 46px; height: 46px; border: 0; border-radius: 10px; background: var(--fill-on-surface, #f4efe7); color: var(--accent, #00776d); cursor: pointer; } .ds-fb-count { margin-top: 10px; font-size: 14px; color: var(--ink-2, #545e70); font-variant-numeric: tabular-nums; }"
+    },
+    {
+      "name": "Feedback board: column and ticket card",
+      "kind": "card",
+      "refersTo": "feedback-card",
+      "description": "A sand status column with its fixed two-line head and white count capsule, holding white numbered cards with wrapping labels at the 9px radius; the open card ringed 2px in marker, a closed card dimmed.",
+      "html": "<section class=\"ds-fb-colm\"><h2 class=\"ds-fb-head\">Fixed, to check<span class=\"ds-fb-n\">2</span></h2><a class=\"ds-fb-card ds-fb-card--open\" href=\"#\"><span class=\"ds-fb-num\">#14 · Ruth</span><strong class=\"ds-fb-title\">The Sermons tab shows last week's notes</strong><span class=\"ds-fb-labels\"><span class=\"ds-fb-label\">1.4 (212)</span><span class=\"ds-fb-label\">iPhone 15</span><span class=\"ds-fb-label ds-fb-label--accent\">2 files</span></span></a><a class=\"ds-fb-card ds-fb-card--closed\" href=\"#\"><span class=\"ds-fb-num\">#9 · Tom</span><strong class=\"ds-fb-title\">Prayer wall text is cut off</strong><span class=\"ds-fb-labels\"><span class=\"ds-fb-label\">Pictures deleted</span></span></a></section>",
+      "css": ".ds-fb-colm { display: flex; flex-direction: column; gap: 8px; width: 220px; padding: 10px; border-radius: 14px; background: var(--sand, #f4efe7); font-family: \"Montserrat\", -apple-system, system-ui, sans-serif; } .ds-fb-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; height: 2.7em; line-height: 1.35; overflow: hidden; margin: 0; padding: 2px 4px 4px; font-size: 14.5px; font-weight: 700; color: var(--ink, #18233a); } .ds-fb-n { min-width: 24px; padding: 1px 8px; border-radius: 10px; background: var(--surface, #fff); font-size: 12px; font-weight: 600; color: var(--ink-2, #545e70); text-align: center; font-variant-numeric: tabular-nums; } .ds-fb-card { display: grid; gap: 4px; padding: 10px 12px 12px; border-radius: 10px; background: var(--surface, #fff); box-shadow: 0 1px 0 var(--line, rgb(42 61 94 / 0.12)); color: var(--ink-2, #545e70); text-decoration: none; font-size: 14px; transition: transform 120ms ease-out, box-shadow 160ms ease-out; } .ds-fb-card:active { transform: scale(0.98); } .ds-fb-card:focus-visible { outline: 2px solid var(--accent, #00776d); outline-offset: 2px; } .ds-fb-card--open { box-shadow: 0 0 0 2px var(--marker, #e7ae74); } .ds-fb-card--closed { opacity: 0.62; } .ds-fb-num { color: var(--ink-3, #6b7384); font-variant-numeric: tabular-nums; } .ds-fb-title { font-size: 15.5px; font-weight: 600; line-height: 1.3; color: var(--ink, #18233a); overflow-wrap: anywhere; } .ds-fb-labels { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; } .ds-fb-label { padding: 1px 8px; border-radius: 9px; background: var(--fill-on-surface, #f4efe7); font-size: 12px; font-weight: 700; color: var(--ink-2, #545e70); overflow-wrap: anywhere; } .ds-fb-label--accent { background: color-mix(in srgb, var(--accent, #00776d) 12%, transparent); color: var(--accent, #00776d); }"
     }
   ],
   "narrative": {
@@ -1544,12 +1565,12 @@
       },
       {
         "name": "The One Column Rule",
-        "body": "No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns, the Places explorer's directory and phone, and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.",
+        "body": "No grids of tiles on a tab root other than Home's Hub, and no uniform icon grid anywhere: the Hub's tiles differ in size, tone and shape. Beyond the Hub, the only multi-column layouts are the two-up series grid on Listen and the day rail. On the desk the admin panel adds its shell, the day rail (a week or a fortnight) and the office week's two columns, split views, the workbench, the announcements desk's writing and proof columns, the Places explorer's directory and phone, App styling's phone and panel, the Feedback board's status columns and its docked ticket (and a ticket page's main column and side), and the media library's folder tiles and picture grid (the folders and files themselves, not tools), and still no grid of tool tiles.",
         "section": "layout"
       },
       {
         "name": "The Flat Page Rule",
-        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card or a Home tile in the Card tone (`raised`) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel and the selection tray (docked over a list that scrolls beneath it); tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
+        "body": "Rows, callouts, the sermon head and the player sit flat on the page; only a boxed list, a picture card, a Home tile in the Card tone (`raised`) or the age question on Account (a white card asked once, above Your family, until it is answered) may lift. If something needs separating, give it sand, not a shadow. In the admin panel the only lifted things are the sign-in card, account panels, the workbench's settings panel, the selection tray (docked over a list that scrolls beneath it), the Drafts menu's popover and the Feedback board's ticket while it floats over the board under 1228px; tables, the office week and the split view's detail are flat, separated by hairlines and sand, and today on the rail is an inset 2px primary ring, not a shadow. The chosen capsule on the rail, or the current \"Not sent yet\" chip, is a 2px marker outline at a 2px offset.",
         "section": "elevation"
       },
       {

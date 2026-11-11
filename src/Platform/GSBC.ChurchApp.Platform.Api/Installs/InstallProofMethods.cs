@@ -13,7 +13,7 @@ public sealed class InstallProofMethods(EndpointDataSource endpoints, TierCatalo
         .Select(endpoint => endpoint.Metadata.GetMetadata<GrpcMethodMetadata>())
         .OfType<GrpcMethodMetadata>()
         .Select(grpc => (grpc.Method.FullName, Tiers: catalog.TiersOf(grpc.ServiceType, grpc.Method.FullName)))
-        .Where(method => method.Tiers is [AppInstallAttribute])
+        .Where(method => method.Tiers is [AppInstallAttribute] or [AppInstallOrSignedInAttribute])
         .Select(method => method.FullName)
         .Distinct()
         .Order(StringComparer.Ordinal)

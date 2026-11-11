@@ -9,6 +9,8 @@ public sealed class AppInstallAttribute : TierAttribute;
 
 public sealed class SignedInAttribute : TierAttribute;
 
+public sealed class AppInstallOrSignedInAttribute : TierAttribute;
+
 public sealed class RequiresAttribute(string node) : TierAttribute
 {
     public string Node { get; } = node;

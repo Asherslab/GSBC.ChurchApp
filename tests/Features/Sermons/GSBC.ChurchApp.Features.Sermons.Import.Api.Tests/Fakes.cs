@@ -80,6 +80,10 @@ internal sealed class KeptMedia : IMediaReferences, IMediaSystemFolders
 
     public Task NameAsync(MediaSystemArea area, string mediaId, string fileName, CancellationToken cancellationToken) => Task.CompletedTask;
 
+    public Task ForgetAsync(MediaSystemArea area, IReadOnlyCollection<string> mediaIds, CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task ForgetUnusedAsync(MediaSystemArea area, DateTime uploadedBefore, CancellationToken cancellationToken) => Task.CompletedTask;
+
     public Task<IReadOnlyList<MediaRef>> VerifyAsync(IReadOnlyCollection<MediaRef> claimed, CancellationToken cancellationToken) =>
         Task.FromResult<IReadOnlyList<MediaRef>>(claimed.ToList());
 

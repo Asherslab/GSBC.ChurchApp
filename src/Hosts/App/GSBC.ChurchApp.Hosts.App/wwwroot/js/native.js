@@ -18,7 +18,9 @@ window.gsbcNative = (() => {
     status: () => dataLayer().status().then((result) => result.state),
     isDevelopmentBuild: () => isNative() && dataLayer().status().then((result) => !!result.developmentBuild),
     isSignedIn: () => isNative() && dataLayer().status().then((result) => !!result.signedIn),
-    device: () => (isNative() ? dataLayer().status().then((result) => ({ platform: result.platform || null, osMajor: result.osMajor || 0 })) : { platform: null, osMajor: 0 }),
+    device: () => (isNative()
+      ? dataLayer().status().then((result) => ({ platform: result.platform || null, osMajor: result.osMajor || 0, osVersion: result.osVersion || null, model: result.model || null }))
+      : { platform: null, osMajor: 0, osVersion: null, model: null }),
     gateway: () => (isNative() ? dataLayer().status().then((result) => result.gateway || null) : null),
     appVersion: () => (isNative() ? dataLayer().status().then((result) => ({ version: result.version || null, build: result.build || null })) : { version: null, build: null }),
     preference: (key) => {
@@ -36,8 +38,8 @@ window.gsbcNative = (() => {
     enqueue: (method, request, quiet) => dataLayer().enqueue({ method, request, quiet }).then((result) => result.id),
     enqueueWithUploads: (method, request, uploads) =>
       dataLayer().enqueue({ method, request, quiet: false, uploads: JSON.parse(uploads) }).then((result) => result.id),
-    keepFile: async (input) => {
-      const file = input && input.files && input.files[0];
+    keepFile: async (input, index) => {
+      const file = input && input.files && input.files[index || 0];
       if (!file) return null;
       const extension = file.name.includes('.') ? file.name.split('.').pop() : '';
       const { token } = await dataLayer().stageUpload({ extension });
@@ -52,6 +54,10 @@ window.gsbcNative = (() => {
         await dataLayer().forgetUpload({ token });
         throw error;
       }
+    },
+    copyStore: async () => {
+      const kept = await dataLayer().copyStore();
+      return JSON.stringify({ token: kept.token, name: 'phone-data.sqlite', bytes: kept.bytes, sha256: kept.sha256, preview: capacitor().convertFileSrc(kept.path) });
     },
     forgetFile: (token) => dataLayer().forgetUpload({ token }),
     discardQuietOutbox: () => dataLayer().discardQuietOutbox(),

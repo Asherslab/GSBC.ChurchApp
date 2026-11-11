@@ -133,6 +133,7 @@ grant.
   |---|---|
   | `[Public]` | anyone; rate-limited |
   | `[AppInstall]` | a genuine installed app (App Attest; SPEC §6) |
+  | `[AppInstallOrSignedIn]` | a genuine installed app, or a signed-in person without one (2026-11-11, for [feedback](../features/feedback.md) and Media's uploads); the phone proves itself on these too, and the method sees the install when it did |
   | `[SignedIn]` | any signed-in user; the method checks anything finer itself |
   | `[Requires("ministries.news.post")]` | users holding the node at the request's scope |
 

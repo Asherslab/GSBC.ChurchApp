@@ -1,0 +1,52 @@
+<!doctype html><html lang="en-AU"><head><meta charset="utf-8"><link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet"><title>Feedback desk: board, each ticket a page</title><style>:root{--nav:#2a3d5e;--note:#d5c9b7;--page:#fff;--sand:#f4efe7;--sand2:#e9e1d4;--ink:#18233a;--ink2:#4a5468;--ink3:#7d8596;--accent:#00776d;--marker:#e7ae74;--mink:#8a5422;--line:rgba(42,61,94,.12)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{width:1440px;height:900px;overflow:hidden;background:var(--page);font-family:Montserrat,-apple-system,sans-serif;color:var(--ink);display:grid;grid-template-columns:248px 1fr;font-size:16px}
+.side{background:var(--nav);color:rgba(255,255,255,.76);padding:22px 14px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;font-weight:600}
+.brand{color:#fff;font-weight:700;display:flex;gap:10px;align-items:center;margin-bottom:14px}.brand i{width:30px;height:30px;border-radius:50%;border:5px solid var(--note)}
+.jump{background:rgba(255,255,255,.12);border-radius:9px;padding:9px 12px;margin-bottom:12px}
+.area{color:#fff;font-weight:700;padding:8px 6px 4px}.lnk{padding:9px 12px 9px 24px;border-radius:9px;display:flex;justify-content:space-between}
+.lnk.on{background:rgba(255,255,255,.12);color:#fff;box-shadow:inset 3px 0 0 var(--marker)}
+.cnt{background:var(--marker);color:#2a1a08;border-radius:10px;font-size:12px;font-weight:700;padding:1px 7px}
+.band{padding:28px 40px 0}.band h1{font-size:27px;font-weight:700;letter-spacing:-.02em}.band p{font-size:14px;color:var(--ink2);margin-top:6px}
+.tabs{display:flex;gap:22px;font-size:14.5px;font-weight:600;color:var(--ink3);border-bottom:1px solid var(--line);margin-top:16px}
+.tabs span{padding:12px 0}.tabs .on{color:var(--ink);box-shadow:inset 0 -3px 0 var(--marker)}
+.tabs em{font-style:normal;background:var(--marker);color:#2a1a08;font-size:12px;border-radius:10px;padding:1px 7px;margin-left:6px}
+.chips{display:flex;gap:6px;margin-top:16px}.chip{height:34px;border-radius:17px;background:var(--sand);color:var(--ink2);font-size:14px;font-weight:600;padding:0 14px;display:flex;align-items:center}.chip.on{background:var(--nav);color:#fff}
+.shot{border-radius:10px;background:linear-gradient(170deg,#dfe7f0 0 15%,#2a3d5e 15% 27%,#fff 27% 100%);box-shadow:0 0 0 1px var(--line);position:relative}
+.shot.v{background:linear-gradient(165deg,#3b4a63,#18233a)}
+.pill{font-size:12px;font-weight:700;border-radius:8px;padding:2px 8px;display:inline-block}
+.new{background:rgba(0,119,109,.12);color:var(--accent)}.prog{background:rgba(231,174,116,.28);color:var(--mink)}.quiet{background:var(--sand);color:var(--ink2)}
+h3{font-size:15px;font-weight:700;margin-bottom:8px}
+.facts div{display:flex;justify-content:space-between;gap:12px;font-size:14px;padding:7px 0;border-top:1px solid var(--line)}.facts dt{color:var(--ink3);font-weight:600}
+.seg{display:flex;background:var(--sand);border-radius:12px;padding:3px;font-size:13px;font-weight:600;color:var(--ink2)}.seg span{flex:1;text-align:center;padding:7px 4px}.seg .on{background:#fff;border-radius:9px;color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.btn{height:40px;border-radius:20px;background:var(--sand);font-size:14px;font-weight:600;padding:0 16px;display:inline-flex;align-items:center}.btn.p{background:var(--nav);color:#fff}
+.notes{background:var(--sand);border-radius:12px;padding:10px 12px;font-size:14px;margin-top:6px}.notes i{display:block;font-style:normal;color:var(--ink3);font-size:13px;margin-top:2px}
+.danger{color:#b4372f;font-size:14px;font-weight:600}
+.bar{display:flex;gap:10px;align-items:center;margin-top:14px}.filter{flex:1;max-width:420px;height:40px;border-radius:12px;background:var(--sand);color:var(--ink2);font-size:14px;display:flex;align-items:center;padding:0 14px}
+.sw{display:flex;background:var(--sand);border-radius:12px;padding:3px;font-size:13.5px;font-weight:600}.sw span{padding:7px 14px}.sw .on{background:#fff;border-radius:9px;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.cols{display:flex;gap:10px;padding:16px 40px 0;align-items:flex-start}
+.col{background:var(--sand);border-radius:14px;padding:10px;flex:1;min-width:0;display:flex;flex-direction:column;gap:8px;min-height:640px}
+.col.narrow{flex:0 0 150px}.col.fold{flex:0 0 46px;min-height:640px;writing-mode:vertical-rl;font-size:13.5px;font-weight:700;color:var(--ink2);align-items:center;padding-top:14px}
+.ch{display:flex;justify-content:space-between;font-size:14px;font-weight:700;padding:2px 4px 4px}.ch em{font-style:normal;font-size:12px;background:#fff;border-radius:10px;padding:1px 8px;color:var(--ink2)}
+.card{background:#fff;border-radius:10px;padding:10px;font-size:13px;color:var(--ink3);box-shadow:0 1px 0 var(--line)}
+.card b{display:block;color:var(--ink);font-size:14px;font-weight:600;line-height:1.3;margin:4px 0}.card.on{box-shadow:0 0 0 2px var(--marker)}
+.card .cov{height:84px;border-radius:7px;margin-bottom:8px}
+.lab{display:inline-block;font-size:11.5px;font-weight:700;border-radius:8px;padding:1px 7px;background:var(--sand);color:var(--ink2);margin:2px 3px 0 0}
+.lab.a{background:rgba(0,119,109,.12);color:var(--accent)}
+</style></head><body><nav class="side"><div class="brand"><i></i>Good Shepherd</div><div class="jump">Jump to…</div><div class="area">The app</div><div class="lnk">App styling</div><div class="lnk on">Feedback <span class="cnt">4</span></div><div class="lnk">Places in the app</div><div class="area">Technical</div><div class="lnk">App health</div><div class="lnk">App review</div></nav>
+<div class="work"><div class="band"><h1>Feedback</h1><p>4 new · 2 in progress · 1 fixed, to check</p><div class="bar"><div class="filter">is:open</div><div class="sw"><span class="on">Board</span><span>List</span></div></div></div>
+<div class="cols">
+ <div class="col"><div class="ch">New<em>4</em></div>
+  <div class="card"><div class="shot cov"></div><span>#42 · Sam Sample</span><b>Save button on the event page is cut off</b><span class="lab">1.4 (212)</span><span class="lab">iOS</span></div>
+  <div class="card"><div class="shot v cov"></div><span>#41 · Jo Sample</span><b>Audio stops when the screen locks</b><span class="lab">1.4 (212)</span><span class="lab">Android</span></div>
+  <div class="card"><span>#40 · not signed in</span><b>Sermon notes offline would be great</b><span class="lab">1.4 (210)</span></div></div>
+ <div class="col"><div class="ch">In progress<em>2</em></div>
+  <div class="card"><div class="shot cov"></div><span>#38 · Pat Sample</span><b>Rosters page is blank after signing in</b><span class="lab">1.4 (212)</span></div>
+  <div class="card"><span>#35 · Riley Sample</span><b>Notification opens the wrong page</b><span class="lab">1.4 (210)</span></div></div>
+ <div class="col"><div class="ch">Fixed, to check<em>1</em></div>
+  <div class="card"><div class="shot cov"></div><span>#36 · Riley Sample</span><b>Tile text overlaps on small phones</b><span class="lab">1.3 (205)</span></div></div>
+ <div class="col"><div class="ch">Resolved<em>9</em></div>
+  <div class="card" style="opacity:.6"><span>#30</span><b>Dark mode icon missing</b><span class="lab">Pictures deleted</span></div>
+  <div class="card" style="opacity:.6"><span>#29</span><b>Giving link opens twice</b></div></div>
+ <div class="col fold">Not doing · 2</div>
+</div></div></body></html>

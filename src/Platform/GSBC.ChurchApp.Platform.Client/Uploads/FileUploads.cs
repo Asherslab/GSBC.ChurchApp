@@ -15,17 +15,19 @@ public sealed class FileUploads(IFileShelf shelf, IServiceProvider services)
 
     public bool CanQueue => shelf.IsAvailable && Requests is not null;
 
-    public string Accepted(bool imagesOnly) => Requests?.Accepted(imagesOnly) ?? "";
+    public string Accepted(PickableFiles kinds) => Requests?.Accepted(kinds) ?? "";
 
-    public async Task<PickedFile> KeepAsync(ElementReference input, string fileName, string reportedType, bool imagesOnly, string altText = "")
+    public string? ContentTypeOf(string fileName, string reportedType, PickableFiles kinds) => Requests?.ContentTypeOf(fileName, reportedType, kinds);
+
+    public async Task<PickedFile> KeepAsync(ElementReference input, string fileName, string reportedType, PickableFiles kinds, string altText = "", int index = 0)
     {
-        if (Requests?.ContentTypeOf(fileName, reportedType, imagesOnly) is not { } contentType)
-            return new PickedFile(null, Requests?.Unusable(fileName, imagesOnly) ?? $"{fileName} can't be sent from this app.");
+        if (Requests?.ContentTypeOf(fileName, reportedType, kinds) is not { } contentType)
+            return new PickedFile(null, Requests?.Unusable(fileName, kinds) ?? $"{fileName} can't be sent from this app.");
 
         StagedFile? kept;
         try
         {
-            kept = await shelf.KeepAsync(input, contentType);
+            kept = await shelf.KeepAsync(input, contentType, index);
         }
         catch (JSException exception)
         {
@@ -36,6 +38,23 @@ public sealed class FileUploads(IFileShelf shelf, IServiceProvider services)
 
         _kept[kept.Preview] = kept;
         return new PickedFile(Placeholder(kept, altText), null);
+    }
+
+    public async Task<MediaRef?> KeepStoreCopyAsync(string contentType)
+    {
+        StagedFile? kept;
+        try
+        {
+            kept = await shelf.CopyStoreAsync(contentType);
+        }
+        catch (JSException)
+        {
+            return null;
+        }
+        if (kept is null)
+            return null;
+        _kept[kept.Preview] = kept;
+        return Placeholder(kept, "");
     }
 
     public static bool IsWaiting(MediaRef? media) => media is { Id.Length: 0, Key.Length: 0, Url.Length: > 0 };

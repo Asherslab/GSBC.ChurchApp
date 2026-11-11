@@ -54,7 +54,7 @@ public sealed class StoredEditingTests
         FileUploads uploads = new(new Shelf(), new Services());
         StoredEventEditing editing = Editing(outbox, new EventDetail { Id = EventId, CalendarId = Calendar, Fields = new EventFields { Title = "Carols night" } }, uploads);
 
-        MediaRef picture = (await uploads.KeepAsync(default, "carols.jpg", "image/jpeg", imagesOnly: true)).Media!;
+        MediaRef picture = (await uploads.KeepAsync(default, "carols.jpg", "image/jpeg", PickableFiles.Pictures)).Media!;
         EventSave save = EditSaves.SaveOf(EditSaves.Copy((await editing.EventAsync(Calendar, EventId))!));
         save.Fields.Picture = picture;
         await editing.SaveEventAsync(save);
@@ -80,7 +80,7 @@ public sealed class StoredEditingTests
         string newId = Guid.CreateVersion7().ToString();
 
         EventSave save = new() { CalendarId = Calendar, NewId = newId, Fields = new EventFields { Title = "Picnic" } };
-        save.Fields.Picture = (await uploads.KeepAsync(default, "picnic.png", "image/png", imagesOnly: true)).Media;
+        save.Fields.Picture = (await uploads.KeepAsync(default, "picnic.png", "image/png", PickableFiles.Pictures)).Media;
         await editing.SaveEventAsync(save);
         outbox.UploadPending();
         await editing.DeleteEventAsync(new EventRef { CalendarId = Calendar, EventId = newId });
@@ -241,22 +241,24 @@ public sealed class StoredEditingTests
     {
         public bool IsAvailable => true;
 
-        public ValueTask<StagedFile?> KeepAsync(Microsoft.AspNetCore.Components.ElementReference input, string contentType)
+        public ValueTask<StagedFile?> KeepAsync(Microsoft.AspNetCore.Components.ElementReference input, string contentType, int index = 0)
         {
             string token = Guid.NewGuid().ToString();
             return ValueTask.FromResult<StagedFile?>(new StagedFile(token, "picture", contentType, 1200, "ab12", $"capacitor://localhost/_capacitor_file_/Uploads/{token}"));
         }
+
+        public ValueTask<StagedFile?> CopyStoreAsync(string contentType) => ValueTask.FromResult<StagedFile?>(null);
 
         public ValueTask ForgetAsync(string token) => ValueTask.CompletedTask;
     }
 
     private sealed class Requests : IUploadRequests
     {
-        public string Accepted(bool imagesOnly) => "image/jpeg,image/png";
+        public string Accepted(PickableFiles kinds) => "image/jpeg,image/png";
 
-        public string? ContentTypeOf(string fileName, string reported, bool imagesOnly) => reported;
+        public string? ContentTypeOf(string fileName, string reported, PickableFiles kinds) => reported;
 
-        public string Unusable(string fileName, bool imagesOnly) => "No.";
+        public string Unusable(string fileName, PickableFiles kinds) => "No.";
 
         public QueuedUpload For(StagedFile file, UploadTarget target, IReadOnlyList<MediaSlot> slots) =>
             new(file, new QueuedCall("find", []), new QueuedCall("begin", []), new QueuedCall("complete", []), slots);

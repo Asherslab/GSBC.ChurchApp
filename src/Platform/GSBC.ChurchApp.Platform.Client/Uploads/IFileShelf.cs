@@ -6,7 +6,9 @@ public interface IFileShelf
 {
     bool IsAvailable { get; }
 
-    ValueTask<StagedFile?> KeepAsync(ElementReference input, string contentType);
+    ValueTask<StagedFile?> KeepAsync(ElementReference input, string contentType, int index = 0);
+
+    ValueTask<StagedFile?> CopyStoreAsync(string contentType);
 
     ValueTask ForgetAsync(string token);
 }
@@ -15,7 +17,9 @@ public sealed class NoFileShelf : IFileShelf
 {
     public bool IsAvailable => false;
 
-    public ValueTask<StagedFile?> KeepAsync(ElementReference input, string contentType) => ValueTask.FromResult<StagedFile?>(null);
+    public ValueTask<StagedFile?> KeepAsync(ElementReference input, string contentType, int index = 0) => ValueTask.FromResult<StagedFile?>(null);
+
+    public ValueTask<StagedFile?> CopyStoreAsync(string contentType) => ValueTask.FromResult<StagedFile?>(null);
 
     public ValueTask ForgetAsync(string token) => ValueTask.CompletedTask;
 }

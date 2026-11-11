@@ -93,14 +93,14 @@ public abstract class MediaLibraryHost : IAsyncLifetime
 
     private protected async Task<UploadedMedia> SendAsync(ClaimsPrincipal user, byte[] bytes, BeginUploadRequest request, bool addAgain = false)
     {
-        UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, request, Cancellation));
+        UploadTicket ticket = await LibraryCallAsync(library => library.BeginUploadAsync(user, null, request, Cancellation));
 
         using ByteArrayContent body = new(bytes);
         body.Headers.ContentType = new MediaTypeHeaderValue(ticket.ContentType);
         using HttpResponseMessage put = await Http.PutAsync(ticket.Url, body, Cancellation);
         put.EnsureSuccessStatusCode();
 
-        return await LibraryCallAsync(library => library.CompleteUploadAsync(user, new CompleteUploadRequest { UploadId = ticket.UploadId, AddAgain = addAgain }, Cancellation));
+        return await LibraryCallAsync(library => library.CompleteUploadAsync(user, null, new CompleteUploadRequest { UploadId = ticket.UploadId, AddAgain = addAgain }, Cancellation));
     }
 
     private protected async Task<T> FoldersCallAsync<T>(Func<MediaFolders, Task<T>> call)

@@ -1,0 +1,31 @@
+@using GSBC.ChurchApp.Platform.Client.Media
+@using GSBC.ChurchApp.Platform.Contracts.Media
+@inject IMediaFiles Files
+
+@if (_source is not null)
+{
+    <video src="@_source" class="@Class" controls="@Controls" playsinline preload="metadata" muted="@(!Controls)" aria-label="@(Label ?? Media.FileName)"></video>
+}
+else
+{
+    <span class="media-placeholder @Class" role="img" aria-label="@(Label ?? Media.FileName)"></span>
+}
+
+@code {
+    private string? _source;
+    private string? _resolvedKey;
+
+    [Parameter, EditorRequired] public required MediaRef Media { get; set; }
+    [Parameter] public bool Controls { get; set; } = true;
+    [Parameter] public string? Label { get; set; }
+    [Parameter] public string? Class { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        string key = Media.Key.Length > 0 ? Media.Key : Media.Url ?? "";
+        if (key == _resolvedKey)
+            return;
+        _resolvedKey = key;
+        _source = await Files.SourceOfAsync(Media);
+    }
+}

@@ -12,5 +12,7 @@ public static class CallingInstall
         context.ServerCallContext?.GetHttpContext().Items[InstallKey] as Guid?
         ?? throw new RpcException(new Status(StatusCode.Unauthenticated, "This call needs a proven app install."));
 
+    public static Guid? Find(CallContext context) => context.ServerCallContext?.GetHttpContext().Items[InstallKey] as Guid?;
+
     internal static void Set(HttpContext context, Guid installId) => context.Items[InstallKey] = installId;
 }

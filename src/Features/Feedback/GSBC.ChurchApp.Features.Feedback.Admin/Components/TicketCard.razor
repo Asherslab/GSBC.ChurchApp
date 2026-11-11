@@ -1,0 +1,34 @@
+<a class="feedback-card @(Open ? "is-open" : "") @(Ticket.Status is TicketStatus.Resolved or TicketStatus.NotDoing ? "is-closed" : "")" href="@FeedbackDestinations.Ticket(Ticket.Number).TrimStart('/')" draggable="true"
+   aria-current="@(Open ? "true" : null)" @onclick="OnOpen" @onclick:preventDefault @ondragstart="OnDrag">
+    @if (Ticket.Cover is { } cover)
+    {
+        <MediaImage Media="cover" Size="MediaSizeName.Thumbnail" Alt="" Class="feedback-card__cover" />
+    }
+    <span class="feedback-card__number">#@Ticket.Number · @Ticket.From</span>
+    <strong class="feedback-card__title">@FeedbackWords.Title(Ticket.Text)</strong>
+    <span class="feedback-card__labels">
+        @if (Ticket.AppBuild.Length > 0)
+        {
+            <span class="feedback-label" title="@Ticket.AppBuild">@Ticket.AppBuild</span>
+        }
+        @if (Ticket.Model.Length > 0)
+        {
+            <span class="feedback-label" title="@PhoneModels.Name(Ticket.Model)">@PhoneModels.Name(Ticket.Model)</span>
+        }
+        @if (Ticket.Attachments > 0)
+        {
+            <span class="feedback-label feedback-label--accent"><Icon Name="paperclip" Size="IconSize.Small" />@(Ticket.Attachments == 1 ? "1 file" : $"{Ticket.Attachments} files")</span>
+        }
+        else if (Ticket.AttachmentsDeleted)
+        {
+            <span class="feedback-label" title="Pictures deleted">Pictures deleted</span>
+        }
+    </span>
+</a>
+
+@code {
+    [Parameter, EditorRequired] public required TicketLine Ticket { get; set; }
+    [Parameter] public bool Open { get; set; }
+    [Parameter] public EventCallback<MouseEventArgs> OnOpen { get; set; }
+    [Parameter] public EventCallback OnDrag { get; set; }
+}

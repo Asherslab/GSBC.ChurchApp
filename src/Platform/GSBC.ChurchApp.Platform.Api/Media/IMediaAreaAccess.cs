@@ -9,4 +9,6 @@ public interface IMediaAreaAccess
     Task<bool> MayUploadAsync(ClaimsPrincipal user, string scopeId, CancellationToken cancellationToken);
 
     Task<bool> MayReadAsync(ClaimsPrincipal user, string scopeId, CancellationToken cancellationToken);
+
+    Task<bool> MayUploadFromInstallAsync(Guid install, string scopeId, CancellationToken cancellationToken) => Task.FromResult(false);
 }
