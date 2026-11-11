@@ -75,6 +75,18 @@ internal sealed class RostersService(
         List<Guid> covered = (facts.GetValueOrDefault(me)?.Children ?? []).Prepend(me).Distinct().ToList();
         IReadOnlyDictionary<Guid, FamilyFacts> coveredFacts = await families.FactsAsync(covered, cancellationToken);
         covered = covered.Where(person => person == me || coveredFacts.GetValueOrDefault(person) is { Minor: true }).ToList();
+        AwayList list = await AwayListAsync(covered, cancellationToken);
+        list.YourId = me.ToString();
+        return list;
+    }
+
+    public ValueTask<AwayList> AwayOfAsync(PersonRef request, CallContext context = default) => AwayOfAsync(request, context.CancellationToken);
+
+    internal async ValueTask<AwayList> AwayOfAsync(PersonRef request, CancellationToken cancellationToken) =>
+        await AwayListAsync([IdOf(request.PersonId, "person")], cancellationToken);
+
+    private async Task<AwayList> AwayListAsync(IReadOnlyList<Guid> covered, CancellationToken cancellationToken)
+    {
         IReadOnlyDictionary<Guid, string> names = await people.NamesAsync(covered, cancellationToken);
         DateOnly today = ChurchTime.Today(time);
         ILookup<Guid, AwayRecord> spans = (await db.Away.AsNoTracking().Where(span => covered.Contains(span.PersonId) && span.To >= today).OrderBy(span => span.From)
@@ -89,6 +101,9 @@ internal sealed class RostersService(
             }).ToList(),
         };
     }
+
+    private async Task<bool> MaySetAwayAsync(Guid me, Guid person, CancellationToken cancellationToken) =>
+        await families.MayActForAsync(me, person, cancellationToken) || (await access.GrantsForAsync(me, cancellationToken)).IsAllowed(RostersPermissions.Away);
 
     public ValueTask<Done> SavePositionAsync(PositionSave request, CallContext context = default) => SavePositionAsync(SignedIn(context), request, context.CancellationToken);
 
@@ -500,7 +515,7 @@ internal sealed class RostersService(
     internal async ValueTask<Done> SaveAwayAsync(Guid me, AwaySave request, CancellationToken cancellationToken)
     {
         Guid person = request.PersonId.Length > 0 ? IdOf(request.PersonId, "person") : me;
-        if (!await families.MayActForAsync(me, person, cancellationToken))
+        if (!await MaySetAwayAsync(me, person, cancellationToken))
             throw Refused("Only they, or a parent of theirs, can say when they're away.");
         if (!DateOnly.TryParseExact(request.From, "yyyy-MM-dd", out DateOnly from) || !DateOnly.TryParseExact(request.To, "yyyy-MM-dd", out DateOnly to))
             throw Invalid("Choose the first and last day.");
@@ -528,7 +543,7 @@ internal sealed class RostersService(
         Guid id = IdOf(request.AwayId, "away dates");
         if (await db.Away.SingleOrDefaultAsync(each => each.Id == id, cancellationToken) is not { } away)
             return new Done();
-        if (!await families.MayActForAsync(me, away.PersonId, cancellationToken))
+        if (!await MaySetAwayAsync(me, away.PersonId, cancellationToken))
             throw Refused("Only they, or a parent of theirs, can change when they're away.");
 
         db.Away.Remove(away);

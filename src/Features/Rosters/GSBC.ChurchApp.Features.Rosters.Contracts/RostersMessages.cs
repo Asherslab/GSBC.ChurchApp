@@ -130,6 +130,13 @@ public sealed class AwaySpan
 public sealed class AwayList
 {
     [ProtoMember(1)] public List<AwayOf> People { get; set; } = [];
+    [ProtoMember(2)] public string YourId { get; set; } = "";
+}
+
+[ProtoContract]
+public sealed class PersonRef
+{
+    [ProtoMember(1)] public string PersonId { get; set; } = "";
 }
 
 [ProtoContract]

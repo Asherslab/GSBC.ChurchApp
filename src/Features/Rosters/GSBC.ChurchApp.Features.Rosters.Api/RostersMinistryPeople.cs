@@ -8,5 +8,6 @@ internal sealed class RostersMinistryPeople(RosterPublisher publisher) : IMinist
     {
         foreach (Guid ministry in ministryIds)
             await publisher.PublishAsync(ministry, cancellationToken);
+        await publisher.PublishTeamsAwayAsync(ministryIds, cancellationToken);
     }
 }

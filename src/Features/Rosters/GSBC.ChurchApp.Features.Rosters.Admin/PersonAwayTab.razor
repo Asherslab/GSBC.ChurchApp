@@ -1,0 +1,11 @@
+@using GSBC.ChurchApp.Features.Rosters.Client.Components
+@using GSBC.ChurchApp.Features.Rosters.Contracts
+@using GSBC.ChurchApp.Platform.Client.Modules
+@inject OnlineRosters Rosters
+
+<DaysAway @key="Person.Id" First="true" Load="() => Rosters.AwayOfAsync(Person.Id)" Feeds="[RostersFeeds.Away]" People="[new PersonLine { Id = Person.Id, Name = Person.Name }]"
+          Lead="@($"Every ministry {Person.FirstName} serves in sees these. Leaders can still put them on, and it's flagged.")" />
+
+@code {
+    [Parameter, EditorRequired] public required PersonOnPage Person { get; set; }
+}
