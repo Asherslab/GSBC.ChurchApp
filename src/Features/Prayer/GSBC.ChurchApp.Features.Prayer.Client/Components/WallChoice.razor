@@ -1,0 +1,91 @@
+@inject TimeProvider Clock
+
+<section class="prayer-request__wall" aria-label="The prayer wall">
+    <h2>The prayer wall</h2>
+    <p class="prayer-request__lead">@Lead</p>
+    @if (Case.Wall != WallState.TakenDown)
+    {
+        <TextField Label="As the wall shows it" Multiline="true" MaxLength="2000" @bind-Value="_text"
+                   Hint="Change the words if they say more than the church should read, such as someone else's name. What they wrote stays as it is." />
+        @if (Case.FirstName.Length > 0)
+        {
+            <Segmented TValue="bool" Label="Name" ShowLabel="true" Options="Names" @bind-Value="_showName"
+                       Hint="@(Case.Minor ? "They're under 18. No name is safer unless they'd like it." : null)" />
+        }
+        else
+        {
+            <p class="prayer-request__lead">They asked for no name, so the wall shows none.</p>
+        }
+        <TextField Label="Shows until" Type="date" Min="@Day(Today.AddDays(1))" Max="@Day(Today.AddDays(365))" @bind-Value="_until" />
+        <div class="prayer-request__actions">
+            <SaveBar Label="@(Case.Wall == WallState.Shown ? "Save the changes" : "Put it on the wall")" State="@(HasChanges ? SaveState.Unsaved : Status)"
+                     WaitingText="Waiting to send. It goes by itself when you're back online" FailedText="Couldn't send" Detail="@Problem" Retry="Retry"
+                     Busy="@(Busy == WallAction.Show)" Blocked="@Blocked" OnSave="ShowAsync" />
+            @if (Case.Wall is WallState.Waiting or WallState.Shown)
+            {
+                <Button Variant="ButtonVariant.Quiet" Busy="@(Busy == WallAction.KeepPrivate)" OnClick="OnKeepPrivate">
+                    @(Case.Wall == WallState.Shown ? "Take it off the wall" : "Not for the wall")
+                </Button>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    private const int WallDays = 30;
+
+    [Parameter, EditorRequired] public required WallCase Case { get; set; }
+    [Parameter, EditorRequired] public required Func<WallSave, Task<bool>> Show { get; set; }
+    [Parameter] public EventCallback OnKeepPrivate { get; set; }
+    [Parameter] public WallAction? Busy { get; set; }
+    [Parameter] public SaveState? Status { get; set; }
+    [Parameter] public string? Problem { get; set; }
+    [Parameter] public EventCallback Retry { get; set; }
+
+    private (string Id, DateTime ChangedAt, WallState Wall)? _from;
+    private (string Text, bool ShowName, string Until) _was;
+    private string _text = "";
+    private bool _showName;
+    private string _until = "";
+
+    public bool HasChanges => (_text, _showName, _until) != _was;
+
+    private DateOnly Today => ChurchTime.Today(Clock);
+
+    private IReadOnlyList<SegmentOption<bool>> Names => [new(false, PrayerWords.NoName), new(true, Case.FirstName)];
+
+    private static string Day(DateOnly day) => day.ToString("yyyy-MM-dd");
+
+    private string? Blocked => _text.Trim().Length == 0
+        ? "Give the wall some words to show."
+        : !DateOnly.TryParse(_until, out DateOnly until) || until <= Today ? "Choose a day after today for it to leave the wall." : null;
+
+    private string Lead => Case.Wall switch
+    {
+        WallState.Waiting => "They asked for it to be shown. Nothing is shown until you put it on the wall.",
+        WallState.Shown => $"On the wall until {PrayerWords.Day(Case.WallUntil ?? Case.SentAt)}. {PrayerWords.Prayed(Case.Prayed)}.",
+        WallState.KeptPrivate => "They asked for the wall, and it was kept private. You can still put it on.",
+        WallState.Ended => "It was on the wall and its time is up. Choose a new day to show it again.",
+        WallState.TakenDown => "They took it off the wall themselves, so it stays off.",
+        _ => "",
+    };
+
+    protected override void OnParametersSet()
+    {
+        (string, DateTime, WallState) from = (Case.Id, Case.ChangedAt, Case.Wall);
+        if (_from == from || (_from?.Id == Case.Id && HasChanges))
+            return;
+        _from = from;
+        DateOnly until = Case.Wall == WallState.Shown && Case.WallUntil is { } shownUntil ? ChurchTime.DayOf(shownUntil) : Today.AddDays(WallDays);
+        bool showName = Case.Wall == WallState.Shown && Case.WallShowsName && Case.FirstName.Length > 0;
+        (_text, _showName, _until) = (Case.WallText.Length > 0 ? Case.WallText : Case.Text, showName, Day(until));
+        _was = (_text, _showName, _until);
+    }
+
+    private async Task ShowAsync()
+    {
+        DateOnly day = DateOnly.Parse(_until);
+        if (await Show(new WallSave { Id = Case.Id, Text = _text.Trim(), ShowName = _showName, Until = ChurchTime.ToUtc(day.ToDateTime(new TimeOnly(23, 59))) }))
+            _was = (_text, _showName, _until);
+    }
+}

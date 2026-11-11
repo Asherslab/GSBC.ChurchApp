@@ -9,6 +9,12 @@ public enum Sending
     CouldNotSend,
 }
 
+public enum WallAction
+{
+    Show,
+    KeepPrivate,
+}
+
 public sealed record YourLine(
     string Id,
     string Text,
@@ -34,3 +40,35 @@ public sealed record PrayerView(IReadOnlyList<YourLine> Yours, IReadOnlyList<Wal
 }
 
 public sealed record PrayerAsk(string Text, bool ForWall, bool ShowName, string Name, bool WantsContact, string Contact);
+
+public sealed record StaffPending(string What, bool Failed, string? Problem);
+
+public sealed record StaffCase(string Id, WallCase? Wall, CareCase? Care, StaffPending? Pending)
+{
+    public string Text => Wall?.Text ?? Care?.Text ?? "";
+
+    public DateTime SentAt => Wall?.SentAt ?? Care?.SentAt ?? default;
+
+    public bool Minor => Wall?.Minor ?? Care?.Minor ?? false;
+
+    public bool AsksForTheWall => Wall?.Wall == WallState.Waiting;
+
+    public bool OnTheWall => Wall?.Wall == WallState.Shown;
+
+    public bool IsNew => Care?.Care == CareState.New;
+}
+
+public sealed record StaffView(IReadOnlyList<StaffCase> Cases, bool MayCare)
+{
+    public static readonly StaffView Empty = new([], false);
+
+    public IReadOnlyList<StaffCase> ForTheWall => Cases.Where(item => item.AsksForTheWall).ToList();
+
+    public IReadOnlyList<StaffCase> New => Cases.Where(item => item.IsNew && !item.AsksForTheWall).ToList();
+
+    public IReadOnlyList<StaffCase> OnTheWall => Cases.Where(item => item.OnTheWall && !item.IsNew).ToList();
+
+    public int Waiting => Cases.Count(item => (item.AsksForTheWall || item.IsNew) && item.Pending is null);
+
+    public StaffCase? Find(string id) => Cases.FirstOrDefault(item => item.Id == id);
+}

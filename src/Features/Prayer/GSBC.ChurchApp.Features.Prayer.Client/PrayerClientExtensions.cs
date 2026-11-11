@@ -9,7 +9,7 @@ namespace GSBC.ChurchApp.Features.Prayer.Client;
 public static class PrayerClientExtensions
 {
     public static IServiceCollection AddPrayerOnPhone(this IServiceCollection services) =>
-        services.AddPrayerClient().AddSingleton<PrayerOnPhone>();
+        services.AddPrayerClient().AddSingleton<PrayerOnPhone>().AddSingleton<PrayerApprovals>();
 
     public static IServiceCollection AddPrayerClient(this IServiceCollection services) =>
         services

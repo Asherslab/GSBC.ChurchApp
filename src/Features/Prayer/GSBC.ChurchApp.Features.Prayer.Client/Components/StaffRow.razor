@@ -1,0 +1,31 @@
+<ListRow Title="@PrayerWords.Excerpt(Item.Text)" Subtitle="@PrayerWords.Staff(Item, Now)" Icon="@Icon" IconTone="@Tone" Chevron="true"
+         Href="@PrayerDestinations.Request(Item.Id).TrimStart('/')">
+    <TitleExtra>
+        @if (Item.Minor)
+        {
+            <Pill Tone="PillTone.Marker">Under 18</Pill>
+        }
+    </TitleExtra>
+</ListRow>
+
+@code {
+    [Parameter, EditorRequired] public required StaffCase Item { get; set; }
+    [Parameter, EditorRequired] public required DateTime Now { get; set; }
+
+    private string Icon => Item.Pending switch
+    {
+        { Failed: true } => "cloud-off",
+        not null => "clock",
+        _ when Item.AsksForTheWall => "prayer",
+        _ when Item.OnTheWall => "prayer",
+        _ => "lock",
+    };
+
+    private RowTone Tone => Item.Pending switch
+    {
+        { Failed: true } => RowTone.Warm,
+        not null => RowTone.Quiet,
+        _ when Item.OnTheWall => RowTone.Accent,
+        _ => RowTone.Primary,
+    };
+}

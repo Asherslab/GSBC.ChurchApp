@@ -105,7 +105,12 @@ public sealed class KeptOnPhone
 {
     [ProtoMember(1)] public List<SentOnPhone> Sent { get; set; } = [];
     [ProtoMember(2)] public List<PrayedOnPhone> Prayed { get; set; } = [];
-    [ProtoMember(3)] public List<QueuedOnPhone> Queued { get; set; } = [];
+}
+
+[ProtoContract]
+public sealed class StaffQueue
+{
+    [ProtoMember(1)] public List<QueuedOnPhone> Queued { get; set; } = [];
 }
 
 [ProtoContract]

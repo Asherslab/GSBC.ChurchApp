@@ -1,10 +1,29 @@
 @page "/prayer"
 @inject PrayerOnPhone Prayer
+@inject PrayerApprovals Approvals
 
 <Page Title="Prayer" BackHref="" BackLabel="Home">
     <Masthead Title="Prayer" Note="@PrayerWords.Note" />
+    @if (Approvals.MayApprove)
+    {
+        <LiveData TValue="StaffView" Load="Approvals.LoadAsync" Feeds="PrayerApprovals.Feeds" ReloadOn="Reload" Remember="prayer.staff">
+            <Section First="true">
+                <ListGroup>
+                    <ListRow Title="To approve" Subtitle="@(context.Value.MayCare ? "Prayer wall requests and new ones for the pastoral team" : "Requests asking for the prayer wall")"
+                             Icon="check" IconTone="@(context.Value.Waiting > 0 ? RowTone.Warm : RowTone.Quiet)" Chevron="true" Href="prayer/approve">
+                        <TrailingContent>
+                            @if (context.Value.Waiting > 0)
+                            {
+                                <Pill Tone="PillTone.Marker">@PrayerWords.Waiting(context.Value.Waiting)</Pill>
+                            }
+                        </TrailingContent>
+                    </ListRow>
+                </ListGroup>
+            </Section>
+        </LiveData>
+    }
     <LiveData TValue="PrayerView" Load="Prayer.LoadAsync" Feeds="PrayerOnPhone.Feeds" ReloadOn="Reload" Remember="prayer.view">
-        <Section First="true">
+        <Section First="@(!Approvals.MayApprove)">
             <Card Class="prayer-ask" Title="How can we pray for you?">
                 <p>@PrayerWords.Private</p>
                 @if (Prayer.CanSend)

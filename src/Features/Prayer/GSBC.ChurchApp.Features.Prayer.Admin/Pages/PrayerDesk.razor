@@ -1,4 +1,7 @@
 @page "/prayer"
+@page "/prayer/approve"
+@page "/prayer/requests/{OpenId}"
+@inject NavigationManager Navigation
 @inject PastoralClient Pastoral
 @inject UnsavedChanges Unsaved
 @inject TimeProvider Clock
@@ -80,10 +83,16 @@
     private string? _selectedId;
 
     [SupplyParameterFromQuery(Name = "request")] public string? RequestId { get; set; }
+    [Parameter] public string? OpenId { get; set; }
 
     private DateTime Now => Clock.GetUtcNow().UtcDateTime;
 
-    protected override void OnParametersSet() => _selectedId ??= RequestId;
+    protected override void OnParametersSet()
+    {
+        _selectedId ??= OpenId ?? RequestId;
+        if (_tab is null && Navigation.ToBaseRelativePath(Navigation.Uri).StartsWith(PrayerDestinations.Approve.TrimStart('/'), StringComparison.Ordinal))
+            _tab = Tab.ForTheWall;
+    }
 
     private Task<Inbox> LoadAsync() => Pastoral.InboxAsync(_query);
 
