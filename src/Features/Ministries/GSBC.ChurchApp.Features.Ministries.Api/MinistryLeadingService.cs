@@ -81,7 +81,7 @@ internal sealed class MinistryLeadingService(
                 MinistriesNotifications.Answered, NotificationAudience.Person(person),
                 person == ask.PersonId ? $"You're in {ministry.Name}" : $"{name} is in {ministry.Name}",
                 ask.As == Places.Team ? "A leader said yes to joining the team." : "A leader said yes. See what's on.",
-                $"/ministries/{ministry.Id}", Subject: $"ministries/answered/{ask.Id:N}/{person:N}"), cancellationToken);
+                $"/ministries/{ministry.Id}", Subject: $"ministries/answered/{ask.Id:N}/{person:N}") { Actor = SignedIn(context) }, cancellationToken);
         return new Done();
     }
 
@@ -178,7 +178,7 @@ internal sealed class MinistryLeadingService(
             await notifications.RaiseAsync(new Notification(
                 MinistriesNotifications.Important, NotificationAudience.Holding(ImportantReaders(post.Audience), ministry.Id.ToString()),
                 $"{ministry.Name}: {post.Title}", Shortened(post.Body), $"/ministries/{ministry.Id}/news",
-                Subject: $"ministries/posts/{post.Id:N}", ScopeId: ministry.Id.ToString()), cancellationToken);
+                Subject: $"ministries/posts/{post.Id:N}", ScopeId: ministry.Id.ToString()) { Actor = me }, cancellationToken);
         return MinistryViews.Post(post);
     }
 
@@ -482,7 +482,7 @@ internal sealed class MinistryLeadingService(
             await notifications.RaiseAsync(new Notification(
                 MinistriesNotifications.Important, NotificationAudience.Holding(MinistriesPermissions.AttendeesView, group.Id.ToString()),
                 $"{group.Name} isn't on {Span(round)}", note.Length > 0 ? note : "The group is back after these Sundays.",
-                $"/ministries/{group.Id}", Subject: $"ministries/sit-out/{group.Id:N}/{roundId:N}", ScopeId: group.Id.ToString()), cancellationToken);
+                $"/ministries/{group.Id}", Subject: $"ministries/sit-out/{group.Id:N}/{roundId:N}", ScopeId: group.Id.ToString()) { Actor = SignedIn(context) }, cancellationToken);
         return new Done();
     }
 

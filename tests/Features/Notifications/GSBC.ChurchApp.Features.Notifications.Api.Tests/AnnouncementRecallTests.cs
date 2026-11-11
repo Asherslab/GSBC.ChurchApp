@@ -34,7 +34,7 @@ public sealed class AnnouncementRecallTests : NotificationsHost
         await DeliverAsync();
 
         await RecallAsync(sent.Id);
-        await RaiseAsync(new Notification(TestKinds.Notice, NotificationAudience.Person(_reader), "Choir at 6", ""));
+        await RaiseAsync(new Notification(TestKinds.Notice, NotificationAudience.Person(_reader), "Choir at 6", "") { Actor = null });
         await DeliverAsync();
 
         Assert.Equal(1, Transport.Sent.Last(push => !push.Message.Background).Message.Badge);

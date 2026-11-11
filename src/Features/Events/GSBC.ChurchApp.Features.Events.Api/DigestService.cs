@@ -74,7 +74,7 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
         await publisher.PublishAsync(cancellationToken);
         if (Digests.Notifies(record, request.NotifyAgain))
         {
-            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, sent, record.Start), cancellationToken);
+            await notifications.RaiseOneOfAsync(Digests.ForEveryoneWhoSeesIt(book, sent, record.Start).Select(each => each with { Actor = record.SentBy }).ToList(), cancellationToken);
             record.NotifiedAt = now;
             await db.SaveChangesAsync(cancellationToken);
         }
@@ -91,7 +91,7 @@ internal sealed class DigestService(EventsDbContext db, EventsPublisher publishe
             throw new RpcException(new Status(StatusCode.Unauthenticated, "Sign in to send it to your phone."));
 
         EventsBook book = await EventsBook.LoadAsync(db, cancellationToken);
-        await notifications.RaiseAsync(Digests.Notification(book, latest.Sent, NotificationAudience.Person(me)) with { Test = true }, cancellationToken);
+        await notifications.RaiseAsync(Digests.Notification(book, latest.Sent, NotificationAudience.Person(me)) with { Test = true, Actor = me }, cancellationToken);
         return new Done();
     }
 

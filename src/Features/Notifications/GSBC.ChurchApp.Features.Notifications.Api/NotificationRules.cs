@@ -60,7 +60,8 @@ internal static class NotificationRules
 
         Recipients found = await AudienceAsync(notification, holders, people, cancellationToken);
         IReadOnlySet<Guid> notInvitedYet = await people.NotInvitedYetAsync(found.People, cancellationToken);
-        return notInvitedYet.Count == 0 ? found : found with { People = found.People.Where(person => !notInvitedYet.Contains(person)).ToList() };
+        Guid? actor = notification.Test ? null : notification.Actor;
+        return found with { People = found.People.Where(person => person != actor && !notInvitedYet.Contains(person)).ToList() };
     }
 
     private static async Task<Recipients> AudienceAsync(

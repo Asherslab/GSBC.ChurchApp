@@ -14,7 +14,7 @@ public sealed class PushLeasingTests : NotificationsHost
         Guid person = Guid.CreateVersion7();
         await RegisterAsync(Guid.CreateVersion7(), person);
         for (int swap = 1; swap <= 5; swap++)
-            await RaiseAsync(new Notification(TestKinds.RosterSwap, NotificationAudience.Person(person), $"Swap {swap}", ""));
+            await RaiseAsync(new Notification(TestKinds.RosterSwap, NotificationAudience.Person(person), $"Swap {swap}", "") { Actor = null });
 
         await Task.WhenAll(DeliverAsync(), DeliverAsync());
 
@@ -31,7 +31,7 @@ public sealed class PushLeasingTests : NotificationsHost
         Transport.Outcomes[Token(gone)] = new Queue<PushResult>([new PushResult(PushOutcome.DeadToken, "Unregistered")]);
         Transport.Outcomes[Token(flaky)] = new Queue<PushResult>([new PushResult(PushOutcome.Retry, "Service unavailable")]);
 
-        await RaiseAsync(new Notification(AnnouncementNotifications.Announcement, NotificationAudience.Everyone, "Carols at 7", ""));
+        await RaiseAsync(new Notification(AnnouncementNotifications.Announcement, NotificationAudience.Everyone, "Carols at 7", "") { Actor = null });
         await DeliverAsync();
         Assert.Equal([flaky], await ListAsync(db => db.Devices.Select(device => device.InstallId)));
 

@@ -16,7 +16,7 @@ public sealed class InboxFeedTests : NotificationsHost
         Holders.Grant(TestKinds.ReceiveNotices, TestKinds.Music, people: [member], phones: [Guid.CreateVersion7()]);
 
         await RaiseAsync(new Notification(TestKinds.Notice, NotificationAudience.Holding(TestKinds.ReceiveNotices, TestKinds.Music), "No practice tonight", "",
-            Link: "/ministries/music/news", Subject: "ministry/music/notice/1", ScopeId: TestKinds.Music));
+            Link: "/ministries/music/news", Subject: "ministry/music/notice/1", ScopeId: TestKinds.Music) { Actor = null });
 
         Assert.Equal([member.ToString()], await ListAsync(db => db.FeedChanges.Where(change => change.Feed == NotificationsFeeds.Inbox).Select(change => change.ScopeId!)));
         FeedChangeRecord publicRow = Assert.Single(await ListAsync(db => db.FeedChanges.Where(change => change.Feed == NotificationsFeeds.Public)));
@@ -27,7 +27,7 @@ public sealed class InboxFeedTests : NotificationsHost
     public async Task ReadingAnItemReachesThePersonsOtherDevices()
     {
         Guid person = Guid.CreateVersion7();
-        await RaiseAsync(new Notification(TestKinds.Notice, NotificationAudience.Person(person), "Choir at 6", ""));
+        await RaiseAsync(new Notification(TestKinds.Notice, NotificationAudience.Person(person), "Choir at 6", "") { Actor = null });
         InboxEntry entry = Assert.Single(await ListAsync(db => db.Inbox));
 
         await WithAsync<NotificationsService, Done>(service => service.MarkReadAsync(new MarkReadRequest { Ids = [entry.Id.ToString()] }, CallAs(person)).AsTask());
@@ -42,7 +42,7 @@ public sealed class InboxFeedTests : NotificationsHost
     {
         Guid person = Guid.CreateVersion7();
         await RaiseAsync(new Notification(TestKinds.RosterSwap, NotificationAudience.Person(person), "Can you swap Sunday?", "", Link: "/ministries/music/roster",
-            Subject: "roster/9", Action: "See the roster"));
+            Subject: "roster/9", Action: "See the roster") { Actor = null });
         Assert.True(Item(await LatestInboxRowAsync()).Waiting);
 
         await WithAsync<NotificationRaiser, bool>(async raiser =>

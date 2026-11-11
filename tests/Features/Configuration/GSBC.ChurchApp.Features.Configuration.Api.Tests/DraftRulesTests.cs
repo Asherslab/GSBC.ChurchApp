@@ -46,7 +46,7 @@ public sealed class DraftRulesTests
     [Fact]
     public void AskingToPublishTellsThoseWhoPublishTheFirstAreaItTouches()
     {
-        Notification waiting = _rules.WaitingToPublish(Christmas, [ChangeIn(HubSurfaces.Area.Key), ChangeIn(AppearanceSurfaces.Area.Key)], "Sam")!;
+        Notification waiting = _rules.WaitingToPublish(Christmas, [ChangeIn(HubSurfaces.Area.Key), ChangeIn(AppearanceSurfaces.Area.Key)], null, "Sam")!;
 
         Assert.Equal(DraftNotifications.WaitingToPublish, waiting.Kind);
         Assert.Equal(NotificationAudience.Holding(AppearanceSurfaces.Publish), waiting.Audience);
@@ -58,7 +58,7 @@ public sealed class DraftRulesTests
     {
         Guid pastor = Guid.CreateVersion7();
 
-        Notification shared = DraftRules.SharedWith(Christmas, pastor, "Sam");
+        Notification shared = DraftRules.SharedWith(Christmas, pastor, null, "Sam");
 
         Assert.Equal((DraftNotifications.SharedWithYou, NotificationAudience.Person(pastor), $"/previews?draft={Christmas.Id}"),
             (shared.Kind, shared.Audience, shared.Link));

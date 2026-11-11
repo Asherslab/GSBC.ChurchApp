@@ -13,7 +13,10 @@ public sealed record Notification(
     bool Urgent = false,
     string? ScopeId = null,
     bool Test = false,
-    string? Action = null);
+    string? Action = null)
+{
+    public required Guid? Actor { get; init; }
+}
 
 public abstract record NotificationAudience
 {

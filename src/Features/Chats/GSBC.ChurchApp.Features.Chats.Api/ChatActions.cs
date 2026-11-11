@@ -118,7 +118,7 @@ internal sealed class ChatActions(
         audit.Record(me, AuditActions.PeopleChanged, string.Join(" ", said), chat.Id);
         MessageRecord note = await AddMessageAsync(chat, me, null, MessageKinds.Event, $"people:{Guid.NewGuid():N}", string.Join(" ", said), null, [], [], cancellationToken);
         Published published = await publisher.PublishAsync(chat.Id, [note.Id], true, cancellationToken);
-        await notifier.ConsentAsync(published, cancellationToken);
+        await notifier.ConsentAsync(published, me, cancellationToken);
     }
 
     public async Task SendAsync(Guid me, SendMessage request, CancellationToken cancellationToken, bool opensAsk = false)
@@ -175,7 +175,7 @@ internal sealed class ChatActions(
         await media.KeepAsync(message, chat.Name, cancellationToken);
         Published published = await publisher.PublishAsync(chatId, [message.Id], true, cancellationToken);
         await notifier.MessageAsync(published, message, cancellationToken);
-        await notifier.ConsentAsync(published, cancellationToken);
+        await notifier.ConsentAsync(published, me, cancellationToken);
     }
 
     public async Task EditAsync(Guid me, EditMessage request, CancellationToken cancellationToken)

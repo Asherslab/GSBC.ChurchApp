@@ -108,7 +108,7 @@ internal sealed class NotificationRaiser(
     public async Task<(int People, int Phones)> ReachAsync(NotificationAudience audience, CancellationToken cancellationToken)
     {
         Recipients recipients = await NotificationRules.RecipientsAsync(
-            new Notification(AnnouncementNotifications.Announcement, audience, "", ""), holders, people, cancellationToken);
+            new Notification(AnnouncementNotifications.Announcement, audience, "", "") { Actor = null }, holders, people, cancellationToken);
         List<Device> devices = await DevicesAsync(recipients, cancellationToken);
         return (recipients.People.Count, devices.Count);
     }

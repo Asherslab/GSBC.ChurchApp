@@ -12,7 +12,7 @@ internal sealed class FeedbackTelling(INotifications notifications)
     public Task NewAsync(TicketRecord ticket, CancellationToken cancellationToken) =>
         notifications.RaiseAsync(new Notification(FeedbackNotifications.New, NotificationAudience.Holding(FeedbackPermissions.Triage),
             $"New feedback #{ticket.Number} from {FeedbackRules.SourceName(ticket.Source)}", $"{FeedbackRules.From(ticket)}: {FeedbackRules.FirstLine(ticket.Text)}",
-            FeedbackDestinations.Ticket(ticket.Number), Subject(ticket.Id), Action: "Look at it"), cancellationToken);
+            FeedbackDestinations.Ticket(ticket.Number), Subject(ticket.Id), Action: "Look at it") { Actor = ticket.UserId }, cancellationToken);
 
     public Task SettledAsync(TicketRecord ticket, CancellationToken cancellationToken) => notifications.SettleAsync(Subject(ticket.Id), cancellationToken);
 }
