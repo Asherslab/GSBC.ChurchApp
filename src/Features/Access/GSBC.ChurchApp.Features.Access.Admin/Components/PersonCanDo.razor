@@ -2,7 +2,7 @@
 @inject IScopeNames ScopeNames
 
 <LiveData TValue="AbilitiesView" Feeds="[AccessFeeds.Roles, .. ScopeNames.Feeds]" Load="LoadAsync" FailedTitle="Can't load what they can do">
-    <section class="person-abilities" aria-label="@($"What {Person.FirstName} can do")">
+    <section aria-label="@($"What {Person.FirstName} can do")">
         <p class="panel-lead">Everything @Person.FirstName's roles let them do, by place, and which role gives it.</p>
         @if (context.Value.Abilities.Places.Count == 0)
         {

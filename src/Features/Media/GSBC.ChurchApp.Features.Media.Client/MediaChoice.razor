@@ -74,7 +74,7 @@
     }
     <div class="media-choice__foot">
         <span class="media-choice__chosen">
-            <span class="media-choice__chosen-name">@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
+            <span>@(_selected is null ? "Nothing chosen yet" : NameOf(_selected))</span>
             @if (_selected is { IsImage: true } picture)
             {
                 <MediaShownAt Media="picture" Size="Size" />

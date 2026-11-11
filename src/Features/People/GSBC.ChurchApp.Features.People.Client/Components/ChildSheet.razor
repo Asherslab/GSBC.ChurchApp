@@ -6,7 +6,7 @@
     <ChildContent>
         @if (Child is { } child)
         {
-            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")" Class="people-code">
+            <Card Title="@(child.CanSignIn ? "A new sign-in for their phone" : "Sign in on their own phone")">
                 @if (_code is { } made)
                 {
                     <div class="people-code__shown">

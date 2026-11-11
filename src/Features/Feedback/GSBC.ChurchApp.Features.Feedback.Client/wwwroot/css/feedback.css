@@ -29,7 +29,6 @@
 .feedback-desk--docked { grid-template-columns: minmax(0, 1fr) minmax(360px, 440px); }
 .feedback-desk__main { min-width: 0; }
 .feedback-desk__search { width: min(320px, 100%); }
-.feedback-desk__sources { margin-top: 16px; }
 .feedback-desk__hint { margin-top: 14px; font-size: var(--text-caption); color: var(--ink-2); max-width: 72ch; }
 .feedback-desk__dock { position: sticky; top: 0; align-self: start; max-height: 100vh; overflow-y: auto; margin: -28px -40px -64px 32px; padding: 28px 28px 48px; border-left: 1px solid var(--line); background: var(--surface); overscroll-behavior: contain; }
 

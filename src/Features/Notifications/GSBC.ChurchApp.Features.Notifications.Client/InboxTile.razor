@@ -48,7 +48,7 @@ else
             return @<HubTile Look="look" Title="@look.Title" Lines="[look.Text]" PlacementId="@Entry.Placement?.Id" />;
         return variant switch
         {
-            NotificationsTiles.Newest => @<HubTile Look="@(look with { Icon = "" })" Title="@unread[0].Item.Title" Lines="[count, unread[0].Item.Body]" Unread="true" Class="hub-tile--newest" PlacementId="@Entry.Placement?.Id" />,
+            NotificationsTiles.Newest => @<HubTile Look="@(look with { Icon = "" })" Title="@unread[0].Item.Title" Lines="[count, unread[0].Item.Body]" Unread="true" PlacementId="@Entry.Placement?.Id" />,
             NotificationsTiles.Dots => @<HubTile Look="@(look with { Icon = "" })" Layout="TileShape.Square" Title="@count" Class="hub-tile--list" PlacementId="@Entry.Placement?.Id">
                 <span class="hub-dots">
                     @foreach (InboxEntry entry in unread.Take(span.Rows > 1 ? span.Rows * 2 : 2))

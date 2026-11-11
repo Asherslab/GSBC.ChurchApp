@@ -67,9 +67,22 @@
   --text-pill: 0.7059rem;
   --text-micro: 0.6471rem;
 
-  --gutter: 20px;
+  --space-3xs: 2px;
+  --space-2xs: 4px;
+  --space-xs: 6px;
+  --space-sm: 8px;
+  --space-md: 12px;
+  --space-lg: 16px;
+  --space-xl: 20px;
+  --space-2xl: 24px;
+  --space-3xl: 32px;
+  --space-4xl: 48px;
+
+  --gutter: var(--space-xl);
   --section: 30px;
+  --section-first: 22px;
   --stack: 14px;
+  --after-tabs: var(--space-xl);
   --touch: 44px;
   --row: 56px;
   --radius-inner: 9px;

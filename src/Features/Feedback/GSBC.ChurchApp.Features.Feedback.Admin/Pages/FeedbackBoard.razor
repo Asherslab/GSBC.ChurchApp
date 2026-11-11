@@ -19,9 +19,7 @@
             }
             else
             {
-                <div class="feedback-desk__sources">
-                    <FilterChips TValue="SourceFilter" Label="Sent from" Options="Sources" Value="_source" ValueChanged="SourceAsync" />
-                </div>
+                <FilterChips TValue="SourceFilter" Label="Sent from" Options="Sources" Value="_source" ValueChanged="SourceAsync" />
                 <div class="feedback-board" role="list">
                     @foreach (TicketStatus status in FeedbackWords.Board)
                     {

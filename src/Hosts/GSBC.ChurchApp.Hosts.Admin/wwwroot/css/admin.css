@@ -34,12 +34,13 @@ a { color: var(--accent); }
     display: flex;
     flex-direction: column;
     gap: 22px;
-    padding: 22px 14px 16px;
+    padding: 22px 10px 16px 14px;
     overflow-y: auto;
     background: var(--masthead);
     color: var(--on-masthead);
     scrollbar-width: thin;
     scrollbar-color: var(--masthead-chip) transparent;
+    scrollbar-gutter: stable;
 }
 
 .admin-brand {
@@ -151,7 +152,7 @@ button.module-nav__link { width: 100%; border: 0; background: none; font-family:
     transition: transform 240ms var(--ease-out);
 }
 .module-nav__link.active::before { transform: scaleY(1); }
-.module-nav__title { min-width: 0; padding: 8px 0; line-height: 1.3; overflow-wrap: anywhere; }
+.module-nav__title { min-width: 0; padding: 8px 0; line-height: 1.3; overflow-wrap: break-word; }
 
 .module-nav__pin {
     position: absolute;
@@ -564,7 +565,6 @@ input[type="checkbox"]:not([class]), input[type="radio"]:not([class]) { display:
 .open-card__body { max-width: 52ch; margin: 0; color: var(--ink-2); }
 
 .person-page__lead { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; color: var(--ink-2); font-size: var(--text-caption); }
-.person-page__tab { margin-top: 24px; }
 .person-page__account { max-width: 640px; }
 
 .person-roles { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 400px); align-items: start; gap: 40px; max-width: 1280px; }
