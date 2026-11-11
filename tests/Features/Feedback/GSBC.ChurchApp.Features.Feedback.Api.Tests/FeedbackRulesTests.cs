@@ -20,12 +20,21 @@ public sealed class FeedbackRulesTests
     }
 
     [Fact]
-    public void FromTheAdminPanelOnlySomeoneSignedInWithTheRoleSends()
+    public void FromTheAdminPanelAnyoneSignedInWithAPageThereSendsFiftyADayWithOrWithoutTheRole()
     {
         Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(Phone, null, false, false), 0));
         Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, false, false), 0));
-        Assert.Equal(SendVerdict.Allowed, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, true, false), 49));
-        Assert.Equal(SendVerdict.TooMany, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, true, false), 50));
+        Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, true, false), 0));
+        Assert.Equal(SendVerdict.Allowed, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, false, false, UsesTheAdminPanel: true), 49));
+        Assert.Equal(SendVerdict.TooMany, FeedbackRules.MaySendFrom(FeedbackSource.AdminPanel, new Sender(null, Person, false, false, UsesTheAdminPanel: true), 50));
+    }
+
+    [Fact]
+    public void OnThePhoneTheAdminPanelCountsForNothing()
+    {
+        Assert.Equal(SendVerdict.NotHere, FeedbackRules.MaySendFrom(FeedbackSource.App, new Sender(null, Person, false, false), 0));
+        Assert.Equal(SendVerdict.TooMany, FeedbackRules.MaySendFrom(FeedbackSource.App, new Sender(Phone, Person, false, false), 5));
+        Assert.Equal(SendVerdict.Allowed, FeedbackRules.MaySendFrom(FeedbackSource.App, new Sender(null, Person, true, false), 49));
     }
 
     [Fact]

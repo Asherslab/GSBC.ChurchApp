@@ -69,6 +69,7 @@ public static class PlatformApiExtensions
         services.TryAddScoped<IChatPlaces, NoChatPlaces>();
         services.TryAddScoped<IAccountEmails, NoAccountEmails>();
         services.AddSingleton<PermissionCatalog>();
+        services.AddScoped<AdminPanelAccess>();
         services.AddSingleton<MeasureCatalog>();
         services.AddSingleton<FeedRegistry>();
         services.AddSingleton<DestinationCatalog>();

@@ -120,7 +120,10 @@
 
     private IReadOnlyList<NavEntry> Permitted => SidebarPlan.InOrder(Modules.Navigation.Where(entry => entry.Requires is null || Access.CanSomewhere(entry.Requires)));
 
-    private IReadOnlyList<SidebarAction> PermittedActions => Actions.Where(action => Access.CanSomewhere(action.Requires)).ToList();
+    private IReadOnlyList<SidebarAction> PermittedActions =>
+        Actions.Where(action => action.Requires is { } permission ? Access.CanSomewhere(permission) : HasAnAdminArea).ToList();
+
+    private bool HasAnAdminArea => Permitted.Any(entry => entry.Requires is not null);
 
     private SidebarPlan Plan => SidebarPlan.Of(Permitted, Pins.Hrefs, _folds, _here, Counts);
 

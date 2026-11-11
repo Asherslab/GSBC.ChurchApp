@@ -17,7 +17,7 @@ public static class ChatsPermissions
         new(ManageNode, ScopeKind.Ministry, "Start, change and delete a ministry's chats, post in its channels and add people to its chats");
 
     public static readonly Permission Check =
-        new(CheckNode, ScopeKind.Ministry, "Check the chats in a ministry and the ministries under it. Every check is logged");
+        new(CheckNode, ScopeKind.Ministry, "Check the chats in a ministry and the ministries under it. Every check is logged", opensAdminArea: true);
 
     public static readonly Permission Audit =
         new(AuditNode, ScopeKind.Global, "Check any chat, receive reports and pause people from chats. Every check is logged", isSensitive: true);

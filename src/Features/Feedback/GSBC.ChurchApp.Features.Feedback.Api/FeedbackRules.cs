@@ -11,7 +11,10 @@ internal enum SendVerdict
     TooMany,
 }
 
-internal sealed record Sender(Guid? Install, Guid? User, bool HoldsTheRole, bool Blocked);
+internal sealed record Sender(Guid? Install, Guid? User, bool HoldsTheRole, bool Blocked, bool UsesTheAdminPanel = false)
+{
+    public bool CountsByPerson => User is not null && (HoldsTheRole || UsesTheAdminPanel);
+}
 
 internal static class FeedbackRules
 {
@@ -34,11 +37,11 @@ internal static class FeedbackRules
     public const string SentStep = "Sent";
     public static readonly TimeSpan UnsentUploadsKeptFor = TimeSpan.FromDays(4);
 
-    public static int DailyLimit(Sender sender) => sender.HoldsTheRole ? FeedbackLimits.WithTheRoleADay : FeedbackLimits.PerPhoneADay;
+    public static int DailyLimit(Sender sender) => sender.CountsByPerson ? FeedbackLimits.WithTheRoleADay : FeedbackLimits.PerPhoneADay;
 
     public static SendVerdict MaySend(Sender sender, int sentInTheLastDay)
     {
-        if (sender is { HoldsTheRole: false, Install: null })
+        if (sender is { CountsByPerson: false, Install: null })
             return SendVerdict.NotHere;
         if (sender.Blocked)
             return SendVerdict.Blocked;
@@ -46,7 +49,7 @@ internal static class FeedbackRules
     }
 
     public static SendVerdict MaySendFrom(FeedbackSource source, Sender sender, int sentInTheLastDay) =>
-        source == FeedbackSource.AdminPanel && sender is not { HoldsTheRole: true, User: not null } ? SendVerdict.NotHere : MaySend(sender, sentInTheLastDay);
+        source == FeedbackSource.AdminPanel && sender is not { UsesTheAdminPanel: true, User: not null } ? SendVerdict.NotHere : MaySend(sender, sentInTheLastDay);
 
     public static string RecentPages(IEnumerable<string> pages) =>
         string.Join('\n', pages.Select(page => Clip(page, LongestPage)).Where(page => page.Length > 0).Take(MostRecentPages));

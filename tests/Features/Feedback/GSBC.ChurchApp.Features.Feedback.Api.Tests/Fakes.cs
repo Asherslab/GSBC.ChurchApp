@@ -39,7 +39,8 @@ internal sealed class Grants : IAccessEvaluator
     public ValueTask<bool> IsAllowedAsync(ClaimsPrincipal user, string node, string? scopeId, CancellationToken cancellationToken) =>
         ValueTask.FromResult(Caller.UserId(user) is { } id && Held.TryGetValue(id, out HashSet<string>? nodes) && nodes.Contains(node));
 
-    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) => throw new NotSupportedException();
+    public ValueTask<GrantSet> GrantsForAsync(Guid userId, CancellationToken cancellationToken) =>
+        ValueTask.FromResult(new GrantSet(Held.GetValueOrDefault(userId, []).Select(node => new Grant(PermissionPattern.Parse(node), Scope.Global)).ToList()));
 }
 
 internal sealed class Library : IMediaReferences, IMediaSystemFolders

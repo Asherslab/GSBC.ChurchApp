@@ -7,6 +7,7 @@ using GSBC.ChurchApp.Platform.Api.Notifications;
 using GSBC.ChurchApp.Platform.Api.People;
 using GSBC.ChurchApp.Platform.Common;
 using GSBC.ChurchApp.Platform.Data;
+using GSBC.ChurchApp.Platform.Permissions;
 using GSBC.ChurchApp.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -31,6 +32,8 @@ public abstract class FeedbackHost : IAsyncLifetime
 
     protected static readonly Guid Staff = Guid.CreateVersion7();
 
+    protected static readonly Permission AdminArea = new("tests.area", ScopeKind.Global, "Open a page in the admin panel", opensAdminArea: true);
+
     public async ValueTask InitializeAsync()
     {
         _database = await TestDatabase.CreateAsync();
@@ -41,6 +44,8 @@ public abstract class FeedbackHost : IAsyncLifetime
         services.AddSingleton<TimeProvider>(Clock);
         services.AddSingleton<INotifications>(Told);
         services.AddSingleton<IAccessEvaluator>(Access);
+        services.AddSingleton(new PermissionCatalog([new PermissionSet([.. FeedbackPermissions.All, AdminArea])]));
+        services.AddScoped<AdminPanelAccess>();
         services.AddSingleton<IMediaReferences>(Media);
         services.AddSingleton<IMediaSystemFolders>(Media);
         services.AddSingleton<IPeopleIndex>(People);
@@ -88,7 +93,7 @@ public abstract class FeedbackHost : IAsyncLifetime
         await WithAsync(async provider =>
         {
             ClaimsPrincipal user = person is { } signedIn ? SignedIn(signedIn) : new ClaimsPrincipal();
-            Sender sender = await provider.GetRequiredService<FeedbackSenders>().WhoAsync(user, install, Cancel);
+            Sender sender = await provider.GetRequiredService<FeedbackSenders>().WhoAsync(user, install, source, Cancel);
             await provider.GetRequiredService<FeedbackSending>().SendAsync(sender, send, Cancel);
         });
         return send.Id;
