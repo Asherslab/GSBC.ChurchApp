@@ -121,7 +121,7 @@ button.ministry-item { cursor: pointer; }
   cursor: pointer;
 }
 
-.ministry-choice:disabled { cursor: default; opacity: 0.6; }
+.ministry-choice:disabled { cursor: default; color: var(--ink-3); }
 
 .ministry-choice--on {
   background: color-mix(in srgb, var(--accent) 8%, var(--page));

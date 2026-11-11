@@ -52,7 +52,7 @@ public static class AppearanceSurfaces
 
         public static readonly HexColourSetting LightMasthead = new("light-masthead", "Masthead", "#2a3d5e");
         public static readonly HexColourSetting LightPrimary = new("light-primary", "Main buttons", "#2a3d5e");
-        public static readonly HexColourSetting LightAccent = new("light-accent", "Links and live", "#00877c");
+        public static readonly HexColourSetting LightAccent = new("light-accent", "Links and live", "#008176");
         public static readonly HexColourSetting LightMarker = new("light-marker", "Marker", "#e7ae74");
         public static readonly HexColourSetting LightTint = new("light-tint", "Shaded boxes", "#f4efe7");
 

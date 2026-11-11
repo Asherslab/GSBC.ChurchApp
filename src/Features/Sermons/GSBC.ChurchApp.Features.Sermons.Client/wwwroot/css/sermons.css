@@ -52,7 +52,7 @@
 .sermon-feature__controls { margin-top: 12px; }
 
 .sermon-search--home { padding-top: 20px; }
-.sermon-search__open { display: flex; align-items: center; gap: 10px; min-height: var(--touch); padding: 0 14px; border-radius: var(--radius-field); background: var(--fill-on-surface); color: var(--ink-2); font-size: var(--text-row); text-decoration: none; }
+.sermon-search__open { display: flex; align-items: center; gap: 10px; min-height: var(--touch); padding: 0 14px; border-radius: var(--radius-field); background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); color: var(--ink-2); font-size: var(--text-row); text-decoration: none; }
 .sermon-search__open .icon { color: var(--ink-3); }
 .sermon-search__open:active { background: var(--sand-strong); }
 

@@ -43,6 +43,7 @@ public sealed class AppearanceTests
     [InlineData("#000000", "#000000", "#000000", "#000000", "#000000")]
     [InlineData("#ffd400", "#9be15d", "#00e5ff", "#ff7ab6", "#fff6c2")]
     [InlineData("#2a3d5e", "#2a3d5e", "#00877c", "#e7ae74", "#f4efe7")]
+    [InlineData("#4a7355", "#3f6449", "#4a7355", "#c9bd4a", "#f3f2e2")]
     [InlineData("#777777", "#767676", "#787878", "#757575", "#797979")]
     public void ThemesWorkedOutFromKeyColoursAreAlwaysReadable(string masthead, string primary, string accent, string marker, string tint)
     {

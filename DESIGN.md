@@ -6,6 +6,7 @@ colors:
   navy-deep: "#22334f"
   aqua: "#009c8f"
   aqua-deep: "#00776d"
+  live: "#008176"
   orange: "#e7ae74"
   orange-ink: "#8a5422"
   on-marker: "#2a1a08"
@@ -15,7 +16,7 @@ colors:
   sand-strong: "#e9e1d4"
   ink: "#18233a"
   ink-2: "#545e70"
-  ink-3: "#6b7384"
+  ink-3: "#626a79"
   line: "rgb(42 61 94 / 0.12)"
   on-masthead-2: "rgb(255 255 255 / 0.76)"
   masthead-chip: "rgb(255 255 255 / 0.12)"
@@ -29,13 +30,17 @@ colors:
   on-bright-aqua: "#062522"
   night-ink: "#f2ede4"
   night-ink-2: "#b2b8c5"
-  night-ink-3: "#8a92a3"
+  night-ink-3: "#9ca2b1"
   night-orange-ink: "#f0c493"
   night-line: "rgb(255 255 255 / 0.09)"
   selected-fill: "#f4efe7"
   fill-on-surface: "#f4efe7"
+  field: "#f4efe7"
+  field-edge: "rgb(98 106 121 / 0.7)"
   night-selected-fill: "#34446a"
   night-fill-on-surface: "#26334f"
+  night-field: "#2d374d"
+  night-field-edge: "rgb(156 162 177 / 0.7)"
   year-night-selected-fill: "#2f4335"
   device-bezel: "#000000"
   year-green: "#4a7355"
@@ -164,7 +169,7 @@ components:
     height: "52px"
     width: "100%"
   button-quiet:
-    backgroundColor: "{colors.sand}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
     rounded: "{rounded.touch}"
     padding: "0 18px"
@@ -176,14 +181,13 @@ components:
     padding: "0 18px"
     height: "44px"
   button-live:
-    backgroundColor: "{colors.aqua}"
+    backgroundColor: "{colors.live}"
     textColor: "{colors.white}"
     rounded: "{rounded.touch}"
     padding: "0 14px"
     height: "36px"
   button-disabled:
-    backgroundColor: "{colors.sand-strong}"
-    textColor: "{colors.ink-3}"
+    textColor: "{colors.ink-2}"
     rounded: "{rounded.touch}"
   masthead:
     backgroundColor: "{colors.navy}"
@@ -259,7 +263,7 @@ components:
     rounded: "{rounded.full}"
     padding: "3px 9px"
   segmented:
-    backgroundColor: "{colors.sand}"
+    backgroundColor: "{colors.field}"
     rounded: "{rounded.field}"
     padding: "3px"
   segmented-selected:
@@ -290,7 +294,7 @@ components:
     rounded: "{rounded.full}"
     size: "48px"
   field:
-    backgroundColor: "{colors.sand}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
     rounded: "{rounded.field}"
     padding: "13px 14px"
@@ -460,7 +464,7 @@ components:
     rounded: "{rounded.touch}"
     padding: "10px 12px 12px"
   copy-field-input:
-    backgroundColor: "{colors.fill-on-surface}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
     rounded: "{rounded.field}"
     height: "40px"
@@ -482,13 +486,13 @@ components:
   table-row-selected:
     backgroundColor: "{colors.selected-fill}"
   search-field:
-    backgroundColor: "{colors.fill-on-surface}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
     rounded: "{rounded.field}"
     height: "40px"
     padding: "0 12px"
   filter-chip:
-    backgroundColor: "{colors.sand}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink-2}"
     rounded: "{rounded.full}"
     height: "34px"
@@ -737,7 +741,7 @@ components:
     padding: "0 6px"
     typography: "{typography.pill}"
   rich-text-tool:
-    backgroundColor: "{colors.fill-on-surface}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink-2}"
     rounded: "{rounded.inner}"
     height: "36px"
@@ -747,7 +751,7 @@ components:
     backgroundColor: "{colors.navy}"
     textColor: "{colors.white}"
   rich-text-input:
-    backgroundColor: "{colors.fill-on-surface}"
+    backgroundColor: "{colors.field}"
     textColor: "{colors.ink}"
     rounded: "{rounded.field}"
     padding: "13px 14px"
@@ -876,7 +880,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 ### Primary
 - **Brand Navy** (navy): the masthead ground, the stuck top bar, primary buttons, the play toggle, selected chips, and the default tint for row icons and agenda times. The colour of the brand guide; the bulletin's cover.
 - **Deep Navy** (navy-deep): the masthead's deeper step, reserved for masthead-adjacent depth.
-- **Masthead Tints** (on-masthead-2, masthead-chip): text and fills on the navy ground. Translucent white at 76% for the admin sidebar's resting links; translucent white at 12% (10% in dark) for ghost-on-masthead fills, the sidebar's Jump to field, its current link, its hover (at 60% of that), the rule above its foot group, the line that says pins couldn't be saved, and the narrow window's Menu button.
+- **Masthead Tints** (on-masthead-2, masthead-chip): text and fills on the navy ground. Translucent white at 76% for the admin sidebar's resting links; translucent white at 12% (10% in dark) for ghost-on-masthead fills, the sidebar's Jump to field, its current link, its hover (at 60% of that), the rule above its foot group, the line that says pins couldn't be saved, and the narrow window's Menu button. A theme works both out so text keeps 4.5:1 on any masthead: the quieter text is moved towards the masthead text until it reads, and the chip steps towards the text colour, or darker instead when that would leave the text on it under 4.5:1.
 
 ### Secondary
 - **Brand Aqua** (aqua): live state. The live dot, the "Watch" button when a service is streaming, switch-on, the selected check, and the "praying" state on the prayer wall.
@@ -890,12 +894,13 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 
 ### Neutral
 - **Page White** (white): the page and surface in light scheme, and all text on the masthead.
-- **Sand** (sand) and **Strong Sand** (sand-strong): the bulletin's shaded boxes. Callouts, the sermon head, the player, fields and notes, quiet buttons, chips, the segmented track, row-icon tiles; strong sand for image placeholders, progress tracks, the switch off-state and disabled buttons.
+- **Sand** (sand) and **Strong Sand** (sand-strong): the bulletin's shaded boxes. Callouts, the sermon head, the player, notes, chips, row-icon tiles; strong sand for image placeholders and progress tracks.
+- **Field** (field) and **Field Edge** (field-edge): what you type into or set (owner, 2026-11-11, chosen on the decision page: "Fill with an edge"). Fields are the field fill with a 1px field edge (ink-3 at 70%), as Inputs describe; quiet buttons, filter chips, the segmented track and steppers take the fill without the edge, and the switch's off track takes both. In light the fill is sand; in dark it is the panel lifted 7% towards white (#2d374d in the brand), which every theme works out the same way, so a field still shows on a raised navy panel.
 - **Ink** (ink), **Ink 2** (ink-2), **Ink 3** (ink-3): headings and titles, then body prose and subtitles, then inactive tabs, hints and trailing metadata. Ink 3 is also a trend chart's comparison series, always dashed.
 - **Hairline** (line): row dividers, the section-tab bar's bottom edge, the tab bar's top edge, pressed-row fill.
 - **Danger** (danger): something that has failed or run out. The failing status word on the device check, and a safeguarding item that has run out (2026-11-10, Claude's default while the owner slept): the Danger pill ("Run out" on the Safeguarding list, "Overdue" on the phone's training row), the flag notice on a person's Safeguarding tab (danger at 12% with danger text), and the blue card's status capsule (danger text on white). It is also the text of danger actions and a field's problem line, as Components describe. Due soon stays the marker (orange, or orange-ink text), so only what has already run out is red.
 - **Selected Fill** (selected-fill): the chosen row in a list on the page, a tonal step (sand in light) rather than a shadow. Inside the workbench's sand list column the step goes the other way, to the segment colour (white in light), so the selected row still stands off its ground.
-- **Fill on Surface** (fill-on-surface): fields, quiet buttons and the segmented track inside the white settings panel; sand in light, strong sand in dark, so a sand fill never vanishes into a raised navy panel. Also the quiet pill and the copy field.
+- **Fill on Surface** (fill-on-surface): a shaded box inside a panel; sand in light, strong sand in dark, so it never vanishes into a raised navy panel. The quiet pill, the chosen place, the layout picker's choices, the icon picker's cells and the Add a tile cards. Fields and quiet buttons take Field instead.
 - **Device Bezel** (device-bezel): the black ring and cutout of the phone frame; device hardware, never a UI colour.
 
 ### Dark scheme
@@ -904,6 +909,7 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 - **Bright Aqua** (bright-aqua) replaces navy as primary and replaces both aqua roles, with **On Bright Aqua** (on-bright-aqua) as its text. Orange stays the marker; **Night Orange Ink** (night-orange-ink) carries orange text.
 - Warm off-white ink (night-ink, night-ink-2, night-ink-3) rather than pure white.
 - **The date block in dark** is a raised navy tile (night-surface, the surface role) with its numerals and month in bright aqua (the primary role), its weekday in night-ink-3; it reads as a dark tile on the night masthead, not a white one. Under the yearly palette the same roles give a year surface with sage numerals.
+- **Night Field** (night-field, #2d374d) and **Night Field Edge** (night-field-edge, night-ink-3 at 70%) are Field in the dark scheme.
 - **Night Selected Fill** (night-selected-fill) is the selected row, the same raised step as a selected segment; Fill on Surface becomes **Night Fill on Surface** (night-fill-on-surface, the strong surface). Under the yearly palette in dark the selected row is **Year Night Selected Fill** (year-night-selected-fill) and fills on the panel use Year Night Surface Strong.
 
 ### 2026 yearly palette (seeded as a theme staff can change, 2026-11-09)
@@ -918,6 +924,8 @@ The palette is switched at the document root: `data-scheme` selects light or dar
 **The Marker Rule.** Orange means "here" or "new": the active section, the unread item, how far you've listened, today on the week rail, an event changed since members last opened it, the tile chosen on the Hub canvas, the next set of Life Groups to fill. It is never a button fill and never decoration. The one ground it may fill is a Home tile in the Highlight or Pale highlight tone (`marker`, `marker-soft`), which staff choose for a tile they want to stand out; no tile ships in solid Highlight by default. The other is a calendar row that stands out (a one-off or a changed date), tinted marker at 14% in the app's week and month lists (owner, 2026-11-09), so it follows the theme as the marker does. On the canvas it also marks the chosen picture in the media chooser.
 
 **The Aqua Acts Rule.** Aqua is for live state, for things you can act on (links, passages, the active tab), and for one short line of metadata at most (a series or recurrence line, a "Streamed on YouTube" tag). Navy is for the primary action itself. Don't use aqua for headings or running text.
+
+**The Contrast Rule.** Text and placeholders hold 4.5:1 against what they sit on; icons and the edges of controls hold 3:1. The quiet inks (ink-2, ink-3) are worked out to read on the page, on shaded boxes and on fields, in every theme and both schemes. Nothing is faded with opacity to look quiet, past or disabled: it changes colour instead (Buttons, *Disabled*). Opacity is for images and covers, drag ghosts, the mark at 7%, and brief press and busy feedback, and never takes text below these numbers. App styling refuses a theme that breaks it: the theme check measures each text colour against what it sits on, in light and in dark, quiet and secondary text in shaded boxes and in fields, danger text in shaded boxes, the masthead's quieter text and the text on its buttons included.
 
 ## Typography
 
@@ -1020,24 +1028,24 @@ The church mark appears only as a mask of the supplied artwork, recoloured with 
 Capsules with a firm press: they scale to 0.96 on press with an ease-out curve, and fire a selection or light haptic.
 - **Shape:** capsule (22px radius at 44px tall); full-width block buttons are 52px tall at the 14px card radius.
 - **Primary:** navy fill, white label, 600 weight, 18px side padding. Used for the main action of a section (Give online, Send to the pastoral team).
-- **Quiet:** sand fill, ink label. Secondary actions and "Not now"/"Done".
+- **Quiet:** the field fill (Field, no edge), ink label. Secondary actions and "Not now"/"Done".
 - **On masthead:** white fill with navy label, the main action inside a masthead (Listen). **Ghost on masthead:** translucent white fill (12%) with white label, the secondary masthead action (Watch, Remind me).
-- **Live:** aqua fill, the Watch button while a service is streaming. In the light scheme the fill is a deeper aqua (#00877c) so white text holds 4.5:1.
+- **Live:** aqua fill, the Watch button while a service is streaming. In the light scheme the fill is a deeper aqua (#008176) so white text holds 4.5:1 (4.8:1).
 - **Tinted:** deep aqua at 12% with a deep-aqua label (20% on hover), for an action that does something for you beside a quiet one, without competing with the section's primary: *Capture this page* in the admin panel's Send feedback.
-- **Disabled:** strong-sand fill, ink-3 label, not interactive.
-- **Icon buttons:** 44px round, transparent, with a translucent fill and a 0.94 scale on press.
+- **Disabled** (owner, 2026-11-11, chosen on the decision page: "Outline"): no fill, a 1.5px inset ring of ink-3 and an ink-2 label, not interactive and not pressing. On the masthead the ring and label are on-masthead-2; in the selection tray, on-primary (the ring at 60%). The same outline marks every disabled control: icon buttons (a ring in their own colour), filter chips, steppers, the chat send button, switches (the ring around an ink-3 knob) and a chat message still waiting to send (its time and files in ink-3). Disabled rows, toggle rows, choices, the admin panel's plain buttons and text links turn their words ink-3 instead; a field that can't be changed keeps its fill with ink-3 text.
+- **Icon buttons:** 44px round, transparent, with a translucent fill and a 0.94 scale on press; disabled, the outline above.
 
 ### Chips
-- **Filter chips:** 36px capsules in sand with ink-2 text; selected becomes navy with white text. Scroll horizontally without a scrollbar. The admin's shared filter chips are smaller (34px, 12px padding, caption at 600), wrap with a 6px gap, turn ink on hover and primary with on-primary text when chosen (pressed state for screen readers), and can carry a tabular count at 75% opacity.
+- **Filter chips:** 36px capsules in sand with ink-2 text; selected becomes navy with white text. Scroll horizontally without a scrollbar. The admin's shared filter chips are smaller (34px, 12px padding, caption at 600), wrap with a 6px gap, take the field fill, turn ink on hover and primary with on-primary text when chosen (pressed state for screen readers), and can carry a tabular count, in ink-3 until the chip is chosen.
 - **Toggle chips:** several on at once, each a 36px capsule (14px at the sides, caption at 600): sand with ink-2 when off, primary with on-primary when on, pressed state for screen readers and a haptic on tap. The row scrolls sideways into the gutter without a scrollbar, 8px apart, and can end in a trailing slot (the calendar's deep-aqua "+ Browse" at caption 600); the wrap form wraps in place instead. The calendars in your week use it. The **quiet** form is for a set that is usually all on, where solid capsules would shout (the weekly digest's calendars, owner 2026-11-09): it wraps, 6px apart, 32px capsules at 12px sides with no fill, ink-2 text and a 1px ring of ink-3 at 45% when off (ring ink-3 and text ink on hover), and sand with ink text led by a small check in accent when on (9px at the leading side).
 - **Passage chips:** 32px capsules in sand with deep-aqua text and a small open-book icon; tapping opens the passage in the in-app browser.
 - **Pill:** a small (0.7059rem, 700) capsule of orange at 28% with orange-ink text, for status such as "Later release".
 - **Pray button:** a 36px sand capsule that turns aqua when you are praying.
-- **Chosen chips (chip picker):** for choosing several from a long list, such as the roles a tile is shown to. Each choice is a 32px primary capsule with on-primary caption text at 600 and a 28px round remove button (on-primary at 16% on hover, spoken as "Remove" and the name). Under them a 44px fill-on-surface search at the field radius (leading search icon, row-size text, deep-aqua caret, the 2px inset deep-aqua ring on focus) opens a listbox of matches on the surface, ringed by a hairline and lifted, up to 18rem tall: names starting with what's typed come first, each the name at row size and 600 over a caption in ink-2, the active one on sand. Arrows move through it, Enter adds, Backspace on an empty search removes the last chip, Escape clears the search.
+- **Chosen chips (chip picker):** for choosing several from a long list, such as the roles a tile is shown to. Each choice is a 32px primary capsule with on-primary caption text at 600 and a 28px round remove button (on-primary at 16% on hover, spoken as "Remove" and the name). Under them a 44px search in the field fill with the field edge, at the field radius (leading search icon, row-size text, deep-aqua caret, the 2px inset deep-aqua ring on focus) opens a listbox of matches on the surface, ringed by a hairline and lifted, up to 18rem tall: names starting with what's typed come first, each the name at row size and 600 over a caption in ink-2, the active one on sand. Arrows move through it, Enter adds, Backspace on an empty search removes the last chip, Escape clears the search.
 - **Pill tones:** Marker (the default, orange as above) for "changed in this draft" and "changed for everyone since"; Accent (aqua at 12% with deep-aqua text) for a calm state, and "Test" on a test notification; Masthead (solid masthead colour with white text) for the event layer; Quiet (fill-on-surface with ink-2 text) for a state that no longer matters, such as an expired or turned-off code, the "Crash" mark in App health, and "Not recorded" on the Safeguarding list; Danger (danger at 12% with danger text) for a safeguarding item that has run out ("Run out", "Overdue"), and nothing else. Due soon and a young person without a parent stay Marker. An optional small icon leads the label.
 
 ### Segmented control
-A sand track (12px radius, 3px inset) of equal segments; the selected segment is a white tile (9px radius) with the segment shadow. Used for Automatic, Light, Dark, the inbox's Waiting and Everything, and an announcement's Now and Later. A segment can carry a count in the same orange capsule as the tab strip's (shown only above zero). It is a radio group: one Tab stop on the chosen segment, and the arrow keys, Home and End move the choice.
+A track in the field fill (12px radius, 3px inset, no edge) of equal segments; the selected segment is a white tile (9px radius) with the segment shadow. Used for Automatic, Light, Dark, the inbox's Waiting and Everything, and an announcement's Now and Later. A segment can carry a count in the same capsule as the tab strip's (shown only above zero). It is a radio group: one Tab stop on the chosen segment, and the arrow keys, Home and End move the choice.
 - **Labelled:** a choice in a form shows its label (caption, 600, ink-2) and an optional hint (caption, ink-3) above the track, like a field; a stacked one gives every option a detail line saying what it means. A bare track is only for switching what a screen shows.
 - **On masthead:** inside a masthead the track is the masthead chip (white at 12%), its segments 32px tall in on-masthead, and the selected one the page-surface tile with primary text. The calendar's Week and Month switch uses it, beside the masthead title.
 
@@ -1059,7 +1067,7 @@ A form with unsaved changes always asks before they're lost (owner, 2026-11-10: 
 - **Saves by itself** (autosave): for long work that's built up over time and has its own publish or send step, such as app styling drafts, an announcement being written, or the digest. It shows `SaveStatus` near its title: "Saving…", "Saved" (or "Saves as you type" before the first save), "Couldn't save. Trying again by itself." with *Try now*, or why it can't save yet ("Give it a title so it can save"). It never has a Save button. It asks before leaving only while a save is waiting, running, failed or not possible yet.
 - **Saves with a button**: for everything else, a record someone changes and then commits (a ministry's details, an event, a sermon, a break). Its one save action is `SaveBar`: a primary button named for what it does ("Save", "Add the regular event", "Add the ministry"), with "You have changes that aren't saved" (a pencil in ink-3) beside it while there are changes, and "Saved" with the check only once the save has happened. It always asks before leaving with changes.
 - **Can't save yet:** the button is disabled and the reason sits next to it in words, caption at 600 in ink-2 ("Give it a title to add it."), never only in a tooltip.
-- **Where the save goes:** in a desktop editor with a navy header, on the header's action row at the right, as the on-masthead button (white with navy text; disabled, the masthead chip with white text, still readable), its status and reason to its left in on-masthead-2. In a panel or a page, at the foot of the form: the editor foot (sticky, full width in a narrow column) or the form's last row, with quieter actions (Cancel, Close, a second way to save) after it. On a sheet, in the sheet's actions, full width, the reason or status centred under it. On the phone, the editor foot, full width.
+- **Where the save goes:** in a desktop editor with a navy header, on the header's action row at the right, as the on-masthead button (white with navy text; disabled, the masthead's outline, see Buttons), its status and reason to its left in on-masthead-2. In a panel or a page, at the foot of the form: the editor foot (sticky, full width in a narrow column) or the form's last row, with quieter actions (Cancel, Close, a second way to save) after it. On a sheet, in the sheet's actions, full width, the reason or status centred under it. On the phone, the editor foot, full width.
 - **Instant changes** (a switch, a role tick, linking a person) take effect the moment they're made and need neither a Save nor a status. Keep them visibly apart from a Save-button form on the same screen: in their own section below the form's SaveBar, as Ministry Settings does with *Ministries under it* and *Delete*.
 - **Leaving:** `UnsavedGuard` covers going to another page, a sidebar link, Back and closing the browser tab (the browser's own warning). Screens that swap what's open without navigating (the calendar, sermons, series and speakers) ask `UnsavedChanges.MayLeaveAsync()` first. The sheet says what would be lost and offers *Save and go on* (when the form can save), *Discard the changes* and *Stay here*.
 
@@ -1067,11 +1075,11 @@ A form with unsaved changes always asks before they're lost (owner, 2026-11-10: 
 The workhorse. A row is a full-width line at least 56px tall: optional leading tile or thumbnail, a title (row title) with an optional caption subtitle, and trailing metadata with a chevron (or an external-link icon when it leaves the app). Rows are divided by hairlines, start with a hairline above the list, and fill with the hairline colour while pressed.
 - **Leading tiles:** 34px, 10px radius; sand with navy icon by default, aqua at 16% with deep-aqua icon for actions, orange at 30% with orange-ink icon for warm items, sand with ink-3 for quiet ones.
 - **Thumbnails:** 96px wide at 16:9, 8px radius, because sermon graphics are made for 1920 by 1080 screens; a progress track (4px, strong sand, orange fill) can sit under the subtitle for sermons in progress.
-- **Agenda rows:** at least 44px, 10px above and below, top-aligned: a 4.75rem time column (label size, 600, tabular, primary) before the title. A special or one-off carries a label line above its title, pill size at 700 in accent, and its time in primary; a regular row is quiet: no label, its title at 400 in ink-2 and its time at 400 in ink-3. A date of a regular event carries the small repeat icon in ink-3, 6px after its title, spoken as how it repeats ("Repeats every Sunday"). A date that isn't on keeps its row, title and time at 400 in ink-3, with a caption line under the title in ink-3 led by the small circle-off icon saying why ("Kids camp weekend · back on 20 November"), never a suffix on the title. A row missing details says what's missing in a caption in orange ink at 600. Past rows fade to 55%; a selected row takes the Tonal Selection. In the app's lists a special or one-off row is set on marker at 14%, 12px wider each side at the field radius, with the hairlines either side of it hidden; a quiet row and a date that isn't on stay plain. Within a day section the hairline sits above each row.
+- **Agenda rows:** at least 44px, 10px above and below, top-aligned: a 4.75rem time column (label size, 600, tabular, primary) before the title. A special or one-off carries a label line above its title, pill size at 700 in accent, and its time in primary; a regular row is quiet: no label, its title at 400 in ink-2 and its time at 400 in ink-3. A date of a regular event carries the small repeat icon in ink-3, 6px after its title, spoken as how it repeats ("Repeats every Sunday"). A date that isn't on keeps its row, title and time at 400 in ink-3, with a caption line under the title in ink-3 led by the small circle-off icon saying why ("Kids camp weekend · back on 20 November"), never a suffix on the title. A row missing details says what's missing in a caption in orange ink at 600. Past rows turn their words, times and icons ink-3; a selected row takes the Tonal Selection. In the app's lists a special or one-off row is set on marker at 14%, 12px wider each side at the field radius, with the hairlines either side of it hidden; a quiet row and a date that isn't on stay plain. Within a day section the hairline sits above each row.
 - **Unread and read rows:** an unread row has a 9px orange dot in a 17px gutter before its title, and the title at 700; a read row has no dot and its title at 500. Rows that are neither keep 600.
 - **Inbox:** the Notifications page's masthead note counts what needs you ("2 waiting for you · 3 new"). While something waits, a Waiting and Everything switch sits above the list, its Waiting segment carrying the count. Waiting rows are reading rows on the warm tile with an action line below in deep aqua at label size and 600 ("Preview it" and a chevron, or "Do this in the admin panel"), and a hint under the list. Everything shows every item (warm tiles for those still waiting, quiet tiles for the rest), an Accent "Test" pill on test notifications, and a small quiet "Mark all as read" under the list while anything is unread.
 - **Hint:** a caption line in ink-2, up to 65ch, 14px under a list, for one sentence about how the list behaves.
-- **Toggle rows:** a title and caption beside a 51 by 31px switch (strong sand off, aqua on, white knob).
+- **Toggle rows:** a title and caption beside a 51 by 31px switch (off, the field fill with its edge; on, live with no edge; a white knob).
 - **Boxed list:** the same rows inside a white, lifted, 14px panel with 16px side padding.
 - **Reading rows:** for entries you read rather than tap. Top-aligned, 22px above and below, the leading tile nudged up to sit with the title, and the subtitle at body size in ink, up to 65ch. Anything more (facts, a text link) goes below the subtitle.
 - **Title extra:** a slot just after the title, for a pill such as "Staff only".
@@ -1086,11 +1094,11 @@ The workhorse. A row is a full-width line at least 56px tall: optional leading t
 - **Series cards:** a 16:9 cover, then the series name and message count, two to a row.
 
 ### Inputs / Fields
-- **Style:** borderless sand fill, 12px radius, 13 by 14px padding, body size; a 600 caption label above in ink-2. Notes fields use the 14px radius and a 180px minimum height.
-- **Focus:** no outline; a 2px inset ring in deep aqua. Elsewhere focus-visible is a 2px deep-aqua outline at 2px offset.
-- **Rich text:** a wrapping toolbar of 36px fill-on-surface buttons 4px apart at the 9px radius (caption at 600, ink-2, ink on hover, primary with on-primary when pressed), over the text as a field: fill-on-surface at the 12px radius, 13 by 14px padding, body size at 1.5, deep-aqua caret, the 2px inset deep-aqua ring on focus, resizing vertically. Under it the preview, "How it looks", is a plain caption at 600 in ink-2 over the rendered text.
-- **Search field (admin):** a 40px fill-on-surface field at the 12px radius, up to 420px wide, with a leading search icon in ink-3, row-size text, an ink-2 placeholder and a deep-aqua caret; focus is the 2px inset deep-aqua ring on the whole field. It settles 250ms after typing stops before it searches.
-- **Copy field:** a labelled, read-only 40px field in fill-on-surface at the 12px radius (row-size tabular text, a little tracking), with a small quiet Copy button beside it that turns to "Copied" with a check, and a polite caption status line beneath (a hint, or how to copy by hand if copying fails). Used for sign-in codes and recovery links; selecting the field selects the whole value.
+- **Style:** the field fill with a 1px inset field edge (Field), 12px radius, 13 by 14px padding, body size; a 600 caption label above in ink-2; placeholders in ink-2. Notes fields use the 14px radius and a 180px minimum height. Every field takes it: text, multi-line, selects, the search field, the chip picker's search, the copy field, the colour hex, rich text, the chat composer and the admin panel's plain inputs.
+- **Focus:** no outline; the 2px inset deep-aqua ring replaces the edge. Elsewhere focus-visible is a 2px deep-aqua outline at 2px offset.
+- **Rich text:** a wrapping toolbar of 36px field-fill buttons 4px apart at the 9px radius (caption at 600, ink-2, ink on hover, primary with on-primary when pressed), over the text as a field: the field fill and edge at the 12px radius, 13 by 14px padding, body size at 1.5, deep-aqua caret, the 2px inset deep-aqua ring on focus, resizing vertically. Under it the preview, "How it looks", is a plain caption at 600 in ink-2 over the rendered text.
+- **Search field (admin):** a 40px field (fill and edge) at the 12px radius, up to 420px wide, with a leading search icon in ink-3, row-size text, an ink-2 placeholder and a deep-aqua caret; focus is the 2px inset deep-aqua ring on the whole field. It settles 250ms after typing stops before it searches.
+- **Copy field:** a labelled, read-only 40px field (fill and edge) at the 12px radius (row-size tabular text, a little tracking), with a small quiet Copy button beside it that turns to "Copied" with a check, and a polite caption status line beneath (a hint, or how to copy by hand if copying fails). Used for sign-in codes and recovery links; selecting the field selects the whole value.
 - **Code field** (`CodeField`, Platform.Ui): a text field for a code someone types or pastes (a parent's sign-in code, an app reviewer's code). As they type it turns to capitals and puts a dash after every four characters, so "zf3b2td9" shows as ZF3B-2TD9; a pasted code with or without its dash works the same. The placeholder shows the shape (ABCD-EFGH), and the phone's keyboard opens in capitals.
 - **Copy button:** the copy field without its field, where the value is already shown beside it: a small quiet capsule with a link icon ("Copy link"), or the copy icon when the value isn't a link ("Copy the code" beside a sign-in code), that turns to "Copied" with a check, or "Couldn't copy: select the address" with an alert icon, spoken politely. In Places in the app it sits between the primary action and the quiet ones.
 - **Who sees it (audience picker):** a segmented Everyone, Signed in and Roles (a fourth "Set up specially" appears only for an audience the three can't express), and under Roles the chip picker of roles ("Find a role") with a hint line; one audience can name several roles.
@@ -1110,7 +1118,7 @@ The cover of every tab root: navy ground, the mark at 7% opacity, 210px wide, bl
 - **Status strip:** inside the Sunday masthead, a 12px-radius strip of translucent white (12%) with a clock icon or a pulsing aqua live dot, the next service or "Live now", and a ghost or live button.
 - **Now playing:** inside the Listen masthead, 136px 16:9 artwork beside the title. With nothing playing it shows the latest sermon with Listen and Watch buttons; once audio is playing it pins that sermon instead, with a 4px orange progress line and a transport row (elapsed, 15s back, a 56px white play/pause disc, 30s forward, remaining).
 - **Beside:** a slot beside the title; the title and it share a row that wraps when tight (10px gap, bottom-aligned), the slot nudged 4px up to sit on the title's baseline. The calendar's Week and Month switch sits there.
-- **Week rail:** in the calendar's sticky week band, seven equal day buttons 4px apart, each at least 44px at the 12px radius in on-masthead: an uppercase micro weekday (600, +0.04em, at 75%), the date at lead size and 700 (tabular), and a 5px beige dot when something is on. Days before today fade to 60%; the day in view takes the masthead chip; today is a white (surface) tile with primary text and an orange dot. Pressing fills with the masthead chip; focus is a 2px marker outline 2px out. Tapping a day scrolls the agenda to it.
+- **Week rail:** in the calendar's sticky week band, seven equal day buttons 4px apart, each at least 44px at the 12px radius in on-masthead: an uppercase micro weekday (600, +0.04em, on-masthead-2), the date at lead size and 700 (tabular), and a 5px beige dot when something is on. Days before today turn on-masthead-2; the day in view takes the masthead chip; today is a white (surface) tile with primary text and an orange dot. Pressing fills with the masthead chip; focus is a 2px marker outline 2px out. Tapping a day scrolls the agenda to it.
 
 ### Section tabs (signature)
 A sticky, horizontally scrolling row of 600 labels in ink-3 (18px apart) that pins directly under the top bar on sectioned pages. As you scroll, the tab for the section in view turns ink and a 3px orange underline slides and resizes to sit under it (240ms ease-out); the row scrolls itself to keep the active tab visible. Tapping a tab smooth-scrolls to its section with a selection haptic. All of Sunday's five tabs (Welcome, Sermons, This week, Next, Give) fit a 390pt width.
@@ -1135,7 +1143,7 @@ Centred: a 40px deep-aqua icon, a 1.0588rem ink title, an ink-2 line, and an opt
 ### Calendar (signature)
 The church calendar as one running diary from today. The ordinary stays quiet and only what's different speaks.
 - **Week:** the sticky week band (see Layout) with the range in beige at label size and 600 (tabular), 12px above the week rail. Under it the toggle chips of your calendars, then a day section per day: a heading at row size and 700 ("Today", "Wednesday") followed by the date in caption ink-3 at 400, then its agenda rows. The list ends on a quiet "Carry on past …" button, or, at the end of what the phone holds, a hint saying that is everything.
-- **Month grid:** micro weekdays (600, +0.04em, ink-3), then day buttons at least 46px at the 12px radius: the date at row size and 600 (tabular), and under it up to three marks: pale (strong sand) for a regular event, accent for a special, marker for a change, and an open 1.2px ink-3 ring for a date that isn't on. Days before today in ink-3; days outside the month at 45%; hover fills sand. Today is filled primary with on-primary (marks in on-primary, regular at 50%); the chosen day is an inset 2px primary ring. A caption key in ink-3 lists the four marks.
+- **Month grid:** micro weekdays (600, +0.04em, ink-3), then day buttons at least 46px at the 12px radius: the date at row size and 600 (tabular), and under it up to three marks: pale (strong sand) for a regular event, accent for a special, marker for a change, and an open 1.2px ink-3 ring for a date that isn't on. Days before today in ink-3; days outside the month in ink-3 with the date at 400; hover fills sand. Today is filled primary with on-primary (marks in on-primary, regular at 50%); the chosen day is an inset 2px primary ring. A caption key in ink-3 lists the four marks.
 - **Event head:** a navy band like the masthead, the mark at 7% bleeding off its top-right, holding the date block beside the words (16px apart): the label line (pill size, 700, beige), the title (headline, 700, -0.02em, balanced) and the when line (beige, label size, 600, tabular: "8:30–11:30am · every second Saturday"). The label line carries the event's own label or its calendar's name, never words the page invents. A date of a regular event ends its when line with "· this date only"; a regular event's own head has no date block, and its when line is the pattern led by the small repeat icon ("Every Sunday · 10:30am–12pm"). Compact in the admin panel's panels: 16px padding, a 12px gap, the title at title size.
 - **Date block:** a white (surface) tile, 78px wide at the 14px radius, the weekday, the date numeral and the month stacked in primary (see Date numeral). Flat: no shadow. In dark it is a raised navy tile with aqua numerals (see Colors). It is a picture of the date, spoken as the full date.
 - **Event body:** 16px under the head, items 14px apart: an optional 16:9 picture edge to edge with square corners above the body; the actions wrapping 10px apart (Add to calendar as the primary with its icon, Register when there is a link and Share quiet); a change note in marker at 22% at the 12px radius (11 by 14px, caption in ink, "Changed" leading in orange ink at 700); a date that isn't on as a sand note at the 12px radius with its icon in ink-2 at 600; then the fact list with icons (where, opening Maps; contacts, calling or messaging), About in prose, and Other dates as rows with the time trailing in ink-3 (a date not on in ink-3).
@@ -1156,7 +1164,7 @@ The church calendar as one running diary from today. The ordinary stays quiet an
 
 ### Admin workbench and drafts
 - **Workbench:** three panes in one view: a sand list column (280 to 340px, hairline right edge), a white work area (24 by 32px padding), and a detail pane (320 to 512px) whose content is a lifted white settings panel at the 14px radius. Under 1200px the detail drops beneath the work area; under 760px, or whenever it is asked to be narrow (the app's form), it becomes one column that shows a single pane at a time.
-- **Tab strip:** a wrapping row of label-weight tabs in ink-3, 22px apart and 44px tall, over a hairline; the selected tab turns ink with the 3px orange underline. A tab can carry a count in an orange capsule (tabular figures), and a trailing slot holds an add action in deep aqua. It is the static sibling of the section tabs: it switches what is shown, it does not scroll the page. **Link mode:** given an address per tab, each tab is a link and the chosen one is the current page (still the 3px orange underline), so a page's areas are tabs with their own addresses, as a ministry's are; a tab replaces the address rather than adding to history. **Sticky** (phone) pins it under the top bar on the page colour, gutter-padded, one row that scrolls sideways without a scrollbar.
+- **Tab strip:** a wrapping row of label-weight tabs in ink-3, 22px apart and 44px tall, over a hairline; the selected tab turns ink with the 3px orange underline. A tab can carry a count in a capsule of marker at 22% with marker-ink text (tabular figures), and a trailing slot holds an add action in deep aqua. It is the static sibling of the section tabs: it switches what is shown, it does not scroll the page. **Link mode:** given an address per tab, each tab is a link and the chosen one is the current page (still the 3px orange underline), so a page's areas are tabs with their own addresses, as a ministry's are; a tab replaces the address rather than adding to history. **Sticky** (phone) pins it under the top bar on the page colour, gutter-padded, one row that scrolls sideways without a scrollbar.
 - **Save status:** one caption line at 600 that is polite to screen readers: a small spinner and "Saving…", a deep-aqua check and "Saved", a pencil in ink-3 and "You have changes that aren't saved" for a form saved with a button, or, on failure, a cloud-off icon and "Couldn't save. Trying again by itself." in orange ink with an underlined "Try now". An optional detail follows in ink-3 after a middle dot.
 - **Selected row:** see the Tonal Selection Rule; the same treatment marks the open draft in the Drafts menu and the chosen row in the work area. In the workbench's sand list column a list-style table hides its header and rounds each cell to the field radius, so the selected row is a white segment tile.
 - **Admin overrides:** in the admin panel the workbench fills the window height, narrows its outer panes to 260 to 300px and 320 to 400px at 1648px, and drops the detail under the work area (24 by 32px padding, a hairline above) at 1428px.
@@ -1192,9 +1200,9 @@ Finds any page the person's role opens, by its name, its area or its summary. A 
 The page head in the admin panel: a headline-size title (balanced, focus target for navigation), an optional caption lead in ink-2 up to 72ch, or a lead slot, an optional back link in deep aqua above the title, and actions at the end. It also sets the browser title as "Page · Good Shepherd admin".
 
 ### Office week (signature)
-- **Day rail:** one shared rail, a week on the home page and a fortnight on Announcements. A sand track (14px radius, 10px padding, 8px column gap, at least 196px tall) of white day columns at the 10px radius that run the rail's full height. Each column carries an uppercase micro weekday in ink-3 ("Today" on today, in orange ink) over a tabular title-large date. Today is outlined with an inset 2px primary ring; days before today keep their column but fade their contents to 55%.
+- **Day rail:** one shared rail, a week on the home page and a fortnight on Announcements. A sand track (14px radius, 10px padding, 8px column gap, at least 196px tall) of white day columns at the 10px radius that run the rail's full height. Each column carries an uppercase micro weekday in ink-3 ("Today" on today, in orange ink) over a tabular title-large date. Today is outlined with an inset 2px primary ring; days before today keep their column with the weekday and date in ink-3.
 - **Fortnight:** fourteen days from this week's Monday, each at least 56px wide with a 6px gap and 8 by 8px padding, the rail as tall as its contents and scrolling sideways when the days don't fit; its capsules are tighter (5 by 7px) and set entirely in pill type. A span covering the whole rail reads "The whole fortnight" instead of "All week".
-- **Capsules:** each dated item is a capsule (9px radius, 6 by 10px padding, caption) laid across the days it covers: a 600 title cut off with an ellipsis over a tabular pill-size date range at 80%. Capsules pack into bands: each takes the highest band where it doesn't touch another, so items on different days share a line. Three kinds: **Everyone** (what everyone sees) in a primary fill with on-primary text; **Event layer** in accent at 16% on the surface with accent text; **Draft** (not out yet) in marker at 32% on the surface with marker-ink text. A capsule presses to 0.98; the chosen one has a 2px marker outline at a 2px offset.
+- **Capsules:** each dated item is a capsule (9px radius, 6 by 10px padding, caption) laid across the days it covers: a 600 title cut off with an ellipsis over a tabular pill-size date range in the capsule's own text colour. Capsules pack into bands: each takes the highest band where it doesn't touch another, so items on different days share a line. Three kinds: **Everyone** (what everyone sees) in a primary fill with on-primary text; **Event layer** in accent at 10% on the surface with accent text; **Draft** (not out yet) in marker at 24% on the surface with marker-ink text. A capsule presses to 0.98; the chosen one has a 2px marker outline at a 2px offset.
 - **Moments:** an item at one time rather than across days (an announcement's send time) reserves its own day and the next two (fewer at the rail's end), so its title has room for two lines; another item that close moves down a band. Its second line is the time alone ("7am"); the full day and time are in its tooltip.
 - **Legend and quiet state:** a caption legend in ink-3 with 14 by 10px swatches appears only when something is dated, and lists only the kinds on the rail, each in the page's own words (the home page's Draft reads "Not out yet: a draft or a scheduled announcement"). With nothing dated, one centred caption line in ink-3 sits across the rail.
 - **Needs you:** hairline rows with a marker-tinted tile (orange at 30%, orange-ink pencil), a 600 title link, a caption detail with a relative date, and a small quiet button for the action. With nothing waiting, a single hairline-ruled line with a deep-aqua check.
@@ -1203,7 +1211,7 @@ The page head in the admin panel: a headline-size title (balanced, focus target 
 ### Announcements desk
 The page where staff write, check and send an announcement, set as the fortnight it will land in.
 - **Fortnight rail:** this week and next, with sent announcements as primary capsules and scheduled ones as marker capsules, each a moment at its send time. While a time is being chosen, the announcement being written shows as a live "this one" capsule at that time, outlined as the chosen one.
-- **Not sent yet:** a row of 34px marker capsules (marker at 32% on the surface, marker-ink, caption) after a 600 caption label in ink-2: each a 600 title cut off at 28ch beside its state in pill type. The one open on the desk has the 2px marker outline; they press to 0.98.
+- **Not sent yet:** a row of 34px marker capsules (marker at 24% on the surface, marker-ink, caption) after a 600 caption label in ink-2: each a 600 title cut off at 28ch beside its state in pill type. The one open on the desk has the 2px marker outline; they press to 0.98.
 - **Writing column:** a title-size heading with Save status beside it, then the title and message fields, then a checklist: hairline rows (14px above and below) with a 120px label column at label size and 600 in ink-2, the field's own label hidden. The rows are Who it's for (with how many phones it would reach as its hint), When (a Now and Later segmented control; Later adds a day field beside a list of times written the church's way, up to 160px, and a caption line saying when it goes), Opens, and Urgent (a toggle). Actions close the column: a small Danger Delete on the left, then Send to my phone (quiet) and a primary button that names its reach ("Send to 42 phones", or "Schedule it").
 - **Proof aside:** the lock-screen proof, captioned with what tapping opens, then "In the app's notifications" (label size, 600, ink-2) over the unread row it will become, its message clamped to two lines.
 - **Confirm sheet:** sending opens a sheet with the lock-screen proof and a hairline summary (a 110px label column: Who it's for, When, and Urgent when it is), a warning notice when no phone would get it, and Back to writing beside the primary send.
@@ -1211,7 +1219,7 @@ The page where staff write, check and send an announcement, set as the fortnight
 - **Sent or scheduled:** the writing column becomes the state line and the message in prose (65ch); a scheduled one offers a quiet "Don't send it: back to writing".
 
 ### Weekly digest desk
-The admin's digest (`/digest`) in the split view, after the approved mock. Above the list, capped at 64rem: the controls as one grid, From (an 11rem date field at 42px, its label level with the others), How long (One week, Two weeks, Month, Custom, a segmented control with its caption label above, up to 26rem) and, for Custom, To (11rem); the range under them at row size and 600 in primary (tabular); then a "Calendars" caption label over the quiet toggle chips. Each item row is a grid, `16px 20px 84px minmax(0, 1fr) minmax(9rem, 14rem) 64px` with 12px between: grip, tick, a 16:9 thumbnail, the body (label, title with its pills, detail), the when (caption at 600 in primary, right-aligned and balanced, wrapping inside its column, the time under it at 500 in ink-2) and the move arrows (32px, ink-3, always shown, sand on hover, 30% when disabled). Every row's when ends at the same x. When the list is 600px or narrower the when drops under the body, left-aligned with the time after a " · ", and the thumbnail shrinks to 56 by 32px. Moving a row with its arrows keeps focus on the moved item and says where it went ("Moved Kids camp to 3 of 6") in a polite status line.
+The admin's digest (`/digest`) in the split view, after the approved mock. Above the list, capped at 64rem: the controls as one grid, From (an 11rem date field at 42px, its label level with the others), How long (One week, Two weeks, Month, Custom, a segmented control with its caption label above, up to 26rem) and, for Custom, To (11rem); the range under them at row size and 600 in primary (tabular); then a "Calendars" caption label over the quiet toggle chips. Each item row is a grid, `16px 20px 84px minmax(0, 1fr) minmax(9rem, 14rem) 64px` with 12px between: grip, tick, a 16:9 thumbnail, the body (label, title with its pills, detail), the when (caption at 600 in primary, right-aligned and balanced, wrapping inside its column, the time under it at 500 in ink-2) and the move arrows (32px, ink-3, always shown, sand on hover, the outline when disabled). Every row's when ends at the same x. When the list is 600px or narrower the when drops under the body, left-aligned with the time after a " · ", and the thumbnail shrinks to 56 by 32px. Moving a row with its arrows keeps focus on the moved item and says where it went ("Moved Kids camp to 3 of 6") in a polite status line.
 
 ### Data table
 The admin's working list. A toolbar row (search, filter chips) wraps above a full-width table at row-title size. Headers are caption-size 600 in ink-3 over a hairline; sortable headers are buttons whose arrow is hidden until hover and shows in orange ink on the sorted column (fading 160ms). Rows are divided by hairlines with 12px cells; numbers and dates align right in tabular figures, secondary cells are caption in ink-2, long text is cut off at 30ch. A selectable row shows a pointer, fills with selected-fill at 55% on hover and the full selected-fill when chosen; focus is an inset 2px deep-aqua ring, and the arrow keys move the selection. An empty table shows an empty state beneath it.
@@ -1293,7 +1301,7 @@ Staff's library as two shelves: the Library, which staff organise in folders, an
 **The App's Own Rule.** Wherever the app owns something rather than staff (the Made by the app shelf, its folders and crumbs, a file's folder, the shelf's empty state), it carries the lock glyph and one plain caption saying what it is and what staff can't do to it. The lock is ink-2 or the surrounding text colour; ownership takes no colour or badge of its own.
 
 ### Sign-in and gates
-- **Sign-in card:** a white card at the 14px radius, lifted, up to 460px wide (28px padding, 20px at the foot), centred on a full-window sand stage, with the mark and name in primary at 700 at its head; fields and quiet buttons inside it use fill-on-surface. A small quiet "App reviewer? Sign in with a code" switches it to the code form.
+- **Sign-in card:** a white card at the 14px radius, lifted, up to 460px wide (28px padding, 20px at the foot), centred on a full-window sand stage, with the mark and name in primary at 700 at its head. A small quiet "App reviewer? Sign in with a code" switches it to the code form.
 - **Open in the app:** a shared link opened without the app is the sign-in card on the sand stage, filling the window: the brand head, then the place as its row tile beside its name in title-large type (balanced) and where it is in caption ink-2, then two short ink-2 paragraphs (up to 52ch) on what the link does and how to get the app. A place for signed-in people is named only "A place in the church app"; a place that's gone says "This isn't in the app any more". Signed-in staff also get a quiet "See it in Places in the app".
 - **Gate:** when a page needs signing in or a permission the person lacks, the title band stays and an empty state sits in a sand box at the 14px radius beneath it. A page that doesn't exist and a page that fails show the empty state alone, with a quiet button home or to try again.
 
@@ -1312,7 +1320,7 @@ A ministry (`/ministries/{id}/{area}`) reads like the Sunday bulletin's shaded b
 - **Items in a box:** hairline-divided, 10px above and below: the title at row size and 600 (1.3), the body in caption ink-2 up to 65ch keeping its line breaks, then a caption meta line in ink-2 wrapping 4 by 8px: "Important" in marker-ink at 600, "From …" for a post from the ministry above (or, when it shows them, one under it), how long ago ("· edited"), and whether it went to the whole church. A leader's own post is a button that opens the post sheet. Files and calendars sit in the boxes as rows on accent tiles (a file or link icon; a calendar), with a small quiet pencil for those who may change them.
 - **Tools:** above the boxes, a primary with a plus ("New post", "Add a link", "Add a calendar") for those who may add, 8px apart. An empty area is an empty state that says what goes there.
 - **About:** the about text up to 65ch, then quiet-tile rows for when, where and who it's for, the leaders led by their Avatar, *Waiting for a leader* (quiet clock rows with a small quiet *Take back*), its teams (or groups) as rows with a chevron, and *Your place*: quiet door rows that act at once ("Leave the team", "Stop coming along", "Mia stops coming").
-- **Join sheet:** "Join …", led by "Who's it for?" when there is more than one choice. Each choice is a card: sand at the 14px radius, 14 by 16px in, 10px apart, a 20px radio (a 2px ink-3 ring) beside the title at 600 over a caption detail in ink-2. The chosen card turns accent at 8% on the page with an inset 2px accent ring, its radio filling to a 6px accent ring; a choice that isn't open is at 60% with its reason as the detail. The first open choice starts chosen; an ask adds an optional note for the leaders, and the block primary names the result.
+- **Join sheet:** "Join …", led by "Who's it for?" when there is more than one choice. Each choice is a card: sand at the 14px radius, 14 by 16px in, 10px apart, a 20px radio (a 2px ink-3 ring) beside the title at 600 over a caption detail in ink-2. The chosen card turns accent at 8% on the page with an inset 2px accent ring, its radio filling to a 6px accent ring; a choice that isn't open is in ink-3 with its reason as the detail. The first open choice starts chosen; an ask adds an optional note for the leaders, and the block primary names the result.
 - **Post sheet:** Title, What to say, *Who it's for* as a stacked segmented control, then a sand note at the field radius (10 by 12px, caption ink-2) saying exactly who reads it; *Important* (notifies everyone it's for at once) and, for an important post to everyone, *Ask to send it to the whole church*. The primary names the audience ("Post for parents"); a saved post adds a danger *Delete the post*.
 - **Sundays (Life Groups):** a row per Sunday; a changed one takes the warm tile and its note in marker-ink at 600 ("No class this week"). Leaders open a sheet with *No class this Sunday* and one line to say.
 
@@ -1435,7 +1443,7 @@ Home arranged on the desk, on App styling's phone inside a draft: the phone colu
 - **Colour swatches:** four to a row (10 by 8px gaps), each a 40px "Aa" chip at the field radius drawn in its own tone, in the draft's theme and the preview's light or dark (the chip carries the phone's palette and scheme, so it always matches the phone beside it), with a hairline inset (the Card chip lifted), over its staff name in caption ink-2, centred; the chosen chip has a 2px marker outline at a 2px offset and its name turns ink at 600. A caption under them says the words change colour by themselves to stay easy to read.
 - **Fade over the picture:** under Picture, only while the tile's words sit over its picture, the same swatches pick the colour that fades over it; the words take that colour's paired text colour.
 - **Top of Home on the canvas:** the masthead is one target; hover draws the inset 2px marker ring at 60%, chosen an inset 3px marker ring (the masthead clips outside rings), and its *Changed* capsule sits inside the top edge under the status bar.
-- **Layout picker:** the kind's layouts stacked 6px apart, each a fill-on-surface box at the field radius (10 by 12px padding) with the name at row size over a caption saying what it draws; the chosen one turns the page colour with an inset 2px marker ring, and a layout that doesn't suit the tile is greyed to 55% with a caption saying why.
+- **Layout picker:** the kind's layouts stacked 6px apart, each a fill-on-surface box at the field radius (10 by 12px padding) with the name at row size over a caption saying what it draws; the chosen one turns the page colour with an inset 2px marker ring, and a layout that doesn't suit the tile has its name and caption in ink-3, the caption saying why.
 - **Contrast:** there is no light and dark proof on show. The tile is drawn twice off screen, in light and in dark, and the contrast of its text measured; only when a scheme falls under 4.5 : 1 does a warning notice appear at the top of the panel, in plain words ("Words on this colour are hard to read in dark mode. Try another colour.").
 - **Icon picker:** the chosen icon in a 38px fill-on-surface cell at the tile radius beside its name at row size and a small quiet "Change icon" (Done while open); Change opens the grid of 38px cells, auto-filling, 6px apart, at the tile radius on fill-on-surface in ink-2, the chosen icon primary with on-primary, with the icon upload under it. The icon colour select follows when there is an icon.
 - **Add a tile:** a sheet of kinds grouped under label-size 700 heads in ink-2 (Your library, Your own, From the app), each a fill-on-surface card at the 14px radius (14px padding) in an auto-filling grid of at least 17rem: its row tile (warm for the church's own and saved templates, accent for the app's), the name at row size, a caption line, its starting size in tabular ink-3; hover steps to strong sand.
@@ -1466,7 +1474,7 @@ The sidebar foot's *Send feedback* opens a sheet over whatever page you're on, s
 - **Where it came from:** above the board, 16px under the tabs, the admin filter chips "Everywhere", "The app" and "The admin panel".
 - **Columns:** each a sand track at the 14px radius, 10px in, its cards 8px apart, at least min(62vh, 640px) tall; at least 170px wide (140px with a ticket docked), Resolved narrower at three quarters. The head is fixed at two lines of label size at 700 in ink (1.35 line height, cut off past two) so every column's first card starts at the same height, its count at the other end in a white capsule (pill size, 600, ink-2, tabular). An empty column says so in a caption ink-3 line ("Nothing new."); Resolved shows its latest 20 and then "And N more. Find one by its number or words." A column under a drag takes an inset 2px deep-aqua ring.
 - **Not doing:** folded by default into a 46px strip of the same sand track, its "Not doing · N" set vertically at label size and 700 in ink-2 (ink on hover); opened, it is a narrow column whose head folds it again. Cards drop on the strip as on a column.
-- **Ticket card:** a white card at the tile radius, 10 by 12px in (12px at its foot), a hairline under it: an optional 88px cover (the first screenshot from its top, at the 9px radius on strong sand), "#12 · Ruth" in tabular caption ink-3, the title at row size and 600 in ink (wrapping, never cut off), then labels that wrap 4px apart: pill size at 700 in ink-2 on fill-on-surface at the 9px radius. A ticket from the admin panel leads with "Admin panel" in primary at 12% with primary text, then the browser; one from the app shows the app build and the phone's name. The build, phone and browser labels stay on one line and are cut with an ellipsis (the full text on hover); the source and state labels wrap instead, since their words carry the meaning. Then the file count in deep aqua at 12% with a paperclip, "Pictures deleted" once they're gone, and on a closed ticket the day its files go ("Files go 18 Nov"). A card that is Resolved or Not doing dims to 62%. The open card is ringed 2px in marker. Press scales it to 0.98; focus is the deep-aqua outline 2px out. Cards drag between columns; clicking docks the ticket, and ⌘-click or Ctrl-click opens `/feedback/{number}` in a new tab, said in a caption hint under the board.
+- **Ticket card:** a white card at the tile radius, 10 by 12px in (12px at its foot), a hairline under it: an optional 88px cover (the first screenshot from its top, at the 9px radius on strong sand), "#12 · Ruth" in tabular caption ink-3, the title at row size and 600 in ink (wrapping, never cut off), then labels that wrap 4px apart: pill size at 700 in ink-2 on fill-on-surface at the 9px radius. A ticket from the admin panel leads with "Admin panel" in primary at 12% with primary text, then the browser; one from the app shows the app build and the phone's name. The build, phone and browser labels stay on one line and are cut with an ellipsis (the full text on hover); the source and state labels wrap instead, since their words carry the meaning. Then the file count in deep aqua at 12% with a paperclip, "Pictures deleted" once they're gone, and on a closed ticket the day its files go ("Files go 18 Nov"). A card that is Resolved or Not doing dims its cover to 62% and its title to ink-2. The open card is ringed 2px in marker. Press scales it to 0.98; focus is the deep-aqua outline 2px out. Cards drag between columns; clicking docks the ticket, and ⌘-click or Ctrl-click opens `/feedback/{number}` in a new tab, said in a caption hint under the board.
 - **Docked ticket:** a head of "#12 · 2 hours ago" in tabular caption ink-3 (one line, ellipsis), *Open as a page* as a text link and a small quiet close, over the title in title type at 700 (balanced). Then the status as the stage pipeline (New, In progress, Fixed, to check, Resolved; up to 520px, 760px on the page), and under it, on their own lines, a quiet underlined *Mark not doing* (a quiet "Not doing" pill once it is) and a caption ink-3 hint: open, that pictures, videos and phone data are deleted 7 days after it's Resolved or Not doing; closed, when it closed, the day its pictures and videos are deleted, and that the ticket goes entirely 180 days after closing. Reopening a ticket keeps its files. Pictures and videos scroll sideways 12px apart, each 240px tall at the field radius on strong sand with its kind and size in caption ink-3 under it.
 - **Ticket page:** the same ticket opened as a page opens on a title band (the title, "#12 · Ruth · 2 hours ago" as its lead, back to Feedback); pictures there are 420px tall. Its side, *Sent with it*, is a fact grid with 5.5rem labels in caption ink-3 at 600 on hairlines: From and Sent, then for a ticket from the admin panel Where ("The admin panel"), Version, Browser, Window (size and scheme), Page and Before (the pages opened just before), and for one from the app App, Phone and Page. A ticket from the app then has *This phone* (how much it has sent, *Block this phone* as a danger text link that opens its reason field) and the stored data as a small quiet download.
 - **What's happened:** the timeline under the words: each step a caption line in ink-3 behind a hairline on its left, who at 600 in ink-2; a note a sand box at the field radius (10 by 12px) with its author and a 28px round delete. *Add a note* is a field over its own `SaveBar`.

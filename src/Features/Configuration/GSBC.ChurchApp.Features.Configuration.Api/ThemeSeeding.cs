@@ -18,7 +18,7 @@ internal sealed class ThemeSeeding(IServiceScopeFactory scopes, ILogger<ThemeSee
     private static readonly Seed[] Seeds =
     [
         new(AppearanceSurfaces.Seeded.BrandId, "The church's brand", "montserrat",
-            new ThemeKeys("#2a3d5e", "#2a3d5e", "#00877c", "#e7ae74", "#f4efe7"),
+            new ThemeKeys("#2a3d5e", "#2a3d5e", "#008176", "#e7ae74", "#f4efe7"),
             new ThemeKeys("#283c62", "#2ec4b6", "#2ec4b6", "#e7ae74", "#1d2840"),
             new() { ["ink"] = "#18233a", ["ink-2"] = "#545e70", ["accent"] = "#00776d", ["masthead-note"] = "#d5c9b7", ["on-live"] = "#ffffff", ["marker-ink"] = "#8a5422" },
             new() { ["ink"] = "#f2ede4", ["ink-2"] = "#b2b8c5", ["masthead-note"] = "#d5c9b7", ["marker-ink"] = "#f0c493" }),

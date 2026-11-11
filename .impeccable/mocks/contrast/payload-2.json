@@ -1,0 +1,42 @@
+{
+  "title": "Fields and quiet controls you can find",
+  "question": "In dark mode a text box on a panel is the same colour as the panel, so the note box in your screenshot only shows as its resize corner; quiet buttons, filter chips and switches fade the same way, and in light they are a faint beige on white. How should fields and quiet controls show where they are?",
+  "options": [
+    {
+      "id": "hairline",
+      "label": "Fill with an edge",
+      "lineage": "today's look, finished with a fine line",
+      "thesis": "Fields keep their beige (light) or navy (dark) fill and gain a fine edge; quiet buttons, chips and switches get a fill that stands apart from the panel.",
+      "palette": ["#f4efe7", "#8f96a3", "#2b3958", "#6e7688"],
+      "materials": ["shaded fill", "1px edge on fields", "stronger dark fill"],
+      "viewport": "Light and dark: a note box, a title field, a search field, Cancel, two filter chips and a switch, on a panel and on the page.",
+      "risk": "The most change for the least novelty: forms look a little busier than today's soft fills.",
+      "html": ".impeccable/mocks/contrast/fields-hairline.html",
+      "comp": ".impeccable/mocks/contrast/fields-hairline.png"
+    },
+    {
+      "id": "stronger-fill",
+      "label": "Stronger fill",
+      "lineage": "today's soft fills, turned up",
+      "thesis": "No lines anywhere: fields, quiet buttons, chips and switches get a fill that clearly differs from the panel and the page, in light and dark.",
+      "palette": ["#efe8dc", "#2b3958", "#1d2840", "#141d31"],
+      "materials": ["shaded fill only", "no edges"],
+      "viewport": "Light and dark: a note box, a title field, a search field, Cancel, two filter chips and a switch, on a panel and on the page.",
+      "risk": "Closest to today and calm, but still soft in light: a field shows as a shaded box rather than a clear edge.",
+      "html": ".impeccable/mocks/contrast/fields-stronger-fill.html",
+      "comp": ".impeccable/mocks/contrast/fields-stronger-fill.png"
+    },
+    {
+      "id": "outlined",
+      "label": "Outlined fields",
+      "lineage": "classic form fields",
+      "thesis": "Fields, quiet buttons, chips and switches lose their fill and take a clear grey outline on the panel's own colour.",
+      "palette": ["#ffffff", "#6b7384", "#1d2840", "#8a92a3"],
+      "materials": ["1px grey outline", "no fill"],
+      "viewport": "Light and dark: a note box, a title field, a search field, Cancel, two filter chips and a switch, on a panel and on the page.",
+      "risk": "Clearest edges, but quiet buttons become outlines too, the look you just chose for disabled buttons, so the two can be mistaken.",
+      "html": ".impeccable/mocks/contrast/fields-outlined.html",
+      "comp": ".impeccable/mocks/contrast/fields-outlined.png"
+    }
+  ]
+}

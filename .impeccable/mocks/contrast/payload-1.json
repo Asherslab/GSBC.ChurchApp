@@ -1,0 +1,43 @@
+{
+  "title": "Disabled buttons you can still see",
+  "question": "A button that can't be pressed yet (\"Add the note\" before you've written anything) is nearly invisible today: its label is 1.7:1 in the admin panel and its shape doesn't show at all. Each option below keeps the label readable (5.5:1 or more) in light and dark. Which look should a disabled button have everywhere, in the app and the admin panel?",
+  "followup": true,
+  "options": [
+    {
+      "id": "outline",
+      "label": "Outline",
+      "lineage": "the empty version of the button",
+      "thesis": "A disabled button loses its fill and keeps a clear outline and grey label: obviously a button, obviously not ready.",
+      "palette": ["#6b7384", "#545e70", "#8a92a3", "#b2b8c5"],
+      "materials": ["1.5px outline", "secondary text colour", "no fill"],
+      "viewport": "Light and dark: the note box with \"Add the note\" disabled, a row of Save, Cancel and Delete enabled then disabled, and a disabled Publish on the masthead.",
+      "risk": "The strongest difference from enabled, but an outlined button can read as a secondary action rather than an unavailable one.",
+      "html": ".impeccable/mocks/contrast/disabled-outline.html",
+      "comp": ".impeccable/mocks/contrast/disabled-outline.png"
+    },
+    {
+      "id": "quiet-fill",
+      "label": "Quiet grey fill",
+      "lineage": "system buttons on iOS and macOS",
+      "thesis": "Every disabled button becomes the same soft grey pill with a faint edge and a grey label, whatever colour it was.",
+      "palette": ["#e6e7ea", "#545e70", "#363f55", "#b2b8c5"],
+      "materials": ["neutral grey fill", "hairline edge", "secondary text colour"],
+      "viewport": "Light and dark: the note box with \"Add the note\" disabled, a row of Save, Cancel and Delete enabled then disabled, and a disabled Publish on the masthead.",
+      "risk": "The quietest option: the shape shows, but less boldly than an outline, and it no longer hints which button will be the main one.",
+      "html": ".impeccable/mocks/contrast/disabled-quiet-fill.html",
+      "comp": ".impeccable/mocks/contrast/disabled-quiet-fill.png"
+    },
+    {
+      "id": "faded-colour",
+      "label": "Faded colour",
+      "lineage": "the button's own colour, washed out",
+      "thesis": "A disabled button keeps a pale version of its own colour, so you can see which one will be the main action once it's ready.",
+      "palette": ["#d4d8df", "#1f2d47", "#1f4553", "#2ec4b6"],
+      "materials": ["tinted fill", "the button's own hue", "readable label"],
+      "viewport": "Light and dark: the note box with \"Add the note\" disabled, a row of Save, Cancel and Delete enabled then disabled, and a disabled Publish on the masthead.",
+      "risk": "In dark mode the faded teal is close enough to the real one that someone may try to press it.",
+      "html": ".impeccable/mocks/contrast/disabled-faded-colour.html",
+      "comp": ".impeccable/mocks/contrast/disabled-faded-colour.png"
+    }
+  ]
+}

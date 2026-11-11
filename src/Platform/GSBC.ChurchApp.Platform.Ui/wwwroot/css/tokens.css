@@ -13,6 +13,8 @@
   --device-bezel: #000000;
   --selected-fill: var(--sand);
   --fill-on-surface: var(--sand);
+  --field: var(--sand);
+  --field-edge: color-mix(in srgb, var(--ink-3) 70%, transparent);
   --page: #ffffff;
   --surface: #ffffff;
   --sand: #f4efe7;
@@ -20,7 +22,7 @@
   --segment-on: var(--surface);
   --ink: #18233a;
   --ink-2: #545e70;
-  --ink-3: #6b7384;
+  --ink-3: #626a79;
   --line: rgb(42 61 94 / 0.12);
   --scrim: rgb(0 0 0 / 0.38);
   --video-ground: #000;
@@ -39,7 +41,7 @@
   --primary: #2a3d5e;
   --on-primary: #ffffff;
   --accent: #00776d;
-  --live: #00877c;
+  --live: #008176;
   --on-live: #ffffff;
   --marker: #e7ae74;
   --marker-ink: #8a5422;
@@ -99,6 +101,7 @@
   --tile-warm-go: var(--ink);
   --selected-fill: var(--segment-on);
   --fill-on-surface: var(--sand-strong);
+  --field: #2d374d;
   --page: #141d31;
   --surface: #1d2840;
   --sand: #1d2840;
@@ -106,7 +109,7 @@
   --segment-on: #34446a;
   --ink: #f2ede4;
   --ink-2: #b2b8c5;
-  --ink-3: #8a92a3;
+  --ink-3: #9ca2b1;
   --line: rgb(255 255 255 / 0.09);
   --scrim: rgb(0 0 0 / 0.55);
   --masthead: #283c62;

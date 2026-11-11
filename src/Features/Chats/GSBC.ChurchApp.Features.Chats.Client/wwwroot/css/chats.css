@@ -36,10 +36,10 @@
 .chat-composer__quote { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; padding: 3px 10px; border-radius: var(--radius-full); background: var(--sand); }
 .chat-composer__note { color: var(--ink-3); }
 .chat-composer__bar { display: flex; align-items: flex-end; gap: 8px; }
-.chat-composer__field { flex: 1; min-height: 40px; max-height: 140px; padding: 9px 14px; border: 0; border-radius: 20px; background: var(--sand); color: var(--ink); font: inherit; font-size: var(--text-body); line-height: 1.38; resize: none; field-sizing: content; }
+.chat-composer__field { flex: 1; min-height: 40px; max-height: 140px; padding: 9px 14px; border: 0; border-radius: 20px; background: var(--field); box-shadow: inset 0 0 0 1px var(--field-edge); color: var(--ink); font: inherit; font-size: var(--text-body); line-height: 1.38; resize: none; field-sizing: content; }
 .chat-composer__field:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 .chat-composer__send { flex: none; display: grid; place-items: center; width: 40px; height: 40px; border: 0; border-radius: var(--radius-full); background: var(--primary); color: var(--on-primary); }
-.chat-composer__send:disabled { background: var(--sand-strong); color: var(--ink-3); }
+.chat-composer__send:disabled { background: none; box-shadow: inset 0 0 0 1.5px var(--ink-3); color: var(--ink-2); }
 .chat-for { padding: 4px 12px; border: 0; border-radius: var(--radius-full); background: var(--sand); font: inherit; font-size: var(--text-caption); font-weight: 600; color: var(--ink-2); }
 .chat-for--on { background: color-mix(in srgb, var(--accent) 14%, var(--page)); color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
 .chat-mentions { display: grid; gap: 2px; padding: 4px; border-radius: var(--radius); background: var(--surface); box-shadow: var(--lift); }
