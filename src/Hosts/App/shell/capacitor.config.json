@@ -7,5 +7,11 @@
     "contentInset": "never",
     "scrollEnabled": false,
     "handleApplicationNotifications": false
+  },
+  "plugins": {
+    "Keyboard": {
+      "resize": "none",
+      "resizeOnFullScreen": true
+    }
   }
 }
